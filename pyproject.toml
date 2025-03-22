@@ -126,7 +126,7 @@ snakeviz = ">=2.2.2,<3"
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
 pdbp = "*"
-dags = {git = "https://github.com/OpenSourceEconomics/dags", rev="55309e2a9dd6ae1ab2802ca89d791afc119078cf"}
+dags = {git = "https://github.com/OpenSourceEconomics/dags", rev="00d92a9a080f8a9df5d567ffba2f99604e896b2d"}
 
 
 [tool.pixi.target.unix.pypi-dependencies]
