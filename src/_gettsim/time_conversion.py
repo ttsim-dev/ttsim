@@ -2,7 +2,6 @@ import inspect
 import re
 from collections.abc import Callable
 
-import dags.tree as dt
 from dags import rename_arguments
 
 from _gettsim.config import (
@@ -11,10 +10,6 @@ from _gettsim.config import (
 )
 from _gettsim.function_types import DerivedFunction, PolicyFunction
 from _gettsim.gettsim_typing import NestedDataDict, NestedFunctionDict
-from _gettsim.shared import (
-    insert_path_and_value,
-    upsert_path_and_value,
-)
 
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7
@@ -230,8 +225,8 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions_tree: NestedFunctionDict,
-    data_tree: NestedDataDict,
+    functions_dict: NestedFunctionDict,
+    data_dict: NestedDataDict,
 ) -> NestedFunctionDict:
     """
      Create functions that convert variables to different time units.
@@ -259,56 +254,42 @@ def create_time_conversion_functions(
 
     Parameters
     ----------
-    functions_tree
-        The functions tree.
-    data
-        The data tree.
+    functions_dict
+        The functions dict with qualified function names as keys and functions as
+        values.
+    data_dict
+        The data dict with qualified data names as keys and pandas Series as values.
 
     Returns
     -------
-    The functions tree with the new time conversion functions.
+    The functions dict with the new time conversion functions.
     """
 
     converted_functions = {}
-    data_tree_paths = dt.tree_paths(data_tree)
 
     # Create time-conversions for existing functions
-    for path, function in dt.flatten_to_tree_paths(functions_tree).items():
-        leaf_name = path[-1]
+    for name, function in functions_dict.items():
         all_time_conversions_for_this_function = _create_time_conversion_functions(
-            name=leaf_name, func=function
+            name=name, func=function
         )
         for der_name, der_func in all_time_conversions_for_this_function.items():
-            new_path = [*path[:-1], der_name]
             # Skip if the function already exists or the data column exists
-            if new_path in dt.tree_paths(converted_functions) + data_tree_paths:
+            if der_name in converted_functions or der_name in data_dict:
                 continue
             else:
-                converted_functions = insert_path_and_value(
-                    base=converted_functions,
-                    path_to_insert=new_path,
-                    value_to_insert=der_func,
-                )
+                converted_functions[der_name] = der_func
 
     # Create time-conversions for data columns
-    for path in data_tree_paths:
-        leaf_name = path[-1]
+    for name in data_dict:
         all_time_conversions_for_this_data_column = _create_time_conversion_functions(
-            name=leaf_name
+            name=name
         )
         for der_name, der_func in all_time_conversions_for_this_data_column.items():
-            new_path = [*path[:-1], der_name]
             # Skip if the function already exists or the data column exists
-            if new_path in dt.tree_paths(converted_functions) + data_tree_paths:
+            if der_name in converted_functions or der_name in data_dict:
                 continue
             else:
-                # Upsert because derived functions based on data should overwrite
-                # derived functions based on other functions.
-                converted_functions = upsert_path_and_value(
-                    base=converted_functions,
-                    path_to_upsert=new_path,
-                    value_to_upsert=der_func,
-                )
+                converted_functions[der_name] = der_func
 
     return converted_functions
 
