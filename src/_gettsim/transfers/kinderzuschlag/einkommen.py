@@ -5,7 +5,7 @@ from _gettsim.function_types import policy_function
 
 aggregation_specs = {
     "arbeitslosengeld_2__anzahl_kinder_bg": AggregateByGroupSpec(
-        source_col="kindergeld__anzahl_ansprüche",
+        source="kindergeld__anzahl_ansprüche",
         aggr="sum",
     ),
 }

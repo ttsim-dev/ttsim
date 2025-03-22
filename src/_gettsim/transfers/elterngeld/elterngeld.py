@@ -5,32 +5,32 @@ from _gettsim.function_types import policy_function
 
 aggregation_specs = {
     "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(
-        source_col="kind_grundsätzlich_anspruchsberechtigt",
+        source="kind_grundsätzlich_anspruchsberechtigt",
         aggr="any",
     ),
     "anzahl_anträge_fg": AggregateByGroupSpec(
-        source_col="claimed",
+        source="claimed",
         aggr="sum",
     ),
     "bezugsmonate_partner": AggregateByPIDSpec(
         p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
-        source_col="bisherige_bezugsmonate",
+        source="bisherige_bezugsmonate",
         aggr="sum",
     ),
     "alter_monate_jüngstes_mitglied_fg": AggregateByGroupSpec(
-        source_col="demographics__alter_monate",
+        source="demographics__alter_monate",
         aggr="min",
     ),
     "anzahl_kinder_bis_2_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_2",
+        source="demographics__kind_bis_2",
         aggr="sum",
     ),
     "anzahl_kinder_bis_5_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_5",
+        source="demographics__kind_bis_5",
         aggr="sum",
     ),
     "anzahl_mehrlinge_jüngstes_kind_fg": AggregateByGroupSpec(
-        source_col="jüngstes_kind_oder_mehrling",
+        source="jüngstes_kind_oder_mehrling",
         aggr="sum",
     ),
 }

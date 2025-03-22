@@ -368,7 +368,7 @@ def test_user_provided_aggregate_by_group_specs():
     aggregation_specs_tree = {
         "module_name": {
             "betrag_m_hh": AggregateByGroupSpec(
-                source_col="betrag_m",
+                source="betrag_m",
                 aggr="sum",
             )
         }
@@ -392,7 +392,7 @@ def test_user_provided_aggregate_by_group_specs():
         {
             "module_name": {
                 "betrag_double_m_hh": AggregateByGroupSpec(
-                    source_col="betrag_m_double",
+                    source="betrag_m_double",
                     aggr="max",
                 ),
             },
@@ -400,7 +400,7 @@ def test_user_provided_aggregate_by_group_specs():
         {
             "module_name": {
                 "betrag_double_m_hh": AggregateByGroupSpec(
-                    source_col="module_name__betrag_m_double",
+                    source="module_name__betrag_m_double",
                     aggr="max",
                 ),
             },
@@ -453,7 +453,7 @@ def test_aggregate_by_group_specs_missing_group_sufix():
     aggregation_specs_tree = {
         "module_name": {
             "betrag_agg_m": AggregateByGroupSpec(
-                source_col="betrag_m",
+                source="betrag_m",
                 aggr="sum",
             )
         },
@@ -480,7 +480,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
     aggregation_specs_tree = {
         "module_name": {
             "betrag_m_hh": AggregateByGroupSpec(
-                source_col="betrag_m",
+                source="betrag_m",
                 aggr="aggr_not_implemented",
             )
         },
@@ -504,7 +504,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                 "module": {
                     "target_func": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
-                        source_col="source_func",
+                        source="source_func",
                         aggr="sum",
                     )
                 }
@@ -518,7 +518,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                 "module": {
                     "target_func_m": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
-                        source_col="source_func_m",
+                        source="source_func_m",
                         aggr="sum",
                     )
                 }
@@ -532,7 +532,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                 "module": {
                     "target_func_m": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
-                        source_col="source_func_m",
+                        source="source_func_m",
                         aggr="sum",
                     )
                 }

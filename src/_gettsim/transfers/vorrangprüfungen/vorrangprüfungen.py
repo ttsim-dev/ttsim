@@ -5,11 +5,11 @@ from _gettsim.function_types import policy_function
 
 aggregation_specs = {
     "wohngeld_vorrang_wthh": AggregateByGroupSpec(
-        source_col="wohngeld_vorrang_vor_arbeitslosengeld_2_bg",
+        source="wohngeld_vorrang_vor_arbeitslosengeld_2_bg",
         aggr="any",
     ),
     "wohngeld_kinderzuschlag_vorrang_wthh": AggregateByGroupSpec(
-        source_col="wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg",
+        source="wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg",
         aggr="any",
     ),
 }

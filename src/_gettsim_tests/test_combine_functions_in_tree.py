@@ -93,7 +93,7 @@ def function_with_float_return(x: int) -> float:
             {
                 "namespace1": {
                     "y_hh": AggregateByGroupSpec(
-                        source_col="x",
+                        source="x",
                         aggr="sum",
                     ),
                 },
@@ -111,7 +111,7 @@ def function_with_float_return(x: int) -> float:
             {
                 "namespace1": {
                     "y_hh": AggregateByGroupSpec(
-                        source_col="inputs__x",
+                        source="inputs__x",
                         aggr="sum",
                     ),
                 },
@@ -153,7 +153,7 @@ def test_get_tree_path_from_source_col_name(argument_name, current_namespace, ex
 @pytest.mark.parametrize(
     (
         "aggregation_method",
-        "source_col",
+        "source",
         "namespace_of_function_to_derive",
         "functions_tree",
         "types_input_variables",
@@ -200,7 +200,7 @@ def test_get_tree_path_from_source_col_name(argument_name, current_namespace, ex
 )
 def test_annotations_for_aggregation(  # noqa: PLR0913
     aggregation_method,
-    source_col,
+    source,
     namespace_of_function_to_derive,
     functions_tree,
     types_input_variables,
@@ -209,7 +209,7 @@ def test_annotations_for_aggregation(  # noqa: PLR0913
     assert (
         _annotations_for_aggregation(
             aggregation_method=aggregation_method,
-            source_col=source_col,
+            source=source,
             namespace=namespace_of_function_to_derive,
             functions_tree=functions_tree,
             types_input_variables=types_input_variables,
@@ -239,7 +239,7 @@ def test_create_one_aggregate_by_group_func_applies_annotations():
     result_func = _create_one_aggregate_by_group_func(
         aggregation_target="bar",
         aggregation_method="sum",
-        source_col="foo",
+        source="foo",
         annotations=annotations,
         group_by_id="hh_id",
     )
@@ -252,7 +252,7 @@ def test_create_one_aggregate_by_p_id_func_applies_annotations():
     result_func = _create_one_aggregate_by_p_id_func(
         aggregation_target="bar",
         p_id_to_aggregate_by="p_id_spam",
-        source_col="foo",
+        source="foo",
         aggregation_method="sum",
         annotations=annotations,
     )

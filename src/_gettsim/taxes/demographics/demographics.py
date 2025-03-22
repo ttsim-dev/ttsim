@@ -13,11 +13,11 @@ from _gettsim.function_types import group_by_function, policy_function
 
 aggregation_specs = {
     "anzahl_erwachsene_hh": AggregateByGroupSpec(
-        source_col="erwachsen",
+        source="erwachsen",
         aggr="sum",
     ),
     "anzahl_rentner_hh": AggregateByGroupSpec(
-        source_col="sozialversicherung__rente__bezieht_rente",
+        source="sozialversicherung__rente__bezieht_rente",
         aggr="sum",
     ),
     "anzahl_personen_hh": AggregateByGroupSpec(

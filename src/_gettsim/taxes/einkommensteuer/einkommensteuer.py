@@ -7,12 +7,12 @@ from _gettsim.piecewise_functions import piecewise_polynomial
 aggregation_specs = {
     "anzahl_kindergeld_ansprüche_1": AggregateByPIDSpec(
         p_id_to_aggregate_by="demographics__p_id_elternteil_1",
-        source_col="kindergeld__grundsätzlich_anspruchsberechtigt",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr="sum",
     ),
     "anzahl_kindergeld_ansprüche_2": AggregateByPIDSpec(
         p_id_to_aggregate_by="demographics__p_id_elternteil_2",
-        source_col="kindergeld__grundsätzlich_anspruchsberechtigt",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr="sum",
     ),
 }

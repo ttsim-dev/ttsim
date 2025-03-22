@@ -9,7 +9,7 @@ from _gettsim.shared import join_numpy
 aggregation_specs = {
     "an_elternteil_auszuzahlender_betrag_m": AggregateByPIDSpec(
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        source_col="betrag_m",
+        source="betrag_m",
         aggr="sum",
     ),
 }

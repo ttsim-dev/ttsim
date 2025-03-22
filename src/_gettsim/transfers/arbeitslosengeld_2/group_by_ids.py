@@ -9,46 +9,46 @@ from _gettsim.function_types import group_by_function
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
 aggregation_specs = {
     "anzahl_erwachsene_fg": AggregateByGroupSpec(
-        source_col="demographics__erwachsen",
+        source="demographics__erwachsen",
         aggr="sum",
     ),
     "anzahl_kinder_fg": AggregateByGroupSpec(
-        source_col="demographics__kind",
+        source="demographics__kind",
         aggr="sum",
     ),
     "anzahl_kinder_bis_6_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_6",
+        source="demographics__kind_bis_6",
         aggr="sum",
     ),
     "anzahl_kinder_bis_15_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_15",
+        source="demographics__kind_bis_15",
         aggr="sum",
     ),
     "anzahl_erwachsene_bg": AggregateByGroupSpec(
-        source_col="demographics__erwachsen",
+        source="demographics__erwachsen",
         aggr="sum",
     ),
     "anzahl_kinder_bg": AggregateByGroupSpec(
-        source_col="demographics__kind",
+        source="demographics__kind",
         aggr="sum",
     ),
     "anzahl_personen_bg": AggregateByGroupSpec(
         aggr="count",
     ),
     "anzahl_kinder_bis_17_bg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_17",
+        source="demographics__kind_bis_17",
         aggr="sum",
     ),
     "alleinerziehend_bg": AggregateByGroupSpec(
-        source_col="demographics__alleinerziehend",
+        source="demographics__alleinerziehend",
         aggr="any",
     ),
     "anzahl_erwachsene_eg": AggregateByGroupSpec(
-        source_col="demographics__erwachsen",
+        source="demographics__erwachsen",
         aggr="sum",
     ),
     "anzahl_kinder_eg": AggregateByGroupSpec(
-        source_col="demographics__kind",
+        source="demographics__kind",
         aggr="sum",
     ),
     "anzahl_personen_eg": AggregateByGroupSpec(

@@ -8,7 +8,7 @@ from _gettsim.piecewise_functions import piecewise_polynomial
 aggregation_specs = {
     "alleinerziehendenbonus": AggregateByPIDSpec(
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        source_col="kindergeld__kind_bis_10_mit_kindergeld",
+        source="kindergeld__kind_bis_10_mit_kindergeld",
         aggr="sum",
     ),
 }

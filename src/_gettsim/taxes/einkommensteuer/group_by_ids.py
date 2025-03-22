@@ -10,7 +10,7 @@ aggregation_specs = {
         aggr="count",
     ),
     "alleinerziehend_sn": AggregateByGroupSpec(
-        source_col="demographics__alleinerziehend",
+        source="demographics__alleinerziehend",
         aggr="any",
     ),
 }

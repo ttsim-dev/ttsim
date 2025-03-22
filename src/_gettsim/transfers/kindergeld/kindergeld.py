@@ -9,7 +9,7 @@ from _gettsim.shared import join_numpy
 aggregation_specs = {
     "anzahl_ansprüche": AggregateByPIDSpec(
         p_id_to_aggregate_by="p_id_empfänger",
-        source_col="grundsätzlich_anspruchsberechtigt",
+        source="grundsätzlich_anspruchsberechtigt",
         aggr="sum",
     ),
 }

@@ -232,8 +232,8 @@ In order to inject aggregation functions at the group level into the graph, scri
 functions of the taxes and transfer system should define a dictionary
 `aggregation_specs` at the module level. This dictionary must specify the aggregated
 columns as keys and the AggregateByGroupSpec data class as values. The data class
-specifies the `source_col` (i.e. the column which is being aggregated) and the
-aggregation method `aggr`.
+specifies the `source` (i.e. the column which is being aggregated) and the aggregation
+method `aggr`.
 
 For example, in `demographics.py`, we could have:
 
@@ -241,7 +241,7 @@ For example, in `demographics.py`, we could have:
 from _gettsim.aggregation import AggregateByGroupSpec
 
 aggregation_specs = {
-    "anzahl_kinder_hh": AggregateByGroupSpec(source_col="demographics__kind", aggr="sum"),
+    "anzahl_kinder_hh": AggregateByGroupSpec(source="demographics__kind", aggr="sum"),
     "anzahl_personen_hh": AggregateByGroupSpec(aggr="count"),
 }
 ```
@@ -292,7 +292,7 @@ from _gettsim.aggregation import AggregateByGroupSpec
 
 aggregation_specs = {
     "kindergeld__betrag_m_bg": AggregateByGroupSpec(
-        source_col="kindergeld__betrag_m",
+        source="kindergeld__betrag_m",
         aggr="sum"
     )
 }
@@ -312,13 +312,12 @@ The implementation is similar to aggregations to the level of groupings: In orde
 specify new aggregation functions, scripts with functions of the taxes and transfer
 system should define a dictionary `aggregation_specs` at the module level. This
 dictionary must specify the aggregated columns as keys and the `AggregateByPIDSpec` data
-class as values. The class specifies the `source_col`, `p_id_to_aggregate_by`, and
-`aggr`. If `aggr` is `count`, `source_col` is not needed.
+class as values. The class specifies the `source`, `p_id_to_aggregate_by`, and `aggr`.
+If `aggr` is `count`, `source` is not needed.
 
-The key `source_col` specifies which column is the source of the aggregation operation.
-The key `p_id_to_aggregate_by` specifies the column that indicates to which `p_id` the
-values in `source_col` should be ascribed to. The key `aggr` gives the aggregation
-method.
+The key `source` specifies which column is the source of the aggregation operation. The
+key `p_id_to_aggregate_by` specifies the column that indicates to which `p_id` the
+values in `source` should be ascribed to. The key `aggr` gives the aggregation method.
 
 For example, in `kindergeld.py`, we could have:
 
@@ -326,7 +325,7 @@ For example, in `kindergeld.py`, we could have:
 aggregation_specs = {
     "kindergeld__anzahl_ansprüche": AggregateByPIDSpec(
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        source_col="kindergeld__grundsätzlich_anspruchsberechtigt",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr="sum",
     ),
 }
