@@ -436,7 +436,7 @@ def _create_one_aggregate_by_group_func(
 
     return DerivedAggregationFunction(
         function=wrapped_func,
-        source_function_name=source,
+        source_name=source,
         source_function=functions[source],
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
@@ -535,7 +535,7 @@ def _create_one_aggregate_by_p_id_func(
 
     return DerivedAggregationFunction(
         function=wrapped_func,
-        source_function_name=source,
+        source_name=source,
         source_function=functions[source],
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,

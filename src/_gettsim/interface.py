@@ -17,7 +17,12 @@ from _gettsim.config import (
     TYPES_INPUT_VARIABLES,
 )
 from _gettsim.config import numpy_or_jax as np
-from _gettsim.function_types import DerivedFunction, GroupByFunction, PolicyFunction
+from _gettsim.function_types import (
+    DerivedAggregationFunction,
+    DerivedTimeConversionFunction,
+    GroupByFunction,
+    PolicyFunction,
+)
 from _gettsim.gettsim_typing import (
     NestedDataDict,
     NestedTargetDict,
@@ -726,7 +731,10 @@ def _fail_if_root_nodes_are_missing(
 
 
 def _func_depends_on_parameters_only(
-    func: PolicyFunction | DerivedFunction | GroupByFunction,
+    func: PolicyFunction
+    | DerivedAggregationFunction
+    | DerivedTimeConversionFunction
+    | GroupByFunction,
 ) -> bool:
     """Check if a function depends on parameters only."""
     return (
