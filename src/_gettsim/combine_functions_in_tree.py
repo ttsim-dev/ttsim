@@ -47,10 +47,10 @@ if TYPE_CHECKING:
 
 
 def combine_policy_functions_and_derived_functions(
-    functions_dict: QualifiedFunctionsDict,
+    functions: QualifiedFunctionsDict,
     aggregation_specs_from_environment: QualifiedAggregationSpecsDict,
-    targets_dict: QualifiedTargetsDict,
-    data_dict: QualifiedDataDict,
+    targets: QualifiedTargetsDict,
+    data: QualifiedDataDict,
     top_level_namespace: set[str],
 ) -> QualifiedFunctionsDict:
     """Add derived functions to the qualified functions dict.
@@ -63,15 +63,15 @@ def combine_policy_functions_and_derived_functions(
 
     Parameters
     ----------
-    functions_dict
+    functions
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
     aggregation_specs_from_environment
         Dict with qualified aggregation spec names as keys and aggregation specs as
         values.
-    targets_dict
+    targets
         Dict with qualified target names as keys and None as values.
-    data_dict
+    data
         Dict with qualified data names as keys and pandas Series as values.
     top_level_namespace
         Set of top-level namespaces.
@@ -83,84 +83,84 @@ def combine_policy_functions_and_derived_functions(
     """
     # Create parent-child relationships
     aggregate_by_p_id_functions = _create_aggregation_functions(
-        functions_dict=functions_dict,
-        aggregations_dict=aggregation_specs_from_environment,
+        functions=functions,
+        aggregations=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
     )
-    current_functions_dict = {
+    current_functions = {
         **aggregate_by_p_id_functions,
-        **functions_dict,
+        **functions,
     }
 
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
-        functions_dict=current_functions_dict,
-        data_dict=data_dict,
+        functions=current_functions,
+        data=data,
     )
-    current_functions_dict = {
+    current_functions = {
         **time_conversion_functions,
-        **current_functions_dict,
+        **current_functions,
     }
 
     # Create aggregation functions
     aggregate_by_group_functions = _create_aggregate_by_group_functions(
-        functions_dict=current_functions_dict,
-        targets_dict=targets_dict,
-        data_dict=data_dict,
-        aggregations_dict_from_environment=aggregation_specs_from_environment,
+        functions=current_functions,
+        targets=targets,
+        data=data,
+        aggregations_from_environment=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
     )
-    current_functions_dict = {
+    current_functions = {
         **aggregate_by_group_functions,
-        **current_functions_dict,
+        **current_functions,
     }
 
     _fail_if_targets_not_in_functions(
-        functions_dict=current_functions_dict,
-        targets_dict=targets_dict,
+        functions=current_functions,
+        targets=targets,
     )
 
-    return current_functions_dict
+    return current_functions
 
 
 def _create_aggregate_by_group_functions(
-    functions_dict: QualifiedFunctionsDict,
-    targets_dict: QualifiedTargetsDict,
-    data_dict: QualifiedDataDict,
-    aggregations_dict_from_environment: QualifiedAggregationSpecsDict,
+    functions: QualifiedFunctionsDict,
+    targets: QualifiedTargetsDict,
+    data: QualifiedDataDict,
+    aggregations_from_environment: QualifiedAggregationSpecsDict,
     top_level_namespace: set[str],
 ) -> QualifiedFunctionsDict:
     """Create aggregation functions."""
 
     # Create aggregation functions from environment
     aggregation_functions_from_environment = _create_aggregation_functions(
-        functions_dict=functions_dict,
-        aggregations_dict=aggregations_dict_from_environment,
+        functions=functions,
+        aggregations=aggregations_from_environment,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
     )
 
     functions_with_aggregation_functions_from_environment = {
         **aggregation_functions_from_environment,
-        **functions_dict,
+        **functions,
     }
 
     # Create derived aggregation functions
-    derived_aggregation_specs_dict = _create_derived_aggregations_specs_dict(
-        functions_dict=functions_with_aggregation_functions_from_environment,
-        targets_dict=targets_dict,
-        data_dict=data_dict,
+    derived_aggregation_specs = _create_derived_aggregations_specs(
+        functions=functions_with_aggregation_functions_from_environment,
+        targets=targets,
+        data=data,
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
-        functions_dict=functions_with_aggregation_functions_from_environment,
-        aggregations_dict=derived_aggregation_specs_dict,
+        functions=functions_with_aggregation_functions_from_environment,
+        aggregations=derived_aggregation_specs,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
     )
 
     return _annotate_aggregation_functions(
-        functions_dict=functions_dict,
+        functions=functions,
         aggregation_functions={
             **aggregation_functions_derived_from_names,
             **aggregation_functions_from_environment,
@@ -169,8 +169,8 @@ def _create_aggregate_by_group_functions(
 
 
 def _create_aggregation_functions(
-    functions_dict: QualifiedFunctionsDict,
-    aggregations_dict: QualifiedAggregationSpecsDict,
+    functions: QualifiedFunctionsDict,
+    aggregations: QualifiedAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
     top_level_namespace: set[str],
 ) -> QualifiedFunctionsDict:
@@ -178,10 +178,10 @@ def _create_aggregation_functions(
 
     Parameters
     ----------
-    functions_dict
+    functions
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
-    aggregations_dict
+    aggregations
         Dict with qualified aggregation spec names as keys and aggregation specs as
         values.
     aggregation_type
@@ -196,7 +196,7 @@ def _create_aggregation_functions(
 
     group_by_functions = {
         name: func
-        for name, func in functions_dict.items()
+        for name, func in functions.items()
         if isinstance(func, GroupByFunction)
     }
 
@@ -205,7 +205,7 @@ def _create_aggregation_functions(
     )
 
     aggregation_functions = {}
-    for target_name, aggregation_spec in aggregations_dict.items():
+    for target_name, aggregation_spec in aggregations.items():
         # Skip if aggregation spec is not the current aggregation type
         if not isinstance(aggregation_spec, expected_aggregation_spec_type):
             continue
@@ -242,10 +242,10 @@ def _create_aggregation_functions(
     return aggregation_functions
 
 
-def _create_derived_aggregations_specs_dict(
-    functions_dict: QualifiedFunctionsDict,
-    targets_dict: QualifiedTargetsDict,
-    data_dict: QualifiedDataDict,
+def _create_derived_aggregations_specs(
+    functions: QualifiedFunctionsDict,
+    targets: QualifiedTargetsDict,
+    data: QualifiedDataDict,
 ) -> QualifiedAggregationSpecsDict:
     """Create automatic aggregation specs derived from functions and data.
 
@@ -254,20 +254,20 @@ def _create_derived_aggregations_specs_dict(
     Example
     -------
     If
-    - `func_hh` is an argument of the functions in `functions_dict`, or a target
-    - and not represented by a function in `functions_dict` or a data column in
+    - `func_hh` is an argument of the functions in `functions`, or a target
+    - and not represented by a function in `functions` or a data column in
         the input data
     then an automatic aggregation specification is created for the sum aggregation of
     `func` by household.
 
     Parameters
     ----------
-    functions_dict
+    functions
         The functions dict with qualified function names as keys and functions as
         values.
-    targets_dict
+    targets
         The targets dict with qualified target names as keys and None as values.
-    data_dict
+    data
         The data dict with qualified data names as keys and pandas Series as values.
 
     Returns
@@ -275,17 +275,17 @@ def _create_derived_aggregations_specs_dict(
     The aggregation specifications derived from the functions and data.
     """
     potential_aggregation_function_names = set(
-        *targets_dict,
+        *targets,
         *_get_potential_aggregation_function_names_from_function_arguments(
-            functions_dict=functions_dict,
+            functions=functions,
         ),
     )
 
     # Create source tree for aggregations. Source can be any already existing function
     # or data column.
     aggregation_sources = {
-        **functions_dict,
-        **data_dict,
+        **functions,
+        **data,
     }
 
     # Create aggregation specs.
@@ -310,13 +310,13 @@ def _create_derived_aggregations_specs_dict(
 
 
 def _get_potential_aggregation_function_names_from_function_arguments(
-    functions_dict: QualifiedFunctionsDict,
+    functions: QualifiedFunctionsDict,
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.
 
     Parameters
     ----------
-    functions_dict
+    functions
         Dictionary containing functions to build the DAG.
 
     Returns
@@ -324,7 +324,7 @@ def _get_potential_aggregation_function_names_from_function_arguments(
     Set of potential aggregation targets.
     """
     current_set = set()
-    for func in functions_dict.values():
+    for func in functions.values():
         for name in get_names_of_arguments_without_defaults(func):
             current_set.add(name)
     return current_set
@@ -531,7 +531,7 @@ def _create_one_aggregate_by_p_id_func(
 
 
 def _annotate_aggregation_functions(
-    functions_dict: QualifiedFunctionsDict,
+    functions: QualifiedFunctionsDict,
     aggregation_functions: QualifiedFunctionsDict,
 ) -> QualifiedFunctionsDict:
     """Annotate aggregation functions.
@@ -541,7 +541,7 @@ def _annotate_aggregation_functions(
 
     Parameters
     ----------
-    functions_dict
+    functions
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
     aggregation_functions
@@ -561,8 +561,8 @@ def _annotate_aggregation_functions(
         annotations = {}
         if aggregation_method == "count":
             annotations["return"] = int
-        elif source in functions_dict:
-            source_function = functions_dict[source]
+        elif source in functions:
+            source_function = functions[source]
             if "return" in source_function.__annotations__:
                 annotations[source] = source_function.__annotations__["return"]
                 annotations["return"] = _select_return_type(
@@ -591,25 +591,25 @@ def _annotate_aggregation_functions(
 
 
 def _fail_if_targets_not_in_functions(
-    functions_dict: QualifiedFunctionsDict, targets_dict: QualifiedTargetsDict
+    functions: QualifiedFunctionsDict, targets: QualifiedTargetsDict
 ) -> None:
     """Fail if some target is not among functions.
 
     Parameters
     ----------
-    functions_dict
+    functions
         Dictionary containing functions to build the DAG.
-    targets_dict
+    targets
         The targets which should be computed. They limit the DAG in the way that only
         ancestors of these nodes need to be considered.
 
     Raises
     ------
     ValueError
-        Raised if any member of `targets_dict` is not among functions.
+        Raised if any member of `targets` is not among functions.
 
     """
-    targets_not_in_functions_tree = [n for n in targets_dict if n not in functions_dict]
+    targets_not_in_functions_tree = [n for n in targets if n not in functions]
     if targets_not_in_functions_tree:
         formatted = format_list_linewise(targets_not_in_functions_tree)
         msg = format_errors_and_warnings(

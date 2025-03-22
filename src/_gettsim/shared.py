@@ -185,6 +185,30 @@ def partition_tree_by_reference_tree(
     return intersection, difference
 
 
+def partition_by_reference_dict(
+    to_partition: dict[str, Any],
+    reference_dict: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Partition a dictionary into two based on the presence of its keys in a reference
+    dictionary.
+
+    Parameters
+    ----------
+    to_partition
+        The dictionary to be partitioned.
+    reference_dict
+        The reference dictionary used to determine the partitioning.
+
+    Returns
+    -------
+    A tuple containing: - The first dictionary with keys present in both dictionaries. -
+    The second dictionary with keys absent in the reference dictionary.
+    """
+    intersection = {k: v for k, v in to_partition.items() if k in reference_dict}
+    difference = {k: v for k, v in to_partition.items() if k not in reference_dict}
+    return intersection, difference
+
+
 def format_errors_and_warnings(text: str, width: int = 79) -> str:
     """Format our own exception messages and warnings by dedenting paragraphs and
     wrapping at the specified width. Mainly required because of messages are written as
