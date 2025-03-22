@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
+import dags
 import dags.tree as dt
 
 from _gettsim.aggregation import (
@@ -24,18 +25,16 @@ from _gettsim.aggregation import (
 )
 from _gettsim.config import (
     SUPPORTED_GROUPINGS,
-    TYPES_INPUT_VARIABLES,
 )
 from _gettsim.function_types import DerivedFunction, GroupByFunction
 from _gettsim.shared import (
     format_errors_and_warnings,
     format_list_linewise,
+    get_name_of_group_by_id,
     get_names_of_arguments_without_defaults,
-    get_path_for_group_by_id,
     insert_path_and_value,
     partition_tree_by_reference_tree,
     remove_group_suffix,
-    rename_arguments_and_add_annotations,
     upsert_tree,
 )
 from _gettsim.time_conversion import create_time_conversion_functions
@@ -46,47 +45,58 @@ if TYPE_CHECKING:
         NestedDataDict,
         NestedFunctionDict,
         NestedTargetDict,
+        QualifiedAggregationSpecsDict,
+        QualifiedDataDict,
+        QualifiedFunctionsDict,
+        QualifiedTargetsDict,
     )
-    from _gettsim.policy_environment import PolicyEnvironment
 
 
 def combine_policy_functions_and_derived_functions(
-    environment: PolicyEnvironment,
-    targets_tree: NestedTargetDict,
-    data_tree: NestedDataDict,
-) -> NestedFunctionDict:
-    """Create the functions tree including derived functions.
+    qualified_functions_dict: QualifiedFunctionsDict,
+    aggregation_specs_from_environment: QualifiedAggregationSpecsDict,
+    qualified_targets_dict: QualifiedTargetsDict,
+    qualified_data_dict: QualifiedDataDict,
+    top_level_namespace: set[str],
+) -> QualifiedFunctionsDict:
+    """Add derived functions to the qualified functions dict.
 
-    Create the functions tree by vectorizing all functions, and adding time conversion
-    functions, aggregation functions, and combinations of these.
+    Derived functions are time converted functions and aggregation functions (aggregate
+    by p_id or by group).
 
-    Check that all targets have a corresponding function in the functions tree or can be
-    taken from the data.
+    Checks that all targets have a corresponding function in the functions tree or can
+    be taken from the data.
 
     Parameters
     ----------
-    environment
-        The environment containing the functions tree and the specs for aggregation.
-    targets_tree
-        The targets which should be computed. They limit the DAG in the way that only
-        ancestors of these nodes need to be considered.
-    data_tree
-        Names of columns in the input data.
+    qualified_functions_dict
+        Dict with qualified function names as keys and functions with qualified
+        arguments as values.
+    aggregation_specs_from_environment
+        Dict with qualified aggregation spec names as keys and aggregation specs as
+        values.
+    qualified_targets_dict
+        Dict with qualified target names as keys and None as values.
+    qualified_data_dict
+        Dict with qualified data names as keys and pandas Series as values.
+    top_level_namespace
+        Set of top-level namespaces.
 
     Returns
     -------
-    The functions tree including derived functions.
+    The qualified functions dict with derived functions.
 
     """
     # Create parent-child relationships
     aggregate_by_p_id_functions = _create_aggregation_functions(
-        functions_tree=environment.functions_tree,
-        aggregations_tree=environment.aggregation_specs_tree,
+        functions_tree=qualified_functions_dict,
+        aggregations_tree=aggregation_specs_from_environment,
+        top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
     )
     current_functions_tree = upsert_tree(
         base=aggregate_by_p_id_functions,
-        to_upsert=environment.functions_tree,
+        to_upsert=qualified_functions_dict,
     )
 
     # Create functions for different time units
@@ -145,78 +155,85 @@ def _create_aggregate_by_group_functions(
 
 
 def _create_aggregation_functions(
-    functions_tree: NestedFunctionDict,
-    aggregations_tree: NestedAggregationSpecDict,
+    qualified_functions_dict: QualifiedFunctionsDict,
+    qualified_aggregations_dict: QualifiedAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
-) -> NestedFunctionDict:
-    """Create aggregation functions."""
+    top_level_namespace: set[str],
+) -> QualifiedFunctionsDict:
+    """Create aggregation functions for one aggregation type.
 
-    out_tree = {}
+    Parameters
+    ----------
+    qualified_functions_dict
+        Dict with qualified function names as keys and functions with qualified
+        arguments as values.
+    qualified_aggregations_dict
+        Dict with qualified aggregation spec names as keys and aggregation specs as
+        values.
+    aggregation_type
+        The aggregation type.
+    top_level_namespace
+        Set of top-level namespaces.
 
-    group_by_functions_tree = dt.unflatten_from_tree_paths(
-        {
-            path: func
-            for path, func in dt.flatten_to_tree_paths(functions_tree).items()
-            if isinstance(func, GroupByFunction)
-        }
-    )
+    Returns
+    -------
+    The qualified functions dict with derived functions.
+    """
+
+    group_by_functions = {
+        name: func
+        for name, func in qualified_functions_dict.items()
+        if isinstance(func, GroupByFunction)
+    }
 
     expected_aggregation_spec_type = (
         AggregateByGroupSpec if aggregation_type == "group" else AggregateByPIDSpec
     )
 
-    for tree_path, aggregation_spec in dt.flatten_to_tree_paths(
-        aggregations_tree
-    ).items():
+    aggregation_functions = {}
+    for target_name, aggregation_spec in qualified_aggregations_dict.items():
         # Skip if aggregation spec is not the current aggregation type
         if not isinstance(aggregation_spec, expected_aggregation_spec_type):
             continue
-        annotations = _annotations_for_aggregation(
-            aggregation_method=aggregation_spec.aggr,
-            source_col=aggregation_spec.source_col,
-            namespace=tree_path[:-1],
-            functions_tree=functions_tree,
-            types_input_variables=TYPES_INPUT_VARIABLES,
-        )
+        # Apply annotations once all functions args are qualified names
+        # annotations = _annotations_for_aggregation(
+        #     aggregation_method=aggregation_spec.aggr,
+        #     source_col=aggregation_spec.source_col,
+        #     namespace=tree_path[:-1],
+        #     functions_tree=functions_tree,
+        #     types_input_variables=TYPES_INPUT_VARIABLES,
+        # )
 
         if aggregation_type == "group":
-            group_by_id_path = get_path_for_group_by_id(
-                target_path=tree_path,
-                group_by_functions_tree=group_by_functions_tree,
+            group_by_id_name = get_name_of_group_by_id(
+                target_name=target_name,
+                group_by_functions=group_by_functions,
             )
 
-            if not group_by_id_path:
+            if not group_by_id_name:
                 msg = format_errors_and_warnings(
                     "Name of aggregated column needs to have a suffix "
                     "indicating the group over which it is aggregated. "
-                    f"{tree_path} does not do so."
+                    f"{dt.tree_path_from_qual_name(target_name)} does not do so."
                 )
                 raise ValueError(msg)
 
             derived_func = _create_one_aggregate_by_group_func(
-                aggregation_target=tree_path[-1],
-                aggregation_method=aggregation_spec.aggr,
-                source_col=aggregation_spec.source_col,
-                annotations=annotations,
-                group_by_id=dt.qual_name_from_tree_path(group_by_id_path),
+                aggregation_target=target_name,
+                aggregation_spec=aggregation_spec,
+                group_by_id=group_by_id_name,
+                top_level_namespace=top_level_namespace,
             )
         else:
-            p_id_to_aggregate_by = aggregation_spec.p_id_to_aggregate_by
             derived_func = _create_one_aggregate_by_p_id_func(
-                aggregation_target=tree_path[-1],
-                p_id_to_aggregate_by=p_id_to_aggregate_by,
-                source_col=aggregation_spec.source_col,
-                aggregation_method=aggregation_spec.aggr,
-                annotations=annotations,
+                aggregation_target=target_name,
+                aggregation_spec=aggregation_spec,
+                top_level_namespace=top_level_namespace,
             )
 
-        out_tree = insert_path_and_value(
-            base=out_tree,
-            path_to_insert=tree_path,
-            value_to_insert=derived_func,
-        )
+        aggregation_functions[target_name] = derived_func
 
-    return out_tree
+    return aggregation_functions
 
 
 def _create_derived_aggregations_tree(
@@ -390,10 +407,9 @@ def _select_return_type(aggregation_method: str, source_col_type: type) -> type:
 
 def _create_one_aggregate_by_group_func(
     aggregation_target: str,
-    aggregation_method: str,
-    source_col: str,
-    annotations: dict[str, Any],
+    aggregation_spec: AggregateByGroupSpec,
     group_by_id: str,
+    top_level_namespace: set[str],
 ) -> DerivedFunction:
     """Create an aggregation function based on aggregation specification.
 
@@ -401,20 +417,24 @@ def _create_one_aggregate_by_group_func(
     ----------
     aggregation_target
         Leaf name of the aggregation target.
-    aggregation_method
-        The aggregation method.
-    source_col
-        The qualified source column name.
+    aggregation_spec
+        The aggregation specification.
     annotations
         The annotations for the derived function.
     group_by_id
         The group-by-identifier.
+    top_level_namespace
+        Set of top-level namespaces.
 
     Returns
     -------
     The derived function.
 
     """
+
+    aggregation_method = aggregation_spec.aggr
+    source_col = aggregation_spec.source_col
+
     if aggregation_method == "count":
         derived_from = group_by_id
         mapper = {"group_by_id": group_by_id}
@@ -464,10 +484,13 @@ def _create_one_aggregate_by_group_func(
             )
             raise ValueError(msg)
 
-    wrapped_func = rename_arguments_and_add_annotations(
-        function=agg_func,
-        mapper=mapper,
-        annotations=annotations,
+    wrapped_func = dt.one_function_without_tree_logic(
+        function=dags.rename_arguments(
+            func=agg_func,
+            mapper=mapper,
+        ),
+        tree_path=dt.tree_path_from_qual_name(aggregation_target),
+        top_level_namespace=top_level_namespace,
     )
 
     return DerivedFunction(
@@ -479,10 +502,8 @@ def _create_one_aggregate_by_group_func(
 
 def _create_one_aggregate_by_p_id_func(
     aggregation_target: str,
-    p_id_to_aggregate_by: str,
-    source_col: str,
-    aggregation_method: str,
-    annotations: dict[str, Any],
+    aggregation_spec: AggregateByPIDSpec,
+    top_level_namespace: set[str],
 ) -> DerivedFunction:
     """Create one function that links variables across persons.
 
@@ -490,21 +511,19 @@ def _create_one_aggregate_by_p_id_func(
     ----------
     aggregation_target
         Name of the aggregation target.
-    p_id_to_aggregate_by
-        The column to aggregate by.
-    source_col
-        The source column.
-    aggregation_method
-        The aggregation method.
-    annotations
-        The annotations for the derived function.
+    aggregation_spec
+        The aggregation specification.
+    top_level_namespace
+        Set of top-level namespaces.
 
     Returns
     -------
     The derived function.
 
     """
-    # Define aggregation func
+    aggregation_method = aggregation_spec.aggr
+    p_id_to_aggregate_by = aggregation_spec.p_id_to_aggregate_by
+    source_col = aggregation_spec.source_col
 
     if aggregation_method == "count":
         derived_from = p_id_to_aggregate_by
@@ -560,10 +579,13 @@ def _create_one_aggregate_by_p_id_func(
             )
             raise ValueError(msg)
 
-    wrapped_func = rename_arguments_and_add_annotations(
-        function=agg_func,
-        mapper=mapper,
-        annotations=annotations,
+    wrapped_func = dt.one_function_without_tree_logic(
+        function=dags.rename_arguments(
+            func=agg_func,
+            mapper=mapper,
+        ),
+        tree_path=dt.tree_path_from_qual_name(aggregation_target),
+        top_level_namespace=top_level_namespace,
     )
 
     return DerivedFunction(

@@ -6,11 +6,14 @@ from typing import Any, TypeVar
 import dags.tree as dt
 import numpy
 import optree
-from dags import rename_arguments
 
 from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim.function_types import PolicyFunction
-from _gettsim.gettsim_typing import NestedDataDict, NestedFunctionDict
+from _gettsim.gettsim_typing import (
+    NestedDataDict,
+    NestedFunctionDict,
+    QualifiedFunctionsDict,
+)
 
 
 class KeyErrorMessage(str):
@@ -309,20 +312,6 @@ def join_numpy(
     return padded_targets.take(indices)
 
 
-def rename_arguments_and_add_annotations(
-    function: Callable,
-    *,
-    mapper: dict | None = None,
-    annotations: dict | None = None,
-):
-    wrapper = rename_arguments(func=function, mapper=mapper)
-
-    if annotations:
-        wrapper.__annotations__ = annotations
-
-    return wrapper
-
-
 def assert_valid_gettsim_pytree(
     tree: Any, leaf_checker: Callable, tree_name: str
 ) -> None:
@@ -381,16 +370,16 @@ def assert_valid_gettsim_pytree(
     _assert_valid_gettsim_pytree(tree, current_key=())
 
 
-def get_path_for_group_by_id(
-    target_path: tuple[str],
-    group_by_functions_tree: NestedFunctionDict,
+def get_name_of_group_by_id(
+    target_name: str,
+    group_by_functions: QualifiedFunctionsDict,
 ) -> tuple[str]:
-    """Get the group-by-identifier for some target path.
+    """Get the group-by-identifier name for some target.
 
-    The group-by-identifier is the path to the group identifier that is embedded in the
-    name. E.g., "einkommen_hh" has "hh_id" as its group-by-identifier. In this sense,
-    the group-by-identifiers live in a global namespace. We generally expect them to be
-    unique.
+    The group-by-identifier is the name of the group identifier that is embedded in the
+    name of the target. E.g., "einkommen_hh" has "hh_id" as its group-by-identifier. In
+    this sense, the group-by-identifiers live in a global namespace. We generally expect
+    them to be unique.
 
     There is an exception, though: It is enough for them to be unique within the
     uppermost namespace. In that case, however, they cannot be used outside of that
@@ -398,33 +387,34 @@ def get_path_for_group_by_id(
 
     Parameters
     ----------
-    target_path
-        The aggregation target.
-    group_by_functions_tree
-        The group-by functions tree.
+    target_name
+        The name of the target.
+    group_by_functions
+        The group-by functions.
 
     Returns
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
-    group_by_paths = optree.tree_paths(group_by_functions_tree, none_is_leaf=True)
     for g in SUPPORTED_GROUPINGS:
-        if target_path[-1].endswith(f"_{g}") and g == "hh":
+        if target_name.endswith(f"_{g}") and g == "hh":
             # Hardcode because hh_id is not part of the functions tree
             return ("hh_id",)
-        elif target_path[-1].endswith(f"_{g}"):
+        elif target_name.endswith(f"_{g}"):
             return _select_group_by_id_from_candidates(
-                candidate_paths=[p for p in group_by_paths if p[-1] == f"{g}_id"],
-                target_path=target_path,
+                candidate_names=[
+                    p for p in group_by_functions if p.endswith(f"_{g}_id")
+                ],
+                target_name=target_name,
             )
     return ()
 
 
 def _select_group_by_id_from_candidates(
-    candidate_paths: list[tuple[str]],
-    target_path: tuple[str],
+    candidate_names: list[str],
+    target_name: str,
 ) -> tuple[str]:
-    """Select the group-by-identifier from the candidates.
+    """Select the group-by-identifier name from the candidates.
 
     If there are multiple candidates, the function takes the one that shares the
     first part of the path (uppermost level of namespace) with the aggregation target.
@@ -447,31 +437,43 @@ def _select_group_by_id_from_candidates(
     -------
     The group-by-identifier.
     """
-    if len(candidate_paths) > 1:
-        candidate_paths_in_matching_namespace = [
-            p for p in candidate_paths if p[0] == target_path[0]
+    if len(candidate_names) > 1:
+        candidate_names_in_matching_namespace = [
+            p
+            for p in candidate_names
+            if dt.tree_path_from_qual_name(p)[0]
+            == dt.tree_path_from_qual_name(target_name)[0]
         ]
-        if len(candidate_paths_in_matching_namespace) == 1:
-            return candidate_paths_in_matching_namespace[0]
+        if len(candidate_names_in_matching_namespace) == 1:
+            return candidate_names_in_matching_namespace[0]
         else:
             _fail_with_ambiguous_group_by_identifier(
-                all_candidate_paths=candidate_paths,
-                candidate_paths_in_matching_namespace=candidate_paths_in_matching_namespace,
-                target_path=target_path,
+                candidate_names_in_matching_namespace=candidate_names_in_matching_namespace,
+                all_candidate_names=candidate_names,
+                target_name=target_name,
             )
     else:
-        return candidate_paths[0]
+        return candidate_names[0]
 
 
 def _fail_with_ambiguous_group_by_identifier(
-    candidate_paths_in_matching_namespace: tuple[str],
-    all_candidate_paths: tuple[str],
-    target_path: tuple[str],
+    candidate_names_in_matching_namespace: list[str],
+    all_candidate_names: list[str],
+    target_name: str,
 ):
-    if len(candidate_paths_in_matching_namespace) == 0:
-        paths = "\n    ".join([str(p) for p in all_candidate_paths])
+    if len(candidate_names_in_matching_namespace) == 0:
+        paths = "\n    ".join(
+            [str(dt.tree_path_from_qual_name(p)) for p in all_candidate_names]
+        )
     else:
-        paths = "\n    ".join([str(p) for p in candidate_paths_in_matching_namespace])
+        paths = "\n    ".join(
+            [
+                str(dt.tree_path_from_qual_name(p))
+                for p in candidate_names_in_matching_namespace
+            ]
+        )
+
+    target_path = dt.tree_path_from_qual_name(target_name)
     msg = format_errors_and_warnings(
         f"""
         Group-by-identifier for target:\n\n    {target_path}\n

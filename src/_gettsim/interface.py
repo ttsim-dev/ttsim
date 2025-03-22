@@ -35,8 +35,8 @@ from _gettsim.shared import (
     assert_valid_gettsim_pytree,
     format_errors_and_warnings,
     format_list_linewise,
+    get_name_of_group_by_id,
     get_names_of_arguments_without_defaults,
-    get_path_for_group_by_id,
     merge_trees,
     partition_tree_by_reference_tree,
 )
@@ -80,11 +80,26 @@ def compute_taxes_and_transfers(
     _fail_if_data_tree_not_valid(data_tree)
     _fail_if_environment_not_valid(environment)
 
-    # Add derived functions to the functions tree.
-    functions_tree = combine_policy_functions_and_derived_functions(
-        environment=environment,
-        targets_tree=targets_tree,
-        data_tree=data_tree,
+    # Transform functions tree to qualified names dict with qualified arguments
+    top_level_namespace = (
+        set(environment.functions.keys())
+        | set(data_tree.keys())
+        | set(dt.unflatten_from_qual_names(TYPES_INPUT_VARIABLES).keys())
+    )
+    qualified_functions_dict = dt.functions_without_tree_logic(
+        functions=environment.functions, top_level_namespace=top_level_namespace
+    )
+
+    qualified_targets_dict = dt.flatten_to_qual_names(targets_tree)
+    qualified_data_dict = dt.flatten_to_qual_names(data_tree)
+
+    # Add derived functions to the qualified functions tree.
+    qualified_functions_dict = combine_policy_functions_and_derived_functions(
+        qualified_functions_dict=qualified_functions_dict,
+        aggregation_specs_from_environment=environment.aggregation_specs,
+        qualified_targets_dict=qualified_targets_dict,
+        qualified_data_dict=qualified_data_dict,
+        top_level_namespace=top_level_namespace,
     )
 
     (
@@ -543,7 +558,7 @@ def _fail_if_group_variables_not_constant_within_groups(
     flat_data_tree = dt.flatten_to_tree_paths(data_tree)
 
     def faulty_leaf(path, leaf):
-        group_by_id = get_path_for_group_by_id(
+        group_by_id = get_name_of_group_by_id(
             target_path=path,
             group_by_functions_tree=group_by_functions_tree,
         )
