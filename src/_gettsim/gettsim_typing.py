@@ -12,10 +12,22 @@ from pandas.api.types import (
 
 from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from _gettsim.config import numpy_or_jax as np
-from _gettsim.function_types import DerivedFunction, GroupByFunction, PolicyFunction
+from _gettsim.function_types import (
+    DerivedAggregationFunction,
+    DerivedTimeConversionFunction,
+    GroupByFunction,
+    PolicyFunction,
+)
 
 NestedFunctionDict = dict[
-    str, Union[PolicyFunction, DerivedFunction, GroupByFunction, "NestedFunctionDict"]
+    str,
+    Union[
+        PolicyFunction,
+        DerivedAggregationFunction,
+        DerivedTimeConversionFunction,
+        GroupByFunction,
+        "NestedFunctionDict",
+    ],
 ]
 NestedTargetDict = dict[str, Union[None, "NestedTargetDict"]]
 NestedInputStructureDict = dict[str, Union[None, "NestedInputStructureDict"]]
@@ -25,7 +37,13 @@ NestedArrayDict = dict[str, Union[np.ndarray, "NestedArrayDict"]]
 NestedAggregationSpecDict = dict[
     str, Union[AggregateByGroupSpec, AggregateByPIDSpec, "NestedAggregationSpecDict"]
 ]
-QualifiedFunctionsDict = dict[str, PolicyFunction | DerivedFunction | GroupByFunction]
+QualifiedFunctionsDict = dict[
+    str,
+    PolicyFunction
+    | DerivedAggregationFunction
+    | DerivedTimeConversionFunction
+    | GroupByFunction,
+]
 QualifiedTargetsDict = dict[str, None]
 QualifiedDataDict = dict[str, pd.Series]
 QualifiedAggregationSpecsDict = dict[str, AggregateByGroupSpec | AggregateByPIDSpec]

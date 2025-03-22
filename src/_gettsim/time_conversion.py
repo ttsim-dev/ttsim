@@ -8,7 +8,7 @@ from _gettsim.config import (
     SUPPORTED_GROUPINGS,
     SUPPORTED_TIME_UNITS,
 )
-from _gettsim.function_types import DerivedFunction, PolicyFunction
+from _gettsim.function_types import DerivedTimeConversionFunction, PolicyFunction
 from _gettsim.gettsim_typing import NestedDataDict, NestedFunctionDict
 
 _M_PER_Y = 12
@@ -296,8 +296,8 @@ def create_time_conversion_functions(
 
 def _create_time_conversion_functions(
     name: str, func: PolicyFunction | None = None
-) -> dict[str, DerivedFunction]:
-    result: dict[str, DerivedFunction] = {}
+) -> dict[str, DerivedTimeConversionFunction]:
+    result: dict[str, DerivedTimeConversionFunction] = {}
 
     all_time_units = list(SUPPORTED_TIME_UNITS)
 
@@ -330,13 +330,14 @@ def _create_time_conversion_functions(
             if new_name in dependencies:
                 continue
 
-            result[new_name] = DerivedFunction(
+            result[new_name] = DerivedTimeConversionFunction(
                 function=_create_function_for_time_unit(
                     name,
                     _time_conversion_functions[f"{time_unit}_to_{missing_time_unit}"],
                 ),
-                leaf_name=new_name,
-                derived_from=func or name,
+                source_function_name=name,
+                source_function=func,
+                conversion_target=new_name,
             )
 
     return result

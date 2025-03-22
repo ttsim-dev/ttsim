@@ -4,12 +4,10 @@ import pytest
 
 from _gettsim.aggregation import AggregateByGroupSpec
 from _gettsim.combine_functions_in_tree import (
-    _annotations_for_aggregation,
     _create_aggregate_by_group_functions,
     _create_one_aggregate_by_group_func,
     _create_one_aggregate_by_p_id_func,
     _fail_if_targets_not_in_functions,
-    _get_tree_path_from_source_col_name,
 )
 from _gettsim.function_types import policy_function
 from _gettsim.interface import compute_taxes_and_transfers
@@ -133,20 +131,6 @@ def test_create_aggregate_by_group_functions(
         environment=environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
-    )
-
-
-@pytest.mark.parametrize(
-    "argument_name, current_namespace, expected",
-    [
-        ("foo", ("dir", "module"), ("dir", "module", "foo")),
-        ("dir__module__foo", ("dir", "module"), ("dir", "module", "foo")),
-    ],
-)
-def test_get_tree_path_from_source_col_name(argument_name, current_namespace, expected):
-    assert (
-        _get_tree_path_from_source_col_name(argument_name, current_namespace)
-        == expected
     )
 
 

@@ -27,7 +27,7 @@ from _gettsim.config import (
     SUPPORTED_GROUPINGS,
     TYPES_INPUT_VARIABLES,
 )
-from _gettsim.function_types import DerivedFunction, GroupByFunction
+from _gettsim.function_types import DerivedAggregationFunction, GroupByFunction
 from _gettsim.shared import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -228,12 +228,14 @@ def _create_aggregation_functions(
                 aggregation_target=target_name,
                 aggregation_spec=aggregation_spec,
                 group_by_id=group_by_id_name,
+                functions=functions,
                 top_level_namespace=top_level_namespace,
             )
         else:
             derived_func = _create_one_aggregate_by_p_id_func(
                 aggregation_target=target_name,
                 aggregation_spec=aggregation_spec,
+                functions=functions,
                 top_level_namespace=top_level_namespace,
             )
 
@@ -346,8 +348,9 @@ def _create_one_aggregate_by_group_func(
     aggregation_target: str,
     aggregation_spec: AggregateByGroupSpec,
     group_by_id: str,
+    functions: QualifiedFunctionsDict,
     top_level_namespace: set[str],
-) -> DerivedFunction:
+) -> DerivedAggregationFunction:
     """Create an aggregation function based on aggregation specification.
 
     Parameters
@@ -360,6 +363,9 @@ def _create_one_aggregate_by_group_func(
         The annotations for the derived function.
     group_by_id
         The group-by-identifier.
+    functions
+        The functions dict with qualified function names as keys and functions as
+        values.
     top_level_namespace
         Set of top-level namespaces.
 
@@ -428,10 +434,11 @@ def _create_one_aggregate_by_group_func(
         top_level_namespace=top_level_namespace,
     )
 
-    return DerivedFunction(
+    return DerivedAggregationFunction(
         function=wrapped_func,
+        source_function_name=source,
+        source_function=functions[source],
         aggregation_target=aggregation_target,
-        source=source,
         aggregation_method=aggregation_method,
     )
 
@@ -439,8 +446,9 @@ def _create_one_aggregate_by_group_func(
 def _create_one_aggregate_by_p_id_func(
     aggregation_target: str,
     aggregation_spec: AggregateByPIDSpec,
+    functions: QualifiedFunctionsDict,
     top_level_namespace: set[str],
-) -> DerivedFunction:
+) -> DerivedAggregationFunction:
     """Create one function that links variables across persons.
 
     Parameters
@@ -449,6 +457,9 @@ def _create_one_aggregate_by_p_id_func(
         Name of the aggregation target.
     aggregation_spec
         The aggregation specification.
+    functions
+        The functions dict with qualified function names as keys and functions as
+        values.
     top_level_namespace
         Set of top-level namespaces.
 
@@ -522,10 +533,11 @@ def _create_one_aggregate_by_p_id_func(
         top_level_namespace=top_level_namespace,
     )
 
-    return DerivedFunction(
+    return DerivedAggregationFunction(
         function=wrapped_func,
+        source_function_name=source,
+        source_function=functions[source],
         aggregation_target=aggregation_target,
-        source=source,
         aggregation_method=aggregation_method,
     )
 
