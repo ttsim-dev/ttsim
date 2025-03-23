@@ -3,32 +3,9 @@ info:
   note: ''
   source: ''
 inputs:
+  assumed: {}
   provided:
-    demographics__hh_id:
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-    demographics__p_id:
-      - 22
-      - 23
-      - 24
-      - 25
-      - 26
-      - 27
-      - 28
-    kindergeld__p_id_empfänger:
-      - -1
-      - 22
-      - 22
-      - 22
-      - 22
-      - 22
-      - 22
-    demographics__alter:
+    alter:
       - 50
       - 1
       - 2
@@ -36,7 +13,23 @@ inputs:
       - 4
       - 5
       - 6
-    demographics__kind:
+    arbeitsstunden_w:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    hh_id:
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+    familie__kind:
       - false
       - true
       - true
@@ -44,22 +37,14 @@ inputs:
       - true
       - true
       - true
-    demographics__arbeitsstunden_w:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    kindergeld__in_ausbildung:
-      - false
-      - true
-      - true
-      - true
-      - true
-      - true
-      - true
+    p_id:
+      - 22
+      - 23
+      - 24
+      - 25
+      - 26
+      - 27
+      - 28
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 0.0
       - 0.0
@@ -76,7 +61,22 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-  assumed: {}
+    kindergeld__in_ausbildung:
+      - false
+      - true
+      - true
+      - true
+      - true
+      - true
+      - true
+    kindergeld__p_id_empfänger:
+      - -1
+      - 22
+      - 22
+      - 22
+      - 22
+      - 22
+      - 22
 outputs:
   kindergeld__betrag_m:
     - 1203
@@ -86,14 +86,6 @@ outputs:
     - 0
     - 0
     - 0
-  kinderbonus__betrag_m:
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
   kindergeld__betrag_m_hh:
     - 1203
     - 1203
@@ -102,11 +94,3 @@ outputs:
     - 1203
     - 1203
     - 1203
-  kinderbonus__betrag_m_hh:
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0

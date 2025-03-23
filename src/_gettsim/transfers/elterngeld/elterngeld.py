@@ -5,16 +5,32 @@ from _gettsim.function_types import policy_function
 
 aggregation_specs = {
     "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(
-        source_col="kind_grundsätzlich_anspruchsberechtigt",
+        source="kind_grundsätzlich_anspruchsberechtigt",
         aggr="any",
     ),
     "anzahl_anträge_fg": AggregateByGroupSpec(
-        source_col="claimed",
+        source="claimed",
         aggr="sum",
     ),
-    "bezugsmonate": AggregateByPIDSpec(
+    "bezugsmonate_partner": AggregateByPIDSpec(
         p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
-        source_col="bisheriger_bezug_m",
+        source="bisherige_bezugsmonate",
+        aggr="sum",
+    ),
+    "alter_monate_jüngstes_mitglied_fg": AggregateByGroupSpec(
+        source="alter_monate",
+        aggr="min",
+    ),
+    "anzahl_kinder_bis_2_fg": AggregateByGroupSpec(
+        source="familie__kind_bis_2",
+        aggr="sum",
+    ),
+    "anzahl_kinder_bis_5_fg": AggregateByGroupSpec(
+        source="familie__kind_bis_5",
+        aggr="sum",
+    ),
+    "anzahl_mehrlinge_jüngstes_kind_fg": AggregateByGroupSpec(
+        source="jüngstes_kind_oder_mehrling",
         aggr="sum",
     ),
 }
@@ -133,7 +149,7 @@ def anspruchshöhe_m(
 @policy_function(start_date="2007-01-01")
 def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
     claimed: bool,
-    demographics__arbeitsstunden_w: float,
+    arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
@@ -145,8 +161,8 @@ def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
     ----------
     claimed
         See basic input variable :ref:`claimed <claimed>`.
-    demographics__arbeitsstunden_w
-        See basic input variable :ref:`demographics__arbeitsstunden_w <demographics__arbeitsstunden_w>`.
+    arbeitsstunden_w
+        See basic input variable :ref:`arbeitsstunden_w <arbeitsstunden_w>`.
     kind_grundsätzlich_anspruchsberechtigt_fg
         See :func:`kind_grundsätzlich_anspruchsberechtigt_fg`.
     einkommen_vorjahr_unter_bezugsgrenze
@@ -162,7 +178,7 @@ def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
     """
     return (
         claimed
-        and demographics__arbeitsstunden_w <= elterngeld_params["max_arbeitsstunden_w"]
+        and arbeitsstunden_w <= elterngeld_params["max_arbeitsstunden_w"]
         and einkommen_vorjahr_unter_bezugsgrenze
         and kind_grundsätzlich_anspruchsberechtigt_fg
         and bezugsmonate_unter_grenze_fg
@@ -171,9 +187,9 @@ def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
 
 @policy_function(start_date="2007-01-01")
 def bezugsmonate_unter_grenze_fg(
-    monate_elterngeldbezug_fg: int,
-    bezugsmonate: int,
-    demographics__alleinerziehend: bool,
+    bisherige_bezugsmonate_fg: int,
+    bezugsmonate_partner: int,
+    familie__alleinerziehend: bool,
     anzahl_anträge_fg: int,
     elterngeld_params: dict,
 ) -> bool:
@@ -182,12 +198,12 @@ def bezugsmonate_unter_grenze_fg(
 
     Parameters
     ----------
-    monate_elterngeldbezug_fg
-        See :func:`monate_elterngeldbezug_fg`.
-    bezugsmonate
-        See function :func:`bezugsmonate`.
-    demographics__alleinerziehend
-        See basic input variable :ref:`demographics__alleinerziehend<demographics__alleinerziehend>`.
+    bisherige_bezugsmonate_fg
+        See :func:`bisherige_bezugsmonate_fg`.
+    bezugsmonate_partner
+        See function :func:`bezugsmonate_partner`.
+    familie__alleinerziehend
+        See basic input variable :ref:`familie__alleinerziehend<familie__alleinerziehend>`.
     anzahl_anträge_fg
         See :func:`anzahl_anträge_fg`.
     elterngeld_params
@@ -197,19 +213,19 @@ def bezugsmonate_unter_grenze_fg(
     -------
 
     """
-    if demographics__alleinerziehend or bezugsmonate >= 2:
+    if familie__alleinerziehend or bezugsmonate_partner >= 2:
         out = (
-            monate_elterngeldbezug_fg
+            bisherige_bezugsmonate_fg
             < elterngeld_params["max_monate_mit_partnermonate"]
         )
     elif anzahl_anträge_fg > 1:
         out = (
-            monate_elterngeldbezug_fg + 1
+            bisherige_bezugsmonate_fg + 1
             < elterngeld_params["max_monate_mit_partnermonate"]
         )
     else:
         out = (
-            monate_elterngeldbezug_fg
+            bisherige_bezugsmonate_fg
             < elterngeld_params["max_monate_ohne_partnermonate"]
         )
     return out
@@ -217,15 +233,15 @@ def bezugsmonate_unter_grenze_fg(
 
 @policy_function(start_date="2007-01-01")
 def kind_grundsätzlich_anspruchsberechtigt(
-    demographics__alter: int,
+    alter: int,
     elterngeld_params: dict,
 ) -> bool:
     """Child is young enough to give rise to Elterngeld claim.
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     elterngeld_params
         See params documentation :ref:`elterngeld_params <elterngeld_params>`.
 
@@ -233,7 +249,7 @@ def kind_grundsätzlich_anspruchsberechtigt(
     -------
 
     """
-    return demographics__alter <= elterngeld_params["max_monate_mit_partnermonate"]
+    return alter <= elterngeld_params["max_monate_mit_partnermonate"]
 
 
 @policy_function(start_date="2011-01-01")
@@ -328,4 +344,34 @@ def anrechenbarer_betrag_m(
         betrag_m - ((1 + anzahl_mehrlinge_fg) * elterngeld_params["mindestbetrag"]),
         0,
     )
+    return out
+
+
+@policy_function()
+def jüngstes_kind_oder_mehrling(
+    alter_monate: float,
+    alter_monate_jüngstes_mitglied_fg: float,
+    familie__kind: bool,
+) -> bool:
+    """Check if person is the youngest child in the household or a twin, triplet, etc.
+    of the youngest child.
+
+    # ToDo: replace familie__kind by some age restriction
+    # ToDo: Check definition as relevant for Elterngeld. Currently, it is calculated as
+    # ToDo: age not being larger than 0.1 of a month
+
+    Parameters
+    ----------
+    alter_monate
+        See :func:`alter_monate`.
+    alter_monate_jüngstes_mitglied_fg
+        See :func:`alter_monate_jüngstes_mitglied_fg`.
+    familie__kind
+        See basic input variable :ref:`familie__kind <familie__kind>`.
+
+    Returns
+    -------
+
+    """
+    out = ((alter_monate - alter_monate_jüngstes_mitglied_fg) < 0.1) and familie__kind
     return out

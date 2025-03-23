@@ -89,7 +89,7 @@ def lohnersatzanteil_einkommen_obere_grenze(
     leaf_name="einkommen_vorjahr_unter_bezugsgrenze",
 )
 def einkommen_vorjahr_unter_bezugsgrenze_mit_unterscheidung_single_paar(
-    demographics__alleinerziehend: bool,
+    familie__alleinerziehend: bool,
     zu_versteuerndes_einkommen_vorjahr_y_sn: float,
     elterngeld_params: dict,
 ) -> bool:
@@ -97,8 +97,8 @@ def einkommen_vorjahr_unter_bezugsgrenze_mit_unterscheidung_single_paar(
 
     Parameters
     ----------
-    demographics__alleinerziehend
-        See basic input variable :ref:`demographics__alleinerziehend <demographics__alleinerziehend>`.
+    familie__alleinerziehend
+        See basic input variable :ref:`familie__alleinerziehend <familie__alleinerziehend>`.
     zu_versteuerndes_einkommen_vorjahr_y_sn
         See :func:`zu_versteuerndes_einkommen_vorjahr_y_sn`.
     elterngeld_params
@@ -108,7 +108,7 @@ def einkommen_vorjahr_unter_bezugsgrenze_mit_unterscheidung_single_paar(
     -------
 
     """
-    if demographics__alleinerziehend:
+    if familie__alleinerziehend:
         out = (
             zu_versteuerndes_einkommen_vorjahr_y_sn
             <= elterngeld_params["max_eink_vorj"]["single"]

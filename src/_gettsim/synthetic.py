@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 
+import dags.tree as dt
 import numpy
 import pandas as pd
 
@@ -54,7 +55,7 @@ def create_synthetic_data(  # noqa: PLR0913
     default_constant_specs = {
         "weiblich": [bool(i % 2 == 1) for i in range(n_children + n_adults)],
         "alter": [35] * n_adults + [8, 5, 3, 1, 10, 9, 7, 6, 4, 2][:n_children],
-        "kind": [False] * n_adults + [True] * n_children,
+        "familie__kind": [False] * n_adults + [True] * n_children,
         "in_ausbildung": [False] * n_adults + [True] * n_children,
     }
     if specs_constant_over_households:
@@ -135,9 +136,9 @@ def create_basic_households(
             )
 
     if n_adults == 1 and n_children > 0:
-        alleinerziehend = [True] + [False] * n_children
+        familie__alleinerziehend = [True] + [False] * n_children
     else:
-        alleinerziehend = [False] * (n_children + n_adults)
+        familie__alleinerziehend = [False] * (n_children + n_adults)
     if n_children > 0:
         sozialversicherung__pflege__beitrag__hat_kinder = [True] * n_adults + [
             False
@@ -150,7 +151,7 @@ def create_basic_households(
             "hh_id": [i] * (n_adults + n_children),
             "hh_typ": [hh_typ_string] * (n_adults + n_children),
             "sozialversicherung__pflege__beitrag__hat_kinder": sozialversicherung__pflege__beitrag__hat_kinder,  # noqa: E501
-            "alleinerz": alleinerziehend,
+            "familie__alleinerziehend": familie__alleinerziehend,
             # Assumption: All children are biological children of the adults, children
             # do not have children themselves
             "sozialversicherung__pflege__beitrag__anzahl_kinder_bis_24": [n_children]
@@ -188,12 +189,12 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
     """Create IDs for different groupings.
 
     Creates the following IDs:
-    - demographics__p_id_elternteil_1
-    - demographics__p_id_elternteil_2
+    - familie__p_id_elternteil_1
+    - familie__p_id_elternteil_2
     - kindergeld__p_id_empfänger
     - erziehungsgeld__p_id_empfänger
     - arbeitslosengeld_2__p_id_einstandspartner
-    - demographics__p_id_ehepartner
+    - familie__p_id_ehepartner
     - einkommensteuer__abzüge__p_id_betreuungskosten_träger
 
     Parameters
@@ -216,24 +217,24 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
     if n_children > 0:
         data = return_p_id_elternteil(data=data, n_adults=n_adults)
     else:
-        data["demographics__p_id_elternteil_1"] = -1
-        data["demographics__p_id_elternteil_2"] = -1
-    data["kindergeld__p_id_empfänger"] = data["demographics__p_id_elternteil_1"]
-    data["erziehungsgeld__p_id_empfänger"] = data["demographics__p_id_elternteil_1"]
+        data["familie__p_id_elternteil_1"] = -1
+        data["familie__p_id_elternteil_2"] = -1
+    data["kindergeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
+    data["erziehungsgeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
     data["einkommensteuer__abzüge__p_id_betreuungskosten_träger"] = data[
-        "demographics__p_id_elternteil_1"
+        "familie__p_id_elternteil_1"
     ]
 
     # Create other IDs
     if n_adults == 1:
-        data["demographics__p_id_ehepartner"] = -1
+        data["familie__p_id_ehepartner"] = -1
         data["arbeitslosengeld_2__p_id_einstandspartner"] = data[
-            "demographics__p_id_ehepartner"
+            "familie__p_id_ehepartner"
         ]
     else:
-        data_adults = data.query("kind == False").copy()
-        for demographics__hh_id, group in data_adults.groupby("hh_id"):
-            relevant_rows = (data_adults["hh_id"] == demographics__hh_id).values
+        data_adults = data.query("familie__kind == False").copy()
+        for hh_id, group in data_adults.groupby("hh_id"):
+            relevant_rows = (data_adults["hh_id"] == hh_id).values
             data_adults.loc[
                 relevant_rows, "arbeitslosengeld_2__p_id_einstandspartner"
             ] = group["p_id"].tolist()[::-1]
@@ -247,34 +248,33 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
             "arbeitslosengeld_2__p_id_einstandspartner"
         ].astype(numpy.int64)
         if adults_married:
-            data["demographics__p_id_ehepartner"] = data[
+            data["familie__p_id_ehepartner"] = data[
                 "arbeitslosengeld_2__p_id_einstandspartner"
             ]
         else:
-            data["demographics__p_id_ehepartner"] = -1
+            data["familie__p_id_ehepartner"] = -1
 
     return data
 
 
 def return_p_id_elternteil(data, n_adults):
-    """Find the demographics__p_id_elternteil_1 and demographics__p_id_elternteil_2."""
-    # demographics__p_id_elternteil_1 is the first adult in the household
+    """Find the familie__p_id_elternteil_1 and familie__p_id_elternteil_2."""
+    # familie__p_id_elternteil_1 is the first adult in the household
     elternteil_1_candidate = {
-        demographics__hh_id: group["p_id"].iloc[0]
-        for demographics__hh_id, group in data.groupby("hh_id")
+        hh_id: group["p_id"].iloc[0] for hh_id, group in data.groupby("hh_id")
     }
-    # Apply candidate id if demographics__kind, else -1
-    data["demographics__p_id_elternteil_1"] = data.apply(
-        lambda x: elternteil_1_candidate[x["hh_id"]] if x["kind"] else -1,
+    # Apply candidate id if familie__kind, else -1
+    data["familie__p_id_elternteil_1"] = data.apply(
+        lambda x: elternteil_1_candidate[x["hh_id"]] if x["familie__kind"] else -1,
         axis=1,
     )
     if n_adults == 2:
-        data["demographics__p_id_elternteil_2"] = data.apply(
-            lambda x: x["demographics__p_id_elternteil_1"] + 1 if x["kind"] else -1,
+        data["familie__p_id_elternteil_2"] = data.apply(
+            lambda x: x["familie__p_id_elternteil_1"] + 1 if x["familie__kind"] else -1,
             axis=1,
         )
     else:
-        data["demographics__p_id_elternteil_2"] = -1
+        data["familie__p_id_elternteil_2"] = -1
     return data
 
 
@@ -306,32 +306,33 @@ def create_constant_across_households_variables(df, n_adults, n_children, policy
 
     default_values = {
         "einkommensteuer__gemeinsam_veranlagt": (
-            df["kind"] == False if n_adults == 2 else False  # noqa: E712
+            df["familie__kind"] == False if n_adults == 2 else False  # noqa: E712
         ),
         "eigenbedarf_gedeckt": False,
         "mietstufe": 3,
         "geburtsmonat": 1,
         "geburtstag": 1,
-        "rente__altersrente__freiwillige_beitragszeiten_m": 5.0,
+        "rente__altersrente__freiwillige_beitragsmonate": 5.0,
         "rente__altersrente__schulausbildung_m": 10.0,
-        "rente__altersrente__kinderberücksichtigungszeiten_m": 24.0,
-        "rente__altersrente__pflegeberücksichtigungszeiten_m": 1.0,
+        "rente__altersrente__kinderberücksichtigungszeiten_monate": 24.0,
+        "rente__altersrente__pflegeberücksichtigungszeiten_monate": 1.0,
         "elterngeld__nettoeinkommen_vorjahr_m": 20000.0,
         "geburtsjahr": policy_year - df["alter"],
         "jahr_renteneintr": policy_year - df["alter"] + 67,
-        "rente__grundrente__sozialversicherung__rente__grundrente__grundrentenzeiten_m": (  # noqa: E501
+        "rente__grundrente__sozialversicherung__rente__grundrente__grundrentenzeiten_monate": (  # noqa: E501
             df["alter"] - 20
         ).clip(lower=0)
         * 12,
-        "rente__grundrente__bewertungszeiten_m": (df["alter"] - 20).clip(lower=0) * 12,
+        "rente__grundrente__bewertungszeiten_monate": (df["alter"] - 20).clip(lower=0)
+        * 12,
         "entgeltp": (df["alter"] - 20).clip(lower=0).astype(float),
         "rente__grundrente__entgeltpunkte": (df["alter"] - 20)
         .clip(lower=0)
         .astype(float),
-        "rente__altersrente__pflichtbeitragszeiten_m": (
+        "rente__altersrente__pflichtbeitragsmonate": (
             (df["alter"] - 25).clip(lower=0) * 12
         ).astype(float),
-        "rente__altersrente__pflichtbeitragszeiten_m_alt": (
+        "rente__altersrente__pflichtbeitragsmonate_alt": (
             (df["alter"] - 40).clip(lower=0) * 12
         ).astype(float),
         "wohnfläche_hh": float(bg_daten["wohnfläche"][hh_typ_string_lookup]),
@@ -343,11 +344,7 @@ def create_constant_across_households_variables(df, n_adults, n_children, policy
         ),
     }
 
-    # Set default values for new columns.
-    types_input_variables_with_qualified_names = tree_to_dict_with_qualified_name(  # noqa: F821
-        TYPES_INPUT_VARIABLES
-    )
-    for input_col, col_type in types_input_variables_with_qualified_names.items():
+    for input_col, col_type in dt.flatten_to_qual_names(TYPES_INPUT_VARIABLES).items():
         if input_col not in df:
             if input_col in default_values:
                 df[input_col] = default_values[input_col]

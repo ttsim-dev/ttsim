@@ -115,7 +115,9 @@ pyyaml = "*"
 toml = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-profiling = "*"
 pytest-xdist = "*"
+snakeviz = ">=2.2.2,<3"
 
 
 # Development Dependencies (pypi)
@@ -124,8 +126,7 @@ pytest-xdist = "*"
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
 pdbp = "*"
-dags = {git = "https://github.com/OpenSourceEconomics/dags"}
-flatten_dict = "*"
+dags = {git = "https://github.com/OpenSourceEconomics/dags", rev="00d92a9a080f8a9df5d567ffba2f99604e896b2d"}
 
 
 [tool.pixi.target.unix.pypi-dependencies]
@@ -244,12 +245,12 @@ exclude = []
 [tool.ruff.lint.per-file-ignores]
 "src/_gettsim_tests/test_rounding.py" = ["PT019"]
 "src/_gettsim/functions/all_functions_for_docs.py" = ["F401", "E501", "F403"]
-"src/_gettsim/gettsim_typing.py" = ["PGH", "PLR", "SIM114"]
+"src/_gettsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/_gettsim/piecewise_functions.py" = ["PLR"]
 "src/_gettsim/policy_environment.py" = ["S506", "PLR"]
 "src/_gettsim/transfers/*" = ["E501"]
 "src/_gettsim/taxes/*" = ["E501"]
-"src/_gettsim/taxes/demographics/demographics.py" = ["E501"]
+"src/_gettsim/taxes/familie/familie.py" = ["E501"]
 "src/_gettsim/visualization.py" = ["PLR"]
 "src/_gettsim_tests/test_synthetic.py" = ["E501"]
 "src/_gettsim/config.py" = ["E501"]

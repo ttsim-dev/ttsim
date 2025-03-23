@@ -19,11 +19,11 @@ import pytest
 from _gettsim import (
     aggregation,
     config,
-    gettsim_typing,
     piecewise_functions,
     shared,
     taxes,
     transfers,
+    typing,
     visualization,
 )
 from _gettsim.function_types import PolicyFunction
@@ -72,6 +72,6 @@ __all__ = [
     "create_synthetic_data",
     "taxes",
     "transfers",
-    "gettsim_typing",
+    "typing",
     "visualization",
 ]

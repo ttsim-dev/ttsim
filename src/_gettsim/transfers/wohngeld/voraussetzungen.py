@@ -53,7 +53,7 @@ def grundsätzlich_anspruchsberechtigt_bg(
 
 @policy_function()
 def vermögensgrenze_unterschritten_wthh(
-    demographics__vermögen_wthh: float,
+    vermögen_wthh: float,
     anzahl_personen_wthh: int,
     wohngeld_params: dict,
 ) -> bool:
@@ -61,8 +61,8 @@ def vermögensgrenze_unterschritten_wthh(
 
     Parameters
     ----------
-    demographics__vermögen_wthh
-        See :func:`demographics__vermögen_wthh <demographics__vermögen_wthh>`.
+    vermögen_wthh
+        See :func:`vermögen_wthh <vermögen_wthh>`.
     anzahl_personen_wthh
         See :func:`anzahl_personen_wthh`.
     wohngeld_params
@@ -74,7 +74,7 @@ def vermögensgrenze_unterschritten_wthh(
     """
 
     return vermögensprüfung(
-        vermögen=demographics__vermögen_wthh,
+        vermögen=vermögen_wthh,
         anzahl_personen=anzahl_personen_wthh,
         params=wohngeld_params,
     )
@@ -82,7 +82,7 @@ def vermögensgrenze_unterschritten_wthh(
 
 @policy_function()
 def vermögensgrenze_unterschritten_bg(
-    demographics__vermögen_bg: float,
+    vermögen_bg: float,
     arbeitslosengeld_2__anzahl_personen_bg: int,
     wohngeld_params: dict,
 ) -> bool:
@@ -90,8 +90,8 @@ def vermögensgrenze_unterschritten_bg(
 
     Parameters
     ----------
-    demographics__vermögen_bg
-        See :func:`demographics__vermögen_bg <demographics__vermögen_bg>`.
+    vermögen_bg
+        See :func:`vermögen_bg <vermögen_bg>`.
     arbeitslosengeld_2__anzahl_personen_bg
         See :func:`arbeitslosengeld_2__anzahl_personen_bg`.
     wohngeld_params
@@ -103,7 +103,7 @@ def vermögensgrenze_unterschritten_bg(
     """
 
     return vermögensprüfung(
-        vermögen=demographics__vermögen_bg,
+        vermögen=vermögen_bg,
         anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
         params=wohngeld_params,
     )

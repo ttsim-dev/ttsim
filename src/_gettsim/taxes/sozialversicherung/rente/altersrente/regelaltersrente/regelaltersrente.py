@@ -5,7 +5,7 @@ from _gettsim.function_types import policy_function
 
 @policy_function(end_date="2007-04-19", leaf_name="altersgrenze")
 def altersgrenze_ohne_staffelung(
-    demographics__geburtsjahr: int,  # noqa: ARG001
+    geburtsjahr: int,  # noqa: ARG001
     ges_rente_params: dict,
 ) -> float:
     """Normal retirement age (NRA).
@@ -20,10 +20,10 @@ def altersgrenze_ohne_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
-    demographics__geburtsmonat
-        See basic input variable :ref:`demographics__geburtsmonat <demographics__geburtsmonat>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
+    geburtsmonat
+        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -33,16 +33,14 @@ def altersgrenze_ohne_staffelung(
     Normal retirement age (NRA).
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (demographics__geburtsjahr).
+    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["regelaltersgrenze"]
 
 
 @policy_function(start_date="2007-04-20", leaf_name="altersgrenze")
-def altersgrenze_mit_staffelung(
-    demographics__geburtsjahr: int, ges_rente_params: dict
-) -> float:
+def altersgrenze_mit_staffelung(geburtsjahr: int, ges_rente_params: dict) -> float:
     """Normal retirement age (NRA).
 
     NRA differs by birth cohort.
@@ -55,8 +53,8 @@ def altersgrenze_mit_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -66,18 +64,14 @@ def altersgrenze_mit_staffelung(
     Normal retirement age (NRA).
 
     """
-    if (
-        demographics__geburtsjahr
-        <= ges_rente_params["regelaltersgrenze"]["max_birthyear_old_regime"]
-    ):
+    if geburtsjahr <= ges_rente_params["regelaltersgrenze"]["max_birthyear_old_regime"]:
         out = ges_rente_params["regelaltersgrenze"]["entry_age_old_regime"]
     elif (
-        demographics__geburtsjahr
-        >= ges_rente_params["regelaltersgrenze"]["min_birthyear_new_regime"]
+        geburtsjahr >= ges_rente_params["regelaltersgrenze"]["min_birthyear_new_regime"]
     ):
         out = ges_rente_params["regelaltersgrenze"]["entry_age_new_regime"]
     else:
-        out = ges_rente_params["regelaltersgrenze"][demographics__geburtsjahr]
+        out = ges_rente_params["regelaltersgrenze"][geburtsjahr]
 
     return out
 

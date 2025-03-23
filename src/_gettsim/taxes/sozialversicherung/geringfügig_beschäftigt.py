@@ -39,7 +39,7 @@ def geringfügig_beschäftigt(
     params_key_for_rounding="sozialv_beitr",
 )
 def minijob_grenze_unterscheidung_ost_west(
-    demographics__wohnort_ost: bool, sozialv_beitr_params: dict
+    wohnort_ost: bool, sozialv_beitr_params: dict
 ) -> float:
     """Minijob income threshold depending on place of living (East or West Germany).
 
@@ -47,8 +47,8 @@ def minijob_grenze_unterscheidung_ost_west(
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See basic input variable :ref:`demographics__wohnort_ost <demographics__wohnort_ost>`.
+    wohnort_ost
+        See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
     sozialv_beitr_params
         See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
     Returns
@@ -57,7 +57,7 @@ def minijob_grenze_unterscheidung_ost_west(
     """
     west = sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]["west"]
     ost = sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]["ost"]
-    out = ost if demographics__wohnort_ost else west
+    out = ost if wohnort_ost else west
     return float(out)
 
 
@@ -67,7 +67,7 @@ def minijob_grenze_unterscheidung_ost_west(
     leaf_name="minijob_grenze",
     params_key_for_rounding="sozialv_beitr",
 )
-def minijob_grenze_einheitlich(sozialv_beitr_params: dict) -> float:
+def minijob_grenze_fixer_betrag(sozialv_beitr_params: dict) -> float:
     """Minijob income threshold depending on place of living.
 
     From 2000 onwards, the threshold is the same for all of Germany. Until September
@@ -89,7 +89,7 @@ def minijob_grenze_einheitlich(sozialv_beitr_params: dict) -> float:
     leaf_name="minijob_grenze",
     params_key_for_rounding="sozialv_beitr",
 )
-def minijob_grenze_from_minimum_wage(sozialv_beitr_params: dict) -> float:
+def minijob_grenze_abgeleitet_von_mindestlohn(sozialv_beitr_params: dict) -> float:
     """Minijob income threshold since 10/2022. Since then, it is calculated endogenously
     from the statutory minimum wage.
 

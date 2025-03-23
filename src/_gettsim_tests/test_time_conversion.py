@@ -1,7 +1,6 @@
 import inspect
 
 import pytest
-from optree import tree_paths
 
 from _gettsim.function_types import policy_function
 from _gettsim.time_conversion import (
@@ -225,67 +224,6 @@ class TestCreateFunctionsForTimeUnits:
         )
 
         assert "test_d" in time_conversion_functions
-
-    @pytest.mark.parametrize(
-        "functions_tree, expected",
-        [
-            (
-                {
-                    "module1": {
-                        "function1_y": policy_function(leaf_name="function1_y")(
-                            lambda: 1
-                        )
-                    }
-                },
-                {
-                    "module1": {
-                        "function1_m": policy_function(leaf_name="function1_m")(
-                            lambda: 1
-                        ),
-                        "function1_w": policy_function(leaf_name="function1_w")(
-                            lambda: 1
-                        ),
-                        "function1_d": policy_function(leaf_name="function1_d")(
-                            lambda: 1
-                        ),
-                    },
-                },
-            ),
-            (
-                {
-                    "module1": {
-                        "module2": {
-                            "function1_y_hh": policy_function(
-                                leaf_name="function1_y_hh"
-                            )(lambda: 1)
-                        }
-                    }
-                },
-                {
-                    "module1": {
-                        "module2": {
-                            "function1_m_hh": policy_function(
-                                leaf_name="function1_m_hh"
-                            )(lambda: 1),
-                            "function1_w_hh": policy_function(
-                                leaf_name="function1_w_hh"
-                            )(lambda: 1),
-                            "function1_d_hh": policy_function(
-                                leaf_name="function1_d_hh"
-                            )(lambda: 1),
-                        },
-                    },
-                },
-            ),
-        ],
-    )
-    def test_should_return_nested_dict(self, functions_tree, expected) -> None:
-        time_conversion_functions = create_time_conversion_functions(functions_tree, {})
-
-        expected_path = tree_paths(expected)
-        result_path = tree_paths(time_conversion_functions)
-
-        assert expected_path == result_path
 
 
 class TestCreateFunctionForTimeUnit:

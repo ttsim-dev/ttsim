@@ -39,14 +39,14 @@ def aggregation_tree():
     return {
         "module1": {
             "group_mean_hh": AggregateByGroupSpec(
-                source_col="f",
+                source="f",
                 aggr="sum",
             ),
         },
         "module2": {
             "p_id_aggregation_target": AggregateByPIDSpec(
                 p_id_to_aggregate_by="groupings__some_foreign_keys",
-                source_col="g_hh",
+                source="g_hh",
                 aggr="sum",
             ),
         },
@@ -73,9 +73,9 @@ def test_compute_taxes_and_transfers_with_tree(
         },
     }
     data = {
-        "demographics": {
-            "p_id": pd.Series([0, 1, 2]),
-            "hh_id": pd.Series([0, 0, 1]),
+        "p_id": pd.Series([0, 1, 2]),
+        "hh_id": pd.Series([0, 0, 1]),
+        "familie": {
             "ehe_id": pd.Series([0, 1, 2]),
         },
         "arbeitslosengeld_2": {

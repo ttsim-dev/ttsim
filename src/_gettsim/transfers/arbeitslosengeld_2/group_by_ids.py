@@ -9,58 +9,46 @@ from _gettsim.function_types import group_by_function
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
 aggregation_specs = {
     "anzahl_erwachsene_fg": AggregateByGroupSpec(
-        source_col="demographics__erwachsen",
+        source="familie__erwachsen",
         aggr="sum",
     ),
     "anzahl_kinder_fg": AggregateByGroupSpec(
-        source_col="kindergeld__grundsätzlich_anspruchsberechtigt",
-        aggr="sum",
-    ),
-    "anzahl_kinder_bis_2_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_2",
-        aggr="sum",
-    ),
-    "anzahl_kinder_bis_5_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_5",
+        source="familie__kind",
         aggr="sum",
     ),
     "anzahl_kinder_bis_6_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_6",
+        source="familie__kind_bis_6",
         aggr="sum",
     ),
     "anzahl_kinder_bis_15_fg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_15",
-        aggr="sum",
-    ),
-    "anzahl_mehrlinge_jüngstes_kind_fg": AggregateByGroupSpec(
-        source_col="demographics__anzahl_mehrlinge_jüngstes_kind",
+        source="familie__kind_bis_15",
         aggr="sum",
     ),
     "anzahl_erwachsene_bg": AggregateByGroupSpec(
-        source_col="demographics__erwachsen",
+        source="familie__erwachsen",
         aggr="sum",
     ),
     "anzahl_kinder_bg": AggregateByGroupSpec(
-        source_col="demographics__kind",
+        source="familie__kind",
         aggr="sum",
     ),
     "anzahl_personen_bg": AggregateByGroupSpec(
         aggr="count",
     ),
     "anzahl_kinder_bis_17_bg": AggregateByGroupSpec(
-        source_col="demographics__kind_bis_17",
+        source="familie__kind_bis_17",
         aggr="sum",
     ),
     "alleinerziehend_bg": AggregateByGroupSpec(
-        source_col="demographics__alleinerziehend",
+        source="familie__alleinerziehend",
         aggr="any",
     ),
     "anzahl_erwachsene_eg": AggregateByGroupSpec(
-        source_col="demographics__erwachsen",
+        source="familie__erwachsen",
         aggr="sum",
     ),
     "anzahl_kinder_eg": AggregateByGroupSpec(
-        source_col="demographics__kind",
+        source="familie__kind",
         aggr="sum",
     ),
     "anzahl_personen_eg": AggregateByGroupSpec(
@@ -73,7 +61,7 @@ aggregation_specs = {
 def bg_id(
     fg_id: numpy.ndarray[int],
     eigenbedarf_gedeckt: numpy.ndarray[bool],
-    demographics__alter: numpy.ndarray[int],
+    alter: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
     """
     Compute the ID of the Bedarfsgemeinschaft for each person.
@@ -85,7 +73,7 @@ def bg_id(
     result = []
 
     for index, current_fg_id in enumerate(fg_id):
-        current_alter = demographics__alter[index]
+        current_alter = alter[index]
         current_eigenbedarf_gedeckt = eigenbedarf_gedeckt[index]
         # TODO(@MImmesberger): Remove hard-coded number
         # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
@@ -101,11 +89,11 @@ def bg_id(
 @group_by_function()
 def fg_id(  # noqa: PLR0913
     p_id_einstandspartner: numpy.ndarray[int],
-    demographics__p_id: numpy.ndarray[int],
-    demographics__hh_id: numpy.ndarray[int],
-    demographics__alter: numpy.ndarray[int],
-    demographics__p_id_elternteil_1: numpy.ndarray[int],
-    demographics__p_id_elternteil_2: numpy.ndarray[int],
+    p_id: numpy.ndarray[int],
+    hh_id: numpy.ndarray[int],
+    alter: numpy.ndarray[int],
+    familie__p_id_elternteil_1: numpy.ndarray[int],
+    familie__p_id_elternteil_2: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
     """
     Compute the ID of the Familiengemeinschaft for each person.
@@ -114,40 +102,40 @@ def fg_id(  # noqa: PLR0913
     p_id_to_index = {}
     p_id_to_p_ids_children = {}
 
-    for index, current_p_id in enumerate(demographics__p_id):
-        # Fast access from demographics__p_id to index
+    for index, current_p_id in enumerate(p_id):
+        # Fast access from p_id to index
         p_id_to_index[current_p_id] = index
 
-        # Fast access from demographics__p_id to p_ids of children
-        current_demographics__p_id_elternteil_1 = demographics__p_id_elternteil_1[index]
-        current_demographics__p_id_elternteil_2 = demographics__p_id_elternteil_2[index]
+        # Fast access from p_id to p_ids of children
+        current_familie__p_id_elternteil_1 = familie__p_id_elternteil_1[index]
+        current_familie__p_id_elternteil_2 = familie__p_id_elternteil_2[index]
 
-        if current_demographics__p_id_elternteil_1 >= 0:
-            if current_demographics__p_id_elternteil_1 not in p_id_to_p_ids_children:
-                p_id_to_p_ids_children[current_demographics__p_id_elternteil_1] = []
-            p_id_to_p_ids_children[current_demographics__p_id_elternteil_1].append(
+        if current_familie__p_id_elternteil_1 >= 0:
+            if current_familie__p_id_elternteil_1 not in p_id_to_p_ids_children:
+                p_id_to_p_ids_children[current_familie__p_id_elternteil_1] = []
+            p_id_to_p_ids_children[current_familie__p_id_elternteil_1].append(
                 current_p_id
             )
 
-        if current_demographics__p_id_elternteil_2 >= 0:
-            if current_demographics__p_id_elternteil_2 not in p_id_to_p_ids_children:
-                p_id_to_p_ids_children[current_demographics__p_id_elternteil_2] = []
-            p_id_to_p_ids_children[current_demographics__p_id_elternteil_2].append(
+        if current_familie__p_id_elternteil_2 >= 0:
+            if current_familie__p_id_elternteil_2 not in p_id_to_p_ids_children:
+                p_id_to_p_ids_children[current_familie__p_id_elternteil_2] = []
+            p_id_to_p_ids_children[current_familie__p_id_elternteil_2].append(
                 current_p_id
             )
 
     p_id_to_fg_id = {}
     next_fg_id = 0
 
-    for index, current_p_id in enumerate(demographics__p_id):
-        # Already assigned a fg_id to this demographics__p_id via einstandspartner /
+    for index, current_p_id in enumerate(p_id):
+        # Already assigned a fg_id to this p_id via einstandspartner /
         # parent
         if current_p_id in p_id_to_fg_id:
             continue
 
         p_id_to_fg_id[current_p_id] = next_fg_id
 
-        current_hh_id = demographics__hh_id[index]
+        current_hh_id = hh_id[index]
         current_p_id_einstandspartner = p_id_einstandspartner[index]
         current_p_id_children = p_id_to_p_ids_children.get(current_p_id, [])
 
@@ -158,8 +146,8 @@ def fg_id(  # noqa: PLR0913
         # Assign fg to children
         for current_p_id_child in current_p_id_children:
             child_index = p_id_to_index[current_p_id_child]
-            child_hh_id = demographics__hh_id[child_index]
-            child_alter = demographics__alter[child_index]
+            child_hh_id = hh_id[child_index]
+            child_alter = alter[child_index]
             child_p_id_children = p_id_to_p_ids_children.get(current_p_id_child, [])
 
             if (
@@ -176,14 +164,14 @@ def fg_id(  # noqa: PLR0913
         next_fg_id += 1
 
     # Compute result vector
-    result = [p_id_to_fg_id[current_p_id] for current_p_id in demographics__p_id]
+    result = [p_id_to_fg_id[current_p_id] for current_p_id in p_id]
     return numpy.asarray(result)
 
 
 @group_by_function()
 def eg_id(
     p_id_einstandspartner: numpy.ndarray[int],
-    demographics__p_id: numpy.ndarray[int],
+    p_id: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
     """
     Compute the ID of the Einstandsgemeinschaft for each person.
@@ -192,7 +180,7 @@ def eg_id(
     next_eg_id = 0
     result = []
 
-    for index, current_p_id in enumerate(demographics__p_id):
+    for index, current_p_id in enumerate(p_id):
         current_p_id_einstandspartner = p_id_einstandspartner[index]
 
         if (

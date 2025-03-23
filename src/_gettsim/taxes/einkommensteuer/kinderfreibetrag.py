@@ -5,13 +5,13 @@ from _gettsim.function_types import policy_function
 
 aggregation_specs = {
     "anzahl_kinderfreibeträge_1": AggregateByPIDSpec(
-        p_id_to_aggregate_by="p_id_kinderfreibetragempfänger_1",
-        source_col="kindergeld__grundsätzlich_anspruchsberechtigt",
+        p_id_to_aggregate_by="p_id_kinderfreibetragsempfänger_1",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr="sum",
     ),
     "anzahl_kinderfreibeträge_2": AggregateByPIDSpec(
-        p_id_to_aggregate_by="p_id_kinderfreibetragempfänger_2",
-        source_col="kindergeld__grundsätzlich_anspruchsberechtigt",
+        p_id_to_aggregate_by="p_id_kinderfreibetragsempfänger_2",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr="sum",
     ),
 }
@@ -19,15 +19,15 @@ aggregation_specs = {
 
 @policy_function()
 def kinderfreibetrag_y(
-    anzahl_ansprüche: int,
+    anzahl_kinderfreibeträge: int,
     eink_st_abzuege_params: dict,
 ) -> float:
     """Individual child allowance.
 
     Parameters
     ----------
-    anzahl_ansprüche
-        See :func:`anzahl_ansprüche`.
+    anzahl_kinderfreibeträge
+        See :func:`anzahl_kinderfreibeträge`.
     eink_st_abzuege_params
         See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
 
@@ -36,7 +36,9 @@ def kinderfreibetrag_y(
 
     """
 
-    return float(sum(eink_st_abzuege_params["kinderfreib"].values()) * anzahl_ansprüche)
+    return float(
+        sum(eink_st_abzuege_params["kinderfreib"].values()) * anzahl_kinderfreibeträge
+    )
 
 
 @policy_function()
@@ -64,36 +66,36 @@ def anzahl_kinderfreibeträge(
 
 
 @policy_function()
-def p_id_kinderfreibetragempfänger_1(
-    demographics__p_id_elternteil_1: int,
+def p_id_kinderfreibetragsempfänger_1(
+    familie__p_id_elternteil_1: int,
 ) -> int:
     """Assigns child allowance to parent 1.
 
     Parameters
     ----------
-    demographics__p_id_elternteil_1
-        See :func:`demographics__p_id_elternteil_1`.
+    familie__p_id_elternteil_1
+        See :func:`familie__p_id_elternteil_1`.
 
     Returns
     -------
 
     """
-    return demographics__p_id_elternteil_1
+    return familie__p_id_elternteil_1
 
 
 @policy_function()
-def p_id_kinderfreibetragempfänger_2(
-    demographics__p_id_elternteil_2: int,
+def p_id_kinderfreibetragsempfänger_2(
+    familie__p_id_elternteil_2: int,
 ) -> int:
     """Assigns child allowance to parent 2.
 
     Parameters
     ----------
-    demographics__p_id_elternteil_2
-        See :func:`demographics__p_id_elternteil_2`.
+    familie__p_id_elternteil_2
+        See :func:`familie__p_id_elternteil_2`.
 
     Returns
     -------
 
     """
-    return demographics__p_id_elternteil_2
+    return familie__p_id_elternteil_2

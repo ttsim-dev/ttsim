@@ -4,7 +4,7 @@ import pytest
 
 from _gettsim.shared import (
     create_tree_from_path_and_value,
-    get_path_for_group_by_id,
+    get_name_of_group_by_id,
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
@@ -71,6 +71,17 @@ def test_insert_path_and_value_invalid(base, path_to_insert, value_to_insert):
 )
 def test_create_tree_from_path_and_value(paths, expected):
     assert create_tree_from_path_and_value(paths) == expected
+
+
+@pytest.mark.parametrize(
+    "paths, value, expected",
+    [
+        ((), {"a": None}, {"a": None}),
+        ((), {"a": 1}, {"a": 1}),
+    ],
+)
+def test_create_tree_from_path_and_value_if_path_is_empty(paths, value, expected):
+    assert create_tree_from_path_and_value(paths, value) == expected
 
 
 @pytest.mark.parametrize(
@@ -178,60 +189,58 @@ def test_partition_tree_by_reference_tree(tree_to_partition, reference_tree, exp
 
 
 @pytest.mark.parametrize(
-    "target_path, group_by_functions_tree, expected",
+    "target_name, group_by_functions, expected",
     [
-        (("namespace1", "foo"), {}, ()),
-        (("namespace1", "foo_hh"), {}, ("demographics", "hh_id")),
+        (("namespace1__foo"), {}, None),
+        (("namespace1__foo_hh"), {}, "hh_id"),
         (
-            ("namespace1", "foo_hh"),
-            {"namespace1": {"hh_id": None}},
-            ("demographics", "hh_id"),
+            ("namespace1__foo_hh"),
+            {"namespace1__hh_id": None},
+            "hh_id",
         ),
         (
-            ("namespace1", "foo_bg"),
-            {"arbeitslosengeld_2": {"bg_id": None}},
-            ("arbeitslosengeld_2", "bg_id"),
+            ("namespace1__foo_bg"),
+            {"arbeitslosengeld_2__bg_id": None},
+            "arbeitslosengeld_2__bg_id",
         ),
         (
-            ("namespace1", "foo_eg"),
-            {"grundsicherung": {"eg_id": None}},
-            ("grundsicherung", "eg_id"),
+            ("namespace1__foo_eg"),
+            {"grundsicherung__eg_id": None},
+            "grundsicherung__eg_id",
         ),
         (
-            ("namespace1", "foo_eg"),
-            {"arbeitslosengeld_2": {"eg_id": None}},
-            ("arbeitslosengeld_2", "eg_id"),
+            ("namespace1__foo_eg"),
+            {"arbeitslosengeld_2__eg_id": None},
+            "arbeitslosengeld_2__eg_id",
         ),
         (
-            ("arbeitslosengeld_2", "einkommen_eg"),
+            ("arbeitslosengeld_2__einkommen_eg"),
             {
-                "arbeitslosengeld_2": {
-                    "eg_id": None,
-                },
-                "grundsicherung": {
-                    "eg_id": None,
-                },
+                "arbeitslosengeld_2__eg_id": None,
+                "grundsicherung__eg_id": None,
             },
-            ("arbeitslosengeld_2", "eg_id"),
+            "arbeitslosengeld_2__eg_id",
         ),
     ],
 )
-def test_get_path_for_group_by_id(target_path, group_by_functions_tree, expected):
-    assert get_path_for_group_by_id(target_path, group_by_functions_tree) == expected
+def test_get_name_of_group_by_id(target_name, group_by_functions, expected):
+    assert (
+        get_name_of_group_by_id(
+            target_name=target_name,
+            group_by_functions=group_by_functions,
+        )
+        == expected
+    )
 
 
 @pytest.mark.parametrize(
-    "target_path, group_by_functions_tree, expected_error_match",
+    "target_name, group_by_functions, expected_error_match",
     [
         (
-            ("outermost", "foo_bg"),
+            ("outermost__foo_bg"),
             {
-                "outermost": {
-                    "bg_id": None,
-                    "nested": {
-                        "bg_id": None,
-                    },
-                },
+                "outermost__bg_id": None,
+                "outermost__nested__bg_id": None,
             },
             (
                 r"Group-by-identifier for target:[\s\S]+"
@@ -242,16 +251,10 @@ def test_get_path_for_group_by_id(target_path, group_by_functions_tree, expected
             ),
         ),
         (
-            ("outermost", "foo_bg"),
+            ("outermost__foo_bg"),
             {
-                "outermost": {
-                    "inner1": {
-                        "bg_id": None,
-                    },
-                    "inner2": {
-                        "bg_id": None,
-                    },
-                },
+                "outermost__inner1__bg_id": None,
+                "outermost__inner2__bg_id": None,
             },
             r"Group-by-identifier for target:[\s\S]+"
             r"\('outermost', 'foo_bg'\)[\s\S]+is ambiguous[\s\S]+"
@@ -260,14 +263,10 @@ def test_get_path_for_group_by_id(target_path, group_by_functions_tree, expected
             r"\('outermost', 'inner2', 'bg_id'\)",
         ),
         (
-            ("new_transfer", "einkommen_eg"),
+            ("new_transfer__einkommen_eg"),
             {
-                "arbeitslosengeld_2": {
-                    "eg_id": None,
-                },
-                "grundsicherung": {
-                    "eg_id": None,
-                },
+                "arbeitslosengeld_2__eg_id": None,
+                "grundsicherung__eg_id": None,
             },
             r"Group-by-identifier for target:[\s\S]+"
             r"\('new_transfer', 'einkommen_eg'\)[\s\S]+is ambiguous[\s\S]+"
@@ -277,8 +276,10 @@ def test_get_path_for_group_by_id(target_path, group_by_functions_tree, expected
         ),
     ],
 )
-def test_get_path_for_group_by_id_fails(
-    target_path, group_by_functions_tree, expected_error_match
+def test_get_name_of_group_by_id_fails(
+    target_name, group_by_functions, expected_error_match
 ):
     with pytest.raises(ValueError, match=expected_error_match):
-        get_path_for_group_by_id(target_path, group_by_functions_tree)
+        get_name_of_group_by_id(
+            target_name=target_name, group_by_functions=group_by_functions
+        )

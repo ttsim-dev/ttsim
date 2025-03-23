@@ -4,7 +4,7 @@ from _gettsim.function_types import policy_function
 
 
 @policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")
-def betrag_versicherter_m_vor_midijob(
+def betrag_versicherter_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommen_m: float,
     sozialv_beitr_params: dict,
@@ -82,7 +82,7 @@ def betrag_versicherter_m_mit_midijob(
 
 
 @policy_function(end_date="2003-03-31", leaf_name="betrag_arbeitgeber_m")
-def betrag_arbeitgeber_m_vor_midijob(
+def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommen_m: float,
     sozialv_beitr_params: dict,
@@ -197,15 +197,13 @@ def einkommen_m(
 
 
 @policy_function()
-def beitragsbemessungsgrenze_m(
-    demographics__wohnort_ost: bool, sozialv_beitr_params: dict
-) -> float:
+def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) -> float:
     """Income threshold up to which pension insurance payments apply.
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See :func:`demographics__wohnort_ost`.
+    wohnort_ost
+        See :func:`wohnort_ost`.
     sozialv_beitr_params
         See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
 
@@ -214,7 +212,7 @@ def beitragsbemessungsgrenze_m(
 
     """
     params = sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]
-    out = params["ost"] if demographics__wohnort_ost else params["west"]
+    out = params["ost"] if wohnort_ost else params["west"]
 
     return float(out)
 
@@ -249,7 +247,7 @@ def betrag_midijob_gesamt_m(
     end_date="2022-09-30",
     leaf_name="betrag_midijob_arbeitgeber_m",
 )
-def betrag_midijob_arbeitgeber_m_anteil_bruttolohn(
+def betrag_midijob_arbeitgeber_m_mit_festem_beitragssatz(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     sozialv_beitr_params: dict,
 ) -> float:
@@ -273,7 +271,7 @@ def betrag_midijob_arbeitgeber_m_anteil_bruttolohn(
 
 
 @policy_function(start_date="2022-10-01", leaf_name="betrag_midijob_arbeitgeber_m")
-def betrag_midijob_arbeitgeber_m_residuum(
+def betrag_midijob_arbeitgeber_m_als_differenz_von_gesamt_und_arbeitnehmerbeitrag(
     betrag_midijob_gesamt_m: float,
     betrag_midijob_arbeitnehmer_m: float,
 ) -> float:
@@ -297,7 +295,7 @@ def betrag_midijob_arbeitgeber_m_residuum(
     end_date="2022-09-30",
     leaf_name="betrag_midijob_arbeitnehmer_m",
 )
-def betrag_midijob_arbeitnehmer_m_residuum(
+def betrag_midijob_arbeitnehmer_m_als_differenz_von_gesamt_und_arbeitgeberbeitrag(
     betrag_midijob_arbeitgeber_m: float,
     betrag_midijob_gesamt_m: float,
 ) -> float:
@@ -318,7 +316,7 @@ def betrag_midijob_arbeitnehmer_m_residuum(
 
 
 @policy_function(start_date="2022-10-01", leaf_name="betrag_midijob_arbeitnehmer_m")
-def betrag_midijob_arbeitnehmer_m_anteil_beitragspflichtiger_einnahmen(
+def betrag_midijob_arbeitnehmer_m_mit_festem_beitragssatz(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     sozialv_beitr_params: dict,
 ) -> float:

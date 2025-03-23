@@ -118,15 +118,13 @@ def bemessungsgrundlage_selbstständig_m(  # noqa: PLR0913
 
 
 @policy_function()
-def beitragsbemessungsgrenze_m(
-    demographics__wohnort_ost: bool, sozialv_beitr_params: dict
-) -> float:
+def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) -> float:
     """Income threshold up to which health insurance payments apply.
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See :func:`demographics__wohnort_ost`.
+    wohnort_ost
+        See :func:`wohnort_ost`.
     sozialv_beitr_params
         See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
 
@@ -137,15 +135,13 @@ def beitragsbemessungsgrenze_m(
     """
     params = sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_krankenv"]
 
-    out = params["ost"] if demographics__wohnort_ost else params["west"]
+    out = params["ost"] if wohnort_ost else params["west"]
 
     return float(out)
 
 
 @policy_function()
-def bezugsgröße_selbstständig_m(
-    demographics__wohnort_ost: bool, sozialv_beitr_params: dict
-) -> float:
+def bezugsgröße_selbstständig_m(wohnort_ost: bool, sozialv_beitr_params: dict) -> float:
     """Threshold for self employment income subject to health insurance.
 
     Selecting by place of living the income threshold for self employed up to which the
@@ -153,8 +149,8 @@ def bezugsgröße_selbstständig_m(
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See basic input variable :ref:`demographics__wohnort_ost <demographics__wohnort_ost>`.
+    wohnort_ost
+        See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
     sozialv_beitr_params
         See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
 
@@ -164,7 +160,7 @@ def bezugsgröße_selbstständig_m(
     """
     out = (
         sozialv_beitr_params["bezugsgröße_selbst_m"]["ost"]
-        if demographics__wohnort_ost
+        if wohnort_ost
         else sozialv_beitr_params["bezugsgröße_selbst_m"]["west"]
     )
 

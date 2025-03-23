@@ -10,7 +10,7 @@ aggregation_specs = {
         aggr="count",
     ),
     "alleinerziehend_sn": AggregateByGroupSpec(
-        source_col="demographics__alleinerziehend",
+        source="familie__alleinerziehend",
         aggr="any",
     ),
 }
@@ -18,8 +18,8 @@ aggregation_specs = {
 
 @group_by_function()
 def sn_id(
-    demographics__p_id: numpy.ndarray[int],
-    demographics__p_id_ehepartner: numpy.ndarray[int],
+    p_id: numpy.ndarray[int],
+    familie__p_id_ehepartner: numpy.ndarray[int],
     gemeinsam_veranlagt: numpy.ndarray[bool],
 ) -> numpy.ndarray[int]:
     """
@@ -30,8 +30,8 @@ def sn_id(
     next_sn_id = 0
     result = []
 
-    for index, current_p_id in enumerate(demographics__p_id):
-        current_p_id_ehepartner = demographics__p_id_ehepartner[index]
+    for index, current_p_id in enumerate(p_id):
+        current_p_id_ehepartner = familie__p_id_ehepartner[index]
         current_gemeinsam_veranlagt = gemeinsam_veranlagt[index]
 
         if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_sn_id:

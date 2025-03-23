@@ -31,7 +31,7 @@ def regelbedarf_m(
 
 @policy_function()
 def mehrbedarf_alleinerziehend_m(
-    demographics__alleinerziehend: bool,
+    familie__alleinerziehend: bool,
     anzahl_kinder_fg: int,
     anzahl_kinder_bis_6_fg: int,
     anzahl_kinder_bis_15_fg: int,
@@ -47,8 +47,8 @@ def mehrbedarf_alleinerziehend_m(
 
     Parameters
     ----------
-    demographics__alleinerziehend
-        See :func:`demographics__alleinerziehend`.
+    familie__alleinerziehend
+        See :func:`familie__alleinerziehend`.
     anzahl_kinder_fg
         See :func:`anzahl_kinder_fg`.
     anzahl_kinder_bis_6_fg
@@ -64,7 +64,7 @@ def mehrbedarf_alleinerziehend_m(
     float checks how much more a single parent need.
 
     """
-    if demographics__alleinerziehend:
+    if familie__alleinerziehend:
         # Clip value at calculated minimal share and given upper share
         # Note that upper limit is applied last (for many children lower
         # could be greater than upper)
@@ -92,7 +92,7 @@ def mehrbedarf_alleinerziehend_m(
 
 @policy_function(end_date="2010-12-31", leaf_name="kindersatz_m")
 def kindersatz_m_bis_2010(
-    demographics__alter: int,
+    alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
     arbeitsl_geld_2_params: dict,
 ) -> float:
@@ -100,8 +100,8 @@ def kindersatz_m_bis_2010(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter`.
+    alter
+        See basic input variable :ref:`alter`.
     kindergeld__gleiche_fg_wie_empfänger
         See :func:`kindergeld__gleiche_fg_wie_empfänger`.
     arbeitsl_geld_2_params
@@ -116,20 +116,20 @@ def kindersatz_m_bis_2010(
     regelsatz = arbeitsl_geld_2_params["regelsatz"]
 
     if (
-        demographics__alter >= anteile["kind_zwischen_14_und_24"]["min_alter"]
-        and demographics__alter <= anteile["kind_zwischen_14_und_24"]["max_alter"]
+        alter >= anteile["kind_zwischen_14_und_24"]["min_alter"]
+        and alter <= anteile["kind_zwischen_14_und_24"]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
         out = regelsatz * anteile["kind_zwischen_14_und_24"]["anteil"]
     elif (
-        demographics__alter >= anteile["kind_zwischen_6_und_13"]["min_alter"]
-        and demographics__alter <= anteile["kind_zwischen_6_und_13"]["max_alter"]
+        alter >= anteile["kind_zwischen_6_und_13"]["min_alter"]
+        and alter <= anteile["kind_zwischen_6_und_13"]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
         out = regelsatz * anteile["kind_zwischen_6_und_13"]["anteil"]
     elif (
-        demographics__alter >= anteile["kind_bis_5"]["min_alter"]
-        and demographics__alter <= anteile["kind_bis_5"]["max_alter"]
+        alter >= anteile["kind_bis_5"]["min_alter"]
+        and alter <= anteile["kind_bis_5"]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
         out = regelsatz * anteile["kind_bis_5"]["anteil"]
@@ -141,7 +141,7 @@ def kindersatz_m_bis_2010(
 
 @policy_function(start_date="2011-01-01", leaf_name="kindersatz_m")
 def kindersatz_m_ab_2011(
-    demographics__alter: int,
+    alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
     arbeitsl_geld_2_params: dict,
 ) -> float:
@@ -151,8 +151,8 @@ def kindersatz_m_ab_2011(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter`.
+    alter
+        See basic input variable :ref:`alter`.
     kindergeld__gleiche_fg_wie_empfänger
         See :func:`kindergeld__gleiche_fg_wie_empfänger`.
     arbeitsl_geld_2_params
@@ -167,20 +167,20 @@ def kindersatz_m_ab_2011(
     out = arbeitsl_geld_2_params.get("kindersofortzuschl", 0.0)
 
     if (
-        demographics__alter >= arbeitsl_geld_2_params["regelsatz"][6]["min_alter"]
-        and demographics__alter <= arbeitsl_geld_2_params["regelsatz"][6]["max_alter"]
+        alter >= arbeitsl_geld_2_params["regelsatz"][6]["min_alter"]
+        and alter <= arbeitsl_geld_2_params["regelsatz"][6]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
         out += arbeitsl_geld_2_params["regelsatz"][6]["betrag"]
     elif (
-        demographics__alter >= arbeitsl_geld_2_params["regelsatz"][5]["min_alter"]
-        and demographics__alter <= arbeitsl_geld_2_params["regelsatz"][5]["max_alter"]
+        alter >= arbeitsl_geld_2_params["regelsatz"][5]["min_alter"]
+        and alter <= arbeitsl_geld_2_params["regelsatz"][5]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
         out += arbeitsl_geld_2_params["regelsatz"][5]["betrag"]
     elif (
-        demographics__alter >= arbeitsl_geld_2_params["regelsatz"][4]["min_alter"]
-        and demographics__alter <= arbeitsl_geld_2_params["regelsatz"][4]["max_alter"]
+        alter >= arbeitsl_geld_2_params["regelsatz"][4]["min_alter"]
+        and alter <= arbeitsl_geld_2_params["regelsatz"][4]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
         out += arbeitsl_geld_2_params["regelsatz"][4]["betrag"]
@@ -392,7 +392,7 @@ def anerkannte_warmmiete_je_qm_m(
 def berechtigte_wohnfläche(
     wohnfläche: float,
     wohnen__bewohnt_eigentum_hh: bool,
-    demographics__anzahl_personen_hh: int,
+    anzahl_personen_hh: int,
     arbeitsl_geld_2_params: dict,
 ) -> float:
     """Calculate size of dwelling eligible to claim.
@@ -405,8 +405,8 @@ def berechtigte_wohnfläche(
         See function :func:`wohnfläche`.
     wohnen__bewohnt_eigentum_hh
         See basic input variable :ref:`wohnen__bewohnt_eigentum_hh <wohnen__bewohnt_eigentum_hh>`.
-    demographics__anzahl_personen_hh
-        See :func:`demographics__anzahl_personen_hh`.
+    anzahl_personen_hh
+        See :func:`anzahl_personen_hh`.
     arbeitsl_geld_2_params
         See params documentation :ref:`arbeitsl_geld_2_params <arbeitsl_geld_2_params>`.
 
@@ -419,29 +419,28 @@ def berechtigte_wohnfläche(
     params = arbeitsl_geld_2_params["berechtigte_wohnfläche_eigentum"]
     max_anzahl_direkt = params["max_anzahl_direkt"]
     if wohnen__bewohnt_eigentum_hh:
-        if demographics__anzahl_personen_hh <= max_anzahl_direkt:
-            maximum = params[demographics__anzahl_personen_hh]
+        if anzahl_personen_hh <= max_anzahl_direkt:
+            maximum = params[anzahl_personen_hh]
         else:
             maximum = (
                 params[max_anzahl_direkt]
-                + (demographics__anzahl_personen_hh - max_anzahl_direkt)
-                * params["je_weitere_person"]
+                + (anzahl_personen_hh - max_anzahl_direkt) * params["je_weitere_person"]
             )
     else:
         maximum = (
             arbeitsl_geld_2_params["berechtigte_wohnfläche_miete"]["single"]
-            + max(demographics__anzahl_personen_hh - 1, 0)
+            + max(anzahl_personen_hh - 1, 0)
             * arbeitsl_geld_2_params["berechtigte_wohnfläche_miete"][
                 "je_weitere_person"
             ]
         )
-    return min(wohnfläche, maximum / demographics__anzahl_personen_hh)
+    return min(wohnfläche, maximum / anzahl_personen_hh)
 
 
 @policy_function()
 def bruttokaltmiete_m(
-    bruttokaltmiete_m_hh: float,
-    demographics__anzahl_personen_hh: int,
+    wohnen__bruttokaltmiete_m_hh: float,
+    anzahl_personen_hh: int,
 ) -> float:
     """Monthly rent attributed to a single person.
 
@@ -451,22 +450,22 @@ def bruttokaltmiete_m(
 
     Parameters
     ----------
-    bruttokaltmiete_m_hh
-        See basic input variable :ref:`bruttokaltmiete_m_hh <bruttokaltmiete_m_hh>`.
-    demographics__anzahl_personen_hh
-        See :func:`demographics__anzahl_personen_hh`.
+    wohnen__bruttokaltmiete_m_hh
+        See basic input variable :ref:`wohnen__bruttokaltmiete_m_hh <wohnen__bruttokaltmiete_m_hh>`.
+    anzahl_personen_hh
+        See :func:`anzahl_personen_hh`.
 
     Returns
     -------
 
     """
-    return bruttokaltmiete_m_hh / demographics__anzahl_personen_hh
+    return wohnen__bruttokaltmiete_m_hh / anzahl_personen_hh
 
 
 @policy_function()
 def heizkosten_m(
-    heizkosten_m_hh: float,
-    demographics__anzahl_personen_hh: int,
+    wohnen__heizkosten_m_hh: float,
+    anzahl_personen_hh: int,
 ) -> float:
     """Monthly heating expenses attributed to a single person.
 
@@ -476,22 +475,22 @@ def heizkosten_m(
 
     Parameters
     ----------
-    heizkosten_m_hh
-        See basic input variable :ref:`heizkosten_m_hh <heizkosten_m_hh>`.
-    demographics__anzahl_personen_hh
-        See :func:`demographics__anzahl_personen_hh`.
+    wohnen__heizkosten_m_hh
+        See basic input variable :ref:`wohnen__heizkosten_m_hh <wohnen__heizkosten_m_hh>`.
+    anzahl_personen_hh
+        See :func:`anzahl_personen_hh`.
 
     Returns
     -------
 
     """
-    return heizkosten_m_hh / demographics__anzahl_personen_hh
+    return wohnen__heizkosten_m_hh / anzahl_personen_hh
 
 
 @policy_function()
 def wohnfläche(
     wohnen__wohnfläche_hh: float,
-    demographics__anzahl_personen_hh: int,
+    anzahl_personen_hh: int,
 ) -> float:
     """Share of household's dwelling size attributed to a single person.
 
@@ -499,11 +498,11 @@ def wohnfläche(
     ----------
     wohnen__wohnfläche_hh
         See basic input variable :ref:`wohnen__wohnfläche_hh <wohnen__wohnfläche_hh>`.
-    demographics__anzahl_personen_hh
-        See :func:`demographics__anzahl_personen_hh`.
+    anzahl_personen_hh
+        See :func:`anzahl_personen_hh`.
 
     Returns
     -------
 
     """
-    return wohnen__wohnfläche_hh / demographics__anzahl_personen_hh
+    return wohnen__wohnfläche_hh / anzahl_personen_hh

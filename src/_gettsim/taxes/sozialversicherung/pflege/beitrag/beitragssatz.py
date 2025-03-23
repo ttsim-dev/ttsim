@@ -5,13 +5,13 @@ from _gettsim.function_types import policy_function
 
 aggregation_specs = {
     "anzahl_kinder_bis_24_elternteil_1": AggregateByPIDSpec(
-        p_id_to_aggregate_by=("p_id_kinderfreibetragempfänger_1"),
-        source_col="demographics__alter_bis_24",
+        p_id_to_aggregate_by=("einkommensteuer__p_id_kinderfreibetragsempfänger_1"),
+        source="alter_bis_24",
         aggr="sum",
     ),
     "anzahl_kinder_bis_24_elternteil_2": AggregateByPIDSpec(
-        p_id_to_aggregate_by=("p_id_kinderfreibetragempfänger_2"),
-        source_col="demographics__alter_bis_24",
+        p_id_to_aggregate_by=("einkommensteuer__p_id_kinderfreibetragsempfänger_2"),
+        source="alter_bis_24",
         aggr="sum",
     ),
 }
@@ -117,7 +117,7 @@ def beitragssatz_mit_kinder_abschlag(
 @policy_function(start_date="2005-01-01")
 def zusatzbetrag_kinderlos(
     hat_kinder: bool,
-    demographics__alter: int,
+    alter: int,
     sozialv_beitr_params: dict,
 ) -> bool:
     """Whether additional care insurance contribution for childless individuals applies.
@@ -129,8 +129,8 @@ def zusatzbetrag_kinderlos(
     ----------
     hat_kinder
         See basic input variable :ref:`hat_kinder <hat_kinder>`.
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     sozialv_beitr_params: dict,
         See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
 
@@ -139,7 +139,7 @@ def zusatzbetrag_kinderlos(
 
     """
     mindestalter = sozialv_beitr_params["ges_pflegev_zusatz_kinderlos_mindestalter"]
-    return (not hat_kinder) and demographics__alter >= mindestalter
+    return (not hat_kinder) and alter >= mindestalter
 
 
 @policy_function()

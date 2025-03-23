@@ -82,7 +82,7 @@ is able to replace this function with her own version.
 See the following example for capital income taxes (Abgeltungssteuer).
 
 ```python
-def abgeltungssteuer__betrag_y_sn(
+def einkommensteuer__abgeltungssteuer__betrag_y_sn(
     einkommensteuer__einkünfte__aus_kapitalvermögen__betrag_y_sn: float,
     abgelt_st_params: dict,
 ) -> float:
@@ -105,7 +105,7 @@ def abgeltungssteuer__betrag_y_sn(
     )
 ```
 
-The function `abgeltungssteuer__betrag_y_sn` requires the variable
+The function `einkommensteuer__abgeltungssteuer__betrag_y_sn` requires the variable
 `einkommensteuer__einkünfte__aus_kapitalvermögen__betrag_y_sn`, which is the amount of
 taxable capital income on the Steuernummer-level (the latter is implied by the `_sn`
 suffix, see {ref}`gep-1`).
@@ -114,9 +114,9 @@ user as a column of the input data or it has to be the name of another function.
 `abgelt_st_params` is a dictionary of parameters related to the calculation of
 `betrag_y_sn`.
 
-> Note: In the source code, the prefix `abgeltungssteuer__` is missing. This is because
-> it is inferred from the path the function is defined in. For more details, see
-> {ref}`gep-6`.
+> Note: In the source code, the prefix `einkommensteuer__abgeltungssteuer__` is missing.
+> This is because it is inferred from the path the function is defined in. For more
+> details, see {ref}`gep-6`.
 
 Another function, say
 
@@ -124,13 +124,14 @@ Another function, say
 def solidaritätszuschlag__betrag_y_sn(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    abgeltungssteuer__betrag_y_sn: float,
+    einkommensteuer__abgeltungssteuer__betrag_y_sn: float,
     soli_st_params: dict,
 ) -> float: ...
 ```
 
-may use `abgeltungssteuer__betrag_y_sn` as an input argument. The DAG backend ensures
-that the function `abgeltungssteuer__betrag_y_sn` will be executed first.
+may use `einkommensteuer__abgeltungssteuer__betrag_y_sn` as an input argument. The DAG
+backend ensures that the function `einkommensteuer__abgeltungssteuer__betrag_y_sn` will
+be executed first.
 
 Note that the type annotations (e.g. `float`) indicate the expected type of each input
 and the output of a function, see {ref}`gep-2`.
@@ -231,22 +232,22 @@ In order to inject aggregation functions at the group level into the graph, scri
 functions of the taxes and transfer system should define a dictionary
 `aggregation_specs` at the module level. This dictionary must specify the aggregated
 columns as keys and the AggregateByGroupSpec data class as values. The data class
-specifies the `source_col` (i.e. the column which is being aggregated) and the
-aggregation method `aggr`.
+specifies the `source` (i.e. the column which is being aggregated) and the aggregation
+method `aggr`.
 
-For example, in `demographics.py`, we could have:
+For example, in `household_characteristics.py`, we could have:
 
 ```
 from _gettsim.aggregation import AggregateByGroupSpec
 
 aggregation_specs = {
-    "anzahl_kinder_hh": AggregateByGroupSpec(source_col="demographics__kind", aggr="sum"),
+    "anzahl_kinder_hh": AggregateByGroupSpec(source="familie__kind", aggr="sum"),
     "anzahl_personen_hh": AggregateByGroupSpec(aggr="count"),
 }
 ```
 
 The group identifier (`hh_id`, `wohngeld__wthh_id`, `arbeitslosengeld_2__fg_id`,
-`arbeitslosengeld_2__bg_id`, `arbeitslosengeld_2__eg_id`, `demographics__ehe_id`,
+`arbeitslosengeld_2__bg_id`, `arbeitslosengeld_2__eg_id`, `familie__ehe_id`,
 `einkommensteuer__sn_id`) will be automatically included as an argument; for `count`
 nothing else is necessary.
 
@@ -291,7 +292,7 @@ from _gettsim.aggregation import AggregateByGroupSpec
 
 aggregation_specs = {
     "kindergeld__betrag_m_bg": AggregateByGroupSpec(
-        source_col="kindergeld__betrag_m",
+        source="kindergeld__betrag_m",
         aggr="sum"
     )
 }
@@ -311,13 +312,12 @@ The implementation is similar to aggregations to the level of groupings: In orde
 specify new aggregation functions, scripts with functions of the taxes and transfer
 system should define a dictionary `aggregation_specs` at the module level. This
 dictionary must specify the aggregated columns as keys and the `AggregateByPIDSpec` data
-class as values. The class specifies the `source_col`, `p_id_to_aggregate_by`, and
-`aggr`. If `aggr` is `count`, `source_col` is not needed.
+class as values. The class specifies the `source`, `p_id_to_aggregate_by`, and `aggr`.
+If `aggr` is `count`, `source` is not needed.
 
-The key `source_col` specifies which column is the source of the aggregation operation.
-The key `p_id_to_aggregate_by` specifies the column that indicates to which `p_id` the
-values in `source_col` should be ascribed to. The key `aggr` gives the aggregation
-method.
+The key `source` specifies which column is the source of the aggregation operation. The
+key `p_id_to_aggregate_by` specifies the column that indicates to which `p_id` the
+values in `source` should be ascribed to. The key `aggr` gives the aggregation method.
 
 For example, in `kindergeld.py`, we could have:
 
@@ -325,7 +325,7 @@ For example, in `kindergeld.py`, we could have:
 aggregation_specs = {
     "kindergeld__anzahl_ansprüche": AggregateByPIDSpec(
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        source_col="kindergeld__grundsätzlich_anspruchsberechtigt",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr="sum",
     ),
 }

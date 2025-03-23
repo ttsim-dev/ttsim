@@ -7,8 +7,8 @@ from _gettsim.function_types import policy_function
 def einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     steuerklasse: int,
-    eink_st_abzuege_params: dict,
     vorsorgepauschale_y: float,
+    eink_st_abzuege_params: dict,
 ) -> float:
     """Calculate tax base for Lohnsteuer (withholding tax on earnings).
 
@@ -28,7 +28,7 @@ def einkommen_y(
 
     """
     entlastung_freibetrag_alleinerz = (steuerklasse == 2) * eink_st_abzuege_params[
-        "alleinerz_freibetrag"
+        "alleinerziehendenfreibetrag"
     ]
 
     if steuerklasse == 6:
@@ -61,9 +61,9 @@ def einkommen_y(
 )
 def vorsorge_krankenv_option_b_ab_2015_bis_2018(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
-    sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
+    sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
+    sozialv_beitr_params: dict,
 ) -> float:
     """For health care deductions, there are two ways to calculate
     the deductions: "Option a" and "Option b".
@@ -74,8 +74,8 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
     ----------
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y:
         See :func:`sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y`.
-    sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz
-        See :func:`sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz`.
+    sozialversicherung__kranken__beitrag__zusatzbeitragssatz
+        See :func:`sozialversicherung__kranken__beitrag__zusatzbeitragssatz`.
     sozialversicherung__pflege__beitrag__beitragssatz:
         See :func:`sozialversicherung__pflege__beitrag__beitragssatz`.
 
@@ -88,7 +88,7 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
 
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
         sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["ermäßigt"] / 2
-        + sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz
+        + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
 
@@ -101,7 +101,7 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
 )
 def vorsorge_krankenv_option_b_ab_2019(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
-    sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz: float,
+    sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
     sozialv_beitr_params: dict,
 ) -> float:
@@ -114,8 +114,8 @@ def vorsorge_krankenv_option_b_ab_2019(
     ----------
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y:
         See :func:`sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y`.
-    sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz
-        See :func:`sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz`.
+    sozialversicherung__kranken__beitrag__zusatzbeitragssatz
+        See :func:`sozialversicherung__kranken__beitrag__zusatzbeitragssatz`.
     sozialversicherung__pflege__beitrag__beitragssatz:
         See :func:`sozialversicherung__pflege__beitrag__beitragssatz`.
     sozialv_beitr_params:
@@ -130,7 +130,7 @@ def vorsorge_krankenv_option_b_ab_2019(
 
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
         sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["ermäßigt"] / 2
-        + sozialversicherung__kranken__beitrag__beitragssatz__zusatzbeitragssatz / 2
+        + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
 
@@ -190,7 +190,7 @@ def vorsorge_krankenv_option_a(
 )
 def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    demographics__wohnort_ost: bool,
+    wohnort_ost: bool,
     sozialv_beitr_params: dict,
     vorsorge_krankenv_option_a: float,
     vorsorge_krankenv_option_b: float,
@@ -204,8 +204,8 @@ def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y:
       See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y>`.
-    demographics__wohnort_ost:
-      See basic input variable :ref:`demographics__wohnort_ost <demographics__wohnort_ost>`.
+    wohnort_ost:
+      See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
     sozialv_beitr_params:
         See params documentation :ref:`sozialv_beitr_params`
     vorsorge_krankenv_option_a:
@@ -223,7 +223,7 @@ def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     """
 
     # 1. Rentenversicherungsbeiträge, §39b (2) Nr. 3a EStG.
-    if demographics__wohnort_ost:
+    if wohnort_ost:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
             12 * sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]["ost"],

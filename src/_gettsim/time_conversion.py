@@ -1,20 +1,21 @@
+from __future__ import annotations
+
 import inspect
 import re
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
-import optree
+from dags import rename_arguments
 
 from _gettsim.config import (
     SUPPORTED_GROUPINGS,
     SUPPORTED_TIME_UNITS,
 )
-from _gettsim.function_types import DerivedFunction, PolicyFunction
-from _gettsim.gettsim_typing import NestedDataDict, NestedFunctionDict
-from _gettsim.shared import (
-    insert_path_and_value,
-    rename_arguments_and_add_annotations,
-    upsert_path_and_value,
-)
+from _gettsim.function_types import DerivedTimeConversionFunction, PolicyFunction
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from _gettsim.typing import QualNameDataDict, QualNameFunctionsDict
 
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7
@@ -230,9 +231,9 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions_tree: NestedFunctionDict,
-    data_tree: NestedDataDict,
-) -> NestedFunctionDict:
+    functions: QualNameFunctionsDict,
+    data: QualNameDataDict,
+) -> QualNameFunctionsDict:
     """
      Create functions that convert variables to different time units.
 
@@ -259,64 +260,50 @@ def create_time_conversion_functions(
 
     Parameters
     ----------
-    functions_tree
-        The functions tree.
+    functions
+        The functions dict with qualified function names as keys and functions as
+        values.
     data
-        The data tree.
+        The data dict with qualified data names as keys and pandas Series as values.
 
     Returns
     -------
-    The functions tree with the new time conversion functions.
+    The functions dict with the new time conversion functions.
     """
 
     converted_functions = {}
-    data_tree_paths = optree.tree_paths(data_tree, none_is_leaf=True)
 
     # Create time-conversions for existing functions
-    for path, function in zip(*optree.tree_flatten_with_path(functions_tree)[:2]):
-        leaf_name = path[-1]
+    for name, function in functions.items():
         all_time_conversions_for_this_function = _create_time_conversion_functions(
-            name=leaf_name, func=function
+            name=name, func=function
         )
         for der_name, der_func in all_time_conversions_for_this_function.items():
-            new_path = [*path[:-1], der_name]
             # Skip if the function already exists or the data column exists
-            if new_path in optree.tree_paths(converted_functions) + data_tree_paths:
+            if der_name in converted_functions or der_name in data:
                 continue
             else:
-                converted_functions = insert_path_and_value(
-                    base=converted_functions,
-                    path_to_insert=new_path,
-                    value_to_insert=der_func,
-                )
+                converted_functions[der_name] = der_func
 
     # Create time-conversions for data columns
-    for path in data_tree_paths:
-        leaf_name = path[-1]
+    for name in data:
         all_time_conversions_for_this_data_column = _create_time_conversion_functions(
-            name=leaf_name
+            name=name
         )
         for der_name, der_func in all_time_conversions_for_this_data_column.items():
-            new_path = [*path[:-1], der_name]
             # Skip if the function already exists or the data column exists
-            if new_path in optree.tree_paths(converted_functions) + data_tree_paths:
+            if der_name in converted_functions or der_name in data:
                 continue
             else:
-                # Upsert because derived functions based on data should overwrite
-                # derived functions based on other functions.
-                converted_functions = upsert_path_and_value(
-                    base=converted_functions,
-                    path_to_upsert=new_path,
-                    value_to_upsert=der_func,
-                )
+                converted_functions[der_name] = der_func
 
     return converted_functions
 
 
 def _create_time_conversion_functions(
     name: str, func: PolicyFunction | None = None
-) -> dict[str, DerivedFunction]:
-    result: dict[str, DerivedFunction] = {}
+) -> dict[str, DerivedTimeConversionFunction]:
+    result: dict[str, DerivedTimeConversionFunction] = {}
 
     all_time_units = list(SUPPORTED_TIME_UNITS)
 
@@ -349,13 +336,14 @@ def _create_time_conversion_functions(
             if new_name in dependencies:
                 continue
 
-            result[new_name] = DerivedFunction(
+            result[new_name] = DerivedTimeConversionFunction(
                 function=_create_function_for_time_unit(
                     name,
                     _time_conversion_functions[f"{time_unit}_to_{missing_time_unit}"],
                 ),
-                leaf_name=new_name,
-                derived_from=func or name,
+                source=name,
+                source_function=func,
+                conversion_target=new_name,
             )
 
     return result
@@ -364,7 +352,7 @@ def _create_time_conversion_functions(
 def _create_function_for_time_unit(
     function_name: str, converter: Callable[[float], float]
 ) -> Callable[[float], float]:
-    @rename_arguments_and_add_annotations(mapper={"x": function_name})
+    @rename_arguments(mapper={"x": function_name})
     def func(x: float) -> float:
         return converter(x)
 

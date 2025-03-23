@@ -3,57 +3,16 @@ info:
   note: Multiple households with mutliple Bedarfsgemeinschaften.
   source: ''
 inputs:
+  assumed: {}
   provided:
-    demographics__p_id:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-    demographics__geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    demographics__geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    demographics__geburtsjahr:
-      - 1970
-      - 1970
-      - 1970
-      - 1970
-      - 2000
-      - 2000
-      - 2010
-    # TODO (@hmgaudecker): Remove again.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/211
-    demographics__alter:
-      - 53
-      - 53
-      - 53
-      - 53
-      - 23
-      - 23
-      - 13
-    demographics__hh_id:
-      - 0
-      - 0
-      - 1
-      - 1
-      - 2
-      - 2
-      - 0
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - true
     arbeitslosengeld_2__p_id_einstandspartner:
       - 1
       - 0
@@ -62,13 +21,77 @@ inputs:
       - -1
       - -1
       - -1
-    demographics__p_id_ehepartner:
+    alter:
+      - 53
+      - 53
+      - 53
+      - 53
+      - 23
+      - 23
+      - 13
+    geburtsjahr:
+      - 1970
+      - 1970
+      - 1970
+      - 1970
+      - 2000
+      - 2000
+      - 2010
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 0
+      - 0
+      - 1
+      - 1
+      - 2
+      - 2
+      - 0
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+    familie__p_id_ehepartner:
       - 1
       - 0
       - 3
       - 2
       - -1
       - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - -1
+      - -1
+      - 0
+      - 0
+      - 0
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - -1
+      - 1
+      - 1
       - -1
     einkommensteuer__gemeinsam_veranlagt:
       - true
@@ -78,27 +101,11 @@ inputs:
       - false
       - false
       - false
-    demographics__p_id_elternteil_1:
-      - -1
-      - -1
-      - -1
-      - -1
-      - 0
-      - 0
-      - 0
-    demographics__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - -1
-      - 1
-      - 1
-      - -1
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
+    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
       - false
       - false
-      - false
-      - false
+      - true
+      - true
       - false
       - false
       - true
@@ -110,23 +117,7 @@ inputs:
       - false
       - false
       - true
-    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
-      - false
-      - false
-      - true
-      - true
-      - false
-      - false
-      - true
 outputs:
-  arbeitslosengeld_2__fg_id:
-    - 0
-    - 0
-    - 1
-    - 1
-    - 2
-    - 3
-    - 0
   arbeitslosengeld_2__bg_id:
     - 0
     - 0
@@ -135,6 +126,14 @@ outputs:
     - 200
     - 300
     - 1
+  arbeitslosengeld_2__fg_id:
+    - 0
+    - 0
+    - 1
+    - 1
+    - 2
+    - 3
+    - 0
   wohngeld__wthh_id:
     - 0
     - 0

@@ -1,18 +1,23 @@
+from __future__ import annotations
+
 import inspect
 import textwrap
-from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-import flatten_dict
+import dags.tree as dt
 import numpy
 import optree
-from dags.signature import rename_arguments
-from flatten_dict.reducers import make_reducer
-from flatten_dict.splitters import make_splitter
 
-from _gettsim.config import QUALIFIED_NAME_SEPARATOR, SUPPORTED_GROUPINGS
-from _gettsim.function_types import PolicyFunction
-from _gettsim.gettsim_typing import NestedDataDict, NestedFunctionDict
+from _gettsim.config import SUPPORTED_GROUPINGS
+
+if TYPE_CHECKING:
+    from _gettsim.function_types import PolicyFunction
+    from _gettsim.typing import (
+        GenericCallable,
+        NestedDataDict,
+        NestedFunctionDict,
+        QualNameFunctionsDict,
+    )
 
 
 class KeyErrorMessage(str):
@@ -33,10 +38,6 @@ def format_list_linewise(list_):
         ]
         """
     ).format(formatted_list=formatted_list)
-
-
-qualified_name_reducer = make_reducer(delimiter=QUALIFIED_NAME_SEPARATOR)
-qualified_name_splitter = make_splitter(delimiter=QUALIFIED_NAME_SEPARATOR)
 
 
 def create_tree_from_path_and_value(path: tuple[str], value: Any = None) -> dict:
@@ -176,15 +177,39 @@ def partition_tree_by_reference_tree(
     - The first tree with leaves present in both trees.
     - The second tree with leaves absent in the reference tree.
     """
-    ref_paths = set(flatten_dict.flatten(reference_tree).keys())
-    flat = flatten_dict.flatten(tree_to_partition)
-    intersection = flatten_dict.unflatten(
+    ref_paths = set(dt.tree_paths(reference_tree))
+    flat = dt.flatten_to_tree_paths(tree_to_partition)
+    intersection = dt.unflatten_from_tree_paths(
         {path: leaf for path, leaf in flat.items() if path in ref_paths}
     )
-    difference = flatten_dict.unflatten(
+    difference = dt.unflatten_from_tree_paths(
         {path: leaf for path, leaf in flat.items() if path not in ref_paths}
     )
 
+    return intersection, difference
+
+
+def partition_by_reference_dict(
+    to_partition: dict[str, Any],
+    reference_dict: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Partition a dictionary into two based on the presence of its keys in a reference
+    dictionary.
+
+    Parameters
+    ----------
+    to_partition
+        The dictionary to be partitioned.
+    reference_dict
+        The reference dictionary used to determine the partitioning.
+
+    Returns
+    -------
+    A tuple containing: - The first dictionary with keys present in both dictionaries. -
+    The second dictionary with keys absent in the reference dictionary.
+    """
+    intersection = {k: v for k, v in to_partition.items() if k in reference_dict}
+    difference = {k: v for k, v in to_partition.items() if k not in reference_dict}
     return intersection, difference
 
 
@@ -315,22 +340,8 @@ def join_numpy(
     return padded_targets.take(indices)
 
 
-def rename_arguments_and_add_annotations(
-    function: Callable | None = None,
-    *,
-    mapper: dict | None = None,
-    annotations: dict | None = None,
-):
-    wrapper = rename_arguments(function, mapper=mapper)
-
-    if annotations:
-        wrapper.__annotations__ = annotations
-
-    return wrapper
-
-
 def assert_valid_gettsim_pytree(
-    tree: Any, leaf_checker: Callable, tree_name: str
+    tree: Any, leaf_checker: GenericCallable, tree_name: str
 ) -> None:
     """
     Recursively assert that a pytree meets the following conditions:
@@ -342,7 +353,7 @@ def assert_valid_gettsim_pytree(
     ----------
     tree : Any
          The tree to validate.
-    leaf_checker : Callable
+    leaf_checker : GenericCallable
          A function that takes a leaf and returns True if it is valid.
     tree_name : str
          The name of the tree (used for error messages).
@@ -387,16 +398,16 @@ def assert_valid_gettsim_pytree(
     _assert_valid_gettsim_pytree(tree, current_key=())
 
 
-def get_path_for_group_by_id(
-    target_path: tuple[str],
-    group_by_functions_tree: NestedFunctionDict,
-) -> tuple[str]:
-    """Get the group-by-identifier for some target path.
+def get_name_of_group_by_id(
+    target_name: str,
+    group_by_functions: QualNameFunctionsDict,
+) -> str:
+    """Get the group-by-identifier name for some target.
 
-    The group-by-identifier is the path to the group identifier that is embedded in the
-    name. E.g., "einkommen_hh" has ("demographics", "hh_id") as its group-by-identifier.
-    In this sense, the group-by-identifiers live in a global namespace. We generally
-    expect them to be unique.
+    The group-by-identifier is the name of the group identifier that is embedded in the
+    name of the target. E.g., "einkommen_hh" has "hh_id" as its group-by-identifier. In
+    this sense, the group-by-identifiers live in a global namespace. We generally expect
+    them to be unique.
 
     There is an exception, though: It is enough for them to be unique within the
     uppermost namespace. In that case, however, they cannot be used outside of that
@@ -404,33 +415,34 @@ def get_path_for_group_by_id(
 
     Parameters
     ----------
-    target_path
-        The aggregation target.
-    group_by_functions_tree
-        The group-by functions tree.
+    target_name
+        The name of the target.
+    group_by_functions
+        The group-by functions.
 
     Returns
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
-    group_by_paths = optree.tree_paths(group_by_functions_tree, none_is_leaf=True)
     for g in SUPPORTED_GROUPINGS:
-        if target_path[-1].endswith(f"_{g}") and g == "hh":
+        if target_name.endswith(f"_{g}") and g == "hh":
             # Hardcode because hh_id is not part of the functions tree
-            return ("demographics", "hh_id")
-        elif target_path[-1].endswith(f"_{g}"):
+            return "hh_id"
+        elif target_name.endswith(f"_{g}"):
             return _select_group_by_id_from_candidates(
-                candidate_paths=[p for p in group_by_paths if p[-1] == f"{g}_id"],
-                target_path=target_path,
+                candidate_names=[
+                    p for p in group_by_functions if p.endswith(f"{g}_id")
+                ],
+                target_name=target_name,
             )
-    return ()
+    return None
 
 
 def _select_group_by_id_from_candidates(
-    candidate_paths: list[tuple[str]],
-    target_path: tuple[str],
-) -> tuple[str]:
-    """Select the group-by-identifier from the candidates.
+    candidate_names: list[str],
+    target_name: str,
+) -> str:
+    """Select the group-by-identifier name from the candidates.
 
     If there are multiple candidates, the function takes the one that shares the
     first part of the path (uppermost level of namespace) with the aggregation target.
@@ -453,31 +465,43 @@ def _select_group_by_id_from_candidates(
     -------
     The group-by-identifier.
     """
-    if len(candidate_paths) > 1:
-        candidate_paths_in_matching_namespace = [
-            p for p in candidate_paths if p[0] == target_path[0]
+    if len(candidate_names) > 1:
+        candidate_names_in_matching_namespace = [
+            p
+            for p in candidate_names
+            if dt.tree_path_from_qual_name(p)[0]
+            == dt.tree_path_from_qual_name(target_name)[0]
         ]
-        if len(candidate_paths_in_matching_namespace) == 1:
-            return candidate_paths_in_matching_namespace[0]
+        if len(candidate_names_in_matching_namespace) == 1:
+            return candidate_names_in_matching_namespace[0]
         else:
-            _fail_with_ambiguous_group_by_identifier(
-                all_candidate_paths=candidate_paths,
-                candidate_paths_in_matching_namespace=candidate_paths_in_matching_namespace,
-                target_path=target_path,
+            _fail_because_of_ambiguous_group_by_identifier(
+                candidate_names_in_matching_namespace=candidate_names_in_matching_namespace,
+                all_candidate_names=candidate_names,
+                target_name=target_name,
             )
     else:
-        return candidate_paths[0]
+        return candidate_names[0]
 
 
-def _fail_with_ambiguous_group_by_identifier(
-    candidate_paths_in_matching_namespace: tuple[str],
-    all_candidate_paths: tuple[str],
-    target_path: tuple[str],
+def _fail_because_of_ambiguous_group_by_identifier(
+    candidate_names_in_matching_namespace: list[str],
+    all_candidate_names: list[str],
+    target_name: str,
 ):
-    if len(candidate_paths_in_matching_namespace) == 0:
-        paths = "\n    ".join([str(p) for p in all_candidate_paths])
+    if len(candidate_names_in_matching_namespace) == 0:
+        paths = "\n    ".join(
+            [str(dt.tree_path_from_qual_name(p)) for p in all_candidate_names]
+        )
     else:
-        paths = "\n    ".join([str(p) for p in candidate_paths_in_matching_namespace])
+        paths = "\n    ".join(
+            [
+                str(dt.tree_path_from_qual_name(p))
+                for p in candidate_names_in_matching_namespace
+            ]
+        )
+
+    target_path = dt.tree_path_from_qual_name(target_name)
     msg = format_errors_and_warnings(
         f"""
         Group-by-identifier for target:\n\n    {target_path}\n

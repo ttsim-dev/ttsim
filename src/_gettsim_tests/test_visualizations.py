@@ -121,7 +121,7 @@ def test_plot_dag():
     """Make sure that minimal example doesn't produce an error."""
     plot_dag(
         environment=environment,
-        targets=["demographics__erwachsene_alle_rentner_hh"],
+        targets=["erwachsene_alle_rentenbezieher_hh"],
     )
 
 
@@ -132,7 +132,7 @@ def test_should_fail_if_target_is_missing():
     ):
         plot_dag(
             environment=PolicyEnvironment({}),
-            targets=["demographics__erwachsene_alle_rentner_hh"],
+            targets=["erwachsene_alle_rentenbezieher_hh"],
         )
 
 
@@ -162,7 +162,7 @@ def test_horizontal_plot_dag():
         environment=environment,
         selectors=[
             {
-                "node": "abgeltungssteuer__zu_versteuernde_kapitaleinkünfte_y_sn",
+                "node": "einkommensteuer__abgeltungssteuer__zu_versteuernde_kapitaleinkünfte_y_sn",  # noqa: E501
                 "type": "neighbors",
             }
         ],
@@ -178,7 +178,7 @@ def test_hover_source_code_plot_dag():
         environment=environment,
         selectors=[
             {
-                "node": "abgeltungssteuer__zu_versteuernde_kapitaleinkünfte_y_sn",
+                "node": "einkommensteuer__abgeltungssteuer__zu_versteuernde_kapitaleinkünfte_y_sn",  # noqa: E501
                 "type": "neighbors",
             }
         ],
