@@ -23,7 +23,7 @@ inputs:
       - -1
       - -1
       - -1
-    demographics__alter:
+    alter:
       - 50
       - 48
       - 18
@@ -50,7 +50,7 @@ inputs:
       - 5
       - 6
       - 7
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 1
       - 0
       - -1
@@ -59,7 +59,7 @@ inputs:
       - -1
       - -1
       - -1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - -1
       - 0
@@ -68,7 +68,7 @@ inputs:
       - 0
       - 0
       - 5
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
       - 1

@@ -6,7 +6,7 @@ inputs:
   assumed:
     p_id:
       - 8
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
     sozialversicherung__rente__erwerbsminderung__entgeltpunkte_ost:
       - 0.0

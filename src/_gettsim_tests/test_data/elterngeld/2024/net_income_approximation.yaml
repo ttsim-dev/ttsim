@@ -8,10 +8,10 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
-    demographics__alter:
+    alter:
       - 43
       - 43
-    demographics__arbeitsstunden_w:
+    arbeitsstunden_w:
       - 40.0
       - 10.0
     hh_id:
@@ -20,16 +20,16 @@ inputs:
     p_id:
       - 0
       - 1
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - -1
       - -1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - -1
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
       - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:

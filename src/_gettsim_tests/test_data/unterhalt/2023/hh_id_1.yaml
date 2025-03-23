@@ -7,7 +7,7 @@ inputs:
   provided:
     hh_id:
       - 1
-    demographics__kind:
+    familie__kind:
       - true
     p_id:
       - 1

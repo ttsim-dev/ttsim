@@ -8,13 +8,13 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__alter:
+    alter:
       - 50
     hh_id:
       - 24
     p_id:
       - 24
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 1000.0

@@ -1,7 +1,7 @@
 ---
 info:
   note: 'Calculation error on the website: should be 210.13 instead of 209.13'
-  source: https://www.mags.nrw/grundsicherung-im-demographics__alter-und-bei-erwerbsminderung-viertes-kapitel-ssss-41-46a-sgb-xii
+  source: https://www.mags.nrw/grundsicherung-im-alter-und-bei-erwerbsminderung-viertes-kapitel-ssss-41-46a-sgb-xii
 inputs:
   assumed: {}
   provided:
@@ -11,43 +11,43 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - 25
       - 24
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - false
       - false
-    demographics__alter:
+    alter:
       - 67
       - 70
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1953
       - 1950
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
       - 1
-    demographics__geburtstag:
+    geburtstag:
       - 1
       - 1
     hh_id:
       - 19
       - 19
-    demographics__kind:
+    familie__kind:
       - false
       - false
     p_id:
       - 24
       - 25
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 25
       - 24
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - -1
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
-    demographics__schwerbehindert_grad_g:
+    schwerbehindert_grad_g:
       - false
       - true
-    demographics__vermögen_eg:
+    vermögen_eg:
       - 0.0
       - 0.0
     einkommensteuer__betrag_y_sn:

@@ -8,13 +8,13 @@ inputs:
     hh_id:
       - 2
       - 2
-    demographics__kind:
+    familie__kind:
       - false
       - true
     p_id:
       - 2
       - 3
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 3
       - 2
     einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:

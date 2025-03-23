@@ -159,13 +159,13 @@ def test_fail_if_pid_is_non_unique():
         "expected_error_message",
     ),
     [
-        ("demographics__p_id_ehepartner", "not a valid p_id in\nthe input data"),
+        ("familie__p_id_ehepartner", "not a valid p_id in\nthe input data"),
         (
             "arbeitslosengeld_2__p_id_einstandspartner",
             "not a\nvalid p_id in the input data",
         ),
-        ("demographics__p_id_elternteil_1", "not a valid p_id\nin the input data"),
-        ("demographics__p_id_elternteil_2", "not a valid p_id\nin the input data"),
+        ("familie__p_id_elternteil_1", "not a valid p_id\nin the input data"),
+        ("familie__p_id_elternteil_2", "not a valid p_id\nin the input data"),
     ],
 )
 def test_fail_if_foreign_key_points_to_non_existing_pid(
@@ -197,10 +197,10 @@ def test_allow_minus_one_as_foreign_key(foreign_key_path):
         "expected_error_message",
     ),
     [
-        ("demographics__p_id_ehepartner", "are equal to the p_id"),
+        ("familie__p_id_ehepartner", "are equal to the p_id"),
         ("arbeitslosengeld_2__p_id_einstandspartner", "are equal to\nthe p_id"),
-        ("demographics__p_id_elternteil_1", "are equal to the p_id"),
-        ("demographics__p_id_elternteil_2", "are equal to the p_id"),
+        ("familie__p_id_elternteil_1", "are equal to the p_id"),
+        ("familie__p_id_elternteil_2", "are equal to the p_id"),
     ],
 )
 def test_fail_if_foreign_key_points_to_pid_of_same_row(
@@ -690,22 +690,22 @@ def test_provide_endogenous_groupings(data, functions_overridden):
             "- hh_id: Conversion from input type float64 to int",
         ),
         (
-            {"demographics__wohnort_ost": pd.Series([1.1, 0.0, 1.0])},
+            {"wohnort_ost": pd.Series([1.1, 0.0, 1.0])},
             {},
-            "- demographics__wohnort_ost: Conversion from input type float64 to bool",
+            "- wohnort_ost: Conversion from input type float64 to bool",
         ),
         (
             {
                 "hh_id": pd.Series([1.0, 2.0, 3.0]),
-                "demographics__wohnort_ost": pd.Series([2, 0, 1]),
+                "wohnort_ost": pd.Series([2, 0, 1]),
             },
             {},
-            "- demographics__wohnort_ost: Conversion from input type int64 to bool",
+            "- wohnort_ost: Conversion from input type int64 to bool",
         ),
         (
-            {"demographics__wohnort_ost": pd.Series(["True", "False"])},
+            {"wohnort_ost": pd.Series(["True", "False"])},
             {},
-            "- demographics__wohnort_ost: Conversion from input type object to bool",
+            "- wohnort_ost: Conversion from input type object to bool",
         ),
         (
             {

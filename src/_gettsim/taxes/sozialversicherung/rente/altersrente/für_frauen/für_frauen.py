@@ -8,7 +8,7 @@ from _gettsim.function_types import policy_function
 
 @policy_function(end_date="1989-12-17", leaf_name="altersgrenze")
 def altersgrenze_ohne_staffelung(
-    demographics__geburtsjahr: int,  # noqa: ARG001
+    geburtsjahr: int,  # noqa: ARG001
     ges_rente_params: dict,
 ) -> float:
     """Full retirement age (FRA) for women.
@@ -19,8 +19,8 @@ def altersgrenze_ohne_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -29,7 +29,7 @@ def altersgrenze_ohne_staffelung(
     Full retirement age for women.
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (demographics__geburtsjahr).
+    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"]
@@ -37,8 +37,8 @@ def altersgrenze_ohne_staffelung(
 
 @policy_function(start_date="1989-12-18", leaf_name="altersgrenze")
 def altersgrenze_mit_staffelung(
-    demographics__geburtsjahr: int,
-    demographics__geburtsmonat: int,
+    geburtsjahr: int,
+    geburtsmonat: int,
     ges_rente_params: dict,
 ) -> float:
     """Full retirement age (FRA) for women.
@@ -49,10 +49,10 @@ def altersgrenze_mit_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
-    demographics__geburtsmonat
-        See basic input variable :ref:`demographics__geburtsmonat <demographics__geburtsmonat>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
+    geburtsmonat
+        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -62,7 +62,7 @@ def altersgrenze_mit_staffelung(
 
     """
     if (
-        demographics__geburtsjahr
+        geburtsjahr
         <= ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][
             "max_birthyear_old_regime"
         ]
@@ -71,7 +71,7 @@ def altersgrenze_mit_staffelung(
             "entry_age_old_regime"
         ]
     elif (
-        demographics__geburtsjahr
+        geburtsjahr
         >= ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][
             "min_birthyear_new_regime"
         ]
@@ -80,16 +80,16 @@ def altersgrenze_mit_staffelung(
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][
-            demographics__geburtsjahr
-        ][demographics__geburtsmonat]
+        out = ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][geburtsjahr][
+            geburtsmonat
+        ]
 
     return out
 
 
 @policy_function(end_date="1989-12-17", leaf_name="altersgrenze_vorzeitig")
 def altersgrenze_vorzeitig_ohne_staffelung(
-    demographics__geburtsjahr: int,  # noqa: ARG001
+    geburtsjahr: int,  # noqa: ARG001
     ges_rente_params: dict,
 ) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
@@ -100,8 +100,8 @@ def altersgrenze_vorzeitig_ohne_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -111,7 +111,7 @@ def altersgrenze_vorzeitig_ohne_staffelung(
 
     """
 
-    # TODO(@MImmesberger): Remove fake dependency (demographics__geburtsjahr).
+    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
@@ -123,8 +123,8 @@ def altersgrenze_vorzeitig_ohne_staffelung(
     leaf_name="altersgrenze_vorzeitig",
 )
 def altersgrenze_vorzeitig_mit_staffelung(
-    demographics__geburtsjahr: int,
-    demographics__geburtsmonat: int,
+    geburtsjahr: int,
+    geburtsmonat: int,
     ges_rente_params: dict,
 ) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
@@ -135,10 +135,10 @@ def altersgrenze_vorzeitig_mit_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
-    demographics__geburtsmonat
-        See basic input variable :ref:`demographics__geburtsmonat <demographics__geburtsmonat>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
+    geburtsmonat
+        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -148,7 +148,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
 
     """
     if (
-        demographics__geburtsjahr
+        geburtsjahr
         <= ges_rente_params["altersgrenze_für_frauen_vorzeitig"][
             "max_birthyear_old_regime"
         ]
@@ -157,7 +157,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
             "entry_age_old_regime"
         ]
     elif (
-        demographics__geburtsjahr
+        geburtsjahr
         >= ges_rente_params["altersgrenze_für_frauen_vorzeitig"][
             "min_birthyear_new_regime"
         ]
@@ -166,16 +166,16 @@ def altersgrenze_vorzeitig_mit_staffelung(
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_für_frauen_vorzeitig"][
-            demographics__geburtsjahr
-        ][demographics__geburtsmonat]
+        out = ges_rente_params["altersgrenze_für_frauen_vorzeitig"][geburtsjahr][
+            geburtsmonat
+        ]
 
     return out
 
 
 @policy_function(start_date="1996-09-27", leaf_name="altersgrenze_vorzeitig")
 def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
-    demographics__geburtsjahr: int,  # noqa: ARG001
+    geburtsjahr: int,  # noqa: ARG001
     ges_rente_params: dict,
 ) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
@@ -186,8 +186,8 @@ def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -197,7 +197,7 @@ def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
 
     """
 
-    # TODO(@MImmesberger): Remove fake dependency (demographics__geburtsjahr).
+    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
@@ -205,7 +205,7 @@ def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
 
 @policy_function(end_date="1997-12-15", leaf_name="grundsätzlich_anspruchsberechtigt")
 def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
-    demographics__weiblich: bool,
+    weiblich: bool,
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtsbeitragsjahre_ab_alter_40: float,
     ges_rente_params: dict,
@@ -219,8 +219,8 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
 
     Parameters
     ----------
-    demographics__weiblich
-        See basic input variable :ref:`demographics__weiblich <demographics__weiblich>`.
+    weiblich
+        See basic input variable :ref:`weiblich <weiblich>`.
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         See :func:`sozialversicherung__rente__wartezeit_15_jahre_erfüllt`
     pflichtsbeitragsjahre_ab_alter_40
@@ -236,7 +236,7 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     """
 
     out = (
-        demographics__weiblich
+        weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtsbeitragsjahre_ab_alter_40
         > ges_rente_params["rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40"]
@@ -251,10 +251,10 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     leaf_name="grundsätzlich_anspruchsberechtigt",
 )
 def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
-    demographics__weiblich: bool,
+    weiblich: bool,
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtsbeitragsjahre_ab_alter_40: float,
-    demographics__geburtsjahr: int,
+    geburtsjahr: int,
     ges_rente_params: dict,
 ) -> bool:
     """Eligibility for Altersrente für Frauen (pension for women).
@@ -267,14 +267,14 @@ def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
 
     Parameters
     ----------
-    demographics__weiblich
-        See basic input variable :ref:`demographics__weiblich <demographics__weiblich>`.
+    weiblich
+        See basic input variable :ref:`weiblich <weiblich>`.
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         See :func:`sozialversicherung__rente__wartezeit_15_jahre_erfüllt`
     pflichtsbeitragsjahre_ab_alter_40
         See basic input variable :ref:`pflichtsbeitragsjahre_ab_alter_40 <pflichtsbeitragsjahre_ab_alter_40>`.
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -285,12 +285,11 @@ def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
     """
 
     out = (
-        demographics__weiblich
+        weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtsbeitragsjahre_ab_alter_40
         > ges_rente_params["rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40"]
-        and demographics__geburtsjahr
-        < ges_rente_params["first_birthyear_without_rente_für_frauen"]
+        and geburtsjahr < ges_rente_params["first_birthyear_without_rente_für_frauen"]
     )
 
     return out

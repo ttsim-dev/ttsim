@@ -49,7 +49,7 @@ def betrag_m_mit_grundrente(
     params_key_for_rounding="ges_rente",
 )
 def bruttorente_m_mit_harter_hinzuverdienstgrenze(
-    demographics__alter: int,
+    alter: int,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     bruttorente_basisbetrag_m: float,
@@ -61,8 +61,8 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
         See :func:`sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze`.
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
@@ -79,8 +79,7 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     # TODO (@MImmesberger): Use age with monthly precision.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     if (
-        demographics__alter
-        >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
+        alter >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     ) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         <= ges_rente_params["hinzuverdienstgrenze"]
@@ -99,7 +98,7 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     params_key_for_rounding="ges_rente",
 )
 def bruttorente_m_mit_hinzuverdienstdeckel(
-    demographics__alter: int,
+    alter: int,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     differenz_bruttolohn_hinzuverdienstdeckel_m: float,
@@ -112,8 +111,8 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
         See :func:`sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze`.
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
@@ -131,7 +130,7 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     if (
         differenz_bruttolohn_hinzuverdienstdeckel_m > 0
-        and demographics__alter
+        and alter
         <= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
         and einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         > 0
@@ -152,7 +151,7 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
 )
 def zahlbetrag_ohne_deckel_m(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    demographics__alter: int,
+    alter: int,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     bruttorente_basisbetrag_m: float,
     differenz_bruttolohn_hinzuverdienstgrenze_m: float,
@@ -165,8 +164,8 @@ def zahlbetrag_ohne_deckel_m(  # noqa: PLR0913
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y>`.
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
         See :func:`sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze`.
     bruttorente_basisbetrag_m
@@ -184,8 +183,7 @@ def zahlbetrag_ohne_deckel_m(  # noqa: PLR0913
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     # No deduction because of age or low earnings
     if (
-        demographics__alter
-        >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
+        alter >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     ) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         <= ges_rente_params["hinzuverdienstgrenze"]
@@ -337,13 +335,13 @@ def bruttorente_basisbetrag_m(
 
 
 @policy_function()
-def rentenwert(demographics__wohnort_ost: bool, ges_rente_params: dict) -> float:
+def rentenwert(wohnort_ost: bool, ges_rente_params: dict) -> float:
     """Select the rentenwert depending on place of living.
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See basic input variable :ref:`demographics__wohnort_ost <demographics__wohnort_ost>`.
+    wohnort_ost
+        See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -353,7 +351,7 @@ def rentenwert(demographics__wohnort_ost: bool, ges_rente_params: dict) -> float
     """
     params = ges_rente_params["rentenwert"]
 
-    out = params["ost"] if demographics__wohnort_ost else params["west"]
+    out = params["ost"] if wohnort_ost else params["west"]
 
     return float(out)
 
@@ -479,7 +477,7 @@ def zugangsfaktor(  # noqa: PLR0913
 
 @policy_function()
 def entgeltpunkte_west_updated(
-    demographics__wohnort_ost: bool,
+    wohnort_ost: bool,
     sozialversicherung__rente__entgeltpunkte_west: float,
     neue_entgeltpunkte: float,
 ) -> float:
@@ -492,8 +490,8 @@ def entgeltpunkte_west_updated(
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See basic input variable :ref:`demographics__wohnort_ost <demographics__wohnort_ost>`.
+    wohnort_ost
+        See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
     sozialversicherung__rente__entgeltpunkte_west
         See basic input variable :ref:`ententgeltpunkte_westgeltp <sozialversicherung__rente__entgeltpunkte_west>`.
     neue_entgeltpunkte
@@ -503,7 +501,7 @@ def entgeltpunkte_west_updated(
     -------
 
     """
-    if demographics__wohnort_ost:
+    if wohnort_ost:
         out = sozialversicherung__rente__entgeltpunkte_west
     else:
         out = sozialversicherung__rente__entgeltpunkte_west + neue_entgeltpunkte
@@ -512,7 +510,7 @@ def entgeltpunkte_west_updated(
 
 @policy_function()
 def entgeltpunkte_ost_updated(
-    demographics__wohnort_ost: bool,
+    wohnort_ost: bool,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     neue_entgeltpunkte: float,
 ) -> float:
@@ -525,8 +523,8 @@ def entgeltpunkte_ost_updated(
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See basic input variable :ref:`demographics__wohnort_ost <demographics__wohnort_ost>`.
+    wohnort_ost
+        See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
     sozialversicherung__rente__entgeltpunkte_ost
         See basic input variable :ref:`sozialversicherung__rente__entgeltpunkte_ost <sozialversicherung__rente__entgeltpunkte_ost>`.
     neue_entgeltpunkte
@@ -536,7 +534,7 @@ def entgeltpunkte_ost_updated(
     -------
 
     """
-    if demographics__wohnort_ost:
+    if wohnort_ost:
         out = sozialversicherung__rente__entgeltpunkte_ost + neue_entgeltpunkte
     else:
         out = sozialversicherung__rente__entgeltpunkte_ost
@@ -546,7 +544,7 @@ def entgeltpunkte_ost_updated(
 @policy_function()
 def neue_entgeltpunkte(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    demographics__wohnort_ost: bool,
+    wohnort_ost: bool,
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     ges_rente_params: dict,
 ) -> float:
@@ -556,8 +554,8 @@ def neue_entgeltpunkte(
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    demographics__wohnort_ost
-        See :func:`demographics__wohnort_ost`.
+    wohnort_ost
+        See :func:`wohnort_ost`.
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m
         See :func:
         `sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m`.
@@ -569,7 +567,7 @@ def neue_entgeltpunkte(
     """
 
     # Scale bruttolohn up if earned in eastern Germany
-    if demographics__wohnort_ost:
+    if wohnort_ost:
         bruttolohn_scaled_east = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
             * ges_rente_params["umrechnung_entgeltpunkte_beitrittsgebiet"]

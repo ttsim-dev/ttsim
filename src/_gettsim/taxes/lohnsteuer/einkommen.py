@@ -190,7 +190,7 @@ def vorsorge_krankenv_option_a(
 )
 def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    demographics__wohnort_ost: bool,
+    wohnort_ost: bool,
     sozialv_beitr_params: dict,
     vorsorge_krankenv_option_a: float,
     vorsorge_krankenv_option_b: float,
@@ -204,8 +204,8 @@ def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y:
       See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y>`.
-    demographics__wohnort_ost:
-      See basic input variable :ref:`demographics__wohnort_ost <demographics__wohnort_ost>`.
+    wohnort_ost:
+      See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
     sozialv_beitr_params:
         See params documentation :ref:`sozialv_beitr_params`
     vorsorge_krankenv_option_a:
@@ -223,7 +223,7 @@ def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     """
 
     # 1. Rentenversicherungsbeiträge, §39b (2) Nr. 3a EStG.
-    if demographics__wohnort_ost:
+    if wohnort_ost:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
             12 * sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]["ost"],

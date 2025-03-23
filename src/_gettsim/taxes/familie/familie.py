@@ -4,25 +4,12 @@ These information are used throughout modules of gettsim.
 
 """
 
-import datetime
-
 import numpy
 
 from _gettsim.aggregation import AggregateByGroupSpec
 from _gettsim.function_types import group_by_function, policy_function
 
 aggregation_specs = {
-    "anzahl_erwachsene_hh": AggregateByGroupSpec(
-        source="erwachsen",
-        aggr="sum",
-    ),
-    "anzahl_rentenbezieher_hh": AggregateByGroupSpec(
-        source="sozialversicherung__rente__bezieht_rente",
-        aggr="sum",
-    ),
-    "anzahl_personen_hh": AggregateByGroupSpec(
-        aggr="count",
-    ),
     "anzahl_personen_ehe": AggregateByGroupSpec(
         aggr="count",
     ),
@@ -125,23 +112,6 @@ def kind_bis_17(alter: int, kind: bool) -> bool:
 
 
 @policy_function()
-def alter_bis_24(alter: int) -> bool:
-    """Age is 24 years at most.
-
-    Trivial, but necessary in order to use the target for aggregation.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-
-    Returns
-    -------
-    """
-    return alter <= 24
-
-
-@policy_function()
 def erwachsen(kind: bool) -> bool:
     """Calculate if adult.
 
@@ -160,86 +130,10 @@ def erwachsen(kind: bool) -> bool:
     return out
 
 
-@policy_function()
-def erwachsene_alle_rentenbezieher_hh(
-    anzahl_erwachsene_hh: int, anzahl_rentenbezieher_hh: int
-) -> bool:
-    """Calculate if all adults in the household are pensioners.
-
-    Parameters
-    ----------
-    anzahl_erwachsene_hh
-        See :func:`anzahl_erwachsene_hh`.
-    anzahl_rentenbezieher_hh
-        See :func:`anzahl_rentenbezieher_hh`.
-
-    Returns
-    -------
-
-    """
-    return anzahl_erwachsene_hh == anzahl_rentenbezieher_hh
-
-
-@policy_function()
-def geburtsdatum(
-    geburtsjahr: int,
-    geburtsmonat: int,
-    geburtstag: int,
-) -> numpy.datetime64:
-    """Create date of birth datetime variable.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    geburtstag
-        See basic input variable :ref:`geburtstag <geburtstag>`.
-
-    Returns
-    -------
-
-    """
-    out = numpy.datetime64(
-        datetime.datetime(
-            geburtsjahr,
-            geburtsmonat,
-            geburtstag,
-        )
-    ).astype("datetime64[D]")
-    return out
-
-
-@policy_function()
-def alter_monate(geburtsdatum: numpy.datetime64, elterngeld_params: dict) -> float:
-    """Calculate age of youngest child in months.
-
-    Parameters
-    ----------
-    hh_id
-        See basic input variable :ref:`hh_id <hh_id>`.
-    geburtsdatum
-        See :func:`geburtsdatum`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-    Returns
-    -------
-
-    """
-
-    # TODO(@hmgaudecker): Remove explicit cast when vectorisation is enabled.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/515
-    age_in_days = elterngeld_params["datum"] - numpy.datetime64(geburtsdatum)
-
-    out = age_in_days / 30.436875
-    return out.astype(float)
-
-
 @group_by_function()
 def ehe_id(
     p_id: numpy.ndarray[int],
-    demographics__p_id_ehepartner: numpy.ndarray[int],
+    p_id_ehepartner: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
     """
     Compute the ID of the Ehe for each person.
@@ -249,7 +143,7 @@ def ehe_id(
     result = []
 
     for index, current_p_id in enumerate(p_id):
-        current_p_id_ehepartner = demographics__p_id_ehepartner[index]
+        current_p_id_ehepartner = p_id_ehepartner[index]
 
         if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_ehe_id:
             result.append(p_id_to_ehe_id[current_p_id_ehepartner])

@@ -5,40 +5,40 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - false
       - false
-    demographics__alter:
+    alter:
       - 37
       - 35
-    demographics__arbeitsstunden_w:
+    arbeitsstunden_w:
       - 38.0
       - 30.0
-    demographics__behinderungsgrad:
+    behinderungsgrad:
       - 0
       - 0
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1980
       - 1982
     hh_id:
       - 18
       - 18
-    demographics__kind:
+    familie__kind:
       - false
       - false
     p_id:
       - 25
       - 26
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 26
       - 25
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - -1
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
       - false
     einkommensteuer__abzüge__betreuungskosten_m:

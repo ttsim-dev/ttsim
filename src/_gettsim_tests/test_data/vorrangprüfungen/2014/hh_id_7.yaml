@@ -23,28 +23,28 @@ inputs:
     arbeitslosengeld_2__regelbedarf_m_bg:
       - 1046.0
       - 1046.0
-    demographics__alter:
+    alter:
       - 75
       - 50
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1939
       - 1964
     hh_id:
       - 7
       - 7
-    demographics__kind:
+    familie__kind:
       - false
       - false
     p_id:
       - 18
       - 19
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - -1
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
-    demographics__vermögen:
+    vermögen:
       - 78000.0
       - 0.0
     jahr:

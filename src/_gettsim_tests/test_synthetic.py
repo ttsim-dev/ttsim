@@ -212,7 +212,7 @@ def test_specs_heterogeneous(col, expected, synthetic_data_spec_heterogeneous_ma
         (
             2,
             0,
-            {"demographics__alter": [30]},
+            {"alter": [30]},
             None,
             pytest.raises(ValueError, match="Length of"),
         ),
@@ -254,10 +254,10 @@ def test_fail_if_functions_and_columns_overlap(
             "synthetic_data_spec_heterogeneous_not_married",
             {
                 "p_id": list(range(33)),
-                "demographics__p_id_elternteil_1": [
+                "familie__p_id_elternteil_1": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
-                "demographics__p_id_elternteil_2": [
+                "familie__p_id_elternteil_2": [
                     -1 if i % 3 != 2 else i - 1 for i in range(33)
                 ],
                 "kindergeld__p_id_empfänger": [
@@ -266,7 +266,7 @@ def test_fail_if_functions_and_columns_overlap(
                 "erziehungsgeld__p_id_empfänger": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
-                "demographics__p_id_ehepartner": [-1 for i in range(33)],
+                "familie__p_id_ehepartner": [-1 for i in range(33)],
                 "arbeitslosengeld_2__p_id_einstandspartner": [
                     i + 1 if i % 3 == 0 else i - 1 if i % 3 == 1 else -1
                     for i in range(33)
@@ -280,10 +280,10 @@ def test_fail_if_functions_and_columns_overlap(
             "synthetic_data_spec_heterogeneous_married",
             {
                 "p_id": list(range(33)),
-                "demographics__p_id_elternteil_1": [
+                "familie__p_id_elternteil_1": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
-                "demographics__p_id_elternteil_2": [
+                "familie__p_id_elternteil_2": [
                     -1 if i % 3 != 2 else i - 1 for i in range(33)
                 ],
                 "kindergeld__p_id_empfänger": [
@@ -292,7 +292,7 @@ def test_fail_if_functions_and_columns_overlap(
                 "erziehungsgeld__p_id_empfänger": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
-                "demographics__p_id_ehepartner": [
+                "familie__p_id_ehepartner": [
                     i + 1 if i % 3 == 0 else i - 1 if i % 3 == 1 else -1
                     for i in range(33)
                 ],
@@ -309,11 +309,11 @@ def test_fail_if_functions_and_columns_overlap(
             "synthetic_data_alleinerziehend",
             {
                 "p_id": [0, 1],
-                "demographics__p_id_elternteil_1": [-1, 0],
-                "demographics__p_id_elternteil_2": [-1, -1],
+                "familie__p_id_elternteil_1": [-1, 0],
+                "familie__p_id_elternteil_2": [-1, -1],
                 "kindergeld__p_id_empfänger": [-1, 0],
                 "erziehungsgeld__p_id_empfänger": [-1, 0],
-                "demographics__p_id_ehepartner": [-1, -1],
+                "familie__p_id_ehepartner": [-1, -1],
                 "arbeitslosengeld_2__p_id_einstandspartner": [-1, -1],
                 "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
                     -1,
@@ -325,11 +325,11 @@ def test_fail_if_functions_and_columns_overlap(
             "synthetic_data_no_children",
             {
                 "p_id": [0, 1],
-                "demographics__p_id_elternteil_1": [-1, -1],
-                "demographics__p_id_elternteil_2": [-1, -1],
+                "familie__p_id_elternteil_1": [-1, -1],
+                "familie__p_id_elternteil_2": [-1, -1],
                 "kindergeld__p_id_empfänger": [-1, -1],
                 "erziehungsgeld__p_id_empfänger": [-1, -1],
-                "demographics__p_id_ehepartner": [1, 0],
+                "familie__p_id_ehepartner": [1, 0],
                 "arbeitslosengeld_2__p_id_einstandspartner": [1, 0],
                 "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
                     -1,

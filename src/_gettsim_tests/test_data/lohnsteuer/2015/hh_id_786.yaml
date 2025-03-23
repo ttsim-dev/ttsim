@@ -4,18 +4,18 @@ info:
   source: ''
 inputs:
   assumed:
-    demographics__p_id_elternteil_1: -1
-    demographics__p_id_elternteil_2: -1
+    familie__p_id_elternteil_1: -1
+    familie__p_id_elternteil_2: -1
   provided:
-    demographics__alter:
+    alter:
       - 25
-    demographics__arbeitsstunden_w:
+    arbeitsstunden_w:
       - 40.0
     hh_id:
       - 786
     p_id:
       - 786
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 241.62857142857143

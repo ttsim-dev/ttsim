@@ -7,11 +7,11 @@ inputs:
   provided:
     hh_id:
       - 4
-    demographics__kind:
+    familie__kind:
       - false
     p_id:
       - 4
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - -1
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y:
       - 2500.0

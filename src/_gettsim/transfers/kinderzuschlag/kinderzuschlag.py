@@ -8,7 +8,7 @@ def betrag_m_bg(
     anspruchshöhe_m_bg: float,
     vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool,
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool,
-    demographics__anzahl_rentenbezieher_hh: int,
+    anzahl_rentenbezieher_hh: int,
 ) -> float:
     """Aggregate child benefit on household level.
 
@@ -20,8 +20,8 @@ def betrag_m_bg(
         See :func:`vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
         See :func:`vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
-    demographics__anzahl_rentenbezieher_hh
-        See :func:`demographics__anzahl_rentenbezieher_hh`.
+    anzahl_rentenbezieher_hh
+        See :func:`anzahl_rentenbezieher_hh`.
 
     Returns
     -------
@@ -32,7 +32,7 @@ def betrag_m_bg(
         and (
             not vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
         )
-    ) or (demographics__anzahl_rentenbezieher_hh > 0):
+    ) or (anzahl_rentenbezieher_hh > 0):
         out = 0.0
     else:
         out = anspruchshöhe_m_bg
@@ -66,7 +66,7 @@ def anspruchshöhe_m(
 @policy_function()
 def anspruchshöhe_m_bg(
     basisbetrag_m_bg: float,
-    demographics__vermögen_bg: float,
+    vermögen_bg: float,
     vermögensfreibetrag_bg: float,
 ) -> float:
     """Set preliminary child benefit to zero if it exceeds the wealth exemption.
@@ -75,8 +75,8 @@ def anspruchshöhe_m_bg(
     ----------
     basisbetrag_m_bg
         See :func:`basisbetrag_m_bg`.
-    demographics__vermögen_bg
-        See basic input variable :ref:`demographics__vermögen_bg <demographics__vermögen_bg>`.
+    vermögen_bg
+        See basic input variable :ref:`vermögen_bg <vermögen_bg>`.
     vermögensfreibetrag_bg
         See :func:`vermögensfreibetrag_bg`.
 
@@ -85,9 +85,9 @@ def anspruchshöhe_m_bg(
 
     """
 
-    if demographics__vermögen_bg > vermögensfreibetrag_bg:
+    if vermögen_bg > vermögensfreibetrag_bg:
         out = max(
-            basisbetrag_m_bg - (demographics__vermögen_bg - vermögensfreibetrag_bg),
+            basisbetrag_m_bg - (vermögen_bg - vermögensfreibetrag_bg),
             0.0,
         )
     else:

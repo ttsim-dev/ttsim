@@ -67,35 +67,35 @@ def anzahl_kinderfreibeträge(
 
 @policy_function()
 def p_id_kinderfreibetragsempfänger_1(
-    demographics__p_id_elternteil_1: int,
+    familie__p_id_elternteil_1: int,
 ) -> int:
     """Assigns child allowance to parent 1.
 
     Parameters
     ----------
-    demographics__p_id_elternteil_1
-        See :func:`demographics__p_id_elternteil_1`.
+    familie__p_id_elternteil_1
+        See :func:`familie__p_id_elternteil_1`.
 
     Returns
     -------
 
     """
-    return demographics__p_id_elternteil_1
+    return familie__p_id_elternteil_1
 
 
 @policy_function()
 def p_id_kinderfreibetragsempfänger_2(
-    demographics__p_id_elternteil_2: int,
+    familie__p_id_elternteil_2: int,
 ) -> int:
     """Assigns child allowance to parent 2.
 
     Parameters
     ----------
-    demographics__p_id_elternteil_2
-        See :func:`demographics__p_id_elternteil_2`.
+    familie__p_id_elternteil_2
+        See :func:`familie__p_id_elternteil_2`.
 
     Returns
     -------
 
     """
-    return demographics__p_id_elternteil_2
+    return familie__p_id_elternteil_2

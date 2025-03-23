@@ -14,23 +14,23 @@ inputs:
     sozialversicherung__arbeitslosen__monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren:
       - 12.0
   provided:
-    demographics__alter:
+    alter:
       - 30
-    demographics__arbeitsstunden_w:
+    arbeitsstunden_w:
       - 0.0
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1989
     hh_id:
       - 1
-    demographics__kind:
+    familie__kind:
       - false
     p_id:
       - 1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
-    demographics__wohnort_ost:
+    wohnort_ost:
       - true
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m:
       - 1000.0

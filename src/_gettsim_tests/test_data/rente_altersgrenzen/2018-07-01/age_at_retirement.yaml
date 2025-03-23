@@ -4,13 +4,13 @@ info:
   source: ''
 inputs:
   assumed:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1952
       - 1952
       - 1953
       - 1953
       - 1954
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
       - 2
       - 1

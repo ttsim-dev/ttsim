@@ -172,23 +172,23 @@ TYPES_INPUT_VARIABLES = {
         "eigenbedarf_gedeckt": bool,
         "p_id_einstandspartner": int,
     },
-    "demographics": {
+    "familie": {
         "alleinerziehend": bool,
-        "alter": int,
-        "arbeitsstunden_w": float,  # Temporary namespace
-        "behinderungsgrad": int,
-        "geburtsjahr": int,
-        "geburtsmonat": int,
-        "geburtstag": int,
         "kind": bool,
         "p_id_ehepartner": int,
         "p_id_elternteil_1": int,
         "p_id_elternteil_2": int,
-        "schwerbehindert_grad_g": bool,
-        "vermögen": float,
-        "weiblich": bool,
-        "wohnort_ost": bool,
     },
+    "alter": int,
+    "arbeitsstunden_w": float,
+    "behinderungsgrad": int,
+    "geburtsjahr": int,
+    "geburtsmonat": int,
+    "geburtstag": int,
+    "schwerbehindert_grad_g": bool,
+    "vermögen": float,
+    "weiblich": bool,
+    "wohnort_ost": bool,
     "einkommensteuer": {
         "abzüge": {
             "beitrag_private_rentenversicherung_m": float,
@@ -312,8 +312,8 @@ TYPES_INPUT_VARIABLES = {
 }
 
 FOREIGN_KEYS = [
-    ("demographics", "p_id_ehepartner"),
     ("arbeitslosengeld_2", "p_id_einstandspartner"),
-    ("demographics", "p_id_elternteil_1"),
-    ("demographics", "p_id_elternteil_2"),
+    ("familie", "p_id_ehepartner"),
+    ("familie", "p_id_elternteil_1"),
+    ("familie", "p_id_elternteil_2"),
 ]

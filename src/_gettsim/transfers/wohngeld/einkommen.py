@@ -93,7 +93,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     einkommensteuer__betrag_y_sn: float,
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y: float,
-    demographics__kind: bool,
+    familie__kind: bool,
     wohngeld_params: dict,
 ) -> float:
     """Calculate housing benefit subtractions on the individual level.
@@ -112,8 +112,8 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     sozialversicherung__kranken__beitrag__betrag_versicherter_y
         See :func:
         `sozialversicherung__kranken__beitrag__betrag_versicherter_y`.
-    demographics__kind
-        See basic input variable :ref:`demographics__kind <demographics__kind>`.
+    familie__kind
+        See basic input variable :ref:`familie__kind <familie__kind>`.
     wohngeld_params
         See params documentation :ref:`wohngeld_params <wohngeld_params>`.
 
@@ -126,7 +126,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
         + (sozialversicherung__rente__beitrag__betrag_versicherter_y > 0)
         + (sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0)
     )
-    if demographics__kind:
+    if familie__kind:
         out = 0.0
     else:
         out = wohngeld_params["abzug_stufen"][abzug_stufen]
@@ -270,9 +270,9 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
 def freibetrag_m_bis_2015(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     ist_kind_mit_erwerbseinkommen: bool,
-    demographics__behinderungsgrad: int,
-    demographics__alleinerziehend: bool,
-    demographics__kind: bool,
+    behinderungsgrad: int,
+    familie__alleinerziehend: bool,
+    familie__kind: bool,
     alleinerziehendenbonus: int,
     wohngeld_params: dict,
 ) -> float:
@@ -284,12 +284,12 @@ def freibetrag_m_bis_2015(  # noqa: PLR0913
         See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
     ist_kind_mit_erwerbseinkommen
         See :func:`ist_kind_mit_erwerbseinkommen`.
-    demographics__behinderungsgrad
-        See basic input variable :ref:`demographics__behinderungsgrad <demographics__behinderungsgrad>`.
-    demographics__alleinerziehend
-        See basic input variable :ref:`demographics__alleinerziehend <demographics__alleinerziehend>`.
-    demographics__kind
-        See basic input variable :ref:`demographics__kind <demographics__kind>`.
+    behinderungsgrad
+        See basic input variable :ref:`behinderungsgrad <behinderungsgrad>`.
+    familie__alleinerziehend
+        See basic input variable :ref:`familie__alleinerziehend <familie__alleinerziehend>`.
+    familie__kind
+        See basic input variable :ref:`familie__kind <familie__kind>`.
     alleinerziehendenbonus
         See :func:`alleinerziehendenbonus`.
     wohngeld_params
@@ -300,7 +300,7 @@ def freibetrag_m_bis_2015(  # noqa: PLR0913
 
     """
     freibetrag_behinderung_m = piecewise_polynomial(
-        demographics__behinderungsgrad,
+        behinderungsgrad,
         thresholds=[*list(wohngeld_params["freibetrag_behinderung"]), np.inf],
         rates=np.array([[0] * len(wohngeld_params["freibetrag_behinderung"])]),
         intercepts_at_lower_thresholds=[
@@ -316,7 +316,7 @@ def freibetrag_m_bis_2015(  # noqa: PLR0913
             wohngeld_params["freibetrag_kinder_m"]["arbeitendes_kind"],
         )
 
-    elif demographics__alleinerziehend and (not demographics__kind):
+    elif familie__alleinerziehend and (not familie__kind):
         freibetrag_kinder_m = (
             alleinerziehendenbonus
             * wohngeld_params["freibetrag_kinder_m"]["alleinerziehend"]
@@ -330,8 +330,8 @@ def freibetrag_m_bis_2015(  # noqa: PLR0913
 def freibetrag_m_ab_2016(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     ist_kind_mit_erwerbseinkommen: bool,
-    demographics__behinderungsgrad: int,
-    demographics__alleinerziehend: bool,
+    behinderungsgrad: int,
+    familie__alleinerziehend: bool,
     wohngeld_params: dict,
 ) -> float:
     """Calculate housing benefit subtracting for one individual since 2016.
@@ -342,12 +342,12 @@ def freibetrag_m_ab_2016(
         See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
     ist_kind_mit_erwerbseinkommen
         See :func:`ist_kind_mit_erwerbseinkommen`.
-    demographics__behinderungsgrad
-        See basic input variable :ref:`demographics__behinderungsgrad <demographics__behinderungsgrad>`.
-    demographics__alleinerziehend
-        See basic input variable :ref:`demographics__alleinerziehend <demographics__alleinerziehend>`.
-    demographics__kind
-        See basic input variable :ref:`demographics__kind <demographics__kind>`.
+    behinderungsgrad
+        See basic input variable :ref:`behinderungsgrad <behinderungsgrad>`.
+    familie__alleinerziehend
+        See basic input variable :ref:`familie__alleinerziehend <familie__alleinerziehend>`.
+    familie__kind
+        See basic input variable :ref:`familie__kind <familie__kind>`.
     wohngeld_params
         See params documentation :ref:`wohngeld_params <wohngeld_params>`.
     Returns
@@ -355,9 +355,7 @@ def freibetrag_m_ab_2016(
 
     """
     freibetrag_behinderung_m = (
-        wohngeld_params["freibetrag_behinderung"] / 12
-        if demographics__behinderungsgrad > 0
-        else 0
+        wohngeld_params["freibetrag_behinderung"] / 12 if behinderungsgrad > 0 else 0
     )
 
     if ist_kind_mit_erwerbseinkommen:
@@ -365,7 +363,7 @@ def freibetrag_m_ab_2016(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
             wohngeld_params["freibetrag_kinder_m"]["arbeitendes_kind"],
         )
-    elif demographics__alleinerziehend:
+    elif familie__alleinerziehend:
         freibetrag_kinder_m = wohngeld_params["freibetrag_kinder_m"]["alleinerziehend"]
     else:
         freibetrag_kinder_m = 0.0

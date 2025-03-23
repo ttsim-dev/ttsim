@@ -4,13 +4,13 @@ info:
   source: Own calculations
 inputs:
   assumed:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1970
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 6
     p_id:
       - 8
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
     sozialversicherung__rente__bezieht_rente:
       - true

@@ -4,13 +4,13 @@ info:
   source: Own calculations
 inputs:
   assumed:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1970
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 4
     p_id:
       - 27
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
     jahr:
       - 2020

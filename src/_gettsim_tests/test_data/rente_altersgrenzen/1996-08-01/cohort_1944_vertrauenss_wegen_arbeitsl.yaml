@@ -5,15 +5,15 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1944
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 2
     hh_id:
       - 24
     p_id:
       - 24
-    demographics__weiblich:
+    weiblich:
       - false
     sozialversicherung__rente__altersrente__für_frauen__pflichtsbeitragsjahre_ab_alter_40:
       - 0.0

@@ -5,13 +5,13 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__alter:
+    alter:
       - 64
     hh_id:
       - 0
     p_id:
       - 0
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 600.0

@@ -241,7 +241,7 @@ For example, in `demographics.py`, we could have:
 from _gettsim.aggregation import AggregateByGroupSpec
 
 aggregation_specs = {
-    "anzahl_kinder_hh": AggregateByGroupSpec(source="demographics__kind", aggr="sum"),
+    "anzahl_kinder_hh": AggregateByGroupSpec(source="familie__kind", aggr="sum"),
     "anzahl_personen_hh": AggregateByGroupSpec(aggr="count"),
 }
 ```

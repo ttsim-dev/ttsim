@@ -8,19 +8,19 @@ inputs:
   provided:
     alleinstehend:
       - true
-    demographics__alter:
+    alter:
       - 70
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1951
     hh_id:
       - 10
-    demographics__kind:
+    familie__kind:
       - false
     p_id:
       - 10
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - -1
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y:
       - 0.0

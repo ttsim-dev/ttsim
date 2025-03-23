@@ -13,43 +13,43 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - true
       - false
-    demographics__alter:
+    alter:
       - 50
       - 16
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1972
       - 2006
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
       - 1
-    demographics__geburtstag:
+    geburtstag:
       - 1
       - 1
     hh_id:
       - 25
       - 25
-    demographics__kind:
+    familie__kind:
       - false
       - true
     p_id:
       - 34
       - 35
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - -1
       - -1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - 34
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
-    demographics__schwerbehindert_grad_g:
+    schwerbehindert_grad_g:
       - true
       - false
-    demographics__vermögen_eg:
+    vermögen_eg:
       - 5400.0
       - 0.0
     einkommensteuer__betrag_y_sn:

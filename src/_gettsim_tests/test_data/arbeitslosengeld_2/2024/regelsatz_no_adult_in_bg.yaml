@@ -10,19 +10,19 @@ inputs:
       - false
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - false
-    demographics__alter:
+    alter:
       - 17
     hh_id:
       - 0
-    demographics__kind:
+    familie__kind:
       - true
     p_id:
       - 0
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
     jahr:
       - 2005

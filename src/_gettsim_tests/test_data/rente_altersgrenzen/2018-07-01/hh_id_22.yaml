@@ -7,19 +7,19 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__alter:
+    alter:
       - 59
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1947
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
     hh_id:
       - 22
     p_id:
       - 22
-    demographics__weiblich:
+    weiblich:
       - false
-    demographics__wohnort_ost:
+    wohnort_ost:
       - true
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 8000.0

@@ -7,16 +7,16 @@ inputs:
     p_id:
       - 0
       - 1
-    demographics__geburtstag:
+    geburtstag:
       - 14
       - 1
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 7
       - 3
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1950
       - 1964
-    demographics__alter:
+    alter:
       - 73
       - 59
     hh_id:

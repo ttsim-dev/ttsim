@@ -5,7 +5,7 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1951
       - 1951
       - 1951
@@ -14,7 +14,7 @@ inputs:
       - 1951
       - 1951
       - 1951
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
       - 1
       - 1
@@ -41,7 +41,7 @@ inputs:
       - 5
       - 6
       - 7
-    demographics__weiblich:
+    weiblich:
       - true
       - true
       - true

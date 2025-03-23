@@ -5,13 +5,13 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__alter:
+    alter:
       - 35
-    demographics__arbeitsstunden_w:
+    arbeitsstunden_w:
       - 0.0
     hh_id:
       - 12
-    demographics__kind:
+    familie__kind:
       - false
     p_id:
       - 39

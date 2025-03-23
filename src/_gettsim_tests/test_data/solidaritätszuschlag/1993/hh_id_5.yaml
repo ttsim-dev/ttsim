@@ -9,11 +9,11 @@ inputs:
       - 0.0
     hh_id:
       - 5
-    demographics__kind:
+    familie__kind:
       - false
     p_id:
       - 5
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - -1
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn:
       - 3000.0

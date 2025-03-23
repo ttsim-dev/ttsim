@@ -47,7 +47,7 @@ def betrag_m(
 
 @policy_function()
 def monate_verbleibender_anspruchsdauer(
-    demographics__alter: int,
+    alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
     anwartschaftszeit: bool,
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
@@ -58,8 +58,8 @@ def monate_verbleibender_anspruchsdauer(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
         See basic input variable :ref:`monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren <monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren>`.
     anwartschaftszeit
@@ -74,7 +74,7 @@ def monate_verbleibender_anspruchsdauer(
 
     """
     nach_alter = piecewise_polynomial(
-        demographics__alter,
+        alter,
         thresholds=[
             *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
             np.inf,
@@ -128,10 +128,10 @@ def monate_verbleibender_anspruchsdauer(
 
 @policy_function()
 def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
-    demographics__alter: int,
+    alter: int,
     arbeitssuchend: bool,
     monate_verbleibender_anspruchsdauer: int,
-    demographics__arbeitsstunden_w: float,
+    arbeitsstunden_w: float,
     arbeitsl_geld_params: dict,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
 ) -> bool:
@@ -139,14 +139,14 @@ def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     arbeitssuchend
         See basic input variable :ref:`arbeitssuchend <arbeitssuchend>`.
     monate_verbleibender_anspruchsdauer
         See :func:`monate_verbleibender_anspruchsdauer`.
-    demographics__arbeitsstunden_w
-        See basic input variable :ref:`demographics__arbeitsstunden_w <demographics__arbeitsstunden_w>`.
+    arbeitsstunden_w
+        See basic input variable :ref:`arbeitsstunden_w <arbeitsstunden_w>`.
     arbeitsl_geld_params
         See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
@@ -163,8 +163,8 @@ def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
     out = (
         arbeitssuchend
         and (monate_verbleibender_anspruchsdauer > 0)
-        and (demographics__alter < regelaltersgrenze)
-        and (demographics__arbeitsstunden_w < arbeitsl_geld_params["stundengrenze"])
+        and (alter < regelaltersgrenze)
+        and (arbeitsstunden_w < arbeitsl_geld_params["stundengrenze"])
     )
 
     return out

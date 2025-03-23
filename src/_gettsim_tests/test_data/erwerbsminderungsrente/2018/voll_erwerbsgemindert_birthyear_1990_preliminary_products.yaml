@@ -4,13 +4,13 @@ info:
   source: Own calculations
 inputs:
   assumed:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1990
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 8
     p_id:
       - 24
-    demographics__wohnort_ost:
+    wohnort_ost:
       - true
     jahr:
       - 2018

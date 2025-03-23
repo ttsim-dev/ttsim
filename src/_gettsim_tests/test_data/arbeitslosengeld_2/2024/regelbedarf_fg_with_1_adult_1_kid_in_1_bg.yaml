@@ -18,25 +18,25 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - true
       - false
-    demographics__alter:
+    alter:
       - 40
       - 10
     hh_id:
       - 0
       - 0
-    demographics__kind:
+    familie__kind:
       - false
       - true
     p_id:
       - 0
       - 1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - 0
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
     einkommensteuer__gemeinsam_veranlagt:

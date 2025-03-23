@@ -197,15 +197,13 @@ def einkommen_m(
 
 
 @policy_function()
-def beitragsbemessungsgrenze_m(
-    demographics__wohnort_ost: bool, sozialv_beitr_params: dict
-) -> float:
+def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) -> float:
     """Income threshold up to which pension insurance payments apply.
 
     Parameters
     ----------
-    demographics__wohnort_ost
-        See :func:`demographics__wohnort_ost`.
+    wohnort_ost
+        See :func:`wohnort_ost`.
     sozialv_beitr_params
         See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
 
@@ -214,7 +212,7 @@ def beitragsbemessungsgrenze_m(
 
     """
     params = sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]
-    out = params["ost"] if demographics__wohnort_ost else params["west"]
+    out = params["ost"] if wohnort_ost else params["west"]
 
     return float(out)
 

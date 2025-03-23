@@ -6,14 +6,14 @@ from _gettsim.function_types import policy_function
 
 @policy_function()
 def pauschbetrag_behinderung_y(
-    demographics__behinderungsgrad: int, eink_st_abzuege_params: dict
+    behinderungsgrad: int, eink_st_abzuege_params: dict
 ) -> float:
     """Assign tax deduction allowance for handicaped to different handicap degrees.
 
     Parameters
     ----------
-    demographics__behinderungsgrad
-        See basic input variable :ref:`demographics__behinderungsgrad <demographics__behinderungsgrad>`.
+    behinderungsgrad
+        See basic input variable :ref:`behinderungsgrad <behinderungsgrad>`.
     eink_st_abzuege_params
         See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
 
@@ -27,10 +27,7 @@ def pauschbetrag_behinderung_y(
 
     # Select corresponding bin.
     selected_bin_index = (
-        np.searchsorted(
-            np.asarray([*bins, np.inf]), demographics__behinderungsgrad, side="right"
-        )
-        - 1
+        np.searchsorted(np.asarray([*bins, np.inf]), behinderungsgrad, side="right") - 1
     )
     selected_bin = bins[selected_bin_index]
 

@@ -19,31 +19,31 @@ inputs:
       - 0.0
       - 0.0
   provided:
-    demographics__alter:
+    alter:
       - 5
       - 30
-    demographics__arbeitsstunden_w:
+    arbeitsstunden_w:
       - 0.0
       - 0.0
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 2014
       - 1989
     hh_id:
       - 3
       - 3
-    demographics__kind:
+    familie__kind:
       - true
       - false
     p_id:
       - 3
       - 4
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - 4
       - -1
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
       - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m:

@@ -5,7 +5,7 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1940
       - 1940
       - 1940
@@ -18,7 +18,7 @@ inputs:
       - 1940
       - 1940
       - 1940
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
       - 1
       - 1
@@ -57,7 +57,7 @@ inputs:
       - 9
       - 10
       - 11
-    demographics__weiblich:
+    weiblich:
       - true
       - true
       - true

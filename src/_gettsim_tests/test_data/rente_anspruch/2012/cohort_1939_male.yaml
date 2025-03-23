@@ -5,14 +5,14 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1939
       - 1939
       - 1939
       - 1939
       - 1939
       - 1939
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 2
       - 2
       - 2
@@ -33,7 +33,7 @@ inputs:
       - 3
       - 4
       - 5
-    demographics__weiblich:
+    weiblich:
       - false
       - false
       - false

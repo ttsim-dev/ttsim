@@ -8,10 +8,10 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - true
       - false
-    demographics__alter:
+    alter:
       - 45
       - 10
     hh_id:
@@ -20,10 +20,10 @@ inputs:
     p_id:
       - 6
       - 7
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - 6
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:

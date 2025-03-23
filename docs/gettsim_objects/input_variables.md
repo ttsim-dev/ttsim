@@ -14,9 +14,9 @@ Household identifier following §5 WoGG
 
 Type: int
 
-(demographics__kind)=
+(familie__kind)=
 
-## `demographics__kind`
+## `familie__kind`
 
 Dependent child living with parents
 
@@ -30,17 +30,17 @@ Monthly wage
 
 Type: float
 
-(demographics__alter)=
+(alter)=
 
-## `demographics__alter`
+## `alter`
 
 Individual's age.
 
 Type: int
 
-(demographics__weiblich)=
+(weiblich)=
 
-## `demographics__weiblich`
+## `weiblich`
 
 Female
 
@@ -54,9 +54,9 @@ Draws public pension benefits.
 
 Type: bool
 
-(demographics__alleinerziehend)=
+(familie__alleinerziehend)=
 
-## `demographics__alleinerziehend`
+## `familie__alleinerziehend`
 
 Single parent
 
@@ -70,25 +70,25 @@ Taxes are filed jointly
 
 Type: bool
 
-(demographics__p_id_elternteil_1)=
+(familie__p_id_elternteil_1)=
 
-## `demographics__p_id_elternteil_1`
+## `familie__p_id_elternteil_1`
 
 Identifier of the first parent
 
 Type: int
 
-(demographics__p_id_elternteil_2)=
+(familie__p_id_elternteil_2)=
 
-## `demographics__p_id_elternteil_2`
+## `familie__p_id_elternteil_2`
 
 Identifier of the second parent
 
 Type: int
 
-(demographics__p_id_ehepartner)=
+(familie__p_id_ehepartner)=
 
-## `demographics__p_id_ehepartner`
+## `familie__p_id_ehepartner`
 
 Identifier of married partner
 
@@ -110,9 +110,9 @@ Identifier of person that claims Kindergeld for the particular child
 
 Type: int
 
-(demographics__wohnort_ost)=
+(wohnort_ost)=
 
-## `demographics__wohnort_ost`
+## `wohnort_ost`
 
 Living in former East Germany
 
@@ -239,9 +239,9 @@ Owner-occupied housing
 
 Type: bool
 
-(demographics__arbeitsstunden_w)=
+(arbeitsstunden_w)=
 
-## `demographics__arbeitsstunden_w`
+## `arbeitsstunden_w`
 
 Weekly working hours of individual
 
@@ -285,25 +285,25 @@ Gross wage in the previous year
 
 Type: float
 
-(demographics__geburtstag)=
+(geburtstag)=
 
-## `demographics__geburtstag`
+## `geburtstag`
 
 Day of birth (within month)
 
 Type: int
 
-(demographics__geburtsmonat)=
+(geburtsmonat)=
 
-## `demographics__geburtsmonat`
+## `geburtsmonat`
 
 Month of birth
 
 Type: int
 
-(demographics__geburtsjahr)=
+(geburtsjahr)=
 
-## `demographics__geburtsjahr`
+## `geburtsjahr`
 
 Year of birth
 
@@ -333,17 +333,17 @@ Number of months the individual received Elterngeld for the current youngest chi
 
 Type: int
 
-(demographics__behinderungsgrad)=
+(behinderungsgrad)=
 
-## `demographics__behinderungsgrad`
+## `behinderungsgrad`
 
 Handicap degree (between 0 and 100)
 
 Type: int
 
-(demographics__schwerbehindert_grad_g)=
+(schwerbehindert_grad_g)=
 
-## `demographics__schwerbehindert_grad_g`
+## `schwerbehindert_grad_g`
 
 Severerly handicapped, with flag "G"
 
@@ -365,9 +365,9 @@ Construction year of dwelling
 
 Type: int
 
-(demographics__vermögen)=
+(vermögen)=
 
-## `demographics__vermögen`
+## `vermögen`
 
 Assets for means testing on individual
 level.{ref}`See this page for more details. <means_testing>`

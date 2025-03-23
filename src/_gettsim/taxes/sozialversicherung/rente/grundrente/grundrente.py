@@ -84,7 +84,7 @@ def einkommen_m(
 @policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
 def anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
-    demographics__anzahl_personen_ehe: int,
+    familie__anzahl_personen_ehe: int,
     sozialversicherung__rente__altersrente__rentenwert: float,
     ges_rente_params: dict,
 ) -> float:
@@ -101,8 +101,8 @@ def anzurechnendes_einkommen_m(
     ----------
     einkommen_m_ehe
         See :func:`einkommen_m_ehe`.
-    demographics__anzahl_personen_ehe
-        See :func:`demographics__anzahl_personen_ehe`.
+    familie__anzahl_personen_ehe
+        See :func:`familie__anzahl_personen_ehe`.
     sozialversicherung__rente__altersrente__rentenwert
         See :func:`sozialversicherung__rente__altersrente__rentenwert`.
     ges_rente_params
@@ -116,7 +116,7 @@ def anzurechnendes_einkommen_m(
     # singles and those for married subjects
     # Note: Thresholds are defined relativ to rentenwert which is implemented by
     # dividing the income by rentenwert and multiply rentenwert to the result.
-    if demographics__anzahl_personen_ehe == 2:
+    if familie__anzahl_personen_ehe == 2:
         einkommensanr_params = ges_rente_params["grundr_einkommensanr_verheiratet"]
     else:
         einkommensanr_params = ges_rente_params["grundr_einkommensanr_single"]
@@ -313,8 +313,8 @@ def proxy_rente_vorjahr_m(  # noqa: PLR0913
     sozialversicherung__rente__bezieht_rente: bool,
     sozialversicherung__rente__private_rente_betrag_m: float,
     sozialversicherung__rente__jahr_renteneintritt: int,
-    demographics__geburtsjahr: int,
-    demographics__alter: int,
+    geburtsjahr: int,
+    alter: int,
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__altersrente__zugangsfaktor: float,
@@ -331,10 +331,10 @@ def proxy_rente_vorjahr_m(  # noqa: PLR0913
         change from last year.
     sozialversicherung__rente__jahr_renteneintritt
         See basic input variable :ref:`sozialversicherung__rente__jahr_renteneintritt <sozialversicherung__rente__jahr_renteneintritt>`.
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     sozialversicherung__rente__entgeltpunkte_west
         See basic input variable :ref:`sozialversicherung__rente__entgeltpunkte_west <sozialversicherung__rente__entgeltpunkte_west>`.
     sozialversicherung__rente__entgeltpunkte_ost
@@ -352,8 +352,7 @@ def proxy_rente_vorjahr_m(  # noqa: PLR0913
     # Calculate if subect was retired last year
     if sozialversicherung__rente__bezieht_rente:
         rentner_vorjahr = (
-            sozialversicherung__rente__jahr_renteneintritt
-            < demographics__geburtsjahr + demographics__alter
+            sozialversicherung__rente__jahr_renteneintritt < geburtsjahr + alter
         )
     else:
         rentner_vorjahr = False

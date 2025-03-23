@@ -11,13 +11,13 @@ inputs:
     hh_id:
       - 0
       - 0
-    demographics__kind:
+    familie__kind:
       - false
       - false
     p_id:
       - 0
       - 1
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 1
       - 0
     einkommensteuer__anzahl_personen_sn:

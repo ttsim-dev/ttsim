@@ -8,43 +8,43 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - true
       - false
-    demographics__alter:
+    alter:
       - 43
       - 0
-    demographics__arbeitsstunden_w:
+    arbeitsstunden_w:
       - 0.0
       - 0.0
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1978
       - 2018
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 10
       - 4
-    demographics__geburtstag:
+    geburtstag:
       - 10
       - 12
     hh_id:
       - 5
       - 5
-    demographics__kind:
+    familie__kind:
       - false
       - true
     p_id:
       - 58
       - 60
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - -1
       - -1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - 58
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
-    demographics__wohnort_ost:
+    wohnort_ost:
       - false
       - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:

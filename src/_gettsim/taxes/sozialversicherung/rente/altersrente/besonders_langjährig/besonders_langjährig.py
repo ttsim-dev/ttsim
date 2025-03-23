@@ -9,7 +9,7 @@ from _gettsim.function_types import policy_function
     leaf_name="altersgrenze",
 )
 def altersgrenze_ohne_staffelung(
-    demographics__geburtsjahr: int,  # noqa: ARG001
+    geburtsjahr: int,  # noqa: ARG001
     ges_rente_params: dict,
 ) -> float:
     """
@@ -24,8 +24,8 @@ def altersgrenze_ohne_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -34,7 +34,7 @@ def altersgrenze_ohne_staffelung(
     Full retirement age (without deductions) for very long term insured.
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (demographics__geburtsjahr).
+    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["altersgrenze_besond_langj_versicherte"]
@@ -42,7 +42,7 @@ def altersgrenze_ohne_staffelung(
 
 @policy_function(start_date="2014-06-23", leaf_name="altersgrenze")
 def altersgrenze_mit_staffelung(
-    demographics__geburtsjahr: int,
+    geburtsjahr: int,
     ges_rente_params: dict,
 ) -> float:
     """
@@ -57,8 +57,8 @@ def altersgrenze_mit_staffelung(
 
     Parameters
     ----------
-    demographics__geburtsjahr
-        See basic input variable :ref:`demographics__geburtsjahr <demographics__geburtsjahr>`.
+    geburtsjahr
+        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
     ges_rente_params
         See params documentation :ref:`ges_rente_params <ges_rente_params>`.
 
@@ -68,7 +68,7 @@ def altersgrenze_mit_staffelung(
 
     """
     if (
-        demographics__geburtsjahr
+        geburtsjahr
         <= ges_rente_params["altersgrenze_besond_langj_versicherte"][
             "max_birthyear_old_regime"
         ]
@@ -77,7 +77,7 @@ def altersgrenze_mit_staffelung(
             "entry_age_old_regime"
         ]
     elif (
-        demographics__geburtsjahr
+        geburtsjahr
         >= ges_rente_params["altersgrenze_besond_langj_versicherte"][
             "min_birthyear_new_regime"
         ]
@@ -86,9 +86,7 @@ def altersgrenze_mit_staffelung(
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_besond_langj_versicherte"][
-            demographics__geburtsjahr
-        ]
+        out = ges_rente_params["altersgrenze_besond_langj_versicherte"][geburtsjahr]
 
     return out
 

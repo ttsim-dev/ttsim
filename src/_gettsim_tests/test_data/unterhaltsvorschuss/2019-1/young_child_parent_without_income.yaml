@@ -9,11 +9,11 @@ inputs:
       - -1
       - -1
       - -1
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - true
       - false
       - false
-    demographics__alter:
+    alter:
       - 45
       - 4
       - 11
@@ -25,11 +25,11 @@ inputs:
       - 39
       - 41
       - 43
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - 39
       - 39
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
       - -1

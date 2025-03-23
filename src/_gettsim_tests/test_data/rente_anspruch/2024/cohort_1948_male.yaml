@@ -5,11 +5,11 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1948
       - 1948
       - 1948
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
       - 1
       - 1
@@ -21,7 +21,7 @@ inputs:
       - 0
       - 1
       - 2
-    demographics__weiblich:
+    weiblich:
       - false
       - false
       - false

@@ -6,7 +6,7 @@ inputs:
   assumed:
     p_id:
       - 31
-    demographics__wohnort_ost:
+    wohnort_ost:
       - true
     sozialversicherung__rente__erwerbsminderung__entgeltpunkte_ost:
       - 61.23076923

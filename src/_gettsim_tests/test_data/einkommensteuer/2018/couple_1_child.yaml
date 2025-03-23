@@ -9,7 +9,7 @@ inputs:
       - 4
       - 4
       - 4
-    demographics__kind:
+    familie__kind:
       - false
       - false
       - true
@@ -17,15 +17,15 @@ inputs:
       - 5
       - 6
       - 7
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 6
       - 5
       - -1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - -1
       - 5
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
       - 6

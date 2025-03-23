@@ -57,8 +57,8 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     ----------
     kindergeld_params
         See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-    demographics__alter
-        See basic input variable :ref:`demographics__alter`.
+    alter
+        See basic input variable :ref:`alter`.
 
     Returns
     -------

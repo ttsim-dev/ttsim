@@ -5,10 +5,10 @@ info:
 inputs:
   assumed: {}
   provided:
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - true
       - false
-    demographics__alter:
+    alter:
       - 45
       - 8
     hh_id:
@@ -17,10 +17,10 @@ inputs:
     p_id:
       - 0
       - 1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - 0
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
     kindergeld__p_id_empfänger:

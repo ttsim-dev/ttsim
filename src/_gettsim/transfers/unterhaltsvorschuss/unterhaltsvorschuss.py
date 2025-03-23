@@ -63,7 +63,7 @@ def betrag_m(
 def elternteil_alleinerziehend(
     kindergeld__p_id_empfänger: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
-    demographics__alleinerziehend: numpy.ndarray[bool],
+    familie__alleinerziehend: numpy.ndarray[bool],
 ) -> numpy.ndarray[bool]:
     """Check if parent that receives Kindergeld is a single parent.
 
@@ -75,8 +75,8 @@ def elternteil_alleinerziehend(
         See basic input variable :ref:`kindergeld__p_id_empfänger`.
     p_id
         See basic input variable :ref:`p_id`.
-    demographics__alleinerziehend
-        See basic input variable :ref:`alleinerziehend`.
+    familie__alleinerziehend
+        See basic input variable :ref:`familie__alleinerziehend`.
 
     Returns
     -------
@@ -85,7 +85,7 @@ def elternteil_alleinerziehend(
     return join_numpy(
         foreign_key=kindergeld__p_id_empfänger,
         primary_key=p_id,
-        target=demographics__alleinerziehend,
+        target=familie__alleinerziehend,
         value_if_foreign_key_is_missing=False,
     )
 
@@ -106,7 +106,7 @@ def not_implemented_m() -> float:
 @policy_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_ohne_staffelung_m(
     kindergeld_params: dict,
-    demographics__alter: int,  # noqa: ARG001
+    alter: int,  # noqa: ARG001
 ) -> float:
     """Kindergeld for first child when Kindergeld does not depend on number of children.
 
@@ -120,7 +120,7 @@ def kindergeld_erstes_kind_ohne_staffelung_m(
     -------
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (demographics__alter).
+    # TODO(@MImmesberger): Remove fake dependency (alter).
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
     return kindergeld_params["kindergeld"]
 
@@ -128,7 +128,7 @@ def kindergeld_erstes_kind_ohne_staffelung_m(
 @policy_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_gestaffelt_m(
     kindergeld_params: dict,
-    demographics__alter: int,  # noqa: ARG001
+    alter: int,  # noqa: ARG001
 ) -> float:
     """Kindergeld for first child when Kindergeld does depend on number of children.
 
@@ -142,7 +142,7 @@ def kindergeld_erstes_kind_gestaffelt_m(
     -------
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (demographics__alter).
+    # TODO(@MImmesberger): Remove fake dependency (alter).
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
     return kindergeld_params["kindergeld"][1]
 
@@ -153,7 +153,7 @@ def kindergeld_erstes_kind_gestaffelt_m(
     leaf_name="anspruchshöhe_m",
 )
 def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
-    demographics__alter: int,
+    alter: int,
     kindergeld_erstes_kind_m: float,
     unterhaltsvors_params: dict,
     eink_st_abzuege_params: dict,
@@ -170,8 +170,8 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     kindergeld_erstes_kind_m
         See :func:`kindergeld_erstes_kind_m`.
     eink_st_abzuege_params
@@ -191,21 +191,13 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
         "sächl_existenzmin"
     ]
 
-    if (
-        altersgrenzen[1]["min_alter"]
-        <= demographics__alter
-        <= altersgrenzen[1]["max_alter"]
-    ):
+    if altersgrenzen[1]["min_alter"] <= alter <= altersgrenzen[1]["max_alter"]:
         out = (
             unterhaltsvors_params["faktor_jüngste_altersgruppe"]
             * (2 * kinderfreibetrag_sächl_existenzmin / 12)
             - kindergeld_erstes_kind_m
         )
-    elif (
-        altersgrenzen[2]["min_alter"]
-        <= demographics__alter
-        <= altersgrenzen[2]["max_alter"]
-    ):
+    elif altersgrenzen[2]["min_alter"] <= alter <= altersgrenzen[2]["max_alter"]:
         out = 2 * kinderfreibetrag_sächl_existenzmin / 12 - kindergeld_erstes_kind_m
     else:
         out = 0.0
@@ -219,7 +211,7 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     leaf_name="anspruchshöhe_m",
 )
 def anspruchshöhe_m_anwendungsvors(
-    demographics__alter: int,
+    alter: int,
     unterhaltsvors_params: dict,
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
@@ -230,8 +222,8 @@ def anspruchshöhe_m_anwendungsvors(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     unterhaltsvors_params
         See params documentation :ref:`unterhaltsvors_params <unterhaltsvors_params>`.
 
@@ -243,17 +235,9 @@ def anspruchshöhe_m_anwendungsvors(
 
     unterhaltsvors = unterhaltsvors_params["anwendungsvorschrift"]
 
-    if (
-        altersgrenzen[1]["min_alter"]
-        <= demographics__alter
-        <= altersgrenzen[1]["max_alter"]
-    ):
+    if altersgrenzen[1]["min_alter"] <= alter <= altersgrenzen[1]["max_alter"]:
         out = unterhaltsvors[1]
-    elif (
-        altersgrenzen[2]["min_alter"]
-        <= demographics__alter
-        <= altersgrenzen[2]["max_alter"]
-    ):
+    elif altersgrenzen[2]["min_alter"] <= alter <= altersgrenzen[2]["max_alter"]:
         out = unterhaltsvors[2]
     else:
         out = 0.0
@@ -267,7 +251,7 @@ def anspruchshöhe_m_anwendungsvors(
     leaf_name="anspruchshöhe_m",
 )
 def anspruchshöhe_m_2016_bis_2017_06(
-    demographics__alter: int,
+    alter: int,
     kindergeld_erstes_kind_m: float,
     unterhalt_params: dict,
 ) -> float:
@@ -281,8 +265,8 @@ def anspruchshöhe_m_2016_bis_2017_06(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     kindergeld_erstes_kind_m
         See :func:`kindergeld_erstes_kind_m`.
     unterhalt_params
@@ -294,17 +278,9 @@ def anspruchshöhe_m_2016_bis_2017_06(
     """
     mindestunterhalt = unterhalt_params["mindestunterhalt"]
 
-    if (
-        mindestunterhalt[1]["min_alter"]
-        <= demographics__alter
-        <= mindestunterhalt[1]["max_alter"]
-    ):
+    if mindestunterhalt[1]["min_alter"] <= alter <= mindestunterhalt[1]["max_alter"]:
         out = mindestunterhalt[1]["betrag"] - kindergeld_erstes_kind_m
-    elif (
-        mindestunterhalt[2]["min_alter"]
-        <= demographics__alter
-        <= mindestunterhalt[2]["max_alter"]
-    ):
+    elif mindestunterhalt[2]["min_alter"] <= alter <= mindestunterhalt[2]["max_alter"]:
         out = mindestunterhalt[2]["betrag"] - kindergeld_erstes_kind_m
     else:
         out = 0.0
@@ -314,7 +290,7 @@ def anspruchshöhe_m_2016_bis_2017_06(
 
 @policy_function(start_date="2017-07-01", leaf_name="anspruchshöhe_m")
 def anspruchshöhe_m_ab_201707(
-    demographics__alter: int,
+    alter: int,
     elternteil_mindesteinkommen_erreicht: bool,
     kindergeld_erstes_kind_m: float,
     unterhalt_params: dict,
@@ -326,8 +302,8 @@ def anspruchshöhe_m_ab_201707(
 
     Parameters
     ----------
-    demographics__alter
-        See basic input variable :ref:`demographics__alter <demographics__alter>`.
+    alter
+        See basic input variable :ref:`alter <alter>`.
     elternteil_mindesteinkommen_erreicht
         See :func:`elternteil_mindesteinkommen_erreicht`.
     kindergeld_erstes_kind_m
@@ -341,22 +317,12 @@ def anspruchshöhe_m_ab_201707(
     """
     mindestunterhalt = unterhalt_params["mindestunterhalt"]
 
-    if (
-        mindestunterhalt[1]["min_alter"]
-        <= demographics__alter
-        <= mindestunterhalt[1]["max_alter"]
-    ):
+    if mindestunterhalt[1]["min_alter"] <= alter <= mindestunterhalt[1]["max_alter"]:
         out = mindestunterhalt[1]["betrag"] - kindergeld_erstes_kind_m
-    elif (
-        mindestunterhalt[2]["min_alter"]
-        <= demographics__alter
-        <= mindestunterhalt[2]["max_alter"]
-    ):
+    elif mindestunterhalt[2]["min_alter"] <= alter <= mindestunterhalt[2]["max_alter"]:
         out = mindestunterhalt[2]["betrag"] - kindergeld_erstes_kind_m
     elif (
-        mindestunterhalt[3]["min_alter"]
-        <= demographics__alter
-        <= mindestunterhalt[3]["max_alter"]
+        mindestunterhalt[3]["min_alter"] <= alter <= mindestunterhalt[3]["max_alter"]
         and elternteil_mindesteinkommen_erreicht
     ):
         out = mindestunterhalt[3]["betrag"] - kindergeld_erstes_kind_m

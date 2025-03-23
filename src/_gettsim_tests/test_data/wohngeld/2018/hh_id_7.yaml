@@ -33,7 +33,7 @@ inputs:
       - -1
       - -1
       - -1
-    demographics__alleinerziehend:
+    familie__alleinerziehend:
       - false
       - false
       - false
@@ -47,7 +47,7 @@ inputs:
       - false
       - false
       - false
-    demographics__alter:
+    alter:
       - 45
       - 42
       - 55
@@ -61,7 +61,7 @@ inputs:
       - 20
       - 9
       - 7
-    demographics__anzahl_personen_hh:
+    anzahl_personen_hh:
       - 13
       - 13
       - 13
@@ -75,7 +75,7 @@ inputs:
       - 13
       - 13
       - 13
-    demographics__behinderungsgrad:
+    behinderungsgrad:
       - 0
       - 0
       - 0
@@ -89,7 +89,7 @@ inputs:
       - 0
       - 0
       - 0
-    demographics__geburtsjahr:
+    geburtsjahr:
       - 1973
       - 1976
       - 1963
@@ -103,7 +103,7 @@ inputs:
       - 1998
       - 2009
       - 2011
-    demographics__geburtsmonat:
+    geburtsmonat:
       - 1
       - 1
       - 1
@@ -117,7 +117,7 @@ inputs:
       - 1
       - 1
       - 1
-    demographics__geburtstag:
+    geburtstag:
       - 1
       - 1
       - 1
@@ -145,7 +145,7 @@ inputs:
       - 7
       - 7
       - 7
-    demographics__kind:
+    familie__kind:
       - false
       - false
       - false
@@ -173,7 +173,7 @@ inputs:
       - 44
       - 45
       - 46
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 35
       - 34
       - 37
@@ -187,7 +187,7 @@ inputs:
       - -1
       - -1
       - -1
-    demographics__p_id_elternteil_1:
+    familie__p_id_elternteil_1:
       - -1
       - -1
       - 34
@@ -201,7 +201,7 @@ inputs:
       - 34
       - 34
       - 34
-    demographics__p_id_elternteil_2:
+    familie__p_id_elternteil_2:
       - -1
       - -1
       - 35
@@ -215,7 +215,7 @@ inputs:
       - 35
       - 35
       - 35
-    demographics__vermögen:
+    vermögen:
       - 4100.0
       - 0.0
       - 0.0

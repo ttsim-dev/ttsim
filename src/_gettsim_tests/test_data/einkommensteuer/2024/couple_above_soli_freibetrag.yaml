@@ -8,13 +8,13 @@ inputs:
     hh_id:
       - 3
       - 3
-    demographics__kind:
+    familie__kind:
       - false
       - false
     p_id:
       - 3
       - 4
-    demographics__p_id_ehepartner:
+    familie__p_id_ehepartner:
       - 4
       - 3
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y:
