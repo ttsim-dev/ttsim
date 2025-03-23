@@ -91,20 +91,14 @@ def combine_policy_functions_and_derived_functions(
         top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
     )
-    current_functions = {
-        **aggregate_by_p_id_functions,
-        **functions,
-    }
+    current_functions = {**aggregate_by_p_id_functions, **functions}
 
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         functions=current_functions,
         data=data,
     )
-    current_functions = {
-        **time_conversion_functions,
-        **current_functions,
-    }
+    current_functions = {**time_conversion_functions, **current_functions}
 
     # Create aggregation functions
     aggregate_by_group_functions = _create_aggregate_by_group_functions(
@@ -114,15 +108,9 @@ def combine_policy_functions_and_derived_functions(
         aggregations_from_environment=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
     )
-    current_functions = {
-        **aggregate_by_group_functions,
-        **current_functions,
-    }
+    current_functions = {**aggregate_by_group_functions, **current_functions}
 
-    _fail_if_targets_not_in_functions(
-        functions=current_functions,
-        targets=targets,
-    )
+    _fail_if_targets_not_in_functions(functions=current_functions, targets=targets)
 
     return current_functions
 
@@ -135,7 +123,7 @@ def _create_aggregate_by_group_functions(
     top_level_namespace: set[str],
 ) -> QualNameFunctionsDict:
     """Create aggregation functions."""
-    # Create aggregation functions from environment
+    # Create the aggregation functions that were explicitly specified.
     aggregation_functions_from_environment = _create_aggregation_functions(
         functions=functions,
         aggregation_functions_to_create=aggregations_from_environment,
@@ -148,7 +136,7 @@ def _create_aggregate_by_group_functions(
         **functions,
     }
 
-    # Create derived aggregation functions
+    # Create derived aggregation functions.
     derived_aggregation_specs = _create_derived_aggregations_specs(
         functions=functions_with_aggregation_functions_from_environment,
         targets=targets,
