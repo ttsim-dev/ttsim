@@ -23,7 +23,7 @@ class DerivedAggregationFunction(PolicyFunction):
         The qualified name of the aggregation target.
     source_function:
         The function from which the new function is derived.
-    source_name:
+    source:
         The name of the source function or data column.
     aggregation_method:
         The method of aggregation used.
@@ -37,7 +37,7 @@ class DerivedAggregationFunction(PolicyFunction):
         | DerivedTimeConversionFunction
         | DerivedAggregationFunction
         | None = None,
-        source_name: str,
+        source: str,
         aggregation_target: str,
         aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
     ):
@@ -50,7 +50,7 @@ class DerivedAggregationFunction(PolicyFunction):
             skip_vectorization=True,
         )
 
-        self.source = source_name
+        self.source = source
         self.aggregation_method = aggregation_method
 
 
@@ -65,7 +65,7 @@ class DerivedTimeConversionFunction(PolicyFunction):
         unless explicitly overwritten.
     source_function:
         The function from which the new function is derived.
-    source_name:
+    source:
         The name of the source function or data column.
     conversion_target:
         The qualified name of the conversion target.
@@ -79,7 +79,7 @@ class DerivedTimeConversionFunction(PolicyFunction):
         | DerivedTimeConversionFunction
         | DerivedAggregationFunction
         | None = None,
-        source_name: str,
+        source: str,
         conversion_target: str,
     ):
         super().__init__(
@@ -91,4 +91,4 @@ class DerivedTimeConversionFunction(PolicyFunction):
             skip_vectorization=True,
         )
 
-        self.source = source_name
+        self.source = source

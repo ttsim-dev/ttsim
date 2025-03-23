@@ -214,13 +214,15 @@ def _convert_data_to_correct_types(
             )
             func_is_policy_function = isinstance(
                 getattr(func, "__wrapped__", func), PolicyFunction
+            ) and not isinstance(
+                getattr(func, "__wrapped__", func), DerivedAggregationFunction
+            )
+            skip_vectorization = (
+                func.skip_vectorization if func_is_policy_function else True
             )
             return_annotation_is_array = (
-                (func_is_group_by_function or func_is_policy_function)
-                and func.skip_vectorization
-                if func_is_policy_function
-                else True
-            )
+                func_is_group_by_function or func_is_policy_function
+            ) and skip_vectorization
             if return_annotation_is_array:
                 # Assumes that things are annotated with numpy.ndarray([dtype]), might
                 # require a change if using proper numpy.typing. Not changing for now

@@ -335,7 +335,7 @@ def _create_time_conversion_functions(
                     name,
                     _time_conversion_functions[f"{time_unit}_to_{missing_time_unit}"],
                 ),
-                source_name=name,
+                source=name,
                 source_function=func,
                 conversion_target=new_name,
             )

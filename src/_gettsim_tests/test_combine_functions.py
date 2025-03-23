@@ -8,6 +8,8 @@ from _gettsim.combine_functions import (
     _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,
     _create_aggregation_functions,
+    _create_one_aggregate_by_group_func,
+    _create_one_aggregate_by_p_id_func,
     _fail_if_targets_not_in_functions,
 )
 from _gettsim.function_types import (
@@ -152,7 +154,7 @@ def test_create_aggregate_by_group_functions(
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
-                    source_name="x",
+                    source="x",
                     aggregation_target="foo",
                     aggregation_method="count",
                 )
@@ -165,7 +167,7 @@ def test_create_aggregate_by_group_functions(
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
-                    source_name="x",
+                    source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
                 )
@@ -178,7 +180,7 @@ def test_create_aggregate_by_group_functions(
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
-                    source_name="x",
+                    source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
                 )
@@ -191,7 +193,7 @@ def test_create_aggregate_by_group_functions(
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
-                    source_name="x",
+                    source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
                 )
@@ -204,7 +206,7 @@ def test_create_aggregate_by_group_functions(
             {
                 "n1__foo_hh": DerivedAggregationFunction(
                     function=function_with_bool_return,
-                    source_name="n1__foo",
+                    source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
                 )
@@ -217,7 +219,7 @@ def test_create_aggregate_by_group_functions(
             {
                 "n1__foo_hh": DerivedAggregationFunction(
                     function=function_with_float_return,
-                    source_name="n1__foo",
+                    source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
                 )
@@ -230,7 +232,7 @@ def test_create_aggregate_by_group_functions(
             {
                 "n1__foo_hh": DerivedAggregationFunction(
                     function=function_with_int_return,
-                    source_name="n1__foo",
+                    source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
                 )
@@ -406,3 +408,182 @@ def test_create_aggregation_with_derived_soure_column():
     )
     assert "foo_hh" in result
     assert "bar_bg" in inspect.signature(result["foo_hh"]).parameters
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "group_by_id",
+        "top_level_namespace",
+        "expected_arg_names",
+    ),
+    [
+        (
+            "foo_hh",
+            AggregateByGroupSpec(aggr="count"),
+            "hh_id",
+            ["foo", "hh_id"],
+            ["hh_id"],
+        ),
+        (
+            "foo_hh",
+            AggregateByGroupSpec(aggr="sum", source="foo"),
+            "hh_id",
+            ["foo", "hh_id"],
+            ["hh_id", "foo"],
+        ),
+        (
+            "foo__bar_hh",
+            AggregateByGroupSpec(aggr="sum", source="bar"),
+            "hh_id",
+            ["foo", "hh_id"],
+            ["hh_id", "foo__bar"],
+        ),
+    ],
+)
+def test_function_arguments_are_namespaced_for_derived_group_funcs(
+    aggregation_target,
+    aggregation_spec,
+    group_by_id,
+    top_level_namespace,
+    expected_arg_names,
+):
+    result = _create_one_aggregate_by_group_func(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        group_by_id=group_by_id,
+        functions={},
+        top_level_namespace=top_level_namespace,
+    )
+    assert all(
+        arg_name in inspect.signature(result).parameters
+        for arg_name in expected_arg_names
+    )
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "top_level_namespace",
+        "expected_arg_names",
+    ),
+    [
+        (
+            "foo",
+            AggregateByPIDSpec(
+                aggr="sum", source="bar", p_id_to_aggregate_by="foreign_id_col"
+            ),
+            ["foo", "foreign_id_col", "bar"],
+            ["foreign_id_col", "bar"],
+        ),
+        (
+            "foo__fünc",
+            AggregateByPIDSpec(
+                aggr="sum", source="bär", p_id_to_aggregate_by="foreign_id_col"
+            ),
+            ["foo", "foreign_id_col"],
+            ["foreign_id_col", "foo__bär"],
+        ),
+    ],
+)
+def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
+    aggregation_target,
+    aggregation_spec,
+    top_level_namespace,
+    expected_arg_names,
+):
+    result = _create_one_aggregate_by_p_id_func(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        functions={},
+        top_level_namespace=top_level_namespace,
+    )
+    assert all(
+        arg_name in inspect.signature(result).parameters
+        for arg_name in expected_arg_names
+    )
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "group_by_id",
+        "top_level_namespace",
+        "source_col_name",
+    ),
+    [
+        (
+            "foo_hh",
+            AggregateByGroupSpec(aggr="sum", source="foo"),
+            "hh_id",
+            ["foo", "hh_id"],
+            "foo",
+        ),
+        (
+            "foo__bar_hh",
+            AggregateByGroupSpec(aggr="sum", source="bar"),
+            "hh_id",
+            ["foo", "hh_id"],
+            "foo__bar",
+        ),
+    ],
+)
+def test_source_column_name_of_aggregate_by_group_func_is_qualified(
+    aggregation_target,
+    aggregation_spec,
+    group_by_id,
+    top_level_namespace,
+    source_col_name,
+):
+    result = _create_one_aggregate_by_group_func(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        group_by_id=group_by_id,
+        functions={},
+        top_level_namespace=top_level_namespace,
+    )
+    assert result.source == source_col_name
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "top_level_namespace",
+        "source_col_name",
+    ),
+    [
+        (
+            "foo",
+            AggregateByPIDSpec(
+                aggr="sum", source="bar", p_id_to_aggregate_by="foreign_id_col"
+            ),
+            ["foo", "foreign_id_col", "bar"],
+            "bar",
+        ),
+        (
+            "foo__fünc",
+            AggregateByPIDSpec(
+                aggr="sum", source="bär", p_id_to_aggregate_by="foreign_id_col"
+            ),
+            ["foo", "foreign_id_col"],
+            "foo__bär",
+        ),
+    ],
+)
+def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
+    aggregation_target,
+    aggregation_spec,
+    top_level_namespace,
+    source_col_name,
+):
+    result = _create_one_aggregate_by_p_id_func(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        functions={},
+        top_level_namespace=top_level_namespace,
+    )
+    assert result.source == source_col_name

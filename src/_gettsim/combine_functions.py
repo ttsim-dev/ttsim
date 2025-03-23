@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from typing import TYPE_CHECKING, Literal
 
 import dags
@@ -38,6 +39,8 @@ from _gettsim.shared import (
 from _gettsim.time_conversion import create_time_conversion_functions
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from _gettsim.gettsim_typing import (
         QualifiedAggregationSpecsDict,
         QualifiedDataDict,
@@ -434,10 +437,19 @@ def _create_one_aggregate_by_group_func(
         top_level_namespace=top_level_namespace,
     )
 
+    qualified_source = (
+        _get_qualified_source_col_name(
+            source=source,
+            wrapped_func=wrapped_func,
+        )
+        if source
+        else None
+    )
+
     return DerivedAggregationFunction(
         function=wrapped_func,
-        source_name=source,
-        source_function=functions.get(source, None),
+        source=qualified_source,
+        source_function=functions.get(qualified_source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
     )
@@ -470,7 +482,7 @@ def _create_one_aggregate_by_p_id_func(
     """
     aggregation_method = aggregation_spec.aggr
     p_id_to_aggregate_by = aggregation_spec.p_id_to_aggregate_by
-    source = aggregation_spec.source
+    source = aggregation_spec.source if aggregation_method != "count" else None
 
     if aggregation_method == "count":
         mapper = {
@@ -533,10 +545,19 @@ def _create_one_aggregate_by_p_id_func(
         top_level_namespace=top_level_namespace,
     )
 
+    qualified_source = (
+        _get_qualified_source_col_name(
+            source=source,
+            wrapped_func=wrapped_func,
+        )
+        if source
+        else None
+    )
+
     return DerivedAggregationFunction(
         function=wrapped_func,
-        source_name=source,
-        source_function=functions.get(source, None),
+        source=qualified_source,
+        source_function=functions.get(qualified_source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
     )
@@ -633,3 +654,16 @@ def _fail_if_targets_not_in_functions(
             f"The following targets have no corresponding function:\n\n{formatted}"
         )
         raise ValueError(msg)
+
+
+def _get_qualified_source_col_name(
+    source: str,
+    wrapped_func: Callable,
+) -> str | None:
+    """Get the qualified source column name."""
+    parameters = inspect.signature(wrapped_func).parameters
+    matches = [p for p in parameters if p.endswith(source)]
+    if len(matches) == 1:
+        return matches[0]
+    else:
+        return None
