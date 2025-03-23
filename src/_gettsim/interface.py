@@ -338,9 +338,10 @@ def _partial_parameters_to_functions(
     for name, function in functions.items():
         arguments = get_names_of_arguments_without_defaults(function)
         partial_params = {
-            i: params[i[:-7]]
-            for i in arguments
-            if i.endswith("_params") and i[:-7] in params
+            arg: params[key]
+            for arg in arguments
+            for key in params
+            if arg.endswith(f"{key}_params")
         }
         if partial_params:
             processed_functions[name] = functools.partial(function, **partial_params)
