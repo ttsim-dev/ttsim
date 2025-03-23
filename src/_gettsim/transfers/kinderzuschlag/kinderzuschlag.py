@@ -8,7 +8,7 @@ def betrag_m_bg(
     anspruchshöhe_m_bg: float,
     vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool,
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool,
-    demographics__anzahl_rentner_hh: int,
+    demographics__anzahl_rentenbezieher_hh: int,
 ) -> float:
     """Aggregate child benefit on household level.
 
@@ -20,8 +20,8 @@ def betrag_m_bg(
         See :func:`vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
         See :func:`vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
-    demographics__anzahl_rentner_hh
-        See :func:`demographics__anzahl_rentner_hh`.
+    demographics__anzahl_rentenbezieher_hh
+        See :func:`demographics__anzahl_rentenbezieher_hh`.
 
     Returns
     -------
@@ -32,7 +32,7 @@ def betrag_m_bg(
         and (
             not vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
         )
-    ) or (demographics__anzahl_rentner_hh > 0):
+    ) or (demographics__anzahl_rentenbezieher_hh > 0):
         out = 0.0
     else:
         out = anspruchshöhe_m_bg

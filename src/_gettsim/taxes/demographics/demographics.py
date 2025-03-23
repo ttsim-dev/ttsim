@@ -16,7 +16,7 @@ aggregation_specs = {
         source="erwachsen",
         aggr="sum",
     ),
-    "anzahl_rentner_hh": AggregateByGroupSpec(
+    "anzahl_rentenbezieher_hh": AggregateByGroupSpec(
         source="sozialversicherung__rente__bezieht_rente",
         aggr="sum",
     ),
@@ -161,8 +161,8 @@ def erwachsen(kind: bool) -> bool:
 
 
 @policy_function()
-def erwachsene_alle_rentner_hh(
-    anzahl_erwachsene_hh: int, anzahl_rentner_hh: int
+def erwachsene_alle_rentenbezieher_hh(
+    anzahl_erwachsene_hh: int, anzahl_rentenbezieher_hh: int
 ) -> bool:
     """Calculate if all adults in the household are pensioners.
 
@@ -170,14 +170,14 @@ def erwachsene_alle_rentner_hh(
     ----------
     anzahl_erwachsene_hh
         See :func:`anzahl_erwachsene_hh`.
-    anzahl_rentner_hh
-        See :func:`anzahl_rentner_hh`.
+    anzahl_rentenbezieher_hh
+        See :func:`anzahl_rentenbezieher_hh`.
 
     Returns
     -------
 
     """
-    return anzahl_erwachsene_hh == anzahl_rentner_hh
+    return anzahl_erwachsene_hh == anzahl_rentenbezieher_hh
 
 
 @policy_function()

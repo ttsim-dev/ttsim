@@ -22,7 +22,7 @@ from _gettsim.function_types import policy_function
 @policy_function()
 def betrag_m_wthh(
     anspruchshöhe_m_wthh: float,
-    demographics__erwachsene_alle_rentner_hh: bool,
+    demographics__erwachsene_alle_rentenbezieher_hh: bool,
     vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh: bool,
     vorrangprüfungen__wohngeld_vorrang_wthh: bool,
 ) -> float:
@@ -32,8 +32,8 @@ def betrag_m_wthh(
     ----------
     anspruchshöhe_m_wthh
         See :func:`anspruchshöhe_m_wthh`.
-    demographics__erwachsene_alle_rentner_hh
-        See :func:`demographics__erwachsene_alle_rentner_hh <demographics__erwachsene_alle_rentner_hh>`.
+    demographics__erwachsene_alle_rentenbezieher_hh
+        See :func:`demographics__erwachsene_alle_rentenbezieher_hh <demographics__erwachsene_alle_rentenbezieher_hh>`.
     vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh
         See :func:`vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh`.
     vorrangprüfungen__wohngeld_vorrang_wthh
@@ -51,10 +51,10 @@ def betrag_m_wthh(
     # Alter (SGB XII) is implemented yet. We assume for now that households with only
     # retirees are eligible for Grundsicherung im Alter but not for ALG2/Wohngeld. All
     # other households are not eligible for SGB XII, but SGB II / Wohngeld. Once this is
-    # resolved, remove the `demographics__erwachsene_alle_rentner_hh` condition.
+    # resolved, remove the `demographics__erwachsene_alle_rentenbezieher_hh` condition.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/703
 
-    if not demographics__erwachsene_alle_rentner_hh and (
+    if not demographics__erwachsene_alle_rentenbezieher_hh and (
         vorrangprüfungen__wohngeld_vorrang_wthh
         or vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh
     ):
