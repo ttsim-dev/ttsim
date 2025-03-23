@@ -7,8 +7,8 @@ from _gettsim.function_types import policy_function
 def einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     steuerklasse: int,
-    eink_st_abzuege_params: dict,
     vorsorgepauschale_y: float,
+    eink_st_abzuege_params: dict,
 ) -> float:
     """Calculate tax base for Lohnsteuer (withholding tax on earnings).
 
@@ -62,8 +62,8 @@ def einkommen_y(
 def vorsorge_krankenv_option_b_ab_2015_bis_2018(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
+    sozialv_beitr_params: dict,
 ) -> float:
     """For health care deductions, there are two ways to calculate
     the deductions: "Option a" and "Option b".

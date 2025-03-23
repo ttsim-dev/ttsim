@@ -6,8 +6,8 @@ from _gettsim.function_types import policy_function
 
 @policy_function(end_date="2004-12-31", leaf_name="altersfreibetrag_y")
 def altersfreibetrag_y_bis_2004(  # noqa: PLR0913
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     alter: int,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y: float,
@@ -58,10 +58,10 @@ def altersfreibetrag_y_bis_2004(  # noqa: PLR0913
 
 @policy_function(start_date="2005-01-01", leaf_name="altersfreibetrag_y")
 def altersfreibetrag_y_ab_2005(  # noqa: PLR0913
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    sozialversicherung__geringfügig_beschäftigt: bool,
     alter: int,
     geburtsjahr: int,
+    sozialversicherung__geringfügig_beschäftigt: bool,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y: float,
