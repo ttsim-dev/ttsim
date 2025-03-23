@@ -244,7 +244,7 @@ def test_rounding_callable(
         base=base,
         direction=direction,
         to_add_after_rounding=to_add_after_rounding if to_add_after_rounding else 0,
-        path=("test_func",),
+        name="test_func",
     )(test_func)
 
     assert_series_equal(
@@ -333,5 +333,6 @@ def test_raise_if_missing_rounding_spec(params, match):
 
     with pytest.raises(KeyError, match=match):
         _add_rounding_to_functions(
-            input_function=eink_st_func, params=params, path=("eink_st_func",)
+            functions={"eink_st_func": eink_st_func},
+            params=params,
         )
