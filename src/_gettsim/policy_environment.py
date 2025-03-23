@@ -33,7 +33,7 @@ from _gettsim.shared import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from _gettsim.gettsim_typing import NestedAggregationSpecDict, NestedFunctionDict
+    from _gettsim.typing import NestedAggregationSpecDict, NestedFunctionDict
 
 
 class PolicyEnvironment:

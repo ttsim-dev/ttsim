@@ -9,7 +9,7 @@ from _gettsim.config import (
     SUPPORTED_TIME_UNITS,
 )
 from _gettsim.function_types import DerivedTimeConversionFunction, PolicyFunction
-from _gettsim.gettsim_typing import NestedDataDict, NestedFunctionDict
+from _gettsim.typing import NestedDataDict, NestedFunctionDict
 
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7

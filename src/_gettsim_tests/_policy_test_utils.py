@@ -12,7 +12,7 @@ from _gettsim.shared import merge_trees
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from _gettsim.gettsim_typing import NestedDataDict, NestedInputStructureDict
+    from _gettsim.typing import NestedDataDict, NestedInputStructureDict
 
 
 class PolicyTest:

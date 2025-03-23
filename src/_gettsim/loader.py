@@ -12,12 +12,12 @@ from _gettsim.config import (
     RESOURCE_DIR,
 )
 from _gettsim.function_types import GroupByFunction, PolicyFunction
-from _gettsim.gettsim_typing import NestedAggregationSpecDict, NestedFunctionDict
 from _gettsim.shared import (
     create_tree_from_path_and_value,
     insert_path_and_value,
     merge_trees,
 )
+from _gettsim.typing import NestedAggregationSpecDict, NestedFunctionDict
 
 
 def load_functions_tree_for_date(date: datetime.date) -> NestedFunctionDict:

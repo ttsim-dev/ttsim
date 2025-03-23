@@ -69,7 +69,7 @@ def plot_dag(
     targets = build_targets_tree(DEFAULT_TARGETS if targets is None else targets)  # noqa: F821
 
     if isinstance(columns_overriding_functions, dict):
-        names_of_columns_overriding_functions = tree_to_dict_with_qualified_name(  # noqa: F821
+        names_of_columns_overriding_functions = dt.flatten_to_qual_names(
             columns_overriding_functions
         ).keys()
     elif isinstance(columns_overriding_functions, str):

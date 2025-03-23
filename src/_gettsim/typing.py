@@ -37,16 +37,16 @@ NestedArrayDict = dict[str, Union[np.ndarray, "NestedArrayDict"]]
 NestedAggregationSpecDict = dict[
     str, Union[AggregateByGroupSpec, AggregateByPIDSpec, "NestedAggregationSpecDict"]
 ]
-QualifiedFunctionsDict = dict[
+QualNameFunctionsDict = dict[
     str,
     PolicyFunction
     | DerivedAggregationFunction
     | DerivedTimeConversionFunction
     | GroupByFunction,
 ]
-QualifiedTargetsDict = dict[str, None]
-QualifiedDataDict = dict[str, pd.Series]
-QualifiedAggregationSpecsDict = dict[str, AggregateByGroupSpec | AggregateByPIDSpec]
+QualNameTargetsDict = dict[str, None]
+QualNameDataDict = dict[str, pd.Series]
+QualNameAggregationSpecsDict = dict[str, AggregateByGroupSpec | AggregateByPIDSpec]
 
 
 def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:
@@ -64,13 +64,12 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
     Bool
 
     """
-    if (internal_type == float) & (is_float_dtype(series)):
-        out = True
-    elif (internal_type == int) & (is_integer_dtype(series)):
-        out = True
-    elif (internal_type == bool) & (is_bool_dtype(series)):
-        out = True
-    elif (internal_type == numpy.datetime64) & (is_datetime64_any_dtype(series)):
+    if (
+        (internal_type == float) & (is_float_dtype(series))
+        or (internal_type == int) & (is_integer_dtype(series))
+        or (internal_type == bool) & (is_bool_dtype(series))
+        or (internal_type == numpy.datetime64) & (is_datetime64_any_dtype(series))
+    ):
         out = True
     else:
         out = False
@@ -78,7 +77,7 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
     return out
 
 
-def convert_series_to_internal_type(
+def convert_series_to_internal_type(  # noqa: PLR0912
     series: pd.Series, internal_type: np.dtype
 ) -> pd.Series:
     """Check if data type of series fits to the internal type of gettsim and otherwise

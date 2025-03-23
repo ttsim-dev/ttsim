@@ -11,7 +11,6 @@ from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from _gettsim.config import FOREIGN_KEYS
 from _gettsim.config import numpy_or_jax as np
 from _gettsim.function_types import group_by_function, policy_function
-from _gettsim.gettsim_typing import convert_series_to_internal_type
 from _gettsim.interface import (
     _convert_data_to_correct_types,
     _fail_if_foreign_keys_are_invalid,
@@ -26,6 +25,7 @@ from _gettsim.transfers.arbeitslosengeld_2.group_by_ids import bg_id
 from _gettsim.transfers.wohngeld.group_by_ids import (
     wthh_id,
 )
+from _gettsim.typing import convert_series_to_internal_type
 from gettsim import FunctionsAndColumnsOverlapWarning
 
 

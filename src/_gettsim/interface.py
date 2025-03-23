@@ -23,15 +23,6 @@ from _gettsim.function_types import (
     GroupByFunction,
     PolicyFunction,
 )
-from _gettsim.gettsim_typing import (
-    NestedDataDict,
-    NestedTargetDict,
-    QualifiedDataDict,
-    QualifiedFunctionsDict,
-    QualifiedTargetsDict,
-    check_series_has_expected_type,
-    convert_series_to_internal_type,
-)
 from _gettsim.policy_environment import PolicyEnvironment
 from _gettsim.shared import (
     KeyErrorMessage,
@@ -42,6 +33,15 @@ from _gettsim.shared import (
     get_names_of_arguments_without_defaults,
     merge_trees,
     partition_by_reference_dict,
+)
+from _gettsim.typing import (
+    NestedDataDict,
+    NestedTargetDict,
+    QualNameDataDict,
+    QualNameFunctionsDict,
+    QualNameTargetsDict,
+    check_series_has_expected_type,
+    convert_series_to_internal_type,
 )
 
 
@@ -106,10 +106,7 @@ def compute_taxes_and_transfers(
         top_level_namespace=top_level_namespace,
     )
 
-    (
-        functions_overridden,
-        functions_not_overridden,
-    ) = partition_by_reference_dict(
+    functions_overridden, functions_not_overridden = partition_by_reference_dict(
         to_partition=functions,
         reference_dict=data,
     )
@@ -171,8 +168,8 @@ def compute_taxes_and_transfers(
 
 
 def _convert_data_to_correct_types(
-    data: QualifiedDataDict, functions_overridden: QualifiedFunctionsDict
-) -> QualifiedDataDict:
+    data: QualNameDataDict, functions_overridden: QualNameFunctionsDict
+) -> QualNameDataDict:
     """Convert all data columns to the type that is expected by GETTSIM.
 
     Parameters
@@ -275,10 +272,10 @@ def _convert_data_to_correct_types(
 
 
 def _create_input_data_for_concatenated_function(
-    data: QualifiedDataDict,
-    functions: QualifiedFunctionsDict,
-    targets: QualifiedTargetsDict,
-) -> QualifiedDataDict:
+    data: QualNameDataDict,
+    functions: QualNameFunctionsDict,
+    targets: QualNameTargetsDict,
+) -> QualNameDataDict:
     """Create input data for the concatenated function.
 
     1. Check that all root nodes are present in the user-provided data.
@@ -322,9 +319,9 @@ def _create_input_data_for_concatenated_function(
 
 
 def _partial_parameters_to_functions(
-    functions: QualifiedFunctionsDict,
+    functions: QualNameFunctionsDict,
     params: dict[str, Any],
-) -> QualifiedFunctionsDict:
+) -> QualNameFunctionsDict:
     """Round and partial parameters into functions.
 
     Parameters
@@ -361,9 +358,9 @@ def _partial_parameters_to_functions(
 
 
 def _add_rounding_to_functions(
-    functions: QualifiedFunctionsDict,
+    functions: QualNameFunctionsDict,
     params: dict[str, Any],
-) -> QualifiedFunctionsDict:
+) -> QualNameFunctionsDict:
     """Add appropriate rounding of outputs to function.
 
     Parameters
@@ -524,8 +521,8 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 
 
 def _fail_if_group_variables_not_constant_within_groups(
-    data: QualifiedDataDict,
-    functions: QualifiedFunctionsDict,
+    data: QualNameDataDict,
+    functions: QualNameFunctionsDict,
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -601,7 +598,7 @@ def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
 
 
 def _fail_if_foreign_keys_are_invalid(
-    data: QualifiedDataDict,
+    data: QualNameDataDict,
     p_id_col: pd.Series,
 ) -> None:
     """
@@ -640,7 +637,7 @@ def _fail_if_foreign_keys_are_invalid(
 
 
 def _warn_if_functions_overridden_by_data(
-    functions_overridden: QualifiedFunctionsDict,
+    functions_overridden: QualNameFunctionsDict,
 ) -> None:
     """Warn if functions are overridden by data."""
     if len(functions_overridden) > 0:
@@ -705,8 +702,8 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
 
 
 def _fail_if_root_nodes_are_missing(
-    functions: QualifiedFunctionsDict,
-    data: QualifiedDataDict,
+    functions: QualNameFunctionsDict,
+    data: QualNameDataDict,
     root_nodes: list[str],
 ) -> None:
     """Fail if root nodes are missing.

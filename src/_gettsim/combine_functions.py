@@ -41,21 +41,21 @@ from _gettsim.time_conversion import create_time_conversion_functions
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from _gettsim.gettsim_typing import (
-        QualifiedAggregationSpecsDict,
-        QualifiedDataDict,
-        QualifiedFunctionsDict,
-        QualifiedTargetsDict,
+    from _gettsim.typing import (
+        QualNameAggregationSpecsDict,
+        QualNameDataDict,
+        QualNameFunctionsDict,
+        QualNameTargetsDict,
     )
 
 
 def combine_policy_functions_and_derived_functions(
-    functions: QualifiedFunctionsDict,
-    aggregation_specs_from_environment: QualifiedAggregationSpecsDict,
-    targets: QualifiedTargetsDict,
-    data: QualifiedDataDict,
+    functions: QualNameFunctionsDict,
+    aggregation_specs_from_environment: QualNameAggregationSpecsDict,
+    targets: QualNameTargetsDict,
+    data: QualNameDataDict,
     top_level_namespace: set[str],
-) -> QualifiedFunctionsDict:
+) -> QualNameFunctionsDict:
     """Add derived functions to the qualified functions dict.
 
     Derived functions are time converted functions and aggregation functions (aggregate
@@ -128,12 +128,12 @@ def combine_policy_functions_and_derived_functions(
 
 
 def _create_aggregate_by_group_functions(
-    functions: QualifiedFunctionsDict,
-    targets: QualifiedTargetsDict,
-    data: QualifiedDataDict,
-    aggregations_from_environment: QualifiedAggregationSpecsDict,
+    functions: QualNameFunctionsDict,
+    targets: QualNameTargetsDict,
+    data: QualNameDataDict,
+    aggregations_from_environment: QualNameAggregationSpecsDict,
     top_level_namespace: set[str],
-) -> QualifiedFunctionsDict:
+) -> QualNameFunctionsDict:
     """Create aggregation functions."""
     # Create aggregation functions from environment
     aggregation_functions_from_environment = _create_aggregation_functions(
@@ -168,11 +168,11 @@ def _create_aggregate_by_group_functions(
 
 
 def _create_aggregation_functions(
-    functions: QualifiedFunctionsDict,
-    aggregation_functions_to_create: QualifiedAggregationSpecsDict,
+    functions: QualNameFunctionsDict,
+    aggregation_functions_to_create: QualNameAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
     top_level_namespace: set[str],
-) -> QualifiedFunctionsDict:
+) -> QualNameFunctionsDict:
     """Create aggregation functions for one aggregation type.
 
     Parameters
@@ -248,10 +248,10 @@ def _create_aggregation_functions(
 
 
 def _create_derived_aggregations_specs(
-    functions: QualifiedFunctionsDict,
-    targets: QualifiedTargetsDict,
-    data: QualifiedDataDict,
-) -> QualifiedAggregationSpecsDict:
+    functions: QualNameFunctionsDict,
+    targets: QualNameTargetsDict,
+    data: QualNameDataDict,
+) -> QualNameAggregationSpecsDict:
     """Create automatic aggregation specs derived from functions and data.
 
     Aggregation specifications are created automatically for summation aggregations.
@@ -315,7 +315,7 @@ def _create_derived_aggregations_specs(
 
 
 def _get_potential_aggregation_function_names_from_function_arguments(
-    functions: QualifiedFunctionsDict,
+    functions: QualNameFunctionsDict,
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.
 
@@ -351,7 +351,7 @@ def _create_one_aggregate_by_group_func(
     aggregation_target: str,
     aggregation_spec: AggregateByGroupSpec,
     group_by_id: str,
-    functions: QualifiedFunctionsDict,
+    functions: QualNameFunctionsDict,
     top_level_namespace: set[str],
 ) -> DerivedAggregationFunction:
     """Create an aggregation function based on aggregation specification.
@@ -437,8 +437,8 @@ def _create_one_aggregate_by_group_func(
         top_level_namespace=top_level_namespace,
     )
 
-    qualified_source = (
-        _get_qualified_source_col_name(
+    qual_name_source = (
+        _get_qual_name_of_source_col(
             source=source,
             wrapped_func=wrapped_func,
         )
@@ -448,8 +448,8 @@ def _create_one_aggregate_by_group_func(
 
     return DerivedAggregationFunction(
         function=wrapped_func,
-        source=qualified_source,
-        source_function=functions.get(qualified_source, None),
+        source=qual_name_source,
+        source_function=functions.get(qual_name_source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
     )
@@ -458,7 +458,7 @@ def _create_one_aggregate_by_group_func(
 def _create_one_aggregate_by_p_id_func(
     aggregation_target: str,
     aggregation_spec: AggregateByPIDSpec,
-    functions: QualifiedFunctionsDict,
+    functions: QualNameFunctionsDict,
     top_level_namespace: set[str],
 ) -> DerivedAggregationFunction:
     """Create one function that links variables across persons.
@@ -545,8 +545,8 @@ def _create_one_aggregate_by_p_id_func(
         top_level_namespace=top_level_namespace,
     )
 
-    qualified_source = (
-        _get_qualified_source_col_name(
+    qual_name_source = (
+        _get_qual_name_of_source_col(
             source=source,
             wrapped_func=wrapped_func,
         )
@@ -556,18 +556,18 @@ def _create_one_aggregate_by_p_id_func(
 
     return DerivedAggregationFunction(
         function=wrapped_func,
-        source=qualified_source,
-        source_function=functions.get(qualified_source, None),
+        source=qual_name_source,
+        source_function=functions.get(qual_name_source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
     )
 
 
 def _annotate_aggregation_functions(
-    functions: QualifiedFunctionsDict,
+    functions: QualNameFunctionsDict,
     types_input_variables: dict[str, type],
-    aggregation_functions: QualifiedFunctionsDict,
-) -> QualifiedFunctionsDict:
+    aggregation_functions: QualNameFunctionsDict,
+) -> QualNameFunctionsDict:
     """Annotate aggregation functions.
 
     Add type annotations to the aggregation functions based on the type annotations of
@@ -627,7 +627,7 @@ def _annotate_aggregation_functions(
 
 
 def _fail_if_targets_not_in_functions(
-    functions: QualifiedFunctionsDict, targets: QualifiedTargetsDict
+    functions: QualNameFunctionsDict, targets: QualNameTargetsDict
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -656,7 +656,7 @@ def _fail_if_targets_not_in_functions(
         raise ValueError(msg)
 
 
-def _get_qualified_source_col_name(
+def _get_qual_name_of_source_col(
     source: str,
     wrapped_func: Callable,
 ) -> str | None:

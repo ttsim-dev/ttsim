@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 
 from _gettsim.function_types import GroupByFunction, group_by_function, policy_function
-from _gettsim.gettsim_typing import NestedFunctionDict
 from _gettsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
@@ -16,6 +15,7 @@ from _gettsim.policy_environment import (
     load_functions_tree_for_date,
     set_up_policy_environment,
 )
+from _gettsim.typing import NestedFunctionDict
 from _gettsim_tests import TEST_DIR
 
 

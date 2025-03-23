@@ -9,10 +9,10 @@ import optree
 
 from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim.function_types import PolicyFunction
-from _gettsim.gettsim_typing import (
+from _gettsim.typing import (
     NestedDataDict,
     NestedFunctionDict,
-    QualifiedFunctionsDict,
+    QualNameFunctionsDict,
 )
 
 
@@ -396,7 +396,7 @@ def assert_valid_gettsim_pytree(
 
 def get_name_of_group_by_id(
     target_name: str,
-    group_by_functions: QualifiedFunctionsDict,
+    group_by_functions: QualNameFunctionsDict,
 ) -> str:
     """Get the group-by-identifier name for some target.
 
