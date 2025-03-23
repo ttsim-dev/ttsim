@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-from _gettsim.combine_functions_in_tree import (
+from _gettsim.combine_functions import (
     _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,
     _create_aggregation_functions,

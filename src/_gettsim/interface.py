@@ -8,7 +8,7 @@ import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
-from _gettsim.combine_functions_in_tree import (
+from _gettsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from _gettsim.config import (

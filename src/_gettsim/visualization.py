@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
-from _gettsim.combine_functions_in_tree import (
+from _gettsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from _gettsim.config import DEFAULT_TARGETS
