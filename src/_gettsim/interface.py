@@ -149,7 +149,7 @@ def compute_taxes_and_transfers(
     )
     _fail_if_foreign_keys_are_invalid(
         data=input_data,
-        p_id_col=data.get("p_id", None),
+        p_id=data.get("p_id", None),
     )
 
     tax_transfer_function = dags.concatenate_functions(
@@ -578,19 +578,19 @@ def _fail_if_group_variables_not_constant_within_groups(
 
 def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
     """Check that pid is unique."""
-    p_id_col = data_tree.get("p_id", None)
-    if p_id_col is None:
+    p_id = data_tree.get("p_id", None)
+    if p_id is None:
         raise ValueError("The input data must contain the p_id.")
 
     # Check for non-unique p_ids
     p_id_counts = {}
-    for p_id in p_id_col:
-        if p_id in p_id_counts:
-            p_id_counts[p_id] += 1
+    for i in p_id:
+        if i in p_id_counts:
+            p_id_counts[i] += 1
         else:
-            p_id_counts[p_id] = 1
+            p_id_counts[i] = 1
 
-    non_unique_p_ids = [p_id for p_id, count in p_id_counts.items() if count > 1]
+    non_unique_p_ids = [i for i, count in p_id_counts.items() if count > 1]
 
     if non_unique_p_ids:
         message = (
@@ -602,7 +602,7 @@ def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
 
 def _fail_if_foreign_keys_are_invalid(
     data: QualNameDataDict,
-    p_id_col: pd.Series,
+    p_id: pd.Series,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -610,7 +610,7 @@ def _fail_if_foreign_keys_are_invalid(
     Foreign keys must point to an existing `p_id` in the input data and must not refer
     to the `p_id` of the same row.
     """
-    valid_ids = set(p_id_col) | {-1}
+    valid_ids = set(p_id) | {-1}
 
     for name, data_column in data.items():
         foreign_key_col = dt.tree_path_from_qual_name(name) in FOREIGN_KEYS
@@ -628,12 +628,12 @@ def _fail_if_foreign_keys_are_invalid(
             )
             raise ValueError(message)
 
-        equal_to_pid_in_same_row = [i for i, j in zip(data_column, p_id_col) if i == j]
+        equal_to_pid_in_same_row = [i for i, j in zip(data_column, p_id) if i == j]
         if any(equal_to_pid_in_same_row):
             message = format_errors_and_warnings(
                 f"""
                 For {path}, the following are equal to the p_id in the same
-                row: {[i for i, j in zip(data_column, p_id_col) if i == j]}.
+                row: {[i for i, j in zip(data_column, p_id) if i == j]}.
                 """
             )
             raise ValueError(message)

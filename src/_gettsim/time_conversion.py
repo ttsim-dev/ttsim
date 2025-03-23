@@ -15,7 +15,7 @@ from _gettsim.function_types import DerivedTimeConversionFunction, PolicyFunctio
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from _gettsim.typing import NestedDataDict, NestedFunctionDict
+    from _gettsim.typing import QualNameDataDict, QualNameFunctionsDict
 
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7
@@ -231,9 +231,9 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions: NestedFunctionDict,
-    data: NestedDataDict,
-) -> NestedFunctionDict:
+    functions: QualNameFunctionsDict,
+    data: QualNameDataDict,
+) -> QualNameFunctionsDict:
     """
      Create functions that convert variables to different time units.
 

@@ -475,7 +475,7 @@ def _select_group_by_id_from_candidates(
         if len(candidate_names_in_matching_namespace) == 1:
             return candidate_names_in_matching_namespace[0]
         else:
-            _fail_with_ambiguous_group_by_identifier(
+            _fail_because_of_ambiguous_group_by_identifier(
                 candidate_names_in_matching_namespace=candidate_names_in_matching_namespace,
                 all_candidate_names=candidate_names,
                 target_name=target_name,
@@ -484,7 +484,7 @@ def _select_group_by_id_from_candidates(
         return candidate_names[0]
 
 
-def _fail_with_ambiguous_group_by_identifier(
+def _fail_because_of_ambiguous_group_by_identifier(
     candidate_names_in_matching_namespace: list[str],
     all_candidate_names: list[str],
     target_name: str,
