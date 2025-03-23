@@ -427,7 +427,7 @@ def get_name_of_group_by_id(
         elif target_name.endswith(f"_{g}"):
             return _select_group_by_id_from_candidates(
                 candidate_names=[
-                    p for p in group_by_functions if p.endswith(f"q{g}_id")
+                    p for p in group_by_functions if p.endswith(f"{g}_id")
                 ],
                 target_name=target_name,
             )

@@ -12,7 +12,7 @@ from _gettsim.config import (
 )
 from _gettsim.function_types import policy_function
 from _gettsim.interface import (
-    _add_rounding_to_function,
+    _add_rounding_to_functions,
     _apply_rounding_spec,
     compute_taxes_and_transfers,
 )
@@ -332,6 +332,6 @@ def test_raise_if_missing_rounding_spec(params, match):
         return arg_1
 
     with pytest.raises(KeyError, match=match):
-        _add_rounding_to_function(
+        _add_rounding_to_functions(
             input_function=eink_st_func, params=params, path=("eink_st_func",)
         )
