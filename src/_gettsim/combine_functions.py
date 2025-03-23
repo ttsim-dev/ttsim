@@ -243,7 +243,7 @@ def _create_aggregation_functions(
     return _annotate_aggregation_functions(
         functions=functions,
         aggregation_functions=aggregation_functions,
-        types_input_variables=TYPES_INPUT_VARIABLES,
+        types_input_variables=dt.flatten_to_qual_names(TYPES_INPUT_VARIABLES),
     )
 
 

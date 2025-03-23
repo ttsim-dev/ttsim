@@ -93,7 +93,7 @@ def compute_taxes_and_transfers(
     top_level_namespace = (
         set(environment.functions_tree.keys())
         | set(data_tree.keys())
-        | set(dt.unflatten_from_qual_names(TYPES_INPUT_VARIABLES).keys())
+        | set(TYPES_INPUT_VARIABLES.keys())
     )
     functions = dt.functions_without_tree_logic(
         functions=environment.functions_tree, top_level_namespace=top_level_namespace
@@ -207,8 +207,11 @@ def _convert_data_to_correct_types(
         internal_type = None
 
         # Look for column in TYPES_INPUT_VARIABLES
-        if name in TYPES_INPUT_VARIABLES:
-            internal_type = TYPES_INPUT_VARIABLES[name]
+        types_qualified_input_variables = dt.flatten_to_qual_names(
+            TYPES_INPUT_VARIABLES
+        )
+        if name in types_qualified_input_variables:
+            internal_type = types_qualified_input_variables[name]
         # Look for column in functions_tree_overridden
         elif name in functions_overridden:
             func = functions_overridden[name]
