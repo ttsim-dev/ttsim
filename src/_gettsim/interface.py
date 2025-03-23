@@ -146,6 +146,7 @@ def compute_taxes_and_transfers(
     )
     _fail_if_foreign_keys_are_invalid(
         data=input_data,
+        p_id_col=data.get("p_id", None),
     )
 
     tax_transfer_function = dags.concatenate_functions(
@@ -208,11 +209,17 @@ def _convert_data_to_correct_types(
         # Look for column in functions_tree_overridden
         elif name in functions_overridden:
             func = functions_overridden[name]
-            return_annotation_is_array = type(func) in [
-                PolicyFunction,
-                GroupByFunction,
-            ] and (
-                func.skip_vectorization if isinstance(func, PolicyFunction) else True
+            func_is_group_by_function = isinstance(
+                getattr(func, "__wrapped__", func), GroupByFunction
+            )
+            func_is_policy_function = isinstance(
+                getattr(func, "__wrapped__", func), PolicyFunction
+            )
+            return_annotation_is_array = (
+                (func_is_group_by_function or func_is_policy_function)
+                and func.skip_vectorization
+                if func_is_policy_function
+                else True
             )
             if return_annotation_is_array:
                 # Assumes that things are annotated with numpy.ndarray([dtype]), might
@@ -371,9 +378,9 @@ def _add_rounding_to_functions(
     """
     rounded_functions = {}
     for name, func in functions.items():
-        if func.params_key_for_rounding:
+        if getattr(func, "params_key_for_rounding", False):
             params_key = func.params_key_for_rounding
-            # Check if there are any rounding specifications.
+            # Check if there are any rounding specifications in params files.
             if not (
                 params_key in params
                 and "rounding" in params[params_key]
@@ -532,7 +539,9 @@ def _fail_if_group_variables_not_constant_within_groups(
         Dictionary of functions.
     """
     group_by_functions = {
-        k: v for k, v in functions.items() if isinstance(v, GroupByFunction)
+        k: v
+        for k, v in functions.items()
+        if isinstance(getattr(v, "__wrapped__", v), GroupByFunction)
     }
 
     faulty_data_columns = []
@@ -591,6 +600,7 @@ def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
 
 def _fail_if_foreign_keys_are_invalid(
     data: QualifiedDataDict,
+    p_id_col: pd.Series,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -598,8 +608,7 @@ def _fail_if_foreign_keys_are_invalid(
     Foreign keys must point to an existing `p_id` in the input data and must not refer
     to the `p_id` of the same row.
     """
-    p_ids = data.get("p_id", {})
-    valid_ids = set(p_ids) | {-1}
+    valid_ids = set(p_id_col) | {-1}
 
     for name, data_column in data.items():
         foreign_key_col = dt.tree_path_from_qual_name(name) in FOREIGN_KEYS
@@ -617,12 +626,12 @@ def _fail_if_foreign_keys_are_invalid(
             )
             raise ValueError(message)
 
-        equal_to_pid_in_same_row = [i for i, j in zip(data_column, p_ids) if i == j]
+        equal_to_pid_in_same_row = [i for i, j in zip(data_column, p_id_col) if i == j]
         if any(equal_to_pid_in_same_row):
             message = format_errors_and_warnings(
                 f"""
                 For {path}, the following are equal to the p_id in the same
-                row: {[i for i, j in zip(data_column, p_ids) if i == j]}.
+                row: {[i for i, j in zip(data_column, p_id_col) if i == j]}.
                 """
             )
             raise ValueError(message)

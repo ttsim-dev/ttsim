@@ -177,7 +177,7 @@ def test_fail_if_foreign_key_points_to_non_existing_pid(
     }
 
     with pytest.raises(ValueError, match=expected_error_message):
-        _fail_if_foreign_keys_are_invalid(data)
+        _fail_if_foreign_keys_are_invalid(data, p_id_col=data["p_id"])
 
 
 @pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
@@ -188,7 +188,7 @@ def test_allow_minus_one_as_foreign_key(foreign_key_path):
         "p_id": pd.Series([1, 2, 3]),
     }
 
-    _fail_if_foreign_keys_are_invalid(data)
+    _fail_if_foreign_keys_are_invalid(data, p_id_col=data["p_id"])
 
 
 @pytest.mark.parametrize(
@@ -212,7 +212,7 @@ def test_fail_if_foreign_key_points_to_pid_of_same_row(
     }
 
     with pytest.raises(ValueError, match=expected_error_message):
-        _fail_if_foreign_keys_are_invalid(data)
+        _fail_if_foreign_keys_are_invalid(data, p_id_col=data["p_id"])
 
 
 @pytest.mark.parametrize(

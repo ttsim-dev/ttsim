@@ -193,7 +193,7 @@ def _create_aggregation_functions(
     group_by_functions = {
         name: func
         for name, func in functions.items()
-        if isinstance(func, GroupByFunction)
+        if isinstance(getattr(func, "__wrapped__", func), GroupByFunction)
     }
 
     expected_aggregation_spec_type = (
