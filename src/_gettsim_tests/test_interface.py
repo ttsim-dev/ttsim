@@ -2,6 +2,7 @@ import copy
 import re
 import warnings
 
+import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
@@ -9,7 +10,7 @@ import pytest
 from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from _gettsim.config import FOREIGN_KEYS
 from _gettsim.config import numpy_or_jax as np
-from _gettsim.function_types import policy_function
+from _gettsim.function_types import group_by_function, policy_function
 from _gettsim.gettsim_typing import convert_series_to_internal_type
 from _gettsim.interface import (
     _convert_data_to_correct_types,
@@ -20,11 +21,7 @@ from _gettsim.interface import (
     compute_taxes_and_transfers,
 )
 from _gettsim.policy_environment import PolicyEnvironment
-from _gettsim.shared import (
-    assert_valid_gettsim_pytree,
-    create_tree_from_path_and_value,
-    upsert_path_and_value,
-)
+from _gettsim.shared import assert_valid_gettsim_pytree
 from _gettsim.transfers.arbeitslosengeld_2.group_by_ids import bg_id
 from _gettsim.transfers.wohngeld.group_by_ids import (
     wthh_id,
@@ -158,103 +155,92 @@ def test_fail_if_pid_is_non_unique():
 
 @pytest.mark.parametrize(
     (
-        "foreign_key_path",
+        "foreign_key_name",
         "expected_error_message",
     ),
     [
-        (("demographics", "p_id_ehepartner"), "not a valid p_id in\nthe input data"),
+        ("demographics__p_id_ehepartner", "not a valid p_id in\nthe input data"),
         (
-            ("arbeitslosengeld_2", "p_id_einstandspartner"),
+            "arbeitslosengeld_2__p_id_einstandspartner",
             "not a\nvalid p_id in the input data",
         ),
-        (("demographics", "p_id_elternteil_1"), "not a valid p_id\nin the input data"),
-        (("demographics", "p_id_elternteil_2"), "not a valid p_id\nin the input data"),
+        ("demographics__p_id_elternteil_1", "not a valid p_id\nin the input data"),
+        ("demographics__p_id_elternteil_2", "not a valid p_id\nin the input data"),
     ],
 )
 def test_fail_if_foreign_key_points_to_non_existing_pid(
-    foreign_key_path, expected_error_message
+    foreign_key_name, expected_error_message
 ):
-    data = create_tree_from_path_and_value(
-        path=foreign_key_path,
-        value=pd.Series([0, 1, 4]),
-    )
-    data = upsert_path_and_value(
-        base=data,
-        path_to_upsert=("p_id",),
-        value_to_upsert=pd.Series([1, 2, 3]),
-    )
+    data = {
+        foreign_key_name: pd.Series([0, 1, 4]),
+        "p_id": pd.Series([1, 2, 3]),
+    }
 
     with pytest.raises(ValueError, match=expected_error_message):
-        _fail_if_foreign_keys_are_invalid(
-            data_tree=data,
-            p_ids=data["p_id"],
-        )
+        _fail_if_foreign_keys_are_invalid(data)
 
 
 @pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
 def test_allow_minus_one_as_foreign_key(foreign_key_path):
-    data = create_tree_from_path_and_value(
-        path=foreign_key_path,
-        value=pd.Series([-1, 1, 2]),
-    )
-    data = upsert_path_and_value(
-        base=data,
-        path_to_upsert=("p_id",),
-        value_to_upsert=pd.Series([1, 2, 3]),
-    )
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
+    data = {
+        foreign_key_name: pd.Series([-1, 1, 2]),
+        "p_id": pd.Series([1, 2, 3]),
+    }
 
-    _fail_if_foreign_keys_are_invalid(
-        data_tree=data,
-        p_ids=data["p_id"],
-    )
+    _fail_if_foreign_keys_are_invalid(data)
 
 
 @pytest.mark.parametrize(
     (
-        "foreign_key_path",
+        "foreign_key_name",
         "expected_error_message",
     ),
     [
-        (("demographics", "p_id_ehepartner"), "are equal to the p_id"),
-        (("arbeitslosengeld_2", "p_id_einstandspartner"), "are equal to\nthe p_id"),
-        (("demographics", "p_id_elternteil_1"), "are equal to the p_id"),
-        (("demographics", "p_id_elternteil_2"), "are equal to the p_id"),
+        ("demographics__p_id_ehepartner", "are equal to the p_id"),
+        ("arbeitslosengeld_2__p_id_einstandspartner", "are equal to\nthe p_id"),
+        ("demographics__p_id_elternteil_1", "are equal to the p_id"),
+        ("demographics__p_id_elternteil_2", "are equal to the p_id"),
     ],
 )
 def test_fail_if_foreign_key_points_to_pid_of_same_row(
-    foreign_key_path, expected_error_message
+    foreign_key_name, expected_error_message
 ):
-    data = create_tree_from_path_and_value(
-        path=foreign_key_path,
-        value=pd.Series([1, 3, 3]),
-    )
-    data = upsert_path_and_value(
-        base=data,
-        path_to_upsert=("p_id",),
-        value_to_upsert=pd.Series([1, 2, 3]),
-    )
+    data = {
+        foreign_key_name: pd.Series([1, 3, 3]),
+        "p_id": pd.Series([1, 2, 3]),
+    }
 
     with pytest.raises(ValueError, match=expected_error_message):
-        _fail_if_foreign_keys_are_invalid(
-            data_tree=data,
-            p_ids=data["p_id"],
-        )
+        _fail_if_foreign_keys_are_invalid(data)
 
 
 @pytest.mark.parametrize(
-    "data",
+    "data, functions",
     [
-        {
-            "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
-            "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-        },
+        (
+            {
+                "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
+                "hh_id": pd.Series([1, 1, 2], name="hh_id"),
+            },
+            {},
+        ),
+        (
+            {
+                "foo_eg": pd.Series([1, 2, 2], name="foo_eg"),
+                "eg_id": pd.Series([1, 1, 2], name="eg_id"),
+            },
+            {
+                "eg_id": group_by_function()(lambda x: x),
+            },
+        ),
     ],
 )
-def test_fail_if_group_variables_not_constant_within_groups(data):
+def test_fail_if_group_variables_not_constant_within_groups(data, functions):
     with pytest.raises(ValueError):
         _fail_if_group_variables_not_constant_within_groups(
-            data_tree=data,
-            functions_tree={},
+            data=data,
+            functions=functions,
         )
 
 
@@ -704,35 +690,29 @@ def test_provide_endogenous_groupings(data, functions_overridden):
             "- hh_id: Conversion from input type float64 to int",
         ),
         (
-            {"demographics": {"wohnort_ost": pd.Series([1.1, 0.0, 1.0])}},
+            {"demographics__wohnort_ost": pd.Series([1.1, 0.0, 1.0])},
             {},
             "- demographics__wohnort_ost: Conversion from input type float64 to bool",
         ),
         (
             {
                 "hh_id": pd.Series([1.0, 2.0, 3.0]),
-                "demographics": {
-                    "wohnort_ost": pd.Series([2, 0, 1]),
-                },
+                "demographics__wohnort_ost": pd.Series([2, 0, 1]),
             },
             {},
             "- demographics__wohnort_ost: Conversion from input type int64 to bool",
         ),
         (
-            {"demographics": {"wohnort_ost": pd.Series(["True", "False"])}},
+            {"demographics__wohnort_ost": pd.Series(["True", "False"])},
             {},
             "- demographics__wohnort_ost: Conversion from input type object to bool",
         ),
         (
             {
                 "hh_id": pd.Series([1, "1", 2]),
-                "einkommensteuer": {
-                    "einkünfte": {
-                        "aus_nichtselbstständiger_arbeit": {
-                            "bruttolohn_m": pd.Series(["2000", 3000, 4000])
-                        }
-                    }
-                },
+                "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": pd.Series(  # noqa: E501
+                    ["2000", 3000, 4000]
+                ),
             },
             {},
             "- hh_id: Conversion from input type object to int failed.",

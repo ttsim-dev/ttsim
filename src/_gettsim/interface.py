@@ -602,12 +602,12 @@ def _fail_if_foreign_keys_are_invalid(
 
     for name, data_column in data.items():
         foreign_key_col = dt.tree_path_from_qual_name(name) in FOREIGN_KEYS
+        path = dt.tree_path_from_qual_name(name)
         if not foreign_key_col:
             continue
 
         # Referenced `p_id` must exist in the input data
         if not all(i in valid_ids for i in data_column):
-            path = dt.tree_path_from_qual_name(name)
             message = format_errors_and_warnings(
                 f"""
                 For {path}, the following are not a valid p_id in the input
@@ -631,10 +631,9 @@ def _warn_if_functions_overridden_by_data(
     functions_overridden: QualifiedFunctionsDict,
 ) -> None:
     """Warn if functions are overridden by data."""
-    formatted_list = format_list_linewise(list(functions_overridden))
-    if len(formatted_list) > 0:
+    if len(functions_overridden) > 0:
         warnings.warn(
-            FunctionsAndColumnsOverlapWarning(formatted_list),
+            FunctionsAndColumnsOverlapWarning(functions_overridden.keys()),
             stacklevel=3,
         )
 
