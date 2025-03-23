@@ -105,7 +105,7 @@ outputs:
     - 3
     - 0
     - 3
-  demographics__ehe_id:
+  familie__ehe_id:
     - 0
     - 0
     - 1

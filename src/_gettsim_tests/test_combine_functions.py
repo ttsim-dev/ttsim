@@ -11,6 +11,7 @@ from _gettsim.combine_functions import (
     _create_one_aggregate_by_group_func,
     _create_one_aggregate_by_p_id_func,
     _fail_if_targets_not_in_functions,
+    _get_name_of_aggregation_source,
 )
 from _gettsim.function_types import (
     DerivedAggregationFunction,
@@ -587,3 +588,32 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
+
+
+@pytest.mark.parametrize(
+    (
+        "target_name",
+        "top_level_namespace",
+        "expected",
+    ),
+    [
+        (
+            "arbeitslosengeld_2__vermögen_bg",
+            {"vermögen", "arbeitslosengeld_2"},
+            "vermögen",
+        ),
+        (
+            "arbeitslosengeld_2__vermögen_bg",
+            {"arbeitslosengeld_2"},
+            "arbeitslosengeld_2__vermögen",
+        ),
+    ],
+)
+def test_get_name_of_aggregation_source(target_name, top_level_namespace, expected):
+    assert (
+        _get_name_of_aggregation_source(
+            target_name=target_name,
+            top_level_namespace=top_level_namespace,
+        )
+        == expected
+    )

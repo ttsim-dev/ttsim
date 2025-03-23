@@ -153,6 +153,7 @@ def _create_aggregate_by_group_functions(
         functions=functions_with_aggregation_functions_from_environment,
         targets=targets,
         data=data,
+        top_level_namespace=top_level_namespace,
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
         functions=functions_with_aggregation_functions_from_environment,
@@ -250,6 +251,7 @@ def _create_derived_aggregations_specs(
     functions: QualNameFunctionsDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
+    top_level_namespace: set[str],
 ) -> QualNameAggregationSpecsDict:
     """Create automatic aggregation specs derived from functions and data.
 
@@ -305,7 +307,10 @@ def _create_derived_aggregations_specs(
         if aggregation_specs_needed:
             derived_aggregations_specs[target_name] = AggregateByGroupSpec(
                 aggr="sum",
-                source=remove_group_suffix(target_name),
+                source=_get_name_of_aggregation_source(
+                    target_name=target_name,
+                    top_level_namespace=top_level_namespace,
+                ),
             )
         else:
             continue
@@ -666,3 +671,32 @@ def _get_qual_name_of_source_col(
         return matches[0]
     else:
         return None
+
+
+def _get_name_of_aggregation_source(
+    target_name: str,
+    top_level_namespace: set[str],
+) -> str:
+    """Get the name of the source column for an aggregation target.
+
+    This function allows for source and target name to be from different namespaces.
+
+    Example 1
+    ---------
+    > target_name = "arbeitslosengeld_2__vermögen_bg"
+    > top_level_namespace = {"vermögen", "arbeitslosengeld_2"}
+    > _get_name_of_aggregation_source(target_name, top_level_namespace)
+    "vermögen"
+
+    Example 2
+    ---------
+    > target_name = "arbeitslosengeld_2__vermögen_bg"
+    > top_level_namespace = {"arbeitslosengeld_2"}
+    > _get_name_of_aggregation_source(target_name, top_level_namespace)
+    "arbeitslosengeld_2__vermögen"
+    """
+    leaf_name = remove_group_suffix(dt.tree_path_from_qual_name(target_name)[-1])
+    if leaf_name in top_level_namespace:
+        return leaf_name
+    else:
+        return remove_group_suffix(target_name)

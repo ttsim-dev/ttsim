@@ -159,13 +159,13 @@ def test_fail_if_pid_is_non_unique():
         "expected_error_message",
     ),
     [
-        ("familie__p_id_ehepartner", "not a valid p_id in\nthe input data"),
+        ("familie__p_id_ehepartner", "not a valid p_id in the\ninput data"),
         (
             "arbeitslosengeld_2__p_id_einstandspartner",
             "not a\nvalid p_id in the input data",
         ),
-        ("familie__p_id_elternteil_1", "not a valid p_id\nin the input data"),
-        ("familie__p_id_elternteil_2", "not a valid p_id\nin the input data"),
+        ("familie__p_id_elternteil_1", "not a valid p_id in the\ninput data"),
+        ("familie__p_id_elternteil_2", "not a valid p_id in the\ninput data"),
     ],
 )
 def test_fail_if_foreign_key_points_to_non_existing_pid(

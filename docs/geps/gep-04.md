@@ -235,7 +235,7 @@ columns as keys and the AggregateByGroupSpec data class as values. The data clas
 specifies the `source` (i.e. the column which is being aggregated) and the aggregation
 method `aggr`.
 
-For example, in `demographics.py`, we could have:
+For example, in `household_characteristics.py`, we could have:
 
 ```
 from _gettsim.aggregation import AggregateByGroupSpec
@@ -247,7 +247,7 @@ aggregation_specs = {
 ```
 
 The group identifier (`hh_id`, `wohngeld__wthh_id`, `arbeitslosengeld_2__fg_id`,
-`arbeitslosengeld_2__bg_id`, `arbeitslosengeld_2__eg_id`, `demographics__ehe_id`,
+`arbeitslosengeld_2__bg_id`, `arbeitslosengeld_2__eg_id`, `familie__ehe_id`,
 `einkommensteuer__sn_id`) will be automatically included as an argument; for `count`
 nothing else is necessary.
 

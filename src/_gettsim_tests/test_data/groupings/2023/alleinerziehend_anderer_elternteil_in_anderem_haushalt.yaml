@@ -68,7 +68,7 @@ outputs:
     - 0
     - 0
     - 1
-  demographics__ehe_id:
+  familie__ehe_id:
     - 0
     - 1
     - 2

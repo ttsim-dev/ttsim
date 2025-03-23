@@ -17,7 +17,7 @@ inputs:
       - false
     alter:
       - 45
-    demographics__anzahl_kinder_bis_24:
+    sozialversicherung__pflege__beitrag__anzahl_kinder_bis_24:
       - 0
     arbeitsstunden_w:
       - 20.0

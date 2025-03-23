@@ -75,7 +75,7 @@ def test_grundrente_proxy_rente_vorjahr_comparison(test: PolicyTest):
 
     # Calculate pension of last year
     environment = cached_set_up_policy_environment(test.date - timedelta(days=365))
-    test.input_tree["demographics"]["alter"] -= 1
+    test.input_tree["alter"] -= 1
     result_previous_year = compute_taxes_and_transfers(
         data_tree=test.input_tree,
         environment=environment,

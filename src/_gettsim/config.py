@@ -69,7 +69,7 @@ INTERNAL_PARAMS_GROUPS = [
 SUPPORTED_GROUPINGS = {
     "hh": {
         "name": "Haushalt",
-        "namespace": "demographics",
+        "namespace": "top-level",
         "description": "Individuals living together in a household in the Wohngeld"
         " sense (§5 WoGG).",
         "potentially_endogenous": False,
@@ -106,7 +106,7 @@ SUPPORTED_GROUPINGS = {
     },
     "ehe": {
         "name": "Ehepartner",
-        "namespace": "demographics",
+        "namespace": "familie",
         "description": "Couples that are either married or in a civil union.",
         "potentially_endogenous": True,
     },
@@ -117,6 +117,7 @@ SUPPORTED_GROUPINGS = {
         "potentially_endogenous": True,
     },
 }
+
 
 SUPPORTED_TIME_UNITS = {
     "y": {

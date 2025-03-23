@@ -113,7 +113,7 @@ outputs:
     - 2
     - 2
     - 1
-  demographics__ehe_id:
+  familie__ehe_id:
     - 0
     - 1
     - 2

@@ -18,10 +18,10 @@ The units are:
 | -------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | Haushalt                         | hh_id                       | Individuals that live together in one household in the Wohngeld sense (§5 WoGG).                                                                                                | no         |
 | wohngeldrechtlicher Teilhaushalt | wohngeld\_\_wthh_id         | The relevant unit for Wohngeld. Encompasses all members of a household for whom the Vorrangprüfung of Wohngeld against ALG2/Kinderzuschlag has the same result ∈ {True, False}. | yes        |
-| Familiengemeinschaft             | demographics\_\_fg_id       | Maximum of two generations, the relevant base unit for Bürgergeld / Arbeitslosengeld 2, before excluding children who have enough income fend for themselves.                   | yes        |
+| Familiengemeinschaft             | familie\_\_fg_id            | Maximum of two generations, the relevant base unit for Bürgergeld / Arbeitslosengeld 2, before excluding children who have enough income fend for themselves.                   | yes        |
 | Bedarfsgemeinschaft              | arbeitslosengeld_2\_\_bg_id | Familiengemeinschaft except for children who have enough income to fend for themselves. Relevant unit for Bürgergeld / Arbeitslosengeld 2.                                      | yes        |
 | Steuernummer                     | einkommensteuer\_\_sn_id    | Spouses filing taxes jointly or individuals.                                                                                                                                    | yes        |
-| Ehepartner                       | demographics\_\_ehe_id      | Couples that are either married or in a civil union.                                                                                                                            | yes        |
+| Ehepartner                       | familie\_\_ehe_id           | Couples that are either married or in a civil union.                                                                                                                            | yes        |
 | Einstandsgemeinschaft            | arbeitslosengeld_2\_\_eg_id | A couple whose members are deemed to be responsible for each other.                                                                                                             | yes        |
 
 ## Taxes
@@ -131,7 +131,7 @@ The units are:
 
 #### Aggregation unit
 
-- `demographics__ehe_id` (endogenous)
+- `familie__ehe_id` (endogenous)
 
 #### Pointers
 
@@ -146,7 +146,7 @@ The units are:
 
 #### Aggregation unit
 
-- `demographics__ehe_id` (endogenous)
+- `familie__ehe_id` (endogenous)
 
 #### Pointers
 

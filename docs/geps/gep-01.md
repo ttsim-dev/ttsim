@@ -144,8 +144,7 @@ GETTSIM knows about the following units:
 - `arbeitslosengeld_2__eg_id`: Einstandsgemeinschaft, a couple whose members are deemed
   to be responsible for each other. This includes couples that live together and may or
   may not be married or in a civil union.
-- `demographics__ehe_id`: Ehegemeinschaft, i.e. couples that are married or in a civil
-  union.
+- `familie__ehe_id`: Ehegemeinschaft, i.e. couples that are married or in a civil union.
 - `einkommensteuer__sn_id`: Steuernummer (same for spouses filing taxes jointly, not the
   same as the Germany-wide Steuer-ID)
 

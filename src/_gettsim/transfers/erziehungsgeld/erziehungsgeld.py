@@ -393,7 +393,7 @@ def einkommensgrenze_y(
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def einkommensgrenze_ohne_geschwisterbonus(
-    alleinerziehend_fg: bool,
+    familie__alleinerziehend_fg: bool,
     alter_monate: float,
     budgetsatz: bool,
     erziehungsgeld_params: dict,
@@ -407,8 +407,8 @@ def einkommensgrenze_ohne_geschwisterbonus(
     ----------
     erziehungsgeld_params
         See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-    alleinerziehend_fg
-        See :func:`alleinerziehend_fg`.
+    familie__alleinerziehend_fg
+        See :func:`familie__alleinerziehend_fg`.
     alter_monate
         See :func:`alter_monate`.
     budgetsatz
@@ -430,8 +430,8 @@ def einkommensgrenze_ohne_geschwisterbonus(
     else:
         limit = "reduced_limit"
 
-    if alleinerziehend_fg:
-        status_eltern = "familie__alleinerziehend"
+    if familie__alleinerziehend_fg:
+        status_eltern = "alleinerziehend"
     else:
         status_eltern = "paar"
 
