@@ -41,6 +41,10 @@ def gesamteinkommen_ohne_abzüge_mit_kapitaleinkünften_y(
 ) -> float:
     """Sum of gross incomes with capital income.
 
+    # TODO(@MImmesberger): Use this function to compute sum of Einkünfte instead. In
+    particular, don't add Renteneinkommen here, but Renteneinkünfte.
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/842
+
     Parameters
     ----------
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y
@@ -109,6 +113,11 @@ def renteneinkommen_m(
     rente_ertragsanteil: float,
 ) -> float:
     """Calculate monthly pension payment subject to taxation.
+
+    # TODO(@MImmesberger): Add Renteneinkünfte to Einkünfte/Sonstige namespace.
+    # Calculate deduction from Renteneinkünfte in Abzüge dir instead of Renteneinkommen
+    # here directly.
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/842
 
     Parameters
     ----------
