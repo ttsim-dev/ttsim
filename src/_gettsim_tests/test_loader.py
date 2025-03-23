@@ -73,6 +73,7 @@ def test_vectorize_func(vectorized_function: Callable) -> None:
         (RESOURCE_DIR / "foo" / "spam" / "bar.py", RESOURCE_DIR, ("foo", "spam")),
         (RESOURCE_DIR / "taxes" / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
         (RESOURCE_DIR / "transfers" / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
+        (RESOURCE_DIR / "transfers" / "foo.py", RESOURCE_DIR, tuple()),  # noqa: C408
     ],
 )
 def test_convert_path_to_tree_path(

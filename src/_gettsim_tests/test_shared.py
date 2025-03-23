@@ -74,6 +74,17 @@ def test_create_tree_from_path_and_value(paths, expected):
 
 
 @pytest.mark.parametrize(
+    "paths, value, expected",
+    [
+        ((), {"a": None}, {"a": None}),
+        ((), {"a": 1}, {"a": 1}),
+    ],
+)
+def test_create_tree_from_path_and_value_if_path_is_empty(paths, value, expected):
+    assert create_tree_from_path_and_value(paths, value) == expected
+
+
+@pytest.mark.parametrize(
     "left, right, expected",
     [
         ({}, {"a": 1}, {"a": 1}),
