@@ -1,4 +1,4 @@
-from typing import Union
+from typing import TYPE_CHECKING
 
 import numpy
 import pandas as pd
@@ -10,43 +10,54 @@ from pandas.api.types import (
     is_object_dtype,
 )
 
-from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from _gettsim.config import numpy_or_jax as np
-from _gettsim.function_types import (
-    DerivedAggregationFunction,
-    DerivedTimeConversionFunction,
-    GroupByFunction,
-    PolicyFunction,
-)
 
-NestedFunctionDict = dict[
-    str,
-    Union[
-        PolicyFunction,
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    # Make these available for import from other modules.
+    from dags.tree.typing import (  # noqa: F401
+        GenericCallable,
+        NestedInputStructureDict,
+        NestedTargetDict,
+        QualNameTargetList,
+    )
+
+    from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+    from _gettsim.function_types import (
         DerivedAggregationFunction,
         DerivedTimeConversionFunction,
         GroupByFunction,
-        "NestedFunctionDict",
-    ],
-]
-NestedTargetDict = dict[str, Union[None, "NestedTargetDict"]]
-NestedInputStructureDict = dict[str, Union[None, "NestedInputStructureDict"]]
-NestedDataDict = dict[str, Union[pd.Series, "NestedDataDict"]]
-NestedSeriesDict = dict[str, Union[pd.Series, "NestedSeriesDict"]]
-NestedArrayDict = dict[str, Union[np.ndarray, "NestedArrayDict"]]
-NestedAggregationSpecDict = dict[
-    str, Union[AggregateByGroupSpec, AggregateByPIDSpec, "NestedAggregationSpecDict"]
-]
-QualNameFunctionsDict = dict[
-    str,
-    PolicyFunction
-    | DerivedAggregationFunction
-    | DerivedTimeConversionFunction
-    | GroupByFunction,
-]
-QualNameTargetsDict = dict[str, None]
-QualNameDataDict = dict[str, pd.Series]
-QualNameAggregationSpecsDict = dict[str, AggregateByGroupSpec | AggregateByPIDSpec]
+        PolicyFunction,
+    )
+
+    # Specialise from dags' GenericCallable types to GETTSIM's functions.
+    NestedFunctionDict = Mapping[
+        str,
+        PolicyFunction
+        | DerivedAggregationFunction
+        | DerivedTimeConversionFunction
+        | GroupByFunction
+        | "NestedFunctionDict",
+    ]
+    QualNameFunctionsDict = Mapping[
+        str,
+        PolicyFunction
+        | DerivedAggregationFunction
+        | DerivedTimeConversionFunction
+        | GroupByFunction,
+    ]
+
+    # Specialise from dags' NestedInputDict to GETTSIM's types.
+    NestedDataDict = Mapping[str, pd.Series | "NestedDataDict"]
+    QualNameDataDict = Mapping[str, pd.Series]
+    NestedArrayDict = Mapping[str, np.ndarray | "NestedArrayDict"]
+    NestedAggregationSpecDict = Mapping[
+        str, AggregateByGroupSpec | AggregateByPIDSpec | "NestedAggregationSpecDict"
+    ]
+    QualNameAggregationSpecsDict = Mapping[
+        str, AggregateByGroupSpec | AggregateByPIDSpec
+    ]
 
 
 def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:
@@ -77,7 +88,7 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
     return out
 
 
-def convert_series_to_internal_type(  # noqa: PLR0912
+def convert_series_to_internal_type(
     series: pd.Series, internal_type: np.dtype
 ) -> pd.Series:
     """Check if data type of series fits to the internal type of gettsim and otherwise

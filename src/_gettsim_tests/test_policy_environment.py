@@ -1,7 +1,9 @@
 """Some tests for the policy_environment module."""
 
+from __future__ import annotations
+
 from datetime import date, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import optree
 import pandas as pd
@@ -15,8 +17,10 @@ from _gettsim.policy_environment import (
     load_functions_tree_for_date,
     set_up_policy_environment,
 )
-from _gettsim.typing import NestedFunctionDict
 from _gettsim_tests import TEST_DIR
+
+if TYPE_CHECKING:
+    from _gettsim.typing import NestedFunctionDict
 
 
 class TestPolicyEnvironment:

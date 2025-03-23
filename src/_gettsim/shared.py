@@ -1,19 +1,23 @@
+from __future__ import annotations
+
 import inspect
 import textwrap
-from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import dags.tree as dt
 import numpy
 import optree
 
 from _gettsim.config import SUPPORTED_GROUPINGS
-from _gettsim.function_types import PolicyFunction
-from _gettsim.typing import (
-    NestedDataDict,
-    NestedFunctionDict,
-    QualNameFunctionsDict,
-)
+
+if TYPE_CHECKING:
+    from _gettsim.function_types import PolicyFunction
+    from _gettsim.typing import (
+        GenericCallable,
+        NestedDataDict,
+        NestedFunctionDict,
+        QualNameFunctionsDict,
+    )
 
 
 class KeyErrorMessage(str):
@@ -337,7 +341,7 @@ def join_numpy(
 
 
 def assert_valid_gettsim_pytree(
-    tree: Any, leaf_checker: Callable, tree_name: str
+    tree: Any, leaf_checker: GenericCallable, tree_name: str
 ) -> None:
     """
     Recursively assert that a pytree meets the following conditions:
@@ -349,7 +353,7 @@ def assert_valid_gettsim_pytree(
     ----------
     tree : Any
          The tree to validate.
-    leaf_checker : Callable
+    leaf_checker : GenericCallable
          A function that takes a leaf and returns True if it is valid.
     tree_name : str
          The name of the tree (used for error messages).

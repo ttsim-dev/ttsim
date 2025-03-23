@@ -45,14 +45,14 @@ if TYPE_CHECKING:
         QualNameAggregationSpecsDict,
         QualNameDataDict,
         QualNameFunctionsDict,
-        QualNameTargetsDict,
+        QualNameTargetList,
     )
 
 
 def combine_policy_functions_and_derived_functions(
     functions: QualNameFunctionsDict,
     aggregation_specs_from_environment: QualNameAggregationSpecsDict,
-    targets: QualNameTargetsDict,
+    targets: QualNameTargetList,
     data: QualNameDataDict,
     top_level_namespace: set[str],
 ) -> QualNameFunctionsDict:
@@ -73,7 +73,7 @@ def combine_policy_functions_and_derived_functions(
         Dict with qualified aggregation spec names as keys and aggregation specs as
         values.
     targets
-        Dict with qualified target names as keys and None as values.
+        The list of targets with qualified names.
     data
         Dict with qualified data names as keys and pandas Series as values.
     top_level_namespace
@@ -129,7 +129,7 @@ def combine_policy_functions_and_derived_functions(
 
 def _create_aggregate_by_group_functions(
     functions: QualNameFunctionsDict,
-    targets: QualNameTargetsDict,
+    targets: QualNameTargetList,
     data: QualNameDataDict,
     aggregations_from_environment: QualNameAggregationSpecsDict,
     top_level_namespace: set[str],
@@ -249,7 +249,7 @@ def _create_aggregation_functions(
 
 def _create_derived_aggregations_specs(
     functions: QualNameFunctionsDict,
-    targets: QualNameTargetsDict,
+    targets: QualNameTargetList,
     data: QualNameDataDict,
 ) -> QualNameAggregationSpecsDict:
     """Create automatic aggregation specs derived from functions and data.
@@ -271,7 +271,7 @@ def _create_derived_aggregations_specs(
         The functions dict with qualified function names as keys and functions as
         values.
     targets
-        The targets dict with qualified target names as keys and None as values.
+        The list of targets with qualified names.
     data
         The data dict with qualified data names as keys and pandas Series as values.
 
@@ -627,7 +627,7 @@ def _annotate_aggregation_functions(
 
 
 def _fail_if_targets_not_in_functions(
-    functions: QualNameFunctionsDict, targets: QualNameTargetsDict
+    functions: QualNameFunctionsDict, targets: QualNameTargetList
 ) -> None:
     """Fail if some target is not among functions.
 

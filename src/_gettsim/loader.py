@@ -1,12 +1,11 @@
-import datetime
+from __future__ import annotations
+
 import importlib.util
 import inspect
 import itertools
 import sys
-from pathlib import Path
-from types import ModuleType
+from typing import TYPE_CHECKING
 
-from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from _gettsim.config import (
     PATHS_TO_INTERNAL_FUNCTIONS,
     RESOURCE_DIR,
@@ -17,7 +16,14 @@ from _gettsim.shared import (
     insert_path_and_value,
     merge_trees,
 )
-from _gettsim.typing import NestedAggregationSpecDict, NestedFunctionDict
+
+if TYPE_CHECKING:
+    import datetime
+    from pathlib import Path
+    from types import ModuleType
+
+    from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+    from _gettsim.typing import NestedAggregationSpecDict, NestedFunctionDict
 
 
 def load_functions_tree_for_date(date: datetime.date) -> NestedFunctionDict:

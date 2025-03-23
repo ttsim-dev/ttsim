@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import inspect
 import re
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from dags import rename_arguments
 
@@ -9,7 +11,11 @@ from _gettsim.config import (
     SUPPORTED_TIME_UNITS,
 )
 from _gettsim.function_types import DerivedTimeConversionFunction, PolicyFunction
-from _gettsim.typing import NestedDataDict, NestedFunctionDict
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from _gettsim.typing import NestedDataDict, NestedFunctionDict
 
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7

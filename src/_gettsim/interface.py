@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import functools
 import inspect
 import warnings
-from typing import Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 import dags
 import dags.tree as dt
@@ -35,14 +37,18 @@ from _gettsim.shared import (
     partition_by_reference_dict,
 )
 from _gettsim.typing import (
-    NestedDataDict,
-    NestedTargetDict,
-    QualNameDataDict,
-    QualNameFunctionsDict,
-    QualNameTargetsDict,
     check_series_has_expected_type,
     convert_series_to_internal_type,
 )
+
+if TYPE_CHECKING:
+    from _gettsim.typing import (
+        NestedDataDict,
+        NestedTargetDict,
+        QualNameDataDict,
+        QualNameFunctionsDict,
+        QualNameTargetList,
+    )
 
 
 def compute_taxes_and_transfers(
@@ -93,7 +99,7 @@ def compute_taxes_and_transfers(
         functions=environment.functions_tree, top_level_namespace=top_level_namespace
     )
 
-    targets = dt.flatten_to_qual_names(targets_tree)
+    targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
     aggregation_specs = dt.flatten_to_qual_names(environment.aggregation_specs_tree)
 
@@ -274,7 +280,7 @@ def _convert_data_to_correct_types(
 def _create_input_data_for_concatenated_function(
     data: QualNameDataDict,
     functions: QualNameFunctionsDict,
-    targets: QualNameTargetsDict,
+    targets: QualNameTargetList,
 ) -> QualNameDataDict:
     """Create input data for the concatenated function.
 
@@ -298,10 +304,7 @@ def _create_input_data_for_concatenated_function(
 
     """
     # Create dag using processed functions
-    dag = dags.create_dag(
-        functions=functions,
-        targets=targets,
-    )
+    dag = dags.create_dag(functions=functions, targets=targets)
 
     # Create root nodes tree
     root_nodes = nx.subgraph_view(
