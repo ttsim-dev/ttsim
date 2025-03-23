@@ -3,7 +3,7 @@ from _gettsim.function_types import policy_function
 
 aggregation_specs = {
     "anzahl_erwachsene_hh": AggregateByGroupSpec(
-        source="erwachsen",
+        source="familie__erwachsen",
         aggr="sum",
     ),
     "anzahl_rentenbezieher_hh": AggregateByGroupSpec(

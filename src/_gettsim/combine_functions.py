@@ -160,7 +160,6 @@ def _create_aggregate_by_group_functions(
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
     )
-
     return {
         **aggregation_functions_derived_from_names,
         **aggregation_functions_from_environment,

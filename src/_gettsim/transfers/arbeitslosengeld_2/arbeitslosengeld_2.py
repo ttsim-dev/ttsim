@@ -12,7 +12,7 @@ def betrag_m_bg(
     vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: bool,
     vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool,
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool,
-    demographics__erwachsene_alle_rentenbezieher_hh: bool,
+    erwachsene_alle_rentenbezieher_hh: bool,
 ) -> float:
     """Calculate final monthly subsistence payment on household level.
 
@@ -28,8 +28,8 @@ def betrag_m_bg(
         See :func:`vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
         See :func:`vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
-    demographics__erwachsene_alle_rentenbezieher_hh
-        See :func:`demographics__erwachsene_alle_rentenbezieher_hh`.
+    erwachsene_alle_rentenbezieher_hh
+        See :func:`erwachsene_alle_rentenbezieher_hh`.
 
     Returns
     -------
@@ -40,13 +40,13 @@ def betrag_m_bg(
     # Alter (SGB XII) is implemented yet. We assume for now that households with only
     # retirees are eligible for Grundsicherung im Alter but not for ALG2/Wohngeld. All
     # other households are not eligible for SGB XII, but SGB II / Wohngeld. Once this is
-    # resolved, remove the `demographics__erwachsene_alle_rentenbezieher_hh` condition.
+    # resolved, remove the `erwachsene_alle_rentenbezieher_hh` condition.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/703
     if (
         vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg
         or vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
         or vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
-        or demographics__erwachsene_alle_rentenbezieher_hh
+        or erwachsene_alle_rentenbezieher_hh
     ):
         out = 0.0
     else:

@@ -94,6 +94,7 @@ def compute_taxes_and_transfers(
         set(environment.functions_tree.keys())
         | set(data_tree.keys())
         | set(TYPES_INPUT_VARIABLES.keys())
+        | set(environment.aggregation_specs_tree.keys())
     )
     functions = dt.functions_without_tree_logic(
         functions=environment.functions_tree, top_level_namespace=top_level_namespace
