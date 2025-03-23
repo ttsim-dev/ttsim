@@ -705,7 +705,7 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
 
 
 def _fail_if_root_nodes_are_missing(
-    functions: QualifiedFunctionsDict,
+    functions_overridden: QualifiedFunctionsDict,
     data: QualifiedDataDict,
     root_nodes: list[str],
 ) -> None:
@@ -716,8 +716,8 @@ def _fail_if_root_nodes_are_missing(
 
     Parameters
     ----------
-    functions
-        Dictionary of functions.
+    functions_overridden
+        Dictionary of functions that are overridden by data.
     root_nodes
         List of root nodes.
     data
@@ -731,8 +731,8 @@ def _fail_if_root_nodes_are_missing(
     missing_nodes = []
 
     for node in root_nodes:
-        if node in functions:
-            func = functions[node]
+        if node in functions_overridden:
+            func = functions_overridden[node]
             if _func_depends_on_parameters_only(func):
                 # Function depends on parameters only, so it does not have to be present
                 # in the data tree.
