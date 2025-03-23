@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 
@@ -36,10 +36,10 @@ class DerivedAggregationFunction(PolicyFunction):
         source_function: PolicyFunction
         | DerivedTimeConversionFunction
         | DerivedAggregationFunction
-        | None,
+        | None = None,
         source_name: str,
         aggregation_target: str,
-        aggregation_method: str,
+        aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
     ):
         super().__init__(
             function=function,
@@ -78,7 +78,7 @@ class DerivedTimeConversionFunction(PolicyFunction):
         source_function: PolicyFunction
         | DerivedTimeConversionFunction
         | DerivedAggregationFunction
-        | None,
+        | None = None,
         source_name: str,
         conversion_target: str,
     ):

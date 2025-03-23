@@ -84,7 +84,7 @@ def combine_policy_functions_and_derived_functions(
     # Create parent-child relationships
     aggregate_by_p_id_functions = _create_aggregation_functions(
         functions=functions,
-        aggregations=aggregation_specs_from_environment,
+        aggregation_functions_to_create=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
     )
@@ -132,11 +132,10 @@ def _create_aggregate_by_group_functions(
     top_level_namespace: set[str],
 ) -> QualifiedFunctionsDict:
     """Create aggregation functions."""
-
     # Create aggregation functions from environment
     aggregation_functions_from_environment = _create_aggregation_functions(
         functions=functions,
-        aggregations=aggregations_from_environment,
+        aggregation_functions_to_create=aggregations_from_environment,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
     )
@@ -154,23 +153,20 @@ def _create_aggregate_by_group_functions(
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
         functions=functions_with_aggregation_functions_from_environment,
-        aggregations=derived_aggregation_specs,
+        aggregation_functions_to_create=derived_aggregation_specs,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
     )
 
-    return _annotate_aggregation_functions(
-        functions=functions,
-        aggregation_functions={
-            **aggregation_functions_derived_from_names,
-            **aggregation_functions_from_environment,
-        },
-    )
+    return {
+        **aggregation_functions_derived_from_names,
+        **aggregation_functions_from_environment,
+    }
 
 
 def _create_aggregation_functions(
     functions: QualifiedFunctionsDict,
-    aggregations: QualifiedAggregationSpecsDict,
+    aggregation_functions_to_create: QualifiedAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
     top_level_namespace: set[str],
 ) -> QualifiedFunctionsDict:
@@ -181,7 +177,7 @@ def _create_aggregation_functions(
     functions
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
-    aggregations
+    aggregation_functions_to_create
         Dict with qualified aggregation spec names as keys and aggregation specs as
         values.
     aggregation_type
@@ -205,7 +201,7 @@ def _create_aggregation_functions(
     )
 
     aggregation_functions = {}
-    for target_name, aggregation_spec in aggregations.items():
+    for target_name, aggregation_spec in aggregation_functions_to_create.items():
         # Skip if aggregation spec is not the current aggregation type
         if not isinstance(aggregation_spec, expected_aggregation_spec_type):
             continue
@@ -241,7 +237,11 @@ def _create_aggregation_functions(
 
         aggregation_functions[target_name] = derived_func
 
-    return aggregation_functions
+    return _annotate_aggregation_functions(
+        functions=functions,
+        aggregation_functions=aggregation_functions,
+        types_input_variables=TYPES_INPUT_VARIABLES,
+    )
 
 
 def _create_derived_aggregations_specs(
@@ -276,12 +276,12 @@ def _create_derived_aggregations_specs(
     -------
     The aggregation specifications derived from the functions and data.
     """
-    potential_aggregation_function_names = set(
+    potential_aggregation_function_names = {
         *targets,
         *_get_potential_aggregation_function_names_from_function_arguments(
             functions=functions,
         ),
-    )
+    }
 
     # Create source tree for aggregations. Source can be any already existing function
     # or data column.
@@ -437,7 +437,7 @@ def _create_one_aggregate_by_group_func(
     return DerivedAggregationFunction(
         function=wrapped_func,
         source_name=source,
-        source_function=functions[source],
+        source_function=functions.get(source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
     )
@@ -536,7 +536,7 @@ def _create_one_aggregate_by_p_id_func(
     return DerivedAggregationFunction(
         function=wrapped_func,
         source_name=source,
-        source_function=functions[source],
+        source_function=functions.get(source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
     )
@@ -544,6 +544,7 @@ def _create_one_aggregate_by_p_id_func(
 
 def _annotate_aggregation_functions(
     functions: QualifiedFunctionsDict,
+    types_input_variables: dict[str, type],
     aggregation_functions: QualifiedFunctionsDict,
 ) -> QualifiedFunctionsDict:
     """Annotate aggregation functions.
@@ -559,6 +560,8 @@ def _annotate_aggregation_functions(
     aggregation_functions
         Dict with qualified aggregation function names as keys and aggregation functions
         as values.
+    types_input_variables
+        Dict with qualified data names as keys and types as values.
 
     Returns
     -------
@@ -585,8 +588,8 @@ def _annotate_aggregation_functions(
                 # of user-provided input variables are handled
                 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
                 pass
-        elif source in TYPES_INPUT_VARIABLES:
-            annotations[source] = TYPES_INPUT_VARIABLES[source]
+        elif source in types_input_variables:
+            annotations[source] = types_input_variables[source]
             annotations["return"] = _select_return_type(
                 aggregation_method, annotations[source]
             )
@@ -621,7 +624,9 @@ def _fail_if_targets_not_in_functions(
         Raised if any member of `targets` is not among functions.
 
     """
-    targets_not_in_functions_tree = [n for n in targets if n not in functions]
+    targets_not_in_functions_tree = [
+        str(dt.tree_path_from_qual_name(n)) for n in targets if n not in functions
+    ]
     if targets_not_in_functions_tree:
         formatted = format_list_linewise(targets_not_in_functions_tree)
         msg = format_errors_and_warnings(

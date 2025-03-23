@@ -85,21 +85,22 @@ def compute_taxes_and_transfers(
 
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = (
-        set(environment.functions.keys())
+        set(environment.functions_tree.keys())
         | set(data_tree.keys())
         | set(dt.unflatten_from_qual_names(TYPES_INPUT_VARIABLES).keys())
     )
     functions = dt.functions_without_tree_logic(
-        functions=environment.functions, top_level_namespace=top_level_namespace
+        functions=environment.functions_tree, top_level_namespace=top_level_namespace
     )
 
     targets = dt.flatten_to_qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
+    aggregation_specs = dt.flatten_to_qual_names(environment.aggregation_specs_tree)
 
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
         functions=functions,
-        aggregation_specs_from_environment=environment.aggregation_specs,
+        aggregation_specs_from_environment=aggregation_specs,
         targets=targets,
         data=data,
         top_level_namespace=top_level_namespace,
@@ -140,7 +141,7 @@ def compute_taxes_and_transfers(
     )
 
     _fail_if_group_variables_not_constant_within_groups(
-        data_tree=input_data,
+        data=input_data,
         functions=functions,
     )
     _fail_if_foreign_keys_are_invalid(
@@ -150,6 +151,9 @@ def compute_taxes_and_transfers(
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,
+        return_type="dict",
+        aggregator=None,
+        enforce_signature=True,
     )
 
     results = tax_transfer_function(**input_data)
@@ -364,6 +368,7 @@ def _add_rounding_to_functions(
     Function with rounding added.
 
     """
+    rounded_functions = {}
     for name, func in functions.items():
         if func.params_key_for_rounding:
             params_key = func.params_key_for_rounding
@@ -400,14 +405,16 @@ def _add_rounding_to_functions(
                     )
                 )
             # Add rounding.
-            return _apply_rounding_spec(
+            rounded_functions[name] = _apply_rounding_spec(
                 base=rounding_spec["base"],
                 direction=rounding_spec["direction"],
                 to_add_after_rounding=rounding_spec.get("to_add_after_rounding", 0),
                 name=name,
             )(func)
+        else:
+            rounded_functions[name] = func
 
-    return func
+    return rounded_functions
 
 
 def _apply_rounding_spec(

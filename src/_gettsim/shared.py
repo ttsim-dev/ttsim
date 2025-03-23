@@ -397,7 +397,7 @@ def assert_valid_gettsim_pytree(
 def get_name_of_group_by_id(
     target_name: str,
     group_by_functions: QualifiedFunctionsDict,
-) -> tuple[str]:
+) -> str:
     """Get the group-by-identifier name for some target.
 
     The group-by-identifier is the name of the group identifier that is embedded in the
@@ -423,21 +423,21 @@ def get_name_of_group_by_id(
     for g in SUPPORTED_GROUPINGS:
         if target_name.endswith(f"_{g}") and g == "hh":
             # Hardcode because hh_id is not part of the functions tree
-            return ("hh_id",)
+            return "hh_id"
         elif target_name.endswith(f"_{g}"):
             return _select_group_by_id_from_candidates(
                 candidate_names=[
-                    p for p in group_by_functions if p.endswith(f"_{g}_id")
+                    p for p in group_by_functions if p.endswith(f"{g}_id")
                 ],
                 target_name=target_name,
             )
-    return ()
+    return None
 
 
 def _select_group_by_id_from_candidates(
     candidate_names: list[str],
     target_name: str,
-) -> tuple[str]:
+) -> str:
     """Select the group-by-identifier name from the candidates.
 
     If there are multiple candidates, the function takes the one that shares the

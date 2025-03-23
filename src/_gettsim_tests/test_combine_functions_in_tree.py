@@ -1,15 +1,20 @@
-import dags.tree as dt
+import inspect
+
 import pandas as pd
 import pytest
 
-from _gettsim.aggregation import AggregateByGroupSpec
+from _gettsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from _gettsim.combine_functions_in_tree import (
+    _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,
-    _create_one_aggregate_by_group_func,
-    _create_one_aggregate_by_p_id_func,
+    _create_aggregation_functions,
     _fail_if_targets_not_in_functions,
 )
-from _gettsim.function_types import policy_function
+from _gettsim.function_types import (
+    DerivedAggregationFunction,
+    group_by_function,
+    policy_function,
+)
 from _gettsim.interface import compute_taxes_and_transfers
 from _gettsim.policy_environment import PolicyEnvironment
 
@@ -136,77 +141,125 @@ def test_create_aggregate_by_group_functions(
 
 @pytest.mark.parametrize(
     (
-        "aggregation_method",
-        "source",
-        "namespace_of_function_to_derive",
-        "functions_tree",
+        "functions",
+        "aggregation_functions",
         "types_input_variables",
         "expected_return_type",
     ),
     [
-        ("count", "foo", ("",), {}, {}, int),
-        ("sum", "foo", ("namespace",), {}, {"namespace": {"foo": float}}, float),
-        ("sum", "foo", ("namespace",), {}, {"namespace": {"foo": int}}, int),
-        ("sum", "foo", ("namespace",), {}, {"namespace": {"foo": bool}}, int),
         (
-            "sum",
-            "foo",
-            ("namespace",),
-            {"namespace": {"foo": function_with_bool_return}},
+            {},
+            {
+                "foo": DerivedAggregationFunction(
+                    function=lambda x: x,
+                    source_name="x",
+                    aggregation_target="foo",
+                    aggregation_method="count",
+                )
+            },
             {},
             int,
         ),
         (
-            "sum",
-            "foo",
-            ("namespace",),
-            {"namespace": {"foo": function_with_int_return}},
+            {},
+            {
+                "foo": DerivedAggregationFunction(
+                    function=lambda x: x,
+                    source_name="x",
+                    aggregation_target="foo",
+                    aggregation_method="sum",
+                )
+            },
+            {"x": int},
+            int,
+        ),
+        (
+            {},
+            {
+                "foo": DerivedAggregationFunction(
+                    function=lambda x: x,
+                    source_name="x",
+                    aggregation_target="foo",
+                    aggregation_method="sum",
+                )
+            },
+            {"x": float},
+            float,
+        ),
+        (
+            {},
+            {
+                "foo": DerivedAggregationFunction(
+                    function=lambda x: x,
+                    source_name="x",
+                    aggregation_target="foo",
+                    aggregation_method="sum",
+                )
+            },
+            {"x": bool},
+            int,
+        ),
+        (
+            {"n1__foo": function_with_bool_return},
+            {
+                "n1__foo_hh": DerivedAggregationFunction(
+                    function=function_with_bool_return,
+                    source_name="n1__foo",
+                    aggregation_target="foo_hh",
+                    aggregation_method="sum",
+                )
+            },
             {},
             int,
         ),
         (
-            "sum",
-            "foo",
-            ("namespace",),
-            {"namespace": {"foo": function_with_float_return}},
+            {"n1__foo": function_with_float_return},
+            {
+                "n1__foo_hh": DerivedAggregationFunction(
+                    function=function_with_float_return,
+                    source_name="n1__foo",
+                    aggregation_target="foo_hh",
+                    aggregation_method="sum",
+                )
+            },
             {},
             float,
         ),
         (
-            "sum",
-            "other_namespace__foo",
-            ("namespace",),
-            {"other_namespace": {"foo": function_with_bool_return}},
+            {"n1__foo": function_with_int_return},
+            {
+                "n1__foo_hh": DerivedAggregationFunction(
+                    function=function_with_int_return,
+                    source_name="n1__foo",
+                    aggregation_target="foo_hh",
+                    aggregation_method="sum",
+                )
+            },
             {},
             int,
         ),
     ],
 )
-def test_annotations_for_aggregation(  # noqa: PLR0913
-    aggregation_method,
-    source,
-    namespace_of_function_to_derive,
-    functions_tree,
+def test_annotations_for_aggregation(
+    functions,
+    aggregation_functions,
     types_input_variables,
     expected_return_type,
 ):
-    assert (
-        _annotations_for_aggregation(
-            aggregation_method=aggregation_method,
-            source=source,
-            namespace=namespace_of_function_to_derive,
-            functions_tree=functions_tree,
-            types_input_variables=types_input_variables,
-        )["return"]
-        == expected_return_type
-    )
+    name_of_aggregation_function = next(iter(aggregation_functions.keys()))
+    annotation_of_aggregation_function = _annotate_aggregation_functions(
+        functions=functions,
+        aggregation_functions=aggregation_functions,
+        types_input_variables=types_input_variables,
+    )[name_of_aggregation_function].__annotations__["return"]
+    assert annotation_of_aggregation_function == expected_return_type
 
 
 @pytest.mark.parametrize(
     "functions, targets, expected_error_match",
     [
-        ({"foo": lambda x: x}, {"bar": None}, "bar"),
-        ({"foo": {"baz": lambda x: x}}, {"foo": {"bar": None}}, "('foo', 'bar')"),
+        ({"foo": lambda x: x}, {"bar": None}, "('bar',)"),
+        ({"foo__baz": lambda x: x}, {"foo__bar": None}, "('foo', 'bar')"),
     ],
 )
 def test_fail_if_targets_are_not_among_functions(
@@ -217,69 +270,109 @@ def test_fail_if_targets_are_not_among_functions(
     assert expected_error_match in str(e.value)
 
 
-def test_create_one_aggregate_by_group_func_applies_annotations():
-    """Test that the annotations are applied to the derived function."""
-    annotations = {"bar": bool, "return": int}
-    result_func = _create_one_aggregate_by_group_func(
-        aggregation_target="bar",
-        aggregation_method="sum",
-        source="foo",
-        annotations=annotations,
-        group_by_id="hh_id",
+@pytest.mark.parametrize(
+    (
+        "functions",
+        "aggregations",
+        "aggregation_type",
+        "top_level_namespace",
+        "expected_annotations",
+    ),
+    [
+        (
+            {"foo": function_with_bool_return},
+            {"foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            "group",
+            ["foo"],
+            {"foo": bool, "return": int},
+        ),
+        (
+            {"foo": function_with_float_return},
+            {"foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            "group",
+            ["foo"],
+            {"foo": float, "return": float},
+        ),
+        (
+            {"foo": function_with_int_return},
+            {
+                "foo_hh": AggregateByPIDSpec(
+                    p_id_to_aggregate_by="foreign_id_col", source="foo", aggr="sum"
+                )
+            },
+            "p_id",
+            ["foo"],
+            {"foo": int, "return": int},
+        ),
+    ],
+)
+def test_annotations_are_applied_to_derived_functions(
+    functions, aggregations, aggregation_type, top_level_namespace, expected_annotations
+):
+    """Test that the annotations are applied to the derived functions."""
+    result_func = next(
+        iter(
+            _create_aggregation_functions(
+                functions=functions,
+                aggregation_functions_to_create=aggregations,
+                aggregation_type=aggregation_type,
+                top_level_namespace=top_level_namespace,
+            ).values()
+        )
     )
-    assert result_func.__annotations__ == annotations
-
-
-def test_create_one_aggregate_by_p_id_func_applies_annotations():
-    """Test that the annotations are applied to the derived function."""
-    annotations = {"bar": bool, "return": int}
-    result_func = _create_one_aggregate_by_p_id_func(
-        aggregation_target="bar",
-        p_id_to_aggregate_by="p_id_spam",
-        source="foo",
-        aggregation_method="sum",
-        annotations=annotations,
-    )
-    assert result_func.__annotations__ == annotations
+    assert result_func.__annotations__ == expected_annotations
 
 
 @pytest.mark.parametrize(
     (
-        "functions_tree",
-        "targets_tree",
-        "data_tree",
-        "aggregations_tree_provided_by_env",
+        "functions",
+        "targets",
+        "data",
+        "aggregations_from_environment",
+        "top_level_namespace",
         "expected",
     ),
     [
         (
-            {"n1": {"foo": policy_function(leaf_name="foo")(lambda x_hh: x_hh)}},
-            {},
-            {"n1": {"x": pd.Series([1])}},
-            {},
-            ("n1", "x_hh"),
-        ),
-        (
-            {"n1": {"foo": policy_function(leaf_name="foo")(lambda x_hh: x_hh)}},
-            {},
-            {"n2": {"x": pd.Series([1])}},
-            {},
-            ("n2", "x_hh"),
-        ),
-        (
-            {"n1": {"foo": policy_function(leaf_name="foo")(lambda x_hh: x_hh)}},
+            {"foo": policy_function(leaf_name="foo")(lambda x_hh: x_hh)},
             {},
             {"x": pd.Series([1])},
             {},
+            ["foo", "x"],
             ("x_hh"),
+        ),
+        (
+            {"n1__foo": policy_function(leaf_name="foo")(lambda n2__x_hh: n2__x_hh)},
+            {},
+            {"n2": {"x": pd.Series([1])}},
+            {},
+            ["n1", "n2"],
+            ("n2__x_hh"),
+        ),
+        (
+            {},
+            {"x_hh": None},
+            {"x": pd.Series([1])},
+            {},
+            ["x"],
+            ("x_hh"),
+        ),
+        (
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {},
+            {"x": pd.Series([1])},
+            {"n1__foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            ["x", "foo", "n1"],
+            ("n1__foo_hh"),
         ),
     ],
 )
-def test_derived_aggregation_functions_are_in_correct_namespace(
-    functions_tree,
-    targets_tree,
-    data_tree,
-    aggregations_tree_provided_by_env,
+def test_derived_aggregation_functions_are_in_correct_namespace(  # noqa: PLR0913
+    functions,
+    targets,
+    data,
+    aggregations_from_environment,
+    top_level_namespace,
     expected,
 ):
     """Test that the derived aggregation functions are in the correct namespace.
@@ -288,9 +381,28 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     namespace of the function that is being aggregated.
     """
     result = _create_aggregate_by_group_functions(
-        functions_tree=functions_tree,
-        targets_tree=targets_tree,
-        data_tree=data_tree,
-        aggregations_tree_provided_by_env=aggregations_tree_provided_by_env,
+        functions=functions,
+        targets=targets,
+        data=data,
+        aggregations_from_environment=aggregations_from_environment,
+        top_level_namespace=top_level_namespace,
     )
-    assert expected in dt.tree_paths(result)
+    assert expected in result
+
+
+def test_create_aggregation_with_derived_soure_column():
+    aggregation_spec_dict = {
+        "foo_hh": AggregateByGroupSpec(
+            source="bar_bg",
+            aggr="sum",
+        )
+    }
+    result = _create_aggregate_by_group_functions(
+        functions={"bg_id": group_by_function()(lambda x: x)},
+        targets={},
+        data={"bar": pd.Series([1])},
+        aggregations_from_environment=aggregation_spec_dict,
+        top_level_namespace=["foo", "bar", "bg_id"],
+    )
+    assert "foo_hh" in result
+    assert "bar_bg" in inspect.signature(result["foo_hh"]).parameters

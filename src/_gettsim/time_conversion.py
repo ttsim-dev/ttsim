@@ -225,8 +225,8 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions_dict: NestedFunctionDict,
-    data_dict: NestedDataDict,
+    functions: NestedFunctionDict,
+    data: NestedDataDict,
 ) -> NestedFunctionDict:
     """
      Create functions that convert variables to different time units.
@@ -254,10 +254,10 @@ def create_time_conversion_functions(
 
     Parameters
     ----------
-    functions_dict
+    functions
         The functions dict with qualified function names as keys and functions as
         values.
-    data_dict
+    data
         The data dict with qualified data names as keys and pandas Series as values.
 
     Returns
@@ -268,25 +268,25 @@ def create_time_conversion_functions(
     converted_functions = {}
 
     # Create time-conversions for existing functions
-    for name, function in functions_dict.items():
+    for name, function in functions.items():
         all_time_conversions_for_this_function = _create_time_conversion_functions(
             name=name, func=function
         )
         for der_name, der_func in all_time_conversions_for_this_function.items():
             # Skip if the function already exists or the data column exists
-            if der_name in converted_functions or der_name in data_dict:
+            if der_name in converted_functions or der_name in data:
                 continue
             else:
                 converted_functions[der_name] = der_func
 
     # Create time-conversions for data columns
-    for name in data_dict:
+    for name in data:
         all_time_conversions_for_this_data_column = _create_time_conversion_functions(
             name=name
         )
         for der_name, der_func in all_time_conversions_for_this_data_column.items():
             # Skip if the function already exists or the data column exists
-            if der_name in converted_functions or der_name in data_dict:
+            if der_name in converted_functions or der_name in data:
                 continue
             else:
                 converted_functions[der_name] = der_func
