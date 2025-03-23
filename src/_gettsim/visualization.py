@@ -3,7 +3,7 @@ import inspect
 import operator
 from functools import reduce
 
-import dags
+import dags.tree as dt
 import networkx as nx
 import numpy
 import pandas as pd
@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
-from _gettsim.combine_functions_in_tree import (
+from _gettsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from _gettsim.config import DEFAULT_TARGETS
@@ -69,7 +69,7 @@ def plot_dag(
     targets = build_targets_tree(DEFAULT_TARGETS if targets is None else targets)  # noqa: F821
 
     if isinstance(columns_overriding_functions, dict):
-        names_of_columns_overriding_functions = tree_to_dict_with_qualified_name(  # noqa: F821
+        names_of_columns_overriding_functions = dt.flatten_to_qual_names(
             columns_overriding_functions
         ).keys()
     elif isinstance(columns_overriding_functions, str):
@@ -91,7 +91,7 @@ def plot_dag(
     )[1]
 
     # Create parameter input structure.
-    input_structure = dags.dag_tree.create_input_structure_tree(
+    input_structure = dt.create_input_structure_tree(
         functions=functions_not_overridden,
         targets=None,  # None because no functions should be filtered out
     )
@@ -111,7 +111,7 @@ def plot_dag(
         params=environment.params,
     )
 
-    input_structure = dags.dag_tree.create_input_structure_tree(
+    input_structure = dt.create_input_structure_tree(
         functions=processed_functions,
         targets=None,
     )
@@ -323,8 +323,8 @@ def _add_url_to_dag(dag):
     for node in dag.nodes:
         # Retrieve the name from the function because some functions are defined for
         # time periods and the node name will point to a non-existent function, but the
-        # function name is a valid target. E.g., wohngeld_eink_freib_m and
-        # wohngeld_eink_freib_m_bis_2015.
+        # function name is a valid target. E.g., freibetrag_m and
+        # freibetrag_m_bis_2015.
         if "function" in dag.nodes[node]:
             # Fix for partialed functions.
             try:

@@ -36,15 +36,12 @@ RESOURCE_DIR = Path(__file__).parent.resolve()
 GEP_01_CHARACTER_LIMIT_USER_FACING_COLUMNS = 20
 GEP_01_CHARACTER_LIMIT_OTHER_COLUMNS = 32
 
-QUALIFIED_NAME_SEPARATOR = "__"
 
 # List of paths to internal functions.
 # If a path is a directory, all Python files are recursively collected from that folder.
 PATHS_TO_INTERNAL_FUNCTIONS = [
-    RESOURCE_DIR / "social_insurance_contributions",
     RESOURCE_DIR / "transfers",
     RESOURCE_DIR / "taxes",
-    RESOURCE_DIR / "demographic_vars.py",
 ]
 
 INTERNAL_PARAMS_GROUPS = [
@@ -72,12 +69,14 @@ INTERNAL_PARAMS_GROUPS = [
 SUPPORTED_GROUPINGS = {
     "hh": {
         "name": "Haushalt",
+        "namespace": "top-level",
         "description": "Individuals living together in a household in the Wohngeld"
         " sense (§5 WoGG).",
         "potentially_endogenous": False,
     },
     "wthh": {
         "name": "wohngeldrechtlicher Teilhaushalt",
+        "namespace": "wohngeld",
         "description": "The relevant unit for Wohngeld. Members of a household for whom"
         " the Wohngeld priority check compared to Bürgergeld yields the same result"
         " ∈ {True, False}.",
@@ -85,6 +84,7 @@ SUPPORTED_GROUPINGS = {
     },
     "fg": {
         "name": "Familiengemeinschaft",
+        "namespace": "arbeitslosengeld_2",
         "description": "Maximum of two generations, the relevant base unit for"
         " Bürgergeld / Arbeitslosengeld 2, before excluding children who have enough"
         " income fend for themselves.",
@@ -92,27 +92,32 @@ SUPPORTED_GROUPINGS = {
     },
     "bg": {
         "name": "Bedarfsgemeinschaft",
+        "namespace": "arbeitslosengeld_2",
         "description": "Familiengemeinschaft except for children who have enough income"
         " to fend for themselves. Relevant unit for Bürgergeld / Arbeitslosengeld 2",
         "potentially_endogenous": True,
     },
     "eg": {
         "name": "Einstandsgemeinschaft / Einstandspartner",
+        "namespace": "arbeitslosengeld_2",
         "description": "A couple whose members are deemed to be responsible for each"
         " other.",
         "potentially_endogenous": True,
     },
     "ehe": {
         "name": "Ehepartner",
+        "namespace": "familie",
         "description": "Couples that are either married or in a civil union.",
         "potentially_endogenous": True,
     },
     "sn": {
         "name": "Steuernummer",
+        "namespace": "einkommensteuer",
         "description": "Spouses filing taxes jointly or individuals.",
         "potentially_endogenous": True,
     },
 }
+
 
 SUPPORTED_TIME_UNITS = {
     "y": {
@@ -130,131 +135,186 @@ SUPPORTED_TIME_UNITS = {
 }
 
 DEFAULT_TARGETS = {
-    "taxes": {
-        "eink_st": {"eink_st_y_sn": None},
-        "soli_st": {"soli_st_y_sn": None},
-        "abgelt_st": {"abgelt_st_y_sn": None},
+    "einkommensteuer": {
+        "betrag_y_sn": None,
+        "abgeltungssteuer": {"betrag_y_sn": None},
     },
-    "transfers": {
-        "elterngeld": {"elterngeld_m": None},
-        "arbeitsl_geld": {"arbeitsl_geld_m": None},
-        "kindergeld": {"kindergeld_m": None},
-        "arbeitsl_geld_2": {"arbeitsl_geld_2_m_bg": None},
-        "kinderzuschl": {"kinderzuschl_m_bg": None},
-        "wohngeld": {"wohngeld_m_wthh": None},
-        "unterhaltsvors": {"unterhaltsvors_m": None},
-        "grunds_im_alter": {"grunds_im_alter_m_eg": None},
-        "rente": {"ges_rente_m": None},
-        "erwerbsm_rente": {"erwerbsm_rente_m": None},
-    },
-    "social_insurance_contributions": {
-        "arbeitsl_v": {
-            "sozialv_beitr_arbeitnehmer_m": None,
-            "arbeitsl_v_beitr_arbeitnehmer_m": None,
+    "solidaritätszuschlag": {"betrag_y_sn": None},
+    "sozialversicherung": {
+        "arbeitslosen": {
+            "beitrag": {"betrag_versicherter_m": None},
+            "betrag_m": None,
         },
-        "ges_rentenv": {"ges_rentenv_beitr_arbeitnehmer_m": None},
-        "ges_krankenv": {"ges_krankenv_beitr_arbeitnehmer_m": None},
-        "ges_pflegev": {"ges_pflegev_beitr_arbeitnehmer_m": None},
+        "kranken": {"beitrag": {"betrag_versicherter_m": None}},
+        "pflege": {"beitrag": {"betrag_versicherter_m": None}},
+        "rente": {
+            "beitrag": {"betrag_versicherter_m": None},
+            "altersrente": {"betrag_m": None},
+            "erwerbsminderung": {"betrag_m": None},
+        },
+        "beiträge_versicherter_m": None,
     },
+    "elterngeld": {"betrag_m": None},
+    "kindergeld": {"betrag_m": None},
+    "arbeitslosengeld_2": {"betrag_m_bg": None},
+    "kinderzuschlag": {"betrag_m_bg": None},
+    "wohngeld": {"betrag_m_wthh": None},
+    "unterhaltsvorschuss": {"betrag_m": None},
+    "grundsicherung": {"im_alter": {"betrag_m_eg": None}},
 }
 
+
 TYPES_INPUT_VARIABLES = {
-    "groupings": {
-        "p_id": int,
-        "hh_id": int,
-        "p_id_elternteil_1": int,
-        "p_id_elternteil_2": int,
-        "p_id_kindergeld_empf": int,
-        "p_id_erziehgeld_empf": int,
-        "p_id_ehepartner": int,
-        "p_id_einstandspartner": int,
-        "p_id_betreuungsk_träger": int,
-    },
-    "basic_inputs": {
-        "vermögen_bedürft": float,
-        "eigenbedarf_gedeckt": bool,
+    "arbeitslosengeld_2": {
+        "arbeitslosengeld_2_bezug_im_vorjahr": bool,
         # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt once
         # Bedarfsgemeinschaften are fully endogenous
         # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
-        "gemeinsam_veranlagt": bool,
-        "bruttolohn_m": float,
-        "alter": int,
-        "weiblich": bool,
-        "selbstständig": bool,
-        "wohnort_ost": bool,
-        "ges_pflegev_hat_kinder": bool,
-        "eink_selbst_m": float,
-        "in_priv_krankenv": bool,
-        "priv_rentenv_beitr_m": float,
-        "elterngeld_nettoeinkommen_vorjahr_m": float,
-        "elterngeld_zu_verst_eink_vorjahr_y_sn": float,
-        "bruttolohn_vorj_m": float,
-        "arbeitsstunden_w": float,
-        "geburtsjahr": int,
-        "geburtstag": int,
-        "geburtsmonat": int,
-        "mietstufe": int,
-        "entgeltp_ost": float,
-        "entgeltp_west": float,
+        "eigenbedarf_gedeckt": bool,
+        "p_id_einstandspartner": int,
+    },
+    "familie": {
+        "alleinerziehend": bool,
         "kind": bool,
-        "rentner": bool,
-        "betreuungskost_m": float,
-        "kapitaleink_brutto_m": float,
-        "eink_vermietung_m": float,
+        "p_id_ehepartner": int,
+        "p_id_elternteil_1": int,
+        "p_id_elternteil_2": int,
+    },
+    "alter": int,
+    "arbeitsstunden_w": float,
+    "behinderungsgrad": int,
+    "geburtsjahr": int,
+    "geburtsmonat": int,
+    "geburtstag": int,
+    "schwerbehindert_grad_g": bool,
+    "vermögen": float,
+    "weiblich": bool,
+    "wohnort_ost": bool,
+    "einkommensteuer": {
+        "abzüge": {
+            "beitrag_private_rentenversicherung_m": float,
+            "betreuungskosten_m": float,
+            "p_id_betreuungskosten_träger": int,
+        },
+        "einkünfte": {
+            "aus_kapitalvermögen": {
+                "kapitalerträge_m": float,
+            },
+            "aus_nichtselbstständiger_arbeit": {
+                "bruttolohn_m": float,
+                "bruttolohn_vorjahr_m": float,
+            },
+            "aus_selbstständiger_arbeit": {
+                "betrag_m": float,
+            },
+            "aus_vermietung_und_verpachtung": {
+                "betrag_m": float,
+            },
+            "ist_selbstständig": bool,
+            "sonstige": {
+                "betrag_m": float,
+            },
+        },
+        "gemeinsam_veranlagt": bool,
+    },
+    "elterngeld": {
+        "bisherige_bezugsmonate": int,
+        "claimed": bool,
+        "nettoeinkommen_vorjahr_m": float,
+        "zu_versteuerndes_einkommen_vorjahr_y_sn": float,
+    },
+    "erziehungsgeld": {
+        "budgetsatz": bool,
+        "p_id_empfänger": int,
+    },
+    "hh_id": int,
+    "kindergeld": {
+        "in_ausbildung": bool,
+        "p_id_empfänger": int,
+    },
+    "lohnsteuer": {
+        "steuerklasse": int,
+    },
+    "p_id": int,
+    "sozialversicherung": {
+        "arbeitslosen": {
+            "anwartschaftszeit": bool,
+            "arbeitssuchend": bool,
+            "monate_durchgängigen_bezugs_von_arbeitslosengeld": float,
+            "monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren": float,
+        },
+        "kranken": {
+            "beitrag": {
+                "privat_versichert": bool,
+            }
+        },
+        "pflege": {
+            "beitrag": {
+                "hat_kinder": bool,
+            }
+        },
+        "rente": {
+            "altersrente": {
+                "für_frauen": {
+                    "pflichtsbeitragsjahre_ab_alter_40": float,
+                },
+                "höchster_bruttolohn_letzte_15_jahre_vor_rente_y": float,
+                "wegen_arbeitslosigkeit": {
+                    "arbeitslos_für_1_jahr_nach_alter_58_ein_halb": bool,
+                    "pflichtbeitragsjahre_8_von_10": bool,
+                    "vertrauensschutz_1997": bool,
+                    "vertrauensschutz_2004": bool,
+                },
+            },
+            "bezieht_rente": bool,
+            "entgeltpunkte_ost": float,
+            "entgeltpunkte_west": float,
+            "erwerbsminderung": {
+                "teilweise_erwerbsgemindert": bool,
+                "voll_erwerbsgemindert": bool,
+            },
+            "ersatzzeiten_monate": float,
+            "freiwillige_beitragsmonate": float,
+            "grundrente": {
+                "bewertungszeiten_monate": int,
+                "grundrentenzeiten_monate": int,
+                "mean_entgeltpunkte": float,
+            },
+            "jahr_renteneintritt": int,
+            "kinderberücksichtigungszeiten_monate": float,
+            "krankheitszeiten_ab_16_bis_24_monate": float,
+            "monat_renteneintritt": int,
+            "monate_geringfügiger_beschäftigung": float,
+            "monate_in_arbeitslosigkeit": float,
+            "monate_in_arbeitsunfähigkeit": float,
+            "monate_in_ausbildungssuche": float,
+            "monate_in_mutterschutz": float,
+            "monate_in_schulausbildung": float,
+            "monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit": float,
+            "pflichtbeitragsmonate": float,
+            "private_rente_betrag_m": float,
+            "pflegeberücksichtigungszeiten_monate": float,
+        },
+    },
+    "unterhalt": {
+        "anspruch_m": float,
+        "tatsächlich_erhaltener_betrag_m": float,
+    },
+    "wohngeld": {
+        "mietstufe": int,
+    },
+    "wohnen": {
+        "baujahr_immobilie_hh": int,
+        "bewohnt_eigentum_hh": bool,
         "bruttokaltmiete_m_hh": float,
         "heizkosten_m_hh": float,
-        "jahr_renteneintr": int,
-        "monat_renteneintr": int,
-        "behinderungsgrad": int,
         "wohnfläche_hh": float,
-        "monate_elterngeldbezug": int,
-        "elterngeld_claimed": bool,
-        "in_ausbildung": bool,
-        "alleinerz": bool,
-        "bewohnt_eigentum_hh": bool,
-        "immobilie_baujahr_hh": int,
-        "sonstig_eink_m": float,
-        "grundr_entgeltp": float,
-        "grundr_zeiten": int,
-        "grundr_bew_zeiten": int,
-        "priv_rente_m": float,
-        "schwerbeh_g": bool,
-        "m_pflichtbeitrag": float,
-        "m_freiw_beitrag": float,
-        "m_mutterschutz": float,
-        "m_arbeitsunfähig": float,
-        "m_krank_ab_16_bis_24": float,
-        "m_arbeitsl": float,
-        "m_ausbild_suche": float,
-        "m_schul_ausbild": float,
-        "m_geringf_beschäft": float,
-        "m_alg1_übergang": float,
-        "m_ersatzzeit": float,
-        "m_kind_berücks_zeit": float,
-        "m_pfleg_berücks_zeit": float,
-        "y_pflichtbeitr_ab_40": float,
-        "pflichtbeitr_8_in_10": bool,
-        "arbeitsl_1y_past_585": bool,
-        "vertra_arbeitsl_1997": bool,
-        "vertra_arbeitsl_2006": bool,
-        "höchster_bruttolohn_letzte_15_jahre_vor_rente_y": float,
-        "anwartschaftszeit": bool,
-        "arbeitssuchend": bool,
-        "m_durchg_alg1_bezug": float,
-        "sozialv_pflicht_5j": float,
-        "bürgerg_bezug_vorj": bool,
-        "kind_unterh_anspr_m": float,
-        "kind_unterh_erhalt_m": float,
-        "steuerklasse": int,
-        "budgetsatz_erzieh": bool,
-        "voll_erwerbsgemind": bool,
-        "teilw_erwerbsgemind": bool,
     },
 }
 
 FOREIGN_KEYS = [
-    "p_id_ehepartner",
-    "p_id_einstandspartner",
-    "p_id_elternteil_1",
-    "p_id_elternteil_2",
+    ("arbeitslosengeld_2", "p_id_einstandspartner"),
+    ("familie", "p_id_ehepartner"),
+    ("familie", "p_id_elternteil_1"),
+    ("familie", "p_id_elternteil_2"),
 ]

@@ -1,139 +1,97 @@
 from datetime import timedelta
 
+import dags.tree as dt
 import pytest
-from pandas.testing import assert_series_equal
+from numpy.testing import assert_array_almost_equal
 
 from _gettsim.interface import compute_taxes_and_transfers
 from _gettsim_tests._helpers import cached_set_up_policy_environment
-from _gettsim_tests._policy_test_utils import PolicyTestData, load_policy_test_data
+from _gettsim_tests._policy_test_utils import PolicyTest, load_policy_test_data
 
-YEARS = [2021]
-
-OUT_COLS_TOL = {
-    "grundr_zuschlag_bonus_entgeltp": 0.0001,
-    "grundr_zuschlag_vor_eink_anr_m": 1,
-    "grundr_zuschlag_m": 1,
-    "ges_rente_m": 1,
-}
-data = load_policy_test_data("grundrente")
+grundrente_test_data = load_policy_test_data("grundrente")
+proxy_rente_test_data = load_policy_test_data("grundrente_proxy_rente")
 
 
-@pytest.mark.xfail(reason="Needs renamings PR.")
 @pytest.mark.parametrize(
-    ("test_data", "column"),
-    data.parametrize_args,
-    ids=str,
+    "test",
+    grundrente_test_data,
 )
-def test_grundrente(
-    test_data: PolicyTestData,
-    column: str,
-):
-    df = test_data.input_df
-    environment = cached_set_up_policy_environment(date=test_data.date)
+def test_grundrente(test: PolicyTest):
+    environment = cached_set_up_policy_environment(date=test.date)
 
     result = compute_taxes_and_transfers(
-        data=df, environment=environment, targets=column
-    )
-
-    tol = OUT_COLS_TOL[column]
-    assert_series_equal(
-        result[column], test_data.output_df[column], check_dtype=False, atol=tol, rtol=0
-    )
-
-
-INPUT_COLS_INCOME = [
-    "p_id",
-    "hh_id",
-    "alter",
-    "priv_rente_m",
-    "entgeltp_west",
-    "entgeltp_ost",
-    "geburtsjahr",
-    "geburtsmonat",
-    "rentner",
-    "jahr_renteneintr",
-    "monat_renteneintr",
-    "wohnort_ost",
-    "bruttolohn_m",
-    "höchster_bruttolohn_letzte_15_jahre_vor_rente_y",
-    "weiblich",
-    "y_pflichtbeitr_ab_40",
-    "pflichtbeitr_8_in_10",
-    "arbeitsl_1y_past_585",
-    "vertra_arbeitsl_2006",
-    "vertra_arbeitsl_1997",
-    "m_pflichtbeitrag",
-    "m_freiw_beitrag",
-    "m_ersatzzeit",
-    "m_schul_ausbild",
-    "m_kind_berücks_zeit",
-    "m_pfleg_berücks_zeit",
-    "m_arbeitsunfähig",
-    "m_krank_ab_16_bis_24",
-    "m_mutterschutz",
-    "m_arbeitsl",
-    "m_ausbild_suche",
-    "m_alg1_übergang",
-    "m_geringf_beschäft",
-]
-
-data_proxy = load_policy_test_data("grundrente_proxy_rente")
-
-
-@pytest.mark.xfail(reason="Needs renamings PR.")
-@pytest.mark.parametrize(
-    ("test_data", "column"),
-    data_proxy.parametrize_args,
-    ids=str,
-)
-def test_proxy_rente_vorj(
-    test_data: PolicyTestData,
-    column: str,
-):
-    df = test_data.input_df[INPUT_COLS_INCOME]
-    environment = cached_set_up_policy_environment(date=test_data.date)
-
-    result = compute_taxes_and_transfers(
-        data=df, environment=environment, targets=column
-    )
-
-    assert_series_equal(
-        result[column].astype(float),
-        test_data.output_df[column],
-        check_dtype=False,
-        rtol=0,
-        atol=0.01,
-    )
-
-
-@pytest.mark.xfail(reason="Needs renamings PR.")
-@pytest.mark.parametrize(
-    "test_data",
-    data_proxy.test_data,
-    ids=str,
-)
-def test_proxy_rente_vorj_comparison_last_year(test_data: PolicyTestData):
-    df = test_data.input_df[INPUT_COLS_INCOME].copy()
-    date = test_data.date
-    environment = cached_set_up_policy_environment(date)
-
-    calc_result = compute_taxes_and_transfers(
-        data=df,
+        data_tree=test.input_tree,
         environment=environment,
-        targets="rente_vorj_vor_grundr_proxy_m",
+        targets_tree=test.target_structure,
+    )
+
+    flat_result = dt.flatten_to_qual_names(result)
+    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
+
+    for result, expected in zip(
+        flat_result.values(), flat_expected_output_tree.values()
+    ):
+        assert_array_almost_equal(result, expected, decimal=0)
+
+
+@pytest.mark.parametrize(
+    "test",
+    proxy_rente_test_data,
+)
+def test_grundrente_proxy_rente(test: PolicyTest):
+    environment = cached_set_up_policy_environment(date=test.date)
+
+    result = compute_taxes_and_transfers(
+        data_tree=test.input_tree,
+        environment=environment,
+        targets_tree=test.target_structure,
+    )
+
+    flat_result = dt.flatten_to_qual_names(result)
+    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
+
+    for result, expected in zip(
+        flat_result.values(), flat_expected_output_tree.values()
+    ):
+        assert_array_almost_equal(result, expected, decimal=0)
+
+
+@pytest.mark.parametrize(
+    "test",
+    proxy_rente_test_data,
+)
+def test_grundrente_proxy_rente_vorjahr_comparison(test: PolicyTest):
+    environment = cached_set_up_policy_environment(date=test.date)
+
+    result = compute_taxes_and_transfers(
+        data_tree=test.input_tree,
+        environment=environment,
+        targets_tree={
+            "sozialversicherung": {
+                "rente": {"grundrente": {"proxy_rente_vorjahr_m": None}}
+            }
+        },
     )
 
     # Calculate pension of last year
-    environment = cached_set_up_policy_environment(date - timedelta(days=365))
-    df["alter"] -= 1
-    calc_result_last_year = compute_taxes_and_transfers(
-        data=df,
+    environment = cached_set_up_policy_environment(test.date - timedelta(days=365))
+    test.input_tree["alter"] -= 1
+    result_previous_year = compute_taxes_and_transfers(
+        data_tree=test.input_tree,
         environment=environment,
-        targets=["bruttorente_m"],
+        targets_tree={
+            "sozialversicherung": {"rente": {"altersrente": {"bruttorente_m": None}}}
+        },
     )
-    assert_series_equal(
-        calc_result["rente_vorj_vor_grundr_proxy_m"],
-        calc_result_last_year["bruttorente_m"] + df["priv_rente_m"],
-        check_names=False,
-        rtol=0,
+
+    flat_result = dt.flatten_to_qual_names(result)
+    flat_result_previous_year = dt.flatten_to_qual_names(result_previous_year)
+    flat_inputs = dt.flatten_to_qual_names(test.input_tree)
+    assert_array_almost_equal(
+        flat_result["sozialversicherung__rente__grundrente__proxy_rente_vorjahr_m"],
+        flat_result_previous_year[
+            "sozialversicherung__rente__altersrente__bruttorente_m"
+        ]
+        + flat_inputs["sozialversicherung__rente__private_rente_betrag_m"],
+        decimal=2,
     )

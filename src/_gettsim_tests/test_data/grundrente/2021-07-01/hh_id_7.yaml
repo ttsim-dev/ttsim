@@ -4,58 +4,58 @@ info:
   source: https://www.deutsche-rentenversicherung.de/SharedDocs/Downloads/DE/Broschueren/national/grundrente_zuschlag_zur_rente.html
     (Ramona K. + Dieter P.)
 inputs:
+  assumed: {}
   provided:
-    p_id:
-      - 7
-    hh_id:
-      - 7
-    p_id_ehepartner:
-      - -1
-    grundr_zeiten:
-      - 480
-    grundr_bew_zeiten:
-      - 300
-    wohnort_ost:
-      - false
-    rente_vorj_vor_grundr_proxy_m:
-      - 0.0
-    bruttolohn_vorj_m:
-      - 1400.0
-    eink_selbst_y:
-      - 0.0
-    eink_vermietung_y:
-      - 0.0
-    kapitaleink_y:
-      - 0.0
-    alter:
-      - 70
     alleinstehend:
       - true
+    alter:
+      - 70
     geburtsjahr:
       - 1951
-    bruttolohn_m:
-      - 0.0
-    höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
-      - 0.0
-    entgeltp_west:
-      - 19.2
-    entgeltp_ost:
-      - 0.0
-    ges_rente_zugangsfaktor:
-      - 1.0
-    rentner:
-      - true
-    grundr_entgeltp:
-      - 15.0
-    kind:
+    hh_id:
+      - 7
+    familie__kind:
       - false
-  assumed: {}
+    p_id:
+      - 7
+    familie__p_id_ehepartner:
+      - -1
+    wohnort_ost:
+      - false
+    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y:
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m:
+      - 1400.0
+    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y:
+      - 0.0
+    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y:
+      - 0.0
+    sozialversicherung__rente__altersrente__höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
+      - 0.0
+    sozialversicherung__rente__altersrente__zugangsfaktor:
+      - 1.0
+    sozialversicherung__rente__bezieht_rente:
+      - true
+    sozialversicherung__rente__entgeltpunkte_ost:
+      - 0.0
+    sozialversicherung__rente__entgeltpunkte_west:
+      - 19.2
+    sozialversicherung__rente__grundrente__bewertungszeiten_monate:
+      - 300
+    sozialversicherung__rente__grundrente__grundrentenzeiten_monate:
+      - 480
+    sozialversicherung__rente__grundrente__mean_entgeltpunkte:
+      - 15.0
+    sozialversicherung__rente__grundrente__proxy_rente_vorjahr_m:
+      - 0.0
 outputs:
-  grundr_zuschlag_bonus_entgeltp:
-    - 0.014583333
-  grundr_zuschlag_vor_eink_anr_m:
-    - 149.72
-  grundr_zuschlag_m:
-    - 59.72
-  ges_rente_m:
+  sozialversicherung__rente__altersrente__betrag_m:
     - 716.0
+  sozialversicherung__rente__grundrente__basisbetrag_m:
+    - 149.72
+  sozialversicherung__rente__grundrente__betrag_m:
+    - 59.72
+  sozialversicherung__rente__grundrente__mean_entgeltpunkte_zuschlag:
+    - 0.014583333

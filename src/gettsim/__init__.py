@@ -19,14 +19,14 @@ import pytest
 from _gettsim import (
     aggregation,
     config,
-    gettsim_typing,
     piecewise_functions,
     shared,
     taxes,
     transfers,
+    typing,
     visualization,
 )
-from _gettsim.functions.policy_function import PolicyFunction
+from _gettsim.function_types import PolicyFunction
 from _gettsim.interface import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
@@ -72,6 +72,6 @@ __all__ = [
     "create_synthetic_data",
     "taxes",
     "transfers",
-    "gettsim_typing",
+    "typing",
     "visualization",
 ]

@@ -3,110 +3,112 @@ info:
   note: Created with Wohngeldrechner that doesn't check for Mindesteinkommen + Vermögen.
   source: https://www.bmwsb.bund.de/SiteGlobals/Forms/wohngeldrechner/wohngeldrechner-2023-formular.html?resourceId=18737268&input_=18737272&pageLocale=de&householdMembers=1&housingbenefitRecipients=1&income=735&rent=600&rentLevelZIPCode=53123&rentLevelTown.GROUP=1&rentLevel=5&rentLevel.GROUP=1&update=Berechnen&result=260%2C00
 inputs:
+  assumed: {}
   provided:
-    p_id:
-      - 56
-    hh_id:
-      - 12
-    p_id_kindergeld_empf:
-      - -1
-    p_id_ehepartner:
-      - -1
-    p_id_elternteil_1:
-      - -1
-    p_id_elternteil_2:
-      - -1
-    p_id_einstandspartner:
-      - -1
-    eigenbedarf_gedeckt:
+    arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
-    gemeinsam_veranlagt:
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
-    kind:
-      - false
-    bruttokaltmiete_m_hh:
-      - 600.0
-    heizkosten_m_hh:
-      - 50.0
-    wohnfläche_hh:
-      - 40.0
-    soli_st_y_sn:
-      - 0.0
-    sozialv_beitr_arbeitnehmer_m:
-      - 0.0
-    bewohnt_eigentum_hh:
-      - false
-    bürgerg_bezug_vorj:
-      - false
-    alleinerz:
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
+    familie__alleinerziehend:
       - false
     alter:
       - 57
-    immobilie_baujahr_hh:
-      - 1982
-    kindergeld_anspruch:
-      - false
-    mietstufe:
-      - 5
-    bruttolohn_m:
-      - 1050.0
-    sum_ges_rente_priv_rente_m:
-      - 0.0
-    rente_ertragsanteil:
-      - 0.0
-    elterngeld_m:
-      - 0.0
-    arbeitsl_geld_m:
-      - 0.0
-    sonstig_eink_m:
-      - 0.0
-    kind_unterh_erhalt_m:
-      - 0.0
-    unterhaltsvors_m:
-      - 0.0
-    eink_selbst_m:
-      - 0.0
-    eink_abhängig_beschäftigt_y:
-      - 12600.0
-    kapitaleink_brutto_y:
-      - 0.0
-    eink_vermietung_m:
-      - 0.0
-    ges_rentenv_beitr_arbeitnehmer_m:
-      - 100.0
-    ges_krankenv_beitr_arbeitnehmer_m:
-      - 80.0
+    anzahl_personen_hh:
+      - 1
     behinderungsgrad:
       - 0
-    jahr:
-      - 2023
-    eink_st_y_sn:
-      - 300.0
-    vermögen_bedürft:
-      - 61000.0
-    anz_personen_hh:
+    geburtsjahr:
+      - 1966
+    geburtsmonat:
       - 1
     geburtstag:
       - 1
-    geburtsmonat:
-      - 1
-    geburtsjahr:
-      - 1966
-    wohngeld_vorrang_bg:
+    hh_id:
+      - 12
+    familie__kind:
+      - false
+    p_id:
+      - 56
+    familie__p_id_ehepartner:
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+    vermögen:
+      - 61000.0
+    einkommensteuer__betrag_y_sn:
+      - 300.0
+    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y:
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_y:
+      - 12600.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 1050.0
+    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
+      - 0.0
+    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
+      - 0.0
+    einkommensteuer__einkünfte__sonstige__betrag_m:
+      - 0.0
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+    einkommensteuer__rente_ertragsanteil:
+      - 0.0
+    elterngeld__betrag_m:
+      - 0.0
+    jahr:
+      - 2023
+    kindergeld__grundsätzlich_anspruchsberechtigt:
+      - false
+    kindergeld__p_id_empfänger:
+      - -1
+    solidaritätszuschlag__betrag_y_sn:
+      - 0.0
+    sozialversicherung__arbeitslosen__betrag_m:
+      - 0.0
+    sozialversicherung__beiträge_versicherter_m:
+      - 0.0
+    sozialversicherung__kranken__beitrag__betrag_versicherter_m:
+      - 80.0
+    sozialversicherung__rente__altersrente__betrag_m:
+      - 0.0
+    sozialversicherung__rente__beitrag__betrag_versicherter_m:
+      - 100.0
+    sozialversicherung__rente__private_rente_betrag_m:
+      - 0.0
+    unterhalt__tatsächlich_erhaltener_betrag_m:
+      - 0.0
+    unterhaltsvorschuss__betrag_m:
+      - 0.0
+    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
       - true
-    wohngeld_kinderzuschl_vorrang_bg:
+    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg:
       - true
-    wohngeld_mindesteinkommen_erreicht_wthh:
+    wohnen__baujahr_immobilie_hh:
+      - 1982
+    wohnen__bewohnt_eigentum_hh:
+      - false
+    wohnen__bruttokaltmiete_m_hh:
+      - 600.0
+    wohnen__heizkosten_m_hh:
+      - 50.0
+    wohnen__wohnfläche_hh:
+      - 40.0
+    wohngeld__mietstufe:
+      - 5
+    wohngeld__mindesteinkommen_erreicht_bg:
       - true
-    wohngeld_mindesteinkommen_erreicht_bg:
+    wohngeld__mindesteinkommen_erreicht_wthh:
       - true
-    wohngeld_vermögensgrenze_unterschritten_wthh:
+    wohngeld__vermögensgrenze_unterschritten_bg:
       - true
-    wohngeld_vermögensgrenze_unterschritten_bg:
+    wohngeld__vermögensgrenze_unterschritten_wthh:
       - true
-  assumed: {}
 outputs:
-  wohngeld_anspruchshöhe_m_bg:
+  wohngeld__anspruchshöhe_m_bg:
     - 425.0
-  wohngeld_anspruchshöhe_m_wthh:
+  wohngeld__anspruchshöhe_m_wthh:
     - 425.0

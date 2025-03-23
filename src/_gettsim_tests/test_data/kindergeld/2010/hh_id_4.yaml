@@ -3,32 +3,28 @@ info:
   note: ''
   source: ''
 inputs:
+  assumed: {}
   provided:
-    hh_id:
-      - 4
-    p_id:
-      - 19
-    p_id_kindergeld_empf:
-      - -1
     alter:
       - 21
-    kind:
-      - false
     arbeitsstunden_w:
       - 10.0
-    in_ausbildung:
-      - true
-    bruttolohn_m:
+    hh_id:
+      - 4
+    familie__kind:
+      - false
+    p_id:
+      - 19
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 700.0
-    _zu_verst_eink_ohne_kinderfreib_y_sn:
+    einkommensteuer__gesamteinkommen_y:
       - 0.0
-  assumed: {}
+    kindergeld__in_ausbildung:
+      - true
+    kindergeld__p_id_empfänger:
+      - -1
 outputs:
-  kindergeld_m:
+  kindergeld__betrag_m:
     - 0
-  kinderbonus_m:
-    - 0.0
-  kindergeld_m_hh:
+  kindergeld__betrag_m_hh:
     - 0
-  kinderbonus_m_hh:
-    - 0.0

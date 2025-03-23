@@ -38,7 +38,7 @@ class AggregateByGroupSpec:
     """
 
     aggr: str
-    source_col: str | None = None
+    source: str | None = None
 
 
 @dataclass
@@ -48,7 +48,7 @@ class AggregateByPIDSpec:
     """
 
     p_id_to_aggregate_by: str
-    source_col: str
+    source: str
     aggr: str
 
 

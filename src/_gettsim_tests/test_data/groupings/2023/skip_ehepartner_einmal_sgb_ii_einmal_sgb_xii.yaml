@@ -23,10 +23,10 @@ inputs:
       - 0
       - 0
 outputs:
-  sn_id:
+  einkommensteuer__sn_id:
     - 0
     - 0
-  bg_id:
+  arbeitslosengeld_2__bg_id:
     - 0
     - 0
   # potentielle_kinderfreibeträge:

@@ -4,36 +4,16 @@ info:
   source: own calculations
 inputs:
   assumed:
-    hh_id:
-      - 6
-      - 6
-      - 6
-      - 6
-    p_id:
-      - 14
-      - 15
-      - 16
-      - 17
-    p_id_elternteil_1:
-      - -1
-      - -1
-      - 14
-      - 14
-    p_id_elternteil_2:
-      - -1
-      - -1
-      - 15
-      - 15
-    p_id_einstandspartner:
+    arbeitslosengeld_2__p_id_einstandspartner:
       - 15
       - 14
       - -1
       - -1
-    p_id_erziehgeld_empf:
-      - -1
-      - -1
-      - 14
-      - 14
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
     alter:
       - 40
       - 40
@@ -44,79 +24,100 @@ inputs:
       - 40.0
       - 0.0
       - 0.0
-    in_ausbildung:
-      - false
-      - false
-      - false
-      - false
-    bruttolohn_m:
-      - 400.0
-      - 1300.0
-      - 0.0
-      - 0.0
-    bruttolohn_vorj_m:
-      - 400.0
-      - 1300.0
-      - 0.0
-      - 0.0
-    elterngeld_nettoeinkommen_vorjahr_m:
-      - 400.0
-      - 1300.0
-      - 0.0
-      - 0.0
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtsmonat:
-      - 1
-      - 1
-      - 3
-      - 9
-    ges_pflegev_hat_kinder:
-      - true
-      - true
-      - false
-      - false
-    kind:
-      - false
-      - false
-      - true
-      - true
-    alleinerz:
-      - false
-      - false
-      - false
-      - false
     geburtsjahr:
       - 1965
       - 1965
       - 2006
       - 2006
-    budgetsatz_erzieh:
+    geburtsmonat:
+      - 1
+      - 1
+      - 3
+      - 9
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 6
+      - 6
+      - 6
+      - 6
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+    p_id:
+      - 14
+      - 15
+      - 16
+      - 17
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 14
+      - 14
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 15
+      - 15
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 400.0
+      - 1300.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m:
+      - 400.0
+      - 1300.0
+      - 0.0
+      - 0.0
+    elterngeld__nettoeinkommen_vorjahr_m:
+      - 400.0
+      - 1300.0
+      - 0.0
+      - 0.0
+    erziehungsgeld__budgetsatz:
       - false
       - false
       - false
       - true
+    erziehungsgeld__p_id_empfänger:
+      - -1
+      - -1
+      - 14
+      - 14
+    kindergeld__in_ausbildung:
+      - false
+      - false
+      - false
+      - false
+    sozialversicherung__pflege__beitrag__hat_kinder:
+      - true
+      - true
+      - false
+      - false
+  provided: {}
 outputs:
-  erziehungsgeld_eink_relev_kind_y:
-    - 0
-    - 0
-    - 14105.6
-    - 14105.6
-  _erziehungsgeld_einkommensgrenze_kind_y:
-    - 0
-    - 0
-    - 19640
-    - 25226
-  erziehungsgeld_kind_m:
+  erziehungsgeld__anspruchshöhe_kind_m:
     - 0.0
     - 0.0
     - 300.0
     - 450.0
-  erziehungsgeld_m:
+  erziehungsgeld__anzurechnendes_einkommen_y:
+    - 0
+    - 0
+    - 14105.6
+    - 14105.6
+  erziehungsgeld__betrag_m:
     - 750.0
     - 0.0
     - 0.0
     - 0.0
+  erziehungsgeld__einkommensgrenze_y:
+    - 0
+    - 0
+    - 19640
+    - 25226

@@ -3,127 +3,30 @@ info:
   note: Created with Wohngeldrechner that doesn't check for Mindesteinkommen.
   source: https://www.smart-rechner.de/wohngeld/rechner.php
 inputs:
+  assumed: {}
   provided:
-    p_id:
-      - 60
-      - 61
-      - 62
-      - 63
-      - 64
-      - 65
-    hh_id:
-      - 14
-      - 14
-      - 14
-      - 14
-      - 14
-      - 14
-    p_id_kindergeld_empf:
-      - -1
-      - -1
-      - 60
-      - 60
-      - 60
-      - 60
-    p_id_ehepartner:
+    arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
       - 61
       - 60
       - -1
       - -1
       - -1
       - -1
-    p_id_elternteil_1:
-      - -1
-      - -1
-      - 60
-      - 60
-      - 60
-      - 60
-    p_id_elternteil_2:
-      - -1
-      - -1
-      - 61
-      - 61
-      - 61
-      - 61
-    p_id_einstandspartner:
-      - 61
-      - 60
-      - -1
-      - -1
-      - -1
-      - -1
-    eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    gemeinsam_veranlagt:
-      - true
-      - true
-      - false
-      - false
-      - false
-      - false
-    kind:
-      - false
-      - false
-      - true
-      - true
-      - true
-      - true
-    bruttokaltmiete_m_hh:
-      - 1300.0
-      - 1300.0
-      - 1300.0
-      - 1300.0
-      - 1300.0
-      - 1300.0
-    heizkosten_m_hh:
-      - 50.0
-      - 50.0
-      - 50.0
-      - 50.0
-      - 50.0
-      - 50.0
-    wohnfläche_hh:
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-    soli_st_y_sn:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    sozialv_beitr_arbeitnehmer_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    bewohnt_eigentum_hh:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    bürgerg_bezug_vorj:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    alleinerz:
+    familie__alleinerziehend:
       - false
       - false
       - false
@@ -137,125 +40,13 @@ inputs:
       - 10
       - 8
       - 3
-    immobilie_baujahr_hh:
-      - 1993
-      - 1993
-      - 1993
-      - 1993
-      - 1993
-      - 1993
-    kindergeld_anspruch:
-      - false
-      - false
-      - true
-      - true
-      - true
-      - true
-    mietstufe:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    bruttolohn_m:
-      - 1300.0
-      - 1200.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    sum_ges_rente_priv_rente_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    rente_ertragsanteil:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    elterngeld_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    arbeitsl_geld_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    sonstig_eink_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    kind_unterh_erhalt_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    unterhaltsvors_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    eink_selbst_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    eink_abhängig_beschäftigt_y:
-      - 15600.0
-      - 14400.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    kapitaleink_brutto_y:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    eink_vermietung_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    ges_rentenv_beitr_arbeitnehmer_m:
-      - 123.8
-      - 114.3
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    ges_krankenv_beitr_arbeitnehmer_m:
-      - 99.0
-      - 91.4
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
+    anzahl_personen_hh:
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
+      - 6
     behinderungsgrad:
       - 0
       - 0
@@ -263,48 +54,6 @@ inputs:
       - 0
       - 0
       - 0
-    jahr:
-      - 2023
-      - 2023
-      - 2023
-      - 2023
-      - 2023
-      - 2023
-    eink_st_y_sn:
-      - 714.0
-      - 714.0
-      - 714.0
-      - 714.0
-      - 714.0
-      - 714.0
-    vermögen_bedürft:
-      - 85000.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    anz_personen_hh:
-      - 6
-      - 6
-      - 6
-      - 6
-      - 6
-      - 6
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
     geburtsjahr:
       - 1978
       - 1983
@@ -312,37 +61,295 @@ inputs:
       - 2013
       - 2015
       - 2020
-    wohngeld_vorrang_bg:
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 14
+      - 14
+      - 14
+      - 14
+      - 14
+      - 14
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+      - true
+    p_id:
+      - 60
+      - 61
+      - 62
+      - 63
+      - 64
+      - 65
+    familie__p_id_ehepartner:
+      - 61
+      - 60
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 60
+      - 60
+      - 60
+      - 60
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 61
+      - 61
+      - 61
+      - 61
+    vermögen:
+      - 85000.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__betrag_y_sn:
+      - 714.0
+      - 714.0
+      - 714.0
+      - 714.0
+      - 714.0
+      - 714.0
+    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_y:
+      - 15600.0
+      - 14400.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 1300.0
+      - 1200.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__sonstige__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__gemeinsam_veranlagt:
+      - true
+      - true
+      - false
+      - false
+      - false
+      - false
+    einkommensteuer__rente_ertragsanteil:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    elterngeld__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    jahr:
+      - 2023
+      - 2023
+      - 2023
+      - 2023
+      - 2023
+      - 2023
+    kindergeld__grundsätzlich_anspruchsberechtigt:
+      - false
+      - false
+      - true
+      - true
+      - true
+      - true
+    kindergeld__p_id_empfänger:
+      - -1
+      - -1
+      - 60
+      - 60
+      - 60
+      - 60
+    solidaritätszuschlag__betrag_y_sn:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__arbeitslosen__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__beiträge_versicherter_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__kranken__beitrag__betrag_versicherter_m:
+      - 99.0
+      - 91.4
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__altersrente__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__beitrag__betrag_versicherter_m:
+      - 123.8
+      - 114.3
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__private_rente_betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    unterhalt__tatsächlich_erhaltener_betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
       - true
       - true
       - true
       - true
       - true
       - true
-    wohngeld_kinderzuschl_vorrang_bg:
+    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg:
       - true
       - true
       - true
       - true
       - true
       - true
-    wohngeld_mindesteinkommen_erreicht_wthh:
+    wohnen__baujahr_immobilie_hh:
+      - 1993
+      - 1993
+      - 1993
+      - 1993
+      - 1993
+      - 1993
+    wohnen__bewohnt_eigentum_hh:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    wohnen__bruttokaltmiete_m_hh:
+      - 1300.0
+      - 1300.0
+      - 1300.0
+      - 1300.0
+      - 1300.0
+      - 1300.0
+    wohnen__heizkosten_m_hh:
+      - 50.0
+      - 50.0
+      - 50.0
+      - 50.0
+      - 50.0
+      - 50.0
+    wohnen__wohnfläche_hh:
+      - 100.0
+      - 100.0
+      - 100.0
+      - 100.0
+      - 100.0
+      - 100.0
+    wohngeld__mietstufe:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    wohngeld__mindesteinkommen_erreicht_wthh:
       - true
       - true
       - true
       - true
       - true
       - true
-  assumed: {}
 outputs:
-  wohngeld_anspruchshöhe_m_bg:
+  wohngeld__anspruchshöhe_m_bg:
     - 777.0
     - 777.0
     - 777.0
     - 777.0
     - 777.0
     - 777.0
-  wohngeld_anspruchshöhe_m_wthh:
+  wohngeld__anspruchshöhe_m_wthh:
     - 777.0
     - 777.0
     - 777.0

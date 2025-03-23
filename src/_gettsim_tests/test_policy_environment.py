@@ -1,14 +1,15 @@
 """Some tests for the policy_environment module."""
 
+from __future__ import annotations
+
 from datetime import date, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import optree
 import pandas as pd
 import pytest
 
-from _gettsim.functions.policy_function import policy_function
-from _gettsim.gettsim_typing import NestedFunctionDict
+from _gettsim.function_types import GroupByFunction, group_by_function, policy_function
 from _gettsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
@@ -17,6 +18,9 @@ from _gettsim.policy_environment import (
     set_up_policy_environment,
 )
 from _gettsim_tests import TEST_DIR
+
+if TYPE_CHECKING:
+    from _gettsim.typing import NestedFunctionDict
 
 
 class TestPolicyEnvironment:
@@ -105,27 +109,26 @@ def test_access_different_date_jahresanfang():
     assert params["foo_jahresanfang"] == 2020
 
 
-@pytest.mark.xfail(reason="Needs renamings PR.")
 @pytest.mark.parametrize(
     "tree, last_day, function_name_last_day, function_name_next_day",
     [
         (
-            {"zu_verst_eink": {"freibetraege": {"eink_st_altersfreib_y": None}}},
+            {"einkommensteuer": {"abzüge": {"altersfreibetrag_y": None}}},
             date(2004, 12, 31),
-            "eink_st_altersfreib_y_bis_2004",
-            "eink_st_altersfreib_y_ab_2005",
+            "altersfreibetrag_y_bis_2004",
+            "altersfreibetrag_y_ab_2005",
         ),
         (
-            {"zu_verst_eink": {"freibetraege": {"alleinerz_freib_y_sn": None}}},
+            {"einkommensteuer": {"abzüge": {"alleinerziehend_betrag_y": None}}},
             date(2014, 12, 31),
-            "eink_st_alleinerz_freib_y_sn_pauschal",
-            "eink_st_alleinerz_freib_y_sn_nach_kinderzahl",
+            "alleinerziehend_betrag_y_pauschal",
+            "alleinerziehend_betrag_y_nach_kinderzahl",
         ),
         (
-            {"zu_verst_eink": {"eink": {"sum_eink_y": None}}},
+            {"einkommensteuer": {"gesamteinkommen_ohne_abzüge_y": None}},
             date(2008, 12, 31),
-            "sum_eink_mit_kapital_eink_y",
-            "sum_eink_ohne_kapital_eink_y",
+            "gesamteinkommen_ohne_abzüge_mit_kapitaleinkünften_y",
+            "gesamteinkommen_ohne_abzüge_ohne_kapitaleinkünfte_y",
         ),
     ],
 )
@@ -155,3 +158,11 @@ def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
 ):
     with pytest.raises(KeyError):
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
+
+
+def test_dont_destroy_group_by_functions():
+    functions_tree = {
+        "foo": group_by_function()(lambda: 1),
+    }
+    environment = PolicyEnvironment(functions_tree)
+    assert isinstance(environment.functions_tree["foo"], GroupByFunction)

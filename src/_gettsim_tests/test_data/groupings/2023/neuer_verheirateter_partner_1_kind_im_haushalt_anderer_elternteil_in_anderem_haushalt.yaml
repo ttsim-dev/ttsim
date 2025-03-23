@@ -1,106 +1,95 @@
 ---
 info:
   note: >-
-    not eligible for potentieller_unterhaltsvorschuss if parent in same household is
-    married to new partner (kind_unterh_anspr_m unaffected)
+    not eligible for potentieller∞_unterhaltsvorschuss if parent in same household is
+    married to new partner (unterhalt__anspruch_m unaffected)
   source: ''
 inputs:
+  assumed: {}
   provided:
-    p_id:
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 1
       - 0
-      - 1
-      - 2
-      - 3
-    geburtstag:
-      - 14
-      - 14
-      - 1
-      - 24
-    geburtsmonat:
-      - 7
-      - 7
-      - 3
-      - 12
-    geburtsjahr:
-      - 1984
-      - 1981
-      - 2010
-      - 1971
-    # TODO (@hmgaudecker): Remove again.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/211
+      - -1
+      - -1
     alter:
       - 39
       - 42
       - 13
       - 52
+    geburtsjahr:
+      - 1984
+      - 1981
+      - 2010
+      - 1971
+    geburtsmonat:
+      - 7
+      - 7
+      - 3
+      - 12
+    geburtstag:
+      - 14
+      - 14
+      - 1
+      - 24
     hh_id:
       - 0
       - 0
       - 0
       - 1
-    p_id_einstandspartner:
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+    familie__p_id_ehepartner:
       - 1
       - 0
       - -1
       - -1
-    p_id_ehepartner:
-      - 1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
       - 0
       - -1
+    familie__p_id_elternteil_2:
       - -1
-    gemeinsam_veranlagt:
+      - -1
+      - 1
+      - -1
+    einkommensteuer__gemeinsam_veranlagt:
       - true
       - true
-      - false
-      - false
-    p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-      - -1
-    p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
-      - -1
-    eigenbedarf_gedeckt:
-      - false
-      - false
       - false
       - false
 outputs:
-  fg_id:
-    - 0
-    - 0
-    - 0
-    - 1
-  bg_id:
+  arbeitslosengeld_2__bg_id:
     - 0
     - 0
     - 0
     - 100
-  eg_id:
+  arbeitslosengeld_2__eg_id:
     - 0
     - 0
     - 1
     - 2
-  ehe_id:
+  arbeitslosengeld_2__fg_id:
+    - 0
+    - 0
+    - 0
+    - 1
+  familie__ehe_id:
     - 0
     - 0
     - 1
     - 2
-  sn_id:
+  einkommensteuer__sn_id:
     - 0
     - 0
     - 1
     - 2
-# potentielle_kinderfreibeträge:
-#   - 1
-#   - 1  # CZ: I think so
-#   - 0
-#   - 1
-# potentieller_unterhaltsvors:
-#   - 0
-#   - 0
-#   - 0
-#   - 0

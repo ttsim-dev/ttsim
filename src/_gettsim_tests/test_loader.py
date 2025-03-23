@@ -6,14 +6,14 @@ import numpy
 import pytest
 
 from _gettsim.config import PATHS_TO_INTERNAL_FUNCTIONS, RESOURCE_DIR
-from _gettsim.functions.loader import (
+from _gettsim.function_types import (
+    policy_function,
+)
+from _gettsim.function_types.policy_function import _vectorize_func
+from _gettsim.loader import (
     _convert_path_to_tree_path,
     _find_python_files_recursively,
     _load_module,
-)
-from _gettsim.functions.policy_function import (
-    _vectorize_func,
-    policy_function,
 )
 
 if TYPE_CHECKING:
@@ -23,7 +23,12 @@ if TYPE_CHECKING:
 
 def test_load_path():
     assert _load_module(
-        RESOURCE_DIR / "social_insurance_contributions" / "ges_krankenv.py",
+        RESOURCE_DIR
+        / "taxes"
+        / "sozialversicherung"
+        / "kranken"
+        / "beitrag"
+        / "beitragssatz.py",
         RESOURCE_DIR,
     )
 
@@ -68,6 +73,7 @@ def test_vectorize_func(vectorized_function: Callable) -> None:
         (RESOURCE_DIR / "foo" / "spam" / "bar.py", RESOURCE_DIR, ("foo", "spam")),
         (RESOURCE_DIR / "taxes" / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
         (RESOURCE_DIR / "transfers" / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
+        (RESOURCE_DIR / "transfers" / "foo.py", RESOURCE_DIR, tuple()),  # noqa: C408
     ],
 )
 def test_convert_path_to_tree_path(

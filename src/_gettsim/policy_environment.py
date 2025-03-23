@@ -4,6 +4,7 @@ import copy
 import datetime
 from typing import TYPE_CHECKING, Any
 
+import dags.tree as dt
 import numpy
 import optree
 import pandas as pd
@@ -13,11 +14,11 @@ from _gettsim.config import (
     INTERNAL_PARAMS_GROUPS,
     RESOURCE_DIR,
 )
-from _gettsim.functions.loader import (
+from _gettsim.function_types import GroupByFunction, PolicyFunction, policy_function
+from _gettsim.loader import (
     load_aggregation_specs_tree,
     load_functions_tree_for_date,
 )
-from _gettsim.functions.policy_function import PolicyFunction, policy_function
 from _gettsim.piecewise_functions import (
     check_thresholds,
     get_piecewise_parameters,
@@ -32,7 +33,7 @@ from _gettsim.shared import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from _gettsim.gettsim_typing import NestedAggregationSpecDict, NestedFunctionDict
+    from _gettsim.typing import NestedAggregationSpecDict, NestedFunctionDict
 
 
 class PolicyEnvironment:
@@ -63,12 +64,14 @@ class PolicyEnvironment:
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_gettsim_pytree(
             functions_tree,
-            lambda leaf: isinstance(leaf, PolicyFunction),
+            lambda leaf: isinstance(leaf, PolicyFunction | GroupByFunction),
             "functions_tree",
         )
         self._functions_tree = optree.tree_map(
-            func=_convert_function_to_policy_function,
-            tree=functions_tree,
+            lambda leaf: leaf
+            if isinstance(leaf, GroupByFunction)
+            else _convert_function_to_policy_function(leaf),
+            functions_tree,
         )
 
         # Read in parameters and aggregation specs
@@ -118,8 +121,10 @@ class PolicyEnvironment:
         new_functions_tree = {**self._functions_tree}
 
         functions_tree_to_upsert = optree.tree_map(
-            func=_convert_function_to_policy_function,
-            tree=functions_tree_to_upsert,
+            lambda leaf: leaf
+            if isinstance(leaf, GroupByFunction)
+            else _convert_function_to_policy_function(leaf),
+            functions_tree_to_upsert,
         )
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
             functions_tree_to_upsert
@@ -187,7 +192,7 @@ def set_up_policy_environment(date: datetime.date | str | int) -> PolicyEnvironm
         params[group] = _parse_piecewise_parameters(params_one_group)
     # Extend dictionary with date-specific values which do not need an own function
     params = _parse_kinderzuschl_max(date, params)
-    params = _parse_einführungsfaktor_vorsorgeaufw_alter_ab_2005(date, params)
+    params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params)
     params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
     aggregation_specs_tree = load_aggregation_specs_tree()
@@ -221,7 +226,7 @@ def _parse_date(date: datetime.date | str | int) -> datetime.date:
 
 def _convert_function_to_policy_function(
     function: callable,
-) -> PolicyFunction:
+) -> PolicyFunction | GroupByFunction:
     """Convert a function to a PolicyFunction.
 
     Parameters
@@ -235,7 +240,7 @@ def _convert_function_to_policy_function(
         The converted function.
 
     """
-    if isinstance(function, PolicyFunction):
+    if isinstance(function, PolicyFunction | GroupByFunction):
         converted_function = function
     else:
         converted_function = policy_function(leaf_name=function.__name__)(function)
@@ -312,7 +317,7 @@ def _parse_kinderzuschl_max(date, params):
     return params
 
 
-def _parse_einführungsfaktor_vorsorgeaufw_alter_ab_2005(date, params):
+def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
     """Calculate introductory factor for pension expense deductions which depends on the
     current year as follows:
 
@@ -343,9 +348,9 @@ def _parse_einführungsfaktor_vorsorgeaufw_alter_ab_2005(date, params):
                 "einführungsfaktor"
             ]["intercepts_at_lower_thresholds"],
         )
-        params["eink_st_abzuege"]["einführungsfaktor_vorsorgeaufw_alter_ab_2005"] = (
-            out.loc[0]
-        )
+        params["eink_st_abzuege"][
+            "einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005"
+        ] = out.loc[0]
     return params
 
 
@@ -410,22 +415,22 @@ def _load_parameter_group_from_yaml(
 
     """
 
-    def subtract_years_from_date(dt, years):
+    def subtract_years_from_date(date, years):
         """Subtract one or more years from a date object."""
         try:
-            dt = dt.replace(year=dt.year - years)
+            date = date.replace(year=date.year - years)
 
         # Take care of leap years
         except ValueError:
-            dt = dt.replace(year=dt.year - years, day=dt.day - 1)
-        return dt
+            date = date.replace(year=date.year - years, day=date.day - 1)
+        return date
 
-    def set_date_to_beginning_of_year(dt):
+    def set_date_to_beginning_of_year(date):
         """Set date to the beginning of the year."""
 
-        dt = dt.replace(month=1, day=1)
+        date = date.replace(month=1, day=1)
 
-        return dt
+        return date
 
     raw_group_data = yaml.load(
         (yaml_path / f"{group}.yaml").read_text(encoding="utf-8"),
@@ -620,8 +625,8 @@ def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
     """Raise error if a PolicyFunction does not have the same leaf name as the last
     branch element of the tree path.
     """
-    tree_paths, functions, _ = optree.tree_flatten_with_path(functions_tree)
-    for tree_path, function in zip(tree_paths, functions):
+
+    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
         if tree_path[-1] != function.leaf_name:
             raise KeyError(
                 f"""
