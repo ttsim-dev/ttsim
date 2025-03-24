@@ -6,13 +6,19 @@
 # Basic information
 name = "gettsim"
 dynamic = ["version"]
-# About the project
-authors = [
-    { name = "The GETTSIM team", email = "gaudecker@iza.org" },
-]
 description = "The German Taxes and Transfers SIMulator"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
+# About the project
+authors = [
+    { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
+    { name = "Marvin Immesberger" },
+    { name = "Christian Zimpelmann" }
+]
+maintainers = [
+    { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
+    { name = "Marvin Immesberger" }
+]
 keywords = [
     "Economics",
     "Taxes",
@@ -36,7 +42,7 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "astor",
-    #"dags",
+    "dags>=0.3.0",
     "ipywidgets",
     "networkx",
     "numpy",
@@ -50,6 +56,7 @@ dependencies = [
     "pytest",
     "pyyaml",
 ]
+
 
 [project.urls]
 Repository = "https://github.com/iza-institute-of-labor-economics/gettsim"
@@ -108,7 +115,6 @@ ipywidgets = "*"
 jupyterlab = "*"
 networkx = "*" # Remove once dags is a proper dependency
 plotly = ">=5.24,<6"
-optree = "*"
 pygments = "*"
 pygraphviz = "*"
 pyyaml = "*"
@@ -126,8 +132,6 @@ snakeviz = ">=2.2.2,<3"
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
 pdbp = "*"
-dags = {git = "https://github.com/OpenSourceEconomics/dags", rev="00d92a9a080f8a9df5d567ffba2f99604e896b2d"}
-
 
 [tool.pixi.target.unix.pypi-dependencies]
 kaleido = "*"
