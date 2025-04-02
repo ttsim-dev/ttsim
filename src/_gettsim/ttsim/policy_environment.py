@@ -12,9 +12,13 @@ import yaml
 
 from _gettsim.config import (
     INTERNAL_PARAMS_GROUPS,
-    RESOURCE_DIR,
+    PATH_TO_FUNCTIONS_ROOT,
 )
-from _gettsim.ttsim.function_types import GroupByFunction, PolicyFunction, policy_function
+from _gettsim.ttsim.function_types import (
+    GroupByFunction,
+    PolicyFunction,
+    policy_function,
+)
 from _gettsim.ttsim.loader import (
     load_aggregation_specs_tree,
     load_functions_tree_for_date,
@@ -390,11 +394,11 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
     return params
 
 
-def _load_parameter_group_from_yaml(
+def _load_parameter_group_from_yaml(  # noqa: PLR0912, PLR0915
     date: datetime.date,
     group: str,
     parameters: list[str] | None = None,
-    yaml_path: Path = RESOURCE_DIR / "parameters",
+    yaml_path: Path = PATH_TO_FUNCTIONS_ROOT / "parameters",
 ) -> dict[str, Any]:
     """Load data from raw yaml group file.
 
@@ -434,7 +438,7 @@ def _load_parameter_group_from_yaml(
 
     raw_group_data = yaml.load(
         (yaml_path / f"{group}.yaml").read_text(encoding="utf-8"),
-        Loader=yaml.CLoader,
+        Loader=yaml.CLoader,  # noqa: S506
     )
 
     # Load parameters (exclude 'rounding' parameters which are handled at the

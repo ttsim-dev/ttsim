@@ -9,7 +9,11 @@ import optree
 import pandas as pd
 import pytest
 
-from _gettsim.ttsim.function_types import GroupByFunction, group_by_function, policy_function
+from _gettsim.ttsim.function_types import (
+    GroupByFunction,
+    group_by_function,
+    policy_function,
+)
 from _gettsim.ttsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
@@ -83,7 +87,7 @@ def test_fail_if_invalid_access_different_date():
             date=pd.to_datetime("01-01-2020").date(),
             group="invalid_access_diff_date",
             parameters=None,
-            yaml_path=TEST_DIR / "test_parameters",
+            yaml_path=TEST_DIR / "ttsim" / "test_parameters",
         )
 
 
@@ -92,7 +96,7 @@ def test_access_different_date_vorjahr():
         date=pd.to_datetime("01-01-2020").date(),
         group="test_access_diff_date_vorjahr",
         parameters=None,
-        yaml_path=TEST_DIR / "test_parameters",
+        yaml_path=TEST_DIR / "ttsim" / "test_parameters",
     )
     assert params["foo"] == 2020
     assert params["foo_vorjahr"] == 2019
@@ -103,7 +107,7 @@ def test_access_different_date_jahresanfang():
         date=pd.to_datetime("07-01-2020").date(),
         group="test_access_diff_date_jahresanfang",
         parameters=None,
-        yaml_path=TEST_DIR / "test_parameters",
+        yaml_path=TEST_DIR / "ttsim" / "test_parameters",
     )
     assert params["foo"] == 2021
     assert params["foo_jahresanfang"] == 2020
