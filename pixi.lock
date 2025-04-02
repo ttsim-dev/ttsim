@@ -5610,8 +5610,8 @@ packages:
   timestamp: 1694400856979
 - pypi: .
   name: gettsim
-  version: 0.7.1.dev95+gdab7a666.d20250324
-  sha256: a7011fdf814d71b26b7d6f474b87555abd82e2e1e1575b07b0215dadba45b997
+  version: 0.7.1.dev96+g1b6bdf64.d20250402
+  sha256: eae53ade8991ab63ae06a5a9c3c160c53e4013353cf359b4de9c304e0a9b5d91
   requires_dist:
   - astor
   - dags>=0.3.0

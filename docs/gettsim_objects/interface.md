@@ -5,7 +5,7 @@ have more information on how they work and how you can use them please see
 {ref}`how_to_guides` and {ref}`tutorials`.
 
 ```{eval-rst}
-.. currentmodule:: _gettsim.interface
+.. currentmodule:: _gettsim.ttsim.interface
 ```
 
 ```{eval-rst}
@@ -13,7 +13,7 @@ have more information on how they work and how you can use them please see
 ```
 
 ```{eval-rst}
-.. currentmodule:: _gettsim.policy_environment
+.. currentmodule:: _gettsim.ttsim.policy_environment
 ```
 
 ```{eval-rst}

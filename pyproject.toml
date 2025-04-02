@@ -317,7 +317,7 @@ filterwarnings = [
     "ignore:The TerminalReporter.writer attribute is",
     "ignore:Repeated execution of the test suite",
     "ignore:Using or importing the ABCs from 'collections'",
-    "ignore::_gettsim.interface.FunctionsAndColumnsOverlapWarning"
+    "ignore::_gettsim.ttsim.interface.FunctionsAndColumnsOverlapWarning"
 ]
 markers = [
     "wip: Tests that are work-in-progress.",
