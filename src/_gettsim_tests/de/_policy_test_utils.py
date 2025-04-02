@@ -43,9 +43,9 @@ class PolicyTest:
 
 
 def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
-    from _gettsim_tests import TEST_DATA_DIR
+    from _gettsim_tests import TAXES_TRANSFERS_TEST_DATA_DIR
 
-    root = TEST_DATA_DIR / policy_name
+    root = TAXES_TRANSFERS_TEST_DATA_DIR / policy_name
 
     out = []
 

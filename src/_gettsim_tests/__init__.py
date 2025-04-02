@@ -6,4 +6,4 @@ from pathlib import Path
 
 # Obtain the test directory of the package.
 TEST_DIR = Path(__file__).parent.resolve()
-TEST_DATA_DIR = TEST_DIR / "test_data"
+TAXES_TRANSFERS_TEST_DATA_DIR = TEST_DIR / "de" / "test_data"
