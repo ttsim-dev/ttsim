@@ -16,24 +16,24 @@ import warnings
 
 import pytest
 
-from _gettsim.de.synthetic import create_synthetic_data
-from _gettsim.ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-from _gettsim.ttsim.function_types import (
+from _gettsim.synthetic import create_synthetic_data
+from _gettsim_tests import TEST_DIR
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.function_types import (
     GroupByFunction,
     PolicyFunction,
     group_by_function,
     policy_function,
 )
-from _gettsim.ttsim.interface import (
+from ttsim.interface import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
 )
-from _gettsim.ttsim.policy_environment import (
+from ttsim.policy_environment import (
     PolicyEnvironment,
     set_up_policy_environment,
 )
-from _gettsim.ttsim.visualization import plot_dag
-from _gettsim_tests import TEST_DIR
+from ttsim.visualization import plot_dag
 
 COUNTER_TEST_EXECUTIONS = itertools.count()
 
@@ -53,17 +53,17 @@ def test(*args):
 
 
 __all__ = [
-    "__version__",
-    "set_up_policy_environment",
-    "compute_taxes_and_transfers",
-    "PolicyEnvironment",
-    "PolicyFunction",
-    "GroupByFunction",
-    "policy_function",
-    "group_by_function",
     "AggregateByGroupSpec",
     "AggregateByPIDSpec",
     "FunctionsAndColumnsOverlapWarning",
+    "GroupByFunction",
+    "PolicyEnvironment",
+    "PolicyFunction",
+    "__version__",
+    "compute_taxes_and_transfers",
     "create_synthetic_data",
+    "group_by_function",
     "plot_dag",
+    "policy_function",
+    "set_up_policy_environment",
 ]

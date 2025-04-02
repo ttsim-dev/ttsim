@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-from _gettsim.ttsim.policy_environment import (
+from ttsim.policy_environment import (
     PolicyEnvironment,
     _parse_date,
     set_up_policy_environment,

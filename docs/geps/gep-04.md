@@ -238,7 +238,7 @@ method `aggr`.
 For example, in `household_characteristics.py`, we could have:
 
 ```
-from _gettsim.ttsim.aggregation import AggregateByGroupSpec
+from ttsim.aggregation import AggregateByGroupSpec
 
 aggregation_specs = {
     "anzahl_kinder_hh": AggregateByGroupSpec(source="familie__kind", aggr="sum"),
@@ -288,7 +288,7 @@ graph will be `kindergeld__betrag_m` and `arbeitslosengeld_2__bg_id`. This is th
 as specifying:
 
 ```
-from _gettsim.ttsim.aggregation import AggregateByGroupSpec
+from ttsim.aggregation import AggregateByGroupSpec
 
 aggregation_specs = {
     "kindergeld__betrag_m_bg": AggregateByGroupSpec(

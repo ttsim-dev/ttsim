@@ -1,4 +1,4 @@
-from _gettsim.ttsim.config import set_array_backend
+from ttsim.config import set_array_backend
 
 
 def pytest_addoption(parser):  # type: ignore[no-untyped-def]

@@ -2,8 +2,8 @@
 
 The table below gives an overview of typical variables selected by users to simulate
 with GETTSIM. You can simulate them by defining them as target in
-{func}`compute_taxes_and_transfers <_gettsim.ttsim.interface.compute_taxes_and_transfers>`.
-You can find their individual calculation in the documentation of all {ref}`functions`.
+{func}`compute_taxes_and_transfers <ttsim.interface.compute_taxes_and_transfers>`. You
+can find their individual calculation in the documentation of all {ref}`functions`.
 
 ```{list-table}
 * - Variables
