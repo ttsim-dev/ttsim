@@ -1,8 +1,10 @@
 """Withholding tax on earnings (Lohnsteuer)."""
 
-from _gettsim.ttsim.function_types import policy_function
 from _gettsim.de.einkommensteuer.einkommensteuer import einkommensteuertarif
-from _gettsim.de.solidaritätszuschlag.solidaritätszuschlag import solidaritätszuschlagstarif
+from _gettsim.de.solidaritätszuschlag.solidaritätszuschlag import (
+    solidaritätszuschlagstarif,
+)
+from _gettsim.ttsim.function_types import policy_function
 
 
 @policy_function()

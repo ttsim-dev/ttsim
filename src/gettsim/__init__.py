@@ -16,15 +16,22 @@ import warnings
 
 import pytest
 
-from _gettsim.ttsim.function_types import PolicyFunction
+from _gettsim.de.synthetic import create_synthetic_data
+from _gettsim.ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from _gettsim.ttsim.function_types import (
+    GroupByFunction,
+    PolicyFunction,
+    group_by_function,
+    policy_function,
+)
 from _gettsim.ttsim.interface import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
 )
-from _gettsim.ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
-from _gettsim.ttsim.function_types import PolicyFunction, policy_function, GroupByFunction, group_by_function
-from _gettsim.ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-from _gettsim.de.synthetic import create_synthetic_data
+from _gettsim.ttsim.policy_environment import (
+    PolicyEnvironment,
+    set_up_policy_environment,
+)
 from _gettsim.ttsim.visualization import plot_dag
 from _gettsim_tests import TEST_DIR
 

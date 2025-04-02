@@ -6,8 +6,8 @@ The parameters of the tax and transfer system are stored in compartment specific
 dictionaries. The {code}`params` argument created in
 {func}`set_up_policy_environment <_gettsim.ttsim.policy_environment.set_up_policy_environment>`
 and then used in
-{func}`compute_taxes_and_transfers <_gettsim.ttsim.interface.compute_taxes_and_transfers>` is
-a dictionary of these compartment specific dictionaries. Thus it is a dictionary of
+{func}`compute_taxes_and_transfers <_gettsim.ttsim.interface.compute_taxes_and_transfers>`
+is a dictionary of these compartment specific dictionaries. Thus it is a dictionary of
 dictionaries, where the keys are the name of the compartment. The files from which
 {func}`set_up_policy_environment <_gettsim.ttsim.policy_environment.set_up_policy_environment>`
 loads the default parameters for each year, can be found
