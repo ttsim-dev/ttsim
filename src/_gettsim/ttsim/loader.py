@@ -6,10 +6,7 @@ import itertools
 import sys
 from typing import TYPE_CHECKING
 
-from _gettsim.config import (
-    PATHS_TO_INTERNAL_FUNCTIONS,
-    RESOURCE_DIR,
-)
+from _gettsim.config import PATH_TO_FUNCTIONS_ROOT
 from _gettsim.ttsim.function_types import GroupByFunction, PolicyFunction
 from _gettsim.ttsim.shared import (
     create_tree_from_path_and_value,
@@ -45,13 +42,13 @@ def load_functions_tree_for_date(date: datetime.date) -> NestedFunctionDict:
     -------
     A tree of active PolicyFunctions.
     """
-    paths_to_functions = _find_python_files_recursively(PATHS_TO_INTERNAL_FUNCTIONS)
+    paths_to_functions = _find_python_files_recursively(PATH_TO_FUNCTIONS_ROOT)
 
     functions_tree = {}
 
     for path in paths_to_functions:
         new_functions_tree = get_active_functions_tree_from_module(
-            path=path, date=date, package_root=RESOURCE_DIR
+            path=path, date=date, root_path=PATH_TO_FUNCTIONS_ROOT
         )
 
         functions_tree = merge_trees(
@@ -64,7 +61,7 @@ def load_functions_tree_for_date(date: datetime.date) -> NestedFunctionDict:
 
 def get_active_functions_tree_from_module(
     path: Path,
-    package_root: Path,
+    root_path: Path,
     date: datetime.date,
 ) -> dict[str, PolicyFunction | GroupByFunction]:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
@@ -73,8 +70,8 @@ def get_active_functions_tree_from_module(
     ----------
     path
         The path to the module from which to extract the active functions.
-    package_root
-        The root of the package that contains the functions.
+    root_path
+        The path to the directory that contains the functions.
     date
         The date for which to extract the active functions.
 
@@ -82,8 +79,8 @@ def get_active_functions_tree_from_module(
     -------
     The tree of active PolicyFunctions and GroupByFunctions.
     """
-    module = _load_module(path, package_root)
-    module_name = _convert_path_to_importable_module_name(path, package_root)
+    module = _load_module(path, root_path)
+    module_name = _convert_path_to_importable_module_name(path, root_path)
 
     all_functions_in_module = inspect.getmembers(module)
 
@@ -106,7 +103,7 @@ def get_active_functions_tree_from_module(
     }
 
     return create_tree_from_path_and_value(
-        path=_convert_path_to_tree_path(path=path, package_root=RESOURCE_DIR),
+        path=_convert_path_to_tree_path(path=path, root_path=root_path),
         value={**active_policy_functions, **group_by_functions},
     )
 
@@ -178,7 +175,7 @@ class ConflictingTimeDependentFunctionsError(Exception):
         from {self.overlap_start} to {self.overlap_end}."""
 
 
-def _find_python_files_recursively(roots: list[Path]) -> list[Path]:
+def _find_python_files_recursively(root_path: Path) -> list[Path]:
     """
     Find all Python files reachable from the given roots.
 
@@ -191,23 +188,11 @@ def _find_python_files_recursively(roots: list[Path]) -> list[Path]:
     -------
     Absolute paths to all discovered Python files.
     """
-    result = []
-
-    for root in roots:
-        if root.is_dir():
-            modules = [
-                file for file in root.rglob("*.py") if file.name != "__init__.py"
-            ]
-            result.extend(modules)
-
-        else:
-            result.append(root)
-
-    return result
+    return [file for file in root_path.rglob("*.py") if file.name != "__init__.py"]
 
 
-def _load_module(path: Path, package_root: Path) -> ModuleType:
-    module_name = _convert_path_to_importable_module_name(path, package_root)
+def _load_module(path: Path, root_path: Path) -> ModuleType:
+    module_name = _convert_path_to_importable_module_name(path, root_path)
     spec = importlib.util.spec_from_file_location(module_name, path)
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
@@ -216,22 +201,22 @@ def _load_module(path: Path, package_root: Path) -> ModuleType:
     return module
 
 
-def _convert_path_to_importable_module_name(path: Path, package_root: Path) -> str:
+def _convert_path_to_importable_module_name(path: Path, root_path: Path) -> str:
     """
     Convert an absolute path to a Python module name.
 
     Examples
     --------
     >>> _convert_path_to_importable_module_name(
-        path=Path("/usr/gettsim/src/_gettsim/taxes/functions.py"),
-        package_root=Path("/usr/gettsim/src/_gettsim"),
+        path=Path("/usr/gettsim/src/_gettsim/de/dir/functions.py"),
+        root_path=Path("/usr/gettsim/src/_gettsim/de"),
     )
-    "taxes.functions"
+    "dir.functions"
     """
-    return path.relative_to(package_root).with_suffix("").as_posix().replace("/", ".")
+    return path.relative_to(root_path).with_suffix("").as_posix().replace("/", ".")
 
 
-def _convert_path_to_tree_path(path: Path, package_root: Path) -> tuple[str, ...]:
+def _convert_path_to_tree_path(path: Path, root_path: Path) -> tuple[str, ...]:
     """
     Convert the path from the package root to a tree path.
 
@@ -241,8 +226,8 @@ def _convert_path_to_tree_path(path: Path, package_root: Path) -> tuple[str, ...
     ----------
     path:
         The path to a Python module.
-    package_root:
-        GETTSIM's package root.
+    root_path:
+        The root path of GETTSIM's taxes and transfers modules.
 
     Returns
     -------
@@ -251,16 +236,12 @@ def _convert_path_to_tree_path(path: Path, package_root: Path) -> tuple[str, ...
     Examples
     --------
     >>> _convert_path_to_tree_path(
-    ...     path=RESOURCE_DIR / "taxes" / "dir" / "functions.py",
-    ...     package_root=RESOURCE_DIR,
+    ...     path=PATH_TO_FUNCTIONS_ROOT / "de" / "dir" / "functions.py",
+    ...     root_path=PATH_TO_FUNCTIONS_ROOT,
     ... )
     ("dir")
     """
-    parts = path.relative_to(package_root.parent / "_gettsim").parts
-
-    # TODO(@MImmesberger): Remove the subsequent line after changing directory structure
-    # https://github.com/iza-institute-of-labor-economics/gettsim/pull/805
-    parts = parts[1:] if parts[0] in {"taxes", "transfers"} else parts
+    parts = path.relative_to(root_path).parts
 
     return parts[:-1]
 
@@ -277,19 +258,19 @@ def load_aggregation_specs_tree() -> NestedAggregationSpecDict:
     -------
     The aggregation tree.
     """
-    paths_to_aggregation_specs = _find_python_files_recursively(
-        PATHS_TO_INTERNAL_FUNCTIONS
-    )
+    paths_to_aggregation_specs = _find_python_files_recursively(PATH_TO_FUNCTIONS_ROOT)
 
     aggregation_specs_tree = {}
 
     for path in paths_to_aggregation_specs:
         aggregation_specs = _load_aggregation_specs_from_module(
             path=path,
-            package_root=RESOURCE_DIR,
+            root_path=PATH_TO_FUNCTIONS_ROOT,
         )
 
-        tree_path = _convert_path_to_tree_path(path=path, package_root=RESOURCE_DIR)
+        tree_path = _convert_path_to_tree_path(
+            path=path, root_path=PATH_TO_FUNCTIONS_ROOT
+        )
 
         aggregation_specs_tree = insert_path_and_value(
             base=aggregation_specs_tree,
@@ -302,7 +283,7 @@ def load_aggregation_specs_tree() -> NestedAggregationSpecDict:
 
 def _load_aggregation_specs_from_module(
     path: Path,
-    package_root: Path,
+    root_path: Path,
 ) -> dict[str, AggregateByGroupSpec | AggregateByPIDSpec]:
     """
     Load aggregation specifications from one module.
@@ -319,5 +300,5 @@ def _load_aggregation_specs_from_module(
     -------
     Loaded dictionaries.
     """
-    module = _load_module(path, package_root)
+    module = _load_module(path, root_path)
     return getattr(module, "aggregation_specs", {})

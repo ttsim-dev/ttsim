@@ -36,12 +36,7 @@ RESOURCE_DIR = Path(__file__).parent.resolve()
 GEP_01_CHARACTER_LIMIT_USER_FACING_COLUMNS = 20
 GEP_01_CHARACTER_LIMIT_OTHER_COLUMNS = 32
 
-
-# List of paths to internal functions.
-# If a path is a directory, all Python files are recursively collected from that folder.
-PATHS_TO_INTERNAL_FUNCTIONS = [
-    RESOURCE_DIR / "de",
-]
+PATH_TO_FUNCTIONS_ROOT = RESOURCE_DIR / "de"
 
 INTERNAL_PARAMS_GROUPS = [
     "eink_st",

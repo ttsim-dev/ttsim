@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy
 import pytest
 
-from _gettsim.config import PATHS_TO_INTERNAL_FUNCTIONS, RESOURCE_DIR
+from _gettsim.config import PATH_TO_FUNCTIONS_ROOT
 from _gettsim.ttsim.function_types import (
     policy_function,
 )
@@ -23,20 +23,19 @@ if TYPE_CHECKING:
 
 def test_load_path():
     assert _load_module(
-        RESOURCE_DIR
-        / "taxes"
+        PATH_TO_FUNCTIONS_ROOT
         / "sozialversicherung"
         / "kranken"
         / "beitrag"
         / "beitragssatz.py",
-        RESOURCE_DIR,
+        PATH_TO_FUNCTIONS_ROOT,
     )
 
 
 def test_dont_load_init_py():
     """Don't load __init__.py files as sources for PolicyFunctions and
     AggregationSpecs."""
-    all_files = _find_python_files_recursively(PATHS_TO_INTERNAL_FUNCTIONS)
+    all_files = _find_python_files_recursively(PATH_TO_FUNCTIONS_ROOT)
     assert "__init__.py" not in [file.name for file in all_files]
 
 
@@ -65,21 +64,22 @@ def test_vectorize_func(vectorized_function: Callable) -> None:
 @pytest.mark.parametrize(
     (
         "path",
-        "package_root",
+        "root_path",
         "expected_tree_path",
     ),
     [
-        (RESOURCE_DIR / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
-        (RESOURCE_DIR / "foo" / "spam" / "bar.py", RESOURCE_DIR, ("foo", "spam")),
-        (RESOURCE_DIR / "taxes" / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
-        (RESOURCE_DIR / "transfers" / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
-        (RESOURCE_DIR / "transfers" / "foo.py", RESOURCE_DIR, tuple()),  # noqa: C408
+        (
+            PATH_TO_FUNCTIONS_ROOT / "foo" / "spam" / "bar.py",
+            PATH_TO_FUNCTIONS_ROOT,
+            ("foo", "spam"),
+        ),
+        (PATH_TO_FUNCTIONS_ROOT / "foo" / "bar.py", PATH_TO_FUNCTIONS_ROOT, ("foo",)),
+        (PATH_TO_FUNCTIONS_ROOT / "foo.py", PATH_TO_FUNCTIONS_ROOT, tuple()),  # noqa: C408
     ],
 )
 def test_convert_path_to_tree_path(
-    path: Path, package_root: Path, expected_tree_path: tuple[str, ...]
+    path: Path, root_path: Path, expected_tree_path: tuple[str, ...]
 ) -> None:
     assert (
-        _convert_path_to_tree_path(path=path, package_root=package_root)
-        == expected_tree_path
+        _convert_path_to_tree_path(path=path, root_path=root_path) == expected_tree_path
     )

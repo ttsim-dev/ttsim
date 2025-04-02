@@ -6,7 +6,7 @@ import inspect
 import pytest
 
 from _gettsim.config import (
-    PATHS_TO_INTERNAL_FUNCTIONS,
+    PATH_TO_FUNCTIONS_ROOT,
     RESOURCE_DIR,
     TYPES_INPUT_VARIABLES,
 )
@@ -110,9 +110,7 @@ def test_funcs_in_doc_module_and_func_from_internal_files_are_the_same():
         )
     }
 
-    internal_function_files = [
-        RESOURCE_DIR.joinpath(p) for p in PATHS_TO_INTERNAL_FUNCTIONS
-    ]
+    internal_function_files = [RESOURCE_DIR.joinpath(p) for p in PATH_TO_FUNCTIONS_ROOT]
 
     internal_functions = {
         f.leaf_name
