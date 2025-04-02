@@ -10,8 +10,8 @@ import optree
 import pandas as pd
 import yaml
 
-from _gettsim.config import (
-    INTERNAL_PARAMS_GROUPS,
+from _gettsim.de.config import INTERNAL_PARAMS_GROUPS
+from _gettsim.ttsim.config import (
     PATH_TO_FUNCTIONS_ROOT,
 )
 from _gettsim.ttsim.function_types import (
@@ -394,7 +394,7 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
     return params
 
 
-def _load_parameter_group_from_yaml(  # noqa: PLR0912, PLR0915
+def _load_parameter_group_from_yaml(
     date: datetime.date,
     group: str,
     parameters: list[str] | None = None,
@@ -438,7 +438,7 @@ def _load_parameter_group_from_yaml(  # noqa: PLR0912, PLR0915
 
     raw_group_data = yaml.load(
         (yaml_path / f"{group}.yaml").read_text(encoding="utf-8"),
-        Loader=yaml.CLoader,  # noqa: S506
+        Loader=yaml.CLoader,
     )
 
     # Load parameters (exclude 'rounding' parameters which are handled at the

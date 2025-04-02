@@ -1,9 +1,9 @@
 """Unemployment benefits (Arbeitslosengeld)."""
 
-from _gettsim.config import numpy_or_jax as np
+from _gettsim.de.einkommensteuer.einkommensteuer import einkommensteuertarif
+from _gettsim.ttsim.config import numpy_or_jax as np
 from _gettsim.ttsim.function_types import policy_function
 from _gettsim.ttsim.piecewise_functions import piecewise_polynomial
-from _gettsim.de.einkommensteuer.einkommensteuer import einkommensteuertarif
 
 
 @policy_function()

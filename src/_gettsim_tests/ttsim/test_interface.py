@@ -7,9 +7,13 @@ import numpy
 import pandas as pd
 import pytest
 
+from _gettsim.de.arbeitslosengeld_2.group_by_ids import bg_id
+from _gettsim.de.wohngeld.group_by_ids import (
+    wthh_id,
+)
 from _gettsim.ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-from _gettsim.config import FOREIGN_KEYS
-from _gettsim.config import numpy_or_jax as np
+from _gettsim.ttsim.config import FOREIGN_KEYS
+from _gettsim.ttsim.config import numpy_or_jax as np
 from _gettsim.ttsim.function_types import group_by_function, policy_function
 from _gettsim.ttsim.interface import (
     _convert_data_to_correct_types,
@@ -21,10 +25,6 @@ from _gettsim.ttsim.interface import (
 )
 from _gettsim.ttsim.policy_environment import PolicyEnvironment
 from _gettsim.ttsim.shared import assert_valid_gettsim_pytree
-from _gettsim.de.arbeitslosengeld_2.group_by_ids import bg_id
-from _gettsim.de.wohngeld.group_by_ids import (
-    wthh_id,
-)
 from _gettsim.ttsim.typing import convert_series_to_internal_type
 from gettsim import FunctionsAndColumnsOverlapWarning
 

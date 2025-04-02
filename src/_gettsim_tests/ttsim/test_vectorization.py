@@ -6,7 +6,7 @@ import dags.tree as dt
 import numpy
 import pytest
 
-from _gettsim.config import USE_JAX
+from _gettsim.ttsim.config import USE_JAX
 
 if USE_JAX:
     import jax.numpy

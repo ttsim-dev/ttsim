@@ -1,42 +1,5 @@
-from __future__ import annotations
-
-import importlib
-from pathlib import Path
-
-import numpy
-
-# Defaults
-USE_JAX = False
-numpy_or_jax = numpy
-
-
-def set_array_backend(backend: str):
-    """Set array library backend.
-
-    backend (str): Must be in {'jax', 'numpy'}.
-
-    """
-    if backend not in {"jax", "numpy"}:
-        raise ValueError(f"Backend must be in {'jax', 'numpy'} but is {backend}.")
-
-    if backend == "jax":
-        assert importlib.util.find_spec("jax") is not None, "JAX is not installed."
-        global USE_JAX  # noqa: PLW0603
-        global numpy_or_jax  # noqa: PLW0603
-        import jax
-
-        USE_JAX = True
-        numpy_or_jax = jax.numpy
-        jax.config.update("jax_platform_name", "cpu")
-
-
-# Obtain the root directory of the package.
-RESOURCE_DIR = Path(__file__).parent.resolve()
-
 GEP_01_CHARACTER_LIMIT_USER_FACING_COLUMNS = 20
 GEP_01_CHARACTER_LIMIT_OTHER_COLUMNS = 32
-
-PATH_TO_FUNCTIONS_ROOT = RESOURCE_DIR / "de"
 
 INTERNAL_PARAMS_GROUPS = [
     "eink_st",

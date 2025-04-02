@@ -5,7 +5,7 @@ import inspect
 
 import pytest
 
-from _gettsim.config import (
+from _gettsim.ttsim.config import (
     PATH_TO_FUNCTIONS_ROOT,
     RESOURCE_DIR,
     TYPES_INPUT_VARIABLES,

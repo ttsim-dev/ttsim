@@ -1,7 +1,7 @@
 import dags.tree as dt
 import pytest
 
-from _gettsim.config import TYPES_INPUT_VARIABLES
+from _gettsim.ttsim.config import TYPES_INPUT_VARIABLES
 from _gettsim.ttsim.interface import compute_taxes_and_transfers
 from _gettsim.ttsim.typing import check_series_has_expected_type
 from _gettsim_tests._helpers import cached_set_up_policy_environment

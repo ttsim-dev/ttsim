@@ -6,10 +6,8 @@ import pytest
 import yaml
 from pandas._testing import assert_series_equal
 
-from _gettsim.config import (
-    INTERNAL_PARAMS_GROUPS,
-    RESOURCE_DIR,
-)
+from _gettsim.de.config import INTERNAL_PARAMS_GROUPS
+from _gettsim.ttsim.config import RESOURCE_DIR
 from _gettsim.ttsim.function_types import policy_function
 from _gettsim.ttsim.interface import (
     _add_rounding_to_functions,

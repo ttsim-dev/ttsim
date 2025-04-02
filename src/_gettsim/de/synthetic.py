@@ -6,7 +6,11 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 
-from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS, TYPES_INPUT_VARIABLES
+from _gettsim.ttsim.config import (
+    RESOURCE_DIR,
+    SUPPORTED_GROUPINGS,
+    TYPES_INPUT_VARIABLES,
+)
 from _gettsim.ttsim.policy_environment import _load_parameter_group_from_yaml
 
 current_year = datetime.datetime.today().year
@@ -150,7 +154,7 @@ def create_basic_households(
         {
             "hh_id": [i] * (n_adults + n_children),
             "hh_typ": [hh_typ_string] * (n_adults + n_children),
-            "sozialversicherung__pflege__beitrag__hat_kinder": sozialversicherung__pflege__beitrag__hat_kinder,  # noqa: E501
+            "sozialversicherung__pflege__beitrag__hat_kinder": sozialversicherung__pflege__beitrag__hat_kinder,
             "familie__alleinerziehend": familie__alleinerziehend,
             # Assumption: All children are biological children of the adults, children
             # do not have children themselves
@@ -319,7 +323,7 @@ def create_constant_across_households_variables(df, n_adults, n_children, policy
         "elterngeld__nettoeinkommen_vorjahr_m": 20000.0,
         "geburtsjahr": policy_year - df["alter"],
         "jahr_renteneintr": policy_year - df["alter"] + 67,
-        "rente__grundrente__sozialversicherung__rente__grundrente__grundrentenzeiten_monate": (  # noqa: E501
+        "rente__grundrente__sozialversicherung__rente__grundrente__grundrentenzeiten_monate": (
             df["alter"] - 20
         ).clip(lower=0)
         * 12,

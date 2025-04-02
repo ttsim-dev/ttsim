@@ -10,7 +10,7 @@ from pandas.api.types import (
     is_object_dtype,
 )
 
-from _gettsim.config import numpy_or_jax as np
+from _gettsim.ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

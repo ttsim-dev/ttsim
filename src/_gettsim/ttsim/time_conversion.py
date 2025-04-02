@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from dags import rename_arguments
 
-from _gettsim.config import (
+from _gettsim.ttsim.config import (
     SUPPORTED_GROUPINGS,
     SUPPORTED_TIME_UNITS,
 )

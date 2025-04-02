@@ -28,7 +28,7 @@ from _gettsim.ttsim.aggregation_numpy import max_by_p_id as max_by_p_id_numpy
 from _gettsim.ttsim.aggregation_numpy import mean_by_p_id as mean_by_p_id_numpy
 from _gettsim.ttsim.aggregation_numpy import min_by_p_id as min_by_p_id_numpy
 from _gettsim.ttsim.aggregation_numpy import sum_by_p_id as sum_by_p_id_numpy
-from _gettsim.config import USE_JAX
+from _gettsim.ttsim.config import USE_JAX
 
 
 @dataclass

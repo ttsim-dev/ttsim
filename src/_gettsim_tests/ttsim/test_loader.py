@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy
 import pytest
 
-from _gettsim.config import PATH_TO_FUNCTIONS_ROOT
+from _gettsim.ttsim.config import PATH_TO_FUNCTIONS_ROOT
 from _gettsim.ttsim.function_types import (
     policy_function,
 )

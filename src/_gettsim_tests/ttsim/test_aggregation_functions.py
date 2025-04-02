@@ -13,8 +13,8 @@ from _gettsim.ttsim.aggregation import (
     grouped_sum,
     sum_by_p_id,
 )
-from _gettsim.config import USE_JAX
-from _gettsim.config import numpy_or_jax as np
+from _gettsim.ttsim.config import USE_JAX
+from _gettsim.ttsim.config import numpy_or_jax as np
 
 
 def parameterize_based_on_dict(test_cases, keys_of_test_cases=None):

@@ -4,10 +4,10 @@ import numpy
 import pandas as pd
 import pytest
 
-from _gettsim.config import DEFAULT_TARGETS
+from _gettsim.de.synthetic import create_synthetic_data
+from _gettsim.ttsim.config import DEFAULT_TARGETS
 from _gettsim.ttsim.interface import compute_taxes_and_transfers
 from _gettsim.ttsim.policy_environment import set_up_policy_environment
-from _gettsim.de.synthetic import create_synthetic_data
 
 
 @pytest.fixture

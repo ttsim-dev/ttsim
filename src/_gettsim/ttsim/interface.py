@@ -13,12 +13,12 @@ import pandas as pd
 from _gettsim.ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
-from _gettsim.config import (
+from _gettsim.ttsim.config import (
     DEFAULT_TARGETS,
     FOREIGN_KEYS,
     TYPES_INPUT_VARIABLES,
 )
-from _gettsim.config import numpy_or_jax as np
+from _gettsim.ttsim.config import numpy_or_jax as np
 from _gettsim.ttsim.function_types import (
     DerivedAggregationFunction,
     DerivedTimeConversionFunction,

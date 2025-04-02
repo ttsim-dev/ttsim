@@ -6,7 +6,7 @@ import itertools
 import sys
 from typing import TYPE_CHECKING
 
-from _gettsim.config import PATH_TO_FUNCTIONS_ROOT
+from _gettsim.ttsim.config import PATH_TO_FUNCTIONS_ROOT
 from _gettsim.ttsim.function_types import GroupByFunction, PolicyFunction
 from _gettsim.ttsim.shared import (
     create_tree_from_path_and_value,

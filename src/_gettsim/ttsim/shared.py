@@ -8,7 +8,7 @@ import dags.tree as dt
 import numpy
 import optree
 
-from _gettsim.config import SUPPORTED_GROUPINGS
+from _gettsim.ttsim.config import SUPPORTED_GROUPINGS
 
 if TYPE_CHECKING:
     from _gettsim.ttsim.function_types import PolicyFunction

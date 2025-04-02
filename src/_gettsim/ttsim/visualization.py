@@ -14,7 +14,7 @@ from pygments.formatters import HtmlFormatter
 from _gettsim.ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
-from _gettsim.config import DEFAULT_TARGETS
+from _gettsim.ttsim.config import DEFAULT_TARGETS
 from _gettsim.ttsim.interface import (
     _partial_parameters_to_functions,
 )

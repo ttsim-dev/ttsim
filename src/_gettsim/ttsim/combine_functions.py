@@ -24,7 +24,7 @@ from _gettsim.ttsim.aggregation import (
     min_by_p_id,
     sum_by_p_id,
 )
-from _gettsim.config import (
+from _gettsim.ttsim.config import (
     SUPPORTED_GROUPINGS,
     TYPES_INPUT_VARIABLES,
 )
