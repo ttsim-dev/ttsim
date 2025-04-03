@@ -5,8 +5,9 @@ import functools
 import inspect
 import re
 from collections.abc import Callable
-from typing import TypeVar
+from typing import Literal, TypeVar
 
+import dags.tree as dt
 import numpy
 
 T = TypeVar("T")
@@ -170,3 +171,132 @@ def _vectorize_func(func: Callable) -> Callable:
     wrapper_vectorize_func.__signature__ = signature
 
     return wrapper_vectorize_func
+
+
+class GroupByFunction(Callable):
+    """
+    A function that computes endogenous group_by IDs.
+
+    Parameters
+    ----------
+    function:
+        The group_by function.
+    """
+
+    def __init__(
+        self,
+        *,
+        function: Callable,
+        leaf_name: str | None = None,
+    ):
+        self.function = function
+        self.leaf_name = leaf_name if leaf_name else function.__name__
+
+        # Expose the signature of the wrapped function for dependency resolution
+        self.__annotations__ = function.__annotations__
+        self.__module__ = function.__module__
+        self.__name__ = function.__name__
+        self.__signature__ = inspect.signature(self.function)
+
+    def __call__(self, *args, **kwargs):
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
+
+
+def group_by_function() -> GroupByFunction:
+    """
+    Decorator that creates a group_by function from a function.
+    """
+
+    def decorator(func: Callable) -> GroupByFunction:
+        return GroupByFunction(function=func)
+
+    return decorator
+
+
+class DerivedAggregationFunction(PolicyFunction):
+    """
+    A function that is an aggregation of another function.
+
+    Parameters
+    ----------
+    function:
+        The function to wrap. Argument values of the `@policy_function` are reused
+        unless explicitly overwritten.
+    aggregation_target:
+        The qualified name of the aggregation target.
+    source_function:
+        The function from which the new function is derived.
+    source:
+        The name of the source function or data column.
+    aggregation_method:
+        The method of aggregation used.
+    """
+
+    def __init__(
+        self,
+        *,
+        function: Callable,
+        source_function: PolicyFunction
+        | DerivedTimeConversionFunction
+        | DerivedAggregationFunction
+        | None = None,
+        source: str,
+        aggregation_target: str,
+        aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
+    ):
+        super().__init__(
+            function=function,
+            leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
+            start_date=source_function.start_date if source_function else None,
+            end_date=source_function.end_date if source_function else None,
+            params_key_for_rounding=None,
+            skip_vectorization=True,
+        )
+
+        self.source = source
+        self.aggregation_method = aggregation_method
+
+
+class DerivedTimeConversionFunction(PolicyFunction):
+    """
+    A function that is a time conversion of another function.
+
+    Parameters
+    ----------
+    function:
+        The function to wrap. Argument values of the `@policy_function` are reused
+        unless explicitly overwritten.
+    source_function:
+        The function from which the new function is derived.
+    source:
+        The name of the source function or data column.
+    conversion_target:
+        The qualified name of the conversion target.
+    """
+
+    def __init__(
+        self,
+        *,
+        function: Callable,
+        source_function: PolicyFunction
+        | DerivedTimeConversionFunction
+        | DerivedAggregationFunction
+        | None = None,
+        source: str,
+        conversion_target: str,
+    ):
+        super().__init__(
+            function=function,
+            leaf_name=dt.tree_path_from_qual_name(conversion_target)[-1],
+            start_date=source_function.start_date if source_function else None,
+            end_date=source_function.end_date if source_function else None,
+            params_key_for_rounding=None,
+            skip_vectorization=True,
+        )
+
+        self.source = source

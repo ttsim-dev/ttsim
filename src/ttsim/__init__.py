@@ -4,16 +4,12 @@ from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
 )
-from ttsim.function_types.derived_function import (
+from ttsim.function_types import (
     DerivedAggregationFunction,
     DerivedTimeConversionFunction,
-)
-from ttsim.function_types.group_by_function import (
     GroupByFunction,
-    group_by_function,
-)
-from ttsim.function_types.policy_function import (
     PolicyFunction,
+    group_by_function,
     policy_function,
 )
 from ttsim.loader import (
