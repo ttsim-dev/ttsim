@@ -4,7 +4,7 @@ Tests for `piecewise_polynomial`
 
 import numpy
 
-from ttsim.piecewise_functions import (
+from ttsim.piecewise_polynomial import (
     get_piecewise_parameters,
 )
 

@@ -23,7 +23,7 @@ from ttsim.loader import (
     load_aggregation_specs_tree,
     load_functions_tree_for_date,
 )
-from ttsim.piecewise_functions import (
+from ttsim.piecewise_polynomial import (
     _check_thresholds,
     get_piecewise_parameters,
     piecewise_polynomial,

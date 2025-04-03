@@ -102,15 +102,24 @@ def get_piecewise_parameters(parameter_dict, parameter, func_type):
 
     # Extract lower thresholds.
     lower_thresholds, upper_thresholds, thresholds = _check_thresholds(
-        parameter_dict, parameter, keys
+        parameter_dict=parameter_dict, parameter=parameter, keys=keys
     )
 
     # Create and fill rates-array
-    rates = _check_rates(parameter_dict, parameter, keys, func_type)
-
+    rates = _check_rates(
+        parameter_dict=parameter_dict,
+        parameter=parameter,
+        keys=keys,
+        func_type=func_type,
+    )
     # Create and fill interecept-array
     intercepts = _check_intercepts(
-        parameter_dict, parameter, lower_thresholds, upper_thresholds, rates, keys
+        parameter_dict=parameter_dict,
+        parameter=parameter,
+        lower_thresholds=lower_thresholds,
+        upper_thresholds=upper_thresholds,
+        rates=rates,
+        keys=keys,
     )
     piecewise_elements = {
         "thresholds": numpy.array(thresholds),
@@ -242,7 +251,7 @@ def _check_rates(parameter_dict, parameter, keys, func_type):
     return rates
 
 
-def _check_intercepts(
+def _check_intercepts(  # noqa: PLR0913
     parameter_dict, parameter, lower_thresholds, upper_thresholds, rates, keys
 ):
     """Check and transfer raw intercepte data. If necessary create intercepts.
