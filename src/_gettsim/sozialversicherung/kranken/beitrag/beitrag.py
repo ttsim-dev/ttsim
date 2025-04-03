@@ -1,6 +1,6 @@
 """Public health insurance contributions."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")

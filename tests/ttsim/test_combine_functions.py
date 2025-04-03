@@ -13,12 +13,12 @@ from ttsim.combine_functions import (
     _fail_if_targets_not_in_functions,
     _get_name_of_aggregation_source,
 )
+from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
 from ttsim.function_types import (
     DerivedAggregationFunction,
     group_by_function,
     policy_function,
 )
-from ttsim.interface import compute_taxes_and_transfers
 from ttsim.policy_environment import PolicyEnvironment
 
 

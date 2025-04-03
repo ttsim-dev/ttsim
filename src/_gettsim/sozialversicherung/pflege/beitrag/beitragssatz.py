@@ -1,7 +1,6 @@
 """Contribution rate to public long-term care insurance."""
 
-from ttsim.aggregation import AggregateByPIDSpec
-from ttsim.function_types import policy_function
+from ttsim import AggregateByPIDSpec, policy_function
 
 aggregation_specs = {
     "anzahl_kinder_bis_24_elternteil_1": AggregateByPIDSpec(

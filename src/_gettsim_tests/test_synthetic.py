@@ -6,8 +6,7 @@ import pytest
 
 from _gettsim.config import DEFAULT_TARGETS
 from _gettsim.synthetic import create_synthetic_data
-from ttsim.interface import compute_taxes_and_transfers
-from ttsim.policy_environment import set_up_policy_environment
+from ttsim import compute_taxes_and_transfers, set_up_policy_environment
 
 
 @pytest.fixture

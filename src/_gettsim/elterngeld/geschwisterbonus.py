@@ -1,6 +1,6 @@
 """Parental leave bonus for siblings."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function(start_date="2007-01-01")

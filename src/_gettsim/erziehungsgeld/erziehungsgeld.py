@@ -1,7 +1,6 @@
 """Functions to compute parental leave benefits (Erziehungsgeld, -2007)."""
 
-from ttsim.aggregation import AggregateByPIDSpec
-from ttsim.function_types import policy_function
+from ttsim import AggregateByPIDSpec, policy_function
 
 aggregation_specs = {
     "anspruchshöhe_m": AggregateByPIDSpec(

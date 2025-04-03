@@ -1,7 +1,7 @@
 """Tax allowances for the elderly."""
 
+from ttsim import policy_function
 from ttsim.config import numpy_or_jax as np
-from ttsim.function_types import policy_function
 
 
 @policy_function(end_date="2004-12-31", leaf_name="altersfreibetrag_y")

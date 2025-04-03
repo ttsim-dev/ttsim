@@ -1,6 +1,6 @@
 """Eligibility checks for housing benefits (Wohngeld)."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function()

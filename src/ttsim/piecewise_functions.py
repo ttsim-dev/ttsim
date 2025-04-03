@@ -101,15 +101,15 @@ def get_piecewise_parameters(parameter_dict, parameter, func_type):
         )
 
     # Extract lower thresholds.
-    lower_thresholds, upper_thresholds, thresholds = check_thresholds(
+    lower_thresholds, upper_thresholds, thresholds = _check_thresholds(
         parameter_dict, parameter, keys
     )
 
     # Create and fill rates-array
-    rates = check_rates(parameter_dict, parameter, keys, func_type)
+    rates = _check_rates(parameter_dict, parameter, keys, func_type)
 
     # Create and fill interecept-array
-    intercepts = check_intercepts(
+    intercepts = _check_intercepts(
         parameter_dict, parameter, lower_thresholds, upper_thresholds, rates, keys
     )
     piecewise_elements = {
@@ -121,7 +121,7 @@ def get_piecewise_parameters(parameter_dict, parameter, func_type):
     return piecewise_elements
 
 
-def check_thresholds(parameter_dict, parameter, keys):
+def _check_thresholds(parameter_dict, parameter, keys):
     """Check and transfer raw threshold data.
 
     Transfer and check raw threshold data, which needs to be specified in a
@@ -188,7 +188,7 @@ def check_thresholds(parameter_dict, parameter, keys):
     return lower_thresholds, upper_thresholds, thresholds
 
 
-def check_rates(parameter_dict, parameter, keys, func_type):
+def _check_rates(parameter_dict, parameter, keys, func_type):
     """Check and transfer raw rates data.
 
     Transfer and check raw rates data, which needs to be specified in a
@@ -242,7 +242,7 @@ def check_rates(parameter_dict, parameter, keys, func_type):
     return rates
 
 
-def check_intercepts(
+def _check_intercepts(
     parameter_dict, parameter, lower_thresholds, upper_thresholds, rates, keys
 ):
     """Check and transfer raw intercepte data. If necessary create intercepts.

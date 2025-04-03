@@ -1,6 +1,6 @@
 """Subsistence transfer for the elderly (Grundsicherung im Alter)."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function()

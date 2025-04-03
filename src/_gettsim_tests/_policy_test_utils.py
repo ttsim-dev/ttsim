@@ -7,12 +7,12 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from ttsim.shared import merge_trees
+from ttsim import merge_trees
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ttsim.typing import NestedDataDict, NestedInputStructureDict
+    from ttsim import NestedDataDict, NestedInputStructureDict
 
 
 class PolicyTest:

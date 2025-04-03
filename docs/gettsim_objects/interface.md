@@ -5,7 +5,7 @@ have more information on how they work and how you can use them please see
 {ref}`how_to_guides` and {ref}`tutorials`.
 
 ```{eval-rst}
-.. currentmodule:: ttsim.interface
+.. currentmodule:: ttsim.compute_taxes_and_transfers
 ```
 
 ```{eval-rst}

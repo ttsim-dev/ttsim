@@ -40,8 +40,13 @@ def format_list_linewise(list_):
     ).format(formatted_list=formatted_list)
 
 
-def create_tree_from_path_and_value(path: tuple[str], value: Any = None) -> dict:
+def create_tree_from_path_and_value(
+    path: tuple[str], value: Any = None
+) -> dict[str, Any]:
     """Create a nested dict with 'path' as keys and 'value' as leaf.
+
+    Almost the same as `dt.unflatten_from_tree_paths({path: value})`, except that
+    it can also deal with an empty tuple as the path and a dictionary as the value.
 
     Example:
         Input:
@@ -61,6 +66,7 @@ def create_tree_from_path_and_value(path: tuple[str], value: Any = None) -> dict
     -------
     The tree structure.
     """
+
     nested_dict = value
     for entry in reversed(path):
         nested_dict = {entry: nested_dict}

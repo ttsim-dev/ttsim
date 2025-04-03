@@ -18,22 +18,19 @@ import pytest
 
 from _gettsim.synthetic import create_synthetic_data
 from _gettsim_tests import TEST_DIR
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-from ttsim.function_types import (
-    GroupByFunction,
-    PolicyFunction,
-    group_by_function,
-    policy_function,
-)
-from ttsim.interface import (
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregateByPIDSpec,
     FunctionsAndColumnsOverlapWarning,
-    compute_taxes_and_transfers,
-)
-from ttsim.policy_environment import (
+    GroupByFunction,
     PolicyEnvironment,
+    PolicyFunction,
+    compute_taxes_and_transfers,
+    group_by_function,
+    plot_dag,
+    policy_function,
     set_up_policy_environment,
 )
-from ttsim.visualization import plot_dag
 
 COUNTER_TEST_EXECUTIONS = itertools.count()
 

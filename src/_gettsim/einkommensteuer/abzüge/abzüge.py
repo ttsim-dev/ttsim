@@ -1,6 +1,6 @@
 """Tax allowances."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function()

@@ -4,7 +4,7 @@ from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from _gettsim.solidaritätszuschlag.solidaritätszuschlag import (
     solidaritätszuschlagstarif,
 )
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function()

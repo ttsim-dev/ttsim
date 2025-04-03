@@ -2,9 +2,7 @@
 
 import numpy
 
-from ttsim.aggregation import AggregateByPIDSpec
-from ttsim.function_types import policy_function
-from ttsim.shared import join_numpy
+from ttsim import AggregateByPIDSpec, join_numpy, policy_function
 
 aggregation_specs = {
     "an_elternteil_auszuzahlender_betrag_m": AggregateByPIDSpec(

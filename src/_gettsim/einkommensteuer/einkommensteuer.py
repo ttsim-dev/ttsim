@@ -1,8 +1,6 @@
 """Income taxes."""
 
-from ttsim.aggregation import AggregateByPIDSpec
-from ttsim.function_types import policy_function
-from ttsim.piecewise_functions import piecewise_polynomial
+from ttsim import AggregateByPIDSpec, piecewise_polynomial, policy_function
 
 aggregation_specs = {
     "anzahl_kindergeld_ansprüche_1": AggregateByPIDSpec(

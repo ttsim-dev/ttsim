@@ -1,6 +1,6 @@
 """Public pension benefits for retirement due to age."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function(end_date="2020-12-31")

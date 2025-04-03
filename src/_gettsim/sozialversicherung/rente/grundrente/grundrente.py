@@ -1,5 +1,4 @@
-from ttsim.function_types import policy_function
-from ttsim.piecewise_functions import piecewise_polynomial
+from ttsim import piecewise_polynomial, policy_function
 
 
 @policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")

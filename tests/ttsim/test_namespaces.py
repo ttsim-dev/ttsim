@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-from ttsim.interface import compute_taxes_and_transfers
+from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
 from ttsim.policy_environment import PolicyEnvironment
 
 

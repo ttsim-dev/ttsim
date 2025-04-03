@@ -3,11 +3,11 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-from ttsim.policy_environment import (
+from ttsim import (
     PolicyEnvironment,
-    _parse_date,
     set_up_policy_environment,
 )
+from ttsim.policy_environment import _parse_date
 
 if TYPE_CHECKING:
     import datetime

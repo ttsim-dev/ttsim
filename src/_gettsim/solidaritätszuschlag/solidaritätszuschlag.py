@@ -1,7 +1,6 @@
 """Solidarity Surcharge (Solidaritätszuschlag)."""
 
-from ttsim.function_types import policy_function
-from ttsim.piecewise_functions import piecewise_polynomial
+from ttsim import piecewise_polynomial, policy_function
 
 
 @policy_function(end_date="2008-12-31", leaf_name="betrag_y_sn")

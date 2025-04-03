@@ -1,7 +1,6 @@
 """Priority checks of transfers against each other."""
 
-from ttsim.aggregation import AggregateByGroupSpec
-from ttsim.function_types import policy_function
+from ttsim import AggregateByGroupSpec, policy_function
 
 aggregation_specs = {
     "wohngeld_vorrang_wthh": AggregateByGroupSpec(

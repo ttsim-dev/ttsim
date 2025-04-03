@@ -1,7 +1,6 @@
 """Income considered in the calculation of Grundsicherung im Alter."""
 
-from ttsim.function_types import policy_function
-from ttsim.piecewise_functions import piecewise_polynomial
+from ttsim import piecewise_polynomial, policy_function
 
 
 @policy_function()

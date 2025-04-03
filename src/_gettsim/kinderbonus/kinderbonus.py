@@ -1,6 +1,6 @@
 """Kinderbonus."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function(start_date="2020-01-01", end_date="2021-12-31")

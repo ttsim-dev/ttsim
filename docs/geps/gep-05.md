@@ -90,8 +90,8 @@ def sozialversicherung__rente__grundrente__höchstbetrag_m(
 ```
 
 When calling
-{func}`compute_taxes_and_transfers <ttsim.interface.compute_taxes_and_transfers>` with
-`rounding=True`, GETTSIM will look for a key `"rounding"` in
+{func}`compute_taxes_and_transfers <ttsim.compute_taxes_and_transfers.compute_taxes_and_transfers>`
+with `rounding=True`, GETTSIM will look for a key `"rounding"` in
 `policy_params["params_key"]` and within that, for another key containing the decorated
 function's name (here: `"sozialversicherung__rente__grundrente__höchstbetrag_m"`). That
 is, by the machinery outlined in {ref}`GEP 3 <gep-3>`, the following indexing of the

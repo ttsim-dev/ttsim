@@ -15,7 +15,7 @@ from _gettsim.config import DEFAULT_TARGETS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
-from ttsim.interface import (
+from ttsim.compute_taxes_and_transfers import (
     _partial_parameters_to_functions,
 )
 from ttsim.policy_environment import PolicyEnvironment

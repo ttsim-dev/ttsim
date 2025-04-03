@@ -1,5 +1,4 @@
-from ttsim.aggregation import AggregateByGroupSpec
-from ttsim.function_types import policy_function
+from ttsim import AggregateByGroupSpec, policy_function
 
 aggregation_specs = {
     "anzahl_erwachsene_hh": AggregateByGroupSpec(

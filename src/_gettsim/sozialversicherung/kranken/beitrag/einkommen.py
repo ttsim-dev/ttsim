@@ -1,6 +1,6 @@
 """Income relevant for public health insurance contributions."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function()

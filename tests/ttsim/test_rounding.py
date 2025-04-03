@@ -7,12 +7,12 @@ import yaml
 from pandas._testing import assert_series_equal
 
 from _gettsim.config import INTERNAL_PARAMS_GROUPS, RESOURCE_DIR
-from ttsim.function_types import policy_function
-from ttsim.interface import (
+from ttsim.compute_taxes_and_transfers import (
     _add_rounding_to_functions,
     _apply_rounding_spec,
     compute_taxes_and_transfers,
 )
+from ttsim.function_types import policy_function
 from ttsim.loader import load_functions_tree_for_date
 from ttsim.policy_environment import PolicyEnvironment
 

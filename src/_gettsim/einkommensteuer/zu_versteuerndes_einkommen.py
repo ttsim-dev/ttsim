@@ -1,6 +1,6 @@
 """Taxable income."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function(params_key_for_rounding="eink_st")

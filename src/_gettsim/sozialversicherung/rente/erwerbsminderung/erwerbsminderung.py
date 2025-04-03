@@ -1,6 +1,6 @@
 """Public pension benefits for retirement due to reduced earnings potential."""
 
-from ttsim.function_types import policy_function
+from ttsim import policy_function
 
 
 @policy_function(start_date="2001-01-01")
