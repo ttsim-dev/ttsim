@@ -208,10 +208,10 @@ def _convert_path_to_importable_module_name(path: Path, root_path: Path) -> str:
     Examples
     --------
     >>> _convert_path_to_importable_module_name(
-        path=Path("/usr/gettsim/src/_gettsim/de/dir/functions.py"),
-        root_path=Path("/usr/gettsim/src/_gettsim/de"),
+        path=Path("/usr/gettsim/src/_gettsim/familie/familie.py"),
+        root_path=Path("/usr/gettsim/src/_gettsim"),
     )
-    "dir.functions"
+    "familie.familie"
     """
     return path.relative_to(root_path).with_suffix("").as_posix().replace("/", ".")
 
