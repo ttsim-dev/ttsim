@@ -346,7 +346,7 @@ def join_numpy(
     return padded_targets.take(indices)
 
 
-def assert_valid_gettsim_pytree(
+def assert_valid_ttsim_pytree(
     tree: Any, leaf_checker: GenericCallable, tree_name: str
 ) -> None:
     """
@@ -370,9 +370,7 @@ def assert_valid_gettsim_pytree(
         If any branch or leaf does not meet the expected requirements.
     """
 
-    def _assert_valid_gettsim_pytree(
-        subtree: Any, current_key: tuple[str, ...]
-    ) -> None:
+    def _assert_valid_ttsim_pytree(subtree: Any, current_key: tuple[str, ...]) -> None:
         def format_key_path(key_tuple: tuple[str, ...]) -> str:
             return "".join(f"[{k}]" for k in key_tuple)
 
@@ -392,7 +390,7 @@ def assert_valid_gettsim_pytree(
                 )
                 raise TypeError(msg)
             if isinstance(value, dict):
-                _assert_valid_gettsim_pytree(value, new_key_path)
+                _assert_valid_ttsim_pytree(value, new_key_path)
             else:
                 if not leaf_checker(value):
                     msg = format_errors_and_warnings(
@@ -401,7 +399,7 @@ def assert_valid_gettsim_pytree(
                     )
                     raise TypeError(msg)
 
-    _assert_valid_gettsim_pytree(tree, current_key=())
+    _assert_valid_ttsim_pytree(tree, current_key=())
 
 
 def get_name_of_group_by_id(

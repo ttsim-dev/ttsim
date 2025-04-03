@@ -28,7 +28,7 @@ from ttsim.function_types import (
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     KeyErrorMessage,
-    assert_valid_gettsim_pytree,
+    assert_valid_ttsim_pytree,
     format_errors_and_warnings,
     format_list_linewise,
     get_name_of_group_by_id,
@@ -507,7 +507,7 @@ def _fail_if_targets_tree_not_valid(targets_tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """
-    assert_valid_gettsim_pytree(
+    assert_valid_ttsim_pytree(
         tree=targets_tree,
         leaf_checker=lambda leaf: leaf is None,
         tree_name="targets_tree",
@@ -519,7 +519,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
     Validate that the data tree is a dictionary with string keys and pd.Series or
     np.ndarray leaves.
     """
-    assert_valid_gettsim_pytree(
+    assert_valid_ttsim_pytree(
         tree=data_tree,
         leaf_checker=lambda leaf: isinstance(leaf, pd.Series | np.ndarray),
         tree_name="data_tree",

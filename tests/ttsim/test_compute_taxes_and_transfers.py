@@ -25,7 +25,7 @@ from ttsim.compute_taxes_and_transfers import (
 from ttsim.config import numpy_or_jax as np
 from ttsim.function_types import group_by_function, policy_function
 from ttsim.policy_environment import PolicyEnvironment
-from ttsim.shared import assert_valid_gettsim_pytree
+from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import convert_series_to_internal_type
 
 
@@ -742,6 +742,6 @@ def test_fail_if_cannot_be_converted_to_correct_type(
         ),
     ],
 )
-def test_assert_valid_gettsim_pytree(tree, leaf_checker, err_substr):
+def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     with pytest.raises(TypeError, match=re.escape(err_substr)):
-        assert_valid_gettsim_pytree(tree, leaf_checker, "tree")
+        assert_valid_ttsim_pytree(tree, leaf_checker, "tree")

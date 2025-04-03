@@ -29,7 +29,7 @@ from ttsim.piecewise_polynomial import (
     piecewise_polynomial,
 )
 from ttsim.shared import (
-    assert_valid_gettsim_pytree,
+    assert_valid_ttsim_pytree,
     upsert_path_and_value,
     upsert_tree,
 )
@@ -66,7 +66,7 @@ class PolicyEnvironment:
         aggregation_specs_tree: NestedAggregationSpecDict | None = None,
     ):
         # Check functions tree and convert functions to PolicyFunction if necessary
-        assert_valid_gettsim_pytree(
+        assert_valid_ttsim_pytree(
             functions_tree,
             lambda leaf: isinstance(leaf, PolicyFunction | GroupByFunction),
             "functions_tree",
