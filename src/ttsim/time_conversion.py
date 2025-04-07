@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING
 
 from dags import rename_arguments
 
-from _gettsim.config import SUPPORTED_GROUPINGS
+from _gettsim.config import SUPPORTED_GROUPINGS, SUPPORTED_TIME_UNITS
 from ttsim.function_types import DerivedTimeConversionFunction, PolicyFunction
-from ttsim.time_conversion import SUPPORTED_TIME_UNITS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
