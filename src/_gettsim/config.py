@@ -78,21 +78,6 @@ SUPPORTED_GROUPINGS = {
 }
 
 
-SUPPORTED_TIME_UNITS = {
-    "y": {
-        "name": "year",
-    },
-    "m": {
-        "name": "month",
-    },
-    "w": {
-        "name": "week",
-    },
-    "d": {
-        "name": "day",
-    },
-}
-
 DEFAULT_TARGETS = {
     "einkommensteuer": {
         "betrag_y_sn": None,

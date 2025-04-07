@@ -6,13 +6,20 @@ from typing import TYPE_CHECKING
 
 from dags import rename_arguments
 
-from _gettsim.config import SUPPORTED_GROUPINGS, SUPPORTED_TIME_UNITS
+from _gettsim.config import SUPPORTED_GROUPINGS
 from ttsim.function_types import DerivedTimeConversionFunction, PolicyFunction
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ttsim.typing import QualNameDataDict, QualNameFunctionsDict
+
+_TIME_UNITS = {
+    "y": "year",
+    "m": "month",
+    "w": "week",
+    "d": "day",
+}
 
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7
@@ -302,7 +309,7 @@ def _create_time_conversion_functions(
 ) -> dict[str, DerivedTimeConversionFunction]:
     result: dict[str, DerivedTimeConversionFunction] = {}
 
-    all_time_units = list(SUPPORTED_TIME_UNITS)
+    all_time_units = list(_TIME_UNITS)
 
     units = "".join(all_time_units)
     groupings = "|".join([f"_{grouping}" for grouping in SUPPORTED_GROUPINGS])
