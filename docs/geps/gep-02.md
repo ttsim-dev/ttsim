@@ -30,16 +30,17 @@ If a column name is `[x]_id` with `x` {math}`\in \{` `_hh`, `_bg`, `_fg`, `_ehe`
 `_sn` {math}`\}`, it will be the same for all households, Bedarfsgemeinschaften, or any
 other grouping of individuals specified in {ref}`GEP 1 <gep-1-column-names>`.
 
-Any other column name ending in `_id` indicates a link to a different individual (e.g.,
-child-parent relations could be `parent_0_ind_id`, `parent_1_ind_id`; receiver of child
-benefits would be `kindergeldempf_id`).
+Any column name `[namespace]__p_id_[y]` indicates a link to a different individual
+(e.g., child-parent are specified via `familie__p_id_elternteil_1`,
+`familie__p_id_elternteil_2`; the recipient of child benefits would be
+`kindergeld__p_id_empfänger`).
 
 ## Motivation and Scope
 
 Taxes and transfers are calculated at different levels of aggregation: Individuals,
 couples, families, households. Sometimes, relations between individuals are important:
-parents and children, payors/receivers of alimony payments, which parent receives the
-`kindergeld` payments, etc..
+parents and children, payors/receivers of alimony payments, which parent receives
+Kindergeld payments, etc..
 
 Potentially, there are many ways of storing these data: Long form, wide form,
 collections of tables adhering to
@@ -54,7 +55,7 @@ N-dimensional arrays, etc.. As usual, everything involves trade-offs, for exampl
 - Almost all functions are much easier to implement when working with a single row. This
   is most important for the typical user and increasing the number of developers.
 
-- Modern tools for vectorization (e.g., Jax) scale best when working with single rows of
+- Modern tools for vectorization (e.g., JAX) scale best when working with single rows of
   data.
 
   Aggregation to groups of individuals (households, Bedarfsgemeinschaften,...) or
@@ -80,19 +81,15 @@ The following discussion assumes that data is passed in as a Pandas DataFrame. I
 be possible to pass data directly in the form that GETTSIM requires it internally. In
 that case, only the relevant steps apply.
 
-- GETTSIM will first make a check that all identifiers pointing to other individuals
-  (e.g., `kindergeldempf_id`) are valid.
+- GETTSIM may make a check that all identifiers pointing to other individuals (e.g.,
+  `kindergeld__p_id_empfänger`) are valid.
 
-- GETTSIM will then create internal identifiers for individuals, households, and tax
-  units. GETTSIM will also generate appropriate columns with identifiers pointing to
-  other individuals. Columns with the original values are stored.
+- GETTSIM may make a check that there is no variation within a group of individuals if
+  the column name indicates that there must not be (e.g., all members sharing the same
+  `hh_id` must have the same `anzahl_personen_hh` in case the variable is provided as an
+  input column).
 
-  All internal identifiers are integers starting at 0 and counting in increments of 1.
-  For individuals, they are sorted, implying they can be used to index into the arrays.
-  It also means that identifiers pointing to other individuals can be used directly for
-  indexing.
-
-  Because groups of individuals are not necessarily nested (e.g., joint taxation during
+- Because groups of individuals are not necessarily nested (e.g., joint taxation during
   separation phase but living in different households), they cannot be sorted in
   general. In case users know their data allows sorting on all groups (i.e., all groups
   have a nesting structure), they will be able to provide a `data_is_sorted` flag, which
@@ -106,17 +103,13 @@ that case, only the relevant steps apply.
 - GETTSIM returns an object of the same type and with the same identifiers that was
   passed by the user.
 
-- GETTSIM strives to show errors along with the original indices, but this may not
-  always be possible.
-
 (gep-2-aggregation-functions)=
 
 ### Grouped values and aggregation functions
 
 Often columns refer to groups of individuals. Such columns have a suffix indicating the
-group (see {ref}`GEP 1 <gep-1-column-names>`, currently `_hh`, `_bg`, `_fg`, `_ehe`,
-`_eg`, and `_sn`). These columns' values will be repeated for all individuals who form
-part of a group.
+group (see {ref}`GEP 1 <gep-1-column-names>`). These columns' values will be repeated
+for all individuals who form part of a group.
 
 By default, GETTSIM will check consistency on input columns in this respect. Users will
 be able to turn this check off.
@@ -133,18 +126,14 @@ Aggregation functions will be provided by GETTSIM.
   specify:
 
   - The stringified name of the aggregated variable. This **must** end with a feasible
-    unit of aggregation, i.e., `_hh`, `_bg`, `_fg`, `_ehe`, `_eg`, or `_sn`
-  - The stringified name of the original variable.
-  - The type of aggregation {math}`\in \{` `sum`, `mean`, `max`, `min`, `any` {math}`\}`
+    unit of aggregation, e.g., `_hh` or `_ehe`.
+  - The type of aggregation {math}`\in \{` `count`, `sum`, `mean`, `max`, `min`, `any`,
+    `all`, {math}`\}`
+  - The stringified name of the original variable (not relevant for `count`)
 
   Note that as per {ref}`GEP 4 <gep-4-aggregation-by-group-functions>`, sums will be
   calculated implicitly if the graph contains a column `my_col` and an aggregate such as
   `my_col_hh` is requested somewhere.
-
-Note that the groups `tu` and `hh` may change in the future. Some might also be
-calculated via relations between household members, see
-[discussion](https://gettsim.zulipchat.com/#narrow/stream/224837-High-Level-Architecture/topic/Update.20Data.20Structures/near/180917151)
-on Zulip in this respect.
 
 ## Alternatives
 
@@ -164,6 +153,8 @@ led to many merge-like operations in user functions.
   re data structures.
 - Zulip stream for
   [GEP 2](https://gettsim.zulipchat.com/#narrow/stream/309998-GEPs/topic/GEP.2001/near/189539859).
+- GitHub PR for update (changes because of `GEP-6 <gep-6>`):
+  <https://github.com/iza-institute-of-labor-economics/gettsim/pull/855>
 
 ## Copyright
 
