@@ -2,7 +2,7 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, join_numpy, policy_function
+from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
 
 aggregation_specs = {
     "kindergeldübertrag_m": AggregateByPIDSpec(

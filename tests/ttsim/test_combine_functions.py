@@ -3,7 +3,7 @@ import inspect
 import pandas as pd
 import pytest
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.combine_functions import (
     _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,

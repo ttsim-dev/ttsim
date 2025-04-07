@@ -2,7 +2,7 @@
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, group_by_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
 aggregation_specs = {
     "anzahl_personen_wthh": AggregateByGroupSpec(

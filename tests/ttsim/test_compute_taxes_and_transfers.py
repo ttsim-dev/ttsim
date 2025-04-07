@@ -13,7 +13,7 @@ from _gettsim.wohngeld.group_by_ids import (
     wthh_id,
 )
 from gettsim import FunctionsAndColumnsOverlapWarning
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.compute_taxes_and_transfers import (
     _convert_data_to_correct_types,
     _fail_if_foreign_keys_are_invalid,

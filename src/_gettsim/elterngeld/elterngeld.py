@@ -1,6 +1,11 @@
 """Parental leave benefits."""
 
-from ttsim import AggregateByGroupSpec, AggregateByPIDSpec, policy_function
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregateByPIDSpec,
+    AggregationType,
+    policy_function,
+)
 
 aggregation_specs = {
     "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(

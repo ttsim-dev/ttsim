@@ -1,6 +1,11 @@
 """Income relevant for housing benefit calculation."""
 
-from ttsim import AggregateByPIDSpec, piecewise_polynomial, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    AggregationType,
+    piecewise_polynomial,
+    policy_function,
+)
 from ttsim.config import numpy_or_jax as np
 
 aggregation_specs = {

@@ -44,7 +44,7 @@ class AggregationType(StrEnum):
     MIN = "min"
     ANY = "any"
     ALL = "all"
-    NOT_IMPLEMENTED = "not_implemented"
+    NOT_IMPLEMENTED = "aggr_not_implemented"
 
 
 @dataclass
@@ -54,7 +54,7 @@ class AggregateByGroupSpec:
     """
 
     aggr: AggregationType
-    source: str
+    source: str | None = None
 
 
 @dataclass

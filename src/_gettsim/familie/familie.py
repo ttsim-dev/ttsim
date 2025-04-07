@@ -6,7 +6,12 @@ These information are used throughout modules of gettsim.
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, group_by_function, policy_function
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregationType,
+    group_by_function,
+    policy_function,
+)
 
 aggregation_specs = {
     "anzahl_personen_ehe": AggregateByGroupSpec(

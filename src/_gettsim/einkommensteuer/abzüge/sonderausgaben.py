@@ -1,6 +1,6 @@
 """Tax allowances for special expenses."""
 
-from ttsim import AggregateByPIDSpec, policy_function
+from ttsim import AggregateByPIDSpec, AggregationType, policy_function
 
 aggregation_specs = {
     "betreuungskosten_elternteil_m": AggregateByPIDSpec(

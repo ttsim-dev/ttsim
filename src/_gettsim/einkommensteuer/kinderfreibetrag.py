@@ -1,6 +1,6 @@
 """Tax allowances for individuals or couples with children."""
 
-from ttsim import AggregateByPIDSpec, policy_function
+from ttsim import AggregateByPIDSpec, AggregationType, policy_function
 
 aggregation_specs = {
     "anzahl_kinderfreibeträge_1": AggregateByPIDSpec(

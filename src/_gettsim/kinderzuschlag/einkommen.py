@@ -1,6 +1,6 @@
 """Income relevant for calculation of Kinderzuschlag."""
 
-from ttsim import AggregateByGroupSpec, policy_function
+from ttsim import AggregateByGroupSpec, AggregationType, policy_function
 
 aggregation_specs = {
     "arbeitslosengeld_2__anzahl_kinder_bg": AggregateByGroupSpec(

@@ -2,7 +2,7 @@ from collections import Counter
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, group_by_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738

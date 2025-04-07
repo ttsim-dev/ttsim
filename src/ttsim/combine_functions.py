@@ -13,6 +13,7 @@ from _gettsim.config import (
 from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
+    AggregationType,
     all_by_p_id,
     any_by_p_id,
     count_by_p_id,
