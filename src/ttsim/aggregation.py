@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import StrEnum
 
 from ttsim.aggregation_jax import all_by_p_id as all_by_p_id_jax
 from ttsim.aggregation_jax import any_by_p_id as any_by_p_id_jax
@@ -31,14 +32,28 @@ from ttsim.aggregation_numpy import sum_by_p_id as sum_by_p_id_numpy
 from ttsim.config import USE_JAX
 
 
+class AggregationType(StrEnum):
+    """
+    Enum for aggregation types.
+    """
+
+    COUNT = "count"
+    SUM = "sum"
+    MEAN = "mean"
+    MAX = "max"
+    MIN = "min"
+    ANY = "any"
+    ALL = "all"
+
+
 @dataclass
 class AggregateByGroupSpec:
     """
     A container for aggregate by group specifications.
     """
 
-    aggr: str
-    source: str | None = None
+    aggr: AggregationType
+    source: str
 
 
 @dataclass
@@ -49,7 +64,7 @@ class AggregateByPIDSpec:
 
     p_id_to_aggregate_by: str
     source: str
-    aggr: str
+    aggr: AggregationType
 
 
 def grouped_count(group_id):
