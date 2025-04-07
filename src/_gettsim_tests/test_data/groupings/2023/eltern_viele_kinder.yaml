@@ -1,116 +1,116 @@
----
 info:
   note: ''
+  precision: 2
   source: ''
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - true
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 1
-      - 0
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
     alter:
-      - 50
-      - 48
-      - 18
-      - 20
-      - 25
-      - 24
-      - 24
-      - 2
-    hh_id:
-      - 0
-      - 0
-      - 1
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
-    p_id:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
+    - 50
+    - 48
+    - 18
+    - 20
+    - 25
+    - 24
+    - 24
+    - 2
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+    - false
+    - false
+    - false
+    - false
+    - false
+    - false
+    - true
+    - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+    - 1
+    - 0
+    - -1
+    - -1
+    - -1
+    - -1
+    - -1
+    - -1
     familie__p_id_ehepartner:
-      - 1
-      - 0
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
+    - 1
+    - 0
+    - -1
+    - -1
+    - -1
+    - -1
+    - -1
+    - -1
     familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 5
+    - -1
+    - -1
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 5
     familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - -1
+    - -1
+    - -1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - -1
+    hh_id:
+    - 0
+    - 0
+    - 1
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    p_id:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
 outputs:
   arbeitslosengeld_2__bg_id:
-    - 0
-    - 0
-    - 100
-    - 0
-    - 200
-    - 300
-    - 1
-    - 300
+  - 0
+  - 0
+  - 100
+  - 0
+  - 200
+  - 300
+  - 1
+  - 300
   arbeitslosengeld_2__eg_id:
-    - 0
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
+  - 0
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
   arbeitslosengeld_2__fg_id:
-    - 0
-    - 0
-    - 1
-    - 0
-    - 2
-    - 3
-    - 0
-    - 3
+  - 0
+  - 0
+  - 1
+  - 0
+  - 2
+  - 3
+  - 0
+  - 3
   familie__ehe_id:
-    - 0
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
+  - 0
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6

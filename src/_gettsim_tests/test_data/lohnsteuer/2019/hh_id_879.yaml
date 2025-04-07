@@ -1,6 +1,6 @@
----
 info:
   note: ''
+  precision: 2
   source: ''
 inputs:
   assumed:
@@ -8,31 +8,31 @@ inputs:
     familie__p_id_elternteil_2: -1
   provided:
     alter:
-      - 25
+    - 25
     arbeitsstunden_w:
-      - 40.0
-    hh_id:
-      - 879
-    p_id:
-      - 879
-    wohnort_ost:
-      - true
+    - 40.0
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 4560.0633333333335
+    - 4560.0633333333335
+    hh_id:
+    - 879
     kindergeld__in_ausbildung:
-      - false
+    - false
     lohnsteuer__steuerklasse:
-      - 5
+    - 5
+    p_id:
+    - 879
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz:
-      - 0.0075
+    - 0.0075
     sozialversicherung__pflege__beitrag__hat_kinder:
-      - false
+    - false
     sozialversicherung__pflege__beitrag__zusatzbetrag_kinderlos:
-      - false
+    - false
     sozialversicherung__regulär_beschäftigt:
-      - true
+    - true
+    wohnort_ost:
+    - true
 outputs:
   lohnsteuer__betrag_m:
-    - 1291.0
+  - 1291.0
   lohnsteuer__betrag_soli_m:
-    - 71.05499999999999
+  - 71.05499999999999

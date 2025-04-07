@@ -1,38 +1,38 @@
----
 info:
   note: One child in the lower age group (0-5).
+  precision: 2
   source: https://familienportal.de/familienportal/meta/aktuelles/aktuelle-meldungen/mehr-geld-fuer-familien-mit-kleinen-einkommen-ab-2021-161920
 inputs:
   assumed: {}
   provided:
-    familie__alleinerziehend:
-      - true
-      - false
     alter:
-      - 45
-      - 4
-    hh_id:
-      - 0
-      - 0
-    p_id:
-      - 0
-      - 1
+    - 45
+    - 4
+    familie__alleinerziehend:
+    - true
+    - false
     familie__p_id_elternteil_1:
-      - -1
-      - 0
+    - -1
+    - 0
     familie__p_id_elternteil_2:
-      - -1
-      - -1
+    - -1
+    - -1
+    hh_id:
+    - 0
+    - 0
     kindergeld__p_id_empfänger:
-      - -1
-      - 0
+    - -1
+    - 0
+    p_id:
+    - 0
+    - 1
     unterhalt__tatsächlich_erhaltener_betrag_m:
-      - 0.0
-      - 0.0
+    - 0.0
+    - 0.0
     unterhaltsvorschuss__einkommen_m:
-      - 0.0
-      - 0.0
+    - 0.0
+    - 0.0
 outputs:
   unterhaltsvorschuss__betrag_m:
-    - 0.0
-    - 174.0
+  - 0.0
+  - 174.0

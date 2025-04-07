@@ -1,35 +1,35 @@
----
 info:
   note: One child in the middle age group (6-11).
+  precision: 2
   source: https://www.berit-sander.de/2016/unterhaltsvorschuss-zum-01-01-2016/
 inputs:
   assumed: {}
   provided:
-    familie__alleinerziehend:
-      - true
-      - false
     alter:
-      - 45
-      - 8
-    hh_id:
-      - 0
-      - 0
-    p_id:
-      - 0
-      - 1
+    - 45
+    - 8
+    familie__alleinerziehend:
+    - true
+    - false
     familie__p_id_elternteil_1:
-      - -1
-      - 0
+    - -1
+    - 0
     familie__p_id_elternteil_2:
-      - -1
-      - -1
+    - -1
+    - -1
+    hh_id:
+    - 0
+    - 0
     kindergeld__p_id_empfänger:
-      - -1
-      - 0
+    - -1
+    - 0
+    p_id:
+    - 0
+    - 1
     unterhalt__tatsächlich_erhaltener_betrag_m:
-      - 0.0
-      - 0.0
+    - 0.0
+    - 0.0
 outputs:
   unterhaltsvorschuss__betrag_m:
-    - 0.0
-    - 194.0
+  - 0.0
+  - 194.0

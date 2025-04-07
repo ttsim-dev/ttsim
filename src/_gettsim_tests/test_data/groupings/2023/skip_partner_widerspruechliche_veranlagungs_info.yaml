@@ -1,20 +1,19 @@
----
 info:
   note: Skipping test for now, because error assertion is not supported yet.
+  precision: 2
   source: ''
 inputs:
-  - id: 0
-    geburtstag: 1984-07-14
-    arbeitslosengeld_2__p_id_einstandspartner: 1
-    familie__p_id_ehepartner: 1
-    einkommensteuer__gemeinsam_veranlagt: true
-    hh_id: 0
-  - id: 1
-    geburtstag: 1981-07-14
-    arbeitslosengeld_2__p_id_einstandspartner: 0
-    familie__p_id_ehepartner: 0
-    einkommensteuer__gemeinsam_veranlagt: false
-    hh_id: 0
+- arbeitslosengeld_2__p_id_einstandspartner: 1
+  einkommensteuer__gemeinsam_veranlagt: true
+  familie__p_id_ehepartner: 1
+  geburtstag: 1984-07-14
+  hh_id: 0
+  id: 0
+- arbeitslosengeld_2__p_id_einstandspartner: 0
+  einkommensteuer__gemeinsam_veranlagt: false
+  familie__p_id_ehepartner: 0
+  geburtstag: 1981-07-14
+  hh_id: 0
+  id: 1
 outputs:
-  - error: >-
-      Informationen zur gemeinsamen Veranlagung widersprechen sich zwischen Ehepartnern
+- error: Informationen zur gemeinsamen Veranlagung widersprechen sich zwischen Ehepartnern

@@ -1,85 +1,85 @@
----
 info:
   note: ''
+  precision: 2
   source: ''
 inputs:
   assumed: {}
   provided:
     alter:
-      - 45
-      - 40
-      - 24
-      - 18
-      - 17
-      - 15
+    - 45
+    - 40
+    - 24
+    - 18
+    - 17
+    - 15
     arbeitsstunden_w:
-      - 40.0
-      - 0.0
-      - 30.0
-      - 0.0
-      - 2.0
-      - 0.0
-    hh_id:
-      - 2
-      - 2
-      - 2
-      - 2
-      - 2
-      - 2
-    familie__kind:
-      - false
-      - false
-      - false
-      - false
-      - true
-      - true
-    p_id:
-      - 12
-      - 13
-      - 14
-      - 15
-      - 16
-      - 17
+    - 40.0
+    - 0.0
+    - 30.0
+    - 0.0
+    - 2.0
+    - 0.0
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 3000.0
-      - 0.0
-      - 700.0
-      - 200.0
-      - 0.0
-      - 0.0
+    - 3000.0
+    - 0.0
+    - 700.0
+    - 200.0
+    - 0.0
+    - 0.0
     einkommensteuer__gesamteinkommen_y:
-      - 3000.0
-      - 3000.0
-      - 3000.0
-      - 3000.0
-      - 3000.0
-      - 3000.0
+    - 3000.0
+    - 3000.0
+    - 3000.0
+    - 3000.0
+    - 3000.0
+    - 3000.0
+    familie__kind:
+    - false
+    - false
+    - false
+    - false
+    - true
+    - true
+    hh_id:
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
     kindergeld__in_ausbildung:
-      - false
-      - false
-      - true
-      - true
-      - true
-      - true
+    - false
+    - false
+    - true
+    - true
+    - true
+    - true
     kindergeld__p_id_empfänger:
-      - -1
-      - -1
-      - 12
-      - 12
-      - 12
-      - 12
+    - -1
+    - -1
+    - 12
+    - 12
+    - 12
+    - 12
+    p_id:
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
 outputs:
   kindergeld__betrag_m:
-    - 462
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
+  - 462
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
   kindergeld__betrag_m_hh:
-    - 462
-    - 462
-    - 462
-    - 462
-    - 462
-    - 462
+  - 462
+  - 462
+  - 462
+  - 462
+  - 462
+  - 462
