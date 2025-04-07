@@ -16,14 +16,32 @@ if TYPE_CHECKING:
 
 _TIME_UNITS = {
     "y": "year",
+    "q": "quarter",
     "m": "month",
     "w": "week",
     "d": "day",
 }
 
+_Q_PER_Y = 4
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7
 _D_PER_Y = 365.25
+
+
+def y_to_q(value: float) -> float:
+    """
+    Converts yearly to quarterly values.
+
+    Parameters
+    ----------
+    value
+        Yearly value to be converted to quarterly value.
+
+    Returns
+    -------
+    Quarterly value.
+    """
+    return value / _Q_PER_Y
 
 
 def y_to_m(value: float) -> float:
@@ -74,6 +92,70 @@ def y_to_d(value: float) -> float:
     return value / _D_PER_Y
 
 
+def q_to_y(value: float) -> float:
+    """
+    Converts quarterly to yearly values.
+
+    Parameters
+    ----------
+    value
+        Quarterly value to be converted to yearly value.
+
+    Returns
+    -------
+    Yearly value.
+    """
+    return value * _Q_PER_Y
+
+
+def q_to_m(value: float) -> float:
+    """
+    Converts quarterly to monthly values.
+
+    Parameters
+    ----------
+    value
+        Quarterly value to be converted to monthly value.
+
+    Returns
+    -------
+    Monthly value.
+    """
+    return value * _M_PER_Y / _Q_PER_Y
+
+
+def q_to_w(value: float) -> float:
+    """
+    Converts quarterly to weekly values.
+
+    Parameters
+    ----------
+    value
+        Quarterly value to be converted to weekly value.
+
+    Returns
+    -------
+    Weekly value.
+    """
+    return value * _Q_PER_Y / _W_PER_Y
+
+
+def q_to_d(value: float) -> float:
+    """
+    Converts quarterly to daily values.
+
+    Parameters
+    ----------
+    value
+        Quarterly value to be converted to daily value.
+
+    Returns
+    -------
+    Daily value.
+    """
+    return value * _Q_PER_Y / _D_PER_Y
+
+
 def m_to_y(value: float) -> float:
     """
     Converts monthly to yearly values.
@@ -88,6 +170,22 @@ def m_to_y(value: float) -> float:
     Yearly value.
     """
     return value * _M_PER_Y
+
+
+def m_to_q(value: float) -> float:
+    """
+    Converts monthly to quarterly values.
+
+    Parameters
+    ----------
+    value
+        Monthly value to be converted to quarterly value.
+
+    Returns
+    -------
+    Quarterly value.
+    """
+    return value * _M_PER_Y / _Q_PER_Y
 
 
 def m_to_w(value: float) -> float:
@@ -136,6 +234,22 @@ def w_to_y(value: float) -> float:
     Yearly value.
     """
     return value * _W_PER_Y
+
+
+def w_to_q(value: float) -> float:
+    """
+    Converts weekly to quarterly values.
+
+    Parameters
+    ----------
+    value
+        Weekly value to be converted to quarterly value.
+
+    Returns
+    -------
+    Quarterly value.
+    """
+    return value * _W_PER_Y / _Q_PER_Y
 
 
 def w_to_m(value: float) -> float:
@@ -202,6 +316,22 @@ def d_to_m(value: float) -> float:
     return value * _D_PER_Y / _M_PER_Y
 
 
+def d_to_q(value: float) -> float:
+    """
+    Converts daily to quarterly values.
+
+    Parameters
+    ----------
+    value
+        Daily value to be converted to quarterly value.
+
+    Returns
+    -------
+    Quarterly value.
+    """
+    return value * _D_PER_Y / _Q_PER_Y
+
+
 def d_to_w(value: float) -> float:
     """
     Converts daily to weekly values.
@@ -220,16 +350,24 @@ def d_to_w(value: float) -> float:
 
 _time_conversion_functions = {
     "y_to_m": y_to_m,
+    "y_to_q": y_to_q,
     "y_to_w": y_to_w,
     "y_to_d": y_to_d,
+    "q_to_y": q_to_y,
+    "q_to_m": q_to_m,
+    "q_to_w": q_to_w,
+    "q_to_d": q_to_d,
     "m_to_y": m_to_y,
+    "m_to_q": m_to_q,
     "m_to_w": m_to_w,
     "m_to_d": m_to_d,
     "w_to_y": w_to_y,
+    "w_to_q": w_to_q,
     "w_to_m": w_to_m,
     "w_to_d": w_to_d,
     "d_to_y": d_to_y,
     "d_to_m": d_to_m,
+    "d_to_q": d_to_q,
     "d_to_w": d_to_w,
 }
 

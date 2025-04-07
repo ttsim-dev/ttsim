@@ -7,18 +7,37 @@ from ttsim.time_conversion import (
     _create_function_for_time_unit,
     create_time_conversion_functions,
     d_to_m,
+    d_to_q,
     d_to_w,
     d_to_y,
     m_to_d,
+    m_to_q,
     m_to_w,
     m_to_y,
+    q_to_d,
+    q_to_m,
+    q_to_w,
+    q_to_y,
     w_to_d,
     w_to_m,
+    w_to_q,
     w_to_y,
     y_to_d,
     y_to_m,
+    y_to_q,
     y_to_w,
 )
+
+
+@pytest.mark.parametrize(
+    ("yearly_value", "quarterly_value"),
+    [
+        (0, 0),
+        (12, 3),
+    ],
+)
+def test_y_to_q(yearly_value: float, quarterly_value: float) -> None:
+    assert y_to_q(yearly_value) == quarterly_value
 
 
 @pytest.mark.parametrize(
@@ -55,6 +74,50 @@ def test_y_to_d(yearly_value: float, daily_value: float) -> None:
 
 
 @pytest.mark.parametrize(
+    ("quarterly_value", "yearly_value"),
+    [
+        (0, 0),
+        (1, 4),
+    ],
+)
+def test_q_to_y(quarterly_value: float, yearly_value: float) -> None:
+    assert q_to_y(quarterly_value) == yearly_value
+
+
+@pytest.mark.parametrize(
+    ("quarterly_value", "monthly_value"),
+    [
+        (0, 0),
+        (1, 3),
+    ],
+)
+def test_q_to_m(quarterly_value: float, monthly_value: float) -> None:
+    assert q_to_m(quarterly_value) == monthly_value
+
+
+@pytest.mark.parametrize(
+    ("quarterly_value", "weekly_value"),
+    [
+        (0, 0),
+        (365.25 / 7 / 4, 1),
+    ],
+)
+def test_q_to_w(quarterly_value: float, weekly_value: float) -> None:
+    assert q_to_w(quarterly_value) == weekly_value
+
+
+@pytest.mark.parametrize(
+    ("quarterly_value", "daily_value"),
+    [
+        (0, 0),
+        (365.25 / 4, 1),
+    ],
+)
+def test_q_to_d(quarterly_value: float, daily_value: float) -> None:
+    assert q_to_d(quarterly_value) == daily_value
+
+
+@pytest.mark.parametrize(
     ("monthly_value", "yearly_value"),
     [
         (0, 0),
@@ -63,6 +126,17 @@ def test_y_to_d(yearly_value: float, daily_value: float) -> None:
 )
 def test_m_to_y(monthly_value: float, yearly_value: float) -> None:
     assert m_to_y(monthly_value) == yearly_value
+
+
+@pytest.mark.parametrize(
+    ("monthly_value", "quarterly_value"),
+    [
+        (0, 0),
+        (1, 3),
+    ],
+)
+def test_m_to_q(monthly_value: float, quarterly_value: float) -> None:
+    assert m_to_q(monthly_value) == quarterly_value
 
 
 @pytest.mark.parametrize(
@@ -110,6 +184,17 @@ def test_w_to_m(weekly_value: float, monthly_value: float) -> None:
 
 
 @pytest.mark.parametrize(
+    ("weekly_value", "quarterly_value"),
+    [
+        (0, 0),
+        (7, 365.25 / 4),
+    ],
+)
+def test_w_to_q(weekly_value: float, quarterly_value: float) -> None:
+    assert w_to_q(weekly_value) == quarterly_value
+
+
+@pytest.mark.parametrize(
     ("weekly_value", "daily_value"),
     [
         (0, 0),
@@ -129,6 +214,17 @@ def test_w_to_d(weekly_value: float, daily_value: float) -> None:
 )
 def test_d_to_y(daily_value: float, yearly_value: float) -> None:
     assert d_to_y(daily_value) == yearly_value
+
+
+@pytest.mark.parametrize(
+    ("daily_value", "quarterly_value"),
+    [
+        (0, 0),
+        (1, 365.25 / 4),
+    ],
+)
+def test_d_to_q(daily_value: float, quarterly_value: float) -> None:
+    assert d_to_q(daily_value) == quarterly_value
 
 
 @pytest.mark.parametrize(
@@ -157,18 +253,21 @@ class TestCreateFunctionsForTimeUnits:
     @pytest.mark.parametrize(
         ("name", "expected"),
         [
-            ("test_y", ["test_m", "test_w", "test_d"]),
-            ("test_y_hh", ["test_m_hh", "test_w_hh", "test_d_hh"]),
-            ("test_y_sn", ["test_m_sn", "test_w_sn", "test_d_sn"]),
-            ("test_m", ["test_y", "test_w", "test_d"]),
-            ("test_m_hh", ["test_y_hh", "test_w_hh", "test_d_hh"]),
-            ("test_m_sn", ["test_y_sn", "test_w_sn", "test_d_sn"]),
-            ("test_w", ["test_y", "test_m", "test_d"]),
-            ("test_w_hh", ["test_y_hh", "test_m_hh", "test_d_hh"]),
-            ("test_w_sn", ["test_y_sn", "test_m_sn", "test_d_sn"]),
-            ("test_d", ["test_y", "test_m", "test_w"]),
-            ("test_d_hh", ["test_y_hh", "test_m_hh", "test_w_hh"]),
-            ("test_d_sn", ["test_y_sn", "test_m_sn", "test_w_sn"]),
+            ("test_y", ["test_m", "test_q", "test_w", "test_d"]),
+            ("test_y_hh", ["test_m_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
+            ("test_y_sn", ["test_m_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
+            ("test_q", ["test_y", "test_m", "test_w", "test_d"]),
+            ("test_q_hh", ["test_y_hh", "test_m_hh", "test_w_hh", "test_d_hh"]),
+            ("test_q_sn", ["test_y_sn", "test_m_sn", "test_w_sn", "test_d_sn"]),
+            ("test_m", ["test_y", "test_q", "test_w", "test_d"]),
+            ("test_m_hh", ["test_y_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
+            ("test_m_sn", ["test_y_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
+            ("test_w", ["test_y", "test_m", "test_q", "test_d"]),
+            ("test_w_hh", ["test_y_hh", "test_m_hh", "test_q_hh", "test_d_hh"]),
+            ("test_w_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_d_sn"]),
+            ("test_d", ["test_y", "test_m", "test_q", "test_w"]),
+            ("test_d_hh", ["test_y_hh", "test_m_hh", "test_q_hh", "test_w_hh"]),
+            ("test_d_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_w_sn"]),
         ],
     )
     def test_should_create_functions_for_other_time_units_for_functions(
@@ -184,18 +283,21 @@ class TestCreateFunctionsForTimeUnits:
     @pytest.mark.parametrize(
         ("name", "expected"),
         [
-            ("test_y", ["test_m", "test_w", "test_d"]),
-            ("test_y_hh", ["test_m_hh", "test_w_hh", "test_d_hh"]),
-            ("test_y_sn", ["test_m_sn", "test_w_sn", "test_d_sn"]),
-            ("test_m", ["test_y", "test_w", "test_d"]),
-            ("test_m_hh", ["test_y_hh", "test_w_hh", "test_d_hh"]),
-            ("test_m_sn", ["test_y_sn", "test_w_sn", "test_d_sn"]),
-            ("test_w", ["test_y", "test_m", "test_d"]),
-            ("test_w_hh", ["test_y_hh", "test_m_hh", "test_d_hh"]),
-            ("test_w_sn", ["test_y_sn", "test_m_sn", "test_d_sn"]),
-            ("test_d", ["test_y", "test_m", "test_w"]),
-            ("test_d_hh", ["test_y_hh", "test_m_hh", "test_w_hh"]),
-            ("test_d_sn", ["test_y_sn", "test_m_sn", "test_w_sn"]),
+            ("test_y", ["test_m", "test_q", "test_w", "test_d"]),
+            ("test_y_hh", ["test_m_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
+            ("test_y_sn", ["test_m_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
+            ("test_q", ["test_y", "test_m", "test_w", "test_d"]),
+            ("test_q_hh", ["test_y_hh", "test_m_hh", "test_w_hh", "test_d_hh"]),
+            ("test_q_sn", ["test_y_sn", "test_m_sn", "test_w_sn", "test_d_sn"]),
+            ("test_m", ["test_y", "test_q", "test_w", "test_d"]),
+            ("test_m_hh", ["test_y_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
+            ("test_m_sn", ["test_y_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
+            ("test_w", ["test_y", "test_q", "test_m", "test_d"]),
+            ("test_w_hh", ["test_y_hh", "test_q_hh", "test_m_hh", "test_d_hh"]),
+            ("test_w_sn", ["test_y_sn", "test_q_sn", "test_m_sn", "test_d_sn"]),
+            ("test_d", ["test_y", "test_q", "test_m", "test_w"]),
+            ("test_d_hh", ["test_y_hh", "test_q_hh", "test_m_hh", "test_w_hh"]),
+            ("test_d_sn", ["test_y_sn", "test_q_sn", "test_m_sn", "test_w_sn"]),
         ],
     )
     def test_should_create_functions_for_other_time_units_for_data_cols(
