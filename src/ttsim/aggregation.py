@@ -44,6 +44,7 @@ class AggregationType(StrEnum):
     MIN = "min"
     ANY = "any"
     ALL = "all"
+    NOT_IMPLEMENTED = "not_implemented"
 
 
 @dataclass

@@ -6,7 +6,7 @@ from ttsim import AggregateByGroupSpec, group_by_function
 
 aggregation_specs = {
     "anzahl_personen_wthh": AggregateByGroupSpec(
-        aggr="count",
+        aggr=AggregationType.COUNT,
     ),
 }
 

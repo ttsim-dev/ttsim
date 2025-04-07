@@ -8,7 +8,7 @@ aggregation_specs = {
     "an_elternteil_auszuzahlender_betrag_m": AggregateByPIDSpec(
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
         source="betrag_m",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 

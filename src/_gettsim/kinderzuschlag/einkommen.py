@@ -5,7 +5,7 @@ from ttsim import AggregateByGroupSpec, policy_function
 aggregation_specs = {
     "arbeitslosengeld_2__anzahl_kinder_bg": AggregateByGroupSpec(
         source="kindergeld__anzahl_ansprüche",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 

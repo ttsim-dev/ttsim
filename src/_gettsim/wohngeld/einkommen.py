@@ -7,7 +7,7 @@ aggregation_specs = {
     "alleinerziehendenbonus": AggregateByPIDSpec(
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
         source="kindergeld__kind_bis_10_mit_kindergeld",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 

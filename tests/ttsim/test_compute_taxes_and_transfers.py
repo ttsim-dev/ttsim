@@ -346,7 +346,7 @@ def test_user_provided_aggregate_by_group_specs():
         "module_name": {
             "betrag_m_hh": AggregateByGroupSpec(
                 source="betrag_m",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             )
         }
     }
@@ -370,7 +370,7 @@ def test_user_provided_aggregate_by_group_specs():
             "module_name": {
                 "betrag_double_m_hh": AggregateByGroupSpec(
                     source="betrag_m_double",
-                    aggr="max",
+                    aggr=AggregationType.MAX,
                 ),
             },
         },
@@ -378,7 +378,7 @@ def test_user_provided_aggregate_by_group_specs():
             "module_name": {
                 "betrag_double_m_hh": AggregateByGroupSpec(
                     source="module_name__betrag_m_double",
-                    aggr="max",
+                    aggr=AggregationType.MAX,
                 ),
             },
         },
@@ -431,7 +431,7 @@ def test_aggregate_by_group_specs_missing_group_sufix():
         "module_name": {
             "betrag_agg_m": AggregateByGroupSpec(
                 source="betrag_m",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             )
         },
     }
@@ -458,7 +458,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
         "module_name": {
             "betrag_m_hh": AggregateByGroupSpec(
                 source="betrag_m",
-                aggr="aggr_not_implemented",
+                aggr=AggregationType.NOT_IMPLEMENTED,
             )
         },
     }
@@ -482,7 +482,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                     "target_func": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
                         source="source_func",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     )
                 }
             },
@@ -496,7 +496,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                     "target_func_m": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     )
                 }
             },
@@ -510,7 +510,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                     "target_func_m": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     )
                 }
             },

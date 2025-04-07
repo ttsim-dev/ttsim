@@ -294,7 +294,7 @@ def _create_derived_aggregations_specs(
 
         if aggregation_specs_needed:
             derived_aggregations_specs[target_name] = AggregateByGroupSpec(
-                aggr="sum",
+                aggr=AggregationType.SUM,
                 source=_get_name_of_aggregation_source(
                     target_name=target_name,
                     top_level_namespace=top_level_namespace,

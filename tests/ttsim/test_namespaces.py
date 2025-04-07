@@ -42,14 +42,14 @@ def aggregation_tree():
         "module1": {
             "group_mean_hh": AggregateByGroupSpec(
                 source="f",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             ),
         },
         "module2": {
             "p_id_aggregation_target": AggregateByPIDSpec(
                 p_id_to_aggregate_by="groupings__some_foreign_keys",
                 source="g_hh",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             ),
         },
     }
