@@ -4,6 +4,7 @@ import datetime
 import functools
 import inspect
 import re
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Literal, TypeVar
 
@@ -13,7 +14,17 @@ import numpy
 T = TypeVar("T")
 
 
-class PolicyFunction(Callable):
+class TTSIMFunction(ABC):
+    """
+    Abstract base class for all TTSIM functions.
+    """
+
+    @abstractmethod
+    def __call__(self, *args, **kwargs):
+        pass
+
+
+class PolicyFunction(TTSIMFunction):
     """
     A function that computes an output vector based on some input vectors and/or
     parameters.
@@ -219,11 +230,6 @@ class PolicyInput(Callable):
         return self.function(*args, **kwargs)
 
     @property
-    def dependencies(self) -> set[str]:
-        """The names of input variables that the function depends on."""
-        return set(inspect.signature(self).parameters)
-
-    @property
     def original_function_name(self) -> str:
         """The name of the wrapped function."""
         return self.function.__name__
@@ -294,7 +300,7 @@ def policy_input(
     return inner
 
 
-class GroupByFunction(Callable):
+class GroupByFunction(TTSIMFunction):
     """
     A function that computes endogenous group_by IDs.
 
@@ -362,10 +368,7 @@ class DerivedAggregationFunction(PolicyFunction):
         self,
         *,
         function: Callable,
-        source_function: PolicyFunction
-        | DerivedTimeConversionFunction
-        | DerivedAggregationFunction
-        | None = None,
+        source_function: TTSIMFunction | None = None,
         source: str,
         aggregation_target: str,
         aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
@@ -404,10 +407,7 @@ class DerivedTimeConversionFunction(PolicyFunction):
         self,
         *,
         function: Callable,
-        source_function: PolicyFunction
-        | DerivedTimeConversionFunction
-        | DerivedAggregationFunction
-        | None = None,
+        source_function: TTSIMFunction | None = None,
         source: str,
         conversion_target: str,
     ):
