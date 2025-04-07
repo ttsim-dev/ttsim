@@ -20,11 +20,13 @@ class PolicyTest:
 
     def __init__(
         self,
+        info: NestedDataDict,
         input_tree: NestedDataDict,
         expected_output_tree: NestedDataDict,
         path: Path,
         date: datetime.date,
     ) -> None:
+        self.info = info
         self.input_tree = input_tree
         self.expected_output_tree = expected_output_tree
         self.path = path
@@ -41,15 +43,32 @@ class PolicyTest:
     def test_name(self) -> str:
         return self.path.stem
 
+def execute_policy_test(test: PolicyTest):
+    from numpy.testing import assert_array_almost_equal
+    from _gettsim_tests._helpers import cached_set_up_policy_environment
+    from ttsim import compute_taxes_and_transfers
 
-def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
-    from _gettsim_tests import TEST_DIR
+    environment = cached_set_up_policy_environment(date=test.date)
 
-    root = TEST_DIR / "test_data" / policy_name
+    result = compute_taxes_and_transfers(
+        data_tree=test.input_tree,
+        environment=environment,
+        targets_tree=test.target_structure,
+    )
 
+    flat_result = dt.flatten_to_qual_names(result)
+    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
+
+    for result, expected, precision in zip(
+        flat_result.values(), flat_expected_output_tree.values(), test.info.values()
+    ):
+        assert_array_almost_equal(result, expected, decimal=precision)
+        
+
+def load_policy_test_data(policy_path: Path) -> list[PolicyTest]:
     out = []
 
-    for path_of_test_file in root.glob("**/*.yaml"):
+    for path_of_test_file in policy_path.glob("**/*.yaml"):
         if _is_skipped(path_of_test_file):
             continue
 
@@ -70,12 +89,18 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
 
 
 def get_test_data_as_tree(test_data: NestedDataDict) -> NestedDataDict:
+    info = test_data.get("info", {})
     provided_inputs = test_data["inputs"].get("provided", {})
     assumed_inputs = test_data["inputs"].get("assumed", {})
 
     unflattened_dict = {}
+    unflattened_dict["info"] = {}
     unflattened_dict["inputs"] = {}
     unflattened_dict["outputs"] = {}
+    if info:
+        unflattened_dict["info"]["precision"] = info.get("precision", 2)
+    else:
+        unflattened_dict["info"]["precision"] = 2
     if provided_inputs:
         unflattened_dict["inputs"]["provided"] = dt.unflatten_from_qual_names(
             provided_inputs
@@ -109,6 +134,7 @@ def _get_policy_tests_from_raw_test_data(
     Returns:
         A list of PolicyTest objects.
     """
+    info: NestedDataDict = raw_test_data.get("info", {})
     inputs: NestedDataDict = raw_test_data.get("inputs", {})
     input_tree: NestedDataDict = dt.unflatten_from_tree_paths(
         {
@@ -134,6 +160,7 @@ def _get_policy_tests_from_raw_test_data(
     if expected_output_tree == {}:
         out.append(
             PolicyTest(
+                info=info,
                 input_tree=input_tree,
                 expected_output_tree={},
                 path=path_of_test_file,
@@ -149,6 +176,7 @@ def _get_policy_tests_from_raw_test_data(
             )
             out.append(
                 PolicyTest(
+                    info=info,
                     input_tree=input_tree,
                     expected_output_tree=one_expected_output,
                     path=path_of_test_file,
