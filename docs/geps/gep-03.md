@@ -56,7 +56,7 @@ These work differently and they are
    - not sentences;
    - correctly capitalised.
 
-   Example (from `arbeitsl_geld_2`):
+   Example (from `arbeitslosengeld_2`):
 
    ```yaml
    eink_anr_frei:
@@ -116,7 +116,7 @@ These work differently and they are
 1. The (optional) `reference_period` key informs on the reference period of the values,
    if applicable
 
-   Possible values: - `Year` - `Month` - `Week` - `Day`
+   Possible values: - `Year` - `Quarter` - `Month` - `Week` - `Day`
 
    Example:
 
@@ -134,7 +134,7 @@ These work differently and they are
    previous point in time (relative to the date specified in
    {func}`set_up_policy_environment <ttsim.policy_environment.set_up_policy_environment>`)
    available within GETTSIM functions. It requires the `reference_period` (one of
-   `Year`, `Month`, `Week`, `Day`) and the `number_of_lags`.
+   `Year`, `Quarter`, `Month`, `Week`, `Day`) and the `number_of_lags`.
 
    Example:
 
@@ -208,7 +208,7 @@ eink_anr_frei_kinder:
   name:
     de: Abweichende anrechnungsfreie Einkommensanteile falls Kinder im Haushalt
   2005-10-01:
-    deviation_from: arbeitsl_geld_2.eink_anr_frei
+    deviation_from: arbeitslosengeld_2.eink_anr_frei
     3:
       upper_threshold: 1500
 ```
@@ -310,7 +310,7 @@ The following walks through several cases.
 
   ```yaml
   value: null
-  note: arbeitsl_hilfe is superseded by arbeitsl_geld_2
+  note: arbeitslosenhilfe is superseded by arbeitslosengeld_2
   ```
 
   Only in exceptional cases it might be useful to set a parameter to some value
@@ -362,7 +362,7 @@ changed. This is done in in the same way as for other policy parameters. Those
 
 ### The `dates_active` key
 
-Some functions should not be present at certain times. For example, `arbeitsl_geld_2`
+Some functions should not be present at certain times. For example, `arbeitslosengeld_2`
 and all its ancestors should not appear in DAGs referring to years prior to 2005.
 
 Other functions have different interfaces in different years or undergo very large
@@ -402,6 +402,8 @@ parameters as in the YAML file for their own policy parameters.
 
 - <https://github.com/iza-institute-of-labor-economics/gettsim/pull/148>
 - <https://gettsim.zulipchat.com/#narrow/stream/309998-GEPs/topic/GEP.2003>
+- GitHub PR for update (changes because of `GEP-6 <gep-6>`):
+  <https://github.com/iza-institute-of-labor-economics/gettsim/pull/855>
 
 ## Copyright
 
