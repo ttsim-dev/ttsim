@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 from ttsim.aggregation_jax import all_by_p_id as all_by_p_id_jax
@@ -54,7 +55,47 @@ class AggregateByGroupSpec:
     """
 
     aggr: AggregationType
-    source: str | None = None
+    source: str
+    _agg_func: Callable = field(init=False)
+
+    def __post_init__(self):
+        if self.aggr == AggregationType.SUM:
+            func = grouped_sum
+        elif self.aggr == AggregationType.MEAN:
+            func = grouped_mean
+        elif self.aggr == AggregationType.MAX:
+            func = grouped_max
+        elif self.aggr == AggregationType.MIN:
+            func = grouped_min
+        elif self.aggr == AggregationType.ANY:
+            func = grouped_any
+        elif self.aggr == AggregationType.ALL:
+            func = grouped_all
+        else:
+            raise ValueError(f"Aggregation type {self.aggr} not implemented")
+
+        self._agg_func = func
+
+    def agg_func(self, source, group_by_id):
+        return self._agg_func(source, group_by_id)
+
+    def mapper(self, group_by_id):
+        return {"source": self.source, "group_by_id": group_by_id}
+
+
+@dataclass
+class CountByGroupSpec:
+    """
+    A container for count by group specifications.
+    """
+
+    aggr: AggregationType = AggregationType.COUNT
+
+    def agg_func(self, group_by_id):
+        return grouped_count(group_by_id)
+
+    def mapper(self, group_by_id):
+        return {"group_by_id": group_by_id}
 
 
 @dataclass
