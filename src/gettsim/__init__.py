@@ -16,25 +16,21 @@ import warnings
 
 import pytest
 
-from _gettsim import (
-    aggregation,
-    config,
-    piecewise_functions,
-    shared,
-    taxes,
-    transfers,
-    typing,
-    visualization,
-)
-from _gettsim.function_types import PolicyFunction
-from _gettsim.interface import (
-    FunctionsAndColumnsOverlapWarning,
-    compute_taxes_and_transfers,
-)
-from _gettsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from _gettsim.synthetic import create_synthetic_data
-from _gettsim.visualization import plot_dag
 from _gettsim_tests import TEST_DIR
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregateByPIDSpec,
+    FunctionsAndColumnsOverlapWarning,
+    GroupByFunction,
+    PolicyEnvironment,
+    PolicyFunction,
+    compute_taxes_and_transfers,
+    group_by_function,
+    plot_dag,
+    policy_function,
+    set_up_policy_environment,
+)
 
 COUNTER_TEST_EXECUTIONS = itertools.count()
 
@@ -54,24 +50,17 @@ def test(*args):
 
 
 __all__ = [
-    "__version__",
+    "AggregateByGroupSpec",
+    "AggregateByPIDSpec",
     "FunctionsAndColumnsOverlapWarning",
+    "GroupByFunction",
     "PolicyEnvironment",
     "PolicyFunction",
+    "__version__",
     "compute_taxes_and_transfers",
-    "set_up_policy_environment",
-    "plot_dag",
-    # TODO (@hmgaudecker): See what can be changed/removed from remainder.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/378
-    "aggregation",
-    "config",
-    "piecewise_functions",
-    "policy_environment",
-    "shared",
-    "social_insurance_contributions",
     "create_synthetic_data",
-    "taxes",
-    "transfers",
-    "typing",
-    "visualization",
+    "group_by_function",
+    "plot_dag",
+    "policy_function",
+    "set_up_policy_environment",
 ]

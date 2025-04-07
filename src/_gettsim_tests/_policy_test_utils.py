@@ -7,12 +7,12 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from _gettsim.shared import merge_trees
+from ttsim import merge_trees
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from _gettsim.typing import NestedDataDict, NestedInputStructureDict
+    from ttsim import NestedDataDict, NestedInputStructureDict
 
 
 class PolicyTest:
@@ -32,9 +32,9 @@ class PolicyTest:
 
     @property
     def target_structure(self) -> NestedInputStructureDict:
-        flat_target_structure = {
-            k: None for k in dt.flatten_to_tree_paths(self.expected_output_tree)
-        }
+        flat_target_structure = dict.fromkeys(
+            dt.flatten_to_tree_paths(self.expected_output_tree)
+        )
         return dt.unflatten_from_tree_paths(flat_target_structure)
 
     @property
@@ -43,9 +43,9 @@ class PolicyTest:
 
 
 def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
-    from _gettsim_tests import TEST_DATA_DIR
+    from _gettsim_tests import TEST_DIR
 
-    root = TEST_DATA_DIR / policy_name
+    root = TEST_DIR / "test_data" / policy_name
 
     out = []
 

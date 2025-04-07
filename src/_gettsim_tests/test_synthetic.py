@@ -5,9 +5,8 @@ import pandas as pd
 import pytest
 
 from _gettsim.config import DEFAULT_TARGETS
-from _gettsim.interface import compute_taxes_and_transfers
-from _gettsim.policy_environment import set_up_policy_environment
 from _gettsim.synthetic import create_synthetic_data
+from ttsim import compute_taxes_and_transfers, set_up_policy_environment
 
 
 @pytest.fixture
@@ -36,8 +35,8 @@ def synthetic_data_spec_variables():
         n_adults=2,
         n_children=1,
         specs_constant_over_households={
-            "basic_inputs__alter": [50, 30, 5],
-            "basic_inputs__einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
+            "alter": [50, 30, 5],
+            "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
                 1000,
                 2000,
                 0,
@@ -53,9 +52,9 @@ def synthetic_data_spec_heterogeneous_married():
         n_adults=2,
         n_children=1,
         adults_married=True,
-        specs_constant_over_households={"basic_inputs__alter": [50, 30, 5]},
+        specs_constant_over_households={"alter": [50, 30, 5]},
         specs_heterogeneous={
-            "basic_inputs__einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
+            "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
                 [i / 2, i / 2, 0] for i in range(0, 1001, 100)
             ]
         },
@@ -69,9 +68,9 @@ def synthetic_data_spec_heterogeneous_not_married():
         n_adults=2,
         n_children=1,
         adults_married=False,
-        specs_constant_over_households={"basic_inputs__alter": [50, 30, 5]},
+        specs_constant_over_households={"alter": [50, 30, 5]},
         specs_heterogeneous={
-            "basic_inputs__einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
+            "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
                 [i / 2, i / 2, 0] for i in range(0, 1001, 100)
             ]
         },
@@ -99,7 +98,7 @@ synthetic_data_fixtures = [
 )
 def test_positive_rent(df, request):
     df = request.getfixturevalue(df)
-    assert df["basic_inputs__wohnen__bruttokaltmiete_m_hh"].min() > 0
+    assert df["wohnen__bruttokaltmiete_m_hh"].min() > 0
 
 
 @pytest.mark.xfail(reason="Synthetic module was not updated to the new interface.")
@@ -109,7 +108,7 @@ def test_positive_rent(df, request):
 )
 def test_no_nans(df, request):
     df = request.getfixturevalue(df)
-    assert df["basic_inputs__wohnen__bruttokaltmiete_m_hh"].notna().all().all()
+    assert df["wohnen__bruttokaltmiete_m_hh"].notna().all().all()
 
 
 @pytest.mark.xfail(reason="Synthetic module was not updated to the new interface.")
@@ -150,16 +149,12 @@ def test_correct_size(df, exp_n_rows, request):
 @pytest.mark.xfail(reason="Synthetic module was not updated to the new interface.")
 def test_alleinerziehend(synthetic_data_alleinerziehend):
     pd.testing.assert_series_equal(
-        synthetic_data_alleinerziehend["basic_inputs__alleinerz"],
-        pd.Series([True, False], name="basic_inputs__alleinerz"),
+        synthetic_data_alleinerziehend["alleinerz"],
+        pd.Series([True, False], name="alleinerz"),
     )
     pd.testing.assert_series_equal(
-        synthetic_data_alleinerziehend[
-            "basic_inputs__einkommensteuer__gemeinsam_veranlagt"
-        ],
-        pd.Series(
-            [False, False], name="basic_inputs__einkommensteuer__gemeinsam_veranlagt"
-        ),
+        synthetic_data_alleinerziehend["einkommensteuer__gemeinsam_veranlagt"],
+        pd.Series([False, False], name="einkommensteuer__gemeinsam_veranlagt"),
     )
 
 
@@ -167,9 +162,9 @@ def test_alleinerziehend(synthetic_data_alleinerziehend):
 @pytest.mark.parametrize(
     "col, expected",
     [
-        ("basic_inputs__alter", [50, 30, 5]),
+        ("alter", [50, 30, 5]),
         (
-            "basic_inputs__einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m",
+            "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m",
             [1000, 2000, 0],
         ),
     ],
@@ -184,13 +179,13 @@ def test_specs_constant_over_households(col, expected, synthetic_data_spec_varia
 @pytest.mark.parametrize(
     "col, expected",
     [
-        ("basic_inputs__alter", [50, 30, 5] * 11),
+        ("alter", [50, 30, 5] * 11),
         (
-            "basic_inputs__einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m",
+            "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m",
             numpy.concatenate([[i / 2, i / 2, 0] for i in range(0, 1001, 100)]),
         ),
         (
-            "basic_inputs__einkommensteuer__gemeinsam_veranlagt",
+            "einkommensteuer__gemeinsam_veranlagt",
             [True, True, False] * 11,
         ),
     ],
@@ -221,8 +216,8 @@ def test_specs_heterogeneous(col, expected, synthetic_data_spec_heterogeneous_ma
             0,
             None,
             {
-                "basic_inputs__alter": [[30, 20], [40, 30]],
-                "basic_inputs__einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
+                "alter": [[30, 20], [40, 30]],
+                "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": [
                     [300, 200]
                 ],
             },

@@ -2,10 +2,10 @@ import dags.tree as dt
 import pytest
 
 from _gettsim.config import TYPES_INPUT_VARIABLES
-from _gettsim.interface import compute_taxes_and_transfers
-from _gettsim.typing import check_series_has_expected_type
 from _gettsim_tests._helpers import cached_set_up_policy_environment
 from _gettsim_tests._policy_test_utils import PolicyTest, load_policy_test_data
+from ttsim import compute_taxes_and_transfers
+from ttsim.typing import check_series_has_expected_type
 
 test_data = load_policy_test_data("full_taxes_and_transfers")
 

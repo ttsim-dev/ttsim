@@ -3,9 +3,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from _gettsim.interface import compute_taxes_and_transfers
 from _gettsim_tests._helpers import cached_set_up_policy_environment
 from _gettsim_tests._policy_test_utils import PolicyTest, load_policy_test_data
+from ttsim import compute_taxes_and_transfers
 
 test_data = load_policy_test_data("groupings")
 
