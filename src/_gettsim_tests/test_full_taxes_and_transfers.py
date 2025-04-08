@@ -1,7 +1,6 @@
 import dags.tree as dt
 import pytest
 
-from _gettsim.config import TYPES_INPUT_VARIABLES
 from _gettsim_tests._helpers import cached_set_up_policy_environment
 from _gettsim_tests._policy_test_utils import PolicyTest, load_policy_test_data
 from ttsim import compute_taxes_and_transfers
@@ -31,7 +30,7 @@ def test_data_types(test: PolicyTest):
         targets_tree=test.target_structure,
     )
 
-    flat_types_input_variables = dt.flatten_to_qual_names(TYPES_INPUT_VARIABLES)
+    flat_types_input_variables = dt.flatten_to_qual_names(todo_policy_inputs)
     flat_functions = dt.flatten_to_qual_names(environment.functions_tree)
 
     for column_name, result_array in dt.flatten_to_qual_names(result).items():

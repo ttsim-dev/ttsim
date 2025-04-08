@@ -7,7 +7,6 @@ import pytest
 
 from _gettsim.config import (
     RESOURCE_DIR,
-    TYPES_INPUT_VARIABLES,
 )
 from ttsim.loader import (
     load_aggregation_specs_tree,
@@ -23,7 +22,7 @@ def _nice_output_list_of_strings(list_of_strings):
 
 @pytest.fixture(scope="module")
 def default_input_variables():
-    return sorted(TYPES_INPUT_VARIABLES.keys())
+    return sorted(f for f in todo_functions_tree if isinstance(f, PolicyInput))
 
 
 @pytest.fixture(scope="module")

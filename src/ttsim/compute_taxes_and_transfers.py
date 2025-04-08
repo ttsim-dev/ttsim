@@ -13,7 +13,6 @@ import pandas as pd
 from _gettsim.config import (
     DEFAULT_TARGETS,
     FOREIGN_KEYS,
-    TYPES_INPUT_VARIABLES,
 )
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
