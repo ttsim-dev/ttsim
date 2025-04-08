@@ -9,8 +9,10 @@ from ttsim.function_types import (
     DerivedTimeConversionFunction,
     GroupByFunction,
     PolicyFunction,
+    PolicyInput,
     group_by_function,
     policy_function,
+    policy_input,
 )
 from ttsim.loader import (
     ConflictingTimeDependentFunctionsError,
@@ -40,6 +42,7 @@ __all__ = [
     "GroupByFunction",
     "PolicyEnvironment",
     "PolicyFunction",
+    "PolicyInput",
     "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
     "create_time_conversion_functions",
@@ -54,6 +57,7 @@ __all__ = [
     "piecewise_polynomial",
     "plot_dag",
     "policy_function",
+    "policy_input",
     "set_up_policy_environment",
     "upsert_path_and_value",
     "upsert_tree",
