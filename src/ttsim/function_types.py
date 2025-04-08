@@ -5,25 +5,43 @@ import functools
 import inspect
 import re
 from abc import ABC, abstractmethod
-from collections.abc import Callable
-from typing import Literal, TypeVar
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal, TypeVar
 
 import dags.tree as dt
 import numpy
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 T = TypeVar("T")
 
 
-class TTSIMFunction(ABC):
+@dataclass
+class TTSIMObject(ABC):
+    """
+    Abstract base class for all TTSIM Functions and Inputs.
+    """
+
+    function: Callable
+    start_date: datetime.date
+    end_date: datetime.date
+
+
+@dataclass
+class TTSIMFunction(TTSIMObject, ABC):
     """
     Abstract base class for all TTSIM functions.
     """
+
+    leaf_name: str | None = None
 
     @abstractmethod
     def __call__(self, *args, **kwargs):
         pass
 
 
+@dataclass
 class PolicyFunction(TTSIMFunction):
     """
     A function that computes an output vector based on some input vectors and/or
@@ -46,29 +64,19 @@ class PolicyFunction(TTSIMFunction):
         Whether the function should be vectorized.
     """
 
-    def __init__(  # noqa: PLR0913
-        self,
-        *,
-        function: Callable,
-        leaf_name: str,
-        start_date: datetime.date,
-        end_date: datetime.date,
-        params_key_for_rounding: str | None,
-        skip_vectorization: bool | None,
-    ):
-        self.skip_vectorization: bool = skip_vectorization
+    params_key_for_rounding: str | None = None
+    skip_vectorization: bool = True
+
+    def __post_init__(self):
         self.function = (
-            function if self.skip_vectorization else _vectorize_func(function)
+            self.function if self.skip_vectorization else _vectorize_func(self.function)
         )
-        self.leaf_name: str = leaf_name if leaf_name else function.__name__
-        self.start_date: datetime.date = start_date
-        self.end_date: datetime.date = end_date
-        self.params_key_for_rounding: str | None = params_key_for_rounding
+        self.leaf_name = self.leaf_name if self.leaf_name else self.function.__name__
 
         # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = function.__annotations__
-        self.__module__ = function.__module__
-        self.__name__ = function.__name__
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
 
     def __call__(self, *args, **kwargs):
@@ -184,15 +192,15 @@ def _vectorize_func(func: Callable) -> Callable:
     return wrapper_vectorize_func
 
 
-class PolicyInput(Callable):
+@dataclass
+class PolicyInput(TTSIMObject):
     """
-    ...
+    A dummy function representing an input variable.
 
     Parameters
     ----------
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
+        The dummy function. Only the return annotation is used.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -201,29 +209,14 @@ class PolicyInput(Callable):
         The key in the params dictionary that should be used for rounding.
     """
 
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        start_date: datetime.date,
-        end_date: datetime.date,
-        params_key_for_rounding: str | None,
-    ):
-        self.function = (
-            function if self.skip_vectorization else _vectorize_func(function)
-        )
-        self.start_date: datetime.date = start_date
-        self.end_date: datetime.date = end_date
-        self.params_key_for_rounding: str | None = params_key_for_rounding
+    params_key_for_rounding: str | None
 
+    def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = function.__annotations__
-        self.__module__ = function.__module__
-        self.__name__ = function.__name__
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
-
-    def __call__(self, *args, **kwargs):
-        return self.function(*args, **kwargs)
 
     @property
     def original_function_name(self) -> str:
@@ -294,22 +287,25 @@ class GroupByFunction(TTSIMFunction):
     Parameters
     ----------
     function:
-        The group_by function.
+        The function to wrap. Argument values of the `@policy_function` are reused
+        unless explicitly overwritten.
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
     """
 
-    def __init__(
+    def __post_init__(
         self,
-        *,
-        function: Callable,
-        leaf_name: str | None = None,
     ):
-        self.function = function
-        self.leaf_name = leaf_name if leaf_name else function.__name__
+        self.leaf_name = self.leaf_name if self.leaf_name else self.function.__name__
 
         # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = function.__annotations__
-        self.__module__ = function.__module__
-        self.__name__ = function.__name__
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
 
     def __call__(self, *args, **kwargs):
@@ -332,6 +328,7 @@ def group_by_function() -> GroupByFunction:
     return decorator
 
 
+@dataclass
 class DerivedAggregationFunction(PolicyFunction):
     """
     A function that is an aggregation of another function.
@@ -341,38 +338,33 @@ class DerivedAggregationFunction(PolicyFunction):
     function:
         The function to wrap. Argument values of the `@policy_function` are reused
         unless explicitly overwritten.
-    aggregation_target:
-        The qualified name of the aggregation target.
-    source_function:
-        The function from which the new function is derived.
     source:
         The name of the source function or data column.
+    aggregation_target:
+        The qualified name of the aggregation target.
     aggregation_method:
         The method of aggregation used.
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    params_key_for_rounding:
+        The key in the params dictionary that should be used for rounding.
+    skip_vectorization:
+        Whether the function should be vectorized.
     """
 
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        source_function: TTSIMFunction,
-        source: str,
-        aggregation_target: str,
-        aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-    ):
-        super().__init__(
-            function=function,
-            leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
-            start_date=source_function.start_date if source_function else None,
-            end_date=source_function.end_date if source_function else None,
-            params_key_for_rounding=None,
-            skip_vectorization=True,
-        )
+    source: str
+    aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"]
+    aggregation_target: str
 
-        self.source = source
-        self.aggregation_method = aggregation_method
+    def __post_init__(self):
+        self.leaf_name = dt.tree_path_from_qual_name(self.aggregation_target)[-1]
 
 
+@dataclass
 class DerivedTimeConversionFunction(PolicyFunction):
     """
     A function that is a time conversion of another function.
@@ -382,29 +374,27 @@ class DerivedTimeConversionFunction(PolicyFunction):
     function:
         The function to wrap. Argument values of the `@policy_function` are reused
         unless explicitly overwritten.
-    source_function:
-        The function from which the new function is derived.
+    function:
+        The function to wrap. Argument values of the `@policy_function` are reused
+        unless explicitly overwritten.
     source:
         The name of the source function or data column.
     conversion_target:
         The qualified name of the conversion target.
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    params_key_for_rounding:
+        The key in the params dictionary that should be used for rounding.
+    skip_vectorization:
+        Whether the function should be vectorized.
     """
 
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        source_function: TTSIMFunction,
-        source: str,
-        conversion_target: str,
-    ):
-        super().__init__(
-            function=function,
-            leaf_name=dt.tree_path_from_qual_name(conversion_target)[-1],
-            start_date=source_function.start_date if source_function else None,
-            end_date=source_function.end_date if source_function else None,
-            params_key_for_rounding=None,
-            skip_vectorization=True,
-        )
+    source: str
+    conversion_target: str
 
-        self.source = source
+    def __post_init__(self):
+        self.leaf_name = dt.tree_path_from_qual_name(self.conversion_target)[-1]
