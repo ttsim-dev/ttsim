@@ -1,8 +1,8 @@
 from ttsim import policy_function
-from ttsim.rounding import RoundingDirection, RoundingSpec
+from ttsim.rounding import RoundingSpec
 
 
-@policy_function(rounding_spec=RoundingSpec(base=1, direction=RoundingDirection.DOWN))
+@policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))
 def amount_m(
     gross_wage_m: float,
     payroll_tax__amount_m: float,
