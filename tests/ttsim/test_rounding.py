@@ -9,60 +9,88 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.function_types import policy_function
 from ttsim.policy_environment import PolicyEnvironment
+from ttsim.rounding import RoundingDirection, RoundingSpec
 
 rounding_specs_and_exp_results = [
-    (1, "up", None, [100.24, 100.78], [101.0, 101.0]),
-    (1, "down", None, [100.24, 100.78], [100.0, 100.0]),
-    (1, "nearest", None, [100.24, 100.78], [100.0, 101.0]),
-    (5, "up", None, [100.24, 100.78], [105.0, 105.0]),
-    (0.1, "down", None, [100.24, 100.78], [100.2, 100.7]),
-    (0.001, "nearest", None, [100.24, 100.78], [100.24, 100.78]),
-    (1, "up", 10, [100.24, 100.78], [111.0, 111.0]),
-    (1, "down", 10, [100.24, 100.78], [110.0, 110.0]),
-    (1, "nearest", 10, [100.24, 100.78], [110.0, 111.0]),
+    (
+        RoundingSpec(base=1, direction=RoundingDirection.UP),
+        [100.24, 100.78],
+        [101.0, 101.0],
+    ),
+    (
+        RoundingSpec(base=1, direction=RoundingDirection.DOWN),
+        [100.24, 100.78],
+        [100.0, 100.0],
+    ),
+    (
+        RoundingSpec(base=1, direction=RoundingDirection.NEAREST),
+        [100.24, 100.78],
+        [100.0, 101.0],
+    ),
+    (
+        RoundingSpec(base=5, direction=RoundingDirection.UP),
+        [100.24, 100.78],
+        [105.0, 105.0],
+    ),
+    (
+        RoundingSpec(base=0.1, direction=RoundingDirection.DOWN),
+        [100.24, 100.78],
+        [100.2, 100.7],
+    ),
+    (
+        RoundingSpec(base=0.001, direction=RoundingDirection.NEAREST),
+        [100.24, 100.78],
+        [100.24, 100.78],
+    ),
+    (
+        RoundingSpec(base=1, direction=RoundingDirection.UP, to_add_after_rounding=10),
+        [100.24, 100.78],
+        [111.0, 111.0],
+    ),
+    (
+        RoundingSpec(
+            base=1, direction=RoundingDirection.DOWN, to_add_after_rounding=10
+        ),
+        [100.24, 100.78],
+        [110.0, 110.0],
+    ),
+    (
+        RoundingSpec(
+            base=1, direction=RoundingDirection.NEAREST, to_add_after_rounding=10
+        ),
+        [100.24, 100.78],
+        [110.0, 111.0],
+    ),
 ]
 
 
 def test_decorator():
-    @policy_function(params_key_for_rounding="params_key_test")
+    rs = RoundingSpec(base=1, direction=RoundingDirection.UP)
+
+    @policy_function(rounding_spec=rs)
     def test_func():
         return 0
 
-    assert test_func.params_key_for_rounding == "params_key_test"
+    assert test_func.rounding_spec == rs
 
 
-@pytest.mark.parametrize(
-    "rounding_specs",
-    [
-        {},
-        {"params_key_test": {}},
-        {"params_key_test": {"rounding": {}}},
-        {"params_key_test": {"rounding": {"test_func": {}}}},
-    ],
-)
-def test_no_rounding_specs(rounding_specs):
+def test_malformed_rounding_specs():
     with pytest.raises(KeyError):
 
-        @policy_function(params_key_for_rounding="params_key_test")
+        @policy_function(rounding_spec={"base": 1, "direction": "up"})
         def test_func():
             return 0
 
-        environment = PolicyEnvironment({"test_func": test_func}, rounding_specs)
-
-        compute_taxes_and_transfers(
-            data_tree={"p_id": pd.Series([1, 2])},
-            environment=environment,
-            targets_tree={"test_func": None},
-        )
+        PolicyEnvironment({"test_func": test_func})
 
 
 @pytest.mark.parametrize(
     "base, direction, to_add_after_rounding",
     [
         (1, "upper", 0),
-        ("0.1", "down", 0),
+        ("0.1", RoundingDirection.DOWN, 0),
         (5, "closest", 0),
-        (5, "up", "0"),
+        (5, RoundingDirection.UP, "0"),
     ],
 )
 def test_rounding_specs_wrong_format(base, direction, to_add_after_rounding):
@@ -276,4 +304,52 @@ def test_raise_if_missing_rounding_spec(params, match):
         _add_rounding_to_functions(
             functions={"eink_st_func": eink_st_func},
             params=params,
+        )
+
+
+@pytest.mark.parametrize(
+    "base, direction, to_add_after_rounding, input_values, exp_output",
+    rounding_specs_and_exp_results,
+)
+def test_rounding_spec(
+    base, direction, to_add_after_rounding, input_values, exp_output
+):
+    """Test RoundingSpec directly."""
+
+    def test_func(income):
+        return income
+
+    to_add = to_add_after_rounding if to_add_after_rounding is not None else 0
+    rounding_spec = RoundingSpec(
+        base=base,
+        direction=direction,
+        to_add_after_rounding=to_add,
+    )
+
+    rounded_func = rounding_spec.apply_rounding(test_func)
+    result = rounded_func(pd.Series(input_values))
+
+    assert_series_equal(
+        pd.Series(result),
+        pd.Series(exp_output),
+        check_names=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "base, direction, to_add_after_rounding",
+    [
+        (1, "upper", 0),
+        ("0.1", RoundingDirection.DOWN, 0),
+        (5, "closest", 0),
+        (5, RoundingDirection.UP, "0"),
+    ],
+)
+def test_rounding_spec_validation(base, direction, to_add_after_rounding):
+    """Test validation of RoundingSpec parameters."""
+    with pytest.raises(ValueError):
+        RoundingSpec(
+            base=base,
+            direction=direction,
+            to_add_after_rounding=to_add_after_rounding,
         )
