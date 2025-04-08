@@ -1,7 +1,7 @@
 """Eligibility for housing benefits.
 
 Policy regime until 2019:
-    - Requirement is fulfilled if income of spouses is below subsitence income
+    - Requirement is fulfilled if income of spouses is below subsistence income
     - Subsistence income is calculated per spouse
 
 Policy regime starting in 2020:
@@ -12,7 +12,7 @@ Policy regime starting in 2020:
 from ttsim import AggregateByGroupSpec, policy_function
 
 aggregation_specs = {
-    "number_children_fam": AggregateByGroupSpec(
+    "number_of_children_fam": AggregateByGroupSpec(
         source="child",
         aggr="sum",
     ),
@@ -22,32 +22,36 @@ aggregation_specs = {
 @policy_function(end_date="2019-12-31", leaf_name="requirement_fulfilled_fam")
 def requirement_fulfilled_fam_not_considering_children(
     housing_benefits__income__amount_m_sp: float,
-    subsistence_income_per_spouse_m: float,
-    number_individuals_sp: int,
+    number_of_individuals_sp: int,
+    housing_benefits_params: dict,
 ) -> bool:
     return (
         housing_benefits__income__amount_m_sp
-        < subsistence_income_per_spouse_m * number_individuals_sp
+        < housing_benefits_params["subsistence_income_per_spouse_m"]
+        * number_of_individuals_sp
     )
 
 
 @policy_function(start_date="2020-01-01", leaf_name="requirement_fulfilled_fam")
 def requirement_fulfilled_fam_considering_children(
     housing_benefits__income__amount_m_fam: float,
-    subsistence_income_per_spouse: float,
-    subsistence_income_per_child: float,
+    housing_benefits_params: dict,
     number_of_children_considered: int,
-    number_individuals_sp: int,
+    number_of_individuals_sp: int,
 ) -> bool:
     return housing_benefits__income__amount_m_fam < (
-        subsistence_income_per_spouse * number_individuals_sp
-        + subsistence_income_per_child * number_of_children_considered
+        housing_benefits_params["subsistence_income_per_spouse"]
+        * number_of_individuals_sp
+        + housing_benefits_params["subsistence_income_per_child"]
+        * number_of_children_considered
     )
 
 
 @policy_function(start_date="2020-01-01")
 def number_of_children_considered(
-    number_children_fam: int,
-    max_number_of_children: int,
+    number_of_children_fam: int,
+    housing_benefits_params: dict,
 ) -> int:
-    return min(number_children_fam, max_number_of_children)
+    return min(
+        number_of_children_fam, housing_benefits_params["max_number_of_children"]
+    )

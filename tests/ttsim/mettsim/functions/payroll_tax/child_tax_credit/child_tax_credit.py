@@ -12,10 +12,10 @@ aggregation_specs = {
 @policy_function()
 def claim_of_child_y(
     child_eligible: bool,
-    child_amount_y: float,
+    payroll_tax_params: dict,
 ) -> float:
     if child_eligible:
-        return child_amount_y
+        return payroll_tax_params["child_tax_credit"]
     else:
         return 0
 
@@ -23,10 +23,10 @@ def claim_of_child_y(
 @policy_function()
 def child_eligible(
     age: int,
-    max_age: int,
+    payroll_tax_params: dict,
     child_in_same_household_as_recipient: float,
 ) -> bool:
-    return age <= max_age and child_in_same_household_as_recipient
+    return age <= payroll_tax_params["max_age"] and child_in_same_household_as_recipient
 
 
 @policy_function(skip_vectorization=True)
