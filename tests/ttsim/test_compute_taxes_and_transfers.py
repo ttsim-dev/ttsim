@@ -7,12 +7,9 @@ import numpy
 import pandas as pd
 import pytest
 
-from _gettsim.arbeitslosengeld_2.group_by_ids import bg_id
-from _gettsim.config import FOREIGN_KEYS
-from _gettsim.wohngeld.group_by_ids import (
-    wthh_id,
-)
 from gettsim import FunctionsAndColumnsOverlapWarning
+from tests.ttsim.mettsim.config import FOREIGN_KEYS
+from tests.ttsim.mettsim.functions.payroll_tax.group_by_ids import fam_id, sp_id
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from ttsim.compute_taxes_and_transfers import (
     _convert_data_to_correct_types,
@@ -628,12 +625,12 @@ def test_fail_if_cannot_be_converted_to_internal_type(
     "data, functions_overridden",
     [
         (
-            {"bg_id": pd.Series([1, 2, 3])},
-            {"bg_id": bg_id},
+            {"sp_id": pd.Series([1, 2, 3])},
+            {"sp_id": sp_id},
         ),
         (
-            {"wthh_id": pd.Series([1, 2, 3])},
-            {"wthh_id": wthh_id},
+            {"fam_id": pd.Series([1, 2, 3])},
+            {"fam_id": fam_id},
         ),
     ],
 )
@@ -652,29 +649,27 @@ def test_provide_endogenous_groupings(data, functions_overridden):
             "- hh_id: Conversion from input type float64 to int",
         ),
         (
-            {"wohnort_ost": pd.Series([1.1, 0.0, 1.0])},
+            {"gondorian": pd.Series([1.1, 0.0, 1.0])},
             {},
-            "- wohnort_ost: Conversion from input type float64 to bool",
+            "- gondorian: Conversion from input type float64 to bool",
         ),
         (
             {
                 "hh_id": pd.Series([1.0, 2.0, 3.0]),
-                "wohnort_ost": pd.Series([2, 0, 1]),
+                "gondorian": pd.Series([2, 0, 1]),
             },
             {},
-            "- wohnort_ost: Conversion from input type int64 to bool",
+            "- gondorian: Conversion from input type int64 to bool",
         ),
         (
-            {"wohnort_ost": pd.Series(["True", "False"])},
+            {"gondorian": pd.Series(["True", "False"])},
             {},
-            "- wohnort_ost: Conversion from input type object to bool",
+            "- gondorian: Conversion from input type object to bool",
         ),
         (
             {
                 "hh_id": pd.Series([1, "1", 2]),
-                "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": pd.Series(  # noqa: E501
-                    ["2000", 3000, 4000]
-                ),
+                "payroll_tax__amount": pd.Series(["2000", 3000, 4000]),
             },
             {},
             "- hh_id: Conversion from input type object to int failed.",
