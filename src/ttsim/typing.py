@@ -24,9 +24,7 @@ if TYPE_CHECKING:
     )
 
     from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-    from ttsim.function_types import (
-        TTSIMFunction,
-    )
+    from ttsim.function_types import TTSIMFunction
 
     # Specialise from dags' GenericCallable types to GETTSIM's functions.
     NestedFunctionDict = Mapping[str, TTSIMFunction | "NestedFunctionDict"]

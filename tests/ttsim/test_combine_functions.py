@@ -1,3 +1,4 @@
+import datetime
 import inspect
 
 import pandas as pd
@@ -142,6 +143,10 @@ def test_create_aggregate_by_group_functions(
     )
 
 
+START_DATE = datetime.date.fromisoformat("1900-01-01")
+END_DATE = datetime.date.fromisoformat("2100-12-31")
+
+
 @pytest.mark.parametrize(
     (
         "functions",
@@ -158,6 +163,8 @@ def test_create_aggregate_by_group_functions(
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="count",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
             {},
@@ -171,6 +178,8 @@ def test_create_aggregate_by_group_functions(
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
             {"x": int},
@@ -184,6 +193,8 @@ def test_create_aggregate_by_group_functions(
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
             {"x": float},
@@ -197,6 +208,8 @@ def test_create_aggregate_by_group_functions(
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
             {"x": bool},
@@ -210,6 +223,8 @@ def test_create_aggregate_by_group_functions(
                     source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
             {},
@@ -223,6 +238,8 @@ def test_create_aggregate_by_group_functions(
                     source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
             {},
@@ -236,6 +253,8 @@ def test_create_aggregate_by_group_functions(
                     source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
             {},

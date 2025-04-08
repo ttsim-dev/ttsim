@@ -65,7 +65,7 @@ class PolicyFunction(TTSIMFunction):
     """
 
     params_key_for_rounding: str | None = None
-    skip_vectorization: bool = True
+    skip_vectorization: bool = False
 
     def __post_init__(self):
         self.function = (
@@ -209,7 +209,7 @@ class PolicyInput(TTSIMObject):
         The key in the params dictionary that should be used for rounding.
     """
 
-    params_key_for_rounding: str | None
+    params_key_for_rounding: str | None = None
 
     def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
@@ -317,13 +317,17 @@ class GroupByFunction(TTSIMFunction):
         return set(inspect.signature(self).parameters)
 
 
-def group_by_function() -> GroupByFunction:
+def group_by_function(
+    *,
+    start_date: str | datetime.date = "1900-01-01",
+    end_date: str | datetime.date = "2100-12-31",
+) -> GroupByFunction:
     """
     Decorator that creates a group_by function from a function.
     """
 
     def decorator(func: Callable) -> GroupByFunction:
-        return GroupByFunction(function=func)
+        return GroupByFunction(function=func, start_date=start_date, end_date=end_date)
 
     return decorator
 
@@ -356,11 +360,20 @@ class DerivedAggregationFunction(PolicyFunction):
         Whether the function should be vectorized.
     """
 
-    source: str
-    aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"]
-    aggregation_target: str
+    source: str | None = None
+    aggregation_method: (
+        Literal["count", "sum", "mean", "min", "max", "any", "all"] | None
+    ) = None
+    aggregation_target: str | None = None
 
     def __post_init__(self):
+        if self.source is None:
+            raise ValueError("The source must be specified.")
+        if self.aggregation_method is None:
+            raise ValueError("The aggregation method must be specified.")
+        if self.aggregation_target is None:
+            raise ValueError("The aggregation target must be specified.")
+
         self.leaf_name = dt.tree_path_from_qual_name(self.aggregation_target)[-1]
 
 
@@ -393,8 +406,13 @@ class DerivedTimeConversionFunction(PolicyFunction):
         Whether the function should be vectorized.
     """
 
-    source: str
-    conversion_target: str
+    source: str | None = None
+    conversion_target: str | None = None
 
     def __post_init__(self):
+        if self.source is None:
+            raise ValueError("The source must be specified.")
+        if self.conversion_target is None:
+            raise ValueError("The conversion target must be specified.")
+
         self.leaf_name = dt.tree_path_from_qual_name(self.conversion_target)[-1]

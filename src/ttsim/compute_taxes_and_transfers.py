@@ -21,9 +21,9 @@ from ttsim.combine_functions import (
 from ttsim.config import numpy_or_jax as np
 from ttsim.function_types import (
     DerivedAggregationFunction,
-    DerivedTimeConversionFunction,
     GroupByFunction,
     PolicyFunction,
+    TTSIMFunction,
 )
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
@@ -752,10 +752,7 @@ def _fail_if_root_nodes_are_missing(
 
 
 def _func_depends_on_parameters_only(
-    func: PolicyFunction
-    | DerivedAggregationFunction
-    | DerivedTimeConversionFunction
-    | GroupByFunction,
+    func: TTSIMFunction,
 ) -> bool:
     """Check if a function depends on parameters only."""
     return (

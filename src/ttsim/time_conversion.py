@@ -484,8 +484,9 @@ def _create_time_conversion_functions(
                     _time_conversion_functions[f"{time_unit}_to_{missing_time_unit}"],
                 ),
                 source=name,
-                source_function=func,
                 conversion_target=new_name,
+                start_date=func.start_date,
+                end_date=func.end_date,
             )
 
     return result

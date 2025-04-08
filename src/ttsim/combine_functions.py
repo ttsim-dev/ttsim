@@ -438,12 +438,15 @@ def _create_one_aggregate_by_group_func(
         else None
     )
 
+    source_function = functions[qual_name_source]
+
     return DerivedAggregationFunction(
         function=wrapped_func,
         source=qual_name_source,
-        source_function=functions.get(qual_name_source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
+        start_date=source_function.start_date,
+        end_date=source_function.end_date,
     )
 
 
@@ -546,12 +549,15 @@ def _create_one_aggregate_by_p_id_func(
         else None
     )
 
+    source_function = functions[qual_name_source]
+
     return DerivedAggregationFunction(
         function=wrapped_func,
         source=qual_name_source,
-        source_function=functions.get(qual_name_source, None),
         aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
+        start_date=source_function.start_date,
+        end_date=source_function.end_date,
     )
 
 
