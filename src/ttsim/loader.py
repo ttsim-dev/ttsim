@@ -7,7 +7,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from _gettsim.config import RESOURCE_DIR
-from ttsim.function_types import GroupByFunction, PolicyFunction, TTSIMFunction
+from ttsim.function_types import TTSIMFunction
 from ttsim.shared import (
     create_tree_from_path_and_value,
     insert_path_and_value,
@@ -84,32 +84,26 @@ def get_active_functions_tree_from_module(
 
     all_functions_in_module = inspect.getmembers(module)
 
-    policy_functions = [
-        func for _, func in all_functions_in_module if isinstance(func, PolicyFunction)
+    ttsim_functions = [
+        func for _, func in all_functions_in_module if isinstance(func, TTSIMFunction)
     ]
 
-    _fail_if_multiple_policy_functions_are_active_at_the_same_time(
-        policy_functions, module_name
+    _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
+        ttsim_functions, module_name
     )
 
-    active_policy_functions = {
-        func.leaf_name: func for func in policy_functions if func.is_active(date)
-    }
-
-    group_by_functions = {
-        func.leaf_name: func
-        for _, func in all_functions_in_module
-        if isinstance(func, GroupByFunction)
+    active_ttsim_functions = {
+        func.leaf_name: func for func in ttsim_functions if func.is_active(date)
     }
 
     return create_tree_from_path_and_value(
         path=_convert_path_to_tree_path(path=path, root_path=root_path),
-        value={**active_policy_functions, **group_by_functions},
+        value=active_ttsim_functions,
     )
 
 
-def _fail_if_multiple_policy_functions_are_active_at_the_same_time(
-    policy_functions: list[PolicyFunction],
+def _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
+    ttsim_functions: list[TTSIMFunction],
     module_name: str,
 ) -> None:
     """Raises an ConflictingTimeDependentFunctionsError if multiple functions with the
@@ -117,10 +111,10 @@ def _fail_if_multiple_policy_functions_are_active_at_the_same_time(
 
     Parameters
     ----------
-    policy_functions
-        List of PolicyFunctions to check for conflicts.
+    ttsim_functions
+        List of TTSIMFunctions to check for conflicts.
     module_name
-        The name of the module from which the PolicyFunctions are extracted.
+        The name of the module from which the TTSIMFunctions are extracted.
 
     Raises
     ------
@@ -129,7 +123,7 @@ def _fail_if_multiple_policy_functions_are_active_at_the_same_time(
     """
     # Create mapping from leaf names to functions.
     leaf_names_to_funcs = {}
-    for func in policy_functions:
+    for func in ttsim_functions:
         if func.leaf_name in leaf_names_to_funcs:
             leaf_names_to_funcs[func.leaf_name].append(func)
         else:
@@ -152,13 +146,13 @@ def _fail_if_multiple_policy_functions_are_active_at_the_same_time(
 class ConflictingTimeDependentFunctionsError(Exception):
     def __init__(
         self,
-        affected_policy_functions: list[PolicyFunction],
+        affected_ttsim_functions: list[TTSIMFunction],
         leaf_name: str,
         module_name: str,
         overlap_start: datetime.date,
         overlap_end: datetime.date,
     ):
-        self.affected_policy_functions = affected_policy_functions
+        self.affected_ttsim_functions = affected_ttsim_functions
         self.leaf_name = leaf_name
         self.module_name = module_name
         self.overlap_start = overlap_start
@@ -166,7 +160,7 @@ class ConflictingTimeDependentFunctionsError(Exception):
 
     def __str__(self):
         overlapping_functions = [
-            func.original_function_name for func in self.affected_policy_functions
+            func.original_function_name for func in self.affected_ttsim_functions
         ]
         return f"""
         Functions with leaf name {self.leaf_name} in module {self.module_name} have

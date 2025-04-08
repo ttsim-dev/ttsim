@@ -5,7 +5,7 @@ import pytest
 from ttsim.function_types import policy_function
 from ttsim.loader import (
     ConflictingTimeDependentFunctionsError,
-    _fail_if_multiple_policy_functions_are_active_at_the_same_time,
+    _fail_if_multiple_ttsim_functions_are_active_at_the_same_time,
 )
 
 # Start date -----------------------------------------------
@@ -153,7 +153,7 @@ def test_dates_active_empty_interval():
     ],
 )
 def test_dates_active_no_conflicts(functions):
-    _fail_if_multiple_policy_functions_are_active_at_the_same_time(
+    _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
         policy_functions=functions, module_name=""
     )
 
@@ -201,6 +201,6 @@ def test_dates_active_no_conflicts(functions):
 )
 def test_dates_active_with_conflicts(functions):
     with pytest.raises(ConflictingTimeDependentFunctionsError):
-        _fail_if_multiple_policy_functions_are_active_at_the_same_time(
+        _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
             policy_functions=functions, module_name=""
         )
