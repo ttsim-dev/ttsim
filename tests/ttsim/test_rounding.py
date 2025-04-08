@@ -1,19 +1,13 @@
-import datetime
-
-import dags.tree as dt
 import pandas as pd
 import pytest
-import yaml
 from pandas._testing import assert_series_equal
 
-from _gettsim.config import INTERNAL_PARAMS_GROUPS, RESOURCE_DIR
 from ttsim.compute_taxes_and_transfers import (
     _add_rounding_to_functions,
     _apply_rounding_spec,
     compute_taxes_and_transfers,
 )
 from ttsim.function_types import policy_function
-from ttsim.loader import load_functions_tree_for_date
 from ttsim.policy_environment import PolicyEnvironment
 
 rounding_specs_and_exp_results = [
@@ -259,66 +253,6 @@ def test_rounding_callable(
         pd.Series(exp_output),
         check_names=False,
     )
-
-
-@pytest.mark.xfail(reason="Not able to load functions regardless of date any more.")
-def test_decorator_for_all_functions_with_rounding_spec():
-    """Check if all functions for which rounding parameters are specified have an
-    attribute which indicates rounding."""
-
-    # Find all functions for which rounding parameters are specified
-    params_dict = {
-        group: yaml.safe_load(
-            (RESOURCE_DIR / "parameters" / f"{group}.yaml").read_text(encoding="utf-8")
-        )
-        for group in INTERNAL_PARAMS_GROUPS
-    }
-    params_keys_with_rounding_spec = [
-        k for k in params_dict if "rounding" in params_dict[k]
-    ]
-    function_names_with_rounding_spec = [
-        fn for k in params_keys_with_rounding_spec for fn in params_dict[k]["rounding"]
-    ]
-
-    # Load mapping of time dependent functions. This will be much nicer after #334 is
-    # addressed.
-    time_dependent_functions = {}
-    for year in range(1990, 2023):
-        year_functions = dt.flatten_to_tree_paths(
-            load_functions_tree_for_date(datetime.date(year=year, month=1, day=1))
-        ).values()
-        function_name_to_leaf_name_dict = {
-            func.function.__name__: func.leaf_name for func in year_functions
-        }
-        time_dependent_functions = {
-            **time_dependent_functions,
-            **function_name_to_leaf_name_dict,
-        }
-
-    # Add time dependent functions for which rounding specs for new name exist
-    # and remove new name from list
-    function_names_to_check = function_names_with_rounding_spec + [
-        k
-        for k, v in time_dependent_functions.items()
-        if v in function_names_with_rounding_spec
-    ]
-    function_names_to_check = [
-        fn
-        for fn in function_names_to_check
-        if fn not in time_dependent_functions.values()
-    ]
-
-    functions_to_check = [
-        f
-        for f in _load_internal_functions()  # noqa: F821
-        if f.original_function_name in function_names_to_check
-    ]
-
-    for f in functions_to_check:
-        assert f.params_key_for_rounding, (
-            f"For the function {f.original_function_name}, rounding parameters are"
-            f" specified. However, its `params_key_for_rounding` attribute is not set."
-        )
 
 
 @pytest.mark.parametrize(

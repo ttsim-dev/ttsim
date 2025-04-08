@@ -3,3 +3,7 @@
 TTSIM specification for testing purposes. Taxes and transfer names follow a law-to-code
 approach based on the Gondorian tax code.
 """
+
+from pathlib import Path
+
+METTSIM_RESSOURCE_DIR = Path(__file__).parent / "mettsim" / "functions"
