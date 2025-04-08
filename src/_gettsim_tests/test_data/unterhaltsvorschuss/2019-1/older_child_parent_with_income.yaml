@@ -1,35 +1,16 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - true
-      - false
-      - false
     alter:
       - 45
       - 11
       - 14
-    hh_id:
-      - 4
-      - 4
-      - 4
-    p_id:
-      - 39
-      - 41
-      - 43
-    familie__p_id_elternteil_1:
-      - -1
-      - 39
-      - 39
-    familie__p_id_elternteil_2:
+    arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
       - -1
@@ -53,6 +34,22 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - true
+      - false
+      - false
+    familie__p_id_elternteil_1:
+      - -1
+      - 39
+      - 39
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+    hh_id:
+      - 4
+      - 4
+      - 4
     jahr:
       - 2019
       - 2019
@@ -65,6 +62,10 @@ inputs:
       - 1
       - 1
       - 1
+    p_id:
+      - 39
+      - 41
+      - 43
     sozialversicherung__arbeitslosen__betrag_m:
       - 0.0
       - 0.0

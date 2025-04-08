@@ -1,10 +1,19 @@
 ---
 info:
   note: Multiple households with mutliple Bedarfsgemeinschaften.
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 53
+      - 53
+      - 53
+      - 53
+      - 23
+      - 23
+      - 13
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -21,14 +30,38 @@ inputs:
       - -1
       - -1
       - -1
-    alter:
-      - 53
-      - 53
-      - 53
-      - 53
-      - 23
-      - 23
-      - 13
+    einkommensteuer__gemeinsam_veranlagt:
+      - true
+      - true
+      - true
+      - true
+      - false
+      - false
+      - false
+    familie__p_id_ehepartner:
+      - 1
+      - 0
+      - 3
+      - 2
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - -1
+      - -1
+      - 0
+      - 0
+      - 0
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - -1
+      - 1
+      - 1
+      - -1
     geburtsjahr:
       - 1970
       - 1970
@@ -69,38 +102,6 @@ inputs:
       - 4
       - 5
       - 6
-    familie__p_id_ehepartner:
-      - 1
-      - 0
-      - 3
-      - 2
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - -1
-      - -1
-      - 0
-      - 0
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - -1
-      - 1
-      - 1
-      - -1
-    einkommensteuer__gemeinsam_veranlagt:
-      - true
-      - true
-      - true
-      - true
-      - false
-      - false
-      - false
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
       - false
       - false

@@ -1,28 +1,11 @@
 ---
 info:
   note: No wealth threshold in place before 2009
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 23
-      - 22
-      - -1
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-      - false
     alter:
       - 42
       - 53
@@ -35,72 +18,24 @@ inputs:
       - 5
       - 5
       - 5
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 23
+      - 22
+      - -1
+      - -1
+      - -1
     behinderungsgrad:
       - 0
       - 0
       - 0
       - 0
       - 0
-    geburtsjahr:
-      - 1964
-      - 1953
-      - 1999
-      - 1998
-      - 1994
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    hh_id:
-      - 4
-      - 4
-      - 4
-      - 4
-      - 4
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-      - true
-    p_id:
-      - 22
-      - 23
-      - 24
-      - 25
-      - 26
-    familie__p_id_ehepartner:
-      - 23
-      - 22
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 22
-      - 22
-      - 22
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 23
-      - 23
-      - 23
-    vermögen:
-      - 200000.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 0.0
       - 0.0
@@ -155,6 +90,60 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 23
+      - 22
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 22
+      - 22
+      - 22
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 23
+      - 23
+      - 23
+    geburtsjahr:
+      - 1964
+      - 1953
+      - 1999
+      - 1998
+      - 1994
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 4
+      - 4
+      - 4
+      - 4
+      - 4
     jahr:
       - 2006
       - 2006
@@ -173,6 +162,12 @@ inputs:
       - 22
       - 22
       - 22
+    p_id:
+      - 22
+      - 23
+      - 24
+      - 25
+      - 26
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -223,6 +218,12 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
+      - 200000.0
       - 0.0
       - 0.0
       - 0.0

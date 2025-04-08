@@ -1,80 +1,26 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - true
     alter:
       - 1
       - 0
       - 0
       - 43
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
+      - -1
+      - -1
+      - -1
     arbeitsstunden_w:
       - 0.0
       - 0.0
       - 0.0
       - 0.0
-    geburtsjahr:
-      - 2017
-      - 2018
-      - 2018
-      - 1982
-    geburtsmonat:
-      - 2
-      - 10
-      - 10
-      - 2
-    geburtstag:
-      - 12
-      - 12
-      - 12
-      - 13
-    hh_id:
-      - 8
-      - 8
-      - 8
-      - 8
-    familie__kind:
-      - true
-      - true
-      - true
-      - false
-    p_id:
-      - 25
-      - 26
-      - 27
-      - 28
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - 28
-      - 28
-      - 28
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - -1
-    wohnort_ost:
-      - false
-      - false
-      - false
-      - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 0.0
       - 0.0
@@ -105,6 +51,51 @@ inputs:
       - 0.0
       - 0.0
       - 5760.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - true
+    familie__kind:
+      - true
+      - true
+      - true
+      - false
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - 28
+      - 28
+      - 28
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - -1
+    geburtsjahr:
+      - 2017
+      - 2018
+      - 2018
+      - 1982
+    geburtsmonat:
+      - 2
+      - 10
+      - 10
+      - 2
+    geburtstag:
+      - 12
+      - 12
+      - 12
+      - 13
+    hh_id:
+      - 8
+      - 8
+      - 8
+      - 8
     jahr:
       - 2019
       - 2019
@@ -120,11 +111,21 @@ inputs:
       - 1
       - 1
       - 1
+    p_id:
+      - 25
+      - 26
+      - 27
+      - 28
     sozialversicherung__pflege__beitrag__hat_kinder:
       - false
       - false
       - false
       - true
+    wohnort_ost:
+      - false
+      - false
+      - false
+      - false
 outputs:
   elterngeld__anzahl_mehrlinge_fg:
     - 1

@@ -1,10 +1,14 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Made up.
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 40
+      - 10
     arbeitslosengeld_2__anrechnungsfreies_einkommen_m:
       - 0.0
       - 0.0
@@ -26,42 +30,36 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
-    familie__alleinerziehend:
-      - true
-      - false
-    alter:
-      - 40
-      - 10
     arbeitsstunden_w:
       - 40.0
       - 0.0
-    hh_id:
-      - 18
-      - 18
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 1000.0
+      - 0.0
+    familie__alleinerziehend:
+      - true
+      - false
     familie__kind:
       - false
       - true
-    p_id:
-      - 47
-      - 48
     familie__p_id_elternteil_1:
       - -1
       - 47
     familie__p_id_elternteil_2:
       - -1
       - -1
-    vermögen:
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 1000.0
-      - 0.0
+    hh_id:
+      - 18
+      - 18
     kindergeld__in_ausbildung:
       - false
       - false
     kindergeld__p_id_empfänger:
       - -1
       - 47
+    p_id:
+      - 47
+      - 48
     sozialversicherung__rente__altersrente__betrag_m:
       - 0.0
       - 0.0
@@ -72,6 +70,9 @@ inputs:
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:

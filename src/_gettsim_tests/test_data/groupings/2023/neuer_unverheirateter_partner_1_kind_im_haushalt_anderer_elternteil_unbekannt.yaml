@@ -1,10 +1,15 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 39
+      - 42
+      - 13
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -13,10 +18,22 @@ inputs:
       - 1
       - 0
       - -1
-    alter:
-      - 39
-      - 42
-      - 13
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 0
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 1
     geburtsjahr:
       - 1984
       - 1981
@@ -37,22 +54,6 @@ inputs:
       - 0
       - 1
       - 2
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
 outputs:
   arbeitslosengeld_2__bg_id:
     - 0
@@ -66,11 +67,11 @@ outputs:
     - 0
     - 0
     - 0
-  familie__ehe_id:
+  einkommensteuer__sn_id:
     - 0
     - 1
     - 2
-  einkommensteuer__sn_id:
+  familie__ehe_id:
     - 0
     - 1
     - 2

@@ -1,22 +1,11 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 16
-      - 15
-      - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
     alter:
       - 45
       - 46
@@ -25,50 +14,18 @@ inputs:
       - 3
       - 3
       - 3
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 16
+      - 15
+      - -1
     behinderungsgrad:
       - 0
       - 0
       - 0
-    geburtsjahr:
-      - 1971
-      - 1970
-      - 2007
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-      - 1
-    hh_id:
-      - 1
-      - 1
-      - 1
-    familie__kind:
-      - false
-      - false
-      - true
-    p_id:
-      - 15
-      - 16
-      - 17
-    familie__p_id_ehepartner:
-      - 16
-      - 15
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 15
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 16
-    vermögen:
-      - 120000.0
-      - 0.0
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 1000.0
       - 1000.0
@@ -109,6 +66,42 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+    familie__p_id_ehepartner:
+      - 16
+      - 15
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 15
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 16
+    geburtsjahr:
+      - 1971
+      - 1970
+      - 2007
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 1
+      - 1
+      - 1
     jahr:
       - 2016
       - 2016
@@ -121,6 +114,10 @@ inputs:
       - -1
       - -1
       - 15
+    p_id:
+      - 15
+      - 16
+      - 17
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -155,6 +152,10 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
+      - 120000.0
       - 0.0
       - 0.0
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
