@@ -1,7 +1,12 @@
-from ttsim import piecewise_polynomial, policy_function
+from ttsim import RoundingSpec, piecewise_polynomial, policy_function
 
 
-@policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+    ),
+    start_date="2021-01-01",
+)
 def betrag_m(basisbetrag_m: float, anzurechnendes_einkommen_m: float) -> float:
     """Calculate Grundrentenzuschlag (additional monthly pensions payments resulting
     from Grundrente)
@@ -80,7 +85,12 @@ def einkommen_m(
     return out
 
 
-@policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+    ),
+    start_date="2021-01-01",
+)
 def anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
     familie__anzahl_personen_ehe: int,
@@ -135,7 +145,12 @@ def anzurechnendes_einkommen_m(
     return out
 
 
-@policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+    ),
+    start_date="2021-01-01",
+)
 def basisbetrag_m(
     mean_entgeltpunkte_zuschlag: float,
     bewertungszeiten_monate: int,
@@ -217,7 +232,12 @@ def durchschnittliche_entgeltpunkte(
     return out
 
 
-@policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=0.0001, direction="nearest", reference="§76g SGB VI Abs. 4 Nr. 4"
+    ),
+    start_date="2021-01-01",
+)
 def höchstbetrag_m(
     grundrentenzeiten_monate: int,
     ges_rente_params: dict,
@@ -254,7 +274,12 @@ def höchstbetrag_m(
     return out
 
 
-@policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=0.0001, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+    ),
+    start_date="2021-01-01",
+)
 def mean_entgeltpunkte_zuschlag(
     durchschnittliche_entgeltpunkte: float,
     höchstbetrag_m: float,
@@ -307,7 +332,12 @@ def mean_entgeltpunkte_zuschlag(
     return out
 
 
-@policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=0.0001, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+    ),
+    start_date="2021-01-01",
+)
 def proxy_rente_vorjahr_m(  # noqa: PLR0913
     sozialversicherung__rente__bezieht_rente: bool,
     sozialversicherung__rente__private_rente_betrag_m: float,

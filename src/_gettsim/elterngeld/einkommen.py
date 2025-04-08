@@ -1,6 +1,6 @@
 """Relevant income for parental leave benefits."""
 
-from ttsim import policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function(start_date="2007-01-01")
@@ -34,7 +34,10 @@ def anzurechnendes_nettoeinkommen_m(
     )
 
 
-@policy_function(start_date="2007-01-01", params_key_for_rounding="elterngeld")
+@policy_function(
+    start_date="2007-01-01",
+    rounding_spec=RoundingSpec(base=2, direction="down", reference="§ 2 (2) BEEG"),
+)
 def lohnersatzanteil_einkommen_untere_grenze(
     nettoeinkommen_vorjahr_m: float,
     elterngeld_params: dict,
@@ -58,7 +61,10 @@ def lohnersatzanteil_einkommen_untere_grenze(
     )
 
 
-@policy_function(start_date="2007-01-01", params_key_for_rounding="elterngeld")
+@policy_function(
+    start_date="2007-01-01",
+    rounding_spec=RoundingSpec(base=2, direction="down", reference="§ 2 (2) BEEG"),
+)
 def lohnersatzanteil_einkommen_obere_grenze(
     nettoeinkommen_vorjahr_m: float,
     elterngeld_params: dict,
@@ -144,7 +150,9 @@ def einkommen_vorjahr_unter_bezugsgrenze_ohne_unterscheidung_single_paar(
     return zu_versteuerndes_einkommen_vorjahr_y_sn <= elterngeld_params["max_eink_vorj"]
 
 
-@policy_function(start_date="2006-01-01", params_key_for_rounding="elterngeld")
+@policy_function(
+    start_date="2006-01-01", rounding_spec=RoundingSpec(base=0.01, direction="down")
+)
 def nettoeinkommen_approximation_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     lohnsteuer__betrag_m: float,

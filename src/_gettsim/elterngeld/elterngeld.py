@@ -1,6 +1,11 @@
 """Parental leave benefits."""
 
-from ttsim import AggregateByGroupSpec, AggregateByPIDSpec, policy_function
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregateByPIDSpec,
+    RoundingSpec,
+    policy_function,
+)
 
 aggregation_specs = {
     "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(
@@ -35,7 +40,9 @@ aggregation_specs = {
 }
 
 
-@policy_function(start_date="2011-01-01", params_key_for_rounding="elterngeld")
+@policy_function(
+    start_date="2011-01-01", rounding_spec=RoundingSpec(base=0.01, direction="down")
+)
 def betrag_m(
     grundsätzlich_anspruchsberechtigt: bool,
     anspruchshöhe_m: float,
@@ -100,7 +107,7 @@ def basisbetrag_m(
     start_date="2007-01-01",
     end_date="2010-12-31",
     leaf_name="betrag_m",
-    params_key_for_rounding="elterngeld",
+    rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
 def elterngeld_not_implemented() -> float:
     raise NotImplementedError("Elterngeld is not implemented prior to 2011.")

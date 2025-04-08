@@ -1,9 +1,9 @@
 """Income relevant for withholding tax on earnings (Lohnsteuer)."""
 
-from ttsim import policy_function
+from ttsim import RoundingSpec, policy_function
 
 
-@policy_function(params_key_for_rounding="lohnst")
+@policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))
 def einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     steuerklasse: int,
@@ -186,7 +186,7 @@ def vorsorge_krankenv_option_a(
 @policy_function(
     start_date="2010-01-01",
     leaf_name="vorsorgepauschale_y",
-    params_key_for_rounding="lohnst",
+    rounding_spec=RoundingSpec(base=1, direction="up"),
 )
 def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
@@ -259,7 +259,6 @@ def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
     start_date="2005-01-01",
     end_date="2009-12-31",
     leaf_name="vorsorgepauschale_y",
-    params_key_for_rounding="lohnst",
 )
 def vorsorgepauschale_y_ab_2005_bis_2009() -> float:
     return 0.0
