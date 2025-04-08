@@ -1,12 +1,18 @@
 ---
 info:
-  note: >-
-    Child in separate Familiengemeinschaft if it has children (Bedarfsgemeinschaft never
+  note: Child in separate Familiengemeinschaft if it has children (Bedarfsgemeinschaft never
     covers more than 2 generations)
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 19
+      - 22
+      - 1
+      - 49
+      - 50
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -19,12 +25,30 @@ inputs:
       - -1
       - 4
       - 3
-    alter:
-      - 19
-      - 22
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+      - 4
+      - 3
+    familie__p_id_elternteil_1:
+      - 3
+      - -1
+      - 0
+      - -1
+      - -1
+    familie__p_id_elternteil_2:
+      - 4
+      - -1
       - 1
-      - 49
-      - 50
+      - -1
+      - -1
     geburtsjahr:
       - 2004
       - 2001
@@ -55,30 +79,6 @@ inputs:
       - 2
       - 3
       - 4
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-      - 4
-      - 3
-    familie__p_id_elternteil_1:
-      - 3
-      - -1
-      - 0
-      - -1
-      - -1
-    familie__p_id_elternteil_2:
-      - 4
-      - -1
-      - 1
-      - -1
-      - -1
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
-      - true
-      - true
 outputs:
   arbeitslosengeld_2__bg_id:
     - 0
@@ -98,13 +98,13 @@ outputs:
     - 0
     - 1
     - 1
-  familie__ehe_id:
+  einkommensteuer__sn_id:
     - 0
     - 1
     - 2
     - 3
     - 3
-  einkommensteuer__sn_id:
+  familie__ehe_id:
     - 0
     - 1
     - 2

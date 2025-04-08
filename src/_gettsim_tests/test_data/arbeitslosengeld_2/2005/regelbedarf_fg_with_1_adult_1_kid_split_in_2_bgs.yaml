@@ -1,11 +1,13 @@
 ---
 info:
-  note: >-
-    Test Regelsatz when Familiengemeinschaft (1 adult, 1 kid) is split into two
-    Bedarfsgemeinschaften.
+  note: Test Regelsatz when Familiengemeinschaft (1 adult, 1 kid) is split into two Bedarfsgemeinschaften.
+  precision: 0.01
   source: Made up.
 inputs:
   assumed:
+    alter:
+      - 40
+      - 10
     arbeitslosengeld_2__bg_id:
       - 0
       - 0
@@ -18,30 +20,27 @@ inputs:
     familie__alleinerziehend:
       - true
       - false
-    alter:
-      - 40
-      - 10
-    hh_id:
-      - 0
-      - 0
     familie__kind:
       - false
       - true
-    p_id:
-      - 0
-      - 1
     familie__p_id_elternteil_1:
       - -1
       - 0
     familie__p_id_elternteil_2:
       - -1
       - -1
+    hh_id:
+      - 0
+      - 0
     jahr:
       - 2005
       - 2005
     kindergeld__p_id_empfänger:
       - -1
       - 0
+    p_id:
+      - 0
+      - 1
     wohnen__bewohnt_eigentum_hh:
       - false
       - false

@@ -1,10 +1,14 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 28
+      - 1
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -23,30 +27,21 @@ inputs:
     arbeitslosengeld_2__regelbedarf_m_bg:
       - 1183.64
       - 1183.64
-    alter:
-      - 28
-      - 1
-    geburtsjahr:
-      - 1991
-      - 2018
-    hh_id:
-      - 6
-      - 6
     familie__kind:
       - false
       - true
-    p_id:
-      - 16
-      - 17
     familie__p_id_elternteil_1:
       - -1
       - 16
     familie__p_id_elternteil_2:
       - -1
       - -1
-    vermögen:
-      - 0.0
-      - 0.0
+    geburtsjahr:
+      - 1991
+      - 2018
+    hh_id:
+      - 6
+      - 6
     jahr:
       - 2019
       - 2019
@@ -56,6 +51,9 @@ inputs:
     kinderzuschlag__basisbetrag_m_bg:
       - 0.0
       - 0.0
+    p_id:
+      - 16
+      - 17
     sozialversicherung__rente__bezieht_rente:
       - false
       - false
@@ -63,6 +61,9 @@ inputs:
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
     wohngeld__anspruchshöhe_m_bg:

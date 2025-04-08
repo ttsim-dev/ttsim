@@ -1,6 +1,7 @@
 ---
 info:
   note: https://www.kindergeld.org/kindergeldrechner/
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
@@ -11,21 +12,21 @@ inputs:
     arbeitsstunden_w:
       - 40.0
       - 0.0
-    hh_id:
-      - 0
-      - 0
     familie__kind:
       - false
       - true
-    p_id:
+    hh_id:
       - 0
-      - 1
+      - 0
     kindergeld__in_ausbildung:
       - false
       - true
     kindergeld__p_id_empfänger:
       - -1
       - 0
+    p_id:
+      - 0
+      - 1
 outputs:
   arbeitslosengeld_2__kindergeld_zur_bedarfsdeckung_m:
     - 0.0

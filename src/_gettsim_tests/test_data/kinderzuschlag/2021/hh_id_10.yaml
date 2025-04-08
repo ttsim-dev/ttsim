@@ -1,10 +1,15 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 35
+      - 33
+      - 12
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -21,43 +26,7 @@ inputs:
       - 28
       - 27
       - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-    alter:
-      - 35
-      - 33
-      - 12
     arbeitsstunden_w:
-      - 0.0
-      - 0.0
-      - 0.0
-    geburtsjahr:
-      - 1986
-      - 1988
-      - 2009
-    hh_id:
-      - 10
-      - 10
-      - 10
-    familie__kind:
-      - false
-      - false
-      - true
-    p_id:
-      - 27
-      - 28
-      - 29
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 27
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 28
-    vermögen:
       - 0.0
       - 0.0
       - 0.0
@@ -69,6 +38,30 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 27
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 28
+    geburtsjahr:
+      - 1986
+      - 1988
+      - 2009
+    hh_id:
+      - 10
+      - 10
+      - 10
     jahr:
       - 2021
       - 2021
@@ -97,11 +90,19 @@ inputs:
       - 1200.0
       - 0.0
       - 0.0
+    p_id:
+      - 27
+      - 28
+      - 29
     unterhalt__tatsächlich_erhaltener_betrag_m:
       - 0.0
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
       - 0.0

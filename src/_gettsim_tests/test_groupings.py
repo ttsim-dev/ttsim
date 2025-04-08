@@ -10,7 +10,7 @@ from ttsim import compute_taxes_and_transfers
 test_data = load_policy_test_data("groupings")
 
 
-@pytest.mark.parametrize("test", test_data)
+@pytest.mark.parametrize("test", test_data, ids=lambda x: x.test_name)
 def test_groupings(test: PolicyTest):
     environment = cached_set_up_policy_environment(date=test.date)
 

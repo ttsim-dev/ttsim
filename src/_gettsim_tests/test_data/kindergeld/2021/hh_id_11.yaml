@@ -1,6 +1,7 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
@@ -13,18 +14,6 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    hh_id:
-      - 11
-      - 11
-      - 11
-    familie__kind:
-      - false
-      - false
-      - true
-    p_id:
-      - 36
-      - 37
-      - 38
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 20000.0
       - 20000.0
@@ -33,6 +22,14 @@ inputs:
       - 200000.0
       - 200000.0
       - 200000.0
+    familie__kind:
+      - false
+      - false
+      - true
+    hh_id:
+      - 11
+      - 11
+      - 11
     kindergeld__in_ausbildung:
       - false
       - false
@@ -41,6 +38,10 @@ inputs:
       - -1
       - -1
       - 36
+    p_id:
+      - 36
+      - 37
+      - 38
 outputs:
   kinderbonus__betrag_m:
     - 12.5

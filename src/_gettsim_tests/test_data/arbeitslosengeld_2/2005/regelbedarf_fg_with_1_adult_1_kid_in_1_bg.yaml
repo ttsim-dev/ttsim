@@ -1,11 +1,13 @@
 ---
 info:
-  note: >-
-    Test Regelbedarf when Familiengemeinschaft (1 adult, 1 kid) is the same as
-    Bedarfsgemeinschaft.
+  note: Test Regelbedarf when Familiengemeinschaft (1 adult, 1 kid) is the same as Bedarfsgemeinschaft.
+  precision: 0.01
   source: Made up.
 inputs:
   assumed:
+    alter:
+      - 40
+      - 10
     arbeitslosengeld_2__bg_id:
       - 0
       - 0
@@ -15,36 +17,33 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
     familie__alleinerziehend:
       - true
       - false
-    alter:
-      - 40
-      - 10
-    hh_id:
-      - 0
-      - 0
     familie__kind:
       - false
       - true
-    p_id:
-      - 0
-      - 1
     familie__p_id_elternteil_1:
       - -1
       - 0
     familie__p_id_elternteil_2:
       - -1
       - -1
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
+    hh_id:
+      - 0
+      - 0
     jahr:
       - 2005
       - 2005
     kindergeld__p_id_empfänger:
       - -1
       - 0
+    p_id:
+      - 0
+      - 1
     wohnen__bewohnt_eigentum_hh:
       - false
       - false
