@@ -1,7 +1,7 @@
 ---
 info:
   note: Child in separate Familiengemeinschaft if he/she is married
-  precision: 0.015
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}

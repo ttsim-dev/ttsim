@@ -2,7 +2,7 @@
 info:
   note: Expanded test case to include additional household members so that more than seven
     people are eligible for housing subsidies
-  precision: 0.015
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}

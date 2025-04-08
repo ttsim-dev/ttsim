@@ -2,7 +2,7 @@
 info:
   note: Test if households with non-retired adult do not get Grundsicherung im Alter (as currently
     implemented those households get ALG 2)
-  precision: 0.015
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}

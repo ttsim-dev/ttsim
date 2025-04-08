@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 0.015
+  precision: 0.01
   source: http://www.dr-wolters.de/content/inhalte/steuerberater_service/onlinerechner/einkommensteuer_berechnung/einkommensteuer_rechner/index.html
 inputs:
   assumed: {}

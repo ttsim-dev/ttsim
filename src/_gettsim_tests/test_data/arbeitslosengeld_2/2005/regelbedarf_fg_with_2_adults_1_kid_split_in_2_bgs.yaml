@@ -1,7 +1,7 @@
 ---
 info:
   note: Test Regelsatz when Familiengemeinschaft (2 adults, 1 kid) is split into two Bedarfsgemeinschaften.
-  precision: 0.015
+  precision: 0.01
   source: Made up.
 inputs:
   assumed:

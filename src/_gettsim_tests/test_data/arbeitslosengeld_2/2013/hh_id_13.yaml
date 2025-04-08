@@ -1,7 +1,7 @@
 ---
 info:
   note: Test if household with retired and non-retired adults do get ALG 2
-  precision: 0.015
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}

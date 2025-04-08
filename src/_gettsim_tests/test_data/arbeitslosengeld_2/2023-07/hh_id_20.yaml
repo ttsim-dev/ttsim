@@ -1,7 +1,7 @@
 ---
 info:
   note: Test with new income thresholds
-  precision: 0.015
+  precision: 0.01
   source: https://www.buerger-geld.org/rechner/ergebnis/index.php
 inputs:
   assumed: {}

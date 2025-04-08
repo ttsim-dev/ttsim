@@ -2,7 +2,7 @@
 info:
   note: 'from eastern Germany: earns less Entgeltpunkte for same wage because Beitragsbemessungsgrenze
     is lower'
-  precision: 0.15
+  precision: 0.1
   source: https://www.ihre-vorsorge.de/rechner/rentenbeginnrechner.html
 inputs:
   assumed: {}

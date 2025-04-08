@@ -2,7 +2,7 @@
 info:
   note: Added capital income of 10 euros for household (expected difference in grundsicherung__im_alter__betrag_m_eg
     ((10*12)-26)/12)=7.83333333)
-  precision: 0.015
+  precision: 0.01
   source: Adjusted test case based on https://www.bpb.de/politik/innenpolitik/rentenpolitik/289395/leistungshoehe-und-fallbeispiele
 inputs:
   assumed: {}

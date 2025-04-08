@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 0.015
+  precision: 0.01
   source: https://pflegebox.de/ratgeber/leben-im-alter/grundsicherung-im-alter/
 inputs:
   assumed: {}

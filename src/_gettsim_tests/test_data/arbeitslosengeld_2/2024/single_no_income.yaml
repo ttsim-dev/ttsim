@@ -2,7 +2,7 @@
 info:
   note: Test with new Regelbedarf. `arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m`
     is wrong.
-  precision: 0.015
+  precision: 0.01
   source: https://www.buerger-geld.org/rechner/ergebnis/index.php
 inputs:
   assumed: {}

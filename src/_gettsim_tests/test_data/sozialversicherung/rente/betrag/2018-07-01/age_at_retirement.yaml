@@ -1,7 +1,7 @@
 ---
 info:
   note: null
-  precision: 0.15
+  precision: 0.1
   source: ''
 inputs:
   assumed:

@@ -1,7 +1,7 @@
 ---
 info:
   note: Created with Wohngeldrechner that doesn't check for Mindesteinkommen.
-  precision: 0.015
+  precision: 0.01
   source: https://www.bmwsb.bund.de/Webs/BMWSB/DE/themen/wohnen/wohnraumfoerderung/wohngeld/wohngeldrechner-2023-artikel.html
 inputs:
   assumed: {}

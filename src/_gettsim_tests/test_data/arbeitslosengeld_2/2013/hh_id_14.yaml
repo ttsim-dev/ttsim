@@ -1,7 +1,7 @@
 ---
 info:
   note: Test with wealth (calculated wealth allowance using https://www.steuerschroeder.de/Steuerrechner/Schonverm%C3%B6gen.html)
-  precision: 0.015
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}

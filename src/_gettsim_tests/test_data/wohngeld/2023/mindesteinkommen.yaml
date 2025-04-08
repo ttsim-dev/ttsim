@@ -1,7 +1,7 @@
 ---
 info:
   note: Several households that differ in their eligibility for Wohngeld because of Mindesteinkommen.
-  precision: 0.015
+  precision: 0.01
   source: Made up.
 inputs:
   assumed: {}

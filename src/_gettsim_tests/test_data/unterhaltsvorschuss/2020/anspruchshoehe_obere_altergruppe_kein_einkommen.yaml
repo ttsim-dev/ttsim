@@ -1,7 +1,7 @@
 ---
 info:
   note: One child in the upper age group (12-17).
-  precision: 0.015
+  precision: 0.01
   source: https://www.bmfsfj.de/bmfsfj/aktuelles/alle-meldungen/aenderungen-2020-kinderzuschlag-unterhaltsvorschuss-freibeträge-142746
 inputs:
   assumed: {}

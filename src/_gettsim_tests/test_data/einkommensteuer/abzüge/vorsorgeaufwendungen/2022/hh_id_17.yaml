@@ -1,7 +1,7 @@
 ---
 info:
   note: corrected tax-exempt employer contribution in testcase
-  precision: 1.5
+  precision: 1
   source: https://www.haufe.de/finance/haufe-finance-office-premium/vorsorgeaufwendungen-225-behandlung-von-ehegattenlebenspartnern-im-falle-der-zusammenveranlagung_idesk_PI20354_HI2531457.html
 inputs:
   assumed: {}

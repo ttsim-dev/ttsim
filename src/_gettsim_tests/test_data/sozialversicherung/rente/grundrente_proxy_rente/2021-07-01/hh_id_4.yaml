@@ -1,7 +1,7 @@
 ---
 info:
   note: made up, regression test
-  precision: 1.5
+  precision: 1
   source: ''
 inputs:
   assumed: {}

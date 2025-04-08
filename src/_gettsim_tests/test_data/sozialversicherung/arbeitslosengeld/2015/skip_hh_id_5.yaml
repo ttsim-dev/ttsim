@@ -1,7 +1,7 @@
 ---
 info:
   note: Calculation is not correct due to change in Grundfreibetrag in July 2015.
-  precision: 0.015
+  precision: 0.01
   source: none
 inputs:
   assumed:

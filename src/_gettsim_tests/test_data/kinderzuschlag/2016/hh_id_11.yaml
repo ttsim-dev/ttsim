@@ -1,7 +1,7 @@
 ---
 info:
   note: Wealth below wealth allowance leading to no deduction in Kinderzuschlag
-  precision: 0.015
+  precision: 0.01
   source: Inspired by Page 12 of https://www.arbeitsagentur.de/datei/ba146349.pdf
 inputs:
   assumed: {}

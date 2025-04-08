@@ -1,6 +1,6 @@
 ---
 info:
-  precision: 0.015
+  precision: 0.01
   source: Own calculations
 inputs:
   assumed:
