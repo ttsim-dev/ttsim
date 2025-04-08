@@ -1913,7 +1913,7 @@ heizkostenentlastung_m:
       Betrag zur Entlastung bei den Heizkosten aufgrund der CO2-Bepreisung in Euro in
       Anhängigkeit der Haushaltsgröße
     en: >-
-      Amount of relief in heating costs due to CO2 pricing in euros depending on
+      Amount of relief in heating costs due to CO2 pricing in Euro depending on
       household size
   unit: Euro
   reference: §12 (6) WoGG, Art. 1 G. v. 15.05.2020, BGBl I S. 1015.
@@ -1957,7 +1957,7 @@ klimakomponente_m:
       Wohngeldreform 2023
     en: >-
       Surcharge to be taken into account as climate component in addition to the maximum
-      amounts pursuant to § 12 (1) in euros depending on the size of the household;
+      amounts pursuant to § 12 (1) in Euro depending on the size of the household;
       introduced with the housing subsidy reform 2023
   unit: Euro
   reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160

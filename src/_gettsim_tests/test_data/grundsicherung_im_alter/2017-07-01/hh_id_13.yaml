@@ -1,7 +1,7 @@
 ---
 info:
   note: >-
-    Added capital income of 10 euros for household (expected difference in
+    Added capital income of 10 Euro for household (expected difference in
     grundsicherung__im_alter__betrag_m_eg ((10*12)-26)/12)=7.83333333)
   source: >-
     Adjusted test case based on
