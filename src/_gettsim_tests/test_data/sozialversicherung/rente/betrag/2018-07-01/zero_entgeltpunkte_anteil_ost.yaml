@@ -1,6 +1,6 @@
 info:
   note: ''
-  precision: 2
+  precision: 1
 inputs:
   assumed: {}
   provided:

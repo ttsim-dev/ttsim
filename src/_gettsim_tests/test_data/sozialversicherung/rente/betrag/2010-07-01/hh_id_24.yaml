@@ -1,6 +1,6 @@
 info:
   note: 'Beispiel: Erna Rüstig (Altersrente für Frauen)'
-  precision: 2
+  precision: 1
   source: https://rentenbescheid24.de/die-altersrente-fuer-langjaehrig-versicherte/
 inputs:
   assumed: {}

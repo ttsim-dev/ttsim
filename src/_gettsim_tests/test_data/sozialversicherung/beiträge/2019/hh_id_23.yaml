@@ -1,6 +1,6 @@
 info:
   note: based on www.tk.de calculator with modifications to the kv-zusatzbeitrag
-  precision: 2
+  precision: 0
   source: ''
 inputs:
   assumed: {}

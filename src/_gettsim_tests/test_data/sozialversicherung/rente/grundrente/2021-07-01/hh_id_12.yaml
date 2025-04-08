@@ -1,6 +1,6 @@
 info:
   note: Person with zero Grundrente Bewertungszeiten
-  precision: 2
+  precision: 0
   source: ''
 inputs:
   assumed: {}

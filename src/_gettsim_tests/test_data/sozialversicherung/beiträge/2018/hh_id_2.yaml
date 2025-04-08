@@ -1,6 +1,6 @@
 info:
   note: ''
-  precision: 2
+  precision: 0
   source: https://www.brutto-netto-rechner.info/gehalt/gehaltsrechner-arbeitgeber.php
 inputs:
   assumed: {}

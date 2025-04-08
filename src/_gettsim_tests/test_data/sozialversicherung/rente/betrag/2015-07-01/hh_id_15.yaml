@@ -1,6 +1,6 @@
 info:
   note: 'From eastern Germany: earns more Entgeltpunkte for same wage.'
-  precision: 2
+  precision: 1
   source: https://www.deutsche-rentenversicherung.de/DRV/DE/Online-Dienste/Online-Rechner/RentenbeginnUndHoehenRechner/rentenbeginnrechner_node.html
 inputs:
   assumed: {}
