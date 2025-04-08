@@ -2,7 +2,7 @@
 info:
   note: 'From eastern Germany: earns less Entgeltpunkte for same wage because Beitragsbemessungsgrenze
     is lower.'
-  precision: 1
+  precision: 0.15
   source: https://www.deutsche-rentenversicherung.de/DRV/DE/Rente/Kurz-vor-der-Rente/Wann-kann-ich-in-Rente-gehen/Wann-kann-ich-in-Rente-gehen_detailseite.html"
 inputs:
   assumed: {}

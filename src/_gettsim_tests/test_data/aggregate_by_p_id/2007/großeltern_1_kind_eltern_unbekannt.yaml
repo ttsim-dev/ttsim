@@ -1,7 +1,7 @@
 ---
 info:
   note: Overwriting the recipients of Kinderfreibetrag.
-  precision: 2
+  precision: 0.015
   source: ''
 inputs:
   assumed: {}

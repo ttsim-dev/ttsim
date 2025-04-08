@@ -1,7 +1,7 @@
 ---
 info:
   note: Skipping test for now, because error assertion is not supported yet.
-  precision: 2
+  precision: 0.015
   source: ''
 inputs:
   - arbeitslosengeld_2__p_id_einstandspartner: 1

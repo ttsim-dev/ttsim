@@ -1,7 +1,7 @@
 ---
 info:
   note: One child in the middle age group (6-11).
-  precision: 2
+  precision: 0.015
   source: https://www.berit-sander.de/2016/unterhaltsvorschuss-zum-01-01-2016/
 inputs:
   assumed: {}

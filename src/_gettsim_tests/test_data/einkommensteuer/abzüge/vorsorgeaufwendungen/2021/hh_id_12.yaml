@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 0
+  precision: 1.5
   source: https://www.finanztip.de/vorsorgeaufwendungen/
 inputs:
   assumed: {}

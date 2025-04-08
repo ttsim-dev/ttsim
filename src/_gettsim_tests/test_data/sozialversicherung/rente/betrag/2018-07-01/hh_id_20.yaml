@@ -1,7 +1,7 @@
 ---
 info:
   note: https://www.smart-rechner.de/rentenbeginn/rechner.php
-  precision: 1
+  precision: 0.15
   source: ''
 inputs:
   assumed: {}

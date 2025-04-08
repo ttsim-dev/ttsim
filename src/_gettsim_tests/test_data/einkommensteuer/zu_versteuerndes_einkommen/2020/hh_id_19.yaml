@@ -1,7 +1,7 @@
 ---
 info:
   note: Result from source including Betreuungskosten
-  precision: 2
+  precision: 0.015
   source: https://www.bmf-steuerrechner.de/bdj/eingabeformbdj.xhtml?jahr=l_k_bdj_2020
 inputs:
   assumed: {}

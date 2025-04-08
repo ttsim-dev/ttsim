@@ -2,7 +2,7 @@
 info:
   note: Test with old income thresholds and new Kindergeld, adjusted for Kindersofortzuschlag
     of 20€). Test cutoff around 18 years.
-  precision: 2
+  precision: 0.015
   source: https://www.buerger-geld.org/rechner
 inputs:
   assumed: {}

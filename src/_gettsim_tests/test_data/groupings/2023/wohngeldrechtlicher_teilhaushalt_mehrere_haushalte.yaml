@@ -1,7 +1,7 @@
 ---
 info:
   note: Multiple households with mutliple Bedarfsgemeinschaften.
-  precision: 2
+  precision: 0.015
   source: ''
 inputs:
   assumed: {}

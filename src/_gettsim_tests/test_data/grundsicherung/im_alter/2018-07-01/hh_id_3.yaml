@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 2
+  precision: 0.015
   source: https://www.bmas.de/SharedDocs/Downloads/DE/Publikationen/a207-sozialhilfe-und-grundsicherung.pdf?__blob=publicationFile&v=1
 inputs:
   assumed: {}

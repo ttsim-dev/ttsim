@@ -1,7 +1,7 @@
 ---
 info:
   note: Adjusted staatl rente
-  precision: 0
+  precision: 1.5
   source: https://www.deutsche-rentenversicherung.de/DRV/DE/Rente/Grundrente/grundrente_fallbeispiele_neu.html
     (Alexander Langkowski)
 inputs:

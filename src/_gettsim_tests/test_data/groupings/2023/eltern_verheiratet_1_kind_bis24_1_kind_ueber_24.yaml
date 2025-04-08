@@ -1,7 +1,7 @@
 ---
 info:
   note: One child is in separate Familiengemeinschaft since over 24
-  precision: 2
+  precision: 0.015
   source: ''
 inputs:
   assumed: {}

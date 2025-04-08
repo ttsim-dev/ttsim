@@ -2,7 +2,7 @@
 info:
   note: Test Regelsatz when no adult is part of Bedarfsgemeinschaft. Child receives the adult
     Regelsatz.
-  precision: 2
+  precision: 0.015
   source: Made up.
 inputs:
   assumed:

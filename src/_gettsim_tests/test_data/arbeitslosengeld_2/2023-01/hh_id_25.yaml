@@ -2,7 +2,7 @@
 info:
   note: Test with old income thresholds with income from self employment, adjusted for Kindersofortzuschlag.
     Constructed test based on hh 19.
-  precision: 2
+  precision: 0.015
   source: ''
 inputs:
   assumed: {}

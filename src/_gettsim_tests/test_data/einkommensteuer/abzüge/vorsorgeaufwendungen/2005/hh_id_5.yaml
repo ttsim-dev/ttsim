@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 0
+  precision: 1.5
   source: https://www.iww.de/ssp/archiv/aenderungen-durch-das-alterseinkuenftegesetz-abzug-von-vorsorgeaufwendungen-ab-2005-f2980
 inputs:
   assumed: {}

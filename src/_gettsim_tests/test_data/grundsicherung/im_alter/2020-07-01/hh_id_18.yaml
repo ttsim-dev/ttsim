@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 2
+  precision: 0.015
   source: https://www.mags.nrw/grundsicherung-im-alter-und-bei-erwerbsminderung-viertes-kapitel-ssss-41-46a-sgb-xii
 inputs:
   assumed: {}

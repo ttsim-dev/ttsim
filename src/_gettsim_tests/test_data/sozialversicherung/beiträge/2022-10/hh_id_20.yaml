@@ -1,7 +1,7 @@
 ---
 info:
   note: Änderungen MidiJob 2022 (mit Kindern)
-  precision: 0
+  precision: 1.5
   source: https://www.kbs.de/SiteGlobals/Forms/Rechner/Midijobrechner/seite1/node.html
 inputs:
   assumed: {}

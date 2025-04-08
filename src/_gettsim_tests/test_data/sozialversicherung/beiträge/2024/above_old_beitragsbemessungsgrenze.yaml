@@ -1,7 +1,7 @@
 ---
 info:
   note: Above old Beitragsbemessungsgrenze (of 2023).
-  precision: 0
+  precision: 1.5
   source: https://www.steuertipps.de/service/rechner/brutto-netto-gehaltsrechner/
 inputs:
   assumed: {}

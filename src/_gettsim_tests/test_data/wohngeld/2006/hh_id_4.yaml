@@ -1,7 +1,7 @@
 ---
 info:
   note: No wealth threshold in place before 2009
-  precision: 2
+  precision: 0.015
   source: Regression test.
 inputs:
   assumed: {}

@@ -1,7 +1,7 @@
 ---
 info:
   note: One child in the lower age group (0-5).
-  precision: 2
+  precision: 0.015
   source: https://www.bmfsfj.de/bmfsfj/aktuelles/alle-meldungen/familien-werden-ab-2010-staerker-entlastet-100030
 inputs:
   assumed: {}
