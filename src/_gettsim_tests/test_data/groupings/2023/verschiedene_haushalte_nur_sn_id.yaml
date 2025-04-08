@@ -1,3 +1,4 @@
+---
 info:
   note: ''
   precision: 2
@@ -6,35 +7,35 @@ inputs:
   assumed: {}
   provided:
     einkommensteuer__gemeinsam_veranlagt:
-    - true
-    - true
-    - false
-    - false
-    - false
-    - false
-    - false
+      - true
+      - true
+      - false
+      - false
+      - false
+      - false
+      - false
     familie__p_id_ehepartner:
-    - 1
-    - 0
-    - -1
-    - -1
-    - -1
-    - 6
-    - 5
+      - 1
+      - 0
+      - -1
+      - -1
+      - -1
+      - 6
+      - 5
     p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+outputs:
+  einkommensteuer__sn_id:
+    - 0
     - 0
     - 1
     - 2
     - 3
     - 4
     - 5
-    - 6
-outputs:
-  einkommensteuer__sn_id:
-  - 0
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5

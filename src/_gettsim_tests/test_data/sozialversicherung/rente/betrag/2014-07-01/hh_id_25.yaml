@@ -1,77 +1,77 @@
+---
 info:
-  note: 'Beispiel: Abwandlung Erna Rüstig (Altersrente für langjährig Versicherte)
-    https://rentenbescheid24.de/die-altersrente-fuer-langjaehrig-versicherte/'
+  note: 'Beispiel: Abwandlung Erna Rüstig (Altersrente für langjährig Versicherte) https://rentenbescheid24.de/die-altersrente-fuer-langjaehrig-versicherte/'
   precision: 1
   source: ''
 inputs:
   assumed: {}
   provided:
     alter:
-    - 65
+      - 65
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-    - 1500.0
+      - 1500.0
     geburtsjahr:
-    - 1948
+      - 1948
     geburtsmonat:
-    - 12
+      - 12
     hh_id:
-    - 25
+      - 25
     jahr:
-    - 2014
+      - 2014
     p_id:
-    - 25
+      - 25
     sozialversicherung__rente__altersrente__besonders_langjährig__grundsätzlich_anspruchsberechtigt:
-    - false
+      - false
     sozialversicherung__rente__altersrente__für_frauen__pflichtsbeitragsjahre_ab_alter_40:
-    - 15.0
+      - 15.0
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__arbeitslos_für_1_jahr_nach_alter_58_ein_halb:
-    - false
+      - false
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__pflichtbeitragsjahre_8_von_10:
-    - false
+      - false
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__vertrauensschutz_1997:
-    - false
+      - false
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__vertrauensschutz_2004:
-    - false
+      - false
     sozialversicherung__rente__entgeltpunkte_ost:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__entgeltpunkte_west:
-    - 22.42
+      - 22.42
     sozialversicherung__rente__ersatzzeiten_monate:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__freiwillige_beitragsmonate:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__kinderberücksichtigungszeiten_monate:
-    - 108.0
+      - 108.0
     sozialversicherung__rente__krankheitszeiten_ab_16_bis_24_monate:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__monate_geringfügiger_beschäftigung:
-    - 60.0
+      - 60.0
     sozialversicherung__rente__monate_in_arbeitslosigkeit:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__monate_in_arbeitsunfähigkeit:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__monate_in_ausbildungssuche:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__monate_in_mutterschutz:
-    - 9.0
+      - 9.0
     sozialversicherung__rente__monate_in_schulausbildung:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__pflegeberücksichtigungszeiten_monate:
-    - 10.0
+      - 10.0
     sozialversicherung__rente__pflichtbeitragsmonate:
-    - 420.0
+      - 420.0
     weiblich:
-    - true
+      - true
     wohnort_ost:
-    - false
+      - false
 outputs:
   sozialversicherung__rente__altersrente__altersgrenze_abschlagsfrei:
-  - 65.0
+    - 65.0
   sozialversicherung__rente__altersrente__entgeltpunkte_ost_updated:
-  - 0.0
+    - 0.0
   sozialversicherung__rente__altersrente__entgeltpunkte_west_updated:
-  - 22.99796044
+    - 22.99796044
   sozialversicherung__rente__altersrente__neue_entgeltpunkte:
-  - 0.577960442
+    - 0.577960442

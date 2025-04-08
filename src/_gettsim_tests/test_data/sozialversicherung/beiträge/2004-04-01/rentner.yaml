@@ -1,3 +1,4 @@
+---
 info:
   note: ''
   precision: 0
@@ -6,29 +7,29 @@ inputs:
   assumed: {}
   provided:
     alter:
-    - 70
+      - 70
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-    - 0.0
+      - 0.0
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
-    - 0.0
+      - 0.0
     einkommensteuer__einkünfte__ist_selbstständig:
-    - false
+      - false
     hh_id:
-    - 13
+      - 13
     jahr:
-    - '2004-04-01'
+      - '2004-04-01'
     p_id:
-    - 111
+      - 111
     sozialversicherung__kranken__beitrag__privat_versichert:
-    - false
+      - false
     sozialversicherung__pflege__beitrag__hat_kinder:
-    - false
+      - false
     sozialversicherung__rente__altersrente__betrag_m:
-    - 1000.0
+      - 1000.0
     sozialversicherung__rente__private_rente_betrag_m:
-    - 0.0
+      - 0.0
     wohnort_ost:
-    - false
+      - false
 outputs:
   sozialversicherung__pflege__beitrag__betrag_versicherter_m:
-  - 17.0
+    - 17.0

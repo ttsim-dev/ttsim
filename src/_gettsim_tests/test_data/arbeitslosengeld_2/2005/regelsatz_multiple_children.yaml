@@ -1,3 +1,4 @@
+---
 info:
   note: Test Regelsatz when Familiengemeinschaft (1 adult, 1 kid) is the same as Bedarfsgemeinschaft.
   precision: 2
@@ -5,88 +6,88 @@ info:
 inputs:
   assumed:
     alter:
-    - 40
-    - 5
-    - 10
-    - 14
-    - 19
+      - 40
+      - 5
+      - 10
+      - 14
+      - 19
     arbeitslosengeld_2__eigenbedarf_gedeckt:
-    - false
-    - false
-    - false
-    - false
-    - false
+      - false
+      - false
+      - false
+      - false
+      - false
     arbeitslosengeld_2__p_id_einstandspartner:
-    - -1
-    - -1
-    - -1
-    - -1
-    - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
     familie__alleinerziehend:
-    - true
-    - false
-    - false
-    - false
-    - false
+      - true
+      - false
+      - false
+      - false
+      - false
     familie__kind:
-    - false
-    - true
-    - true
-    - true
-    - true
+      - false
+      - true
+      - true
+      - true
+      - true
     familie__p_id_elternteil_1:
-    - -1
-    - 0
-    - 0
-    - 0
-    - 0
+      - -1
+      - 0
+      - 0
+      - 0
+      - 0
     familie__p_id_elternteil_2:
-    - -1
-    - -1
-    - -1
-    - -1
-    - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
     hh_id:
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
     jahr:
-    - 2005
-    - 2005
-    - 2005
-    - 2005
-    - 2005
+      - 2005
+      - 2005
+      - 2005
+      - 2005
+      - 2005
     kindergeld__p_id_empfänger:
-    - -1
-    - 0
-    - 0
-    - 0
-    - 0
+      - -1
+      - 0
+      - 0
+      - 0
+      - 0
     p_id:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
   provided: {}
 outputs:
   arbeitslosengeld_2__erwachsenensatz_m:
-  - 500.24
-  - 0.0
-  - 0.0
-  - 0.0
-  - 0.0
+    - 500.24
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
   arbeitslosengeld_2__kindersatz_m:
-  - 0.0
-  - 202.8
-  - 202.8
-  - 270.4
-  - 270.4
+    - 0.0
+    - 202.8
+    - 202.8
+    - 270.4
+    - 270.4
   arbeitslosengeld_2__regelsatz_m:
-  - 500.24
-  - 202.8
-  - 202.8
-  - 270.4
-  - 270.4
+    - 500.24
+    - 202.8
+    - 202.8
+    - 270.4
+    - 270.4

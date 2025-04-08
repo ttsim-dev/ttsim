@@ -1,3 +1,4 @@
+---
 info:
   note: Skipping test for now, because input columns are missing.
   precision: 2
@@ -5,24 +6,24 @@ info:
 inputs:
   provided:
     geburtsjahr:
-    - 2002
-    - 1966
+      - 2002
+      - 1966
     geburtsmonat:
-    - 7
-    - 3
+      - 7
+      - 3
     geburtstag:
-    - 14
-    - 1
+      - 14
+      - 1
     hh_id:
-    - 0
-    - 0
+      - 0
+      - 0
     p_id:
-    - 0
-    - 1
+      - 0
+      - 1
 outputs:
   arbeitslosengeld_2__bg_id:
-  - 0
-  - 1
+    - 0
+    - 1
   einkommensteuer__sn_id:
-  - 0
-  - 1
+    - 0
+    - 1

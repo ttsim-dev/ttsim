@@ -1,3 +1,4 @@
+---
 info:
   note: ''
   precision: 0
@@ -6,42 +7,42 @@ inputs:
   assumed: {}
   provided:
     einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
-    - 333.333333
-    - 1666.666667
+      - 333.333333
+      - 1666.666667
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-    - 5000.0
-    - 10000.0
+      - 5000.0
+      - 10000.0
     einkommensteuer__gemeinsam_veranlagt:
-    - true
-    - true
+      - true
+      - true
     familie__kind:
-    - false
-    - false
+      - false
+      - false
     familie__p_id_ehepartner:
-    - 21
-    - 20
+      - 21
+      - 20
     hh_id:
-    - 18
-    - 18
+      - 18
+      - 18
     jahr:
-    - 2022
-    - 2022
+      - 2022
+      - 2022
     p_id:
-    - 20
-    - 21
+      - 20
+      - 21
     sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m:
-    - 0.0
-    - 0.0
+      - 0.0
+      - 0.0
     sozialversicherung__kranken__beitrag__betrag_versicherter_m:
-    - 0.0
-    - 0.0
+      - 0.0
+      - 0.0
     sozialversicherung__pflege__beitrag__betrag_versicherter_m:
-    - 0.0
-    - 0.0
+      - 0.0
+      - 0.0
     sozialversicherung__rente__beitrag__betrag_versicherter_m:
-    - 0.0
-    - 0.0
+      - 0.0
+      - 0.0
 outputs:
   einkommensteuer__abzüge__vorsorgeaufwendungen_y_sn:
-  - 22560
-  - 22560
+    - 22560
+    - 22560

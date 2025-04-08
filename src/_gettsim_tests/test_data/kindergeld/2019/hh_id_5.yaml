@@ -1,3 +1,4 @@
+---
 info:
   note: ''
   precision: 2
@@ -6,25 +7,25 @@ inputs:
   assumed: {}
   provided:
     alter:
-    - 21
+      - 21
     arbeitsstunden_w:
-    - 0.0
+      - 0.0
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-    - 0.0
+      - 0.0
     einkommensteuer__gesamteinkommen_y:
-    - 0.0
+      - 0.0
     familie__kind:
-    - false
+      - false
     hh_id:
-    - 5
+      - 5
     kindergeld__in_ausbildung:
-    - false
+      - false
     kindergeld__p_id_empfänger:
-    - 20
+      - 20
     p_id:
-    - 20
+      - 20
 outputs:
   kindergeld__betrag_m:
-  - 0
+    - 0
   kindergeld__betrag_m_hh:
-  - 0
+    - 0

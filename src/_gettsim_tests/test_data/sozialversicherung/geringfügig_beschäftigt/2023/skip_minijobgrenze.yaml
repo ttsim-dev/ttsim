@@ -1,3 +1,4 @@
+---
 info:
   note: ''
   precision: 2
@@ -5,11 +6,11 @@ info:
 inputs:
   provided:
     hh_id:
-    - 0
+      - 0
     p_id:
-    - 0
+      - 0
     sozialversicherung__pflege__beitrag__hat_kinder:
-    - false
+      - false
 outputs:
   sozialversicherung__minijob_grenze:
-  - 520.0
+    - 520.0

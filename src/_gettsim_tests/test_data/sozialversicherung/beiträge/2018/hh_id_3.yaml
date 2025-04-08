@@ -1,3 +1,4 @@
+---
 info:
   note: ''
   precision: 0
@@ -6,41 +7,41 @@ inputs:
   assumed: {}
   provided:
     alter:
-    - 25
+      - 25
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-    - 900.0
+      - 900.0
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
-    - 0.0
+      - 0.0
     einkommensteuer__einkünfte__ist_selbstständig:
-    - false
+      - false
     hh_id:
-    - 3
+      - 3
     jahr:
-    - '2018'
+      - '2018'
     p_id:
-    - 34
+      - 34
     sozialversicherung__kranken__beitrag__privat_versichert:
-    - false
+      - false
     sozialversicherung__pflege__beitrag__hat_kinder:
-    - false
+      - false
     sozialversicherung__rente__altersrente__betrag_m:
-    - 0.0
+      - 0.0
     sozialversicherung__rente__private_rente_betrag_m:
-    - 0.0
+      - 0.0
     wohnort_ost:
-    - false
+      - false
 outputs:
   sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m:
-  - 13.5
+    - 13.5
   sozialversicherung__beitrag_gesamt_m:
-  - 360.01
+    - 360.01
   sozialversicherung__beiträge_arbeitgeber_m:
-  - 174.38
+    - 174.38
   sozialversicherung__beiträge_versicherter_m:
-  - 185.625
+    - 185.625
   sozialversicherung__kranken__beitrag__betrag_versicherter_m:
-  - 74.7
+    - 74.7
   sozialversicherung__pflege__beitrag__betrag_versicherter_m:
-  - 13.725
+    - 13.725
   sozialversicherung__rente__beitrag__betrag_versicherter_m:
-  - 83.7
+    - 83.7

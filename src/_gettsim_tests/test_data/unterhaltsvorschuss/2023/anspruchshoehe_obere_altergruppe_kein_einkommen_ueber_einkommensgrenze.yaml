@@ -1,3 +1,4 @@
+---
 info:
   note: One child in the upper age group (12-17).
   precision: 2
@@ -6,33 +7,33 @@ inputs:
   assumed: {}
   provided:
     alter:
-    - 45
-    - 15
+      - 45
+      - 15
     familie__alleinerziehend:
-    - true
-    - false
+      - true
+      - false
     familie__p_id_elternteil_1:
-    - -1
-    - 0
+      - -1
+      - 0
     familie__p_id_elternteil_2:
-    - -1
-    - -1
+      - -1
+      - -1
     hh_id:
-    - 0
-    - 0
+      - 0
+      - 0
     kindergeld__p_id_empfänger:
-    - -1
-    - 0
+      - -1
+      - 0
     p_id:
-    - 0
-    - 1
+      - 0
+      - 1
     unterhalt__tatsächlich_erhaltener_betrag_m:
-    - 0.0
-    - 0.0
+      - 0.0
+      - 0.0
     unterhaltsvorschuss__einkommen_m:
-    - 1000.0
-    - 0.0
+      - 1000.0
+      - 0.0
 outputs:
   unterhaltsvorschuss__betrag_m:
-  - 0.0
-  - 338.0
+    - 0.0
+    - 338.0

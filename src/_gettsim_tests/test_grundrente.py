@@ -10,6 +10,7 @@ from ttsim import compute_taxes_and_transfers
 
 proxy_rente_test_data = load_policy_test_data("grundrente_proxy_rente")
 
+
 @pytest.mark.parametrize(
     "test",
     proxy_rente_test_data,

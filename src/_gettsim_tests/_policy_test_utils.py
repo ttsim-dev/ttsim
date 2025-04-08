@@ -7,8 +7,8 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from ttsim import merge_trees
 from _gettsim_tests import TEST_DIR
+from ttsim import merge_trees
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -44,8 +44,10 @@ class PolicyTest:
     def test_name(self) -> str:
         return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
+
 def execute_policy_test(test: PolicyTest):
     from numpy.testing import assert_array_almost_equal
+
     from _gettsim_tests._helpers import cached_set_up_policy_environment
     from ttsim import compute_taxes_and_transfers
 
@@ -69,7 +71,7 @@ def execute_policy_test(test: PolicyTest):
 def get_policy_test_ids_and_cases() -> dict[str, PolicyTest]:
     all_policy_tests = load_policy_test_data("")
     return {policy_test.test_name: policy_test for policy_test in all_policy_tests}
-       
+
 
 def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
     root = TEST_DIR / "test_data" / policy_name
