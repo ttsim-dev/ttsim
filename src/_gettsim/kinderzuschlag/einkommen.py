@@ -1,6 +1,6 @@
 """Income relevant for calculation of Kinderzuschlag."""
 
-from ttsim import AggregateByGroupSpec, RoundingSpec, policy_function
+from ttsim import AggregateByGroupSpec, RoundingDirection, RoundingSpec, policy_function
 
 aggregation_specs = {
     "arbeitslosengeld_2__anzahl_kinder_bg": AggregateByGroupSpec(
@@ -47,7 +47,9 @@ def bruttoeinkommen_eltern_m(
 
 
 @policy_function(
-    rounding_spec=RoundingSpec(base=10, direction="down", reference="§ 6a Abs. 4 BKGG"),
+    rounding_spec=RoundingSpec(
+        base=10, direction=RoundingDirection.DOWN, reference="§ 6a Abs. 4 BKGG"
+    ),
     leaf_name="nettoeinkommen_eltern_m",
     end_date="2019-06-30",
 )
@@ -83,7 +85,9 @@ def nettoeinkommen_eltern_m_mit_grober_rundung(
 
 
 @policy_function(
-    rounding_spec=RoundingSpec(base=1, direction="down", reference="§ 11 Abs. 2 BKGG"),
+    rounding_spec=RoundingSpec(
+        base=1, direction=RoundingDirection.DOWN, reference="§ 11 Abs. 2 BKGG"
+    ),
     leaf_name="nettoeinkommen_eltern_m",
     start_date="2019-07-01",
 )

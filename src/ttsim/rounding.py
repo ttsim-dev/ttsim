@@ -22,7 +22,7 @@ class RoundingSpec:
     base: int | float
     direction: RoundingDirection
     to_add_after_rounding: int | float = 0
-    reference: str = ""
+    reference: str | None = None
 
     def __post_init__(self):
         """Validate the types of base and to_add_after_rounding."""

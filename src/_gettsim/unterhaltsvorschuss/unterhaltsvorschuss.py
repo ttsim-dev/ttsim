@@ -2,7 +2,13 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, RoundingSpec, join_numpy, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    RoundingDirection,
+    RoundingSpec,
+    join_numpy,
+    policy_function,
+)
 
 aggregation_specs = {
     "an_elternteil_auszuzahlender_betrag_m": AggregateByPIDSpec(
@@ -16,7 +22,7 @@ aggregation_specs = {
 @policy_function(
     start_date="2009-01-01",
     rounding_spec=RoundingSpec(
-        base=1, direction="down", reference="§ 9 Abs. 3 UhVorschG"
+        base=1, direction=RoundingDirection.UP, reference="§ 9 Abs. 3 UhVorschG"
     ),
 )
 def betrag_m(
@@ -97,7 +103,7 @@ def elternteil_alleinerziehend(
     end_date="2008-12-31",
     leaf_name="betrag_m",
     rounding_spec=RoundingSpec(
-        base=1, direction="down", reference="§ 9 Abs. 3 UhVorschG"
+        base=1, direction=RoundingDirection.DOWN, reference="§ 9 Abs. 3 UhVorschG"
     ),
 )
 def not_implemented_m() -> float:

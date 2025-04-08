@@ -1,12 +1,12 @@
 """Public pension benefits for retirement due to age."""
 
-from ttsim import RoundingSpec, policy_function
+from ttsim import RoundingDirection, RoundingSpec, policy_function
 
 
 @policy_function(
     end_date="2020-12-31",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
     ),
     leaf_name="betrag_m",
 )
@@ -19,7 +19,7 @@ def betrag_m(
 @policy_function(
     start_date="2021-01-01",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
     ),
     leaf_name="betrag_m",
 )
@@ -54,7 +54,7 @@ def betrag_m_mit_grundrente(
 @policy_function(
     end_date="2016-12-31",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
     ),
     leaf_name="bruttorente_m",
 )
@@ -106,7 +106,7 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     end_date="2022-12-31",
     leaf_name="bruttorente_m",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
     ),
 )
 def bruttorente_m_mit_hinzuverdienstdeckel(
@@ -278,7 +278,7 @@ def differenz_bruttolohn_hinzuverdienstdeckel_y(
     start_date="2023-01-01",
     leaf_name="bruttorente_m",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
     ),
 )
 def bruttorente_m_ohne_einkommensanrechnung(

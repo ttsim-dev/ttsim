@@ -1,10 +1,11 @@
-from ttsim import policy_function
-from ttsim.rounding import RoundingSpec
+from ttsim import RoundingDirection, RoundingSpec, policy_function
 
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=1, direction="down", reference="§ 4 Gondorian Housing Benefit Law"
+        base=1,
+        direction=RoundingDirection.DOWN,
+        reference="§ 4 Gondorian Housing Benefit Law",
     )
 )
 def amount_m(

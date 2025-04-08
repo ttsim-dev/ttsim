@@ -1,6 +1,6 @@
 """Relevant income for parental leave benefits."""
 
-from ttsim import RoundingSpec, policy_function
+from ttsim import RoundingDirection, RoundingSpec, policy_function
 
 
 @policy_function(start_date="2007-01-01")
@@ -36,7 +36,9 @@ def anzurechnendes_nettoeinkommen_m(
 
 @policy_function(
     start_date="2007-01-01",
-    rounding_spec=RoundingSpec(base=2, direction="down", reference="§ 2 (2) BEEG"),
+    rounding_spec=RoundingSpec(
+        base=2, direction=RoundingDirection.DOWN, reference="§ 2 (2) BEEG"
+    ),
 )
 def lohnersatzanteil_einkommen_untere_grenze(
     nettoeinkommen_vorjahr_m: float,
@@ -63,7 +65,9 @@ def lohnersatzanteil_einkommen_untere_grenze(
 
 @policy_function(
     start_date="2007-01-01",
-    rounding_spec=RoundingSpec(base=2, direction="down", reference="§ 2 (2) BEEG"),
+    rounding_spec=RoundingSpec(
+        base=2, direction=RoundingDirection.DOWN, reference="§ 2 (2) BEEG"
+    ),
 )
 def lohnersatzanteil_einkommen_obere_grenze(
     nettoeinkommen_vorjahr_m: float,
@@ -151,7 +155,8 @@ def einkommen_vorjahr_unter_bezugsgrenze_ohne_unterscheidung_single_paar(
 
 
 @policy_function(
-    start_date="2006-01-01", rounding_spec=RoundingSpec(base=0.01, direction="down")
+    start_date="2006-01-01",
+    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.DOWN),
 )
 def nettoeinkommen_approximation_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
