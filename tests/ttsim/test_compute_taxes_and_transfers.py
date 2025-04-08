@@ -150,8 +150,9 @@ def test_fail_if_pid_is_non_unique():
         _fail_if_pid_is_non_unique(data)
 
 
-@pytest.mark.parametrize("foreign_key_name", FOREIGN_KEYS)
-def test_fail_if_foreign_key_points_to_non_existing_pid(foreign_key_name):
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
+def test_fail_if_foreign_key_points_to_non_existing_pid(foreign_key_path):
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
         foreign_key_name: pd.Series([0, 1, 4]),
         "p_id": pd.Series([1, 2, 3]),
@@ -161,7 +162,7 @@ def test_fail_if_foreign_key_points_to_non_existing_pid(foreign_key_name):
         _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
 
 
-@pytest.mark.parametrize("foreign_key_name", FOREIGN_KEYS)
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
 def test_allow_minus_one_as_foreign_key(foreign_key_path):
     foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
@@ -172,8 +173,9 @@ def test_allow_minus_one_as_foreign_key(foreign_key_path):
     _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
 
 
-@pytest.mark.parametrize("foreign_key_name", FOREIGN_KEYS)
-def test_fail_if_foreign_key_points_to_pid_of_same_row(foreign_key_name):
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
+def test_fail_if_foreign_key_points_to_pid_of_same_row(foreign_key_path):
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
         foreign_key_name: pd.Series([1, 3, 3]),
         "p_id": pd.Series([1, 2, 3]),
