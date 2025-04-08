@@ -199,8 +199,6 @@ class PolicyInput(Callable):
         The date until which the function is active (inclusive).
     params_key_for_rounding:
         The key in the params dictionary that should be used for rounding.
-    skip_vectorization:
-        Whether the function should be vectorized.
     """
 
     def __init__(
@@ -210,9 +208,7 @@ class PolicyInput(Callable):
         start_date: datetime.date,
         end_date: datetime.date,
         params_key_for_rounding: str | None,
-        skip_vectorization: bool | None,
     ):
-        self.skip_vectorization: bool = skip_vectorization
         self.function = (
             function if self.skip_vectorization else _vectorize_func(function)
         )
@@ -244,18 +240,13 @@ def policy_input(
     start_date: str | datetime.date = "1900-01-01",
     end_date: str | datetime.date = "2100-12-31",
     params_key_for_rounding: str | None = None,
-    skip_vectorization: bool = False,
 ) -> PolicyInput:
     """
-    Decorator that makes a `PolicyInput` from a function.
+    Decorator that makes a (dummy) function a `PolicyInput`.
 
-    **Dates active (start_date, end_date, leaf_name):**
+    **Dates active (start_date, end_date):**
 
     Specifies that a PolicyInput is only active between two dates, `start` and `end`.
-
-    Note that even if you use this decorator with the `leaf_name` argument, you must
-    ensure that the function name is unique in the file where it is defined. Otherwise,
-    the function would be overwritten by the last function with the same name.
 
     **Rounding spec (params_key_for_rounding):**
 
@@ -271,9 +262,6 @@ def policy_input(
         Key of the parameters dictionary where rounding specifications are found. For
         functions that are not user-written this is just the name of the respective
         .yaml file.
-    skip_vectorization
-        Whether the function is already vectorized and, thus, should not be vectorized
-        again.
 
     Returns
     -------
@@ -294,7 +282,6 @@ def policy_input(
             start_date=start_date,
             end_date=end_date,
             params_key_for_rounding=params_key_for_rounding,
-            skip_vectorization=skip_vectorization,
         )
 
     return inner
@@ -368,7 +355,7 @@ class DerivedAggregationFunction(PolicyFunction):
         self,
         *,
         function: Callable,
-        source_function: TTSIMFunction | None = None,
+        source_function: TTSIMFunction,
         source: str,
         aggregation_target: str,
         aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
@@ -407,7 +394,7 @@ class DerivedTimeConversionFunction(PolicyFunction):
         self,
         *,
         function: Callable,
-        source_function: TTSIMFunction | None = None,
+        source_function: TTSIMFunction,
         source: str,
         conversion_target: str,
     ):
