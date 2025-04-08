@@ -275,6 +275,7 @@ def policy_input(
     return inner
 
 
+@dataclass
 class GroupByFunction(TTSIMFunction):
     """
     A function that computes endogenous group_by IDs.
@@ -292,10 +293,10 @@ class GroupByFunction(TTSIMFunction):
         The date until which the function is active (inclusive).
     """
 
-    def __post_init__(
-        self,
-    ):
-        self.leaf_name = self.leaf_name if self.leaf_name else self.function.__name__
+    def __post_init__(self):
+        self.leaf_name = (
+            self.function.__name__ if self.leaf_name is None else self.leaf_name
+        )
 
         # Expose the signature of the wrapped function for dependency resolution
         self.__annotations__ = self.function.__annotations__
@@ -313,13 +314,16 @@ def group_by_function(
     *,
     start_date: str | datetime.date = "1900-01-01",
     end_date: str | datetime.date = "2100-12-31",
+    leaf_name: str | None = None,
 ) -> GroupByFunction:
     """
     Decorator that creates a group_by function from a function.
     """
 
     def decorator(func: Callable) -> GroupByFunction:
-        return GroupByFunction(function=func, start_date=start_date, end_date=end_date)
+        return GroupByFunction(
+            function=func, start_date=start_date, end_date=end_date, leaf_name=leaf_name
+        )
 
     return decorator
 
