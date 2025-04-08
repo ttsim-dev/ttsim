@@ -8,6 +8,7 @@ import pandas as pd
 import yaml
 
 from ttsim import merge_trees
+from _gettsim_tests import TEST_DIR
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -41,7 +42,7 @@ class PolicyTest:
 
     @property
     def test_name(self) -> str:
-        return self.path.stem
+        return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
 def execute_policy_test(test: PolicyTest):
     from numpy.testing import assert_array_almost_equal
@@ -63,12 +64,19 @@ def execute_policy_test(test: PolicyTest):
         flat_result.values(), flat_expected_output_tree.values(), test.info.values()
     ):
         assert_array_almost_equal(result, expected, decimal=precision)
-        
 
-def load_policy_test_data(policy_path: Path) -> list[PolicyTest]:
+
+def get_policy_test_ids_and_cases() -> dict[str, PolicyTest]:
+    all_policy_tests = load_policy_test_data("")
+    return {policy_test.test_name: policy_test for policy_test in all_policy_tests}
+       
+
+def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
+    root = TEST_DIR / "test_data" / policy_name
+
     out = []
 
-    for path_of_test_file in policy_path.glob("**/*.yaml"):
+    for path_of_test_file in root.glob("**/*.yaml"):
         if _is_skipped(path_of_test_file):
             continue
 
