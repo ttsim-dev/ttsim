@@ -9,8 +9,3 @@ eligibility:
 assistance_rate:
   1900-01-01:
     scalar: 0.5
-rounding:
-  housing_benefits__eligibility__income__amount_m:
-    1900-01-01:
-      base: 1
-      direction: down

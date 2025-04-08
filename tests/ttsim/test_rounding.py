@@ -3,8 +3,6 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim.compute_taxes_and_transfers import (
-    _add_rounding_to_functions,
-    _apply_rounding_spec,
     compute_taxes_and_transfers,
 )
 from ttsim.function_types import policy_function
@@ -75,9 +73,9 @@ def test_decorator():
 
 
 def test_malformed_rounding_specs():
-    with pytest.raises(KeyError):
+    with pytest.raises(AssertionError):
 
-        @policy_function(rounding_spec={"base": 1, "direction": "up"})
+        @policy_function(rounding_spec={"base": 1, "direction": "updsf"})
         def test_func():
             return 0
 
@@ -85,51 +83,14 @@ def test_malformed_rounding_specs():
 
 
 @pytest.mark.parametrize(
-    "base, direction, to_add_after_rounding",
-    [
-        (1, "upper", 0),
-        ("0.1", RoundingDirection.DOWN, 0),
-        (5, "closest", 0),
-        (5, RoundingDirection.UP, "0"),
-    ],
-)
-def test_rounding_specs_wrong_format(base, direction, to_add_after_rounding):
-    with pytest.raises(ValueError):
-
-        @policy_function(params_key_for_rounding="params_key_test")
-        def test_func():
-            return 0
-
-        rounding_specs = {
-            "params_key_test": {
-                "rounding": {
-                    "test_func": {
-                        "base": base,
-                        "direction": direction,
-                        "to_add_after_rounding": to_add_after_rounding,
-                    }
-                }
-            }
-        }
-
-        environment = PolicyEnvironment({"test_func": test_func}, rounding_specs)
-
-        compute_taxes_and_transfers(
-            data_tree={"p_id": pd.Series([1, 2])},
-            environment=environment,
-            targets_tree={"test_func": None},
-        )
-
-
-@pytest.mark.parametrize(
-    "base, direction, to_add_after_rounding, input_values, exp_output",
+    "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding(base, direction, to_add_after_rounding, input_values, exp_output):
+def test_rounding(rounding_spec, input_values, exp_output):
     """Check if rounding is correct."""
 
     # Define function that should be rounded
-    @policy_function(params_key_for_rounding="params_key_test")
+    @policy_function(rounding_spec=rounding_spec)
     def test_func(income):
         return income
 
@@ -137,25 +98,8 @@ def test_rounding(base, direction, to_add_after_rounding, input_values, exp_outp
         "p_id": pd.Series([1, 2]),
         "namespace": {"income": pd.Series(input_values)},
     }
-    rounding_specs = {
-        "params_key_test": {
-            "rounding": {
-                "namespace__test_func": {
-                    "base": base,
-                    "direction": direction,
-                }
-            }
-        }
-    }
 
-    if to_add_after_rounding:
-        rounding_specs["params_key_test"]["rounding"]["namespace__test_func"][
-            "to_add_after_rounding"
-        ] = to_add_after_rounding
-
-    environment = PolicyEnvironment(
-        {"namespace": {"test_func": test_func}}, rounding_specs
-    )
+    environment = PolicyEnvironment({"namespace": {"test_func": test_func}})
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
@@ -173,7 +117,9 @@ def test_rounding_with_time_conversion():
     """Check if rounding is correct for time-converted functions."""
 
     # Define function that should be rounded
-    @policy_function(params_key_for_rounding="params_key_test")
+    @policy_function(
+        rounding_spec=RoundingSpec(base=1, direction=RoundingDirection.DOWN)
+    )
     def test_func_m(income):
         return income
 
@@ -181,17 +127,8 @@ def test_rounding_with_time_conversion():
         "p_id": pd.Series([1, 2]),
         "income": pd.Series([1.2, 1.5]),
     }
-    rounding_specs = {
-        "params_key_test": {
-            "rounding": {
-                "test_func_m": {
-                    "base": 1,
-                    "direction": "down",
-                }
-            }
-        }
-    }
-    environment = PolicyEnvironment({"test_func_m": test_func_m}, rounding_specs)
+
+    environment = PolicyEnvironment({"test_func_m": test_func_m})
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
@@ -206,40 +143,22 @@ def test_rounding_with_time_conversion():
 
 
 @pytest.mark.parametrize(
-    """
-    base,
-    direction,
-    to_add_after_rounding,
-    input_values_exp_output,
-    ignore_since_not_rounded
-    """,
+    "rounding_spec, input_values_exp_output, ignore_since_no_rounding",
     rounding_specs_and_exp_results,
 )
 def test_no_rounding(
-    base,
-    direction,
-    to_add_after_rounding,
+    rounding_spec,
     input_values_exp_output,
-    ignore_since_not_rounded,  # noqa: ARG001
+    ignore_since_no_rounding,  # noqa: ARG001
 ):
     # Define function that should be rounded
-    @policy_function(params_key_for_rounding="params_key_test")
+    @policy_function(rounding_spec=rounding_spec)
     def test_func(income):
         return income
 
     data = {"p_id": pd.Series([1, 2])}
     data["income"] = pd.Series(input_values_exp_output)
-    rounding_specs = {
-        "params_key_test": {
-            "rounding": {"test_func": {"base": base, "direction": direction}}
-        }
-    }
-    environment = PolicyEnvironment({"test_func": test_func}, rounding_specs)
-
-    if to_add_after_rounding:
-        rounding_specs["params_key_test"]["rounding"]["test_func"][
-            "to_add_after_rounding"
-        ] = to_add_after_rounding
+    environment = PolicyEnvironment({"test_func": test_func})
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
@@ -255,26 +174,16 @@ def test_no_rounding(
 
 
 @pytest.mark.parametrize(
-    "base, direction, to_add_after_rounding, input_values, exp_output",
+    "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding_callable(
-    base, direction, to_add_after_rounding, input_values, exp_output
-):
-    """Check if callable is rounded correctly.
-
-    Tests `_apply_rounding_spec` directly.
-    """
+def test_rounding_callable(rounding_spec, input_values, exp_output):
+    """Check if callable is rounded correctly."""
 
     def test_func(income):
         return income
 
-    func_with_rounding = _apply_rounding_spec(
-        base=base,
-        direction=direction,
-        to_add_after_rounding=to_add_after_rounding if to_add_after_rounding else 0,
-        name="test_func",
-    )(test_func)
+    func_with_rounding = rounding_spec.apply_rounding(test_func)
 
     assert_series_equal(
         func_with_rounding(pd.Series(input_values)),
@@ -284,47 +193,14 @@ def test_rounding_callable(
 
 
 @pytest.mark.parametrize(
-    "params, match",
-    [
-        ({}, "Rounding specifications for function"),
-        ({"eink_st": {}}, "Rounding specifications for function"),
-        ({"eink_st": {"rounding": {}}}, "Rounding specifications for function"),
-        (
-            {"eink_st": {"rounding": {"eink_st_func": {}}}},
-            "Both 'base' and 'direction' are expected",
-        ),
-    ],
-)
-def test_raise_if_missing_rounding_spec(params, match):
-    @policy_function(params_key_for_rounding="eink_st")
-    def eink_st_func(arg_1: float) -> float:
-        return arg_1
-
-    with pytest.raises(KeyError, match=match):
-        _add_rounding_to_functions(
-            functions={"eink_st_func": eink_st_func},
-            params=params,
-        )
-
-
-@pytest.mark.parametrize(
-    "base, direction, to_add_after_rounding, input_values, exp_output",
+    "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding_spec(
-    base, direction, to_add_after_rounding, input_values, exp_output
-):
+def test_rounding_spec(rounding_spec, input_values, exp_output):
     """Test RoundingSpec directly."""
 
     def test_func(income):
         return income
-
-    to_add = to_add_after_rounding if to_add_after_rounding is not None else 0
-    rounding_spec = RoundingSpec(
-        base=base,
-        direction=direction,
-        to_add_after_rounding=to_add,
-    )
 
     rounded_func = rounding_spec.apply_rounding(test_func)
     result = rounded_func(pd.Series(input_values))

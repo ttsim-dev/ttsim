@@ -54,6 +54,7 @@ class PolicyFunction(Callable):
         self.leaf_name: str = leaf_name if leaf_name else function.__name__
         self.start_date: datetime.date = start_date
         self.end_date: datetime.date = end_date
+        self._fail_if_rounding_has_wrong_type(rounding_spec)
         self.rounding_spec: RoundingSpec | None = rounding_spec
 
         # Expose the signature of the wrapped function for dependency resolution
@@ -61,6 +62,25 @@ class PolicyFunction(Callable):
         self.__module__ = function.__module__
         self.__name__ = function.__name__
         self.__signature__ = inspect.signature(self.function)
+
+    def _fail_if_rounding_has_wrong_type(
+        self, rounding_spec: RoundingSpec | None
+    ) -> None:
+        """Check if rounding_spec has the correct type.
+
+        Parameters
+        ----------
+        rounding_spec
+            The rounding specification to check.
+
+        Raises
+        ------
+        AssertionError
+            If rounding_spec is not a RoundingSpec or None.
+        """
+        assert isinstance(rounding_spec, RoundingSpec | None), (
+            f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
+        )
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)

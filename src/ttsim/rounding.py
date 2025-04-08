@@ -27,6 +27,10 @@ class RoundingSpec:
         """Validate the types of base and to_add_after_rounding."""
         if type(self.base) not in [int, float]:
             raise ValueError(f"base needs to be a number, got {self.base!r}")
+        if type(self.direction) not in [RoundingDirection]:
+            raise ValueError(
+                f"direction needs to be a RoundingDirection, got {self.direction!r}"
+            )
         if type(self.to_add_after_rounding) not in [int, float]:
             raise ValueError(
                 f"Additive part must be a number, got {self.to_add_after_rounding!r}"
