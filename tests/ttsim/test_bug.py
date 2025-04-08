@@ -1,0 +1,3 @@
+from _gettsim_tests._helpers import cached_set_up_policy_environment
+
+cached_set_up_policy_environment(date=2010)
