@@ -7,7 +7,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from _gettsim.config import RESOURCE_DIR
-from ttsim.function_types import GroupByFunction, PolicyFunction, TTSIMFunction
+from ttsim.function_types import GroupByFunction, PolicyFunction
 from ttsim.shared import (
     create_tree_from_path_and_value,
     insert_path_and_value,
@@ -63,7 +63,7 @@ def get_active_functions_tree_from_module(
     path: Path,
     root_path: Path,
     date: datetime.date,
-) -> dict[str, TTSIMFunction]:
+) -> dict[str, PolicyFunction | GroupByFunction]:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 
     Parameters

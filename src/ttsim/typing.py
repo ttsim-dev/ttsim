@@ -25,12 +25,28 @@ if TYPE_CHECKING:
 
     from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
     from ttsim.function_types import (
-        TTSIMFunction,
+        DerivedAggregationFunction,
+        DerivedTimeConversionFunction,
+        GroupByFunction,
+        PolicyFunction,
     )
 
     # Specialise from dags' GenericCallable types to GETTSIM's functions.
-    NestedFunctionDict = Mapping[str, TTSIMFunction | "NestedFunctionDict"]
-    QualNameFunctionsDict = Mapping[str, TTSIMFunction]
+    NestedFunctionDict = Mapping[
+        str,
+        PolicyFunction
+        | DerivedAggregationFunction
+        | DerivedTimeConversionFunction
+        | GroupByFunction
+        | "NestedFunctionDict",
+    ]
+    QualNameFunctionsDict = Mapping[
+        str,
+        PolicyFunction
+        | DerivedAggregationFunction
+        | DerivedTimeConversionFunction
+        | GroupByFunction,
+    ]
 
     # Specialise from dags' NestedInputDict to GETTSIM's types.
     NestedDataDict = Mapping[str, pd.Series | "NestedDataDict"]

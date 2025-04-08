@@ -4,7 +4,6 @@ import datetime
 import functools
 import inspect
 import re
-from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Literal, TypeVar
 
@@ -14,17 +13,7 @@ import numpy
 T = TypeVar("T")
 
 
-class TTSIMFunction(ABC):
-    """
-    Abstract base class for all TTSIM functions.
-    """
-
-    @abstractmethod
-    def __call__(self, *args, **kwargs):
-        pass
-
-
-class PolicyFunction(TTSIMFunction):
+class PolicyFunction(Callable):
     """
     A function that computes an output vector based on some input vectors and/or
     parameters.
@@ -184,123 +173,7 @@ def _vectorize_func(func: Callable) -> Callable:
     return wrapper_vectorize_func
 
 
-class PolicyInput(Callable):
-    """
-    ...
-
-    Parameters
-    ----------
-    function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    skip_vectorization:
-        Whether the function should be vectorized.
-    """
-
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        start_date: datetime.date,
-        end_date: datetime.date,
-        params_key_for_rounding: str | None,
-        skip_vectorization: bool | None,
-    ):
-        self.skip_vectorization: bool = skip_vectorization
-        self.function = (
-            function if self.skip_vectorization else _vectorize_func(function)
-        )
-        self.start_date: datetime.date = start_date
-        self.end_date: datetime.date = end_date
-        self.params_key_for_rounding: str | None = params_key_for_rounding
-
-        # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = function.__annotations__
-        self.__module__ = function.__module__
-        self.__name__ = function.__name__
-        self.__signature__ = inspect.signature(self.function)
-
-    def __call__(self, *args, **kwargs):
-        return self.function(*args, **kwargs)
-
-    @property
-    def original_function_name(self) -> str:
-        """The name of the wrapped function."""
-        return self.function.__name__
-
-    def is_active(self, date: datetime.date) -> bool:
-        """Check if the function is active at a given date."""
-        return self.start_date <= date <= self.end_date
-
-
-def policy_input(
-    *,
-    start_date: str | datetime.date = "1900-01-01",
-    end_date: str | datetime.date = "2100-12-31",
-    params_key_for_rounding: str | None = None,
-    skip_vectorization: bool = False,
-) -> PolicyInput:
-    """
-    Decorator that makes a `PolicyInput` from a function.
-
-    **Dates active (start_date, end_date, leaf_name):**
-
-    Specifies that a PolicyInput is only active between two dates, `start` and `end`.
-
-    Note that even if you use this decorator with the `leaf_name` argument, you must
-    ensure that the function name is unique in the file where it is defined. Otherwise,
-    the function would be overwritten by the last function with the same name.
-
-    **Rounding spec (params_key_for_rounding):**
-
-    Adds the location of the rounding specification to a PolicyInput.
-
-    Parameters
-    ----------
-    start_date
-        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    end_date
-        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    params_key_for_rounding
-        Key of the parameters dictionary where rounding specifications are found. For
-        functions that are not user-written this is just the name of the respective
-        .yaml file.
-    skip_vectorization
-        Whether the function is already vectorized and, thus, should not be vectorized
-        again.
-
-    Returns
-    -------
-    A PolicyInput object.
-    """
-
-    _validate_dashed_iso_date(start_date)
-    _validate_dashed_iso_date(end_date)
-
-    start_date = datetime.date.fromisoformat(start_date)
-    end_date = datetime.date.fromisoformat(end_date)
-
-    _validate_date_range(start_date, end_date)
-
-    def inner(func: Callable) -> PolicyInput:
-        return PolicyInput(
-            function=func,
-            start_date=start_date,
-            end_date=end_date,
-            params_key_for_rounding=params_key_for_rounding,
-            skip_vectorization=skip_vectorization,
-        )
-
-    return inner
-
-
-class GroupByFunction(TTSIMFunction):
+class GroupByFunction(Callable):
     """
     A function that computes endogenous group_by IDs.
 
@@ -368,7 +241,10 @@ class DerivedAggregationFunction(PolicyFunction):
         self,
         *,
         function: Callable,
-        source_function: TTSIMFunction | None = None,
+        source_function: PolicyFunction
+        | DerivedTimeConversionFunction
+        | DerivedAggregationFunction
+        | None = None,
         source: str,
         aggregation_target: str,
         aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
@@ -407,7 +283,10 @@ class DerivedTimeConversionFunction(PolicyFunction):
         self,
         *,
         function: Callable,
-        source_function: TTSIMFunction | None = None,
+        source_function: PolicyFunction
+        | DerivedTimeConversionFunction
+        | DerivedAggregationFunction
+        | None = None,
         source: str,
         conversion_target: str,
     ):
