@@ -452,9 +452,10 @@ def test_aggregate_by_group_specs_agg_not_impl():
         match="aggr must be of type AggregationType, not <class 'str'>",
     ):
         AggregateByGroupSpec(
-                    source="betrag_m",
-                    aggr="sum",
-                )
+            source="betrag_m",
+            aggr="sum",
+        )
+
 
 @pytest.mark.parametrize(
     ("aggregation_specs_tree, leaf_name, target_tree, expected"),
