@@ -45,7 +45,6 @@ class AggregationType(StrEnum):
     MIN = "min"
     ANY = "any"
     ALL = "all"
-    NOT_IMPLEMENTED = "aggr_not_implemented"
 
 
 @dataclass
@@ -55,23 +54,30 @@ class AggregateByGroupSpec:
     """
 
     aggr: AggregationType
-    source: str
+    source: str | None = None
     _agg_func: Callable = field(init=False)
 
     def __post_init__(self):
-        if self.aggr == AggregationType.SUM:
-            func = grouped_sum
-        elif self.aggr == AggregationType.MEAN:
-            func = grouped_mean
-        elif self.aggr == AggregationType.MAX:
-            func = grouped_max
-        elif self.aggr == AggregationType.MIN:
-            func = grouped_min
-        elif self.aggr == AggregationType.ANY:
-            func = grouped_any
-        elif self.aggr == AggregationType.ALL:
-            func = grouped_all
-        else:
+        if not isinstance(self.aggr, AggregationType):
+            raise ValueError(
+                f"aggr must be of type AggregationType, not {type(self.aggr)}"
+            )
+
+        if self.aggr == AggregationType.COUNT and self.source is not None:
+            raise ValueError("COUNT aggregation cannot use a source.")
+
+        aggregation_registry = {
+            AggregationType.SUM: grouped_sum,
+            AggregationType.MEAN: grouped_mean,
+            AggregationType.MAX: grouped_max,
+            AggregationType.MIN: grouped_min,
+            AggregationType.ANY: grouped_any,
+            AggregationType.ALL: grouped_all,
+            AggregationType.COUNT: grouped_count,
+        }
+
+        func = aggregation_registry.get(self.aggr)
+        if func is None:
             raise ValueError(f"Aggregation type {self.aggr} not implemented")
 
         self._agg_func = func
@@ -80,22 +86,9 @@ class AggregateByGroupSpec:
         return self._agg_func(source, group_by_id)
 
     def mapper(self, group_by_id):
+        if self.aggr == AggregationType.COUNT:
+            return {"group_by_id": group_by_id}
         return {"source": self.source, "group_by_id": group_by_id}
-
-
-@dataclass
-class CountByGroupSpec:
-    """
-    A container for count by group specifications.
-    """
-
-    aggr: AggregationType = AggregationType.COUNT
-
-    def agg_func(self, group_by_id):
-        return grouped_count(group_by_id)
-
-    def mapper(self, group_by_id):
-        return {"group_by_id": group_by_id}
 
 
 @dataclass

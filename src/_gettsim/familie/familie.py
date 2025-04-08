@@ -14,9 +14,7 @@ from ttsim import (
 )
 
 aggregation_specs = {
-    "anzahl_personen_ehe": AggregateByGroupSpec(
-        aggr=AggregationType.COUNT,
-    ),
+    "anzahl_personen_ehe": AggregateByGroupSpec(aggr=AggregationType.COUNT),
 }
 
 

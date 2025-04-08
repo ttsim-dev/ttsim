@@ -14,7 +14,6 @@ from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
     AggregationType,
-    CountByGroupSpec,
     all_by_p_id,
     any_by_p_id,
     count_by_p_id,
@@ -336,7 +335,7 @@ def _select_return_type(aggregation_method: str, source_col_type: type) -> type:
 
 def _create_one_aggregate_by_group_func(
     aggregation_target: str,
-    aggregation_spec: AggregateByGroupSpec | CountByGroupSpec,
+    aggregation_spec: AggregateByGroupSpec,
     group_by_id: str,
     functions: QualNameFunctionsDict,
     top_level_namespace: set[str],

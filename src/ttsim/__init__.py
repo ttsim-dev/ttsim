@@ -33,6 +33,7 @@ from ttsim.visualization import plot_dag
 __all__ = [
     "AggregateByGroupSpec",
     "AggregateByPIDSpec",
+    "AggregationType",
     "ConflictingTimeDependentFunctionsError",
     "DerivedAggregationFunction",
     "DerivedTimeConversionFunction",

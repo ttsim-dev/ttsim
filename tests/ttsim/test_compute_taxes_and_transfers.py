@@ -447,31 +447,14 @@ def test_aggregate_by_group_specs_missing_group_sufix():
 
 
 def test_aggregate_by_group_specs_agg_not_impl():
-    data = {
-        "p_id": pd.Series([1, 2, 3], name="p_id"),
-        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-        "module_name": {
-            "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
-        },
-    }
-    aggregation_specs_tree = {
-        "module_name": {
-            "betrag_m_hh": AggregateByGroupSpec(
-                source="betrag_m",
-                aggr=AggregationType.NOT_IMPLEMENTED,
-            )
-        },
-    }
     with pytest.raises(
         ValueError,
-        match="Aggregation method aggr_not_implemented is not implemented.",
+        match="aggr must be of type AggregationType, not <class 'str'>",
     ):
-        compute_taxes_and_transfers(
-            data,
-            PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
-            targets_tree={"module_name": {"betrag_m_hh": None}},
-        )
-
+        AggregateByGroupSpec(
+                    source="betrag_m",
+                    aggr="sum",
+                )
 
 @pytest.mark.parametrize(
     ("aggregation_specs_tree, leaf_name, target_tree, expected"),

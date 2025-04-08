@@ -31,9 +31,7 @@ aggregation_specs = {
         source="familie__kind",
         aggr=AggregationType.SUM,
     ),
-    "anzahl_personen_bg": AggregateByGroupSpec(
-        aggr=AggregationType.COUNT,
-    ),
+    "anzahl_personen_bg": AggregateByGroupSpec(aggr=AggregationType.COUNT),
     "anzahl_kinder_bis_17_bg": AggregateByGroupSpec(
         source="familie__kind_bis_17",
         aggr=AggregationType.SUM,
@@ -50,9 +48,7 @@ aggregation_specs = {
         source="familie__kind",
         aggr=AggregationType.SUM,
     ),
-    "anzahl_personen_eg": AggregateByGroupSpec(
-        aggr=AggregationType.COUNT,
-    ),
+    "anzahl_personen_eg": AggregateByGroupSpec(aggr=AggregationType.COUNT),
 }
 
 

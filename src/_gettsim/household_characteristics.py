@@ -9,9 +9,7 @@ aggregation_specs = {
         source="sozialversicherung__rente__bezieht_rente",
         aggr=AggregationType.SUM,
     ),
-    "anzahl_personen_hh": AggregateByGroupSpec(
-        aggr=AggregationType.COUNT,
-    ),
+    "anzahl_personen_hh": AggregateByGroupSpec(aggr=AggregationType.COUNT),
 }
 
 
