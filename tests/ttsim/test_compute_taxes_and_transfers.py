@@ -6,10 +6,10 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+from mettsim.config import FOREIGN_KEYS
+from mettsim.functions.payroll_tax.group_by_ids import fam_id, sp_id
 
 from gettsim import FunctionsAndColumnsOverlapWarning
-from tests.ttsim.mettsim.config import FOREIGN_KEYS
-from tests.ttsim.mettsim.functions.payroll_tax.group_by_ids import fam_id, sp_id
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
 from ttsim.compute_taxes_and_transfers import (
     _convert_data_to_correct_types,

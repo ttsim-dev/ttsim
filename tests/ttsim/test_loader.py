@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import numpy
 import pytest
+from mettsim.config import METTSIM_RESSOURCE_DIR
 
-from tests.ttsim.mettsim.config import METTSIM_RESSOURCE_DIR
 from ttsim.function_types import _vectorize_func, policy_function
 from ttsim.loader import (
     _convert_path_to_tree_path,
