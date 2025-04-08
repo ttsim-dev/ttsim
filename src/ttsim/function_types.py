@@ -4,7 +4,6 @@ import datetime
 import functools
 import inspect
 import re
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, TypeVar
 
@@ -18,7 +17,7 @@ T = TypeVar("T")
 
 
 @dataclass
-class TTSIMObject(ABC):
+class TTSIMObject:
     """
     Abstract base class for all TTSIM Functions and Inputs.
     """
@@ -27,18 +26,31 @@ class TTSIMObject(ABC):
     start_date: datetime.date
     end_date: datetime.date
 
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
+
+    def is_active(self, date: datetime.date) -> bool:
+        """Check if the function is active at a given date."""
+        return self.start_date <= date <= self.end_date
+
 
 @dataclass
-class TTSIMFunction(TTSIMObject, ABC):
+class TTSIMFunction(TTSIMObject):
     """
     Abstract base class for all TTSIM functions.
     """
 
     leaf_name: str | None = None
 
-    @abstractmethod
     def __call__(self, *args, **kwargs):
-        pass
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
 
 
 @dataclass
@@ -78,23 +90,6 @@ class PolicyFunction(TTSIMFunction):
         self.__module__ = self.function.__module__
         self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
-
-    def __call__(self, *args, **kwargs):
-        return self.function(*args, **kwargs)
-
-    @property
-    def dependencies(self) -> set[str]:
-        """The names of input variables that the function depends on."""
-        return set(inspect.signature(self).parameters)
-
-    @property
-    def original_function_name(self) -> str:
-        """The name of the wrapped function."""
-        return self.function.__name__
-
-    def is_active(self, date: datetime.date) -> bool:
-        """Check if the function is active at a given date."""
-        return self.start_date <= date <= self.end_date
 
 
 def policy_function(
@@ -307,9 +302,6 @@ class GroupByFunction(TTSIMFunction):
         self.__module__ = self.function.__module__
         self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
-
-    def __call__(self, *args, **kwargs):
-        return self.function(*args, **kwargs)
 
     @property
     def dependencies(self) -> set[str]:
