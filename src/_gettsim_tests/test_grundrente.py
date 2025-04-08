@@ -8,53 +8,7 @@ from _gettsim_tests._helpers import cached_set_up_policy_environment
 from _gettsim_tests._policy_test_utils import PolicyTest, load_policy_test_data
 from ttsim import compute_taxes_and_transfers
 
-grundrente_test_data = load_policy_test_data("grundrente")
 proxy_rente_test_data = load_policy_test_data("grundrente_proxy_rente")
-
-
-@pytest.mark.parametrize(
-    "test",
-    grundrente_test_data,
-)
-def test_grundrente(test: PolicyTest):
-    environment = cached_set_up_policy_environment(date=test.date)
-
-    result = compute_taxes_and_transfers(
-        data_tree=test.input_tree,
-        environment=environment,
-        targets_tree=test.target_structure,
-    )
-
-    flat_result = dt.flatten_to_qual_names(result)
-    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
-
-    for result, expected in zip(
-        flat_result.values(), flat_expected_output_tree.values()
-    ):
-        assert_array_almost_equal(result, expected, decimal=0)
-
-
-@pytest.mark.parametrize(
-    "test",
-    proxy_rente_test_data,
-)
-def test_grundrente_proxy_rente(test: PolicyTest):
-    environment = cached_set_up_policy_environment(date=test.date)
-
-    result = compute_taxes_and_transfers(
-        data_tree=test.input_tree,
-        environment=environment,
-        targets_tree=test.target_structure,
-    )
-
-    flat_result = dt.flatten_to_qual_names(result)
-    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
-
-    for result, expected in zip(
-        flat_result.values(), flat_expected_output_tree.values()
-    ):
-        assert_array_almost_equal(result, expected, decimal=0)
-
 
 @pytest.mark.parametrize(
     "test",
