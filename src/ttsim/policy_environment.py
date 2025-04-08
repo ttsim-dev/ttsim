@@ -124,11 +124,10 @@ class PolicyEnvironment:
         # Add old functions tree to new functions tree
         new_functions_tree = {**self._functions_tree}
 
-        functions_tree_to_upsert = optree.tree_map(
-            lambda leaf: leaf
-            if isinstance(leaf, GroupByFunction)
-            else _convert_function_to_policy_function(leaf),
-            functions_tree_to_upsert,
+        assert_valid_ttsim_pytree(
+            tree=functions_tree_to_upsert,
+            leaf_checker=lambda leaf: isinstance(leaf, TTSIMFunction),
+            tree_name="functions_tree_to_upsert",
         )
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
             functions_tree_to_upsert
