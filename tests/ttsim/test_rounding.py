@@ -5,9 +5,20 @@ from pandas._testing import assert_series_equal
 from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
-from ttsim.function_types import policy_function
+from ttsim.function_types import policy_function, policy_input
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.rounding import RoundingDirection, RoundingSpec
+
+
+@policy_input()
+def x() -> int:
+    pass
+
+
+@policy_input()
+def p_id() -> int:
+    pass
+
 
 rounding_specs_and_exp_results = [
     (
@@ -91,15 +102,17 @@ def test_rounding(rounding_spec, input_values, exp_output):
 
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(income):
-        return income
+    def test_func(x):
+        return x
 
     data = {
         "p_id": pd.Series([1, 2]),
-        "namespace": {"income": pd.Series(input_values)},
+        "namespace": {"x": pd.Series(input_values)},
     }
 
-    environment = PolicyEnvironment({"namespace": {"test_func": test_func}})
+    environment = PolicyEnvironment(
+        {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
+    )
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
@@ -120,15 +133,21 @@ def test_rounding_with_time_conversion():
     @policy_function(
         rounding_spec=RoundingSpec(base=1, direction=RoundingDirection.DOWN)
     )
-    def test_func_m(income):
-        return income
+    def test_func_m(x):
+        return x
 
     data = {
         "p_id": pd.Series([1, 2]),
-        "income": pd.Series([1.2, 1.5]),
+        "x": pd.Series([1.2, 1.5]),
     }
 
-    environment = PolicyEnvironment({"test_func_m": test_func_m})
+    environment = PolicyEnvironment(
+        {
+            "test_func_m": test_func_m,
+            "x": x,
+            "p_id": p_id,
+        }
+    )
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
@@ -153,12 +172,18 @@ def test_no_rounding(
 ):
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(income):
-        return income
+    def test_func(x):
+        return x
 
     data = {"p_id": pd.Series([1, 2])}
-    data["income"] = pd.Series(input_values_exp_output)
-    environment = PolicyEnvironment({"test_func": test_func})
+    data["x"] = pd.Series(input_values_exp_output)
+    environment = PolicyEnvironment(
+        {
+            "test_func": test_func,
+            "x": x,
+            "p_id": p_id,
+        }
+    )
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,

@@ -31,7 +31,7 @@ def function_with_bool_return(x: bool) -> bool:
 
 
 @policy_input()
-def x() -> bool:
+def x() -> int:
     pass
 
 
@@ -78,7 +78,8 @@ def function_with_float_return(x: int) -> float:
                     "f": policy_function(leaf_name="f")(
                         lambda inputs__x_hh: inputs__x_hh
                     )
-                }
+                },
+                "inputs": {"x": x},
             },
             {"namespace1": {"f": None}},
             {
@@ -90,7 +91,12 @@ def function_with_float_return(x: int) -> float:
         ),
         (
             # Aggregations derived from target
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda x: x)}},
+            {
+                "namespace1": {
+                    "f": policy_function(leaf_name="f")(lambda x: x),
+                    "x": x,
+                }
+            },
             {"namespace1": {"f_hh": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -101,7 +107,12 @@ def function_with_float_return(x: int) -> float:
         ),
         (
             # Aggregations derived from simple environment specification
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)}},
+            {
+                "namespace1": {
+                    "f": policy_function(leaf_name="f")(lambda y_hh: y_hh),
+                    "x": x,
+                }
+            },
             {"namespace1": {"f": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -119,7 +130,10 @@ def function_with_float_return(x: int) -> float:
         ),
         (
             # Aggregations derived from namespaced environment specification
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)}},
+            {
+                "namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)},
+                "inputs": {"x": x},
+            },
             {"namespace1": {"f": None}},
             {
                 "inputs": {"x": pd.Series([1, 1, 1])},
