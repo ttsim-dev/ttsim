@@ -372,20 +372,21 @@ def _create_one_aggregate_by_group_func(
         top_level_namespace=top_level_namespace,
     )
 
-    if isinstance(aggregation_spec, AggregateByGroupSpec):
-        qual_name_source = _get_qual_name_of_source_col(
+    qual_name_source = (
+        _get_qual_name_of_source_col(
             source=source,
             wrapped_func=wrapped_func,
         )
-    else:
-        qual_name_source = None
+        if source
+        else None
+    )
 
     source_function = functions[qual_name_source]
 
     return DerivedAggregationFunction(
+        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
         function=wrapped_func,
         source=qual_name_source,
-        aggregation_target=aggregation_target,
         aggregation_method=aggregation_spec.aggr,
         start_date=source_function.start_date,
         end_date=source_function.end_date,
@@ -494,9 +495,9 @@ def _create_one_aggregate_by_p_id_func(
     source_function = functions[qual_name_source]
 
     return DerivedAggregationFunction(
+        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
         function=wrapped_func,
         source=qual_name_source,
-        aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
         start_date=source_function.start_date,
         end_date=source_function.end_date,
