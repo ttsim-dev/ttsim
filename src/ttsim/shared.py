@@ -494,6 +494,54 @@ def join_numpy(
     return padded_targets.take(indices)
 
 
+@jax.jit
+def join_jax(
+    foreign_key: jnp.ndarray[Key],
+    primary_key: jnp.ndarray[Key],
+    target: jnp.ndarray[Out],
+    value_if_foreign_key_is_missing: Out,
+) -> jnp.ndarray[Out]:
+    """
+    Given a foreign key, find the corresponding primary key, and return the target at
+    the same index as the primary key.
+
+    Parameters
+    ----------
+    foreign_key : numpy.ndarray[Key]
+        The foreign keys.
+    primary_key : numpy.ndarray[Key]
+        The primary keys.
+    target : numpy.ndarray[Out]
+        The targets in the same order as the primary keys.
+    value_if_foreign_key_is_missing : Out
+        The value to return if no matching primary key is found.
+
+    Returns
+    -------
+    The joined array.
+    """
+
+    # For each foreign key and for each primary key, check if they match
+    matches_foreign_key = foreign_key[:, None] == primary_key
+
+    # For each foreign key, add a column with True at the end, to later fall back to
+    # the value for unresolved foreign keys
+    padded_matches_foreign_key = jnp.pad(
+        matches_foreign_key, ((0, 0), (0, 1)), "constant", constant_values=True
+    )
+
+    # For each foreign key, compute the index of the first matching primary key
+    indices = jnp.argmax(padded_matches_foreign_key, axis=1)
+
+    # Add the value for unresolved foreign keys at the end of the target array
+    padded_targets = jnp.pad(
+        target, (0, 1), "constant", constant_values=value_if_foreign_key_is_missing
+    )
+
+    # Return the target at the index of the first matching primary key
+    return padded_targets.take(indices)
+
+
 def assert_valid_ttsim_pytree(
     tree: Any, leaf_checker: GenericCallable, tree_name: str
 ) -> None:
