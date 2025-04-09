@@ -1,5 +1,6 @@
 import numpy
 import pytest
+
 try:
     import jax
     import jax.numpy as jnp
