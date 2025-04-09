@@ -306,10 +306,10 @@ def group_by_function(
     def decorator(func: Callable) -> GroupByFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
         return GroupByFunction(
+            leaf_name=_leaf_name,
             function=func,
             start_date=start_date,
             end_date=end_date,
-            leaf_name=_leaf_name,
         )
 
     return decorator
