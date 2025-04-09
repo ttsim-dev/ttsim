@@ -1,36 +1,41 @@
 """Parental leave benefits."""
 
-from ttsim import AggregateByGroupSpec, AggregateByPIDSpec, policy_function
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregateByPIDSpec,
+    AggregationType,
+    policy_function,
+)
 
 aggregation_specs = {
     "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(
         source="kind_grundsätzlich_anspruchsberechtigt",
-        aggr="any",
+        aggr=AggregationType.ANY,
     ),
     "anzahl_anträge_fg": AggregateByGroupSpec(
         source="claimed",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "bezugsmonate_partner": AggregateByPIDSpec(
         p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
         source="bisherige_bezugsmonate",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "alter_monate_jüngstes_mitglied_fg": AggregateByGroupSpec(
         source="alter_monate",
-        aggr="min",
+        aggr=AggregationType.MIN,
     ),
     "anzahl_kinder_bis_2_fg": AggregateByGroupSpec(
         source="familie__kind_bis_2",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kinder_bis_5_fg": AggregateByGroupSpec(
         source="familie__kind_bis_5",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_mehrlinge_jüngstes_kind_fg": AggregateByGroupSpec(
         source="jüngstes_kind_oder_mehrling",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 

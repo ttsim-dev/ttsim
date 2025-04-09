@@ -1,56 +1,29 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 52
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
-    familie__alleinerziehend:
-      - false
-    alter:
-      - 52
     arbeitsstunden_w:
       - 20.0
     behinderungsgrad:
       - 0
-    geburtsjahr:
-      - 1967
-    geburtsmonat:
-      - 1
-    geburtstag:
-      - 1
-    hh_id:
-      - 5
-    familie__kind:
-      - false
-    p_id:
-      - 11
-    familie__p_id_ehepartner:
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-    schwerbehindert_grad_g:
-      - false
-    vermögen:
-      - 5500.0
-    weiblich:
-      - true
-    wohnort_ost:
-      - false
+    einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
+      - 0.0
     einkommensteuer__abzüge__betreuungskosten_m:
       - 0.0
     einkommensteuer__abzüge__p_id_betreuungskosten_träger:
       - -1
-    einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
-      - 0.0
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
       - 206.0
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
@@ -75,12 +48,34 @@ inputs:
       - 4000.0
     elterngeld__zu_versteuerndes_einkommen_vorjahr_y_sn:
       - 48798.0
+    familie__alleinerziehend:
+      - false
+    familie__kind:
+      - false
+    familie__p_id_ehepartner:
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+    geburtsjahr:
+      - 1967
+    geburtsmonat:
+      - 1
+    geburtstag:
+      - 1
+    hh_id:
+      - 5
     kindergeld__in_ausbildung:
       - false
     kindergeld__p_id_empfänger:
       - -1
     lohnsteuer__steuerklasse:
       - 1
+    p_id:
+      - 11
+    schwerbehindert_grad_g:
+      - false
     sozialversicherung__arbeitslosen__anwartschaftszeit:
       - true
     sozialversicherung__arbeitslosen__arbeitssuchend:
@@ -93,19 +88,9 @@ inputs:
       - false
     sozialversicherung__pflege__beitrag__hat_kinder:
       - true
-    sozialversicherung__rente__erwerbsminderung__teilweise_erwerbsgemindert:
-      - false
-    sozialversicherung__rente__erwerbsminderung__voll_erwerbsgemindert:
-      - false
-    sozialversicherung__rente__altersrente__höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
-      - 0.0
-    sozialversicherung__rente__monat_renteneintritt:
-      - 1
     sozialversicherung__rente__altersrente__für_frauen__pflichtsbeitragsjahre_ab_alter_40:
       - 0.0
-    sozialversicherung__rente__monate_in_arbeitslosigkeit:
-      - 0.0
-    sozialversicherung__rente__monate_in_arbeitsunfähigkeit:
+    sozialversicherung__rente__altersrente__höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
       - 0.0
     sozialversicherung__rente__bezieht_rente:
       - false
@@ -115,6 +100,10 @@ inputs:
       - 1.7936
     sozialversicherung__rente__ersatzzeiten_monate:
       - 0.0
+    sozialversicherung__rente__erwerbsminderung__teilweise_erwerbsgemindert:
+      - false
+    sozialversicherung__rente__erwerbsminderung__voll_erwerbsgemindert:
+      - false
     sozialversicherung__rente__freiwillige_beitragsmonate:
       - 5.0
     sozialversicherung__rente__grundrente__bewertungszeiten_monate:
@@ -129,7 +118,21 @@ inputs:
       - 0.0
     sozialversicherung__rente__krankheitszeiten_ab_16_bis_24_monate:
       - 0.0
+    sozialversicherung__rente__monat_renteneintritt:
+      - 1
+    sozialversicherung__rente__monate_geringfügiger_beschäftigung:
+      - 0.0
+    sozialversicherung__rente__monate_in_arbeitslosigkeit:
+      - 0.0
+    sozialversicherung__rente__monate_in_arbeitsunfähigkeit:
+      - 0.0
+    sozialversicherung__rente__monate_in_ausbildungssuche:
+      - 0.0
     sozialversicherung__rente__monate_in_mutterschutz:
+      - 0.0
+    sozialversicherung__rente__monate_in_schulausbildung:
+      - 12.0
+    sozialversicherung__rente__monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit:
       - 0.0
     sozialversicherung__rente__pflegeberücksichtigungszeiten_monate:
       - 0.0
@@ -137,18 +140,14 @@ inputs:
       - 348.0
     sozialversicherung__rente__private_rente_betrag_m:
       - 0.0
-    sozialversicherung__rente__monate_in_schulausbildung:
-      - 12.0
-    sozialversicherung__rente__monate_in_ausbildungssuche:
-      - 0.0
-    sozialversicherung__rente__monate_geringfügiger_beschäftigung:
-      - 0.0
-    sozialversicherung__rente__monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit:
-      - 0.0
     unterhalt__anspruch_m:
       - 0.0
     unterhalt__tatsächlich_erhaltener_betrag_m:
       - 0.0
+    vermögen:
+      - 5500.0
+    weiblich:
+      - true
     wohnen__baujahr_immobilie_hh:
       - 3
     wohnen__bewohnt_eigentum_hh:
@@ -161,4 +160,6 @@ inputs:
       - 50.0
     wohngeld__mietstufe:
       - 3
+    wohnort_ost:
+      - false
 outputs: {}

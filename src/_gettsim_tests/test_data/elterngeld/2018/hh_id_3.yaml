@@ -1,52 +1,20 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 56
-      - 55
-    familie__alleinerziehend:
-      - false
-      - false
     alter:
       - 43
       - 43
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 56
+      - 55
     arbeitsstunden_w:
       - 9.0
       - 30.0
-    geburtsjahr:
-      - 1976
-      - 1976
-    geburtsmonat:
-      - 5
-      - 7
-    geburtstag:
-      - 5
-      - 7
-    hh_id:
-      - 3
-      - 3
-    familie__kind:
-      - false
-      - false
-    p_id:
-      - 55
-      - 56
-    familie__p_id_ehepartner:
-      - 56
-      - 55
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-    wohnort_ost:
-      - false
-      - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 900.0
       - 3400.0
@@ -65,6 +33,33 @@ inputs:
     elterngeld__zu_versteuerndes_einkommen_vorjahr_y_sn:
       - 7406.0
       - 39806.0
+    familie__alleinerziehend:
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+    familie__p_id_ehepartner:
+      - 56
+      - 55
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+    geburtsjahr:
+      - 1976
+      - 1976
+    geburtsmonat:
+      - 5
+      - 7
+    geburtstag:
+      - 5
+      - 7
+    hh_id:
+      - 3
+      - 3
     jahr:
       - 2018
       - 2018
@@ -74,7 +69,13 @@ inputs:
     lohnsteuer__steuerklasse:
       - 1
       - 1
+    p_id:
+      - 55
+      - 56
     sozialversicherung__pflege__beitrag__hat_kinder:
+      - false
+      - false
+    wohnort_ost:
       - false
       - false
 outputs:

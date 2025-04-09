@@ -1,12 +1,17 @@
 ---
 info:
-  note: >-
-    Test with old income thresholds and new Kindergeld, adjusted for
-    Kindersofortzuschlag of 20€). Test cutoff around 18 years.
+  note: Test with old income thresholds and new Kindergeld, adjusted for Kindersofortzuschlag
+    of 20€). Test cutoff around 18 years.
+  precision: 0.01
   source: https://www.buerger-geld.org/rechner
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 40
+      - 38
+      - 18
+      - 17
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -22,59 +27,9 @@ inputs:
       - 43
       - -1
       - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-    alter:
-      - 40
-      - 38
-      - 18
-      - 17
     arbeitsstunden_w:
       - 0.0
       - 12.0
-      - 0.0
-      - 0.0
-    geburtsjahr:
-      - 1983
-      - 1985
-      - 2005
-      - 2006
-    hh_id:
-      - 18
-      - 18
-      - 18
-      - 18
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-    p_id:
-      - 43
-      - 44
-      - 45
-      - 46
-    familie__p_id_ehepartner:
-      - 44
-      - 43
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 43
-      - 43
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 44
-      - 44
-    vermögen:
-      - 0.0
-      - 0.0
       - 0.0
       - 0.0
     einkommensteuer__betrag_y_sn:
@@ -117,6 +72,41 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 44
+      - 43
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 43
+      - 43
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 44
+      - 44
+    geburtsjahr:
+      - 1983
+      - 1985
+      - 2005
+      - 2006
+    hh_id:
+      - 18
+      - 18
+      - 18
+      - 18
     jahr:
       - 2023-01
       - 2023-01
@@ -137,6 +127,11 @@ inputs:
       - -1
       - 43
       - 43
+    p_id:
+      - 43
+      - 44
+      - 45
+      - 46
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -173,6 +168,11 @@ inputs:
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
       - 0.0

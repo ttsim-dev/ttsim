@@ -1,10 +1,16 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 67
+      - 34
+      - 37
+      - 48
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -20,16 +26,6 @@ inputs:
       - -1
       - -1
       - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-    alter:
-      - 67
-      - 34
-      - 37
-      - 48
     arbeitsstunden_w:
       - 0.0
       - 0.0
@@ -40,71 +36,11 @@ inputs:
       - 0
       - 0
       - 0
-    geburtsjahr:
-      - 1952
-      - 1985
-      - 1982
-      - 1971
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-    hh_id:
-      - 2
-      - 2
-      - 2
-      - 2
-    familie__kind:
-      - false
-      - false
-      - false
-      - false
-    p_id:
-      - 5
-      - 6
-      - 7
-      - 8
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - -1
-    schwerbehindert_grad_g:
-      - false
-      - false
-      - false
-      - false
-    vermögen:
-      - 5500.0
+    einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
       - 0.0
       - 0.0
       - 0.0
-    weiblich:
-      - false
-      - true
-      - false
-      - false
-    wohnort_ost:
-      - true
-      - true
-      - true
-      - true
+      - 0.0
     einkommensteuer__abzüge__betreuungskosten_m:
       - 0.0
       - 0.0
@@ -115,11 +51,6 @@ inputs:
       - -1
       - -1
       - -1
-    einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
       - 200.0
       - 201.0
@@ -180,6 +111,51 @@ inputs:
       - 30678.0
       - 28302.0
       - 12726.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - false
+      - false
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - -1
+    geburtsjahr:
+      - 1952
+      - 1985
+      - 1982
+      - 1971
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 2
+      - 2
+      - 2
+      - 2
     kindergeld__in_ausbildung:
       - false
       - false
@@ -195,6 +171,16 @@ inputs:
       - 1
       - 1
       - 1
+    p_id:
+      - 5
+      - 6
+      - 7
+      - 8
+    schwerbehindert_grad_g:
+      - false
+      - false
+      - false
+      - false
     sozialversicherung__arbeitslosen__anwartschaftszeit:
       - true
       - true
@@ -225,37 +211,12 @@ inputs:
       - true
       - false
       - false
-    sozialversicherung__rente__erwerbsminderung__teilweise_erwerbsgemindert:
-      - false
-      - false
-      - false
-      - false
-    sozialversicherung__rente__erwerbsminderung__voll_erwerbsgemindert:
-      - false
-      - false
-      - false
-      - false
-    sozialversicherung__rente__altersrente__höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    sozialversicherung__rente__monat_renteneintritt:
-      - 1
-      - 1
-      - 1
-      - 1
     sozialversicherung__rente__altersrente__für_frauen__pflichtsbeitragsjahre_ab_alter_40:
       - 8.0
       - 0.0
       - 0.0
       - 0.0
-    sozialversicherung__rente__monate_in_arbeitslosigkeit:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    sozialversicherung__rente__monate_in_arbeitsunfähigkeit:
+    sozialversicherung__rente__altersrente__höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
       - 0.0
       - 0.0
       - 0.0
@@ -280,6 +241,16 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    sozialversicherung__rente__erwerbsminderung__teilweise_erwerbsgemindert:
+      - false
+      - false
+      - false
+      - false
+    sozialversicherung__rente__erwerbsminderung__voll_erwerbsgemindert:
+      - false
+      - false
+      - false
+      - false
     sozialversicherung__rente__freiwillige_beitragsmonate:
       - 5.0
       - 5.0
@@ -315,7 +286,42 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    sozialversicherung__rente__monat_renteneintritt:
+      - 1
+      - 1
+      - 1
+      - 1
+    sozialversicherung__rente__monate_geringfügiger_beschäftigung:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__monate_in_arbeitslosigkeit:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__monate_in_arbeitsunfähigkeit:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__monate_in_ausbildungssuche:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
     sozialversicherung__rente__monate_in_mutterschutz:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__monate_in_schulausbildung:
+      - 12.0
+      - 12.0
+      - 12.0
+      - 12.0
+    sozialversicherung__rente__monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit:
       - 0.0
       - 0.0
       - 0.0
@@ -335,26 +341,6 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    sozialversicherung__rente__monate_in_schulausbildung:
-      - 12.0
-      - 12.0
-      - 12.0
-      - 12.0
-    sozialversicherung__rente__monate_in_ausbildungssuche:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    sozialversicherung__rente__monate_geringfügiger_beschäftigung:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    sozialversicherung__rente__monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
     unterhalt__anspruch_m:
       - 177.0
       - 177.0
@@ -365,6 +351,16 @@ inputs:
       - 177.0
       - 177.0
       - 0.0
+    vermögen:
+      - 5500.0
+      - 0.0
+      - 0.0
+      - 0.0
+    weiblich:
+      - false
+      - true
+      - false
+      - false
     wohnen__baujahr_immobilie_hh:
       - 3
       - 3
@@ -395,4 +391,9 @@ inputs:
       - 3
       - 3
       - 3
+    wohnort_ost:
+      - true
+      - true
+      - true
+      - true
 outputs: {}

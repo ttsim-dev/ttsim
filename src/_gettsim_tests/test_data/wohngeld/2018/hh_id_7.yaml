@@ -1,52 +1,11 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 35
-      - 34
-      - 37
-      - 36
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
     alter:
       - 45
       - 42
@@ -75,6 +34,34 @@ inputs:
       - 13
       - 13
       - 13
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 35
+      - 34
+      - 37
+      - 36
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
     behinderungsgrad:
       - 0
       - 0
@@ -89,146 +76,6 @@ inputs:
       - 0
       - 0
       - 0
-    geburtsjahr:
-      - 1973
-      - 1976
-      - 1963
-      - 1961
-      - 1993
-      - 2000
-      - 2002
-      - 2004
-      - 2005
-      - 2006
-      - 1998
-      - 2009
-      - 2011
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    hh_id:
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-      - 7
-    familie__kind:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - true
-      - true
-      - true
-      - true
-      - true
-      - true
-      - true
-      - true
-    p_id:
-      - 34
-      - 35
-      - 36
-      - 37
-      - 38
-      - 39
-      - 40
-      - 41
-      - 42
-      - 43
-      - 44
-      - 45
-      - 46
-    familie__p_id_ehepartner:
-      - 35
-      - 34
-      - 37
-      - 36
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 34
-      - 34
-      - 34
-      - 34
-      - 34
-      - 34
-      - 34
-      - 34
-      - 34
-      - 34
-      - 34
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 35
-      - 35
-      - 35
-      - 35
-      - 35
-      - 35
-      - 35
-      - 35
-      - 35
-      - 35
-      - 35
-    vermögen:
-      - 4100.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 1000.0
       - 1000.0
@@ -355,6 +202,132 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - true
+      - true
+      - true
+      - true
+      - true
+      - true
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 35
+      - 34
+      - 37
+      - 36
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+      - 34
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+      - 35
+    geburtsjahr:
+      - 1973
+      - 1976
+      - 1963
+      - 1961
+      - 1993
+      - 2000
+      - 2002
+      - 2004
+      - 2005
+      - 2006
+      - 1998
+      - 2009
+      - 2011
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
+      - 7
     jahr:
       - 2018
       - 2018
@@ -397,6 +370,20 @@ inputs:
       - 34
       - 34
       - 34
+    p_id:
+      - 34
+      - 35
+      - 36
+      - 37
+      - 38
+      - 39
+      - 40
+      - 41
+      - 42
+      - 43
+      - 44
+      - 45
+      - 46
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -511,6 +498,20 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
+      - 4100.0
       - 0.0
       - 0.0
       - 0.0

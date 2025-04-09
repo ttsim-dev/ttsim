@@ -2,57 +2,53 @@ from collections import Counter
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, group_by_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
 aggregation_specs = {
     "anzahl_erwachsene_fg": AggregateByGroupSpec(
         source="familie__erwachsen",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kinder_fg": AggregateByGroupSpec(
         source="familie__kind",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kinder_bis_6_fg": AggregateByGroupSpec(
         source="familie__kind_bis_6",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kinder_bis_15_fg": AggregateByGroupSpec(
         source="familie__kind_bis_15",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_erwachsene_bg": AggregateByGroupSpec(
         source="familie__erwachsen",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kinder_bg": AggregateByGroupSpec(
         source="familie__kind",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
-    "anzahl_personen_bg": AggregateByGroupSpec(
-        aggr="count",
-    ),
+    "anzahl_personen_bg": AggregateByGroupSpec(aggr=AggregationType.COUNT),
     "anzahl_kinder_bis_17_bg": AggregateByGroupSpec(
         source="familie__kind_bis_17",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "alleinerziehend_bg": AggregateByGroupSpec(
         source="familie__alleinerziehend",
-        aggr="any",
+        aggr=AggregationType.ANY,
     ),
     "anzahl_erwachsene_eg": AggregateByGroupSpec(
         source="familie__erwachsen",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kinder_eg": AggregateByGroupSpec(
         source="familie__kind",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
-    "anzahl_personen_eg": AggregateByGroupSpec(
-        aggr="count",
-    ),
+    "anzahl_personen_eg": AggregateByGroupSpec(aggr=AggregationType.COUNT),
 }
 
 

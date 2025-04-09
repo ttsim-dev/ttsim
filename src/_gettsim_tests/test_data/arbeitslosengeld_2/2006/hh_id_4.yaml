@@ -1,10 +1,17 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 33
+      - 30
+      - 12
+      - 10
+      - 2
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -23,67 +30,7 @@ inputs:
       - -1
       - -1
       - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-      - false
-    alter:
-      - 33
-      - 30
-      - 12
-      - 10
-      - 2
     arbeitsstunden_w:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    geburtsjahr:
-      - 1973
-      - 1976
-      - 1994
-      - 1996
-      - 2004
-    hh_id:
-      - 4
-      - 4
-      - 4
-      - 4
-      - 4
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-      - true
-    p_id:
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-    familie__p_id_ehepartner:
-      - 6
-      - 5
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 5
-      - 5
-      - 5
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 6
-      - 6
-      - 6
-    vermögen:
       - 0.0
       - 0.0
       - 0.0
@@ -137,6 +84,48 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 6
+      - 5
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 5
+      - 5
+      - 5
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 6
+      - 6
+      - 6
+    geburtsjahr:
+      - 1973
+      - 1976
+      - 1994
+      - 1996
+      - 2004
+    hh_id:
+      - 4
+      - 4
+      - 4
+      - 4
+      - 4
     jahr:
       - '2006'
       - '2006'
@@ -161,6 +150,12 @@ inputs:
       - 5
       - 5
       - 5
+    p_id:
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -204,6 +199,12 @@ inputs:
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
       - 0.0
