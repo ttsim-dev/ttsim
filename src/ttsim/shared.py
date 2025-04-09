@@ -19,7 +19,7 @@ if TYPE_CHECKING:
         GenericCallable,
         NestedDataDict,
         NestedTTSIMFunctionDict,
-        QualNameTTSIMFObjectDict,
+        QualNameTTSIMObjectDict,
     )
 
 
@@ -420,7 +420,7 @@ def assert_valid_ttsim_pytree(
 
 def get_name_of_group_by_id(
     target_name: str,
-    group_by_functions: QualNameTTSIMFObjectDict,
+    group_by_functions: QualNameTTSIMObjectDict,
 ) -> str:
     """Get the group-by-identifier name for some target.
 

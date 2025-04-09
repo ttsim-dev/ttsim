@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Literal, TypeVar
 import dags.tree as dt
 import numpy
 
+from ttsim.rounding import RoundingSpec
 from ttsim.shared import validate_dashed_iso_date, validate_date_range
 
 if TYPE_CHECKING:
@@ -130,13 +131,13 @@ class PolicyFunction(TTSIMFunction):
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
+    rounding_spec:
+        The rounding specification.
     skip_vectorization:
         Whether the function should be vectorized.
     """
 
-    params_key_for_rounding: str | None = None
+    rounding_spec: RoundingSpec | None
 
     def __post_init__(self):
         self.function = (
@@ -150,13 +151,49 @@ class PolicyFunction(TTSIMFunction):
         self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
 
+    def _fail_if_rounding_has_wrong_type(
+        self, rounding_spec: RoundingSpec | None
+    ) -> None:
+        """Check if rounding_spec has the correct type.
+
+        Parameters
+        ----------
+        rounding_spec
+            The rounding specification to check.
+
+        Raises
+        ------
+        AssertionError
+            If rounding_spec is not a RoundingSpec or None.
+        """
+        assert isinstance(rounding_spec, RoundingSpec | None), (
+            f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
+        )
+
+    def __call__(self, *args, **kwargs):
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
+
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
+
+    def is_active(self, date: datetime.date) -> bool:
+        """Check if the function is active at a given date."""
+        return self.start_date <= date <= self.end_date
+
 
 def policy_function(
     *,
     start_date: str | datetime.date = "1900-01-01",
     end_date: str | datetime.date = "2100-12-31",
     leaf_name: str | None = None,
-    params_key_for_rounding: str | None = None,
+    rounding_spec: RoundingSpec | None = None,
     skip_vectorization: bool = False,
 ) -> PolicyFunction:
     """
@@ -172,9 +209,9 @@ def policy_function(
     ensure that the function name is unique in the file where it is defined. Otherwise,
     the function would be overwritten by the last function with the same name.
 
-    **Rounding spec (params_key_for_rounding):**
+    **Rounding specification (rounding_spec):**
 
-    Adds the location of the rounding specification to a PolicyFunction.
+    Adds the way rounding is to be done to a PolicyFunction.
 
     Parameters
     ----------
@@ -185,10 +222,8 @@ def policy_function(
     leaf_name
         The name that should be used as the PolicyFunction's leaf name in the DAG. If
         omitted, we use the name of the function as defined.
-    params_key_for_rounding
-        Key of the parameters dictionary where rounding specifications are found. For
-        functions that are not user-written this is just the name of the respective
-        .yaml file.
+    rounding_spec
+        The specification to be used for rounding.
     skip_vectorization
         Whether the function is already vectorized and, thus, should not be vectorized
         again.
@@ -206,7 +241,7 @@ def policy_function(
             leaf_name=leaf_name if leaf_name else func.__name__,
             start_date=start_date,
             end_date=end_date,
-            params_key_for_rounding=params_key_for_rounding,
+            rounding_spec=rounding_spec,
             skip_vectorization=skip_vectorization,
         )
 

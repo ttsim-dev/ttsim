@@ -1,7 +1,7 @@
 import networkx as nx
 import pytest
+from _helpers import cached_set_up_policy_environment
 
-from _gettsim_tests._helpers import cached_set_up_policy_environment
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.visualization import (
     _get_selected_nodes,

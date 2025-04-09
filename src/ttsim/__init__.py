@@ -22,6 +22,7 @@ from ttsim.loader import (
 )
 from ttsim.piecewise_polynomial import get_piecewise_parameters, piecewise_polynomial
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
+from ttsim.rounding import RoundingDirection, RoundingSpec
 from ttsim.shared import (
     insert_path_and_value,
     join_numpy,
@@ -44,6 +45,8 @@ __all__ = [
     "PolicyEnvironment",
     "PolicyFunction",
     "PolicyInput",
+    "RoundingDirection",
+    "RoundingSpec",
     "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
     "create_time_conversion_functions",
