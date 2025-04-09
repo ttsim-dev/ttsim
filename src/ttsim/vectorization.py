@@ -1,6 +1,7 @@
 import ast
 import functools
 import inspect
+import types
 from collections.abc import Callable
 from importlib import import_module
 
@@ -20,14 +21,17 @@ def make_vectorizable(func: Callable, backend: str) -> Callable:
     Returns:
         New function with altered ast.
     """
-    module: str = _module_from_backend(backend)
-    tree: ast.Module = _make_vectorizable_ast(func, module=module)
+    if _is_lambda_function(func):
+        raise TranslateToVectorizableError(
+            "Lambda functions are not supported for vectorization. Please define a "
+            "named function and use that."
+        )
+
+    module = _module_from_backend(backend)
+    tree = _make_vectorizable_ast(func, module=module)
 
     # recreate scope of function, add policy_function decorator and array library
     scope = func.__globals__
-    from ttsim.function_types import policy_function
-
-    scope["policy_function"] = policy_function
     scope[module] = import_module(module)
 
     # execute new ast
@@ -51,8 +55,14 @@ def make_vectorizable_source(func: Callable, backend: str) -> str:
     Returns:
         Source code of new function with altered ast.
     """
-    module: str = _module_from_backend(backend)
-    tree: ast.Module = _make_vectorizable_ast(func, module=module)
+    if _is_lambda_function(func):
+        raise TranslateToVectorizableError(
+            "Lambda functions are not supported for vectorization. Please define a "
+            "named function and use that."
+        )
+
+    module = _module_from_backend(backend)
+    tree = _make_vectorizable_ast(func, module=module)
     return astor.code_gen.to_source(tree)
 
 
@@ -66,11 +76,11 @@ def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
     Returns:
         AST of new function with altered ast.
     """
-    tree: ast.Module = _func_to_ast(func)
+    tree = _func_to_ast(func)
     tree = _add_parent_attr_to_ast(tree)
 
     # get function location for error messages
-    func_loc: str = func.__module__ + "/" + func.__name__
+    func_loc = func.__module__ + "/" + func.__name__
 
     # transform tree nodes
     new_tree = Transformer(module, func_loc).visit(tree)
@@ -78,7 +88,7 @@ def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
 
 
 def _func_to_ast(func: Callable) -> ast.Module:
-    source: str = inspect.getsource(func)
+    source = inspect.getsource(func)
     return ast.parse(source)
 
 
@@ -96,8 +106,8 @@ def _add_parent_attr_to_ast(tree: ast.AST) -> ast.AST:
 
 class Transformer(ast.NodeTransformer):
     def __init__(self, module: str, func_loc: str) -> None:
-        self.module: str = module
-        self.func_loc: str = func_loc
+        self.module = module
+        self.func_loc = func_loc
 
     def visit_Call(self, node: ast.Call) -> ast.AST:  # noqa: N802
         self.generic_visit(node)
@@ -107,7 +117,7 @@ class Transformer(ast.NodeTransformer):
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.AST:  # noqa: N802
         if isinstance(node.op, ast.Not):
-            out: ast.AST = _not_to_call(node, module=self.module)
+            out = _not_to_call(node, module=self.module)
         else:
             out = node
         return out
@@ -118,9 +128,9 @@ class Transformer(ast.NodeTransformer):
 
     def visit_If(self, node: ast.If) -> ast.AST:  # noqa: N802
         self.generic_visit(node)
-        call: ast.AST = _if_to_call(node, module=self.module, func_loc=self.func_loc)
+        call = _if_to_call(node, module=self.module, func_loc=self.func_loc)
         if isinstance(node.body[0], ast.Return):
-            out: ast.AST = ast.Return(call)
+            out = ast.Return(call)
         elif isinstance(node.body[0], (ast.Assign, ast.AugAssign)):
             out = node.body[0]
             out.value = call
@@ -156,7 +166,7 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     args = [node.test, node.body[0].value]
 
     if len(node.orelse) > 1 or len(node.body) > 1:
-        msg: str = _too_many_operations_error_message(node, func_loc=func_loc)
+        msg = _too_many_operations_error_message(node, func_loc=func_loc)
         raise TranslateToVectorizableError(msg)
     elif node.orelse == []:
         if isinstance(node.body[0], ast.Return):
@@ -170,18 +180,16 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     elif isinstance(node.orelse[0], ast.Return):
         args.append(node.orelse[0].value)
     elif isinstance(node.orelse[0], ast.If):
-        call_if: ast.Call = _if_to_call(
-            node.orelse[0], module=module, func_loc=func_loc
-        )
+        call_if = _if_to_call(node.orelse[0], module=module, func_loc=func_loc)
         args.append(call_if)
     elif isinstance(node.orelse[0], (ast.Assign, ast.AugAssign)):
         if isinstance(node.orelse[0].value, ast.IfExp):
-            call_ifexp: ast.Call = _ifexp_to_call(node.orelse[0].value, module=module)
+            call_ifexp = _ifexp_to_call(node.orelse[0].value, module=module)
             args.append(call_ifexp)
         else:
             args.append(node.orelse[0].value)
     else:
-        msg = _unallowed_operation_error_message(node.orelse[0], func_loc=func_loc)
+        msg = _disallowed_operation_error_message(node.orelse[0], func_loc=func_loc)
         raise TranslateToVectorizableError(msg)
 
     return ast.Call(
@@ -198,7 +206,7 @@ def _ifexp_to_call(node: ast.IfExp, module: str) -> ast.Call:
     args = [node.test, node.body]
 
     if isinstance(node.orelse, ast.IfExp):
-        call_ifexp: ast.Call = _ifexp_to_call(node.orelse, module=module)
+        call_ifexp = _ifexp_to_call(node.orelse, module=module)
         args.append(call_ifexp)
     else:
         args.append(node.orelse)
@@ -245,7 +253,7 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
     if not transform_node:
         return node
 
-    func_id: str = node.func.id
+    func_id = node.func.id
     call = node
     args = node.args
 
@@ -256,7 +264,7 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
             ctx=ast.Load(),
         )
     elif func_id in ("max", "min") and len(args) == 2:
-        attr: str = func_id + "imum"  # max -> maximum, min -> minimum
+        attr = func_id + "imum"  # max -> maximum, min -> minimum
         call.func = ast.Attribute(
             value=ast.Name(id=module, ctx=ast.Load()),
             attr=attr,
@@ -270,8 +278,12 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
 
 
 # ======================================================================================
-# Transformation errors
+# Transformation errors and checks
 # ======================================================================================
+
+
+def _is_lambda_function(obj: object) -> bool:
+    return isinstance(obj, types.FunctionType) and obj.__name__ == "<lambda>"
 
 
 class TranslateToVectorizableError(ValueError):
@@ -279,8 +291,8 @@ class TranslateToVectorizableError(ValueError):
 
 
 def _too_many_arguments_call_error_message(node: ast.Call, func_loc: str) -> str:
-    source: str = _node_to_formatted_source(node)
-    _func_name: str = node.func.id
+    source = _node_to_formatted_source(node)
+    _func_name = node.func.id
     return (
         "\n\n"
         f"The function {_func_name} is called with too many arguments. Please only use "
@@ -293,7 +305,7 @@ def _too_many_arguments_call_error_message(node: ast.Call, func_loc: str) -> str
 
 
 def _return_and_no_else_error_message(node: ast.Return, func_loc: str) -> str:
-    source: str = _node_to_formatted_source(node)
+    source = _node_to_formatted_source(node)
     return (
         "\n\n"
         "The if-clause body is a return statement, while the else clause is missing.\n"
@@ -305,7 +317,7 @@ def _return_and_no_else_error_message(node: ast.Return, func_loc: str) -> str:
 
 
 def _too_many_operations_error_message(node: ast.If, func_loc: str) -> str:
-    source: str = _node_to_formatted_source(node)
+    source = _node_to_formatted_source(node)
     return (
         "\n\n"
         "An if statement is performing multiple operations, which is forbidden.\n"
@@ -316,8 +328,8 @@ def _too_many_operations_error_message(node: ast.If, func_loc: str) -> str:
     )
 
 
-def _unallowed_operation_error_message(node: ast.AST, func_loc: str) -> str:
-    source: str = _node_to_formatted_source(node)
+def _disallowed_operation_error_message(node: ast.AST, func_loc: str) -> str:
+    source = _node_to_formatted_source(node)
     return (
         "\n\n"
         f"An if-elif-else clause body is of type {type(node)}, which is forbidden.\n"
@@ -333,7 +345,7 @@ def _unallowed_operation_error_message(node: ast.AST, func_loc: str) -> str:
 
 
 def _node_to_formatted_source(node: ast.AST) -> str:
-    source: str = astor.code_gen.to_source(node)
+    source = astor.code_gen.to_source(node)
     return " > " + source[:-1].replace("\n", "\n > ")
 
 

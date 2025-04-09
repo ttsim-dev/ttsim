@@ -1,4 +1,5 @@
 import datetime
+import functools
 import inspect
 import string
 
@@ -16,6 +17,7 @@ from ttsim.function_types import GroupByFunction
 from ttsim.loader import load_functions_tree_for_date
 from ttsim.vectorization import (
     TranslateToVectorizableError,
+    _is_lambda_function,
     make_vectorizable,
     make_vectorizable_source,
 )
@@ -349,13 +351,13 @@ def test_notimplemented_error():
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
-def test_unallowed_operation_source(func):
+def test_disallowed_operation_source(func):
     with pytest.raises(TranslateToVectorizableError):
         make_vectorizable_source(func, backend="numpy")
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
-def test_unallowed_operation_wrapper(func):
+def test_disallowed_operation_wrapper(func):
     with pytest.raises(TranslateToVectorizableError):
         make_vectorizable(func, backend="numpy")
 
@@ -522,3 +524,48 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         elterngeld_params=elterngeld_params,
     )
     assert_array_equal(got, full(shape, exp))
+
+
+# ======================================================================================
+# Lambda functions
+# ======================================================================================
+
+
+def test_is_lambda_function_true():
+    assert _is_lambda_function(lambda x: x)
+
+
+def test_is_lambda_function_wrapped():
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    assert _is_lambda_function(decorator(lambda x: x))
+
+
+def test_is_lambda_function_false():
+    def f(x):
+        return x
+
+    assert not _is_lambda_function(f)
+
+
+def test_is_lambda_function_non_function_input():
+    assert not _is_lambda_function(42)
+    assert not _is_lambda_function("not a function")
+    assert not _is_lambda_function([1, 2, 3])
+    assert not _is_lambda_function({1: "a", 2: "b"})
+    assert not _is_lambda_function(None)
+
+
+def test_lambda_functions_disallowed_make_vectorizable():
+    with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
+        make_vectorizable(lambda x: x, backend="numpy")
+
+
+def test_lambda_functions_disallowed_make_vectorizable_source():
+    with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
+        make_vectorizable_source(lambda x: x, backend="numpy")
