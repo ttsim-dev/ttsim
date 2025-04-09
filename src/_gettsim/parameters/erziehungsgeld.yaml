@@ -133,16 +133,6 @@ end_age_m_budgetsatz:
   reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
   2004-01-01:
     scalar: 12
-rounding:
-  erziehungsgeld__anspruchshöhe_kind_m:
-    1900-01-01:
-      base: 0.01
-      direction: nearest
-      reference: Added temporarily, remove when fixing  # 823.
-    2004-01-01:
-      base: 0.01
-      direction: nearest
-      reference: null
 abolishment_cohort:
   name:
     de: Letzte Geburtskohorte für die Erziehungsgeld ausgezahlt wird

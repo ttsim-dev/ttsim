@@ -15,13 +15,12 @@ from _gettsim.config import (
     RESOURCE_DIR,
 )
 from ttsim.function_types import (
-    TTSIMFunction,
     TTSIMObject,
     policy_function,
 )
 from ttsim.loader import (
     load_aggregation_specs_tree,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
 )
 from ttsim.piecewise_polynomial import (
     _check_thresholds,
@@ -35,9 +34,10 @@ from ttsim.shared import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
-    from ttsim.typing import NestedAggregationSpecDict, NestedFunctionDict
+    from ttsim.typing import NestedAggregationSpecDict, NestedTTSIMFunctionDict
 
 
 class PolicyEnvironment:
@@ -61,7 +61,7 @@ class PolicyEnvironment:
 
     def __init__(
         self,
-        functions_tree: NestedFunctionDict,
+        functions_tree: NestedTTSIMFunctionDict,
         params: dict[str, Any] | None = None,
         aggregation_specs_tree: NestedAggregationSpecDict | None = None,
     ):
@@ -72,7 +72,7 @@ class PolicyEnvironment:
             "functions_tree",
         )
         self._functions_tree = optree.tree_map(
-            lambda leaf: _convert_function_to_policy_function(leaf),
+            lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
             functions_tree,
         )
 
@@ -83,7 +83,7 @@ class PolicyEnvironment:
         )
 
     @property
-    def functions_tree(self) -> NestedFunctionDict:
+    def functions_tree(self) -> NestedTTSIMFunctionDict:
         """The policy functions. Does not include aggregations or time conversions."""
         return self._functions_tree
 
@@ -101,7 +101,7 @@ class PolicyEnvironment:
         return self._aggregation_specs_tree
 
     def upsert_policy_functions(
-        self, functions_tree_to_upsert: NestedFunctionDict
+        self, functions_tree_to_upsert: NestedTTSIMFunctionDict
     ) -> PolicyEnvironment:
         """Upsert GETTSIM's function tree with (parts of) a new function tree.
 
@@ -122,19 +122,18 @@ class PolicyEnvironment:
         # Add old functions tree to new functions tree
         new_functions_tree = {**self._functions_tree}
 
-        assert_valid_ttsim_pytree(
-            tree=functions_tree_to_upsert,
-            leaf_checker=lambda leaf: isinstance(leaf, TTSIMObject),
-            tree_name="functions_tree_to_upsert",
+        functions_tree_to_upsert_with_correct_types = optree.tree_map(
+            lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
+            functions_tree_to_upsert,
         )
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-            functions_tree_to_upsert
+            functions_tree_to_upsert_with_correct_types
         )
 
         # Add functions tree to upsert to new functions tree
         new_functions_tree = upsert_tree(
             base=new_functions_tree,
-            to_upsert=functions_tree_to_upsert,
+            to_upsert=functions_tree_to_upsert_with_correct_types,
         )
 
         result = object.__new__(PolicyEnvironment)
@@ -166,12 +165,16 @@ class PolicyEnvironment:
         return result
 
 
-def set_up_policy_environment(date: datetime.date | str | int) -> PolicyEnvironment:
+def set_up_policy_environment(
+    resource_dir: Path, date: datetime.date | str | int
+) -> PolicyEnvironment:
     """
     Set up the policy environment for a particular date.
 
     Parameters
     ----------
+    resource_dir
+        The directory to load the policy environment from.
     date
         The date for which the policy system is set up. An integer is
         interpreted as the year.
@@ -183,7 +186,7 @@ def set_up_policy_environment(date: datetime.date | str | int) -> PolicyEnvironm
     # Check policy date for correct format and convert to datetime.date
     date = _parse_date(date)
 
-    functions_tree = load_functions_tree_for_date(date)
+    functions_tree = load_objects_tree_for_date(resource_dir=resource_dir, date=date)
 
     params = {}
     for group in INTERNAL_PARAMS_GROUPS:
@@ -225,26 +228,30 @@ def _parse_date(date: datetime.date | str | int) -> datetime.date:
     return date
 
 
-def _convert_function_to_policy_function(function: callable) -> TTSIMFunction:
-    """Convert a function to a PolicyFunction.
+def _convert_to_policy_function_if_not_ttsim_object(
+    input_object: Callable | TTSIMObject,
+) -> TTSIMObject:
+    """Convert an object to a PolicyFunction if it is not already a TTSIMObject.
 
     Parameters
     ----------
-    function
-        The function to convert.
+    input_object
+        The object to convert.
 
     Returns
     -------
-    function
-        The converted function.
+    converted_object
+        The converted object.
 
     """
-    if isinstance(function, TTSIMFunction):
-        converted_function = function
+    if isinstance(input_object, TTSIMObject):
+        converted_object = input_object
     else:
-        converted_function = policy_function(leaf_name=function.__name__)(function)
+        converted_object = policy_function(leaf_name=input_object.__name__)(
+            input_object
+        )
 
-    return converted_function
+    return converted_object
 
 
 def _parse_piecewise_parameters(tax_data):
@@ -619,7 +626,7 @@ def transfer_dictionary(remaining_dict, new_dict, key_list):
 
 
 def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedFunctionDict,
+    functions_tree: NestedTTSIMFunctionDict,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last
     branch element of the tree path.

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Literal, TypeVar
 import dags.tree as dt
 import numpy
 
+from ttsim.rounding import RoundingSpec
 from ttsim.shared import validate_dashed_iso_date, validate_date_range
 
 if TYPE_CHECKING:
@@ -23,6 +24,7 @@ class TTSIMObject:
     Abstract base class for all TTSIM Functions and Inputs.
     """
 
+    leaf_name: str
     start_date: datetime.date
     end_date: datetime.date
 
@@ -81,6 +83,7 @@ def policy_input(
     def inner(func: Callable) -> PolicyInput:
         data_type = func.__annotations__["return"]
         return PolicyInput(
+            leaf_name=func.__name__,
             data_type=data_type,
             start_date=start_date,
             end_date=end_date,
@@ -96,7 +99,6 @@ class TTSIMFunction(TTSIMObject):
     """
 
     function: Callable
-    leaf_name: str | None = None
     skip_vectorization: bool = False
 
     def __call__(self, *args, **kwargs):
@@ -121,28 +123,27 @@ class PolicyFunction(TTSIMFunction):
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
         The function to wrap. Argument values of the `@policy_function` are reused
         unless explicitly overwritten.
-    leaf_name:
-        The leaf name of the function in the functions tree.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
+    rounding_spec:
+        The rounding specification.
     skip_vectorization:
         Whether the function should be vectorized.
     """
 
-    params_key_for_rounding: str | None = None
+    rounding_spec: RoundingSpec | None = None
 
     def __post_init__(self):
         self.function = (
             self.function if self.skip_vectorization else _vectorize_func(self.function)
         )
-        self.leaf_name = self.leaf_name if self.leaf_name else self.function.__name__
 
         # Expose the signature of the wrapped function for dependency resolution
         self.__annotations__ = self.function.__annotations__
@@ -150,13 +151,49 @@ class PolicyFunction(TTSIMFunction):
         self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
 
+    def _fail_if_rounding_has_wrong_type(
+        self, rounding_spec: RoundingSpec | None
+    ) -> None:
+        """Check if rounding_spec has the correct type.
+
+        Parameters
+        ----------
+        rounding_spec
+            The rounding specification to check.
+
+        Raises
+        ------
+        AssertionError
+            If rounding_spec is not a RoundingSpec or None.
+        """
+        assert isinstance(rounding_spec, RoundingSpec | None), (
+            f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
+        )
+
+    def __call__(self, *args, **kwargs):
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
+
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
+
+    def is_active(self, date: datetime.date) -> bool:
+        """Check if the function is active at a given date."""
+        return self.start_date <= date <= self.end_date
+
 
 def policy_function(
     *,
+    leaf_name: str | None = None,
     start_date: str | datetime.date = "1900-01-01",
     end_date: str | datetime.date = "2100-12-31",
-    leaf_name: str | None = None,
-    params_key_for_rounding: str | None = None,
+    rounding_spec: RoundingSpec | None = None,
     skip_vectorization: bool = False,
 ) -> PolicyFunction:
     """
@@ -172,23 +209,21 @@ def policy_function(
     ensure that the function name is unique in the file where it is defined. Otherwise,
     the function would be overwritten by the last function with the same name.
 
-    **Rounding spec (params_key_for_rounding):**
+    **Rounding specification (rounding_spec):**
 
-    Adds the location of the rounding specification to a PolicyFunction.
+    Adds the way rounding is to be done to a PolicyFunction.
 
     Parameters
     ----------
+    leaf_name
+        The name that should be used as the PolicyFunction's leaf name in the DAG. If
+        omitted, we use the name of the function as defined.
     start_date
         The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
     end_date
         The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    leaf_name
-        The name that should be used as the PolicyFunction's leaf name in the DAG. If
-        omitted, we use the name of the function as defined.
-    params_key_for_rounding
-        Key of the parameters dictionary where rounding specifications are found. For
-        functions that are not user-written this is just the name of the respective
-        .yaml file.
+    rounding_spec
+        The specification to be used for rounding.
     skip_vectorization
         Whether the function is already vectorized and, thus, should not be vectorized
         again.
@@ -202,11 +237,11 @@ def policy_function(
 
     def inner(func: Callable) -> PolicyFunction:
         return PolicyFunction(
-            function=func,
             leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
             start_date=start_date,
             end_date=end_date,
-            params_key_for_rounding=params_key_for_rounding,
+            rounding_spec=rounding_spec,
             skip_vectorization=skip_vectorization,
         )
 
@@ -234,10 +269,10 @@ class GroupByFunction(TTSIMFunction):
 
     Parameters
     ----------
-    function:
-        The function calculating the group_by IDs.
     leaf_name:
         The leaf name of the function in the functions tree.
+    function:
+        The function calculating the group_by IDs.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -245,10 +280,6 @@ class GroupByFunction(TTSIMFunction):
     """
 
     def __post_init__(self):
-        self.leaf_name = (
-            self.function.__name__ if self.leaf_name is None else self.leaf_name
-        )
-
         # Expose the signature of the wrapped function for dependency resolution
         self.__annotations__ = self.function.__annotations__
         self.__module__ = self.function.__module__
@@ -263,17 +294,22 @@ class GroupByFunction(TTSIMFunction):
 
 def group_by_function(
     *,
+    leaf_name: str | None = None,
     start_date: str | datetime.date = "1900-01-01",
     end_date: str | datetime.date = "2100-12-31",
-    leaf_name: str | None = None,
 ) -> GroupByFunction:
     """
     Decorator that creates a group_by function from a function.
     """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def decorator(func: Callable) -> GroupByFunction:
+        _leaf_name = func.__name__ if leaf_name is None else leaf_name
         return GroupByFunction(
-            function=func, start_date=start_date, end_date=end_date, leaf_name=leaf_name
+            leaf_name=_leaf_name,
+            function=func,
+            start_date=start_date,
+            end_date=end_date,
         )
 
     return decorator
@@ -286,16 +322,14 @@ class DerivedAggregationFunction(TTSIMFunction):
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
         The function performing the aggregation.
     source:
         The name of the source function or data column.
-    aggregation_target:
-        The qualified name of the aggregation target.
     aggregation_method:
         The method of aggregation used.
-    leaf_name:
-        The leaf name of the function in the functions tree.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -310,17 +344,12 @@ class DerivedAggregationFunction(TTSIMFunction):
     aggregation_method: (
         Literal["count", "sum", "mean", "min", "max", "any", "all"] | None
     ) = None
-    aggregation_target: str | None = None
 
     def __post_init__(self):
         if self.source is None:
             raise ValueError("The source must be specified.")
         if self.aggregation_method is None:
             raise ValueError("The aggregation method must be specified.")
-        if self.aggregation_target is None:
-            raise ValueError("The aggregation target must be specified.")
-
-        self.leaf_name = dt.tree_path_from_qual_name(self.aggregation_target)[-1]
 
 
 @dataclass
@@ -330,14 +359,14 @@ class DerivedTimeConversionFunction(TTSIMFunction):
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
         The function performing the time conversion.
     source:
         The name of the source function or data column.
     conversion_target:
         The qualified name of the conversion target.
-    leaf_name:
-        The leaf name of the function in the functions tree.
     start_date:
         The date from which the function is active (inclusive).
     end_date:

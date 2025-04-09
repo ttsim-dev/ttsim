@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 import optree
 import pandas as pd
 import pytest
+from mettsim.config import METTSIM_RESSOURCE_DIR
 
 from ttsim.function_types import (
     GroupByFunction,
@@ -19,12 +20,12 @@ from ttsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
     set_up_policy_environment,
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedFunctionDict
+    from ttsim.typing import NestedTTSIMFunctionDict
 
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
@@ -75,12 +76,12 @@ class TestPolicyEnvironment:
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="02-29-2020")
+    set_up_policy_environment(date="02-29-2020", resource_dir=METTSIM_RESSOURCE_DIR)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="02-30-2020")
+        set_up_policy_environment(date="02-30-2020", resource_dir=METTSIM_RESSOURCE_DIR)
 
 
 def test_fail_if_invalid_access_different_date():
@@ -119,26 +120,10 @@ def test_access_different_date_jahresanfang():
     "tree, last_day, function_name_last_day, function_name_next_day",
     [
         (
-            {"einkommensteuer": {"abzüge": {"altersfreibetrag_y": None}}},
-            date(2004, 12, 31),
-            "altersfreibetrag_y_bis_2004",
-            "altersfreibetrag_y_ab_2005",
-        ),
-        (
-            {"einkommensteuer": {"abzüge": {"alleinerziehend_betrag_y": None}}},
-            date(2014, 12, 31),
-            "alleinerziehend_betrag_y_pauschal",
-            "alleinerziehend_betrag_y_nach_kinderzahl",
-        ),
-        (
-            {
-                "einkommensteuer": {
-                    "einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y": None
-                }
-            },
-            date(2008, 12, 31),
-            "einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_mit_kapitaleinkünften_y",
-            "einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_ohne_kapitaleinkünfte_y",
+            {"housing_benefits": {"eligibility": {"requirement_fulfilled_fam": None}}},
+            date(2019, 12, 31),
+            "requirement_fulfilled_fam_not_considering_children",
+            "requirement_fulfilled_fam_considering_children",
         ),
     ],
 )
@@ -148,8 +133,12 @@ def test_load_functions_tree_for_date(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = load_functions_tree_for_date(date=last_day)
-    functions_next_day = load_functions_tree_for_date(date=last_day + timedelta(days=1))
+    functions_last_day = load_objects_tree_for_date(
+        resource_dir=METTSIM_RESSOURCE_DIR, date=last_day
+    )
+    functions_next_day = load_objects_tree_for_date(
+        resource_dir=METTSIM_RESSOURCE_DIR, date=last_day + timedelta(days=1)
+    )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
 
@@ -164,7 +153,7 @@ def test_load_functions_tree_for_date(
     ],
 )
 def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedFunctionDict,
+    functions_tree: NestedTTSIMFunctionDict,
 ):
     with pytest.raises(KeyError):
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)

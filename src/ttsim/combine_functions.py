@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING, Literal
 import dags
 import dags.tree as dt
 
-from _gettsim.config import (
-    SUPPORTED_GROUPINGS,
-    TYPES_INPUT_VARIABLES,
-)
+from _gettsim.config import SUPPORTED_GROUPINGS
 from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
@@ -38,18 +35,19 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         QualNameAggregationSpecsDict,
         QualNameDataDict,
-        QualNameFunctionsDict,
         QualNameTargetList,
+        QualNameTTSIMFunctionDict,
+        QualNameTTSIMObjectDict,
     )
 
 
 def combine_policy_functions_and_derived_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
     aggregation_specs_from_environment: QualNameAggregationSpecsDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     top_level_namespace: set[str],
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMObjectDict:
     """Add derived functions to the qualified functions dict.
 
     Derived functions are time converted functions and aggregation functions (aggregate
@@ -80,7 +78,7 @@ def combine_policy_functions_and_derived_functions(
     """
     # Create parent-child relationships
     aggregate_by_p_id_functions = _create_aggregation_functions(
-        functions=functions,
+        ttsim_objects=functions,
         aggregation_functions_to_create=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
@@ -110,16 +108,16 @@ def combine_policy_functions_and_derived_functions(
 
 
 def _create_aggregate_by_group_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     aggregations_from_environment: QualNameAggregationSpecsDict,
     top_level_namespace: set[str],
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMObjectDict:
     """Create aggregation functions."""
     # Create the aggregation functions that were explicitly specified.
     aggregation_functions_from_environment = _create_aggregation_functions(
-        functions=functions,
+        ttsim_objects=functions,
         aggregation_functions_to_create=aggregations_from_environment,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
@@ -138,7 +136,7 @@ def _create_aggregate_by_group_functions(
         top_level_namespace=top_level_namespace,
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
-        functions=functions_with_aggregation_functions_from_environment,
+        ttsim_objects=functions_with_aggregation_functions_from_environment,
         aggregation_functions_to_create=derived_aggregation_specs,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
@@ -150,16 +148,16 @@ def _create_aggregate_by_group_functions(
 
 
 def _create_aggregation_functions(
-    functions: QualNameFunctionsDict,
+    ttsim_objects: QualNameTTSIMObjectDict,
     aggregation_functions_to_create: QualNameAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
     top_level_namespace: set[str],
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMFunctionDict:
     """Create aggregation functions for one aggregation type.
 
     Parameters
     ----------
-    functions
+    ttsim_objects
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
     aggregation_functions_to_create
@@ -177,7 +175,7 @@ def _create_aggregation_functions(
 
     group_by_functions = {
         name: func
-        for name, func in functions.items()
+        for name, func in ttsim_objects.items()
         if isinstance(getattr(func, "__wrapped__", func), GroupByFunction)
     }
 
@@ -209,28 +207,28 @@ def _create_aggregation_functions(
                 aggregation_target=target_name,
                 aggregation_spec=aggregation_spec,
                 group_by_id=group_by_id_name,
-                functions=functions,
+                functions=ttsim_objects,
                 top_level_namespace=top_level_namespace,
             )
         else:
             derived_func = _create_one_aggregate_by_p_id_func(
                 aggregation_target=target_name,
                 aggregation_spec=aggregation_spec,
-                functions=functions,
+                functions=ttsim_objects,
                 top_level_namespace=top_level_namespace,
             )
 
         aggregation_functions[target_name] = derived_func
 
     return _annotate_aggregation_functions(
-        functions=functions,
+        ttsim_objects=ttsim_objects,
         aggregation_functions=aggregation_functions,
         types_input_variables=dt.flatten_to_qual_names(TYPES_INPUT_VARIABLES),
     )
 
 
 def _create_derived_aggregations_specs(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     top_level_namespace: set[str],
@@ -301,7 +299,7 @@ def _create_derived_aggregations_specs(
 
 
 def _get_potential_aggregation_function_names_from_function_arguments(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.
 
@@ -337,7 +335,7 @@ def _create_one_aggregate_by_group_func(
     aggregation_target: str,
     aggregation_spec: AggregateByGroupSpec,
     group_by_id: str,
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
     top_level_namespace: set[str],
 ) -> DerivedAggregationFunction:
     """Create an aggregation function based on aggregation specification.
@@ -374,20 +372,21 @@ def _create_one_aggregate_by_group_func(
         top_level_namespace=top_level_namespace,
     )
 
-    if isinstance(aggregation_spec, AggregateByGroupSpec):
-        qual_name_source = _get_qual_name_of_source_col(
+    qual_name_source = (
+        _get_qual_name_of_source_col(
             source=source,
             wrapped_func=wrapped_func,
         )
-    else:
-        qual_name_source = None
+        if source
+        else None
+    )
 
     source_function = functions[qual_name_source]
 
     return DerivedAggregationFunction(
+        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
         function=wrapped_func,
         source=qual_name_source,
-        aggregation_target=aggregation_target,
         aggregation_method=aggregation_spec.aggr,
         start_date=source_function.start_date,
         end_date=source_function.end_date,
@@ -397,7 +396,7 @@ def _create_one_aggregate_by_group_func(
 def _create_one_aggregate_by_p_id_func(
     aggregation_target: str,
     aggregation_spec: AggregateByPIDSpec,
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
     top_level_namespace: set[str],
 ) -> DerivedAggregationFunction:
     """Create one function that links variables across persons.
@@ -496,9 +495,9 @@ def _create_one_aggregate_by_p_id_func(
     source_function = functions[qual_name_source]
 
     return DerivedAggregationFunction(
+        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
         function=wrapped_func,
         source=qual_name_source,
-        aggregation_target=aggregation_target,
         aggregation_method=aggregation_method,
         start_date=source_function.start_date,
         end_date=source_function.end_date,
@@ -506,10 +505,10 @@ def _create_one_aggregate_by_p_id_func(
 
 
 def _annotate_aggregation_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
     types_input_variables: dict[str, type],
-    aggregation_functions: QualNameFunctionsDict,
-) -> QualNameFunctionsDict:
+    aggregation_functions: QualNameTTSIMObjectDict,
+) -> QualNameTTSIMObjectDict:
     """Annotate aggregation functions.
 
     Add type annotations to the aggregation functions based on the type annotations of
@@ -569,7 +568,7 @@ def _annotate_aggregation_functions(
 
 
 def _fail_if_targets_not_in_functions(
-    functions: QualNameFunctionsDict, targets: QualNameTargetList
+    functions: QualNameTTSIMObjectDict, targets: QualNameTargetList
 ) -> None:
     """Fail if some target is not among functions.
 

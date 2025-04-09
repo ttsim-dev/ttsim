@@ -82,7 +82,7 @@ def bg_id(
 
 
 @group_by_function()
-def fg_id(
+def fg_id(  # noqa: PLR0913 PLR0912
     p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
     hh_id: numpy.ndarray[int],
@@ -134,10 +134,6 @@ def fg_id(
         current_p_id_einstandspartner = p_id_einstandspartner[index]
         current_p_id_children = p_id_to_p_ids_children.get(current_p_id, [])
 
-        # Assign fg to einstandspartner
-        if current_p_id_einstandspartner >= 0:
-            p_id_to_fg_id[current_p_id_einstandspartner] = next_fg_id
-
         # Assign fg to children
         for current_p_id_child in current_p_id_children:
             child_index = p_id_to_index[current_p_id_child]
@@ -155,6 +151,32 @@ def fg_id(
                 and len(child_p_id_children) == 0
             ):
                 p_id_to_fg_id[current_p_id_child] = next_fg_id
+
+        # Assign fg to einstandspartner
+        if current_p_id_einstandspartner >= 0:
+            p_id_to_fg_id[current_p_id_einstandspartner] = next_fg_id
+            current_p_id_einstandspartner_children = p_id_to_p_ids_children.get(
+                current_p_id_einstandspartner, []
+            )
+            # Assign fg to children of einstandspartner
+            for current_p_id_child in current_p_id_einstandspartner_children:
+                if current_p_id_child in p_id_to_fg_id:
+                    continue
+                child_index = p_id_to_index[current_p_id_child]
+                child_hh_id = hh_id[child_index]
+                child_alter = alter[child_index]
+                child_p_id_children = p_id_to_p_ids_children.get(current_p_id_child, [])
+
+                if (
+                    child_hh_id == current_hh_id
+                    # TODO (@MImmesberger): Check correct conditions for grown up children
+                    # https://github.com/iza-institute-of-labor-economics/gettsim/pull/509
+                    # TODO(@MImmesberger): Remove hard-coded number
+                    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
+                    and child_alter < 25
+                    and len(child_p_id_children) == 0
+                ):
+                    p_id_to_fg_id[current_p_id_child] = next_fg_id
 
         next_fg_id += 1
 

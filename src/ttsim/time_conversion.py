@@ -4,6 +4,7 @@ import inspect
 import re
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
 from dags import rename_arguments
 
 from _gettsim.config import SUPPORTED_GROUPINGS
@@ -12,7 +13,7 @@ from ttsim.function_types import DerivedTimeConversionFunction, PolicyFunction
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ttsim.typing import QualNameDataDict, QualNameFunctionsDict
+    from ttsim.typing import QualNameDataDict, QualNameTTSIMObjectDict
 
 _TIME_UNITS = {
     "y": "year",
@@ -373,9 +374,9 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMObjectDict,
     data: QualNameDataDict,
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMObjectDict:
     """
      Create functions that convert variables to different time units.
 
@@ -479,12 +480,12 @@ def _create_time_conversion_functions(
                 continue
 
             result[new_name] = DerivedTimeConversionFunction(
+                leaf_name=dt.tree_path_from_qual_name(new_name)[-1],
                 function=_create_function_for_time_unit(
                     name,
                     _time_conversion_functions[f"{time_unit}_to_{missing_time_unit}"],
                 ),
                 source=name,
-                conversion_target=new_name,
                 start_date=func.start_date,
                 end_date=func.end_date,
             )

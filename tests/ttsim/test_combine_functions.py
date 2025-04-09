@@ -160,6 +160,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
+                    leaf_name="foo",
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="count",
@@ -175,6 +176,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
+                    leaf_name="foo",
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
@@ -190,6 +192,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
+                    leaf_name="foo",
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
@@ -205,6 +208,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     function=lambda x: x,
+                    leaf_name="foo",
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
@@ -220,6 +224,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "n1__foo_hh": DerivedAggregationFunction(
                     function=function_with_bool_return,
+                    leaf_name="n1__foo_hh",
                     source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
@@ -235,6 +240,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "n1__foo_hh": DerivedAggregationFunction(
                     function=function_with_float_return,
+                    leaf_name="n1__foo_hh",
                     source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
@@ -250,6 +256,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "n1__foo_hh": DerivedAggregationFunction(
                     function=function_with_int_return,
+                    leaf_name="n1__foo_hh",
                     source="n1__foo",
                     aggregation_target="foo_hh",
                     aggregation_method="sum",
@@ -337,7 +344,7 @@ def test_annotations_are_applied_to_derived_functions(
     result_func = next(
         iter(
             _create_aggregation_functions(
-                functions=functions,
+                ttsim_objects=functions,
                 aggregation_functions_to_create=aggregations,
                 aggregation_type=aggregation_type,
                 top_level_namespace=top_level_namespace,
