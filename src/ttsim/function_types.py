@@ -6,7 +6,6 @@ import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, TypeVar
 
-import dags.tree as dt
 import numpy
 
 from ttsim.rounding import RoundingSpec
@@ -365,8 +364,6 @@ class DerivedTimeConversionFunction(TTSIMFunction):
         The function performing the time conversion.
     source:
         The name of the source function or data column.
-    conversion_target:
-        The qualified name of the conversion target.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -378,15 +375,12 @@ class DerivedTimeConversionFunction(TTSIMFunction):
     """
 
     source: str | None = None
-    conversion_target: str | None = None
 
     def __post_init__(self):
         if self.source is None:
             raise ValueError("The source must be specified.")
         if self.conversion_target is None:
             raise ValueError("The conversion target must be specified.")
-
-        self.leaf_name = dt.tree_path_from_qual_name(self.conversion_target)[-1]
 
 
 def _convert_and_validate_dates(
