@@ -86,6 +86,16 @@ inputs:
       - 50.0
       - 50.0
       - 50.0
+    einkommensteuer__einkünfte__aus_forst_und_landwirtschaft__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_gewerbebetrieb__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
     einkommensteuer__gemeinsam_veranlagt:
       - false
       - false
