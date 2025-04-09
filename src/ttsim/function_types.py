@@ -46,7 +46,7 @@ class PolicyInput(TTSIMObject):
         The date until which the input is relevant / active (inclusive).
     """
 
-    data_type: Literal["int", "float", "bool"]
+    data_type: type[float | int | bool]
 
 
 def policy_input(
