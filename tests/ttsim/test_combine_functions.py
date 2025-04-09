@@ -337,7 +337,7 @@ def test_annotations_are_applied_to_derived_functions(
     result_func = next(
         iter(
             _create_aggregation_functions(
-                functions=functions,
+                ttsim_objects=functions,
                 aggregation_functions_to_create=aggregations,
                 aggregation_type=aggregation_type,
                 top_level_namespace=top_level_namespace,

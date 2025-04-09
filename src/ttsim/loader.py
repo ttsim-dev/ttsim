@@ -20,46 +20,44 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-    from ttsim.typing import NestedAggregationSpecDict, NestedFunctionDict
+    from ttsim.typing import NestedTTSIMObjectDict
 
 
-def load_functions_tree_for_date(date: datetime.date) -> NestedFunctionDict:
+def load_objects_tree_for_date(
+    resource_dir: Path, date: datetime.date
+) -> NestedTTSIMObjectDict:
     """
-    Load the functions tree for a given date.
-
-    This function takes the list of root paths and searches for all modules containing
-    PolicyFunctions. Then it loads all PolicyFunctions that are active at the given date
-    and constructs the functions tree.
-
-    Namespaces are at the directory level.
+    Traverse `resource_dir` and return all TTSIMObjects for a given date.
 
     Parameters
     ----------
+    resource_dir:
+        The directory to traverse.
     date:
-        The date for which policy functions should be loaded.
+        The date for which policy objects should be loaded.
 
     Returns
     -------
-    A tree of active PolicyFunctions.
+    A tree of active TTSIMObjects.
     """
-    paths_to_functions = _find_python_files_recursively(RESOURCE_DIR)
+    paths_to_objects = _find_python_files_recursively(resource_dir)
 
-    functions_tree = {}
+    objects_tree = {}
 
-    for path in paths_to_functions:
-        new_functions_tree = get_active_functions_tree_from_module(
-            path=path, date=date, root_path=RESOURCE_DIR
+    for path in paths_to_objects:
+        new_objects_tree = get_active_ttsim_objects_tree_from_module(
+            path=path, date=date, root_path=resource_dir
         )
 
-        functions_tree = merge_trees(
-            left=functions_tree,
-            right=new_functions_tree,
+        objects_tree = merge_trees(
+            left=objects_tree,
+            right=new_objects_tree,
         )
 
-    return functions_tree
+    return objects_tree
 
 
-def get_active_functions_tree_from_module(
+def get_active_ttsim_objects_tree_from_module(
     path: Path,
     root_path: Path,
     date: datetime.date,
@@ -81,19 +79,20 @@ def get_active_functions_tree_from_module(
     """
     module = _load_module(path, root_path)
     module_name = _convert_path_to_importable_module_name(path, root_path)
+    breakpoint()
 
     all_functions_in_module = inspect.getmembers(module)
 
-    ttsim_functions = [
+    ttsim_objects = [
         func for _, func in all_functions_in_module if isinstance(func, TTSIMFunction)
     ]
 
     _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
-        ttsim_functions, module_name
+        ttsim_objects, module_name
     )
 
     active_ttsim_functions = {
-        func.leaf_name: func for func in ttsim_functions if func.is_active(date)
+        func.leaf_name: func for func in ttsim_objects if func.is_active(date)
     }
 
     return create_tree_from_path_and_value(

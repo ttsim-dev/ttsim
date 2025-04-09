@@ -13,7 +13,7 @@ from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
 from ttsim.function_types import policy_function
-from ttsim.loader import load_functions_tree_for_date
+from ttsim.loader import load_objects_tree_for_date
 from ttsim.policy_environment import PolicyEnvironment
 
 rounding_specs_and_exp_results = [
@@ -285,7 +285,7 @@ def test_decorator_for_all_functions_with_rounding_spec():
     time_dependent_functions = {}
     for year in range(1990, 2023):
         year_functions = dt.flatten_to_tree_paths(
-            load_functions_tree_for_date(datetime.date(year=year, month=1, day=1))
+            load_objects_tree_for_date(datetime.date(year=year, month=1, day=1))
         ).values()
         function_name_to_leaf_name_dict = {
             func.function.__name__: func.leaf_name for func in year_functions

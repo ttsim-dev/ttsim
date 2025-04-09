@@ -21,7 +21,7 @@ from ttsim.function_types import (
 )
 from ttsim.loader import (
     load_aggregation_specs_tree,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
 )
 from ttsim.piecewise_polynomial import (
     _check_thresholds,
@@ -37,7 +37,7 @@ from ttsim.shared import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ttsim.typing import NestedAggregationSpecDict, NestedFunctionDict
+    from ttsim.typing import NestedAggregationSpecDict, NestedTTSIMFunctionDict
 
 
 class PolicyEnvironment:
@@ -61,7 +61,7 @@ class PolicyEnvironment:
 
     def __init__(
         self,
-        functions_tree: NestedFunctionDict,
+        functions_tree: NestedTTSIMFunctionDict,
         params: dict[str, Any] | None = None,
         aggregation_specs_tree: NestedAggregationSpecDict | None = None,
     ):
@@ -83,7 +83,7 @@ class PolicyEnvironment:
         )
 
     @property
-    def functions_tree(self) -> NestedFunctionDict:
+    def functions_tree(self) -> NestedTTSIMFunctionDict:
         """The policy functions. Does not include aggregations or time conversions."""
         return self._functions_tree
 
@@ -101,7 +101,7 @@ class PolicyEnvironment:
         return self._aggregation_specs_tree
 
     def upsert_policy_functions(
-        self, functions_tree_to_upsert: NestedFunctionDict
+        self, functions_tree_to_upsert: NestedTTSIMFunctionDict
     ) -> PolicyEnvironment:
         """Upsert GETTSIM's function tree with (parts of) a new function tree.
 
@@ -183,7 +183,7 @@ def set_up_policy_environment(date: datetime.date | str | int) -> PolicyEnvironm
     # Check policy date for correct format and convert to datetime.date
     date = _parse_date(date)
 
-    functions_tree = load_functions_tree_for_date(date)
+    functions_tree = load_objects_tree_for_date(date)
 
     params = {}
     for group in INTERNAL_PARAMS_GROUPS:
@@ -619,7 +619,7 @@ def transfer_dictionary(remaining_dict, new_dict, key_list):
 
 
 def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedFunctionDict,
+    functions_tree: NestedTTSIMFunctionDict,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last
     branch element of the tree path.

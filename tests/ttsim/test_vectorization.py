@@ -13,7 +13,7 @@ if USE_JAX:
 from numpy.testing import assert_array_equal
 
 from ttsim.function_types import GroupByFunction
-from ttsim.loader import load_functions_tree_for_date
+from ttsim.loader import load_objects_tree_for_date
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     make_vectorizable,
@@ -374,7 +374,7 @@ for year in range(1990, 2023):
         [
             pf.function
             for pf in dt.flatten_to_tree_paths(
-                load_functions_tree_for_date(datetime.date(year=year, month=1, day=1))
+                load_objects_tree_for_date(datetime.date(year=year, month=1, day=1))
             ).values()
             if not isinstance(pf, GroupByFunction)
         ],

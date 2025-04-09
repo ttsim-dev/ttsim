@@ -19,12 +19,12 @@ from ttsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
     set_up_policy_environment,
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedFunctionDict
+    from ttsim.typing import NestedTTSIMFunctionDict
 
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
@@ -144,8 +144,8 @@ def test_load_functions_tree_for_date(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = load_functions_tree_for_date(date=last_day)
-    functions_next_day = load_functions_tree_for_date(date=last_day + timedelta(days=1))
+    functions_last_day = load_objects_tree_for_date(date=last_day)
+    functions_next_day = load_objects_tree_for_date(date=last_day + timedelta(days=1))
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
 
@@ -160,7 +160,7 @@ def test_load_functions_tree_for_date(
     ],
 )
 def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedFunctionDict,
+    functions_tree: NestedTTSIMFunctionDict,
 ):
     with pytest.raises(KeyError):
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)

@@ -16,9 +16,9 @@ from ttsim.function_types import (
 )
 from ttsim.loader import (
     ConflictingTimeDependentFunctionsError,
-    get_active_functions_tree_from_module,
+    get_active_ttsim_objects_tree_from_module,
     load_aggregation_specs_tree,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
 )
 from ttsim.piecewise_polynomial import get_piecewise_parameters, piecewise_polynomial
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
@@ -47,13 +47,13 @@ __all__ = [
     "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
     "create_time_conversion_functions",
-    "get_active_functions_tree_from_module",
+    "get_active_ttsim_objects_tree_from_module",
     "get_piecewise_parameters",
     "group_by_function",
     "insert_path_and_value",
     "join_numpy",
     "load_aggregation_specs_tree",
-    "load_functions_tree_for_date",
+    "load_objects_tree_for_date",
     "merge_trees",
     "piecewise_polynomial",
     "plot_dag",

@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         GenericCallable,
         NestedDataDict,
-        NestedFunctionDict,
-        QualNameFunctionsDict,
+        NestedTTSIMFunctionDict,
+        QualNameTTSIMFObjectDict,
     )
 
 
@@ -177,11 +177,11 @@ def insert_path_and_value(
 
 
 def partition_tree_by_reference_tree(
-    tree_to_partition: NestedFunctionDict | NestedDataDict,
-    reference_tree: NestedFunctionDict | NestedDataDict,
+    tree_to_partition: NestedTTSIMFunctionDict | NestedDataDict,
+    reference_tree: NestedTTSIMFunctionDict | NestedDataDict,
 ) -> tuple[
-    NestedFunctionDict | NestedDataDict,
-    NestedFunctionDict | NestedDataDict,
+    NestedTTSIMFunctionDict | NestedDataDict,
+    NestedTTSIMFunctionDict | NestedDataDict,
 ]:
     """
     Partition a tree into two based on the presence of its paths in a reference tree.
@@ -420,7 +420,7 @@ def assert_valid_ttsim_pytree(
 
 def get_name_of_group_by_id(
     target_name: str,
-    group_by_functions: QualNameFunctionsDict,
+    group_by_functions: QualNameTTSIMFObjectDict,
 ) -> str:
     """Get the group-by-identifier name for some target.
 

@@ -12,7 +12,7 @@ from ttsim.function_types import DerivedTimeConversionFunction, PolicyFunction
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ttsim.typing import QualNameDataDict, QualNameFunctionsDict
+    from ttsim.typing import QualNameDataDict, QualNameTTSIMFObjectDict
 
 _TIME_UNITS = {
     "y": "year",
@@ -373,9 +373,9 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFObjectDict,
     data: QualNameDataDict,
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMFObjectDict:
     """
      Create functions that convert variables to different time units.
 

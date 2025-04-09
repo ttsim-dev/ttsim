@@ -10,7 +10,7 @@ from _gettsim.config import (
 )
 from ttsim.loader import (
     load_aggregation_specs_tree,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
 )
 from ttsim.shared import remove_group_suffix
 
@@ -40,7 +40,7 @@ def aggregation_dict():
 def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
     for year in range(1990, 2023):
-        year_functions = load_functions_tree_for_date(
+        year_functions = load_objects_tree_for_date(
             datetime.date(year=year, month=1, day=1)
         )
         new_dict = {func.function.__name__: func.leaf_name for func in year_functions}

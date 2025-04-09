@@ -45,8 +45,8 @@ if TYPE_CHECKING:
         NestedDataDict,
         NestedTargetDict,
         QualNameDataDict,
-        QualNameFunctionsDict,
         QualNameTargetList,
+        QualNameTTSIMFObjectDict,
     )
 
 
@@ -173,7 +173,7 @@ def compute_taxes_and_transfers(
 
 
 def _convert_data_to_correct_types(
-    data: QualNameDataDict, functions_overridden: QualNameFunctionsDict
+    data: QualNameDataDict, functions_overridden: QualNameTTSIMFObjectDict
 ) -> QualNameDataDict:
     """Convert all data columns to the type that is expected by GETTSIM.
 
@@ -281,7 +281,7 @@ def _convert_data_to_correct_types(
 
 def _create_input_data_for_concatenated_function(
     data: QualNameDataDict,
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFObjectDict,
     targets: QualNameTargetList,
 ) -> QualNameDataDict:
     """Create input data for the concatenated function.
@@ -324,9 +324,9 @@ def _create_input_data_for_concatenated_function(
 
 
 def _partial_parameters_to_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFObjectDict,
     params: dict[str, Any],
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMFObjectDict:
     """Round and partial parameters into functions.
 
     Parameters
@@ -363,9 +363,9 @@ def _partial_parameters_to_functions(
 
 
 def _add_rounding_to_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFObjectDict,
     params: dict[str, Any],
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMFObjectDict:
     """Add appropriate rounding of outputs to function.
 
     Parameters
@@ -527,7 +527,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFObjectDict,
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -641,7 +641,7 @@ def _fail_if_foreign_keys_are_invalid(
 
 
 def _warn_if_functions_overridden_by_data(
-    functions_overridden: QualNameFunctionsDict,
+    functions_overridden: QualNameTTSIMFObjectDict,
 ) -> None:
     """Warn if functions are overridden by data."""
     if len(functions_overridden) > 0:
@@ -706,7 +706,7 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
 
 
 def _fail_if_root_nodes_are_missing(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFObjectDict,
     data: QualNameDataDict,
     root_nodes: list[str],
 ) -> None:
