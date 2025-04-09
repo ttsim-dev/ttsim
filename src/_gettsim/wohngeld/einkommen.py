@@ -143,7 +143,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
-    einkommensteuer__einkünfte__sonstige__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m: float,
     einkommensteuer__renteneinkommen_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
@@ -165,8 +165,8 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
         See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
     sozialversicherung__arbeitslosen__betrag_m
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-    einkommensteuer__einkünfte__sonstige__betrag_m
-        See :func:`einkommensteuer__einkünfte__sonstige__betrag_m`.
+    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
+        See :func:`einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m`.
     einkommensteuer__renteneinkommen_m
         See :func:`einkommensteuer__renteneinkommen_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
@@ -194,7 +194,11 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
         + unterhaltsvorschuss__betrag_m
     )
 
-    eink_ind = einkommen + transfers + einkommensteuer__einkünfte__sonstige__betrag_m
+    eink_ind = (
+        einkommen
+        + transfers
+        + einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
+    )
     out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
     return out
 
@@ -206,7 +210,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
-    einkommensteuer__einkünfte__sonstige__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m: float,
     einkommensteuer__renteneinkommen_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
@@ -229,8 +233,8 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
         See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
     sozialversicherung__arbeitslosen__betrag_m
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-    einkommensteuer__einkünfte__sonstige__betrag_m
-        See :func:`einkommensteuer__einkünfte__sonstige__betrag_m`.
+    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
+        See :func:`einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m`.
     einkommensteuer__renteneinkommen_m
         See :func:`einkommensteuer__renteneinkommen_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
@@ -264,7 +268,11 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
         + elterngeld__anrechenbarer_betrag_m
     )
 
-    eink_ind = einkommen + transfers + einkommensteuer__einkünfte__sonstige__betrag_m
+    eink_ind = (
+        einkommen
+        + transfers
+        + einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
+    )
     out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
     return out
 

@@ -36,7 +36,7 @@ inputs:
       - 12.0
     einkommensteuer__einkünfte__ist_selbstständig:
       - false
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m:
       - 50.0
     einkommensteuer__gemeinsam_veranlagt:
       - false

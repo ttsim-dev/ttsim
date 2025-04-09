@@ -131,10 +131,14 @@ def test_access_different_date_jahresanfang():
             "alleinerziehend_betrag_y_nach_kinderzahl",
         ),
         (
-            {"einkommensteuer": {"gesamteinkommen_ohne_abzüge_y": None}},
+            {
+                "einkommensteuer": {
+                    "einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y": None
+                }
+            },
             date(2008, 12, 31),
-            "gesamteinkommen_ohne_abzüge_mit_kapitaleinkünften_y",
-            "gesamteinkommen_ohne_abzüge_ohne_kapitaleinkünfte_y",
+            "einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_mit_kapitaleinkünften_y",
+            "einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_ohne_kapitaleinkünfte_y",
         ),
     ],
 )
