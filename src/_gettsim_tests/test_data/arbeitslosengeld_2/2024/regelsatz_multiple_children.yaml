@@ -1,11 +1,16 @@
 ---
 info:
-  note: >-
-    Test Regelsatz when Familiengemeinschaft (1 adult, 1 kid) is the same as
-    Bedarfsgemeinschaft.
+  note: Test Regelsatz when Familiengemeinschaft (1 adult, 1 kid) is the same as Bedarfsgemeinschaft.
+  precision: 0.01
   source: Made up.
 inputs:
   assumed:
+    alter:
+      - 40
+      - 5
+      - 10
+      - 14
+      - 19
     arbeitslosengeld_2__bg_id:
       - 0
       - 0
@@ -30,30 +35,12 @@ inputs:
       - false
       - false
       - false
-    alter:
-      - 40
-      - 5
-      - 10
-      - 14
-      - 19
-    hh_id:
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
     familie__kind:
       - false
       - true
       - true
       - true
       - true
-    p_id:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
     familie__p_id_elternteil_1:
       - -1
       - 0
@@ -66,6 +53,12 @@ inputs:
       - -1
       - -1
       - -1
+    hh_id:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
     jahr:
       - 2024
       - 2024
@@ -78,6 +71,12 @@ inputs:
       - 0
       - 0
       - 0
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
   provided: {}
 outputs:
   arbeitslosengeld_2__erwachsenensatz_m:

@@ -1,7 +1,13 @@
-from ttsim import policy_function
+from ttsim import RoundingDirection, RoundingSpec, policy_function
 
 
-@policy_function(params_key_for_rounding="housing_benefits")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=1,
+        direction=RoundingDirection.DOWN,
+        reference="§ 4 Gondorian Housing Benefit Law",
+    )
+)
 def amount_m(
     gross_wage_m: float,
     payroll_tax__amount_m: float,

@@ -1,34 +1,32 @@
 ---
 info:
   note: Skipping test for now, because input columns are missing.
+  precision: 0.01
   source: ''
 inputs:
   provided:
-    p_id:
-      - 0
-      - 1
-    geburtstag:
-      - 14
-      - 1
-    geburtsmonat:
-      - 7
-      - 3
-    geburtsjahr:
-      - 1950
-      - 1964
     alter:
       - 73
       - 59
+    geburtsjahr:
+      - 1950
+      - 1964
+    geburtsmonat:
+      - 7
+      - 3
+    geburtstag:
+      - 14
+      - 1
     hh_id:
       - 0
       - 0
+    p_id:
+      - 0
+      - 1
 outputs:
-  einkommensteuer__sn_id:
-    - 0
-    - 0
   arbeitslosengeld_2__bg_id:
     - 0
     - 0
-  # potentielle_kinderfreibeträge:
-  #   - 0
-  #   - 0
+  einkommensteuer__sn_id:
+    - 0
+    - 0

@@ -1,10 +1,17 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 33
+      - 30
+      - 12
+      - 10
+      - 2
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -41,36 +48,12 @@ inputs:
       - 2281.0
       - 2281.0
       - 2281.0
-    alter:
-      - 33
-      - 30
-      - 12
-      - 10
-      - 2
-    geburtsjahr:
-      - 1973
-      - 1976
-      - 1994
-      - 1996
-      - 2004
-    hh_id:
-      - 4
-      - 4
-      - 4
-      - 4
-      - 4
     familie__kind:
       - false
       - false
       - true
       - true
       - true
-    p_id:
-      - 8
-      - 9
-      - 10
-      - 11
-      - 12
     familie__p_id_elternteil_1:
       - -1
       - -1
@@ -83,12 +66,18 @@ inputs:
       - 9
       - 9
       - 9
-    vermögen:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
+    geburtsjahr:
+      - 1973
+      - 1976
+      - 1994
+      - 1996
+      - 2004
+    hh_id:
+      - 4
+      - 4
+      - 4
+      - 4
+      - 4
     jahr:
       - 2006
       - 2006
@@ -101,6 +90,12 @@ inputs:
       - 280.0
       - 280.0
       - 280.0
+    p_id:
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
     sozialversicherung__rente__bezieht_rente:
       - false
       - false
@@ -114,6 +109,12 @@ inputs:
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
       - 0.0

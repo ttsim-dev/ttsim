@@ -1,6 +1,12 @@
 """Income taxes."""
 
-from ttsim import AggregateByPIDSpec, piecewise_polynomial, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    RoundingDirection,
+    RoundingSpec,
+    piecewise_polynomial,
+    policy_function,
+)
 
 aggregation_specs = {
     "anzahl_kindergeld_ansprüche_1": AggregateByPIDSpec(
@@ -17,7 +23,11 @@ aggregation_specs = {
 
 
 @policy_function(
-    end_date="1996-12-31", leaf_name="betrag_y_sn", params_key_for_rounding="eink_st"
+    end_date="1996-12-31",
+    leaf_name="betrag_y_sn",
+    rounding_spec=RoundingSpec(
+        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S. 6 EStG"
+    ),
 )
 def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
     betrag_mit_kinderfreibetrag_y_sn: float,
@@ -40,7 +50,9 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
 @policy_function(
     start_date="1997-01-01",
     leaf_name="betrag_y_sn",
-    params_key_for_rounding="eink_st",
+    rounding_spec=RoundingSpec(
+        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+    ),
 )
 def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
     betrag_ohne_kinderfreibetrag_y_sn: float,
@@ -104,7 +116,9 @@ def kinderfreibetrag_günstiger_sn(
 @policy_function(
     end_date="2001-12-31",
     leaf_name="betrag_mit_kinderfreibetrag_y_sn",
-    params_key_for_rounding="eink_st",
+    rounding_spec=RoundingSpec(
+        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+    ),
 )
 def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
     raise NotImplementedError("Tax system before 2002 is not implemented yet.")
@@ -113,7 +127,9 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
 @policy_function(
     start_date="2002-01-01",
     leaf_name="betrag_mit_kinderfreibetrag_y_sn",
-    params_key_for_rounding="eink_st",
+    rounding_spec=RoundingSpec(
+        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+    ),
 )
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
@@ -146,7 +162,11 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     return out
 
 
-@policy_function(params_key_for_rounding="eink_st")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+    )
+)
 def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
     anzahl_personen_sn: int,

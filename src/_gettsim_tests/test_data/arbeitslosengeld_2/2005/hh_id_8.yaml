@@ -1,38 +1,21 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 45
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
-    familie__alleinerziehend:
-      - false
-    alter:
-      - 45
     arbeitsstunden_w:
       - 20.0
-    geburtsjahr:
-      - 1960
-    hh_id:
-      - 8
-    familie__kind:
-      - false
-    p_id:
-      - 4
-    familie__p_id_ehepartner:
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-    vermögen:
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 0.0
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
@@ -49,6 +32,20 @@ inputs:
       - false
     elterngeld__betrag_m:
       - 0.0
+    familie__alleinerziehend:
+      - false
+    familie__kind:
+      - false
+    familie__p_id_ehepartner:
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+    geburtsjahr:
+      - 1960
+    hh_id:
+      - 8
     jahr:
       - '2005'
     kindergeld__betrag_m_bg:
@@ -57,6 +54,8 @@ inputs:
       - false
     kindergeld__p_id_empfänger:
       - -1
+    p_id:
+      - 4
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
     sozialversicherung__arbeitslosen__betrag_m:
@@ -72,6 +71,8 @@ inputs:
     unterhalt__tatsächlich_erhaltener_betrag_m:
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+    vermögen:
       - 0.0
     wohnen__bewohnt_eigentum_hh:
       - false

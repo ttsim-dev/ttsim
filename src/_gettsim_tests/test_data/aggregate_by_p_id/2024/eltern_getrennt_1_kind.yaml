@@ -1,10 +1,15 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 34
+      - 34
+      - 10
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -13,14 +18,26 @@ inputs:
       - -1
       - -1
       - -1
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
     familie__alleinerziehend:
       - true
       - false
       - false
-    alter:
-      - 34
-      - 34
-      - 10
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 0
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 1
     geburtsjahr:
       - 1990
       - 1990
@@ -37,26 +54,6 @@ inputs:
       - 0
       - 0
       - 0
-    p_id:
-      - 0
-      - 1
-      - 2
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
       - false
@@ -65,6 +62,10 @@ inputs:
       - -1
       - -1
       - 0
+    p_id:
+      - 0
+      - 1
+      - 2
 outputs:
   einkommensteuer__anzahl_kinderfreibeträge:
     - 1

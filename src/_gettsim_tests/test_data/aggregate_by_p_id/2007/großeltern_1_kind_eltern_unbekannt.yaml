@@ -1,10 +1,15 @@
 ---
 info:
   note: Overwriting the recipients of Kinderfreibetrag.
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 74
+      - 74
+      - 10
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -13,10 +18,30 @@ inputs:
       - -1
       - -1
       - -1
-    alter:
-      - 74
-      - 74
-      - 10
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
+    einkommensteuer__p_id_kinderfreibetragsempfänger_1:
+      - -1
+      - -1
+      - 0
+    einkommensteuer__p_id_kinderfreibetragsempfänger_2:
+      - -1
+      - -1
+      - 1
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
     geburtsjahr:
       - 1933
       - 1933
@@ -33,34 +58,6 @@ inputs:
       - 0
       - 0
       - 0
-    p_id:
-      - 0
-      - 1
-      - 2
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
-    einkommensteuer__p_id_kinderfreibetragsempfänger_1:
-      - -1
-      - -1
-      - 0
-    einkommensteuer__p_id_kinderfreibetragsempfänger_2:
-      - -1
-      - -1
-      - 1
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
       - false
@@ -69,6 +66,10 @@ inputs:
       - -1
       - -1
       - 0
+    p_id:
+      - 0
+      - 1
+      - 2
 outputs:
   einkommensteuer__anzahl_kinderfreibeträge:
     - 1

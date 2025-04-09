@@ -1,0 +1,16 @@
+---
+info:
+  note: ''
+  precision: 0.01
+  source: ''
+inputs:
+  provided:
+    hh_id:
+      - 0
+    p_id:
+      - 0
+    sozialversicherung__pflege__beitrag__hat_kinder:
+      - false
+outputs:
+  sozialversicherung__minijob_grenze:
+    - 450.0

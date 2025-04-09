@@ -101,11 +101,3 @@ anwendungsvorschrift:
       Kindergeldes für das erste Kind vor Anpassung des Kinderfreibetrags (hier: 184
       Euro). Ab 2016 orientiert sich der Unterhaltsvorschuss wieder an den regulären
       Mindestunterhaltsbeträgen.
-rounding:
-  unterhaltsvorschuss__betrag_m:
-    note:
-      en: Rounding rules since implementation in 1980 via BGBl. I 1979 S. 1184.
-    1980-01-01:
-      base: 1
-      direction: up
-      reference: § 9 Abs. 3 UhVorschG
