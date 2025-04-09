@@ -18,7 +18,7 @@ def renteneinkünfte_m(
     sozialversicherung__rente__altersrente__betrag_m: float,
     sozialversicherung__rente__private_rente_betrag_m: float,
 ) -> float:
-    """Income from pensions."""
+    """Pension income counting towards taxable income."""
     return rente_ertragsanteil * (
         sozialversicherung__rente__altersrente__betrag_m
         + sozialversicherung__rente__private_rente_betrag_m
