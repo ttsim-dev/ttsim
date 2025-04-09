@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
     # Specialise from dags' GenericCallable types to GETTSIM's functions.
     NestedTTSIMFunctionDict = Mapping[str, TTSIMFunction | "NestedTTSIMFunctionDict"]
-    QualNameTTSIMObjectDict = Mapping[str, TTSIMFunction]
+    QualNameTTSIMFunctionDict = Mapping[str, TTSIMFunction]
 
     # Specialise from dags' NestedInputDict to GETTSIM's types.
     NestedDataDict = Mapping[str, pd.Series | "NestedDataDict"]
