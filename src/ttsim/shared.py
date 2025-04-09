@@ -494,7 +494,6 @@ def join_numpy(
     return padded_targets.take(indices)
 
 
-@jax.jit
 def join_jax(
     foreign_key: jnp.ndarray[Key],
     primary_key: jnp.ndarray[Key],

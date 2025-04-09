@@ -1,6 +1,10 @@
 import numpy
 import pytest
-from jax import numpy as jnp
+try:
+    import jax
+    import jax.numpy as jnp
+except ImportError:
+    pass
 
 from ttsim.shared import join_jax, join_numpy
 
@@ -91,8 +95,9 @@ def test_join_jax(
     value_if_foreign_key_is_missing: str,
     expected: numpy.ndarray[str],
 ):
+    join_jax_jitted = jax.jit(join_jax)
     assert numpy.array_equal(
-        join_jax(
+        join_jax_jitted(
             jnp.array(foreign_key),
             jnp.array(primary_key),
             jnp.array(target),
