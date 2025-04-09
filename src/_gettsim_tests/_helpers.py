@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
+from _gettsim.config import RESOURCE_DIR
 from ttsim import (
     PolicyEnvironment,
     set_up_policy_environment,
@@ -22,4 +23,4 @@ def cached_set_up_policy_environment(
 
 @lru_cache(maxsize=100)
 def _cached_set_up_policy_environment(date: datetime.date) -> PolicyEnvironment:
-    return set_up_policy_environment(date)
+    return set_up_policy_environment(date=date, resource_dir=RESOURCE_DIR)
