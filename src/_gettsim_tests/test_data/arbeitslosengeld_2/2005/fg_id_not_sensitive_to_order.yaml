@@ -1,0 +1,77 @@
+---
+info:
+  note: ''
+  source: ''
+inputs:
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    alter:
+      - 12
+      - 39
+      - 13
+      - 12
+      - 22
+      - 42
+    hh_id:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    p_id_einstandspartner:
+      - -1
+      - 5
+      - -1
+      - -1
+      - -1
+      - 1
+    familie__p_id_elternteil_1:
+      - 1
+      - -1
+      - 1
+      - 1
+      - 5
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - 5
+      - -1
+      - -1
+    eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+outputs:
+  arbeitslosengeld_2__fg_id:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+  arbeitslosengeld_2__bg_id:
+    - 100
+    - 100
+    - 100
+    - 100
+    - 100
+    - 100
+  arbeitslosengeld_2__eg_id:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 1
