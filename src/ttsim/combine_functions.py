@@ -207,7 +207,7 @@ def _create_aggregation_functions(
                 aggregation_target=target_name,
                 aggregation_spec=aggregation_spec,
                 group_by_id=group_by_id_name,
-                functions=ttsim_objects,
+                ttsim_objects=ttsim_objects,
                 top_level_namespace=top_level_namespace,
             )
         else:
@@ -334,7 +334,7 @@ def _create_one_aggregate_by_group_func(
     aggregation_target: str,
     aggregation_spec: AggregateByGroupSpec,
     group_by_id: str,
-    functions: QualNameTTSIMObjectDict,
+    ttsim_objects: QualNameTTSIMObjectDict,
     top_level_namespace: set[str],
 ) -> DerivedAggregationFunction:
     """Create an aggregation function based on aggregation specification.
@@ -349,9 +349,8 @@ def _create_one_aggregate_by_group_func(
         The annotations for the derived function.
     group_by_id
         The group-by-identifier.
-    functions
-        The functions dict with qualified function names as keys and functions as
-        values.
+    ttsim_objects
+        Map qualified names to TTSIMObjects.
     top_level_namespace
         Set of top-level namespaces.
 
@@ -380,7 +379,7 @@ def _create_one_aggregate_by_group_func(
         else None
     )
 
-    source_function = functions[qual_name_source]
+    source_function = ttsim_objects[qual_name_source]
 
     return DerivedAggregationFunction(
         leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],

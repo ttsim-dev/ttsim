@@ -483,7 +483,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
         group_by_id=group_by_id,
-        functions={},
+        ttsim_objects={},
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -576,7 +576,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
         group_by_id=group_by_id,
-        functions={},
+        ttsim_objects={},
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name

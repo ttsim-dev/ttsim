@@ -88,13 +88,11 @@ def compute_taxes_and_transfers(
     _fail_if_environment_not_valid(environment)
 
     # Transform functions tree to qualified names dict with qualified arguments
-    top_level_namespace = (
-        set(environment.raw_objects_tree.keys())
-        | set(data_tree.keys())
-        | set(environment.aggregation_specs_tree.keys())
+    top_level_namespace = set(environment.raw_objects_tree.keys()) | set(
+        environment.aggregation_specs_tree.keys()
     )
     functions = dt.functions_without_tree_logic(
-        functions=environment.raw_objects_tree, top_level_namespace=top_level_namespace
+        functions=environment.functions_tree, top_level_namespace=top_level_namespace
     )
 
     targets = dt.qual_names(targets_tree)
