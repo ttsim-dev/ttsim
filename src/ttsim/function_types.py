@@ -137,7 +137,7 @@ class PolicyFunction(TTSIMFunction):
         Whether the function should be vectorized.
     """
 
-    rounding_spec: RoundingSpec | None
+    rounding_spec: RoundingSpec | None = None
 
     def __post_init__(self):
         self.function = (

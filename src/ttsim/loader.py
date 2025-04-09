@@ -20,7 +20,10 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-    from ttsim.typing import NestedTTSIMObjectDict
+    from ttsim.typing import (
+        NestedAggregationSpecDict,
+        NestedTTSIMObjectDict,
+    )
 
 
 def load_objects_tree_for_date(
@@ -79,7 +82,6 @@ def get_active_ttsim_objects_tree_from_module(
     """
     module = _load_module(path, root_path)
     module_name = _convert_path_to_importable_module_name(path, root_path)
-    breakpoint()
 
     all_functions_in_module = inspect.getmembers(module)
 

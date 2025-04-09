@@ -28,6 +28,8 @@ if TYPE_CHECKING:
 
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
+RESOURCE_DIR = Path(__file__).parent / "mettsim"
+
 
 class TestPolicyEnvironment:
     def test_func_exists_in_tree(self):
@@ -144,8 +146,12 @@ def test_load_functions_tree_for_date(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = load_objects_tree_for_date(date=last_day)
-    functions_next_day = load_objects_tree_for_date(date=last_day + timedelta(days=1))
+    functions_last_day = load_objects_tree_for_date(
+        resource_dir=RESOURCE_DIR, date=last_day
+    )
+    functions_next_day = load_objects_tree_for_date(
+        resource_dir=RESOURCE_DIR, date=last_day + timedelta(days=1)
+    )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
 

@@ -28,7 +28,6 @@ from ttsim.shared import (
     remove_group_suffix,
 )
 from ttsim.time_conversion import create_time_conversion_functions
-from ttsim.typing import QualNameTTSIMObjectDict
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -37,6 +36,7 @@ if TYPE_CHECKING:
         QualNameAggregationSpecsDict,
         QualNameDataDict,
         QualNameTargetList,
+        QualNameTTSIMFunctionDict,
         QualNameTTSIMObjectDict,
     )
 

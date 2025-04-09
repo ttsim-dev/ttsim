@@ -166,12 +166,16 @@ class PolicyEnvironment:
         return result
 
 
-def set_up_policy_environment(date: datetime.date | str | int) -> PolicyEnvironment:
+def set_up_policy_environment(
+    resource_dir: Path, date: datetime.date | str | int
+) -> PolicyEnvironment:
     """
     Set up the policy environment for a particular date.
 
     Parameters
     ----------
+    resource_dir
+        The directory to load the policy environment from.
     date
         The date for which the policy system is set up. An integer is
         interpreted as the year.
@@ -183,7 +187,7 @@ def set_up_policy_environment(date: datetime.date | str | int) -> PolicyEnvironm
     # Check policy date for correct format and convert to datetime.date
     date = _parse_date(date)
 
-    functions_tree = load_objects_tree_for_date(date)
+    functions_tree = load_objects_tree_for_date(resource_dir=resource_dir, date=date)
 
     params = {}
     for group in INTERNAL_PARAMS_GROUPS:

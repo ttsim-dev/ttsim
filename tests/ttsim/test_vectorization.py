@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import string
+from pathlib import Path
 
 import dags.tree as dt
 import numpy
@@ -375,7 +376,10 @@ for year in range(1990, 2023):
         [
             pf.function
             for pf in dt.flatten_to_tree_paths(
-                load_objects_tree_for_date(datetime.date(year=year, month=1, day=1))
+                load_objects_tree_for_date(
+                    resource_dir=Path(__file__).parent / "mettsim",
+                    date=datetime.date(year=year, month=1, day=1),
+                )
             ).values()
             if not isinstance(pf, GroupByFunction)
         ],
