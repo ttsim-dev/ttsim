@@ -8,5 +8,5 @@ def sonstige_einkünfte_ohne_renten_m() -> float:
     """Additional income: includes private and public transfers that are not yet
     implemented in GETTSIM (e.g., BAföG, Kriegsopferfürsorge).
 
-    Excluding income from public and private pensions.
+    Excludes income from public and private pensions.
     """
