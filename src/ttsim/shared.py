@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -11,6 +12,8 @@ import optree
 from _gettsim.config import SUPPORTED_GROUPINGS
 
 if TYPE_CHECKING:
+    import datetime
+
     from ttsim.function_types import PolicyFunction
     from ttsim.typing import (
         GenericCallable,
@@ -18,6 +21,19 @@ if TYPE_CHECKING:
         NestedFunctionDict,
         QualNameFunctionsDict,
     )
+
+
+_DASHED_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def validate_dashed_iso_date(date: str | datetime.date):
+    if not _DASHED_ISO_DATE.match(date):
+        raise ValueError(f"Date {date} does not match the format YYYY-MM-DD.")
+
+
+def validate_date_range(start: datetime.date, end: datetime.date):
+    if start > end:
+        raise ValueError(f"The start date {start} must be before the end date {end}.")
 
 
 class KeyErrorMessage(str):

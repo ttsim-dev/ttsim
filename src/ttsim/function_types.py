@@ -3,12 +3,13 @@ from __future__ import annotations
 import datetime
 import functools
 import inspect
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, TypeVar
 
 import dags.tree as dt
 import numpy
+
+from ttsim.shared import validate_dashed_iso_date, validate_date_range
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,14 +23,8 @@ class TTSIMObject:
     Abstract base class for all TTSIM Functions and Inputs.
     """
 
-    function: Callable
     start_date: datetime.date
     end_date: datetime.date
-
-    @property
-    def original_function_name(self) -> str:
-        """The name of the wrapped function."""
-        return self.function.__name__
 
     def is_active(self, date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -37,12 +32,72 @@ class TTSIMObject:
 
 
 @dataclass
-class TTSIMFunction(TTSIMObject):
+class PolicyInput(TTSIMObject):
     """
-    Abstract base class for all TTSIM functions.
+    A dummy function representing an input variable.
+
+    Parameters
+    ----------
+    data_type:
+        The data type of the input variable.
+    start_date:
+        The date from which the input is relevant / active (inclusive).
+    end_date:
+        The date until which the input is relevant / active (inclusive).
     """
 
+    data_type: Literal["int", "float", "bool"]
+
+
+def policy_input(
+    *,
+    start_date: str | datetime.date = "1900-01-01",
+    end_date: str | datetime.date = "2100-12-31",
+) -> PolicyInput:
+    """
+    Decorator that makes a (dummy) function a `PolicyInput`.
+
+    **Dates active (start_date, end_date):**
+
+    Specifies that a PolicyInput is only active between two dates, `start` and `end`.
+
+    **Rounding spec (params_key_for_rounding):**
+
+    Adds the location of the rounding specification to a PolicyInput.
+
+    Parameters
+    ----------
+    start_date
+        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    end_date
+        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+
+    Returns
+    -------
+    A PolicyInput object.
+    """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    def inner(func: Callable) -> PolicyInput:
+        data_type = func.__annotations__["return"]
+        return PolicyInput(
+            data_type=data_type,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    return inner
+
+
+@dataclass
+class TTSIMFunction(TTSIMObject):
+    """
+    Base class for all TTSIM functions.
+    """
+
+    function: Callable
     leaf_name: str | None = None
+    skip_vectorization: bool = False
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)
@@ -51,6 +106,11 @@ class TTSIMFunction(TTSIMObject):
     def dependencies(self) -> set[str]:
         """The names of input variables that the function depends on."""
         return set(inspect.signature(self).parameters)
+
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
 
 
 @dataclass
@@ -77,7 +137,6 @@ class PolicyFunction(TTSIMFunction):
     """
 
     params_key_for_rounding: str | None = None
-    skip_vectorization: bool = False
 
     def __post_init__(self):
         self.function = (
@@ -139,13 +198,7 @@ def policy_function(
     A PolicyFunction object.
     """
 
-    _validate_dashed_iso_date(start_date)
-    _validate_dashed_iso_date(end_date)
-
-    start_date = datetime.date.fromisoformat(start_date)
-    end_date = datetime.date.fromisoformat(end_date)
-
-    _validate_date_range(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable) -> PolicyFunction:
         return PolicyFunction(
@@ -158,19 +211,6 @@ def policy_function(
         )
 
     return inner
-
-
-_DASHED_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
-
-
-def _validate_dashed_iso_date(date: str | datetime.date):
-    if not _DASHED_ISO_DATE.match(date):
-        raise ValueError(f"Date {date} does not match the format YYYY-MM-DD.")
-
-
-def _validate_date_range(start: datetime.date, end: datetime.date):
-    if start > end:
-        raise ValueError(f"The start date {start} must be before the end date {end}.")
 
 
 def _vectorize_func(func: Callable) -> Callable:
@@ -188,94 +228,6 @@ def _vectorize_func(func: Callable) -> Callable:
 
 
 @dataclass
-class PolicyInput(TTSIMObject):
-    """
-    A dummy function representing an input variable.
-
-    Parameters
-    ----------
-    function:
-        The dummy function. Only the return annotation is used.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    """
-
-    params_key_for_rounding: str | None = None
-
-    def __post_init__(self):
-        # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = self.function.__annotations__
-        self.__module__ = self.function.__module__
-        self.__name__ = self.function.__name__
-        self.__signature__ = inspect.signature(self.function)
-
-    @property
-    def original_function_name(self) -> str:
-        """The name of the wrapped function."""
-        return self.function.__name__
-
-    def is_active(self, date: datetime.date) -> bool:
-        """Check if the function is active at a given date."""
-        return self.start_date <= date <= self.end_date
-
-
-def policy_input(
-    *,
-    start_date: str | datetime.date = "1900-01-01",
-    end_date: str | datetime.date = "2100-12-31",
-    params_key_for_rounding: str | None = None,
-) -> PolicyInput:
-    """
-    Decorator that makes a (dummy) function a `PolicyInput`.
-
-    **Dates active (start_date, end_date):**
-
-    Specifies that a PolicyInput is only active between two dates, `start` and `end`.
-
-    **Rounding spec (params_key_for_rounding):**
-
-    Adds the location of the rounding specification to a PolicyInput.
-
-    Parameters
-    ----------
-    start_date
-        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    end_date
-        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    params_key_for_rounding
-        Key of the parameters dictionary where rounding specifications are found. For
-        functions that are not user-written this is just the name of the respective
-        .yaml file.
-
-    Returns
-    -------
-    A PolicyInput object.
-    """
-
-    _validate_dashed_iso_date(start_date)
-    _validate_dashed_iso_date(end_date)
-
-    start_date = datetime.date.fromisoformat(start_date)
-    end_date = datetime.date.fromisoformat(end_date)
-
-    _validate_date_range(start_date, end_date)
-
-    def inner(func: Callable) -> PolicyInput:
-        return PolicyInput(
-            function=func,
-            start_date=start_date,
-            end_date=end_date,
-            params_key_for_rounding=params_key_for_rounding,
-        )
-
-    return inner
-
-
-@dataclass
 class GroupByFunction(TTSIMFunction):
     """
     A function that computes endogenous group_by IDs.
@@ -283,8 +235,7 @@ class GroupByFunction(TTSIMFunction):
     Parameters
     ----------
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
+        The function calculating the group_by IDs.
     leaf_name:
         The leaf name of the function in the functions tree.
     start_date:
@@ -329,15 +280,14 @@ def group_by_function(
 
 
 @dataclass
-class DerivedAggregationFunction(PolicyFunction):
+class DerivedAggregationFunction(TTSIMFunction):
     """
     A function that is an aggregation of another function.
 
     Parameters
     ----------
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
+        The function performing the aggregation.
     source:
         The name of the source function or data column.
     aggregation_target:
@@ -374,18 +324,14 @@ class DerivedAggregationFunction(PolicyFunction):
 
 
 @dataclass
-class DerivedTimeConversionFunction(PolicyFunction):
+class DerivedTimeConversionFunction(TTSIMFunction):
     """
     A function that is a time conversion of another function.
 
     Parameters
     ----------
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
-    function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
+        The function performing the time conversion.
     source:
         The name of the source function or data column.
     conversion_target:
@@ -412,3 +358,32 @@ class DerivedTimeConversionFunction(PolicyFunction):
             raise ValueError("The conversion target must be specified.")
 
         self.leaf_name = dt.tree_path_from_qual_name(self.conversion_target)[-1]
+
+
+def _convert_and_validate_dates(
+    start_date: str | datetime.date,
+    end_date: str | datetime.date,
+) -> tuple[datetime.date, datetime.date]:
+    """Convert and validate date strings to datetime.date objects.
+
+    Parameters
+    ----------
+    start_date
+        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    end_date
+        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+
+    Returns
+    -------
+    tuple[datetime.date, datetime.date]
+        The converted and validated start and end dates.
+    """
+    validate_dashed_iso_date(start_date)
+    validate_dashed_iso_date(end_date)
+
+    start_date = datetime.date.fromisoformat(start_date)
+    end_date = datetime.date.fromisoformat(end_date)
+
+    validate_date_range(start_date, end_date)
+
+    return start_date, end_date

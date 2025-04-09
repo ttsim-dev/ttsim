@@ -15,8 +15,8 @@ from _gettsim.config import (
     RESOURCE_DIR,
 )
 from ttsim.function_types import (
-    GroupByFunction,
     TTSIMFunction,
+    TTSIMObject,
     policy_function,
 )
 from ttsim.loader import (
@@ -68,13 +68,11 @@ class PolicyEnvironment:
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_ttsim_pytree(
             functions_tree,
-            lambda leaf: isinstance(leaf, TTSIMFunction),
+            lambda leaf: isinstance(leaf, TTSIMObject),
             "functions_tree",
         )
         self._functions_tree = optree.tree_map(
-            lambda leaf: leaf
-            if isinstance(leaf, GroupByFunction)
-            else _convert_function_to_policy_function(leaf),
+            lambda leaf: _convert_function_to_policy_function(leaf),
             functions_tree,
         )
 
@@ -126,7 +124,7 @@ class PolicyEnvironment:
 
         assert_valid_ttsim_pytree(
             tree=functions_tree_to_upsert,
-            leaf_checker=lambda leaf: isinstance(leaf, TTSIMFunction),
+            leaf_checker=lambda leaf: isinstance(leaf, TTSIMObject),
             tree_name="functions_tree_to_upsert",
         )
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
@@ -227,9 +225,7 @@ def _parse_date(date: datetime.date | str | int) -> datetime.date:
     return date
 
 
-def _convert_function_to_policy_function(
-    function: callable,
-) -> TTSIMFunction:
+def _convert_function_to_policy_function(function: callable) -> TTSIMFunction:
     """Convert a function to a PolicyFunction.
 
     Parameters
