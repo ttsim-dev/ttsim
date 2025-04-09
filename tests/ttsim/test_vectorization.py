@@ -450,7 +450,7 @@ def test_geschwisterbonus_m(backend):
     assert_array_equal(got, full(shape, exp))
 
 
-def mock__elterngeld__grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
+def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     claimed: bool,
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,

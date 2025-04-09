@@ -123,7 +123,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
 
 
 @policy_function(start_date="2003-04-01", leaf_name="betrag_arbeitgeber_m")
-def betrag_arbeitgeber_m_mit_midijob(  # noqa: PLR0913
+def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_midijob_arbeitgeber_m: float,
     einkommen_m: float,

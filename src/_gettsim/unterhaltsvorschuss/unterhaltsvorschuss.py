@@ -381,7 +381,7 @@ def mindesteinkommen_erreicht(
 
 
 @policy_function(start_date="2017-01-01")
-def einkommen_m(  # noqa: PLR0913
+def einkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,

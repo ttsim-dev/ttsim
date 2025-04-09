@@ -251,7 +251,7 @@ def _check_rates(parameter_dict, parameter, keys, func_type):
     return rates
 
 
-def _check_intercepts(  # noqa: PLR0913
+def _check_intercepts(
     parameter_dict, parameter, lower_thresholds, upper_thresholds, rates, keys
 ):
     """Check and transfer raw intercepte data. If necessary create intercepts.

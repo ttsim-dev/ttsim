@@ -102,7 +102,7 @@ def kindergeld_zur_bedarfsdeckung_m(
 
 
 @policy_function()
-def differenz_kindergeld_kindbedarf_m(  # noqa: PLR0913
+def differenz_kindergeld_kindbedarf_m(
     regelbedarf_m_bg: float,
     nettoeinkommen_nach_abzug_freibetrag_m: float,
     wohngeld__anspruchshöhe_m_bg: float,
