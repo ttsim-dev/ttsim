@@ -4,7 +4,7 @@ from ttsim import policy_function
 
 
 @policy_function()
-def betrag_m_eg(  # noqa: PLR0913
+def betrag_m_eg(
     arbeitslosengeld_2__regelbedarf_m_bg: float,
     mehrbedarf_schwerbehinderung_g_m_eg: float,
     kindergeld__betrag_m_eg: float,

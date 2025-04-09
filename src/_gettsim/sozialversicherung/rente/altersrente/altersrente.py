@@ -149,7 +149,7 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
     start_date="2017-01-01",
     end_date="2022-12-31",
 )
-def zahlbetrag_ohne_deckel_m(  # noqa: PLR0913
+def zahlbetrag_ohne_deckel_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     alter: int,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
@@ -357,7 +357,7 @@ def rentenwert(wohnort_ost: bool, ges_rente_params: dict) -> float:
 
 
 @policy_function()
-def zugangsfaktor(  # noqa: PLR0913
+def zugangsfaktor(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     referenzalter_abschlag: float,

@@ -4,7 +4,7 @@ from ttsim import piecewise_polynomial, policy_function
 
 
 @policy_function()
-def einkommen_m(  # noqa: PLR0913
+def einkommen_m(
     erwerbseinkommen_m: float,
     private_rente_betrag_m: float,
     gesetzliche_rente_m: float,

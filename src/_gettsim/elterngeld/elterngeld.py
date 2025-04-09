@@ -151,7 +151,7 @@ def anspruchshöhe_m(
 
 
 @policy_function(start_date="2007-01-01")
-def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
+def grundsätzlich_anspruchsberechtigt(
     claimed: bool,
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,

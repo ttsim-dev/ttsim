@@ -178,7 +178,7 @@ def vorsorgeaufwendungen_regime_bis_2004_y_sn(
     start_date="2005-01-01",
     end_date="2009-12-31",
 )
-def vorsorgeaufwendungen_globale_kappung_y_sn(  # noqa: PLR0913
+def vorsorgeaufwendungen_globale_kappung_y_sn(
     altersvorsorge_y_sn: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn: float,
     sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn: float,
@@ -228,7 +228,7 @@ def vorsorgeaufwendungen_globale_kappung_y_sn(  # noqa: PLR0913
 @policy_function(
     start_date="2010-01-01",
 )
-def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(  # noqa: PLR0913
+def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     altersvorsorge_y_sn: float,
     sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn: float,

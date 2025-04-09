@@ -395,7 +395,7 @@ def test_annotations_are_applied_to_derived_functions(
         ),
     ],
 )
-def test_derived_aggregation_functions_are_in_correct_namespace(  # noqa: PLR0913
+def test_derived_aggregation_functions_are_in_correct_namespace(
     functions,
     targets,
     data,

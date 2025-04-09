@@ -308,7 +308,7 @@ def mean_entgeltpunkte_zuschlag(
 
 
 @policy_function(params_key_for_rounding="ges_rente", start_date="2021-01-01")
-def proxy_rente_vorjahr_m(  # noqa: PLR0913
+def proxy_rente_vorjahr_m(
     sozialversicherung__rente__bezieht_rente: bool,
     sozialversicherung__rente__private_rente_betrag_m: float,
     sozialversicherung__rente__jahr_renteneintritt: int,
