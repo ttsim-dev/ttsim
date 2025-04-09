@@ -1,4 +1,6 @@
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from enum import StrEnum
 
 from ttsim.aggregation_jax import all_by_p_id as all_by_p_id_jax
 from ttsim.aggregation_jax import any_by_p_id as any_by_p_id_jax
@@ -31,14 +33,62 @@ from ttsim.aggregation_numpy import sum_by_p_id as sum_by_p_id_numpy
 from ttsim.config import USE_JAX
 
 
+class AggregationType(StrEnum):
+    """
+    Enum for aggregation types.
+    """
+
+    COUNT = "count"
+    SUM = "sum"
+    MEAN = "mean"
+    MAX = "max"
+    MIN = "min"
+    ANY = "any"
+    ALL = "all"
+
+
 @dataclass
 class AggregateByGroupSpec:
     """
     A container for aggregate by group specifications.
     """
 
-    aggr: str
+    aggr: AggregationType
     source: str | None = None
+    _agg_func: Callable = field(init=False)
+
+    def __post_init__(self):
+        if not isinstance(self.aggr, AggregationType):
+            raise ValueError(
+                f"aggr must be of type AggregationType, not {type(self.aggr)}"
+            )
+
+        if self.aggr == AggregationType.COUNT and self.source is not None:
+            raise ValueError("COUNT aggregation cannot use a source.")
+
+        aggregation_registry = {
+            AggregationType.SUM: grouped_sum,
+            AggregationType.MEAN: grouped_mean,
+            AggregationType.MAX: grouped_max,
+            AggregationType.MIN: grouped_min,
+            AggregationType.ANY: grouped_any,
+            AggregationType.ALL: grouped_all,
+            AggregationType.COUNT: grouped_count,
+        }
+
+        func = aggregation_registry.get(self.aggr)
+        if func is None:
+            raise ValueError(f"Aggregation type {self.aggr} not implemented")
+
+        self._agg_func = func
+
+    def agg_func(self, source, group_by_id):
+        return self._agg_func(source, group_by_id)
+
+    def mapper(self, group_by_id):
+        if self.aggr == AggregationType.COUNT:
+            return {"group_by_id": group_by_id}
+        return {"source": self.source, "group_by_id": group_by_id}
 
 
 @dataclass
@@ -49,7 +99,7 @@ class AggregateByPIDSpec:
 
     p_id_to_aggregate_by: str
     source: str
-    aggr: str
+    aggr: AggregationType
 
 
 def grouped_count(group_id):

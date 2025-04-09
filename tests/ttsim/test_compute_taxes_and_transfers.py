@@ -10,7 +10,7 @@ from mettsim.config import FOREIGN_KEYS
 from mettsim.functions.payroll_tax.group_by_ids import fam_id, sp_id
 
 from gettsim import FunctionsAndColumnsOverlapWarning
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.compute_taxes_and_transfers import (
     _convert_data_to_correct_types,
     _fail_if_foreign_keys_are_invalid,
@@ -316,7 +316,7 @@ def test_user_provided_aggregate_by_group_specs():
         "module_name": {
             "betrag_m_hh": AggregateByGroupSpec(
                 source="betrag_m",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             )
         }
     }
@@ -340,7 +340,7 @@ def test_user_provided_aggregate_by_group_specs():
             "module_name": {
                 "betrag_double_m_hh": AggregateByGroupSpec(
                     source="betrag_m_double",
-                    aggr="max",
+                    aggr=AggregationType.MAX,
                 ),
             },
         },
@@ -348,7 +348,7 @@ def test_user_provided_aggregate_by_group_specs():
             "module_name": {
                 "betrag_double_m_hh": AggregateByGroupSpec(
                     source="module_name__betrag_m_double",
-                    aggr="max",
+                    aggr=AggregationType.MAX,
                 ),
             },
         },
@@ -401,7 +401,7 @@ def test_aggregate_by_group_specs_missing_group_sufix():
         "module_name": {
             "betrag_agg_m": AggregateByGroupSpec(
                 source="betrag_m",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             )
         },
     }
@@ -417,29 +417,13 @@ def test_aggregate_by_group_specs_missing_group_sufix():
 
 
 def test_aggregate_by_group_specs_agg_not_impl():
-    data = {
-        "p_id": pd.Series([1, 2, 3], name="p_id"),
-        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-        "module_name": {
-            "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
-        },
-    }
-    aggregation_specs_tree = {
-        "module_name": {
-            "betrag_m_hh": AggregateByGroupSpec(
-                source="betrag_m",
-                aggr="aggr_not_implemented",
-            )
-        },
-    }
     with pytest.raises(
         ValueError,
-        match="Aggregation method aggr_not_implemented is not implemented.",
+        match="aggr must be of type AggregationType, not <class 'str'>",
     ):
-        compute_taxes_and_transfers(
-            data,
-            PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
-            targets_tree={"module_name": {"betrag_m_hh": None}},
+        AggregateByGroupSpec(
+            source="betrag_m",
+            aggr="sum",
         )
 
 
@@ -452,7 +436,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                     "target_func": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
                         source="source_func",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     )
                 }
             },
@@ -466,7 +450,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                     "target_func_m": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     )
                 }
             },
@@ -480,7 +464,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                     "target_func_m": AggregateByPIDSpec(
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     )
                 }
             },

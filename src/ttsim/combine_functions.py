@@ -13,16 +13,10 @@ from _gettsim.config import (
 from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
+    AggregationType,
     all_by_p_id,
     any_by_p_id,
     count_by_p_id,
-    grouped_all,
-    grouped_any,
-    grouped_count,
-    grouped_max,
-    grouped_mean,
-    grouped_min,
-    grouped_sum,
     max_by_p_id,
     mean_by_p_id,
     min_by_p_id,
@@ -294,7 +288,7 @@ def _create_derived_aggregations_specs(
 
         if aggregation_specs_needed:
             derived_aggregations_specs[target_name] = AggregateByGroupSpec(
-                aggr="sum",
+                aggr=AggregationType.SUM,
                 source=_get_name_of_aggregation_source(
                     target_name=target_name,
                     top_level_namespace=top_level_namespace,
@@ -369,81 +363,31 @@ def _create_one_aggregate_by_group_func(
     The derived function.
 
     """
-
-    aggregation_method = aggregation_spec.aggr
     source = aggregation_spec.source
-
-    if aggregation_method == "count":
-        mapper = {"group_by_id": group_by_id}
-
-        def agg_func(group_by_id):
-            return grouped_count(group_by_id)
-
-    else:
-        mapper = {
-            "source": source,
-            "group_by_id": group_by_id,
-        }
-        if aggregation_method == "sum":
-
-            def agg_func(source, group_by_id):
-                return grouped_sum(source, group_by_id)
-
-        elif aggregation_method == "mean":
-
-            def agg_func(source, group_by_id):
-                return grouped_mean(source, group_by_id)
-
-        elif aggregation_method == "max":
-
-            def agg_func(source, group_by_id):
-                return grouped_max(source, group_by_id)
-
-        elif aggregation_method == "min":
-
-            def agg_func(source, group_by_id):
-                return grouped_min(source, group_by_id)
-
-        elif aggregation_method == "any":
-
-            def agg_func(source, group_by_id):
-                return grouped_any(source, group_by_id)
-
-        elif aggregation_method == "all":
-
-            def agg_func(source, group_by_id):
-                return grouped_all(source, group_by_id)
-
-        else:
-            msg = format_errors_and_warnings(
-                f"Aggregation method {aggregation_method} is not implemented."
-            )
-            raise ValueError(msg)
 
     wrapped_func = dt.one_function_without_tree_logic(
         function=dags.rename_arguments(
-            func=agg_func,
-            mapper=mapper,
+            func=aggregation_spec.agg_func,
+            mapper=aggregation_spec.mapper(group_by_id),
         ),
         tree_path=dt.tree_path_from_qual_name(aggregation_target),
         top_level_namespace=top_level_namespace,
     )
 
-    qual_name_source = (
-        _get_qual_name_of_source_col(
+    if isinstance(aggregation_spec, AggregateByGroupSpec):
+        qual_name_source = _get_qual_name_of_source_col(
             source=source,
             wrapped_func=wrapped_func,
         )
-        if source
-        else None
-    )
+    else:
+        qual_name_source = None
 
     return DerivedAggregationFunction(
         function=wrapped_func,
         source=qual_name_source,
         source_function=functions.get(qual_name_source, None),
         aggregation_target=aggregation_target,
-        aggregation_method=aggregation_method,
+        aggregation_method=aggregation_spec.aggr,
     )
 
 

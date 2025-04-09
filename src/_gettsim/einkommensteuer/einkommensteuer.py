@@ -2,6 +2,7 @@
 
 from ttsim import (
     AggregateByPIDSpec,
+    AggregationType,
     RoundingDirection,
     RoundingSpec,
     piecewise_polynomial,
@@ -12,12 +13,12 @@ aggregation_specs = {
     "anzahl_kindergeld_ansprüche_1": AggregateByPIDSpec(
         p_id_to_aggregate_by="familie__p_id_elternteil_1",
         source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kindergeld_ansprüche_2": AggregateByPIDSpec(
         p_id_to_aggregate_by="familie__p_id_elternteil_2",
         source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 

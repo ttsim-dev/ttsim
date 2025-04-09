@@ -1,13 +1,18 @@
 """Income relevant for housing benefit calculation."""
 
-from ttsim import AggregateByPIDSpec, piecewise_polynomial, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    AggregationType,
+    piecewise_polynomial,
+    policy_function,
+)
 from ttsim.config import numpy_or_jax as np
 
 aggregation_specs = {
     "alleinerziehendenbonus": AggregateByPIDSpec(
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
         source="kindergeld__kind_bis_10_mit_kindergeld",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 
