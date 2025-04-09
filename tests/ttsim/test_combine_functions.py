@@ -19,6 +19,7 @@ from ttsim.function_types import (
     DerivedAggregationFunction,
     group_by_function,
     policy_function,
+    policy_input,
 )
 from ttsim.policy_environment import PolicyEnvironment
 
@@ -27,6 +28,11 @@ from ttsim.policy_environment import PolicyEnvironment
 @policy_function(leaf_name="foo")
 def function_with_bool_return(x: bool) -> bool:
     return x
+
+
+@policy_input()
+def x() -> bool:
+    pass
 
 
 @pytest.fixture
@@ -43,7 +49,7 @@ def function_with_float_return(x: int) -> float:
 
 @pytest.mark.parametrize(
     (
-        "functions_tree",
+        "objects_tree",
         "targets_tree",
         "data_tree",
         "aggregations_specs_from_env",
@@ -51,7 +57,12 @@ def function_with_float_return(x: int) -> float:
     [
         (
             # Aggregations derived from simple function arguments
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda x_hh: x_hh)}},
+            {
+                "namespace1": {
+                    "f": policy_function(leaf_name="f")(lambda x_hh: x_hh),
+                    "x": x,
+                }
+            },
             {"namespace1": {"f": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -127,13 +138,13 @@ def function_with_float_return(x: int) -> float:
     ],
 )
 def test_create_aggregate_by_group_functions(
-    functions_tree,
+    objects_tree,
     targets_tree,
     data_tree,
     aggregations_specs_from_env,
 ):
     environment = PolicyEnvironment(
-        functions_tree=functions_tree,
+        raw_objects_tree=objects_tree,
         aggregation_specs_tree=aggregations_specs_from_env,
     )
     compute_taxes_and_transfers(
@@ -149,9 +160,8 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
 
 @pytest.mark.parametrize(
     (
-        "functions",
+        "objects",
         "aggregation_functions",
-        "types_input_variables",
         "expected_return_type",
     ),
     [
@@ -159,127 +169,114 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
                     leaf_name="foo",
+                    function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="count",
                     start_date=START_DATE,
                     end_date=END_DATE,
                 )
             },
-            {},
             int,
         ),
         (
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
                     leaf_name="foo",
+                    function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                )
+                ),
+                "x": int,
             },
-            {"x": int},
             int,
         ),
         (
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
                     leaf_name="foo",
+                    function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                )
+                ),
+                "x": float,
             },
-            {"x": float},
             float,
         ),
         (
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
                     leaf_name="foo",
+                    function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                )
+                ),
+                "x": bool,
             },
-            {"x": bool},
             int,
         ),
         (
             {"n1__foo": function_with_bool_return},
             {
                 "n1__foo_hh": DerivedAggregationFunction(
+                    leaf_name="foo_hh",
                     function=function_with_bool_return,
-                    leaf_name="n1__foo_hh",
                     source="n1__foo",
-                    aggregation_target="foo_hh",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
                 )
             },
-            {},
             int,
         ),
         (
             {"n1__foo": function_with_float_return},
             {
                 "n1__foo_hh": DerivedAggregationFunction(
+                    leaf_name="foo_hh",
                     function=function_with_float_return,
-                    leaf_name="n1__foo_hh",
                     source="n1__foo",
-                    aggregation_target="foo_hh",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
                 )
             },
-            {},
             float,
         ),
         (
             {"n1__foo": function_with_int_return},
             {
                 "n1__foo_hh": DerivedAggregationFunction(
+                    leaf_name="foo_hh",
                     function=function_with_int_return,
-                    leaf_name="n1__foo_hh",
                     source="n1__foo",
-                    aggregation_target="foo_hh",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
                 )
             },
-            {},
             int,
         ),
     ],
 )
 def test_annotations_for_aggregation(
-    functions,
+    objects,
     aggregation_functions,
-    types_input_variables,
     expected_return_type,
 ):
     name_of_aggregation_function = next(iter(aggregation_functions.keys()))
     annotation_of_aggregation_function = _annotate_aggregation_functions(
-        functions=functions,
+        ttsim_objects=objects,
         aggregation_functions=aggregation_functions,
-        types_input_variables=types_input_variables,
     )[name_of_aggregation_function].__annotations__["return"]
     assert annotation_of_aggregation_function == expected_return_type
 

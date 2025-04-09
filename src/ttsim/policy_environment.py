@@ -37,7 +37,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from ttsim.typing import NestedAggregationSpecDict, NestedTTSIMFunctionDict
+    from ttsim.typing import (
+        NestedAggregationSpecDict,
+        NestedTTSIMFunctionDict,
+        NestedTTSIMObjectDict,
+    )
 
 
 class PolicyEnvironment:
@@ -61,19 +65,19 @@ class PolicyEnvironment:
 
     def __init__(
         self,
-        functions_tree: NestedTTSIMFunctionDict,
+        raw_objects_tree: NestedTTSIMObjectDict,
         params: dict[str, Any] | None = None,
         aggregation_specs_tree: NestedAggregationSpecDict | None = None,
     ):
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_ttsim_pytree(
-            functions_tree,
-            lambda leaf: isinstance(leaf, TTSIMObject),
-            "functions_tree",
+            tree=raw_objects_tree,
+            leaf_checker=lambda leaf: isinstance(leaf, TTSIMObject),
+            tree_name="raw_objects_tree",
         )
-        self._functions_tree = optree.tree_map(
+        self._raw_objects_tree = optree.tree_map(
             lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
-            functions_tree,
+            raw_objects_tree,
         )
 
         # Read in parameters and aggregation specs
@@ -83,9 +87,9 @@ class PolicyEnvironment:
         )
 
     @property
-    def functions_tree(self) -> NestedTTSIMFunctionDict:
+    def raw_objects_tree(self) -> NestedTTSIMObjectDict:
         """The policy functions. Does not include aggregations or time conversions."""
-        return self._functions_tree
+        return self._raw_objects_tree
 
     @property
     def params(self) -> dict[str, Any]:

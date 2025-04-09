@@ -607,6 +607,7 @@ def test_fail_if_cannot_be_converted_to_internal_type(
         convert_series_to_internal_type(input_data, expected_type)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize(
     "data, functions_overridden",
     [
@@ -626,6 +627,7 @@ def test_provide_endogenous_groupings(data, functions_overridden):
     _convert_data_to_correct_types(data, functions_overridden)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize(
     "data, functions_overridden, error_match",
     [

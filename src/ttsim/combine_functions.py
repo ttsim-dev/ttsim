@@ -223,7 +223,6 @@ def _create_aggregation_functions(
     return _annotate_aggregation_functions(
         ttsim_objects=ttsim_objects,
         aggregation_functions=aggregation_functions,
-        types_input_variables=dt.flatten_to_qual_names(TYPES_INPUT_VARIABLES),
     )
 
 
@@ -505,8 +504,7 @@ def _create_one_aggregate_by_p_id_func(
 
 
 def _annotate_aggregation_functions(
-    functions: QualNameTTSIMObjectDict,
-    types_input_variables: dict[str, type],
+    ttsim_objects: QualNameTTSIMObjectDict,
     aggregation_functions: QualNameTTSIMObjectDict,
 ) -> QualNameTTSIMObjectDict:
     """Annotate aggregation functions.
@@ -522,8 +520,6 @@ def _annotate_aggregation_functions(
     aggregation_functions
         Dict with qualified aggregation function names as keys and aggregation functions
         as values.
-    types_input_variables
-        Dict with qualified data names as keys and types as values.
 
     Returns
     -------
@@ -538,8 +534,8 @@ def _annotate_aggregation_functions(
         annotations = {}
         if aggregation_method == "count":
             annotations["return"] = int
-        elif source in functions:
-            source_function = functions[source]
+        elif source in ttsim_objects:
+            source_function = ttsim_objects[source]
             if "return" in source_function.__annotations__:
                 annotations[source] = source_function.__annotations__["return"]
                 annotations["return"] = _select_return_type(

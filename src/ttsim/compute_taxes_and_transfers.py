@@ -89,12 +89,12 @@ def compute_taxes_and_transfers(
 
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = (
-        set(environment.functions_tree.keys())
+        set(environment.raw_objects_tree.keys())
         | set(data_tree.keys())
         | set(environment.aggregation_specs_tree.keys())
     )
     functions = dt.functions_without_tree_logic(
-        functions=environment.functions_tree, top_level_namespace=top_level_namespace
+        functions=environment.raw_objects_tree, top_level_namespace=top_level_namespace
     )
 
     targets = dt.qual_names(targets_tree)
@@ -116,10 +116,10 @@ def compute_taxes_and_transfers(
     )
 
     _warn_if_functions_overridden_by_data(functions_overridden)
-    data_with_correct_types = _convert_data_to_correct_types(
-        data=data,
-        functions_overridden=functions_overridden,
-    )
+    # data_with_correct_types = _convert_data_to_correct_types(
+    #     data=data,
+    #     functions_overridden=functions_overridden,
+    # )
 
     functions_with_rounding_specs = (
         _add_rounding_to_functions(functions=functions_not_overridden)

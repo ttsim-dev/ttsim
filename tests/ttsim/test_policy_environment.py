@@ -35,12 +35,12 @@ class TestPolicyEnvironment:
         function = policy_function(leaf_name="foo")(lambda: 1)
         environment = PolicyEnvironment({"foo": function})
 
-        assert environment.functions_tree["foo"] == function
+        assert environment.raw_objects_tree["foo"] == function
 
     def test_func_does_not_exist_in_tree(self):
         environment = PolicyEnvironment({}, {})
 
-        assert "foo" not in environment.functions_tree
+        assert "foo" not in environment.raw_objects_tree
 
     @pytest.mark.parametrize(
         "environment",
@@ -59,7 +59,7 @@ class TestPolicyEnvironment:
         new_function = policy_function(leaf_name="foo")(lambda: 3)
         new_environment = environment.upsert_policy_functions({"foo": new_function})
 
-        assert new_environment.functions_tree["foo"] == new_function
+        assert new_environment.raw_objects_tree["foo"] == new_function
 
     @pytest.mark.parametrize(
         "environment",
@@ -164,4 +164,4 @@ def test_dont_destroy_group_by_functions():
         "foo": group_by_function()(lambda: 1),
     }
     environment = PolicyEnvironment(functions_tree)
-    assert isinstance(environment.functions_tree["foo"], GroupByFunction)
+    assert isinstance(environment.raw_objects_tree["foo"], GroupByFunction)

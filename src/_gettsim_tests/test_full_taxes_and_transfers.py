@@ -31,7 +31,7 @@ def test_data_types(test: PolicyTest):
     )
 
     flat_types_input_variables = dt.flatten_to_qual_names(todo_policy_inputs)
-    flat_functions = dt.flatten_to_qual_names(environment.functions_tree)
+    flat_functions = dt.flatten_to_qual_names(environment.raw_objects_tree)
 
     for column_name, result_array in dt.flatten_to_qual_names(result).items():
         if column_name in flat_types_input_variables:
