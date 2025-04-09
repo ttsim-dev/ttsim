@@ -361,17 +361,19 @@ def join_jax(
 ) -> jnp.ndarray[Out]:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
-    the same index as the primary key.
+    the same index as the primary key. This is the jax version, it has no input checks
+    and can not work with string arrays. Run the numpy version first to make sure the
+    inputs are correct.
 
     Parameters
     ----------
-    foreign_key : numpy.ndarray[Key]
+    foreign_key : jax.numpy.ndarray[Key]
         The foreign keys.
-    primary_key : numpy.ndarray[Key]
+    primary_key : jax.numpy.ndarray[Key]
         The primary keys.
-    target : numpy.ndarray[Out]
+    target : jax.numpy.ndarray[Out]
         The targets in the same order as the primary keys.
-    value_if_foreign_key_is_missing : Out
+    value_if_foreign_key_is_missing : jax.numpy.ndarray[Out]
         The value to return if no matching primary key is found.
 
     Returns
