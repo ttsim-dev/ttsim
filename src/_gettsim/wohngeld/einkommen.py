@@ -144,7 +144,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
     einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m: float,
-    einkommensteuer__renteneinkommen_m: float,
+    einkommensteuer__renteneinkünfte_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     abzugsanteil_vom_einkommen_für_steuern_sozialversicherung: float,
@@ -167,8 +167,8 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
     einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
         See :func:`einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m`.
-    einkommensteuer__renteneinkommen_m
-        See :func:`einkommensteuer__renteneinkommen_m`.
+    einkommensteuer__renteneinkünfte_m
+        See :func:`einkommensteuer__renteneinkünfte_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
         See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
     unterhaltsvorschuss__betrag_m
@@ -189,7 +189,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__renteneinkommen_m
+        + einkommensteuer__renteneinkünfte_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
     )
@@ -211,7 +211,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
     einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m: float,
-    einkommensteuer__renteneinkommen_m: float,
+    einkommensteuer__renteneinkünfte_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     elterngeld__anrechenbarer_betrag_m: float,
@@ -235,8 +235,8 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
     einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
         See :func:`einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m`.
-    einkommensteuer__renteneinkommen_m
-        See :func:`einkommensteuer__renteneinkommen_m`.
+    einkommensteuer__renteneinkünfte_m
+        See :func:`einkommensteuer__renteneinkünfte_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
         See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
     unterhaltsvorschuss__betrag_m
@@ -262,7 +262,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__renteneinkommen_m
+        + einkommensteuer__renteneinkünfte_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
         + elterngeld__anrechenbarer_betrag_m
