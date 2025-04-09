@@ -13,7 +13,7 @@ if USE_JAX:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
-from ttsim.function_types import GroupByFunction
+from ttsim.function_types import GroupByFunction, policy_function
 from ttsim.loader import load_functions_tree_for_date
 from ttsim.vectorization import (
     TranslateToVectorizableError,
@@ -569,3 +569,20 @@ def test_lambda_functions_disallowed_make_vectorizable():
 def test_lambda_functions_disallowed_make_vectorizable_source():
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
         make_vectorizable_source(lambda x: x, backend="numpy")
+
+
+# ======================================================================================
+# Policy functions
+# ======================================================================================
+
+
+def test_make_vectorizable_policy_func():
+    @policy_function()
+    def alter_bis_24(alter: int) -> bool:
+        return alter <= 24
+
+    vectorized = make_vectorizable(alter_bis_24, backend="numpy")
+
+    got = vectorized(numpy.array([20, 25, 30]))
+    exp = numpy.array([True, False, False])
+    assert_array_equal(got, exp)

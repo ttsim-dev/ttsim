@@ -1,6 +1,7 @@
 import ast
 import functools
 import inspect
+import textwrap
 import types
 from collections.abc import Callable
 from importlib import import_module
@@ -89,7 +90,17 @@ def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
 
 def _func_to_ast(func: Callable) -> ast.Module:
     source = inspect.getsource(func)
-    return ast.parse(source)
+    source_dedented = textwrap.dedent(source)
+    source_without_decorators = _remove_decorator_lines(source_dedented)
+    return ast.parse(source_without_decorators)
+
+
+def _remove_decorator_lines(source: str) -> str:
+    """Removes leading decorator lines from function source code."""
+    if source.startswith("def "):
+        return source
+    else:
+        return "def " + source.split("\ndef ")[1]
 
 
 def _add_parent_attr_to_ast(tree: ast.AST) -> ast.AST:

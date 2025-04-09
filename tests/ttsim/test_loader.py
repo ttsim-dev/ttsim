@@ -33,12 +33,15 @@ def test_dont_load_init_py():
 
 
 def scalar_func(x: int) -> int:
-    return x * 2
+    if x < 0:
+        return 0
+    else:
+        return x * 2
 
 
 @policy_function(skip_vectorization=True)
 def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:
-    return numpy.asarray([xi * 2 for xi in x])
+    return numpy.where(x < 0, 0, x * 2)
 
 
 @pytest.mark.parametrize(
@@ -50,7 +53,7 @@ def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:
 )
 def test_vectorize_func(vectorized_function: Callable) -> None:
     assert numpy.array_equal(
-        vectorized_function(numpy.array([1, 2, 3])), numpy.array([2, 4, 6])
+        vectorized_function(numpy.array([-1, 0, 2, 3])), numpy.array([0, 0, 4, 6])
     )
 
 

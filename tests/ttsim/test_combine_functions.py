@@ -40,6 +40,10 @@ def function_with_float_return(x: int) -> float:
     return x
 
 
+def identity(x):
+    return x
+
+
 @pytest.mark.parametrize(
     (
         "functions_tree",

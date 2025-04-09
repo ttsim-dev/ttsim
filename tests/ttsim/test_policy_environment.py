@@ -29,9 +29,21 @@ if TYPE_CHECKING:
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
 
+def return_one():
+    return 1
+
+
+def return_two():
+    return 2
+
+
+def return_three():
+    return 3
+
+
 class TestPolicyEnvironment:
     def test_func_exists_in_tree(self):
-        function = policy_function(leaf_name="foo")(lambda: 1)
+        function = policy_function(leaf_name="foo")(return_one)
         environment = PolicyEnvironment({"foo": function})
 
         assert environment.functions_tree["foo"] == function
@@ -45,17 +57,17 @@ class TestPolicyEnvironment:
         "environment",
         [
             PolicyEnvironment({}, {}),
-            PolicyEnvironment({"foo": policy_function(leaf_name="foo")(lambda: 1)}),
+            PolicyEnvironment({"foo": policy_function(leaf_name="foo")(return_one)}),
             PolicyEnvironment(
                 {
-                    "foo": policy_function(leaf_name="foo")(lambda: 1),
-                    "bar": policy_function(leaf_name="bar")(lambda: 2),
+                    "foo": policy_function(leaf_name="foo")(return_one),
+                    "bar": policy_function(leaf_name="bar")(return_two),
                 }
             ),
         ],
     )
     def test_upsert_functions(self, environment: PolicyEnvironment):
-        new_function = policy_function(leaf_name="foo")(lambda: 3)
+        new_function = policy_function(leaf_name="foo")(return_three)
         new_environment = environment.upsert_policy_functions({"foo": new_function})
 
         assert new_environment.functions_tree["foo"] == new_function
@@ -156,7 +168,7 @@ def test_load_functions_tree_for_date(
 @pytest.mark.parametrize(
     "functions_tree",
     [
-        {"foo": policy_function(leaf_name="bar")(lambda: 1)},
+        {"foo": policy_function(leaf_name="bar")(return_one)},
     ],
 )
 def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
@@ -168,7 +180,7 @@ def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
 
 def test_dont_destroy_group_by_functions():
     functions_tree = {
-        "foo": group_by_function()(lambda: 1),
+        "foo": group_by_function()(return_one),
     }
     environment = PolicyEnvironment(functions_tree)
     assert isinstance(environment.functions_tree["foo"], GroupByFunction)

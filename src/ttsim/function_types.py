@@ -8,7 +8,9 @@ from collections.abc import Callable
 from typing import Literal, TypeVar
 
 import dags.tree as dt
-import numpy
+
+from ttsim.config import USE_JAX
+from ttsim.vectorization import make_vectorizable
 
 T = TypeVar("T")
 
@@ -55,10 +57,9 @@ class PolicyFunction(Callable):
         self.params_key_for_rounding: str | None = params_key_for_rounding
 
         # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = function.__annotations__
-        self.__module__ = function.__module__
-        self.__name__ = function.__name__
+        functools.update_wrapper(self, self.function)
         self.__signature__ = inspect.signature(self.function)
+        self.__globals__ = self.function.__globals__
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)
@@ -160,17 +161,11 @@ def _validate_date_range(start: datetime.date, end: datetime.date):
 
 
 def _vectorize_func(func: Callable) -> Callable:
-    # What should work once that Jax backend is fully supported
-    signature = inspect.signature(func)
-    func_vec = numpy.vectorize(func)
+    if hasattr(func, "__info__") and func.__info__.get("vectorized", False):
+        return func
 
-    @functools.wraps(func)
-    def wrapper_vectorize_func(*args, **kwargs):
-        return func_vec(*args, **kwargs)
-
-    wrapper_vectorize_func.__signature__ = signature
-
-    return wrapper_vectorize_func
+    backend = "jax" if USE_JAX else "numpy"
+    return make_vectorizable(func, backend=backend)
 
 
 class GroupByFunction(Callable):
