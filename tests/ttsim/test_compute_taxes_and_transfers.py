@@ -6,12 +6,9 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+from mettsim.config import FOREIGN_KEYS
+from mettsim.functions.payroll_tax.group_by_ids import fam_id, sp_id
 
-from _gettsim.arbeitslosengeld_2.group_by_ids import bg_id
-from _gettsim.config import FOREIGN_KEYS
-from _gettsim.wohngeld.group_by_ids import (
-    wthh_id,
-)
 from gettsim import FunctionsAndColumnsOverlapWarning
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.compute_taxes_and_transfers import (
@@ -51,13 +48,13 @@ def minimal_input_data_shared_hh():
 
 # Create a function which is used by some tests below
 @policy_function()
-def func_before_partial(arg_1, arbeitsl_geld_2_params):
-    return arg_1 + arbeitsl_geld_2_params["test_param_1"]
+def func_before_partial(arg_1, payroll_tax_params):
+    return arg_1 + payroll_tax_params["test_param_1"]
 
 
 func_after_partial = _partial_parameters_to_functions(
     {"test_func": func_before_partial},
-    {"arbeitsl_geld_2": {"test_param_1": 1}},
+    {"payroll_tax": {"test_param_1": 1}},
 )["test_func"]
 
 
@@ -153,30 +150,15 @@ def test_fail_if_pid_is_non_unique():
         _fail_if_pid_is_non_unique(data)
 
 
-@pytest.mark.parametrize(
-    (
-        "foreign_key_name",
-        "expected_error_message",
-    ),
-    [
-        ("familie__p_id_ehepartner", "not a valid p_id in the\ninput data"),
-        (
-            "arbeitslosengeld_2__p_id_einstandspartner",
-            "not a\nvalid p_id in the input data",
-        ),
-        ("familie__p_id_elternteil_1", "not a valid p_id in the\ninput data"),
-        ("familie__p_id_elternteil_2", "not a valid p_id in the\ninput data"),
-    ],
-)
-def test_fail_if_foreign_key_points_to_non_existing_pid(
-    foreign_key_name, expected_error_message
-):
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
+def test_fail_if_foreign_key_points_to_non_existing_pid(foreign_key_path):
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
         foreign_key_name: pd.Series([0, 1, 4]),
         "p_id": pd.Series([1, 2, 3]),
     }
 
-    with pytest.raises(ValueError, match=expected_error_message):
+    with pytest.raises(ValueError, match="not a valid p_id in the\ninput data"):
         _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
 
 
@@ -191,27 +173,15 @@ def test_allow_minus_one_as_foreign_key(foreign_key_path):
     _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
 
 
-@pytest.mark.parametrize(
-    (
-        "foreign_key_name",
-        "expected_error_message",
-    ),
-    [
-        ("familie__p_id_ehepartner", "are equal to the p_id"),
-        ("arbeitslosengeld_2__p_id_einstandspartner", "are equal to\nthe p_id"),
-        ("familie__p_id_elternteil_1", "are equal to the p_id"),
-        ("familie__p_id_elternteil_2", "are equal to the p_id"),
-    ],
-)
-def test_fail_if_foreign_key_points_to_pid_of_same_row(
-    foreign_key_name, expected_error_message
-):
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
+def test_fail_if_foreign_key_points_to_pid_of_same_row(foreign_key_path):
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
         foreign_key_name: pd.Series([1, 3, 3]),
         "p_id": pd.Series([1, 2, 3]),
     }
 
-    with pytest.raises(ValueError, match=expected_error_message):
+    with pytest.raises(ValueError, match="are equal to the p_id"):
         _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
 
 
@@ -227,11 +197,11 @@ def test_fail_if_foreign_key_points_to_pid_of_same_row(
         ),
         (
             {
-                "foo_eg": pd.Series([1, 2, 2], name="foo_eg"),
-                "eg_id": pd.Series([1, 1, 2], name="eg_id"),
+                "foo_fam": pd.Series([1, 2, 2], name="foo_fam"),
+                "fam_id": pd.Series([1, 1, 2], name="fam_id"),
             },
             {
-                "eg_id": group_by_function()(lambda x: x),
+                "fam_id": group_by_function()(lambda x: x),
             },
         ),
     ],
@@ -641,12 +611,12 @@ def test_fail_if_cannot_be_converted_to_internal_type(
     "data, functions_overridden",
     [
         (
-            {"bg_id": pd.Series([1, 2, 3])},
-            {"bg_id": bg_id},
+            {"sp_id": pd.Series([1, 2, 3])},
+            {"sp_id": sp_id},
         ),
         (
-            {"wthh_id": pd.Series([1, 2, 3])},
-            {"wthh_id": wthh_id},
+            {"fam_id": pd.Series([1, 2, 3])},
+            {"fam_id": fam_id},
         ),
     ],
 )
@@ -665,29 +635,27 @@ def test_provide_endogenous_groupings(data, functions_overridden):
             "- hh_id: Conversion from input type float64 to int",
         ),
         (
-            {"wohnort_ost": pd.Series([1.1, 0.0, 1.0])},
+            {"gondorian": pd.Series([1.1, 0.0, 1.0])},
             {},
-            "- wohnort_ost: Conversion from input type float64 to bool",
+            "- gondorian: Conversion from input type float64 to bool",
         ),
         (
             {
                 "hh_id": pd.Series([1.0, 2.0, 3.0]),
-                "wohnort_ost": pd.Series([2, 0, 1]),
+                "gondorian": pd.Series([2, 0, 1]),
             },
             {},
-            "- wohnort_ost: Conversion from input type int64 to bool",
+            "- gondorian: Conversion from input type int64 to bool",
         ),
         (
-            {"wohnort_ost": pd.Series(["True", "False"])},
+            {"gondorian": pd.Series(["True", "False"])},
             {},
-            "- wohnort_ost: Conversion from input type object to bool",
+            "- gondorian: Conversion from input type object to bool",
         ),
         (
             {
                 "hh_id": pd.Series([1, "1", 2]),
-                "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": pd.Series(  # noqa: E501
-                    ["2000", 3000, 4000]
-                ),
+                "payroll_tax__amount": pd.Series(["2000", 3000, 4000]),
             },
             {},
             "- hh_id: Conversion from input type object to int failed.",

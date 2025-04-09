@@ -1,6 +1,12 @@
 """Functions to compute parental leave benefits (Erziehungsgeld, -2007)."""
 
-from ttsim import AggregateByPIDSpec, AggregationType, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    AggregationType,
+    RoundingDirection,
+    RoundingSpec,
+    policy_function,
+)
 
 aggregation_specs = {
     "anspruchshöhe_m": AggregateByPIDSpec(
@@ -43,7 +49,7 @@ def betrag_m(
 @policy_function(
     end_date="2003-12-31",
     leaf_name="anspruchshöhe_kind_m",
-    params_key_for_rounding="erziehungsgeld",
+    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.NEAREST),
 )
 def erziehungsgeld_kind_ohne_budgetsatz_m() -> float:
     raise NotImplementedError(
@@ -58,7 +64,7 @@ def erziehungsgeld_kind_ohne_budgetsatz_m() -> float:
     start_date="2004-01-01",
     end_date="2008-12-31",
     leaf_name="anspruchshöhe_kind_m",
-    params_key_for_rounding="erziehungsgeld",
+    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.NEAREST),
 )
 def anspruchshöhe_kind_mit_budgetsatz_m(
     kind_grundsätzlich_anspruchsberechtigt: bool,
