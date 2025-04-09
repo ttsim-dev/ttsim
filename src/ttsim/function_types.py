@@ -123,11 +123,11 @@ class PolicyFunction(TTSIMFunction):
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
         The function to wrap. Argument values of the `@policy_function` are reused
         unless explicitly overwritten.
-    leaf_name:
-        The leaf name of the function in the functions tree.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -190,9 +190,9 @@ class PolicyFunction(TTSIMFunction):
 
 def policy_function(
     *,
+    leaf_name: str | None = None,
     start_date: str | datetime.date = "1900-01-01",
     end_date: str | datetime.date = "2100-12-31",
-    leaf_name: str | None = None,
     rounding_spec: RoundingSpec | None = None,
     skip_vectorization: bool = False,
 ) -> PolicyFunction:
@@ -215,13 +215,13 @@ def policy_function(
 
     Parameters
     ----------
+    leaf_name
+        The name that should be used as the PolicyFunction's leaf name in the DAG. If
+        omitted, we use the name of the function as defined.
     start_date
         The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
     end_date
         The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    leaf_name
-        The name that should be used as the PolicyFunction's leaf name in the DAG. If
-        omitted, we use the name of the function as defined.
     rounding_spec
         The specification to be used for rounding.
     skip_vectorization
@@ -237,8 +237,8 @@ def policy_function(
 
     def inner(func: Callable) -> PolicyFunction:
         return PolicyFunction(
-            function=func,
             leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
             start_date=start_date,
             end_date=end_date,
             rounding_spec=rounding_spec,
@@ -269,10 +269,10 @@ class GroupByFunction(TTSIMFunction):
 
     Parameters
     ----------
-    function:
-        The function calculating the group_by IDs.
     leaf_name:
         The leaf name of the function in the functions tree.
+    function:
+        The function calculating the group_by IDs.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -322,16 +322,14 @@ class DerivedAggregationFunction(TTSIMFunction):
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
         The function performing the aggregation.
     source:
         The name of the source function or data column.
-    aggregation_target:
-        The qualified name of the aggregation target.
     aggregation_method:
         The method of aggregation used.
-    leaf_name:
-        The leaf name of the function in the functions tree.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -346,17 +344,12 @@ class DerivedAggregationFunction(TTSIMFunction):
     aggregation_method: (
         Literal["count", "sum", "mean", "min", "max", "any", "all"] | None
     ) = None
-    aggregation_target: str | None = None
 
     def __post_init__(self):
         if self.source is None:
             raise ValueError("The source must be specified.")
         if self.aggregation_method is None:
             raise ValueError("The aggregation method must be specified.")
-        if self.aggregation_target is None:
-            raise ValueError("The aggregation target must be specified.")
-
-        self.leaf_name = dt.tree_path_from_qual_name(self.aggregation_target)[-1]
 
 
 @dataclass
@@ -366,14 +359,14 @@ class DerivedTimeConversionFunction(TTSIMFunction):
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
         The function performing the time conversion.
     source:
         The name of the source function or data column.
     conversion_target:
         The qualified name of the conversion target.
-    leaf_name:
-        The leaf name of the function in the functions tree.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
