@@ -137,7 +137,7 @@ def vermögensfreibetrag_bg_ab_2023(
     end_date="2019-06-30",
     leaf_name="basisbetrag_m_bg",
 )
-def basisbetrag_m_bg_check_eink_max(  # noqa: PLR0913
+def basisbetrag_m_bg_check_eink_max(
     bruttoeinkommen_eltern_m_bg: float,
     nettoeinkommen_eltern_m_bg: float,
     mindestbruttoeinkommen_m_bg: float,
@@ -239,7 +239,7 @@ def basisbetrag_m_bg(
 
 
 @policy_function()
-def basisbetrag_kind_m(  # noqa: PLR0913
+def basisbetrag_kind_m(
     kindergeld__grundsätzlich_anspruchsberechtigt: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,

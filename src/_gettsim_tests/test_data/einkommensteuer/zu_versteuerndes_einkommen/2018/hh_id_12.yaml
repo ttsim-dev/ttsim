@@ -73,7 +73,7 @@ outputs:
     - 0
   einkommensteuer__abzüge__pauschbetrag_behinderung_y:
     - 0
-  einkommensteuer__gesamteinkommen_ohne_abzüge_y:
+  einkommensteuer__einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y:
     - 59000
   einkommensteuer__gesamteinkommen_y:
     - 53046.4

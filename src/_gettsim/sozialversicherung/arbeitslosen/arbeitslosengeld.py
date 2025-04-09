@@ -126,7 +126,7 @@ def monate_verbleibender_anspruchsdauer(
 
 
 @policy_function()
-def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
+def grundsätzlich_anspruchsberechtigt(
     alter: int,
     arbeitssuchend: bool,
     monate_verbleibender_anspruchsdauer: int,
@@ -170,7 +170,7 @@ def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
 
 
 @policy_function()
-def einkommen_vorjahr_proxy_m(  # noqa: PLR0913
+def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
     arbeitsl_geld_params: dict,

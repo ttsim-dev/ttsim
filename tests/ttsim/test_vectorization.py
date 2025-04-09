@@ -13,7 +13,7 @@ if USE_JAX:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
-from ttsim.function_types import GroupByFunction
+from ttsim.function_types import GroupByFunction, PolicyInput
 from ttsim.loader import load_objects_tree_for_date
 from ttsim.vectorization import (
     TranslateToVectorizableError,
@@ -381,7 +381,7 @@ for year in range(1990, 2023):
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).values()
-            if not isinstance(pf, GroupByFunction)
+            if not isinstance(pf, GroupByFunction | PolicyInput)
         ],
     )
     @pytest.mark.parametrize("backend", backends)
@@ -455,7 +455,7 @@ def test_geschwisterbonus_m(backend):
     assert_array_equal(got, full(shape, exp))
 
 
-def mock__elterngeld__grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
+def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     claimed: bool,
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
