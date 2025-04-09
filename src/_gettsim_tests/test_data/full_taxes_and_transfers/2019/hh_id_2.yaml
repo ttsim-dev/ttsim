@@ -81,7 +81,7 @@ inputs:
       - false
       - false
       - false
-    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 50.0
       - 50.0
       - 50.0

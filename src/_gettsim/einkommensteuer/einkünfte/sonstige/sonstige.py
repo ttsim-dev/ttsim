@@ -5,11 +5,11 @@ from ttsim import piecewise_polynomial, policy_function
 
 @policy_function()
 def betrag_m(
-    sonstige_einkünfte_ohne_renten_m: float,
+    ohne_renten_m: float,
     renteneinkünfte_m: float,
 ) -> float:
     """Total sonstige Einkünfte."""
-    return sonstige_einkünfte_ohne_renten_m + renteneinkünfte_m
+    return ohne_renten_m + renteneinkünfte_m
 
 
 @policy_function()

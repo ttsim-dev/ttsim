@@ -383,7 +383,7 @@ def mindesteinkommen_erreicht(
 @policy_function(start_date="2017-01-01")
 def einkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m: float,
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
@@ -397,8 +397,8 @@ def einkommen_m(
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m`.
-    einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
-        See :func:`einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m`.
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
         See :func:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m`.
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
@@ -418,7 +418,7 @@ def einkommen_m(
     """
     out = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        + einkommensteuer__einkünfte__sonstige__sonstige_einkünfte_ohne_renten_m
+        + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
