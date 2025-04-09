@@ -7,7 +7,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from _gettsim.config import RESOURCE_DIR
-from ttsim.function_types import TTSIMFunction
+from ttsim.function_types import TTSIMFunction, TTSIMObject
 from ttsim.shared import (
     create_tree_from_path_and_value,
     insert_path_and_value,
@@ -81,16 +81,14 @@ def get_active_ttsim_objects_tree_from_module(
     The tree of active PolicyFunctions and GroupByFunctions.
     """
     module = _load_module(path, root_path)
-    module_name = _convert_path_to_importable_module_name(path, root_path)
-
-    all_functions_in_module = inspect.getmembers(module)
 
     ttsim_objects = [
-        func for _, func in all_functions_in_module if isinstance(func, TTSIMFunction)
+        func for _, func in inspect.getmembers(module) if isinstance(func, TTSIMObject)
     ]
 
-    _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
-        ttsim_objects, module_name
+    _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+        ttsim_objects,
+        module_name=root_path / path,
     )
 
     active_ttsim_functions = {
@@ -103,40 +101,40 @@ def get_active_ttsim_objects_tree_from_module(
     )
 
 
-def _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
-    ttsim_functions: list[TTSIMFunction],
+def _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+    ttsim_objects: list[TTSIMObject],
     module_name: str,
 ) -> None:
-    """Raises an ConflictingTimeDependentFunctionsError if multiple functions with the
+    """Raises an ConflictingTimeDependentObjectsError if multiple objects with the
     same leaf name are active at the same time.
 
     Parameters
     ----------
-    ttsim_functions
-        List of TTSIMFunctions to check for conflicts.
+    ttsim_objects
+        List of TTSIMObjects to check for conflicts.
     module_name
-        The name of the module from which the TTSIMFunctions are extracted.
+        The name of the module from which the TTSIMObjects are extracted.
 
     Raises
     ------
-    ConflictingTimeDependentFunctionsError
-        If multiple functions with the same name are active at the same time.
+    ConflictingTimeDependentObjectsError
+        If multiple objects with the same leaf name are active at the same time.
     """
-    # Create mapping from leaf names to functions.
-    leaf_names_to_funcs = {}
-    for func in ttsim_functions:
-        if func.leaf_name in leaf_names_to_funcs:
-            leaf_names_to_funcs[func.leaf_name].append(func)
+    # Create mapping from leaf names to objects.
+    leaf_names_to_objects = {}
+    for obj in ttsim_objects:
+        if obj.leaf_name in leaf_names_to_objects:
+            leaf_names_to_objects[obj.leaf_name].append(obj)
         else:
-            leaf_names_to_funcs[func.leaf_name] = [func]
+            leaf_names_to_objects[obj.leaf_name] = [obj]
 
     # Check for overlapping start and end dates for time-dependent functions.
-    for leaf_name, funcs in leaf_names_to_funcs.items():
-        dates_active = [(f.start_date, f.end_date) for f in funcs]
+    for leaf_name, objects in leaf_names_to_objects.items():
+        dates_active = [(f.start_date, f.end_date) for f in objects]
         for (start1, end1), (start2, end2) in itertools.combinations(dates_active, 2):
             if start1 <= end2 and start2 <= end1:
-                raise ConflictingTimeDependentFunctionsError(
-                    affected_policy_functions=funcs,
+                raise ConflictingTimeDependentObjectsError(
+                    affected_policy_functions=objects,
                     leaf_name=leaf_name,
                     module_name=module_name,
                     overlap_start=max(start1, start2),
@@ -144,29 +142,31 @@ def _fail_if_multiple_ttsim_functions_are_active_at_the_same_time(
                 )
 
 
-class ConflictingTimeDependentFunctionsError(Exception):
+class ConflictingTimeDependentObjectsError(Exception):
     def __init__(
         self,
-        affected_ttsim_functions: list[TTSIMFunction],
+        affected_ttsim_objects: list[TTSIMObject],
         leaf_name: str,
         module_name: str,
         overlap_start: datetime.date,
         overlap_end: datetime.date,
     ):
-        self.affected_ttsim_functions = affected_ttsim_functions
+        self.affected_ttsim_objects = affected_ttsim_objects
         self.leaf_name = leaf_name
         self.module_name = module_name
         self.overlap_start = overlap_start
         self.overlap_end = overlap_end
 
     def __str__(self):
-        overlapping_functions = [
-            func.original_function_name for func in self.affected_ttsim_functions
+        overlapping_objects = [
+            obj.__getattribute__("original_function_name", obj.leaf_name)
+            for obj in self.affected_ttsim_objects
+            if obj
         ]
         return f"""
         Functions with leaf name {self.leaf_name} in module {self.module_name} have
         overlapping start and end dates. The following functions are affected: \n\n
-        {", ".join(overlapping_functions)} \n Overlapping
+        {", ".join(overlapping_objects)} \n Overlapping
         from {self.overlap_start} to {self.overlap_end}."""
 
 
@@ -187,28 +187,16 @@ def _find_python_files_recursively(root_path: Path) -> list[Path]:
 
 
 def _load_module(path: Path, root_path: Path) -> ModuleType:
-    module_name = _convert_path_to_importable_module_name(path, root_path)
-    spec = importlib.util.spec_from_file_location(module_name, path)
+    name = path.relative_to(root_path).with_suffix("").as_posix().replace("/", ".")
+    spec = importlib.util.spec_from_file_location(
+        name=name,
+        location=path,
+    )
     module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
+    sys.modules[name] = module
     spec.loader.exec_module(module)
 
     return module
-
-
-def _convert_path_to_importable_module_name(path: Path, root_path: Path) -> str:
-    """
-    Convert an absolute path to a Python module name.
-
-    Examples
-    --------
-    >>> _convert_path_to_importable_module_name(
-        path=Path("/usr/gettsim/src/_gettsim/familie/familie.py"),
-        root_path=Path("/usr/gettsim/src/_gettsim"),
-    )
-    "familie.familie"
-    """
-    return path.relative_to(root_path).with_suffix("").as_posix().replace("/", ".")
 
 
 def _convert_path_to_tree_path(path: Path, root_path: Path) -> tuple[str, ...]:

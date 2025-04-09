@@ -24,6 +24,7 @@ class TTSIMObject:
     Abstract base class for all TTSIM Functions and Inputs.
     """
 
+    leaf_name: str
     start_date: datetime.date
     end_date: datetime.date
 
@@ -82,6 +83,7 @@ def policy_input(
     def inner(func: Callable) -> PolicyInput:
         data_type = func.__annotations__["return"]
         return PolicyInput(
+            leaf_name=func.__name__,
             data_type=data_type,
             start_date=start_date,
             end_date=end_date,
@@ -97,7 +99,6 @@ class TTSIMFunction(TTSIMObject):
     """
 
     function: Callable
-    leaf_name: str | None = None
     skip_vectorization: bool = False
 
     def __call__(self, *args, **kwargs):
@@ -143,7 +144,6 @@ class PolicyFunction(TTSIMFunction):
         self.function = (
             self.function if self.skip_vectorization else _vectorize_func(self.function)
         )
-        self.leaf_name = self.leaf_name if self.leaf_name else self.function.__name__
 
         # Expose the signature of the wrapped function for dependency resolution
         self.__annotations__ = self.function.__annotations__
@@ -280,10 +280,6 @@ class GroupByFunction(TTSIMFunction):
     """
 
     def __post_init__(self):
-        self.leaf_name = (
-            self.function.__name__ if self.leaf_name is None else self.leaf_name
-        )
-
         # Expose the signature of the wrapped function for dependency resolution
         self.__annotations__ = self.function.__annotations__
         self.__module__ = self.function.__module__
@@ -298,17 +294,22 @@ class GroupByFunction(TTSIMFunction):
 
 def group_by_function(
     *,
+    leaf_name: str | None = None,
     start_date: str | datetime.date = "1900-01-01",
     end_date: str | datetime.date = "2100-12-31",
-    leaf_name: str | None = None,
 ) -> GroupByFunction:
     """
     Decorator that creates a group_by function from a function.
     """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def decorator(func: Callable) -> GroupByFunction:
+        _leaf_name = func.__name__ if leaf_name is None else leaf_name
         return GroupByFunction(
-            function=func, start_date=start_date, end_date=end_date, leaf_name=leaf_name
+            function=func,
+            start_date=start_date,
+            end_date=end_date,
+            leaf_name=_leaf_name,
         )
 
     return decorator

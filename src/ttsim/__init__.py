@@ -15,7 +15,7 @@ from ttsim.function_types import (
     policy_input,
 )
 from ttsim.loader import (
-    ConflictingTimeDependentFunctionsError,
+    ConflictingTimeDependentObjectsError,
     get_active_ttsim_objects_tree_from_module,
     load_aggregation_specs_tree,
     load_objects_tree_for_date,
@@ -37,7 +37,7 @@ __all__ = [
     "AggregateByGroupSpec",
     "AggregateByPIDSpec",
     "AggregationType",
-    "ConflictingTimeDependentFunctionsError",
+    "ConflictingTimeDependentObjectsError",
     "DerivedAggregationFunction",
     "DerivedTimeConversionFunction",
     "FunctionsAndColumnsOverlapWarning",
