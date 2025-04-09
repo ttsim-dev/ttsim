@@ -5,7 +5,7 @@ import importlib
 import pandas as pd
 import pytest
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
 from ttsim.policy_environment import PolicyEnvironment
 
@@ -42,14 +42,14 @@ def aggregation_tree():
         "module1": {
             "group_mean_hh": AggregateByGroupSpec(
                 source="f",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             ),
         },
         "module2": {
             "p_id_aggregation_target": AggregateByPIDSpec(
                 p_id_to_aggregate_by="groupings__some_foreign_keys",
                 source="g_hh",
-                aggr="sum",
+                aggr=AggregationType.SUM,
             ),
         },
     }

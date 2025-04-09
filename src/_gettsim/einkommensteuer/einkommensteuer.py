@@ -1,17 +1,22 @@
 """Income taxes."""
 
-from ttsim import AggregateByPIDSpec, piecewise_polynomial, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    AggregationType,
+    piecewise_polynomial,
+    policy_function,
+)
 
 aggregation_specs = {
     "anzahl_kindergeld_ansprüche_1": AggregateByPIDSpec(
         p_id_to_aggregate_by="familie__p_id_elternteil_1",
         source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kindergeld_ansprüche_2": AggregateByPIDSpec(
         p_id_to_aggregate_by="familie__p_id_elternteil_2",
         source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 
