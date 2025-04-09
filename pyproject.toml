@@ -124,6 +124,7 @@ pytest-cov = "*"
 pytest-profiling = "*"
 pytest-xdist = "*"
 snakeviz = ">=2.2.2,<3"
+mypy = "1.15.0.*"
 
 
 # Development Dependencies (pypi)
