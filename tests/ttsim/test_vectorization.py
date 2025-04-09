@@ -6,6 +6,7 @@ import string
 import dags.tree as dt
 import numpy
 import pytest
+from dags import concatenate_functions
 
 from ttsim.config import USE_JAX
 
@@ -585,4 +586,47 @@ def test_make_vectorizable_policy_func():
 
     got = vectorized(numpy.array([20, 25, 30]))
     exp = numpy.array([True, False, False])
+    assert_array_equal(got, exp)
+
+
+# ======================================================================================
+# Dags functions
+# ======================================================================================
+
+
+def test_make_vectorizable_concatened_func():
+    def f_a(x: int) -> int:
+        return x
+
+    def f_b(a: int) -> int:
+        return a + 2
+
+    def f_manual(x: int) -> int:
+        return f_b(f_a(x))
+
+    vectorized = make_vectorizable(f_manual, backend="numpy")
+    got = vectorized(numpy.array([1, 2, 3]))
+    exp = numpy.array([3, 4, 5])
+    assert_array_equal(got, exp)
+
+
+@pytest.mark.xfail(reason="Make vectorizable does not work on dags concatenated funcs.")
+def test_make_vectorizable_dags_concatened_func():
+    def f_a(x: int) -> int:
+        return x
+
+    def f_b(a: int) -> int:
+        return a + 2
+
+    f_dags = concatenate_functions(
+        functions={
+            "a": f_a,
+            "b": f_b,
+        },
+        targets={"b"},
+    )
+
+    vectorized = make_vectorizable(f_dags, backend="numpy")
+    got = vectorized(numpy.array([1, 2, 3]))
+    exp = numpy.array([3, 4, 5])
     assert_array_equal(got, exp)

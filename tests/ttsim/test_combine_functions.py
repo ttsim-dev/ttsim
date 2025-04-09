@@ -54,7 +54,7 @@ def identity(x):
     [
         (
             # Aggregations derived from simple function arguments
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda x_hh: x_hh)}},
+            {"namespace1": {"f": policy_function(leaf_name="f")(identity)}},
             {"namespace1": {"f": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -67,9 +67,7 @@ def identity(x):
             # Aggregations derived from namespaced function arguments
             {
                 "namespace1": {
-                    "f": policy_function(leaf_name="f")(
-                        lambda inputs__x_hh: inputs__x_hh
-                    )
+                    "f": policy_function(leaf_name="f")(identity),
                 }
             },
             {"namespace1": {"f": None}},
@@ -82,7 +80,7 @@ def identity(x):
         ),
         (
             # Aggregations derived from target
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda x: x)}},
+            {"namespace1": {"f": policy_function(leaf_name="f")(identity)}},
             {"namespace1": {"f_hh": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -93,7 +91,7 @@ def identity(x):
         ),
         (
             # Aggregations derived from simple environment specification
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)}},
+            {"namespace1": {"f": policy_function(leaf_name="f")(identity)}},
             {"namespace1": {"f": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -111,7 +109,7 @@ def identity(x):
         ),
         (
             # Aggregations derived from namespaced environment specification
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)}},
+            {"namespace1": {"f": policy_function(leaf_name="f")(identity)}},
             {"namespace1": {"f": None}},
             {
                 "inputs": {"x": pd.Series([1, 1, 1])},
@@ -158,7 +156,7 @@ def test_create_aggregate_by_group_functions(
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="count",
@@ -171,7 +169,7 @@ def test_create_aggregate_by_group_functions(
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
@@ -184,7 +182,7 @@ def test_create_aggregate_by_group_functions(
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
@@ -197,7 +195,7 @@ def test_create_aggregate_by_group_functions(
             {},
             {
                 "foo": DerivedAggregationFunction(
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_target="foo",
                     aggregation_method="sum",
@@ -265,8 +263,8 @@ def test_annotations_for_aggregation(
 @pytest.mark.parametrize(
     "functions, targets, expected_error_match",
     [
-        ({"foo": lambda x: x}, {"bar": None}, "('bar',)"),
-        ({"foo__baz": lambda x: x}, {"foo__bar": None}, "('foo', 'bar')"),
+        ({"foo": identity}, {"bar": None}, "('bar',)"),
+        ({"foo__baz": identity}, {"foo__bar": None}, "('foo', 'bar')"),
     ],
 )
 def test_fail_if_targets_are_not_among_functions(
@@ -341,7 +339,7 @@ def test_annotations_are_applied_to_derived_functions(
     ),
     [
         (
-            {"foo": policy_function(leaf_name="foo")(lambda x_hh: x_hh)},
+            {"foo": policy_function(leaf_name="foo")(identity)},
             {},
             {"x": pd.Series([1])},
             {},
@@ -349,7 +347,7 @@ def test_annotations_are_applied_to_derived_functions(
             ("x_hh"),
         ),
         (
-            {"n1__foo": policy_function(leaf_name="foo")(lambda n2__x_hh: n2__x_hh)},
+            {"n1__foo": policy_function(leaf_name="foo")(identity)},
             {},
             {"n2": {"x": pd.Series([1])}},
             {},
@@ -365,7 +363,7 @@ def test_annotations_are_applied_to_derived_functions(
             ("x_hh"),
         ),
         (
-            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {"foo": policy_function(leaf_name="foo")(identity)},
             {},
             {"x": pd.Series([1])},
             {"n1__foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
@@ -405,7 +403,7 @@ def test_create_aggregation_with_derived_soure_column():
         )
     }
     result = _create_aggregate_by_group_functions(
-        functions={"bg_id": group_by_function()(lambda x: x)},
+        functions={"bg_id": group_by_function()(identity)},
         targets={},
         data={"bar": pd.Series([1])},
         aggregations_from_environment=aggregation_spec_dict,

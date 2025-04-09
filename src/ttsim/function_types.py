@@ -60,6 +60,7 @@ class PolicyFunction(Callable):
         functools.update_wrapper(self, self.function)
         self.__signature__ = inspect.signature(self.function)
         self.__globals__ = self.function.__globals__
+        self.__closure__ = self.function.__closure__
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)

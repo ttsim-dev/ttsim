@@ -8,6 +8,8 @@ from importlib import import_module
 
 import astor
 
+from ttsim.config import numpy_or_jax
+
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
@@ -31,8 +33,13 @@ def make_vectorizable(func: Callable, backend: str) -> Callable:
     module = _module_from_backend(backend)
     tree = _make_vectorizable_ast(func, module=module)
 
-    # recreate scope of function, add policy_function decorator and array library
-    scope = func.__globals__
+    # recreate scope of function, add array library
+    scope = dict(func.__globals__)
+    if func.__closure__:
+        closure_vars = func.__code__.co_freevars
+        closure_cells = [c.cell_contents for c in func.__closure__]
+        scope.update(dict(zip(closure_vars, closure_cells)))
+
     scope[module] = import_module(module)
 
     # execute new ast
@@ -269,6 +276,13 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
     args = node.args
 
     if len(args) == 1:
+        if type(args) not in (list, tuple, numpy_or_jax.ndarray):
+            raise TranslateToVectorizableError(
+                f"Argument of function {func_id} is not a list or tuple."
+                f"\n\nFunction: {func_loc}\n\n"
+                f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
+            )
+
         call.func = ast.Attribute(
             value=ast.Name(id=module, ctx=ast.Load()),
             attr=func_id,
