@@ -188,7 +188,7 @@ def vorsorge_krankenv_option_a(
     leaf_name="vorsorgepauschale_y",
     rounding_spec=RoundingSpec(base=1, direction=RoundingDirection.UP),
 )
-def vorsorgepauschale_y_ab_2010(  # noqa: PLR0913
+def vorsorgepauschale_y_ab_2010(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     wohnort_ost: bool,
     sozialv_beitr_params: dict,

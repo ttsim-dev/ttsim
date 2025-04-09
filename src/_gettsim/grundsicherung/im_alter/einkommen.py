@@ -4,11 +4,11 @@ from ttsim import piecewise_polynomial, policy_function
 
 
 @policy_function()
-def einkommen_m(  # noqa: PLR0913
+def einkommen_m(
     erwerbseinkommen_m: float,
     private_rente_betrag_m: float,
     gesetzliche_rente_m: float,
-    einkommensteuer__einkünfte__sonstige__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     kapitaleinkommen_brutto_m: float,
     einkommensteuer__betrag_m_sn: float,
@@ -28,8 +28,8 @@ def einkommen_m(  # noqa: PLR0913
         See :func:`private_rente_betrag_m`.
     gesetzliche_rente_m
         See :func:`gesetzliche_rente_m`.
-    einkommensteuer__einkünfte__sonstige__betrag_m
-        See :func:`einkommensteuer__einkünfte__sonstige__betrag_m`.
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
     kapitaleinkommen_brutto_m
@@ -55,7 +55,7 @@ def einkommen_m(  # noqa: PLR0913
         erwerbseinkommen_m
         + gesetzliche_rente_m
         + private_rente_betrag_m
-        + einkommensteuer__einkünfte__sonstige__betrag_m
+        + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + kapitaleinkommen_brutto_m
         + elterngeld__anrechenbarer_betrag_m

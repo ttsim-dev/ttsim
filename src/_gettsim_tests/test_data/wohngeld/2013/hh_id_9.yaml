@@ -36,13 +36,13 @@ inputs:
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 100.0
       - 0.0
     einkommensteuer__gemeinsam_veranlagt:
       - true
       - true
-    einkommensteuer__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
       - 0.0
       - 0.0
     elterngeld__betrag_m:
