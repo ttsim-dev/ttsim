@@ -458,7 +458,7 @@ def _create_time_conversion_functions(
     source_name: str,
     ttsim_object: TTSIMObject,
     time_unit_pattern: re.Pattern,
-    all_time_units: list[str],
+    all_time_units: tuple[str, ...],
 ) -> dict[str, DerivedTimeConversionFunction]:
     result: dict[str, DerivedTimeConversionFunction] = {}
     match = time_unit_pattern.fullmatch(source_name)

@@ -201,11 +201,11 @@ def _get_top_level_namespace(
     all_top_level_names = set()
     for name in direct_top_level_names:
         match = re_pattern.fullmatch(name)
-        function_base_name = match.group("base_name")
+        base_name = match.group("base_name")
         create_conversions_for_time_units = bool(match.group("time_unit"))
 
         all_top_level_names_for_name = all_variations_of_base_name(
-            base_name=function_base_name,
+            base_name=base_name,
             supported_time_conversions=supported_time_conversions,
             supported_groupings=supported_groupings,
             create_conversions_for_time_units=create_conversions_for_time_units,
