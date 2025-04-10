@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from ttsim.typing import QualNameDataDict, QualNameTTSIMObjectDict
 
-_TIME_UNITS = {
+TIME_UNITS = {
     "y": "year",
     "q": "quarter",
     "m": "month",
@@ -421,7 +421,7 @@ def create_time_conversion_functions(
     converted_ttsim_objects = {}
 
     for source_name, ttsim_object in ttsim_objects.items():
-        all_time_units = list(_TIME_UNITS)
+        all_time_units = tuple(TIME_UNITS)
         time_unit_pattern = get_re_pattern_for_time_units_and_groupings(
             supported_groupings=SUPPORTED_GROUPINGS,
             supported_time_units=all_time_units,

@@ -37,7 +37,7 @@ from ttsim.shared import (
     merge_trees,
     partition_by_reference_dict,
 )
-from ttsim.time_conversion import _TIME_UNITS
+from ttsim.time_conversion import TIME_UNITS
 from ttsim.typing import (
     check_series_has_expected_type,
     convert_series_to_internal_type,
@@ -49,6 +49,7 @@ if TYPE_CHECKING:
         NestedTargetDict,
         QualNameDataDict,
         QualNameTargetList,
+        QualNameTTSIMFunctionDict,
         QualNameTTSIMObjectDict,
     )
 
@@ -94,8 +95,8 @@ def compute_taxes_and_transfers(
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
-        supported_time_conversions=list(_TIME_UNITS.keys()),
-        supported_groupings=list(SUPPORTED_GROUPINGS.keys()),
+        supported_time_conversions=tuple(TIME_UNITS.keys()),
+        supported_groupings=tuple(SUPPORTED_GROUPINGS.keys()),
     )
     functions = dt.functions_without_tree_logic(
         functions=environment.functions_tree, top_level_namespace=top_level_namespace
@@ -137,7 +138,7 @@ def compute_taxes_and_transfers(
 
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
-        data=data_with_correct_types,
+        data=data,
         functions=functions_with_partialled_parameters,
         targets=targets,
     )
@@ -174,8 +175,8 @@ def compute_taxes_and_transfers(
 
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
-    supported_time_conversions: list[str],
-    supported_groupings: list[str],
+    supported_time_conversions: tuple[str, ...],
+    supported_groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
 

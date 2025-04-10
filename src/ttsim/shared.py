@@ -38,7 +38,7 @@ def validate_date_range(start: datetime.date, end: datetime.date):
 
 
 def get_re_pattern_for_time_units_and_groupings(
-    supported_groupings: list[str], supported_time_units: list[str]
+    supported_groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
 ) -> re.Pattern:
     """Get a regex pattern for time units and groupings.
 

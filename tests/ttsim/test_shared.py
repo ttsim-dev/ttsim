@@ -355,13 +355,13 @@ def test_all_variations_of_base_name(
         "expected_aggregation",
     ),
     [
-        ("foo", ["m", "y"], ["hh"], "foo", None, None),
-        ("foo_m_hh", ["m", "y"], ["hh"], "foo", "m", "hh"),
-        ("foo_y_hh", ["m", "y"], ["hh"], "foo", "y", "hh"),
-        ("foo_m", ["m", "y"], ["hh"], "foo", "m", None),
-        ("foo_y", ["m", "y"], ["hh"], "foo", "y", None),
-        ("foo_hh", ["m", "y"], ["hh"], "foo", None, "hh"),
-        ("foo_hh_bar", ["m", "y"], ["hh"], "foo_hh_bar", None, None),
+        ("foo", ("m", "y"), ["hh"], "foo", None, None),
+        ("foo_m_hh", ("m", "y"), ["hh"], "foo", "m", "hh"),
+        ("foo_y_hh", ("m", "y"), ["hh"], "foo", "y", "hh"),
+        ("foo_m", ("m", "y"), ["hh"], "foo", "m", None),
+        ("foo_y", ("m", "y"), ["hh"], "foo", "y", None),
+        ("foo_hh", ("m", "y"), ["hh"], "foo", None, "hh"),
+        ("foo_hh_bar", ("m", "y"), ["hh"], "foo_hh_bar", None, None),
     ],
 )
 def test_get_re_pattern_for_time_units_and_groupings(
