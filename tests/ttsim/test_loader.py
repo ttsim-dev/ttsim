@@ -39,7 +39,7 @@ def scalar_func(x: int) -> int:
         return x * 2
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:
     return numpy.where(x < 0, 0, x * 2)
 
@@ -47,7 +47,7 @@ def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:
 @pytest.mark.parametrize(
     "vectorized_function",
     [
-        _vectorize_func(scalar_func),
+        _vectorize_func(scalar_func, vectorization_strategy="loop"),
         already_vectorized_func,
     ],
 )

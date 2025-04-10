@@ -8,6 +8,7 @@ from collections.abc import Callable
 from typing import Literal, TypeVar
 
 import dags.tree as dt
+import numpy
 
 from ttsim.config import USE_JAX
 from ttsim.vectorization import make_vectorizable
@@ -45,11 +46,17 @@ class PolicyFunction(Callable):
         start_date: datetime.date,
         end_date: datetime.date,
         params_key_for_rounding: str | None,
-        skip_vectorization: bool | None,
+        vectorization_strategy: Literal["loop", "vectorize", "not_required"],
     ):
-        self.skip_vectorization: bool = skip_vectorization
+        self.vectorization_strategy: Literal["loop", "vectorize", "not_required"] = (
+            vectorization_strategy
+        )
         self.function = (
-            function if self.skip_vectorization else _vectorize_func(function)
+            function
+            if self.vectorization_strategy == "not_required"
+            else _vectorize_func(
+                function, vectorization_strategy=self.vectorization_strategy
+            )
         )
         self.leaf_name: str = leaf_name if leaf_name else function.__name__
         self.start_date: datetime.date = start_date
@@ -86,7 +93,7 @@ def policy_function(
     end_date: str | datetime.date = "2100-12-31",
     leaf_name: str | None = None,
     params_key_for_rounding: str | None = None,
-    skip_vectorization: bool = False,
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
 ) -> PolicyFunction:
     """
     Decorator that makes a `PolicyFunction` from a function.
@@ -142,7 +149,7 @@ def policy_function(
             start_date=start_date,
             end_date=end_date,
             params_key_for_rounding=params_key_for_rounding,
-            skip_vectorization=skip_vectorization,
+            vectorization_strategy=vectorization_strategy,
         )
 
     return inner
@@ -161,12 +168,23 @@ def _validate_date_range(start: datetime.date, end: datetime.date):
         raise ValueError(f"The start date {start} must be before the end date {end}.")
 
 
-def _vectorize_func(func: Callable) -> Callable:
-    if hasattr(func, "__info__") and func.__info__.get("vectorized", False):
-        return func
-
-    backend = "jax" if USE_JAX else "numpy"
-    return make_vectorizable(func, backend=backend)
+def _vectorize_func(
+    func: Callable, vectorization_strategy: Literal["loop", "vectorize"]
+) -> Callable:
+    if vectorization_strategy == "loop":
+        vectorized = functools.wraps(func)(numpy.vectorize(func))
+        vectorized.__signature__ = inspect.signature(func)
+        vectorized.__globals__ = func.__globals__
+        vectorized.__closure__ = func.__closure__
+    elif vectorization_strategy == "vectorize":
+        backend = "jax" if USE_JAX else "numpy"
+        vectorized = make_vectorizable(func, backend=backend)
+    else:
+        raise ValueError(
+            f"Vectorization strategy {vectorization_strategy} is not supported. "
+            "Use 'loop' or 'vectorize'."
+        )
+    return vectorized
 
 
 class GroupByFunction(Callable):
@@ -251,7 +269,7 @@ class DerivedAggregationFunction(PolicyFunction):
             start_date=source_function.start_date if source_function else None,
             end_date=source_function.end_date if source_function else None,
             params_key_for_rounding=None,
-            skip_vectorization=True,
+            vectorization_strategy="not_required",
         )
 
         self.source = source
@@ -292,7 +310,7 @@ class DerivedTimeConversionFunction(PolicyFunction):
             start_date=source_function.start_date if source_function else None,
             end_date=source_function.end_date if source_function else None,
             params_key_for_rounding=None,
-            skip_vectorization=True,
+            vectorization_strategy="not_required",
         )
 
         self.source = source

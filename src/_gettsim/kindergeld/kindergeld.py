@@ -173,7 +173,7 @@ def kind_bis_10_mit_kindergeld(
     return out
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def gleiche_fg_wie_empfänger(
     p_id: numpy.ndarray[int],
     p_id_empfänger: numpy.ndarray[int],
