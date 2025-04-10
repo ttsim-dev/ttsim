@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import re
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
@@ -9,6 +8,7 @@ from dags import rename_arguments
 
 from _gettsim.config import SUPPORTED_GROUPINGS
 from ttsim.function_types import DerivedTimeConversionFunction, PolicyFunction
+from ttsim.shared import get_re_pattern_for_time_units_and_groupings
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -447,15 +447,13 @@ def _create_time_conversion_functions(
     name: str, func: PolicyFunction | None = None
 ) -> dict[str, DerivedTimeConversionFunction]:
     result: dict[str, DerivedTimeConversionFunction] = {}
-
     all_time_units = list(_TIME_UNITS)
 
-    units = "".join(all_time_units)
-    groupings = "|".join([f"_{grouping}" for grouping in SUPPORTED_GROUPINGS])
-    function_with_time_unit = re.compile(
-        f"(?P<base_name>.*_)(?P<time_unit>[{units}])(?P<aggregation>{groupings})?"
+    time_unit_pattern = get_re_pattern_for_time_units_and_groupings(
+        supported_groupings=SUPPORTED_GROUPINGS,
+        supported_time_units=all_time_units,
     )
-    match = function_with_time_unit.fullmatch(name)
+    match = time_unit_pattern.fullmatch(name)
     dependencies = set(inspect.signature(func).parameters) if func else set()
 
     if match:

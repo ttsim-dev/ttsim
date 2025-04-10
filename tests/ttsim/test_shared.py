@@ -8,6 +8,7 @@ from ttsim.shared import (
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
+    potential_target_names_from_base_name,
     upsert_path_and_value,
     upsert_tree,
 )
@@ -283,3 +284,60 @@ def test_get_name_of_group_by_id_fails(
         get_name_of_group_by_id(
             target_name=target_name, group_by_functions=group_by_functions
         )
+
+
+@pytest.mark.parametrize(
+    (
+        "base_name",
+        "supported_time_conversions",
+        "supported_groupings",
+        "create_conversions_for_time_units",
+        "expected",
+    ),
+    [
+        (
+            "income",
+            ["y", "m"],
+            ["hh"],
+            True,
+            {"income_m", "income_y", "income_m_hh", "income_y_hh"},
+        ),
+        (
+            "income",
+            ["y", "m"],
+            ["hh", "x"],
+            True,
+            {
+                "income_m",
+                "income_y",
+                "income_m_hh",
+                "income_y_hh",
+                "income_m_x",
+                "income_y_x",
+            },
+        ),
+        (
+            "claims_benefits",
+            ["y", "m"],
+            ["hh", "x"],
+            False,
+            {"claims_benefits", "claims_benefits_hh", "claims_benefits_x"},
+        ),
+    ],
+)
+def test_potential_target_names_from_base_name(
+    base_name,
+    supported_time_conversions,
+    supported_groupings,
+    create_conversions_for_time_units,
+    expected,
+):
+    assert (
+        potential_target_names_from_base_name(
+            base_name=base_name,
+            supported_time_conversions=supported_time_conversions,
+            supported_groupings=supported_groupings,
+            create_conversions_for_time_units=create_conversions_for_time_units,
+        )
+        == expected
+    )

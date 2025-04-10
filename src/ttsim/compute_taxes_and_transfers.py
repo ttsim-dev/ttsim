@@ -31,8 +31,10 @@ from ttsim.shared import (
     format_list_linewise,
     get_name_of_group_by_id,
     get_names_of_arguments_without_defaults,
+    get_re_pattern_for_time_units_and_groupings,
     merge_trees,
     partition_by_reference_dict,
+    potential_target_names_from_base_name,
 )
 from ttsim.typing import (
     check_series_has_expected_type,
@@ -88,9 +90,7 @@ def compute_taxes_and_transfers(
     _fail_if_environment_not_valid(environment)
 
     # Transform functions tree to qualified names dict with qualified arguments
-    top_level_namespace = set(environment.raw_objects_tree.keys()) | set(
-        environment.aggregation_specs_tree.keys()
-    )
+    top_level_namespace = _get_top_level_namespace(environment)
     functions = dt.functions_without_tree_logic(
         functions=environment.functions_tree, top_level_namespace=top_level_namespace
     )
@@ -164,6 +164,48 @@ def compute_taxes_and_transfers(
         )
 
     return result_tree
+
+
+def _get_top_level_namespace(
+    environment: PolicyEnvironment,
+    supported_time_conversions: list[str],
+    supported_groupings: list[str],
+) -> set[str]:
+    """Get the top level namespace.
+
+    Parameters
+    ----------
+    environment:
+        The policy environment.
+
+    Returns
+    -------
+    top_level_namespace:
+        The top level namespace.
+    """
+    names_from_environment = set(environment.raw_objects_tree.keys()) | set(
+        environment.aggregation_specs_tree.keys()
+    )
+    potential_function_names = set()
+    re_pattern = get_re_pattern_for_time_units_and_groupings(
+        supported_groupings=supported_groupings,
+        supported_time_units=supported_time_conversions,
+    )
+
+    for element in names_from_environment:
+        if match := re_pattern.fullmatch(element):
+            function_base_name = match.group("base_name")
+            create_conversions_for_time_units = bool(match.group("time_unit"))
+
+            potential_derived_functions = potential_target_names_from_base_name(
+                base_name=function_base_name,
+                supported_time_conversions=supported_time_conversions,
+                supported_groupings=supported_groupings,
+                create_conversions_for_time_units=create_conversions_for_time_units,
+            )
+            potential_function_names.update(potential_derived_functions)
+
+    return potential_function_names
 
 
 def _convert_data_to_correct_types(
