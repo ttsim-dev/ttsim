@@ -354,8 +354,9 @@ def partition_by_reference_dict(
 
     Returns
     -------
-    A tuple containing: - The first dictionary with keys present in both dictionaries. -
-    The second dictionary with keys absent in the reference dictionary.
+    A tuple containing:
+    - The first dictionary with keys present in both dictionaries.
+    - The second dictionary with keys absent in the reference dictionary.
     """
     intersection = {k: v for k, v in to_partition.items() if k in reference_dict}
     difference = {k: v for k, v in to_partition.items() if k not in reference_dict}

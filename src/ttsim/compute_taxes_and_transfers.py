@@ -23,6 +23,7 @@ from ttsim.function_types import (
     DerivedAggregationFunction,
     GroupByFunction,
     PolicyFunction,
+    PolicyInput,
     TTSIMFunction,
 )
 from ttsim.policy_environment import PolicyEnvironment
@@ -98,13 +99,23 @@ def compute_taxes_and_transfers(
         supported_time_conversions=tuple(TIME_UNITS.keys()),
         supported_groupings=tuple(SUPPORTED_GROUPINGS.keys()),
     )
-    functions = dt.functions_without_tree_logic(
-        functions=environment.functions_tree, top_level_namespace=top_level_namespace
-    )
-
+    # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
     aggregation_specs = dt.flatten_to_qual_names(environment.aggregation_specs_tree)
+    functions = {}
+    inputs = {}
+    for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
+        if isinstance(f_or_i, TTSIMFunction):
+            functions[name] = dt.one_function_without_tree_logic(
+                function=f_or_i,
+                tree_path=dt.tree_path_from_qual_name(name),
+                top_level_namespace=top_level_namespace,
+            )
+        elif isinstance(f_or_i, PolicyInput):
+            inputs[name] = f_or_i
+        else:
+            raise ValueError(f"Unknown type: {type(f_or_i)}")
 
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
@@ -115,7 +126,7 @@ def compute_taxes_and_transfers(
         top_level_namespace=top_level_namespace,
     )
 
-    functions_overridden, functions_not_overridden = partition_by_reference_dict(
+    functions_overridden, functions_to_be_used = partition_by_reference_dict(
         to_partition=functions,
         reference_dict=data,
     )
@@ -127,9 +138,9 @@ def compute_taxes_and_transfers(
     # )
 
     functions_with_rounding_specs = (
-        _add_rounding_to_functions(functions=functions_not_overridden)
+        _add_rounding_to_functions(functions=functions_to_be_used)
         if rounding
-        else functions_not_overridden
+        else functions_to_be_used
     )
     functions_with_partialled_parameters = _partial_parameters_to_functions(
         functions=functions_with_rounding_specs,

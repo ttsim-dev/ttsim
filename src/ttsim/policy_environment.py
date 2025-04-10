@@ -15,7 +15,6 @@ from _gettsim.config import (
     RESOURCE_DIR,
 )
 from ttsim.function_types import (
-    TTSIMFunction,
     TTSIMObject,
     policy_function,
 )
@@ -94,16 +93,6 @@ class PolicyEnvironment:
         Does not include aggregations or time conversions.
         """
         return self._raw_objects_tree
-
-    @property
-    def functions_tree(self) -> NestedTTSIMFunctionDict:
-        """The policy functions."""
-        flat_objects = dt.flatten_to_tree_paths(self._raw_objects_tree)
-        flat_functions = {}
-        for k, v in flat_objects.items():
-            if isinstance(v, TTSIMFunction):
-                flat_functions[k] = v
-        return dt.unflatten_from_tree_paths(flat_functions)
 
     @property
     def params(self) -> dict[str, Any]:
