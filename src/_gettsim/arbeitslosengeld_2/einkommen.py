@@ -3,7 +3,7 @@
 from ttsim import piecewise_polynomial, policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def anzurechnendes_einkommen_m(
     nettoeinkommen_nach_abzug_freibetrag_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
@@ -47,7 +47,7 @@ def anzurechnendes_einkommen_m(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def nettoeinkommen_nach_abzug_freibetrag_m(
     nettoeinkommen_vor_abzug_freibetrag_m: float,
     anrechnungsfreies_einkommen_m: float,
@@ -72,7 +72,7 @@ def nettoeinkommen_nach_abzug_freibetrag_m(
     return nettoeinkommen_vor_abzug_freibetrag_m - anrechnungsfreies_einkommen_m
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def nettoeinkommen_vor_abzug_freibetrag_m(
     bruttoeinkommen_m: float,
     einkommensteuer__betrag_m_sn: float,
@@ -111,7 +111,7 @@ def nettoeinkommen_vor_abzug_freibetrag_m(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def bruttoeinkommen_m(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__sonstige__betrag_m: float,
@@ -168,7 +168,7 @@ def bruttoeinkommen_m(  # noqa: PLR0913
     return out
 
 
-@policy_function(end_date="2005-09-30")
+@policy_function(end_date="2005-09-30", vectorization_strategy="vectorize")
 def nettoquote_m(  # noqa: PLR0913
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__betrag_m_sn: float,
