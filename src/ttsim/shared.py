@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         GenericCallable,
         NestedDataDict,
-        NestedTTSIMFunctionDict,
+        NestedTTSIMObjectDict,
         QualNameTTSIMFunctionDict,
     )
 
@@ -304,11 +304,11 @@ def insert_path_and_value(
 
 
 def partition_tree_by_reference_tree(
-    tree_to_partition: NestedTTSIMFunctionDict | NestedDataDict,
-    reference_tree: NestedTTSIMFunctionDict | NestedDataDict,
+    tree_to_partition: NestedTTSIMObjectDict | NestedDataDict,
+    reference_tree: NestedTTSIMObjectDict | NestedDataDict,
 ) -> tuple[
-    NestedTTSIMFunctionDict | NestedDataDict,
-    NestedTTSIMFunctionDict | NestedDataDict,
+    NestedTTSIMObjectDict | NestedDataDict,
+    NestedTTSIMObjectDict | NestedDataDict,
 ]:
     """
     Partition a tree into two based on the presence of its paths in a reference tree.

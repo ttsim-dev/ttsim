@@ -40,7 +40,6 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         NestedAggregationSpecDict,
-        NestedTTSIMFunctionDict,
         NestedTTSIMObjectDict,
     )
 
@@ -96,7 +95,7 @@ class PolicyEnvironment:
         return self._raw_objects_tree
 
     @property
-    def functions_tree(self) -> NestedTTSIMFunctionDict:
+    def functions_tree(self) -> NestedTTSIMObjectDict:
         """The policy functions."""
         flat_objects = dt.flatten_to_tree_paths(self._raw_objects_tree)
         flat_functions = {}
@@ -118,44 +117,40 @@ class PolicyEnvironment:
         """
         return self._aggregation_specs_tree
 
-    def upsert_policy_functions(
-        self, functions_tree_to_upsert: NestedTTSIMFunctionDict
+    def upsert_objects(
+        self, tree_to_upsert: NestedTTSIMObjectDict
     ) -> PolicyEnvironment:
-        """Upsert GETTSIM's function tree with (parts of) a new function tree.
+        """Upsert GETTSIM's function tree with (parts of) a new TTSIM objects tree.
 
-        Adds to or overwrites functions of the policy environment. Note that this
+        Adds to or overwrites TTSIM objects of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
 
         Parameters
         ----------
-        functions_tree
+        tree_to_upsert
             The functions to add or overwrite.
 
         Returns
         -------
-        The policy environment with the new functions.
+        The policy environment with the upserted functions.
         """
-        new_functions_tree = {}
 
-        # Add old functions tree to new functions tree
-        new_functions_tree = {**self._functions_tree}
-
-        functions_tree_to_upsert_with_correct_types = optree.tree_map(
+        tree_to_upsert_with_correct_types = optree.tree_map(
             lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
-            functions_tree_to_upsert,
+            tree_to_upsert,
         )
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-            functions_tree_to_upsert_with_correct_types
+            tree_to_upsert_with_correct_types
         )
 
         # Add functions tree to upsert to new functions tree
-        new_functions_tree = upsert_tree(
-            base=new_functions_tree,
-            to_upsert=functions_tree_to_upsert_with_correct_types,
+        new_tree = upsert_tree(
+            base={**self._raw_objects_tree},
+            to_upsert=tree_to_upsert_with_correct_types,
         )
 
         result = object.__new__(PolicyEnvironment)
-        result._functions_tree = new_functions_tree  # noqa: SLF001
+        result._raw_objects_tree = new_tree  # noqa: SLF001
         result._params = self._params  # noqa: SLF001
         result._aggregation_specs_tree = self._aggregation_specs_tree  # noqa: SLF001
 
@@ -176,7 +171,7 @@ class PolicyEnvironment:
         The policy environment with the new parameters.
         """
         result = object.__new__(PolicyEnvironment)
-        result._functions_tree = self._functions_tree  # noqa: SLF001
+        result._raw_objects_tree = self._raw_objects_tree  # noqa: SLF001
         result._params = params  # noqa: SLF001
         result._aggregation_specs_tree = self._aggregation_specs_tree  # noqa: SLF001
 
@@ -644,7 +639,7 @@ def transfer_dictionary(remaining_dict, new_dict, key_list):
 
 
 def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedTTSIMFunctionDict,
+    functions_tree: NestedTTSIMObjectDict,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last
     branch element of the tree path.

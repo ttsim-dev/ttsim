@@ -25,7 +25,7 @@ from ttsim.policy_environment import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedTTSIMFunctionDict
+    from ttsim.typing import NestedTTSIMObjectDict
 
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
@@ -57,7 +57,7 @@ class TestPolicyEnvironment:
     )
     def test_upsert_functions(self, environment: PolicyEnvironment):
         new_function = policy_function(leaf_name="foo")(lambda: 3)
-        new_environment = environment.upsert_policy_functions({"foo": new_function})
+        new_environment = environment.upsert_objects({"foo": new_function})
 
         assert new_environment.raw_objects_tree["foo"] == new_function
 
@@ -153,7 +153,7 @@ def test_load_functions_tree_for_date(
     ],
 )
 def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedTTSIMFunctionDict,
+    functions_tree: NestedTTSIMObjectDict,
 ):
     with pytest.raises(KeyError):
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)

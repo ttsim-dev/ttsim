@@ -154,7 +154,7 @@ def test_dates_active_empty_interval():
 )
 def test_dates_active_no_conflicts(functions):
     _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-        policy_functions=functions, module_name=""
+        ttsim_objects=functions, module_name=""
     )
 
 
@@ -202,5 +202,5 @@ def test_dates_active_no_conflicts(functions):
 def test_dates_active_with_conflicts(functions):
     with pytest.raises(ConflictingTimeDependentObjectsError):
         _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-            policy_functions=functions, module_name=""
+            ttsim_objects=functions, module_name=""
         )

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from ttsim.function_types import TTSIMFunction, TTSIMObject
 
     NestedTTSIMObjectDict = Mapping[str, TTSIMObject | "NestedTTSIMObjectDict"]
-    QualNameTTSIMFunctionDict = Mapping[str, TTSIMObject]
+    QualNameTTSIMObjectDict = Mapping[str, TTSIMObject]
 
     # Specialise from dags' GenericCallable types to GETTSIM's functions.
     NestedTTSIMFunctionDict = Mapping[str, TTSIMFunction | "NestedTTSIMFunctionDict"]
