@@ -6,6 +6,7 @@ from ttsim.shared import (
     all_variations_of_base_name,
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
+    get_re_pattern_for_some_base_name,
     get_re_pattern_for_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
@@ -379,3 +380,27 @@ def test_get_re_pattern_for_time_units_and_groupings(
     assert match.group("base_name") == expected_base_name
     assert match.group("time_unit") == expected_time_unit
     assert match.group("aggregation") == expected_aggregation
+
+
+@pytest.mark.parametrize(
+    (
+        "base_name",
+        "supported_time_units",
+        "supported_groupings",
+        "expected_match",
+    ),
+    [
+        ("foo", ["m", "y"], ["hh"], "foo_m_hh"),
+        ("foo", ["m", "y"], ["hh", "x"], "foo_m"),
+        ("foo", ["m", "y"], ["hh", "x"], "foo_hh"),
+    ],
+)
+def test_get_re_pattern_for_some_base_name(
+    base_name, supported_time_units, supported_groupings, expected_match
+):
+    re_pattern = get_re_pattern_for_some_base_name(
+        base_name=base_name,
+        supported_time_units=supported_time_units,
+        supported_groupings=supported_groupings,
+    )
+    assert re_pattern.fullmatch(expected_match)
