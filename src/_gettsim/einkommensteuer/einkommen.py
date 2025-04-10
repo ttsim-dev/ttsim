@@ -6,7 +6,7 @@ Belastungen and sonstige Abzüge."""
 from ttsim import piecewise_polynomial, policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def gesamteinkommen_y(
     gesamteinkommen_ohne_abzüge_y_sn: float,
     einkommensteuer__abzüge__betrag_y_sn: float,
@@ -30,7 +30,11 @@ def gesamteinkommen_y(
     return max(out, 0.0)
 
 
-@policy_function(end_date="2008-12-31", leaf_name="gesamteinkommen_ohne_abzüge_y")
+@policy_function(
+    end_date="2008-12-31",
+    leaf_name="gesamteinkommen_ohne_abzüge_y",
+    vectorization_strategy="vectorize",
+)
 def gesamteinkommen_ohne_abzüge_mit_kapitaleinkünften_y(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_y: float,
@@ -71,7 +75,11 @@ def gesamteinkommen_ohne_abzüge_mit_kapitaleinkünften_y(
     return out
 
 
-@policy_function(start_date="2009-01-01", leaf_name="gesamteinkommen_ohne_abzüge_y")
+@policy_function(
+    start_date="2009-01-01",
+    leaf_name="gesamteinkommen_ohne_abzüge_y",
+    vectorization_strategy="vectorize",
+)
 def gesamteinkommen_ohne_abzüge_ohne_kapitaleinkünfte_y(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_y: float,
@@ -105,7 +113,7 @@ def gesamteinkommen_ohne_abzüge_ohne_kapitaleinkünfte_y(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def renteneinkommen_m(
     sozialversicherung__rente__altersrente__betrag_m: float,
     sozialversicherung__rente__private_rente_betrag_m: float,
