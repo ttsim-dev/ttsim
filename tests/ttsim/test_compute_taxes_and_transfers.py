@@ -21,10 +21,25 @@ from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.function_types import group_by_function, policy_function
+from ttsim.function_types import group_by_function, policy_function, policy_input
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import convert_series_to_internal_type
+
+
+@policy_input()
+def p_id() -> int:
+    pass
+
+
+@policy_input()
+def hh_id() -> int:
+    pass
+
+
+@policy_input()
+def betrag_m() -> float:
+    pass
 
 
 @pytest.fixture(scope="module")
@@ -62,9 +77,10 @@ func_after_partial = _partial_parameters_to_functions(
 def test_output_as_tree(minimal_input_data):
     environment = PolicyEnvironment(
         {
+            "p_id": p_id,
             "module": {
                 "test_func": policy_function(leaf_name="test_func")(lambda p_id: p_id)
-            }
+            },
         }
     )
 
@@ -313,6 +329,14 @@ def test_user_provided_aggregate_by_group_specs():
         },
     }
 
+    inputs = {
+        "p_id": p_id,
+        "hh_id": hh_id,
+        "module_name": {
+            "betrag_m": betrag_m,
+        },
+    }
+
     aggregation_specs_tree = {
         "module_name": {
             "betrag_m_hh": AggregateByGroupSpec(
@@ -325,7 +349,9 @@ def test_user_provided_aggregate_by_group_specs():
 
     out = compute_taxes_and_transfers(
         data,
-        PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
+        PolicyEnvironment(
+            raw_objects_tree=inputs, aggregation_specs_tree=aggregation_specs_tree
+        ),
         targets_tree={"module_name": {"betrag_m_hh": None}},
     )
 

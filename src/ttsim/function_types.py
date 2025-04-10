@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
+DEFAULT_START_DATE = datetime.date(1900, 1, 1)
+DEFAULT_END_DATE = datetime.date(2100, 12, 31)
+
 
 @dataclass
 class TTSIMObject:
@@ -52,8 +55,8 @@ class PolicyInput(TTSIMObject):
 
 def policy_input(
     *,
-    start_date: str | datetime.date = "1900-01-01",
-    end_date: str | datetime.date = "2100-12-31",
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
 ) -> PolicyInput:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
@@ -191,8 +194,8 @@ class PolicyFunction(TTSIMFunction):
 def policy_function(
     *,
     leaf_name: str | None = None,
-    start_date: str | datetime.date = "1900-01-01",
-    end_date: str | datetime.date = "2100-12-31",
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
     rounding_spec: RoundingSpec | None = None,
     skip_vectorization: bool = False,
 ) -> PolicyFunction:
@@ -295,8 +298,8 @@ class GroupByFunction(TTSIMFunction):
 def group_by_function(
     *,
     leaf_name: str | None = None,
-    start_date: str | datetime.date = "1900-01-01",
-    end_date: str | datetime.date = "2100-12-31",
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
 ) -> GroupByFunction:
     """
     Decorator that creates a group_by function from a function.
@@ -412,11 +415,12 @@ def _convert_and_validate_dates(
     tuple[datetime.date, datetime.date]
         The converted and validated start and end dates.
     """
-    validate_dashed_iso_date(start_date)
-    validate_dashed_iso_date(end_date)
-
-    start_date = datetime.date.fromisoformat(start_date)
-    end_date = datetime.date.fromisoformat(end_date)
+    if isinstance(start_date, str):
+        validate_dashed_iso_date(start_date)
+        start_date = datetime.date.fromisoformat(start_date)
+    if isinstance(end_date, str):
+        validate_dashed_iso_date(end_date)
+        end_date = datetime.date.fromisoformat(end_date)
 
     validate_date_range(start_date, end_date)
 

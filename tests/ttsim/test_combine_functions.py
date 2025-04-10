@@ -289,7 +289,7 @@ def test_annotations_for_aggregation(
 ):
     name_of_aggregation_function = next(iter(aggregation_functions.keys()))
     annotation_of_aggregation_function = _annotate_aggregation_functions(
-        ttsim_objects=objects,
+        functions=objects,
         aggregation_functions=aggregation_functions,
     )[name_of_aggregation_function].__annotations__["return"]
     assert annotation_of_aggregation_function == expected_return_type
@@ -355,7 +355,7 @@ def test_annotations_are_applied_to_derived_functions(
     result_func = next(
         iter(
             _create_aggregation_functions(
-                ttsim_objects=functions,
+                functions=functions,
                 aggregation_functions_to_create=aggregations,
                 aggregation_type=aggregation_type,
                 top_level_namespace=top_level_namespace,
@@ -497,7 +497,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
         group_by_id=group_by_id,
-        ttsim_objects={},
+        functions={},
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -590,7 +590,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
         group_by_id=group_by_id,
-        ttsim_objects={},
+        functions={},
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
