@@ -134,7 +134,7 @@ def _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
         for (start1, end1), (start2, end2) in itertools.combinations(dates_active, 2):
             if start1 <= end2 and start2 <= end1:
                 raise ConflictingTimeDependentObjectsError(
-                    affected_policy_functions=objects,
+                    affected_ttsim_objects=objects,
                     leaf_name=leaf_name,
                     module_name=module_name,
                     overlap_start=max(start1, start2),
