@@ -453,17 +453,22 @@ def _create_time_conversion_functions(
         supported_groupings=SUPPORTED_GROUPINGS,
         supported_time_units=all_time_units,
     )
+
     match = time_unit_pattern.fullmatch(name)
+    base_name = match.group("base_name") or ""
+    time_unit = match.group("time_unit") or ""
+    aggregation = match.group("aggregation") or ""
+
     dependencies = set(inspect.signature(func).parameters) if func else set()
 
-    if match:
-        base_name = match.group("base_name")
-        time_unit = match.group("time_unit")
-        aggregation = match.group("aggregation") or ""
-
+    if match and time_unit:
         missing_time_units = [unit for unit in all_time_units if unit != time_unit]
         for missing_time_unit in missing_time_units:
-            new_name = f"{base_name}{missing_time_unit}{aggregation}"
+            new_name = (
+                f"{base_name}_{missing_time_unit}{aggregation}"
+                if aggregation
+                else f"{base_name}_{missing_time_unit}"
+            )
 
             # Without this check, we could create cycles in the DAG: Consider a
             # hard-coded function `var_y` that takes `var_m` as an input, assuming it

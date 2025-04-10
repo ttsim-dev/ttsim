@@ -42,10 +42,11 @@ def get_re_pattern_for_time_units_and_groupings(
 ) -> re.Pattern:
     """Get a regex pattern for time units and groupings.
 
-    The pattern is of the form:
-    <base_name>_<time_unit>_<aggregation>
-    where <base_name> is optional, <time_unit> is one of the supported time units, and
-    <aggregation> is one of the supported groupings.
+    The pattern matches strings in any of these formats:
+    - <base_name>  (can contain underscores)
+    - <base_name>_<time_unit>
+    - <base_name>_<aggregation>
+    - <base_name>_<time_unit>_<aggregation>
 
     Parameters
     ----------
@@ -60,9 +61,12 @@ def get_re_pattern_for_time_units_and_groupings(
         The regex pattern.
     """
     units = "".join(supported_time_units)
-    groupings = "|".join([f"_{grouping}" for grouping in supported_groupings])
+    groupings = "|".join(supported_groupings)
     return re.compile(
-        f"(?P<base_name>.*_)(?P<time_unit>[{units}])(?P<aggregation>{groupings})?"
+        f"(?P<base_name>.*?)"
+        f"(?:_(?P<time_unit>[{units}]))?"
+        f"(?:_(?P<aggregation>{groupings}))?"
+        f"$"
     )
 
 

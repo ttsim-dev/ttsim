@@ -5,6 +5,7 @@ import pytest
 from ttsim.shared import (
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
+    get_re_pattern_for_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
@@ -341,3 +342,39 @@ def test_potential_target_names_from_base_name(
         )
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    (
+        "func_name",
+        "supported_time_units",
+        "supported_groupings",
+        "expected_base_name",
+        "expected_time_unit",
+        "expected_aggregation",
+    ),
+    [
+        ("foo", ["m", "y"], ["hh"], "foo", None, None),
+        ("foo_m_hh", ["m", "y"], ["hh"], "foo", "m", "hh"),
+        ("foo_y_hh", ["m", "y"], ["hh"], "foo", "y", "hh"),
+        ("foo_m", ["m", "y"], ["hh"], "foo", "m", None),
+        ("foo_y", ["m", "y"], ["hh"], "foo", "y", None),
+        ("foo_hh", ["m", "y"], ["hh"], "foo", None, "hh"),
+    ],
+)
+def test_get_re_pattern_for_time_units_and_groupings(
+    func_name,
+    supported_time_units,
+    supported_groupings,
+    expected_base_name,
+    expected_time_unit,
+    expected_aggregation,
+):
+    result = get_re_pattern_for_time_units_and_groupings(
+        supported_time_units=supported_time_units,
+        supported_groupings=supported_groupings,
+    )
+    match = result.fullmatch(func_name)
+    assert match.group("base_name") == expected_base_name
+    assert match.group("time_unit") == expected_time_unit
+    assert match.group("aggregation") == expected_aggregation

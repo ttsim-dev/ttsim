@@ -196,14 +196,17 @@ def _get_top_level_namespace(
         if match := re_pattern.fullmatch(element):
             function_base_name = match.group("base_name")
             create_conversions_for_time_units = bool(match.group("time_unit"))
+        else:
+            function_base_name = element
+            create_conversions_for_time_units = False
 
-            potential_derived_functions = potential_target_names_from_base_name(
-                base_name=function_base_name,
-                supported_time_conversions=supported_time_conversions,
-                supported_groupings=supported_groupings,
-                create_conversions_for_time_units=create_conversions_for_time_units,
-            )
-            potential_function_names.update(potential_derived_functions)
+        potential_derived_functions = potential_target_names_from_base_name(
+            base_name=function_base_name,
+            supported_time_conversions=supported_time_conversions,
+            supported_groupings=supported_groupings,
+            create_conversions_for_time_units=create_conversions_for_time_units,
+        )
+        potential_function_names.update(potential_derived_functions)
 
     return potential_function_names
 
