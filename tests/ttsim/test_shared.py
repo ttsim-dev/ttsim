@@ -360,6 +360,7 @@ def test_potential_target_names_from_base_name(
         ("foo_m", ["m", "y"], ["hh"], "foo", "m", None),
         ("foo_y", ["m", "y"], ["hh"], "foo", "y", None),
         ("foo_hh", ["m", "y"], ["hh"], "foo", None, "hh"),
+        ("foo_hh_bar", ["m", "y"], ["hh"], "foo_hh_bar", None, None),
     ],
 )
 def test_get_re_pattern_for_time_units_and_groupings(

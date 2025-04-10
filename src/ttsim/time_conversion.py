@@ -455,7 +455,7 @@ def _create_time_conversion_functions(
     )
 
     match = time_unit_pattern.fullmatch(name)
-    base_name = match.group("base_name") or ""
+    base_name = match.group("base_name")
     time_unit = match.group("time_unit") or ""
     aggregation = match.group("aggregation") or ""
 
