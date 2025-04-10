@@ -58,7 +58,7 @@ def minijob_grenze_unterscheidung_ost_west(
     west = sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]["west"]
     ost = sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]["ost"]
     out = ost if wohnort_ost else west
-    return float(out)
+    return out
 
 
 @policy_function(

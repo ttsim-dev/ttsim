@@ -137,7 +137,7 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) ->
 
     out = params["ost"] if wohnort_ost else params["west"]
 
-    return float(out)
+    return out
 
 
 @policy_function()
@@ -164,7 +164,7 @@ def bezugsgröße_selbstständig_m(wohnort_ost: bool, sozialv_beitr_params: dict
         else sozialv_beitr_params["bezugsgröße_selbst_m"]["west"]
     )
 
-    return float(out)
+    return out
 
 
 @policy_function()

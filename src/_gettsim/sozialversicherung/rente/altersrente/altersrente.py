@@ -353,7 +353,7 @@ def rentenwert(wohnort_ost: bool, ges_rente_params: dict) -> float:
 
     out = params["ost"] if wohnort_ost else params["west"]
 
-    return float(out)
+    return out
 
 
 @policy_function()

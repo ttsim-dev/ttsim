@@ -136,7 +136,7 @@ def kindersatz_m_bis_2010(
     else:
         out = 0.0
 
-    return float(out)
+    return out
 
 
 @policy_function(start_date="2011-01-01", leaf_name="kindersatz_m")
@@ -189,7 +189,7 @@ def kindersatz_m_ab_2011(
     else:
         out = 0.0
 
-    return float(out)
+    return out
 
 
 @policy_function(end_date="2010-12-31", leaf_name="erwachsenensatz_m")

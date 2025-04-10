@@ -38,7 +38,7 @@ def sonderausgaben_y_sn_nur_pauschale(
         * einkommensteuer__anzahl_personen_sn
     )
 
-    return float(out)
+    return out
 
 
 @policy_function(start_date="2012-01-01", leaf_name="sonderausgaben_y_sn")
@@ -73,7 +73,7 @@ def sonderausgaben_y_sn_mit_betreuung(
 
     out = max(sonderausgaben_gesamt, pauschale)
 
-    return float(out)
+    return out
 
 
 @policy_function()
@@ -128,4 +128,4 @@ def absetzbare_betreuungskosten_y_sn(
         * eink_st_abzuege_params["kinderbetreuungskosten_abz_anteil"]
     )
 
-    return float(out)
+    return out
