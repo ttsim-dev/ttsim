@@ -13,6 +13,7 @@ import pandas as pd
 from _gettsim.config import (
     DEFAULT_TARGETS,
     FOREIGN_KEYS,
+    SUPPORTED_GROUPINGS,
 )
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
@@ -26,6 +27,7 @@ from ttsim.function_types import (
 )
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
+    all_variations_of_base_name,
     assert_valid_ttsim_pytree,
     format_errors_and_warnings,
     format_list_linewise,
@@ -34,8 +36,8 @@ from ttsim.shared import (
     get_re_pattern_for_time_units_and_groupings,
     merge_trees,
     partition_by_reference_dict,
-    potential_target_names_from_base_name,
 )
+from ttsim.time_conversion import _TIME_UNITS
 from ttsim.typing import (
     check_series_has_expected_type,
     convert_series_to_internal_type,
@@ -90,7 +92,11 @@ def compute_taxes_and_transfers(
     _fail_if_environment_not_valid(environment)
 
     # Transform functions tree to qualified names dict with qualified arguments
-    top_level_namespace = _get_top_level_namespace(environment)
+    top_level_namespace = _get_top_level_namespace(
+        environment=environment,
+        supported_time_conversions=list(_TIME_UNITS.keys()),
+        supported_groupings=list(SUPPORTED_GROUPINGS.keys()),
+    )
     functions = dt.functions_without_tree_logic(
         functions=environment.functions_tree, top_level_namespace=top_level_namespace
     )
@@ -183,32 +189,29 @@ def _get_top_level_namespace(
     top_level_namespace:
         The top level namespace.
     """
-    names_from_environment = set(environment.raw_objects_tree.keys()) | set(
+    direct_top_level_names = set(environment.raw_objects_tree.keys()) | set(
         environment.aggregation_specs_tree.keys()
     )
-    potential_function_names = set()
+    all_top_level_names = set()
     re_pattern = get_re_pattern_for_time_units_and_groupings(
         supported_groupings=supported_groupings,
         supported_time_units=supported_time_conversions,
     )
 
-    for element in names_from_environment:
-        if match := re_pattern.fullmatch(element):
-            function_base_name = match.group("base_name")
-            create_conversions_for_time_units = bool(match.group("time_unit"))
-        else:
-            function_base_name = element
-            create_conversions_for_time_units = False
+    for name in direct_top_level_names:
+        match = re_pattern.fullmatch(name)
+        function_base_name = match.group("base_name")
+        create_conversions_for_time_units = bool(match.group("time_unit"))
 
-        potential_derived_functions = potential_target_names_from_base_name(
+        all_top_level_names_for_name = all_variations_of_base_name(
             base_name=function_base_name,
             supported_time_conversions=supported_time_conversions,
             supported_groupings=supported_groupings,
             create_conversions_for_time_units=create_conversions_for_time_units,
         )
-        potential_function_names.update(potential_derived_functions)
+        all_top_level_names.update(all_top_level_names_for_name)
 
-    return potential_function_names
+    return all_top_level_names
 
 
 def _convert_data_to_correct_types(

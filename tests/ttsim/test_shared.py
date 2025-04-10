@@ -3,13 +3,13 @@ from dataclasses import dataclass
 import pytest
 
 from ttsim.shared import (
+    all_variations_of_base_name,
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
     get_re_pattern_for_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
-    potential_target_names_from_base_name,
     upsert_path_and_value,
     upsert_tree,
 )
@@ -326,7 +326,7 @@ def test_get_name_of_group_by_id_fails(
         ),
     ],
 )
-def test_potential_target_names_from_base_name(
+def test_all_variations_of_base_name(
     base_name,
     supported_time_conversions,
     supported_groupings,
@@ -334,7 +334,7 @@ def test_potential_target_names_from_base_name(
     expected,
 ):
     assert (
-        potential_target_names_from_base_name(
+        all_variations_of_base_name(
             base_name=base_name,
             supported_time_conversions=supported_time_conversions,
             supported_groupings=supported_groupings,

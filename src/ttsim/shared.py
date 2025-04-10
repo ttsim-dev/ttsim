@@ -43,7 +43,7 @@ def get_re_pattern_for_time_units_and_groupings(
     """Get a regex pattern for time units and groupings.
 
     The pattern matches strings in any of these formats:
-    - <base_name>  (can contain underscores)
+    - <base_name>  (may contain underscores)
     - <base_name>_<time_unit>
     - <base_name>_<aggregation>
     - <base_name>_<time_unit>_<aggregation>
@@ -70,17 +70,17 @@ def get_re_pattern_for_time_units_and_groupings(
     )
 
 
-def potential_target_names_from_base_name(
+def all_variations_of_base_name(
     base_name: str,
     supported_time_conversions: list[str],
     supported_groupings: list[str],
     create_conversions_for_time_units: bool,
 ) -> set[str]:
-    """Get all derived function names given a base function name.
+    """Get possible derived function names given a base function name.
 
     Examples
     --------
-    >>> potential_target_names_from_base_name(
+    >>> all_variations_of_base_name(
         base_name="income",
         supported_time_conversions=["y", "m"],
         supported_groupings=["hh"],
@@ -88,7 +88,7 @@ def potential_target_names_from_base_name(
     )
     {'income_m', 'income_y', 'income_hh_y', 'income_hh_m'}
 
-    >>> potential_target_names_from_base_name(
+    >>> all_variations_of_base_name(
         base_name="claims_benefits",
         supported_time_conversions=["y", "m"],
         supported_groupings=["hh"],
