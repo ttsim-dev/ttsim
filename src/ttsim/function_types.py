@@ -140,6 +140,7 @@ class PolicyFunction(TTSIMFunction):
     rounding_spec: RoundingSpec | None = None
 
     def __post_init__(self):
+        self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         self.function = (
             self.function if self.skip_vectorization else _vectorize_func(self.function)
         )
@@ -350,6 +351,12 @@ class DerivedAggregationFunction(TTSIMFunction):
         if self.aggregation_method is None:
             raise ValueError("The aggregation method must be specified.")
 
+        # Expose the signature of the wrapped function for dependency resolution
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
+        self.__signature__ = inspect.signature(self.function)
+
 
 @dataclass
 class DerivedTimeConversionFunction(TTSIMFunction):
@@ -379,6 +386,12 @@ class DerivedTimeConversionFunction(TTSIMFunction):
     def __post_init__(self):
         if self.source is None:
             raise ValueError("The source must be specified.")
+
+        # Expose the signature of the wrapped function for dependency resolution
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
+        self.__signature__ = inspect.signature(self.function)
 
 
 def _convert_and_validate_dates(

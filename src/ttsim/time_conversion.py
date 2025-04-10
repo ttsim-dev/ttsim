@@ -7,7 +7,10 @@ import dags.tree as dt
 from dags import rename_arguments
 
 from _gettsim.config import SUPPORTED_GROUPINGS
-from ttsim.function_types import DerivedTimeConversionFunction, TTSIMObject
+from ttsim.function_types import (
+    DerivedTimeConversionFunction,
+    TTSIMFunction,
+)
 from ttsim.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
@@ -17,7 +20,7 @@ if TYPE_CHECKING:
     import re
     from collections.abc import Callable
 
-    from ttsim.typing import QualNameDataDict, QualNameTTSIMObjectDict
+    from ttsim.typing import QualNameDataDict, QualNameTTSIMFunctionDict
 
 TIME_UNITS = {
     "y": "year",
@@ -378,9 +381,9 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    ttsim_objects: QualNameTTSIMObjectDict,
+    functions: QualNameTTSIMFunctionDict,
     data: QualNameDataDict,
-) -> QualNameTTSIMObjectDict:
+) -> QualNameTTSIMFunctionDict:
     """
      Create functions that convert variables to different time units.
 
@@ -420,7 +423,7 @@ def create_time_conversion_functions(
 
     converted_ttsim_objects = {}
 
-    for source_name, ttsim_object in ttsim_objects.items():
+    for source_name, ttsim_object in functions.items():
         all_time_units = tuple(TIME_UNITS)
         pattern_all = get_re_pattern_for_all_time_units_and_groupings(
             supported_groupings=SUPPORTED_GROUPINGS,
@@ -429,19 +432,19 @@ def create_time_conversion_functions(
         pattern_specific = pattern_all.fullmatch(source_name)
         base_name = pattern_specific.group("base_name")
 
-        # If base_name is in data, base time conversions on this.
         for data_name in data:
+            # If base_name is in provided data, base time conversions on that.
             if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=base_name,
                 supported_time_units=all_time_units,
                 supported_groupings=SUPPORTED_GROUPINGS,
-            ):
-                source_name = pattern_specific.fullmatch(data_name)  # noqa: PLW2901
+            ).fullmatch(data_name):
+                source_name = data_name  # noqa: PLW2901
                 break
 
         all_time_conversions_for_this_function = _create_time_conversion_functions(
             source_name=source_name,
-            ttsim_object=ttsim_object,
+            function=ttsim_object,
             time_unit_pattern=pattern_all,
             all_time_units=all_time_units,
         )
@@ -456,7 +459,7 @@ def create_time_conversion_functions(
 
 def _create_time_conversion_functions(
     source_name: str,
-    ttsim_object: TTSIMObject,
+    function: TTSIMFunction,
     time_unit_pattern: re.Pattern,
     all_time_units: tuple[str, ...],
 ) -> dict[str, DerivedTimeConversionFunction]:
@@ -465,9 +468,7 @@ def _create_time_conversion_functions(
     base_name = match.group("base_name")
     time_unit = match.group("time_unit") or ""
     aggregation = match.group("aggregation") or ""
-    dependencies = (
-        set(inspect.signature(ttsim_object).parameters) if ttsim_object else set()
-    )
+    dependencies = set(inspect.signature(function).parameters) if function else set()
 
     if match and time_unit:
         missing_time_units = [unit for unit in all_time_units if unit != time_unit]
@@ -499,8 +500,8 @@ def _create_time_conversion_functions(
                     ],
                 ),
                 source=source_name,
-                start_date=ttsim_object.start_date,
-                end_date=ttsim_object.end_date,
+                start_date=function.start_date,
+                end_date=function.end_date,
             )
 
     return result
