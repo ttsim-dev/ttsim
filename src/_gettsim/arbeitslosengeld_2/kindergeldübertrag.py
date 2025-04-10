@@ -161,7 +161,7 @@ def differenz_kindergeld_kindbedarf_m(  # noqa: PLR0913
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="not_required")
 def in_anderer_bg_als_kindergeldempfänger(
     p_id: numpy.ndarray[int],
     kindergeld__p_id_empfänger: numpy.ndarray[int],
