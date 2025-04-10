@@ -33,7 +33,7 @@ from ttsim.shared import (
     format_list_linewise,
     get_name_of_group_by_id,
     get_names_of_arguments_without_defaults,
-    get_re_pattern_for_time_units_and_groupings,
+    get_re_pattern_for_all_time_units_and_groupings,
     merge_trees,
     partition_by_reference_dict,
 )
@@ -193,12 +193,12 @@ def _get_top_level_namespace(
     direct_top_level_names = set(environment.raw_objects_tree.keys()) | set(
         environment.aggregation_specs_tree.keys()
     )
-    all_top_level_names = set()
-    re_pattern = get_re_pattern_for_time_units_and_groupings(
+    re_pattern = get_re_pattern_for_all_time_units_and_groupings(
         supported_groupings=supported_groupings,
         supported_time_units=supported_time_conversions,
     )
 
+    all_top_level_names = set()
     for name in direct_top_level_names:
         match = re_pattern.fullmatch(name)
         function_base_name = match.group("base_name")

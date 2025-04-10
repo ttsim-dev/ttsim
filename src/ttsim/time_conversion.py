@@ -9,8 +9,8 @@ from dags import rename_arguments
 from _gettsim.config import SUPPORTED_GROUPINGS
 from ttsim.function_types import DerivedTimeConversionFunction, TTSIMObject
 from ttsim.shared import (
-    get_re_pattern_for_some_base_name,
-    get_re_pattern_for_time_units_and_groupings,
+    get_re_pattern_for_all_time_units_and_groupings,
+    get_re_pattern_for_specific_time_units_and_groupings,
 )
 
 if TYPE_CHECKING:
@@ -422,29 +422,27 @@ def create_time_conversion_functions(
 
     for source_name, ttsim_object in ttsim_objects.items():
         all_time_units = tuple(TIME_UNITS)
-        time_unit_pattern = get_re_pattern_for_time_units_and_groupings(
+        pattern_all = get_re_pattern_for_all_time_units_and_groupings(
             supported_groupings=SUPPORTED_GROUPINGS,
             supported_time_units=all_time_units,
         )
-        match = time_unit_pattern.fullmatch(source_name)
-        base_name = match.group("base_name")
+        pattern_specific = pattern_all.fullmatch(source_name)
+        base_name = pattern_specific.group("base_name")
 
-        # If base_name is in data, make all time conversion depend on it instead of the
-        # function
+        # If base_name is in data, base time conversions on this.
         for data_name in data:
-            match = get_re_pattern_for_some_base_name(
+            if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=base_name,
                 supported_time_units=all_time_units,
                 supported_groupings=SUPPORTED_GROUPINGS,
-            ).fullmatch(data_name)
-            if match:
-                source_name = data_name  # noqa: PLW2901
+            ):
+                source_name = pattern_specific.fullmatch(data_name)  # noqa: PLW2901
                 break
 
         all_time_conversions_for_this_function = _create_time_conversion_functions(
             source_name=source_name,
             ttsim_object=ttsim_object,
-            time_unit_pattern=time_unit_pattern,
+            time_unit_pattern=pattern_all,
             all_time_units=all_time_units,
         )
         for der_name, der_func in all_time_conversions_for_this_function.items():

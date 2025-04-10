@@ -37,7 +37,7 @@ def validate_date_range(start: datetime.date, end: datetime.date):
         raise ValueError(f"The start date {start} must be before the end date {end}.")
 
 
-def get_re_pattern_for_time_units_and_groupings(
+def get_re_pattern_for_all_time_units_and_groupings(
     supported_groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
 ) -> re.Pattern:
     """Get a regex pattern for time units and groupings.
@@ -70,8 +70,10 @@ def get_re_pattern_for_time_units_and_groupings(
     )
 
 
-def get_re_pattern_for_some_base_name(
-    base_name: str, supported_time_units: list[str], supported_groupings: list[str]
+def get_re_pattern_for_specific_time_units_and_groupings(
+    base_name: str,
+    supported_time_units: tuple[str, ...],
+    supported_groupings: tuple[str, ...],
 ) -> re.Pattern:
     """Get a regex for a specific base name with optional time unit and aggregation.
 

@@ -6,8 +6,8 @@ from ttsim.shared import (
     all_variations_of_base_name,
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
-    get_re_pattern_for_some_base_name,
-    get_re_pattern_for_time_units_and_groupings,
+    get_re_pattern_for_all_time_units_and_groupings,
+    get_re_pattern_for_specific_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
@@ -372,7 +372,7 @@ def test_get_re_pattern_for_time_units_and_groupings(
     expected_time_unit,
     expected_aggregation,
 ):
-    result = get_re_pattern_for_time_units_and_groupings(
+    result = get_re_pattern_for_all_time_units_and_groupings(
         supported_time_units=supported_time_units,
         supported_groupings=supported_groupings,
     )
@@ -398,7 +398,7 @@ def test_get_re_pattern_for_time_units_and_groupings(
 def test_get_re_pattern_for_some_base_name(
     base_name, supported_time_units, supported_groupings, expected_match
 ):
-    re_pattern = get_re_pattern_for_some_base_name(
+    re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
         base_name=base_name,
         supported_time_units=supported_time_units,
         supported_groupings=supported_groupings,
