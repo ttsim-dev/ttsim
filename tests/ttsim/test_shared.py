@@ -3,8 +3,11 @@ from dataclasses import dataclass
 import pytest
 
 from ttsim.shared import (
+    all_variations_of_base_name,
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
+    get_re_pattern_for_all_time_units_and_groupings,
+    get_re_pattern_for_specific_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
@@ -283,3 +286,121 @@ def test_get_name_of_group_by_id_fails(
         get_name_of_group_by_id(
             target_name=target_name, group_by_functions=group_by_functions
         )
+
+
+@pytest.mark.parametrize(
+    (
+        "base_name",
+        "supported_time_conversions",
+        "supported_groupings",
+        "create_conversions_for_time_units",
+        "expected",
+    ),
+    [
+        (
+            "income",
+            ["y", "m"],
+            ["hh"],
+            True,
+            {"income_m", "income_y", "income_m_hh", "income_y_hh"},
+        ),
+        (
+            "income",
+            ["y", "m"],
+            ["hh", "x"],
+            True,
+            {
+                "income_m",
+                "income_y",
+                "income_m_hh",
+                "income_y_hh",
+                "income_m_x",
+                "income_y_x",
+            },
+        ),
+        (
+            "claims_benefits",
+            ["y", "m"],
+            ["hh", "x"],
+            False,
+            {"claims_benefits", "claims_benefits_hh", "claims_benefits_x"},
+        ),
+    ],
+)
+def test_all_variations_of_base_name(
+    base_name,
+    supported_time_conversions,
+    supported_groupings,
+    create_conversions_for_time_units,
+    expected,
+):
+    assert (
+        all_variations_of_base_name(
+            base_name=base_name,
+            supported_time_conversions=supported_time_conversions,
+            supported_groupings=supported_groupings,
+            create_conversions_for_time_units=create_conversions_for_time_units,
+        )
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    (
+        "func_name",
+        "supported_time_units",
+        "supported_groupings",
+        "expected_base_name",
+        "expected_time_unit",
+        "expected_aggregation",
+    ),
+    [
+        ("foo", ("m", "y"), ["hh"], "foo", None, None),
+        ("foo_m_hh", ("m", "y"), ["hh"], "foo", "m", "hh"),
+        ("foo_y_hh", ("m", "y"), ["hh"], "foo", "y", "hh"),
+        ("foo_m", ("m", "y"), ["hh"], "foo", "m", None),
+        ("foo_y", ("m", "y"), ["hh"], "foo", "y", None),
+        ("foo_hh", ("m", "y"), ["hh"], "foo", None, "hh"),
+        ("foo_hh_bar", ("m", "y"), ["hh"], "foo_hh_bar", None, None),
+    ],
+)
+def test_get_re_pattern_for_time_units_and_groupings(
+    func_name,
+    supported_time_units,
+    supported_groupings,
+    expected_base_name,
+    expected_time_unit,
+    expected_aggregation,
+):
+    result = get_re_pattern_for_all_time_units_and_groupings(
+        supported_time_units=supported_time_units,
+        supported_groupings=supported_groupings,
+    )
+    match = result.fullmatch(func_name)
+    assert match.group("base_name") == expected_base_name
+    assert match.group("time_unit") == expected_time_unit
+    assert match.group("aggregation") == expected_aggregation
+
+
+@pytest.mark.parametrize(
+    (
+        "base_name",
+        "supported_time_units",
+        "supported_groupings",
+        "expected_match",
+    ),
+    [
+        ("foo", ["m", "y"], ["hh"], "foo_m_hh"),
+        ("foo", ["m", "y"], ["hh", "x"], "foo_m"),
+        ("foo", ["m", "y"], ["hh", "x"], "foo_hh"),
+    ],
+)
+def test_get_re_pattern_for_some_base_name(
+    base_name, supported_time_units, supported_groupings, expected_match
+):
+    re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
+        base_name=base_name,
+        supported_time_units=supported_time_units,
+        supported_groupings=supported_groupings,
+    )
+    assert re_pattern.fullmatch(expected_match)

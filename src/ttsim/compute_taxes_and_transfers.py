@@ -13,6 +13,7 @@ import pandas as pd
 from _gettsim.config import (
     DEFAULT_TARGETS,
     FOREIGN_KEYS,
+    SUPPORTED_GROUPINGS,
 )
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
@@ -26,14 +27,17 @@ from ttsim.function_types import (
 )
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
+    all_variations_of_base_name,
     assert_valid_ttsim_pytree,
     format_errors_and_warnings,
     format_list_linewise,
     get_name_of_group_by_id,
     get_names_of_arguments_without_defaults,
+    get_re_pattern_for_all_time_units_and_groupings,
     merge_trees,
     partition_by_reference_dict,
 )
+from ttsim.time_conversion import TIME_UNITS
 from ttsim.typing import (
     check_series_has_expected_type,
     convert_series_to_internal_type,
@@ -45,6 +49,7 @@ if TYPE_CHECKING:
         NestedTargetDict,
         QualNameDataDict,
         QualNameTargetList,
+        QualNameTTSIMFunctionDict,
         QualNameTTSIMObjectDict,
     )
 
@@ -88,8 +93,10 @@ def compute_taxes_and_transfers(
     _fail_if_environment_not_valid(environment)
 
     # Transform functions tree to qualified names dict with qualified arguments
-    top_level_namespace = set(environment.raw_objects_tree.keys()) | set(
-        environment.aggregation_specs_tree.keys()
+    top_level_namespace = _get_top_level_namespace(
+        environment=environment,
+        supported_time_conversions=tuple(TIME_UNITS.keys()),
+        supported_groupings=tuple(SUPPORTED_GROUPINGS.keys()),
     )
     functions = dt.functions_without_tree_logic(
         functions=environment.functions_tree, top_level_namespace=top_level_namespace
@@ -131,7 +138,7 @@ def compute_taxes_and_transfers(
 
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
-        data=data_with_correct_types,
+        data=data,
         functions=functions_with_partialled_parameters,
         targets=targets,
     )
@@ -164,6 +171,48 @@ def compute_taxes_and_transfers(
         )
 
     return result_tree
+
+
+def _get_top_level_namespace(
+    environment: PolicyEnvironment,
+    supported_time_conversions: tuple[str, ...],
+    supported_groupings: tuple[str, ...],
+) -> set[str]:
+    """Get the top level namespace.
+
+    Parameters
+    ----------
+    environment:
+        The policy environment.
+
+    Returns
+    -------
+    top_level_namespace:
+        The top level namespace.
+    """
+    direct_top_level_names = set(environment.raw_objects_tree.keys()) | set(
+        environment.aggregation_specs_tree.keys()
+    )
+    re_pattern = get_re_pattern_for_all_time_units_and_groupings(
+        supported_groupings=supported_groupings,
+        supported_time_units=supported_time_conversions,
+    )
+
+    all_top_level_names = set()
+    for name in direct_top_level_names:
+        match = re_pattern.fullmatch(name)
+        base_name = match.group("base_name")
+        create_conversions_for_time_units = bool(match.group("time_unit"))
+
+        all_top_level_names_for_name = all_variations_of_base_name(
+            base_name=base_name,
+            supported_time_conversions=supported_time_conversions,
+            supported_groupings=supported_groupings,
+            create_conversions_for_time_units=create_conversions_for_time_units,
+        )
+        all_top_level_names.update(all_top_level_names_for_name)
+
+    return all_top_level_names
 
 
 def _convert_data_to_correct_types(

@@ -16,6 +16,7 @@ from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_pid_is_non_unique,
+    _get_top_level_namespace,
     _partial_parameters_to_functions,
     compute_taxes_and_transfers,
 )
@@ -699,3 +700,58 @@ def test_fail_if_cannot_be_converted_to_correct_type(
 def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     with pytest.raises(TypeError, match=re.escape(err_substr)):
         assert_valid_ttsim_pytree(tree, leaf_checker, "tree")
+
+
+@pytest.mark.parametrize(
+    (
+        "environment",
+        "supported_time_conversions",
+        "supported_groupings",
+        "expected",
+    ),
+    [
+        (
+            PolicyEnvironment(
+                raw_objects_tree={
+                    "foo_m": policy_function(leaf_name="foo_m")(lambda x: x)
+                },
+                aggregation_specs_tree={},
+            ),
+            ["m", "y"],
+            ["hh"],
+            {"foo_m", "foo_y", "foo_m_hh", "foo_y_hh"},
+        ),
+        (
+            PolicyEnvironment(
+                raw_objects_tree={"foo": policy_function(leaf_name="foo")(lambda x: x)},
+                aggregation_specs_tree={},
+            ),
+            ["m", "y"],
+            ["hh"],
+            {"foo", "foo_hh"},
+        ),
+        (
+            PolicyEnvironment(
+                raw_objects_tree={},
+                aggregation_specs_tree={
+                    "foo_hh": AggregateByGroupSpec(
+                        source="foo",
+                        aggr=AggregationType.SUM,
+                    ),
+                },
+            ),
+            ["m", "y"],
+            ["hh"],
+            {"foo", "foo_hh"},
+        ),
+    ],
+)
+def test_get_top_level_namespace(
+    environment, supported_time_conversions, supported_groupings, expected
+):
+    result = _get_top_level_namespace(
+        environment=environment,
+        supported_time_conversions=supported_time_conversions,
+        supported_groupings=supported_groupings,
+    )
+    assert result == expected

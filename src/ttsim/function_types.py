@@ -379,8 +379,6 @@ class DerivedTimeConversionFunction(TTSIMFunction):
     def __post_init__(self):
         if self.source is None:
             raise ValueError("The source must be specified.")
-        if self.conversion_target is None:
-            raise ValueError("The conversion target must be specified.")
 
 
 def _convert_and_validate_dates(

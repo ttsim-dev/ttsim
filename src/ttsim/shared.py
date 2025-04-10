@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import itertools
 import re
 import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -34,6 +35,132 @@ def validate_dashed_iso_date(date: str | datetime.date):
 def validate_date_range(start: datetime.date, end: datetime.date):
     if start > end:
         raise ValueError(f"The start date {start} must be before the end date {end}.")
+
+
+def get_re_pattern_for_all_time_units_and_groupings(
+    supported_groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
+) -> re.Pattern:
+    """Get a regex pattern for time units and groupings.
+
+    The pattern matches strings in any of these formats:
+    - <base_name>  (may contain underscores)
+    - <base_name>_<time_unit>
+    - <base_name>_<aggregation>
+    - <base_name>_<time_unit>_<aggregation>
+
+    Parameters
+    ----------
+    supported_groupings
+        The supported groupings.
+    supported_time_units
+        The supported time units.
+
+    Returns
+    -------
+    pattern
+        The regex pattern.
+    """
+    units = "".join(supported_time_units)
+    groupings = "|".join(supported_groupings)
+    return re.compile(
+        f"(?P<base_name>.*?)"
+        f"(?:_(?P<time_unit>[{units}]))?"
+        f"(?:_(?P<aggregation>{groupings}))?"
+        f"$"
+    )
+
+
+def get_re_pattern_for_specific_time_units_and_groupings(
+    base_name: str,
+    supported_time_units: tuple[str, ...],
+    supported_groupings: tuple[str, ...],
+) -> re.Pattern:
+    """Get a regex for a specific base name with optional time unit and aggregation.
+
+    The pattern matches strings in any of these formats:
+    - <specific_base_name>
+    - <specific_base_name>_<time_unit>
+    - <specific_base_name>_<aggregation>
+    - <specific_base_name>_<time_unit>_<aggregation>
+
+    Parameters
+    ----------
+    base_name
+        The specific base name to match.
+    supported_time_units
+        The supported time units.
+    supported_groupings
+        The supported groupings.
+
+    Returns
+    -------
+    pattern
+        The regex pattern.
+    """
+    units = "".join(supported_time_units)
+    groupings = "|".join(supported_groupings)
+    return re.compile(
+        f"(?P<base_name>{re.escape(base_name)})"
+        f"(?:_(?P<time_unit>[{units}]))?"
+        f"(?:_(?P<aggregation>{groupings}))?"
+        f"$"
+    )
+
+
+def all_variations_of_base_name(
+    base_name: str,
+    supported_time_conversions: list[str],
+    supported_groupings: list[str],
+    create_conversions_for_time_units: bool,
+) -> set[str]:
+    """Get possible derived function names given a base function name.
+
+    Examples
+    --------
+    >>> all_variations_of_base_name(
+        base_name="income",
+        supported_time_conversions=["y", "m"],
+        supported_groupings=["hh"],
+        create_conversions_for_time_units=True,
+    )
+    {'income_m', 'income_y', 'income_hh_y', 'income_hh_m'}
+
+    >>> all_variations_of_base_name(
+        base_name="claims_benefits",
+        supported_time_conversions=["y", "m"],
+        supported_groupings=["hh"],
+        create_conversions_for_time_units=False,
+    )
+    {'claims_benefits_hh'}
+
+    Parameters
+    ----------
+    base_name
+        The base function name.
+    supported_time_conversions
+        The supported time conversions.
+    supported_groupings
+        The supported groupings.
+    create_conversions_for_time_units
+        Whether to create conversions for time units.
+
+    Returns
+    -------
+    The names of all potential targets based on the base name.
+    """
+    result = set()
+    if create_conversions_for_time_units:
+        for time_unit in supported_time_conversions:
+            result.add(f"{base_name}_{time_unit}")
+        for time_unit, aggregation in itertools.product(
+            supported_time_conversions, supported_groupings
+        ):
+            result.add(f"{base_name}_{time_unit}_{aggregation}")
+    else:
+        result.add(base_name)
+        for aggregation in supported_groupings:
+            result.add(f"{base_name}_{aggregation}")
+    return result
 
 
 class KeyErrorMessage(str):
