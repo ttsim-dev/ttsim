@@ -81,7 +81,7 @@ def minijob_grenze_fixer_betrag(sozialv_beitr_params: dict) -> float:
     -------
 
     """
-    return float(sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"])
+    return sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]
 
 
 @policy_function(
