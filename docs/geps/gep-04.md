@@ -312,8 +312,8 @@ The implementation is similar to aggregations to the level of groupings: In orde
 specify new aggregation functions, scripts with functions of the taxes and transfer
 system should define a dictionary `aggregation_specs` at the module level. This
 dictionary must specify the aggregated columns as keys and the `AggregateByPIDSpec` data
-class as values. The class specifies the `source`, `p_id_to_aggregate_by`, and `agg`.
-If `agg` is `count`, `source` is not needed.
+class as values. The class specifies the `source`, `p_id_to_aggregate_by`, and `agg`. If
+`agg` is `count`, `source` is not needed.
 
 The key `source` specifies which column is the source of the aggregation operation. The
 key `p_id_to_aggregate_by` specifies the column that indicates to which `p_id` the
