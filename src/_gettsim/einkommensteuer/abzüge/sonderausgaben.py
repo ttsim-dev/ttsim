@@ -7,13 +7,14 @@ from ttsim import (
     policy_function,
 )
 
-aggregation_specs = {
-    "betreuungskosten_elternteil_m": AggregateByPIDSpec(
-        p_id_to_aggregate_by="p_id_betreuungskosten_träger",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="betreuungskosten_elternteil_m",
         source="betreuungskosten_m",
+        p_id_to_aggregate_by="p_id_betreuungskosten_träger",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(end_date="2011-12-31", leaf_name="sonderausgaben_y_sn")

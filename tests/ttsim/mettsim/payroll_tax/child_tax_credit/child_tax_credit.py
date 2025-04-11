@@ -1,12 +1,13 @@
-from ttsim import AggregateByPIDSpec, join_numpy, policy_function
+from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
 
-aggregation_specs = {
-    "amount_y": AggregateByPIDSpec(
-        p_id_to_aggregate_by="recipient_id",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="amount_y",
         source="claim_of_child_y",
-        aggr="sum",
+        p_id_to_aggregate_by="recipient_id",
+        aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function()

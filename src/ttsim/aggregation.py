@@ -48,13 +48,14 @@ class AggregationType(StrEnum):
 
 
 @dataclass
-class AggregateByGroupSpec:
+class AggregateSpec:
     """
     A container for aggregate by group specifications.
     """
 
+    target: str
+    source: str | None
     aggr: AggregationType
-    source: str | None = None
     _agg_func: Callable = field(init=False)
 
     def __post_init__(self):
@@ -64,8 +65,16 @@ class AggregateByGroupSpec:
             )
 
         if self.aggr == AggregationType.COUNT and self.source is not None:
-            raise ValueError("COUNT aggregation cannot use a source.")
+            raise ValueError("COUNT aggregation must not provide a source.")
 
+
+@dataclass
+class AggregateByGroupSpec(AggregateSpec):
+    """
+    A container for aggregate by group specifications.
+    """
+
+    def __post_init__(self):
         aggregation_registry = {
             AggregationType.SUM: grouped_sum,
             AggregationType.MEAN: grouped_mean,
@@ -92,14 +101,41 @@ class AggregateByGroupSpec:
 
 
 @dataclass
-class AggregateByPIDSpec:
+class AggregateByPIDSpec(AggregateSpec):
     """
     A container for aggregate by p_id specifications.
     """
 
-    p_id_to_aggregate_by: str
-    source: str
-    aggr: AggregationType
+    p_id_to_aggregate_by: int
+
+    def __post_init__(self):
+        aggregation_registry = {
+            AggregationType.SUM: sum_by_p_id,
+            AggregationType.MEAN: mean_by_p_id,
+            AggregationType.MAX: max_by_p_id,
+            AggregationType.MIN: min_by_p_id,
+            AggregationType.ANY: any_by_p_id,
+            AggregationType.ALL: all_by_p_id,
+            AggregationType.COUNT: count_by_p_id,
+        }
+
+        func = aggregation_registry.get(self.aggr)
+        if func is None:
+            raise ValueError(f"Aggregation type {self.aggr} not implemented")
+
+        self._agg_func = func
+
+    def agg_func(self, source, p_id_to_aggregate_by):
+        return self._agg_func(source, p_id_to_aggregate_by)
+
+    @property
+    def mapper(self):
+        if self.aggr == AggregationType.COUNT:
+            return {"p_id_to_aggregate_by": self.p_id_to_aggregate_by}
+        return {
+            "source": self.source,
+            "p_id_to_aggregate_by": self.p_id_to_aggregate_by,
+        }
 
 
 def grouped_count(group_id):

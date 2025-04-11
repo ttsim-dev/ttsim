@@ -10,13 +10,14 @@ from ttsim import (
     policy_function,
 )
 
-aggregation_specs = {
-    "an_elternteil_auszuzahlender_betrag_m": AggregateByPIDSpec(
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="an_elternteil_auszuzahlender_betrag_m",
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
         source="betrag_m",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(

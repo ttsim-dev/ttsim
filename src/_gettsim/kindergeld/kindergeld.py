@@ -4,13 +4,14 @@ import numpy
 
 from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
 
-aggregation_specs = {
-    "anzahl_ansprüche": AggregateByPIDSpec(
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="anzahl_ansprüche",
         p_id_to_aggregate_by="p_id_empfänger",
         source="grundsätzlich_anspruchsberechtigt",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(start_date="2023-01-01", leaf_name="betrag_m")

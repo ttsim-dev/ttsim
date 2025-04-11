@@ -4,9 +4,11 @@ import numpy
 
 from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
-aggregation_specs = {
-    "anzahl_personen_wthh": AggregateByGroupSpec(aggr=AggregationType.COUNT),
-}
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_personen_wthh", source=None, aggr=AggregationType.COUNT
+    ),
+)
 
 
 @group_by_function()

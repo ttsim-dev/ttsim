@@ -8,18 +8,20 @@ from ttsim import (
     policy_function,
 )
 
-aggregation_specs = {
-    "anzahl_kindergeld_ansprüche_1": AggregateByPIDSpec(
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="anzahl_kindergeld_ansprüche_1",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         p_id_to_aggregate_by="familie__p_id_elternteil_1",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr=AggregationType.SUM,
     ),
-    "anzahl_kindergeld_ansprüche_2": AggregateByPIDSpec(
+    AggregateByPIDSpec(
+        target="anzahl_kindergeld_ansprüche_2",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         p_id_to_aggregate_by="familie__p_id_elternteil_2",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(

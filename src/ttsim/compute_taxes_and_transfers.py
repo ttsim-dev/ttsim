@@ -49,6 +49,7 @@ if TYPE_CHECKING:
         NestedDataDict,
         NestedTargetDict,
         QualNameDataDict,
+        QualNamePolicyInputDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
     )
@@ -102,8 +103,8 @@ def compute_taxes_and_transfers(
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
     aggregation_specs = dt.flatten_to_qual_names(environment.aggregation_specs_tree)
-    functions = {}
-    inputs = {}
+    functions: QualNameTTSIMFunctionDict = {}
+    inputs: QualNamePolicyInputDict = {}
     for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
         if isinstance(f_or_i, TTSIMFunction):
             functions[name] = dt.one_function_without_tree_logic(
@@ -122,6 +123,7 @@ def compute_taxes_and_transfers(
         aggregation_specs_from_environment=aggregation_specs,
         targets=targets,
         data=data,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
 

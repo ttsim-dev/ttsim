@@ -4,13 +4,16 @@ import numpy
 
 from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
-aggregation_specs = {
-    "anzahl_personen_sn": AggregateByGroupSpec(aggr=AggregationType.COUNT),
-    "alleinerziehend_sn": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_personen_sn", source=None, aggr=AggregationType.COUNT
+    ),
+    AggregateByGroupSpec(
+        target="alleinerziehend_sn",
         source="familie__alleinerziehend",
         aggr=AggregationType.ANY,
     ),
-}
+)
 
 
 @group_by_function()

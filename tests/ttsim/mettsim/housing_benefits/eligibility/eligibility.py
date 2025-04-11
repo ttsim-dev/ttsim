@@ -11,12 +11,13 @@ Policy regime starting in 2020:
 
 from ttsim import AggregateByGroupSpec, AggregationType, policy_function
 
-aggregation_specs = {
-    "number_of_children_fam": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="number_of_children_fam",
         source="child",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(end_date="2019-12-31", leaf_name="requirement_fulfilled_fam")

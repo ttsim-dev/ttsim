@@ -7,13 +7,14 @@ from ttsim import (
     policy_function,
 )
 
-aggregation_specs = {
-    "anspruchshöhe_m": AggregateByPIDSpec(
-        p_id_to_aggregate_by="p_id_empfänger",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="anspruchshöhe_m",
         source="anspruchshöhe_kind_m",
+        p_id_to_aggregate_by="p_id_empfänger",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")

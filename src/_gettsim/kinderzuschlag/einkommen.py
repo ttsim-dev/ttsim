@@ -7,12 +7,13 @@ from ttsim import (
     policy_function,
 )
 
-aggregation_specs = {
-    "arbeitslosengeld_2__anzahl_kinder_bg": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="arbeitslosengeld_2__anzahl_kinder_bg",
         source="kindergeld__anzahl_ansprüche",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function()

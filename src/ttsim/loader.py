@@ -282,4 +282,5 @@ def _load_aggregation_specs_from_module(
     Loaded dictionaries.
     """
     module = _load_module(path, root_path)
-    return getattr(module, "aggregation_specs", {})
+    aggregation_specs = getattr(module, "aggregation_specs", ())
+    return {a_s.target: a_s for a_s in aggregation_specs}

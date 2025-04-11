@@ -8,13 +8,14 @@ from ttsim import (
 )
 from ttsim.config import numpy_or_jax as np
 
-aggregation_specs = {
-    "alleinerziehendenbonus": AggregateByPIDSpec(
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="alleinerziehendenbonus",
         source="kindergeld__kind_bis_10_mit_kindergeld",
+        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
         aggr=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function()
