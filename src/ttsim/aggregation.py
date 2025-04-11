@@ -92,6 +92,7 @@ class AggregateByGroupSpec(AggregateSpec):
         self._agg_func = func
 
     def agg_func(self, source, group_by_id):
+        # Need to leave this interface in order for renaming of arguments to work.
         return self._agg_func(source, group_by_id)
 
     def mapper(self, group_by_id):
@@ -106,7 +107,7 @@ class AggregateByPIDSpec(AggregateSpec):
     A container for aggregate by p_id specifications.
     """
 
-    p_id_to_aggregate_by: int
+    p_id_to_aggregate_by: str
 
     def __post_init__(self):
         aggregation_registry = {
@@ -125,16 +126,20 @@ class AggregateByPIDSpec(AggregateSpec):
 
         self._agg_func = func
 
-    def agg_func(self, source, p_id_to_aggregate_by):
-        return self._agg_func(source, p_id_to_aggregate_by)
+    def agg_func(self, source, p_id_to_aggregate_by, p_id_to_store_by):
+        # Need to leave this interface in order for renaming of arguments to work.
+        return self._agg_func(source, p_id_to_aggregate_by, p_id_to_store_by)
 
-    @property
     def mapper(self):
         if self.aggr == AggregationType.COUNT:
-            return {"p_id_to_aggregate_by": self.p_id_to_aggregate_by}
+            return {
+                "p_id_to_aggregate_by": self.p_id_to_aggregate_by,
+                "p_id_to_store_by": "p_id",
+            }
         return {
             "source": self.source,
             "p_id_to_aggregate_by": self.p_id_to_aggregate_by,
+            "p_id_to_store_by": "p_id",
         }
 
 

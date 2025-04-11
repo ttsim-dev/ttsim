@@ -20,6 +20,8 @@ from ttsim.aggregation import (
     sum_by_p_id,
 )
 from ttsim.function_types import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
     DerivedAggregationFunction,
     GroupByFunction,
 )
@@ -115,6 +117,7 @@ def combine_policy_functions_and_derived_functions(
 
 def _create_aggregate_by_group_functions(
     functions: QualNameTTSIMFunctionDict,
+    inputs: QualNamePolicyInputDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     aggregations_from_environment: QualNameAggregationSpecsDict,
@@ -124,6 +127,7 @@ def _create_aggregate_by_group_functions(
     # Create the aggregation functions that were explicitly specified.
     aggregation_functions_from_environment = _create_aggregation_functions(
         functions=functions,
+        inputs=inputs,
         aggregation_functions_to_create=aggregations_from_environment,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
@@ -143,6 +147,7 @@ def _create_aggregate_by_group_functions(
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
         functions=functions_with_aggregation_functions_from_environment,
+        inputs=inputs,
         aggregation_functions_to_create=derived_aggregation_specs,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
@@ -210,15 +215,14 @@ def _create_aggregation_functions(
                 )
                 raise ValueError(msg)
 
-            mapper_arg = group_by_id_name
-
+            mapper = aggregation_spec.mapper(group_by_id_name)
         else:
-            mapper_arg = aggregation_spec.p_id_to_aggregate_by
+            mapper = aggregation_spec.mapper()
 
         wrapped_func = dt.one_function_without_tree_logic(
             function=dags.rename_arguments(
                 func=aggregation_spec.agg_func,
-                mapper=aggregation_spec.mapper,
+                mapper=mapper,
             ),
             tree_path=dt.tree_path_from_qual_name(qual_name_target),
             top_level_namespace=top_level_namespace,
@@ -232,16 +236,29 @@ def _create_aggregation_functions(
             if aggregation_spec.source
             else None
         )
-        if qual_name_source is None:
-            wtf
-            breakpoint()
+        if qual_name_source in inputs:
+            start_date = inputs[qual_name_source].start_date
+            end_date = inputs[qual_name_source].end_date
         elif qual_name_source in functions:
             start_date = functions[qual_name_source].start_date
             end_date = functions[qual_name_source].end_date
-        elif qual_name_source in inputs:
-            start_date = inputs[qual_name_source].start_date
-            end_date = inputs[qual_name_source].end_date
+        elif qual_name_source is None:
+            # Case: count
+            start_date = DEFAULT_START_DATE
+            end_date = DEFAULT_END_DATE
+            # TODO(@hmgaudecker): We should get the start date and end date from the
+            # group_by_id_name / p_id_to_aggregate_by. But the attributes of the class
+            # are short names, not qualified names.
+            # if qual_name_source in inputs:
+            #     start_date = inputs[qual_name_source].start_date
+            #     end_date = inputs[qual_name_source].end_date
+            # elif qual_name_source in functions:
+            #     start_date = functions[qual_name_source].start_date
+            #     end_date = functions[qual_name_source].end_date
         else:
+            # We end up here if source is not available because of start and end dates.
+            print(f"Source {qual_name_source} not found in functions or inputs")
+            continue
             raise ValueError(
                 f"Source {qual_name_source} not found in functions or inputs"
             )
@@ -259,6 +276,7 @@ def _create_aggregation_functions(
 
     return _annotate_aggregation_functions(
         functions=functions,
+        inputs=inputs,
         aggregation_functions=aggregation_functions,
     )
 
@@ -322,6 +340,7 @@ def _create_derived_aggregations_specs(
 
         if aggregation_specs_needed:
             derived_aggregations_specs[target_name] = AggregateByGroupSpec(
+                target=target_name,
                 aggr=AggregationType.SUM,
                 source=_get_name_of_aggregation_source(
                     target_name=target_name,
@@ -556,6 +575,7 @@ def _create_one_aggregate_by_p_id_func(
 
 def _annotate_aggregation_functions(
     functions: QualNameTTSIMFunctionDict,
+    inputs: QualNamePolicyInputDict,
     aggregation_functions: QualNameTTSIMFunctionDict,
 ) -> QualNameTTSIMFunctionDict:
     """Annotate aggregation functions.
@@ -566,8 +586,9 @@ def _annotate_aggregation_functions(
     Parameters
     ----------
     functions
-        Dict with qualified function names as keys and functions with qualified
-        arguments as values.
+        Map qualified function names to functions.
+    inputs
+        Map qualified input names to policy inputs.
     aggregation_functions
         Dict with qualified aggregation function names as keys and aggregation functions
         as values.
@@ -585,6 +606,11 @@ def _annotate_aggregation_functions(
         annotations = {}
         if aggregation_method == "count":
             annotations["return"] = int
+        elif source in inputs:
+            annotations[source] = inputs[source].data_type
+            annotations["return"] = _select_return_type(
+                aggregation_method, annotations[source]
+            )
         elif source in functions:
             source_function = functions[source]
             if "return" in source_function.__annotations__:
@@ -597,11 +623,6 @@ def _annotate_aggregation_functions(
                 # of user-provided input variables are handled
                 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
                 pass
-        elif source in types_input_variables:
-            annotations[source] = types_input_variables[source]
-            annotations["return"] = _select_return_type(
-                aggregation_method, annotations[source]
-            )
         else:
             # TODO(@hmgaudecker): Think about how type annotations of aggregations of
             # user-provided input variables are handled

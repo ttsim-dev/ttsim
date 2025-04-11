@@ -349,10 +349,10 @@ class DerivedAggregationFunction(TTSIMFunction):
     ) = None
 
     def __post_init__(self):
-        if self.source is None:
-            raise ValueError("The source must be specified.")
         if self.aggregation_method is None:
             raise ValueError("The aggregation method must be specified.")
+        if self.source is None and self.aggregation_method != "count":
+            raise ValueError("The source must be specified.")
 
         # Expose the signature of the wrapped function for dependency resolution
         self.__annotations__ = self.function.__annotations__
