@@ -63,7 +63,7 @@ def einkommen_regulär_beschäftigt_m(
 
 
 @policy_function()
-def bemessungsgrundlage_selbstständig_m(  # noqa: PLR0913
+def bemessungsgrundlage_selbstständig_m(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     bezugsgröße_selbstständig_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,

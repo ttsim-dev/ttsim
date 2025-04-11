@@ -112,7 +112,7 @@ def nettoeinkommen_vor_abzug_freibetrag_m(
 
 
 @policy_function(vectorization_strategy="vectorize")
-def bruttoeinkommen_m(  # noqa: PLR0913
+def bruttoeinkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__sonstige__betrag_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
@@ -169,7 +169,7 @@ def bruttoeinkommen_m(  # noqa: PLR0913
 
 
 @policy_function(end_date="2005-09-30", vectorization_strategy="vectorize")
-def nettoquote_m(  # noqa: PLR0913
+def nettoquote_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__betrag_m_sn: float,
     solidaritätszuschlag__betrag_m_sn: float,

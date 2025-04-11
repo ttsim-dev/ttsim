@@ -80,7 +80,7 @@ def min_miete_m_hh(anzahl_personen_hh: int, wohngeld_params: dict) -> float:
 
 
 @policy_function(end_date="2008-12-31", leaf_name="miete_m_hh")
-def miete_m_hh_bis_2008(  # noqa: PLR0913
+def miete_m_hh_bis_2008(
     mietstufe: int,
     wohnen__baujahr_immobilie_hh: int,
     anzahl_personen_hh: int,

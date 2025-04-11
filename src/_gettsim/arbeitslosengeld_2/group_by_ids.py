@@ -82,7 +82,7 @@ def bg_id(
 
 
 @group_by_function()
-def fg_id(  # noqa: PLR0913 PLR0912
+def fg_id(  # noqa: PLR0912
     p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
     hh_id: numpy.ndarray[int],

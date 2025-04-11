@@ -4,7 +4,7 @@ from ttsim import policy_function
 
 
 @policy_function(start_date="2001-01-01")
-def betrag_m(  # noqa: PLR0913
+def betrag_m(
     zugangsfaktor: float,
     entgeltpunkte_west: float,
     entgeltpunkte_ost: float,
@@ -292,7 +292,7 @@ def zugangsfaktor(
 # TODO(@MImmesberger): Reuse Altersrente Wartezeiten for Erwerbsminderungsrente
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/838
 @policy_function(start_date="2001-01-01")
-def wartezeit_langjährig_versichert_erfüllt(  # noqa: PLR0913
+def wartezeit_langjährig_versichert_erfüllt(
     sozialversicherung__rente__pflichtbeitragsmonate: float,
     sozialversicherung__rente__freiwillige_beitragsmonate: float,
     sozialversicherung__rente__anrechnungsmonate_45_jahre_wartezeit: float,
