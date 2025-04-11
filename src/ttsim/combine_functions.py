@@ -118,6 +118,7 @@ def _create_aggregate_by_group_functions(
 ) -> QualNameTTSIMFunctionDict:
     """Create aggregation functions."""
     # Create the aggregation functions that were explicitly specified.
+
     aggregation_functions_from_environment = _create_aggregation_functions(
         functions=functions,
         inputs=inputs,
@@ -199,27 +200,26 @@ def _create_aggregation_functions(
                 target_name=qual_name_target,
                 group_by_functions=group_by_functions,
             )
+            if not group_by_id_name:
+                msg = format_errors_and_warnings(
+                    "Name of aggregated column needs to have a suffix "
+                    "indicating the group over which it is aggregated. "
+                    f"{dt.tree_path_from_qual_name(qual_name_target)} does not do so."
+                )
+                raise ValueError(msg)
 
-            derived_func = _create_one_aggregation_function(
-                aggregation_target=qual_name_target,
-                aggregation_spec=aggregation_spec,
-                aggregation_type="group",
-                group_by_id=group_by_id_name,
-                functions=functions,
-                inputs=inputs,
-                top_level_namespace=top_level_namespace,
-            )
         else:
-            derived_func = _create_one_aggregation_function(
-                aggregation_target=qual_name_target,
-                aggregation_spec=aggregation_spec,
-                aggregation_type="p_id",
-                group_by_id=None,
-                functions=functions,
-                inputs=inputs,
-                top_level_namespace=top_level_namespace,
-            )
+            group_by_id_name = None
 
+        derived_func = _create_one_aggregation_function(
+            aggregation_target=qual_name_target,
+            aggregation_spec=aggregation_spec,
+            aggregation_type=aggregation_type,
+            group_by_id=group_by_id_name,
+            functions=functions,
+            inputs=inputs,
+            top_level_namespace=top_level_namespace,
+        )
         if derived_func is not None:
             aggregation_functions[qual_name_target] = derived_func
 
@@ -238,7 +238,7 @@ def _create_one_aggregation_function(
     functions: QualNameTTSIMFunctionDict,
     inputs: QualNamePolicyInputDict,
     top_level_namespace: set[str],
-) -> DerivedAggregationFunction:
+) -> DerivedAggregationFunction | None:
     """Create a single aggregation function.
 
     Parameters
@@ -263,13 +263,6 @@ def _create_one_aggregation_function(
     The derived aggregation function.
     """
     if aggregation_type == "group":
-        if not group_by_id:
-            msg = format_errors_and_warnings(
-                "Name of aggregated column needs to have a suffix "
-                "indicating the group over which it is aggregated. "
-                f"{dt.tree_path_from_qual_name(aggregation_target)} does not do so."
-            )
-            raise ValueError(msg)
         mapper = aggregation_spec.mapper(group_by_id)
     else:
         mapper = aggregation_spec.mapper()

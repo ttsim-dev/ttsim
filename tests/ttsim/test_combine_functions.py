@@ -36,6 +36,16 @@ def x() -> int:
     pass
 
 
+@policy_input()
+def p_id() -> int:
+    pass
+
+
+@policy_input()
+def hh_id() -> int:
+    pass
+
+
 @pytest.fixture
 @policy_function(leaf_name="bar")
 def function_with_int_return(x: int) -> int:
@@ -59,10 +69,12 @@ def function_with_float_return(x: int) -> float:
         (
             # Aggregations derived from simple function arguments
             {
+                "hh_id": hh_id,
+                "p_id": p_id,
                 "namespace1": {
                     "f": policy_function(leaf_name="f")(lambda x_hh: x_hh),
                     "x": x,
-                }
+                },
             },
             {"namespace1": {"f": None}},
             {
@@ -75,6 +87,8 @@ def function_with_float_return(x: int) -> float:
         (
             # Aggregations derived from namespaced function arguments
             {
+                "hh_id": hh_id,
+                "p_id": p_id,
                 "namespace1": {
                     "f": policy_function(leaf_name="f")(
                         lambda inputs__x_hh: inputs__x_hh
@@ -93,10 +107,12 @@ def function_with_float_return(x: int) -> float:
         (
             # Aggregations derived from target
             {
+                "hh_id": hh_id,
+                "p_id": p_id,
                 "namespace1": {
                     "f": policy_function(leaf_name="f")(lambda x: x),
                     "x": x,
-                }
+                },
             },
             {"namespace1": {"f_hh": None}},
             {
@@ -109,10 +125,12 @@ def function_with_float_return(x: int) -> float:
         (
             # Aggregations derived from simple environment specification
             {
+                "hh_id": hh_id,
+                "p_id": p_id,
                 "namespace1": {
                     "f": policy_function(leaf_name="f")(lambda y_hh: y_hh),
                     "x": x,
-                }
+                },
             },
             {"namespace1": {"f": None}},
             {
@@ -121,18 +139,20 @@ def function_with_float_return(x: int) -> float:
                 "p_id": pd.Series([0, 1, 2]),
             },
             {
-                "namespace1": (
-                    AggregateByGroupSpec(
+                "namespace1": {
+                    "y_hh": AggregateByGroupSpec(
                         target="y_hh",
                         source="x",
                         agg=AggregationType.SUM,
-                    ),
-                ),
+                    )
+                },
             },
         ),
         (
             # Aggregations derived from namespaced environment specification
             {
+                "hh_id": hh_id,
+                "p_id": p_id,
                 "namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)},
                 "inputs": {"x": x},
             },
@@ -143,13 +163,13 @@ def function_with_float_return(x: int) -> float:
                 "p_id": pd.Series([0, 1, 2]),
             },
             {
-                "namespace1": (
-                    AggregateByGroupSpec(
+                "namespace1": {
+                    "y_hh": AggregateByGroupSpec(
                         target="y_hh",
                         source="inputs__x",
                         agg=AggregationType.SUM,
-                    ),
-                ),
+                    )
+                },
             },
         ),
     ],
@@ -453,8 +473,13 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
 
 
 def test_create_aggregation_with_derived_soure_column():
+    @policy_input()
+    def bar() -> int:
+        pass
+
     aggregation_spec_dict = {
         "foo_hh": AggregateByGroupSpec(
+            target="foo_hh",
             source="bar_bg",
             agg=AggregationType.SUM,
         )
@@ -462,6 +487,7 @@ def test_create_aggregation_with_derived_soure_column():
     result = _create_aggregate_by_group_functions(
         functions={"bg_id": group_by_function()(lambda x: x)},
         targets={},
+        inputs={"bar": bar},
         data={"bar": pd.Series([1])},
         aggregations_from_environment=aggregation_spec_dict,
         top_level_namespace=["foo", "bar", "bg_id"],
@@ -535,6 +561,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         aggregation_type="group",
         group_by_id=group_by_id,
         functions=functions,
+        inputs={},
         top_level_namespace=top_level_namespace,
     )
     assert result.start_date == expected_start_date
@@ -608,7 +635,9 @@ def test_aggregate_by_p_id_function_start_and_end_date(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
         aggregation_type="p_id",
+        group_by_id=None,
         functions=functions,
+        inputs={},
         top_level_namespace=top_level_namespace,
     )
     assert result.start_date == expected_start_date
@@ -666,6 +695,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         aggregation_type="group",
         group_by_id=group_by_id,
         functions={},
+        inputs={},
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -717,6 +747,7 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
         aggregation_spec=aggregation_spec,
         aggregation_type="p_id",
         functions={},
+        inputs={},
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -767,6 +798,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         aggregation_type="group",
         group_by_id=group_by_id,
         functions={},
+        inputs={},
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
@@ -814,7 +846,9 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
         aggregation_type="p_id",
+        group_by_id=None,
         functions={},
+        inputs={},
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name

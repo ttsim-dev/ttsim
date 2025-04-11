@@ -48,13 +48,12 @@ class AggregationType(StrEnum):
 
 
 @dataclass
-class AggregateSpec:
+class AggregationSpec:
     """
-    A container for aggregate by group specifications.
+    Base class for aggregation specifications. Only use for type checking.
     """
 
     target: str
-    qual_name_target: str = field(init=False)
     source: str | None
     agg: AggregationType
     _agg_func: Callable = field(init=False)
@@ -68,12 +67,9 @@ class AggregateSpec:
         if self.agg == AggregationType.COUNT and self.source is not None:
             raise ValueError("COUNT aggregation must not provide a source.")
 
-    def set_qual_name_target(self, qual_name_target: str):
-        self.qual_name_target = qual_name_target
-
 
 @dataclass
-class AggregateByGroupSpec(AggregateSpec):
+class AggregateByGroupSpec(AggregationSpec):
     """
     A container for aggregate by group specifications.
     """
@@ -106,7 +102,7 @@ class AggregateByGroupSpec(AggregateSpec):
 
 
 @dataclass
-class AggregateByPIDSpec(AggregateSpec):
+class AggregateByPIDSpec(AggregationSpec):
     """
     A container for aggregate by p_id specifications.
     """
