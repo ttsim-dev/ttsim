@@ -68,6 +68,9 @@ class AggregateSpec:
         if self.aggr == AggregationType.COUNT and self.source is not None:
             raise ValueError("COUNT aggregation must not provide a source.")
 
+    def set_qual_name_target(self, qual_name_target: str):
+        self.qual_name_target = qual_name_target
+
 
 @dataclass
 class AggregateByGroupSpec(AggregateSpec):
@@ -109,6 +112,7 @@ class AggregateByPIDSpec(AggregateSpec):
     """
 
     p_id_to_aggregate_by: str
+    p_id_to_store_by: str = "p_id"
 
     def __post_init__(self):
         aggregation_registry = {

@@ -9,8 +9,7 @@ from ttsim.combine_functions import (
     _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,
     _create_aggregation_functions,
-    _create_one_aggregate_by_group_func,
-    _create_one_aggregate_by_p_id_func,
+    _create_one_aggregation_function,
     _fail_if_targets_not_in_functions,
     _get_name_of_aggregation_source,
 )
@@ -530,9 +529,10 @@ def test_aggregate_by_group_function_start_and_end_date(
     expected_start_date,
     expected_end_date,
 ):
-    result = _create_one_aggregate_by_group_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="group",
         group_by_id=group_by_id,
         functions=functions,
         top_level_namespace=top_level_namespace,
@@ -554,6 +554,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         (
             "bar",
             AggregateByPIDSpec(
+                target="bar_hh",
                 source="foo",
                 aggr=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
@@ -566,6 +567,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         (
             "bar",
             AggregateByPIDSpec(
+                target="bar_hh",
                 source="foo",
                 aggr=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
@@ -578,6 +580,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         (
             "bar",
             AggregateByPIDSpec(
+                target="bar_hh",
                 source="foo",
                 aggr=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
@@ -601,9 +604,10 @@ def test_aggregate_by_p_id_function_start_and_end_date(
     expected_start_date,
     expected_end_date,
 ):
-    result = _create_one_aggregate_by_p_id_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="p_id",
         functions=functions,
         top_level_namespace=top_level_namespace,
     )
@@ -622,21 +626,27 @@ def test_aggregate_by_p_id_function_start_and_end_date(
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr=AggregationType.COUNT),
+            AggregateByGroupSpec(
+                target="foo_hh", source=None, aggr=AggregationType.COUNT
+            ),
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id"],
         ),
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr=AggregationType.SUM, source="foo"),
+            AggregateByGroupSpec(
+                target="foo_hh", source="foo", aggr=AggregationType.SUM
+            ),
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo"],
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(aggr=AggregationType.SUM, source="bar"),
+            AggregateByGroupSpec(
+                target="foo__bar_hh", source="foo", aggr=AggregationType.SUM
+            ),
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo__bar"],
@@ -650,9 +660,10 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
     top_level_namespace,
     expected_arg_names,
 ):
-    result = _create_one_aggregate_by_group_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="group",
         group_by_id=group_by_id,
         functions={},
         top_level_namespace=top_level_namespace,
@@ -674,6 +685,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         (
             "foo",
             AggregateByPIDSpec(
+                target="foo_hh",
                 aggr=AggregationType.SUM,
                 source="bar",
                 p_id_to_aggregate_by="foreign_id_col",
@@ -684,6 +696,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         (
             "foo__fünc",
             AggregateByPIDSpec(
+                target="foo_hh",
                 aggr=AggregationType.SUM,
                 source="bär",
                 p_id_to_aggregate_by="foreign_id_col",
@@ -699,9 +712,10 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     top_level_namespace,
     expected_arg_names,
 ):
-    result = _create_one_aggregate_by_p_id_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="p_id",
         functions={},
         top_level_namespace=top_level_namespace,
     )
@@ -722,14 +736,18 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr=AggregationType.SUM, source="foo"),
+            AggregateByGroupSpec(
+                target="foo_hh", aggr=AggregationType.SUM, source="foo"
+            ),
             "hh_id",
             ["foo", "hh_id"],
             "foo",
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(aggr=AggregationType.SUM, source="bar"),
+            AggregateByGroupSpec(
+                target="bar_hh", aggr=AggregationType.SUM, source="bar"
+            ),
             "hh_id",
             ["foo", "hh_id"],
             "foo__bar",
@@ -743,9 +761,10 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
     top_level_namespace,
     source_col_name,
 ):
-    result = _create_one_aggregate_by_group_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="group",
         group_by_id=group_by_id,
         functions={},
         top_level_namespace=top_level_namespace,
@@ -764,6 +783,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         (
             "foo",
             AggregateByPIDSpec(
+                target="foo_hh",
                 aggr=AggregationType.SUM,
                 source="bar",
                 p_id_to_aggregate_by="foreign_id_col",
@@ -774,6 +794,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         (
             "foo__fünc",
             AggregateByPIDSpec(
+                target="foo_hh",
                 aggr=AggregationType.SUM,
                 source="bär",
                 p_id_to_aggregate_by="foreign_id_col",
@@ -789,9 +810,10 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
     top_level_namespace,
     source_col_name,
 ):
-    result = _create_one_aggregate_by_p_id_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="p_id",
         functions={},
         top_level_namespace=top_level_namespace,
     )

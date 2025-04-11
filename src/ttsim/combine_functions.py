@@ -200,77 +200,122 @@ def _create_aggregation_functions(
                 group_by_functions=group_by_functions,
             )
 
-            if not group_by_id_name:
-                msg = format_errors_and_warnings(
-                    "Name of aggregated column needs to have a suffix "
-                    "indicating the group over which it is aggregated. "
-                    f"{dt.tree_path_from_qual_name(qual_name_target)} does not do so."
-                )
-                raise ValueError(msg)
-
-            mapper = aggregation_spec.mapper(group_by_id_name)
-        else:
-            mapper = aggregation_spec.mapper()
-
-        wrapped_func = dt.one_function_without_tree_logic(
-            function=dags.rename_arguments(
-                func=aggregation_spec.agg_func,
-                mapper=mapper,
-            ),
-            tree_path=dt.tree_path_from_qual_name(qual_name_target),
-            top_level_namespace=top_level_namespace,
-        )
-
-        qual_name_source = (
-            _get_qual_name_of_source_col(
-                source=aggregation_spec.source,
-                wrapped_func=wrapped_func,
+            derived_func = _create_one_aggregation_function(
+                aggregation_target=qual_name_target,
+                aggregation_spec=aggregation_spec,
+                aggregation_type="group",
+                group_by_id=group_by_id_name,
+                functions=functions,
+                inputs=inputs,
+                top_level_namespace=top_level_namespace,
             )
-            if aggregation_spec.source
-            else None
-        )
-        if qual_name_source in inputs:
-            start_date = inputs[qual_name_source].start_date
-            end_date = inputs[qual_name_source].end_date
-        elif qual_name_source in functions:
-            start_date = functions[qual_name_source].start_date
-            end_date = functions[qual_name_source].end_date
-        elif qual_name_source is None:
-            # Case: count
-            start_date = DEFAULT_START_DATE
-            end_date = DEFAULT_END_DATE
-            # TODO(@hmgaudecker): We should get the start date and end date from the
-            # group_by_id_name / p_id_to_aggregate_by. But the attributes of the class
-            # are short names, not qualified names.
-            # if qual_name_source in inputs:
-            #     start_date = inputs[qual_name_source].start_date
-            #     end_date = inputs[qual_name_source].end_date
-            # elif qual_name_source in functions:
-            #     start_date = functions[qual_name_source].start_date
-            #     end_date = functions[qual_name_source].end_date
         else:
-            # We end up here if source is not available because of start and end dates.
-            #            print(f"Source {qual_name_source} not found in functions or inputs")
-            continue
-            raise ValueError(
-                f"Source {qual_name_source} not found in functions or inputs"
+            derived_func = _create_one_aggregation_function(
+                aggregation_target=qual_name_target,
+                aggregation_spec=aggregation_spec,
+                aggregation_type="p_id",
+                group_by_id=None,
+                functions=functions,
+                inputs=inputs,
+                top_level_namespace=top_level_namespace,
             )
 
-        derived_func = DerivedAggregationFunction(
-            leaf_name=dt.tree_path_from_qual_name(qual_name_target)[-1],
-            function=wrapped_func,
-            source=qual_name_source,
-            aggregation_method=aggregation_spec.aggr,
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-        aggregation_functions[qual_name_target] = derived_func
+        if derived_func is not None:
+            aggregation_functions[qual_name_target] = derived_func
 
     return _annotate_aggregation_functions(
         functions=functions,
         inputs=inputs,
         aggregation_functions=aggregation_functions,
+    )
+
+
+def _create_one_aggregation_function(
+    aggregation_target: str,
+    aggregation_spec: AggregateByGroupSpec | AggregateByPIDSpec,
+    aggregation_type: Literal["group", "p_id"],
+    group_by_id: str | None,
+    functions: QualNameTTSIMFunctionDict,
+    inputs: QualNamePolicyInputDict,
+    top_level_namespace: set[str],
+) -> DerivedAggregationFunction:
+    """Create a single aggregation function.
+
+    Parameters
+    ----------
+    aggregation_target
+        The qualified name of the target column.
+    aggregation_spec
+        The aggregation specification.
+    aggregation_type
+        The type of aggregation ("group" or "p_id").
+    group_by_id
+        The name of the group by id column. Only required for group aggregations.
+    functions
+        Dict with qualified function names as keys and functions as values.
+    inputs
+        Dict with qualified input names as keys and policy inputs as values.
+    top_level_namespace
+        Set of top-level namespaces.
+
+    Returns
+    -------
+    The derived aggregation function.
+    """
+    if aggregation_type == "group":
+        if not group_by_id:
+            msg = format_errors_and_warnings(
+                "Name of aggregated column needs to have a suffix "
+                "indicating the group over which it is aggregated. "
+                f"{dt.tree_path_from_qual_name(aggregation_target)} does not do so."
+            )
+            raise ValueError(msg)
+        mapper = aggregation_spec.mapper(group_by_id)
+    else:
+        mapper = aggregation_spec.mapper()
+
+    wrapped_func = dt.one_function_without_tree_logic(
+        function=dags.rename_arguments(
+            func=aggregation_spec.agg_func,
+            mapper=mapper,
+        ),
+        tree_path=dt.tree_path_from_qual_name(aggregation_target),
+        top_level_namespace=top_level_namespace,
+    )
+
+    qual_name_source = (
+        _get_qual_name_of_source_col(
+            source=aggregation_spec.source,
+            wrapped_func=wrapped_func,
+        )
+        if aggregation_spec.source
+        else None
+    )
+    if qual_name_source in inputs:
+        start_date = inputs[qual_name_source].start_date
+        end_date = inputs[qual_name_source].end_date
+    elif qual_name_source in functions:
+        start_date = functions[qual_name_source].start_date
+        end_date = functions[qual_name_source].end_date
+    elif qual_name_source is None:
+        # Case: count
+        start_date = DEFAULT_START_DATE
+        end_date = DEFAULT_END_DATE
+    else:
+        # We end up here if source is not available because of start and end dates.
+        #            print(f"Source {qual_name_source} not found in functions or inputs")
+        return None
+        # raise ValueError(
+        #     f"Source {qual_name_source} not found in functions or inputs"
+        # )
+
+    return DerivedAggregationFunction(
+        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
+        function=wrapped_func,
+        source=qual_name_source,
+        aggregation_method=aggregation_spec.aggr,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 
@@ -426,7 +471,8 @@ def _annotate_aggregation_functions(
                 )
         else:
             print(
-                f"Source {source} not found in functions or inputs, should only happen if only basename can be matched."
+                f"Source {source} not found in functions or inputs,"
+                "should only happen if only basename can be matched."
             )
             # TODO(@hmgaudecker): Think about how type annotations of aggregations of
             # user-provided input variables are handled
