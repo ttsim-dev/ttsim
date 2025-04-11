@@ -57,6 +57,7 @@ def compute_taxes_and_transfers(
     targets_tree: NestedTargetDict | None = None,
     rounding: bool = True,
     debug: bool = False,
+    jit: bool = False,
 ) -> NestedDataDict:
     """Compute taxes and transfers.
 
@@ -74,6 +75,9 @@ def compute_taxes_and_transfers(
     debug : bool
         If debug is 'True', `compute_taxes_and_transfers` returns the input data tree
         along with the computed targets.
+    jit : bool
+        If jit is 'True', the function is compiled using JAX's JIT compilation. To use
+        this feature, JAX must be installed.
 
     Returns
     -------
@@ -160,6 +164,15 @@ def compute_taxes_and_transfers(
         aggregator=None,
         enforce_signature=True,
     )
+
+    if jit:
+        try:
+            import jax
+        except ImportError as e:
+            raise ImportError(
+                "JAX is not installed. Please install JAX to use JIT compilation."
+            ) from e
+        tax_transfer_function = jax.jit(tax_transfer_function)
 
     results = tax_transfer_function(**input_data)
 
