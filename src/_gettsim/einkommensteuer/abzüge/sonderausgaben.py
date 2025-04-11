@@ -3,7 +3,6 @@
 from ttsim import (
     AggregateByPIDSpec,
     AggregationType,
-    RoundingDirection,
     RoundingSpec,
     policy_function,
 )
@@ -107,7 +106,7 @@ def ausgaben_für_betreuung_y(
     return out
 
 
-@policy_function(rounding_spec=RoundingSpec(base=1, direction=RoundingDirection.UP))
+@policy_function(rounding_spec=RoundingSpec(base=1, direction="up"))
 def absetzbare_betreuungskosten_y_sn(
     ausgaben_für_betreuung_y_sn: float,
     eink_st_abzuege_params: dict,

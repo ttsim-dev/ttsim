@@ -1,10 +1,10 @@
-from ttsim import RoundingDirection, RoundingSpec, policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function(
     rounding_spec=RoundingSpec(
         base=1,
-        direction=RoundingDirection.DOWN,
+        direction="down",
         reference="§ 4 Gondorian Housing Benefit Law",
     )
 )

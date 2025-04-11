@@ -3,7 +3,6 @@
 from ttsim import (
     AggregateByPIDSpec,
     AggregationType,
-    RoundingDirection,
     RoundingSpec,
     piecewise_polynomial,
     policy_function,
@@ -27,7 +26,7 @@ aggregation_specs = {
     end_date="1996-12-31",
     leaf_name="betrag_y_sn",
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S. 6 EStG"
+        base=1, direction="down", reference="§ 32a Abs. 1 S. 6 EStG"
     ),
 )
 def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
@@ -52,7 +51,7 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
     start_date="1997-01-01",
     leaf_name="betrag_y_sn",
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+        base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
 )
 def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
@@ -118,7 +117,7 @@ def kinderfreibetrag_günstiger_sn(
     end_date="2001-12-31",
     leaf_name="betrag_mit_kinderfreibetrag_y_sn",
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+        base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
 )
 def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
@@ -129,7 +128,7 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
     start_date="2002-01-01",
     leaf_name="betrag_mit_kinderfreibetrag_y_sn",
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+        base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
 )
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
@@ -165,7 +164,7 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.6 EStG"
+        base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     )
 )
 def betrag_ohne_kinderfreibetrag_y_sn(
