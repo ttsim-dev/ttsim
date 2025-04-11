@@ -12,7 +12,7 @@ aggregation_specs = (
         target="betreuungskosten_elternteil_m",
         source="betreuungskosten_m",
         p_id_to_aggregate_by="p_id_betreuungskosten_träger",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

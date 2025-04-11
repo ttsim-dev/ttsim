@@ -9,7 +9,7 @@ aggregation_specs = (
         target="anzahl_ansprüche",
         p_id_to_aggregate_by="p_id_empfänger",
         source="grundsätzlich_anspruchsberechtigt",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

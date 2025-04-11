@@ -11,7 +11,7 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="arbeitslosengeld_2__anzahl_kinder_bg",
         source="kindergeld__anzahl_ansprüche",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

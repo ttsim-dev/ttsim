@@ -15,7 +15,7 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="number_of_children_fam",
         source="child",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

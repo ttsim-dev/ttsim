@@ -13,7 +13,7 @@ aggregation_specs = (
         target="alleinerziehendenbonus",
         source="kindergeld__kind_bis_10_mit_kindergeld",
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

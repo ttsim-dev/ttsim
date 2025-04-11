@@ -10,58 +10,58 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="anzahl_erwachsene_fg",
         source="familie__erwachsen",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_fg",
         source="familie__kind",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_6_fg",
         source="familie__kind_bis_6",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_15_fg",
         source="familie__kind_bis_15",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_erwachsene_bg",
         source="familie__erwachsen",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bg",
         source="familie__kind",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
-        target="anzahl_personen_bg", source=None, aggr=AggregationType.COUNT
+        target="anzahl_personen_bg", source=None, agg=AggregationType.COUNT
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_17_bg",
         source="familie__kind_bis_17",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="alleinerziehend_bg",
         source="familie__alleinerziehend",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
     AggregateByGroupSpec(
         target="anzahl_erwachsene_eg",
         source="familie__erwachsen",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_eg",
         source="familie__kind",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
-        target="anzahl_personen_eg", source=None, aggr=AggregationType.COUNT
+        target="anzahl_personen_eg", source=None, agg=AggregationType.COUNT
     ),
 )
 

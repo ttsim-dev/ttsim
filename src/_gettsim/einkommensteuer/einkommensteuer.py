@@ -13,13 +13,13 @@ aggregation_specs = (
         target="anzahl_kindergeld_ansprüche_1",
         source="kindergeld__grundsätzlich_anspruchsberechtigt",
         p_id_to_aggregate_by="familie__p_id_elternteil_1",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByPIDSpec(
         target="anzahl_kindergeld_ansprüche_2",
         source="kindergeld__grundsätzlich_anspruchsberechtigt",
         p_id_to_aggregate_by="familie__p_id_elternteil_2",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

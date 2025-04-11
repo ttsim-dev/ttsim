@@ -12,38 +12,38 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="kind_grundsätzlich_anspruchsberechtigt_fg",
         source="kind_grundsätzlich_anspruchsberechtigt",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
     AggregateByGroupSpec(
         target="anzahl_anträge_fg",
         source="claimed",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByPIDSpec(
         target="bezugsmonate_partner",
         p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
         source="bisherige_bezugsmonate",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="alter_monate_jüngstes_mitglied_fg",
         source="alter_monate",
-        aggr=AggregationType.MIN,
+        agg=AggregationType.MIN,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_2_fg",
         source="familie__kind_bis_2",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_5_fg",
         source="familie__kind_bis_5",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_mehrlinge_jüngstes_kind_fg",
         source="jüngstes_kind_oder_mehrling",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

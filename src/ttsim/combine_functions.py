@@ -313,7 +313,7 @@ def _create_one_aggregation_function(
         leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
         function=wrapped_func,
         source=qual_name_source,
-        aggregation_method=aggregation_spec.aggr,
+        aggregation_method=aggregation_spec.agg,
         start_date=start_date,
         end_date=end_date,
     )
@@ -379,7 +379,7 @@ def _create_derived_aggregations_specs(
         if aggregation_specs_needed:
             derived_aggregations_specs[target_name] = AggregateByGroupSpec(
                 target=target_name,
-                aggr=AggregationType.SUM,
+                agg=AggregationType.SUM,
                 source=_get_name_of_aggregation_source(
                     target_name=target_name,
                     top_level_namespace=top_level_namespace,

@@ -4,15 +4,15 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="anzahl_erwachsene_hh",
         source="familie__erwachsen",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_rentenbezieher_hh",
         source="sozialversicherung__rente__bezieht_rente",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByGroupSpec(
-        target="anzahl_personen_hh", source=None, aggr=AggregationType.COUNT
+        target="anzahl_personen_hh", source=None, agg=AggregationType.COUNT
     ),
 )
 

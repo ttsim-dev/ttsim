@@ -9,7 +9,7 @@ aggregation_specs = (
         target="kindergeldübertrag_m",
         source="differenz_kindergeld_kindbedarf_m",
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

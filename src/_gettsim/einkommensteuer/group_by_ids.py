@@ -6,12 +6,12 @@ from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
 aggregation_specs = (
     AggregateByGroupSpec(
-        target="anzahl_personen_sn", source=None, aggr=AggregationType.COUNT
+        target="anzahl_personen_sn", source=None, agg=AggregationType.COUNT
     ),
     AggregateByGroupSpec(
         target="alleinerziehend_sn",
         source="familie__alleinerziehend",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
 )
 

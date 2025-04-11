@@ -342,7 +342,7 @@ def test_user_provided_aggregate_by_group_specs():
             AggregateByGroupSpec(
                 target="betrag_m_hh",
                 source="betrag_m",
-                aggr=AggregationType.SUM,
+                agg=AggregationType.SUM,
             ),
         )
     }
@@ -369,7 +369,7 @@ def test_user_provided_aggregate_by_group_specs():
                 AggregateByGroupSpec(
                     target="betrag_double_m_hh",
                     source="betrag_m_double",
-                    aggr=AggregationType.MAX,
+                    agg=AggregationType.MAX,
                 ),
             )
         },
@@ -378,7 +378,7 @@ def test_user_provided_aggregate_by_group_specs():
                 AggregateByGroupSpec(
                     target="betrag_double_m_hh",
                     source="betrag_m_double",
-                    aggr=AggregationType.MAX,
+                    agg=AggregationType.MAX,
                 ),
             )
         },
@@ -432,7 +432,7 @@ def test_aggregate_by_group_specs_missing_group_sufix():
             AggregateByGroupSpec(
                 target="betrag_agg_m",
                 source="betrag_m",
-                aggr=AggregationType.SUM,
+                agg=AggregationType.SUM,
             ),
         )
     }
@@ -450,12 +450,12 @@ def test_aggregate_by_group_specs_missing_group_sufix():
 def test_aggregate_by_group_specs_agg_not_impl():
     with pytest.raises(
         ValueError,
-        match="aggr must be of type AggregationType, not <class 'str'>",
+        match="agg must be of type AggregationType, not <class 'str'>",
     ):
         AggregateByGroupSpec(
             target="betrag_agg_m",
             source="betrag_m",
-            aggr="sum",
+            agg="sum",
         )
 
 
@@ -469,7 +469,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func",
-                        aggr=AggregationType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 )
             },
@@ -484,7 +484,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        aggr=AggregationType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 )
             },
@@ -499,7 +499,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        aggr=AggregationType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 )
             },
@@ -771,7 +771,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                     AggregateByGroupSpec(
                         target="foo_hh",
                         source="foo",
-                        aggr=AggregationType.SUM,
+                        agg=AggregationType.SUM,
                     ),
                 ),
             ),

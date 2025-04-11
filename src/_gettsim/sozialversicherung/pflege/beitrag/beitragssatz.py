@@ -7,13 +7,13 @@ aggregation_specs = (
         target="anzahl_kinder_bis_24_elternteil_1",
         source="alter_bis_24",
         p_id_to_aggregate_by="einkommensteuer__p_id_kinderfreibetragsempfänger_1",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
     AggregateByPIDSpec(
         target="anzahl_kinder_bis_24_elternteil_2",
         source="alter_bis_24",
         p_id_to_aggregate_by="einkommensteuer__p_id_kinderfreibetragsempfänger_2",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

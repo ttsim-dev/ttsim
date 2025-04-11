@@ -5,7 +5,7 @@ aggregation_specs = (
         target="amount_y",
         source="claim_of_child_y",
         p_id_to_aggregate_by="recipient_id",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

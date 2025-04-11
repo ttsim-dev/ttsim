@@ -6,12 +6,12 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="wohngeld_vorrang_wthh",
         source="wohngeld_vorrang_vor_arbeitslosengeld_2_bg",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
     AggregateByGroupSpec(
         target="wohngeld_kinderzuschlag_vorrang_wthh",
         source="wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
 )
 
