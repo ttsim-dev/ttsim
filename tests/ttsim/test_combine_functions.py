@@ -16,6 +16,8 @@ from ttsim.combine_functions import (
 )
 from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
 from ttsim.function_types import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
     DerivedAggregationFunction,
     group_by_function,
     policy_function,
@@ -452,6 +454,140 @@ def test_create_aggregation_with_derived_soure_column():
     )
     assert "foo_hh" in result
     assert "bar_bg" in inspect.signature(result["foo_hh"]).parameters
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "group_by_id",
+        "functions",
+        "top_level_namespace",
+        "expected_start_date",
+        "expected_end_date",
+    ),
+    [
+        (
+            "foo_hh",
+            AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM),
+            "hh_id",
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            ["foo", "foo_hh", "hh_id"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "foo_hh",
+            AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM),
+            "hh_id",
+            {},
+            ["foo", "foo_hh", "hh_id"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "foo_hh",
+            AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM),
+            "hh_id",
+            {
+                "foo": policy_function(
+                    leaf_name="foo", start_date="2025-01-01", end_date="2025-12-31"
+                )(lambda x: x)
+            },
+            ["foo", "foo_hh", "hh_id"],
+            datetime.date.fromisoformat("2025-01-01"),
+            datetime.date.fromisoformat("2025-12-31"),
+        ),
+    ],
+)
+def test_aggregate_by_group_function_start_and_end_date(
+    aggregation_target,
+    aggregation_spec,
+    group_by_id,
+    functions,
+    top_level_namespace,
+    expected_start_date,
+    expected_end_date,
+):
+    result = _create_one_aggregate_by_group_func(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        group_by_id=group_by_id,
+        functions=functions,
+        top_level_namespace=top_level_namespace,
+    )
+    assert result.start_date == expected_start_date
+    assert result.end_date == expected_end_date
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "functions",
+        "top_level_namespace",
+        "expected_start_date",
+        "expected_end_date",
+    ),
+    [
+        (
+            "bar",
+            AggregateByPIDSpec(
+                source="foo",
+                aggr=AggregationType.SUM,
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            ["foo", "bar", "foreign_id_col"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "bar",
+            AggregateByPIDSpec(
+                source="foo",
+                aggr=AggregationType.SUM,
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {},
+            ["foo", "bar", "foreign_id_col"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "bar",
+            AggregateByPIDSpec(
+                source="foo",
+                aggr=AggregationType.SUM,
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {
+                "foo": policy_function(
+                    leaf_name="foo", start_date="2025-01-01", end_date="2025-12-31"
+                )(lambda x: x)
+            },
+            ["foo", "bar", "foreign_id_col"],
+            datetime.date.fromisoformat("2025-01-01"),
+            datetime.date.fromisoformat("2025-12-31"),
+        ),
+    ],
+)
+def test_aggregate_by_p_id_function_start_and_end_date(
+    aggregation_target,
+    aggregation_spec,
+    functions,
+    top_level_namespace,
+    expected_start_date,
+    expected_end_date,
+):
+    result = _create_one_aggregate_by_p_id_func(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        functions=functions,
+        top_level_namespace=top_level_namespace,
+    )
+    assert result.start_date == expected_start_date
+    assert result.end_date == expected_end_date
 
 
 @pytest.mark.parametrize(
