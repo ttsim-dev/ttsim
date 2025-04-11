@@ -105,7 +105,7 @@ def test_piecewise_polynomial(eink_st_params):
             for xi in x_linspace
         ]
     )
-    numpy.testing.assert_allclose(y_numpy, y_legacy,rtol=1e-6)
+    numpy.testing.assert_allclose(y_numpy, y_legacy, rtol=1e-6)
 
 
 def test_piecewise_polynomial_jax(eink_st_params):
