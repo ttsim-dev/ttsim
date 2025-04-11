@@ -23,10 +23,9 @@ from ttsim.shared import (
     format_list_linewise,
     get_name_of_group_by_id,
     get_names_of_arguments_without_defaults,
-    get_re_pattern_for_all_time_units_and_groupings,
     remove_group_suffix,
 )
-from ttsim.time_conversion import TIME_UNITS, create_time_conversion_functions
+from ttsim.time_conversion import create_time_conversion_functions
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -296,33 +295,12 @@ def _create_one_aggregation_function(
         start_date = DEFAULT_START_DATE
         end_date = DEFAULT_END_DATE
     else:
-        # Case: Source is aggregated itself
-        # Try to find base in inputs or functions
-        re_pattern = get_re_pattern_for_all_time_units_and_groupings(
-            supported_time_units=TIME_UNITS,
-            supported_groupings=SUPPORTED_GROUPINGS,
-        )
-        base_name_of_source = re_pattern.match(qual_name_source).group("base_name")
-        for function_name in functions:
-            base_name_of_function = re_pattern.match(function_name).group("base_name")
-            if base_name_of_function == base_name_of_source:
-                start_date = functions[function_name].start_date
-                end_date = functions[function_name].end_date
-                break
-        for input_name in inputs:
-            base_name_of_input = re_pattern.match(input_name).group("base_name")
-            if base_name_of_input == base_name_of_source:
-                start_date = inputs[input_name].start_date
-                end_date = inputs[input_name].end_date
-                break
-
-    if start_date is None or end_date is None:
-        raise ValueError(
-            f"""
-            Start and end dates of source {qual_name_source} not available because
-            source was not found in functions or inputs.
-            """
-        )
+        # We end up here if source is not available because of start and end dates.
+        #            print(f"Source {qual_name_source} not found in functions or inputs")
+        return None
+        # raise ValueError(
+        #     f"Source {qual_name_source} not found in functions or inputs"
+        # )
 
     return DerivedAggregationFunction(
         leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
