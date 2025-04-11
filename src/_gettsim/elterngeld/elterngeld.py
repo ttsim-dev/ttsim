@@ -1,41 +1,51 @@
 """Parental leave benefits."""
 
-from ttsim import AggregateByGroupSpec, AggregateByPIDSpec, policy_function
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregateByPIDSpec,
+    AggregationType,
+    RoundingDirection,
+    RoundingSpec,
+    policy_function,
+)
 
 aggregation_specs = {
     "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(
         source="kind_grundsätzlich_anspruchsberechtigt",
-        aggr="any",
+        aggr=AggregationType.ANY,
     ),
     "anzahl_anträge_fg": AggregateByGroupSpec(
         source="claimed",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "bezugsmonate_partner": AggregateByPIDSpec(
         p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
         source="bisherige_bezugsmonate",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "alter_monate_jüngstes_mitglied_fg": AggregateByGroupSpec(
         source="alter_monate",
-        aggr="min",
+        aggr=AggregationType.MIN,
     ),
     "anzahl_kinder_bis_2_fg": AggregateByGroupSpec(
         source="familie__kind_bis_2",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_kinder_bis_5_fg": AggregateByGroupSpec(
         source="familie__kind_bis_5",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
     "anzahl_mehrlinge_jüngstes_kind_fg": AggregateByGroupSpec(
         source="jüngstes_kind_oder_mehrling",
-        aggr="sum",
+        aggr=AggregationType.SUM,
     ),
 }
 
 
-@policy_function(start_date="2011-01-01", params_key_for_rounding="elterngeld")
+@policy_function(
+    start_date="2011-01-01",
+    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.DOWN),
+)
 def betrag_m(
     grundsätzlich_anspruchsberechtigt: bool,
     anspruchshöhe_m: float,
@@ -100,7 +110,7 @@ def basisbetrag_m(
     start_date="2007-01-01",
     end_date="2010-12-31",
     leaf_name="betrag_m",
-    params_key_for_rounding="elterngeld",
+    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.DOWN),
 )
 def elterngeld_not_implemented() -> float:
     raise NotImplementedError("Elterngeld is not implemented prior to 2011.")

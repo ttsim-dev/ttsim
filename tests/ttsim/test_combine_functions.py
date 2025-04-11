@@ -3,7 +3,7 @@ import inspect
 import pandas as pd
 import pytest
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.combine_functions import (
     _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,
@@ -102,7 +102,7 @@ def identity(x):
                 "namespace1": {
                     "y_hh": AggregateByGroupSpec(
                         source="x",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     ),
                 },
             },
@@ -120,7 +120,7 @@ def identity(x):
                 "namespace1": {
                     "y_hh": AggregateByGroupSpec(
                         source="inputs__x",
-                        aggr="sum",
+                        aggr=AggregationType.SUM,
                     ),
                 },
             },
@@ -286,14 +286,14 @@ def test_fail_if_targets_are_not_among_functions(
     [
         (
             {"foo": function_with_bool_return},
-            {"foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            {"foo_hh": AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM)},
             "group",
             ["foo"],
             {"foo": bool, "return": int},
         ),
         (
             {"foo": function_with_float_return},
-            {"foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            {"foo_hh": AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM)},
             "group",
             ["foo"],
             {"foo": float, "return": float},
@@ -302,7 +302,9 @@ def test_fail_if_targets_are_not_among_functions(
             {"foo": function_with_int_return},
             {
                 "foo_hh": AggregateByPIDSpec(
-                    p_id_to_aggregate_by="foreign_id_col", source="foo", aggr="sum"
+                    p_id_to_aggregate_by="foreign_id_col",
+                    source="foo",
+                    aggr=AggregationType.SUM,
                 )
             },
             "p_id",
@@ -366,13 +368,17 @@ def test_annotations_are_applied_to_derived_functions(
             {"foo": policy_function(leaf_name="foo")(identity)},
             {},
             {"x": pd.Series([1])},
-            {"n1__foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            {
+                "n1__foo_hh": AggregateByGroupSpec(
+                    source="foo", aggr=AggregationType.SUM
+                )
+            },
             ["x", "foo", "n1"],
             ("n1__foo_hh"),
         ),
     ],
 )
-def test_derived_aggregation_functions_are_in_correct_namespace(  # noqa: PLR0913
+def test_derived_aggregation_functions_are_in_correct_namespace(
     functions,
     targets,
     data,
@@ -399,7 +405,7 @@ def test_create_aggregation_with_derived_soure_column():
     aggregation_spec_dict = {
         "foo_hh": AggregateByGroupSpec(
             source="bar_bg",
-            aggr="sum",
+            aggr=AggregationType.SUM,
         )
     }
     result = _create_aggregate_by_group_functions(
@@ -424,21 +430,21 @@ def test_create_aggregation_with_derived_soure_column():
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr="count"),
+            AggregateByGroupSpec(aggr=AggregationType.COUNT),
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id"],
         ),
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr="sum", source="foo"),
+            AggregateByGroupSpec(aggr=AggregationType.SUM, source="foo"),
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo"],
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(aggr="sum", source="bar"),
+            AggregateByGroupSpec(aggr=AggregationType.SUM, source="bar"),
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo__bar"],
@@ -476,7 +482,9 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         (
             "foo",
             AggregateByPIDSpec(
-                aggr="sum", source="bar", p_id_to_aggregate_by="foreign_id_col"
+                aggr=AggregationType.SUM,
+                source="bar",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
             ["foo", "foreign_id_col", "bar"],
             ["foreign_id_col", "bar"],
@@ -484,7 +492,9 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         (
             "foo__fünc",
             AggregateByPIDSpec(
-                aggr="sum", source="bär", p_id_to_aggregate_by="foreign_id_col"
+                aggr=AggregationType.SUM,
+                source="bär",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
             ["foo", "foreign_id_col"],
             ["foreign_id_col", "foo__bär"],
@@ -520,14 +530,14 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr="sum", source="foo"),
+            AggregateByGroupSpec(aggr=AggregationType.SUM, source="foo"),
             "hh_id",
             ["foo", "hh_id"],
             "foo",
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(aggr="sum", source="bar"),
+            AggregateByGroupSpec(aggr=AggregationType.SUM, source="bar"),
             "hh_id",
             ["foo", "hh_id"],
             "foo__bar",
@@ -562,7 +572,9 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         (
             "foo",
             AggregateByPIDSpec(
-                aggr="sum", source="bar", p_id_to_aggregate_by="foreign_id_col"
+                aggr=AggregationType.SUM,
+                source="bar",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
             ["foo", "foreign_id_col", "bar"],
             "bar",
@@ -570,7 +582,9 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         (
             "foo__fünc",
             AggregateByPIDSpec(
-                aggr="sum", source="bär", p_id_to_aggregate_by="foreign_id_col"
+                aggr=AggregationType.SUM,
+                source="bär",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
             ["foo", "foreign_id_col"],
             "foo__bär",

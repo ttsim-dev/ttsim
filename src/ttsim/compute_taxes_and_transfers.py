@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, get_args
 
 import dags
 import dags.tree as dt
@@ -27,7 +27,6 @@ from ttsim.function_types import (
 )
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
-    KeyErrorMessage,
     assert_valid_ttsim_pytree,
     format_errors_and_warnings,
     format_list_linewise,
@@ -129,10 +128,7 @@ def compute_taxes_and_transfers(
     )
 
     functions_with_rounding_specs = (
-        _add_rounding_to_functions(
-            functions=functions_not_overridden,
-            params=environment.params,
-        )
+        _add_rounding_to_functions(functions=functions_not_overridden)
         if rounding
         else functions_not_overridden
     )
@@ -381,7 +377,6 @@ def _partial_parameters_to_functions(
 
 def _add_rounding_to_functions(
     functions: QualNameFunctionsDict,
-    params: dict[str, Any],
 ) -> QualNameFunctionsDict:
     """Add appropriate rounding of outputs to function.
 
@@ -389,123 +384,18 @@ def _add_rounding_to_functions(
     ----------
     functions
         Functions to which rounding should be added.
-    params : dict
-        Dictionary of parameters
 
     Returns
     -------
     Function with rounding added.
 
     """
-    rounded_functions = {}
-    for name, func in functions.items():
-        if getattr(func, "params_key_for_rounding", False):
-            params_key = func.params_key_for_rounding
-            # Check if there are any rounding specifications in params files.
-            if not (
-                params_key in params
-                and "rounding" in params[params_key]
-                and name in params[params_key]["rounding"]
-            ):
-                path = dt.tree_path_from_qual_name(name)
-                raise KeyError(
-                    KeyErrorMessage(
-                        f"""
-                        Rounding specifications for function
-
-                            {path}
-
-                        are expected in the parameter dictionary at:\n
-                        [{params_key!r}]['rounding'][{name!r}].\n
-                        These nested keys do not exist. If this function should not be
-                        rounded, remove the respective decorator.
-                        """
-                    )
-                )
-            rounding_spec = params[params_key]["rounding"][name]
-            # Check if expected parameters are present in rounding specifications.
-            if not ("base" in rounding_spec and "direction" in rounding_spec):
-                raise KeyError(
-                    KeyErrorMessage(
-                        "Both 'base' and 'direction' are expected as rounding "
-                        "parameters in the parameter dictionary. \n "
-                        "At least one of them is missing at:\n"
-                        f"[{params_key!r}]['rounding'][{name!r}]."
-                    )
-                )
-            # Add rounding.
-            rounded_functions[name] = _apply_rounding_spec(
-                base=rounding_spec["base"],
-                direction=rounding_spec["direction"],
-                to_add_after_rounding=rounding_spec.get("to_add_after_rounding", 0),
-                name=name,
-            )(func)
-        else:
-            rounded_functions[name] = func
-
-    return rounded_functions
-
-
-def _apply_rounding_spec(
-    base: float,
-    direction: Literal["up", "down", "nearest"],
-    to_add_after_rounding: float,
-    name: str,
-) -> callable:
-    """Decorator to round the output of a function.
-
-    Parameters
-    ----------
-    base
-        Precision of rounding (e.g. 0.1 to round to the first decimal place)
-    direction
-        Whether the series should be rounded up, down or to the nearest number
-    to_add_after_rounding
-        Number to be added after the rounding step
-    name:
-        Name of the function to be rounded.
-
-    Returns
-    -------
-    Series with (potentially) rounded numbers
-
-    """
-
-    path = dt.tree_path_from_qual_name(name)
-
-    def inner(func):
-        # Make sure that signature is preserved.
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            out = func(*args, **kwargs)
-
-            # Check inputs.
-            if type(base) not in [int, float]:
-                raise ValueError(f"base needs to be a number, got {base!r} for {path}")
-            if type(to_add_after_rounding) not in [int, float]:
-                raise ValueError(
-                    f"Additive part needs to be a number, got"
-                    f" {to_add_after_rounding!r} for {path}"
-                )
-
-            if direction == "up":
-                rounded_out = base * np.ceil(out / base)
-            elif direction == "down":
-                rounded_out = base * np.floor(out / base)
-            elif direction == "nearest":
-                rounded_out = base * (out / base).round()
-            else:
-                raise ValueError(
-                    "direction must be one of 'up', 'down', or 'nearest'"
-                    f", got {direction!r} for {path}"
-                )
-
-            rounded_out += to_add_after_rounding
-            return rounded_out
-
-        return wrapper
-
-    return inner
+    return {
+        name: func.rounding_spec.apply_rounding(func)
+        if getattr(func, "rounding_spec", False)
+        else func
+        for name, func in functions.items()
+    }
 
 
 def _fail_if_environment_not_valid(environment: Any) -> None:

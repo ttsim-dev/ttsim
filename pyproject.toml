@@ -219,6 +219,7 @@ extend-ignore = [
     "FIX002", # Line contains TODO -- Use stuff from TD area.
     "PLC2401", # Allow non-ASCII characters in variable names.
     "PLC2403", # Allow non-ASCII function names for imports.
+    "PLR0913", # Allow too many arguments in function definitions.
     "N999", # Allow non-ASCII characters in file names.
 
     # Things we are not sure we want

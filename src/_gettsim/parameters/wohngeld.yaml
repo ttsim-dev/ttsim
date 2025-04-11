@@ -1969,14 +1969,3 @@ klimakomponente_m:
     4: 34.40
     5: 39.20
     jede_weitere_person: 4.8
-rounding:
-  wohngeld__anspruchshöhe_m_bg:
-    1970-01-01:
-      base: 1
-      direction: nearest
-      reference: § 19 WoGG Abs.2 Anlage 3
-  wohngeld__anspruchshöhe_m_wthh:
-    1970-01-01:
-      base: 1
-      direction: nearest
-      reference: § 19 WoGG Abs.2 Anlage 3
