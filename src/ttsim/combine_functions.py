@@ -499,15 +499,20 @@ def _create_one_aggregate_by_p_id_func(
         else None
     )
 
-    source_function = functions[qual_name_source]
+    if qual_name_source in functions:
+        start_date = functions[qual_name_source].start_date
+        end_date = functions[qual_name_source].end_date
+    else:
+        start_date = DEFAULT_START_DATE
+        end_date = DEFAULT_END_DATE
 
     return DerivedAggregationFunction(
         leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
         function=wrapped_func,
         source=qual_name_source,
         aggregation_method=aggregation_method,
-        start_date=source_function.start_date,
-        end_date=source_function.end_date,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 
