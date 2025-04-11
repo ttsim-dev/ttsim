@@ -4,7 +4,6 @@ from ttsim import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
     AggregationType,
-    RoundingDirection,
     RoundingSpec,
     policy_function,
 )
@@ -44,7 +43,7 @@ aggregation_specs = {
 
 @policy_function(
     start_date="2011-01-01",
-    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.DOWN),
+    rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
 def betrag_m(
     grundsätzlich_anspruchsberechtigt: bool,
@@ -110,7 +109,7 @@ def basisbetrag_m(
     start_date="2007-01-01",
     end_date="2010-12-31",
     leaf_name="betrag_m",
-    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.DOWN),
+    rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
 def elterngeld_not_implemented() -> float:
     raise NotImplementedError("Elterngeld is not implemented prior to 2011.")

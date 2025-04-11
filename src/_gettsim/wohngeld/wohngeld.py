@@ -16,7 +16,7 @@ priority check, but cannot cover their needs with the Wohngeld calculated in poi
 3. In this sense, this implementation is an approximation of the actual Wohngeld.
 """
 
-from ttsim import RoundingDirection, RoundingSpec, policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function()
@@ -68,7 +68,7 @@ def betrag_m_wthh(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=1,
-        direction=RoundingDirection.NEAREST,
+        direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
     )
 )
@@ -118,7 +118,7 @@ def anspruchshöhe_m_wthh(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=1,
-        direction=RoundingDirection.NEAREST,
+        direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
     )
 )
