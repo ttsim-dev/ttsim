@@ -467,12 +467,10 @@ def test_annotations_are_applied_to_derived_functions(
             {},
             {"x": pd.Series([1])},
             {
-                "n1": (
-                    AggregateByGroupSpec(
-                        target="foo_hh",
-                        source="foo",
-                        agg=AggregationType.SUM,
-                    ),
+                "n1__foo_hh": AggregateByGroupSpec(
+                    target="foo_hh",
+                    source="foo",
+                    agg=AggregationType.SUM,
                 )
             },
             ["x", "foo", "n1"],
@@ -511,45 +509,43 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         "aggregation_spec",
         "group_by_id",
         "functions",
+        "inputs",
         "top_level_namespace",
         "expected_start_date",
         "expected_end_date",
     ),
     [
         (
-            "foo_hh",
-            AggregateByGroupSpec(
-                target="foo_hh", source="foo", agg=AggregationType.SUM
-            ),
-            "hh_id",
-            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
-            ["foo", "foo_hh", "hh_id"],
-            DEFAULT_START_DATE,
-            DEFAULT_END_DATE,
-        ),
-        (
-            "foo_hh",
-            AggregateByGroupSpec(
-                target="foo_hh", source="foo", agg=AggregationType.SUM
-            ),
+            "x_hh",
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
             "hh_id",
             {},
-            ["foo", "foo_hh", "hh_id"],
+            {"x": x},
+            ["x", "x_hh", "hh_id"],
             DEFAULT_START_DATE,
             DEFAULT_END_DATE,
         ),
         (
-            "foo_hh",
-            AggregateByGroupSpec(
-                target="foo_hh", source="foo", agg=AggregationType.SUM
-            ),
+            "x_hh",
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
+            "hh_id",
+            {"x": policy_function(leaf_name="x")(lambda x: x)},
+            {},
+            ["x", "x_hh", "hh_id"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "x_hh",
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
             "hh_id",
             {
-                "foo": policy_function(
-                    leaf_name="foo", start_date="2025-01-01", end_date="2025-12-31"
+                "x": policy_function(
+                    leaf_name="x", start_date="2025-01-01", end_date="2025-12-31"
                 )(lambda x: x)
             },
-            ["foo", "foo_hh", "hh_id"],
+            {},
+            ["x", "x_hh", "hh_id"],
             datetime.date.fromisoformat("2025-01-01"),
             datetime.date.fromisoformat("2025-12-31"),
         ),
@@ -560,6 +556,7 @@ def test_aggregate_by_group_function_start_and_end_date(
     aggregation_spec,
     group_by_id,
     functions,
+    inputs,
     top_level_namespace,
     expected_start_date,
     expected_end_date,
@@ -570,7 +567,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         aggregation_type="group",
         group_by_id=group_by_id,
         functions=functions,
-        inputs={},
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.start_date == expected_start_date
@@ -582,6 +579,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         "aggregation_target",
         "aggregation_spec",
         "functions",
+        "inputs",
         "top_level_namespace",
         "expected_start_date",
         "expected_end_date",
@@ -591,12 +589,13 @@ def test_aggregate_by_group_function_start_and_end_date(
             "bar",
             AggregateByPIDSpec(
                 target="bar_hh",
-                source="foo",
+                source="x",
                 agg=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
             ),
-            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
-            ["foo", "bar", "foreign_id_col"],
+            {"x": policy_function(leaf_name="x")(lambda x: x)},
+            {},
+            ["x", "bar", "foreign_id_col"],
             DEFAULT_START_DATE,
             DEFAULT_END_DATE,
         ),
@@ -604,12 +603,13 @@ def test_aggregate_by_group_function_start_and_end_date(
             "bar",
             AggregateByPIDSpec(
                 target="bar_hh",
-                source="foo",
+                source="x",
                 agg=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
             ),
             {},
-            ["foo", "bar", "foreign_id_col"],
+            {"x": x},
+            ["x", "bar", "foreign_id_col"],
             DEFAULT_START_DATE,
             DEFAULT_END_DATE,
         ),
@@ -617,16 +617,17 @@ def test_aggregate_by_group_function_start_and_end_date(
             "bar",
             AggregateByPIDSpec(
                 target="bar_hh",
-                source="foo",
+                source="x",
                 agg=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
             ),
             {
-                "foo": policy_function(
-                    leaf_name="foo", start_date="2025-01-01", end_date="2025-12-31"
+                "x": policy_function(
+                    leaf_name="x", start_date="2025-01-01", end_date="2025-12-31"
                 )(lambda x: x)
             },
-            ["foo", "bar", "foreign_id_col"],
+            {},
+            ["x", "bar", "foreign_id_col"],
             datetime.date.fromisoformat("2025-01-01"),
             datetime.date.fromisoformat("2025-12-31"),
         ),
@@ -636,6 +637,7 @@ def test_aggregate_by_p_id_function_start_and_end_date(
     aggregation_target,
     aggregation_spec,
     functions,
+    inputs,
     top_level_namespace,
     expected_start_date,
     expected_end_date,
@@ -646,7 +648,7 @@ def test_aggregate_by_p_id_function_start_and_end_date(
         aggregation_type="p_id",
         group_by_id=None,
         functions=functions,
-        inputs={},
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.start_date == expected_start_date
@@ -657,6 +659,8 @@ def test_aggregate_by_p_id_function_start_and_end_date(
     (
         "aggregation_target",
         "aggregation_spec",
+        "functions",
+        "inputs",
         "group_by_id",
         "top_level_namespace",
         "expected_arg_names",
@@ -667,6 +671,8 @@ def test_aggregate_by_p_id_function_start_and_end_date(
             AggregateByGroupSpec(
                 target="foo_hh", source=None, agg=AggregationType.COUNT
             ),
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {},
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id"],
@@ -676,6 +682,8 @@ def test_aggregate_by_p_id_function_start_and_end_date(
             AggregateByGroupSpec(
                 target="foo_hh", source="foo", agg=AggregationType.SUM
             ),
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {},
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo"],
@@ -683,8 +691,10 @@ def test_aggregate_by_p_id_function_start_and_end_date(
         (
             "foo__bar_hh",
             AggregateByGroupSpec(
-                target="foo__bar_hh", source="foo", agg=AggregationType.SUM
+                target="foo__bar_hh", source="bar", agg=AggregationType.SUM
             ),
+            {"foo__bar": policy_function(leaf_name="bar")(lambda x: x)},
+            {},
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo__bar"],
@@ -694,6 +704,8 @@ def test_aggregate_by_p_id_function_start_and_end_date(
 def test_function_arguments_are_namespaced_for_derived_group_funcs(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
     group_by_id,
     top_level_namespace,
     expected_arg_names,
@@ -703,8 +715,8 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         aggregation_spec=aggregation_spec,
         aggregation_type="group",
         group_by_id=group_by_id,
-        functions={},
-        inputs={},
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -717,6 +729,9 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
     (
         "aggregation_target",
         "aggregation_spec",
+        "functions",
+        "inputs",
+        "group_by_id",
         "top_level_namespace",
         "expected_arg_names",
     ),
@@ -729,6 +744,9 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
                 source="bar",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
+            {"bar": policy_function(leaf_name="bar")(lambda x: x)},
+            {},
+            "foreign_id_col",
             ["foo", "foreign_id_col", "bar"],
             ["foreign_id_col", "bar"],
         ),
@@ -740,14 +758,34 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
                 source="bär",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
+            {"foo__bär": policy_function(leaf_name="bär")(lambda x: x)},
+            {},
+            "foreign_id_col",
             ["foo", "foreign_id_col"],
             ["foreign_id_col", "foo__bär"],
+        ),
+        (
+            "foo",
+            AggregateByPIDSpec(
+                target="foo_hh",
+                agg=AggregationType.SUM,
+                source="x",
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {},
+            {"x": x},
+            "foreign_id_col",
+            ["foo", "foreign_id_col", "x"],
+            ["foreign_id_col", "x"],
         ),
     ],
 )
 def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
+    group_by_id,
     top_level_namespace,
     expected_arg_names,
 ):
@@ -755,8 +793,9 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
         aggregation_type="p_id",
-        functions={},
-        inputs={},
+        group_by_id=group_by_id,
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -769,6 +808,8 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     (
         "aggregation_target",
         "aggregation_spec",
+        "functions",
+        "inputs",
         "group_by_id",
         "top_level_namespace",
         "source_col_name",
@@ -779,6 +820,8 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
             AggregateByGroupSpec(
                 target="foo_hh", agg=AggregationType.SUM, source="foo"
             ),
+            {},
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
             "hh_id",
             ["foo", "hh_id"],
             "foo",
@@ -788,6 +831,8 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
             AggregateByGroupSpec(
                 target="bar_hh", agg=AggregationType.SUM, source="bar"
             ),
+            {},
+            {"foo__bar": policy_function(leaf_name="bar")(lambda x: x)},
             "hh_id",
             ["foo", "hh_id"],
             "foo__bar",
@@ -797,6 +842,8 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
 def test_source_column_name_of_aggregate_by_group_func_is_qualified(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
     group_by_id,
     top_level_namespace,
     source_col_name,
@@ -806,8 +853,8 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         aggregation_spec=aggregation_spec,
         aggregation_type="group",
         group_by_id=group_by_id,
-        functions={},
-        inputs={},
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
@@ -817,6 +864,8 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
     (
         "aggregation_target",
         "aggregation_spec",
+        "functions",
+        "inputs",
         "top_level_namespace",
         "source_col_name",
     ),
@@ -829,6 +878,8 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
                 source="bar",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
+            {},
+            {"bar": policy_function(leaf_name="bar")(lambda x: x)},
             ["foo", "foreign_id_col", "bar"],
             "bar",
         ),
@@ -840,6 +891,8 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
                 source="bär",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
+            {},
+            {"foo__bär": policy_function(leaf_name="bär")(lambda x: x)},
             ["foo", "foreign_id_col"],
             "foo__bär",
         ),
@@ -848,6 +901,8 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
 def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
     top_level_namespace,
     source_col_name,
 ):
@@ -856,8 +911,8 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
         aggregation_spec=aggregation_spec,
         aggregation_type="p_id",
         group_by_id=None,
-        functions={},
-        inputs={},
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
