@@ -231,6 +231,7 @@ def test_get_name_of_group_by_id(target_name, group_by_functions, expected):
         get_name_of_group_by_id(
             target_name=target_name,
             group_by_functions=group_by_functions,
+            supported_groupings=("hh", "bg", "eg"),
         )
         == expected
     )
@@ -284,7 +285,9 @@ def test_get_name_of_group_by_id_fails(
 ):
     with pytest.raises(ValueError, match=expected_error_match):
         get_name_of_group_by_id(
-            target_name=target_name, group_by_functions=group_by_functions
+            target_name=target_name,
+            group_by_functions=group_by_functions,
+            supported_groupings=("hh", "bg", "eg"),
         )
 
 

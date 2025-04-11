@@ -17,6 +17,8 @@ def test_aggregate_by_p_id(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
+        foreign_keys=((),),
+        supported_groupings=(),
     )
 
     flat_result = dt.flatten_to_qual_names(result)

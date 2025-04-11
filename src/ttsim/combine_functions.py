@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Literal
 import dags
 import dags.tree as dt
 
-from _gettsim.config import SUPPORTED_GROUPINGS
 from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
@@ -46,6 +45,7 @@ def combine_policy_functions_and_derived_functions(
     data: QualNameDataDict,
     inputs: QualNamePolicyInputDict,
     top_level_namespace: set[str],
+    supported_groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
     """Add derived functions to the qualified functions dict.
 
@@ -82,6 +82,7 @@ def combine_policy_functions_and_derived_functions(
         aggregation_functions_to_create=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
+        supported_groupings=supported_groupings,
     )
     current_functions = {**aggregate_by_p_id_functions, **functions}
 
@@ -100,6 +101,7 @@ def combine_policy_functions_and_derived_functions(
         inputs=inputs,
         aggregations_from_environment=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
     current_functions = {**aggregate_by_group_functions, **current_functions}
 
@@ -115,6 +117,7 @@ def _create_aggregate_by_group_functions(
     data: QualNameDataDict,
     aggregations_from_environment: QualNameAggregationSpecsDict,
     top_level_namespace: set[str],
+    supported_groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
     """Create aggregation functions."""
     # Create the aggregation functions that were explicitly specified.
@@ -125,6 +128,7 @@ def _create_aggregate_by_group_functions(
         aggregation_functions_to_create=aggregations_from_environment,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
 
     functions_with_aggregation_functions_from_environment = {
@@ -138,6 +142,7 @@ def _create_aggregate_by_group_functions(
         targets=targets,
         data=data,
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
         functions=functions_with_aggregation_functions_from_environment,
@@ -145,6 +150,7 @@ def _create_aggregate_by_group_functions(
         aggregation_functions_to_create=derived_aggregation_specs,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
     return {
         **aggregation_functions_derived_from_names,
@@ -158,6 +164,7 @@ def _create_aggregation_functions(
     aggregation_functions_to_create: QualNameAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
     top_level_namespace: set[str],
+    supported_groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
     """Create aggregation functions for one aggregation type.
 
@@ -199,6 +206,7 @@ def _create_aggregation_functions(
             group_by_id_name = get_name_of_group_by_id(
                 target_name=qual_name_target,
                 group_by_functions=group_by_functions,
+                supported_groupings=supported_groupings,
             )
             if not group_by_id_name:
                 msg = format_errors_and_warnings(
@@ -314,6 +322,7 @@ def _create_derived_aggregations_specs(
     targets: QualNameTargetList,
     data: QualNameDataDict,
     top_level_namespace: set[str],
+    supported_groupings: tuple[str, ...],
 ) -> QualNameAggregationSpecsDict:
     """Create automatic aggregation specs derived from functions and data.
 
@@ -362,7 +371,7 @@ def _create_derived_aggregations_specs(
         # Don't create aggregation functions for unsupported groupings or functions that
         # already exist in the source tree.
         aggregation_specs_needed = (
-            any(target_name.endswith(f"_{g}") for g in SUPPORTED_GROUPINGS)
+            any(target_name.endswith(f"_{g}") for g in supported_groupings)
             and target_name not in aggregation_sources
         )
 

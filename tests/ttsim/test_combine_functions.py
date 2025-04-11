@@ -197,6 +197,8 @@ def test_create_aggregate_by_group_functions(
         environment=environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
+        supported_groupings=("hh",),
+        foreign_keys=(),
     )
 
 
@@ -417,6 +419,7 @@ def test_annotations_are_applied_to_derived_functions(
                 aggregation_functions_to_create=aggregations,
                 aggregation_type=aggregation_type,
                 top_level_namespace=top_level_namespace,
+                supported_groupings=("hh",),
             ).values()
         )
     )
@@ -499,6 +502,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         data=data,
         aggregations_from_environment=aggregations_from_environment,
         top_level_namespace=top_level_namespace,
+        supported_groupings=("hh",),
     )
     assert expected in result
 

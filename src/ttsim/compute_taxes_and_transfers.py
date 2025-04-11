@@ -10,11 +10,6 @@ import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
-from _gettsim.config import (
-    DEFAULT_TARGETS,
-    FOREIGN_KEYS,
-    SUPPORTED_GROUPINGS,
-)
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
@@ -58,7 +53,9 @@ if TYPE_CHECKING:
 def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
-    targets_tree: NestedTargetDict | None = None,
+    targets_tree: NestedTargetDict,
+    foreign_keys: tuple[tuple[str, ...], ...],
+    supported_groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
 ) -> NestedDataDict:
@@ -85,8 +82,6 @@ def compute_taxes_and_transfers(
         The computed variables as a tree.
 
     """
-    # Use default targets if no targets are provided.
-    targets_tree = targets_tree if targets_tree else DEFAULT_TARGETS
 
     # Check user inputs
     _fail_if_targets_tree_not_valid(targets_tree)
@@ -97,7 +92,7 @@ def compute_taxes_and_transfers(
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
         supported_time_conversions=tuple(TIME_UNITS.keys()),
-        supported_groupings=tuple(SUPPORTED_GROUPINGS.keys()),
+        supported_groupings=supported_groupings,
     )
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
@@ -125,6 +120,7 @@ def compute_taxes_and_transfers(
         data=data,
         inputs=inputs,
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
 
     functions_overridden, functions_to_be_used = partition_by_reference_dict(
@@ -158,10 +154,12 @@ def compute_taxes_and_transfers(
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
         functions=functions,
+        supported_groupings=supported_groupings,
     )
     _fail_if_foreign_keys_are_invalid(
         data=input_data,
         p_id=data.get("p_id", None),
+        foreign_keys=foreign_keys,
     )
 
     tax_transfer_function = dags.concatenate_functions(
@@ -471,12 +469,13 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
         leaf_checker=lambda leaf: isinstance(leaf, pd.Series | np.ndarray),
         tree_name="data_tree",
     )
-    _fail_if_pid_is_non_unique(data_tree)
+    _fail_if_p_id_is_non_unique(data_tree)
 
 
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
     functions: QualNameTTSIMFunctionDict,
+    supported_groupings: tuple[str, ...],
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -503,6 +502,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         group_by_id = get_name_of_group_by_id(
             target_name=name,
             group_by_functions=group_by_functions,
+            supported_groupings=supported_groupings,
         )
         if group_by_id in data:
             group_by_id_series = pd.Series(data[group_by_id])
@@ -527,7 +527,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         raise ValueError(msg)
 
 
-def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
+def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
     """Check that pid is unique."""
     p_id = data_tree.get("p_id", None)
     if p_id is None:
@@ -553,6 +553,7 @@ def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
 def _fail_if_foreign_keys_are_invalid(
     data: QualNameDataDict,
     p_id: pd.Series,
+    foreign_keys: tuple[tuple[str, ...], ...],
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -563,7 +564,7 @@ def _fail_if_foreign_keys_are_invalid(
     valid_ids = set(p_id) | {-1}
 
     for name, data_column in data.items():
-        foreign_key_col = dt.tree_path_from_qual_name(name) in FOREIGN_KEYS
+        foreign_key_col = dt.tree_path_from_qual_name(name) in foreign_keys
         path = dt.tree_path_from_qual_name(name)
         if not foreign_key_col:
             continue

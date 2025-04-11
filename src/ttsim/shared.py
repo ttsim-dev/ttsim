@@ -549,6 +549,7 @@ def assert_valid_ttsim_pytree(
 def get_name_of_group_by_id(
     target_name: str,
     group_by_functions: QualNameTTSIMFunctionDict,
+    supported_groupings: tuple[str, ...],
 ) -> str:
     """Get the group-by-identifier name for some target.
 
@@ -572,7 +573,7 @@ def get_name_of_group_by_id(
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
-    for g in SUPPORTED_GROUPINGS:
+    for g in supported_groupings:
         if target_name.endswith(f"_{g}") and g == "hh":
             # Hardcode because hh_id is not part of the functions tree
             return "hh_id"

@@ -6,16 +6,15 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import FOREIGN_KEYS
 from mettsim.payroll_tax.group_by_ids import fam_id, sp_id
 
-from gettsim import FunctionsAndColumnsOverlapWarning
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.compute_taxes_and_transfers import (
+    FunctionsAndColumnsOverlapWarning,
     _convert_data_to_correct_types,
     _fail_if_foreign_keys_are_invalid,
     _fail_if_group_variables_not_constant_within_groups,
-    _fail_if_pid_is_non_unique,
+    _fail_if_p_id_is_non_unique,
     _get_top_level_namespace,
     _partial_parameters_to_functions,
     compute_taxes_and_transfers,
@@ -25,6 +24,14 @@ from ttsim.function_types import group_by_function, policy_function, policy_inpu
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import convert_series_to_internal_type
+
+FOREIGN_KEYS = (
+    ("payroll_tax", "p_id_spouse"),
+    ("p_id_parent_1",),
+    ("p_id_parent_2",),
+)
+
+SUPPORTED_GROUPINGS = ("fam", "sp")
 
 
 @policy_input()
@@ -62,6 +69,16 @@ def minimal_input_data_shared_hh():
     return out
 
 
+@policy_input()
+def p_id() -> int:
+    pass
+
+
+@policy_input()
+def hh_id() -> int:
+    pass
+
+
 # Create a function which is used by some tests below
 @policy_function()
 def func_before_partial(arg_1, payroll_tax_params):
@@ -88,6 +105,8 @@ def test_output_as_tree(minimal_input_data):
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"module": {"test_func": None}},
+        foreign_keys=FOREIGN_KEYS,
+        supported_groupings=("hh",),
     )
 
     assert isinstance(out, dict)
@@ -110,6 +129,8 @@ def test_warn_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"some_target": None},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=("hh",),
         )
 
 
@@ -126,6 +147,8 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=("hh",),
         )
 
 
@@ -148,35 +171,39 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"unique": None},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=("hh",),
         )
 
     assert len(warning_list) == 0
 
 
-def test_fail_if_pid_does_not_exist():
+def test_fail_if_p_id_does_not_exist():
     data = {"hh_id": pd.Series(data=numpy.arange(8), name="hh_id")}
 
     with pytest.raises(ValueError):
-        _fail_if_pid_is_non_unique(data)
+        _fail_if_p_id_is_non_unique(data)
 
 
-def test_fail_if_pid_is_non_unique():
+def test_fail_if_p_id_is_non_unique():
     data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
 
     with pytest.raises(ValueError):
-        _fail_if_pid_is_non_unique(data)
+        _fail_if_p_id_is_non_unique(data)
 
 
 @pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
-def test_fail_if_foreign_key_points_to_non_existing_pid(foreign_key_path):
+def test_fail_if_foreign_key_points_to_non_existing_p_id(foreign_key_path):
     foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
         foreign_key_name: pd.Series([0, 1, 4]),
         "p_id": pd.Series([1, 2, 3]),
     }
 
-    with pytest.raises(ValueError, match="not a valid p_id in the\ninput data"):
-        _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
+    with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
+        _fail_if_foreign_keys_are_invalid(
+            data=data, p_id=data["p_id"], foreign_keys=FOREIGN_KEYS
+        )
 
 
 @pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
@@ -187,11 +214,13 @@ def test_allow_minus_one_as_foreign_key(foreign_key_path):
         "p_id": pd.Series([1, 2, 3]),
     }
 
-    _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
+    _fail_if_foreign_keys_are_invalid(
+        data=data, p_id=data["p_id"], foreign_keys=FOREIGN_KEYS
+    )
 
 
 @pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
-def test_fail_if_foreign_key_points_to_pid_of_same_row(foreign_key_path):
+def test_fail_if_foreign_key_points_to_p_id_of_same_row(foreign_key_path):
     foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
         foreign_key_name: pd.Series([1, 3, 3]),
@@ -199,19 +228,14 @@ def test_fail_if_foreign_key_points_to_pid_of_same_row(foreign_key_path):
     }
 
     with pytest.raises(ValueError, match="are equal to the p_id"):
-        _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
+        _fail_if_foreign_keys_are_invalid(
+            data=data, p_id=data["p_id"], foreign_keys=FOREIGN_KEYS
+        )
 
 
 @pytest.mark.parametrize(
     "data, functions",
     [
-        (
-            {
-                "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
-                "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-            },
-            {},
-        ),
         (
             {
                 "foo_fam": pd.Series([1, 2, 2], name="foo_fam"),
@@ -228,6 +252,7 @@ def test_fail_if_group_variables_not_constant_within_groups(data, functions):
         _fail_if_group_variables_not_constant_within_groups(
             data=data,
             functions=functions,
+            supported_groupings=SUPPORTED_GROUPINGS,
         )
 
 
@@ -250,7 +275,11 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
         match="The following data columns are missing",
     ):
         compute_taxes_and_transfers(
-            minimal_input_data, environment, targets_tree={"c": None}
+            data_tree=minimal_input_data,
+            environment=environment,
+            targets_tree={"c": None},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=("hh",),
         )
 
 
@@ -265,7 +294,11 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
 
     environment = PolicyEnvironment({"a": a, "b": b})
     compute_taxes_and_transfers(
-        minimal_input_data, environment, targets_tree={"b": None}
+        data_tree=minimal_input_data,
+        environment=environment,
+        targets_tree={"b": None},
+        foreign_keys=FOREIGN_KEYS,
+        supported_groupings=("hh",),
     )
 
 
@@ -279,20 +312,30 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
         match="The following targets have no corresponding function",
     ):
         compute_taxes_and_transfers(
-            minimal_input_data, environment, targets_tree={"unknown_target": None}
+            data_tree=minimal_input_data,
+            environment=environment,
+            targets_tree={"unknown_target": None},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=("hh",),
         )
 
 
-def test_fail_if_missing_pid():
+def test_fail_if_missing_p_id():
     data = {"hh_id": pd.Series([1, 2, 3], name="hh_id")}
     with pytest.raises(
         ValueError,
         match="The input data must contain the p_id",
     ):
-        compute_taxes_and_transfers(data, PolicyEnvironment({}), targets_tree={})
+        compute_taxes_and_transfers(
+            data_tree=data,
+            environment=PolicyEnvironment({}),
+            targets_tree={},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=("hh",),
+        )
 
 
-def test_fail_if_non_unique_pid(minimal_input_data):
+def test_fail_if_non_unique_p_id(minimal_input_data):
     data = copy.deepcopy(minimal_input_data)
     data["p_id"][:] = 1
 
@@ -300,7 +343,13 @@ def test_fail_if_non_unique_pid(minimal_input_data):
         ValueError,
         match="The following p_ids are non-unique",
     ):
-        compute_taxes_and_transfers(data, PolicyEnvironment({}), targets_tree={})
+        compute_taxes_and_transfers(
+            data_tree=data,
+            environment=PolicyEnvironment({}),
+            targets_tree={},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=("hh",),
+        )
 
 
 def test_partial_parameters_to_functions():
@@ -349,11 +398,13 @@ def test_user_provided_aggregate_by_group_specs():
     expected_res = pd.Series([200, 200, 100])
 
     out = compute_taxes_and_transfers(
-        data,
-        PolicyEnvironment(
+        data_tree=data,
+        environment=PolicyEnvironment(
             raw_objects_tree=inputs, aggregation_specs_tree=aggregation_specs_tree
         ),
         targets_tree={"module_name": {"betrag_m_hh": None}},
+        foreign_keys=FOREIGN_KEYS,
+        supported_groupings=("hh",),
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -394,11 +445,14 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
     }
     expected_res = pd.Series([400, 400, 200])
 
+    @policy_function()
     def betrag_m_double(betrag_m):
         return 2 * betrag_m
 
     environment = PolicyEnvironment(
         {
+            "p_id": p_id,
+            "hh_id": hh_id,
             "module_name": {
                 "betrag_m_double": policy_function(leaf_name="betrag_m_double")(
                     betrag_m_double
@@ -409,9 +463,11 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
     )
 
     out = compute_taxes_and_transfers(
-        data,
-        environment,
+        data_tree=data,
+        environment=environment,
         targets_tree={"module_name": {"betrag_double_m_hh": None}},
+        foreign_keys=FOREIGN_KEYS,
+        supported_groupings=("hh",),
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -419,7 +475,7 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
     )
 
 
-def test_aggregate_by_group_specs_missing_group_sufix():
+def test_aggregate_by_group_specs_missing_group_suffix():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "hh_id": pd.Series([1, 1, 2], name="hh_id"),
@@ -428,13 +484,13 @@ def test_aggregate_by_group_specs_missing_group_sufix():
         },
     }
     aggregation_specs_tree = {
-        "module_name": (
-            AggregateByGroupSpec(
+        "module_name": {
+            "betrag_agg_m": AggregateByGroupSpec(
                 target="betrag_agg_m",
                 source="betrag_m",
                 agg=AggregationType.SUM,
-            ),
-        )
+            )
+        }
     }
     with pytest.raises(
         ValueError,
@@ -444,6 +500,8 @@ def test_aggregate_by_group_specs_missing_group_sufix():
             data,
             PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
             targets_tree={"module_name": {"betrag_agg_m": None}},
+            supported_groupings=("hh",),
+            foreign_keys=FOREIGN_KEYS,
         )
 
 
@@ -464,14 +522,14 @@ def test_aggregate_by_group_specs_agg_not_impl():
     [
         (
             {
-                "module": (
-                    AggregateByPIDSpec(
+                "module": {
+                    "target_func": AggregateByPIDSpec(
                         target="target_func",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func",
                         agg=AggregationType.SUM,
                     )
-                )
+                }
             },
             "source_func",
             {"module": {"target_func": None}},
@@ -479,14 +537,14 @@ def test_aggregate_by_group_specs_agg_not_impl():
         ),
         (
             {
-                "module": (
-                    AggregateByPIDSpec(
+                "module": {
+                    "target_func_m": AggregateByPIDSpec(
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
                         agg=AggregationType.SUM,
                     )
-                )
+                }
             },
             "source_func_m",
             {"module": {"target_func_y": None}},
@@ -494,14 +552,14 @@ def test_aggregate_by_group_specs_agg_not_impl():
         ),
         (
             {
-                "module": (
-                    AggregateByPIDSpec(
+                "module": {
+                    "target_func_m": AggregateByPIDSpec(
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
                         agg=AggregationType.SUM,
                     )
-                )
+                }
             },
             "source_func_m",
             {"module": {"target_func_y_hh": None}},
@@ -522,7 +580,11 @@ def test_user_provided_aggregate_by_p_id_specs(
     def source_func(p_id: int) -> int:  # noqa: ARG001
         return 100
 
-    functions_tree = {"module": {leaf_name: source_func}}
+    functions_tree = {
+        "module": {leaf_name: source_func},
+        "p_id": p_id,
+        "hh_id": hh_id,
+    }
 
     environment = PolicyEnvironment(
         functions_tree,
@@ -532,6 +594,8 @@ def test_user_provided_aggregate_by_p_id_specs(
         minimal_input_data_shared_hh,
         environment,
         targets_tree=target_tree,
+        supported_groupings=("hh",),
+        foreign_keys=FOREIGN_KEYS,
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
@@ -767,13 +831,13 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
         (
             PolicyEnvironment(
                 raw_objects_tree={},
-                aggregation_specs_tree=(
-                    AggregateByGroupSpec(
+                aggregation_specs_tree={
+                    "foo_hh": AggregateByGroupSpec(
                         target="foo_hh",
                         source="foo",
                         agg=AggregationType.SUM,
                     ),
-                ),
+                },
             ),
             ["m", "y"],
             ["hh"],
