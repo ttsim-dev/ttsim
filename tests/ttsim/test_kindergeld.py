@@ -1,0 +1,48 @@
+from pathlib import Path
+
+import dags.tree as dt
+import pandas as pd
+import pytest
+from pandas.testing import assert_frame_equal
+
+from _gettsim_tests._helpers import cached_set_up_policy_environment
+from _gettsim_tests._policy_test_utils import load_policy_test_data
+from ttsim import compute_taxes_and_transfers
+
+SRC = Path().parent.parent / "src"
+TEST_DATA = SRC / "_gettsim_tests" / "test_data"
+
+
+@pytest.fixture
+def kindergeld_policy_test():
+    name = "alleinerz_2_children_low_unterhalt.yaml"
+    kindergeld_2024 = load_policy_test_data("kindergeld/2024")
+    single_test = [
+        test_data for test_data in kindergeld_2024 if test_data.path.name == name
+    ]
+    return single_test[0]
+
+
+def test_kindergeld(kindergeld_policy_test):
+    test = kindergeld_policy_test
+
+    environment = cached_set_up_policy_environment(date=test.date)
+
+    result = compute_taxes_and_transfers(
+        data_tree=test.input_tree,
+        environment=environment,
+        targets_tree=test.target_structure,
+    )
+
+    flat_result = dt.flatten_to_qual_names(result)
+    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
+
+    if flat_expected_output_tree:
+        result_dataframe = pd.DataFrame(flat_result)
+        expected_dataframe = pd.DataFrame(flat_expected_output_tree)
+        assert_frame_equal(
+            result_dataframe,
+            expected_dataframe,
+            atol=test.info["precision"],
+            check_dtype=False,
+        )
