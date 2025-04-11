@@ -1,4 +1,5 @@
 import numpy
+from jax import numpy as jnp
 
 
 def piecewise_polynomial(
@@ -56,12 +57,10 @@ def piecewise_polynomial(
                     out += (
                         rates_multiplier * rates[pol - 1, i - 1] * threshold_incr**pol
                     )
-
     # If rates remain the same, everything is a lot easier.
     else:
         # We assign each individual the pre-calculated intercept.
         out = intercepts_at_lower_thresholds[selected_bin]
-
     # Intialize a multiplyer for 1 if it is not given.
     rates_multiplier = 1 if rates_multiplier is None else rates_multiplier
 
@@ -75,6 +74,95 @@ def piecewise_polynomial(
             )
 
     return out
+
+
+def piecewise_polynomial_numpy(
+    x, thresholds, rates, intercepts_at_lower_thresholds, rates_multiplier=1
+):
+    """Calculate value of the piecewise function at `x`.
+
+    Parameters
+    ----------
+    x : np.array
+        Series with values which piecewise polynomial is applied to.
+    thresholds : numpy.array
+                A one-dimensional array containing the thresholds for all intervals.
+    coefficients : numpy.ndarray
+            A two-dimensional array where columns are interval sections and rows
+            correspond to the coefficient for the nth polynomial.
+    intercepts_at_lower_thresholds : numpy.ndarray
+        The intercepts at the lower threshold of each interval.
+    rates_multiplier : pd.Series, float
+                       Multiplier to create individual or scaled rates. If given and
+                       not equal to 1, the function also calculates new intercepts.
+
+    Returns
+    -------
+    out : float
+        The value of `x` under the piecewise function.
+
+    """
+    if thresholds[0] == -numpy.inf and numpy.any(rates[:, 0]):
+        raise ValueError(
+            "The first interval starts at -inf, but the coefficients of "
+            "the polynomial are not all 0."
+        )
+    order = rates.shape[0]
+    selected_bin = numpy.searchsorted(thresholds, x, side="right") - 1
+    coefficients = rates[:, selected_bin].T
+    increment_to_calc = numpy.where(
+        thresholds[selected_bin] == -numpy.inf, 0, x - thresholds[selected_bin]
+    )
+    out = (
+        intercepts_at_lower_thresholds[selected_bin]
+        + (
+            ((increment_to_calc.reshape(-1, 1)) ** numpy.arange(1, order + 1, 1))
+            * (coefficients)
+        ).sum(axis=1)
+    ) * rates_multiplier
+    return numpy.squeeze(out)
+
+
+def piecewise_polynomial_jax(
+    x, thresholds, rates, intercepts_at_lower_thresholds, rates_multiplier=1
+):
+    """Calculate value of the piecewise function at `x`.
+
+    Parameters
+    ----------
+    x : np.array
+        Series with values which piecewise polynomial is applied to.
+    thresholds : numpy.array
+                A one-dimensional array containing the thresholds for all intervals.
+    coefficients : numpy.ndarray
+            A two-dimensional array where columns are interval sections and rows
+            correspond to the coefficient for the nth polynomial.
+    intercepts_at_lower_thresholds : numpy.ndarray
+        The intercepts at the lower threshold of each interval.
+    rates_multiplier : pd.Series, float
+                       Multiplier to create individual or scaled rates. If given and
+                       not equal to 1, the function also calculates new intercepts.
+
+    Returns
+    -------
+    out : float
+        The value of `x` under the piecewise function.
+
+    """
+    order = rates.shape[0]
+    selected_bin = jnp.searchsorted(thresholds, x, side="right") - 1
+    coefficients = rates[:, selected_bin].T
+    increment_to_calc = jnp.where(
+        thresholds[selected_bin] == -jnp.inf, 0, x - thresholds[selected_bin]
+    )
+    out = (
+        intercepts_at_lower_thresholds[selected_bin]
+        + (
+            ((increment_to_calc.reshape(-1, 1)) ** jnp.arange(1, order + 1, 1))
+            * (coefficients)
+        ).sum(axis=1)
+    ) * rates_multiplier
+    return jnp.squeeze(out)
 
 
 def get_piecewise_parameters(parameter_dict, parameter, func_type):
