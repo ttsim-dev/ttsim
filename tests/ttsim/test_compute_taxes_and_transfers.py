@@ -6,6 +6,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+from mettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
 from mettsim.payroll_tax.group_by_ids import fam_id, sp_id
 
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
@@ -24,14 +25,6 @@ from ttsim.function_types import group_by_function, policy_function, policy_inpu
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import convert_series_to_internal_type
-
-FOREIGN_KEYS = (
-    ("payroll_tax", "p_id_spouse"),
-    ("p_id_parent_1",),
-    ("p_id_parent_2",),
-)
-
-SUPPORTED_GROUPINGS = ("fam", "sp")
 
 
 @policy_input()
@@ -67,16 +60,6 @@ def minimal_input_data_shared_hh():
         "hh_id": pd.Series([0, 0, 1], name="hh_id"),
     }
     return out
-
-
-@policy_input()
-def p_id() -> int:
-    pass
-
-
-@policy_input()
-def hh_id() -> int:
-    pass
 
 
 # Create a function which is used by some tests below
@@ -236,6 +219,13 @@ def test_fail_if_foreign_key_points_to_p_id_of_same_row(foreign_key_path):
 @pytest.mark.parametrize(
     "data, functions",
     [
+        (
+            {
+                "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
+                "hh_id": pd.Series([1, 1, 2], name="hh_id"),
+            },
+            {},
+        ),
         (
             {
                 "foo_fam": pd.Series([1, 2, 2], name="foo_fam"),
@@ -415,15 +405,6 @@ def test_user_provided_aggregate_by_group_specs():
 @pytest.mark.parametrize(
     "aggregation_specs_tree",
     [
-        {
-            "module_name": (
-                AggregateByGroupSpec(
-                    target="betrag_double_m_hh",
-                    source="betrag_m_double",
-                    agg=AggregationType.MAX,
-                ),
-            )
-        },
         {
             "module_name": (
                 AggregateByGroupSpec(
