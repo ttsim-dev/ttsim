@@ -338,12 +338,13 @@ def test_user_provided_aggregate_by_group_specs():
     }
 
     aggregation_specs_tree = {
-        "module_name": {
-            "betrag_m_hh": AggregateByGroupSpec(
+        "module_name": (
+            AggregateByGroupSpec(
+                target="betrag_m_hh",
                 source="betrag_m",
                 aggr=AggregationType.SUM,
-            )
-        }
+            ),
+        )
     }
     expected_res = pd.Series([200, 200, 100])
 
@@ -364,20 +365,22 @@ def test_user_provided_aggregate_by_group_specs():
     "aggregation_specs_tree",
     [
         {
-            "module_name": {
-                "betrag_double_m_hh": AggregateByGroupSpec(
+            "module_name": (
+                AggregateByGroupSpec(
+                    target="betrag_double_m_hh",
                     source="betrag_m_double",
                     aggr=AggregationType.MAX,
                 ),
-            },
+            )
         },
         {
-            "module_name": {
-                "betrag_double_m_hh": AggregateByGroupSpec(
-                    source="module_name__betrag_m_double",
+            "module_name": (
+                AggregateByGroupSpec(
+                    target="betrag_double_m_hh",
+                    source="betrag_m_double",
                     aggr=AggregationType.MAX,
                 ),
-            },
+            )
         },
     ],
 )
@@ -425,12 +428,13 @@ def test_aggregate_by_group_specs_missing_group_sufix():
         },
     }
     aggregation_specs_tree = {
-        "module_name": {
-            "betrag_agg_m": AggregateByGroupSpec(
+        "module_name": (
+            AggregateByGroupSpec(
+                target="betrag_agg_m",
                 source="betrag_m",
                 aggr=AggregationType.SUM,
-            )
-        },
+            ),
+        )
     }
     with pytest.raises(
         ValueError,
@@ -449,6 +453,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
         match="aggr must be of type AggregationType, not <class 'str'>",
     ):
         AggregateByGroupSpec(
+            target="betrag_agg_m",
             source="betrag_m",
             aggr="sum",
         )
@@ -459,13 +464,14 @@ def test_aggregate_by_group_specs_agg_not_impl():
     [
         (
             {
-                "module": {
-                    "target_func": AggregateByPIDSpec(
+                "module": (
+                    AggregateByPIDSpec(
+                        target="target_func",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func",
                         aggr=AggregationType.SUM,
                     )
-                }
+                )
             },
             "source_func",
             {"module": {"target_func": None}},
@@ -473,13 +479,14 @@ def test_aggregate_by_group_specs_agg_not_impl():
         ),
         (
             {
-                "module": {
-                    "target_func_m": AggregateByPIDSpec(
+                "module": (
+                    AggregateByPIDSpec(
+                        target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
                         aggr=AggregationType.SUM,
                     )
-                }
+                )
             },
             "source_func_m",
             {"module": {"target_func_y": None}},
@@ -487,13 +494,14 @@ def test_aggregate_by_group_specs_agg_not_impl():
         ),
         (
             {
-                "module": {
-                    "target_func_m": AggregateByPIDSpec(
+                "module": (
+                    AggregateByPIDSpec(
+                        target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
                         aggr=AggregationType.SUM,
                     )
-                }
+                )
             },
             "source_func_m",
             {"module": {"target_func_y_hh": None}},
@@ -759,12 +767,13 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
         (
             PolicyEnvironment(
                 raw_objects_tree={},
-                aggregation_specs_tree={
-                    "foo_hh": AggregateByGroupSpec(
+                aggregation_specs_tree=(
+                    AggregateByGroupSpec(
+                        target="foo_hh",
                         source="foo",
                         aggr=AggregationType.SUM,
                     ),
-                },
+                ),
             ),
             ["m", "y"],
             ["hh"],

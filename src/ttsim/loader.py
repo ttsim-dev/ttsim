@@ -283,4 +283,8 @@ def _load_aggregation_specs_from_module(
     """
     module = _load_module(path, root_path)
     aggregation_specs = getattr(module, "aggregation_specs", ())
+    # for a_s in aggregation_specs:
+    #     a_s.qual_name_target = dt.qual_name_from_tree_path(
+    #         _convert_path_to_tree_path(path=path, root_path=root_path)
+    #     )
     return {a_s.target: a_s for a_s in aggregation_specs}

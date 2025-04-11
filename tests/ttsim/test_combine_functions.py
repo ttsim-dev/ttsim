@@ -122,12 +122,13 @@ def function_with_float_return(x: int) -> float:
                 "p_id": pd.Series([0, 1, 2]),
             },
             {
-                "namespace1": {
-                    "y_hh": AggregateByGroupSpec(
+                "namespace1": (
+                    AggregateByGroupSpec(
+                        target="y_hh",
                         source="x",
                         aggr=AggregationType.SUM,
                     ),
-                },
+                ),
             },
         ),
         (
@@ -143,12 +144,13 @@ def function_with_float_return(x: int) -> float:
                 "p_id": pd.Series([0, 1, 2]),
             },
             {
-                "namespace1": {
-                    "y_hh": AggregateByGroupSpec(
+                "namespace1": (
+                    AggregateByGroupSpec(
+                        target="y_hh",
                         source="inputs__x",
                         aggr=AggregationType.SUM,
                     ),
-                },
+                ),
             },
         ),
     ],
@@ -323,27 +325,36 @@ def test_fail_if_targets_are_not_among_functions(
     [
         (
             {"foo": function_with_bool_return},
-            {"foo_hh": AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM)},
+            (
+                AggregateByGroupSpec(
+                    target="foo_hh", source="foo", aggr=AggregationType.SUM
+                ),
+            ),
             "group",
             ["foo"],
             {"foo": bool, "return": int},
         ),
         (
             {"foo": function_with_float_return},
-            {"foo_hh": AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM)},
+            (
+                AggregateByGroupSpec(
+                    target="foo_hh", source="foo", aggr=AggregationType.SUM
+                ),
+            ),
             "group",
             ["foo"],
             {"foo": float, "return": float},
         ),
         (
             {"foo": function_with_int_return},
-            {
-                "foo_hh": AggregateByPIDSpec(
+            (
+                AggregateByPIDSpec(
+                    target="foo_hh",
                     p_id_to_aggregate_by="foreign_id_col",
                     source="foo",
                     aggr=AggregationType.SUM,
-                )
-            },
+                ),
+            ),
             "p_id",
             ["foo"],
             {"foo": int, "return": int},
@@ -406,8 +417,12 @@ def test_annotations_are_applied_to_derived_functions(
             {},
             {"x": pd.Series([1])},
             {
-                "n1__foo_hh": AggregateByGroupSpec(
-                    source="foo", aggr=AggregationType.SUM
+                "n1": (
+                    AggregateByGroupSpec(
+                        target="foo_hh",
+                        source="foo",
+                        aggr=AggregationType.SUM,
+                    ),
                 )
             },
             ["x", "foo", "n1"],
@@ -469,7 +484,9 @@ def test_create_aggregation_with_derived_soure_column():
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM),
+            AggregateByGroupSpec(
+                target="foo_hh", source="foo", aggr=AggregationType.SUM
+            ),
             "hh_id",
             {"foo": policy_function(leaf_name="foo")(lambda x: x)},
             ["foo", "foo_hh", "hh_id"],
@@ -478,7 +495,9 @@ def test_create_aggregation_with_derived_soure_column():
         ),
         (
             "foo_hh",
-            AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM),
+            AggregateByGroupSpec(
+                target="foo_hh", source="foo", aggr=AggregationType.SUM
+            ),
             "hh_id",
             {},
             ["foo", "foo_hh", "hh_id"],
@@ -487,7 +506,9 @@ def test_create_aggregation_with_derived_soure_column():
         ),
         (
             "foo_hh",
-            AggregateByGroupSpec(source="foo", aggr=AggregationType.SUM),
+            AggregateByGroupSpec(
+                target="foo_hh", source="foo", aggr=AggregationType.SUM
+            ),
             "hh_id",
             {
                 "foo": policy_function(

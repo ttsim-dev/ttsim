@@ -54,6 +54,7 @@ class AggregateSpec:
     """
 
     target: str
+    qual_name_target: str = field(init=False)
     source: str | None
     aggr: AggregationType
     _agg_func: Callable = field(init=False)
