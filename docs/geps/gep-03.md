@@ -45,10 +45,6 @@ Each of these parameters in turn is a dictionary with at least three keys: `name
 usually change over time; each time a value is changed, another `YYYY-MM-DD` entry is
 added.
 
-Some keys at the outermost level refer to functions of the taxes and transfers system.
-These work differently and they are
-{ref}`treated separately below <gep-3-keys-referring-to-functions>`.
-
 1. The `name` key has two sub-keys `de` and `en`, which are
 
    - short names without re-stating the realm of the parameter (e.g. "Arbeitslosengeld
@@ -320,60 +316,9 @@ The following walks through several cases.
   that the (set of) parameter(s) is not relevant any more, else the previous ones will
   linger on.
 
-(gep-3-keys-referring-to-functions)=
+(gep-3-handling-of-parameters-in-the-codebase)=
 
-## Keys referring to functions
-
-### The `rounding` key
-
-See {ref}`GEP-5 <gep-5>` for the entire scope of rounding, here we reproduce the
-{ref}`relevant section referring to YAML-files <gep-5-rounding-spec-yaml>`,
-
-The following goes through the details using an example from the basic pension allowance
-(Grundrente).
-
-The law on the public pension insurance specifies that the maximum possible
-Grundrentenzuschlag `sozialversicherung__rente__grundrente__höchstbetrag_m` be rounded
-to the nearest fourth decimal point (§76g SGB VI: Zuschlag an Entgeltpunkten für
-langjährige Versicherung). The example below contains GETTSIM's encoding of this fact.
-
-The snippet is taken from `ges_rente.yaml`, which contains the following code:
-
-```yaml
-rounding:
-  höchstbetrag_m:
-    2020-01-01:
-      base: 0.0001
-      direction: nearest
-      reference: §76g SGB VI Abs. 4 Nr. 4
-```
-
-The specification of the rounding parameters starts with the key `rounding` at the
-outermost level of indentation. The keys are names of functions.
-
-At the next level, the `YYYY-MM-DD` key(s) indicate when rounding was introduced and/or
-changed. This is done in in the same way as for other policy parameters. Those
-`YYYY-MM-DD` key(s) are associated with a dictionary containing the following elements:
-
-- The parameter `base` determines the base to which the variables is rounded. It has to
-  be a floating point number.
-- The parameter `direction` has to be one of `up`, `down`, or `nearest`.
-- The `reference` must contain the reference to the law, which specifies the rounding.
-
-### The `dates_active` key
-
-Some functions should not be present at certain times. For example, `arbeitslosengeld_2`
-and all its ancestors should not appear in DAGs referring to years prior to 2005.
-
-Other functions have different interfaces in different years or undergo very large
-changes in their body.
-
-The `dates_active` key can be used to include certain functions only in certain years
-and to switch between different implementations of other functions.
-
-(gep-3-storage-of-parameters)=
-
-## Storage of parameters
+## Handling of parameters in the codebase
 
 The contents of the YAML files become part of the `policy_params` dictionary. Its keys
 correspond to the names of the YAML files. Each value will be a dictionary that follows
