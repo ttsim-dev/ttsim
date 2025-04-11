@@ -13,7 +13,7 @@ from ttsim.aggregation import (
     grouped_sum,
     sum_by_p_id,
 )
-from ttsim.config import USE_JAX
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 
 
@@ -131,7 +131,7 @@ test_grouped_specs = {
         "expected_type": numpy.integer,
     },
 }
-if not USE_JAX:
+if not IS_JAX_INSTALLED:
     test_grouped_specs["datetime"] = {
         "column_to_aggregate": np.array(
             [
@@ -205,7 +205,7 @@ test_grouped_raises_specs = {
         "exception_match": "The dtype of id columns must be integer.",
     },
 }
-if not USE_JAX:
+if not IS_JAX_INSTALLED:
     test_grouped_raises_specs["dtype_string"] = {
         "column_to_aggregate": np.array(["0", "1", "2", "3", "4"]),
         "group_id": np.array([0, 0, 1, 1, 1]),

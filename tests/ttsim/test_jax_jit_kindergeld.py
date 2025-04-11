@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import dags.tree as dt
-import jax
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
@@ -10,6 +9,10 @@ from _gettsim.kindergeld.kindergeld import betrag_ohne_staffelung_m as betrag_m
 from _gettsim_tests._helpers import cached_set_up_policy_environment
 from _gettsim_tests._policy_test_utils import load_policy_test_data
 from ttsim import compute_taxes_and_transfers
+from ttsim.config import IS_JAX_INSTALLED
+
+if IS_JAX_INSTALLED:
+    import jax
 
 SRC = Path().parent.parent / "src"
 TEST_DATA = SRC / "_gettsim_tests" / "test_data"
@@ -20,6 +23,7 @@ TEST_DATA = SRC / "_gettsim_tests" / "test_data"
 # ======================================================================================
 
 
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="JAX is not installed")
 def test_kindergeld_policy_func():
     policy_func = betrag_m
     policy_func_jitted = jax.jit(policy_func)
@@ -47,6 +51,7 @@ def kindergeld_policy_test():
     return single_test[1]  # index=1 -> betrag_m
 
 
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="JAX is not installed")
 def test_compute_taxes_and_transfers_kindergeld(kindergeld_policy_test):
     test = kindergeld_policy_test
 

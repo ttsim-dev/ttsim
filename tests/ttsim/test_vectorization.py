@@ -8,9 +8,9 @@ import numpy
 import pytest
 from dags import concatenate_functions
 
-from ttsim.config import USE_JAX
+from ttsim.config import IS_JAX_INSTALLED
 
-if USE_JAX:
+if IS_JAX_INSTALLED:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
@@ -27,10 +27,10 @@ from ttsim.vectorization import (
 # Backend
 # ======================================================================================
 
-backends = ["jax", "numpy"] if USE_JAX else ["numpy"]
+backends = ["jax", "numpy"] if IS_JAX_INSTALLED else ["numpy"]
 
 modules = {"numpy": numpy}
-if USE_JAX:
+if IS_JAX_INSTALLED:
     modules["jax"] = jax.numpy
 
 # ======================================================================================

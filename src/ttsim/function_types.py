@@ -10,7 +10,7 @@ from typing import Literal, TypeVar
 import dags.tree as dt
 import numpy
 
-from ttsim.config import USE_JAX
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.vectorization import make_vectorizable
 
 T = TypeVar("T")
@@ -177,7 +177,7 @@ def _vectorize_func(
         vectorized.__globals__ = func.__globals__
         vectorized.__closure__ = func.__closure__
     elif vectorization_strategy == "vectorize":
-        backend = "jax" if USE_JAX else "numpy"
+        backend = "jax" if IS_JAX_INSTALLED else "numpy"
         vectorized = make_vectorizable(func, backend=backend)
     else:
         raise ValueError(
