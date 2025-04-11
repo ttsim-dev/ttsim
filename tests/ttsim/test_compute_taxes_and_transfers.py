@@ -406,13 +406,13 @@ def test_user_provided_aggregate_by_group_specs():
     "aggregation_specs_tree",
     [
         {
-            "module_name": (
-                AggregateByGroupSpec(
+            "module_name": {
+                "betrag_double_m_hh": AggregateByGroupSpec(
                     target="betrag_double_m_hh",
                     source="betrag_m_double",
                     agg=AggregationType.MAX,
                 ),
-            )
+            }
         },
     ],
 )
@@ -442,7 +442,6 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
         },
         aggregation_specs_tree=aggregation_specs_tree,
     )
-
     out = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
@@ -488,7 +487,7 @@ def test_aggregate_by_group_specs_missing_group_suffix():
 
 def test_aggregate_by_group_specs_agg_not_impl():
     with pytest.raises(
-        ValueError,
+        TypeError,
         match="agg must be of type AggregationType, not <class 'str'>",
     ):
         AggregateByGroupSpec(

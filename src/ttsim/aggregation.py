@@ -75,6 +75,8 @@ class AggregateByGroupSpec(AggregationSpec):
     """
 
     def __post_init__(self):
+        super().__post_init__()
+
         aggregation_registry = {
             AggregationType.SUM: grouped_sum,
             AggregationType.MEAN: grouped_mean,
