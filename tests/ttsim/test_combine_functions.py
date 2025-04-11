@@ -445,7 +445,7 @@ def test_annotations_are_applied_to_derived_functions(
         ),
         (
             {"n1__foo": policy_function(leaf_name="foo")(lambda n2__x_hh: n2__x_hh)},
-            {"n2": {"x": x}},
+            {"hh_id": hh_id, "n2__x": x},
             {},
             {"n2": {"x": pd.Series([1])}},
             {},
@@ -463,7 +463,7 @@ def test_annotations_are_applied_to_derived_functions(
         ),
         (
             {"foo": policy_function(leaf_name="foo")(lambda x: x)},
-            {"x": x},
+            {"hh_id": hh_id, "x": x},
             {},
             {"x": pd.Series([1])},
             {
