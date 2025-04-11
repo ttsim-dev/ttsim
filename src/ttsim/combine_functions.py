@@ -11,13 +11,6 @@ from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
     AggregationType,
-    all_by_p_id,
-    any_by_p_id,
-    count_by_p_id,
-    max_by_p_id,
-    mean_by_p_id,
-    min_by_p_id,
-    sum_by_p_id,
 )
 from ttsim.function_types import (
     DEFAULT_END_DATE,
@@ -386,193 +379,6 @@ def _select_return_type(aggregation_method: str, source_col_type: type) -> type:
     return return_type
 
 
-def _create_one_aggregate_by_group_func(
-    aggregation_target: str,
-    aggregation_spec: AggregateByGroupSpec,
-    group_by_id: str,
-    functions: QualNameTTSIMFunctionDict,
-    inputs: QualNamePolicyInputDict,
-    top_level_namespace: set[str],
-) -> DerivedAggregationFunction:
-    """Create an aggregation function based on aggregation specification.
-
-    Parameters
-    ----------
-    aggregation_target
-        Leaf name of the aggregation target.
-    aggregation_spec
-        The aggregation specification.
-    annotations
-        The annotations for the derived function.
-    group_by_id
-        The group-by-identifier.
-    functions
-        Map of qualified names to functions.
-    inputs
-        Map of qualified names to policy inputs.
-    top_level_namespace
-        Set of top-level namespaces.
-
-    Returns
-    -------
-    The derived function.
-
-    """
-    source = aggregation_spec.source
-
-    wrapped_func = dt.one_function_without_tree_logic(
-        function=dags.rename_arguments(
-            func=aggregation_spec.agg_func,
-            mapper=aggregation_spec.mapper(group_by_id),
-        ),
-        tree_path=dt.tree_path_from_qual_name(aggregation_target),
-        top_level_namespace=top_level_namespace,
-    )
-
-    qual_name_source = (
-        _get_qual_name_of_source_col(
-            source=source,
-            wrapped_func=wrapped_func,
-        )
-        if source
-        else None
-    )
-
-    if qual_name_source in functions:
-        start_date = functions[qual_name_source].start_date
-        end_date = functions[qual_name_source].end_date
-    elif qual_name_source in inputs:
-        start_date = inputs[qual_name_source].start_date
-        end_date = inputs[qual_name_source].end_date
-    else:
-        raise ValueError(f"Source {qual_name_source} not found in functions or inputs")
-
-    return DerivedAggregationFunction(
-        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
-        function=wrapped_func,
-        source=qual_name_source,
-        aggregation_method=aggregation_spec.aggr,
-        start_date=start_date,
-        end_date=end_date,
-    )
-
-
-def _create_one_aggregate_by_p_id_func(
-    aggregation_target: str,
-    aggregation_spec: AggregateByPIDSpec,
-    functions: QualNameTTSIMFunctionDict,
-    top_level_namespace: set[str],
-) -> DerivedAggregationFunction:
-    """Create one function that links variables across persons.
-
-    Parameters
-    ----------
-    aggregation_target
-        Name of the aggregation target.
-    aggregation_spec
-        The aggregation specification.
-    functions
-        The functions dict with qualified function names as keys and functions as
-        values.
-    top_level_namespace
-        Set of top-level namespaces.
-
-    Returns
-    -------
-    The derived function.
-
-    """
-    aggregation_method = aggregation_spec.aggr
-    p_id_to_aggregate_by = aggregation_spec.p_id_to_aggregate_by
-    source = aggregation_spec.source if aggregation_method != "count" else None
-
-    if aggregation_method == "count":
-        mapper = {
-            "p_id_to_aggregate_by": p_id_to_aggregate_by,
-            "p_id_to_store_by": "p_id",
-        }
-
-        def agg_func(p_id_to_aggregate_by, p_id_to_store_by):
-            return count_by_p_id(p_id_to_aggregate_by, p_id_to_store_by)
-
-    else:
-        mapper = {
-            "p_id_to_aggregate_by": p_id_to_aggregate_by,
-            "p_id_to_store_by": "p_id",
-            "column": source,
-        }
-
-        if aggregation_method == "sum":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return sum_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "mean":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return mean_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "max":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return max_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "min":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return min_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "any":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return any_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "all":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return all_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        else:
-            msg = format_errors_and_warnings(
-                f"Aggregation method {aggregation_method} is not implemented."
-            )
-            raise ValueError(msg)
-
-    wrapped_func = dt.one_function_without_tree_logic(
-        function=dags.rename_arguments(
-            func=agg_func,
-            mapper=mapper,
-        ),
-        tree_path=dt.tree_path_from_qual_name(aggregation_target),
-        top_level_namespace=top_level_namespace,
-    )
-
-    qual_name_source = (
-        _get_qual_name_of_source_col(
-            source=source,
-            wrapped_func=wrapped_func,
-        )
-        if source
-        else None
-    )
-
-    if qual_name_source in functions:
-        start_date = functions[qual_name_source].start_date
-        end_date = functions[qual_name_source].end_date
-    else:
-        start_date = DEFAULT_START_DATE
-        end_date = DEFAULT_END_DATE
-
-    return DerivedAggregationFunction(
-        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
-        function=wrapped_func,
-        source=qual_name_source,
-        aggregation_method=aggregation_method,
-        start_date=start_date,
-        end_date=end_date,
-    )
-
-
 def _annotate_aggregation_functions(
     functions: QualNameTTSIMFunctionDict,
     inputs: QualNamePolicyInputDict,
@@ -618,16 +424,13 @@ def _annotate_aggregation_functions(
                 annotations["return"] = _select_return_type(
                     aggregation_method, annotations[source]
                 )
-            else:
-                # TODO(@hmgaudecker): Think about how type annotations of aggregations
-                # of user-provided input variables are handled
-                # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
-                pass
         else:
+            print(
+                f"Source {source} not found in functions or inputs, should only happen if only basename can be matched."
+            )
             # TODO(@hmgaudecker): Think about how type annotations of aggregations of
             # user-provided input variables are handled
             # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
-            pass
 
         aggregation_function.__annotations__ = annotations
         annotated_functions[aggregation_target] = aggregation_function
