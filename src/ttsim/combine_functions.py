@@ -295,12 +295,9 @@ def _create_one_aggregation_function(
         start_date = DEFAULT_START_DATE
         end_date = DEFAULT_END_DATE
     else:
-        # We end up here if source is not available because of start and end dates.
-        #            print(f"Source {qual_name_source} not found in functions or inputs")
-        return None
-        # raise ValueError(
-        #     f"Source {qual_name_source} not found in functions or inputs"
-        # )
+        raise ValueError(
+            f"Aggregation source {qual_name_source} not found in functions or inputs."
+        )
 
     return DerivedAggregationFunction(
         leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
@@ -455,21 +452,13 @@ def _annotate_aggregation_functions(
             annotations["return"] = _select_return_type(
                 aggregation_method, annotations[source]
             )
-        elif source in functions:
+        else:
             source_function = functions[source]
             if "return" in source_function.__annotations__:
                 annotations[source] = source_function.__annotations__["return"]
                 annotations["return"] = _select_return_type(
                     aggregation_method, annotations[source]
                 )
-        else:
-            print(
-                f"Source {source} not found in functions or inputs,"
-                "should only happen if only basename can be matched."
-            )
-            # TODO(@hmgaudecker): Think about how type annotations of aggregations of
-            # user-provided input variables are handled
-            # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
 
         aggregation_function.__annotations__ = annotations
         annotated_functions[aggregation_target] = aggregation_function
