@@ -20,7 +20,7 @@ def kindergeld_policy_test():
     single_test = [
         test_data for test_data in kindergeld_2024 if test_data.path.name == name
     ]
-    return single_test[0]
+    return single_test[1]
 
 
 def test_kindergeld(kindergeld_policy_test):

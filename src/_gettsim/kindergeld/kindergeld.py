@@ -13,7 +13,9 @@ aggregation_specs = {
 }
 
 
-@policy_function(start_date="2023-01-01", leaf_name="betrag_m")
+@policy_function(
+    start_date="2023-01-01", leaf_name="betrag_m", vectorization_strategy="vectorize"
+)
 def betrag_ohne_staffelung_m(
     anzahl_ansprüche: int,
     kindergeld_params: dict,
@@ -73,7 +75,11 @@ def betrag_gestaffelt_m(
     return sum_kindergeld
 
 
-@policy_function(end_date="2011-12-31", leaf_name="grundsätzlich_anspruchsberechtigt")
+@policy_function(
+    end_date="2011-12-31",
+    leaf_name="grundsätzlich_anspruchsberechtigt",
+    vectorization_strategy="vectorize",
+)
 def grundsätzlich_anspruchsberechtigt_nach_lohn(
     alter: int,
     in_ausbildung: bool,
@@ -113,7 +119,11 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
     return out
 
 
-@policy_function(start_date="2012-01-01", leaf_name="grundsätzlich_anspruchsberechtigt")
+@policy_function(
+    start_date="2012-01-01",
+    leaf_name="grundsätzlich_anspruchsberechtigt",
+    vectorization_strategy="vectorize",
+)
 def grundsätzlich_anspruchsberechtigt_nach_stunden(
     alter: int,
     in_ausbildung: bool,
@@ -151,7 +161,7 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def kind_bis_10_mit_kindergeld(
     alter: int,
     grundsätzlich_anspruchsberechtigt: bool,
