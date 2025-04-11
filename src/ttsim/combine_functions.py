@@ -299,13 +299,16 @@ def _create_one_aggregation_function(
         start_date = functions[qual_name_source].start_date
         end_date = functions[qual_name_source].end_date
     elif qual_name_source is None:
-        # Case: count
+        # Aggregation method is count
         start_date = DEFAULT_START_DATE
         end_date = DEFAULT_END_DATE
     else:
-        raise ValueError(
-            f"Aggregation source {qual_name_source} not found in functions or inputs."
-        )
+        start_date = DEFAULT_START_DATE
+        end_date = DEFAULT_END_DATE
+        # TODO(@MImmesberger): Once we filter the aggregations by start and end date,
+        # we should throw an error here. The qualified source name should be in either
+        # functions or inputs (or None if it is a count).
+        # https://github.com/iza-institute-of-labor-economics/gettsim/issues/870
 
     return DerivedAggregationFunction(
         leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
@@ -461,13 +464,19 @@ def _annotate_aggregation_functions(
             annotations["return"] = _select_return_type(
                 aggregation_method, annotations[source]
             )
-        else:
+        elif source in functions:
             source_function = functions[source]
             if "return" in source_function.__annotations__:
                 annotations[source] = source_function.__annotations__["return"]
                 annotations["return"] = _select_return_type(
                     aggregation_method, annotations[source]
                 )
+        else:
+            # TODO(@MImmesberger): Once we filter the aggregations by start and end
+            # date, we should throw an error here. The qualified source name should be
+            # in either functions or inputs (or None if it is a count).
+            # https://github.com/iza-institute-of-labor-economics/gettsim/issues/870
+            pass
 
         aggregation_function.__annotations__ = annotations
         annotated_functions[aggregation_target] = aggregation_function
