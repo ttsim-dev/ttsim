@@ -91,8 +91,9 @@ parameter files) for the following reason:
   each period can be specified using the `start_date`, `end_date` keywords in the
   `policy_function` decorator.
 - Optional rounding can be easily specified for user-written functions.
-- At the definition of a function, it is clearly visible whether it is optionally
-  rounded and where the rounding parameters are found.
+- At the definition of a function, it is clearly visible whether and how it is
+  optionally rounded (initially we included the rounding parameters in the yaml files,
+  which led to an unclear structure there and one always had to look in two places).
 
 ## Discussion
 
@@ -100,6 +101,10 @@ parameter files) for the following reason:
 - PR: <https://github.com/iza-institute-of-labor-economics/gettsim/pull/324>
 - PR Implementation:
   <https://github.com/iza-institute-of-labor-economics/gettsim/pull/316>
+- GitHub PR for update (changes because of `GEP-6 <gep-6>`):
+  <https://github.com/iza-institute-of-labor-economics/gettsim/pull/855>
+- Github PR changing to a RoundingSpec class rather than parameters specified in the
+  yaml files: <https://github.com/iza-institute-of-labor-economics/gettsim/pull/854>
 
 ## Copyright
 
