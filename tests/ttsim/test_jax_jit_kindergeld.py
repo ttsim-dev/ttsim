@@ -1,16 +1,40 @@
 from pathlib import Path
 
 import dags.tree as dt
+import jax
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from _gettsim.kindergeld.kindergeld import betrag_ohne_staffelung_m as betrag_m
 from _gettsim_tests._helpers import cached_set_up_policy_environment
 from _gettsim_tests._policy_test_utils import load_policy_test_data
 from ttsim import compute_taxes_and_transfers
 
 SRC = Path().parent.parent / "src"
 TEST_DATA = SRC / "_gettsim_tests" / "test_data"
+
+
+# ======================================================================================
+# Unit tests for each policy function
+# ======================================================================================
+
+
+def test_kindergeld_policy_func():
+    policy_func = betrag_m
+    policy_func_jitted = jax.jit(policy_func)
+
+    inputs = {
+        "anzahl_ansprüche": jax.numpy.array([1, 2, 3]),
+        # params are not vectorized over
+        "kindergeld_params": {"kindergeld": 250},
+    }
+    policy_func_jitted(**inputs)
+
+
+# ======================================================================================
+# End-to-end tests (for compute_taxes_and_transfers)
+# ======================================================================================
 
 
 @pytest.fixture
@@ -20,10 +44,10 @@ def kindergeld_policy_test():
     single_test = [
         test_data for test_data in kindergeld_2024 if test_data.path.name == name
     ]
-    return single_test[1]
+    return single_test[1]  # index=1 -> betrag_m
 
 
-def test_kindergeld(kindergeld_policy_test):
+def test_compute_taxes_and_transfers_kindergeld(kindergeld_policy_test):
     test = kindergeld_policy_test
 
     environment = cached_set_up_policy_environment(date=test.date)
@@ -32,6 +56,7 @@ def test_kindergeld(kindergeld_policy_test):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
+        jit=True,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
