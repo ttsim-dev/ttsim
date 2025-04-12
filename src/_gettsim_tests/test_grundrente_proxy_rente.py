@@ -12,13 +12,12 @@ from _gettsim_tests.utils import (
 )
 from ttsim import compute_taxes_and_transfers
 
-proxy_rente_test_data = load_policy_test_data("grundrente_proxy_rente")
-
-
-@pytest.mark.parametrize(
-    "test",
-    proxy_rente_test_data,
+proxy_rente_test_data = load_policy_test_data(
+    "sozialversicherung/rente/grundrente_proxy_rente"
 )
+
+
+@pytest.mark.parametrize("test", proxy_rente_test_data)
 def test_grundrente_proxy_rente_vorjahr_comparison(test: PolicyTest):
     environment = cached_set_up_policy_environment(date=test.date)
 
