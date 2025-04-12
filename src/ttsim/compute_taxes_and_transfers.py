@@ -68,8 +68,7 @@ def compute_taxes_and_transfers(
     environment: PolicyEnvironment
         The policy environment which contains all necessary functions and parameters.
     targets_tree : NestedTargetDict | None
-        The targets tree. By default, ``targets_tree`` is ``None`` and all key outputs
-        as defined by `gettsim.config.DEFAULT_TARGETS` are returned.
+        The targets tree.
     rounding : bool, default True
         Indicator for whether rounding should be applied as specified in the law.
     debug : bool
@@ -695,7 +694,9 @@ def _fail_if_root_nodes_are_missing(
             missing_nodes.append(str(node))
 
     if missing_nodes:
-        formatted = format_list_linewise(missing_nodes)
+        formatted = format_list_linewise(
+            [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes]
+        )
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
