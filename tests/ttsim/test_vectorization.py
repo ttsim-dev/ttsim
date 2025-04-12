@@ -370,7 +370,6 @@ def test_unallowed_operation_wrapper(func):
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/515
 for year in range(1990, 2023):
 
-    @pytest.mark.skip(reason="@Tim:Need to take care of RoundingDirection issue first.")
     @pytest.mark.parametrize(
         "func",
         [
