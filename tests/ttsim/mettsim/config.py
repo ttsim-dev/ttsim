@@ -6,7 +6,7 @@ approach based on the Gondorian tax code.
 
 from pathlib import Path
 
-METTSIM_RESSOURCE_DIR = Path(__file__).parent
+RESOURCE_DIR = Path(__file__).parent
 
 
 FOREIGN_KEYS = (

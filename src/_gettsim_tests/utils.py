@@ -1,20 +1,38 @@
 from __future__ import annotations
 
 import datetime
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import pandas as pd
 import yaml
 
-from _gettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from _gettsim.config import FOREIGN_KEYS, RESOURCE_DIR, SUPPORTED_GROUPINGS
 from _gettsim_tests import TEST_DIR
-from ttsim import merge_trees
+from ttsim import (
+    PolicyEnvironment,
+    merge_trees,
+    set_up_policy_environment,
+)
+from ttsim.policy_environment import _parse_date
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from ttsim import NestedDataDict, NestedInputStructureDict
+
+
+def cached_set_up_policy_environment(
+    date: int | str | datetime.date,
+) -> PolicyEnvironment:
+    normalized_date = _parse_date(date)
+    return _cached_set_up_policy_environment(normalized_date)
+
+
+@lru_cache(maxsize=100)
+def _cached_set_up_policy_environment(date: datetime.date) -> PolicyEnvironment:
+    return set_up_policy_environment(date=date, resource_dir=RESOURCE_DIR)
 
 
 class PolicyTest:
@@ -49,7 +67,7 @@ class PolicyTest:
 def execute_test(test: PolicyTest):
     from pandas.testing import assert_frame_equal
 
-    from _gettsim_tests._helpers import cached_set_up_policy_environment
+    from _gettsim_tests.utils import cached_set_up_policy_environment
     from ttsim import compute_taxes_and_transfers
 
     environment = cached_set_up_policy_environment(date=test.date)
@@ -168,7 +186,7 @@ def _get_policy_tests_from_raw_test_data(
         }
     )
 
-    date: datetime.date = _parse_date(path_to_yaml.parent.name)
+    date: datetime.date = _parse_date_from_dir_name(path_to_yaml.parent.name)
 
     out = []
     if expected_output_tree == {}:
@@ -201,7 +219,7 @@ def _get_policy_tests_from_raw_test_data(
     return out
 
 
-def _parse_date(date: str) -> datetime.date:
+def _parse_date_from_dir_name(date: str) -> datetime.date:
     parts = date.split("-")
 
     if len(parts) == 1:

@@ -1,5 +1,5 @@
 import pytest
-from _policy_test_utils import (
+from utils import (
     PolicyTest,
     execute_test,
     get_policy_test_ids_and_cases,

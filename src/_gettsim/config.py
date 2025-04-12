@@ -77,7 +77,7 @@ SUPPORTED_GROUPINGS = {
 }
 
 
-DEFAULT_TARGETS = {
+_TO_DELETE_DEFAULT_TARGETS = {
     "einkommensteuer": {
         "betrag_y_sn": None,
         "abgeltungssteuer": {"betrag_y_sn": None},

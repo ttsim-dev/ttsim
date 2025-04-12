@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import optree
 import pandas as pd
 import pytest
-from mettsim.config import METTSIM_RESSOURCE_DIR
+from mettsim.config import RESOURCE_DIR
 
 from ttsim.function_types import (
     GroupByFunction,
@@ -76,12 +76,12 @@ class TestPolicyEnvironment:
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="02-29-2020", resource_dir=METTSIM_RESSOURCE_DIR)
+    set_up_policy_environment(date="02-29-2020", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="02-30-2020", resource_dir=METTSIM_RESSOURCE_DIR)
+        set_up_policy_environment(date="02-30-2020", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_access_different_date():
@@ -134,10 +134,10 @@ def test_load_functions_tree_for_date(
     function_name_next_day: str,
 ):
     functions_last_day = load_objects_tree_for_date(
-        resource_dir=METTSIM_RESSOURCE_DIR, date=last_day
+        resource_dir=RESOURCE_DIR, date=last_day
     )
     functions_next_day = load_objects_tree_for_date(
-        resource_dir=METTSIM_RESSOURCE_DIR, date=last_day + timedelta(days=1)
+        resource_dir=RESOURCE_DIR, date=last_day + timedelta(days=1)
     )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]

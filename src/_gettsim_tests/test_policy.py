@@ -1,6 +1,6 @@
 import pytest
 
-from _gettsim_tests._policy_test_utils import (
+from _gettsim_tests.utils import (
     PolicyTest,
     execute_test,
     get_policy_test_ids_and_cases,
