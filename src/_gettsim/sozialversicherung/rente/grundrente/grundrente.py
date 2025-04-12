@@ -1,9 +1,9 @@
-from ttsim import RoundingDirection, RoundingSpec, piecewise_polynomial, policy_function
+from ttsim import RoundingSpec, piecewise_polynomial, policy_function
 
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
     ),
     start_date="2021-01-01",
 )
@@ -87,7 +87,7 @@ def einkommen_m(
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
     ),
     start_date="2021-01-01",
 )
@@ -147,7 +147,7 @@ def anzurechnendes_einkommen_m(
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction=RoundingDirection.NEAREST, reference="§ 123 SGB VI Abs. 1"
+        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
     ),
     start_date="2021-01-01",
 )
@@ -235,7 +235,7 @@ def durchschnittliche_entgeltpunkte(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=0.0001,
-        direction=RoundingDirection.NEAREST,
+        direction="nearest",
         reference="§76g SGB VI Abs. 4 Nr. 4",
     ),
     start_date="2021-01-01",
@@ -279,7 +279,7 @@ def höchstbetrag_m(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=0.0001,
-        direction=RoundingDirection.NEAREST,
+        direction="nearest",
         reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
@@ -339,12 +339,12 @@ def mean_entgeltpunkte_zuschlag(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=0.0001,
-        direction=RoundingDirection.NEAREST,
+        direction="nearest",
         reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
 )
-def proxy_rente_vorjahr_m(  # noqa: PLR0913
+def proxy_rente_vorjahr_m(
     sozialversicherung__rente__bezieht_rente: bool,
     sozialversicherung__rente__private_rente_betrag_m: float,
     sozialversicherung__rente__jahr_renteneintritt: int,

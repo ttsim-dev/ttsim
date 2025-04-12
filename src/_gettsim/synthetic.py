@@ -9,14 +9,13 @@ import pandas as pd
 from _gettsim.config import (
     RESOURCE_DIR,
     SUPPORTED_GROUPINGS,
-    TYPES_INPUT_VARIABLES,
 )
 from ttsim.policy_environment import _load_parameter_group_from_yaml
 
 current_year = datetime.datetime.today().year
 
 
-def create_synthetic_data(  # noqa: PLR0913
+def create_synthetic_data(
     n_adults=1,
     n_children=0,
     adults_married=True,

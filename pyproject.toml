@@ -219,6 +219,7 @@ extend-ignore = [
     "PLC2401", # Allow non-ASCII characters in variable names.
     "PLC2403", # Allow non-ASCII function names for imports.
     "N999", # Allow non-ASCII characters in file names.
+    "PLR0913", # Too many arguments in function definition.
 
     # Things we are not sure we want
     # ==============================

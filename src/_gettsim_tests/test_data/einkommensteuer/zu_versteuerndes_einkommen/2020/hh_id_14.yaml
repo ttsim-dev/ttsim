@@ -172,7 +172,7 @@ outputs:
     - 0
     - 0
     - 0
-  einkommensteuer__gesamteinkommen_ohne_abzüge_y:
+  einkommensteuer__einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y:
     - 41000
     - 23000
     - 0

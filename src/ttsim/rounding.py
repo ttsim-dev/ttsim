@@ -2,25 +2,17 @@ from __future__ import annotations
 
 import functools
 from dataclasses import dataclass
-from enum import StrEnum
+from typing import Literal, get_args
 
 import numpy as np
 
-
-class RoundingDirection(StrEnum):
-    """
-    Enum for the rounding direction.
-    """
-
-    UP = "up"
-    DOWN = "down"
-    NEAREST = "nearest"
+ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 
 
 @dataclass
 class RoundingSpec:
     base: int | float
-    direction: RoundingDirection
+    direction: ROUNDING_DIRECTION
     to_add_after_rounding: int | float = 0
     reference: str | None = None
 
@@ -28,9 +20,10 @@ class RoundingSpec:
         """Validate the types of base and to_add_after_rounding."""
         if type(self.base) not in [int, float]:
             raise ValueError(f"base needs to be a number, got {self.base!r}")
-        if type(self.direction) not in [RoundingDirection]:
+        valid_directions = get_args(ROUNDING_DIRECTION)
+        if self.direction not in valid_directions:
             raise ValueError(
-                f"direction needs to be a RoundingDirection, got {self.direction!r}"
+                f"`direction` must be one of {valid_directions}, got {self.direction!r}"
             )
         if type(self.to_add_after_rounding) not in [int, float]:
             raise ValueError(
@@ -57,11 +50,11 @@ class RoundingSpec:
         def wrapper(*args, **kwargs):
             out = func(*args, **kwargs)
 
-            if self.direction == RoundingDirection.UP:
+            if self.direction == "up":
                 rounded_out = self.base * np.ceil(out / self.base)
-            elif self.direction == RoundingDirection.DOWN:
+            elif self.direction == "down":
                 rounded_out = self.base * np.floor(out / self.base)
-            elif self.direction == RoundingDirection.NEAREST:
+            elif self.direction == "nearest":
                 rounded_out = self.base * (out / self.base).round()
 
             rounded_out += self.to_add_after_rounding

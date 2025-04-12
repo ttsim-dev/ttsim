@@ -2,16 +2,18 @@
 
 from ttsim import AggregateByGroupSpec, AggregationType, policy_function
 
-aggregation_specs = {
-    "wohngeld_vorrang_wthh": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="wohngeld_vorrang_wthh",
         source="wohngeld_vorrang_vor_arbeitslosengeld_2_bg",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
-    "wohngeld_kinderzuschlag_vorrang_wthh": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="wohngeld_kinderzuschlag_vorrang_wthh",
         source="wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
-}
+)
 
 
 @policy_function()

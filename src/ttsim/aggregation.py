@@ -48,23 +48,34 @@ class AggregationType(StrEnum):
 
 
 @dataclass
-class AggregateByGroupSpec:
+class AggregationSpec:
+    """
+    Base class for aggregation specifications. Only use for type checking.
+    """
+
+    target: str
+    source: str | None
+    agg: AggregationType
+    _agg_func: Callable = field(init=False)
+
+    def __post_init__(self):
+        if not isinstance(self.agg, AggregationType):
+            raise TypeError(
+                f"agg must be of type AggregationType, not {type(self.agg)}"
+            )
+
+        if self.agg == AggregationType.COUNT and self.source is not None:
+            raise ValueError("COUNT aggregation must not provide a source.")
+
+
+@dataclass
+class AggregateByGroupSpec(AggregationSpec):
     """
     A container for aggregate by group specifications.
     """
 
-    aggr: AggregationType
-    source: str | None = None
-    _agg_func: Callable = field(init=False)
-
     def __post_init__(self):
-        if not isinstance(self.aggr, AggregationType):
-            raise ValueError(
-                f"aggr must be of type AggregationType, not {type(self.aggr)}"
-            )
-
-        if self.aggr == AggregationType.COUNT and self.source is not None:
-            raise ValueError("COUNT aggregation cannot use a source.")
+        super().__post_init__()
 
         aggregation_registry = {
             AggregationType.SUM: grouped_sum,
@@ -76,30 +87,64 @@ class AggregateByGroupSpec:
             AggregationType.COUNT: grouped_count,
         }
 
-        func = aggregation_registry.get(self.aggr)
+        func = aggregation_registry.get(self.agg)
         if func is None:
-            raise ValueError(f"Aggregation type {self.aggr} not implemented")
+            raise ValueError(f"Aggregation type {self.agg} not implemented")
 
         self._agg_func = func
 
     def agg_func(self, source, group_by_id):
+        # Need to leave this interface in order for renaming of arguments to work.
         return self._agg_func(source, group_by_id)
 
     def mapper(self, group_by_id):
-        if self.aggr == AggregationType.COUNT:
+        if self.agg == AggregationType.COUNT:
             return {"group_by_id": group_by_id}
         return {"source": self.source, "group_by_id": group_by_id}
 
 
 @dataclass
-class AggregateByPIDSpec:
+class AggregateByPIDSpec(AggregationSpec):
     """
     A container for aggregate by p_id specifications.
     """
 
     p_id_to_aggregate_by: str
-    source: str
-    aggr: AggregationType
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        aggregation_registry = {
+            AggregationType.SUM: sum_by_p_id,
+            AggregationType.MEAN: mean_by_p_id,
+            AggregationType.MAX: max_by_p_id,
+            AggregationType.MIN: min_by_p_id,
+            AggregationType.ANY: any_by_p_id,
+            AggregationType.ALL: all_by_p_id,
+            AggregationType.COUNT: count_by_p_id,
+        }
+
+        func = aggregation_registry.get(self.agg)
+        if func is None:
+            raise ValueError(f"Aggregation type {self.agg} not implemented")
+
+        self._agg_func = func
+
+    def agg_func(self, source, p_id_to_aggregate_by, p_id_to_store_by):
+        # Need to leave this interface in order for renaming of arguments to work.
+        return self._agg_func(source, p_id_to_aggregate_by, p_id_to_store_by)
+
+    def mapper(self):
+        if self.agg == AggregationType.COUNT:
+            return {
+                "p_id_to_aggregate_by": self.p_id_to_aggregate_by,
+                "p_id_to_store_by": "p_id",
+            }
+        return {
+            "source": self.source,
+            "p_id_to_aggregate_by": self.p_id_to_aggregate_by,
+            "p_id_to_store_by": "p_id",
+        }
 
 
 def grouped_count(group_id):

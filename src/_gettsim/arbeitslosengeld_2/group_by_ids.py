@@ -6,50 +6,64 @@ from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
-aggregation_specs = {
-    "anzahl_erwachsene_fg": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_erwachsene_fg",
         source="familie__erwachsen",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_kinder_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_kinder_fg",
         source="familie__kind",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_kinder_bis_6_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_6_fg",
         source="familie__kind_bis_6",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_kinder_bis_15_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_15_fg",
         source="familie__kind_bis_15",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_erwachsene_bg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_erwachsene_bg",
         source="familie__erwachsen",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_kinder_bg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bg",
         source="familie__kind",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_personen_bg": AggregateByGroupSpec(aggr=AggregationType.COUNT),
-    "anzahl_kinder_bis_17_bg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_personen_bg", source=None, agg=AggregationType.COUNT
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_17_bg",
         source="familie__kind_bis_17",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "alleinerziehend_bg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="alleinerziehend_bg",
         source="familie__alleinerziehend",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
-    "anzahl_erwachsene_eg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_erwachsene_eg",
         source="familie__erwachsen",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_kinder_eg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_kinder_eg",
         source="familie__kind",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_personen_eg": AggregateByGroupSpec(aggr=AggregationType.COUNT),
-}
+    AggregateByGroupSpec(
+        target="anzahl_personen_eg", source=None, agg=AggregationType.COUNT
+    ),
+)
 
 
 @group_by_function()
@@ -82,7 +96,7 @@ def bg_id(
 
 
 @group_by_function()
-def fg_id(  # noqa: PLR0913 PLR0912
+def fg_id(  # noqa: PLR0912
     p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
     hh_id: numpy.ndarray[int],

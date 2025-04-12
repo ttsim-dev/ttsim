@@ -1,12 +1,10 @@
-from ttsim import RoundingDirection, RoundingSpec, policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function(
     end_date="2004-12-31",
     leaf_name="vorsorgeaufwendungen_y_sn",
-    rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.UP, reference="§ 10 Abs. 3 EStG"
-    ),
+    rounding_spec=RoundingSpec(base=1, direction="up", reference="§ 10 Abs. 3 EStG"),
 )
 def vorsorgeaufwendungen_y_sn_bis_2004(
     vorsorgeaufwendungen_regime_bis_2004_y_sn: float,
@@ -29,9 +27,7 @@ def vorsorgeaufwendungen_y_sn_bis_2004(
     start_date="2005-01-01",
     end_date="2009-12-31",
     leaf_name="vorsorgeaufwendungen_y_sn",
-    rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.UP, reference="§ 10 Abs. 3 EStG"
-    ),
+    rounding_spec=RoundingSpec(base=1, direction="up", reference="§ 10 Abs. 3 EStG"),
 )
 def vorsorgeaufwendungen_y_sn_ab_2005_bis_2009(
     vorsorgeaufwendungen_regime_bis_2004_y_sn: float,
@@ -63,9 +59,7 @@ def vorsorgeaufwendungen_y_sn_ab_2005_bis_2009(
     start_date="2010-01-01",
     end_date="2019-12-31",
     leaf_name="vorsorgeaufwendungen_y_sn",
-    rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.UP, reference="§ 10 Abs. 3 EStG"
-    ),
+    rounding_spec=RoundingSpec(base=1, direction="up", reference="§ 10 Abs. 3 EStG"),
 )
 def vorsorgeaufwendungen_y_sn_ab_2010_bis_2019(
     vorsorgeaufwendungen_regime_bis_2004_y_sn: float,
@@ -96,9 +90,7 @@ def vorsorgeaufwendungen_y_sn_ab_2010_bis_2019(
 @policy_function(
     start_date="2020-01-01",
     leaf_name="vorsorgeaufwendungen_y_sn",
-    rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.UP, reference="§ 10 Abs. 3 EStG"
-    ),
+    rounding_spec=RoundingSpec(base=1, direction="up", reference="§ 10 Abs. 3 EStG"),
 )
 def vorsorgeaufwendungen_y_sn_ab_2020(
     vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn: float,
@@ -186,7 +178,7 @@ def vorsorgeaufwendungen_regime_bis_2004_y_sn(
     start_date="2005-01-01",
     end_date="2009-12-31",
 )
-def vorsorgeaufwendungen_globale_kappung_y_sn(  # noqa: PLR0913
+def vorsorgeaufwendungen_globale_kappung_y_sn(
     altersvorsorge_y_sn: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn: float,
     sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn: float,
@@ -236,7 +228,7 @@ def vorsorgeaufwendungen_globale_kappung_y_sn(  # noqa: PLR0913
 @policy_function(
     start_date="2010-01-01",
 )
-def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(  # noqa: PLR0913
+def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     altersvorsorge_y_sn: float,
     sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn: float,

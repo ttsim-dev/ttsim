@@ -4,47 +4,53 @@ from ttsim import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
     AggregationType,
-    RoundingDirection,
     RoundingSpec,
     policy_function,
 )
 
-aggregation_specs = {
-    "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="kind_grundsätzlich_anspruchsberechtigt_fg",
         source="kind_grundsätzlich_anspruchsberechtigt",
-        aggr=AggregationType.ANY,
+        agg=AggregationType.ANY,
     ),
-    "anzahl_anträge_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_anträge_fg",
         source="claimed",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "bezugsmonate_partner": AggregateByPIDSpec(
+    AggregateByPIDSpec(
+        target="bezugsmonate_partner",
         p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
         source="bisherige_bezugsmonate",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "alter_monate_jüngstes_mitglied_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="alter_monate_jüngstes_mitglied_fg",
         source="alter_monate",
-        aggr=AggregationType.MIN,
+        agg=AggregationType.MIN,
     ),
-    "anzahl_kinder_bis_2_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_2_fg",
         source="familie__kind_bis_2",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_kinder_bis_5_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_5_fg",
         source="familie__kind_bis_5",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-    "anzahl_mehrlinge_jüngstes_kind_fg": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_mehrlinge_jüngstes_kind_fg",
         source="jüngstes_kind_oder_mehrling",
-        aggr=AggregationType.SUM,
+        agg=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(
     start_date="2011-01-01",
-    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.DOWN),
+    rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
 def betrag_m(
     grundsätzlich_anspruchsberechtigt: bool,
@@ -110,7 +116,7 @@ def basisbetrag_m(
     start_date="2007-01-01",
     end_date="2010-12-31",
     leaf_name="betrag_m",
-    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.DOWN),
+    rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
 def elterngeld_not_implemented() -> float:
     raise NotImplementedError("Elterngeld is not implemented prior to 2011.")
@@ -156,7 +162,7 @@ def anspruchshöhe_m(
 
 
 @policy_function(start_date="2007-01-01")
-def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
+def grundsätzlich_anspruchsberechtigt(
     claimed: bool,
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,

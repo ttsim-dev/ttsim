@@ -36,8 +36,12 @@ inputs:
       - 8.0
     einkommensteuer__einkünfte__ist_selbstständig:
       - false
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 50.0
+    einkommensteuer__einkünfte__aus_forst_und_landwirtschaft__betrag_m:
+      - 0.0
+    einkommensteuer__einkünfte__aus_gewerbebetrieb__betrag_m:
+      - 0.0
     einkommensteuer__gemeinsam_veranlagt:
       - false
     elterngeld__bisherige_bezugsmonate:

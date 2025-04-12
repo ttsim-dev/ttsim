@@ -8,13 +8,14 @@ from ttsim import (
 )
 from ttsim.config import numpy_or_jax as np
 
-aggregation_specs = {
-    "alleinerziehendenbonus": AggregateByPIDSpec(
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="alleinerziehendenbonus",
         source="kindergeld__kind_bis_10_mit_kindergeld",
-        aggr=AggregationType.SUM,
+        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
+        agg=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function()
@@ -137,14 +138,14 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
 
 
 @policy_function(end_date="2006-12-31", leaf_name="einkommen_vor_freibetrag_m")
-def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
+def einkommen_vor_freibetrag_m_ohne_elterngeld(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
-    einkommensteuer__einkünfte__sonstige__betrag_m: float,
-    einkommensteuer__renteneinkommen_m: float,
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
+    einkommensteuer__renteneinkünfte_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     abzugsanteil_vom_einkommen_für_steuern_sozialversicherung: float,
@@ -165,10 +166,10 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
         See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
     sozialversicherung__arbeitslosen__betrag_m
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-    einkommensteuer__einkünfte__sonstige__betrag_m
-        See :func:`einkommensteuer__einkünfte__sonstige__betrag_m`.
-    einkommensteuer__renteneinkommen_m
-        See :func:`einkommensteuer__renteneinkommen_m`.
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
+    einkommensteuer__renteneinkünfte_m
+        See :func:`einkommensteuer__renteneinkünfte_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
         See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
     unterhaltsvorschuss__betrag_m
@@ -189,25 +190,27 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(  # noqa: PLR0913
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__renteneinkommen_m
+        + einkommensteuer__renteneinkünfte_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
     )
 
-    eink_ind = einkommen + transfers + einkommensteuer__einkünfte__sonstige__betrag_m
+    eink_ind = (
+        einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
+    )
     out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
     return out
 
 
 @policy_function(start_date="2007-01-01", leaf_name="einkommen_vor_freibetrag_m")
-def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
+def einkommen_vor_freibetrag_m_mit_elterngeld(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
-    einkommensteuer__einkünfte__sonstige__betrag_m: float,
-    einkommensteuer__renteneinkommen_m: float,
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
+    einkommensteuer__renteneinkünfte_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     elterngeld__anrechenbarer_betrag_m: float,
@@ -229,10 +232,10 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
         See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
     sozialversicherung__arbeitslosen__betrag_m
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-    einkommensteuer__einkünfte__sonstige__betrag_m
-        See :func:`einkommensteuer__einkünfte__sonstige__betrag_m`.
-    einkommensteuer__renteneinkommen_m
-        See :func:`einkommensteuer__renteneinkommen_m`.
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
+    einkommensteuer__renteneinkünfte_m
+        See :func:`einkommensteuer__renteneinkünfte_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
         See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
     unterhaltsvorschuss__betrag_m
@@ -258,19 +261,21 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(  # noqa: PLR0913
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__renteneinkommen_m
+        + einkommensteuer__renteneinkünfte_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
         + elterngeld__anrechenbarer_betrag_m
     )
 
-    eink_ind = einkommen + transfers + einkommensteuer__einkünfte__sonstige__betrag_m
+    eink_ind = (
+        einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
+    )
     out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
     return out
 
 
 @policy_function(end_date="2015-12-31", leaf_name="freibetrag_m")
-def freibetrag_m_bis_2015(  # noqa: PLR0913
+def freibetrag_m_bis_2015(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     ist_kind_mit_erwerbseinkommen: bool,
     behinderungsgrad: int,

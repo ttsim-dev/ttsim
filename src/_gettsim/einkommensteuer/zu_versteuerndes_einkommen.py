@@ -1,11 +1,11 @@
 """Taxable income."""
 
-from ttsim import RoundingDirection, RoundingSpec, policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.DOWN, reference="§ 32a Abs. 1 S.1 EStG"
+        base=1, direction="down", reference="§ 32a Abs. 1 S.1 EStG"
     ),
     start_date="2004-01-01",
     leaf_name="zu_versteuerndes_einkommen_y_sn",
@@ -41,7 +41,7 @@ def zu_versteuerndes_einkommen_y_sn_mit_abrundungsregel(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=36,
-        direction=RoundingDirection.DOWN,
+        direction="down",
         to_add_after_rounding=18,
         reference="§ 32a Abs. 2 EStG",
     ),
@@ -80,7 +80,7 @@ def zu_versteuerndes_einkommen_y_sn_mit_grober_54er_rundungsregel(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=27.609762,
-        direction=RoundingDirection.DOWN,
+        direction="down",
         to_add_after_rounding=13.804881,
         reference="§ 32a Abs. 2 EStG",
     ),

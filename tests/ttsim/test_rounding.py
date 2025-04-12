@@ -5,57 +5,64 @@ from pandas._testing import assert_series_equal
 from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
-from ttsim.function_types import policy_function
+from ttsim.function_types import policy_function, policy_input
 from ttsim.policy_environment import PolicyEnvironment
-from ttsim.rounding import RoundingDirection, RoundingSpec
+from ttsim.rounding import RoundingSpec
+
+
+@policy_input()
+def x() -> int:
+    pass
+
+
+@policy_input()
+def p_id() -> int:
+    pass
+
 
 rounding_specs_and_exp_results = [
     (
-        RoundingSpec(base=1, direction=RoundingDirection.UP),
+        RoundingSpec(base=1, direction="up"),
         [100.24, 100.78],
         [101.0, 101.0],
     ),
     (
-        RoundingSpec(base=1, direction=RoundingDirection.DOWN),
+        RoundingSpec(base=1, direction="down"),
         [100.24, 100.78],
         [100.0, 100.0],
     ),
     (
-        RoundingSpec(base=1, direction=RoundingDirection.NEAREST),
+        RoundingSpec(base=1, direction="nearest"),
         [100.24, 100.78],
         [100.0, 101.0],
     ),
     (
-        RoundingSpec(base=5, direction=RoundingDirection.UP),
+        RoundingSpec(base=5, direction="up"),
         [100.24, 100.78],
         [105.0, 105.0],
     ),
     (
-        RoundingSpec(base=0.1, direction=RoundingDirection.DOWN),
+        RoundingSpec(base=0.1, direction="down"),
         [100.24, 100.78],
         [100.2, 100.7],
     ),
     (
-        RoundingSpec(base=0.001, direction=RoundingDirection.NEAREST),
+        RoundingSpec(base=0.001, direction="nearest"),
         [100.24, 100.78],
         [100.24, 100.78],
     ),
     (
-        RoundingSpec(base=1, direction=RoundingDirection.UP, to_add_after_rounding=10),
+        RoundingSpec(base=1, direction="up", to_add_after_rounding=10),
         [100.24, 100.78],
         [111.0, 111.0],
     ),
     (
-        RoundingSpec(
-            base=1, direction=RoundingDirection.DOWN, to_add_after_rounding=10
-        ),
+        RoundingSpec(base=1, direction="down", to_add_after_rounding=10),
         [100.24, 100.78],
         [110.0, 110.0],
     ),
     (
-        RoundingSpec(
-            base=1, direction=RoundingDirection.NEAREST, to_add_after_rounding=10
-        ),
+        RoundingSpec(base=1, direction="nearest", to_add_after_rounding=10),
         [100.24, 100.78],
         [110.0, 111.0],
     ),
@@ -63,7 +70,7 @@ rounding_specs_and_exp_results = [
 
 
 def test_decorator():
-    rs = RoundingSpec(base=1, direction=RoundingDirection.UP)
+    rs = RoundingSpec(base=1, direction="up")
 
     @policy_function(rounding_spec=rs)
     def test_func():
@@ -91,20 +98,24 @@ def test_rounding(rounding_spec, input_values, exp_output):
 
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(income):
-        return income
+    def test_func(x):
+        return x
 
     data = {
         "p_id": pd.Series([1, 2]),
-        "namespace": {"income": pd.Series(input_values)},
+        "namespace": {"x": pd.Series(input_values)},
     }
 
-    environment = PolicyEnvironment({"namespace": {"test_func": test_func}})
+    environment = PolicyEnvironment(
+        {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
+    )
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
         targets_tree={"namespace": {"test_func": None}},
+        foreign_keys=((),),
+        supported_groupings=(),
     )
     assert_series_equal(
         pd.Series(calc_result["namespace"]["test_func"]),
@@ -117,23 +128,29 @@ def test_rounding_with_time_conversion():
     """Check if rounding is correct for time-converted functions."""
 
     # Define function that should be rounded
-    @policy_function(
-        rounding_spec=RoundingSpec(base=1, direction=RoundingDirection.DOWN)
-    )
-    def test_func_m(income):
-        return income
+    @policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))
+    def test_func_m(x):
+        return x
 
     data = {
         "p_id": pd.Series([1, 2]),
-        "income": pd.Series([1.2, 1.5]),
+        "x": pd.Series([1.2, 1.5]),
     }
 
-    environment = PolicyEnvironment({"test_func_m": test_func_m})
+    environment = PolicyEnvironment(
+        {
+            "test_func_m": test_func_m,
+            "x": x,
+            "p_id": p_id,
+        }
+    )
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
         targets_tree={"test_func_y": None},
+        foreign_keys=((),),
+        supported_groupings=(),
     )
     assert_series_equal(
         pd.Series(calc_result["test_func_y"]),
@@ -153,17 +170,25 @@ def test_no_rounding(
 ):
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
-    def test_func(income):
-        return income
+    def test_func(x):
+        return x
 
     data = {"p_id": pd.Series([1, 2])}
-    data["income"] = pd.Series(input_values_exp_output)
-    environment = PolicyEnvironment({"test_func": test_func})
+    data["x"] = pd.Series(input_values_exp_output)
+    environment = PolicyEnvironment(
+        {
+            "test_func": test_func,
+            "x": x,
+            "p_id": p_id,
+        }
+    )
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
         targets_tree={"test_func": None},
+        foreign_keys=((),),
+        supported_groupings=(),
         rounding=False,
     )
     assert_series_equal(
@@ -216,9 +241,9 @@ def test_rounding_spec(rounding_spec, input_values, exp_output):
     "base, direction, to_add_after_rounding",
     [
         (1, "upper", 0),
-        ("0.1", RoundingDirection.DOWN, 0),
+        ("0.1", "down", 0),
         (5, "closest", 0),
-        (5, RoundingDirection.UP, "0"),
+        (5, "up", "0"),
     ],
 )
 def test_rounding_spec_validation(base, direction, to_add_after_rounding):

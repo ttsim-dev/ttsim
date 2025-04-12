@@ -6,23 +6,17 @@ from typing import TYPE_CHECKING, Literal
 import dags
 import dags.tree as dt
 
-from _gettsim.config import (
-    SUPPORTED_GROUPINGS,
-    TYPES_INPUT_VARIABLES,
-)
 from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
     AggregationType,
-    all_by_p_id,
-    any_by_p_id,
-    count_by_p_id,
-    max_by_p_id,
-    mean_by_p_id,
-    min_by_p_id,
-    sum_by_p_id,
 )
-from ttsim.function_types import DerivedAggregationFunction, GroupByFunction
+from ttsim.function_types import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
+    DerivedAggregationFunction,
+    GroupByFunction,
+)
 from ttsim.shared import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -38,18 +32,21 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         QualNameAggregationSpecsDict,
         QualNameDataDict,
-        QualNameFunctionsDict,
+        QualNamePolicyInputDict,
         QualNameTargetList,
+        QualNameTTSIMFunctionDict,
     )
 
 
 def combine_policy_functions_and_derived_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
     aggregation_specs_from_environment: QualNameAggregationSpecsDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
+    inputs: QualNamePolicyInputDict,
     top_level_namespace: set[str],
-) -> QualNameFunctionsDict:
+    supported_groupings: tuple[str, ...],
+) -> QualNameTTSIMFunctionDict:
     """Add derived functions to the qualified functions dict.
 
     Derived functions are time converted functions and aggregation functions (aggregate
@@ -78,12 +75,14 @@ def combine_policy_functions_and_derived_functions(
     The qualified functions dict with derived functions.
 
     """
-    # Create parent-child relationships
+    # Create parent-child relationships and similar.
     aggregate_by_p_id_functions = _create_aggregation_functions(
         functions=functions,
+        inputs=inputs,
         aggregation_functions_to_create=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
+        supported_groupings=supported_groupings,
     )
     current_functions = {**aggregate_by_p_id_functions, **functions}
 
@@ -94,13 +93,15 @@ def combine_policy_functions_and_derived_functions(
     )
     current_functions = {**time_conversion_functions, **current_functions}
 
-    # Create aggregation functions
+    # Create aggregation functions by group.
     aggregate_by_group_functions = _create_aggregate_by_group_functions(
         functions=current_functions,
         targets=targets,
         data=data,
+        inputs=inputs,
         aggregations_from_environment=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
     current_functions = {**aggregate_by_group_functions, **current_functions}
 
@@ -110,19 +111,24 @@ def combine_policy_functions_and_derived_functions(
 
 
 def _create_aggregate_by_group_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
+    inputs: QualNamePolicyInputDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     aggregations_from_environment: QualNameAggregationSpecsDict,
     top_level_namespace: set[str],
-) -> QualNameFunctionsDict:
+    supported_groupings: tuple[str, ...],
+) -> QualNameTTSIMFunctionDict:
     """Create aggregation functions."""
     # Create the aggregation functions that were explicitly specified.
+
     aggregation_functions_from_environment = _create_aggregation_functions(
         functions=functions,
+        inputs=inputs,
         aggregation_functions_to_create=aggregations_from_environment,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
 
     functions_with_aggregation_functions_from_environment = {
@@ -136,12 +142,15 @@ def _create_aggregate_by_group_functions(
         targets=targets,
         data=data,
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
         functions=functions_with_aggregation_functions_from_environment,
+        inputs=inputs,
         aggregation_functions_to_create=derived_aggregation_specs,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
     return {
         **aggregation_functions_derived_from_names,
@@ -150,11 +159,13 @@ def _create_aggregate_by_group_functions(
 
 
 def _create_aggregation_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
+    inputs: QualNamePolicyInputDict,
     aggregation_functions_to_create: QualNameAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
     top_level_namespace: set[str],
-) -> QualNameFunctionsDict:
+    supported_groupings: tuple[str, ...],
+) -> QualNameTTSIMFunctionDict:
     """Create aggregation functions for one aggregation type.
 
     Parameters
@@ -186,54 +197,135 @@ def _create_aggregation_functions(
     )
 
     aggregation_functions = {}
-    for target_name, aggregation_spec in aggregation_functions_to_create.items():
+    for qual_name_target, aggregation_spec in aggregation_functions_to_create.items():
         # Skip if aggregation spec is not the current aggregation type
         if not isinstance(aggregation_spec, expected_aggregation_spec_type):
             continue
 
         if aggregation_type == "group":
             group_by_id_name = get_name_of_group_by_id(
-                target_name=target_name,
+                target_name=qual_name_target,
                 group_by_functions=group_by_functions,
+                supported_groupings=supported_groupings,
             )
-
             if not group_by_id_name:
                 msg = format_errors_and_warnings(
                     "Name of aggregated column needs to have a suffix "
                     "indicating the group over which it is aggregated. "
-                    f"{dt.tree_path_from_qual_name(target_name)} does not do so."
+                    f"{dt.tree_path_from_qual_name(qual_name_target)} does not do so."
                 )
                 raise ValueError(msg)
 
-            derived_func = _create_one_aggregate_by_group_func(
-                aggregation_target=target_name,
-                aggregation_spec=aggregation_spec,
-                group_by_id=group_by_id_name,
-                functions=functions,
-                top_level_namespace=top_level_namespace,
-            )
         else:
-            derived_func = _create_one_aggregate_by_p_id_func(
-                aggregation_target=target_name,
-                aggregation_spec=aggregation_spec,
-                functions=functions,
-                top_level_namespace=top_level_namespace,
-            )
+            group_by_id_name = None
 
-        aggregation_functions[target_name] = derived_func
+        derived_func = _create_one_aggregation_function(
+            aggregation_target=qual_name_target,
+            aggregation_spec=aggregation_spec,
+            aggregation_type=aggregation_type,
+            group_by_id=group_by_id_name,
+            functions=functions,
+            inputs=inputs,
+            top_level_namespace=top_level_namespace,
+        )
+        if derived_func is not None:
+            aggregation_functions[qual_name_target] = derived_func
 
     return _annotate_aggregation_functions(
         functions=functions,
+        inputs=inputs,
         aggregation_functions=aggregation_functions,
-        types_input_variables=dt.flatten_to_qual_names(TYPES_INPUT_VARIABLES),
+    )
+
+
+def _create_one_aggregation_function(
+    aggregation_target: str,
+    aggregation_spec: AggregateByGroupSpec | AggregateByPIDSpec,
+    aggregation_type: Literal["group", "p_id"],
+    group_by_id: str | None,
+    functions: QualNameTTSIMFunctionDict,
+    inputs: QualNamePolicyInputDict,
+    top_level_namespace: set[str],
+) -> DerivedAggregationFunction | None:
+    """Create a single aggregation function.
+
+    Parameters
+    ----------
+    aggregation_target
+        The qualified name of the target column.
+    aggregation_spec
+        The aggregation specification.
+    aggregation_type
+        The type of aggregation ("group" or "p_id").
+    group_by_id
+        The name of the group by id column. Only required for group aggregations.
+    functions
+        Dict with qualified function names as keys and functions as values.
+    inputs
+        Dict with qualified input names as keys and policy inputs as values.
+    top_level_namespace
+        Set of top-level namespaces.
+
+    Returns
+    -------
+    The derived aggregation function.
+    """
+    if aggregation_type == "group":
+        mapper = aggregation_spec.mapper(group_by_id)
+    else:
+        mapper = aggregation_spec.mapper()
+
+    wrapped_func = dt.one_function_without_tree_logic(
+        function=dags.rename_arguments(
+            func=aggregation_spec.agg_func,
+            mapper=mapper,
+        ),
+        tree_path=dt.tree_path_from_qual_name(aggregation_target),
+        top_level_namespace=top_level_namespace,
+    )
+
+    qual_name_source = (
+        _get_qual_name_of_source_col(
+            source=aggregation_spec.source,
+            wrapped_func=wrapped_func,
+        )
+        if aggregation_spec.source
+        else None
+    )
+    if qual_name_source in inputs:
+        start_date = inputs[qual_name_source].start_date
+        end_date = inputs[qual_name_source].end_date
+    elif qual_name_source in functions:
+        start_date = functions[qual_name_source].start_date
+        end_date = functions[qual_name_source].end_date
+    elif qual_name_source is None:
+        # Aggregation method is count
+        start_date = DEFAULT_START_DATE
+        end_date = DEFAULT_END_DATE
+    else:
+        start_date = DEFAULT_START_DATE
+        end_date = DEFAULT_END_DATE
+        # TODO(@MImmesberger): Once we filter the aggregations by start and end date,
+        # we should throw an error here. The qualified source name should be in either
+        # functions or inputs (or None if it is a count).
+        # https://github.com/iza-institute-of-labor-economics/gettsim/issues/870
+
+    return DerivedAggregationFunction(
+        leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
+        function=wrapped_func,
+        source=qual_name_source,
+        aggregation_method=aggregation_spec.agg,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 
 def _create_derived_aggregations_specs(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     top_level_namespace: set[str],
+    supported_groupings: tuple[str, ...],
 ) -> QualNameAggregationSpecsDict:
     """Create automatic aggregation specs derived from functions and data.
 
@@ -282,13 +374,14 @@ def _create_derived_aggregations_specs(
         # Don't create aggregation functions for unsupported groupings or functions that
         # already exist in the source tree.
         aggregation_specs_needed = (
-            any(target_name.endswith(f"_{g}") for g in SUPPORTED_GROUPINGS)
+            any(target_name.endswith(f"_{g}") for g in supported_groupings)
             and target_name not in aggregation_sources
         )
 
         if aggregation_specs_needed:
             derived_aggregations_specs[target_name] = AggregateByGroupSpec(
-                aggr=AggregationType.SUM,
+                target=target_name,
+                agg=AggregationType.SUM,
                 source=_get_name_of_aggregation_source(
                     target_name=target_name,
                     top_level_namespace=top_level_namespace,
@@ -301,7 +394,7 @@ def _create_derived_aggregations_specs(
 
 
 def _get_potential_aggregation_function_names_from_function_arguments(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.
 
@@ -333,177 +426,11 @@ def _select_return_type(aggregation_method: str, source_col_type: type) -> type:
     return return_type
 
 
-def _create_one_aggregate_by_group_func(
-    aggregation_target: str,
-    aggregation_spec: AggregateByGroupSpec,
-    group_by_id: str,
-    functions: QualNameFunctionsDict,
-    top_level_namespace: set[str],
-) -> DerivedAggregationFunction:
-    """Create an aggregation function based on aggregation specification.
-
-    Parameters
-    ----------
-    aggregation_target
-        Leaf name of the aggregation target.
-    aggregation_spec
-        The aggregation specification.
-    annotations
-        The annotations for the derived function.
-    group_by_id
-        The group-by-identifier.
-    functions
-        The functions dict with qualified function names as keys and functions as
-        values.
-    top_level_namespace
-        Set of top-level namespaces.
-
-    Returns
-    -------
-    The derived function.
-
-    """
-    source = aggregation_spec.source
-
-    wrapped_func = dt.one_function_without_tree_logic(
-        function=dags.rename_arguments(
-            func=aggregation_spec.agg_func,
-            mapper=aggregation_spec.mapper(group_by_id),
-        ),
-        tree_path=dt.tree_path_from_qual_name(aggregation_target),
-        top_level_namespace=top_level_namespace,
-    )
-
-    if isinstance(aggregation_spec, AggregateByGroupSpec):
-        qual_name_source = _get_qual_name_of_source_col(
-            source=source,
-            wrapped_func=wrapped_func,
-        )
-    else:
-        qual_name_source = None
-
-    return DerivedAggregationFunction(
-        function=wrapped_func,
-        source=qual_name_source,
-        source_function=functions.get(qual_name_source, None),
-        aggregation_target=aggregation_target,
-        aggregation_method=aggregation_spec.aggr,
-    )
-
-
-def _create_one_aggregate_by_p_id_func(
-    aggregation_target: str,
-    aggregation_spec: AggregateByPIDSpec,
-    functions: QualNameFunctionsDict,
-    top_level_namespace: set[str],
-) -> DerivedAggregationFunction:
-    """Create one function that links variables across persons.
-
-    Parameters
-    ----------
-    aggregation_target
-        Name of the aggregation target.
-    aggregation_spec
-        The aggregation specification.
-    functions
-        The functions dict with qualified function names as keys and functions as
-        values.
-    top_level_namespace
-        Set of top-level namespaces.
-
-    Returns
-    -------
-    The derived function.
-
-    """
-    aggregation_method = aggregation_spec.aggr
-    p_id_to_aggregate_by = aggregation_spec.p_id_to_aggregate_by
-    source = aggregation_spec.source if aggregation_method != "count" else None
-
-    if aggregation_method == "count":
-        mapper = {
-            "p_id_to_aggregate_by": p_id_to_aggregate_by,
-            "p_id_to_store_by": "p_id",
-        }
-
-        def agg_func(p_id_to_aggregate_by, p_id_to_store_by):
-            return count_by_p_id(p_id_to_aggregate_by, p_id_to_store_by)
-
-    else:
-        mapper = {
-            "p_id_to_aggregate_by": p_id_to_aggregate_by,
-            "p_id_to_store_by": "p_id",
-            "column": source,
-        }
-
-        if aggregation_method == "sum":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return sum_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "mean":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return mean_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "max":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return max_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "min":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return min_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "any":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return any_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        elif aggregation_method == "all":
-
-            def agg_func(column, p_id_to_aggregate_by, p_id_to_store_by):
-                return all_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-        else:
-            msg = format_errors_and_warnings(
-                f"Aggregation method {aggregation_method} is not implemented."
-            )
-            raise ValueError(msg)
-
-    wrapped_func = dt.one_function_without_tree_logic(
-        function=dags.rename_arguments(
-            func=agg_func,
-            mapper=mapper,
-        ),
-        tree_path=dt.tree_path_from_qual_name(aggregation_target),
-        top_level_namespace=top_level_namespace,
-    )
-
-    qual_name_source = (
-        _get_qual_name_of_source_col(
-            source=source,
-            wrapped_func=wrapped_func,
-        )
-        if source
-        else None
-    )
-
-    return DerivedAggregationFunction(
-        function=wrapped_func,
-        source=qual_name_source,
-        source_function=functions.get(qual_name_source, None),
-        aggregation_target=aggregation_target,
-        aggregation_method=aggregation_method,
-    )
-
-
 def _annotate_aggregation_functions(
-    functions: QualNameFunctionsDict,
-    types_input_variables: dict[str, type],
-    aggregation_functions: QualNameFunctionsDict,
-) -> QualNameFunctionsDict:
+    functions: QualNameTTSIMFunctionDict,
+    inputs: QualNamePolicyInputDict,
+    aggregation_functions: QualNameTTSIMFunctionDict,
+) -> QualNameTTSIMFunctionDict:
     """Annotate aggregation functions.
 
     Add type annotations to the aggregation functions based on the type annotations of
@@ -512,13 +439,12 @@ def _annotate_aggregation_functions(
     Parameters
     ----------
     functions
-        Dict with qualified function names as keys and functions with qualified
-        arguments as values.
+        Map qualified function names to functions.
+    inputs
+        Map qualified input names to policy inputs.
     aggregation_functions
         Dict with qualified aggregation function names as keys and aggregation functions
         as values.
-    types_input_variables
-        Dict with qualified data names as keys and types as values.
 
     Returns
     -------
@@ -533,6 +459,11 @@ def _annotate_aggregation_functions(
         annotations = {}
         if aggregation_method == "count":
             annotations["return"] = int
+        elif source in inputs:
+            annotations[source] = inputs[source].data_type
+            annotations["return"] = _select_return_type(
+                aggregation_method, annotations[source]
+            )
         elif source in functions:
             source_function = functions[source]
             if "return" in source_function.__annotations__:
@@ -540,20 +471,11 @@ def _annotate_aggregation_functions(
                 annotations["return"] = _select_return_type(
                     aggregation_method, annotations[source]
                 )
-            else:
-                # TODO(@hmgaudecker): Think about how type annotations of aggregations
-                # of user-provided input variables are handled
-                # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
-                pass
-        elif source in types_input_variables:
-            annotations[source] = types_input_variables[source]
-            annotations["return"] = _select_return_type(
-                aggregation_method, annotations[source]
-            )
         else:
-            # TODO(@hmgaudecker): Think about how type annotations of aggregations of
-            # user-provided input variables are handled
-            # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
+            # TODO(@MImmesberger): Once we filter the aggregations by start and end
+            # date, we should throw an error here. The qualified source name should be
+            # in either functions or inputs (or None if it is a count).
+            # https://github.com/iza-institute-of-labor-economics/gettsim/issues/870
             pass
 
         aggregation_function.__annotations__ = annotations
@@ -563,7 +485,7 @@ def _annotate_aggregation_functions(
 
 
 def _fail_if_targets_not_in_functions(
-    functions: QualNameFunctionsDict, targets: QualNameTargetList
+    functions: QualNameTTSIMFunctionDict, targets: QualNameTargetList
 ) -> None:
     """Fail if some target is not among functions.
 

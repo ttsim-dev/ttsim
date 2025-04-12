@@ -13,9 +13,11 @@ from ttsim import (
     policy_function,
 )
 
-aggregation_specs = {
-    "anzahl_personen_ehe": AggregateByGroupSpec(aggr=AggregationType.COUNT),
-}
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_personen_ehe", source=None, agg=AggregationType.COUNT
+    ),
+)
 
 
 @policy_function()
