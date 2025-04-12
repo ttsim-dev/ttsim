@@ -112,6 +112,8 @@ class AggregateByPIDSpec(AggregationSpec):
     p_id_to_aggregate_by: str
 
     def __post_init__(self):
+        super().__post_init__()
+
         aggregation_registry = {
             AggregationType.SUM: sum_by_p_id,
             AggregationType.MEAN: mean_by_p_id,
