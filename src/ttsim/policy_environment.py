@@ -29,6 +29,7 @@ from ttsim.piecewise_polynomial import (
 )
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
+    to_datetime,
     upsert_path_and_value,
     upsert_tree,
 )
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from ttsim.typing import (
+        DashedISOString,
         NestedAggregationSpecDict,
         NestedTTSIMObjectDict,
     )
@@ -168,7 +170,7 @@ class PolicyEnvironment:
 
 
 def set_up_policy_environment(
-    resource_dir: Path, date: datetime.date | str | int
+    resource_dir: Path, date: datetime.date | DashedISOString
 ) -> PolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -186,7 +188,7 @@ def set_up_policy_environment(
     The policy environment for the specified date.
     """
     # Check policy date for correct format and convert to datetime.date
-    date = _parse_date(date)
+    date = to_datetime(date)
 
     functions_tree = load_objects_tree_for_date(resource_dir=resource_dir, date=date)
 
@@ -208,26 +210,6 @@ def set_up_policy_environment(
         params,
         aggregation_specs_tree,
     )
-
-
-def _parse_date(date: datetime.date | str | int) -> datetime.date:
-    """Check the policy date for different input formats.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy system is set up.
-
-    Returns
-    -------
-    The date for which the policy system is set up as datetime.date.
-
-    """
-    if isinstance(date, str):
-        date = pd.to_datetime(date).date()
-    elif isinstance(date, int):
-        date = datetime.date(year=date, month=1, day=1)
-    return date
 
 
 def _convert_to_policy_function_if_not_ttsim_object(

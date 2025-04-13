@@ -46,7 +46,7 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
         },
     }
 
-    environment = cached_set_up_policy_environment(date="2023")
+    environment = cached_set_up_policy_environment("2023-01-01")
 
     with pytest.raises(
         ValueError,

@@ -12,7 +12,7 @@ from ttsim.visualization import (
     plot_dag,
 )
 
-environment = set_up_policy_environment(date=2020, resource_dir=RESOURCE_DIR)
+environment = set_up_policy_environment(date="2020-01-01", resource_dir=RESOURCE_DIR)
 
 
 @pytest.mark.xfail(reason="Visualization module was not updated to the new interface.")

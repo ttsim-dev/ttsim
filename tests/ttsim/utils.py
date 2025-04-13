@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -10,10 +9,13 @@ import yaml
 from mettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
 
 from ttsim import merge_trees, set_up_policy_environment
+from ttsim.shared import to_datetime
 
 TEST_DIR = Path(__file__).parent / "test_data"
 
 if TYPE_CHECKING:
+    import datetime
+
     from ttsim import NestedDataDict, NestedInputStructureDict
 
 
@@ -162,7 +164,7 @@ def _get_policy_tests_from_raw_test_data(
         }
     )
 
-    date: datetime.date = _parse_date_from_dir_name(path_to_yaml.parent.name)
+    date: datetime.date = to_datetime(path_to_yaml.parent.name)
 
     out = []
     if expected_output_tree == {}:
@@ -193,14 +195,3 @@ def _get_policy_tests_from_raw_test_data(
             )
 
     return out
-
-
-def _parse_date_from_dir_name(date: str) -> datetime.date:
-    parts = date.split("-")
-
-    if len(parts) == 1:
-        return datetime.date(int(parts[0]), 1, 1)
-    if len(parts) == 2:
-        return datetime.date(int(parts[0]), int(parts[1]), 1)
-    if len(parts) == 3:
-        return datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))

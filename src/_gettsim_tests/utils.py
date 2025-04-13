@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
@@ -15,19 +14,19 @@ from ttsim import (
     merge_trees,
     set_up_policy_environment,
 )
-from ttsim.policy_environment import _parse_date
+from ttsim.shared import to_datetime
 
 if TYPE_CHECKING:
+    import datetime
     from pathlib import Path
 
-    from ttsim import NestedDataDict, NestedInputStructureDict
+    from ttsim.typing import DashedISOString, NestedDataDict, NestedInputStructureDict
 
 
 def cached_set_up_policy_environment(
-    date: int | str | datetime.date,
+    date: datetime.date | DashedISOString,
 ) -> PolicyEnvironment:
-    normalized_date = _parse_date(date)
-    return _cached_set_up_policy_environment(normalized_date)
+    return _cached_set_up_policy_environment(to_datetime(date))
 
 
 @lru_cache(maxsize=100)
@@ -186,7 +185,7 @@ def _get_policy_tests_from_raw_test_data(
         }
     )
 
-    date: datetime.date = _parse_date_from_dir_name(path_to_yaml.parent.name)
+    date: datetime.date = to_datetime(path_to_yaml.parent.name)
 
     out = []
     if expected_output_tree == {}:
@@ -217,14 +216,3 @@ def _get_policy_tests_from_raw_test_data(
             )
 
     return out
-
-
-def _parse_date_from_dir_name(date: str) -> datetime.date:
-    parts = date.split("-")
-
-    if len(parts) == 1:
-        return datetime.date(int(parts[0]), 1, 1)
-    if len(parts) == 2:
-        return datetime.date(int(parts[0]), int(parts[1]), 1)
-    if len(parts) == 3:
-        return datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
