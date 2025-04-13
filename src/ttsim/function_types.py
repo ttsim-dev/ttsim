@@ -400,8 +400,8 @@ class DerivedTimeConversionFunction(TTSIMFunction):
 
 
 def _convert_and_validate_dates(
-    start_date: DashedISOString | datetime.date,
-    end_date: DashedISOString | datetime.date,
+    start_date: datetime.date | DashedISOString,
+    end_date: datetime.date | DashedISOString,
 ) -> tuple[datetime.date, datetime.date]:
     """Convert and validate date strings to datetime.date objects.
 
@@ -417,12 +417,8 @@ def _convert_and_validate_dates(
     tuple[datetime.date, datetime.date]
         The converted and validated start and end dates.
     """
-    if isinstance(start_date, str):
-        to_datetime(start_date)
-        start_date = datetime.date.fromisoformat(start_date)
-    if isinstance(end_date, str):
-        to_datetime(end_date)
-        end_date = datetime.date.fromisoformat(end_date)
+    start_date = to_datetime(start_date)
+    end_date = to_datetime(end_date)
 
     validate_date_range(start_date, end_date)
 
