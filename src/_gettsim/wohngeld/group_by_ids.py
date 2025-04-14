@@ -2,7 +2,7 @@
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_creation_function
 
 aggregation_specs = (
     AggregateByGroupSpec(
@@ -11,7 +11,7 @@ aggregation_specs = (
 )
 
 
-@group_by_function()
+@group_creation_function()
 def wthh_id(
     hh_id: numpy.ndarray[int],
     vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: numpy.ndarray[bool],

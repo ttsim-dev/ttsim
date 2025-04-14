@@ -9,10 +9,12 @@ from typing import TYPE_CHECKING, Literal, TypeVar
 import numpy
 
 from ttsim.rounding import RoundingSpec
-from ttsim.shared import validate_dashed_iso_date, validate_date_range
+from ttsim.shared import to_datetime, validate_date_range
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from ttsim.typing import DashedISOString
 
 T = TypeVar("T")
 
@@ -251,6 +253,19 @@ def policy_function(
     return inner
 
 
+# def agg_by_group_function(
+#     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
+# ) -> AggByGroupFunction:
+#     return decorator
+
+
+# def agg_by_pid_function(
+#     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
+#     foreign_key_includes_self: bool,
+# ) -> AggByPIDFunction:
+#     return decorator
+
+
 def _vectorize_func(func: Callable) -> Callable:
     # What should work once that Jax backend is fully supported
     signature = inspect.signature(func)
@@ -266,7 +281,7 @@ def _vectorize_func(func: Callable) -> Callable:
 
 
 @dataclass
-class GroupByFunction(TTSIMFunction):
+class GroupCreationFunction(TTSIMFunction):
     """
     A function that computes endogenous group_by IDs.
 
@@ -280,7 +295,14 @@ class GroupByFunction(TTSIMFunction):
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
+    foreign_keys_that_may_point_to_self:
+        The foreign keys that may point to the group_by ID.
+    foreign_keys_that_must_not_point_to_self:
+        The foreign keys that must not point to the group_by ID.
     """
+
+    foreign_keys_that_may_point_to_self: tuple[str, ...] = ()
+    foreign_keys_that_must_not_point_to_self: tuple[str, ...] = ()
 
     def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
@@ -295,24 +317,33 @@ class GroupByFunction(TTSIMFunction):
         return set(inspect.signature(self).parameters)
 
 
-def group_by_function(
+def group_creation_function(
     *,
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> GroupByFunction:
+    foreign_keys_that_may_point_to_self: tuple[str, ...] | None = None,
+    foreign_keys_that_must_not_point_to_self: tuple[str, ...] | None = None,
+) -> GroupCreationFunction:
     """
     Decorator that creates a group_by function from a function.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def decorator(func: Callable) -> GroupByFunction:
+    if foreign_keys_that_may_point_to_self is None:
+        foreign_keys_that_may_point_to_self = ()
+    if foreign_keys_that_must_not_point_to_self is None:
+        foreign_keys_that_must_not_point_to_self = ()
+
+    def decorator(func: Callable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
-        return GroupByFunction(
+        return GroupCreationFunction(
             leaf_name=_leaf_name,
             function=func,
             start_date=start_date,
             end_date=end_date,
+            foreign_keys_that_may_point_to_self=foreign_keys_that_may_point_to_self,
+            foreign_keys_that_must_not_point_to_self=foreign_keys_that_must_not_point_to_self,
         )
 
     return decorator
@@ -398,8 +429,8 @@ class DerivedTimeConversionFunction(TTSIMFunction):
 
 
 def _convert_and_validate_dates(
-    start_date: str | datetime.date,
-    end_date: str | datetime.date,
+    start_date: datetime.date | DashedISOString,
+    end_date: datetime.date | DashedISOString,
 ) -> tuple[datetime.date, datetime.date]:
     """Convert and validate date strings to datetime.date objects.
 
@@ -415,12 +446,8 @@ def _convert_and_validate_dates(
     tuple[datetime.date, datetime.date]
         The converted and validated start and end dates.
     """
-    if isinstance(start_date, str):
-        validate_dashed_iso_date(start_date)
-        start_date = datetime.date.fromisoformat(start_date)
-    if isinstance(end_date, str):
-        validate_dashed_iso_date(end_date)
-        end_date = datetime.date.fromisoformat(end_date)
+    start_date = to_datetime(start_date)
+    end_date = to_datetime(end_date)
 
     validate_date_range(start_date, end_date)
 

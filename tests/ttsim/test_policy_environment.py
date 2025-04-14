@@ -19,8 +19,8 @@ from ttsim.policy_environment import (
     set_up_policy_environment,
 )
 from ttsim.ttsim_objects import (
-    GroupByFunction,
-    group_by_function,
+    GroupCreationFunction,
+    group_creation_function,
     policy_function,
 )
 
@@ -76,12 +76,12 @@ class TestPolicyEnvironment:
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="02-29-2020", resource_dir=RESOURCE_DIR)
+    set_up_policy_environment(date="2020-02-29", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="02-30-2020", resource_dir=RESOURCE_DIR)
+        set_up_policy_environment(date="2020-02-30", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_access_different_date():
@@ -161,7 +161,7 @@ def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
 
 def test_dont_destroy_group_by_functions():
     functions_tree = {
-        "foo": group_by_function()(lambda: 1),
+        "foo": group_creation_function()(lambda: 1),
     }
     environment = PolicyEnvironment(functions_tree)
-    assert isinstance(environment.raw_objects_tree["foo"], GroupByFunction)
+    assert isinstance(environment.raw_objects_tree["foo"], GroupCreationFunction)

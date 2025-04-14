@@ -2,7 +2,7 @@ from collections import Counter
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_creation_function
 
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
@@ -66,7 +66,7 @@ aggregation_specs = (
 )
 
 
-@group_by_function()
+@group_creation_function()
 def bg_id(
     fg_id: numpy.ndarray[int],
     eigenbedarf_gedeckt: numpy.ndarray[bool],
@@ -95,7 +95,7 @@ def bg_id(
     return numpy.asarray(result)
 
 
-@group_by_function()
+@group_creation_function()
 def fg_id(  # noqa: PLR0912
     p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
@@ -199,7 +199,7 @@ def fg_id(  # noqa: PLR0912
     return numpy.asarray(result)
 
 
-@group_by_function()
+@group_creation_function()
 def eg_id(
     p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],

@@ -23,7 +23,7 @@ from ttsim.compute_taxes_and_transfers import (
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import assert_valid_ttsim_pytree
-from ttsim.ttsim_objects import group_by_function, policy_function, policy_input
+from ttsim.ttsim_objects import group_creation_function, policy_function, policy_input
 from ttsim.typing import convert_series_to_internal_type
 
 
@@ -232,7 +232,7 @@ def test_fail_if_foreign_key_points_to_p_id_of_same_row(foreign_key_path):
                 "fam_id": pd.Series([1, 1, 2], name="fam_id"),
             },
             {
-                "fam_id": group_by_function()(lambda x: x),
+                "fam_id": group_creation_function()(lambda x: x),
             },
         ),
     ],

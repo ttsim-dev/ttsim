@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NewType
 
 import numpy
 import pandas as pd
@@ -44,6 +44,9 @@ if TYPE_CHECKING:
     QualNameAggregationSpecsDict = Mapping[
         str, AggregateByGroupSpec | AggregateByPIDSpec
     ]
+
+    DashedISOString = NewType("DashedISOString", str)
+    """A string representing a date in the format 'YYYY-MM-DD'."""
 
 
 def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:

@@ -23,7 +23,7 @@ from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     DerivedAggregationFunction,
-    GroupByFunction,
+    GroupCreationFunction,
 )
 
 if TYPE_CHECKING:
@@ -189,7 +189,7 @@ def _create_aggregation_functions(
     group_by_functions = {
         name: func
         for name, func in functions.items()
-        if isinstance(getattr(func, "__wrapped__", func), GroupByFunction)
+        if isinstance(getattr(func, "__wrapped__", func), GroupCreationFunction)
     }
 
     expected_aggregation_spec_type = (

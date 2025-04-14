@@ -29,7 +29,7 @@ from ttsim.shared import (
 from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     DerivedAggregationFunction,
-    GroupByFunction,
+    GroupCreationFunction,
     PolicyFunction,
     PolicyInput,
     TTSIMFunction,
@@ -267,7 +267,7 @@ def _convert_data_to_correct_types(
         elif name in functions_overridden:
             func = functions_overridden[name]
             func_is_group_by_function = isinstance(
-                getattr(func, "__wrapped__", func), GroupByFunction
+                getattr(func, "__wrapped__", func), GroupCreationFunction
             )
             func_is_policy_function = isinstance(
                 getattr(func, "__wrapped__", func), PolicyFunction
@@ -492,7 +492,7 @@ def _fail_if_group_variables_not_constant_within_groups(
     group_by_functions = {
         k: v
         for k, v in functions.items()
-        if isinstance(getattr(v, "__wrapped__", v), GroupByFunction)
+        if isinstance(getattr(v, "__wrapped__", v), GroupCreationFunction)
     }
 
     faulty_data_columns = []

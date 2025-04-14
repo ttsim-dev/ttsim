@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import inspect
 import itertools
 import re
@@ -13,10 +14,9 @@ import optree
 from _gettsim.config import SUPPORTED_GROUPINGS
 
 if TYPE_CHECKING:
-    import datetime
-
     from ttsim.ttsim_objects import PolicyFunction
     from ttsim.typing import (
+        DashedISOString,
         GenericCallable,
         NestedDataDict,
         NestedTTSIMObjectDict,
@@ -24,12 +24,18 @@ if TYPE_CHECKING:
     )
 
 
-_DASHED_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+_DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
-def validate_dashed_iso_date(date: str | datetime.date):
-    if not _DASHED_ISO_DATE.match(date):
-        raise ValueError(f"Date {date} does not match the format YYYY-MM-DD.")
+def to_datetime(date: datetime.date | DashedISOString):
+    if isinstance(date, datetime.date):
+        return date
+    if isinstance(date, str) and _DASHED_ISO_DATE_REGEX.fullmatch(date):
+        return datetime.date.fromisoformat(date)
+    else:
+        raise ValueError(
+            f"Date {date} neither matches the format YYYY-MM-DD nor is a datetime.date."
+        )
 
 
 def validate_date_range(start: datetime.date, end: datetime.date):
