@@ -30,7 +30,7 @@ _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 def to_datetime(date: datetime.date | DashedISOString):
     if isinstance(date, datetime.date):
         return date
-    if isinstance(date, str) and _DASHED_ISO_DATE_REGEX.match(date):
+    if isinstance(date, str) and _DASHED_ISO_DATE_REGEX.fullmatch(date):
         return datetime.date.fromisoformat(date)
     else:
         raise ValueError(
