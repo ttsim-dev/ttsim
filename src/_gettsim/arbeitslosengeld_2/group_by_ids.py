@@ -67,35 +67,6 @@ aggregation_specs = (
 
 
 @group_creation_function()
-def bg_id(
-    fg_id: numpy.ndarray[int],
-    eigenbedarf_gedeckt: numpy.ndarray[bool],
-    alter: numpy.ndarray[int],
-) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Bedarfsgemeinschaft for each person.
-    """
-    # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
-    # once Bedarfsgemeinschaften are fully endogenous
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
-    counter = Counter()
-    result = []
-
-    for index, current_fg_id in enumerate(fg_id):
-        current_alter = alter[index]
-        current_eigenbedarf_gedeckt = eigenbedarf_gedeckt[index]
-        # TODO(@MImmesberger): Remove hard-coded number
-        # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
-        if current_alter < 25 and current_eigenbedarf_gedeckt:
-            counter[current_fg_id] += 1
-            result.append(current_fg_id * 100 + counter[current_fg_id])
-        else:
-            result.append(current_fg_id * 100)
-
-    return numpy.asarray(result)
-
-
-@group_creation_function()
 def fg_id(  # noqa: PLR0912
     p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
@@ -196,6 +167,35 @@ def fg_id(  # noqa: PLR0912
 
     # Compute result vector
     result = [p_id_to_fg_id[current_p_id] for current_p_id in p_id]
+    return numpy.asarray(result)
+
+
+@group_creation_function()
+def bg_id(
+    fg_id: numpy.ndarray[int],
+    eigenbedarf_gedeckt: numpy.ndarray[bool],
+    alter: numpy.ndarray[int],
+) -> numpy.ndarray[int]:
+    """
+    Compute the ID of the Bedarfsgemeinschaft for each person.
+    """
+    # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
+    # once Bedarfsgemeinschaften are fully endogenous
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
+    counter = Counter()
+    result = []
+
+    for index, current_fg_id in enumerate(fg_id):
+        current_alter = alter[index]
+        current_eigenbedarf_gedeckt = eigenbedarf_gedeckt[index]
+        # TODO(@MImmesberger): Remove hard-coded number
+        # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
+        if current_alter < 25 and current_eigenbedarf_gedeckt:
+            counter[current_fg_id] += 1
+            result.append(current_fg_id * 100 + counter[current_fg_id])
+        else:
+            result.append(current_fg_id * 100)
+
     return numpy.asarray(result)
 
 
