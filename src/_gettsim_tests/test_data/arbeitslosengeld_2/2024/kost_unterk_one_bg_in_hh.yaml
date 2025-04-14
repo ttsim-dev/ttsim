@@ -1,9 +1,15 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Made up.
 inputs:
   assumed:
+    alter:
+      - 30
+      - 30
+      - 10
+      - 10
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -14,26 +20,16 @@ inputs:
       - 0
       - -1
       - -1
-    alter:
-      - 30
-      - 30
-      - 10
-      - 10
-    hh_id:
-      - 0
-      - 0
-      - 0
-      - 0
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
+      - false
     familie__kind:
       - false
       - false
       - true
       - true
-    p_id:
-      - 0
-      - 1
-      - 2
-      - 3
     familie__p_id_ehepartner:
       - -1
       - -1
@@ -49,16 +45,21 @@ inputs:
       - -1
       - 1
       - 1
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
-      - false
+    hh_id:
+      - 0
+      - 0
+      - 0
+      - 0
     jahr:
       - 2018
       - 2018
       - 2018
       - 2018
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
     wohnen__bruttokaltmiete_m_hh:
       - 1000.0
       - 1000.0

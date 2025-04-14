@@ -1,6 +1,7 @@
 ---
 info:
   note: https://www.kindergeld.org/kindergeldrechner/
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
@@ -17,24 +18,6 @@ inputs:
       - 0.0
       - 2.0
       - 0.0
-    hh_id:
-      - 13
-      - 13
-      - 13
-      - 13
-      - 13
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-      - true
-    p_id:
-      - 40
-      - 41
-      - 43
-      - 44
-      - 45
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 3000.0
       - 0.0
@@ -47,6 +30,18 @@ inputs:
       - 3000.0
       - 3000.0
       - 3000.0
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+    hh_id:
+      - 13
+      - 13
+      - 13
+      - 13
+      - 13
     kindergeld__in_ausbildung:
       - false
       - false
@@ -59,6 +54,12 @@ inputs:
       - 40
       - 40
       - 40
+    p_id:
+      - 40
+      - 41
+      - 43
+      - 44
+      - 45
 outputs:
   kindergeld__betrag_m:
     - 750

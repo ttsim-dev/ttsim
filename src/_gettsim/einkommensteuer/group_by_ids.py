@@ -2,17 +2,18 @@
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, group_by_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
-aggregation_specs = {
-    "anzahl_personen_sn": AggregateByGroupSpec(
-        aggr="count",
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_personen_sn", source=None, agg=AggregationType.COUNT
     ),
-    "alleinerziehend_sn": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="alleinerziehend_sn",
         source="familie__alleinerziehend",
-        aggr="any",
+        agg=AggregationType.ANY,
     ),
-}
+)
 
 
 @group_by_function()

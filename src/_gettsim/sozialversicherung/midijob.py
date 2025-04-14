@@ -1,6 +1,6 @@
 """Midijob."""
 
-from ttsim import policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function()
@@ -50,7 +50,7 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
     start_date="2003-04-01",
     end_date="2004-12-31",
     leaf_name="midijob_faktor_f",
-    params_key_for_rounding="sozialv_beitr",
+    rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
@@ -111,7 +111,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     start_date="2005-01-01",
     end_date="2022-09-30",
     leaf_name="midijob_faktor_f",
-    params_key_for_rounding="sozialv_beitr",
+    rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
@@ -174,7 +174,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005(
 @policy_function(
     start_date="2022-10-01",
     leaf_name="midijob_faktor_f",
-    params_key_for_rounding="sozialv_beitr",
+    rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_ohne_minijob_steuerpauschale(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,

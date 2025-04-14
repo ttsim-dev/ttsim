@@ -1,13 +1,19 @@
 """Income relevant for calculation of Kinderzuschlag."""
 
-from ttsim import AggregateByGroupSpec, policy_function
+from ttsim import (
+    AggregateByGroupSpec,
+    AggregationType,
+    RoundingSpec,
+    policy_function,
+)
 
-aggregation_specs = {
-    "arbeitslosengeld_2__anzahl_kinder_bg": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="arbeitslosengeld_2__anzahl_kinder_bg",
         source="kindergeld__anzahl_ansprüche",
-        aggr="sum",
+        agg=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function()
@@ -46,8 +52,48 @@ def bruttoeinkommen_eltern_m(
     return out
 
 
-@policy_function(params_key_for_rounding="kinderzuschl_eink")
-def nettoeinkommen_eltern_m(
+@policy_function(
+    rounding_spec=RoundingSpec(base=10, direction="down", reference="§ 6a Abs. 4 BKGG"),
+    leaf_name="nettoeinkommen_eltern_m",
+    end_date="2019-06-30",
+)
+def nettoeinkommen_eltern_m_mit_grober_rundung(
+    arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m: float,
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__erwachsen: bool,
+) -> float:
+    """Parental income (after deduction of taxes, social insurance contributions, and
+    other deductions) for calculation of child benefit.
+
+    Parameters
+    ----------
+    arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m
+        See :func:`arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m`.
+    kindergeld__grundsätzlich_anspruchsberechtigt
+        See :func:`kindergeld__grundsätzlich_anspruchsberechtigt`.
+    familie__erwachsen
+        See :func:`familie__erwachsen`.
+
+    Returns
+    -------
+
+    """
+    # TODO(@MImmesberger): Redesign the conditions in this function: False for adults
+    # who do not have Kindergeld claims.
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/704
+    if familie__erwachsen and (not kindergeld__grundsätzlich_anspruchsberechtigt):
+        out = arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m
+    else:
+        out = 0.0
+    return out
+
+
+@policy_function(
+    rounding_spec=RoundingSpec(base=1, direction="down", reference="§ 11 Abs. 2 BKGG"),
+    leaf_name="nettoeinkommen_eltern_m",
+    start_date="2019-07-01",
+)
+def nettoeinkommen_eltern_m_mit_genauer_rundung(
     arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m: float,
     kindergeld__grundsätzlich_anspruchsberechtigt: bool,
     familie__erwachsen: bool,

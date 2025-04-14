@@ -1,23 +1,25 @@
+import datetime
 import inspect
 
 import pandas as pd
 import pytest
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.combine_functions import (
     _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,
     _create_aggregation_functions,
-    _create_one_aggregate_by_group_func,
-    _create_one_aggregate_by_p_id_func,
+    _create_one_aggregation_function,
     _fail_if_targets_not_in_functions,
     _get_name_of_aggregation_source,
 )
 from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
 from ttsim.function_types import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
     DerivedAggregationFunction,
-    group_by_function,
     policy_function,
+    policy_input,
 )
 from ttsim.policy_environment import PolicyEnvironment
 
@@ -26,6 +28,31 @@ from ttsim.policy_environment import PolicyEnvironment
 @policy_function(leaf_name="foo")
 def function_with_bool_return(x: bool) -> bool:
     return x
+
+
+@policy_input()
+def x() -> int:
+    pass
+
+
+@policy_input()
+def x_f() -> float:
+    pass
+
+
+@policy_input()
+def x_b() -> bool:
+    pass
+
+
+@policy_input()
+def p_id() -> int:
+    pass
+
+
+@policy_input()
+def hh_id() -> int:
+    pass
 
 
 @pytest.fixture
@@ -42,7 +69,7 @@ def function_with_float_return(x: int) -> float:
 
 @pytest.mark.parametrize(
     (
-        "functions_tree",
+        "objects_tree",
         "targets_tree",
         "data_tree",
         "aggregations_specs_from_env",
@@ -50,7 +77,14 @@ def function_with_float_return(x: int) -> float:
     [
         (
             # Aggregations derived from simple function arguments
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda x_hh: x_hh)}},
+            {
+                "hh_id": hh_id,
+                "p_id": p_id,
+                "namespace1": {
+                    "f": policy_function(leaf_name="f")(lambda x_hh: x_hh),
+                    "x": x,
+                },
+            },
             {"namespace1": {"f": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -62,11 +96,14 @@ def function_with_float_return(x: int) -> float:
         (
             # Aggregations derived from namespaced function arguments
             {
+                "hh_id": hh_id,
+                "p_id": p_id,
                 "namespace1": {
                     "f": policy_function(leaf_name="f")(
                         lambda inputs__x_hh: inputs__x_hh
                     )
-                }
+                },
+                "inputs": {"x": x},
             },
             {"namespace1": {"f": None}},
             {
@@ -78,7 +115,14 @@ def function_with_float_return(x: int) -> float:
         ),
         (
             # Aggregations derived from target
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda x: x)}},
+            {
+                "hh_id": hh_id,
+                "p_id": p_id,
+                "namespace1": {
+                    "f": policy_function(leaf_name="f")(lambda x: x),
+                    "x": x,
+                },
+            },
             {"namespace1": {"f_hh": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -89,7 +133,14 @@ def function_with_float_return(x: int) -> float:
         ),
         (
             # Aggregations derived from simple environment specification
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)}},
+            {
+                "hh_id": hh_id,
+                "p_id": p_id,
+                "namespace1": {
+                    "f": policy_function(leaf_name="f")(lambda y_hh: y_hh),
+                    "x": x,
+                },
+            },
             {"namespace1": {"f": None}},
             {
                 "namespace1": {"x": pd.Series([1, 1, 1])},
@@ -99,15 +150,21 @@ def function_with_float_return(x: int) -> float:
             {
                 "namespace1": {
                     "y_hh": AggregateByGroupSpec(
+                        target="y_hh",
                         source="x",
-                        aggr="sum",
-                    ),
+                        agg=AggregationType.SUM,
+                    )
                 },
             },
         ),
         (
             # Aggregations derived from namespaced environment specification
-            {"namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)}},
+            {
+                "hh_id": hh_id,
+                "p_id": p_id,
+                "namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)},
+                "inputs": {"x": x},
+            },
             {"namespace1": {"f": None}},
             {
                 "inputs": {"x": pd.Series([1, 1, 1])},
@@ -117,143 +174,164 @@ def function_with_float_return(x: int) -> float:
             {
                 "namespace1": {
                     "y_hh": AggregateByGroupSpec(
+                        target="y_hh",
                         source="inputs__x",
-                        aggr="sum",
-                    ),
+                        agg=AggregationType.SUM,
+                    )
                 },
             },
         ),
     ],
 )
 def test_create_aggregate_by_group_functions(
-    functions_tree,
+    objects_tree,
     targets_tree,
     data_tree,
     aggregations_specs_from_env,
 ):
     environment = PolicyEnvironment(
-        functions_tree=functions_tree,
+        raw_objects_tree=objects_tree,
         aggregation_specs_tree=aggregations_specs_from_env,
     )
     compute_taxes_and_transfers(
         environment=environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
+        supported_groupings=("hh",),
+        foreign_keys=(),
     )
+
+
+START_DATE = datetime.date.fromisoformat("1900-01-01")
+END_DATE = datetime.date.fromisoformat("2100-12-31")
 
 
 @pytest.mark.parametrize(
     (
         "functions",
+        "inputs",
         "aggregation_functions",
-        "types_input_variables",
         "expected_return_type",
     ),
     [
         (
             {},
+            {},
             {
                 "foo": DerivedAggregationFunction(
+                    leaf_name="foo",
                     function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="count",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
-            {},
             int,
         ),
         (
             {},
+            {"x": x},
             {
                 "foo": DerivedAggregationFunction(
+                    leaf_name="foo",
                     function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
-            {"x": int},
             int,
         ),
         (
             {},
+            {"x": x_f},
             {
                 "foo": DerivedAggregationFunction(
+                    leaf_name="foo",
                     function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
-            {"x": float},
             float,
         ),
         (
             {},
+            {"x": x_b},
             {
                 "foo": DerivedAggregationFunction(
+                    leaf_name="foo",
                     function=lambda x: x,
                     source="x",
-                    aggregation_target="foo",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
-            {"x": bool},
             int,
         ),
         (
             {"n1__foo": function_with_bool_return},
+            {},
             {
                 "n1__foo_hh": DerivedAggregationFunction(
+                    leaf_name="foo_hh",
                     function=function_with_bool_return,
                     source="n1__foo",
-                    aggregation_target="foo_hh",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
-            {},
             int,
         ),
         (
             {"n1__foo": function_with_float_return},
+            {},
             {
                 "n1__foo_hh": DerivedAggregationFunction(
+                    leaf_name="foo_hh",
                     function=function_with_float_return,
                     source="n1__foo",
-                    aggregation_target="foo_hh",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
-            {},
             float,
         ),
         (
             {"n1__foo": function_with_int_return},
+            {},
             {
                 "n1__foo_hh": DerivedAggregationFunction(
+                    leaf_name="foo_hh",
                     function=function_with_int_return,
                     source="n1__foo",
-                    aggregation_target="foo_hh",
                     aggregation_method="sum",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
                 )
             },
-            {},
             int,
         ),
     ],
 )
 def test_annotations_for_aggregation(
     functions,
+    inputs,
     aggregation_functions,
-    types_input_variables,
     expected_return_type,
 ):
     name_of_aggregation_function = next(iter(aggregation_functions.keys()))
     annotation_of_aggregation_function = _annotate_aggregation_functions(
         functions=functions,
+        inputs=inputs,
         aggregation_functions=aggregation_functions,
-        types_input_variables=types_input_variables,
     )[name_of_aggregation_function].__annotations__["return"]
     assert annotation_of_aggregation_function == expected_return_type
 
@@ -276,6 +354,7 @@ def test_fail_if_targets_are_not_among_functions(
 @pytest.mark.parametrize(
     (
         "functions",
+        "inputs",
         "aggregations",
         "aggregation_type",
         "top_level_namespace",
@@ -284,23 +363,37 @@ def test_fail_if_targets_are_not_among_functions(
     [
         (
             {"foo": function_with_bool_return},
-            {"foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            {},
+            {
+                "foo_hh": AggregateByGroupSpec(
+                    target="foo_hh", source="foo", agg=AggregationType.SUM
+                ),
+            },
             "group",
             ["foo"],
             {"foo": bool, "return": int},
         ),
         (
             {"foo": function_with_float_return},
-            {"foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            {},
+            {
+                "foo_hh": AggregateByGroupSpec(
+                    target="foo_hh", source="foo", agg=AggregationType.SUM
+                ),
+            },
             "group",
             ["foo"],
             {"foo": float, "return": float},
         ),
         (
             {"foo": function_with_int_return},
+            {},
             {
                 "foo_hh": AggregateByPIDSpec(
-                    p_id_to_aggregate_by="foreign_id_col", source="foo", aggr="sum"
+                    target="foo_hh",
+                    p_id_to_aggregate_by="foreign_id_col",
+                    source="foo",
+                    agg=AggregationType.SUM,
                 )
             },
             "p_id",
@@ -310,16 +403,23 @@ def test_fail_if_targets_are_not_among_functions(
     ],
 )
 def test_annotations_are_applied_to_derived_functions(
-    functions, aggregations, aggregation_type, top_level_namespace, expected_annotations
+    functions,
+    inputs,
+    aggregations,
+    aggregation_type,
+    top_level_namespace,
+    expected_annotations,
 ):
     """Test that the annotations are applied to the derived functions."""
     result_func = next(
         iter(
             _create_aggregation_functions(
                 functions=functions,
+                inputs=inputs,
                 aggregation_functions_to_create=aggregations,
                 aggregation_type=aggregation_type,
                 top_level_namespace=top_level_namespace,
+                supported_groupings=("hh",),
             ).values()
         )
     )
@@ -329,6 +429,7 @@ def test_annotations_are_applied_to_derived_functions(
 @pytest.mark.parametrize(
     (
         "functions",
+        "inputs",
         "targets",
         "data",
         "aggregations_from_environment",
@@ -338,6 +439,7 @@ def test_annotations_are_applied_to_derived_functions(
     [
         (
             {"foo": policy_function(leaf_name="foo")(lambda x_hh: x_hh)},
+            {"x": x},
             {},
             {"x": pd.Series([1])},
             {},
@@ -346,6 +448,7 @@ def test_annotations_are_applied_to_derived_functions(
         ),
         (
             {"n1__foo": policy_function(leaf_name="foo")(lambda n2__x_hh: n2__x_hh)},
+            {"hh_id": hh_id, "n2__x": x},
             {},
             {"n2": {"x": pd.Series([1])}},
             {},
@@ -354,6 +457,7 @@ def test_annotations_are_applied_to_derived_functions(
         ),
         (
             {},
+            {"x": x},
             {"x_hh": None},
             {"x": pd.Series([1])},
             {},
@@ -362,16 +466,24 @@ def test_annotations_are_applied_to_derived_functions(
         ),
         (
             {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {"hh_id": hh_id, "x": x},
             {},
             {"x": pd.Series([1])},
-            {"n1__foo_hh": AggregateByGroupSpec(source="foo", aggr="sum")},
+            {
+                "n1__foo_hh": AggregateByGroupSpec(
+                    target="foo_hh",
+                    source="foo",
+                    agg=AggregationType.SUM,
+                )
+            },
             ["x", "foo", "n1"],
             ("n1__foo_hh"),
         ),
     ],
 )
-def test_derived_aggregation_functions_are_in_correct_namespace(  # noqa: PLR0913
+def test_derived_aggregation_functions_are_in_correct_namespace(
     functions,
+    inputs,
     targets,
     data,
     aggregations_from_environment,
@@ -385,30 +497,14 @@ def test_derived_aggregation_functions_are_in_correct_namespace(  # noqa: PLR091
     """
     result = _create_aggregate_by_group_functions(
         functions=functions,
+        inputs=inputs,
         targets=targets,
         data=data,
         aggregations_from_environment=aggregations_from_environment,
         top_level_namespace=top_level_namespace,
+        supported_groupings=("hh",),
     )
     assert expected in result
-
-
-def test_create_aggregation_with_derived_soure_column():
-    aggregation_spec_dict = {
-        "foo_hh": AggregateByGroupSpec(
-            source="bar_bg",
-            aggr="sum",
-        )
-    }
-    result = _create_aggregate_by_group_functions(
-        functions={"bg_id": group_by_function()(lambda x: x)},
-        targets={},
-        data={"bar": pd.Series([1])},
-        aggregations_from_environment=aggregation_spec_dict,
-        top_level_namespace=["foo", "bar", "bg_id"],
-    )
-    assert "foo_hh" in result
-    assert "bar_bg" in inspect.signature(result["foo_hh"]).parameters
 
 
 @pytest.mark.parametrize(
@@ -416,27 +512,193 @@ def test_create_aggregation_with_derived_soure_column():
         "aggregation_target",
         "aggregation_spec",
         "group_by_id",
+        "functions",
+        "inputs",
+        "top_level_namespace",
+        "expected_start_date",
+        "expected_end_date",
+    ),
+    [
+        (
+            "x_hh",
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
+            "hh_id",
+            {},
+            {"x": x},
+            ["x", "x_hh", "hh_id"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "x_hh",
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
+            "hh_id",
+            {"x": policy_function(leaf_name="x")(lambda x: x)},
+            {},
+            ["x", "x_hh", "hh_id"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "x_hh",
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
+            "hh_id",
+            {
+                "x": policy_function(
+                    leaf_name="x", start_date="2025-01-01", end_date="2025-12-31"
+                )(lambda x: x)
+            },
+            {},
+            ["x", "x_hh", "hh_id"],
+            datetime.date.fromisoformat("2025-01-01"),
+            datetime.date.fromisoformat("2025-12-31"),
+        ),
+    ],
+)
+def test_aggregate_by_group_function_start_and_end_date(
+    aggregation_target,
+    aggregation_spec,
+    group_by_id,
+    functions,
+    inputs,
+    top_level_namespace,
+    expected_start_date,
+    expected_end_date,
+):
+    result = _create_one_aggregation_function(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        aggregation_type="group",
+        group_by_id=group_by_id,
+        functions=functions,
+        inputs=inputs,
+        top_level_namespace=top_level_namespace,
+    )
+    assert result.start_date == expected_start_date
+    assert result.end_date == expected_end_date
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "functions",
+        "inputs",
+        "top_level_namespace",
+        "expected_start_date",
+        "expected_end_date",
+    ),
+    [
+        (
+            "bar",
+            AggregateByPIDSpec(
+                target="bar_hh",
+                source="x",
+                agg=AggregationType.SUM,
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {"x": policy_function(leaf_name="x")(lambda x: x)},
+            {},
+            ["x", "bar", "foreign_id_col"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "bar",
+            AggregateByPIDSpec(
+                target="bar_hh",
+                source="x",
+                agg=AggregationType.SUM,
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {},
+            {"x": x},
+            ["x", "bar", "foreign_id_col"],
+            DEFAULT_START_DATE,
+            DEFAULT_END_DATE,
+        ),
+        (
+            "bar",
+            AggregateByPIDSpec(
+                target="bar_hh",
+                source="x",
+                agg=AggregationType.SUM,
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {
+                "x": policy_function(
+                    leaf_name="x", start_date="2025-01-01", end_date="2025-12-31"
+                )(lambda x: x)
+            },
+            {},
+            ["x", "bar", "foreign_id_col"],
+            datetime.date.fromisoformat("2025-01-01"),
+            datetime.date.fromisoformat("2025-12-31"),
+        ),
+    ],
+)
+def test_aggregate_by_p_id_function_start_and_end_date(
+    aggregation_target,
+    aggregation_spec,
+    functions,
+    inputs,
+    top_level_namespace,
+    expected_start_date,
+    expected_end_date,
+):
+    result = _create_one_aggregation_function(
+        aggregation_target=aggregation_target,
+        aggregation_spec=aggregation_spec,
+        aggregation_type="p_id",
+        group_by_id=None,
+        functions=functions,
+        inputs=inputs,
+        top_level_namespace=top_level_namespace,
+    )
+    assert result.start_date == expected_start_date
+    assert result.end_date == expected_end_date
+
+
+@pytest.mark.parametrize(
+    (
+        "aggregation_target",
+        "aggregation_spec",
+        "functions",
+        "inputs",
+        "group_by_id",
         "top_level_namespace",
         "expected_arg_names",
     ),
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr="count"),
+            AggregateByGroupSpec(
+                target="foo_hh", source=None, agg=AggregationType.COUNT
+            ),
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {},
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id"],
         ),
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr="sum", source="foo"),
+            AggregateByGroupSpec(
+                target="foo_hh", source="foo", agg=AggregationType.SUM
+            ),
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {},
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo"],
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(aggr="sum", source="bar"),
+            AggregateByGroupSpec(
+                target="foo__bar_hh", source="bar", agg=AggregationType.SUM
+            ),
+            {"foo__bar": policy_function(leaf_name="bar")(lambda x: x)},
+            {},
             "hh_id",
             ["foo", "hh_id"],
             ["hh_id", "foo__bar"],
@@ -446,15 +708,19 @@ def test_create_aggregation_with_derived_soure_column():
 def test_function_arguments_are_namespaced_for_derived_group_funcs(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
     group_by_id,
     top_level_namespace,
     expected_arg_names,
 ):
-    result = _create_one_aggregate_by_group_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="group",
         group_by_id=group_by_id,
-        functions={},
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -467,6 +733,9 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
     (
         "aggregation_target",
         "aggregation_spec",
+        "functions",
+        "inputs",
+        "group_by_id",
         "top_level_namespace",
         "expected_arg_names",
     ),
@@ -474,31 +743,63 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         (
             "foo",
             AggregateByPIDSpec(
-                aggr="sum", source="bar", p_id_to_aggregate_by="foreign_id_col"
+                target="foo_hh",
+                agg=AggregationType.SUM,
+                source="bar",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
+            {"bar": policy_function(leaf_name="bar")(lambda x: x)},
+            {},
+            "foreign_id_col",
             ["foo", "foreign_id_col", "bar"],
             ["foreign_id_col", "bar"],
         ),
         (
             "foo__fünc",
             AggregateByPIDSpec(
-                aggr="sum", source="bär", p_id_to_aggregate_by="foreign_id_col"
+                target="foo_hh",
+                agg=AggregationType.SUM,
+                source="bär",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
+            {"foo__bär": policy_function(leaf_name="bär")(lambda x: x)},
+            {},
+            "foreign_id_col",
             ["foo", "foreign_id_col"],
             ["foreign_id_col", "foo__bär"],
+        ),
+        (
+            "foo",
+            AggregateByPIDSpec(
+                target="foo_hh",
+                agg=AggregationType.SUM,
+                source="x",
+                p_id_to_aggregate_by="foreign_id_col",
+            ),
+            {},
+            {"x": x},
+            "foreign_id_col",
+            ["foo", "foreign_id_col", "x"],
+            ["foreign_id_col", "x"],
         ),
     ],
 )
 def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
+    group_by_id,
     top_level_namespace,
     expected_arg_names,
 ):
-    result = _create_one_aggregate_by_p_id_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
-        functions={},
+        aggregation_type="p_id",
+        group_by_id=group_by_id,
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -511,6 +812,8 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     (
         "aggregation_target",
         "aggregation_spec",
+        "functions",
+        "inputs",
         "group_by_id",
         "top_level_namespace",
         "source_col_name",
@@ -518,14 +821,22 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(aggr="sum", source="foo"),
+            AggregateByGroupSpec(
+                target="foo_hh", agg=AggregationType.SUM, source="foo"
+            ),
+            {},
+            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
             "hh_id",
             ["foo", "hh_id"],
             "foo",
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(aggr="sum", source="bar"),
+            AggregateByGroupSpec(
+                target="bar_hh", agg=AggregationType.SUM, source="bar"
+            ),
+            {},
+            {"foo__bar": policy_function(leaf_name="bar")(lambda x: x)},
             "hh_id",
             ["foo", "hh_id"],
             "foo__bar",
@@ -535,15 +846,19 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
 def test_source_column_name_of_aggregate_by_group_func_is_qualified(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
     group_by_id,
     top_level_namespace,
     source_col_name,
 ):
-    result = _create_one_aggregate_by_group_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
+        aggregation_type="group",
         group_by_id=group_by_id,
-        functions={},
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
@@ -553,6 +868,8 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
     (
         "aggregation_target",
         "aggregation_spec",
+        "functions",
+        "inputs",
         "top_level_namespace",
         "source_col_name",
     ),
@@ -560,16 +877,26 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         (
             "foo",
             AggregateByPIDSpec(
-                aggr="sum", source="bar", p_id_to_aggregate_by="foreign_id_col"
+                target="foo_hh",
+                agg=AggregationType.SUM,
+                source="bar",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
+            {},
+            {"bar": policy_function(leaf_name="bar")(lambda x: x)},
             ["foo", "foreign_id_col", "bar"],
             "bar",
         ),
         (
             "foo__fünc",
             AggregateByPIDSpec(
-                aggr="sum", source="bär", p_id_to_aggregate_by="foreign_id_col"
+                target="foo_hh",
+                agg=AggregationType.SUM,
+                source="bär",
+                p_id_to_aggregate_by="foreign_id_col",
             ),
+            {},
+            {"foo__bär": policy_function(leaf_name="bär")(lambda x: x)},
             ["foo", "foreign_id_col"],
             "foo__bär",
         ),
@@ -578,13 +905,18 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
 def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
     aggregation_target,
     aggregation_spec,
+    functions,
+    inputs,
     top_level_namespace,
     source_col_name,
 ):
-    result = _create_one_aggregate_by_p_id_func(
+    result = _create_one_aggregation_function(
         aggregation_target=aggregation_target,
         aggregation_spec=aggregation_spec,
-        functions={},
+        aggregation_type="p_id",
+        group_by_id=None,
+        functions=functions,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name

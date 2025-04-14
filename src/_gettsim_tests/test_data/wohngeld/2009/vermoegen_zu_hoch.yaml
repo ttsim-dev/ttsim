@@ -1,58 +1,26 @@
 ---
 info:
   note: Wealth is too high for housing subsidies.
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - true
-      - false
     alter:
       - 37
       - 8
     anzahl_personen_hh:
       - 2
       - 2
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
+      - -1
     behinderungsgrad:
       - 0
       - 0
-    geburtsjahr:
-      - 1972
-      - 2001
-    geburtsmonat:
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-    hh_id:
-      - 3
-      - 3
-    familie__kind:
-      - false
-      - true
-    p_id:
-      - 20
-      - 21
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - 20
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-    vermögen:
-      - 95000.0
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 1000.0
       - 1000.0
@@ -71,18 +39,45 @@ inputs:
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 250.0
       - 0.0
     einkommensteuer__gemeinsam_veranlagt:
       - false
       - false
-    einkommensteuer__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
       - 0.0
       - 0.0
     elterngeld__betrag_m:
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - true
+      - false
+    familie__kind:
+      - false
+      - true
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - 20
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+    geburtsjahr:
+      - 1972
+      - 2001
+    geburtsmonat:
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+    hh_id:
+      - 3
+      - 3
     jahr:
       - 2009
       - 2009
@@ -92,6 +87,9 @@ inputs:
     kindergeld__p_id_empfänger:
       - -1
       - 20
+    p_id:
+      - 20
+      - 21
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -118,6 +116,9 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+    vermögen:
+      - 95000.0
       - 0.0
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
       - true

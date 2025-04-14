@@ -1,42 +1,21 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-    familie__alleinerziehend:
-      - false
     alter:
       - 52
     anzahl_personen_hh:
       - 1
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
     behinderungsgrad:
       - 0
-    geburtsjahr:
-      - 1967
-    geburtsmonat:
-      - 1
-    geburtstag:
-      - 1
-    hh_id:
-      - 5
-    familie__kind:
-      - false
-    p_id:
-      - 27
-    familie__p_id_ehepartner:
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-    vermögen:
-      - 55000.0
     einkommensteuer__betrag_y_sn:
       - 0.0
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y:
@@ -47,20 +26,40 @@ inputs:
       - 0.0
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 0.0
     einkommensteuer__gemeinsam_veranlagt:
       - false
-    einkommensteuer__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
       - 0.0
     elterngeld__betrag_m:
       - 0.0
+    familie__alleinerziehend:
+      - false
+    familie__kind:
+      - false
+    familie__p_id_ehepartner:
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+    geburtsjahr:
+      - 1967
+    geburtsmonat:
+      - 1
+    geburtstag:
+      - 1
+    hh_id:
+      - 5
     jahr:
       - 2019
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
     kindergeld__p_id_empfänger:
       - -1
+    p_id:
+      - 27
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
     sozialversicherung__arbeitslosen__betrag_m:
@@ -79,6 +78,8 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+    vermögen:
+      - 55000.0
     vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg:
       - true
     vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg:

@@ -1,19 +1,21 @@
 """Tax allowances for individuals or couples with children."""
 
-from ttsim import AggregateByPIDSpec, policy_function
+from ttsim import AggregateByPIDSpec, AggregationType, policy_function
 
-aggregation_specs = {
-    "anzahl_kinderfreibeträge_1": AggregateByPIDSpec(
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="anzahl_kinderfreibeträge_1",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         p_id_to_aggregate_by="p_id_kinderfreibetragsempfänger_1",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        aggr="sum",
+        agg=AggregationType.SUM,
     ),
-    "anzahl_kinderfreibeträge_2": AggregateByPIDSpec(
+    AggregateByPIDSpec(
+        target="anzahl_kinderfreibeträge_2",
+        source="kindergeld__grundsätzlich_anspruchsberechtigt",
         p_id_to_aggregate_by="p_id_kinderfreibetragsempfänger_2",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        aggr="sum",
+        agg=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function()

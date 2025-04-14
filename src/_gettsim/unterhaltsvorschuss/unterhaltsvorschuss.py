@@ -2,18 +2,30 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, join_numpy, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    AggregationType,
+    RoundingSpec,
+    join_numpy,
+    policy_function,
+)
 
-aggregation_specs = {
-    "an_elternteil_auszuzahlender_betrag_m": AggregateByPIDSpec(
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="an_elternteil_auszuzahlender_betrag_m",
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
         source="betrag_m",
-        aggr="sum",
+        agg=AggregationType.SUM,
     ),
-}
+)
 
 
-@policy_function(start_date="2009-01-01", params_key_for_rounding="unterhaltsvors")
+@policy_function(
+    start_date="2009-01-01",
+    rounding_spec=RoundingSpec(
+        base=1, direction="up", reference="§ 9 Abs. 3 UhVorschG"
+    ),
+)
 def betrag_m(
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     anspruchshöhe_m: float,
@@ -91,7 +103,9 @@ def elternteil_alleinerziehend(
 @policy_function(
     end_date="2008-12-31",
     leaf_name="betrag_m",
-    params_key_for_rounding="unterhaltsvors",
+    rounding_spec=RoundingSpec(
+        base=1, direction="down", reference="§ 9 Abs. 3 UhVorschG"
+    ),
 )
 def not_implemented_m() -> float:
     raise NotImplementedError(
@@ -381,9 +395,9 @@ def mindesteinkommen_erreicht(
 
 
 @policy_function(start_date="2017-01-01")
-def einkommen_m(  # noqa: PLR0913
+def einkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    einkommensteuer__einkünfte__sonstige__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
@@ -397,8 +411,8 @@ def einkommen_m(  # noqa: PLR0913
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m`.
-    einkommensteuer__einkünfte__sonstige__betrag_m
-        See :func:`einkommensteuer__einkünfte__sonstige__betrag_m`.
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
         See :func:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m`.
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
@@ -418,7 +432,7 @@ def einkommen_m(  # noqa: PLR0913
     """
     out = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        + einkommensteuer__einkünfte__sonstige__betrag_m
+        + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m

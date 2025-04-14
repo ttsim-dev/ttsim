@@ -1,10 +1,15 @@
 ---
 info:
   note: Wealth significantly above wealth allowance leading to no claim
+  precision: 0.01
   source: Inspired by Page 12 of https://www.arbeitsagentur.de/datei/ba146349.pdf
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 40
+      - 40
+      - 11
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -21,44 +26,8 @@ inputs:
       - 37
       - 36
       - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-    alter:
-      - 40
-      - 40
-      - 11
     arbeitsstunden_w:
       - 0.0
-      - 0.0
-      - 0.0
-    geburtsjahr:
-      - 1976
-      - 1976
-      - 2005
-    hh_id:
-      - 13
-      - 13
-      - 13
-    familie__kind:
-      - false
-      - false
-      - true
-    p_id:
-      - 36
-      - 37
-      - 38
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 36
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 37
-    vermögen:
-      - 25000.0
       - 0.0
       - 0.0
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
@@ -69,6 +38,30 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 36
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 37
+    geburtsjahr:
+      - 1976
+      - 1976
+      - 2005
+    hh_id:
+      - 13
+      - 13
+      - 13
     jahr:
       - 2016
       - 2016
@@ -97,12 +90,20 @@ inputs:
       - 644.0
       - 0.0
       - 0.0
+    p_id:
+      - 36
+      - 37
+      - 38
     unterhalt__tatsächlich_erhaltener_betrag_m:
       - 0.0
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
+      - 25000.0
       - 0.0
       - 0.0
     wohnen__bruttokaltmiete_m_hh:

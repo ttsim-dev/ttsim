@@ -1,39 +1,12 @@
 ---
 info:
-  note: >-
-    Expanded test case to include additional household members so that more than seven
+  note: Expanded test case to include additional household members so that more than seven
     people are eligible for housing subsidies
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 67
-      - 66
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
     alter:
       - 42
       - 53
@@ -52,6 +25,24 @@ inputs:
       - 8
       - 8
       - 8
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 67
+      - 66
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
     behinderungsgrad:
       - 0
       - 0
@@ -61,96 +52,6 @@ inputs:
       - 0
       - 0
       - 0
-    geburtsjahr:
-      - 1964
-      - 1953
-      - 1999
-      - 1998
-      - 1994
-      - 2004
-      - 2004
-      - 2001
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    hh_id:
-      - 15
-      - 15
-      - 15
-      - 15
-      - 15
-      - 15
-      - 15
-      - 15
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-      - true
-      - true
-      - true
-      - true
-    p_id:
-      - 66
-      - 67
-      - 68
-      - 69
-      - 70
-      - 71
-      - 72
-      - 73
-    familie__p_id_ehepartner:
-      - 67
-      - 66
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 66
-      - 66
-      - 66
-      - 66
-      - 66
-      - 66
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 67
-      - 67
-      - 67
-      - 67
-      - 67
-      - 67
-    vermögen:
-      - 200000.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 0.0
       - 0.0
@@ -196,7 +97,7 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 0.0
       - 0.0
       - 0.0
@@ -214,7 +115,7 @@ inputs:
       - false
       - false
       - false
-    einkommensteuer__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
       - 0.0
       - 0.0
       - 0.0
@@ -232,6 +133,87 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+      - true
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 67
+      - 66
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 66
+      - 66
+      - 66
+      - 66
+      - 66
+      - 66
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 67
+      - 67
+      - 67
+      - 67
+      - 67
+      - 67
+    geburtsjahr:
+      - 1964
+      - 1953
+      - 1999
+      - 1998
+      - 1994
+      - 2004
+      - 2004
+      - 2001
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 15
+      - 15
+      - 15
+      - 15
+      - 15
+      - 15
+      - 15
+      - 15
     jahr:
       - 2006
       - 2006
@@ -259,6 +241,15 @@ inputs:
       - 66
       - 66
       - 66
+    p_id:
+      - 66
+      - 67
+      - 68
+      - 69
+      - 70
+      - 71
+      - 72
+      - 73
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -333,6 +324,15 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
+      - 200000.0
       - 0.0
       - 0.0
       - 0.0

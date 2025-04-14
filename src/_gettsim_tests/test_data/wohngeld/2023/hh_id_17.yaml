@@ -1,10 +1,23 @@
 ---
 info:
   note: Created with Wohngeldrechner that doesn't check for Mindesteinkommen.
+  precision: 0.01
   source: https://www.bmwsb.bund.de/SiteGlobals/Forms/wohngeldrechner/wohngeldrechner-2023-formular.html?resourceId=18737268&input_=18737272&pageLocale=de&householdMembers=5&housingbenefitRecipients=5&income=1750&rent=1300&rentLevelZIPCode=72393&rentLevelTown.GROUP=1&rentLevel=1&rentLevel.GROUP=1&update=Berechnen&result=746%2C00
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 45
+      - 40
+      - 15
+      - 10
+      - 8
+    anzahl_personen_hh:
+      - 5
+      - 5
+      - 5
+      - 5
+      - 5
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -23,90 +36,12 @@ inputs:
       - -1
       - -1
       - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-      - false
-    alter:
-      - 45
-      - 40
-      - 15
-      - 10
-      - 8
-    anzahl_personen_hh:
-      - 5
-      - 5
-      - 5
-      - 5
-      - 5
     behinderungsgrad:
       - 0
       - 0
       - 0
       - 0
       - 0
-    geburtsjahr:
-      - 1978
-      - 1983
-      - 2008
-      - 2013
-      - 2015
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    hh_id:
-      - 17
-      - 17
-      - 17
-      - 17
-      - 17
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-      - true
-    p_id:
-      - 78
-      - 79
-      - 80
-      - 81
-      - 82
-    familie__p_id_ehepartner:
-      - 79
-      - 78
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 78
-      - 78
-      - 78
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 79
-      - 79
-      - 79
-    vermögen:
-      - 85000.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 714.0
       - 714.0
@@ -143,7 +78,7 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 0.0
       - 0.0
       - 0.0
@@ -155,7 +90,7 @@ inputs:
       - false
       - false
       - false
-    einkommensteuer__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
       - 0.0
       - 0.0
       - 0.0
@@ -167,6 +102,60 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 79
+      - 78
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 78
+      - 78
+      - 78
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 79
+      - 79
+      - 79
+    geburtsjahr:
+      - 1978
+      - 1983
+      - 2008
+      - 2013
+      - 2015
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 17
+      - 17
+      - 17
+      - 17
+      - 17
     jahr:
       - 2023
       - 2023
@@ -185,6 +174,12 @@ inputs:
       - 78
       - 78
       - 78
+    p_id:
+      - 78
+      - 79
+      - 80
+      - 81
+      - 82
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -235,6 +230,12 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
+      - 85000.0
       - 0.0
       - 0.0
       - 0.0

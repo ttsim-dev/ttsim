@@ -1,12 +1,16 @@
 ---
 info:
-  note: >-
-    Test with old income thresholds and new Kindergeld, (adjusted for
-    Kindersofortzuschlag of 20€). Household with wealth.
+  note: Test with old income thresholds and new Kindergeld, (adjusted for Kindersofortzuschlag
+    of 20€). Household with wealth.
+  precision: 0.01
   source: https://www.hartziv.org/rechner/
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 40
+      - 38
+      - 3
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -19,49 +23,9 @@ inputs:
       - 41
       - 40
       - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-    alter:
-      - 40
-      - 38
-      - 3
     arbeitsstunden_w:
       - 0.0
       - 12.0
-      - 0.0
-    geburtsjahr:
-      - 1983
-      - 1985
-      - 2020
-    hh_id:
-      - 17
-      - 17
-      - 17
-    familie__kind:
-      - false
-      - false
-      - true
-    p_id:
-      - 40
-      - 41
-      - 42
-    familie__p_id_ehepartner:
-      - 41
-      - 40
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 40
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 41
-    vermögen:
-      - 85000.0
-      - 0.0
       - 0.0
     einkommensteuer__betrag_y_sn:
       - 0.0
@@ -83,7 +47,7 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 0.0
       - 0.0
       - 0.0
@@ -95,6 +59,34 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+    familie__p_id_ehepartner:
+      - 41
+      - 40
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 40
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 41
+    geburtsjahr:
+      - 1983
+      - 1985
+      - 2020
+    hh_id:
+      - 17
+      - 17
+      - 17
     jahr:
       - 2023-01
       - 2023-01
@@ -111,6 +103,10 @@ inputs:
       - -1
       - -1
       - 40
+    p_id:
+      - 40
+      - 41
+      - 42
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -141,6 +137,10 @@ inputs:
       - 0.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
+      - 85000.0
       - 0.0
       - 0.0
     wohnen__bewohnt_eigentum_hh:

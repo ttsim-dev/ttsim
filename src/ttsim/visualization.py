@@ -11,7 +11,6 @@ import plotly.graph_objects as go
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
-from _gettsim.config import DEFAULT_TARGETS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
@@ -66,7 +65,7 @@ def plot_dag(
         a hover information. Sometimes, the tooltip is not properly displayed.
 
     """
-    targets = build_targets_tree(DEFAULT_TARGETS if targets is None else targets)  # noqa: F821
+    targets = build_targets_tree(fixme if targets is None else targets)  # noqa: F821
 
     if isinstance(columns_overriding_functions, dict):
         names_of_columns_overriding_functions = dt.flatten_to_qual_names(

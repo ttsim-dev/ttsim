@@ -1,52 +1,20 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - true
-      - false
     alter:
       - 43
       - 0
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
+      - -1
     arbeitsstunden_w:
       - 3.0
       - 0.0
-    geburtsjahr:
-      - 1974
-      - 2017
-    geburtsmonat:
-      - 4
-      - 6
-    geburtstag:
-      - 4
-      - 12
-    hh_id:
-      - 2
-      - 2
-    familie__kind:
-      - false
-      - true
-    p_id:
-      - 42
-      - 43
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - 42
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-    wohnort_ost:
-      - false
-      - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 100.0
       - 0.0
@@ -65,6 +33,33 @@ inputs:
     elterngeld__zu_versteuerndes_einkommen_vorjahr_y_sn:
       - 18260.0
       - 0.0
+    familie__alleinerziehend:
+      - true
+      - false
+    familie__kind:
+      - false
+      - true
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - 42
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+    geburtsjahr:
+      - 1974
+      - 2017
+    geburtsmonat:
+      - 4
+      - 6
+    geburtstag:
+      - 4
+      - 12
+    hh_id:
+      - 2
+      - 2
     jahr:
       - 2018
       - 2018
@@ -74,8 +69,14 @@ inputs:
     lohnsteuer__steuerklasse:
       - 1
       - 1
+    p_id:
+      - 42
+      - 43
     sozialversicherung__pflege__beitrag__hat_kinder:
       - true
+      - false
+    wohnort_ost:
+      - false
       - false
 outputs:
   elterngeld__anzahl_mehrlinge_fg:

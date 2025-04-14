@@ -1,38 +1,17 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-    familie__alleinerziehend:
-      - false
     alter:
       - 43
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
     arbeitsstunden_w:
       - 22.5
-    geburtsjahr:
-      - 1974
-    geburtsmonat:
-      - 3
-    geburtstag:
-      - 3
-    hh_id:
-      - 2
-    familie__kind:
-      - false
-    p_id:
-      - 42
-    familie__p_id_ehepartner:
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-    wohnort_ost:
-      - false
     einkommensteuer__betrag_y_sn:
       - 218.96
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
@@ -47,17 +26,39 @@ inputs:
       - 1800.0
     elterngeld__zu_versteuerndes_einkommen_vorjahr_y_sn:
       - 18260.0
+    familie__alleinerziehend:
+      - false
+    familie__kind:
+      - false
+    familie__p_id_ehepartner:
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+    geburtsjahr:
+      - 1974
+    geburtsmonat:
+      - 3
+    geburtstag:
+      - 3
+    hh_id:
+      - 2
     jahr:
       - 2017
     kindergeld__in_ausbildung:
       - false
     lohnsteuer__steuerklasse:
       - 1
+    p_id:
+      - 42
     solidaritätszuschlag__betrag_y_sn:
       - 12.04
     sozialversicherung__beiträge_versicherter_m:
       - 378.0
     sozialversicherung__pflege__beitrag__hat_kinder:
+      - false
+    wohnort_ost:
       - false
 outputs:
   elterngeld__anzahl_mehrlinge_fg:

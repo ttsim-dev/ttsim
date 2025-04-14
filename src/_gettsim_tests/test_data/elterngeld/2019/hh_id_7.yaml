@@ -1,66 +1,23 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 72
-      - 71
-      - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
     alter:
       - 43
       - 43
       - 0
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 72
+      - 71
+      - -1
     arbeitsstunden_w:
       - 0.0
       - 0.0
       - 0.0
-    geburtsjahr:
-      - 1976
-      - 1976
-      - 2018
-    geburtsmonat:
-      - 5
-      - 6
-      - 12
-    geburtstag:
-      - 5
-      - 6
-      - 1
-    hh_id:
-      - 7
-      - 7
-      - 7
-    familie__kind:
-      - false
-      - false
-      - true
-    p_id:
-      - 71
-      - 72
-      - 73
-    familie__p_id_ehepartner:
-      - 72
-      - 71
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 71
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 72
-    wohnort_ost:
-      - false
-      - false
-      - false
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
       - 0.0
       - 0.0
@@ -85,6 +42,42 @@ inputs:
       - 16560.0
       - 16560.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+    familie__p_id_ehepartner:
+      - 72
+      - 71
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 71
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 72
+    geburtsjahr:
+      - 1976
+      - 1976
+      - 2018
+    geburtsmonat:
+      - 5
+      - 6
+      - 12
+    geburtstag:
+      - 5
+      - 6
+      - 1
+    hh_id:
+      - 7
+      - 7
+      - 7
     jahr:
       - 2019
       - 2019
@@ -97,9 +90,17 @@ inputs:
       - 1
       - 1
       - 1
+    p_id:
+      - 71
+      - 72
+      - 73
     sozialversicherung__pflege__beitrag__hat_kinder:
       - true
       - true
+      - false
+    wohnort_ost:
+      - false
+      - false
       - false
 outputs:
   elterngeld__anzahl_mehrlinge_fg:

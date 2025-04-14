@@ -1,29 +1,15 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - true
-      - false
     alter:
       - 45
       - 10
-    hh_id:
-      - 5
-      - 5
-    p_id:
-      - 6
-      - 7
-    familie__p_id_elternteil_1:
-      - -1
-      - 6
-    familie__p_id_elternteil_2:
+    arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
@@ -38,9 +24,21 @@ inputs:
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - true
+      - false
+    familie__p_id_elternteil_1:
+      - -1
+      - 6
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+    hh_id:
+      - 5
+      - 5
     jahr:
       - 2018
       - 2018
@@ -50,6 +48,9 @@ inputs:
     monat:
       - 1
       - 1
+    p_id:
+      - 6
+      - 7
     sozialversicherung__arbeitslosen__betrag_m:
       - 0.0
       - 0.0

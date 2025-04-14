@@ -1,31 +1,11 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 48
-      - 47
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
     alter:
       - 43
       - 48
@@ -40,6 +20,20 @@ inputs:
       - 6
       - 6
       - 6
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - 48
+      - 47
+      - -1
+      - -1
+      - -1
+      - -1
     behinderungsgrad:
       - 0
       - 0
@@ -47,76 +41,6 @@ inputs:
       - 0
       - 0
       - 0
-    geburtsjahr:
-      - 1975
-      - 1970
-      - 2004
-      - 2003
-      - 2012
-      - 2013
-    geburtsmonat:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    geburtstag:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-    hh_id:
-      - 8
-      - 8
-      - 8
-      - 8
-      - 8
-      - 8
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-      - true
-      - true
-    p_id:
-      - 47
-      - 48
-      - 49
-      - 50
-      - 51
-      - 52
-    familie__p_id_ehepartner:
-      - 48
-      - 47
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 47
-      - 47
-      - 47
-      - 47
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 48
-      - 48
-      - 48
-      - 48
-    vermögen:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
     einkommensteuer__betrag_y_sn:
       - 1000.0
       - 1000.0
@@ -152,7 +76,7 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__betrag_m:
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
       - 0.0
       - 0.0
       - 0.0
@@ -166,7 +90,7 @@ inputs:
       - false
       - false
       - false
-    einkommensteuer__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
       - 0.0
       - 0.0
       - 0.0
@@ -180,6 +104,69 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 48
+      - 47
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 47
+      - 47
+      - 47
+      - 47
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 48
+      - 48
+      - 48
+      - 48
+    geburtsjahr:
+      - 1975
+      - 1970
+      - 2004
+      - 2003
+      - 2012
+      - 2013
+    geburtsmonat:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    geburtstag:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    hh_id:
+      - 8
+      - 8
+      - 8
+      - 8
+      - 8
+      - 8
     jahr:
       - 2018
       - 2018
@@ -201,6 +188,13 @@ inputs:
       - 47
       - 47
       - 47
+    p_id:
+      - 47
+      - 48
+      - 49
+      - 50
+      - 51
+      - 52
     solidaritätszuschlag__betrag_y_sn:
       - 0.0
       - 0.0
@@ -258,6 +252,13 @@ inputs:
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
       - 0.0

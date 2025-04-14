@@ -1,25 +1,26 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: Regression test.
 inputs:
   assumed: {}
   provided:
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-      - -1
     alter:
       - 43
       - 43
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
+      - -1
     arbeitsstunden_w:
       - 40.0
       - 10.0
-    hh_id:
-      - 0
-      - 0
-    p_id:
-      - 0
-      - 1
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 1000.0
+      - 200.0
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
     familie__p_id_ehepartner:
       - -1
       - -1
@@ -29,22 +30,22 @@ inputs:
     familie__p_id_elternteil_2:
       - -1
       - -1
-    wohnort_ost:
-      - false
-      - false
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 1000.0
-      - 200.0
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
+    hh_id:
+      - 0
+      - 0
     kindergeld__in_ausbildung:
       - false
       - false
     lohnsteuer__steuerklasse:
       - 1
       - 1
+    p_id:
+      - 0
+      - 1
     sozialversicherung__pflege__beitrag__hat_kinder:
+      - false
+      - false
+    wohnort_ost:
       - false
       - false
 outputs:

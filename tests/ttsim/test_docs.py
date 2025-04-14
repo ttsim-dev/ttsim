@@ -7,11 +7,10 @@ import pytest
 
 from _gettsim.config import (
     RESOURCE_DIR,
-    TYPES_INPUT_VARIABLES,
 )
 from ttsim.loader import (
     load_aggregation_specs_tree,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
 )
 from ttsim.shared import remove_group_suffix
 
@@ -23,7 +22,7 @@ def _nice_output_list_of_strings(list_of_strings):
 
 @pytest.fixture(scope="module")
 def default_input_variables():
-    return sorted(TYPES_INPUT_VARIABLES.keys())
+    return sorted(f for f in todo_functions_tree if isinstance(f, PolicyInput))
 
 
 @pytest.fixture(scope="module")
@@ -41,8 +40,9 @@ def aggregation_dict():
 def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
     for year in range(1990, 2023):
-        year_functions = load_functions_tree_for_date(
-            datetime.date(year=year, month=1, day=1)
+        year_functions = load_objects_tree_for_date(
+            resource_dir=RESOURCE_DIR,
+            date=datetime.date(year=year, month=1, day=1),
         )
         new_dict = {func.function.__name__: func.leaf_name for func in year_functions}
         time_dependent_functions = {**time_dependent_functions, **new_dict}

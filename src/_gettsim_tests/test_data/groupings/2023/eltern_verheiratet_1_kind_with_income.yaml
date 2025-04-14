@@ -1,12 +1,15 @@
 ---
 info:
-  note: >-
-    Child in separate Bedarfsgemeinschaft if he/she has enough income to fend for
-    him/herself
+  note: Child in separate Bedarfsgemeinschaft if he/she has enough income to fend for him/herself
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 49
+      - 50
+      - 22
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - true
       - true
@@ -15,10 +18,22 @@ inputs:
       - 1
       - 0
       - -1
-    alter:
-      - 49
-      - 50
-      - 22
+    einkommensteuer__gemeinsam_veranlagt:
+      - true
+      - true
+      - false
+    familie__p_id_ehepartner:
+      - 1
+      - 0
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 0
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 1
     geburtsjahr:
       - 1974
       - 1973
@@ -39,22 +54,6 @@ inputs:
       - 0
       - 1
       - 2
-    familie__p_id_ehepartner:
-      - 1
-      - 0
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
-    einkommensteuer__gemeinsam_veranlagt:
-      - true
-      - true
-      - false
 outputs:
   arbeitslosengeld_2__bg_id:
     - 0
@@ -68,11 +67,11 @@ outputs:
     - 0
     - 0
     - 0
-  familie__ehe_id:
+  einkommensteuer__sn_id:
     - 0
     - 0
     - 1
-  einkommensteuer__sn_id:
+  familie__ehe_id:
     - 0
     - 0
     - 1

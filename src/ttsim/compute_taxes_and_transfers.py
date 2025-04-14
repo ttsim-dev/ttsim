@@ -3,39 +3,37 @@ from __future__ import annotations
 import functools
 import inspect
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, get_args
 
 import dags
 import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
-from _gettsim.config import (
-    DEFAULT_TARGETS,
-    FOREIGN_KEYS,
-    TYPES_INPUT_VARIABLES,
-)
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.function_types import (
     DerivedAggregationFunction,
-    DerivedTimeConversionFunction,
     GroupByFunction,
     PolicyFunction,
+    PolicyInput,
+    TTSIMFunction,
 )
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
-    KeyErrorMessage,
+    all_variations_of_base_name,
     assert_valid_ttsim_pytree,
     format_errors_and_warnings,
     format_list_linewise,
     get_name_of_group_by_id,
     get_names_of_arguments_without_defaults,
+    get_re_pattern_for_all_time_units_and_groupings,
     merge_trees,
     partition_by_reference_dict,
 )
+from ttsim.time_conversion import TIME_UNITS
 from ttsim.typing import (
     check_series_has_expected_type,
     convert_series_to_internal_type,
@@ -46,15 +44,18 @@ if TYPE_CHECKING:
         NestedDataDict,
         NestedTargetDict,
         QualNameDataDict,
-        QualNameFunctionsDict,
+        QualNamePolicyInputDict,
         QualNameTargetList,
+        QualNameTTSIMFunctionDict,
     )
 
 
 def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
-    targets_tree: NestedTargetDict | None = None,
+    targets_tree: NestedTargetDict,
+    foreign_keys: tuple[tuple[str, ...], ...],
+    supported_groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
 ) -> NestedDataDict:
@@ -67,8 +68,7 @@ def compute_taxes_and_transfers(
     environment: PolicyEnvironment
         The policy environment which contains all necessary functions and parameters.
     targets_tree : NestedTargetDict | None
-        The targets tree. By default, ``targets_tree`` is ``None`` and all key outputs
-        as defined by `gettsim.config.DEFAULT_TARGETS` are returned.
+        The targets tree.
     rounding : bool, default True
         Indicator for whether rounding should be applied as specified in the law.
     debug : bool
@@ -81,8 +81,6 @@ def compute_taxes_and_transfers(
         The computed variables as a tree.
 
     """
-    # Use default targets if no targets are provided.
-    targets_tree = targets_tree if targets_tree else DEFAULT_TARGETS
 
     # Check user inputs
     _fail_if_targets_tree_not_valid(targets_tree)
@@ -90,19 +88,28 @@ def compute_taxes_and_transfers(
     _fail_if_environment_not_valid(environment)
 
     # Transform functions tree to qualified names dict with qualified arguments
-    top_level_namespace = (
-        set(environment.functions_tree.keys())
-        | set(data_tree.keys())
-        | set(TYPES_INPUT_VARIABLES.keys())
-        | set(environment.aggregation_specs_tree.keys())
+    top_level_namespace = _get_top_level_namespace(
+        environment=environment,
+        supported_time_conversions=tuple(TIME_UNITS.keys()),
+        supported_groupings=supported_groupings,
     )
-    functions = dt.functions_without_tree_logic(
-        functions=environment.functions_tree, top_level_namespace=top_level_namespace
-    )
-
+    # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
     aggregation_specs = dt.flatten_to_qual_names(environment.aggregation_specs_tree)
+    functions: QualNameTTSIMFunctionDict = {}
+    inputs: QualNamePolicyInputDict = {}
+    for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
+        if isinstance(f_or_i, TTSIMFunction):
+            functions[name] = dt.one_function_without_tree_logic(
+                function=f_or_i,
+                tree_path=dt.tree_path_from_qual_name(name),
+                top_level_namespace=top_level_namespace,
+            )
+        elif isinstance(f_or_i, PolicyInput):
+            inputs[name] = f_or_i
+        else:
+            raise ValueError(f"Unknown type: {type(f_or_i)}")
 
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
@@ -110,27 +117,26 @@ def compute_taxes_and_transfers(
         aggregation_specs_from_environment=aggregation_specs,
         targets=targets,
         data=data,
+        inputs=inputs,
         top_level_namespace=top_level_namespace,
+        supported_groupings=supported_groupings,
     )
 
-    functions_overridden, functions_not_overridden = partition_by_reference_dict(
+    functions_overridden, functions_to_be_used = partition_by_reference_dict(
         to_partition=functions,
         reference_dict=data,
     )
 
     _warn_if_functions_overridden_by_data(functions_overridden)
-    data_with_correct_types = _convert_data_to_correct_types(
-        data=data,
-        functions_overridden=functions_overridden,
-    )
+    # data_with_correct_types = _convert_data_to_correct_types(
+    #     data=data,
+    #     functions_overridden=functions_overridden,
+    # )
 
     functions_with_rounding_specs = (
-        _add_rounding_to_functions(
-            functions=functions_not_overridden,
-            params=environment.params,
-        )
+        _add_rounding_to_functions(functions=functions_to_be_used)
         if rounding
-        else functions_not_overridden
+        else functions_to_be_used
     )
     functions_with_partialled_parameters = _partial_parameters_to_functions(
         functions=functions_with_rounding_specs,
@@ -139,7 +145,7 @@ def compute_taxes_and_transfers(
 
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
-        data=data_with_correct_types,
+        data=data,
         functions=functions_with_partialled_parameters,
         targets=targets,
     )
@@ -147,10 +153,12 @@ def compute_taxes_and_transfers(
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
         functions=functions,
+        supported_groupings=supported_groupings,
     )
     _fail_if_foreign_keys_are_invalid(
         data=input_data,
         p_id=data.get("p_id", None),
+        foreign_keys=foreign_keys,
     )
 
     tax_transfer_function = dags.concatenate_functions(
@@ -174,8 +182,50 @@ def compute_taxes_and_transfers(
     return result_tree
 
 
+def _get_top_level_namespace(
+    environment: PolicyEnvironment,
+    supported_time_conversions: tuple[str, ...],
+    supported_groupings: tuple[str, ...],
+) -> set[str]:
+    """Get the top level namespace.
+
+    Parameters
+    ----------
+    environment:
+        The policy environment.
+
+    Returns
+    -------
+    top_level_namespace:
+        The top level namespace.
+    """
+    direct_top_level_names = set(environment.raw_objects_tree.keys()) | set(
+        environment.aggregation_specs_tree.keys()
+    )
+    re_pattern = get_re_pattern_for_all_time_units_and_groupings(
+        supported_groupings=supported_groupings,
+        supported_time_units=supported_time_conversions,
+    )
+
+    all_top_level_names = set()
+    for name in direct_top_level_names:
+        match = re_pattern.fullmatch(name)
+        base_name = match.group("base_name")
+        create_conversions_for_time_units = bool(match.group("time_unit"))
+
+        all_top_level_names_for_name = all_variations_of_base_name(
+            base_name=base_name,
+            supported_time_conversions=supported_time_conversions,
+            supported_groupings=supported_groupings,
+            create_conversions_for_time_units=create_conversions_for_time_units,
+        )
+        all_top_level_names.update(all_top_level_names_for_name)
+
+    return all_top_level_names
+
+
 def _convert_data_to_correct_types(
-    data: QualNameDataDict, functions_overridden: QualNameFunctionsDict
+    data: QualNameDataDict, functions_overridden: QualNameTTSIMFunctionDict
 ) -> QualNameDataDict:
     """Convert all data columns to the type that is expected by GETTSIM.
 
@@ -283,7 +333,7 @@ def _convert_data_to_correct_types(
 
 def _create_input_data_for_concatenated_function(
     data: QualNameDataDict,
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
     targets: QualNameTargetList,
 ) -> QualNameDataDict:
     """Create input data for the concatenated function.
@@ -326,9 +376,9 @@ def _create_input_data_for_concatenated_function(
 
 
 def _partial_parameters_to_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
     params: dict[str, Any],
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMFunctionDict:
     """Round and partial parameters into functions.
 
     Parameters
@@ -365,132 +415,26 @@ def _partial_parameters_to_functions(
 
 
 def _add_rounding_to_functions(
-    functions: QualNameFunctionsDict,
-    params: dict[str, Any],
-) -> QualNameFunctionsDict:
+    functions: QualNameTTSIMFunctionDict,
+) -> QualNameTTSIMFunctionDict:
     """Add appropriate rounding of outputs to function.
 
     Parameters
     ----------
     functions
         Functions to which rounding should be added.
-    params : dict
-        Dictionary of parameters
 
     Returns
     -------
     Function with rounding added.
 
     """
-    rounded_functions = {}
-    for name, func in functions.items():
-        if getattr(func, "params_key_for_rounding", False):
-            params_key = func.params_key_for_rounding
-            # Check if there are any rounding specifications in params files.
-            if not (
-                params_key in params
-                and "rounding" in params[params_key]
-                and name in params[params_key]["rounding"]
-            ):
-                path = dt.tree_path_from_qual_name(name)
-                raise KeyError(
-                    KeyErrorMessage(
-                        f"""
-                        Rounding specifications for function
-
-                            {path}
-
-                        are expected in the parameter dictionary at:\n
-                        [{params_key!r}]['rounding'][{name!r}].\n
-                        These nested keys do not exist. If this function should not be
-                        rounded, remove the respective decorator.
-                        """
-                    )
-                )
-            rounding_spec = params[params_key]["rounding"][name]
-            # Check if expected parameters are present in rounding specifications.
-            if not ("base" in rounding_spec and "direction" in rounding_spec):
-                raise KeyError(
-                    KeyErrorMessage(
-                        "Both 'base' and 'direction' are expected as rounding "
-                        "parameters in the parameter dictionary. \n "
-                        "At least one of them is missing at:\n"
-                        f"[{params_key!r}]['rounding'][{name!r}]."
-                    )
-                )
-            # Add rounding.
-            rounded_functions[name] = _apply_rounding_spec(
-                base=rounding_spec["base"],
-                direction=rounding_spec["direction"],
-                to_add_after_rounding=rounding_spec.get("to_add_after_rounding", 0),
-                name=name,
-            )(func)
-        else:
-            rounded_functions[name] = func
-
-    return rounded_functions
-
-
-def _apply_rounding_spec(
-    base: float,
-    direction: Literal["up", "down", "nearest"],
-    to_add_after_rounding: float,
-    name: str,
-) -> callable:
-    """Decorator to round the output of a function.
-
-    Parameters
-    ----------
-    base
-        Precision of rounding (e.g. 0.1 to round to the first decimal place)
-    direction
-        Whether the series should be rounded up, down or to the nearest number
-    to_add_after_rounding
-        Number to be added after the rounding step
-    name:
-        Name of the function to be rounded.
-
-    Returns
-    -------
-    Series with (potentially) rounded numbers
-
-    """
-
-    path = dt.tree_path_from_qual_name(name)
-
-    def inner(func):
-        # Make sure that signature is preserved.
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            out = func(*args, **kwargs)
-
-            # Check inputs.
-            if type(base) not in [int, float]:
-                raise ValueError(f"base needs to be a number, got {base!r} for {path}")
-            if type(to_add_after_rounding) not in [int, float]:
-                raise ValueError(
-                    f"Additive part needs to be a number, got"
-                    f" {to_add_after_rounding!r} for {path}"
-                )
-
-            if direction == "up":
-                rounded_out = base * np.ceil(out / base)
-            elif direction == "down":
-                rounded_out = base * np.floor(out / base)
-            elif direction == "nearest":
-                rounded_out = base * (out / base).round()
-            else:
-                raise ValueError(
-                    "direction must be one of 'up', 'down', or 'nearest'"
-                    f", got {direction!r} for {path}"
-                )
-
-            rounded_out += to_add_after_rounding
-            return rounded_out
-
-        return wrapper
-
-    return inner
+    return {
+        name: func.rounding_spec.apply_rounding(func)
+        if getattr(func, "rounding_spec", False)
+        else func
+        for name, func in functions.items()
+    }
 
 
 def _fail_if_environment_not_valid(environment: Any) -> None:
@@ -524,12 +468,13 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
         leaf_checker=lambda leaf: isinstance(leaf, pd.Series | np.ndarray),
         tree_name="data_tree",
     )
-    _fail_if_pid_is_non_unique(data_tree)
+    _fail_if_p_id_is_non_unique(data_tree)
 
 
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
+    supported_groupings: tuple[str, ...],
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -556,6 +501,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         group_by_id = get_name_of_group_by_id(
             target_name=name,
             group_by_functions=group_by_functions,
+            supported_groupings=supported_groupings,
         )
         if group_by_id in data:
             group_by_id_series = pd.Series(data[group_by_id])
@@ -580,7 +526,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         raise ValueError(msg)
 
 
-def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
+def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
     """Check that pid is unique."""
     p_id = data_tree.get("p_id", None)
     if p_id is None:
@@ -606,6 +552,7 @@ def _fail_if_pid_is_non_unique(data_tree: NestedDataDict) -> None:
 def _fail_if_foreign_keys_are_invalid(
     data: QualNameDataDict,
     p_id: pd.Series,
+    foreign_keys: tuple[tuple[str, ...], ...],
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -616,7 +563,7 @@ def _fail_if_foreign_keys_are_invalid(
     valid_ids = set(p_id) | {-1}
 
     for name, data_column in data.items():
-        foreign_key_col = dt.tree_path_from_qual_name(name) in FOREIGN_KEYS
+        foreign_key_col = dt.tree_path_from_qual_name(name) in foreign_keys
         path = dt.tree_path_from_qual_name(name)
         if not foreign_key_col:
             continue
@@ -643,7 +590,7 @@ def _fail_if_foreign_keys_are_invalid(
 
 
 def _warn_if_functions_overridden_by_data(
-    functions_overridden: QualNameFunctionsDict,
+    functions_overridden: QualNameTTSIMFunctionDict,
 ) -> None:
     """Warn if functions are overridden by data."""
     if len(functions_overridden) > 0:
@@ -708,7 +655,7 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
 
 
 def _fail_if_root_nodes_are_missing(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
     data: QualNameDataDict,
     root_nodes: list[str],
 ) -> None:
@@ -747,15 +694,14 @@ def _fail_if_root_nodes_are_missing(
             missing_nodes.append(str(node))
 
     if missing_nodes:
-        formatted = format_list_linewise(missing_nodes)
+        formatted = format_list_linewise(
+            [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes]
+        )
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
 def _func_depends_on_parameters_only(
-    func: PolicyFunction
-    | DerivedAggregationFunction
-    | DerivedTimeConversionFunction
-    | GroupByFunction,
+    func: TTSIMFunction,
 ) -> bool:
     """Check if a function depends on parameters only."""
     return (

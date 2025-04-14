@@ -1,12 +1,18 @@
 ---
 info:
-  note: >-
-    A later implementation may rely on the order of p_id or
-    hh_id.
+  note: A later implementation may rely on the order of p_id or hh_id.
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 39
+      - 39
+      - 13
+      - 39
+      - 13
+      - 13
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -21,13 +27,34 @@ inputs:
       - -1
       - -1
       - -1
-    alter:
-      - 39
-      - 39
-      - 13
-      - 39
-      - 13
-      - 13
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 0
+      - -1
+      - 2
+      - 1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
     geburtsjahr:
       - 1984
       - 1984
@@ -63,34 +90,6 @@ inputs:
       - 2
       - 3
       - 5
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-      - -1
-      - 2
-      - 1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
 outputs:
   arbeitslosengeld_2__bg_id:
     - 0
@@ -113,14 +112,14 @@ outputs:
     - 2
     - 2
     - 1
-  familie__ehe_id:
+  einkommensteuer__sn_id:
     - 0
     - 1
     - 2
     - 3
     - 4
     - 5
-  einkommensteuer__sn_id:
+  familie__ehe_id:
     - 0
     - 1
     - 2

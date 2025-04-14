@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 import optree
 import pandas as pd
 import pytest
+from mettsim.config import RESOURCE_DIR
 
 from ttsim.function_types import (
     GroupByFunction,
@@ -19,12 +20,12 @@ from ttsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
-    load_functions_tree_for_date,
+    load_objects_tree_for_date,
     set_up_policy_environment,
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedFunctionDict
+    from ttsim.typing import NestedTTSIMObjectDict
 
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
@@ -34,12 +35,12 @@ class TestPolicyEnvironment:
         function = policy_function(leaf_name="foo")(lambda: 1)
         environment = PolicyEnvironment({"foo": function})
 
-        assert environment.functions_tree["foo"] == function
+        assert environment.raw_objects_tree["foo"] == function
 
     def test_func_does_not_exist_in_tree(self):
         environment = PolicyEnvironment({}, {})
 
-        assert "foo" not in environment.functions_tree
+        assert "foo" not in environment.raw_objects_tree
 
     @pytest.mark.parametrize(
         "environment",
@@ -56,9 +57,9 @@ class TestPolicyEnvironment:
     )
     def test_upsert_functions(self, environment: PolicyEnvironment):
         new_function = policy_function(leaf_name="foo")(lambda: 3)
-        new_environment = environment.upsert_policy_functions({"foo": new_function})
+        new_environment = environment.upsert_objects({"foo": new_function})
 
-        assert new_environment.functions_tree["foo"] == new_function
+        assert new_environment.raw_objects_tree["foo"] == new_function
 
     @pytest.mark.parametrize(
         "environment",
@@ -75,12 +76,12 @@ class TestPolicyEnvironment:
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="02-29-2020")
+    set_up_policy_environment(date="02-29-2020", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="02-30-2020")
+        set_up_policy_environment(date="02-30-2020", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_access_different_date():
@@ -119,22 +120,10 @@ def test_access_different_date_jahresanfang():
     "tree, last_day, function_name_last_day, function_name_next_day",
     [
         (
-            {"einkommensteuer": {"abzüge": {"altersfreibetrag_y": None}}},
-            date(2004, 12, 31),
-            "altersfreibetrag_y_bis_2004",
-            "altersfreibetrag_y_ab_2005",
-        ),
-        (
-            {"einkommensteuer": {"abzüge": {"alleinerziehend_betrag_y": None}}},
-            date(2014, 12, 31),
-            "alleinerziehend_betrag_y_pauschal",
-            "alleinerziehend_betrag_y_nach_kinderzahl",
-        ),
-        (
-            {"einkommensteuer": {"gesamteinkommen_ohne_abzüge_y": None}},
-            date(2008, 12, 31),
-            "gesamteinkommen_ohne_abzüge_mit_kapitaleinkünften_y",
-            "gesamteinkommen_ohne_abzüge_ohne_kapitaleinkünfte_y",
+            {"housing_benefits": {"eligibility": {"requirement_fulfilled_fam": None}}},
+            date(2019, 12, 31),
+            "requirement_fulfilled_fam_not_considering_children",
+            "requirement_fulfilled_fam_considering_children",
         ),
     ],
 )
@@ -144,8 +133,12 @@ def test_load_functions_tree_for_date(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = load_functions_tree_for_date(date=last_day)
-    functions_next_day = load_functions_tree_for_date(date=last_day + timedelta(days=1))
+    functions_last_day = load_objects_tree_for_date(
+        resource_dir=RESOURCE_DIR, date=last_day
+    )
+    functions_next_day = load_objects_tree_for_date(
+        resource_dir=RESOURCE_DIR, date=last_day + timedelta(days=1)
+    )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
 
@@ -160,7 +153,7 @@ def test_load_functions_tree_for_date(
     ],
 )
 def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedFunctionDict,
+    functions_tree: NestedTTSIMObjectDict,
 ):
     with pytest.raises(KeyError):
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
@@ -171,4 +164,4 @@ def test_dont_destroy_group_by_functions():
         "foo": group_by_function()(lambda: 1),
     }
     environment = PolicyEnvironment(functions_tree)
-    assert isinstance(environment.functions_tree["foo"], GroupByFunction)
+    assert isinstance(environment.raw_objects_tree["foo"], GroupByFunction)

@@ -2,13 +2,13 @@
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, group_by_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
-aggregation_specs = {
-    "anzahl_personen_wthh": AggregateByGroupSpec(
-        aggr="count",
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_personen_wthh", source=None, agg=AggregationType.COUNT
     ),
-}
+)
 
 
 @group_by_function()

@@ -1,6 +1,7 @@
 ---
 info:
   note: ''
+  precision: 0.01
   source: ''
 inputs:
   assumed: {}
@@ -8,24 +9,24 @@ inputs:
     einkommensteuer__abgeltungssteuer__betrag_y_sn:
       - 0.0
       - 0.0
-    hh_id:
-      - 1
-      - 1
-    familie__kind:
-      - false
-      - false
-    p_id:
-      - 2
-      - 3
-    familie__p_id_ehepartner:
-      - 3
-      - 2
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn:
       - 36000.0
       - 36000.0
     einkommensteuer__gemeinsam_veranlagt:
       - true
       - true
+    familie__kind:
+      - false
+      - false
+    familie__p_id_ehepartner:
+      - 3
+      - 2
+    hh_id:
+      - 1
+      - 1
+    p_id:
+      - 2
+      - 3
     zusammen_veranlagt:
       - true
       - true
