@@ -7,7 +7,7 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from _gettsim.config import FOREIGN_KEYS, RESOURCE_DIR, SUPPORTED_GROUPINGS
+from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     PolicyEnvironment,
@@ -76,7 +76,6 @@ def execute_test(test: PolicyTest):
         environment=environment,
         targets_tree=test.target_structure,
         supported_groupings=SUPPORTED_GROUPINGS,
-        foreign_keys=FOREIGN_KEYS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

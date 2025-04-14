@@ -1,7 +1,7 @@
 import dags.tree as dt
 import pytest
 
-from _gettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim_tests.utils import (
     PolicyTest,
     cached_set_up_policy_environment,
@@ -22,7 +22,6 @@ def test_full_taxes_transfers(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=SUPPORTED_GROUPINGS,
     )
 
@@ -35,7 +34,6 @@ def test_data_types(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=SUPPORTED_GROUPINGS,
     )
 
@@ -74,6 +72,5 @@ def test_allow_none_as_target_tree(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=None,
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=SUPPORTED_GROUPINGS,
     )

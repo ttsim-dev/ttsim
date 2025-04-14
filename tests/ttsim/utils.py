@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 import yaml
-from mettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from mettsim.config import SUPPORTED_GROUPINGS
 
 from ttsim import merge_trees, set_up_policy_environment
 from ttsim.shared import to_datetime
@@ -60,7 +60,6 @@ def execute_test(test: PolicyTest):
         environment=environment,
         targets_tree=test.target_structure,
         supported_groupings=SUPPORTED_GROUPINGS,
-        foreign_keys=FOREIGN_KEYS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

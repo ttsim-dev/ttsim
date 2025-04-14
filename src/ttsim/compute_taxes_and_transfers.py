@@ -55,7 +55,6 @@ def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
-    foreign_keys: tuple[tuple[str, ...], ...],
     supported_groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,

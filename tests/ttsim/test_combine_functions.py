@@ -198,7 +198,6 @@ def test_create_aggregate_by_group_functions(
         data_tree=data_tree,
         targets_tree=targets_tree,
         supported_groupings=("hh",),
-        foreign_keys=(),
     )
 
 

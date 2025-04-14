@@ -5,7 +5,7 @@ import warnings
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from mettsim.config import SUPPORTED_GROUPINGS
 from mettsim.payroll_tax.group_by_ids import fam_id, sp_id
 
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
@@ -97,7 +97,6 @@ def test_output_as_tree(minimal_input_data):
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"module": {"test_func": None}},
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -121,7 +120,6 @@ def test_warn_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"some_target": None},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -139,7 +137,6 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -163,7 +160,6 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"unique": None},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -283,7 +279,6 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"c": None},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -302,7 +297,6 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"b": None},
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -320,7 +314,6 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"unknown_target": None},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -335,7 +328,6 @@ def test_fail_if_missing_p_id():
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -352,7 +344,6 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -408,7 +399,6 @@ def test_user_provided_aggregate_by_group_specs():
             raw_objects_tree=inputs, aggregation_specs_tree=aggregation_specs_tree
         ),
         targets_tree={"module_name": {"betrag_m_hh": None}},
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -461,7 +451,6 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
         data_tree=data,
         environment=environment,
         targets_tree={"module_name": {"betrag_double_m_hh": None}},
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -496,7 +485,6 @@ def test_aggregate_by_group_specs_missing_group_suffix():
             PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
             targets_tree={"module_name": {"betrag_agg_m": None}},
             supported_groupings=("hh",),
-            foreign_keys=FOREIGN_KEYS,
         )
 
 
@@ -590,7 +578,6 @@ def test_user_provided_aggregate_by_p_id_specs(
         environment,
         targets_tree=target_tree,
         supported_groupings=("hh",),
-        foreign_keys=FOREIGN_KEYS,
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
