@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import warnings
-from typing import TYPE_CHECKING, Any, get_args
+from typing import TYPE_CHECKING, Any
 
 import dags
 import dags.tree as dt
@@ -15,9 +15,7 @@ from ttsim.combine_functions import (
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.function_types import (
-    DerivedAggregationFunction,
     GroupByFunction,
-    PolicyFunction,
     PolicyInput,
     TTSIMFunction,
 )
@@ -34,10 +32,6 @@ from ttsim.shared import (
     partition_by_reference_dict,
 )
 from ttsim.time_conversion import TIME_UNITS
-from ttsim.typing import (
-    check_series_has_expected_type,
-    convert_series_to_internal_type,
-)
 
 if TYPE_CHECKING:
     from ttsim.typing import (
@@ -128,10 +122,6 @@ def compute_taxes_and_transfers(
     )
 
     _warn_if_functions_overridden_by_data(functions_overridden)
-    # data_with_correct_types = _convert_data_to_correct_types(
-    #     data=data,
-    #     functions_overridden=functions_overridden,
-    # )
 
     functions_with_rounding_specs = (
         _add_rounding_to_functions(functions=functions_to_be_used)
@@ -222,113 +212,6 @@ def _get_top_level_namespace(
         all_top_level_names.update(all_top_level_names_for_name)
 
     return all_top_level_names
-
-
-def _convert_data_to_correct_types(
-    data: QualNameDataDict, functions_overridden: QualNameTTSIMFunctionDict
-) -> QualNameDataDict:
-    """Convert all data columns to the type that is expected by GETTSIM.
-
-    Parameters
-    ----------
-    data
-        Data provided by the user.
-    functions_overridden
-        Functions that are overridden by data.
-
-    Returns
-    -------
-    Data with correct types.
-
-    """
-    collected_errors = ["The data types of the following columns are invalid:\n"]
-    collected_conversions = [
-        "The data types of the following input variables have been converted:"
-    ]
-    general_warning = (
-        "Note that the automatic conversion of data types is unsafe and that"
-        " its correctness cannot be guaranteed."
-        " The best solution is to convert all columns to the expected data"
-        " types yourself."
-    )
-
-    data_with_correct_types = {}
-
-    for name, series in data.items():
-        internal_type = None
-
-        # Look for column in TYPES_INPUT_VARIABLES
-        types_qualified_input_variables = dt.flatten_to_qual_names(
-            TYPES_INPUT_VARIABLES
-        )
-        if name in types_qualified_input_variables:
-            internal_type = types_qualified_input_variables[name]
-        # Look for column in functions_tree_overridden
-        elif name in functions_overridden:
-            func = functions_overridden[name]
-            func_is_group_by_function = isinstance(
-                getattr(func, "__wrapped__", func), GroupByFunction
-            )
-            func_is_policy_function = isinstance(
-                getattr(func, "__wrapped__", func), PolicyFunction
-            ) and not isinstance(
-                getattr(func, "__wrapped__", func), DerivedAggregationFunction
-            )
-            skip_vectorization = (
-                func.skip_vectorization if func_is_policy_function else True
-            )
-            return_annotation_is_array = (
-                func_is_group_by_function or func_is_policy_function
-            ) and skip_vectorization
-            if return_annotation_is_array:
-                # Assumes that things are annotated with numpy.ndarray([dtype]), might
-                # require a change if using proper numpy.typing. Not changing for now
-                # as we will likely switch to JAX completely.
-                internal_type = get_args(func.__annotations__["return"])[0]
-            elif "return" in func.__annotations__:
-                internal_type = func.__annotations__["return"]
-            else:
-                pass
-        else:
-            pass
-
-        # Make conversion if necessary
-        if internal_type and not check_series_has_expected_type(
-            series=series, internal_type=internal_type
-        ):
-            try:
-                converted_leaf = convert_series_to_internal_type(
-                    series=series, internal_type=internal_type
-                )
-                data_with_correct_types[name] = converted_leaf
-                collected_conversions.append(
-                    f" - {name} from {series.dtype} to {internal_type.__name__}"
-                )
-            except ValueError as e:
-                collected_errors.append(f"\n - {name}: {e}")
-        else:
-            data_with_correct_types[name] = series
-
-    # If any error occured raise Error
-    if len(collected_errors) > 1:
-        msg = """
-            Note that conversion from floating point to integers or Booleans inherently
-            suffers from approximation error. It might well be that your data seemingly
-            obey the restrictions when scrolling through them, but in fact they do not
-            (for example, because 1e-15 is displayed as 0.0). \n The best solution is to
-            convert all columns to the expected data types yourself.
-            """
-        collected_errors = "\n".join(collected_errors)
-        raise ValueError(format_errors_and_warnings(collected_errors + msg))
-    # Otherwise raise warning which lists all successful conversions
-    elif len(collected_conversions) > 1:
-        collected_conversions = format_list_linewise(collected_conversions)
-        warnings.warn(
-            collected_conversions + "\n" + "\n" + general_warning,
-            stacklevel=2,
-        )
-
-    return data_with_correct_types
 
 
 def _create_input_data_for_concatenated_function(
