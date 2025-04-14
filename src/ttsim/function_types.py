@@ -9,10 +9,12 @@ from typing import TYPE_CHECKING, Literal, TypeVar
 import numpy
 
 from ttsim.rounding import RoundingSpec
-from ttsim.shared import validate_dashed_iso_date, validate_date_range
+from ttsim.shared import to_datetime, validate_date_range
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from ttsim.typing import DashedISOString
 
 T = TypeVar("T")
 
@@ -398,8 +400,8 @@ class DerivedTimeConversionFunction(TTSIMFunction):
 
 
 def _convert_and_validate_dates(
-    start_date: str | datetime.date,
-    end_date: str | datetime.date,
+    start_date: datetime.date | DashedISOString,
+    end_date: datetime.date | DashedISOString,
 ) -> tuple[datetime.date, datetime.date]:
     """Convert and validate date strings to datetime.date objects.
 
@@ -415,12 +417,8 @@ def _convert_and_validate_dates(
     tuple[datetime.date, datetime.date]
         The converted and validated start and end dates.
     """
-    if isinstance(start_date, str):
-        validate_dashed_iso_date(start_date)
-        start_date = datetime.date.fromisoformat(start_date)
-    if isinstance(end_date, str):
-        validate_dashed_iso_date(end_date)
-        end_date = datetime.date.fromisoformat(end_date)
+    start_date = to_datetime(start_date)
+    end_date = to_datetime(end_date)
 
     validate_date_range(start_date, end_date)
 

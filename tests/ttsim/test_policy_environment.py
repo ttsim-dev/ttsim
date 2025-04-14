@@ -76,12 +76,12 @@ class TestPolicyEnvironment:
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="02-29-2020", resource_dir=RESOURCE_DIR)
+    set_up_policy_environment(date="2020-02-29", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="02-30-2020", resource_dir=RESOURCE_DIR)
+        set_up_policy_environment(date="2020-02-30", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_access_different_date():
