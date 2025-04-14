@@ -89,7 +89,8 @@ added.
 1. The `unit` key informs on the unit of the values (Euro or DM if monetary, share of
    some other value, ...).
 
-   - In rare cases (e.g. child benefit age threshold), it might be omitted.
+   - In some cases (e.g., factor for the calculation of the marginal employment
+     threshold), there is no unit.
    - It should be capitalised.
    - Some values used at this point: `Euro`, `DM`, `Share`, `Percent`, `Factor`, `Year`,
      `Month`, `Hour`, `Square Meter`, `Euro / Square Meter`.
