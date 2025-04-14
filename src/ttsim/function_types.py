@@ -3,67 +3,167 @@ from __future__ import annotations
 import datetime
 import functools
 import inspect
-import re
-from collections.abc import Callable
-from typing import Literal, TypeVar
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal, TypeVar
 
-import dags.tree as dt
 import numpy
+from pandas.api.types import (
+    is_bool_dtype,
+    is_datetime64_any_dtype,
+    is_float_dtype,
+    is_integer_dtype,
+)
 
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.rounding import RoundingSpec
+from ttsim.shared import to_datetime, validate_date_range
 from ttsim.vectorization import make_vectorizable
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import pandas as pd
+
+    from ttsim.config import numpy_or_jax as np
+    from ttsim.typing import DashedISOString
 
 T = TypeVar("T")
 
+DEFAULT_START_DATE = datetime.date(1900, 1, 1)
+DEFAULT_END_DATE = datetime.date(2100, 12, 31)
 
-class PolicyFunction(Callable):
+
+@dataclass
+class TTSIMObject:
+    """
+    Abstract base class for all TTSIM Functions and Inputs.
+    """
+
+    leaf_name: str
+    start_date: datetime.date
+    end_date: datetime.date
+
+    def is_active(self, date: datetime.date) -> bool:
+        """Check if the function is active at a given date."""
+        return self.start_date <= date <= self.end_date
+
+
+@dataclass
+class PolicyInput(TTSIMObject):
+    """
+    A dummy function representing an input variable.
+
+    Parameters
+    ----------
+    data_type:
+        The data type of the input variable.
+    start_date:
+        The date from which the input is relevant / active (inclusive).
+    end_date:
+        The date until which the input is relevant / active (inclusive).
+    """
+
+    data_type: type[float | int | bool]
+
+
+def policy_input(
+    *,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+) -> PolicyInput:
+    """
+    Decorator that makes a (dummy) function a `PolicyInput`.
+
+    **Dates active (start_date, end_date):**
+
+    Specifies that a PolicyInput is only active between two dates, `start` and `end`.
+
+    **Rounding spec (params_key_for_rounding):**
+
+    Adds the location of the rounding specification to a PolicyInput.
+
+    Parameters
+    ----------
+    start_date
+        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    end_date
+        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+
+    Returns
+    -------
+    A PolicyInput object.
+    """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    def inner(func: Callable) -> PolicyInput:
+        data_type = func.__annotations__["return"]
+        return PolicyInput(
+            leaf_name=func.__name__,
+            data_type=data_type,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    return inner
+
+
+@dataclass
+class TTSIMFunction(TTSIMObject):
+    """
+    Base class for all TTSIM functions.
+    """
+
+    function: Callable
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"]
+
+    def __call__(self, *args, **kwargs):
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
+
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
+
+
+@dataclass
+class PolicyFunction(TTSIMFunction):
     """
     A function that computes an output vector based on some input vectors and/or
     parameters.
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
         The function to wrap. Argument values of the `@policy_function` are reused
         unless explicitly overwritten.
-    leaf_name:
-        The leaf name of the function in the functions tree.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
     rounding_spec:
         The rounding specification.
-    skip_vectorization:
-        Whether the function should be vectorized.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
     """
 
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        leaf_name: str,
-        start_date: datetime.date,
-        end_date: datetime.date,
-        vectorization_strategy: Literal["loop", "vectorize", "not_required"],
-        rounding_spec: RoundingSpec | None,
-    ):
-        self.vectorization_strategy: Literal["loop", "vectorize", "not_required"] = (
-            vectorization_strategy
-        )
+    rounding_spec: RoundingSpec | None = None
+
+    def __post_init__(self):
+        self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         self.function = (
-            function
+            self.function
             if self.vectorization_strategy == "not_required"
             else _vectorize_func(
-                function, vectorization_strategy=self.vectorization_strategy
+                self.function, vectorization_strategy=self.vectorization_strategy
             )
         )
-        self.leaf_name: str = leaf_name if leaf_name else function.__name__
-        self.start_date: datetime.date = start_date
-        self.end_date: datetime.date = end_date
-        self._fail_if_rounding_has_wrong_type(rounding_spec)
-        self.rounding_spec: RoundingSpec | None = rounding_spec
 
         # Expose the signature of the wrapped function for dependency resolution
         functools.update_wrapper(self, self.function)
@@ -110,11 +210,11 @@ class PolicyFunction(Callable):
 
 def policy_function(
     *,
-    start_date: str | datetime.date = "1900-01-01",
-    end_date: str | datetime.date = "2100-12-31",
     leaf_name: str | None = None,
-    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
     rounding_spec: RoundingSpec | None = None,
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
 ) -> PolicyFunction:
     """
     Decorator that makes a `PolicyFunction` from a function.
@@ -135,56 +235,36 @@ def policy_function(
 
     Parameters
     ----------
+    leaf_name
+        The name that should be used as the PolicyFunction's leaf name in the DAG. If
+        omitted, we use the name of the function as defined.
     start_date
         The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
     end_date
         The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
-    leaf_name
-        The name that should be used as the PolicyFunction's leaf name in the DAG. If
-        omitted, we use the name of the function as defined.
     rounding_spec
         The specification to be used for rounding.
-    skip_vectorization
-        Whether the function is already vectorized and, thus, should not be vectorized
-        again.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
 
     Returns
     -------
     A PolicyFunction object.
     """
 
-    _validate_dashed_iso_date(start_date)
-    _validate_dashed_iso_date(end_date)
-
-    start_date = datetime.date.fromisoformat(start_date)
-    end_date = datetime.date.fromisoformat(end_date)
-
-    _validate_date_range(start_date, end_date)
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable) -> PolicyFunction:
         return PolicyFunction(
-            function=func,
             leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
             start_date=start_date,
             end_date=end_date,
-            vectorization_strategy=vectorization_strategy,
             rounding_spec=rounding_spec,
+            vectorization_strategy=vectorization_strategy,
         )
 
     return inner
-
-
-_DASHED_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
-
-
-def _validate_dashed_iso_date(date: str | datetime.date):
-    if not _DASHED_ISO_DATE.match(date):
-        raise ValueError(f"Date {date} does not match the format YYYY-MM-DD.")
-
-
-def _validate_date_range(start: datetime.date, end: datetime.date):
-    if start > end:
-        raise ValueError(f"The start date {start} must be before the end date {end}.")
 
 
 def _vectorize_func(
@@ -206,33 +286,29 @@ def _vectorize_func(
     return vectorized
 
 
-class GroupByFunction(Callable):
+@dataclass
+class GroupByFunction(TTSIMFunction):
     """
     A function that computes endogenous group_by IDs.
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
-        The group_by function.
+        The function calculating the group_by IDs.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
     """
 
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        leaf_name: str | None = None,
-    ):
-        self.function = function
-        self.leaf_name = leaf_name if leaf_name else function.__name__
-
+    def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = function.__annotations__
-        self.__module__ = function.__module__
-        self.__name__ = function.__name__
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
-
-    def __call__(self, *args, **kwargs):
-        return self.function(*args, **kwargs)
 
     @property
     def dependencies(self) -> set[str]:
@@ -240,96 +316,158 @@ class GroupByFunction(Callable):
         return set(inspect.signature(self).parameters)
 
 
-def group_by_function() -> GroupByFunction:
+def group_by_function(
+    *,
+    leaf_name: str | None = None,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+) -> GroupByFunction:
     """
     Decorator that creates a group_by function from a function.
     """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def decorator(func: Callable) -> GroupByFunction:
-        return GroupByFunction(function=func)
+        _leaf_name = func.__name__ if leaf_name is None else leaf_name
+        return GroupByFunction(
+            leaf_name=_leaf_name,
+            function=func,
+            start_date=start_date,
+            end_date=end_date,
+            vectorization_strategy="not_required",
+        )
 
     return decorator
 
 
-class DerivedAggregationFunction(PolicyFunction):
+@dataclass
+class DerivedAggregationFunction(TTSIMFunction):
     """
     A function that is an aggregation of another function.
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
-    aggregation_target:
-        The qualified name of the aggregation target.
-    source_function:
-        The function from which the new function is derived.
+        The function performing the aggregation.
     source:
         The name of the source function or data column.
     aggregation_method:
         The method of aggregation used.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    params_key_for_rounding:
+        The key in the params dictionary that should be used for rounding.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
     """
 
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        source_function: PolicyFunction
-        | DerivedTimeConversionFunction
-        | DerivedAggregationFunction
-        | None = None,
-        source: str,
-        aggregation_target: str,
-        aggregation_method: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-    ):
-        super().__init__(
-            function=function,
-            leaf_name=dt.tree_path_from_qual_name(aggregation_target)[-1],
-            start_date=source_function.start_date if source_function else None,
-            end_date=source_function.end_date if source_function else None,
-            vectorization_strategy="not_required",
-            rounding_spec=None,
-        )
+    source: str | None = None
+    aggregation_method: (
+        Literal["count", "sum", "mean", "min", "max", "any", "all"] | None
+    ) = None
 
-        self.source = source
-        self.aggregation_method = aggregation_method
+    def __post_init__(self):
+        if self.aggregation_method is None:
+            raise ValueError("The aggregation method must be specified.")
+        if self.source is None and self.aggregation_method != "count":
+            raise ValueError("The source must be specified.")
+
+        # Expose the signature of the wrapped function for dependency resolution
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
+        self.__signature__ = inspect.signature(self.function)
 
 
-class DerivedTimeConversionFunction(PolicyFunction):
+@dataclass
+class DerivedTimeConversionFunction(TTSIMFunction):
     """
     A function that is a time conversion of another function.
 
     Parameters
     ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
-    source_function:
-        The function from which the new function is derived.
+        The function performing the time conversion.
     source:
         The name of the source function or data column.
-    conversion_target:
-        The qualified name of the conversion target.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    params_key_for_rounding:
+        The key in the params dictionary that should be used for rounding.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
     """
 
-    def __init__(
-        self,
-        *,
-        function: Callable,
-        source_function: PolicyFunction
-        | DerivedTimeConversionFunction
-        | DerivedAggregationFunction
-        | None = None,
-        source: str,
-        conversion_target: str,
-    ):
-        super().__init__(
-            function=function,
-            leaf_name=dt.tree_path_from_qual_name(conversion_target)[-1],
-            start_date=source_function.start_date if source_function else None,
-            end_date=source_function.end_date if source_function else None,
-            vectorization_strategy="not_required",
-            rounding_spec=None,
-        )
+    source: str | None = None
 
-        self.source = source
+    def __post_init__(self):
+        if self.source is None:
+            raise ValueError("The source must be specified.")
+
+        # Expose the signature of the wrapped function for dependency resolution
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
+        self.__signature__ = inspect.signature(self.function)
+
+
+def _convert_and_validate_dates(
+    start_date: datetime.date | DashedISOString,
+    end_date: datetime.date | DashedISOString,
+) -> tuple[datetime.date, datetime.date]:
+    """Convert and validate date strings to datetime.date objects.
+
+    Parameters
+    ----------
+    start_date
+        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    end_date
+        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+
+    Returns
+    -------
+    tuple[datetime.date, datetime.date]
+        The converted and validated start and end dates.
+    """
+    start_date = to_datetime(start_date)
+    end_date = to_datetime(end_date)
+
+    validate_date_range(start_date, end_date)
+
+    return start_date, end_date
+
+
+def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:
+    """Checks whether used series has already expected internal type.
+
+    Parameters
+    ----------
+    series : pandas.Series or pandas.DataFrame or dict of pandas.Series
+        Data provided by the user.
+    internal_type : TypeVar
+        One of the internal gettsim types.
+
+    Returns
+    -------
+    Bool
+
+    """
+    if (
+        (internal_type == float) & (is_float_dtype(series))
+        or (internal_type == int) & (is_integer_dtype(series))
+        or (internal_type == bool) & (is_bool_dtype(series))
+        or (internal_type == numpy.datetime64) & (is_datetime64_any_dtype(series))
+    ):
+        out = True
+    else:
+        out = False
+
+    return out

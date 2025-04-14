@@ -3,8 +3,12 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from _gettsim_tests._helpers import cached_set_up_policy_environment
-from _gettsim_tests._policy_test_utils import PolicyTest, load_policy_test_data
+from _gettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from _gettsim_tests.utils import (
+    PolicyTest,
+    cached_set_up_policy_environment,
+    load_policy_test_data,
+)
 from ttsim import compute_taxes_and_transfers
 
 test_data = load_policy_test_data("groupings")
@@ -18,6 +22,8 @@ def test_groupings(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
+        foreign_keys=FOREIGN_KEYS,
+        supported_groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -40,7 +46,7 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
         },
     }
 
-    environment = cached_set_up_policy_environment(date="2023")
+    environment = cached_set_up_policy_environment("2023-01-01")
 
     with pytest.raises(
         ValueError,
@@ -50,4 +56,6 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
             data_tree=data,
             environment=environment,
             targets_tree={"einkommensteuer": {"sn_id": None}},
+            foreign_keys=FOREIGN_KEYS,
+            supported_groupings=SUPPORTED_GROUPINGS,
         )

@@ -1,8 +1,8 @@
 import networkx as nx
 import pytest
-from _helpers import cached_set_up_policy_environment
+from mettsim.config import RESOURCE_DIR
 
-from ttsim.policy_environment import PolicyEnvironment
+from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.visualization import (
     _get_selected_nodes,
     _kth_order_neighbors,
@@ -12,7 +12,7 @@ from ttsim.visualization import (
     plot_dag,
 )
 
-environment = cached_set_up_policy_environment(date=2020)
+environment = set_up_policy_environment(date="2020-01-01", resource_dir=RESOURCE_DIR)
 
 
 @pytest.mark.xfail(reason="Visualization module was not updated to the new interface.")

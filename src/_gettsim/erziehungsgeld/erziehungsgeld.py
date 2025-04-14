@@ -3,18 +3,18 @@
 from ttsim import (
     AggregateByPIDSpec,
     AggregationType,
-    RoundingDirection,
     RoundingSpec,
     policy_function,
 )
 
-aggregation_specs = {
-    "anspruchshöhe_m": AggregateByPIDSpec(
-        p_id_to_aggregate_by="p_id_empfänger",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="anspruchshöhe_m",
         source="anspruchshöhe_kind_m",
-        aggr=AggregationType.SUM,
+        p_id_to_aggregate_by="p_id_empfänger",
+        agg=AggregationType.SUM,
     ),
-}
+)
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
@@ -49,7 +49,7 @@ def betrag_m(
 @policy_function(
     end_date="2003-12-31",
     leaf_name="anspruchshöhe_kind_m",
-    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.NEAREST),
+    rounding_spec=RoundingSpec(base=0.01, direction="nearest"),
 )
 def erziehungsgeld_kind_ohne_budgetsatz_m() -> float:
     raise NotImplementedError(
@@ -64,7 +64,7 @@ def erziehungsgeld_kind_ohne_budgetsatz_m() -> float:
     start_date="2004-01-01",
     end_date="2008-12-31",
     leaf_name="anspruchshöhe_kind_m",
-    rounding_spec=RoundingSpec(base=0.01, direction=RoundingDirection.NEAREST),
+    rounding_spec=RoundingSpec(base=0.01, direction="nearest"),
 )
 def anspruchshöhe_kind_mit_budgetsatz_m(
     kind_grundsätzlich_anspruchsberechtigt: bool,

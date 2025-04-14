@@ -9,7 +9,6 @@ import pandas as pd
 from _gettsim.config import (
     RESOURCE_DIR,
     SUPPORTED_GROUPINGS,
-    TYPES_INPUT_VARIABLES,
 )
 from ttsim.policy_environment import _load_parameter_group_from_yaml
 

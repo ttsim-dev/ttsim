@@ -284,34 +284,6 @@ class TestCreateFunctionsForTimeUnits:
         for expected_name in expected:
             assert expected_name in time_conversion_functions
 
-    @pytest.mark.parametrize(
-        ("name", "expected"),
-        [
-            ("test_y", ["test_m", "test_q", "test_w", "test_d"]),
-            ("test_y_hh", ["test_m_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
-            ("test_y_sn", ["test_m_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
-            ("test_q", ["test_y", "test_m", "test_w", "test_d"]),
-            ("test_q_hh", ["test_y_hh", "test_m_hh", "test_w_hh", "test_d_hh"]),
-            ("test_q_sn", ["test_y_sn", "test_m_sn", "test_w_sn", "test_d_sn"]),
-            ("test_m", ["test_y", "test_q", "test_w", "test_d"]),
-            ("test_m_hh", ["test_y_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
-            ("test_m_sn", ["test_y_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
-            ("test_w", ["test_y", "test_q", "test_m", "test_d"]),
-            ("test_w_hh", ["test_y_hh", "test_q_hh", "test_m_hh", "test_d_hh"]),
-            ("test_w_sn", ["test_y_sn", "test_q_sn", "test_m_sn", "test_d_sn"]),
-            ("test_d", ["test_y", "test_q", "test_m", "test_w"]),
-            ("test_d_hh", ["test_y_hh", "test_q_hh", "test_m_hh", "test_w_hh"]),
-            ("test_d_sn", ["test_y_sn", "test_q_sn", "test_m_sn", "test_w_sn"]),
-        ],
-    )
-    def test_should_create_functions_for_other_time_units_for_data_cols(
-        self, name: str, expected: list[str]
-    ) -> None:
-        time_conversion_functions = create_time_conversion_functions({}, {name: None})
-
-        for expected_name in expected:
-            assert expected_name in time_conversion_functions
-
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
         time_conversion_functions = create_time_conversion_functions(
             {"test1_d": policy_function(leaf_name="test1_d")(return_one)},

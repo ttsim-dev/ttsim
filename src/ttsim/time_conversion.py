@@ -1,20 +1,28 @@
 from __future__ import annotations
 
 import inspect
-import re
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
 from dags import rename_arguments
 
 from _gettsim.config import SUPPORTED_GROUPINGS
-from ttsim.function_types import DerivedTimeConversionFunction, PolicyFunction
+from ttsim.function_types import (
+    DerivedTimeConversionFunction,
+    TTSIMFunction,
+)
+from ttsim.shared import (
+    get_re_pattern_for_all_time_units_and_groupings,
+    get_re_pattern_for_specific_time_units_and_groupings,
+)
 
 if TYPE_CHECKING:
+    import re
     from collections.abc import Callable
 
-    from ttsim.typing import QualNameDataDict, QualNameFunctionsDict
+    from ttsim.typing import QualNameDataDict, QualNameTTSIMFunctionDict
 
-_TIME_UNITS = {
+TIME_UNITS = {
     "y": "year",
     "q": "quarter",
     "m": "month",
@@ -373,9 +381,9 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions: QualNameFunctionsDict,
+    functions: QualNameTTSIMFunctionDict,
     data: QualNameDataDict,
-) -> QualNameFunctionsDict:
+) -> QualNameTTSIMFunctionDict:
     """
      Create functions that convert variables to different time units.
 
@@ -413,58 +421,63 @@ def create_time_conversion_functions(
     The functions dict with the new time conversion functions.
     """
 
-    converted_functions = {}
+    converted_ttsim_objects = {}
 
-    # Create time-conversions for existing functions
-    for name, function in functions.items():
+    for source_name, ttsim_object in functions.items():
+        all_time_units = tuple(TIME_UNITS)
+        pattern_all = get_re_pattern_for_all_time_units_and_groupings(
+            supported_groupings=SUPPORTED_GROUPINGS,
+            supported_time_units=all_time_units,
+        )
+        pattern_specific = pattern_all.fullmatch(source_name)
+        base_name = pattern_specific.group("base_name")
+
+        for data_name in data:
+            # If base_name is in provided data, base time conversions on that.
+            if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
+                base_name=base_name,
+                supported_time_units=all_time_units,
+                supported_groupings=SUPPORTED_GROUPINGS,
+            ).fullmatch(data_name):
+                source_name = data_name  # noqa: PLW2901
+                break
+
         all_time_conversions_for_this_function = _create_time_conversion_functions(
-            name=name, func=function
+            source_name=source_name,
+            function=ttsim_object,
+            time_unit_pattern=pattern_all,
+            all_time_units=all_time_units,
         )
         for der_name, der_func in all_time_conversions_for_this_function.items():
-            # Skip if the function already exists or the data column exists
-            if der_name in converted_functions or der_name in data:
+            if der_name in converted_ttsim_objects or der_name in data:
                 continue
             else:
-                converted_functions[der_name] = der_func
+                converted_ttsim_objects[der_name] = der_func
 
-    # Create time-conversions for data columns
-    for name in data:
-        all_time_conversions_for_this_data_column = _create_time_conversion_functions(
-            name=name
-        )
-        for der_name, der_func in all_time_conversions_for_this_data_column.items():
-            # Skip if the function already exists or the data column exists
-            if der_name in converted_functions or der_name in data:
-                continue
-            else:
-                converted_functions[der_name] = der_func
-
-    return converted_functions
+    return converted_ttsim_objects
 
 
 def _create_time_conversion_functions(
-    name: str, func: PolicyFunction | None = None
+    source_name: str,
+    function: TTSIMFunction,
+    time_unit_pattern: re.Pattern,
+    all_time_units: tuple[str, ...],
 ) -> dict[str, DerivedTimeConversionFunction]:
     result: dict[str, DerivedTimeConversionFunction] = {}
+    match = time_unit_pattern.fullmatch(source_name)
+    base_name = match.group("base_name")
+    time_unit = match.group("time_unit") or ""
+    aggregation = match.group("aggregation") or ""
+    dependencies = set(inspect.signature(function).parameters) if function else set()
 
-    all_time_units = list(_TIME_UNITS)
-
-    units = "".join(all_time_units)
-    groupings = "|".join([f"_{grouping}" for grouping in SUPPORTED_GROUPINGS])
-    function_with_time_unit = re.compile(
-        f"(?P<base_name>.*_)(?P<time_unit>[{units}])(?P<aggregation>{groupings})?"
-    )
-    match = function_with_time_unit.fullmatch(name)
-    dependencies = set(inspect.signature(func).parameters) if func else set()
-
-    if match:
-        base_name = match.group("base_name")
-        time_unit = match.group("time_unit")
-        aggregation = match.group("aggregation") or ""
-
+    if match and time_unit:
         missing_time_units = [unit for unit in all_time_units if unit != time_unit]
         for missing_time_unit in missing_time_units:
-            new_name = f"{base_name}{missing_time_unit}{aggregation}"
+            new_name = (
+                f"{base_name}_{missing_time_unit}_{aggregation}"
+                if aggregation
+                else f"{base_name}_{missing_time_unit}"
+            )
 
             # Without this check, we could create cycles in the DAG: Consider a
             # hard-coded function `var_y` that takes `var_m` as an input, assuming it
@@ -479,22 +492,26 @@ def _create_time_conversion_functions(
                 continue
 
             result[new_name] = DerivedTimeConversionFunction(
+                leaf_name=dt.tree_path_from_qual_name(new_name)[-1],
                 function=_create_function_for_time_unit(
-                    name,
-                    _time_conversion_functions[f"{time_unit}_to_{missing_time_unit}"],
+                    source=source_name,
+                    converter=_time_conversion_functions[
+                        f"{time_unit}_to_{missing_time_unit}"
+                    ],
                 ),
-                source=name,
-                source_function=func,
-                conversion_target=new_name,
+                source=source_name,
+                start_date=function.start_date,
+                end_date=function.end_date,
+                vectorization_strategy="not_required",
             )
 
     return result
 
 
 def _create_function_for_time_unit(
-    function_name: str, converter: Callable[[float], float]
+    source: str, converter: Callable[[float], float]
 ) -> Callable[[float], float]:
-    @rename_arguments(mapper={"x": function_name})
+    @rename_arguments(mapper={"x": source})
     def func(x: float) -> float:
         return converter(x)
 

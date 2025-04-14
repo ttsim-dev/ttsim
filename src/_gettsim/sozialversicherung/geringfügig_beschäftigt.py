@@ -1,6 +1,6 @@
 """Marginally employed."""
 
-from ttsim import RoundingDirection, RoundingSpec, policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function()
@@ -37,7 +37,7 @@ def geringfügig_beschäftigt(
     end_date="1999-12-31",
     leaf_name="minijob_grenze",
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.UP, reference="§ 8 Abs. 1a Satz 2 SGB IV"
+        base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
     ),
 )
 def minijob_grenze_unterscheidung_ost_west(
@@ -68,7 +68,7 @@ def minijob_grenze_unterscheidung_ost_west(
     end_date="2022-09-30",
     leaf_name="minijob_grenze",
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.UP, reference="§ 8 Abs. 1a Satz 2 SGB IV"
+        base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
     ),
 )
 def minijob_grenze_fixer_betrag(sozialv_beitr_params: dict) -> float:
@@ -92,7 +92,7 @@ def minijob_grenze_fixer_betrag(sozialv_beitr_params: dict) -> float:
     start_date="2022-10-01",
     leaf_name="minijob_grenze",
     rounding_spec=RoundingSpec(
-        base=1, direction=RoundingDirection.UP, reference="§ 8 Abs. 1a Satz 2 SGB IV"
+        base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
     ),
 )
 def minijob_grenze_abgeleitet_von_mindestlohn(sozialv_beitr_params: dict) -> float:

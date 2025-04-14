@@ -114,7 +114,7 @@ def nettoeinkommen_vor_abzug_freibetrag_m(
 @policy_function(vectorization_strategy="vectorize")
 def bruttoeinkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    einkommensteuer__einkünfte__sonstige__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
@@ -131,8 +131,8 @@ def bruttoeinkommen_m(
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         See basic input variable :ref:`hh_id <hh_id>`.
-    einkommensteuer__einkünfte__sonstige__betrag_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__sonstige__betrag_m <einkommensteuer__einkünfte__sonstige__betrag_m>`.
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        See basic input variable :ref:`einkommensteuer__einkünfte__sonstige__ohne_renten_m <einkommensteuer__einkünfte__sonstige__ohne_renten_m>`.
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
         See basic input variable :ref:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m <einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m>`.
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
@@ -155,7 +155,7 @@ def bruttoeinkommen_m(
     """
     out = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        + einkommensteuer__einkünfte__sonstige__betrag_m
+        + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m

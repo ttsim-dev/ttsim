@@ -6,8 +6,10 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from _gettsim.kindergeld.kindergeld import betrag_ohne_staffelung_m as betrag_m
-from _gettsim_tests._helpers import cached_set_up_policy_environment
-from _gettsim_tests._policy_test_utils import load_policy_test_data
+from _gettsim_tests.utils import (
+    cached_set_up_policy_environment,
+    load_policy_test_data,
+)
 from ttsim import compute_taxes_and_transfers
 from ttsim.config import IS_JAX_INSTALLED
 

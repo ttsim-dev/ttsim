@@ -4,7 +4,6 @@ import numpy
 import pandas as pd
 import pytest
 
-from _gettsim.config import DEFAULT_TARGETS
 from _gettsim.synthetic import create_synthetic_data
 from ttsim import compute_taxes_and_transfers, set_up_policy_environment
 
@@ -349,6 +348,6 @@ def test_default_targets(fixture, policy_date, request):
     environment = set_up_policy_environment(policy_date)
     compute_taxes_and_transfers(
         data_tree=request.getfixturevalue(fixture),
-        targets_tree=DEFAULT_TARGETS,
+        targets_tree=fixme,
         environment=environment,
     )

@@ -1,0 +1,34 @@
+import dags.tree as dt
+import pytest
+from numpy.testing import assert_array_almost_equal
+
+from _gettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from _gettsim_tests.utils import (
+    PolicyTest,
+    cached_set_up_policy_environment,
+    load_policy_test_data,
+)
+from ttsim import compute_taxes_and_transfers
+
+test_data = load_policy_test_data("household_links")
+
+
+@pytest.mark.parametrize("test", test_data)
+def test_aggregate_by_p_id(test: PolicyTest):
+    environment = cached_set_up_policy_environment(date=test.date)
+
+    result = compute_taxes_and_transfers(
+        data_tree=test.input_tree,
+        environment=environment,
+        targets_tree=test.target_structure,
+        foreign_keys=FOREIGN_KEYS,
+        supported_groupings=SUPPORTED_GROUPINGS,
+    )
+
+    flat_result = dt.flatten_to_qual_names(result)
+    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
+
+    for result, expected in zip(
+        flat_result.values(), flat_expected_output_tree.values()
+    ):
+        assert_array_almost_equal(result, expected, decimal=2)
