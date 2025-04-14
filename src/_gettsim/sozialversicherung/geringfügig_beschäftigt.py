@@ -111,6 +111,6 @@ def minijob_grenze_abgeleitet_von_mindestlohn(sozialv_beitr_params: dict) -> flo
     """
     return (
         sozialv_beitr_params["mindestlohn"]
-        * sozialv_beitr_params["geringf_eink_faktor"]
-        / sozialv_beitr_params["geringf_eink_divisor"]
+        * sozialv_beitr_params["geringf_eink_faktor_zähler"]
+        / sozialv_beitr_params["geringf_eink_faktor_nenner"]
     )

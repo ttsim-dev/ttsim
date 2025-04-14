@@ -24,7 +24,7 @@
             "additionalProperties": false
           },
           "unit": {
-            "type": "string",
+            "type": ["string", "null"],
             "enum": [
               "Euro",
               "DM",
@@ -35,7 +35,8 @@
               "Month",
               "Hour",
               "Square Meter",
-              "Euro / Square Meter"
+              "Euro / Square Meter",
+              null
             ]
           },
           "type": {
@@ -59,21 +60,6 @@
             },
             "required": ["reference_period", "number_of_lags"],
             "additionalProperties": false
-          },
-          "rounding": {
-            "type": "object",
-            "patternProperties": {
-              "^[a-zA-Z0-9äöüßÄÖÜ]+$": {
-                "type": "object",
-                "properties": {
-                  "base": { "type": "number" },
-                  "direction": { "type": "string", "enum": ["up", "down", "nearest"] },
-                  "reference": { "type": ["string", "null"] }
-                },
-                "required": ["base", "direction"],
-                "additionalProperties": false
-              }
-            }
           }
         },
         "patternProperties": {

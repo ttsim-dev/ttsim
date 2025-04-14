@@ -289,7 +289,7 @@ beitr_bemess_grenze_m:
     en: Income Threshold for social insurance.
   description:
     de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
-    en: null
+    en: The income threshold is the same for health and long-term care insurance.
   note:
     de: null
     en: null
@@ -586,11 +586,11 @@ beitr_bemess_grenze_m:
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
 bezugsgröße_selbst_m:
   name:
-    de: Monatliche Bezugsgröße
-    en: Monthly reference size
+    de: Monatliche Bezugsgröße für Selbstständige
+    en: Monthly reference size for self employed
   description:
-    de: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
-    en: null
+    de: §18 SGB IV ynd https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
+    en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
   unit: Euro
   reference_period: Month
   1984-01-01:
@@ -742,11 +742,11 @@ mindestanteil_bezugsgröße_beitragspf_einnahme_selbst:
 geringfügige_eink_grenzen_m:
   name:
     de: >-
-      Gleitzone (Midijob Grenze) und Minijob Grenze (bis 1999 unterschiedliche Grenzen)
+      Minijob Grenze und Gleitzone / Midijob Grenze
     en: Thresholds for marginal employment ('mini' and 'midi' jobs)
   description:
-    de: Midijob § 20 (2) SGB IV, Minijob § 8 (1) Nr. 1 SGB IV
-    en: null
+    de: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
+    en: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
   unit: Euro
   reference_period: Month
   1984-01-01:
@@ -835,20 +835,34 @@ geringfügige_eink_grenzen_m:
     deviation_from: previous
     midijob: 2000
     reference: Art. 3 G. v. 11.11.2022 BGBl. I S. 1985
-geringf_eink_faktor:
+geringf_eink_faktor_zähler:
   name:
+    de: Zähler im Faktor für die Berechnung der Geringfügigkeitsgrenze.
+    en: Numerator in the factor for the calculation of the marginal employment threshold.
+  description:
     de: >-
       Faktor, mit dem der Mindestlohn in der Berechnung der Geringfügigkeitsgrenze
       multipliziert wird.
+    en: >-
+      Factor by which the minimum wage is multiplied to calculate the threshold for
+      marginal employment.
+  unit: null
   reference: §8 (1a) SGB IV
   2022-10-01:
     scalar: 130
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
-geringf_eink_divisor:
+geringf_eink_faktor_nenner:
   name:
+    de: Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.
+    en: Denominator in the factor for the calculation of the marginal employment threshold.
+  description:
     de: >-
-      Betrag, durch den der Mindestlohn, multipliziert mit gering_eink_faktor, dividiert
-      wird, um die Geringfügigkeitsgrenze zu erhalten.
+      Betrag, durch den der Mindestlohn dividiert wird, um die Geringfügigkeitsgrenze zu
+      erhalten.
+    en: >-
+      Amount by which the minimum wage is divided to obtain the marginal employment
+      threshold.
+  unit: Euro
   reference: §8 (1a) SGB IV
   2022-10-01:
     scalar: 3
@@ -901,6 +915,14 @@ mindestlohn:
   name:
     de: Allgemeiner gesetzlicher Mindestlohn pro Stunde
     en: Statutory hourly minimum wage
+  description:
+    de: >-
+      Der Mindestlohn ist der niedrigste Stundenlohn, den ein Arbeitgeber für eine
+      regelmäßige, nicht mehr als 45 Stunden wöchentlich zu leistende Arbeitsleistung
+      zahlen muss.
+    en: >-
+      The minimum wage is the lowest hourly wage that an employer must pay for a
+      regular, not more than 45 hours weekly work.
   unit: Euro
   reference: §1 (2) Mindestlohngesetz
   2015-01-01:
