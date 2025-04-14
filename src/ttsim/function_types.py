@@ -7,6 +7,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, TypeVar
 
 import numpy
+from pandas.api.types import (
+    is_bool_dtype,
+    is_datetime64_any_dtype,
+    is_float_dtype,
+    is_integer_dtype,
+)
 
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import to_datetime, validate_date_range
@@ -14,6 +20,9 @@ from ttsim.shared import to_datetime, validate_date_range
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    import pandas as pd
+
+    from ttsim.config import numpy_or_jax as np
     from ttsim.typing import DashedISOString
 
 T = TypeVar("T")
@@ -423,3 +432,31 @@ def _convert_and_validate_dates(
     validate_date_range(start_date, end_date)
 
     return start_date, end_date
+
+
+def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:
+    """Checks whether used series has already expected internal type.
+
+    Parameters
+    ----------
+    series : pandas.Series or pandas.DataFrame or dict of pandas.Series
+        Data provided by the user.
+    internal_type : TypeVar
+        One of the internal gettsim types.
+
+    Returns
+    -------
+    Bool
+
+    """
+    if (
+        (internal_type == float) & (is_float_dtype(series))
+        or (internal_type == int) & (is_integer_dtype(series))
+        or (internal_type == bool) & (is_bool_dtype(series))
+        or (internal_type == numpy.datetime64) & (is_datetime64_any_dtype(series))
+    ):
+        out = True
+    else:
+        out = False
+
+    return out

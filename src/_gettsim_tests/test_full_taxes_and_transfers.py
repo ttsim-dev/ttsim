@@ -8,8 +8,7 @@ from _gettsim_tests.utils import (
     load_policy_test_data,
 )
 from ttsim import compute_taxes_and_transfers
-from ttsim.function_types import PolicyInput
-from ttsim.typing import check_series_has_expected_type
+from ttsim.function_types import PolicyInput, check_series_has_expected_type
 
 test_data = load_policy_test_data("full_taxes_and_transfers")
 
