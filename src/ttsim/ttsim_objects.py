@@ -4,6 +4,7 @@ import datetime
 import functools
 import inspect
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, TypeVar
 
 import numpy
@@ -20,6 +21,16 @@ T = TypeVar("T")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
 DEFAULT_END_DATE = datetime.date(2100, 12, 31)
+
+
+class FKType(StrEnum):
+    """
+    Enum for foreign key types.
+    """
+
+    IRRELEVANT = "irrelevant"
+    MAY_POINT_TO_SELF = "may point to self"
+    MUST_NOT_POINT_TO_SELF = "must not point to self"
 
 
 @dataclass
@@ -50,15 +61,21 @@ class PolicyInput(TTSIMObject):
         The date from which the input is relevant / active (inclusive).
     end_date:
         The date until which the input is relevant / active (inclusive).
+    is_foreign_key_that_may_point_to_self:
+        Whether the input variable must be among `p_id`s and may point to itself.
+    is_foreign_key_that_must_not_point_to_self:
+        Whether the input variable must be among `p_id`s and must not point to itself.
     """
 
     data_type: type[float | int | bool]
+    foreign_key_type: FKType = FKType.IRRELEVANT
 
 
 def policy_input(
     *,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
+    foreign_key_type: FKType = FKType.IRRELEVANT,
 ) -> PolicyInput:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
@@ -91,6 +108,7 @@ def policy_input(
             data_type=data_type,
             start_date=start_date,
             end_date=end_date,
+            foreign_key_type=foreign_key_type,
         )
 
     return inner
@@ -322,18 +340,13 @@ def group_creation_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-    foreign_keys_that_may_point_to_self: tuple[str, ...] | None = None,
-    foreign_keys_that_must_not_point_to_self: tuple[str, ...] | None = None,
+    foreign_keys_that_may_point_to_self: tuple[str, ...] = (),
+    foreign_keys_that_must_not_point_to_self: tuple[str, ...] = (),
 ) -> GroupCreationFunction:
     """
     Decorator that creates a group_by function from a function.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
-
-    if foreign_keys_that_may_point_to_self is None:
-        foreign_keys_that_may_point_to_self = ()
-    if foreign_keys_that_must_not_point_to_self is None:
-        foreign_keys_that_must_not_point_to_self = ()
 
     def decorator(func: Callable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name

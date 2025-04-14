@@ -24,6 +24,7 @@ from ttsim.time_conversion import create_time_conversion_functions
 from ttsim.ttsim_objects import (
     DerivedAggregationFunction,
     DerivedTimeConversionFunction,
+    FKType,
     GroupCreationFunction,
     PolicyFunction,
     PolicyInput,
@@ -40,6 +41,7 @@ __all__ = [
     "ConflictingTimeDependentObjectsError",
     "DerivedAggregationFunction",
     "DerivedTimeConversionFunction",
+    "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
     "PolicyEnvironment",
