@@ -1,3 +1,4 @@
+import dags.tree as dt
 import pytest
 
 from _gettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
@@ -7,6 +8,7 @@ from _gettsim_tests.utils import (
     load_policy_test_data,
 )
 from ttsim import compute_taxes_and_transfers
+from ttsim.function_types import PolicyInput, check_series_has_expected_type
 
 test_data = load_policy_test_data("full_taxes_and_transfers")
 
@@ -22,6 +24,42 @@ def test_full_taxes_transfers(test: PolicyTest):
         foreign_keys=FOREIGN_KEYS,
         supported_groupings=SUPPORTED_GROUPINGS,
     )
+
+
+@pytest.mark.parametrize("test", test_data, ids=lambda x: x.test_name)
+def test_data_types(test: PolicyTest):
+    environment = cached_set_up_policy_environment(date=test.date)
+
+    result = compute_taxes_and_transfers(
+        data_tree=test.input_tree,
+        environment=environment,
+        targets_tree=test.target_structure,
+        foreign_keys=FOREIGN_KEYS,
+        supported_groupings=SUPPORTED_GROUPINGS,
+    )
+
+    flat_types_input_variables = {
+        n: pi.data_type
+        for n, pi in dt.flatten_to_qual_names(environment.raw_objects_tree).items()
+        if isinstance(pi, PolicyInput)
+    }
+    flat_functions = dt.flatten_to_qual_names(environment.raw_objects_tree)
+
+    for column_name, result_array in dt.flatten_to_qual_names(result).items():
+        if column_name in flat_types_input_variables:
+            internal_type = flat_types_input_variables[column_name]
+        elif column_name in flat_functions:
+            internal_type = flat_functions[column_name].__annotations__["return"]
+        else:
+            # TODO (@hmgaudecker): Implement easy way to find out expected type of
+            #     aggregated functions
+            # https://github.com/iza-institute-of-labor-economics/gettsim/issues/604
+            if column_name.endswith(("_sn", "_hh", "_fg", "_bg", "_eg", "_ehe")):
+                internal_type = None
+            else:
+                raise ValueError(f"Column name {column_name} unknown.")
+        if internal_type:
+            assert check_series_has_expected_type(result_array, internal_type)
 
 
 @pytest.mark.skip(
