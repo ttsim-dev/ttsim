@@ -46,7 +46,7 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer__abzüge__p_id_betreuungskosten_träger:
+    einkommensteuer__abzüge__p_id_betreuungskostenträger:
       - -1
       - -1
       - -1
