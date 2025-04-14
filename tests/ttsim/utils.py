@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 import yaml
-from mettsim.config import SUPPORTED_GROUPINGS
+from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 
 from ttsim import merge_trees, set_up_policy_environment
 from ttsim.shared import to_datetime
 
-TEST_DIR = Path(__file__).parent / "test_data"
+TEST_DIR = Path(__file__).parent
 
 if TYPE_CHECKING:
     import datetime
@@ -53,7 +53,7 @@ def execute_test(test: PolicyTest):
 
     from ttsim import compute_taxes_and_transfers
 
-    environment = set_up_policy_environment(date=test.date)
+    environment = set_up_policy_environment(date=test.date, resource_dir=RESOURCE_DIR)
 
     result = compute_taxes_and_transfers(
         data_tree=test.input_tree,

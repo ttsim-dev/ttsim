@@ -203,7 +203,7 @@ def set_up_policy_environment(
     params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params)
     params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
-    aggregation_specs_tree = load_aggregation_specs_tree()
+    aggregation_specs_tree = load_aggregation_specs_tree(resource_dir=resource_dir)
 
     return PolicyEnvironment(
         functions_tree,

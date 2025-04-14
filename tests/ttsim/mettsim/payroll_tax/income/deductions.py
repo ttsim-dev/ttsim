@@ -6,7 +6,8 @@ def deductions_y(
     payroll_tax__child_tax_credit__amount_y: float,
     payroll_tax_params: dict,
 ) -> float:
-    return (
+    return min(
         payroll_tax_params["lump_sum_deduction_y"]
-        + payroll_tax__child_tax_credit__amount_y
+        + payroll_tax__child_tax_credit__amount_y,
+        0.0,
     )
