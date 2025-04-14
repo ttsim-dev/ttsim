@@ -15,6 +15,15 @@ from pandas.api.types import (
     is_integer_dtype,
 )
 
+from ttsim.aggregation import (
+    grouped_all,
+    grouped_any,
+    grouped_count,
+    grouped_max,
+    grouped_mean,
+    grouped_min,
+    grouped_sum,
+)
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import to_datetime, validate_date_range
 
@@ -283,18 +292,6 @@ def policy_function(
     return inner
 
 
-# def agg_by_group_function(
-#     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-# ) -> AggByGroupFunction:
-#     return decorator
-
-
-# def agg_by_pid_function(
-#     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-# ) -> AggByPIDFunction:
-#     return decorator
-
-
 def _vectorize_func(func: Callable) -> Callable:
     # What should work once that Jax backend is fully supported
     signature = inspect.signature(func)
@@ -403,6 +400,78 @@ class DerivedAggregationFunction(TTSIMFunction):
         self.__module__ = self.function.__module__
         self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
+
+
+@dataclass
+class AggByGroupFunction(TTSIMFunction):
+    """
+    A function that is an aggregation of another column by some group id.
+
+    Parameters
+    ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    function:
+        The function performing the aggregation.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    params_key_for_rounding:
+        The key in the params dictionary that should be used for rounding.
+    skip_vectorization:
+        Whether the function should be vectorized.
+    """
+
+    def __post_init__(self):
+        if self.aggregation_method is None:
+            raise ValueError("The aggregation method must be specified.")
+        if self.source is None and self.aggregation_method != "count":
+            raise ValueError("The source must be specified.")
+
+        # Expose the signature of the wrapped function for dependency resolution
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
+        self.__signature__ = inspect.signature(self.function)
+
+
+def agg_by_group_function(
+    *,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+    agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
+) -> AggByGroupFunction:
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    aggregation_registry = {
+        "sum": grouped_sum,
+        "mean": grouped_mean,
+        "max": grouped_max,
+        "min": grouped_min,
+        "any": grouped_any,
+        "all": grouped_all,
+        "count": grouped_count,
+    }
+
+    def inner(func: Callable) -> AggByGroupFunction:
+        return AggByGroupFunction(
+            leaf_name=func.__name__,
+            function=func,
+            start_date=start_date,
+            end_date=end_date,
+            rounding_spec=None,
+            skip_vectorization=False,
+            foreign_key_type=FKType.IRRELEVANT,
+        )
+
+    return inner
+
+
+# def agg_by_pid_function(
+#     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
+# ) -> AggByPIDFunction:
+#     return decorator
 
 
 @dataclass
