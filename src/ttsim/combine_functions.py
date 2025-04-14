@@ -11,12 +11,6 @@ from ttsim.aggregation import (
     AggregateByPIDSpec,
     AggregationType,
 )
-from ttsim.function_types import (
-    DEFAULT_END_DATE,
-    DEFAULT_START_DATE,
-    DerivedAggregationFunction,
-    GroupByFunction,
-)
 from ttsim.shared import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -25,6 +19,12 @@ from ttsim.shared import (
     remove_group_suffix,
 )
 from ttsim.time_conversion import create_time_conversion_functions
+from ttsim.ttsim_objects import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
+    DerivedAggregationFunction,
+    GroupByFunction,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable

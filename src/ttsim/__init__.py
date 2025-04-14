@@ -4,16 +4,6 @@ from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
 )
-from ttsim.function_types import (
-    DerivedAggregationFunction,
-    DerivedTimeConversionFunction,
-    GroupByFunction,
-    PolicyFunction,
-    PolicyInput,
-    group_by_function,
-    policy_function,
-    policy_input,
-)
 from ttsim.loader import (
     ConflictingTimeDependentObjectsError,
     get_active_ttsim_objects_tree_from_module,
@@ -31,6 +21,16 @@ from ttsim.shared import (
     upsert_tree,
 )
 from ttsim.time_conversion import create_time_conversion_functions
+from ttsim.ttsim_objects import (
+    DerivedAggregationFunction,
+    DerivedTimeConversionFunction,
+    GroupByFunction,
+    PolicyFunction,
+    PolicyInput,
+    group_by_function,
+    policy_function,
+    policy_input,
+)
 from ttsim.visualization import plot_dag
 
 __all__ = [

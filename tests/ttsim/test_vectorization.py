@@ -13,8 +13,8 @@ if USE_JAX:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
-from ttsim.function_types import GroupByFunction, PolicyInput
 from ttsim.loader import load_objects_tree_for_date
+from ttsim.ttsim_objects import GroupByFunction, PolicyInput
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     make_vectorizable,

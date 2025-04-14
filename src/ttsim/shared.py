@@ -15,7 +15,7 @@ from _gettsim.config import SUPPORTED_GROUPINGS
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim.function_types import PolicyFunction
+    from ttsim.ttsim_objects import PolicyFunction
     from ttsim.typing import (
         GenericCallable,
         NestedDataDict,

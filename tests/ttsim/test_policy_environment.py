@@ -11,17 +11,17 @@ import pandas as pd
 import pytest
 from mettsim.config import RESOURCE_DIR
 
-from ttsim.function_types import (
-    GroupByFunction,
-    group_by_function,
-    policy_function,
-)
 from ttsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
     load_objects_tree_for_date,
     set_up_policy_environment,
+)
+from ttsim.ttsim_objects import (
+    GroupByFunction,
+    group_by_function,
+    policy_function,
 )
 
 if TYPE_CHECKING:

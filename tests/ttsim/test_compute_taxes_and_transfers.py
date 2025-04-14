@@ -21,9 +21,9 @@ from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.function_types import group_by_function, policy_function, policy_input
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import assert_valid_ttsim_pytree
+from ttsim.ttsim_objects import group_by_function, policy_function, policy_input
 from ttsim.typing import convert_series_to_internal_type
 
 

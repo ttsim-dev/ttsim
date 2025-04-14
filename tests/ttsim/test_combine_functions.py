@@ -14,14 +14,14 @@ from ttsim.combine_functions import (
     _get_name_of_aggregation_source,
 )
 from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
-from ttsim.function_types import (
+from ttsim.policy_environment import PolicyEnvironment
+from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     DerivedAggregationFunction,
     policy_function,
     policy_input,
 )
-from ttsim.policy_environment import PolicyEnvironment
 
 
 @pytest.fixture

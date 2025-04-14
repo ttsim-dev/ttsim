@@ -14,10 +14,6 @@ from _gettsim.config import (
     INTERNAL_PARAMS_GROUPS,
     RESOURCE_DIR,
 )
-from ttsim.function_types import (
-    TTSIMObject,
-    policy_function,
-)
 from ttsim.loader import (
     load_aggregation_specs_tree,
     load_objects_tree_for_date,
@@ -31,6 +27,10 @@ from ttsim.shared import (
     assert_valid_ttsim_pytree,
     upsert_path_and_value,
     upsert_tree,
+)
+from ttsim.ttsim_objects import (
+    TTSIMObject,
+    policy_function,
 )
 
 if TYPE_CHECKING:

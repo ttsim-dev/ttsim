@@ -14,13 +14,6 @@ from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.function_types import (
-    DerivedAggregationFunction,
-    GroupByFunction,
-    PolicyFunction,
-    PolicyInput,
-    TTSIMFunction,
-)
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     all_variations_of_base_name,
@@ -34,6 +27,13 @@ from ttsim.shared import (
     partition_by_reference_dict,
 )
 from ttsim.time_conversion import TIME_UNITS
+from ttsim.ttsim_objects import (
+    DerivedAggregationFunction,
+    GroupByFunction,
+    PolicyFunction,
+    PolicyInput,
+    TTSIMFunction,
+)
 from ttsim.typing import (
     check_series_has_expected_type,
     convert_series_to_internal_type,

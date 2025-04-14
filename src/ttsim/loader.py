@@ -7,12 +7,12 @@ import sys
 from typing import TYPE_CHECKING
 
 from _gettsim.config import RESOURCE_DIR
-from ttsim.function_types import TTSIMFunction, TTSIMObject
 from ttsim.shared import (
     create_tree_from_path_and_value,
     insert_path_and_value,
     merge_trees,
 )
+from ttsim.ttsim_objects import TTSIMFunction, TTSIMObject
 
 if TYPE_CHECKING:
     import datetime

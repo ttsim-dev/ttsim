@@ -47,64 +47,6 @@ class AggregationType(StrEnum):
     ALL = "all"
 
 
-# Definitions for the decorators
-
-# ```python
-from typing import Literal
-
-
-def agg_by_group_function(
-    agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-) -> AggByGroupFunction:
-    return decorator
-
-
-def agg_by_pid_function(
-    agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-    foreign_key_includes_self: bool,
-) -> AggByPIDFunction:
-    return decorator
-
-
-def group_creation_function(
-    foreign_keys_including_self: tuple[str, ...] | None = None,
-    foreign_keys_excluding_self: tuple[str, ...] | None = None,
-) -> GroupCreationFunction:
-    return decorator
-
-
-# ```
-
-# METTSIM example usage
-
-# ```python
-
-
-@agg_by_group_function(agg_type="sum")
-def number_of_children_fam(child: bool) -> int:
-    pass
-
-
-@agg_by_pid_function(agg_type="sum", foreign_key_includes_self=True)
-def amount_y(claim_of_child_y: float, p_id_recipient: int) -> float:
-    pass
-
-
-@group_creation_function(
-    foreign_keys_excluding_self=("p_id_ehepartner", "p_id_parent_1", "p_id_parent_2"),
-)
-def fam_id(
-    p_id_spouse: numpy.ndarray[int],
-    p_id: numpy.ndarray[int],
-    age: numpy.ndarray[int],
-    p_id_parent_1: numpy.ndarray[int],
-    p_id_parent_2: numpy.ndarray[int],
-) -> numpy.ndarray[int]: ...
-
-
-# ```
-
-
 @dataclass
 class AggregationSpec:
     """

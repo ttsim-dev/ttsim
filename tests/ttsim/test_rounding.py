@@ -5,9 +5,9 @@ from pandas._testing import assert_series_equal
 from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
-from ttsim.function_types import policy_function, policy_input
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.rounding import RoundingSpec
+from ttsim.ttsim_objects import policy_function, policy_input
 
 
 @policy_input()
