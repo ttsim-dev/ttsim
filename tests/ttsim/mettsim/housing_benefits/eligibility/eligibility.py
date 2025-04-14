@@ -56,3 +56,11 @@ def number_of_children_considered(
     return min(
         number_of_children_fam, housing_benefits_params["max_number_of_children"]
     )
+
+
+@policy_function(start_date="2020-01-01")
+def child(
+    age: int,
+    # housing_benefits_params: dict,
+) -> bool:
+    return age <= 18  # housing_benefits_params["max_age_children"]
