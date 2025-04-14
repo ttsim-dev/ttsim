@@ -21,7 +21,7 @@ inputs:
       - 1
       - 0
     payroll_tax__gross_wage_m:
-      - 1500
+      - 800
       - 0
     payroll_tax__child_tax_credit__p_id_recipient:
       - -1
@@ -31,17 +31,11 @@ inputs:
       - 30
 outputs:
   housing_benefits__amount_m_fam:
-    - 0.0
-    - 0.0
+    - (800 - (800 - 100/12)*0.3) * 0.5
+    - (800 - (800 - 100/12)*0.3) * 0.5
   housing_benefits__income__amount_m:
-    - 1500 - (1500 - 100/12) * 0.3
+    - 800 - (800 - 100/12)*0.3
     - 0.0
   housing_benefits__eligibility__requirement_fulfilled_fam:
-    - false
-    - false
-  housing_benefits__eligibility__number_of_children_considered:
-    - 0
-    - 0
-  housing_benefits__eligibility__number_of_children_fam:
-    - 0
-    - 0
+    - true
+    - true
