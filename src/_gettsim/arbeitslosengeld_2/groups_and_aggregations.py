@@ -4,67 +4,6 @@ import numpy
 
 from ttsim import AggregateByGroupSpec, AggregationType, group_creation_function
 
-# TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
-aggregation_specs = (
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_fg",
-        source="familie__erwachsen",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_fg",
-        source="familie__kind",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_6_fg",
-        source="familie__kind_bis_6",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_15_fg",
-        source="familie__kind_bis_15",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_bg",
-        source="familie__erwachsen",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bg",
-        source="familie__kind",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_personen_bg", source=None, agg=AggregationType.COUNT
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_17_bg",
-        source="familie__kind_bis_17",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="alleinerziehend_bg",
-        source="familie__alleinerziehend",
-        agg=AggregationType.ANY,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_eg",
-        source="familie__erwachsen",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_eg",
-        source="familie__kind",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_personen_eg", source=None, agg=AggregationType.COUNT
-    ),
-)
-
 
 @group_creation_function()
 def fg_id(  # noqa: PLR0912
@@ -227,3 +166,65 @@ def eg_id(
         next_eg_id += 1
 
     return numpy.asarray(result)
+
+
+# TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_erwachsene_fg",
+        source="familie__erwachsen",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_kinder_fg",
+        source="familie__kind",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_6_fg",
+        source="familie__kind_bis_6",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_15_fg",
+        source="familie__kind_bis_15",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_erwachsene_bg",
+        source="familie__erwachsen",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bg",
+        source="familie__kind",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_personen_bg", source=None, agg=AggregationType.COUNT
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_kinder_bis_17_bg",
+        source="familie__kind_bis_17",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="alleinerziehend_bg",
+        source="familie__alleinerziehend",
+        agg=AggregationType.ANY,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_erwachsene_eg",
+        source="familie__erwachsen",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_kinder_eg",
+        source="familie__kind",
+        agg=AggregationType.SUM,
+    ),
+    AggregateByGroupSpec(
+        target="anzahl_personen_eg", source=None, agg=AggregationType.COUNT
+    ),
+)
