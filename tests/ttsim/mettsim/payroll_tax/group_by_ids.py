@@ -1,6 +1,11 @@
 import numpy
 
-from ttsim import group_creation_function
+from ttsim import FKType, group_creation_function, policy_input
+
+
+@policy_input(foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)
+def p_id_spouse() -> int:
+    """Identifier of married partner."""
 
 
 @group_creation_function()
