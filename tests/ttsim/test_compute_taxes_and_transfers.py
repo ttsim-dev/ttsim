@@ -7,12 +7,10 @@ import numpy
 import pandas as pd
 import pytest
 from mettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
-from mettsim.payroll_tax.group_by_ids import fam_id, sp_id
 
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
-    _convert_data_to_correct_types,
     _fail_if_foreign_keys_are_invalid,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
@@ -686,68 +684,68 @@ def test_fail_if_cannot_be_converted_to_internal_type(
         convert_series_to_internal_type(input_data, expected_type)
 
 
-@pytest.mark.skip
-@pytest.mark.parametrize(
-    "data, functions_overridden",
-    [
-        (
-            {"sp_id": pd.Series([1, 2, 3])},
-            {"sp_id": sp_id},
-        ),
-        (
-            {"fam_id": pd.Series([1, 2, 3])},
-            {"fam_id": fam_id},
-        ),
-    ],
-)
-def test_provide_endogenous_groupings(data, functions_overridden):
-    """Test whether GETTSIM handles user-provided grouping IDs, which would otherwise be
-    set endogenously."""
-    _convert_data_to_correct_types(data, functions_overridden)
+# @pytest.mark.skip
+# @pytest.mark.parametrize(
+#     "data, functions_overridden",
+#     [
+#         (
+#             {"sp_id": pd.Series([1, 2, 3])},
+#             {"sp_id": sp_id},
+#         ),
+#         (
+#             {"fam_id": pd.Series([1, 2, 3])},
+#             {"fam_id": fam_id},
+#         ),
+#     ],
+# )
+# def test_provide_endogenous_groupings(data, functions_overridden):
+#     """Test whether TTSIM handles user-provided grouping IDs, which would otherwise be
+#     set endogenously."""
+#     _convert_data_to_correct_types(data, functions_overridden)
 
 
-@pytest.mark.skip
-@pytest.mark.parametrize(
-    "data, functions_overridden, error_match",
-    [
-        (
-            {"hh_id": pd.Series([1, 1.1, 2])},
-            {},
-            "- hh_id: Conversion from input type float64 to int",
-        ),
-        (
-            {"gondorian": pd.Series([1.1, 0.0, 1.0])},
-            {},
-            "- gondorian: Conversion from input type float64 to bool",
-        ),
-        (
-            {
-                "hh_id": pd.Series([1.0, 2.0, 3.0]),
-                "gondorian": pd.Series([2, 0, 1]),
-            },
-            {},
-            "- gondorian: Conversion from input type int64 to bool",
-        ),
-        (
-            {"gondorian": pd.Series(["True", "False"])},
-            {},
-            "- gondorian: Conversion from input type object to bool",
-        ),
-        (
-            {
-                "hh_id": pd.Series([1, "1", 2]),
-                "payroll_tax__amount": pd.Series(["2000", 3000, 4000]),
-            },
-            {},
-            "- hh_id: Conversion from input type object to int failed.",
-        ),
-    ],
-)
-def test_fail_if_cannot_be_converted_to_correct_type(
-    data, functions_overridden, error_match
-):
-    with pytest.raises(ValueError, match=error_match):
-        _convert_data_to_correct_types(data, functions_overridden)
+# @pytest.mark.skip
+# @pytest.mark.parametrize(
+#     "data, functions_overridden, error_match",
+#     [
+#         (
+#             {"hh_id": pd.Series([1, 1.1, 2])},
+#             {},
+#             "- hh_id: Conversion from input type float64 to int",
+#         ),
+#         (
+#             {"gondorian": pd.Series([1.1, 0.0, 1.0])},
+#             {},
+#             "- gondorian: Conversion from input type float64 to bool",
+#         ),
+#         (
+#             {
+#                 "hh_id": pd.Series([1.0, 2.0, 3.0]),
+#                 "gondorian": pd.Series([2, 0, 1]),
+#             },
+#             {},
+#             "- gondorian: Conversion from input type int64 to bool",
+#         ),
+#         (
+#             {"gondorian": pd.Series(["True", "False"])},
+#             {},
+#             "- gondorian: Conversion from input type object to bool",
+#         ),
+#         (
+#             {
+#                 "hh_id": pd.Series([1, "1", 2]),
+#                 "payroll_tax__amount": pd.Series(["2000", 3000, 4000]),
+#             },
+#             {},
+#             "- hh_id: Conversion from input type object to int failed.",
+#         ),
+#     ],
+# )
+# def test_fail_if_cannot_be_converted_to_correct_type(
+#     data, functions_overridden, error_match
+# ):
+#     with pytest.raises(ValueError, match=error_match):
+#         _convert_data_to_correct_types(data, functions_overridden)
 
 
 @pytest.mark.parametrize(
