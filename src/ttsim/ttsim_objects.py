@@ -122,6 +122,7 @@ class TTSIMFunction(TTSIMObject):
 
     function: Callable
     skip_vectorization: bool = False
+    foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)
@@ -218,6 +219,7 @@ def policy_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     rounding_spec: RoundingSpec | None = None,
     skip_vectorization: bool = False,
+    foreign_key_type: FKType = FKType.IRRELEVANT,
 ) -> PolicyFunction:
     """
     Decorator that makes a `PolicyFunction` from a function.
@@ -266,6 +268,7 @@ def policy_function(
             end_date=end_date,
             rounding_spec=rounding_spec,
             skip_vectorization=skip_vectorization,
+            foreign_key_type=foreign_key_type,
         )
 
     return inner
@@ -279,7 +282,6 @@ def policy_function(
 
 # def agg_by_pid_function(
 #     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-#     foreign_key_includes_self: bool,
 # ) -> AggByPIDFunction:
 #     return decorator
 
@@ -313,14 +315,7 @@ class GroupCreationFunction(TTSIMFunction):
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
-    foreign_keys_that_may_point_to_self:
-        The foreign keys that may point to the group_by ID.
-    foreign_keys_that_must_not_point_to_self:
-        The foreign keys that must not point to the group_by ID.
     """
-
-    foreign_keys_that_may_point_to_self: tuple[str, ...] = ()
-    foreign_keys_that_must_not_point_to_self: tuple[str, ...] = ()
 
     def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
@@ -340,8 +335,6 @@ def group_creation_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-    foreign_keys_that_may_point_to_self: tuple[str, ...] = (),
-    foreign_keys_that_must_not_point_to_self: tuple[str, ...] = (),
 ) -> GroupCreationFunction:
     """
     Decorator that creates a group_by function from a function.
@@ -355,8 +348,6 @@ def group_creation_function(
             function=func,
             start_date=start_date,
             end_date=end_date,
-            foreign_keys_that_may_point_to_self=foreign_keys_that_may_point_to_self,
-            foreign_keys_that_must_not_point_to_self=foreign_keys_that_must_not_point_to_self,
         )
 
     return decorator

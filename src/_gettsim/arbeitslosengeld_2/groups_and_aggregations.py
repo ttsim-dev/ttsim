@@ -5,9 +5,7 @@ import numpy
 from ttsim import AggregateByGroupSpec, AggregationType, group_creation_function
 
 
-@group_creation_function(
-    foreign_keys_that_must_not_point_to_self=("p_id_einstandspartner",),
-)
+@group_creation_function()
 def fg_id(  # noqa: PLR0912
     p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],

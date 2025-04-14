@@ -134,9 +134,7 @@ def erwachsen(kind: bool) -> bool:
     return out
 
 
-@group_creation_function(
-    foreign_keys_that_must_not_point_to_self=("p_id_ehepartner",),
-)
+@group_creation_function()
 def ehe_id(
     p_id: numpy.ndarray[int],
     p_id_ehepartner: numpy.ndarray[int],
