@@ -186,32 +186,12 @@ def _get_policy_tests_from_raw_test_data(
 
     date: datetime.date = to_datetime(path_to_yaml.parent.name)
 
-    out = []
-    if expected_output_tree == {}:
-        out.append(
-            PolicyTest(
-                info=test_info,
-                input_tree=input_tree,
-                expected_output_tree={},
-                path=path_to_yaml,
-                date=date,
-            )
+    return [
+        PolicyTest(
+            info=test_info,
+            input_tree=input_tree,
+            expected_output_tree=expected_output_tree,
+            path=path_to_yaml,
+            date=date,
         )
-    else:
-        for target_name, output_data in dt.flatten_to_tree_paths(
-            expected_output_tree
-        ).items():
-            one_expected_output: NestedDataDict = dt.unflatten_from_tree_paths(
-                {target_name: output_data}
-            )
-            out.append(
-                PolicyTest(
-                    info=test_info,
-                    input_tree=input_tree,
-                    expected_output_tree=one_expected_output,
-                    path=path_to_yaml,
-                    date=date,
-                )
-            )
-
-    return out
+    ]
