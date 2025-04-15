@@ -13,10 +13,10 @@ from ttsim.shared import (
 from ttsim.ttsim_objects import (
     DerivedTimeConversionFunction,
     TTSIMFunction,
+    TTSIMObject,
 )
 
 if TYPE_CHECKING:
-    import re
     from collections.abc import Callable
 
     from ttsim.typing import (
@@ -432,88 +432,103 @@ def create_time_conversion_functions(
         groupings=groupings,
         supported_time_units=all_time_units,
     )
-    converted_ttsim_objects = {}
-    for source_name, ttsim_object in ttsim_objects.items():
-        pattern_specific = pattern_all.fullmatch(source_name)
-        base_name = pattern_specific.group("base_name")
 
-        for data_name in data:
+    base_names_to_time_conversion_inputs = {}
+    base_names_to_variations = {}
+    for qual_name, ttsim_object in ttsim_objects.items():
+        match = pattern_all.fullmatch(qual_name)
+        base_name = match.group("base_name")
+        if match.group("time_unit"):
+            if base_name in base_names_to_variations:
+                (base_names_to_variations[base_name].append(qual_name),)
+            else:
+                base_names_to_variations[base_name] = [qual_name]
+            base_names_to_time_conversion_inputs[base_name] = {
+                "base_name": base_name,
+                "qual_name_source": qual_name,
+                "ttsim_object": ttsim_object,
+                "time_unit": match.group("time_unit"),
+                "aggregation_suffix": f"_{match.group('aggregation')}"
+                if match.group("aggregation")
+                else "",
+                "all_time_units": all_time_units,
+            }
+
+    _fail_if_multiple_time_units_for_same_base_name(base_names_to_variations)
+
+    converted_ttsim_objects = {}
+    for base_name, inputs in base_names_to_time_conversion_inputs.items():
+        for qual_name_data in data:
             # If base_name is in provided data, base time conversions on that.
             if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=base_name,
-                supported_time_units=all_time_units,
+                all_time_units=all_time_units,
                 groupings=groupings,
-            ).fullmatch(data_name):
-                source_name = data_name  # noqa: PLW2901
+            ).fullmatch(qual_name_data):
+                inputs["qual_name_source"] = qual_name_data
+                inputs["time_unit"] = pattern_specific.group("time_unit")
                 break
 
-        all_time_conversions_for_this_function = _create_time_conversion_functions(
-            source_name=source_name,
-            function=ttsim_object,
-            time_unit_pattern=pattern_all,
-            all_time_units=all_time_units,
-        )
-        for der_name, der_func in all_time_conversions_for_this_function.items():
+        variations = _create_one_set_of_time_conversion_functions(**inputs)
+        for der_name in variations:
             if der_name in converted_ttsim_objects or der_name in data:
-                continue
-            else:
-                converted_ttsim_objects[der_name] = der_func
+                raise ValueError("Fixme, I should not be here -- left for debugging")
+        converted_ttsim_objects = {**converted_ttsim_objects, **variations}
 
     return converted_ttsim_objects
 
 
-def _create_time_conversion_functions(
-    source_name: str,
-    function: TTSIMFunction,
-    time_unit_pattern: re.Pattern,
+def _fail_if_multiple_time_units_for_same_base_name(
+    base_names_to_variations: dict[str, list[str]],
+) -> None:
+    invalid = {b: q for b, q in base_names_to_variations.items() if len(q) > 1}
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
+
+
+def _create_one_set_of_time_conversion_functions(
+    base_name: str,
+    qual_name_source: str,
+    ttsim_object: TTSIMObject,
+    time_unit: str,
+    aggregation_suffix: str,
     all_time_units: tuple[str, ...],
 ) -> dict[str, DerivedTimeConversionFunction]:
-    breakpoint()
     result: dict[str, DerivedTimeConversionFunction] = {}
-    match = time_unit_pattern.fullmatch(source_name)
-    base_name = match.group("base_name")
-    time_unit = match.group("time_unit") or ""
-    aggregation = match.group("aggregation") or ""
     dependencies = (
-        set(inspect.signature(function).parameters)
-        if isinstance(function, TTSIMFunction)
+        set(inspect.signature(ttsim_object).parameters)
+        if isinstance(ttsim_object, TTSIMFunction)
         else set()
     )
 
-    if match and time_unit:
-        missing_time_units = [unit for unit in all_time_units if unit != time_unit]
-        for missing_time_unit in missing_time_units:
-            new_name = (
-                f"{base_name}_{missing_time_unit}_{aggregation}"
-                if aggregation
-                else f"{base_name}_{missing_time_unit}"
-            )
+    for target_time_unit in [tu for tu in all_time_units if tu != time_unit]:
+        new_name = f"{base_name}_{target_time_unit}{aggregation_suffix}"
 
-            # Without this check, we could create cycles in the DAG: Consider a
-            # hard-coded function `var_y` that takes `var_m` as an input, assuming it
-            # to be provided in the input data. If we create a function `var_m`, which
-            # would take `var_y` as input, we create a cycle. If `var_m` is actually
-            # provided as an input, `var_m` would be overwritten, removing the cycle.
-            # However, if `var_m` is not provided as an input, an error message would
-            # be shown that a cycle between `var_y` and `var_m` was detected. This
-            # hides the actual problem, which is that `var_m` is not provided as an
-            # input.
-            if new_name in dependencies:
-                continue
+        # Without this check, we could create cycles in the DAG: Consider a
+        # hard-coded function `var_y` that takes `var_m` as an input, assuming it
+        # to be provided in the input data. If we create a function `var_m`, which
+        # would take `var_y` as input, we create a cycle. If `var_m` is actually
+        # provided as an input, `var_m` would be overwritten, removing the cycle.
+        # However, if `var_m` is not provided as an input, an error message would
+        # be shown that a cycle between `var_y` and `var_m` was detected. This
+        # hides the actual problem, which is that `var_m` is not provided as an
+        # input.
+        if new_name in dependencies:
+            continue
 
-            result[new_name] = DerivedTimeConversionFunction(
-                leaf_name=dt.tree_path_from_qual_name(new_name)[-1],
-                function=_create_function_for_time_unit(
-                    source=source_name,
-                    converter=_time_conversion_functions[
-                        f"{time_unit}_to_{missing_time_unit}"
-                    ],
-                ),
-                source=source_name,
-                start_date=function.start_date,
-                end_date=function.end_date,
-                vectorization_strategy="not_required",
-            )
+        result[new_name] = DerivedTimeConversionFunction(
+            leaf_name=dt.tree_path_from_qual_name(new_name)[-1],
+            function=_create_function_for_time_unit(
+                source=qual_name_source,
+                converter=_time_conversion_functions[
+                    f"{time_unit}_to_{target_time_unit}"
+                ],
+            ),
+            source=qual_name_source,
+            start_date=ttsim_object.start_date,
+            end_date=ttsim_object.end_date,
+            vectorization_strategy="not_required",
+        )
 
     return result
 

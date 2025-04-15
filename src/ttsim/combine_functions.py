@@ -24,6 +24,8 @@ from ttsim.ttsim_objects import (
     DEFAULT_START_DATE,
     DerivedAggregationFunction,
     GroupCreationFunction,
+    PolicyInput,
+    TTSIMFunction,
 )
 
 if TYPE_CHECKING:
@@ -35,6 +37,7 @@ if TYPE_CHECKING:
         QualNamePolicyInputDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
+        QualNameTTSIMObjectDict,
     )
 
 
@@ -77,14 +80,19 @@ def combine_policy_functions_and_derived_functions(
         data=data,
         groupings=groupings,
     )
-    current_functions = {**time_conversion_functions, **functions}
+    current_functions = {
+        **{qn: f for qn, f in ttsim_objects.items() if isinstance(f, TTSIMFunction)},
+        **time_conversion_functions,
+    }
 
     # Create aggregation functions by group.
     aggregate_by_group_functions = _create_aggregate_by_group_functions(
         functions=current_functions,
         targets=targets,
         data=data,
-        policy_inputs=policy_inputs,
+        policy_inputs={
+            qn: f for qn, f in ttsim_objects.items() if isinstance(f, PolicyInput)
+        },
         top_level_namespace=top_level_namespace,
         groupings=groupings,
     )

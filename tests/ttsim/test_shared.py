@@ -403,7 +403,7 @@ def test_get_re_pattern_for_some_base_name(
 ):
     re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
         base_name=base_name,
-        supported_time_units=supported_time_units,
+        all_time_units=supported_time_units,
         groupings=groupings,
     )
     assert re_pattern.fullmatch(expected_match)

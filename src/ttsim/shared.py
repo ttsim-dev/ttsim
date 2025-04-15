@@ -76,7 +76,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
 
 def get_re_pattern_for_specific_time_units_and_groupings(
     base_name: str,
-    supported_time_units: tuple[str, ...],
+    all_time_units: tuple[str, ...],
     groupings: tuple[str, ...],
 ) -> re.Pattern:
     """Get a regex for a specific base name with optional time unit and aggregation.
@@ -101,7 +101,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     pattern
         The regex pattern.
     """
-    re_units = "".join(supported_time_units)
+    re_units = "".join(all_time_units)
     re_groupings = "|".join(groupings)
     return re.compile(
         f"(?P<base_name>{re.escape(base_name)})"
