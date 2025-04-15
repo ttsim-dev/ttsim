@@ -14,11 +14,6 @@ from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.function_types import (
-    GroupByFunction,
-    PolicyInput,
-    TTSIMFunction,
-)
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     all_variations_of_base_name,
@@ -32,6 +27,12 @@ from ttsim.shared import (
     partition_by_reference_dict,
 )
 from ttsim.time_conversion import TIME_UNITS
+from ttsim.ttsim_objects import (
+    FKType,
+    GroupCreationFunction,
+    PolicyInput,
+    TTSIMFunction,
+)
 
 if TYPE_CHECKING:
     from ttsim.typing import (
@@ -48,7 +49,6 @@ def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
-    foreign_keys: tuple[tuple[str, ...], ...],
     supported_groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
@@ -107,7 +107,7 @@ def compute_taxes_and_transfers(
         elif isinstance(f_or_i, PolicyInput):
             inputs[name] = f_or_i
         else:
-            raise ValueError(f"Unknown type: {type(f_or_i)}")
+            raise TypeError(f"Unknown type: {type(f_or_i)}")
 
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
@@ -149,10 +149,12 @@ def compute_taxes_and_transfers(
         functions=functions,
         supported_groupings=supported_groupings,
     )
-    _fail_if_foreign_keys_are_invalid(
-        data=input_data,
-        p_id=data.get("p_id", None),
-        foreign_keys=foreign_keys,
+    # Hack until correct behavior is implemented
+    _input_data_with_p_id = input_data.copy()
+    _input_data_with_p_id["p_id"] = data["p_id"].copy()
+    _fail_if_foreign_keys_are_invalid_in_data(
+        data=_input_data_with_p_id,
+        policy_inputs=inputs,
     )
 
     tax_transfer_function = dags.concatenate_functions(
@@ -388,7 +390,7 @@ def _fail_if_group_variables_not_constant_within_groups(
     group_by_functions = {
         k: v
         for k, v in functions.items()
-        if isinstance(getattr(v, "__wrapped__", v), GroupByFunction)
+        if isinstance(getattr(v, "__wrapped__", v), GroupCreationFunction)
     }
 
     faulty_data_columns = []
@@ -445,10 +447,9 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
         raise ValueError(message)
 
 
-def _fail_if_foreign_keys_are_invalid(
+def _fail_if_foreign_keys_are_invalid_in_data(
     data: QualNameDataDict,
-    p_id: pd.Series,
-    foreign_keys: tuple[tuple[str, ...], ...],
+    policy_inputs: QualNamePolicyInputDict,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -456,33 +457,36 @@ def _fail_if_foreign_keys_are_invalid(
     Foreign keys must point to an existing `p_id` in the input data and must not refer
     to the `p_id` of the same row.
     """
-    valid_ids = set(p_id) | {-1}
 
-    for name, data_column in data.items():
-        foreign_key_col = dt.tree_path_from_qual_name(name) in foreign_keys
-        path = dt.tree_path_from_qual_name(name)
-        if not foreign_key_col:
+    valid_ids = set(data["p_id"]) | {-1}
+
+    for fk_name, fk in policy_inputs.items():
+        if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
+        elif fk_name in data:
+            path = dt.tree_path_from_qual_name(fk_name)
+            # Referenced `p_id` must exist in the input data
+            if not all(i in valid_ids for i in data[fk_name]):
+                message = format_errors_and_warnings(
+                    f"""
+                    For {path}, the following are not a valid p_id in the input
+                    data: {[i for i in data[fk_name] if i not in valid_ids]}.
+                    """
+                )
+                raise ValueError(message)
 
-        # Referenced `p_id` must exist in the input data
-        if not all(i in valid_ids for i in data_column):
-            message = format_errors_and_warnings(
-                f"""
-                For {path}, the following are not a valid p_id in the input
-                data: {[i for i in data_column if i not in valid_ids]}.
-                """
-            )
-            raise ValueError(message)
-
-        equal_to_pid_in_same_row = [i for i, j in zip(data_column, p_id) if i == j]
-        if any(equal_to_pid_in_same_row):
-            message = format_errors_and_warnings(
-                f"""
-                For {path}, the following are equal to the p_id in the same
-                row: {[i for i, j in zip(data_column, p_id) if i == j]}.
-                """
-            )
-            raise ValueError(message)
+            if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
+                equal_to_pid_in_same_row = [
+                    i for i, j in zip(data[fk_name], data["p_id"]) if i == j
+                ]
+                if any(equal_to_pid_in_same_row):
+                    message = format_errors_and_warnings(
+                        f"""
+                        For {path}, the following are equal to the p_id in the same
+                        row: {equal_to_pid_in_same_row}.
+                        """
+                    )
+                    raise ValueError(message)
 
 
 def _warn_if_functions_overridden_by_data(

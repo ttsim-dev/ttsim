@@ -6,13 +6,12 @@ import itertools
 import sys
 from typing import TYPE_CHECKING
 
-from _gettsim.config import RESOURCE_DIR
-from ttsim.function_types import TTSIMFunction, TTSIMObject
 from ttsim.shared import (
     create_tree_from_path_and_value,
     insert_path_and_value,
     merge_trees,
 )
+from ttsim.ttsim_objects import TTSIMFunction, TTSIMObject
 
 if TYPE_CHECKING:
     import datetime
@@ -82,22 +81,28 @@ def get_active_ttsim_objects_tree_from_module(
     """
     module = _load_module(path, root_path)
 
-    ttsim_objects = [
-        func for _, func in inspect.getmembers(module) if isinstance(func, TTSIMObject)
-    ]
+    ttsim_objects_orig_names = {
+        name: obj
+        for name, obj in inspect.getmembers(module)
+        if isinstance(obj, TTSIMObject)
+    }
+    if "eligibility" in path.name:
+        breakpoint()
 
     _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-        ttsim_objects,
+        ttsim_objects_orig_names.values(),
         module_name=root_path / path,
     )
 
-    active_ttsim_functions = {
-        func.leaf_name: func for func in ttsim_objects if func.is_active(date)
+    active_ttsim_objects = {
+        obj.leaf_name: obj
+        for obj in ttsim_objects_orig_names.values()
+        if obj.is_active(date)
     }
 
     return create_tree_from_path_and_value(
         path=_convert_path_to_tree_path(path=path, root_path=root_path),
-        value=active_ttsim_functions,
+        value=active_ttsim_objects,
     )
 
 
@@ -172,12 +177,12 @@ class ConflictingTimeDependentObjectsError(Exception):
 
 def _find_python_files_recursively(root_path: Path) -> list[Path]:
     """
-    Find all Python files reachable from the given roots.
+    Find all Python files reachable from the given root path.
 
     Parameters
     ----------
-    roots:
-        The roots from which to start the search for Python files.
+    root_path:
+        The path from which to start the search for Python files.
 
     Returns
     -------
@@ -229,7 +234,7 @@ def _convert_path_to_tree_path(path: Path, root_path: Path) -> tuple[str, ...]:
     return parts[:-1]
 
 
-def load_aggregation_specs_tree() -> NestedAggregationSpecDict:
+def load_aggregation_specs_tree(resource_dir: Path) -> NestedAggregationSpecDict:
     """
     Load the tree with aggregation specifications.
 
@@ -241,17 +246,17 @@ def load_aggregation_specs_tree() -> NestedAggregationSpecDict:
     -------
     The aggregation tree.
     """
-    paths_to_aggregation_specs = _find_python_files_recursively(RESOURCE_DIR)
+    paths_to_aggregation_specs = _find_python_files_recursively(resource_dir)
 
     aggregation_specs_tree = {}
 
     for path in paths_to_aggregation_specs:
         aggregation_specs = _load_aggregation_specs_from_module(
             path=path,
-            root_path=RESOURCE_DIR,
+            root_path=resource_dir,
         )
 
-        tree_path = _convert_path_to_tree_path(path=path, root_path=RESOURCE_DIR)
+        tree_path = _convert_path_to_tree_path(path=path, root_path=resource_dir)
 
         aggregation_specs_tree = insert_path_and_value(
             base=aggregation_specs_tree,

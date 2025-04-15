@@ -1,0 +1,44 @@
+---
+info:
+  note: ''
+  precision: 0.01
+  source: ''
+inputs:
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+    hh_id:
+      - 0
+      - 0
+      - 0
+    p_id_parent_1:
+      - -1
+      - -1
+      - 0
+    p_id_parent_2:
+      - -1
+      - -1
+      - 1
+    p_id_spouse:
+      - 1
+      - 0
+      - -1
+    age:
+      - 30
+      - 30
+      - 10
+    gross_wage_y:
+      - 10000
+      - 0
+      - 0
+outputs:
+  sp_id:
+    - 0
+    - 0
+    - 1
+  payroll_tax__fam_id:
+    - 0
+    - 0
+    - 0

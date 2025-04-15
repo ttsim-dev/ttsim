@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from _gettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim_tests.utils import (
     PolicyTest,
     cached_set_up_policy_environment,
@@ -22,7 +22,6 @@ def test_groupings(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        foreign_keys=FOREIGN_KEYS,
         supported_groupings=SUPPORTED_GROUPINGS,
     )
 
@@ -56,6 +55,5 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
             data_tree=data,
             environment=environment,
             targets_tree={"einkommensteuer": {"sn_id": None}},
-            foreign_keys=FOREIGN_KEYS,
             supported_groupings=SUPPORTED_GROUPINGS,
         )
