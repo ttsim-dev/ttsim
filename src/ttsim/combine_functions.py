@@ -42,7 +42,7 @@ def combine_policy_functions_and_derived_functions(
     functions: QualNameTTSIMFunctionDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
-    inputs: QualNamePolicyInputDict,
+    policy_inputs: QualNamePolicyInputDict,
     top_level_namespace: set[str],
     groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
@@ -76,7 +76,7 @@ def combine_policy_functions_and_derived_functions(
     time_conversion_functions = create_time_conversion_functions(
         functions=functions,
         data=data,
-        ttsim_objects=ttsim_objects,
+        policy_inputs=policy_inputs,
         groupings=groupings,
     )
     current_functions = {**time_conversion_functions, **functions}
@@ -86,7 +86,7 @@ def combine_policy_functions_and_derived_functions(
         functions=current_functions,
         targets=targets,
         data=data,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
         groupings=groupings,
     )
@@ -99,7 +99,7 @@ def combine_policy_functions_and_derived_functions(
 
 def _create_aggregate_by_group_functions(
     functions: QualNameTTSIMFunctionDict,
-    inputs: QualNamePolicyInputDict,
+    policy_inputs: QualNamePolicyInputDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     top_level_namespace: set[str],
@@ -117,7 +117,7 @@ def _create_aggregate_by_group_functions(
     )
     aggregation_functions_derived_from_names = _create_aggregation_functions(
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         aggregation_functions_to_create=derived_aggregation_specs,
         aggregation_type="group",
         top_level_namespace=top_level_namespace,
@@ -130,7 +130,7 @@ def _create_aggregate_by_group_functions(
 
 def _create_aggregation_functions(
     functions: QualNameTTSIMFunctionDict,
-    inputs: QualNamePolicyInputDict,
+    policy_inputs: QualNamePolicyInputDict,
     aggregation_functions_to_create: QualNameAggregationSpecsDict,
     aggregation_type: Literal["group", "p_id"],
     top_level_namespace: set[str],
@@ -195,7 +195,7 @@ def _create_aggregation_functions(
             aggregation_type=aggregation_type,
             group_by_id=group_by_id_name,
             functions=functions,
-            inputs=inputs,
+            policy_inputs=policy_inputs,
             top_level_namespace=top_level_namespace,
         )
         if derived_func is not None:
@@ -203,7 +203,7 @@ def _create_aggregation_functions(
 
     return _annotate_aggregation_functions(
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         aggregation_functions=aggregation_functions,
     )
 
@@ -214,7 +214,7 @@ def _create_one_aggregation_function(
     aggregation_type: Literal["group", "p_id"],
     group_by_id: str | None,
     functions: QualNameTTSIMFunctionDict,
-    inputs: QualNamePolicyInputDict,
+    policy_inputs: QualNamePolicyInputDict,
     top_level_namespace: set[str],
 ) -> DerivedAggregationFunction | None:
     """Create a single aggregation function.
@@ -231,7 +231,7 @@ def _create_one_aggregation_function(
         The name of the group by id column. Only required for group aggregations.
     functions
         Dict with qualified function names as keys and functions as values.
-    inputs
+    policy_inputs
         Dict with qualified input names as keys and policy inputs as values.
     top_level_namespace
         Set of top-level namespaces.
@@ -262,9 +262,9 @@ def _create_one_aggregation_function(
         if aggregation_spec.source
         else None
     )
-    if qual_name_source in inputs:
-        start_date = inputs[qual_name_source].start_date
-        end_date = inputs[qual_name_source].end_date
+    if qual_name_source in policy_inputs:
+        start_date = policy_inputs[qual_name_source].start_date
+        end_date = policy_inputs[qual_name_source].end_date
     elif qual_name_source in functions:
         start_date = functions[qual_name_source].start_date
         end_date = functions[qual_name_source].end_date
@@ -399,7 +399,7 @@ def _select_return_type(aggregation_method: str, source_col_type: type) -> type:
 
 def _annotate_aggregation_functions(
     functions: QualNameTTSIMFunctionDict,
-    inputs: QualNamePolicyInputDict,
+    policy_inputs: QualNamePolicyInputDict,
     aggregation_functions: QualNameTTSIMFunctionDict,
 ) -> QualNameTTSIMFunctionDict:
     """Annotate aggregation functions.
@@ -411,7 +411,7 @@ def _annotate_aggregation_functions(
     ----------
     functions
         Map qualified function names to functions.
-    inputs
+    policy_inputs
         Map qualified input names to policy inputs.
     aggregation_functions
         Dict with qualified aggregation function names as keys and aggregation functions
@@ -430,8 +430,8 @@ def _annotate_aggregation_functions(
         annotations = {}
         if aggregation_method == "count":
             annotations["return"] = int
-        elif source in inputs:
-            annotations[source] = inputs[source].data_type
+        elif source in policy_inputs:
+            annotations[source] = policy_inputs[source].data_type
             annotations["return"] = _select_return_type(
                 aggregation_method, annotations[source]
             )

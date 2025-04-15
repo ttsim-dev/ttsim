@@ -277,17 +277,24 @@ class TestCreateFunctionsForTimeUnits:
     def test_should_create_functions_for_other_time_units_for_functions(
         self, name: str, expected: list[str]
     ) -> None:
+        functions = {name: policy_function(leaf_name=name)(return_one)}
         time_conversion_functions = create_time_conversion_functions(
-            {name: policy_function(leaf_name="test")(return_one)}, {}
+            functions=functions,
+            data={},
+            policy_inputs={},
+            groupings=("sn", "hh"),
         )
 
         for expected_name in expected:
             assert expected_name in time_conversion_functions
 
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
+        functions = {"test1_d": policy_function(leaf_name="test1_d")(return_one)}
         time_conversion_functions = create_time_conversion_functions(
-            {"test1_d": policy_function(leaf_name="test1_d")(return_one)},
-            {"test2_y": None},
+            functions=functions,
+            data={"test2_y": None},
+            policy_inputs={},
+            groupings=("sn", "hh"),
         )
 
         assert "test1_d" not in time_conversion_functions
@@ -296,9 +303,12 @@ class TestCreateFunctionsForTimeUnits:
     def test_should_overwrite_functions_with_data_cols_that_only_differ_in_time_period(
         self,
     ) -> None:
+        functions = {"test_d": policy_function(leaf_name="test_d")(return_one)}
         time_conversion_functions = create_time_conversion_functions(
-            {"test_d": policy_function(leaf_name="test_d")(return_one)},
-            {"test_y": None},
+            functions=functions,
+            data={"test_y": None},
+            policy_inputs={},
+            groupings=("sn", "hh"),
         )
 
         assert "test_d" in time_conversion_functions
@@ -324,9 +334,12 @@ class TestCreateFunctionForTimeUnit:
 
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
 def test_should_not_create_cycle():
+    functions = {"test_d": policy_function(leaf_name="test_d")(lambda test_m: test_m)}
     time_conversion_functions = create_time_conversion_functions(
-        {"test_d": policy_function(leaf_name="test_d")(lambda test_m: test_m)},
-        {},
+        functions=functions,
+        data={},
+        policy_inputs={},
+        groupings=(),
     )
 
     assert "test_m" not in time_conversion_functions

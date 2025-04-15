@@ -20,7 +20,12 @@ if TYPE_CHECKING:
     import re
     from collections.abc import Callable
 
-    from ttsim.typing import QualNameDataDict, QualNameTTSIMFunctionDict
+    from ttsim.typing import (
+        QualNameDataDict,
+        QualNamePolicyInputDict,
+        QualNameTTSIMFunctionDict,
+    )
+
 
 TIME_UNITS = {
     "y": "year",
@@ -383,7 +388,7 @@ _time_conversion_functions = {
 def create_time_conversion_functions(
     functions: QualNameTTSIMFunctionDict,
     data: QualNameDataDict,
-    ttsim_objects: QualNameTTSIMObjectDict,
+    policy_inputs: QualNamePolicyInputDict,
     groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
     """

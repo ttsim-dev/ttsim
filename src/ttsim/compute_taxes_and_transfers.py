@@ -95,7 +95,7 @@ def compute_taxes_and_transfers(
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
     functions: QualNameTTSIMFunctionDict = {}
-    inputs: QualNamePolicyInputDict = {}
+    policy_inputs: QualNamePolicyInputDict = {}
     for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
         if isinstance(f_or_i, TTSIMFunction):
             functions[name] = dt.one_function_without_tree_logic(
@@ -104,7 +104,7 @@ def compute_taxes_and_transfers(
                 top_level_namespace=top_level_namespace,
             )
         elif isinstance(f_or_i, PolicyInput):
-            inputs[name] = f_or_i
+            policy_inputs[name] = f_or_i
         else:
             raise TypeError(f"Unknown type: {type(f_or_i)}")
 
@@ -113,7 +113,7 @@ def compute_taxes_and_transfers(
         functions=functions,
         targets=targets,
         data=data,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
         groupings=groupings,
     )
@@ -149,7 +149,7 @@ def compute_taxes_and_transfers(
     )
     _fail_if_foreign_keys_are_invalid_in_data(
         data=input_data,
-        policy_inputs=inputs,
+        policy_inputs=policy_inputs,
     )
 
     tax_transfer_function = dags.concatenate_functions(
