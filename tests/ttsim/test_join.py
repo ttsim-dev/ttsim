@@ -1,7 +1,6 @@
 import pytest
 
 from ttsim.config import numpy_or_jax
-
 from ttsim.shared import join
 
 
