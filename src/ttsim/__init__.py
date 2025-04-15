@@ -7,7 +7,6 @@ from ttsim.compute_taxes_and_transfers import (
 from ttsim.loader import (
     ConflictingTimeDependentObjectsError,
     get_active_ttsim_objects_tree_from_module,
-    load_aggregation_specs_tree,
     load_objects_tree_for_date,
 )
 from ttsim.piecewise_polynomial import get_piecewise_parameters, piecewise_polynomial
@@ -64,7 +63,6 @@ __all__ = [
     "group_creation_function",
     "insert_path_and_value",
     "join_numpy",
-    "load_aggregation_specs_tree",
     "load_objects_tree_for_date",
     "merge_trees",
     "piecewise_polynomial",

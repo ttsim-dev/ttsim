@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from ttsim.shared import (
     create_tree_from_path_and_value,
-    insert_path_and_value,
     merge_trees,
 )
 from ttsim.ttsim_objects import TTSIMFunction, TTSIMObject
@@ -18,11 +17,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
-    from ttsim.typing import (
-        NestedAggregationSpecDict,
-        NestedTTSIMObjectDict,
-    )
+    from ttsim.typing import NestedTTSIMObjectDict
 
 
 def load_objects_tree_for_date(
@@ -229,60 +224,3 @@ def _convert_path_to_tree_path(path: Path, root_path: Path) -> tuple[str, ...]:
     parts = path.relative_to(root_path).parts
 
     return parts[:-1]
-
-
-def load_aggregation_specs_tree(resource_dir: Path) -> NestedAggregationSpecDict:
-    """
-    Load the tree with aggregation specifications.
-
-    This function loads the tree with aggregation specifications from the internal
-    functions by searching and loading all aggregation specifications from GETTSIM's
-    modules.
-
-    Returns
-    -------
-    The aggregation tree.
-    """
-    paths_to_aggregation_specs = _find_python_files_recursively(resource_dir)
-
-    aggregation_specs_tree = {}
-
-    for path in paths_to_aggregation_specs:
-        aggregation_specs = _load_aggregation_specs_from_module(
-            path=path,
-            root_path=resource_dir,
-        )
-
-        tree_path = _convert_path_to_tree_path(path=path, root_path=resource_dir)
-
-        aggregation_specs_tree = insert_path_and_value(
-            base=aggregation_specs_tree,
-            path_to_insert=tree_path,
-            value_to_insert=aggregation_specs,
-        )
-
-    return aggregation_specs_tree
-
-
-def _load_aggregation_specs_from_module(
-    path: Path,
-    root_path: Path,
-) -> dict[str, AggregateByGroupSpec | AggregateByPIDSpec]:
-    """
-    Load aggregation specifications from one module.
-
-    Returns a dictionary with the name of the aggregation target as keys and the
-    aggregation specifications as values.
-
-    Parameters
-    ----------
-    path:
-        The path to the module in which to search for dictionaries.
-
-    Returns
-    -------
-    Loaded dictionaries.
-    """
-    module = _load_module(path, root_path)
-    aggregation_specs = getattr(module, "aggregation_specs", ())
-    return {a_s.target: a_s for a_s in aggregation_specs}

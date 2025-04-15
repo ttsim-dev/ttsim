@@ -40,7 +40,6 @@ if TYPE_CHECKING:
 
 def combine_policy_functions_and_derived_functions(
     functions: QualNameTTSIMFunctionDict,
-    aggregation_specs_from_environment: QualNameAggregationSpecsDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
     inputs: QualNamePolicyInputDict,
@@ -60,9 +59,6 @@ def combine_policy_functions_and_derived_functions(
     functions
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
-    aggregation_specs_from_environment
-        Dict with qualified aggregation spec names as keys and aggregation specs as
-        values.
     targets
         The list of targets with qualified names.
     data
@@ -80,7 +76,6 @@ def combine_policy_functions_and_derived_functions(
     aggregate_by_p_id_functions = _create_aggregation_functions(
         functions=functions,
         inputs=inputs,
-        aggregation_functions_to_create=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
         aggregation_type="p_id",
         supported_groupings=supported_groupings,
@@ -100,7 +95,6 @@ def combine_policy_functions_and_derived_functions(
         targets=targets,
         data=data,
         inputs=inputs,
-        aggregations_from_environment=aggregation_specs_from_environment,
         top_level_namespace=top_level_namespace,
         supported_groupings=supported_groupings,
     )

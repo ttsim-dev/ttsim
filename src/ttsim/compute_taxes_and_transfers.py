@@ -94,7 +94,6 @@ def compute_taxes_and_transfers(
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
-    aggregation_specs = dt.flatten_to_qual_names(environment.aggregation_specs_tree)
     functions: QualNameTTSIMFunctionDict = {}
     inputs: QualNamePolicyInputDict = {}
     for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
@@ -112,7 +111,6 @@ def compute_taxes_and_transfers(
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
         functions=functions,
-        aggregation_specs_from_environment=aggregation_specs,
         targets=targets,
         data=data,
         inputs=inputs,
@@ -201,9 +199,7 @@ def _get_top_level_namespace(
     top_level_namespace:
         The top level namespace.
     """
-    direct_top_level_names = set(environment.raw_objects_tree.keys()) | set(
-        environment.aggregation_specs_tree.keys()
-    )
+    direct_top_level_names = set(environment.raw_objects_tree.keys())
     re_pattern = get_re_pattern_for_all_time_units_and_groupings(
         supported_groupings=supported_groupings,
         supported_time_units=supported_time_conversions,

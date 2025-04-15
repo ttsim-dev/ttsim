@@ -189,10 +189,7 @@ def test_create_aggregate_by_group_functions(
     data_tree,
     aggregations_specs_from_env,
 ):
-    environment = PolicyEnvironment(
-        raw_objects_tree=objects_tree,
-        aggregation_specs_tree=aggregations_specs_from_env,
-    )
+    environment = PolicyEnvironment(raw_objects_tree=objects_tree)
     compute_taxes_and_transfers(
         environment=environment,
         data_tree=data_tree,

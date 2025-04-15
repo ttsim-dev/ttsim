@@ -392,9 +392,7 @@ def test_user_provided_aggregate_by_group_specs():
 
     out = compute_taxes_and_transfers(
         data_tree=data,
-        environment=PolicyEnvironment(
-            raw_objects_tree=inputs, aggregation_specs_tree=aggregation_specs_tree
-        ),
+        environment=PolicyEnvironment(raw_objects_tree=inputs),
         targets_tree={"module_name": {"betrag_m_hh": None}},
         supported_groupings=("hh",),
     )
@@ -442,7 +440,6 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
                 )
             },
         },
-        aggregation_specs_tree=aggregation_specs_tree,
     )
     out = compute_taxes_and_transfers(
         data_tree=data,
@@ -479,7 +476,7 @@ def test_aggregate_by_group_specs_missing_group_suffix():
     ):
         compute_taxes_and_transfers(
             data,
-            PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
+            PolicyEnvironment({}),
             targets_tree={"module_name": {"betrag_agg_m": None}},
             supported_groupings=("hh",),
         )
@@ -566,10 +563,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         "hh_id": hh_id,
     }
 
-    environment = PolicyEnvironment(
-        functions_tree,
-        aggregation_specs_tree=aggregation_specs_tree,
-    )
+    environment = PolicyEnvironment(functions_tree)
     out = compute_taxes_and_transfers(
         minimal_input_data_shared_hh,
         environment,
@@ -791,8 +785,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
             PolicyEnvironment(
                 raw_objects_tree={
                     "foo_m": policy_function(leaf_name="foo_m")(lambda x: x)
-                },
-                aggregation_specs_tree={},
+                }
             ),
             ["m", "y"],
             ["hh"],
@@ -800,8 +793,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
         ),
         (
             PolicyEnvironment(
-                raw_objects_tree={"foo": policy_function(leaf_name="foo")(lambda x: x)},
-                aggregation_specs_tree={},
+                raw_objects_tree={"foo": policy_function(leaf_name="foo")(lambda x: x)}
             ),
             ["m", "y"],
             ["hh"],
@@ -809,13 +801,12 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
         ),
         (
             PolicyEnvironment(
-                raw_objects_tree={},
-                aggregation_specs_tree={
-                    "foo_hh": AggregateByGroupSpec(
-                        target="foo_hh",
-                        source="foo",
-                        agg=AggType.SUM,
-                    ),
+                raw_objects_tree={
+                    # "foo_hh": AggregateByGroupSpec(
+                    #     target="foo_hh",
+                    #     source="foo",
+                    #     agg=AggType.SUM,
+                    # ),
                 },
             ),
             ["m", "y"],
