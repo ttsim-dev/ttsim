@@ -75,6 +75,7 @@ def combine_policy_functions_and_derived_functions(
     The qualified functions dict with derived functions.
 
     """
+
     # Create parent-child relationships and similar.
     aggregate_by_p_id_functions = _create_aggregation_functions(
         functions=functions,

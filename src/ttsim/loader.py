@@ -55,7 +55,6 @@ def load_objects_tree_for_date(
             left=objects_tree,
             right=new_objects_tree,
         )
-
     return objects_tree
 
 

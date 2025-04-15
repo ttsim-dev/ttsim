@@ -21,7 +21,7 @@ def claim_of_child_y(
     payroll_tax_params: dict,
 ) -> float:
     if child_eligible:
-        return payroll_tax_params["child_tax_credit"]
+        return payroll_tax_params["child_tax_credit"]["child_amount_y"]
     else:
         return 0
 
@@ -32,7 +32,10 @@ def child_eligible(
     payroll_tax_params: dict,
     in_same_household_as_recipient: float,
 ) -> bool:
-    return age <= payroll_tax_params["max_age"] and in_same_household_as_recipient
+    return (
+        age <= payroll_tax_params["child_tax_credit"]["max_age"]
+        and in_same_household_as_recipient
+    )
 
 
 @policy_function(vectorization_strategy="not_required")

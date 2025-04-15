@@ -34,7 +34,7 @@ inputs:
       - 0
       - 0
 outputs:
-  sp_id:
+  payroll_tax__sp_id:
     - 0
     - 0
     - 1

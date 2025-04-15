@@ -149,11 +149,8 @@ def compute_taxes_and_transfers(
         functions=functions,
         supported_groupings=supported_groupings,
     )
-    # Hack until correct behavior is implemented
-    _input_data_with_p_id = input_data.copy()
-    _input_data_with_p_id["p_id"] = data["p_id"].copy()
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=_input_data_with_p_id,
+        data=input_data,
         policy_inputs=inputs,
     )
 

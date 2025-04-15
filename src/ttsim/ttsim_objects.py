@@ -599,7 +599,7 @@ def agg_by_p_id_function(
         else:
             _fail_if_other_arg_is_invalid(other_args, orig_location)
             mapper = {
-                "source": other_args.pop(),
+                "column": other_args.pop(),
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
             }
