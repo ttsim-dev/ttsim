@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, TypeVar
 
+import dags
 import numpy
 from pandas.api.types import (
     is_bool_dtype,
@@ -16,6 +17,7 @@ from pandas.api.types import (
 )
 
 from ttsim.aggregation import (
+    AggType,
     grouped_all,
     grouped_any,
     grouped_count,
@@ -438,34 +440,80 @@ class AggByGroupFunction(TTSIMFunction):
 
 def agg_by_group_function(
     *,
+    leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-    agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
+    agg_type: AggType,
 ) -> AggByGroupFunction:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    aggregation_registry = {
-        "sum": grouped_sum,
-        "mean": grouped_mean,
-        "max": grouped_max,
-        "min": grouped_min,
-        "any": grouped_any,
-        "all": grouped_all,
-        "count": grouped_count,
+    agg_registry = {
+        AggType.SUM: grouped_sum,
+        AggType.MEAN: grouped_mean,
+        AggType.MAX: grouped_max,
+        AggType.MIN: grouped_min,
+        AggType.ANY: grouped_any,
+        AggType.ALL: grouped_all,
+        AggType.COUNT: grouped_count,
     }
 
     def inner(func: Callable) -> AggByGroupFunction:
+        args = set(inspect.signature(func).parameters)
+        group_id = {p for p in args if p.endswith("_id")}
+        other_arg = args - group_id
+        _fail_if_group_id_is_invalid(group_id, func)
+        if agg_type == AggType.COUNT:
+            _fail_if_other_arg_nonempty(other_arg, func)
+            mapper = {"group_id": group_id.pop()}
+        else:
+            _fail_if_other_arg_is_invalid(other_arg, func)
+            mapper = {"group_id": group_id.pop(), "column": other_arg.pop()}
+
+        agg_func = dags.rename_arguments(
+            func=agg_registry[agg_type],
+            mapper=mapper,
+        )
+        breakpoint()
+        functools.update_wrapper(agg_func, func)
+        agg_func.__signature__ = inspect.signature(func)
+        agg_func.__globals__ = func.__globals__
+        agg_func.__closure__ = func.__closure__
+
         return AggByGroupFunction(
-            leaf_name=func.__name__,
-            function=func,
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=agg_func,
             start_date=start_date,
             end_date=end_date,
-            rounding_spec=None,
             skip_vectorization=False,
             foreign_key_type=FKType.IRRELEVANT,
+            ttsim_object_from_def=func,
         )
 
     return inner
+
+
+def _fail_if_group_id_is_invalid(group_id: set[str], func: Callable):
+    if len(group_id) != 1:
+        raise ValueError(
+            "Require exactly one group identifier ending with '_id' for "
+            f"aggregation by group. Got {group_id} in {func.__name__}."
+        )
+
+
+def _fail_if_other_arg_nonempty(other_arg: set[str], func: Callable):
+    if other_arg:
+        raise ValueError(
+            "There must not be another argument besides the group identifier for "
+            f"counting by group. Got {other_arg} in {func.__name__}."
+        )
+
+
+def _fail_if_other_arg_is_invalid(other_arg: set[str], func: Callable):
+    if len(other_arg) != 1:
+        raise ValueError(
+            "There must be exactly one other argument for aggregation by group (other "
+            f"than counting). Got {other_arg} in {func.__name__}."
+        )
 
 
 # def agg_by_pid_function(

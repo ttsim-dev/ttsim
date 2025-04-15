@@ -9,7 +9,7 @@ Policy regime starting in 2020:
     - Subsistence income is calculated per spouse and child
 """
 
-from ttsim import AggregateByGroupSpec, AggType, policy_function
+from ttsim import AggregateByGroupSpec, AggType, agg_by_group_function, policy_function
 
 aggregation_specs = (
     AggregateByGroupSpec(
@@ -18,6 +18,11 @@ aggregation_specs = (
         agg=AggType.SUM,
     ),
 )
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def number_of_children_fam(fam_id, child):
+    """The number of children in the family."""
 
 
 @policy_function(end_date="2019-12-31", leaf_name="requirement_fulfilled_fam")

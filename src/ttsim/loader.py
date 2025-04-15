@@ -87,6 +87,8 @@ def get_active_ttsim_objects_tree_from_module(
         for name, obj in inspect.getmembers(module)
         if isinstance(obj, TTSIMObject)
     }
+    if "eligibility" in path.name:
+        breakpoint()
 
     _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
         ttsim_objects_orig_names.values(),
