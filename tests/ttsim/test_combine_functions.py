@@ -19,6 +19,7 @@ from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     DerivedAggregationFunction,
+    agg_by_group_function,
     policy_function,
     policy_input,
 )
@@ -55,6 +56,16 @@ def hh_id() -> int:
     pass
 
 
+@agg_by_group_function(leaf_name="y_hh", agg_type=AggType.SUM)
+def y_hh(hh_id: int, x: int) -> int:
+    pass
+
+
+@agg_by_group_function(leaf_name="y_hh", agg_type=AggType.SUM)
+def y_hh_namespaced_input(hh_id: int, inputs__x: int) -> int:
+    pass
+
+
 @pytest.fixture
 @policy_function(leaf_name="bar")
 def function_with_int_return(x: int) -> int:
@@ -76,7 +87,6 @@ def identity(x):
         "objects_tree",
         "targets_tree",
         "data_tree",
-        "aggregations_specs_from_env",
     ),
     [
         (
@@ -95,7 +105,6 @@ def identity(x):
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
             },
-            {},
         ),
         (
             # Aggregations derived from namespaced function arguments
@@ -111,7 +120,6 @@ def identity(x):
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
             },
-            {},
         ),
         (
             # Aggregations derived from target
@@ -129,10 +137,9 @@ def identity(x):
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
             },
-            {},
         ),
         (
-            # Aggregations derived from simple environment specification
+            # Explicit aggregation via objects tree with leaf name input
             {
                 "hh_id": hh_id,
                 "p_id": p_id,
@@ -140,6 +147,7 @@ def identity(x):
                     "f": policy_function(leaf_name="f")(identity),
                     "x": x,
                 },
+                "y_hh": y_hh,
             },
             {"namespace1": {"f": None}},
             {
@@ -147,22 +155,16 @@ def identity(x):
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
             },
-            {
-                "namespace1": {
-                    "y_hh": AggregateByGroupSpec(
-                        target="y_hh",
-                        source="x",
-                        agg=AggType.SUM,
-                    )
-                },
-            },
         ),
         (
-            # Aggregations derived from namespaced environment specification
+            # Explicit aggregation via objects tree with namespaced input
             {
                 "hh_id": hh_id,
                 "p_id": p_id,
-                "namespace1": {"f": policy_function(leaf_name="f")(identity)},
+                "namespace1": {
+                    "f": policy_function(leaf_name="f")(identity),
+                    "y_hh": y_hh_namespaced_input,
+                },
                 "inputs": {"x": x},
             },
             {"namespace1": {"f": None}},
@@ -171,15 +173,6 @@ def identity(x):
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
             },
-            {
-                "namespace1": {
-                    "y_hh": AggregateByGroupSpec(
-                        target="y_hh",
-                        source="inputs__x",
-                        agg=AggType.SUM,
-                    )
-                },
-            },
         ),
     ],
 )
@@ -187,7 +180,6 @@ def test_create_aggregate_by_group_functions(
     objects_tree,
     targets_tree,
     data_tree,
-    aggregations_specs_from_env,
 ):
     environment = PolicyEnvironment(raw_objects_tree=objects_tree)
     compute_taxes_and_transfers(
@@ -435,7 +427,6 @@ def test_annotations_are_applied_to_derived_functions(
         "inputs",
         "targets",
         "data",
-        "aggregations_from_environment",
         "top_level_namespace",
         "expected",
     ),
@@ -489,7 +480,6 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     inputs,
     targets,
     data,
-    aggregations_from_environment,
     top_level_namespace,
     expected,
 ):
