@@ -17,6 +17,11 @@ aggregation_specs = (
         source="child",
         agg=AggregationType.SUM,
     ),
+    AggregateByGroupSpec(
+        target="number_of_individuals_sp",
+        source=None,
+        agg=AggregationType.COUNT,
+    ),
 )
 
 
