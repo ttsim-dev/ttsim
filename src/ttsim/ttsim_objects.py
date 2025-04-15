@@ -425,17 +425,14 @@ class AggByGroupFunction(TTSIMFunction):
         Whether the function should be vectorized.
     """
 
-    def __post_init__(self):
-        if self.aggregation_method is None:
-            raise ValueError("The aggregation method must be specified.")
-        if self.source is None and self.aggregation_method != "count":
-            raise ValueError("The source must be specified.")
+    orig_loc: str = "automatically generated"
 
+    def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = self.function.__annotations__
-        self.__module__ = self.function.__module__
-        self.__name__ = self.function.__name__
+        functools.update_wrapper(self, self.function)
         self.__signature__ = inspect.signature(self.function)
+        self.__globals__ = self.function.__globals__
+        self.__closure__ = self.function.__closure__
 
 
 def agg_by_group_function(
@@ -458,22 +455,22 @@ def agg_by_group_function(
     }
 
     def inner(func: Callable) -> AggByGroupFunction:
+        orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
-        group_id = {p for p in args if p.endswith("_id")}
-        other_arg = args - group_id
-        _fail_if_group_id_is_invalid(group_id, func)
+        group_ids = {p for p in args if p.endswith("_id")}
+        other_args = args - group_ids
+        _fail_if_group_id_is_invalid(group_ids, orig_location)
         if agg_type == AggType.COUNT:
-            _fail_if_other_arg_nonempty(other_arg, func)
-            mapper = {"group_id": group_id.pop()}
+            _fail_if_other_arg_is_present(other_args, orig_location)
+            mapper = {"group_id": group_ids.pop()}
         else:
-            _fail_if_other_arg_is_invalid(other_arg, func)
-            mapper = {"group_id": group_id.pop(), "column": other_arg.pop()}
-
+            _fail_if_other_arg_is_invalid(other_args, orig_location)
+            mapper = {"group_id": group_ids.pop(), "column": other_args.pop()}
         agg_func = dags.rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
-        breakpoint()
+
         functools.update_wrapper(agg_func, func)
         agg_func.__signature__ = inspect.signature(func)
         agg_func.__globals__ = func.__globals__
@@ -486,33 +483,36 @@ def agg_by_group_function(
             end_date=end_date,
             skip_vectorization=False,
             foreign_key_type=FKType.IRRELEVANT,
-            ttsim_object_from_def=func,
+            orig_location=f"{func.__module__}.{func.__name__}",
         )
 
     return inner
 
 
-def _fail_if_group_id_is_invalid(group_id: set[str], func: Callable):
-    if len(group_id) != 1:
+def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
+    if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
-            f"aggregation by group. Got {group_id} in {func.__name__}."
+            "aggregation by group. Got "
+            f"{', '.join(group_ids) if group_ids else 'nothing'} in {orig_location}."
         )
 
 
-def _fail_if_other_arg_nonempty(other_arg: set[str], func: Callable):
-    if other_arg:
+def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
+    if other_args:
         raise ValueError(
             "There must not be another argument besides the group identifier for "
-            f"counting by group. Got {other_arg} in {func.__name__}."
+            "than counting). Got "
+            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
         )
 
 
-def _fail_if_other_arg_is_invalid(other_arg: set[str], func: Callable):
-    if len(other_arg) != 1:
+def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str):
+    if len(other_args) != 1:
         raise ValueError(
             "There must be exactly one other argument for aggregation by group (other "
-            f"than counting). Got {other_arg} in {func.__name__}."
+            "than counting). Got "
+            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
         )
 
 

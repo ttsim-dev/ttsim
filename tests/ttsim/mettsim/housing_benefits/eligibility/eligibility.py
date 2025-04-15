@@ -20,7 +20,7 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="number_of_individuals_sp",
         source=None,
-        agg=AggregationType.COUNT,
+        agg=AggType.COUNT,
     ),
 )
 
