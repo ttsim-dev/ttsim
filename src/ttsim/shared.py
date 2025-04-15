@@ -17,7 +17,6 @@ try:
 except ImportError:
     pass
 
-from _gettsim.config import SUPPORTED_GROUPINGS
 
 if TYPE_CHECKING:
     from ttsim.ttsim_objects import PolicyFunction
