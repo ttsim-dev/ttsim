@@ -6,7 +6,6 @@ import itertools
 import sys
 from typing import TYPE_CHECKING
 
-from _gettsim.config import RESOURCE_DIR
 from ttsim.shared import (
     create_tree_from_path_and_value,
     insert_path_and_value,
@@ -235,7 +234,7 @@ def _convert_path_to_tree_path(path: Path, root_path: Path) -> tuple[str, ...]:
     return parts[:-1]
 
 
-def load_aggregation_specs_tree() -> NestedAggregationSpecDict:
+def load_aggregation_specs_tree(resource_dir: Path) -> NestedAggregationSpecDict:
     """
     Load the tree with aggregation specifications.
 
@@ -247,17 +246,17 @@ def load_aggregation_specs_tree() -> NestedAggregationSpecDict:
     -------
     The aggregation tree.
     """
-    paths_to_aggregation_specs = _find_python_files_recursively(RESOURCE_DIR)
+    paths_to_aggregation_specs = _find_python_files_recursively(resource_dir)
 
     aggregation_specs_tree = {}
 
     for path in paths_to_aggregation_specs:
         aggregation_specs = _load_aggregation_specs_from_module(
             path=path,
-            root_path=RESOURCE_DIR,
+            root_path=resource_dir,
         )
 
-        tree_path = _convert_path_to_tree_path(path=path, root_path=RESOURCE_DIR)
+        tree_path = _convert_path_to_tree_path(path=path, root_path=resource_dir)
 
         aggregation_specs_tree = insert_path_and_value(
             base=aggregation_specs_tree,

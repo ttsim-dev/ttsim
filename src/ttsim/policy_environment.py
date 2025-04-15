@@ -10,10 +10,6 @@ import optree
 import pandas as pd
 import yaml
 
-from _gettsim.config import (
-    INTERNAL_PARAMS_GROUPS,
-    RESOURCE_DIR,
-)
 from ttsim.loader import (
     load_aggregation_specs_tree,
     load_objects_tree_for_date,
@@ -193,17 +189,33 @@ def set_up_policy_environment(
     functions_tree = load_objects_tree_for_date(resource_dir=resource_dir, date=date)
 
     params = {}
-    for group in INTERNAL_PARAMS_GROUPS:
-        params_one_group = _load_parameter_group_from_yaml(date, group)
+    if "_gettsim" in resource_dir.name:
+        from _gettsim.config import INTERNAL_PARAMS_GROUPS as internal_params_groups
+    else:
+        internal_params_groups = [
+            "payroll_tax",
+            "housing_benefits",
+        ]
+    for group in internal_params_groups:
+        params_one_group = _load_parameter_group_from_yaml(
+            date=date,
+            group=group,
+            parameters=None,
+            yaml_path=resource_dir / "parameters",
+        )
 
         # Align parameters for piecewise polynomial functions
         params[group] = _parse_piecewise_parameters(params_one_group)
-    # Extend dictionary with date-specific values which do not need an own function
-    params = _parse_kinderzuschl_max(date, params)
-    params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params)
-    params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
-    aggregation_specs_tree = load_aggregation_specs_tree()
+    if "_gettsim" in resource_dir.name:
+        # Extend dictionary with date-specific values which do not need an own function
+        params = _parse_kinderzuschl_max(date, params)
+        params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
+            date, params
+        )
+        params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
+
+    aggregation_specs_tree = load_aggregation_specs_tree(resource_dir=resource_dir)
 
     return PolicyEnvironment(
         functions_tree,
@@ -383,8 +395,8 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
 def _load_parameter_group_from_yaml(
     date: datetime.date,
     group: str,
+    yaml_path: Path,
     parameters: list[str] | None = None,
-    yaml_path: Path = RESOURCE_DIR / "parameters",
 ) -> dict[str, Any]:
     """Load data from raw yaml group file.
 
@@ -451,8 +463,8 @@ def _load_parameter_group_from_yaml(
                 if "." in future_policy["deviation_from"]:
                     path_list = future_policy["deviation_from"].split(".")
                     params_temp = _load_parameter_group_from_yaml(
-                        date,
-                        path_list[0],
+                        date=date,
+                        group=path_list[0],
                         parameters=[path_list[1]],
                         yaml_path=yaml_path,
                     )

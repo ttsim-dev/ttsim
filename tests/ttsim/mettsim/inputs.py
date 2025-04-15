@@ -19,3 +19,13 @@ def p_id_parent_1() -> int:
 @policy_input(foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)
 def p_id_parent_2() -> int:
     """Identifier of the second parent."""
+
+
+@policy_input(foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)
+def p_id_spouse() -> int:
+    """Identifier of married partner."""
+
+
+@policy_input()
+def age() -> int:
+    """Age of the person."""

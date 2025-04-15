@@ -914,27 +914,33 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
 @pytest.mark.parametrize(
     (
         "target_name",
+        "supported_groupings",
         "top_level_namespace",
         "expected",
     ),
     [
         (
             "arbeitslosengeld_2__vermögen_bg",
+            ("bg",),
             {"vermögen", "arbeitslosengeld_2"},
             "vermögen",
         ),
         (
             "arbeitslosengeld_2__vermögen_bg",
+            ("bg",),
             {"arbeitslosengeld_2"},
             "arbeitslosengeld_2__vermögen",
         ),
     ],
 )
-def test_get_name_of_aggregation_source(target_name, top_level_namespace, expected):
+def test_get_name_of_aggregation_source(
+    target_name, supported_groupings, top_level_namespace, expected
+):
     assert (
         _get_name_of_aggregation_source(
             target_name=target_name,
             top_level_namespace=top_level_namespace,
+            supported_groupings=supported_groupings,
         )
         == expected
     )

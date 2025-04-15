@@ -384,6 +384,7 @@ def _create_derived_aggregations_specs(
                 agg=AggType.SUM,
                 source=_get_name_of_aggregation_source(
                     target_name=target_name,
+                    supported_groupings=supported_groupings,
                     top_level_namespace=top_level_namespace,
                 ),
             )
@@ -529,6 +530,7 @@ def _get_qual_name_of_source_col(
 
 def _get_name_of_aggregation_source(
     target_name: str,
+    supported_groupings: tuple[str, ...],
     top_level_namespace: set[str],
 ) -> str:
     """Get the name of the source column for an aggregation target.
@@ -538,6 +540,7 @@ def _get_name_of_aggregation_source(
     Example 1
     ---------
     > target_name = "arbeitslosengeld_2__vermögen_bg"
+    > supported_groupings = ("bg",)
     > top_level_namespace = {"vermögen", "arbeitslosengeld_2"}
     > _get_name_of_aggregation_source(target_name, top_level_namespace)
     "vermögen"
@@ -545,12 +548,16 @@ def _get_name_of_aggregation_source(
     Example 2
     ---------
     > target_name = "arbeitslosengeld_2__vermögen_bg"
+    > supported_groupings = ("bg",)
     > top_level_namespace = {"arbeitslosengeld_2"}
     > _get_name_of_aggregation_source(target_name, top_level_namespace)
     "arbeitslosengeld_2__vermögen"
     """
-    leaf_name = remove_group_suffix(dt.tree_path_from_qual_name(target_name)[-1])
+    leaf_name = remove_group_suffix(
+        dt.tree_path_from_qual_name(target_name)[-1],
+        supported_groupings=supported_groupings,
+    )
     if leaf_name in top_level_namespace:
         return leaf_name
     else:
-        return remove_group_suffix(target_name)
+        return remove_group_suffix(target_name, supported_groupings=supported_groupings)
