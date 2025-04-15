@@ -82,7 +82,7 @@ def test_all_input_vars_documented(
         for c in arguments
         if (c not in defined_functions)
         and (
-            remove_group_suffix(c, supported_groupings=SUPPORTED_GROUPINGS)
+            remove_group_suffix(c, groupings=SUPPORTED_GROUPINGS)
             not in defined_functions
         )
         and (not c.endswith("_params"))

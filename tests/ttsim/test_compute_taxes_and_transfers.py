@@ -63,7 +63,7 @@ def minimal_input_data_shared_hh():
 def mettsim_environment():
     return set_up_policy_environment(
         policy_inputs=mettsim_policy_inputs,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
         supported_time_conversions=TIME_UNITS,
     )
 
@@ -94,7 +94,7 @@ def test_output_as_tree(minimal_input_data):
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"module": {"test_func": None}},
-        supported_groupings=("hh",),
+        groupings=("hh",),
     )
 
     assert isinstance(out, dict)
@@ -117,7 +117,7 @@ def test_warn_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"some_target": None},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
 
@@ -134,7 +134,7 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
 
@@ -157,7 +157,7 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"unique": None},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
     assert len(warning_list) == 0
@@ -250,7 +250,7 @@ def test_fail_if_group_variables_not_constant_within_groups(data, functions):
         _fail_if_group_variables_not_constant_within_groups(
             data=data,
             functions=functions,
-            supported_groupings=SUPPORTED_GROUPINGS,
+            groupings=SUPPORTED_GROUPINGS,
         )
 
 
@@ -276,7 +276,7 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"c": None},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
 
@@ -294,7 +294,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"b": None},
-        supported_groupings=("hh",),
+        groupings=("hh",),
     )
 
 
@@ -311,7 +311,7 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"unknown_target": None},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
 
@@ -325,7 +325,7 @@ def test_fail_if_missing_p_id():
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
 
@@ -341,7 +341,7 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
 
@@ -394,7 +394,7 @@ def test_user_provided_aggregate_by_group_specs():
         data_tree=data,
         environment=PolicyEnvironment(raw_objects_tree=inputs),
         targets_tree={"module_name": {"betrag_m_hh": None}},
-        supported_groupings=("hh",),
+        groupings=("hh",),
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -445,7 +445,7 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
         data_tree=data,
         environment=environment,
         targets_tree={"module_name": {"betrag_double_m_hh": None}},
-        supported_groupings=("hh",),
+        groupings=("hh",),
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -478,7 +478,7 @@ def test_aggregate_by_group_specs_missing_group_suffix():
             data,
             PolicyEnvironment({}),
             targets_tree={"module_name": {"betrag_agg_m": None}},
-            supported_groupings=("hh",),
+            groupings=("hh",),
         )
 
 
@@ -568,7 +568,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         minimal_input_data_shared_hh,
         environment,
         targets_tree=target_tree,
-        supported_groupings=("hh",),
+        groupings=("hh",),
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
@@ -777,7 +777,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     (
         "environment",
         "supported_time_conversions",
-        "supported_groupings",
+        "groupings",
         "expected",
     ),
     [
@@ -816,11 +816,11 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     ],
 )
 def test_get_top_level_namespace(
-    environment, supported_time_conversions, supported_groupings, expected
+    environment, supported_time_conversions, groupings, expected
 ):
     result = _get_top_level_namespace(
         environment=environment,
         supported_time_conversions=supported_time_conversions,
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
     assert result == expected

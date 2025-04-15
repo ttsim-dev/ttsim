@@ -194,7 +194,7 @@ def test_create_aggregate_by_group_functions(
         environment=environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
-        supported_groupings=("hh",),
+        groupings=("hh",),
     )
 
 
@@ -422,7 +422,7 @@ def test_annotations_are_applied_to_derived_functions(
                 aggregation_functions_to_create=aggregations,
                 aggregation_type=aggregation_type,
                 top_level_namespace=top_level_namespace,
-                supported_groupings=("hh",),
+                groupings=("hh",),
             ).values()
         )
     )
@@ -503,9 +503,8 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         inputs=inputs,
         targets=targets,
         data=data,
-        aggregations_from_environment=aggregations_from_environment,
         top_level_namespace=top_level_namespace,
-        supported_groupings=("hh",),
+        groupings=("hh",),
     )
     assert expected in result
 
@@ -918,7 +917,7 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
 @pytest.mark.parametrize(
     (
         "target_name",
-        "supported_groupings",
+        "groupings",
         "top_level_namespace",
         "expected",
     ),
@@ -938,13 +937,13 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
     ],
 )
 def test_get_name_of_aggregation_source(
-    target_name, supported_groupings, top_level_namespace, expected
+    target_name, groupings, top_level_namespace, expected
 ):
     assert (
         _get_name_of_aggregation_source(
             target_name=target_name,
             top_level_namespace=top_level_namespace,
-            supported_groupings=supported_groupings,
+            groupings=groupings,
         )
         == expected
     )

@@ -42,7 +42,7 @@ def validate_date_range(start: datetime.date, end: datetime.date):
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
-    supported_groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
+    groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
 ) -> re.Pattern:
     """Get a regex pattern for time units and groupings.
 
@@ -54,7 +54,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
 
     Parameters
     ----------
-    supported_groupings
+    groupings
         The supported groupings.
     supported_time_units
         The supported time units.
@@ -64,12 +64,12 @@ def get_re_pattern_for_all_time_units_and_groupings(
     pattern
         The regex pattern.
     """
-    units = "".join(supported_time_units)
-    groupings = "|".join(supported_groupings)
+    re_units = "".join(supported_time_units)
+    re_groupings = "|".join(groupings)
     return re.compile(
         f"(?P<base_name>.*?)"
-        f"(?:_(?P<time_unit>[{units}]))?"
-        f"(?:_(?P<aggregation>{groupings}))?"
+        f"(?:_(?P<time_unit>[{re_units}]))?"
+        f"(?:_(?P<aggregation>{re_groupings}))?"
         f"$"
     )
 
@@ -77,7 +77,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
 def get_re_pattern_for_specific_time_units_and_groupings(
     base_name: str,
     supported_time_units: tuple[str, ...],
-    supported_groupings: tuple[str, ...],
+    groupings: tuple[str, ...],
 ) -> re.Pattern:
     """Get a regex for a specific base name with optional time unit and aggregation.
 
@@ -93,7 +93,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
         The specific base name to match.
     supported_time_units
         The supported time units.
-    supported_groupings
+    groupings
         The supported groupings.
 
     Returns
@@ -101,12 +101,12 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     pattern
         The regex pattern.
     """
-    units = "".join(supported_time_units)
-    groupings = "|".join(supported_groupings)
+    re_units = "".join(supported_time_units)
+    re_groupings = "|".join(groupings)
     return re.compile(
         f"(?P<base_name>{re.escape(base_name)})"
-        f"(?:_(?P<time_unit>[{units}]))?"
-        f"(?:_(?P<aggregation>{groupings}))?"
+        f"(?:_(?P<time_unit>[{re_units}]))?"
+        f"(?:_(?P<aggregation>{re_groupings}))?"
         f"$"
     )
 
@@ -114,7 +114,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
 def all_variations_of_base_name(
     base_name: str,
     supported_time_conversions: list[str],
-    supported_groupings: list[str],
+    groupings: list[str],
     create_conversions_for_time_units: bool,
 ) -> set[str]:
     """Get possible derived function names given a base function name.
@@ -124,7 +124,7 @@ def all_variations_of_base_name(
     >>> all_variations_of_base_name(
         base_name="income",
         supported_time_conversions=["y", "m"],
-        supported_groupings=["hh"],
+        groupings=["hh"],
         create_conversions_for_time_units=True,
     )
     {'income_m', 'income_y', 'income_hh_y', 'income_hh_m'}
@@ -132,7 +132,7 @@ def all_variations_of_base_name(
     >>> all_variations_of_base_name(
         base_name="claims_benefits",
         supported_time_conversions=["y", "m"],
-        supported_groupings=["hh"],
+        groupings=["hh"],
         create_conversions_for_time_units=False,
     )
     {'claims_benefits_hh'}
@@ -143,7 +143,7 @@ def all_variations_of_base_name(
         The base function name.
     supported_time_conversions
         The supported time conversions.
-    supported_groupings
+    groupings
         The supported groupings.
     create_conversions_for_time_units
         Whether to create conversions for time units.
@@ -157,12 +157,12 @@ def all_variations_of_base_name(
         for time_unit in supported_time_conversions:
             result.add(f"{base_name}_{time_unit}")
         for time_unit, aggregation in itertools.product(
-            supported_time_conversions, supported_groupings
+            supported_time_conversions, groupings
         ):
             result.add(f"{base_name}_{time_unit}_{aggregation}")
     else:
         result.add(base_name)
-        for aggregation in supported_groupings:
+        for aggregation in groupings:
             result.add(f"{base_name}_{aggregation}")
     return result
 
@@ -418,9 +418,9 @@ def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[st
     return [p for p in parameters if parameters[p].default == parameters[p].empty]
 
 
-def remove_group_suffix(col, supported_groupings):
+def remove_group_suffix(col, groupings):
     out = col
-    for g in supported_groupings:
+    for g in groupings:
         out = out.removesuffix(f"_{g}")
 
     return out
@@ -553,7 +553,7 @@ def assert_valid_ttsim_pytree(
 def get_name_of_group_by_id(
     target_name: str,
     group_by_functions: QualNameTTSIMFunctionDict,
-    supported_groupings: tuple[str, ...],
+    groupings: tuple[str, ...],
 ) -> str:
     """Get the group-by-identifier name for some target.
 
@@ -577,7 +577,7 @@ def get_name_of_group_by_id(
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
-    for g in supported_groupings:
+    for g in groupings:
         if target_name.endswith(f"_{g}") and g == "hh":
             # Hardcode because hh_id is not part of the functions tree
             return "hh_id"

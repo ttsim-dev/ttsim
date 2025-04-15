@@ -49,7 +49,7 @@ def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
-    supported_groupings: tuple[str, ...],
+    groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
     jit: bool = False,
@@ -89,7 +89,7 @@ def compute_taxes_and_transfers(
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
         supported_time_conversions=tuple(TIME_UNITS.keys()),
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
@@ -115,7 +115,7 @@ def compute_taxes_and_transfers(
         data=data,
         inputs=inputs,
         top_level_namespace=top_level_namespace,
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
 
     functions_overridden, functions_to_be_used = partition_by_reference_dict(
@@ -145,7 +145,7 @@ def compute_taxes_and_transfers(
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
         functions=functions,
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
     _fail_if_foreign_keys_are_invalid_in_data(
         data=input_data,
@@ -185,7 +185,7 @@ def compute_taxes_and_transfers(
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
     supported_time_conversions: tuple[str, ...],
-    supported_groupings: tuple[str, ...],
+    groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
 
@@ -201,7 +201,7 @@ def _get_top_level_namespace(
     """
     direct_top_level_names = set(environment.raw_objects_tree.keys())
     re_pattern = get_re_pattern_for_all_time_units_and_groupings(
-        supported_groupings=supported_groupings,
+        groupings=groupings,
         supported_time_units=supported_time_conversions,
     )
 
@@ -214,7 +214,7 @@ def _get_top_level_namespace(
         all_top_level_names_for_name = all_variations_of_base_name(
             base_name=base_name,
             supported_time_conversions=supported_time_conversions,
-            supported_groupings=supported_groupings,
+            groupings=groupings,
             create_conversions_for_time_units=create_conversions_for_time_units,
         )
         all_top_level_names.update(all_top_level_names_for_name)
@@ -365,7 +365,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
     functions: QualNameTTSIMFunctionDict,
-    supported_groupings: tuple[str, ...],
+    groupings: tuple[str, ...],
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -392,7 +392,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         group_by_id = get_name_of_group_by_id(
             target_name=name,
             group_by_functions=group_by_functions,
-            supported_groupings=supported_groupings,
+            groupings=groupings,
         )
         if group_by_id in data:
             group_by_id_series = pd.Series(data[group_by_id])
