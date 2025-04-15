@@ -2,7 +2,7 @@
 
 from ttsim import (
     AggregateByGroupSpec,
-    AggType,
+    AggregationType,
     RoundingSpec,
     policy_function,
 )
@@ -11,7 +11,7 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="arbeitslosengeld_2__anzahl_kinder_bg",
         source="kindergeld__anzahl_ansprüche",
-        agg=AggType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

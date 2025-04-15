@@ -2,19 +2,21 @@
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, AggType, group_creation_function
+from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
 
 aggregation_specs = (
-    AggregateByGroupSpec(target="anzahl_personen_sn", source=None, agg=AggType.COUNT),
+    AggregateByGroupSpec(
+        target="anzahl_personen_sn", source=None, agg=AggregationType.COUNT
+    ),
     AggregateByGroupSpec(
         target="alleinerziehend_sn",
         source="familie__alleinerziehend",
-        agg=AggType.ANY,
+        agg=AggregationType.ANY,
     ),
 )
 
 
-@group_creation_function()
+@group_by_function()
 def sn_id(
     p_id: numpy.ndarray[int],
     familie__p_id_ehepartner: numpy.ndarray[int],

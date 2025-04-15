@@ -1,8 +1,18 @@
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.combine_functions import combine_policy_functions_and_derived_functions
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
+)
+from ttsim.function_types import (
+    DerivedAggregationFunction,
+    DerivedTimeConversionFunction,
+    GroupByFunction,
+    PolicyFunction,
+    PolicyInput,
+    group_by_function,
+    policy_function,
+    policy_input,
 )
 from ttsim.loader import (
     ConflictingTimeDependentObjectsError,
@@ -21,43 +31,27 @@ from ttsim.shared import (
     upsert_tree,
 )
 from ttsim.time_conversion import create_time_conversion_functions
-from ttsim.ttsim_objects import (
-    AggByGroupFunction,
-    DerivedAggregationFunction,
-    DerivedTimeConversionFunction,
-    FKType,
-    GroupCreationFunction,
-    PolicyFunction,
-    PolicyInput,
-    agg_by_group_function,
-    group_creation_function,
-    policy_function,
-    policy_input,
-)
 from ttsim.visualization import plot_dag
 
 __all__ = [
-    "AggByGroupFunction",
-    "AggType",
     "AggregateByGroupSpec",
     "AggregateByPIDSpec",
+    "AggregationType",
     "ConflictingTimeDependentObjectsError",
     "DerivedAggregationFunction",
     "DerivedTimeConversionFunction",
-    "FKType",
     "FunctionsAndColumnsOverlapWarning",
-    "GroupCreationFunction",
+    "GroupByFunction",
     "PolicyEnvironment",
     "PolicyFunction",
     "PolicyInput",
     "RoundingSpec",
-    "agg_by_group_function",
     "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
     "create_time_conversion_functions",
     "get_active_ttsim_objects_tree_from_module",
     "get_piecewise_parameters",
-    "group_creation_function",
+    "group_by_function",
     "insert_path_and_value",
     "join_numpy",
     "load_aggregation_specs_tree",

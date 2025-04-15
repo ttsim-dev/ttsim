@@ -4,7 +4,7 @@ import inspect
 import pandas as pd
 import pytest
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.combine_functions import (
     _annotate_aggregation_functions,
     _create_aggregate_by_group_functions,
@@ -14,14 +14,14 @@ from ttsim.combine_functions import (
     _get_name_of_aggregation_source,
 )
 from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
-from ttsim.policy_environment import PolicyEnvironment
-from ttsim.ttsim_objects import (
+from ttsim.function_types import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     DerivedAggregationFunction,
     policy_function,
     policy_input,
 )
+from ttsim.policy_environment import PolicyEnvironment
 
 
 @pytest.fixture
@@ -152,7 +152,7 @@ def identity(x):
                     "y_hh": AggregateByGroupSpec(
                         target="y_hh",
                         source="x",
-                        agg=AggType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 },
             },
@@ -176,7 +176,7 @@ def identity(x):
                     "y_hh": AggregateByGroupSpec(
                         target="y_hh",
                         source="inputs__x",
-                        agg=AggType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 },
             },
@@ -198,6 +198,7 @@ def test_create_aggregate_by_group_functions(
         data_tree=data_tree,
         targets_tree=targets_tree,
         supported_groupings=("hh",),
+        foreign_keys=(),
     )
 
 
@@ -372,7 +373,7 @@ def test_fail_if_targets_are_not_among_functions(
             {},
             {
                 "foo_hh": AggregateByGroupSpec(
-                    target="foo_hh", source="foo", agg=AggType.SUM
+                    target="foo_hh", source="foo", agg=AggregationType.SUM
                 ),
             },
             "group",
@@ -384,7 +385,7 @@ def test_fail_if_targets_are_not_among_functions(
             {},
             {
                 "foo_hh": AggregateByGroupSpec(
-                    target="foo_hh", source="foo", agg=AggType.SUM
+                    target="foo_hh", source="foo", agg=AggregationType.SUM
                 ),
             },
             "group",
@@ -399,7 +400,7 @@ def test_fail_if_targets_are_not_among_functions(
                     target="foo_hh",
                     p_id_to_aggregate_by="foreign_id_col",
                     source="foo",
-                    agg=AggType.SUM,
+                    agg=AggregationType.SUM,
                 )
             },
             "p_id",
@@ -479,7 +480,7 @@ def test_annotations_are_applied_to_derived_functions(
                 "n1__foo_hh": AggregateByGroupSpec(
                     target="foo_hh",
                     source="foo",
-                    agg=AggType.SUM,
+                    agg=AggregationType.SUM,
                 )
             },
             ["x", "foo", "n1"],
@@ -527,7 +528,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     [
         (
             "x_hh",
-            AggregateByGroupSpec(target="x_hh", source="x", agg=AggType.SUM),
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
             "hh_id",
             {},
             {"x": x},
@@ -537,7 +538,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         ),
         (
             "x_hh",
-            AggregateByGroupSpec(target="x_hh", source="x", agg=AggType.SUM),
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
             "hh_id",
             {"x": policy_function(leaf_name="x")(lambda x: x)},
             {},
@@ -547,7 +548,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         ),
         (
             "x_hh",
-            AggregateByGroupSpec(target="x_hh", source="x", agg=AggType.SUM),
+            AggregateByGroupSpec(target="x_hh", source="x", agg=AggregationType.SUM),
             "hh_id",
             {
                 "x": policy_function(
@@ -600,7 +601,7 @@ def test_aggregate_by_group_function_start_and_end_date(
             AggregateByPIDSpec(
                 target="bar_hh",
                 source="x",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
             ),
             {"x": policy_function(leaf_name="x")(lambda x: x)},
@@ -614,7 +615,7 @@ def test_aggregate_by_group_function_start_and_end_date(
             AggregateByPIDSpec(
                 target="bar_hh",
                 source="x",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
             ),
             {},
@@ -628,7 +629,7 @@ def test_aggregate_by_group_function_start_and_end_date(
             AggregateByPIDSpec(
                 target="bar_hh",
                 source="x",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 p_id_to_aggregate_by="foreign_id_col",
             ),
             {
@@ -678,7 +679,9 @@ def test_aggregate_by_p_id_function_start_and_end_date(
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(target="foo_hh", source=None, agg=AggType.COUNT),
+            AggregateByGroupSpec(
+                target="foo_hh", source=None, agg=AggregationType.COUNT
+            ),
             {"foo": policy_function(leaf_name="foo")(lambda x: x)},
             {},
             "hh_id",
@@ -687,7 +690,9 @@ def test_aggregate_by_p_id_function_start_and_end_date(
         ),
         (
             "foo_hh",
-            AggregateByGroupSpec(target="foo_hh", source="foo", agg=AggType.SUM),
+            AggregateByGroupSpec(
+                target="foo_hh", source="foo", agg=AggregationType.SUM
+            ),
             {"foo": policy_function(leaf_name="foo")(lambda x: x)},
             {},
             "hh_id",
@@ -696,7 +701,9 @@ def test_aggregate_by_p_id_function_start_and_end_date(
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(target="foo__bar_hh", source="bar", agg=AggType.SUM),
+            AggregateByGroupSpec(
+                target="foo__bar_hh", source="bar", agg=AggregationType.SUM
+            ),
             {"foo__bar": policy_function(leaf_name="bar")(lambda x: x)},
             {},
             "hh_id",
@@ -744,7 +751,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
             "foo",
             AggregateByPIDSpec(
                 target="foo_hh",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 source="bar",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
@@ -758,7 +765,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
             "foo__fünc",
             AggregateByPIDSpec(
                 target="foo_hh",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 source="bär",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
@@ -772,7 +779,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
             "foo",
             AggregateByPIDSpec(
                 target="foo_hh",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 source="x",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
@@ -821,7 +828,9 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     [
         (
             "foo_hh",
-            AggregateByGroupSpec(target="foo_hh", agg=AggType.SUM, source="foo"),
+            AggregateByGroupSpec(
+                target="foo_hh", agg=AggregationType.SUM, source="foo"
+            ),
             {},
             {"foo": policy_function(leaf_name="foo")(lambda x: x)},
             "hh_id",
@@ -830,7 +839,9 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
         ),
         (
             "foo__bar_hh",
-            AggregateByGroupSpec(target="bar_hh", agg=AggType.SUM, source="bar"),
+            AggregateByGroupSpec(
+                target="bar_hh", agg=AggregationType.SUM, source="bar"
+            ),
             {},
             {"foo__bar": policy_function(leaf_name="bar")(lambda x: x)},
             "hh_id",
@@ -874,7 +885,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
             "foo",
             AggregateByPIDSpec(
                 target="foo_hh",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 source="bar",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
@@ -887,7 +898,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
             "foo__fünc",
             AggregateByPIDSpec(
                 target="foo_hh",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
                 source="bär",
                 p_id_to_aggregate_by="foreign_id_col",
             ),
@@ -921,33 +932,27 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
 @pytest.mark.parametrize(
     (
         "target_name",
-        "supported_groupings",
         "top_level_namespace",
         "expected",
     ),
     [
         (
             "arbeitslosengeld_2__vermögen_bg",
-            ("bg",),
             {"vermögen", "arbeitslosengeld_2"},
             "vermögen",
         ),
         (
             "arbeitslosengeld_2__vermögen_bg",
-            ("bg",),
             {"arbeitslosengeld_2"},
             "arbeitslosengeld_2__vermögen",
         ),
     ],
 )
-def test_get_name_of_aggregation_source(
-    target_name, supported_groupings, top_level_namespace, expected
-):
+def test_get_name_of_aggregation_source(target_name, top_level_namespace, expected):
     assert (
         _get_name_of_aggregation_source(
             target_name=target_name,
             top_level_namespace=top_level_namespace,
-            supported_groupings=supported_groupings,
         )
         == expected
     )

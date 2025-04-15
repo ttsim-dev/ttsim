@@ -8,13 +8,15 @@ import numpy
 
 from ttsim import (
     AggregateByGroupSpec,
-    AggType,
-    group_creation_function,
+    AggregationType,
+    group_by_function,
     policy_function,
 )
 
 aggregation_specs = (
-    AggregateByGroupSpec(target="anzahl_personen_ehe", source=None, agg=AggType.COUNT),
+    AggregateByGroupSpec(
+        target="anzahl_personen_ehe", source=None, agg=AggregationType.COUNT
+    ),
 )
 
 
@@ -132,7 +134,7 @@ def erwachsen(kind: bool) -> bool:
     return out
 
 
-@group_creation_function()
+@group_by_function()
 def ehe_id(
     p_id: numpy.ndarray[int],
     p_id_ehepartner: numpy.ndarray[int],

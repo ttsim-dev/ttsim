@@ -9,7 +9,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 - {gh}`861` Make fg_id invariant to ordering of data ({ghuser}`mj023`).
 - {gh}`856` Add METTSIM to test TTSIM part ({ghuser}`hmgaudecker`, `timmens`,
   `MImmesberger`).
-- {gh}`860` Use AggType instead of strings ({ghuser}`timmens`).
+- {gh}`860` Use AggregationType instead of strings ({ghuser}`timmens`).
 - {gh}`858` Apply tree logic to GETTSIM tests ({ghuser}`felixschmitz`).
 - {gh}`850` Split GETTSIM from TTSIM functions ({ghuser}`hmgaudecker`, `MImmesberger`).
 - {gh}`805` Rename taxes and transers using new tree structure ({ghuser}`hmgaudecker`,

@@ -4,7 +4,7 @@ import numpy
 
 from ttsim import (
     AggregateByPIDSpec,
-    AggType,
+    AggregationType,
     RoundingSpec,
     join_numpy,
     policy_function,
@@ -15,7 +15,7 @@ aggregation_specs = (
         target="an_elternteil_auszuzahlender_betrag_m",
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
         source="betrag_m",
-        agg=AggType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

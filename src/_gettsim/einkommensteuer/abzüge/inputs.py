@@ -14,5 +14,5 @@ def betreuungskosten_m() -> float:
 
 
 @policy_input()
-def p_id_betreuungskostenträger() -> int:
+def p_id_betreuungskosten_träger() -> int:
     """Identifier of the person who paid childcare expenses."""

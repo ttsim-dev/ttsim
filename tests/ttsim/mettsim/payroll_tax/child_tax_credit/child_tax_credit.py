@@ -1,16 +1,11 @@
-from ttsim import (
-    AggregateByPIDSpec,
-    AggType,
-    join_numpy,
-    policy_function,
-)
+from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
 
 aggregation_specs = (
     AggregateByPIDSpec(
         target="amount_y",
         source="claim_of_child_y",
-        p_id_to_aggregate_by="p_id_recipient",
-        agg=AggType.SUM,
+        p_id_to_aggregate_by="recipient_id",
+        agg=AggregationType.SUM,
     ),
 )
 
@@ -30,20 +25,20 @@ def claim_of_child_y(
 def child_eligible(
     age: int,
     payroll_tax_params: dict,
-    in_same_household_as_recipient: float,
+    child_in_same_household_as_recipient: float,
 ) -> bool:
-    return age <= payroll_tax_params["max_age"] and in_same_household_as_recipient
+    return age <= payroll_tax_params["max_age"] and child_in_same_household_as_recipient
 
 
 @policy_function(vectorization_strategy="not_required")
-def in_same_household_as_recipient(
+def child_in_same_household_as_recipient(
     p_id: int,
     hh_id: int,
-    p_id_recipient: int,
+    recipient_id: int,
 ) -> bool:
     return (
         join_numpy(
-            foreign_key=p_id_recipient,
+            foreign_key=recipient_id,
             primary_key=p_id,
             target=hh_id,
             value_if_foreign_key_is_missing=-1,

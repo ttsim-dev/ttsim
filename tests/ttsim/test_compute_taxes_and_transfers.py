@@ -2,15 +2,16 @@ import copy
 import re
 import warnings
 
+import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import SUPPORTED_GROUPINGS
+from mettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
-    _fail_if_foreign_keys_are_invalid_in_data,
+    _fail_if_foreign_keys_are_invalid,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
     _get_top_level_namespace,
@@ -18,10 +19,9 @@ from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
+from ttsim.function_types import group_by_function, policy_function, policy_input
+from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import assert_valid_ttsim_pytree
-from ttsim.time_conversion import TIME_UNITS
-from ttsim.ttsim_objects import group_creation_function, policy_function, policy_input
 
 
 @policy_input()
@@ -59,15 +59,6 @@ def minimal_input_data_shared_hh():
     return out
 
 
-@pytest.fixture(scope="module")
-def mettsim_environment():
-    return set_up_policy_environment(
-        policy_inputs=mettsim_policy_inputs,
-        supported_groupings=SUPPORTED_GROUPINGS,
-        supported_time_conversions=TIME_UNITS,
-    )
-
-
 # Create a function which is used by some tests below
 @policy_function()
 def func_before_partial(arg_1, payroll_tax_params):
@@ -94,6 +85,7 @@ def test_output_as_tree(minimal_input_data):
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"module": {"test_func": None}},
+        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -117,6 +109,7 @@ def test_warn_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"some_target": None},
+            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -134,6 +127,7 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
+            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -157,6 +151,7 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"unique": None},
+            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -177,51 +172,45 @@ def test_fail_if_p_id_is_non_unique():
         _fail_if_p_id_is_non_unique(data)
 
 
-@pytest.mark.skip
-def test_fail_if_foreign_key_points_to_non_existing_p_id(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
+def test_fail_if_foreign_key_points_to_non_existing_p_id(foreign_key_path):
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
+        foreign_key_name: pd.Series([0, 1, 4]),
         "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([0, 1, 2]),
     }
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
-        _fail_if_foreign_keys_are_invalid_in_data(
-            data=data, policy_inputs=policy_inputs
+        _fail_if_foreign_keys_are_invalid(
+            data=data, p_id=data["p_id"], foreign_keys=FOREIGN_KEYS
         )
 
 
-@pytest.mark.skip
-def test_allow_minus_one_as_foreign_key(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
+def test_allow_minus_one_as_foreign_key(foreign_key_path):
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
+        foreign_key_name: pd.Series([-1, 1, 2]),
         "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([-1, 1, 2]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
+    _fail_if_foreign_keys_are_invalid(
+        data=data, p_id=data["p_id"], foreign_keys=FOREIGN_KEYS
+    )
 
 
-@pytest.mark.skip
-def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
+@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
+def test_fail_if_foreign_key_points_to_p_id_of_same_row(foreign_key_path):
+    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
     data = {
+        foreign_key_name: pd.Series([1, 3, 3]),
         "p_id": pd.Series([1, 2, 3]),
-        "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
-
-
-@pytest.mark.skip
-def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_child_": pd.Series([1, 3, 3]),
-    }
-
-    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
+    with pytest.raises(ValueError, match="are equal to the p_id"):
+        _fail_if_foreign_keys_are_invalid(
+            data=data, p_id=data["p_id"], foreign_keys=FOREIGN_KEYS
+        )
 
 
 @pytest.mark.parametrize(
@@ -240,7 +229,7 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
                 "fam_id": pd.Series([1, 1, 2], name="fam_id"),
             },
             {
-                "fam_id": group_creation_function()(lambda x: x),
+                "fam_id": group_by_function()(lambda x: x),
             },
         ),
     ],
@@ -276,6 +265,7 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"c": None},
+            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -294,6 +284,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"b": None},
+        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -311,6 +302,7 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"unknown_target": None},
+            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -325,6 +317,7 @@ def test_fail_if_missing_p_id():
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
+            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -341,6 +334,7 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
+            foreign_keys=FOREIGN_KEYS,
             supported_groupings=("hh",),
         )
 
@@ -384,7 +378,7 @@ def test_user_provided_aggregate_by_group_specs():
             AggregateByGroupSpec(
                 target="betrag_m_hh",
                 source="betrag_m",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
             ),
         )
     }
@@ -396,6 +390,7 @@ def test_user_provided_aggregate_by_group_specs():
             raw_objects_tree=inputs, aggregation_specs_tree=aggregation_specs_tree
         ),
         targets_tree={"module_name": {"betrag_m_hh": None}},
+        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -412,7 +407,7 @@ def test_user_provided_aggregate_by_group_specs():
                 "betrag_double_m_hh": AggregateByGroupSpec(
                     target="betrag_double_m_hh",
                     source="betrag_m_double",
-                    agg=AggType.MAX,
+                    agg=AggregationType.MAX,
                 ),
             }
         },
@@ -448,6 +443,7 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
         data_tree=data,
         environment=environment,
         targets_tree={"module_name": {"betrag_double_m_hh": None}},
+        foreign_keys=FOREIGN_KEYS,
         supported_groupings=("hh",),
     )
 
@@ -469,7 +465,7 @@ def test_aggregate_by_group_specs_missing_group_suffix():
             "betrag_agg_m": AggregateByGroupSpec(
                 target="betrag_agg_m",
                 source="betrag_m",
-                agg=AggType.SUM,
+                agg=AggregationType.SUM,
             )
         }
     }
@@ -482,13 +478,14 @@ def test_aggregate_by_group_specs_missing_group_suffix():
             PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
             targets_tree={"module_name": {"betrag_agg_m": None}},
             supported_groupings=("hh",),
+            foreign_keys=FOREIGN_KEYS,
         )
 
 
 def test_aggregate_by_group_specs_agg_not_impl():
     with pytest.raises(
         TypeError,
-        match="agg must be of type AggType, not <class 'str'>",
+        match="agg must be of type AggregationType, not <class 'str'>",
     ):
         AggregateByGroupSpec(
             target="betrag_agg_m",
@@ -507,7 +504,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func",
-                        agg=AggType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 }
             },
@@ -522,7 +519,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        agg=AggType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 }
             },
@@ -537,7 +534,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        agg=AggType.SUM,
+                        agg=AggregationType.SUM,
                     )
                 }
             },
@@ -575,6 +572,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         environment,
         targets_tree=target_tree,
         supported_groupings=("hh",),
+        foreign_keys=FOREIGN_KEYS,
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
@@ -814,7 +812,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                     "foo_hh": AggregateByGroupSpec(
                         target="foo_hh",
                         source="foo",
-                        agg=AggType.SUM,
+                        agg=AggregationType.SUM,
                     ),
                 },
             ),

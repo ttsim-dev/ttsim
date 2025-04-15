@@ -265,7 +265,7 @@ def test_fail_if_functions_and_columns_overlap(
                     i + 1 if i % 3 == 0 else i - 1 if i % 3 == 1 else -1
                     for i in range(33)
                 ],
-                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
+                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
             },
@@ -294,7 +294,7 @@ def test_fail_if_functions_and_columns_overlap(
                     i + 1 if i % 3 == 0 else i - 1 if i % 3 == 1 else -1
                     for i in range(33)
                 ],
-                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
+                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
             },
@@ -309,7 +309,7 @@ def test_fail_if_functions_and_columns_overlap(
                 "erziehungsgeld__p_id_empfänger": [-1, 0],
                 "familie__p_id_ehepartner": [-1, -1],
                 "arbeitslosengeld_2__p_id_einstandspartner": [-1, -1],
-                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
+                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
                     -1,
                     0,
                 ],
@@ -325,7 +325,7 @@ def test_fail_if_functions_and_columns_overlap(
                 "erziehungsgeld__p_id_empfänger": [-1, -1],
                 "familie__p_id_ehepartner": [1, 0],
                 "arbeitslosengeld_2__p_id_einstandspartner": [1, 0],
-                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
+                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
                     -1,
                     -1,
                 ],

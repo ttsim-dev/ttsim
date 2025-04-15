@@ -1,6 +1,6 @@
 """Input columns."""
 
-from ttsim import FKType, policy_input
+from ttsim import policy_input
 
 
 @policy_input(start_date="2023-01-01")
@@ -16,6 +16,6 @@ def eigenbedarf_gedeckt() -> bool:
     """Received Arbeitslosengeld II / Bürgergeld in previous year."""
 
 
-@policy_input(start_date="2005-01-01", foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)
+@policy_input(start_date="2005-01-01")
 def p_id_einstandspartner() -> int:
     """Identifier of Einstandspartner."""

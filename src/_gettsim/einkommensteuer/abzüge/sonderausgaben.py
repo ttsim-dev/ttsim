@@ -2,7 +2,7 @@
 
 from ttsim import (
     AggregateByPIDSpec,
-    AggType,
+    AggregationType,
     RoundingSpec,
     policy_function,
 )
@@ -11,8 +11,8 @@ aggregation_specs = (
     AggregateByPIDSpec(
         target="betreuungskosten_elternteil_m",
         source="betreuungskosten_m",
-        p_id_to_aggregate_by="p_id_betreuungskostenträger",
-        agg=AggType.SUM,
+        p_id_to_aggregate_by="p_id_betreuungskosten_träger",
+        agg=AggregationType.SUM,
     ),
 )
 

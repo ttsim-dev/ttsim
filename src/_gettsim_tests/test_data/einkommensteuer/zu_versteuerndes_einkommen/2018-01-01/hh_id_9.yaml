@@ -16,7 +16,7 @@ inputs:
       - 0.0
     einkommensteuer__abzüge__betreuungskosten_m:
       - 0.0
-    einkommensteuer__abzüge__p_id_betreuungskostenträger:
+    einkommensteuer__abzüge__p_id_betreuungskosten_träger:
       - -1
     einkommensteuer__abzüge__vorsorgeaufwendungen_y_sn:
       - 1910.41

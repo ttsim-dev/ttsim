@@ -14,8 +14,6 @@ from ttsim.loader import (
 )
 from ttsim.shared import remove_group_suffix
 
-SUPPORTED_GROUPINGS = ("hh", "sp", "fam")
-
 
 def _nice_output_list_of_strings(list_of_strings):
     my_str = "\n".join(sorted(list_of_strings))
@@ -93,10 +91,7 @@ def test_all_input_vars_documented(
         c
         for c in arguments
         if (c not in defined_functions)
-        and (
-            remove_group_suffix(c, supported_groupings=SUPPORTED_GROUPINGS)
-            not in defined_functions
-        )
+        and (remove_group_suffix(c) not in defined_functions)
         and (not c.endswith("_params"))
     ]
 

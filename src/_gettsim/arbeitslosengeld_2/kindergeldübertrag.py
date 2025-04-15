@@ -2,14 +2,14 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, AggType, join_numpy, policy_function
+from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
 
 aggregation_specs = (
     AggregateByPIDSpec(
         target="kindergeldübertrag_m",
         source="differenz_kindergeld_kindbedarf_m",
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        agg=AggType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

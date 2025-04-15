@@ -7,7 +7,7 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
+from _gettsim.config import FOREIGN_KEYS, RESOURCE_DIR, SUPPORTED_GROUPINGS
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     PolicyEnvironment,
@@ -76,6 +76,7 @@ def execute_test(test: PolicyTest):
         environment=environment,
         targets_tree=test.target_structure,
         supported_groupings=SUPPORTED_GROUPINGS,
+        foreign_keys=FOREIGN_KEYS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -186,12 +187,32 @@ def _get_policy_tests_from_raw_test_data(
 
     date: datetime.date = to_datetime(path_to_yaml.parent.name)
 
-    return [
-        PolicyTest(
-            info=test_info,
-            input_tree=input_tree,
-            expected_output_tree=expected_output_tree,
-            path=path_to_yaml,
-            date=date,
+    out = []
+    if expected_output_tree == {}:
+        out.append(
+            PolicyTest(
+                info=test_info,
+                input_tree=input_tree,
+                expected_output_tree={},
+                path=path_to_yaml,
+                date=date,
+            )
         )
-    ]
+    else:
+        for target_name, output_data in dt.flatten_to_tree_paths(
+            expected_output_tree
+        ).items():
+            one_expected_output: NestedDataDict = dt.unflatten_from_tree_paths(
+                {target_name: output_data}
+            )
+            out.append(
+                PolicyTest(
+                    info=test_info,
+                    input_tree=input_tree,
+                    expected_output_tree=one_expected_output,
+                    path=path_to_yaml,
+                    date=date,
+                )
+            )
+
+    return out

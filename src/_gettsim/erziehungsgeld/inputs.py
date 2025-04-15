@@ -1,6 +1,6 @@
 """Input columns."""
 
-from ttsim import FKType, policy_input
+from ttsim import policy_input
 
 
 @policy_input()
@@ -8,6 +8,6 @@ def budgetsatz() -> bool:
     """Applied for "Budgetsatz" of parental leave benefit."""
 
 
-@policy_input(foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)
+@policy_input()
 def p_id_empfänger() -> int:
     pass

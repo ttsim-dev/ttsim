@@ -198,7 +198,7 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
     - erziehungsgeld__p_id_empfänger
     - arbeitslosengeld_2__p_id_einstandspartner
     - familie__p_id_ehepartner
-    - einkommensteuer__abzüge__p_id_betreuungskostenträger
+    - einkommensteuer__abzüge__p_id_betreuungskosten_träger
 
     Parameters
     ----------
@@ -224,7 +224,7 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
         data["familie__p_id_elternteil_2"] = -1
     data["kindergeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
     data["erziehungsgeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
-    data["einkommensteuer__abzüge__p_id_betreuungskostenträger"] = data[
+    data["einkommensteuer__abzüge__p_id_betreuungskosten_träger"] = data[
         "familie__p_id_elternteil_1"
     ]
 

@@ -2,7 +2,7 @@
 
 from ttsim import (
     AggregateByPIDSpec,
-    AggType,
+    AggregationType,
     piecewise_polynomial,
     policy_function,
 )
@@ -13,7 +13,7 @@ aggregation_specs = (
         target="alleinerziehendenbonus",
         source="kindergeld__kind_bis_10_mit_kindergeld",
         p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        agg=AggType.SUM,
+        agg=AggregationType.SUM,
     ),
 )
 

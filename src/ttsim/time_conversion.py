@@ -7,13 +7,13 @@ import dags.tree as dt
 from dags import rename_arguments
 
 from _gettsim.config import SUPPORTED_GROUPINGS
+from ttsim.function_types import (
+    DerivedTimeConversionFunction,
+    TTSIMFunction,
+)
 from ttsim.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
-)
-from ttsim.ttsim_objects import (
-    DerivedTimeConversionFunction,
-    TTSIMFunction,
 )
 
 if TYPE_CHECKING:
