@@ -18,6 +18,9 @@ from pandas.api.types import (
 
 from ttsim.aggregation import (
     AggType,
+    all_by_p_id,
+    any_by_p_id,
+    count_by_p_id,
     grouped_all,
     grouped_any,
     grouped_count,
@@ -25,6 +28,10 @@ from ttsim.aggregation import (
     grouped_mean,
     grouped_min,
     grouped_sum,
+    max_by_p_id,
+    mean_by_p_id,
+    min_by_p_id,
+    sum_by_p_id,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.rounding import RoundingSpec
@@ -432,6 +439,8 @@ class AggByGroupFunction(TTSIMFunction):
         The key in the params dictionary that should be used for rounding.
     skip_vectorization:
         Whether the function should be vectorized.
+    orig_location:
+        The original location of the function, or "automatically generated".
     """
 
     orig_location: str = "automatically generated"
@@ -508,8 +517,7 @@ def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
 def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
     if other_args:
         raise ValueError(
-            "There must not be another argument besides the group identifier for "
-            "than counting). Got "
+            "There must be no argument besides identifiers for counting. Got: "
             f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
         )
 
@@ -517,16 +525,120 @@ def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
 def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str):
     if len(other_args) != 1:
         raise ValueError(
-            "There must be exactly one other argument for aggregation by group (other "
-            "than counting). Got "
+            "There must be exactly one argument besides identifiers for aggregations. "
+            "Got: "
             f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
         )
 
 
-# def agg_by_pid_function(
-#     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
-# ) -> AggByPIDFunction:
-#     return decorator
+@dataclass
+class AggByPIDFunction(TTSIMFunction):
+    """
+    A function that is an aggregation of another column by some group id.
+
+    Parameters
+    ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    function:
+        The function performing the aggregation.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    params_key_for_rounding:
+        The key in the params dictionary that should be used for rounding.
+    skip_vectorization:
+        Whether the function should be vectorized.
+    orig_location:
+        The original location of the function, or "automatically generated".
+    """
+
+    orig_location: str = "automatically generated"
+
+    def __post_init__(self):
+        # Expose the signature of the wrapped function for dependency resolution
+        functools.update_wrapper(self, self.function)
+        self.__signature__ = inspect.signature(self.function)
+        self.__globals__ = self.function.__globals__
+        self.__closure__ = self.function.__closure__
+
+
+def agg_by_p_id_function(
+    *,
+    leaf_name: str | None = None,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+    agg_type: AggType,
+) -> AggByPIDFunction:
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    agg_registry = {
+        AggType.SUM: sum_by_p_id,
+        AggType.MEAN: mean_by_p_id,
+        AggType.MAX: max_by_p_id,
+        AggType.MIN: min_by_p_id,
+        AggType.ANY: any_by_p_id,
+        AggType.ALL: all_by_p_id,
+        AggType.COUNT: count_by_p_id,
+    }
+
+    def inner(func: Callable) -> AggByPIDFunction:
+        orig_location = f"{func.__module__}.{func.__name__}"
+        args = set(inspect.signature(func).parameters)
+        other_p_ids = {p for p in args if p.startswith("p_id_")}
+        other_args = args - {*other_p_ids, "p_id"}
+        _fail_if_p_id_is_not_present(args, orig_location)
+        _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
+        if agg_type == AggType.COUNT:
+            _fail_if_other_arg_is_present(other_args, orig_location)
+            mapper = {
+                "p_id_to_aggregate_by": other_p_ids.pop(),
+                "p_id_to_store_by": "p_id",
+            }
+        else:
+            _fail_if_other_arg_is_invalid(other_args, orig_location)
+            mapper = {
+                "source": other_args.pop(),
+                "p_id_to_aggregate_by": other_p_ids.pop(),
+                "p_id_to_store_by": "p_id",
+            }
+        agg_func = dags.rename_arguments(
+            func=agg_registry[agg_type],
+            mapper=mapper,
+        )
+
+        functools.update_wrapper(agg_func, func)
+        agg_func.__signature__ = inspect.signature(func)
+
+        return AggByPIDFunction(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=agg_func,
+            start_date=start_date,
+            end_date=end_date,
+            vectorization_strategy="not_required",
+            foreign_key_type=FKType.IRRELEVANT,
+            orig_location=f"{func.__module__}.{func.__name__}",
+        )
+
+    return inner
+
+
+def _fail_if_p_id_is_not_present(args: set[str], orig_location: str):
+    if "p_id" not in args:
+        raise ValueError(
+            "The function must have the argument named 'p_id' for aggregation by p_id. "
+            f"Got {', '.join(args) if args else 'nothing'} in {orig_location}."
+        )
+
+
+def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
+    if len(other_p_ids) != 1:
+        raise ValueError(
+            "Require exactly one identifier starting with 'p_id_' for "
+            "aggregation by p_id. Got: "
+            f"{', '.join(other_p_ids) if other_p_ids else 'nothing'} in {orig_location}."  # noqa: E501
+        )
 
 
 @dataclass

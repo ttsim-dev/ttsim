@@ -1,18 +1,18 @@
 from ttsim import (
-    AggregateByPIDSpec,
     AggType,
+    agg_by_p_id_function,
     join_numpy,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="amount_y",
-        source="claim_of_child_y",
-        p_id_to_aggregate_by="p_id_recipient",
-        agg=AggType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def amount_y(
+    p_id: int,
+    p_id_recipient: int,
+    claim_of_child_y: float,
+) -> float:
+    """The amount of child tax credit at the recipient level."""
 
 
 @policy_function()

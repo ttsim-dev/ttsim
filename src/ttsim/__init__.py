@@ -23,6 +23,7 @@ from ttsim.shared import (
 from ttsim.time_conversion import create_time_conversion_functions
 from ttsim.ttsim_objects import (
     AggByGroupFunction,
+    AggByPIDFunction,
     DerivedAggregationFunction,
     DerivedTimeConversionFunction,
     FKType,
@@ -30,6 +31,7 @@ from ttsim.ttsim_objects import (
     PolicyFunction,
     PolicyInput,
     agg_by_group_function,
+    agg_by_p_id_function,
     group_creation_function,
     policy_function,
     policy_input,
@@ -38,6 +40,7 @@ from ttsim.visualization import plot_dag
 
 __all__ = [
     "AggByGroupFunction",
+    "AggByPIDFunction",
     "AggType",
     "AggregateByGroupSpec",
     "AggregateByPIDSpec",
@@ -52,6 +55,7 @@ __all__ = [
     "PolicyInput",
     "RoundingSpec",
     "agg_by_group_function",
+    "agg_by_p_id_function",
     "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
     "create_time_conversion_functions",
