@@ -73,7 +73,6 @@ def combine_policy_functions_and_derived_functions(
     The qualified functions dict with derived functions.
 
     """
-
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         ttsim_objects=ttsim_objects,
@@ -96,6 +95,8 @@ def combine_policy_functions_and_derived_functions(
         top_level_namespace=top_level_namespace,
         groupings=groupings,
     )
+    # Error occurs here -- aggregate_by_group_functions does not respect namespaces.
+    breakpoint()
     current_functions = {**aggregate_by_group_functions, **current_functions}
 
     _fail_if_targets_not_in_functions(functions=current_functions, targets=targets)
