@@ -11,6 +11,14 @@ import dags.tree as dt
 import numpy
 import optree
 
+try:
+    import jax
+    import jax.numpy as jnp
+except ImportError:
+    pass
+
+from _gettsim.config import SUPPORTED_GROUPINGS
+
 if TYPE_CHECKING:
     from ttsim.ttsim_objects import PolicyFunction
     from ttsim.typing import (
