@@ -317,6 +317,7 @@ def _create_one_aggregation_function(
         aggregation_method=aggregation_spec.agg,
         start_date=start_date,
         end_date=end_date,
+        vectorization_strategy="not_required",
     )
 
 

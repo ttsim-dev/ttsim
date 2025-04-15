@@ -343,7 +343,7 @@ def regelsatz_m_bg_arbeitsl_geld_2_params_bis_2010(
             * 2
         )
 
-    return float(out)
+    return out
 
 
 # TODO(@MImmesberger): The regelsatz is already calculated in the ALG2 modules. We
@@ -377,7 +377,7 @@ def regelsatz_m_bg(
     else:
         out = arbeitsl_geld_2_params["regelsatz"][2] * 2
 
-    return float(out)
+    return out
 
 
 @policy_function()

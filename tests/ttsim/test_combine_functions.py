@@ -67,6 +67,10 @@ def function_with_float_return(x: int) -> float:
     return x
 
 
+def identity(x):
+    return x
+
+
 @pytest.mark.parametrize(
     (
         "objects_tree",
@@ -81,7 +85,7 @@ def function_with_float_return(x: int) -> float:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "namespace1": {
-                    "f": policy_function(leaf_name="f")(lambda x_hh: x_hh),
+                    "f": policy_function(leaf_name="f")(identity),
                     "x": x,
                 },
             },
@@ -98,11 +102,7 @@ def function_with_float_return(x: int) -> float:
             {
                 "hh_id": hh_id,
                 "p_id": p_id,
-                "namespace1": {
-                    "f": policy_function(leaf_name="f")(
-                        lambda inputs__x_hh: inputs__x_hh
-                    )
-                },
+                "namespace1": {"f": policy_function(leaf_name="f")(identity)},
                 "inputs": {"x": x},
             },
             {"namespace1": {"f": None}},
@@ -119,7 +119,7 @@ def function_with_float_return(x: int) -> float:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "namespace1": {
-                    "f": policy_function(leaf_name="f")(lambda x: x),
+                    "f": policy_function(leaf_name="f")(identity),
                     "x": x,
                 },
             },
@@ -137,7 +137,7 @@ def function_with_float_return(x: int) -> float:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "namespace1": {
-                    "f": policy_function(leaf_name="f")(lambda y_hh: y_hh),
+                    "f": policy_function(leaf_name="f")(identity),
                     "x": x,
                 },
             },
@@ -162,7 +162,7 @@ def function_with_float_return(x: int) -> float:
             {
                 "hh_id": hh_id,
                 "p_id": p_id,
-                "namespace1": {"f": policy_function(leaf_name="f")(lambda y_hh: y_hh)},
+                "namespace1": {"f": policy_function(leaf_name="f")(identity)},
                 "inputs": {"x": x},
             },
             {"namespace1": {"f": None}},
@@ -219,11 +219,12 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_method="count",
                     start_date=START_DATE,
                     end_date=END_DATE,
+                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -234,11 +235,12 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
+                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -249,11 +251,12 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
+                    vectorization_strategy="not_required",
                 )
             },
             float,
@@ -264,11 +267,12 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=lambda x: x,
+                    function=identity,
                     source="x",
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
+                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -284,6 +288,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
+                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -299,6 +304,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
+                    vectorization_strategy="not_required",
                 )
             },
             float,
@@ -314,6 +320,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
+                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -338,8 +345,8 @@ def test_annotations_for_aggregation(
 @pytest.mark.parametrize(
     "functions, targets, expected_error_match",
     [
-        ({"foo": lambda x: x}, {"bar": None}, "('bar',)"),
-        ({"foo__baz": lambda x: x}, {"foo__bar": None}, "('foo', 'bar')"),
+        ({"foo": identity}, {"bar": None}, "('bar',)"),
+        ({"foo__baz": identity}, {"foo__bar": None}, "('foo', 'bar')"),
     ],
 )
 def test_fail_if_targets_are_not_among_functions(
@@ -437,7 +444,7 @@ def test_annotations_are_applied_to_derived_functions(
     ),
     [
         (
-            {"foo": policy_function(leaf_name="foo")(lambda x_hh: x_hh)},
+            {"foo": policy_function(leaf_name="foo")(identity)},
             {"x": x},
             {},
             {"x": pd.Series([1])},
@@ -446,7 +453,7 @@ def test_annotations_are_applied_to_derived_functions(
             ("x_hh"),
         ),
         (
-            {"n1__foo": policy_function(leaf_name="foo")(lambda n2__x_hh: n2__x_hh)},
+            {"n1__foo": policy_function(leaf_name="foo")(identity)},
             {"hh_id": hh_id, "n2__x": x},
             {},
             {"n2": {"x": pd.Series([1])}},
@@ -464,7 +471,7 @@ def test_annotations_are_applied_to_derived_functions(
             ("x_hh"),
         ),
         (
-            {"foo": policy_function(leaf_name="foo")(lambda x: x)},
+            {"foo": policy_function(leaf_name="foo")(identity)},
             {"hh_id": hh_id, "x": x},
             {},
             {"x": pd.Series([1])},

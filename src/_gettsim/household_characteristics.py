@@ -15,7 +15,7 @@ aggregation_specs = (
 )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def erwachsene_alle_rentenbezieher_hh(
     anzahl_erwachsene_hh: int, anzahl_rentenbezieher_hh: int
 ) -> bool:

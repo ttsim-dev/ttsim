@@ -27,6 +27,7 @@ aggregation_specs = (
 @policy_function(
     end_date="1996-12-31",
     leaf_name="betrag_y_sn",
+    vectorization_strategy="vectorize",
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S. 6 EStG"
     ),
@@ -52,6 +53,7 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
 @policy_function(
     start_date="1997-01-01",
     leaf_name="betrag_y_sn",
+    vectorization_strategy="vectorize",
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
@@ -87,7 +89,7 @@ def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def kinderfreibetrag_günstiger_sn(
     betrag_ohne_kinderfreibetrag_y_sn: float,
     betrag_mit_kinderfreibetrag_y_sn: float,
@@ -236,7 +238,11 @@ def relevantes_kindergeld_mit_staffelung_m(
     return relevantes_kindergeld / 2
 
 
-@policy_function(start_date="2023-01-01", leaf_name="relevantes_kindergeld_m")
+@policy_function(
+    start_date="2023-01-01",
+    leaf_name="relevantes_kindergeld_m",
+    vectorization_strategy="vectorize",
+)
 def relevantes_kindergeld_ohne_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,

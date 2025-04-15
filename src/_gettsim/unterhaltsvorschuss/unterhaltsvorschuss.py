@@ -69,7 +69,7 @@ def betrag_m(
     return out
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def elternteil_alleinerziehend(
     kindergeld__p_id_empfänger: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
@@ -344,7 +344,7 @@ def anspruchshöhe_m_ab_201707(
     return out
 
 
-@policy_function(start_date="2017-01-01", skip_vectorization=True)
+@policy_function(start_date="2017-01-01", vectorization_strategy="not_required")
 def elternteil_mindesteinkommen_erreicht(
     kindergeld__p_id_empfänger: numpy.ndarray[int],
     p_id: numpy.ndarray[int],

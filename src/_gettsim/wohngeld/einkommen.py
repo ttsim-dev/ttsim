@@ -408,7 +408,7 @@ def einkommen(
     unteres_eink = params["min_eink"][min(anzahl_personen, max(params["min_eink"]))]
 
     out = max(eink_nach_abzug_m_hh, unteres_eink)
-    return float(out)
+    return out
 
 
 @policy_function()

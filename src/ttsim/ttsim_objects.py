@@ -26,8 +26,10 @@ from ttsim.aggregation import (
     grouped_min,
     grouped_sum,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import to_datetime, validate_date_range
+from ttsim.vectorization import make_vectorizable
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -81,10 +83,8 @@ class PolicyInput(TTSIMObject):
         The date from which the input is relevant / active (inclusive).
     end_date:
         The date until which the input is relevant / active (inclusive).
-    is_foreign_key_that_may_point_to_self:
-        Whether the input variable must be among `p_id`s and may point to itself.
-    is_foreign_key_that_must_not_point_to_self:
-        Whether the input variable must be among `p_id`s and must not point to itself.
+    foreign_key_type:
+        Whether this is a foreign key and, if so, whether it may point to itself.
     """
 
     data_type: type[float | int | bool]
@@ -141,7 +141,7 @@ class TTSIMFunction(TTSIMObject):
     """
 
     function: Callable
-    skip_vectorization: bool = False
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"]
     foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __call__(self, *args, **kwargs):
@@ -177,8 +177,8 @@ class PolicyFunction(TTSIMFunction):
         The date until which the function is active (inclusive).
     rounding_spec:
         The rounding specification.
-    skip_vectorization:
-        Whether the function should be vectorized.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
     """
 
     rounding_spec: RoundingSpec | None = None
@@ -186,14 +186,18 @@ class PolicyFunction(TTSIMFunction):
     def __post_init__(self):
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         self.function = (
-            self.function if self.skip_vectorization else _vectorize_func(self.function)
+            self.function
+            if self.vectorization_strategy == "not_required"
+            else _vectorize_func(
+                self.function, vectorization_strategy=self.vectorization_strategy
+            )
         )
 
         # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = self.function.__annotations__
-        self.__module__ = self.function.__module__
-        self.__name__ = self.function.__name__
+        functools.update_wrapper(self, self.function)
         self.__signature__ = inspect.signature(self.function)
+        self.__globals__ = self.function.__globals__
+        self.__closure__ = self.function.__closure__
 
     def _fail_if_rounding_has_wrong_type(
         self, rounding_spec: RoundingSpec | None
@@ -238,7 +242,7 @@ def policy_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     rounding_spec: RoundingSpec | None = None,
-    skip_vectorization: bool = False,
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
     foreign_key_type: FKType = FKType.IRRELEVANT,
 ) -> PolicyFunction:
     """
@@ -269,9 +273,8 @@ def policy_function(
         The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
     rounding_spec
         The specification to be used for rounding.
-    skip_vectorization
-        Whether the function is already vectorized and, thus, should not be vectorized
-        again.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
 
     Returns
     -------
@@ -287,25 +290,30 @@ def policy_function(
             start_date=start_date,
             end_date=end_date,
             rounding_spec=rounding_spec,
-            skip_vectorization=skip_vectorization,
+            vectorization_strategy=vectorization_strategy,
             foreign_key_type=foreign_key_type,
         )
 
     return inner
 
 
-def _vectorize_func(func: Callable) -> Callable:
-    # What should work once that Jax backend is fully supported
-    signature = inspect.signature(func)
-    func_vec = numpy.vectorize(func)
-
-    @functools.wraps(func)
-    def wrapper_vectorize_func(*args, **kwargs):
-        return func_vec(*args, **kwargs)
-
-    wrapper_vectorize_func.__signature__ = signature
-
-    return wrapper_vectorize_func
+def _vectorize_func(
+    func: Callable, vectorization_strategy: Literal["loop", "vectorize"]
+) -> Callable:
+    if vectorization_strategy == "loop":
+        vectorized = functools.wraps(func)(numpy.vectorize(func))
+        vectorized.__signature__ = inspect.signature(func)
+        vectorized.__globals__ = func.__globals__
+        vectorized.__closure__ = func.__closure__
+    elif vectorization_strategy == "vectorize":
+        backend = "jax" if IS_JAX_INSTALLED else "numpy"
+        vectorized = make_vectorizable(func, backend=backend)
+    else:
+        raise ValueError(
+            f"Vectorization strategy {vectorization_strategy} is not supported. "
+            "Use 'loop' or 'vectorize'."
+        )
+    return vectorized
 
 
 @dataclass
@@ -356,6 +364,7 @@ def group_creation_function(
             function=func,
             start_date=start_date,
             end_date=end_date,
+            vectorization_strategy="not_required",
         )
 
     return decorator
@@ -382,8 +391,8 @@ class DerivedAggregationFunction(TTSIMFunction):
         The date until which the function is active (inclusive).
     params_key_for_rounding:
         The key in the params dictionary that should be used for rounding.
-    skip_vectorization:
-        Whether the function should be vectorized.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
     """
 
     source: str | None = None
@@ -425,7 +434,7 @@ class AggByGroupFunction(TTSIMFunction):
         Whether the function should be vectorized.
     """
 
-    orig_loc: str = "automatically generated"
+    orig_location: str = "automatically generated"
 
     def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
@@ -473,15 +482,13 @@ def agg_by_group_function(
 
         functools.update_wrapper(agg_func, func)
         agg_func.__signature__ = inspect.signature(func)
-        agg_func.__globals__ = func.__globals__
-        agg_func.__closure__ = func.__closure__
 
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
-            skip_vectorization=False,
+            vectorization_strategy="not_required",
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
         )
@@ -541,8 +548,8 @@ class DerivedTimeConversionFunction(TTSIMFunction):
         The date until which the function is active (inclusive).
     params_key_for_rounding:
         The key in the params dictionary that should be used for rounding.
-    skip_vectorization:
-        Whether the function should be vectorized.
+    vectorization_strategy:
+        Whether and how the function should be vectorized.
     """
 
     source: str | None = None

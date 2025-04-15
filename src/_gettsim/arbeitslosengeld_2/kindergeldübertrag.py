@@ -66,7 +66,7 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     return kindergeld_params["kindergeld"] if kindergeld__anzahl_ansprüche > 0 else 0.0
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def kindergeld_zur_bedarfsdeckung_m(
     kindergeld_pro_kind_m: float,
     kindergeld__p_id_empfänger: numpy.ndarray[int],
@@ -162,7 +162,7 @@ def differenz_kindergeld_kindbedarf_m(
     return out
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def in_anderer_bg_als_kindergeldempfänger(
     p_id: numpy.ndarray[int],
     kindergeld__p_id_empfänger: numpy.ndarray[int],

@@ -123,6 +123,10 @@ def test_dates_active_empty_interval():
 # Conflicts ------------------------------------------------
 
 
+def identity(x):
+    return x
+
+
 @pytest.mark.parametrize(
     "functions",
     [
@@ -131,24 +135,24 @@ def test_dates_active_empty_interval():
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
             policy_function(
                 start_date="2023-02-01",
                 end_date="2023-02-28",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
         ],
         [
             policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
             policy_function(
                 start_date="2023-01-01",
                 end_date="2023-02-28",
                 leaf_name="g",
-            )(lambda x: x),
+            )(identity),
         ],
     ],
 )
@@ -166,36 +170,36 @@ def test_dates_active_no_conflicts(functions):
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
             policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
         ],
         [
             policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
             policy_function(
                 start_date="2021-01-02",
                 end_date="2023-02-01",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
         ],
         [
             policy_function(
                 start_date="2023-01-02",
                 end_date="2023-02-01",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
             policy_function(
                 start_date="2022-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
-            )(lambda x: x),
+            )(identity),
         ],
     ],
 )

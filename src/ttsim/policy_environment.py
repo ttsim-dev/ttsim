@@ -340,7 +340,7 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
     Updated dictionary.
 
     """
-    jahr = float(date.year)
+    jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
             pd.Series(jahr),
@@ -373,7 +373,7 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
 
     """
 
-    jahr = float(date.year)
+    jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
             pd.Series(jahr),

@@ -29,6 +29,10 @@ from ttsim.time_conversion import (
 from ttsim.ttsim_objects import policy_function
 
 
+def return_one() -> int:
+    return 1
+
+
 @pytest.mark.parametrize(
     ("yearly_value", "quarterly_value"),
     [
@@ -274,7 +278,7 @@ class TestCreateFunctionsForTimeUnits:
         self, name: str, expected: list[str]
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            {name: policy_function(leaf_name="test")(lambda: 1)}, {}
+            {name: policy_function(leaf_name="test")(return_one)}, {}
         )
 
         for expected_name in expected:
@@ -282,7 +286,7 @@ class TestCreateFunctionsForTimeUnits:
 
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            {"test1_d": policy_function(leaf_name="test1_d")(lambda: 1)},
+            {"test1_d": policy_function(leaf_name="test1_d")(return_one)},
             {"test2_y": None},
         )
 
@@ -293,7 +297,7 @@ class TestCreateFunctionsForTimeUnits:
         self,
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            {"test_d": policy_function(leaf_name="test_d")(lambda: 1)},
+            {"test_d": policy_function(leaf_name="test_d")(return_one)},
             {"test_y": None},
         )
 

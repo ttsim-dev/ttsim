@@ -35,7 +35,7 @@ def child_eligible(
     return age <= payroll_tax_params["max_age"] and in_same_household_as_recipient
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def in_same_household_as_recipient(
     p_id: int,
     hh_id: int,

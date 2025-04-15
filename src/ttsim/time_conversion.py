@@ -502,6 +502,7 @@ def _create_time_conversion_functions(
                 source=source_name,
                 start_date=function.start_date,
                 end_date=function.end_date,
+                vectorization_strategy="not_required",
             )
 
     return result

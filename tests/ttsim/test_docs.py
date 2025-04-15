@@ -135,7 +135,7 @@ def test_type_hints():  # noqa: PLR0912
     types = {}
 
     for func in _load_internal_functions():  # noqa: F821
-        if func.skip_vectorization:
+        if func.vectorization_strategy == "not_required":
             continue
 
         name = func.leaf_name
