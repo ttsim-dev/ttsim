@@ -281,7 +281,7 @@ class TestCreateFunctionsForTimeUnits:
         time_conversion_functions = create_time_conversion_functions(
             functions=functions,
             data={},
-            policy_inputs={},
+            ttsim_objects=functions,
             groupings=("sn", "hh"),
         )
 
@@ -293,7 +293,7 @@ class TestCreateFunctionsForTimeUnits:
         time_conversion_functions = create_time_conversion_functions(
             functions=functions,
             data={"test2_y": None},
-            policy_inputs={},
+            ttsim_objects=functions,
             groupings=("sn", "hh"),
         )
 
@@ -307,7 +307,7 @@ class TestCreateFunctionsForTimeUnits:
         time_conversion_functions = create_time_conversion_functions(
             functions=functions,
             data={"test_y": None},
-            policy_inputs={},
+            ttsim_objects=functions,
             groupings=("sn", "hh"),
         )
 
@@ -338,7 +338,7 @@ def test_should_not_create_cycle():
     time_conversion_functions = create_time_conversion_functions(
         functions=functions,
         data={},
-        policy_inputs={},
+        ttsim_objects=functions,
         groupings=(),
     )
 

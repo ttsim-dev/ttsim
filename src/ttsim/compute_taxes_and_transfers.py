@@ -30,7 +30,6 @@ from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     FKType,
     GroupCreationFunction,
-    PolicyInput,
     TTSIMFunction,
 )
 
@@ -39,7 +38,6 @@ if TYPE_CHECKING:
         NestedDataDict,
         NestedTargetDict,
         QualNameDataDict,
-        QualNamePolicyInputDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
     )
@@ -94,26 +92,25 @@ def compute_taxes_and_transfers(
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
-    functions: QualNameTTSIMFunctionDict = {}
-    policy_inputs: QualNamePolicyInputDict = {}
-    for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
-        if isinstance(f_or_i, TTSIMFunction):
-            functions[name] = dt.one_function_without_tree_logic(
-                function=f_or_i,
-                tree_path=dt.tree_path_from_qual_name(name),
-                top_level_namespace=top_level_namespace,
-            )
-        elif isinstance(f_or_i, PolicyInput):
-            policy_inputs[name] = f_or_i
-        else:
-            raise TypeError(f"Unknown type: {type(f_or_i)}")
+    # functions: QualNameTTSIMFunctionDict = {}
+    # policy_inputs: QualNamePolicyInputDict = {}
+    # for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
+    #     if isinstance(f_or_i, TTSIMFunction):
+    #         functions[name] = dt.one_function_without_tree_logic(
+    #             function=f_or_i,
+    #             tree_path=dt.tree_path_from_qual_name(name),
+    #             top_level_namespace=top_level_namespace,
+    #         )
+    #     elif isinstance(f_or_i, PolicyInput):
+    #         policy_inputs[name] = f_or_i
+    #     else:
+    #         raise TypeError(f"Unknown type: {type(f_or_i)}")
 
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
-        functions=functions,
+        ttsim_objects=dt.flatten_to_qual_names(environment.raw_objects_tree),
         targets=targets,
         data=data,
-        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
         groupings=groupings,
     )
@@ -442,7 +439,7 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
 
 def _fail_if_foreign_keys_are_invalid_in_data(
     data: QualNameDataDict,
-    policy_inputs: QualNamePolicyInputDict,
+    ttsim_objects: QualNameTTSIMObjectDict,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -453,7 +450,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
 
     valid_ids = set(data["p_id"]) | {-1}
 
-    for fk_name, fk in policy_inputs.items():
+    for fk_name, fk in ttsim_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
         elif fk_name in data:

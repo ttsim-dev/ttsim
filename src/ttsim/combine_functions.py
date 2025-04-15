@@ -39,10 +39,9 @@ if TYPE_CHECKING:
 
 
 def combine_policy_functions_and_derived_functions(
-    functions: QualNameTTSIMFunctionDict,
+    ttsim_objects: QualNameTTSIMObjectDict,
     targets: QualNameTargetList,
     data: QualNameDataDict,
-    policy_inputs: QualNamePolicyInputDict,
     top_level_namespace: set[str],
     groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
@@ -74,9 +73,8 @@ def combine_policy_functions_and_derived_functions(
 
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
-        functions=functions,
+        ttsim_objects=ttsim_objects,
         data=data,
-        policy_inputs=policy_inputs,
         groupings=groupings,
     )
     current_functions = {**time_conversion_functions, **functions}
