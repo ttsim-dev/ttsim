@@ -10,10 +10,7 @@ import optree
 import pandas as pd
 import yaml
 
-from ttsim.loader import (
-    load_aggregation_specs_tree,
-    load_objects_tree_for_date,
-)
+from ttsim.loader import load_objects_tree_for_date
 from ttsim.piecewise_polynomial import (
     _check_thresholds,
     get_piecewise_parameters,
@@ -36,7 +33,6 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         DashedISOString,
-        NestedAggregationSpecDict,
         NestedTTSIMObjectDict,
     )
 
@@ -49,22 +45,16 @@ class PolicyEnvironment:
 
     Parameters
     ----------
-    functions_tree
-        The policy functions tree.
+    raw_objects_tree
+        The pytree of TTSIM objects (policy inputs, policy functions, agg functions).
     params
         A dictionary with policy parameters.
-    aggregation_specs_tree
-        The tree with aggregation specifications for aggregations on group levels
-        (defined in config.py) or aggregations by p_id (defined in config.py). The
-        aggregation tree is a nested dictionary with AggregateByGroupSpec or
-        AggregateByPIDSpec dataclasses as leafs.
     """
 
     def __init__(
         self,
         raw_objects_tree: NestedTTSIMObjectDict,
         params: dict[str, Any] | None = None,
-        aggregation_specs_tree: NestedAggregationSpecDict | None = None,
     ):
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_ttsim_pytree(
@@ -79,9 +69,6 @@ class PolicyEnvironment:
 
         # Read in parameters and aggregation specs
         self._params = params if params is not None else {}
-        self._aggregation_specs_tree = (
-            aggregation_specs_tree if aggregation_specs_tree is not None else {}
-        )
 
     @property
     def raw_objects_tree(self) -> NestedTTSIMObjectDict:
@@ -95,14 +82,6 @@ class PolicyEnvironment:
     def params(self) -> dict[str, Any]:
         """The parameters of the policy environment."""
         return self._params
-
-    @property
-    def aggregation_specs_tree(self) -> NestedAggregationSpecDict:
-        """
-        The tree with aggregation specifications for aggregations on group levels
-        (defined in config.py) or aggregations by p_id.
-        """
-        return self._aggregation_specs_tree
 
     def upsert_objects(
         self, tree_to_upsert: NestedTTSIMObjectDict
@@ -139,7 +118,6 @@ class PolicyEnvironment:
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = new_tree  # noqa: SLF001
         result._params = self._params  # noqa: SLF001
-        result._aggregation_specs_tree = self._aggregation_specs_tree  # noqa: SLF001
 
         return result
 
@@ -160,7 +138,6 @@ class PolicyEnvironment:
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = self._raw_objects_tree  # noqa: SLF001
         result._params = params  # noqa: SLF001
-        result._aggregation_specs_tree = self._aggregation_specs_tree  # noqa: SLF001
 
         return result
 
@@ -215,12 +192,9 @@ def set_up_policy_environment(
         )
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
-    aggregation_specs_tree = load_aggregation_specs_tree(resource_dir=resource_dir)
-
     return PolicyEnvironment(
         functions_tree,
         params,
-        aggregation_specs_tree,
     )
 
 

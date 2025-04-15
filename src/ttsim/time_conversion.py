@@ -20,7 +20,12 @@ if TYPE_CHECKING:
     import re
     from collections.abc import Callable
 
-    from ttsim.typing import QualNameDataDict, QualNameTTSIMFunctionDict
+    from ttsim.typing import (
+        QualNameDataDict,
+        QualNamePolicyInputDict,
+        QualNameTTSIMFunctionDict,
+    )
+
 
 TIME_UNITS = {
     "y": "year",
@@ -383,30 +388,33 @@ _time_conversion_functions = {
 def create_time_conversion_functions(
     functions: QualNameTTSIMFunctionDict,
     data: QualNameDataDict,
+    policy_inputs: QualNamePolicyInputDict,
+    groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
     """
      Create functions that convert variables to different time units.
 
     The time unit of a function is determined by a naming convention:
-    * Functions referring to yearly values end with "_y", or "_y_x" where "x" is a
-        grouping level.
-    * Functions referring to monthly values end with "_m", or "_m_x" where "x" is a
-        grouping level.
-    * Functions referring to weekly values end with "_w", or "_w_x" where "x" is a
-        grouping level.
-    * Functions referring to daily values end with "_d", or "_d_x" where "x" is a
-        grouping level.
 
-    Unless the corresponding function already exists, the following functions are
-    created:
+    * Functions referring to yearly values end with "_y", or "_y_x" where "x" is a
+      grouping level.
+    * Functions referring to monthly values end with "_m", or "_m_x" where "x" is a
+      grouping level.
+    * Functions referring to weekly values end with "_w", or "_w_x" where "x" is a
+      grouping level.
+    * Functions referring to daily values end with "_d", or "_d_x" where "x" is a
+      grouping level.
+
+    Unless the corresponding function already exists, the following will be created:
+
     * For functions referring to yearly values, create monthly, weekly and daily
-    functions.
+      functions.
     * For functions referring to monthly values, create yearly, weekly and daily
-    functions.
+      functions.
     * For functions referring to weekly values, create yearly, monthly and daily
-    functions.
+      functions.
     * For functions referring to daily values, create yearly, monthly and weekly
-    functions.
+      functions.
 
     Parameters
     ----------
@@ -426,7 +434,7 @@ def create_time_conversion_functions(
     for source_name, ttsim_object in functions.items():
         all_time_units = tuple(TIME_UNITS)
         pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-            supported_groupings=SUPPORTED_GROUPINGS,
+            groupings=SUPPORTED_GROUPINGS,
             supported_time_units=all_time_units,
         )
         pattern_specific = pattern_all.fullmatch(source_name)
@@ -437,7 +445,7 @@ def create_time_conversion_functions(
             if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=base_name,
                 supported_time_units=all_time_units,
-                supported_groupings=SUPPORTED_GROUPINGS,
+                groupings=SUPPORTED_GROUPINGS,
             ).fullmatch(data_name):
                 source_name = data_name  # noqa: PLW2901
                 break

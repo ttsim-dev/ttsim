@@ -59,7 +59,7 @@ def execute_test(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

@@ -231,7 +231,7 @@ def test_get_name_of_group_by_id(target_name, group_by_functions, expected):
         get_name_of_group_by_id(
             target_name=target_name,
             group_by_functions=group_by_functions,
-            supported_groupings=("hh", "bg", "eg"),
+            groupings=("hh", "bg", "eg"),
         )
         == expected
     )
@@ -287,7 +287,7 @@ def test_get_name_of_group_by_id_fails(
         get_name_of_group_by_id(
             target_name=target_name,
             group_by_functions=group_by_functions,
-            supported_groupings=("hh", "bg", "eg"),
+            groupings=("hh", "bg", "eg"),
         )
 
 
@@ -295,7 +295,7 @@ def test_get_name_of_group_by_id_fails(
     (
         "base_name",
         "supported_time_conversions",
-        "supported_groupings",
+        "groupings",
         "create_conversions_for_time_units",
         "expected",
     ),
@@ -333,7 +333,7 @@ def test_get_name_of_group_by_id_fails(
 def test_all_variations_of_base_name(
     base_name,
     supported_time_conversions,
-    supported_groupings,
+    groupings,
     create_conversions_for_time_units,
     expected,
 ):
@@ -341,7 +341,7 @@ def test_all_variations_of_base_name(
         all_variations_of_base_name(
             base_name=base_name,
             supported_time_conversions=supported_time_conversions,
-            supported_groupings=supported_groupings,
+            groupings=groupings,
             create_conversions_for_time_units=create_conversions_for_time_units,
         )
         == expected
@@ -352,7 +352,7 @@ def test_all_variations_of_base_name(
     (
         "func_name",
         "supported_time_units",
-        "supported_groupings",
+        "groupings",
         "expected_base_name",
         "expected_time_unit",
         "expected_aggregation",
@@ -370,14 +370,14 @@ def test_all_variations_of_base_name(
 def test_get_re_pattern_for_time_units_and_groupings(
     func_name,
     supported_time_units,
-    supported_groupings,
+    groupings,
     expected_base_name,
     expected_time_unit,
     expected_aggregation,
 ):
     result = get_re_pattern_for_all_time_units_and_groupings(
         supported_time_units=supported_time_units,
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
     match = result.fullmatch(func_name)
     assert match.group("base_name") == expected_base_name
@@ -389,7 +389,7 @@ def test_get_re_pattern_for_time_units_and_groupings(
     (
         "base_name",
         "supported_time_units",
-        "supported_groupings",
+        "groupings",
         "expected_match",
     ),
     [
@@ -399,11 +399,11 @@ def test_get_re_pattern_for_time_units_and_groupings(
     ],
 )
 def test_get_re_pattern_for_some_base_name(
-    base_name, supported_time_units, supported_groupings, expected_match
+    base_name, supported_time_units, groupings, expected_match
 ):
     re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
         base_name=base_name,
         supported_time_units=supported_time_units,
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
     assert re_pattern.fullmatch(expected_match)
