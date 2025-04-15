@@ -15,7 +15,7 @@ from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environmen
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import (
     insert_path_and_value,
-    join_numpy,
+    join,
     merge_trees,
     upsert_path_and_value,
     upsert_tree,
@@ -63,7 +63,7 @@ __all__ = [
     "get_piecewise_parameters",
     "group_creation_function",
     "insert_path_and_value",
-    "join_numpy",
+    "join",
     "load_aggregation_specs_tree",
     "load_objects_tree_for_date",
     "merge_trees",

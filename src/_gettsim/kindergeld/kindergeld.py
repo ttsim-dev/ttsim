@@ -2,7 +2,7 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, AggType, join_numpy, policy_function
+from ttsim import AggregateByPIDSpec, AggType, join, policy_function
 
 aggregation_specs = (
     AggregateByPIDSpec(
@@ -205,7 +205,7 @@ def gleiche_fg_wie_empfänger(
     -------
 
     """
-    fg_id_kindergeldempfänger = join_numpy(
+    fg_id_kindergeldempfänger = join(
         p_id_empfänger,
         p_id,
         arbeitslosengeld_2__fg_id,

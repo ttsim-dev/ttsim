@@ -6,7 +6,7 @@ from ttsim import (
     AggregateByPIDSpec,
     AggType,
     RoundingSpec,
-    join_numpy,
+    join,
     policy_function,
 )
 
@@ -92,7 +92,7 @@ def elternteil_alleinerziehend(
     -------
 
     """
-    return join_numpy(
+    return join(
         foreign_key=kindergeld__p_id_empfänger,
         primary_key=p_id,
         target=familie__alleinerziehend,
@@ -365,7 +365,7 @@ def elternteil_mindesteinkommen_erreicht(
     Returns
     -------
     """
-    return join_numpy(
+    return join(
         kindergeld__p_id_empfänger,
         p_id,
         mindesteinkommen_erreicht,

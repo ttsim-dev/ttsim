@@ -1,7 +1,7 @@
 from ttsim import (
     AggType,
     agg_by_p_id_function,
-    join_numpy,
+    join,
     policy_function,
 )
 
@@ -45,7 +45,7 @@ def in_same_household_as_recipient(
     p_id_recipient: int,
 ) -> bool:
     return (
-        join_numpy(
+        join(
             foreign_key=p_id_recipient,
             primary_key=p_id,
             target=hh_id,

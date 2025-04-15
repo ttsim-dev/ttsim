@@ -8,7 +8,6 @@ import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import dags.tree as dt
-import numpy
 import optree
 
 from ttsim.config import numpy_or_jax
@@ -433,11 +432,11 @@ Out: TypeVar = TypeVar("Out")
 
 
 def join(
-    foreign_key: numpy.ndarray[Key],
-    primary_key: numpy.ndarray[Key],
-    target: numpy.ndarray[Out],
+    foreign_key: numpy_or_jax.ndarray,
+    primary_key: numpy_or_jax.ndarray,
+    target: numpy_or_jax.ndarray,
     value_if_foreign_key_is_missing: Out,
-) -> numpy.ndarray[Out]:
+) -> numpy_or_jax.ndarray:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
     the same index as the primary key. When using Jax, does not work on String Arrays.

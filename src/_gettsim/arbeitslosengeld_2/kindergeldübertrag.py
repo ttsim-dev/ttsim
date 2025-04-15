@@ -2,7 +2,7 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, AggType, join_numpy, policy_function
+from ttsim import AggregateByPIDSpec, AggType, join, policy_function
 
 aggregation_specs = (
     AggregateByPIDSpec(
@@ -94,7 +94,7 @@ def kindergeld_zur_bedarfsdeckung_m(
     -------
 
     """
-    return join_numpy(
+    return join(
         kindergeld__p_id_empfänger,
         p_id,
         kindergeld_pro_kind_m,
