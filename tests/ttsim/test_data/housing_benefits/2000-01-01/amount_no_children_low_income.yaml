@@ -20,7 +20,7 @@ inputs:
     p_id_spouse:
       - 1
       - 0
-    payroll_tax__gross_wage_m:
+    payroll_tax__income__gross_wage_m:
       - 800
       - 0
     payroll_tax__child_tax_credit__p_id_recipient:

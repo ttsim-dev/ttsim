@@ -25,7 +25,7 @@ inputs:
       - 1
       - 0
       - -1
-    payroll_tax__gross_wage_m:
+    payroll_tax__income__gross_wage_m:
       - 1500
       - 0
       - 0
