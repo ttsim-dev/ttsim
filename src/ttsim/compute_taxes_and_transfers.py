@@ -30,6 +30,7 @@ from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     FKType,
     GroupCreationFunction,
+    PolicyInput,
     TTSIMFunction,
 )
 
@@ -37,9 +38,11 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         NestedDataDict,
         NestedTargetDict,
+        NestedTTSIMObjectDict,
         QualNameDataDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
+        QualNameTTSIMObjectDict,
     )
 
 
@@ -92,23 +95,14 @@ def compute_taxes_and_transfers(
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
-    # functions: QualNameTTSIMFunctionDict = {}
-    # policy_inputs: QualNamePolicyInputDict = {}
-    # for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
-    #     if isinstance(f_or_i, TTSIMFunction):
-    #         functions[name] = dt.one_function_without_tree_logic(
-    #             function=f_or_i,
-    #             tree_path=dt.tree_path_from_qual_name(name),
-    #             top_level_namespace=top_level_namespace,
-    #         )
-    #     elif isinstance(f_or_i, PolicyInput):
-    #         policy_inputs[name] = f_or_i
-    #     else:
-    #         raise TypeError(f"Unknown type: {type(f_or_i)}")
+    ttsim_objects = remove_tree_logic_from_objects_tree(
+        environment.raw_objects_tree,
+        top_level_namespace=top_level_namespace,
+    )
 
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
-        ttsim_objects=dt.flatten_to_qual_names(environment.raw_objects_tree),
+        ttsim_objects=ttsim_objects,
         targets=targets,
         data=data,
         top_level_namespace=top_level_namespace,
@@ -221,6 +215,27 @@ def _get_top_level_namespace(
         all_top_level_names.update(all_top_level_names_for_name)
 
     return all_top_level_names
+
+
+def remove_tree_logic_from_objects_tree(
+    objects_tree: NestedTTSIMObjectDict,
+    top_level_namespace: set[str],
+) -> QualNameTTSIMObjectDict:
+    """Remove tree logic from the objects tree.
+
+    Creates a qualified names dict with functions that have qualified arguments only.
+    """
+    qualified_names_dict = dt.flatten_to_qual_names(objects_tree)
+    return {
+        qn: f_or_i
+        if isinstance(f_or_i, PolicyInput)
+        else dt.one_function_without_tree_logic(
+            function=f_or_i,
+            tree_path=dt.tree_path_from_qual_name(qn),
+            top_level_namespace=top_level_namespace,
+        )
+        for qn, f_or_i in qualified_names_dict.items()
+    }
 
 
 def _create_input_data_for_concatenated_function(
