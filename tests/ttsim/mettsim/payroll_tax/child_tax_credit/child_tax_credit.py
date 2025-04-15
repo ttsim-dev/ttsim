@@ -1,6 +1,6 @@
 from ttsim import (
     AggregateByPIDSpec,
-    AggregationType,
+    AggType,
     join_numpy,
     policy_function,
     policy_input,
@@ -12,7 +12,7 @@ aggregation_specs = (
         target="amount_y",
         source="claim_of_child_y",
         p_id_to_aggregate_by="p_id_recipient",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
 )
 

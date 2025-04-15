@@ -9,7 +9,7 @@ import dags.tree as dt
 from ttsim.aggregation import (
     AggregateByGroupSpec,
     AggregateByPIDSpec,
-    AggregationType,
+    AggType,
 )
 from ttsim.shared import (
     format_errors_and_warnings,
@@ -381,7 +381,7 @@ def _create_derived_aggregations_specs(
         if aggregation_specs_needed:
             derived_aggregations_specs[target_name] = AggregateByGroupSpec(
                 target=target_name,
-                agg=AggregationType.SUM,
+                agg=AggType.SUM,
                 source=_get_name_of_aggregation_source(
                     target_name=target_name,
                     top_level_namespace=top_level_namespace,

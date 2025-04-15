@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from mettsim.config import SUPPORTED_GROUPINGS
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     _fail_if_foreign_keys_are_invalid_in_data,
@@ -384,7 +384,7 @@ def test_user_provided_aggregate_by_group_specs():
             AggregateByGroupSpec(
                 target="betrag_m_hh",
                 source="betrag_m",
-                agg=AggregationType.SUM,
+                agg=AggType.SUM,
             ),
         )
     }
@@ -412,7 +412,7 @@ def test_user_provided_aggregate_by_group_specs():
                 "betrag_double_m_hh": AggregateByGroupSpec(
                     target="betrag_double_m_hh",
                     source="betrag_m_double",
-                    agg=AggregationType.MAX,
+                    agg=AggType.MAX,
                 ),
             }
         },
@@ -469,7 +469,7 @@ def test_aggregate_by_group_specs_missing_group_suffix():
             "betrag_agg_m": AggregateByGroupSpec(
                 target="betrag_agg_m",
                 source="betrag_m",
-                agg=AggregationType.SUM,
+                agg=AggType.SUM,
             )
         }
     }
@@ -488,7 +488,7 @@ def test_aggregate_by_group_specs_missing_group_suffix():
 def test_aggregate_by_group_specs_agg_not_impl():
     with pytest.raises(
         TypeError,
-        match="agg must be of type AggregationType, not <class 'str'>",
+        match="agg must be of type AggType, not <class 'str'>",
     ):
         AggregateByGroupSpec(
             target="betrag_agg_m",
@@ -507,7 +507,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func",
-                        agg=AggregationType.SUM,
+                        agg=AggType.SUM,
                     )
                 }
             },
@@ -522,7 +522,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        agg=AggregationType.SUM,
+                        agg=AggType.SUM,
                     )
                 }
             },
@@ -537,7 +537,7 @@ def test_aggregate_by_group_specs_agg_not_impl():
                         target="target_func_m",
                         p_id_to_aggregate_by="hh_id",
                         source="source_func_m",
-                        agg=AggregationType.SUM,
+                        agg=AggType.SUM,
                     )
                 }
             },
@@ -814,7 +814,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                     "foo_hh": AggregateByGroupSpec(
                         target="foo_hh",
                         source="foo",
-                        agg=AggregationType.SUM,
+                        agg=AggType.SUM,
                     ),
                 },
             ),

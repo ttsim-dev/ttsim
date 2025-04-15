@@ -1,4 +1,4 @@
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggregationType
+from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
 from ttsim.combine_functions import combine_policy_functions_and_derived_functions
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
@@ -35,9 +35,9 @@ from ttsim.ttsim_objects import (
 from ttsim.visualization import plot_dag
 
 __all__ = [
+    "AggType",
     "AggregateByGroupSpec",
     "AggregateByPIDSpec",
-    "AggregationType",
     "ConflictingTimeDependentObjectsError",
     "DerivedAggregationFunction",
     "DerivedTimeConversionFunction",

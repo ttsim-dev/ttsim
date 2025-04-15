@@ -8,15 +8,13 @@ import numpy
 
 from ttsim import (
     AggregateByGroupSpec,
-    AggregationType,
+    AggType,
     group_creation_function,
     policy_function,
 )
 
 aggregation_specs = (
-    AggregateByGroupSpec(
-        target="anzahl_personen_ehe", source=None, agg=AggregationType.COUNT
-    ),
+    AggregateByGroupSpec(target="anzahl_personen_ehe", source=None, agg=AggType.COUNT),
 )
 
 

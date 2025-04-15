@@ -2,7 +2,7 @@ from collections import Counter
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, AggregationType, group_creation_function
+from ttsim import AggregateByGroupSpec, AggType, group_creation_function
 
 
 @group_creation_function()
@@ -174,57 +174,53 @@ aggregation_specs = (
     AggregateByGroupSpec(
         target="anzahl_erwachsene_fg",
         source="familie__erwachsen",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_fg",
         source="familie__kind",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_6_fg",
         source="familie__kind_bis_6",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_15_fg",
         source="familie__kind_bis_15",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_erwachsene_bg",
         source="familie__erwachsen",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_bg",
         source="familie__kind",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
-    AggregateByGroupSpec(
-        target="anzahl_personen_bg", source=None, agg=AggregationType.COUNT
-    ),
+    AggregateByGroupSpec(target="anzahl_personen_bg", source=None, agg=AggType.COUNT),
     AggregateByGroupSpec(
         target="anzahl_kinder_bis_17_bg",
         source="familie__kind_bis_17",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByGroupSpec(
         target="alleinerziehend_bg",
         source="familie__alleinerziehend",
-        agg=AggregationType.ANY,
+        agg=AggType.ANY,
     ),
     AggregateByGroupSpec(
         target="anzahl_erwachsene_eg",
         source="familie__erwachsen",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByGroupSpec(
         target="anzahl_kinder_eg",
         source="familie__kind",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
-    AggregateByGroupSpec(
-        target="anzahl_personen_eg", source=None, agg=AggregationType.COUNT
-    ),
+    AggregateByGroupSpec(target="anzahl_personen_eg", source=None, agg=AggType.COUNT),
 )

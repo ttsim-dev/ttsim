@@ -1,19 +1,19 @@
 """Contribution rate to public long-term care insurance."""
 
-from ttsim import AggregateByPIDSpec, AggregationType, policy_function
+from ttsim import AggregateByPIDSpec, AggType, policy_function
 
 aggregation_specs = (
     AggregateByPIDSpec(
         target="anzahl_kinder_bis_24_elternteil_1",
         source="alter_bis_24",
         p_id_to_aggregate_by="einkommensteuer__p_id_kinderfreibetragsempfänger_1",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
     AggregateByPIDSpec(
         target="anzahl_kinder_bis_24_elternteil_2",
         source="alter_bis_24",
         p_id_to_aggregate_by="einkommensteuer__p_id_kinderfreibetragsempfänger_2",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
 )
 

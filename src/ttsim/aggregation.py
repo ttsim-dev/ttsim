@@ -33,7 +33,7 @@ from ttsim.aggregation_numpy import sum_by_p_id as sum_by_p_id_numpy
 from ttsim.config import USE_JAX
 
 
-class AggregationType(StrEnum):
+class AggType(StrEnum):
     """
     Enum for aggregation types.
     """
@@ -55,16 +55,14 @@ class AggregationSpec:
 
     target: str
     source: str | None
-    agg: AggregationType
+    agg: AggType
     _agg_func: Callable = field(init=False)
 
     def __post_init__(self):
-        if not isinstance(self.agg, AggregationType):
-            raise TypeError(
-                f"agg must be of type AggregationType, not {type(self.agg)}"
-            )
+        if not isinstance(self.agg, AggType):
+            raise TypeError(f"agg must be of type AggType, not {type(self.agg)}")
 
-        if self.agg == AggregationType.COUNT and self.source is not None:
+        if self.agg == AggType.COUNT and self.source is not None:
             raise ValueError("COUNT aggregation must not provide a source.")
 
 
@@ -78,13 +76,13 @@ class AggregateByGroupSpec(AggregationSpec):
         super().__post_init__()
 
         aggregation_registry = {
-            AggregationType.SUM: grouped_sum,
-            AggregationType.MEAN: grouped_mean,
-            AggregationType.MAX: grouped_max,
-            AggregationType.MIN: grouped_min,
-            AggregationType.ANY: grouped_any,
-            AggregationType.ALL: grouped_all,
-            AggregationType.COUNT: grouped_count,
+            AggType.SUM: grouped_sum,
+            AggType.MEAN: grouped_mean,
+            AggType.MAX: grouped_max,
+            AggType.MIN: grouped_min,
+            AggType.ANY: grouped_any,
+            AggType.ALL: grouped_all,
+            AggType.COUNT: grouped_count,
         }
 
         func = aggregation_registry.get(self.agg)
@@ -98,7 +96,7 @@ class AggregateByGroupSpec(AggregationSpec):
         return self._agg_func(source, group_by_id)
 
     def mapper(self, group_by_id):
-        if self.agg == AggregationType.COUNT:
+        if self.agg == AggType.COUNT:
             return {"group_by_id": group_by_id}
         return {"source": self.source, "group_by_id": group_by_id}
 
@@ -115,13 +113,13 @@ class AggregateByPIDSpec(AggregationSpec):
         super().__post_init__()
 
         aggregation_registry = {
-            AggregationType.SUM: sum_by_p_id,
-            AggregationType.MEAN: mean_by_p_id,
-            AggregationType.MAX: max_by_p_id,
-            AggregationType.MIN: min_by_p_id,
-            AggregationType.ANY: any_by_p_id,
-            AggregationType.ALL: all_by_p_id,
-            AggregationType.COUNT: count_by_p_id,
+            AggType.SUM: sum_by_p_id,
+            AggType.MEAN: mean_by_p_id,
+            AggType.MAX: max_by_p_id,
+            AggType.MIN: min_by_p_id,
+            AggType.ANY: any_by_p_id,
+            AggType.ALL: all_by_p_id,
+            AggType.COUNT: count_by_p_id,
         }
 
         func = aggregation_registry.get(self.agg)
@@ -135,7 +133,7 @@ class AggregateByPIDSpec(AggregationSpec):
         return self._agg_func(source, p_id_to_aggregate_by, p_id_to_store_by)
 
     def mapper(self):
-        if self.agg == AggregationType.COUNT:
+        if self.agg == AggType.COUNT:
             return {
                 "p_id_to_aggregate_by": self.p_id_to_aggregate_by,
                 "p_id_to_store_by": "p_id",
