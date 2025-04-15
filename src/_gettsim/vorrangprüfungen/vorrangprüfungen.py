@@ -1,17 +1,17 @@
 """Priority checks of transfers against each other."""
 
-from ttsim import AggregateByGroupSpec, AggregationType, policy_function
+from ttsim import AggregateByGroupSpec, AggType, policy_function
 
 aggregation_specs = (
     AggregateByGroupSpec(
         target="wohngeld_vorrang_wthh",
         source="wohngeld_vorrang_vor_arbeitslosengeld_2_bg",
-        agg=AggregationType.ANY,
+        agg=AggType.ANY,
     ),
     AggregateByGroupSpec(
         target="wohngeld_kinderzuschlag_vorrang_wthh",
         source="wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg",
-        agg=AggregationType.ANY,
+        agg=AggType.ANY,
     ),
 )
 

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
     from ttsim.config import numpy_or_jax as np
-    from ttsim.function_types import PolicyInput, TTSIMFunction, TTSIMObject
+    from ttsim.ttsim_objects import PolicyInput, TTSIMFunction, TTSIMObject
 
     NestedTTSIMObjectDict = Mapping[str, TTSIMObject | "NestedTTSIMObjectDict"]
     QualNameTTSIMObjectDict = Mapping[str, TTSIMObject]

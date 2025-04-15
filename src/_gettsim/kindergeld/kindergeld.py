@@ -2,14 +2,14 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
+from ttsim import AggregateByPIDSpec, AggType, join_numpy, policy_function
 
 aggregation_specs = (
     AggregateByPIDSpec(
         target="anzahl_ansprüche",
         p_id_to_aggregate_by="p_id_empfänger",
         source="grundsätzlich_anspruchsberechtigt",
-        agg=AggregationType.SUM,
+        agg=AggType.SUM,
     ),
 )
 

@@ -5,9 +5,9 @@ from pandas._testing import assert_series_equal
 from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
-from ttsim.function_types import policy_function, policy_input
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.rounding import RoundingSpec
+from ttsim.ttsim_objects import policy_function, policy_input
 
 
 @policy_input()
@@ -114,7 +114,6 @@ def test_rounding(rounding_spec, input_values, exp_output):
         data_tree=data,
         environment=environment,
         targets_tree={"namespace": {"test_func": None}},
-        foreign_keys=((),),
         supported_groupings=(),
     )
     assert_series_equal(
@@ -149,7 +148,6 @@ def test_rounding_with_time_conversion():
         data_tree=data,
         environment=environment,
         targets_tree={"test_func_y": None},
-        foreign_keys=((),),
         supported_groupings=(),
     )
     assert_series_equal(
@@ -187,7 +185,6 @@ def test_no_rounding(
         data_tree=data,
         environment=environment,
         targets_tree={"test_func": None},
-        foreign_keys=((),),
         supported_groupings=(),
         rounding=False,
     )

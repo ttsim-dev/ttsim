@@ -15,8 +15,12 @@ if IS_JAX_INSTALLED:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
-from ttsim.function_types import GroupByFunction, PolicyInput, policy_function
 from ttsim.loader import load_objects_tree_for_date
+from ttsim.ttsim_objects import (
+    GroupCreationFunction,
+    PolicyInput,
+    policy_function,
+)
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -383,7 +387,7 @@ for year in range(1990, 2023):
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).values()
-            if not isinstance(pf, GroupByFunction | PolicyInput)
+            if not isinstance(pf, GroupCreationFunction | PolicyInput)
         ],
     )
     @pytest.mark.parametrize("backend", backends)

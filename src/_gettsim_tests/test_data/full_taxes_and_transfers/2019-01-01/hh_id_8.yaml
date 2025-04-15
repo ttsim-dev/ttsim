@@ -22,7 +22,7 @@ inputs:
       - 0.0
     einkommensteuer__abzüge__betreuungskosten_m:
       - 0.0
-    einkommensteuer__abzüge__p_id_betreuungskosten_träger:
+    einkommensteuer__abzüge__p_id_betreuungskostenträger:
       - -1
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
       - 0.0

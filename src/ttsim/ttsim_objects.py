@@ -4,8 +4,10 @@ import datetime
 import functools
 import inspect
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, TypeVar
 
+import dags
 import numpy
 from pandas.api.types import (
     is_bool_dtype,
@@ -14,6 +16,16 @@ from pandas.api.types import (
     is_integer_dtype,
 )
 
+from ttsim.aggregation import (
+    AggType,
+    grouped_all,
+    grouped_any,
+    grouped_count,
+    grouped_max,
+    grouped_mean,
+    grouped_min,
+    grouped_sum,
+)
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import to_datetime, validate_date_range
@@ -31,6 +43,16 @@ T = TypeVar("T")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
 DEFAULT_END_DATE = datetime.date(2100, 12, 31)
+
+
+class FKType(StrEnum):
+    """
+    Enum for foreign key types.
+    """
+
+    IRRELEVANT = "irrelevant"
+    MAY_POINT_TO_SELF = "may point to self"
+    MUST_NOT_POINT_TO_SELF = "must not point to self"
 
 
 @dataclass
@@ -61,15 +83,21 @@ class PolicyInput(TTSIMObject):
         The date from which the input is relevant / active (inclusive).
     end_date:
         The date until which the input is relevant / active (inclusive).
+    is_foreign_key_that_may_point_to_self:
+        Whether the input variable must be among `p_id`s and may point to itself.
+    is_foreign_key_that_must_not_point_to_self:
+        Whether the input variable must be among `p_id`s and must not point to itself.
     """
 
     data_type: type[float | int | bool]
+    foreign_key_type: FKType = FKType.IRRELEVANT
 
 
 def policy_input(
     *,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
+    foreign_key_type: FKType = FKType.IRRELEVANT,
 ) -> PolicyInput:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
@@ -102,6 +130,7 @@ def policy_input(
             data_type=data_type,
             start_date=start_date,
             end_date=end_date,
+            foreign_key_type=foreign_key_type,
         )
 
     return inner
@@ -115,6 +144,7 @@ class TTSIMFunction(TTSIMObject):
 
     function: Callable
     vectorization_strategy: Literal["loop", "vectorize", "not_required"]
+    foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)
@@ -215,6 +245,7 @@ def policy_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     rounding_spec: RoundingSpec | None = None,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
+    foreign_key_type: FKType = FKType.IRRELEVANT,
 ) -> PolicyFunction:
     """
     Decorator that makes a `PolicyFunction` from a function.
@@ -262,6 +293,7 @@ def policy_function(
             end_date=end_date,
             rounding_spec=rounding_spec,
             vectorization_strategy=vectorization_strategy,
+            foreign_key_type=foreign_key_type,
         )
 
     return inner
@@ -287,7 +319,7 @@ def _vectorize_func(
 
 
 @dataclass
-class GroupByFunction(TTSIMFunction):
+class GroupCreationFunction(TTSIMFunction):
     """
     A function that computes endogenous group_by IDs.
 
@@ -316,20 +348,20 @@ class GroupByFunction(TTSIMFunction):
         return set(inspect.signature(self).parameters)
 
 
-def group_by_function(
+def group_creation_function(
     *,
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> GroupByFunction:
+) -> GroupCreationFunction:
     """
     Decorator that creates a group_by function from a function.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def decorator(func: Callable) -> GroupByFunction:
+    def decorator(func: Callable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
-        return GroupByFunction(
+        return GroupCreationFunction(
             leaf_name=_leaf_name,
             function=func,
             start_date=start_date,
@@ -381,6 +413,124 @@ class DerivedAggregationFunction(TTSIMFunction):
         self.__module__ = self.function.__module__
         self.__name__ = self.function.__name__
         self.__signature__ = inspect.signature(self.function)
+
+
+@dataclass
+class AggByGroupFunction(TTSIMFunction):
+    """
+    A function that is an aggregation of another column by some group id.
+
+    Parameters
+    ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    function:
+        The function performing the aggregation.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    params_key_for_rounding:
+        The key in the params dictionary that should be used for rounding.
+    skip_vectorization:
+        Whether the function should be vectorized.
+    """
+
+    def __post_init__(self):
+        if self.aggregation_method is None:
+            raise ValueError("The aggregation method must be specified.")
+        if self.source is None and self.aggregation_method != "count":
+            raise ValueError("The source must be specified.")
+
+        # Expose the signature of the wrapped function for dependency resolution
+        self.__annotations__ = self.function.__annotations__
+        self.__module__ = self.function.__module__
+        self.__name__ = self.function.__name__
+        self.__signature__ = inspect.signature(self.function)
+
+
+def agg_by_group_function(
+    *,
+    leaf_name: str | None = None,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+    agg_type: AggType,
+) -> AggByGroupFunction:
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    agg_registry = {
+        AggType.SUM: grouped_sum,
+        AggType.MEAN: grouped_mean,
+        AggType.MAX: grouped_max,
+        AggType.MIN: grouped_min,
+        AggType.ANY: grouped_any,
+        AggType.ALL: grouped_all,
+        AggType.COUNT: grouped_count,
+    }
+
+    def inner(func: Callable) -> AggByGroupFunction:
+        args = set(inspect.signature(func).parameters)
+        group_id = {p for p in args if p.endswith("_id")}
+        other_arg = args - group_id
+        _fail_if_group_id_is_invalid(group_id, func)
+        if agg_type == AggType.COUNT:
+            _fail_if_other_arg_nonempty(other_arg, func)
+            mapper = {"group_id": group_id.pop()}
+        else:
+            _fail_if_other_arg_is_invalid(other_arg, func)
+            mapper = {"group_id": group_id.pop(), "column": other_arg.pop()}
+
+        agg_func = dags.rename_arguments(
+            func=agg_registry[agg_type],
+            mapper=mapper,
+        )
+        breakpoint()
+        functools.update_wrapper(agg_func, func)
+        agg_func.__signature__ = inspect.signature(func)
+        agg_func.__globals__ = func.__globals__
+        agg_func.__closure__ = func.__closure__
+
+        return AggByGroupFunction(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=agg_func,
+            start_date=start_date,
+            end_date=end_date,
+            skip_vectorization=False,
+            foreign_key_type=FKType.IRRELEVANT,
+            ttsim_object_from_def=func,
+        )
+
+    return inner
+
+
+def _fail_if_group_id_is_invalid(group_id: set[str], func: Callable):
+    if len(group_id) != 1:
+        raise ValueError(
+            "Require exactly one group identifier ending with '_id' for "
+            f"aggregation by group. Got {group_id} in {func.__name__}."
+        )
+
+
+def _fail_if_other_arg_nonempty(other_arg: set[str], func: Callable):
+    if other_arg:
+        raise ValueError(
+            "There must not be another argument besides the group identifier for "
+            f"counting by group. Got {other_arg} in {func.__name__}."
+        )
+
+
+def _fail_if_other_arg_is_invalid(other_arg: set[str], func: Callable):
+    if len(other_arg) != 1:
+        raise ValueError(
+            "There must be exactly one other argument for aggregation by group (other "
+            f"than counting). Got {other_arg} in {func.__name__}."
+        )
+
+
+# def agg_by_pid_function(
+#     agg_type: Literal["count", "sum", "mean", "min", "max", "any", "all"],
+# ) -> AggByPIDFunction:
+#     return decorator
 
 
 @dataclass

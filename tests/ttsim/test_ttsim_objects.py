@@ -1,6 +1,6 @@
 import pytest
 
-from ttsim.function_types import (
+from ttsim.ttsim_objects import (
     PolicyFunction,
     PolicyInput,
     policy_function,
