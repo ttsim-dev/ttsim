@@ -11,8 +11,6 @@ import dags.tree as dt
 import numpy
 import optree
 
-from _gettsim.config import SUPPORTED_GROUPINGS
-
 if TYPE_CHECKING:
     from ttsim.ttsim_objects import PolicyFunction
     from ttsim.typing import (
@@ -420,9 +418,9 @@ def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[st
     return [p for p in parameters if parameters[p].default == parameters[p].empty]
 
 
-def remove_group_suffix(col):
+def remove_group_suffix(col, supported_groupings):
     out = col
-    for g in SUPPORTED_GROUPINGS:
+    for g in supported_groupings:
         out = out.removesuffix(f"_{g}")
 
     return out
