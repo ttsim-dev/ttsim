@@ -170,28 +170,28 @@ def kindersatz_m_ab_2011(
 
     """
 
-    kindersofotzuschl = arbeitsl_geld_2_params.get("kindersofortzuschl", 0.0)
+    kindersofortzuschlag = arbeitsl_geld_2_params.get("kindersofortzuschl", 0.0)
 
     if (
         alter >= arbeitsl_geld_2_params["regelsatz"][6]["min_alter"]
         and alter <= arbeitsl_geld_2_params["regelsatz"][6]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofotzuschl + arbeitsl_geld_2_params["regelsatz"][6]["betrag"]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][6]["betrag"]
     elif (
         alter >= arbeitsl_geld_2_params["regelsatz"][5]["min_alter"]
         and alter <= arbeitsl_geld_2_params["regelsatz"][5]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofotzuschl + arbeitsl_geld_2_params["regelsatz"][5]["betrag"]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][5]["betrag"]
     elif (
         alter >= arbeitsl_geld_2_params["regelsatz"][4]["min_alter"]
         and alter <= arbeitsl_geld_2_params["regelsatz"][4]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofotzuschl + arbeitsl_geld_2_params["regelsatz"][4]["betrag"]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][4]["betrag"]
     elif kindergeld__gleiche_fg_wie_empfänger:  # adult children with parents in FG
-        out = kindersofotzuschl + arbeitsl_geld_2_params["regelsatz"][3]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][3]
     else:
         out = 0.0
 
