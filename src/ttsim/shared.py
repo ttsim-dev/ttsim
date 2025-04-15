@@ -11,12 +11,7 @@ import dags.tree as dt
 import numpy
 import optree
 
-try:
-    import jax
-    import jax.numpy as jnp
-except ImportError:
-    pass
-
+from ttsim.config import numpy_or_jax
 
 if TYPE_CHECKING:
     from ttsim.ttsim_objects import PolicyFunction
@@ -437,7 +432,7 @@ Key: TypeVar = TypeVar("Key")
 Out: TypeVar = TypeVar("Out")
 
 
-def join_numpy(
+def join(
     foreign_key: numpy.ndarray[Key],
     primary_key: numpy.ndarray[Key],
     target: numpy.ndarray[Out],
@@ -445,15 +440,15 @@ def join_numpy(
 ) -> numpy.ndarray[Out]:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
-    the same index as the primary key.
+    the same index as the primary key. When using Jax, does not work on String Arrays.
 
     Parameters
     ----------
-    foreign_key : numpy.ndarray[Key]
+    foreign_key : numpy_or_jax.ndarray[Key]
         The foreign keys.
-    primary_key : numpy.ndarray[Key]
+    primary_key : numpy_or_jax.ndarray[Key]
         The primary keys.
-    target : numpy.ndarray[Out]
+    target : numpy_or_jax.ndarray[Out]
         The targets in the same order as the primary keys.
     value_if_foreign_key_is_missing : Out
         The value to return if no matching primary key is found.
@@ -462,87 +457,20 @@ def join_numpy(
     -------
     The joined array.
     """
-    if len(numpy.unique(primary_key)) != len(primary_key):
-        keys, counts = numpy.unique(primary_key, return_counts=True)
-        duplicate_primary_keys = keys[counts > 1]
-        msg = format_errors_and_warnings(
-            f"Duplicate primary keys: {duplicate_primary_keys}",
-        )
-        raise ValueError(msg)
-
-    invalid_foreign_keys = foreign_key[
-        (foreign_key >= 0) & (~numpy.isin(foreign_key, primary_key))
-    ]
-
-    if len(invalid_foreign_keys) > 0:
-        msg = format_errors_and_warnings(
-            f"Invalid foreign keys: {invalid_foreign_keys}",
-        )
-        raise ValueError(msg)
-
     # For each foreign key and for each primary key, check if they match
     matches_foreign_key = foreign_key[:, None] == primary_key
 
     # For each foreign key, add a column with True at the end, to later fall back to
     # the value for unresolved foreign keys
-    padded_matches_foreign_key = numpy.pad(
+    padded_matches_foreign_key = numpy_or_jax.pad(
         matches_foreign_key, ((0, 0), (0, 1)), "constant", constant_values=True
     )
 
     # For each foreign key, compute the index of the first matching primary key
-    indices = numpy.argmax(padded_matches_foreign_key, axis=1)
+    indices = numpy_or_jax.argmax(padded_matches_foreign_key, axis=1)
 
     # Add the value for unresolved foreign keys at the end of the target array
-    padded_targets = numpy.pad(
-        target, (0, 1), "constant", constant_values=value_if_foreign_key_is_missing
-    )
-
-    # Return the target at the index of the first matching primary key
-    return padded_targets.take(indices)
-
-
-def join_jax(
-    foreign_key: jnp.ndarray[Key],
-    primary_key: jnp.ndarray[Key],
-    target: jnp.ndarray[Out],
-    value_if_foreign_key_is_missing: Out,
-) -> jnp.ndarray[Out]:
-    """
-    Given a foreign key, find the corresponding primary key, and return the target at
-    the same index as the primary key. This is the jax version, it has no input checks
-    and can not work with string arrays. Run the numpy version first to make sure the
-    inputs are correct.
-
-    Parameters
-    ----------
-    foreign_key : jax.numpy.ndarray[Key]
-        The foreign keys.
-    primary_key : jax.numpy.ndarray[Key]
-        The primary keys.
-    target : jax.numpy.ndarray[Out]
-        The targets in the same order as the primary keys.
-    value_if_foreign_key_is_missing : jax.numpy.ndarray[Out]
-        The value to return if no matching primary key is found.
-
-    Returns
-    -------
-    The joined array.
-    """
-
-    # For each foreign key and for each primary key, check if they match
-    matches_foreign_key = foreign_key[:, None] == primary_key
-
-    # For each foreign key, add a column with True at the end, to later fall back to
-    # the value for unresolved foreign keys
-    padded_matches_foreign_key = jnp.pad(
-        matches_foreign_key, ((0, 0), (0, 1)), "constant", constant_values=True
-    )
-
-    # For each foreign key, compute the index of the first matching primary key
-    indices = jnp.argmax(padded_matches_foreign_key, axis=1)
-
-    # Add the value for unresolved foreign keys at the end of the target array
-    padded_targets = jnp.pad(
+    padded_targets = numpy_or_jax.pad(
         target, (0, 1), "constant", constant_values=value_if_foreign_key_is_missing
     )
 

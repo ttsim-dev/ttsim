@@ -1,123 +1,51 @@
-import numpy
 import pytest
 
-try:
-    import jax
-    import jax.numpy as jnp
-except ImportError:
-    pass
+from ttsim.config import numpy_or_jax
 
-from ttsim.shared import join_jax, join_numpy
+from ttsim.shared import join
 
 
 @pytest.mark.parametrize(
     "foreign_key, primary_key, target, value_if_foreign_key_is_missing, expected",
     [
         (
-            numpy.array([1, 2, 3]),
-            numpy.array([1, 2, 3]),
-            numpy.array(["a", "b", "c"]),
-            "d",
-            numpy.array(["a", "b", "c"]),
+            numpy_or_jax.array([1, 2, 3]),
+            numpy_or_jax.array([1, 2, 3]),
+            numpy_or_jax.array([1, 2, 3]),
+            4,
+            numpy_or_jax.array([1, 2, 3]),
         ),
         (
-            numpy.array([3, 2, 1]),
-            numpy.array([1, 2, 3]),
-            numpy.array(["a", "b", "c"]),
-            "d",
-            numpy.array(["c", "b", "a"]),
+            numpy_or_jax.array([3, 2, 1]),
+            numpy_or_jax.array([1, 2, 3]),
+            numpy_or_jax.array([1, 2, 3]),
+            4,
+            numpy_or_jax.array([3, 2, 1]),
         ),
         (
-            numpy.array([1, 1, 1]),
-            numpy.array([1, 2, 3]),
-            numpy.array(["a", "b", "c"]),
-            "d",
-            numpy.array(["a", "a", "a"]),
+            numpy_or_jax.array([1, 1, 1]),
+            numpy_or_jax.array([1, 2, 3]),
+            numpy_or_jax.array([1, 2, 3]),
+            4,
+            numpy_or_jax.array([1, 1, 1]),
         ),
         (
-            numpy.array([-1]),
-            numpy.array([1]),
-            numpy.array(["a"]),
-            "d",
-            numpy.array(["d"]),
+            numpy_or_jax.array([-1]),
+            numpy_or_jax.array([1]),
+            numpy_or_jax.array([1]),
+            4,
+            numpy_or_jax.array([4]),
         ),
     ],
 )
-def test_join_numpy(
-    foreign_key: numpy.ndarray[int],
-    primary_key: numpy.ndarray[int],
-    target: numpy.ndarray[str],
-    value_if_foreign_key_is_missing: str,
-    expected: numpy.ndarray[str],
+def test_join(
+    foreign_key: numpy_or_jax.ndarray,
+    primary_key: numpy_or_jax.ndarray,
+    target: numpy_or_jax.ndarray,
+    value_if_foreign_key_is_missing: int,
+    expected: numpy_or_jax.ndarray,
 ):
-    assert numpy.array_equal(
-        join_numpy(foreign_key, primary_key, target, value_if_foreign_key_is_missing),
+    assert numpy_or_jax.array_equal(
+        join(foreign_key, primary_key, target, value_if_foreign_key_is_missing),
         expected,
     )
-
-
-@pytest.mark.parametrize(
-    "foreign_key, primary_key, target, value_if_foreign_key_is_missing, expected",
-    [
-        (
-            numpy.array([1, 2, 3]),
-            numpy.array([1, 2, 3]),
-            numpy.array([1, 2, 3]),
-            4,
-            numpy.array([1, 2, 3]),
-        ),
-        (
-            numpy.array([3, 2, 1]),
-            numpy.array([1, 2, 3]),
-            numpy.array([1, 2, 3]),
-            4,
-            numpy.array([3, 2, 1]),
-        ),
-        (
-            numpy.array([1, 1, 1]),
-            numpy.array([1, 2, 3]),
-            numpy.array([1, 2, 3]),
-            4,
-            numpy.array([1, 1, 1]),
-        ),
-        (
-            numpy.array([-1]),
-            numpy.array([1]),
-            numpy.array([1]),
-            4,
-            numpy.array([4]),
-        ),
-    ],
-)
-def test_join_jax(
-    foreign_key: numpy.ndarray[int],
-    primary_key: numpy.ndarray[int],
-    target: numpy.ndarray[str],
-    value_if_foreign_key_is_missing: str,
-    expected: numpy.ndarray[str],
-):
-    join_jax_jitted = jax.jit(join_jax)
-    assert numpy.array_equal(
-        join_jax_jitted(
-            jnp.array(foreign_key),
-            jnp.array(primary_key),
-            jnp.array(target),
-            jnp.array(value_if_foreign_key_is_missing),
-        ),
-        jnp.array(expected),
-    )
-
-
-def test_join_numpy_raises_duplicate_primary_key():
-    with pytest.raises(ValueError, match="Duplicate primary keys:"):
-        join_numpy(
-            numpy.array([1, 1, 1]),
-            numpy.array([1, 1, 1]),
-            numpy.array(["a", "b", "c"]),
-            "default",
-        )
-
-
-def test_join_numpy_raises_invalid_foreign_key():
-    with pytest.raises(ValueError, match="Invalid foreign keys:"):
-        join_numpy(numpy.array([2]), numpy.array([1]), numpy.array(["a"]), "d")
