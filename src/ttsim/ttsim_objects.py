@@ -434,7 +434,7 @@ class AggByGroupFunction(TTSIMFunction):
         Whether the function should be vectorized.
     """
 
-    orig_loc: str = "automatically generated"
+    orig_location: str = "automatically generated"
 
     def __post_init__(self):
         # Expose the signature of the wrapped function for dependency resolution
@@ -482,8 +482,6 @@ def agg_by_group_function(
 
         functools.update_wrapper(agg_func, func)
         agg_func.__signature__ = inspect.signature(func)
-        agg_func.__globals__ = func.__globals__
-        agg_func.__closure__ = func.__closure__
 
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
