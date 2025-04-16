@@ -527,7 +527,6 @@ def _create_one_set_of_time_conversion_functions(
             source=qual_name_source,
             start_date=ttsim_object.start_date,
             end_date=ttsim_object.end_date,
-            vectorization_strategy="not_required",
         )
 
     return result

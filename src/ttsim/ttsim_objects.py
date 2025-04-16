@@ -148,7 +148,6 @@ class TTSIMFunction(TTSIMObject):
     """
 
     function: Callable
-    vectorization_strategy: Literal["loop", "vectorize", "not_required"]
     foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __call__(self, *args, **kwargs):
@@ -161,7 +160,10 @@ class TTSIMFunction(TTSIMObject):
 
     @property
     def original_function_name(self) -> str:
-        """The name of the wrapped function."""
+        """The name of the function as defined in the source code.
+
+        I.e., the name before applying the leaf name and removing tree logic.
+        """
         return self.function.__name__
 
 
@@ -184,21 +186,12 @@ class PolicyFunction(TTSIMFunction):
         The date until which the function is active (inclusive).
     rounding_spec:
         The rounding specification.
-    vectorization_strategy:
-        Whether and how the function should be vectorized.
     """
 
     rounding_spec: RoundingSpec | None = None
 
     def __post_init__(self):
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
-        self.function = (
-            self.function
-            if self.vectorization_strategy == "not_required"
-            else _vectorize_func(
-                self.function, vectorization_strategy=self.vectorization_strategy
-            )
-        )
 
         # Expose the signature of the wrapped function for dependency resolution
         functools.update_wrapper(self, self.function)
@@ -282,6 +275,8 @@ def policy_function(
         The specification to be used for rounding.
     vectorization_strategy:
         Whether and how the function should be vectorized.
+    foreign_key_type:
+        Whether this is a foreign key and, if so, whether it may point to itself.
 
     Returns
     -------
@@ -291,13 +286,17 @@ def policy_function(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable) -> PolicyFunction:
+        func = (
+            func
+            if vectorization_strategy == "not_required"
+            else _vectorize_func(func, vectorization_strategy=vectorization_strategy)
+        )
         return PolicyFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
             start_date=start_date,
             end_date=end_date,
             rounding_spec=rounding_spec,
-            vectorization_strategy=vectorization_strategy,
             foreign_key_type=foreign_key_type,
         )
 
@@ -371,7 +370,6 @@ def group_creation_function(
             function=func,
             start_date=start_date,
             end_date=end_date,
-            vectorization_strategy="not_required",
         )
 
     return decorator
@@ -497,7 +495,6 @@ def agg_by_group_function(
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
-            vectorization_strategy="not_required",
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
         )
@@ -616,7 +613,6 @@ def agg_by_p_id_function(
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
-            vectorization_strategy="not_required",
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
         )
@@ -658,10 +654,6 @@ class DerivedTimeConversionFunction(TTSIMFunction):
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    vectorization_strategy:
-        Whether and how the function should be vectorized.
     """
 
     source: str | None = None
