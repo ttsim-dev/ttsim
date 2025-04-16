@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, NewType
+from typing import TYPE_CHECKING, Any, NewType
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     QualNamePolicyInputDict = Mapping[str, PolicyInput]
 
     # Specialise from dags' NestedInputDict to GETTSIM's types.
+    NestedInputToSeriesNameDict = Mapping[str, Any | "NestedInputToSeriesNameDict"]
     NestedDataDict = Mapping[str, pd.Series | "NestedDataDict"]
     QualNameDataDict = Mapping[str, pd.Series]
     NestedArrayDict = Mapping[str, np.ndarray | "NestedArrayDict"]
