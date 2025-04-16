@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import re
 from typing import TYPE_CHECKING
 
 import dags
@@ -10,9 +9,12 @@ from dags import rename_arguments
 
 from ttsim.aggregation import grouped_sum
 from ttsim.shared import (
+    fail_if_multiple_time_units_for_same_base_name_and_group,
+    get_base_name_and_grouping_suffix,
     get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
+    group_pattern,
 )
 from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
@@ -24,6 +26,7 @@ from ttsim.ttsim_objects import (
 )
 
 if TYPE_CHECKING:
+    import re
     from collections.abc import Callable
 
     from ttsim.typing import (
@@ -441,36 +444,34 @@ def create_time_conversion_functions(
         time_units=all_time_units,
     )
 
-    base_names_to_time_conversion_inputs = {}
-    base_names_to_variations = {}
+    bngs_to_time_conversion_inputs = {}
+    bngs_to_variations = {}
     for qual_name, ttsim_object in ttsim_objects.items():
         match = pattern_all.fullmatch(qual_name)
-        base_name = match.group("base_name")
+        # We must not find multiple time units for the same base name and group.
+        bngs = get_base_name_and_grouping_suffix(match)
         if match.group("time_unit"):
-            if base_name in base_names_to_variations:
-                (base_names_to_variations[base_name].append(qual_name),)
+            if bngs not in bngs_to_variations:
+                bngs_to_variations[bngs] = [qual_name]
             else:
-                base_names_to_variations[base_name] = [qual_name]
-            base_names_to_time_conversion_inputs[base_name] = {
-                "base_name": base_name,
+                bngs_to_variations[bngs].append(qual_name)
+            bngs_to_time_conversion_inputs[bngs] = {
+                "base_name": bngs[0],
                 "qual_name_source": qual_name,
                 "ttsim_object": ttsim_object,
                 "time_unit": match.group("time_unit"),
-                "aggregation_suffix": f"_{match.group('aggregation')}"
-                if match.group("aggregation")
-                else "",
+                "grouping_suffix": bngs[1],
                 "all_time_units": all_time_units,
             }
 
-    # FixMe: Commented out for a moment.
-    # _fail_if_multiple_time_units_for_same_base_name(base_names_to_variations)
+    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
     converted_ttsim_objects = {}
-    for base_name, inputs in base_names_to_time_conversion_inputs.items():
+    for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for qual_name_data in data:
             # If base_name is in provided data, base time conversions on that.
             if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
-                base_name=base_name,
+                base_name=bngs[0],
                 all_time_units=all_time_units,
                 groupings=groupings,
             ).fullmatch(qual_name_data):
@@ -481,18 +482,12 @@ def create_time_conversion_functions(
         variations = _create_one_set_of_time_conversion_functions(**inputs)
         for der_name in variations:
             if der_name in converted_ttsim_objects or der_name in data:
-                raise ValueError("Fixme, I should not be here -- left for debugging")
+                raise ValueError(
+                    "Fixme, should never end up here -- left for debugging"
+                )
         converted_ttsim_objects = {**converted_ttsim_objects, **variations}
 
     return converted_ttsim_objects
-
-
-def _fail_if_multiple_time_units_for_same_base_name(
-    base_names_to_variations: dict[str, list[str]],
-) -> None:
-    invalid = {b: q for b, q in base_names_to_variations.items() if len(q) > 1}
-    if invalid:
-        raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
 def _create_one_set_of_time_conversion_functions(
@@ -500,7 +495,7 @@ def _create_one_set_of_time_conversion_functions(
     qual_name_source: str,
     ttsim_object: TTSIMObject,
     time_unit: str,
-    aggregation_suffix: str,
+    grouping_suffix: str,
     all_time_units: tuple[str, ...],
 ) -> dict[str, DerivedTimeConversionFunction]:
     result: dict[str, DerivedTimeConversionFunction] = {}
@@ -511,7 +506,7 @@ def _create_one_set_of_time_conversion_functions(
     )
 
     for target_time_unit in [tu for tu in all_time_units if tu != time_unit]:
-        new_name = f"{base_name}_{target_time_unit}{aggregation_suffix}"
+        new_name = f"{base_name}_{target_time_unit}{grouping_suffix}"
 
         # Without this check, we could create cycles in the DAG: Consider a
         # hard-coded function `var_y` that takes `var_m` as an input, assuming it
@@ -557,21 +552,19 @@ def create_agg_by_group_functions(
     targets: QualNameTargetList,
     groupings: tuple[str, ...],
 ) -> QualNameTTSIMFunctionDict:
-    group_pattern = re.compile(
-        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
-    )
+    gp = group_pattern(groupings)
     all_functions_and_data = {**ttsim_functions_with_time_conversions, **data}
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.
-        *[t for t in targets if group_pattern.match(t)],
+        *[t for t in targets if gp.match(t)],
         *_get_potential_agg_by_group_function_names_from_function_arguments(
             functions=ttsim_functions_with_time_conversions,
-            group_pattern=group_pattern,
+            group_pattern=gp,
         ),
     }
     # We will only aggregate from individual-level objects.
     potential_agg_by_group_sources = {
-        qn: o for qn, o in all_functions_and_data.items() if not group_pattern.match(qn)
+        qn: o for qn, o in all_functions_and_data.items() if not gp.match(qn)
     }
     # Exclude objects that have been explicitly provided.
     agg_by_group_function_names = {
@@ -581,7 +574,7 @@ def create_agg_by_group_functions(
     }
     out = {}
     for abgfn in agg_by_group_function_names:
-        match = group_pattern.match(abgfn)
+        match = gp.match(abgfn)
         base_name_with_time_unit = match.group("base_name_with_time_unit")
         if base_name_with_time_unit in potential_agg_by_group_sources:
             group_id = f"{match.group('group')}_id"

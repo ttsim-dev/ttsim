@@ -240,7 +240,6 @@ class PolicyFunction(TTSIMFunction):
         top_level_namespace: set[str],
     ) -> PolicyFunction:
         """Remove tree logic from the function and update the function signature."""
-
         return PolicyFunction(
             leaf_name=self.leaf_name,
             function=dt.one_function_without_tree_logic(

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import inspect
-import itertools
 import re
 import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -49,8 +48,8 @@ def get_re_pattern_for_all_time_units_and_groupings(
     The pattern matches strings in any of these formats:
     - <base_name>  (may contain underscores)
     - <base_name>_<time_unit>
-    - <base_name>_<aggregation>
-    - <base_name>_<time_unit>_<aggregation>
+    - <base_name>_<grouping>
+    - <base_name>_<time_unit>_<grouping>
 
     Parameters
     ----------
@@ -69,8 +68,14 @@ def get_re_pattern_for_all_time_units_and_groupings(
     return re.compile(
         f"(?P<base_name>.*?)"
         f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
         f"$"
+    )
+
+
+def group_pattern(groupings: tuple[str, ...]) -> re.Pattern:
+    return re.compile(
+        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
     )
 
 
@@ -84,8 +89,8 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     The pattern matches strings in any of these formats:
     - <specific_base_name>
     - <specific_base_name>_<time_unit>
-    - <specific_base_name>_<aggregation>
-    - <specific_base_name>_<time_unit>_<aggregation>
+    - <specific_base_name>_<grouping>
+    - <specific_base_name>_<time_unit>_<grouping>
 
     Parameters
     ----------
@@ -106,63 +111,26 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     return re.compile(
         f"(?P<base_name>{re.escape(base_name)})"
         f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
         f"$"
     )
 
 
-def all_variations_of_base_name(
-    base_name: str,
-    time_units: tuple[str],
-    groupings: list[str],
-    create_conversions_for_time_units: bool,
-) -> set[str]:
-    """Get possible derived function names given a base function name.
-
-    Examples
-    --------
-    >>> all_variations_of_base_name(
-        base_name="income",
-        time_units=("y", "m"),
-        groupings=["hh"],
-        create_conversions_for_time_units=True,
+def get_base_name_and_grouping_suffix(match: re.Match) -> tuple[str, str]:
+    return (
+        match.group("base_name"),
+        f"_{match.group('grouping')}" if match.group("grouping") else "",
     )
-    {'income_m', 'income_y', 'income_hh_y', 'income_hh_m'}
 
-    >>> all_variations_of_base_name(
-        base_name="claims_benefits",
-        time_units=("y", "m"),
-        groupings=["hh"],
-        create_conversions_for_time_units=False,
-    )
-    {'claims_benefits_hh'}
 
-    Parameters
-    ----------
-    base_name
-        The base function name.
-    time_units
-        The supported time conversions.
-    groupings
-        The supported groupings.
-    create_conversions_for_time_units
-        Whether to create conversions for time units.
-
-    Returns
-    -------
-    The names of all potential targets based on the base name.
-    """
-    result = set()
-    if create_conversions_for_time_units:
-        for time_unit in time_units:
-            result.add(f"{base_name}_{time_unit}")
-        for time_unit, aggregation in itertools.product(time_units, groupings):
-            result.add(f"{base_name}_{time_unit}_{aggregation}")
-    else:
-        result.add(base_name)
-        for aggregation in groupings:
-            result.add(f"{base_name}_{aggregation}")
-    return result
+def fail_if_multiple_time_units_for_same_base_name_and_group(
+    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
+) -> None:
+    invalid = {
+        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
+    }
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
 class KeyErrorMessage(str):

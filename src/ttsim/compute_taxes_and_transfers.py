@@ -18,13 +18,15 @@ from ttsim.combine_functions import (
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
-    all_variations_of_base_name,
     assert_valid_ttsim_pytree,
+    fail_if_multiple_time_units_for_same_base_name_and_group,
     format_errors_and_warnings,
     format_list_linewise,
+    get_base_name_and_grouping_suffix,
     get_name_of_group_by_id,
     get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
+    group_pattern,
     merge_trees,
     partition_by_reference_dict,
 )
@@ -218,25 +220,32 @@ def _get_top_level_namespace(
     """
     direct_top_level_names = set(environment.raw_objects_tree.keys())
 
-    re_pattern = get_re_pattern_for_all_time_units_and_groupings(
+    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         groupings=groupings,
         time_units=time_units,
     )
 
-    all_top_level_names = set()
-    group_ids_outside_top_level_namespace = set()
+    all_top_level_names = direct_top_level_names.copy()
+    bngs_to_variations = {}
     for name in direct_top_level_names:
-        match = re_pattern.fullmatch(name)
-        base_name = match.group("base_name")
-        create_conversions_for_time_units = bool(match.group("time_unit"))
+        match = pattern_all.fullmatch(name)
+        # We must not find multiple time units for the same base name and group.
+        bngs = get_base_name_and_grouping_suffix(match)
+        if match.group("time_unit"):
+            if bngs not in bngs_to_variations:
+                bngs_to_variations[bngs] = [name]
+            else:
+                bngs_to_variations[bngs].append(name)
+            for time_unit in time_units:
+                all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
+    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-        all_top_level_names_for_name = all_variations_of_base_name(
-            base_name=base_name,
-            time_units=time_units,
-            groupings=groupings,
-            create_conversions_for_time_units=create_conversions_for_time_units,
-        )
-        all_top_level_names.update(all_top_level_names_for_name)
+    gp = group_pattern(groupings)
+    potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
+
+    for name in potential_base_names:
+        for g in groupings:
+            all_top_level_names.add(f"{name}_{g}")
 
     return all_top_level_names
 
