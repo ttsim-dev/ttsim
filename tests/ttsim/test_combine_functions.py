@@ -78,7 +78,7 @@ def function_with_float_return(x: int) -> float:
     return x
 
 
-def input_x(x):
+def some_x(x):
     return x
 
 
@@ -139,7 +139,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(input_x),
+                    "f": policy_function(leaf_name="f")(some_x),
                     "x": x,
                 },
             },
@@ -156,7 +156,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(input_x),
+                    "f": policy_function(leaf_name="f")(some_x),
                     "x": x,
                 },
                 "y_hh": y_hh,
@@ -220,7 +220,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=input_x,
+                    function=some_x,
                     source="x",
                     aggregation_method="count",
                     start_date=START_DATE,
@@ -235,7 +235,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=input_x,
+                    function=some_x,
                     source="x",
                     aggregation_method="sum",
                     start_date=START_DATE,
@@ -250,7 +250,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=input_x,
+                    function=some_x,
                     source="x",
                     aggregation_method="sum",
                     start_date=START_DATE,
@@ -265,7 +265,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
             {
                 "foo": DerivedAggregationFunction(
                     leaf_name="foo",
-                    function=input_x,
+                    function=some_x,
                     source="x",
                     aggregation_method="sum",
                     start_date=START_DATE,
@@ -339,8 +339,8 @@ def test_annotations_for_aggregation(
 @pytest.mark.parametrize(
     "functions, targets, expected_error_match",
     [
-        ({"foo": input_x}, {"bar": None}, "('bar',)"),
-        ({"foo__baz": input_x}, {"foo__bar": None}, "('foo', 'bar')"),
+        ({"foo": some_x}, {"bar": None}, "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, "('foo', 'bar')"),
     ],
 )
 def test_fail_if_targets_are_not_among_functions(
