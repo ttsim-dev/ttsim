@@ -13,12 +13,12 @@ from ttsim import AggType, agg_by_group_function, policy_function
 
 
 @agg_by_group_function(agg_type=AggType.SUM, start_date="2020-01-01")
-def number_of_adults_fam(payroll_tax__fam_id: int, adult: bool) -> int:
+def number_of_adults_fam(fam_id: int, adult: bool) -> int:
     """The number of adults in the family."""
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
-def number_of_individuals_fam(payroll_tax__fam_id: int) -> int:
+def number_of_individuals_fam(fam_id: int) -> int:
     """The number of individuals in the family."""
 
 

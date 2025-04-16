@@ -7,15 +7,16 @@ These information are used throughout modules of gettsim.
 import numpy
 
 from ttsim import (
-    AggregateByGroupSpec,
     AggType,
+    agg_by_group_function,
     group_creation_function,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByGroupSpec(target="anzahl_personen_ehe", source=None, agg=AggType.COUNT),
-)
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_ehe(ehe_id: int) -> int:
+    pass
 
 
 @policy_function()

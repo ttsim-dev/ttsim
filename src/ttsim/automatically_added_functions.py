@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import inspect
+import re
 from typing import TYPE_CHECKING
 
+import dags
 import dags.tree as dt
 from dags import rename_arguments
 
+from ttsim.aggregation import grouped_sum
 from ttsim.shared import (
+    get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
 )
 from ttsim.ttsim_objects import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
+    AggByGroupFunction,
     DerivedTimeConversionFunction,
     TTSIMFunction,
     TTSIMObject,
@@ -21,12 +28,13 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         QualNameDataDict,
+        QualNameTargetList,
         QualNameTTSIMFunctionDict,
         QualNameTTSIMObjectDict,
     )
 
 
-TIME_UNITS = {
+TIME_UNIT_LABELS = {
     "y": "year",
     "q": "quarter",
     "m": "month",
@@ -427,10 +435,10 @@ def create_time_conversion_functions(
     The functions dict with the new time conversion functions.
     """
 
-    all_time_units = tuple(TIME_UNITS)
+    all_time_units = tuple(TIME_UNIT_LABELS)
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         groupings=groupings,
-        supported_time_units=all_time_units,
+        time_units=all_time_units,
     )
 
     base_names_to_time_conversion_inputs = {}
@@ -540,3 +548,73 @@ def _create_function_for_time_unit(
         return converter(x)
 
     return func
+
+
+def create_agg_by_group_functions(
+    ttsim_functions_with_time_conversions: QualNameTTSIMObjectDict,
+    data: QualNameDataDict,
+    targets: QualNameTargetList,
+    groupings: tuple[str, ...],
+) -> QualNameTTSIMFunctionDict:
+    group_pattern = re.compile(
+        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
+    )
+    all_functions_and_data = {**ttsim_functions_with_time_conversions, **data}
+    potential_agg_by_group_function_names = {
+        # Targets that end with a grouping suffix are potential aggregation targets.
+        *[t for t in targets if group_pattern.match(t)],
+        *_get_potential_agg_by_group_function_names_from_function_arguments(
+            functions=ttsim_functions_with_time_conversions,
+            group_pattern=group_pattern,
+        ),
+    }
+    # We will only aggregate from individual-level objects.
+    potential_agg_by_group_sources = {
+        qn: o for qn, o in all_functions_and_data.items() if not group_pattern.match(qn)
+    }
+    # Exclude objects that have been explicitly provided.
+    agg_by_group_function_names = {
+        t
+        for t in potential_agg_by_group_function_names
+        if t not in all_functions_and_data
+    }
+    out = {}
+    for abgfn in agg_by_group_function_names:
+        match = group_pattern.match(abgfn)
+        base_name_with_time_unit = match.group("base_name_with_time_unit")
+        if base_name_with_time_unit in potential_agg_by_group_sources:
+            group_id = f"{match.group('group')}_id"
+            agg_func = dags.rename_arguments(
+                func=grouped_sum,
+                mapper={"group_id": group_id, "column": base_name_with_time_unit},
+            )
+            out[abgfn] = AggByGroupFunction(
+                leaf_name=dt.tree_path_from_qual_name(abgfn)[-1],
+                function=agg_func,
+                start_date=DEFAULT_START_DATE,
+                end_date=DEFAULT_END_DATE,
+            )
+    return out
+
+
+def _get_potential_agg_by_group_function_names_from_function_arguments(
+    functions: QualNameTTSIMFunctionDict,
+    group_pattern: re.Pattern,
+) -> set[str]:
+    """Get potential aggregation function names from function arguments.
+
+    Parameters
+    ----------
+    functions
+        Dictionary containing functions to build the DAG.
+
+    Returns
+    -------
+    Set of potential aggregation targets.
+    """
+    all_names = {
+        name
+        for func in functions.values()
+        for name in get_names_of_required_arguments(func)
+    }
+    return {n for n in all_names if group_pattern.match(n)}

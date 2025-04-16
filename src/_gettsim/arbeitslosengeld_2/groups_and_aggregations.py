@@ -2,7 +2,7 @@ from collections import Counter
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, AggType, group_creation_function
+from ttsim import AggType, agg_by_group_function, group_creation_function
 
 
 @group_creation_function()
@@ -170,57 +170,61 @@ def eg_id(
 
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
-aggregation_specs = (
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_fg",
-        source="familie__erwachsen",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_fg",
-        source="familie__kind",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_6_fg",
-        source="familie__kind_bis_6",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_15_fg",
-        source="familie__kind_bis_15",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_bg",
-        source="familie__erwachsen",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bg",
-        source="familie__kind",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(target="anzahl_personen_bg", source=None, agg=AggType.COUNT),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_17_bg",
-        source="familie__kind_bis_17",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="alleinerziehend_bg",
-        source="familie__alleinerziehend",
-        agg=AggType.ANY,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_eg",
-        source="familie__erwachsen",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_eg",
-        source="familie__kind",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(target="anzahl_personen_eg", source=None, agg=AggType.COUNT),
-)
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_erwachsene_fg(familie__erwachsen: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_fg(familie__kind: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_6_fg(familie__kind_bis_6: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_15_fg(familie__kind_bis_15: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_erwachsene_bg(familie__erwachsen: bool, bg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bg(familie__kind: bool, bg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_bg(bg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_17_bg(familie__kind_bis_17: bool, bg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.ANY)
+def alleinerziehend_bg(familie__alleinerziehend: bool, bg_id: int) -> bool:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_erwachsene_eg(familie__erwachsen: bool, eg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_eg(familie__kind: bool, eg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_eg(eg_id: int) -> int:
+    pass

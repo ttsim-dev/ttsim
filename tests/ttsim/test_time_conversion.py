@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from ttsim.time_conversion import (
+from ttsim.automatically_added_functions import (
     _create_function_for_time_unit,
     create_time_conversion_functions,
     d_to_m,

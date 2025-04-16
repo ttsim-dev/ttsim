@@ -21,7 +21,7 @@ def test_full_taxes_transfers(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
 
@@ -33,7 +33,7 @@ def test_data_types(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_types_input_variables = {
@@ -71,5 +71,5 @@ def test_allow_none_as_target_tree(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=None,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )

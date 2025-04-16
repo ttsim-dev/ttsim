@@ -1,4 +1,5 @@
 from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
+from ttsim.automatically_added_functions import create_time_conversion_functions
 from ttsim.combine_functions import combine_policy_functions_and_derived_functions
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
@@ -19,7 +20,6 @@ from ttsim.shared import (
     upsert_path_and_value,
     upsert_tree,
 )
-from ttsim.time_conversion import create_time_conversion_functions
 from ttsim.ttsim_objects import (
     AggByGroupFunction,
     AggByPIDFunction,

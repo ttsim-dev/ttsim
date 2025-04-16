@@ -75,7 +75,7 @@ def execute_test(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -87,7 +87,7 @@ def execute_test(test: PolicyTest):
         assert_frame_equal(
             result_dataframe,
             expected_dataframe,
-            atol=test.info["precision"],
+            atol=test.info["precision_atol"],
             check_dtype=False,
         )
 

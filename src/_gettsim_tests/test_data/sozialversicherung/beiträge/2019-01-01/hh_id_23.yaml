@@ -1,7 +1,7 @@
 ---
 info:
   note: based on www.tk.de calculator with modifications to the kv-zusatzbeitrag
-  precision: 1
+  precision_atol: 1
   source: ''
 inputs:
   assumed: {}

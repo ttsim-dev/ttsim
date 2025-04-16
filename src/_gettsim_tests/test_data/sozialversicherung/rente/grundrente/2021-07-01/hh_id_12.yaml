@@ -1,7 +1,7 @@
 ---
 info:
   note: Person with zero Grundrente Bewertungszeiten
-  precision: 1
+  precision_atol: 1
   source: ''
 inputs:
   assumed: {}
