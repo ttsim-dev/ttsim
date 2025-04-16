@@ -59,7 +59,7 @@ class PolicyTest:
         return dt.unflatten_from_tree_paths(flat_target_structure)
 
     @property
-    def test_name(self) -> str:
+    def name(self) -> str:
         return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
 
@@ -94,7 +94,7 @@ def execute_test(test: PolicyTest):
 
 def get_policy_test_ids_and_cases() -> dict[str, PolicyTest]:
     all_policy_tests = load_policy_test_data("")
-    return {policy_test.test_name: policy_test for policy_test in all_policy_tests}
+    return {policy_test.name: policy_test for policy_test in all_policy_tests}
 
 
 def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
