@@ -8,6 +8,7 @@ import pytest
 from mettsim.config import SUPPORTED_GROUPINGS
 
 from ttsim.aggregation import AggregateByGroupSpec, AggType
+from ttsim.automatically_added_functions import TIME_UNITS
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     _fail_if_foreign_keys_are_invalid_in_data,
@@ -20,7 +21,6 @@ from ttsim.compute_taxes_and_transfers import (
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.shared import assert_valid_ttsim_pytree, merge_trees
-from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     agg_by_group_function,
     agg_by_p_id_function,

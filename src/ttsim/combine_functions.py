@@ -11,20 +11,22 @@ from ttsim.aggregation import (
     AggregateByPIDSpec,
     AggType,
 )
+from ttsim.automatically_added_functions import (
+    create_agg_by_group_functions,
+    create_time_conversion_functions,
+)
 from ttsim.shared import (
     format_errors_and_warnings,
     format_list_linewise,
     get_name_of_group_by_id,
-    get_names_of_arguments_without_defaults,
+    get_names_of_required_arguments,
     remove_group_suffix,
 )
-from ttsim.time_conversion import create_time_conversion_functions
 from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     DerivedAggregationFunction,
     GroupCreationFunction,
-    PolicyInput,
     TTSIMFunction,
 )
 
@@ -84,14 +86,10 @@ def combine_policy_functions_and_derived_functions(
         **time_conversion_functions,
     }
     # Create aggregation functions by group.
-    aggregate_by_group_functions = _create_aggregate_by_group_functions(
-        functions=current_functions,
-        targets=targets,
+    aggregate_by_group_functions = create_agg_by_group_functions(
+        ttsim_functions_with_time_conversions=current_functions,
         data=data,
-        policy_inputs={
-            qn: f for qn, f in ttsim_objects.items() if isinstance(f, PolicyInput)
-        },
-        top_level_namespace=top_level_namespace,
+        targets=targets,
         groupings=groupings,
     )
     current_functions = {**aggregate_by_group_functions, **current_functions}
@@ -166,32 +164,20 @@ def _create_aggregation_functions(
         if isinstance(func, GroupCreationFunction)
     }
 
-    expected_aggregation_spec_type = (
-        AggregateByGroupSpec if aggregation_type == "group" else AggregateByPIDSpec
-    )
-
     aggregation_functions = {}
     for qual_name_target, aggregation_spec in aggregation_functions_to_create.items():
-        # Skip if aggregation spec is not the current aggregation type
-        if not isinstance(aggregation_spec, expected_aggregation_spec_type):
-            continue
-
-        if aggregation_type == "group":
-            group_by_id_name = get_name_of_group_by_id(
-                target_name=qual_name_target,
-                group_by_functions=group_by_functions,
-                groupings=groupings,
+        group_by_id_name = get_name_of_group_by_id(
+            target_name=qual_name_target,
+            group_by_functions=group_by_functions,
+            groupings=groupings,
+        )
+        if not group_by_id_name:
+            msg = format_errors_and_warnings(
+                "Name of aggregated column needs to have a suffix "
+                "indicating the group over which it is aggregated. "
+                f"{dt.tree_path_from_qual_name(qual_name_target)} does not do so."
             )
-            if not group_by_id_name:
-                msg = format_errors_and_warnings(
-                    "Name of aggregated column needs to have a suffix "
-                    "indicating the group over which it is aggregated. "
-                    f"{dt.tree_path_from_qual_name(qual_name_target)} does not do so."
-                )
-                raise ValueError(msg)
-
-        else:
-            group_by_id_name = None
+            raise ValueError(msg)
 
         derived_func = _create_one_aggregation_function(
             aggregation_target=qual_name_target,
@@ -383,7 +369,7 @@ def _get_potential_aggregation_function_names_from_function_arguments(
     """
     current_set = set()
     for func in functions.values():
-        for name in get_names_of_arguments_without_defaults(func):
+        for name in get_names_of_required_arguments(func):
             current_set.add(name)
     return current_set
 

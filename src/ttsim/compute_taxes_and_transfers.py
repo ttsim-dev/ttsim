@@ -10,6 +10,7 @@ import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
+from ttsim.automatically_added_functions import TIME_UNITS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
@@ -21,12 +22,11 @@ from ttsim.shared import (
     format_errors_and_warnings,
     format_list_linewise,
     get_name_of_group_by_id,
-    get_names_of_arguments_without_defaults,
+    get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
     merge_trees,
     partition_by_reference_dict,
 )
-from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     FKType,
     GroupCreationFunction,
@@ -298,7 +298,7 @@ def _partial_parameters_to_functions(
     # parameters.
     processed_functions = {}
     for name, function in functions.items():
-        arguments = get_names_of_arguments_without_defaults(function)
+        arguments = get_names_of_required_arguments(function)
         partial_params = {
             arg: params[key]
             for arg in arguments

@@ -397,7 +397,7 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
     return formatted_text
 
 
-def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[str]:
+def get_names_of_required_arguments(function: PolicyFunction) -> list[str]:
     """Get argument names without defaults.
 
     The detection of argument names also works for partialed functions.
@@ -405,11 +405,14 @@ def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[st
     Examples
     --------
     >>> def func(a, b): pass
-    >>> get_names_of_arguments_without_defaults(func)
+    >>> get_names_of_required_arguments(func)
     ['a', 'b']
+    >>> def g(c=0): pass
+    >>> get_names_of_required_arguments(g)
+    []
     >>> import functools
     >>> func_ = functools.partial(func, a=1)
-    >>> get_names_of_arguments_without_defaults(func_)
+    >>> get_names_of_required_arguments(func_)
     ['b']
 
     """
