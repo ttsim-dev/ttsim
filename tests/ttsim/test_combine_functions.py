@@ -123,12 +123,11 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
             {
                 "hh_id": hh_id,
                 "p_id": p_id,
-                "n1": {"f": policy_function(leaf_name="f")(return_x_hh)},
-                "inputs": {"x": x},
+                "n1": {"f": policy_function(leaf_name="f")(return_x_hh), "x": x},
             },
             {"n1": {"f": None}},
             {
-                "inputs": {"x": pd.Series([1, 1, 1])},
+                "n1": {"x": pd.Series([1, 1, 1])},
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
             },
