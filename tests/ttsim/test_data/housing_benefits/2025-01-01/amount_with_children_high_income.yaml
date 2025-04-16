@@ -20,7 +20,7 @@ inputs:
     p_id_parent_2:
       - -1
       - -1
-      - 0
+      - 1
     p_id_spouse:
       - 1
       - 0
@@ -39,11 +39,11 @@ inputs:
       - 10
 outputs:
   housing_benefits__amount_m_fam:
-    - (1500 - (1500 - 200/12) * 0.3) * 0.5
-    - (1500 - (1500 - 200/12) * 0.3) * 0.5
-    - (1500 - (1500 - 200/12) * 0.3) * 0.5
+    - 527.5
+    - 527.5
+    - 527.5
   housing_benefits__income__amount_m:
-    - 1500 - (1500 - 200/12) * 0.3
+    - 1055
     - 0.0
     - 0.0
   housing_benefits__eligibility__requirement_fulfilled_fam:

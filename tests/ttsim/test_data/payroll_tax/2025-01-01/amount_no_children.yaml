@@ -33,11 +33,17 @@ outputs:
   payroll_tax__income__deductions_y:
     - 100
     - 0.0
+  payroll_tax__income__deductions_y_sp:
+    - 100
+    - 100.0
   payroll_tax__income__amount_y:
-    - 10000 - 100
+    - 9900
     - 0.0
+  payroll_tax__income__amount_y_sp:
+    - 9900
+    - 9900
   payroll_tax__amount_y:
-    - 9900 * 0.3
+    - 2970
     - 0.0
   payroll_tax__child_tax_credit__claim_of_child_y:
     - 0.0
