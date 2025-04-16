@@ -10,7 +10,7 @@ import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
-from ttsim.automatically_added_functions import TIME_UNITS
+from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
@@ -88,7 +88,7 @@ def compute_taxes_and_transfers(
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
-        supported_time_conversions=tuple(TIME_UNITS.keys()),
+        time_units=tuple(TIME_UNIT_LABELS.keys()),
         groupings=groupings,
     )
     # Flatten nested objects to qualified names
@@ -178,7 +178,7 @@ def compute_taxes_and_transfers(
 
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
-    supported_time_conversions: tuple[str, ...],
+    time_units: tuple[str, ...],
     groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
@@ -194,9 +194,10 @@ def _get_top_level_namespace(
         The top level namespace.
     """
     direct_top_level_names = set(environment.raw_objects_tree.keys())
+
     re_pattern = get_re_pattern_for_all_time_units_and_groupings(
         groupings=groupings,
-        supported_time_units=supported_time_conversions,
+        time_units=time_units,
     )
 
     all_top_level_names = set()
@@ -207,7 +208,7 @@ def _get_top_level_namespace(
 
         all_top_level_names_for_name = all_variations_of_base_name(
             base_name=base_name,
-            supported_time_conversions=supported_time_conversions,
+            time_units=time_units,
             groupings=groupings,
             create_conversions_for_time_units=create_conversions_for_time_units,
         )

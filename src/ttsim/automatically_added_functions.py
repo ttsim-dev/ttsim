@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     )
 
 
-TIME_UNITS = {
+TIME_UNIT_LABELS = {
     "y": "year",
     "q": "quarter",
     "m": "month",
@@ -435,10 +435,10 @@ def create_time_conversion_functions(
     The functions dict with the new time conversion functions.
     """
 
-    all_time_units = tuple(TIME_UNITS)
+    all_time_units = tuple(TIME_UNIT_LABELS)
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         groupings=groupings,
-        supported_time_units=all_time_units,
+        time_units=all_time_units,
     )
 
     base_names_to_time_conversion_inputs = {}
@@ -490,8 +490,8 @@ def _fail_if_multiple_time_units_for_same_base_name(
     base_names_to_variations: dict[str, list[str]],
 ) -> None:
     invalid = {b: q for b, q in base_names_to_variations.items() if len(q) > 1}
-    # if invalid:
-    #     raise ValueError(f"Multiple time units for base names: {invalid}")
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
 def _create_one_set_of_time_conversion_functions(
@@ -548,15 +548,6 @@ def _create_function_for_time_unit(
         return converter(x)
 
     return func
-
-
-def _is_grouped_object(qn: str, groupings: tuple[str, ...]) -> bool:
-    match = pattern.match(qn)
-    if match:
-        # match.group('base_name_with_time_unit') will give the part before the grouping suffix
-        # match.group('group') will give the grouping suffix without the underscore
-        return True
-    return False
 
 
 def create_agg_by_group_functions(

@@ -294,7 +294,7 @@ def test_get_name_of_group_by_id_fails(
 @pytest.mark.parametrize(
     (
         "base_name",
-        "supported_time_conversions",
+        "time_units",
         "groupings",
         "create_conversions_for_time_units",
         "expected",
@@ -332,7 +332,7 @@ def test_get_name_of_group_by_id_fails(
 )
 def test_all_variations_of_base_name(
     base_name,
-    supported_time_conversions,
+    time_units,
     groupings,
     create_conversions_for_time_units,
     expected,
@@ -340,7 +340,7 @@ def test_all_variations_of_base_name(
     assert (
         all_variations_of_base_name(
             base_name=base_name,
-            supported_time_conversions=supported_time_conversions,
+            time_units=time_units,
             groupings=groupings,
             create_conversions_for_time_units=create_conversions_for_time_units,
         )
@@ -351,7 +351,7 @@ def test_all_variations_of_base_name(
 @pytest.mark.parametrize(
     (
         "func_name",
-        "supported_time_units",
+        "time_units",
         "groupings",
         "expected_base_name",
         "expected_time_unit",
@@ -369,14 +369,14 @@ def test_all_variations_of_base_name(
 )
 def test_get_re_pattern_for_time_units_and_groupings(
     func_name,
-    supported_time_units,
+    time_units,
     groupings,
     expected_base_name,
     expected_time_unit,
     expected_aggregation,
 ):
     result = get_re_pattern_for_all_time_units_and_groupings(
-        supported_time_units=supported_time_units,
+        time_units=time_units,
         groupings=groupings,
     )
     match = result.fullmatch(func_name)
@@ -388,7 +388,7 @@ def test_get_re_pattern_for_time_units_and_groupings(
 @pytest.mark.parametrize(
     (
         "base_name",
-        "supported_time_units",
+        "time_units",
         "groupings",
         "expected_match",
     ),
@@ -399,11 +399,11 @@ def test_get_re_pattern_for_time_units_and_groupings(
     ],
 )
 def test_get_re_pattern_for_some_base_name(
-    base_name, supported_time_units, groupings, expected_match
+    base_name, time_units, groupings, expected_match
 ):
     re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
         base_name=base_name,
-        all_time_units=supported_time_units,
+        all_time_units=time_units,
         groupings=groupings,
     )
     assert re_pattern.fullmatch(expected_match)

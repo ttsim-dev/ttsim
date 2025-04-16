@@ -42,7 +42,7 @@ def validate_date_range(start: datetime.date, end: datetime.date):
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
-    groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
+    groupings: tuple[str, ...], time_units: tuple[str, ...]
 ) -> re.Pattern:
     """Get a regex pattern for time units and groupings.
 
@@ -56,7 +56,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
     ----------
     groupings
         The supported groupings.
-    supported_time_units
+    time_units
         The supported time units.
 
     Returns
@@ -64,7 +64,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
     pattern
         The regex pattern.
     """
-    re_units = "".join(supported_time_units)
+    re_units = "".join(time_units)
     re_groupings = "|".join(groupings)
     return re.compile(
         f"(?P<base_name>.*?)"
@@ -91,7 +91,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     ----------
     base_name
         The specific base name to match.
-    supported_time_units
+    time_units
         The supported time units.
     groupings
         The supported groupings.
@@ -113,7 +113,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
 
 def all_variations_of_base_name(
     base_name: str,
-    supported_time_conversions: list[str],
+    time_units: tuple[str],
     groupings: list[str],
     create_conversions_for_time_units: bool,
 ) -> set[str]:
@@ -123,7 +123,7 @@ def all_variations_of_base_name(
     --------
     >>> all_variations_of_base_name(
         base_name="income",
-        supported_time_conversions=["y", "m"],
+        time_units=("y", "m"),
         groupings=["hh"],
         create_conversions_for_time_units=True,
     )
@@ -131,7 +131,7 @@ def all_variations_of_base_name(
 
     >>> all_variations_of_base_name(
         base_name="claims_benefits",
-        supported_time_conversions=["y", "m"],
+        time_units=("y", "m"),
         groupings=["hh"],
         create_conversions_for_time_units=False,
     )
@@ -141,7 +141,7 @@ def all_variations_of_base_name(
     ----------
     base_name
         The base function name.
-    supported_time_conversions
+    time_units
         The supported time conversions.
     groupings
         The supported groupings.
@@ -154,11 +154,9 @@ def all_variations_of_base_name(
     """
     result = set()
     if create_conversions_for_time_units:
-        for time_unit in supported_time_conversions:
+        for time_unit in time_units:
             result.add(f"{base_name}_{time_unit}")
-        for time_unit, aggregation in itertools.product(
-            supported_time_conversions, groupings
-        ):
+        for time_unit, aggregation in itertools.product(time_units, groupings):
             result.add(f"{base_name}_{time_unit}_{aggregation}")
     else:
         result.add(base_name)

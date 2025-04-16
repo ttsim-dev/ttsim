@@ -8,7 +8,7 @@ import pytest
 from mettsim.config import SUPPORTED_GROUPINGS
 
 from ttsim.aggregation import AggregateByGroupSpec, AggType
-from ttsim.automatically_added_functions import TIME_UNITS
+from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     _fail_if_foreign_keys_are_invalid_in_data,
@@ -41,7 +41,7 @@ def p_id_someone_else() -> int:
 
 
 @policy_input()
-def hh_id() -> int:
+def fam_id() -> int:
     pass
 
 
@@ -55,24 +55,24 @@ def minimal_input_data():
     n_individuals = 5
     out = {
         "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
-        "hh_id": pd.Series(numpy.arange(n_individuals), name="hh_id"),
+        "fam_id": pd.Series(numpy.arange(n_individuals), name="fam_id"),
     }
     return out
 
 
 @pytest.fixture(scope="module")
-def minimal_input_data_shared_hh():
+def minimal_input_data_shared_fam():
     n_individuals = 3
     out = {
         "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
-        "hh_id": pd.Series([0, 0, 1], name="hh_id"),
+        "fam_id": pd.Series([0, 0, 1], name="fam_id"),
         "p_id_someone_else": pd.Series([1, 0, -1], name="p_id_someone_else"),
     }
     return out
 
 
 @agg_by_group_function(agg_type=AggType.SUM)
-def foo_hh(foo: int, hh_id: int) -> int:
+def foo_fam(foo: int, fam_id: int) -> int:
     pass
 
 
@@ -81,7 +81,7 @@ def mettsim_environment():
     return set_up_policy_environment(
         policy_inputs=mettsim_policy_inputs,
         groupings=SUPPORTED_GROUPINGS,
-        supported_time_conversions=TIME_UNITS,
+        time_units=tuple(TIME_UNIT_LABELS.keys()),
     )
 
 
@@ -111,7 +111,7 @@ def test_output_as_tree(minimal_input_data):
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"module": {"test_func": None}},
-        groupings=("hh",),
+        groupings=("fam",),
     )
 
     assert isinstance(out, dict)
@@ -134,7 +134,7 @@ def test_warn_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"some_target": None},
-            groupings=("hh",),
+            groupings=("fam",),
         )
 
 
@@ -151,7 +151,7 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
-            groupings=("hh",),
+            groupings=("fam",),
         )
 
 
@@ -174,14 +174,14 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"unique": None},
-            groupings=("hh",),
+            groupings=("fam",),
         )
 
     assert len(warning_list) == 0
 
 
 def test_fail_if_p_id_does_not_exist():
-    data = {"hh_id": pd.Series(data=numpy.arange(8), name="hh_id")}
+    data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(ValueError):
         _fail_if_p_id_is_non_unique(data)
@@ -244,6 +244,7 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
 @pytest.mark.parametrize(
     "data, functions",
     [
+        # Remove this one once we got rid of the hh_id hack
         (
             {
                 "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
@@ -293,7 +294,7 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"c": None},
-            groupings=("hh",),
+            groupings=("fam",),
         )
 
 
@@ -311,7 +312,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"b": None},
-        groupings=("hh",),
+        groupings=("fam",),
     )
 
 
@@ -328,12 +329,12 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"unknown_target": None},
-            groupings=("hh",),
+            groupings=("fam",),
         )
 
 
 def test_fail_if_missing_p_id():
-    data = {"hh_id": pd.Series([1, 2, 3], name="hh_id")}
+    data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
         match="The input data must contain the p_id",
@@ -342,7 +343,7 @@ def test_fail_if_missing_p_id():
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            groupings=("hh",),
+            groupings=("fam",),
         )
 
 
@@ -358,7 +359,7 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            groupings=("hh",),
+            groupings=("fam",),
         )
 
 
@@ -382,7 +383,7 @@ def test_partial_parameters_to_functions_removes_argument():
 def test_user_provided_aggregate_by_group_specs():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
-        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
+        "fam_id": pd.Series([1, 1, 2], name="fam_id"),
         "module_name": {
             "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
         },
@@ -390,7 +391,7 @@ def test_user_provided_aggregate_by_group_specs():
 
     inputs = {
         "p_id": p_id,
-        "hh_id": hh_id,
+        "fam_id": fam_id,
         "module_name": {
             "betrag_m": betrag_m,
         },
@@ -399,7 +400,7 @@ def test_user_provided_aggregate_by_group_specs():
     aggregation_specs_tree = {
         "module_name": (
             AggregateByGroupSpec(
-                target="betrag_m_hh",
+                target="betrag_m_fam",
                 source="betrag_m",
                 agg=AggType.SUM,
             ),
@@ -410,24 +411,24 @@ def test_user_provided_aggregate_by_group_specs():
     out = compute_taxes_and_transfers(
         data_tree=data,
         environment=PolicyEnvironment(raw_objects_tree=inputs),
-        targets_tree={"module_name": {"betrag_m_hh": None}},
-        groupings=("hh",),
+        targets_tree={"module_name": {"betrag_m_fam": None}},
+        groupings=("fam",),
     )
 
     numpy.testing.assert_array_almost_equal(
-        out["module_name"]["betrag_m_hh"], expected_res
+        out["module_name"]["betrag_m_fam"], expected_res
     )
 
 
 def test_user_provided_aggregation():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
-        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
+        "fam_id": pd.Series([1, 1, 2], name="fam_id"),
         "module_name": {
             "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
         },
     }
-    # Double up, then take max hh_id
+    # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200])
 
     @policy_function()
@@ -435,16 +436,16 @@ def test_user_provided_aggregation():
         return 2 * betrag_m
 
     @agg_by_group_function(agg_type=AggType.MAX)
-    def betrag_m_double_hh(betrag_m_double, hh_id) -> float:
+    def betrag_m_double_fam(betrag_m_double, fam_id) -> float:
         pass
 
     environment = PolicyEnvironment(
         {
             "p_id": p_id,
-            "hh_id": hh_id,
+            "fam_id": fam_id,
             "module_name": {
                 "betrag_m_double": betrag_m_double,
-                "betrag_m_double_hh": betrag_m_double_hh,
+                "betrag_m_double_fam": betrag_m_double_fam,
             },
         }
     )
@@ -452,25 +453,25 @@ def test_user_provided_aggregation():
     actual = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
-        targets_tree={"module_name": {"betrag_m_double_hh": None}},
-        groupings=("hh",),
+        targets_tree={"module_name": {"betrag_m_double_fam": None}},
+        groupings=("fam",),
         debug=True,
     )
 
     numpy.testing.assert_array_almost_equal(
-        actual["module_name"]["betrag_m_double_hh"], expected
+        actual["module_name"]["betrag_m_double_fam"], expected
     )
 
 
 def test_user_provided_aggregation_with_time_conversion():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
-        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
+        "fam_id": pd.Series([1, 1, 2], name="fam_id"),
         "module_name": {
             "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
         },
     }
-    # Double up, convert to quarter, then take max hh_id
+    # Double up, convert to quarter, then take max fam_id
     expected = pd.Series([400 * 3, 400 * 3, 200 * 3])
 
     @policy_function()
@@ -478,16 +479,16 @@ def test_user_provided_aggregation_with_time_conversion():
         return 2 * betrag_m
 
     @agg_by_group_function(agg_type=AggType.MAX)
-    def max_betrag_double_m_hh(betrag_double_m, hh_id) -> float:
+    def max_betrag_double_m_fam(betrag_double_m, fam_id) -> float:
         pass
 
     environment = PolicyEnvironment(
         {
             "p_id": p_id,
-            "hh_id": hh_id,
+            "fam_id": fam_id,
             "module_name": {
                 "betrag_double_m": betrag_double_m,
-                "max_betrag_double_m_hh": max_betrag_double_m_hh,
+                "max_betrag_double_m_fam": max_betrag_double_m_fam,
             },
         }
     )
@@ -495,13 +496,13 @@ def test_user_provided_aggregation_with_time_conversion():
     actual = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
-        targets_tree={"module_name": {"betrag_double_q_hh": None}},
-        groupings=("hh",),
+        targets_tree={"module_name": {"betrag_double_q_fam": None}},
+        groupings=("fam",),
         debug=True,
     )
 
     numpy.testing.assert_array_almost_equal(
-        actual["module_name"]["max_betrag_double_q_hh"], expected
+        actual["module_name"]["max_betrag_double_q_fam"], expected
     )
 
 
@@ -561,7 +562,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     leaf_name,
     target_tree,
     expected,
-    minimal_input_data_shared_hh,
+    minimal_input_data_shared_fam,
 ):
     # TODO(@MImmesberger): Remove fake dependency.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
@@ -580,10 +581,10 @@ def test_user_provided_aggregate_by_p_id_specs(
 
     environment = PolicyEnvironment(raw_objects_tree=raw_objects_tree)
     out = compute_taxes_and_transfers(
-        minimal_input_data_shared_hh,
+        minimal_input_data_shared_fam,
         environment,
         targets_tree=target_tree,
-        groupings=("hh",),
+        groupings=("fam",),
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
@@ -719,9 +720,9 @@ def test_user_provided_aggregate_by_p_id_specs(
 #     "data, functions_overridden, error_match",
 #     [
 #         (
-#             {"hh_id": pd.Series([1, 1.1, 2])},
+#             {"fam_id": pd.Series([1, 1.1, 2])},
 #             {},
-#             "- hh_id: Conversion from input type float64 to int",
+#             "- fam_id: Conversion from input type float64 to int",
 #         ),
 #         (
 #             {"gondorian": pd.Series([1.1, 0.0, 1.0])},
@@ -730,7 +731,7 @@ def test_user_provided_aggregate_by_p_id_specs(
 #         ),
 #         (
 #             {
-#                 "hh_id": pd.Series([1.0, 2.0, 3.0]),
+#                 "fam_id": pd.Series([1.0, 2.0, 3.0]),
 #                 "gondorian": pd.Series([2, 0, 1]),
 #             },
 #             {},
@@ -743,11 +744,11 @@ def test_user_provided_aggregate_by_p_id_specs(
 #         ),
 #         (
 #             {
-#                 "hh_id": pd.Series([1, "1", 2]),
+#                 "fam_id": pd.Series([1, "1", 2]),
 #                 "payroll_tax__amount": pd.Series(["2000", 3000, 4000]),
 #             },
 #             {},
-#             "- hh_id: Conversion from input type object to int failed.",
+#             "- fam_id: Conversion from input type object to int failed.",
 #         ),
 #     ],
 # )
@@ -791,7 +792,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
 @pytest.mark.parametrize(
     (
         "environment",
-        "supported_time_conversions",
+        "time_units",
         "groupings",
         "expected",
     ),
@@ -803,31 +804,29 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 }
             ),
             ["m", "y"],
-            ["hh"],
-            {"foo_m", "foo_y", "foo_m_hh", "foo_y_hh"},
+            ["fam"],
+            {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
         ),
         (
             PolicyEnvironment(
                 raw_objects_tree={"foo": policy_function(leaf_name="foo")(lambda x: x)}
             ),
             ["m", "y"],
-            ["hh"],
-            {"foo", "foo_hh"},
+            ["fam"],
+            {"foo", "foo_fam"},
         ),
         (
-            PolicyEnvironment(raw_objects_tree={"foo_hh": foo_hh}),
+            PolicyEnvironment(raw_objects_tree={"foo_fam": foo_fam}),
             ["m", "y"],
-            ["hh"],
-            {"foo", "foo_hh"},
+            ["fam"],
+            {"foo", "foo_fam"},
         ),
     ],
 )
-def test_get_top_level_namespace(
-    environment, supported_time_conversions, groupings, expected
-):
+def test_get_top_level_namespace(environment, time_units, groupings, expected):
     result = _get_top_level_namespace(
         environment=environment,
-        supported_time_conversions=supported_time_conversions,
+        time_units=time_units,
         groupings=groupings,
     )
     assert result == expected
