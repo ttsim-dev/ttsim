@@ -54,6 +54,6 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
         compute_taxes_and_transfers(
             data_tree=data,
             environment=environment,
-            targets_tree={"einkommensteuer": {"sn_id": None}},
+            targets_tree={"sn_id": None},
             groupings=SUPPORTED_GROUPINGS,
         )
