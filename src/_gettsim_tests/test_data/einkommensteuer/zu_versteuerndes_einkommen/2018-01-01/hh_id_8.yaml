@@ -20,6 +20,12 @@ inputs:
       - -1
     einkommensteuer__abzüge__vorsorgeaufwendungen_y_sn:
       - 990.74
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
+      - 0.0
+    einkommensteuer__einkünfte__aus_gewerbebetrieb__betrag_m:
+      - 0.0
+    einkommensteuer__einkünfte__aus_forst_und_landwirtschaft__betrag_m:
+      - 0.0
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
       - 100.0
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
