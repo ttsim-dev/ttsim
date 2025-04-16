@@ -29,7 +29,7 @@ inputs:
     age:
       - 30
       - 30
-    parent_is_noble:
+    payroll_tax__parent_is_noble_fam:
       - true
       - true
     wealth:
