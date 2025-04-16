@@ -237,7 +237,7 @@ def wthh_id(
 def sn_id(
     p_id: numpy.ndarray[int],
     familie__p_id_ehepartner: numpy.ndarray[int],
-    gemeinsam_veranlagt: numpy.ndarray[bool],
+    einkommensteuer__gemeinsam_veranlagt: numpy.ndarray[bool],
 ) -> numpy.ndarray[int]:
     """
     Compute a Steuernummer (ID) for each person / couple.
@@ -249,7 +249,7 @@ def sn_id(
 
     for index, current_p_id in enumerate(p_id):
         current_p_id_ehepartner = familie__p_id_ehepartner[index]
-        current_gemeinsam_veranlagt = gemeinsam_veranlagt[index]
+        current_gemeinsam_veranlagt = einkommensteuer__gemeinsam_veranlagt[index]
 
         if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_sn_id:
             gemeinsam_veranlagt_ehepartner = p_id_to_gemeinsam_veranlagt[
