@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 
-from ttsim.aggregation import AggregateByGroupSpec, AggType
+from ttsim.aggregation import AggType
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     _fail_if_foreign_keys_are_invalid_in_data,
@@ -399,15 +399,6 @@ def test_user_provided_aggregate_by_group_specs():
         },
     }
 
-    aggregation_specs_tree = {
-        "module_name": (
-            AggregateByGroupSpec(
-                target="betrag_m_fam",
-                source="betrag_m",
-                agg=AggType.SUM,
-            ),
-        )
-    }
     expected_res = pd.Series([200, 200, 100])
 
     out = compute_taxes_and_transfers(
@@ -506,18 +497,6 @@ def test_user_provided_aggregation_with_time_conversion():
     numpy.testing.assert_array_almost_equal(
         actual["module_name"]["max_betrag_double_q_fam"], expected
     )
-
-
-def test_aggregate_by_group_specs_agg_not_impl():
-    with pytest.raises(
-        TypeError,
-        match="agg must be of type AggType, not <class 'str'>",
-    ):
-        AggregateByGroupSpec(
-            target="betrag_agg_m",
-            source="betrag_m",
-            agg="sum",
-        )
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

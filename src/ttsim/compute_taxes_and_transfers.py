@@ -109,7 +109,6 @@ def compute_taxes_and_transfers(
         ttsim_objects=ttsim_objects,
         targets=targets,
         data=data,
-        top_level_namespace=top_level_namespace,
         groupings=groupings,
     )
 
