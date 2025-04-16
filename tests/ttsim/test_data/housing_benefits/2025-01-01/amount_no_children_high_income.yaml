@@ -29,6 +29,9 @@ inputs:
     age:
       - 30
       - 30
+    parent_is_noble:
+      - false
+      - false
 outputs:
   housing_benefits__amount_m_fam:
     - 0.0

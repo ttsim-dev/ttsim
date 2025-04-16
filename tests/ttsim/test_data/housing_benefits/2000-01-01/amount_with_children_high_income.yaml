@@ -37,6 +37,10 @@ inputs:
       - 30
       - 30
       - 10
+    parent_is_noble:
+      - false
+      - false
+      - false
 outputs:
   housing_benefits__amount_m_fam:
     - 0.0

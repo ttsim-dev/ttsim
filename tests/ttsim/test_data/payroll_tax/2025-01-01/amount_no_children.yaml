@@ -29,6 +29,9 @@ inputs:
     age:
       - 30
       - 30
+    parent_is_noble:
+      - false
+      - false
 outputs:
   payroll_tax__income__deductions_y:
     - 100

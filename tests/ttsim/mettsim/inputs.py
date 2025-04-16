@@ -29,3 +29,8 @@ def p_id_spouse() -> int:
 @policy_input()
 def age() -> int:
     """Age of the person."""
+
+
+@policy_input()
+def parent_is_noble() -> bool:
+    """Whether at least one parent is noble."""

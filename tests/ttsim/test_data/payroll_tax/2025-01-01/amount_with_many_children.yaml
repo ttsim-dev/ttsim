@@ -53,6 +53,12 @@ inputs:
       - 10
       - 10
       - 10
+    parent_is_noble:
+      - false
+      - false
+      - false
+      - false
+      - false
 outputs:
   payroll_tax__income__deductions_y:
     - 400
