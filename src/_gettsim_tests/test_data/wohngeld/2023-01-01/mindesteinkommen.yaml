@@ -336,7 +336,7 @@ outputs:
     - false
     - false
     - false
-  wohngeld__wthh_id:
+  hh_id:
     - 1
     - 1
     - 100

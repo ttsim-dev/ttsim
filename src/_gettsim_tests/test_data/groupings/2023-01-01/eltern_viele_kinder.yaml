@@ -79,7 +79,7 @@ inputs:
       - 6
       - 7
 outputs:
-  arbeitslosengeld_2__bg_id:
+  bg_id:
     - 0
     - 0
     - 100
@@ -88,7 +88,7 @@ outputs:
     - 300
     - 1
     - 300
-  arbeitslosengeld_2__eg_id:
+  eg_id:
     - 0
     - 0
     - 1
@@ -97,7 +97,7 @@ outputs:
     - 4
     - 5
     - 6
-  arbeitslosengeld_2__fg_id:
+  fg_id:
     - 0
     - 0
     - 1
@@ -106,7 +106,7 @@ outputs:
     - 3
     - 0
     - 3
-  familie__ehe_id:
+  ehe_id:
     - 0
     - 0
     - 1

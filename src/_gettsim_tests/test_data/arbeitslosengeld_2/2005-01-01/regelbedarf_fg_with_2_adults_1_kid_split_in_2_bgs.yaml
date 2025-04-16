@@ -9,7 +9,7 @@ inputs:
       - 40
       - 10
       - 45
-    arbeitslosengeld_2__bg_id:
+    bg_id:
       - 0
       - 1
       - 0

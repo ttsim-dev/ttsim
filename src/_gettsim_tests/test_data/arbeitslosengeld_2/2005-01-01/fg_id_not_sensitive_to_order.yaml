@@ -54,21 +54,21 @@ inputs:
       - false
       - false
 outputs:
-  arbeitslosengeld_2__fg_id:
+  fg_id:
     - 1
     - 1
     - 1
     - 1
     - 1
     - 1
-  arbeitslosengeld_2__bg_id:
+  bg_id:
     - 100
     - 100
     - 100
     - 100
     - 100
     - 100
-  arbeitslosengeld_2__eg_id:
+  eg_id:
     - 0
     - 1
     - 2

@@ -24,9 +24,9 @@ inputs:
       - 0
       - 1
 outputs:
-  arbeitslosengeld_2__bg_id:
+  bg_id:
     - 0
     - 0
-  einkommensteuer__sn_id:
+  sn_id:
     - 0
     - 0

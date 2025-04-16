@@ -7,7 +7,7 @@ info:
   source: Made up.
 inputs:
   assumed:
-    arbeitslosengeld_2__bg_id:
+    bg_id:
       - 0
       - 0
       - 1

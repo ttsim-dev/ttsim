@@ -6,7 +6,7 @@ info:
   source: https://www.das-steht-dir-zu.de/arbeit/buergergeld/der-buergergeld-rechner/index.html
 inputs:
   assumed:
-    arbeitslosengeld_2__bg_id:
+    bg_id:
       - 0
       - 0
       - 0
