@@ -87,7 +87,7 @@ def execute_test(test: PolicyTest):
         assert_frame_equal(
             result_dataframe,
             expected_dataframe,
-            atol=test.info["precision"],
+            atol=test.info["precision_atol"],
             check_dtype=False,
         )
 

@@ -2,7 +2,7 @@
 info:
   note: 'based on Beispiel: Erna Rüstig (Altersrente für Frauen) but added a mixed(east/west)
     earning biography'
-  precision: 0.1
+  precision_atol: 0.1
   source: https://rentenbescheid24.de/die-altersrente-fuer-langjaehrig-versicherte/
 inputs:
   assumed: {}

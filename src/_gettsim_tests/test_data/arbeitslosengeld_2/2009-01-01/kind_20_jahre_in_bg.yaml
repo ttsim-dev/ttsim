@@ -1,7 +1,7 @@
 ---
 info:
   note: Regression test.
-  precision: 0.01
+  precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}
