@@ -34,3 +34,8 @@ def age() -> int:
 @policy_input()
 def parent_is_noble() -> bool:
     """Whether at least one parent is noble."""
+
+
+@policy_input()
+def wealth() -> float:
+    """Wealth of the person."""

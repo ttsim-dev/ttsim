@@ -59,6 +59,12 @@ inputs:
       - false
       - false
       - false
+    wealth:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
 outputs:
   housing_benefits__amount_m_fam:
     - 296.5
