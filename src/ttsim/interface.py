@@ -77,7 +77,7 @@ def df_to_data_tree(
                 index=df.index,
             )
 
-    return name_to_input_series
+    return dt.unflatten_from_qual_names(name_to_input_series)
 
 
 def _fail_if_mapper_has_incorrect_format(
