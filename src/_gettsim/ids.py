@@ -20,7 +20,7 @@ def p_id() -> int:
 @group_creation_function()
 def ehe_id(
     p_id: numpy.ndarray[int],
-    p_id_ehepartner: numpy.ndarray[int],
+    familie__p_id_ehepartner: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
     """
     Compute the ID of the Ehe for each person.
@@ -30,7 +30,7 @@ def ehe_id(
     result = []
 
     for index, current_p_id in enumerate(p_id):
-        current_p_id_ehepartner = p_id_ehepartner[index]
+        current_p_id_ehepartner = familie__p_id_ehepartner[index]
 
         if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_ehe_id:
             result.append(p_id_to_ehe_id[current_p_id_ehepartner])
