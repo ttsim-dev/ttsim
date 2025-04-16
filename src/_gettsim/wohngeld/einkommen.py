@@ -1,21 +1,19 @@
 """Income relevant for housing benefit calculation."""
 
 from ttsim import (
-    AggregateByPIDSpec,
     AggType,
+    agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
 )
 from ttsim.config import numpy_or_jax as np
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="alleinerziehendenbonus",
-        source="kindergeld__kind_bis_10_mit_kindergeld",
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        agg=AggType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def alleinerziehendenbonus(
+    kindergeld__kind_bis_10_mit_kindergeld: bool, kindergeld__p_id_empfänger: int
+) -> int:
+    pass
 
 
 @policy_function()
@@ -433,3 +431,8 @@ def ist_kind_mit_erwerbseinkommen(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m > 0
     ) and kindergeld__grundsätzlich_anspruchsberechtigt
     return out
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def wohngeld_spec_target(wohngeld_source_field: bool, p_id_field: int) -> int:
+    pass

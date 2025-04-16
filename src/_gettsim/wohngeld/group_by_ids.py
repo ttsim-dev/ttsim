@@ -2,11 +2,12 @@
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, AggType, group_creation_function
+from ttsim import AggType, agg_by_group_function, group_creation_function
 
-aggregation_specs = (
-    AggregateByGroupSpec(target="anzahl_personen_wthh", source=None, agg=AggType.COUNT),
-)
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_wthh(wthh_id: int) -> int:
+    pass
 
 
 @group_creation_function()

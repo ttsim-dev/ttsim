@@ -1,51 +1,53 @@
 """Parental leave benefits."""
 
 from ttsim import (
-    AggregateByGroupSpec,
-    AggregateByPIDSpec,
     AggType,
     RoundingSpec,
+    agg_by_group_function,
+    agg_by_p_id_function,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByGroupSpec(
-        target="kind_grundsätzlich_anspruchsberechtigt_fg",
-        source="kind_grundsätzlich_anspruchsberechtigt",
-        agg=AggType.ANY,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_anträge_fg",
-        source="claimed",
-        agg=AggType.SUM,
-    ),
-    AggregateByPIDSpec(
-        target="bezugsmonate_partner",
-        p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
-        source="bisherige_bezugsmonate",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="alter_monate_jüngstes_mitglied_fg",
-        source="alter_monate",
-        agg=AggType.MIN,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_2_fg",
-        source="familie__kind_bis_2",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_5_fg",
-        source="familie__kind_bis_5",
-        agg=AggType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_mehrlinge_jüngstes_kind_fg",
-        source="jüngstes_kind_oder_mehrling",
-        agg=AggType.SUM,
-    ),
-)
+
+@agg_by_group_function(agg_type=AggType.ANY)
+def kind_grundsätzlich_anspruchsberechtigt_fg(
+    kind_grundsätzlich_anspruchsberechtigt: bool, fg_id: int
+) -> bool:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_anträge_fg(claimed: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def bezugsmonate_partner(
+    bisherige_bezugsmonate: int, arbeitslosengeld_2__p_id_einstandspartner: int
+) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.MIN)
+def alter_monate_jüngstes_mitglied_fg(alter_monate: float, fg_id: int) -> float:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_2_fg(familie__kind_bis_2: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_5_fg(familie__kind_bis_5: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_mehrlinge_jüngstes_kind_fg(
+    jüngstes_kind_oder_mehrling: bool, fg_id: int
+) -> int:
+    pass
 
 
 @policy_function(

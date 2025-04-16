@@ -2,16 +2,14 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, AggType, join_numpy, policy_function
+from ttsim import AggType, agg_by_p_id_function, join_numpy, policy_function
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="kindergeldübertrag_m",
-        source="differenz_kindergeld_kindbedarf_m",
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        agg=AggType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def kindergeldübertrag_m(
+    differenz_kindergeld_kindbedarf_m: float, kindergeld__p_id_empfänger: int
+) -> float:
+    pass
 
 
 @policy_function(end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m")
