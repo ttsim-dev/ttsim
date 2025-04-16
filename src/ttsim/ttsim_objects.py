@@ -635,7 +635,11 @@ def agg_by_p_id_function(
     def inner(func: Callable) -> AggByPIDFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
-        other_p_ids = {p for p in args if p.startswith("p_id_")}
+        other_p_ids = {
+            p
+            for p in args
+            if any(e.startswith("p_id_") for e in dt.tree_path_from_qual_name(p))
+        }
         other_args = args - {*other_p_ids, "p_id"}
         _fail_if_p_id_is_not_present(args, orig_location)
         _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
