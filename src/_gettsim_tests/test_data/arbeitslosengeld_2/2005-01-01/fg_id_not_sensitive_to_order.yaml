@@ -2,6 +2,7 @@
 info:
   note: ''
   source: ''
+  precision_atol: 0.01
 inputs:
   provided:
     p_id:
@@ -25,7 +26,7 @@ inputs:
       - 0
       - 0
       - 0
-    p_id_einstandspartner:
+    arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - 5
       - -1
@@ -46,7 +47,7 @@ inputs:
       - 5
       - -1
       - -1
-    eigenbedarf_gedeckt:
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
       - false
