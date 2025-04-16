@@ -416,7 +416,7 @@ def test_user_provided_aggregation():
         },
     }
     # Double up, then take max hh_id
-    expected_res = pd.Series([400, 400, 200])
+    expected = pd.Series([400, 400, 200])
 
     @policy_function()
     def betrag_m_double(betrag_m):
@@ -432,11 +432,12 @@ def test_user_provided_aggregation():
             "hh_id": hh_id,
             "module_name": {
                 "betrag_m_double": betrag_m_double,
-                "betrag_m_double_m_hh": betrag_m_double_hh,
+                "betrag_m_double_hh": betrag_m_double_hh,
             },
-        },
+        }
     )
-    out = compute_taxes_and_transfers(
+
+    actual = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
         targets_tree={"module_name": {"betrag_m_double_hh": None}},
@@ -445,7 +446,50 @@ def test_user_provided_aggregation():
     )
 
     numpy.testing.assert_array_almost_equal(
-        out["module_name"]["betrag_m_double_hh"], expected_res
+        actual["module_name"]["betrag_m_double_hh"], expected
+    )
+
+
+def test_user_provided_aggregation_with_time_conversion():
+    data = {
+        "p_id": pd.Series([1, 2, 3], name="p_id"),
+        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
+        "module_name": {
+            "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
+        },
+    }
+    # Double up, convert to quarter, then take max hh_id
+    expected = pd.Series([400 * 3, 400 * 3, 200 * 3])
+
+    @policy_function()
+    def betrag_double_m(betrag_m):
+        return 2 * betrag_m
+
+    @agg_by_group_function(agg_type=AggType.MAX)
+    def max_betrag_double_m_hh(betrag_double_m, hh_id) -> float:
+        pass
+
+    environment = PolicyEnvironment(
+        {
+            "p_id": p_id,
+            "hh_id": hh_id,
+            "module_name": {
+                "betrag_double_m": betrag_double_m,
+                "max_betrag_double_m_hh": max_betrag_double_m_hh,
+            },
+        }
+    )
+
+    actual = compute_taxes_and_transfers(
+        data_tree=data,
+        environment=environment,
+        targets_tree={"module_name": {"betrag_double_q_hh": None}},
+        groupings=("hh",),
+        debug=True,
+    )
+
+    numpy.testing.assert_array_almost_equal(
+        actual["module_name"]["max_betrag_double_q_hh"], expected
     )
 
 
