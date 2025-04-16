@@ -208,7 +208,7 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
 @pytest.mark.parametrize(
     (
         "functions",
-        "inputs",
+        "policy_inputs",
         "aggregation_functions",
         "expected_return_type",
     ),
@@ -322,14 +322,14 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
 )
 def test_annotations_for_aggregation(
     functions,
-    inputs,
+    policy_inputs,
     aggregation_functions,
     expected_return_type,
 ):
     name_of_aggregation_function = next(iter(aggregation_functions.keys()))
     annotation_of_aggregation_function = _annotate_aggregation_functions(
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         aggregation_functions=aggregation_functions,
     )[name_of_aggregation_function].__annotations__["return"]
     assert annotation_of_aggregation_function == expected_return_type
@@ -395,7 +395,7 @@ def test_annotations_are_applied_to_derived_functions(
         iter(
             _create_aggregation_functions(
                 functions=functions,
-                inputs={},
+                policy_inputs={},
                 aggregation_functions_to_create=aggregation_functions_to_create,
                 aggregation_type=aggregation_type,
                 top_level_namespace=top_level_namespace,
@@ -425,12 +425,12 @@ def test_annotations_are_applied_to_derived_functions(
             ("x_hh"),
         ),
         (
-            {"n1__foo": policy_function(leaf_name="foo")(return_x_hh)},
-            {"hh_id": hh_id, "n2__x": x},
+            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_hh)},
+            {"hh_id": hh_id, "n1__x": x},
             {},
-            {"n2": {"x": pd.Series([1])}},
+            {"n1": {"x": pd.Series([1])}},
             ["n1", "n2"],
-            ("n2__x_hh"),
+            ("n1__x_hh"),
         ),
         (
             {},
@@ -472,7 +472,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         "aggregation_spec",
         "group_by_id",
         "functions",
-        "inputs",
+        "policy_inputs",
         "top_level_namespace",
         "expected_start_date",
         "expected_end_date",
@@ -519,7 +519,7 @@ def test_aggregate_by_group_function_start_and_end_date(
     aggregation_spec,
     group_by_id,
     functions,
-    inputs,
+    policy_inputs,
     top_level_namespace,
     expected_start_date,
     expected_end_date,
@@ -530,7 +530,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         aggregation_type="group",
         group_by_id=group_by_id,
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.start_date == expected_start_date
@@ -542,7 +542,7 @@ def test_aggregate_by_group_function_start_and_end_date(
         "aggregation_target",
         "aggregation_spec",
         "functions",
-        "inputs",
+        "policy_inputs",
         "top_level_namespace",
         "expected_start_date",
         "expected_end_date",
@@ -600,7 +600,7 @@ def test_aggregate_by_p_id_function_start_and_end_date(
     aggregation_target,
     aggregation_spec,
     functions,
-    inputs,
+    policy_inputs,
     top_level_namespace,
     expected_start_date,
     expected_end_date,
@@ -611,7 +611,7 @@ def test_aggregate_by_p_id_function_start_and_end_date(
         aggregation_type="p_id",
         group_by_id=None,
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.start_date == expected_start_date
@@ -623,7 +623,7 @@ def test_aggregate_by_p_id_function_start_and_end_date(
         "aggregation_target",
         "aggregation_spec",
         "functions",
-        "inputs",
+        "policy_inputs",
         "group_by_id",
         "top_level_namespace",
         "expected_arg_names",
@@ -662,7 +662,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
     aggregation_target,
     aggregation_spec,
     functions,
-    inputs,
+    policy_inputs,
     group_by_id,
     top_level_namespace,
     expected_arg_names,
@@ -673,7 +673,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         aggregation_type="group",
         group_by_id=group_by_id,
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -687,7 +687,7 @@ def test_function_arguments_are_namespaced_for_derived_group_funcs(
         "aggregation_target",
         "aggregation_spec",
         "functions",
-        "inputs",
+        "policy_inputs",
         "group_by_id",
         "top_level_namespace",
         "expected_arg_names",
@@ -741,7 +741,7 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
     aggregation_target,
     aggregation_spec,
     functions,
-    inputs,
+    policy_inputs,
     group_by_id,
     top_level_namespace,
     expected_arg_names,
@@ -752,7 +752,7 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
         aggregation_type="p_id",
         group_by_id=group_by_id,
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
     )
     assert all(
@@ -766,7 +766,7 @@ def test_function_arguments_are_namespaced_for_derived_p_id_funcs(
         "aggregation_target",
         "aggregation_spec",
         "functions",
-        "inputs",
+        "policy_inputs",
         "group_by_id",
         "top_level_namespace",
         "source_col_name",
@@ -796,7 +796,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
     aggregation_target,
     aggregation_spec,
     functions,
-    inputs,
+    policy_inputs,
     group_by_id,
     top_level_namespace,
     source_col_name,
@@ -807,7 +807,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         aggregation_type="group",
         group_by_id=group_by_id,
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
@@ -818,7 +818,7 @@ def test_source_column_name_of_aggregate_by_group_func_is_qualified(
         "aggregation_target",
         "aggregation_spec",
         "functions",
-        "inputs",
+        "policy_inputs",
         "top_level_namespace",
         "source_col_name",
     ),
@@ -855,7 +855,7 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
     aggregation_target,
     aggregation_spec,
     functions,
-    inputs,
+    policy_inputs,
     top_level_namespace,
     source_col_name,
 ):
@@ -865,7 +865,7 @@ def test_source_column_name_of_aggregate_by_p_id_func_is_qualified(
         aggregation_type="p_id",
         group_by_id=None,
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         top_level_namespace=top_level_namespace,
     )
     assert result.source == source_col_name
