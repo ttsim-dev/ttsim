@@ -9,7 +9,11 @@ inputs:
       - 0
       - 1
       - 2
+      - 3
+      - 4
     hh_id:
+      - 0
+      - 0
       - 0
       - 0
       - 0
@@ -17,52 +21,78 @@ inputs:
       - -1
       - -1
       - 0
+      - 0
+      - 0
     p_id_parent_2:
       - -1
       - -1
+      - 1
+      - 1
       - 1
     p_id_spouse:
       - 1
       - 0
       - -1
+      - -1
+      - -1
     payroll_tax__income__gross_wage_y:
       - 10000
+      - 0
+      - 0
       - 0
       - 0
     payroll_tax__child_tax_credit__p_id_recipient:
       - -1
       - -1
       - 0
+      - 0
+      - 0
     age:
       - 30
       - 30
       - 10
+      - 10
+      - 10
 outputs:
   payroll_tax__income__deductions_y:
-    - 200
+    - 400
+    - 100.0
+    - 100.0
     - 100.0
     - 100.0
   payroll_tax__income__amount_y:
-    - 9800
+    - 9600
+    - 0.0
+    - 0.0
     - 0.0
     - 0.0
   payroll_tax__amount_y:
-    - 2940
+    - 2880.0
+    - 0.0
+    - 0.0
     - 0.0
     - 0.0
   payroll_tax__child_tax_credit__claim_of_child_y:
     - 0.0
     - 0.0
     - 100.0
+    - 100.0
+    - 100.0
   payroll_tax__child_tax_credit__amount_m:
-    - 8.333333
+    - 25.0
+    - 0.0
+    - 0.0
     - 0.0
     - 0.0
   payroll_tax__child_tax_credit__child_eligible:
     - false
     - false
     - true
+    - true
+    - true
   payroll_tax__child_tax_credit__in_same_household_as_recipient:
     - false
     - false
+    - true
+    - true
     - true
