@@ -2,13 +2,13 @@ import copy
 import re
 import warnings
 
+import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import SUPPORTED_GROUPINGS
+from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 
 from ttsim.aggregation import AggregateByGroupSpec, AggType
-from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     _fail_if_foreign_keys_are_invalid_in_data,
@@ -80,9 +80,8 @@ def foo_fam(foo: int, fam_id: int) -> int:
 @pytest.fixture(scope="module")
 def mettsim_environment():
     return set_up_policy_environment(
-        policy_inputs=mettsim_policy_inputs,
-        groupings=SUPPORTED_GROUPINGS,
-        time_units=tuple(TIME_UNIT_LABELS.keys()),
+        resource_dir=RESOURCE_DIR,
+        date="2025-01-01",
     )
 
 
@@ -195,9 +194,8 @@ def test_fail_if_p_id_is_non_unique():
         _fail_if_p_id_is_non_unique(data)
 
 
-@pytest.mark.skip
 def test_fail_if_foreign_key_points_to_non_existing_p_id(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([0, 1, 2]),
@@ -205,41 +203,44 @@ def test_fail_if_foreign_key_points_to_non_existing_p_id(mettsim_environment):
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         _fail_if_foreign_keys_are_invalid_in_data(
-            data=data, policy_inputs=policy_inputs
+            data=data, ttsim_objects=flat_objects_tree
         )
 
 
-@pytest.mark.skip
 def test_allow_minus_one_as_foreign_key(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([-1, 1, 2]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
+    _fail_if_foreign_keys_are_invalid_in_data(
+        data=data, ttsim_objects=flat_objects_tree
+    )
 
 
-@pytest.mark.skip
 def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
+    _fail_if_foreign_keys_are_invalid_in_data(
+        data=data, ttsim_objects=flat_objects_tree
+    )
 
 
-@pytest.mark.skip
 def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
-    policy_inputs = mettsim_environment.policy_inputs
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_child_": pd.Series([1, 3, 3]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
+    _fail_if_foreign_keys_are_invalid_in_data(
+        data=data, ttsim_objects=flat_objects_tree
+    )
 
 
 @pytest.mark.parametrize(
