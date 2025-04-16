@@ -3,9 +3,8 @@ eligibility:
   1900-01-01:
     subsistence_income_per_spouse_m: 500.0
   2020-01-01:
-    subsistence_income_per_spouse_m: 500.0
-    subsistence_income_per_child_m: 200.0
-    max_number_of_children: 2
+    subsistence_income_per_individual_m: 500.0
+    max_number_of_family_members: 4
 assistance_rate:
   1900-01-01:
     scalar: 0.5

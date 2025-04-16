@@ -50,11 +50,11 @@ outputs:
     - true
     - true
     - true
-  housing_benefits__eligibility__number_of_children_considered:
-    - 1
-    - 1
-    - 1
-  housing_benefits__eligibility__number_of_children_fam:
-    - 1
-    - 1
-    - 1
+  housing_benefits__eligibility__number_of_family_members_considered_fam:
+    - 3
+    - 3
+    - 3
+  housing_benefits__eligibility__number_of_individuals_fam:
+    - 3
+    - 3
+    - 3

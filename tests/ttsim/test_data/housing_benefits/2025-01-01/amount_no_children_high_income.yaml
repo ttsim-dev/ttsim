@@ -39,9 +39,9 @@ outputs:
   housing_benefits__eligibility__requirement_fulfilled_fam:
     - false
     - false
-  housing_benefits__eligibility__number_of_children_considered:
-    - 0
-    - 0
-  housing_benefits__eligibility__number_of_children_fam:
-    - 0
-    - 0
+  housing_benefits__eligibility__number_of_family_members_considered_fam:
+    - 2
+    - 2
+  housing_benefits__eligibility__number_of_individuals_fam:
+    - 2
+    - 2
