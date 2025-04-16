@@ -20,7 +20,7 @@ from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     AggByGroupFunction,
-    DerivedTimeConversionFunction,
+    TimeConversionFunction,
     TTSIMFunction,
     TTSIMObject,
 )
@@ -497,8 +497,8 @@ def _create_one_set_of_time_conversion_functions(
     time_unit: str,
     grouping_suffix: str,
     all_time_units: tuple[str, ...],
-) -> dict[str, DerivedTimeConversionFunction]:
-    result: dict[str, DerivedTimeConversionFunction] = {}
+) -> dict[str, TimeConversionFunction]:
+    result: dict[str, TimeConversionFunction] = {}
     dependencies = (
         set(inspect.signature(ttsim_object).parameters)
         if isinstance(ttsim_object, TTSIMFunction)
@@ -520,7 +520,7 @@ def _create_one_set_of_time_conversion_functions(
         if new_name in dependencies:
             continue
 
-        result[new_name] = DerivedTimeConversionFunction(
+        result[new_name] = TimeConversionFunction(
             leaf_name=dt.tree_path_from_qual_name(new_name)[-1],
             function=_create_function_for_time_unit(
                 source=qual_name_source,

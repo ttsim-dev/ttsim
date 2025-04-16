@@ -401,47 +401,6 @@ def group_creation_function(
 
 
 @dataclass
-class DerivedAggregationFunction(TTSIMFunction):
-    """
-    A function that is an aggregation of another function.
-
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function performing the aggregation.
-    source:
-        The name of the source function or data column.
-    aggregation_method:
-        The method of aggregation used.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    """
-
-    source: str | None = None
-    aggregation_method: (
-        Literal["count", "sum", "mean", "min", "max", "any", "all"] | None
-    ) = None
-
-    def __post_init__(self):
-        if self.aggregation_method is None:
-            raise ValueError("The aggregation method must be specified.")
-        if self.source is None and self.aggregation_method != "count":
-            raise ValueError("The source must be specified.")
-
-        # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = self.function.__annotations__
-        self.__module__ = self.function.__module__
-        self.__name__ = self.function.__name__
-        self.__signature__ = inspect.signature(self.function)
-
-
-@dataclass
 class AggByGroupFunction(TTSIMFunction):
     """
     A function that is an aggregation of another column by some group id.
@@ -693,7 +652,7 @@ def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
 
 
 @dataclass
-class DerivedTimeConversionFunction(TTSIMFunction):
+class TimeConversionFunction(TTSIMFunction):
     """
     A function that is a time conversion of another function.
 
@@ -722,9 +681,9 @@ class DerivedTimeConversionFunction(TTSIMFunction):
         self,
         tree_path: tuple[str, ...],
         top_level_namespace: set[str],
-    ) -> DerivedTimeConversionFunction:
+    ) -> TimeConversionFunction:
         """Remove tree logic from the function and update the function signature."""
-        return DerivedTimeConversionFunction(
+        return TimeConversionFunction(
             source=self.source,
             leaf_name=self.leaf_name,
             function=dt.one_function_without_tree_logic(
