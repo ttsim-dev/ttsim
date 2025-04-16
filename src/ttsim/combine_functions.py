@@ -87,9 +87,6 @@ def combine_policy_functions_and_derived_functions(
         },
         **time_conversion_functions,
     }
-
-    # Error occurs here -- aggregate_by_group_functions does not respect namespaces.
-    breakpoint()
     # Create aggregation functions by group.
     aggregate_by_group_functions = _create_aggregate_by_group_functions(
         functions=current_functions,

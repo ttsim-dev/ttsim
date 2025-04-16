@@ -30,7 +30,6 @@ from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     FKType,
     GroupCreationFunction,
-    PolicyInput,
     TTSIMFunction,
 )
 
@@ -95,11 +94,10 @@ def compute_taxes_and_transfers(
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
-    ttsim_objects = remove_tree_logic_from_objects_tree(
-        environment.raw_objects_tree,
+    ttsim_objects = remove_tree_logic_from_ttsim_objects_tree(
+        raw_objects_tree=environment.raw_objects_tree,
         top_level_namespace=top_level_namespace,
     )
-
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
         ttsim_objects=ttsim_objects,
@@ -144,7 +142,7 @@ def compute_taxes_and_transfers(
     }
     _fail_if_foreign_keys_are_invalid_in_data(
         data=_input_data_with_p_id,
-        policy_inputs=policy_inputs,
+        ttsim_objects=ttsim_objects,
     )
 
     tax_transfer_function = dags.concatenate_functions(
@@ -217,24 +215,17 @@ def _get_top_level_namespace(
     return all_top_level_names
 
 
-def remove_tree_logic_from_objects_tree(
-    objects_tree: NestedTTSIMObjectDict,
+def remove_tree_logic_from_ttsim_objects_tree(
+    raw_objects_tree: NestedTTSIMObjectDict,
     top_level_namespace: set[str],
 ) -> QualNameTTSIMObjectDict:
-    """Remove tree logic from the objects tree.
-
-    Creates a qualified names dict with functions that have qualified arguments only.
-    """
-    qualified_names_dict = dt.flatten_to_qual_names(objects_tree)
+    """Map qualified names to TTSIM objects without tree logic."""
     return {
-        qn: f_or_i
-        if isinstance(f_or_i, PolicyInput)
-        else dt.one_function_without_tree_logic(
-            function=f_or_i,
-            tree_path=dt.tree_path_from_qual_name(qn),
+        name: f_or_i.remove_tree_logic(
+            tree_path=dt.tree_path_from_qual_name(name),
             top_level_namespace=top_level_namespace,
         )
-        for qn, f_or_i in qualified_names_dict.items()
+        for name, f_or_i in dt.flatten_to_qual_names(raw_objects_tree).items()
     }
 
 
