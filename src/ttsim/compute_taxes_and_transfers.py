@@ -137,7 +137,7 @@ def compute_taxes_and_transfers(
         groupings=groupings,
     )
     _input_data_with_p_id = {
-        "p_id": input_data["p_id"],
+        "p_id": data["p_id"],
         **input_data,
     }
     _fail_if_foreign_keys_are_invalid_in_data(
