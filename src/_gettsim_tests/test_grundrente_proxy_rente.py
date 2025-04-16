@@ -29,7 +29,7 @@ def test_grundrente_proxy_rente_vorjahr_comparison(test: PolicyTest):
                 "rente": {"grundrente": {"proxy_rente_vorjahr_m": None}}
             }
         },
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     # Calculate pension of last year
@@ -41,7 +41,7 @@ def test_grundrente_proxy_rente_vorjahr_comparison(test: PolicyTest):
         targets_tree={
             "sozialversicherung": {"rente": {"altersrente": {"bruttorente_m": None}}}
         },
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

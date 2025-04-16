@@ -22,7 +22,7 @@ def test_groupings(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -55,5 +55,5 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
             data_tree=data,
             environment=environment,
             targets_tree={"einkommensteuer": {"sn_id": None}},
-            supported_groupings=SUPPORTED_GROUPINGS,
+            groupings=SUPPORTED_GROUPINGS,
         )
