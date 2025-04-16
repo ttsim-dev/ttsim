@@ -12,7 +12,7 @@ Policy regime starting in 2020:
 from ttsim import AggType, agg_by_group_function, policy_function
 
 
-@agg_by_group_function(agg_type=AggType.SUM, start_date="2020-01-01")
+@agg_by_group_function(agg_type=AggType.SUM, end_date="2019-12-31")
 def number_of_adults_fam(fam_id: int, adult: bool) -> int:
     """The number of adults in the family."""
 

@@ -31,8 +31,8 @@ inputs:
       - 30
 outputs:
   housing_benefits__amount_m_fam:
-    - 281.25
-    - 281.25
+    - 281.0
+    - 281.0
   housing_benefits__income__amount_m:
     - 562.0
     - 0.0

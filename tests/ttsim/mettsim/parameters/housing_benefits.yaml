@@ -9,5 +9,5 @@ assistance_rate:
   1900-01-01:
     scalar: 0.5
 max_age_children:
-  2020-01-01:
+  1900-01-01:
     scalar: 18
