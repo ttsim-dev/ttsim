@@ -144,7 +144,8 @@ def compute_taxes_and_transfers(
         data=_input_data_with_p_id,
         ttsim_objects=ttsim_objects,
     )
-
+    if debug:
+        targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,

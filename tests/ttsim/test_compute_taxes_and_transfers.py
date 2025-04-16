@@ -21,7 +21,12 @@ from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.time_conversion import TIME_UNITS
-from ttsim.ttsim_objects import group_creation_function, policy_function, policy_input
+from ttsim.ttsim_objects import (
+    agg_by_group_function,
+    group_creation_function,
+    policy_function,
+    policy_input,
+)
 
 
 @policy_input()
@@ -402,21 +407,7 @@ def test_user_provided_aggregate_by_group_specs():
     )
 
 
-@pytest.mark.parametrize(
-    "aggregation_specs_tree",
-    [
-        {
-            "module_name": {
-                "betrag_double_m_hh": AggregateByGroupSpec(
-                    target="betrag_double_m_hh",
-                    source="betrag_m_double",
-                    agg=AggType.MAX,
-                ),
-            }
-        },
-    ],
-)
-def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree):
+def test_user_provided_aggregation():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "hh_id": pd.Series([1, 1, 2], name="hh_id"),
@@ -424,32 +415,37 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
             "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
         },
     }
+    # Double up, then take max hh_id
     expected_res = pd.Series([400, 400, 200])
 
     @policy_function()
     def betrag_m_double(betrag_m):
         return 2 * betrag_m
 
+    @agg_by_group_function(agg_type=AggType.MAX)
+    def betrag_m_double_hh(betrag_m_double, hh_id) -> float:
+        pass
+
     environment = PolicyEnvironment(
         {
             "p_id": p_id,
             "hh_id": hh_id,
             "module_name": {
-                "betrag_m_double": policy_function(leaf_name="betrag_m_double")(
-                    betrag_m_double
-                )
+                "betrag_m_double": betrag_m_double,
+                "betrag_m_double_m_hh": betrag_m_double_hh,
             },
         },
     )
     out = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
-        targets_tree={"module_name": {"betrag_double_m_hh": None}},
+        targets_tree={"module_name": {"betrag_m_double_hh": None}},
         groupings=("hh",),
+        debug=True,
     )
 
     numpy.testing.assert_array_almost_equal(
-        out["module_name"]["betrag_double_m_hh"], expected_res
+        out["module_name"]["betrag_m_double_hh"], expected_res
     )
 
 
