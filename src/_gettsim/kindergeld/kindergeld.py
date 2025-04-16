@@ -7,7 +7,7 @@ from ttsim import AggType, agg_by_p_id_function, join_numpy, policy_function
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_ansprüche(
-    grundsätzlich_anspruchsberechtigt: bool, p_id_empfänger: int
+    grundsätzlich_anspruchsberechtigt: bool, p_id_empfänger: int, p_id: int
 ) -> int:
     pass
 

@@ -7,6 +7,7 @@ from ttsim import AggType, agg_by_p_id_function, policy_function
 def anzahl_kinderfreibeträge_1(
     kindergeld__grundsätzlich_anspruchsberechtigt: bool,
     p_id_kinderfreibetragsempfänger_1: int,
+    p_id: int,
 ) -> int:
     pass
 
@@ -15,6 +16,7 @@ def anzahl_kinderfreibeträge_1(
 def anzahl_kinderfreibeträge_2(
     kindergeld__grundsätzlich_anspruchsberechtigt: bool,
     p_id_kinderfreibetragsempfänger_2: int,
+    p_id: int,
 ) -> int:
     pass
 

@@ -5,14 +5,18 @@ from ttsim import AggType, agg_by_p_id_function, policy_function
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kinder_bis_24_elternteil_1(
-    alter_bis_24: bool, einkommensteuer__p_id_kinderfreibetragsempfänger_1: int
+    alter_bis_24: bool,
+    einkommensteuer__p_id_kinderfreibetragsempfänger_1: int,
+    p_id: int,
 ) -> int:
     pass
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kinder_bis_24_elternteil_2(
-    alter_bis_24: bool, einkommensteuer__p_id_kinderfreibetragsempfänger_2: int
+    alter_bis_24: bool,
+    einkommensteuer__p_id_kinderfreibetragsempfänger_2: int,
+    p_id: int,
 ) -> int:
     pass
 

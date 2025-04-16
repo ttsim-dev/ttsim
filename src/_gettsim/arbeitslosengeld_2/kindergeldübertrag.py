@@ -7,7 +7,7 @@ from ttsim import AggType, agg_by_p_id_function, join_numpy, policy_function
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def kindergeldübertrag_m(
-    differenz_kindergeld_kindbedarf_m: float, kindergeld__p_id_empfänger: int
+    differenz_kindergeld_kindbedarf_m: float, kindergeld__p_id_empfänger: int, p_id: int
 ) -> float:
     pass
 

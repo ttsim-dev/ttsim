@@ -11,14 +11,18 @@ from ttsim import (
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kindergeld_ansprüche_1(
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool, familie__p_id_elternteil_1: int
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__p_id_elternteil_1: int,
+    p_id: int,
 ) -> int:
     pass
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kindergeld_ansprüche_2(
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool, familie__p_id_elternteil_2: int
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__p_id_elternteil_2: int,
+    p_id: int,
 ) -> int:
     pass
 

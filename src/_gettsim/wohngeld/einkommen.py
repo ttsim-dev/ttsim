@@ -11,7 +11,9 @@ from ttsim.config import numpy_or_jax as np
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def alleinerziehendenbonus(
-    kindergeld__kind_bis_10_mit_kindergeld: bool, kindergeld__p_id_empfänger: int
+    kindergeld__kind_bis_10_mit_kindergeld: bool,
+    kindergeld__p_id_empfänger: int,
+    p_id: int,
 ) -> int:
     pass
 
@@ -434,5 +436,7 @@ def ist_kind_mit_erwerbseinkommen(
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
-def wohngeld_spec_target(wohngeld_source_field: bool, p_id_field: int) -> int:
+def wohngeld_spec_target(
+    wohngeld_source_field: bool, p_id_field: int, p_id: int
+) -> int:
     pass

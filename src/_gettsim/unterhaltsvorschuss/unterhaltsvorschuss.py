@@ -13,7 +13,7 @@ from ttsim import (
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def an_elternteil_auszuzahlender_betrag_m(
-    betrag_m: float, kindergeld__p_id_empfänger: int
+    betrag_m: float, kindergeld__p_id_empfänger: int, p_id: int
 ) -> float:
     pass
 
@@ -444,6 +444,6 @@ def einkommen_m(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def unterhaltsvorschuss_spec_target(
-    unterhaltsvorschuss_source_field: bool, p_id_field: int
+    unterhaltsvorschuss_source_field: bool, p_id_field: int, p_id: int
 ) -> int:
     pass

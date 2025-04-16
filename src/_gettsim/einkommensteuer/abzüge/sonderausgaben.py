@@ -10,7 +10,7 @@ from ttsim import (
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def betreuungskosten_elternteil_m(
-    betreuungskosten_m: float, p_id_betreuungskostenträger: int
+    betreuungskosten_m: float, p_id_betreuungskostenträger: int, p_id: int
 ) -> float:
     pass
 

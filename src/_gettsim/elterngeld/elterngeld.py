@@ -23,7 +23,9 @@ def anzahl_anträge_fg(claimed: bool, fg_id: int) -> int:
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def bezugsmonate_partner(
-    bisherige_bezugsmonate: int, arbeitslosengeld_2__p_id_einstandspartner: int
+    bisherige_bezugsmonate: int,
+    arbeitslosengeld_2__p_id_einstandspartner: int,
+    p_id: int,
 ) -> int:
     pass
 

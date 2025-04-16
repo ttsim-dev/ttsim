@@ -9,7 +9,9 @@ from ttsim import (
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
-def anspruchshöhe_m(anspruchshöhe_kind_m: float, p_id_empfänger: int) -> float:
+def anspruchshöhe_m(
+    anspruchshöhe_kind_m: float, p_id_empfänger: int, p_id: int
+) -> float:
     pass
 
 
@@ -448,6 +450,6 @@ def einkommensgrenze_ohne_geschwisterbonus(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def erziehungsgeld_spec_target(
-    erziehungsgeld_source_field: bool, p_id_field: int
+    erziehungsgeld_source_field: bool, p_id_field: int, p_id: int
 ) -> int:
     pass
