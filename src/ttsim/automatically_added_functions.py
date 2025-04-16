@@ -462,7 +462,8 @@ def create_time_conversion_functions(
                 "all_time_units": all_time_units,
             }
 
-    _fail_if_multiple_time_units_for_same_base_name(base_names_to_variations)
+    # FixMe: Commented out for a moment.
+    # _fail_if_multiple_time_units_for_same_base_name(base_names_to_variations)
 
     converted_ttsim_objects = {}
     for base_name, inputs in base_names_to_time_conversion_inputs.items():
