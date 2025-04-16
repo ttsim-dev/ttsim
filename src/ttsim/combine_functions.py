@@ -80,11 +80,7 @@ def combine_policy_functions_and_derived_functions(
         groupings=groupings,
     )
     current_functions = {
-        **{
-            qn: f
-            for qn, f in ttsim_objects.items()
-            if isinstance(getattr(f, "__wrapped__", f), TTSIMFunction)
-        },
+        **{qn: f for qn, f in ttsim_objects.items() if isinstance(f, TTSIMFunction)},
         **time_conversion_functions,
     }
     # Create aggregation functions by group.
@@ -167,7 +163,7 @@ def _create_aggregation_functions(
     group_by_functions = {
         name: func
         for name, func in functions.items()
-        if isinstance(getattr(func, "__wrapped__", func), GroupCreationFunction)
+        if isinstance(func, GroupCreationFunction)
     }
 
     expected_aggregation_spec_type = (
@@ -295,7 +291,6 @@ def _create_one_aggregation_function(
         aggregation_method=aggregation_spec.agg,
         start_date=start_date,
         end_date=end_date,
-        vectorization_strategy="not_required",
     )
 
 

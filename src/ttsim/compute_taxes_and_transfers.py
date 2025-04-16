@@ -388,9 +388,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         Dictionary of functions.
     """
     group_by_functions = {
-        k: v
-        for k, v in functions.items()
-        if isinstance(getattr(v, "__wrapped__", v), GroupCreationFunction)
+        k: v for k, v in functions.items() if isinstance(v, GroupCreationFunction)
     }
 
     faulty_data_columns = []

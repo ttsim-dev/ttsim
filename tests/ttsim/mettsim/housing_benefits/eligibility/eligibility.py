@@ -30,7 +30,7 @@ def requirement_fulfilled_fam_not_considering_children(
 ) -> bool:
     return (
         housing_benefits__income__amount_m_sp
-        < housing_benefits_params["subsistence_income_per_spouse_m"]
+        < housing_benefits_params["eligibility"]["subsistence_income_per_spouse_m"]
         * number_of_individuals_sp
     )
 
@@ -43,9 +43,9 @@ def requirement_fulfilled_fam_considering_children(
     number_of_individuals_sp: int,
 ) -> bool:
     return housing_benefits__income__amount_m_fam < (
-        housing_benefits_params["subsistence_income_per_spouse"]
+        housing_benefits_params["eligibility"]["subsistence_income_per_spouse_m"]
         * number_of_individuals_sp
-        + housing_benefits_params["subsistence_income_per_child"]
+        + housing_benefits_params["eligibility"]["subsistence_income_per_child_m"]
         * number_of_children_considered
     )
 
@@ -56,13 +56,14 @@ def number_of_children_considered(
     housing_benefits_params: dict,
 ) -> int:
     return min(
-        number_of_children_fam, housing_benefits_params["max_number_of_children"]
+        number_of_children_fam,
+        housing_benefits_params["eligibility"]["max_number_of_children"],
     )
 
 
 @policy_function(start_date="2020-01-01")
 def child(
     age: int,
-    # housing_benefits_params: dict,
+    housing_benefits_params: dict,
 ) -> bool:
-    return age <= 18  # housing_benefits_params["max_age_children"]
+    return age <= housing_benefits_params["max_age_children"]

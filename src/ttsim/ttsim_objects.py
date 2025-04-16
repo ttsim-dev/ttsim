@@ -422,8 +422,6 @@ class DerivedAggregationFunction(TTSIMFunction):
         The date until which the function is active (inclusive).
     params_key_for_rounding:
         The key in the params dictionary that should be used for rounding.
-    vectorization_strategy:
-        Whether and how the function should be vectorized.
     """
 
     source: str | None = None

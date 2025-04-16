@@ -225,7 +225,6 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="count",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -241,7 +240,6 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -257,7 +255,6 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                    vectorization_strategy="not_required",
                 )
             },
             float,
@@ -273,7 +270,6 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -289,7 +285,6 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                    vectorization_strategy="not_required",
                 )
             },
             int,
@@ -305,7 +300,6 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                    vectorization_strategy="not_required",
                 )
             },
             float,
@@ -321,7 +315,6 @@ END_DATE = datetime.date.fromisoformat("2100-12-31")
                     aggregation_method="sum",
                     start_date=START_DATE,
                     end_date=END_DATE,
-                    vectorization_strategy="not_required",
                 )
             },
             int,
