@@ -45,7 +45,7 @@ def betrag_versicherter_m_ohne_midijob(
 
 
 @policy_function(start_date="2003-04-01", leaf_name="betrag_versicherter_m")
-def betrag_versicherter_m_mit_midijob(  # noqa: PLR0913
+def betrag_versicherter_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_rentner_m: float,
     betrag_selbstständig_m: float,
@@ -94,7 +94,7 @@ def betrag_versicherter_m_mit_midijob(  # noqa: PLR0913
 
 
 @policy_function(end_date="2003-03-31", leaf_name="betrag_arbeitgeber_m")
-def betrag_arbeitgeber_m_ohne_midijob(  # noqa: PLR0913
+def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommen_m: float,
@@ -140,7 +140,7 @@ def betrag_arbeitgeber_m_ohne_midijob(  # noqa: PLR0913
 
 
 @policy_function(start_date="2003-04-01", leaf_name="betrag_arbeitgeber_m")
-def betrag_arbeitgeber_m_mit_midijob(  # noqa: PLR0913
+def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,

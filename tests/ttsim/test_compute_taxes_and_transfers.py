@@ -2,31 +2,52 @@ import copy
 import re
 import warnings
 
-import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+from mettsim.config import SUPPORTED_GROUPINGS
 
-from _gettsim.arbeitslosengeld_2.group_by_ids import bg_id
-from _gettsim.config import FOREIGN_KEYS
-from _gettsim.wohngeld.group_by_ids import (
-    wthh_id,
-)
-from gettsim import FunctionsAndColumnsOverlapWarning
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
+from ttsim.aggregation import AggregateByGroupSpec, AggType
 from ttsim.compute_taxes_and_transfers import (
-    _convert_data_to_correct_types,
-    _fail_if_foreign_keys_are_invalid,
+    FunctionsAndColumnsOverlapWarning,
+    _fail_if_foreign_keys_are_invalid_in_data,
     _fail_if_group_variables_not_constant_within_groups,
-    _fail_if_pid_is_non_unique,
+    _fail_if_p_id_is_non_unique,
+    _get_top_level_namespace,
     _partial_parameters_to_functions,
     compute_taxes_and_transfers,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.function_types import group_by_function, policy_function
-from ttsim.policy_environment import PolicyEnvironment
-from ttsim.shared import assert_valid_ttsim_pytree
-from ttsim.typing import convert_series_to_internal_type
+from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
+from ttsim.shared import assert_valid_ttsim_pytree, merge_trees
+from ttsim.time_conversion import TIME_UNITS
+from ttsim.ttsim_objects import (
+    agg_by_group_function,
+    agg_by_p_id_function,
+    group_creation_function,
+    policy_function,
+    policy_input,
+)
+
+
+@policy_input()
+def p_id() -> int:
+    pass
+
+
+@policy_input()
+def p_id_someone_else() -> int:
+    pass
+
+
+@policy_input()
+def hh_id() -> int:
+    pass
+
+
+@policy_input()
+def betrag_m() -> float:
+    pass
 
 
 @pytest.fixture(scope="module")
@@ -45,28 +66,44 @@ def minimal_input_data_shared_hh():
     out = {
         "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
         "hh_id": pd.Series([0, 0, 1], name="hh_id"),
+        "p_id_someone_else": pd.Series([1, 0, -1], name="p_id_someone_else"),
     }
     return out
 
 
+@agg_by_group_function(agg_type=AggType.SUM)
+def foo_hh(foo: int, hh_id: int) -> int:
+    pass
+
+
+@pytest.fixture(scope="module")
+def mettsim_environment():
+    return set_up_policy_environment(
+        policy_inputs=mettsim_policy_inputs,
+        groupings=SUPPORTED_GROUPINGS,
+        supported_time_conversions=TIME_UNITS,
+    )
+
+
 # Create a function which is used by some tests below
 @policy_function()
-def func_before_partial(arg_1, arbeitsl_geld_2_params):
-    return arg_1 + arbeitsl_geld_2_params["test_param_1"]
+def func_before_partial(arg_1, payroll_tax_params):
+    return arg_1 + payroll_tax_params["test_param_1"]
 
 
 func_after_partial = _partial_parameters_to_functions(
     {"test_func": func_before_partial},
-    {"arbeitsl_geld_2": {"test_param_1": 1}},
+    {"payroll_tax": {"test_param_1": 1}},
 )["test_func"]
 
 
 def test_output_as_tree(minimal_input_data):
     environment = PolicyEnvironment(
         {
+            "p_id": p_id,
             "module": {
                 "test_func": policy_function(leaf_name="test_func")(lambda p_id: p_id)
-            }
+            },
         }
     )
 
@@ -74,6 +111,7 @@ def test_output_as_tree(minimal_input_data):
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"module": {"test_func": None}},
+        groupings=("hh",),
     )
 
     assert isinstance(out, dict)
@@ -96,6 +134,7 @@ def test_warn_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"some_target": None},
+            groupings=("hh",),
         )
 
 
@@ -112,6 +151,7 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
+            groupings=("hh",),
         )
 
 
@@ -134,85 +174,71 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"unique": None},
+            groupings=("hh",),
         )
 
     assert len(warning_list) == 0
 
 
-def test_fail_if_pid_does_not_exist():
+def test_fail_if_p_id_does_not_exist():
     data = {"hh_id": pd.Series(data=numpy.arange(8), name="hh_id")}
 
     with pytest.raises(ValueError):
-        _fail_if_pid_is_non_unique(data)
+        _fail_if_p_id_is_non_unique(data)
 
 
-def test_fail_if_pid_is_non_unique():
+def test_fail_if_p_id_is_non_unique():
     data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
 
     with pytest.raises(ValueError):
-        _fail_if_pid_is_non_unique(data)
+        _fail_if_p_id_is_non_unique(data)
 
 
-@pytest.mark.parametrize(
-    (
-        "foreign_key_name",
-        "expected_error_message",
-    ),
-    [
-        ("familie__p_id_ehepartner", "not a valid p_id in the\ninput data"),
-        (
-            "arbeitslosengeld_2__p_id_einstandspartner",
-            "not a\nvalid p_id in the input data",
-        ),
-        ("familie__p_id_elternteil_1", "not a valid p_id in the\ninput data"),
-        ("familie__p_id_elternteil_2", "not a valid p_id in the\ninput data"),
-    ],
-)
-def test_fail_if_foreign_key_points_to_non_existing_pid(
-    foreign_key_name, expected_error_message
-):
+@pytest.mark.skip
+def test_fail_if_foreign_key_points_to_non_existing_p_id(mettsim_environment):
+    policy_inputs = mettsim_environment.policy_inputs
     data = {
-        foreign_key_name: pd.Series([0, 1, 4]),
         "p_id": pd.Series([1, 2, 3]),
+        "p_id_spouse": pd.Series([0, 1, 2]),
     }
 
-    with pytest.raises(ValueError, match=expected_error_message):
-        _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
+    with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
+        _fail_if_foreign_keys_are_invalid_in_data(
+            data=data, policy_inputs=policy_inputs
+        )
 
 
-@pytest.mark.parametrize("foreign_key_path", FOREIGN_KEYS)
-def test_allow_minus_one_as_foreign_key(foreign_key_path):
-    foreign_key_name = dt.qual_name_from_tree_path(foreign_key_path)
+@pytest.mark.skip
+def test_allow_minus_one_as_foreign_key(mettsim_environment):
+    policy_inputs = mettsim_environment.policy_inputs
     data = {
-        foreign_key_name: pd.Series([-1, 1, 2]),
         "p_id": pd.Series([1, 2, 3]),
+        "p_id_spouse": pd.Series([-1, 1, 2]),
     }
 
-    _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
+    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
 
 
-@pytest.mark.parametrize(
-    (
-        "foreign_key_name",
-        "expected_error_message",
-    ),
-    [
-        ("familie__p_id_ehepartner", "are equal to the p_id"),
-        ("arbeitslosengeld_2__p_id_einstandspartner", "are equal to\nthe p_id"),
-        ("familie__p_id_elternteil_1", "are equal to the p_id"),
-        ("familie__p_id_elternteil_2", "are equal to the p_id"),
-    ],
-)
-def test_fail_if_foreign_key_points_to_pid_of_same_row(
-    foreign_key_name, expected_error_message
-):
+@pytest.mark.skip
+def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(mettsim_environment):
+    policy_inputs = mettsim_environment.policy_inputs
     data = {
-        foreign_key_name: pd.Series([1, 3, 3]),
         "p_id": pd.Series([1, 2, 3]),
+        "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
     }
 
-    with pytest.raises(ValueError, match=expected_error_message):
-        _fail_if_foreign_keys_are_invalid(data, p_id=data["p_id"])
+    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
+
+
+@pytest.mark.skip
+def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
+    policy_inputs = mettsim_environment.policy_inputs
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "p_id_child_": pd.Series([1, 3, 3]),
+    }
+
+    _fail_if_foreign_keys_are_invalid_in_data(data=data, policy_inputs=policy_inputs)
 
 
 @pytest.mark.parametrize(
@@ -227,11 +253,11 @@ def test_fail_if_foreign_key_points_to_pid_of_same_row(
         ),
         (
             {
-                "foo_eg": pd.Series([1, 2, 2], name="foo_eg"),
-                "eg_id": pd.Series([1, 1, 2], name="eg_id"),
+                "foo_fam": pd.Series([1, 2, 2], name="foo_fam"),
+                "fam_id": pd.Series([1, 1, 2], name="fam_id"),
             },
             {
-                "eg_id": group_by_function()(lambda x: x),
+                "fam_id": group_creation_function()(lambda x: x),
             },
         ),
     ],
@@ -241,6 +267,7 @@ def test_fail_if_group_variables_not_constant_within_groups(data, functions):
         _fail_if_group_variables_not_constant_within_groups(
             data=data,
             functions=functions,
+            groupings=SUPPORTED_GROUPINGS,
         )
 
 
@@ -263,7 +290,10 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
         match="The following data columns are missing",
     ):
         compute_taxes_and_transfers(
-            minimal_input_data, environment, targets_tree={"c": None}
+            data_tree=minimal_input_data,
+            environment=environment,
+            targets_tree={"c": None},
+            groupings=("hh",),
         )
 
 
@@ -278,7 +308,10 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
 
     environment = PolicyEnvironment({"a": a, "b": b})
     compute_taxes_and_transfers(
-        minimal_input_data, environment, targets_tree={"b": None}
+        data_tree=minimal_input_data,
+        environment=environment,
+        targets_tree={"b": None},
+        groupings=("hh",),
     )
 
 
@@ -292,20 +325,28 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
         match="The following targets have no corresponding function",
     ):
         compute_taxes_and_transfers(
-            minimal_input_data, environment, targets_tree={"unknown_target": None}
+            data_tree=minimal_input_data,
+            environment=environment,
+            targets_tree={"unknown_target": None},
+            groupings=("hh",),
         )
 
 
-def test_fail_if_missing_pid():
+def test_fail_if_missing_p_id():
     data = {"hh_id": pd.Series([1, 2, 3], name="hh_id")}
     with pytest.raises(
         ValueError,
         match="The input data must contain the p_id",
     ):
-        compute_taxes_and_transfers(data, PolicyEnvironment({}), targets_tree={})
+        compute_taxes_and_transfers(
+            data_tree=data,
+            environment=PolicyEnvironment({}),
+            targets_tree={},
+            groupings=("hh",),
+        )
 
 
-def test_fail_if_non_unique_pid(minimal_input_data):
+def test_fail_if_non_unique_p_id(minimal_input_data):
     data = copy.deepcopy(minimal_input_data)
     data["p_id"][:] = 1
 
@@ -313,7 +354,12 @@ def test_fail_if_non_unique_pid(minimal_input_data):
         ValueError,
         match="The following p_ids are non-unique",
     ):
-        compute_taxes_and_transfers(data, PolicyEnvironment({}), targets_tree={})
+        compute_taxes_and_transfers(
+            data_tree=data,
+            environment=PolicyEnvironment({}),
+            targets_tree={},
+            groupings=("hh",),
+        )
 
 
 def test_partial_parameters_to_functions():
@@ -342,20 +388,30 @@ def test_user_provided_aggregate_by_group_specs():
         },
     }
 
-    aggregation_specs_tree = {
+    inputs = {
+        "p_id": p_id,
+        "hh_id": hh_id,
         "module_name": {
-            "betrag_m_hh": AggregateByGroupSpec(
+            "betrag_m": betrag_m,
+        },
+    }
+
+    aggregation_specs_tree = {
+        "module_name": (
+            AggregateByGroupSpec(
+                target="betrag_m_hh",
                 source="betrag_m",
-                aggr="sum",
-            )
-        }
+                agg=AggType.SUM,
+            ),
+        )
     }
     expected_res = pd.Series([200, 200, 100])
 
     out = compute_taxes_and_transfers(
-        data,
-        PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
+        data_tree=data,
+        environment=PolicyEnvironment(raw_objects_tree=inputs),
         targets_tree={"module_name": {"betrag_m_hh": None}},
+        groupings=("hh",),
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -363,28 +419,7 @@ def test_user_provided_aggregate_by_group_specs():
     )
 
 
-@pytest.mark.parametrize(
-    "aggregation_specs_tree",
-    [
-        {
-            "module_name": {
-                "betrag_double_m_hh": AggregateByGroupSpec(
-                    source="betrag_m_double",
-                    aggr="max",
-                ),
-            },
-        },
-        {
-            "module_name": {
-                "betrag_double_m_hh": AggregateByGroupSpec(
-                    source="module_name__betrag_m_double",
-                    aggr="max",
-                ),
-            },
-        },
-    ],
-)
-def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree):
+def test_user_provided_aggregation():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "hh_id": pd.Series([1, 1, 2], name="hh_id"),
@@ -392,136 +427,137 @@ def test_user_provided_aggregate_by_group_specs_function(aggregation_specs_tree)
             "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
         },
     }
-    expected_res = pd.Series([400, 400, 200])
+    # Double up, then take max hh_id
+    expected = pd.Series([400, 400, 200])
 
+    @policy_function()
     def betrag_m_double(betrag_m):
         return 2 * betrag_m
 
+    @agg_by_group_function(agg_type=AggType.MAX)
+    def betrag_m_double_hh(betrag_m_double, hh_id) -> float:
+        pass
+
     environment = PolicyEnvironment(
         {
+            "p_id": p_id,
+            "hh_id": hh_id,
             "module_name": {
-                "betrag_m_double": policy_function(leaf_name="betrag_m_double")(
-                    betrag_m_double
-                )
+                "betrag_m_double": betrag_m_double,
+                "betrag_m_double_hh": betrag_m_double_hh,
             },
-        },
-        aggregation_specs_tree=aggregation_specs_tree,
+        }
     )
 
-    out = compute_taxes_and_transfers(
-        data,
-        environment,
-        targets_tree={"module_name": {"betrag_double_m_hh": None}},
+    actual = compute_taxes_and_transfers(
+        data_tree=data,
+        environment=environment,
+        targets_tree={"module_name": {"betrag_m_double_hh": None}},
+        groupings=("hh",),
+        debug=True,
     )
 
     numpy.testing.assert_array_almost_equal(
-        out["module_name"]["betrag_double_m_hh"], expected_res
+        actual["module_name"]["betrag_m_double_hh"], expected
     )
 
 
-def test_aggregate_by_group_specs_missing_group_sufix():
+def test_user_provided_aggregation_with_time_conversion():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "hh_id": pd.Series([1, 1, 2], name="hh_id"),
         "module_name": {
-            "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
+            "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
         },
     }
-    aggregation_specs_tree = {
-        "module_name": {
-            "betrag_agg_m": AggregateByGroupSpec(
-                source="betrag_m",
-                aggr="sum",
-            )
-        },
-    }
-    with pytest.raises(
-        ValueError,
-        match="Name of aggregated column needs to have a suffix",
-    ):
-        compute_taxes_and_transfers(
-            data,
-            PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
-            targets_tree={"module_name": {"betrag_agg_m": None}},
-        )
+    # Double up, convert to quarter, then take max hh_id
+    expected = pd.Series([400 * 3, 400 * 3, 200 * 3])
+
+    @policy_function()
+    def betrag_double_m(betrag_m):
+        return 2 * betrag_m
+
+    @agg_by_group_function(agg_type=AggType.MAX)
+    def max_betrag_double_m_hh(betrag_double_m, hh_id) -> float:
+        pass
+
+    environment = PolicyEnvironment(
+        {
+            "p_id": p_id,
+            "hh_id": hh_id,
+            "module_name": {
+                "betrag_double_m": betrag_double_m,
+                "max_betrag_double_m_hh": max_betrag_double_m_hh,
+            },
+        }
+    )
+
+    actual = compute_taxes_and_transfers(
+        data_tree=data,
+        environment=environment,
+        targets_tree={"module_name": {"betrag_double_q_hh": None}},
+        groupings=("hh",),
+        debug=True,
+    )
+
+    numpy.testing.assert_array_almost_equal(
+        actual["module_name"]["max_betrag_double_q_hh"], expected
+    )
 
 
 def test_aggregate_by_group_specs_agg_not_impl():
-    data = {
-        "p_id": pd.Series([1, 2, 3], name="p_id"),
-        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-        "module_name": {
-            "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
-        },
-    }
-    aggregation_specs_tree = {
-        "module_name": {
-            "betrag_m_hh": AggregateByGroupSpec(
-                source="betrag_m",
-                aggr="aggr_not_implemented",
-            )
-        },
-    }
     with pytest.raises(
-        ValueError,
-        match="Aggregation method aggr_not_implemented is not implemented.",
+        TypeError,
+        match="agg must be of type AggType, not <class 'str'>",
     ):
-        compute_taxes_and_transfers(
-            data,
-            PolicyEnvironment({}, aggregation_specs_tree=aggregation_specs_tree),
-            targets_tree={"module_name": {"betrag_m_hh": None}},
+        AggregateByGroupSpec(
+            target="betrag_agg_m",
+            source="betrag_m",
+            agg="sum",
         )
 
 
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def sum_source_by_p_id_someone_else(
+    source: int, p_id: int, p_id_someone_else: int
+) -> int:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def sum_source_m_by_p_id_someone_else(
+    source_m: int, p_id: int, p_id_someone_else: int
+) -> int:
+    pass
+
+
 @pytest.mark.parametrize(
-    ("aggregation_specs_tree, leaf_name, target_tree, expected"),
+    ("agg_functions, leaf_name, target_tree, expected"),
     [
         (
             {
                 "module": {
-                    "target_func": AggregateByPIDSpec(
-                        p_id_to_aggregate_by="hh_id",
-                        source="source_func",
-                        aggr="sum",
-                    )
+                    "sum_source_by_p_id_someone_else": sum_source_by_p_id_someone_else
                 }
             },
-            "source_func",
-            {"module": {"target_func": None}},
+            "source",
+            {"module": {"sum_source_by_p_id_someone_else": None}},
             pd.Series([200, 100, 0]),
         ),
         (
             {
                 "module": {
-                    "target_func_m": AggregateByPIDSpec(
-                        p_id_to_aggregate_by="hh_id",
-                        source="source_func_m",
-                        aggr="sum",
-                    )
+                    "sum_source_m_by_p_id_someone_else": sum_source_m_by_p_id_someone_else
                 }
             },
-            "source_func_m",
-            {"module": {"target_func_y": None}},
-            pd.Series([2400, 1200, 0]),
-        ),
-        (
-            {
-                "module": {
-                    "target_func_m": AggregateByPIDSpec(
-                        p_id_to_aggregate_by="hh_id",
-                        source="source_func_m",
-                        aggr="sum",
-                    )
-                }
-            },
-            "source_func_m",
-            {"module": {"target_func_y_hh": None}},
-            pd.Series([3600, 3600, 0]),
+            "source_m",
+            {"module": {"sum_source_m_by_p_id_someone_else": None}},
+            pd.Series([200, 100, 0]),
         ),
     ],
 )
 def test_user_provided_aggregate_by_p_id_specs(
-    aggregation_specs_tree,
+    agg_functions,
     leaf_name,
     target_tree,
     expected,
@@ -529,192 +565,197 @@ def test_user_provided_aggregate_by_p_id_specs(
 ):
     # TODO(@MImmesberger): Remove fake dependency.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-    @policy_function(leaf_name=leaf_name)
-    def source_func(p_id: int) -> int:  # noqa: ARG001
-        return 100
+    @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
+    def source(p_id: int) -> int:  # noqa: ARG001
+        return np.array([100, 200, 300])
 
-    functions_tree = {"module": {leaf_name: source_func}}
-
-    environment = PolicyEnvironment(
-        functions_tree,
-        aggregation_specs_tree=aggregation_specs_tree,
+    raw_objects_tree = merge_trees(
+        agg_functions,
+        {
+            "module": {leaf_name: source},
+            "p_id": p_id,
+            "p_id_someone_else": p_id_someone_else,
+        },
     )
+
+    environment = PolicyEnvironment(raw_objects_tree=raw_objects_tree)
     out = compute_taxes_and_transfers(
         minimal_input_data_shared_hh,
         environment,
         targets_tree=target_tree,
+        groupings=("hh",),
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
 
 
-@pytest.mark.parametrize(
-    "input_data, expected_type, expected_output_data",
-    [
-        (pd.Series([0, 1, 0]), bool, pd.Series([False, True, False])),
-        (pd.Series([1.0, 0.0, 1]), bool, pd.Series([True, False, True])),
-        (pd.Series([200, 550, 237]), float, pd.Series([200.0, 550.0, 237.0])),
-        (pd.Series([1.0, 4.0, 10.0]), int, pd.Series([1, 4, 10])),
-        (pd.Series([200.0, 567.0]), int, pd.Series([200, 567])),
-        (pd.Series([1.0, 0.0]), bool, pd.Series([True, False])),
-    ],
-)
-def test_convert_series_to_internal_types(
-    input_data, expected_type, expected_output_data
-):
-    adjusted_input = convert_series_to_internal_type(input_data, expected_type)
-    pd.testing.assert_series_equal(adjusted_input, expected_output_data)
+# @pytest.mark.parametrize(
+#     "input_data, expected_type, expected_output_data",
+#     [
+#         (pd.Series([0, 1, 0]), bool, pd.Series([False, True, False])),
+#         (pd.Series([1.0, 0.0, 1]), bool, pd.Series([True, False, True])),
+#         (pd.Series([200, 550, 237]), float, pd.Series([200.0, 550.0, 237.0])),
+#         (pd.Series([1.0, 4.0, 10.0]), int, pd.Series([1, 4, 10])),
+#         (pd.Series([200.0, 567.0]), int, pd.Series([200, 567])),
+#         (pd.Series([1.0, 0.0]), bool, pd.Series([True, False])),
+#     ],
+# )
+# def test_convert_series_to_internal_types(
+#     input_data, expected_type, expected_output_data
+# ):
+#     adjusted_input = convert_series_to_internal_type(input_data, expected_type)
+#     pd.testing.assert_series_equal(adjusted_input, expected_output_data)
 
 
-@pytest.mark.parametrize(
-    "input_data, expected_type, error_match",
-    [
-        (
-            pd.Series(["Hallo", 200, 325]),
-            float,
-            "Conversion from input type object to float failed.",
-        ),
-        (
-            pd.Series([True, False]),
-            float,
-            "Conversion from input type bool to float failed.",
-        ),
-        (
-            pd.Series(["a", "b", "c"]).astype("category"),
-            float,
-            "Conversion from input type category to float failed.",
-        ),
-        (
-            pd.Series(["2.0", "3.0"]),
-            int,
-            "Conversion from input type object to int failed.",
-        ),
-        (
-            pd.Series([1.5, 1.0, 2.9]),
-            int,
-            "Conversion from input type float64 to int failed.",
-        ),
-        (
-            pd.Series(["a", "b", "c"]).astype("category"),
-            int,
-            "Conversion from input type category to int failed.",
-        ),
-        (
-            pd.Series([5, 2, 3]),
-            bool,
-            "Conversion from input type int64 to bool failed.",
-        ),
-        (
-            pd.Series([1.5, 1.0, 35.0]),
-            bool,
-            "Conversion from input type float64 to bool failed.",
-        ),
-        (
-            pd.Series(["a", "b", "c"]).astype("category"),
-            bool,
-            "Conversion from input type category to bool failed.",
-        ),
-        (
-            pd.Series(["richtig"]),
-            bool,
-            "Conversion from input type object to bool failed.",
-        ),
-        (
-            pd.Series(["True", "False", ""]),
-            bool,
-            "Conversion from input type object to bool failed.",
-        ),
-        (
-            pd.Series(["true"]),
-            bool,
-            "Conversion from input type object to bool failed.",
-        ),
-        (
-            pd.Series(["zweitausendzwanzig"]),
-            numpy.datetime64,
-            "Conversion from input type object to datetime64 failed.",
-        ),
-        (
-            pd.Series([True, True]),
-            numpy.datetime64,
-            "Conversion from input type bool to datetime64 failed.",
-        ),
-        (
-            pd.Series([2020]),
-            str,
-            "The internal type <class 'str'> is not yet supported.",
-        ),
-    ],
-)
-def test_fail_if_cannot_be_converted_to_internal_type(
-    input_data, expected_type, error_match
-):
-    with pytest.raises(ValueError, match=error_match):
-        convert_series_to_internal_type(input_data, expected_type)
+# @pytest.mark.parametrize(
+#     "input_data, expected_type, error_match",
+#     [
+#         (
+#             pd.Series(["Hallo", 200, 325]),
+#             float,
+#             "Conversion from input type object to float failed.",
+#         ),
+#         (
+#             pd.Series([True, False]),
+#             float,
+#             "Conversion from input type bool to float failed.",
+#         ),
+#         (
+#             pd.Series(["a", "b", "c"]).astype("category"),
+#             float,
+#             "Conversion from input type category to float failed.",
+#         ),
+#         (
+#             pd.Series(["2.0", "3.0"]),
+#             int,
+#             "Conversion from input type object to int failed.",
+#         ),
+#         (
+#             pd.Series([1.5, 1.0, 2.9]),
+#             int,
+#             "Conversion from input type float64 to int failed.",
+#         ),
+#         (
+#             pd.Series(["a", "b", "c"]).astype("category"),
+#             int,
+#             "Conversion from input type category to int failed.",
+#         ),
+#         (
+#             pd.Series([5, 2, 3]),
+#             bool,
+#             "Conversion from input type int64 to bool failed.",
+#         ),
+#         (
+#             pd.Series([1.5, 1.0, 35.0]),
+#             bool,
+#             "Conversion from input type float64 to bool failed.",
+#         ),
+#         (
+#             pd.Series(["a", "b", "c"]).astype("category"),
+#             bool,
+#             "Conversion from input type category to bool failed.",
+#         ),
+#         (
+#             pd.Series(["richtig"]),
+#             bool,
+#             "Conversion from input type object to bool failed.",
+#         ),
+#         (
+#             pd.Series(["True", "False", ""]),
+#             bool,
+#             "Conversion from input type object to bool failed.",
+#         ),
+#         (
+#             pd.Series(["true"]),
+#             bool,
+#             "Conversion from input type object to bool failed.",
+#         ),
+#         (
+#             pd.Series(["zweitausendzwanzig"]),
+#             numpy.datetime64,
+#             "Conversion from input type object to datetime64 failed.",
+#         ),
+#         (
+#             pd.Series([True, True]),
+#             numpy.datetime64,
+#             "Conversion from input type bool to datetime64 failed.",
+#         ),
+#         (
+#             pd.Series([2020]),
+#             str,
+#             "The internal type <class 'str'> is not yet supported.",
+#         ),
+#     ],
+# )
+# def test_fail_if_cannot_be_converted_to_internal_type(
+#     input_data, expected_type, error_match
+# ):
+#     with pytest.raises(ValueError, match=error_match):
+#         convert_series_to_internal_type(input_data, expected_type)
 
 
-@pytest.mark.parametrize(
-    "data, functions_overridden",
-    [
-        (
-            {"bg_id": pd.Series([1, 2, 3])},
-            {"bg_id": bg_id},
-        ),
-        (
-            {"wthh_id": pd.Series([1, 2, 3])},
-            {"wthh_id": wthh_id},
-        ),
-    ],
-)
-def test_provide_endogenous_groupings(data, functions_overridden):
-    """Test whether GETTSIM handles user-provided grouping IDs, which would otherwise be
-    set endogenously."""
-    _convert_data_to_correct_types(data, functions_overridden)
+# @pytest.mark.skip
+# @pytest.mark.parametrize(
+#     "data, functions_overridden",
+#     [
+#         (
+#             {"sp_id": pd.Series([1, 2, 3])},
+#             {"sp_id": sp_id},
+#         ),
+#         (
+#             {"fam_id": pd.Series([1, 2, 3])},
+#             {"fam_id": fam_id},
+#         ),
+#     ],
+# )
+# def test_provide_endogenous_groupings(data, functions_overridden):
+#     """Test whether TTSIM handles user-provided grouping IDs, which would otherwise be
+#     set endogenously."""
+#     _convert_data_to_correct_types(data, functions_overridden)
 
 
-@pytest.mark.parametrize(
-    "data, functions_overridden, error_match",
-    [
-        (
-            {"hh_id": pd.Series([1, 1.1, 2])},
-            {},
-            "- hh_id: Conversion from input type float64 to int",
-        ),
-        (
-            {"wohnort_ost": pd.Series([1.1, 0.0, 1.0])},
-            {},
-            "- wohnort_ost: Conversion from input type float64 to bool",
-        ),
-        (
-            {
-                "hh_id": pd.Series([1.0, 2.0, 3.0]),
-                "wohnort_ost": pd.Series([2, 0, 1]),
-            },
-            {},
-            "- wohnort_ost: Conversion from input type int64 to bool",
-        ),
-        (
-            {"wohnort_ost": pd.Series(["True", "False"])},
-            {},
-            "- wohnort_ost: Conversion from input type object to bool",
-        ),
-        (
-            {
-                "hh_id": pd.Series([1, "1", 2]),
-                "einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m": pd.Series(  # noqa: E501
-                    ["2000", 3000, 4000]
-                ),
-            },
-            {},
-            "- hh_id: Conversion from input type object to int failed.",
-        ),
-    ],
-)
-def test_fail_if_cannot_be_converted_to_correct_type(
-    data, functions_overridden, error_match
-):
-    with pytest.raises(ValueError, match=error_match):
-        _convert_data_to_correct_types(data, functions_overridden)
+# @pytest.mark.skip
+# @pytest.mark.parametrize(
+#     "data, functions_overridden, error_match",
+#     [
+#         (
+#             {"hh_id": pd.Series([1, 1.1, 2])},
+#             {},
+#             "- hh_id: Conversion from input type float64 to int",
+#         ),
+#         (
+#             {"gondorian": pd.Series([1.1, 0.0, 1.0])},
+#             {},
+#             "- gondorian: Conversion from input type float64 to bool",
+#         ),
+#         (
+#             {
+#                 "hh_id": pd.Series([1.0, 2.0, 3.0]),
+#                 "gondorian": pd.Series([2, 0, 1]),
+#             },
+#             {},
+#             "- gondorian: Conversion from input type int64 to bool",
+#         ),
+#         (
+#             {"gondorian": pd.Series(["True", "False"])},
+#             {},
+#             "- gondorian: Conversion from input type object to bool",
+#         ),
+#         (
+#             {
+#                 "hh_id": pd.Series([1, "1", 2]),
+#                 "payroll_tax__amount": pd.Series(["2000", 3000, 4000]),
+#             },
+#             {},
+#             "- hh_id: Conversion from input type object to int failed.",
+#         ),
+#     ],
+# )
+# def test_fail_if_cannot_be_converted_to_correct_type(
+#     data, functions_overridden, error_match
+# ):
+#     with pytest.raises(ValueError, match=error_match):
+#         _convert_data_to_correct_types(data, functions_overridden)
 
 
 @pytest.mark.parametrize(
@@ -745,3 +786,48 @@ def test_fail_if_cannot_be_converted_to_correct_type(
 def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     with pytest.raises(TypeError, match=re.escape(err_substr)):
         assert_valid_ttsim_pytree(tree, leaf_checker, "tree")
+
+
+@pytest.mark.parametrize(
+    (
+        "environment",
+        "supported_time_conversions",
+        "groupings",
+        "expected",
+    ),
+    [
+        (
+            PolicyEnvironment(
+                raw_objects_tree={
+                    "foo_m": policy_function(leaf_name="foo_m")(lambda x: x)
+                }
+            ),
+            ["m", "y"],
+            ["hh"],
+            {"foo_m", "foo_y", "foo_m_hh", "foo_y_hh"},
+        ),
+        (
+            PolicyEnvironment(
+                raw_objects_tree={"foo": policy_function(leaf_name="foo")(lambda x: x)}
+            ),
+            ["m", "y"],
+            ["hh"],
+            {"foo", "foo_hh"},
+        ),
+        (
+            PolicyEnvironment(raw_objects_tree={"foo_hh": foo_hh}),
+            ["m", "y"],
+            ["hh"],
+            {"foo", "foo_hh"},
+        ),
+    ],
+)
+def test_get_top_level_namespace(
+    environment, supported_time_conversions, groupings, expected
+):
+    result = _get_top_level_namespace(
+        environment=environment,
+        supported_time_conversions=supported_time_conversions,
+        groupings=groupings,
+    )
+    assert result == expected

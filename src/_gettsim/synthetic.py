@@ -9,14 +9,13 @@ import pandas as pd
 from _gettsim.config import (
     RESOURCE_DIR,
     SUPPORTED_GROUPINGS,
-    TYPES_INPUT_VARIABLES,
 )
 from ttsim.policy_environment import _load_parameter_group_from_yaml
 
 current_year = datetime.datetime.today().year
 
 
-def create_synthetic_data(  # noqa: PLR0913
+def create_synthetic_data(
     n_adults=1,
     n_children=0,
     adults_married=True,
@@ -199,7 +198,7 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
     - erziehungsgeld__p_id_empfänger
     - arbeitslosengeld_2__p_id_einstandspartner
     - familie__p_id_ehepartner
-    - einkommensteuer__abzüge__p_id_betreuungskosten_träger
+    - einkommensteuer__abzüge__p_id_betreuungskostenträger
 
     Parameters
     ----------
@@ -225,7 +224,7 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
         data["familie__p_id_elternteil_2"] = -1
     data["kindergeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
     data["erziehungsgeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
-    data["einkommensteuer__abzüge__p_id_betreuungskosten_träger"] = data[
+    data["einkommensteuer__abzüge__p_id_betreuungskostenträger"] = data[
         "familie__p_id_elternteil_1"
     ]
 

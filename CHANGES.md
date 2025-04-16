@@ -6,6 +6,18 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 
 ## Unpublished
 
+- {gh}`861` Make fg_id invariant to ordering of data ({ghuser}`mj023`).
+- {gh}`856` Add METTSIM to test TTSIM part ({ghuser}`hmgaudecker`, `timmens`,
+  `MImmesberger`).
+- {gh}`860` Use AggType instead of strings ({ghuser}`timmens`).
+- {gh}`858` Apply tree logic to GETTSIM tests ({ghuser}`felixschmitz`).
+- {gh}`850` Split GETTSIM from TTSIM functions ({ghuser}`hmgaudecker`, `MImmesberger`).
+- {gh}`805` Rename taxes and transers using new tree structure ({ghuser}`hmgaudecker`,
+  `MImmesberger`).
+- {gh}`818` Change behavior of namespaces so they are on the module level
+  ({ghuser}`hmgaudecker`, `MImmesberger`).
+- {gh}`780` Refactor infrastructure to work with `dags.tree` ({ghuser}`lars-reimann`,
+  `hmgaudecker`, `MImmesberger`).
 - {gh}`807` Implement changes from 2. Jahressteuergesetz 2024 ({ghuser}`Eric-Sommer`)
 - {gh}`809` implement 2025 changes to pensions and social security contributions
   ({ghuser}`Eric-Sommer`).

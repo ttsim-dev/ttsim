@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING
 
 import numpy
 import pytest
+from mettsim.config import RESOURCE_DIR
 
-from _gettsim.config import RESOURCE_DIR
-from ttsim.function_types import _vectorize_func, policy_function
 from ttsim.loader import (
     _convert_path_to_tree_path,
     _find_python_files_recursively,
     _load_module,
 )
+from ttsim.ttsim_objects import _vectorize_func, policy_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 def test_load_path():
     assert _load_module(
-        RESOURCE_DIR / "sozialversicherung" / "kranken" / "beitrag" / "beitragssatz.py",
+        RESOURCE_DIR / "payroll_tax" / "amount.py",
         RESOURCE_DIR,
     )
 
@@ -65,9 +65,9 @@ def test_vectorize_func(vectorized_function: Callable) -> None:
     ),
     [
         (
-            RESOURCE_DIR / "foo" / "spam" / "bar.py",
+            RESOURCE_DIR / "payroll_tax" / "child_tax_credit" / "child_tax_credit.py",
             RESOURCE_DIR,
-            ("foo", "spam"),
+            ("payroll_tax", "child_tax_credit"),
         ),
         (RESOURCE_DIR / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
         (RESOURCE_DIR / "foo.py", RESOURCE_DIR, tuple()),  # noqa: C408

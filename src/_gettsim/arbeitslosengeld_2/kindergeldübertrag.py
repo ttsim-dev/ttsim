@@ -2,15 +2,16 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, join_numpy, policy_function
+from ttsim import AggregateByPIDSpec, AggType, join_numpy, policy_function
 
-aggregation_specs = {
-    "kindergeldübertrag_m": AggregateByPIDSpec(
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="kindergeldübertrag_m",
         source="differenz_kindergeld_kindbedarf_m",
-        aggr="sum",
+        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
+        agg=AggType.SUM,
     ),
-}
+)
 
 
 @policy_function(end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m")
@@ -102,7 +103,7 @@ def kindergeld_zur_bedarfsdeckung_m(
 
 
 @policy_function()
-def differenz_kindergeld_kindbedarf_m(  # noqa: PLR0913
+def differenz_kindergeld_kindbedarf_m(
     regelbedarf_m_bg: float,
     nettoeinkommen_nach_abzug_freibetrag_m: float,
     wohngeld__anspruchshöhe_m_bg: float,

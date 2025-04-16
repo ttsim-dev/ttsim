@@ -1,14 +1,20 @@
 """Tax allowances for special expenses."""
 
-from ttsim import AggregateByPIDSpec, policy_function
+from ttsim import (
+    AggregateByPIDSpec,
+    AggType,
+    RoundingSpec,
+    policy_function,
+)
 
-aggregation_specs = {
-    "betreuungskosten_elternteil_m": AggregateByPIDSpec(
-        p_id_to_aggregate_by="p_id_betreuungskosten_träger",
+aggregation_specs = (
+    AggregateByPIDSpec(
+        target="betreuungskosten_elternteil_m",
         source="betreuungskosten_m",
-        aggr="sum",
+        p_id_to_aggregate_by="p_id_betreuungskostenträger",
+        agg=AggType.SUM,
     ),
-}
+)
 
 
 @policy_function(end_date="2011-12-31", leaf_name="sonderausgaben_y_sn")
@@ -101,7 +107,7 @@ def ausgaben_für_betreuung_y(
     return out
 
 
-@policy_function(params_key_for_rounding="eink_st_abzuege")
+@policy_function(rounding_spec=RoundingSpec(base=1, direction="up"))
 def absetzbare_betreuungskosten_y_sn(
     ausgaben_für_betreuung_y_sn: float,
     eink_st_abzuege_params: dict,

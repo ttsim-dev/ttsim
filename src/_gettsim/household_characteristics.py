@@ -1,18 +1,18 @@
-from ttsim import AggregateByGroupSpec, policy_function
+from ttsim import AggregateByGroupSpec, AggType, policy_function
 
-aggregation_specs = {
-    "anzahl_erwachsene_hh": AggregateByGroupSpec(
+aggregation_specs = (
+    AggregateByGroupSpec(
+        target="anzahl_erwachsene_hh",
         source="familie__erwachsen",
-        aggr="sum",
+        agg=AggType.SUM,
     ),
-    "anzahl_rentenbezieher_hh": AggregateByGroupSpec(
+    AggregateByGroupSpec(
+        target="anzahl_rentenbezieher_hh",
         source="sozialversicherung__rente__bezieht_rente",
-        aggr="sum",
+        agg=AggType.SUM,
     ),
-    "anzahl_personen_hh": AggregateByGroupSpec(
-        aggr="count",
-    ),
-}
+    AggregateByGroupSpec(target="anzahl_personen_hh", source=None, agg=AggType.COUNT),
+)
 
 
 @policy_function(vectorization_strategy="vectorize")

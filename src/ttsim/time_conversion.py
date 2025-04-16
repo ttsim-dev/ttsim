@@ -1,20 +1,32 @@
 from __future__ import annotations
 
 import inspect
-import re
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
 from dags import rename_arguments
 
-from _gettsim.config import SUPPORTED_GROUPINGS
-from ttsim.function_types import DerivedTimeConversionFunction, PolicyFunction
+from ttsim.shared import (
+    get_re_pattern_for_all_time_units_and_groupings,
+    get_re_pattern_for_specific_time_units_and_groupings,
+)
+from ttsim.ttsim_objects import (
+    DerivedTimeConversionFunction,
+    TTSIMFunction,
+    TTSIMObject,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ttsim.typing import QualNameDataDict, QualNameFunctionsDict
+    from ttsim.typing import (
+        QualNameDataDict,
+        QualNameTTSIMFunctionDict,
+        QualNameTTSIMObjectDict,
+    )
 
-_TIME_UNITS = {
+
+TIME_UNITS = {
     "y": "year",
     "q": "quarter",
     "m": "month",
@@ -373,32 +385,34 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    functions: QualNameFunctionsDict,
+    ttsim_objects: QualNameTTSIMObjectDict,
     data: QualNameDataDict,
-) -> QualNameFunctionsDict:
+    groupings: tuple[str, ...],
+) -> QualNameTTSIMFunctionDict:
     """
      Create functions that convert variables to different time units.
 
     The time unit of a function is determined by a naming convention:
-    * Functions referring to yearly values end with "_y", or "_y_x" where "x" is a
-        grouping level.
-    * Functions referring to monthly values end with "_m", or "_m_x" where "x" is a
-        grouping level.
-    * Functions referring to weekly values end with "_w", or "_w_x" where "x" is a
-        grouping level.
-    * Functions referring to daily values end with "_d", or "_d_x" where "x" is a
-        grouping level.
 
-    Unless the corresponding function already exists, the following functions are
-    created:
+    * Functions referring to yearly values end with "_y", or "_y_x" where "x" is a
+      grouping level.
+    * Functions referring to monthly values end with "_m", or "_m_x" where "x" is a
+      grouping level.
+    * Functions referring to weekly values end with "_w", or "_w_x" where "x" is a
+      grouping level.
+    * Functions referring to daily values end with "_d", or "_d_x" where "x" is a
+      grouping level.
+
+    Unless the corresponding function already exists, the following will be created:
+
     * For functions referring to yearly values, create monthly, weekly and daily
-    functions.
+      functions.
     * For functions referring to monthly values, create yearly, weekly and daily
-    functions.
+      functions.
     * For functions referring to weekly values, create yearly, monthly and daily
-    functions.
+      functions.
     * For functions referring to daily values, create yearly, monthly and weekly
-    functions.
+      functions.
 
     Parameters
     ----------
@@ -413,88 +427,115 @@ def create_time_conversion_functions(
     The functions dict with the new time conversion functions.
     """
 
-    converted_functions = {}
+    all_time_units = tuple(TIME_UNITS)
+    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
+        groupings=groupings,
+        supported_time_units=all_time_units,
+    )
 
-    # Create time-conversions for existing functions
-    for name, function in functions.items():
-        all_time_conversions_for_this_function = _create_time_conversion_functions(
-            name=name, func=function
-        )
-        for der_name, der_func in all_time_conversions_for_this_function.items():
-            # Skip if the function already exists or the data column exists
-            if der_name in converted_functions or der_name in data:
-                continue
+    base_names_to_time_conversion_inputs = {}
+    base_names_to_variations = {}
+    for qual_name, ttsim_object in ttsim_objects.items():
+        match = pattern_all.fullmatch(qual_name)
+        base_name = match.group("base_name")
+        if match.group("time_unit"):
+            if base_name in base_names_to_variations:
+                (base_names_to_variations[base_name].append(qual_name),)
             else:
-                converted_functions[der_name] = der_func
+                base_names_to_variations[base_name] = [qual_name]
+            base_names_to_time_conversion_inputs[base_name] = {
+                "base_name": base_name,
+                "qual_name_source": qual_name,
+                "ttsim_object": ttsim_object,
+                "time_unit": match.group("time_unit"),
+                "aggregation_suffix": f"_{match.group('aggregation')}"
+                if match.group("aggregation")
+                else "",
+                "all_time_units": all_time_units,
+            }
 
-    # Create time-conversions for data columns
-    for name in data:
-        all_time_conversions_for_this_data_column = _create_time_conversion_functions(
-            name=name
-        )
-        for der_name, der_func in all_time_conversions_for_this_data_column.items():
-            # Skip if the function already exists or the data column exists
-            if der_name in converted_functions or der_name in data:
-                continue
-            else:
-                converted_functions[der_name] = der_func
+    _fail_if_multiple_time_units_for_same_base_name(base_names_to_variations)
 
-    return converted_functions
+    converted_ttsim_objects = {}
+    for base_name, inputs in base_names_to_time_conversion_inputs.items():
+        for qual_name_data in data:
+            # If base_name is in provided data, base time conversions on that.
+            if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
+                base_name=base_name,
+                all_time_units=all_time_units,
+                groupings=groupings,
+            ).fullmatch(qual_name_data):
+                inputs["qual_name_source"] = qual_name_data
+                inputs["time_unit"] = pattern_specific.group("time_unit")
+                break
+
+        variations = _create_one_set_of_time_conversion_functions(**inputs)
+        for der_name in variations:
+            if der_name in converted_ttsim_objects or der_name in data:
+                raise ValueError("Fixme, I should not be here -- left for debugging")
+        converted_ttsim_objects = {**converted_ttsim_objects, **variations}
+
+    return converted_ttsim_objects
 
 
-def _create_time_conversion_functions(
-    name: str, func: PolicyFunction | None = None
+def _fail_if_multiple_time_units_for_same_base_name(
+    base_names_to_variations: dict[str, list[str]],
+) -> None:
+    invalid = {b: q for b, q in base_names_to_variations.items() if len(q) > 1}
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
+
+
+def _create_one_set_of_time_conversion_functions(
+    base_name: str,
+    qual_name_source: str,
+    ttsim_object: TTSIMObject,
+    time_unit: str,
+    aggregation_suffix: str,
+    all_time_units: tuple[str, ...],
 ) -> dict[str, DerivedTimeConversionFunction]:
     result: dict[str, DerivedTimeConversionFunction] = {}
-
-    all_time_units = list(_TIME_UNITS)
-
-    units = "".join(all_time_units)
-    groupings = "|".join([f"_{grouping}" for grouping in SUPPORTED_GROUPINGS])
-    function_with_time_unit = re.compile(
-        f"(?P<base_name>.*_)(?P<time_unit>[{units}])(?P<aggregation>{groupings})?"
+    dependencies = (
+        set(inspect.signature(ttsim_object).parameters)
+        if isinstance(ttsim_object, TTSIMFunction)
+        else set()
     )
-    match = function_with_time_unit.fullmatch(name)
-    dependencies = set(inspect.signature(func).parameters) if func else set()
 
-    if match:
-        base_name = match.group("base_name")
-        time_unit = match.group("time_unit")
-        aggregation = match.group("aggregation") or ""
+    for target_time_unit in [tu for tu in all_time_units if tu != time_unit]:
+        new_name = f"{base_name}_{target_time_unit}{aggregation_suffix}"
 
-        missing_time_units = [unit for unit in all_time_units if unit != time_unit]
-        for missing_time_unit in missing_time_units:
-            new_name = f"{base_name}{missing_time_unit}{aggregation}"
+        # Without this check, we could create cycles in the DAG: Consider a
+        # hard-coded function `var_y` that takes `var_m` as an input, assuming it
+        # to be provided in the input data. If we create a function `var_m`, which
+        # would take `var_y` as input, we create a cycle. If `var_m` is actually
+        # provided as an input, `var_m` would be overwritten, removing the cycle.
+        # However, if `var_m` is not provided as an input, an error message would
+        # be shown that a cycle between `var_y` and `var_m` was detected. This
+        # hides the actual problem, which is that `var_m` is not provided as an
+        # input.
+        if new_name in dependencies:
+            continue
 
-            # Without this check, we could create cycles in the DAG: Consider a
-            # hard-coded function `var_y` that takes `var_m` as an input, assuming it
-            # to be provided in the input data. If we create a function `var_m`, which
-            # would take `var_y` as input, we create a cycle. If `var_m` is actually
-            # provided as an input, `var_m` would be overwritten, removing the cycle.
-            # However, if `var_m` is not provided as an input, an error message would
-            # be shown that a cycle between `var_y` and `var_m` was detected. This
-            # hides the actual problem, which is that `var_m` is not provided as an
-            # input.
-            if new_name in dependencies:
-                continue
-
-            result[new_name] = DerivedTimeConversionFunction(
-                function=_create_function_for_time_unit(
-                    name,
-                    _time_conversion_functions[f"{time_unit}_to_{missing_time_unit}"],
-                ),
-                source=name,
-                source_function=func,
-                conversion_target=new_name,
-            )
+        result[new_name] = DerivedTimeConversionFunction(
+            leaf_name=dt.tree_path_from_qual_name(new_name)[-1],
+            function=_create_function_for_time_unit(
+                source=qual_name_source,
+                converter=_time_conversion_functions[
+                    f"{time_unit}_to_{target_time_unit}"
+                ],
+            ),
+            source=qual_name_source,
+            start_date=ttsim_object.start_date,
+            end_date=ttsim_object.end_date,
+        )
 
     return result
 
 
 def _create_function_for_time_unit(
-    function_name: str, converter: Callable[[float], float]
+    source: str, converter: Callable[[float], float]
 ) -> Callable[[float], float]:
-    @rename_arguments(mapper={"x": function_name})
+    @rename_arguments(mapper={"x": source})
     def func(x: float) -> float:
         return converter(x)
 

@@ -6,13 +6,16 @@ These information are used throughout modules of gettsim.
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, group_by_function, policy_function
+from ttsim import (
+    AggregateByGroupSpec,
+    AggType,
+    group_creation_function,
+    policy_function,
+)
 
-aggregation_specs = {
-    "anzahl_personen_ehe": AggregateByGroupSpec(
-        aggr="count",
-    ),
-}
+aggregation_specs = (
+    AggregateByGroupSpec(target="anzahl_personen_ehe", source=None, agg=AggType.COUNT),
+)
 
 
 @policy_function()
@@ -129,7 +132,7 @@ def erwachsen(kind: bool) -> bool:
     return out
 
 
-@group_by_function()
+@group_creation_function()
 def ehe_id(
     p_id: numpy.ndarray[int],
     p_id_ehepartner: numpy.ndarray[int],

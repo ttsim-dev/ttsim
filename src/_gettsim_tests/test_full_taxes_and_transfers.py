@@ -1,11 +1,14 @@
 import dags.tree as dt
 import pytest
 
-from _gettsim.config import TYPES_INPUT_VARIABLES
-from _gettsim_tests._helpers import cached_set_up_policy_environment
-from _gettsim_tests._policy_test_utils import PolicyTest, load_policy_test_data
+from _gettsim.config import SUPPORTED_GROUPINGS
+from _gettsim_tests.utils import (
+    PolicyTest,
+    cached_set_up_policy_environment,
+    load_policy_test_data,
+)
 from ttsim import compute_taxes_and_transfers
-from ttsim.typing import check_series_has_expected_type
+from ttsim.ttsim_objects import PolicyInput, check_series_has_expected_type
 
 test_data = load_policy_test_data("full_taxes_and_transfers")
 
@@ -18,6 +21,7 @@ def test_full_taxes_transfers(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
+        supported_groupings=SUPPORTED_GROUPINGS,
     )
 
 
@@ -29,10 +33,15 @@ def test_data_types(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
+        supported_groupings=SUPPORTED_GROUPINGS,
     )
 
-    flat_types_input_variables = dt.flatten_to_qual_names(TYPES_INPUT_VARIABLES)
-    flat_functions = dt.flatten_to_qual_names(environment.functions_tree)
+    flat_types_input_variables = {
+        n: pi.data_type
+        for n, pi in dt.flatten_to_qual_names(environment.raw_objects_tree).items()
+        if isinstance(pi, PolicyInput)
+    }
+    flat_functions = dt.flatten_to_qual_names(environment.raw_objects_tree)
 
     for column_name, result_array in dt.flatten_to_qual_names(result).items():
         if column_name in flat_types_input_variables:
@@ -51,6 +60,9 @@ def test_data_types(test: PolicyTest):
             assert check_series_has_expected_type(result_array, internal_type)
 
 
+@pytest.mark.skip(
+    reason="Got rid of DEFAULT_TARGETS, there might not be a replacement."
+)
 @pytest.mark.parametrize("test", test_data, ids=lambda x: x.test_name)
 def test_allow_none_as_target_tree(test: PolicyTest):
     environment = cached_set_up_policy_environment(date=test.date)
@@ -59,4 +71,5 @@ def test_allow_none_as_target_tree(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=None,
+        supported_groupings=SUPPORTED_GROUPINGS,
     )

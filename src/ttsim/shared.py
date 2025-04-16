@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import datetime
 import inspect
+import itertools
+import re
 import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -8,16 +11,160 @@ import dags.tree as dt
 import numpy
 import optree
 
-from _gettsim.config import SUPPORTED_GROUPINGS
-
 if TYPE_CHECKING:
-    from ttsim.function_types import PolicyFunction
+    from ttsim.ttsim_objects import PolicyFunction
     from ttsim.typing import (
+        DashedISOString,
         GenericCallable,
         NestedDataDict,
-        NestedFunctionDict,
-        QualNameFunctionsDict,
+        NestedTTSIMObjectDict,
+        QualNameTTSIMFunctionDict,
     )
+
+
+_DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def to_datetime(date: datetime.date | DashedISOString):
+    if isinstance(date, datetime.date):
+        return date
+    if isinstance(date, str) and _DASHED_ISO_DATE_REGEX.fullmatch(date):
+        return datetime.date.fromisoformat(date)
+    else:
+        raise ValueError(
+            f"Date {date} neither matches the format YYYY-MM-DD nor is a datetime.date."
+        )
+
+
+def validate_date_range(start: datetime.date, end: datetime.date):
+    if start > end:
+        raise ValueError(f"The start date {start} must be before the end date {end}.")
+
+
+def get_re_pattern_for_all_time_units_and_groupings(
+    groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
+) -> re.Pattern:
+    """Get a regex pattern for time units and groupings.
+
+    The pattern matches strings in any of these formats:
+    - <base_name>  (may contain underscores)
+    - <base_name>_<time_unit>
+    - <base_name>_<aggregation>
+    - <base_name>_<time_unit>_<aggregation>
+
+    Parameters
+    ----------
+    groupings
+        The supported groupings.
+    supported_time_units
+        The supported time units.
+
+    Returns
+    -------
+    pattern
+        The regex pattern.
+    """
+    re_units = "".join(supported_time_units)
+    re_groupings = "|".join(groupings)
+    return re.compile(
+        f"(?P<base_name>.*?)"
+        f"(?:_(?P<time_unit>[{re_units}]))?"
+        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"$"
+    )
+
+
+def get_re_pattern_for_specific_time_units_and_groupings(
+    base_name: str,
+    all_time_units: tuple[str, ...],
+    groupings: tuple[str, ...],
+) -> re.Pattern:
+    """Get a regex for a specific base name with optional time unit and aggregation.
+
+    The pattern matches strings in any of these formats:
+    - <specific_base_name>
+    - <specific_base_name>_<time_unit>
+    - <specific_base_name>_<aggregation>
+    - <specific_base_name>_<time_unit>_<aggregation>
+
+    Parameters
+    ----------
+    base_name
+        The specific base name to match.
+    supported_time_units
+        The supported time units.
+    groupings
+        The supported groupings.
+
+    Returns
+    -------
+    pattern
+        The regex pattern.
+    """
+    re_units = "".join(all_time_units)
+    re_groupings = "|".join(groupings)
+    return re.compile(
+        f"(?P<base_name>{re.escape(base_name)})"
+        f"(?:_(?P<time_unit>[{re_units}]))?"
+        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"$"
+    )
+
+
+def all_variations_of_base_name(
+    base_name: str,
+    supported_time_conversions: list[str],
+    groupings: list[str],
+    create_conversions_for_time_units: bool,
+) -> set[str]:
+    """Get possible derived function names given a base function name.
+
+    Examples
+    --------
+    >>> all_variations_of_base_name(
+        base_name="income",
+        supported_time_conversions=["y", "m"],
+        groupings=["hh"],
+        create_conversions_for_time_units=True,
+    )
+    {'income_m', 'income_y', 'income_hh_y', 'income_hh_m'}
+
+    >>> all_variations_of_base_name(
+        base_name="claims_benefits",
+        supported_time_conversions=["y", "m"],
+        groupings=["hh"],
+        create_conversions_for_time_units=False,
+    )
+    {'claims_benefits_hh'}
+
+    Parameters
+    ----------
+    base_name
+        The base function name.
+    supported_time_conversions
+        The supported time conversions.
+    groupings
+        The supported groupings.
+    create_conversions_for_time_units
+        Whether to create conversions for time units.
+
+    Returns
+    -------
+    The names of all potential targets based on the base name.
+    """
+    result = set()
+    if create_conversions_for_time_units:
+        for time_unit in supported_time_conversions:
+            result.add(f"{base_name}_{time_unit}")
+        for time_unit, aggregation in itertools.product(
+            supported_time_conversions, groupings
+        ):
+            result.add(f"{base_name}_{time_unit}_{aggregation}")
+    else:
+        result.add(base_name)
+        for aggregation in groupings:
+            result.add(f"{base_name}_{aggregation}")
+    return result
 
 
 class KeyErrorMessage(str):
@@ -161,11 +308,11 @@ def insert_path_and_value(
 
 
 def partition_tree_by_reference_tree(
-    tree_to_partition: NestedFunctionDict | NestedDataDict,
-    reference_tree: NestedFunctionDict | NestedDataDict,
+    tree_to_partition: NestedTTSIMObjectDict | NestedDataDict,
+    reference_tree: NestedTTSIMObjectDict | NestedDataDict,
 ) -> tuple[
-    NestedFunctionDict | NestedDataDict,
-    NestedFunctionDict | NestedDataDict,
+    NestedTTSIMObjectDict | NestedDataDict,
+    NestedTTSIMObjectDict | NestedDataDict,
 ]:
     """
     Partition a tree into two based on the presence of its paths in a reference tree.
@@ -211,8 +358,9 @@ def partition_by_reference_dict(
 
     Returns
     -------
-    A tuple containing: - The first dictionary with keys present in both dictionaries. -
-    The second dictionary with keys absent in the reference dictionary.
+    A tuple containing:
+    - The first dictionary with keys present in both dictionaries.
+    - The second dictionary with keys absent in the reference dictionary.
     """
     intersection = {k: v for k, v in to_partition.items() if k in reference_dict}
     difference = {k: v for k, v in to_partition.items() if k not in reference_dict}
@@ -270,9 +418,9 @@ def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[st
     return [p for p in parameters if parameters[p].default == parameters[p].empty]
 
 
-def remove_group_suffix(col):
+def remove_group_suffix(col, groupings):
     out = col
-    for g in SUPPORTED_GROUPINGS:
+    for g in groupings:
         out = out.removesuffix(f"_{g}")
 
     return out
@@ -404,7 +552,8 @@ def assert_valid_ttsim_pytree(
 
 def get_name_of_group_by_id(
     target_name: str,
-    group_by_functions: QualNameFunctionsDict,
+    group_by_functions: QualNameTTSIMFunctionDict,
+    groupings: tuple[str, ...],
 ) -> str:
     """Get the group-by-identifier name for some target.
 
@@ -428,7 +577,7 @@ def get_name_of_group_by_id(
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
-    for g in SUPPORTED_GROUPINGS:
+    for g in groupings:
         if target_name.endswith(f"_{g}") and g == "hh":
             # Hardcode because hh_id is not part of the functions tree
             return "hh_id"

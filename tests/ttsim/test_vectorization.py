@@ -2,20 +2,21 @@ import datetime
 import functools
 import inspect
 import string
+from pathlib import Path
 
 import dags.tree as dt
 import numpy
 import pytest
 from dags import concatenate_functions
 
-from ttsim.config import USE_JAX
+from ttsim.config import IS_JAX_INSTALLED
 
-if USE_JAX:
+if IS_JAX_INSTALLED:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
-from ttsim.function_types import GroupByFunction, policy_function
-from ttsim.loader import load_functions_tree_for_date
+from ttsim.loader import load_objects_tree_for_date
+from ttsim.ttsim_objects import GroupCreationFunction, PolicyInput, policy_function
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -27,10 +28,10 @@ from ttsim.vectorization import (
 # Backend
 # ======================================================================================
 
-backends = ["jax", "numpy"] if USE_JAX else ["numpy"]
+backends = ["jax", "numpy"] if IS_JAX_INSTALLED else ["numpy"]
 
 modules = {"numpy": numpy}
-if USE_JAX:
+if IS_JAX_INSTALLED:
     modules["jax"] = jax.numpy
 
 # ======================================================================================
@@ -368,7 +369,7 @@ def test_disallowed_operation_wrapper(func):
 # ======================================================================================
 
 
-# TODO(@MImmesberger): Remove isinstance check once GroupByFunctions are JAX-compatible.
+# TODO(@MImmesberger): Remove isinstance once GroupCreationFunctions are JAX-compatible.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/515
 for year in range(1990, 2023):
 
@@ -377,9 +378,12 @@ for year in range(1990, 2023):
         [
             pf.function
             for pf in dt.flatten_to_tree_paths(
-                load_functions_tree_for_date(datetime.date(year=year, month=1, day=1))
+                load_objects_tree_for_date(
+                    resource_dir=Path(__file__).parent / "mettsim",
+                    date=datetime.date(year=year, month=1, day=1),
+                )
             ).values()
-            if not isinstance(pf, GroupByFunction)
+            if not isinstance(pf, GroupCreationFunction | PolicyInput)
         ],
     )
     @pytest.mark.parametrize("backend", backends)
@@ -453,7 +457,7 @@ def test_geschwisterbonus_m(backend):
     assert_array_equal(got, full(shape, exp))
 
 
-def mock__elterngeld__grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
+def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     claimed: bool,
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,

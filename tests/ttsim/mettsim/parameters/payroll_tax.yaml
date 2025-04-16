@@ -1,0 +1,9 @@
+---
+child_tax_credit:
+  1900-01-01:
+    child_amount_y: 100.0
+    max_age: 18
+income:
+  1900-01-01:
+    lump_sum_deduction_y: 100.0
+    rate: 0.3
