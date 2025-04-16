@@ -410,7 +410,7 @@ def test_annotations_are_applied_to_derived_functions(
 @pytest.mark.parametrize(
     (
         "functions",
-        "inputs",
+        "policy_inputs",
         "targets",
         "data",
         "top_level_namespace",
@@ -422,7 +422,6 @@ def test_annotations_are_applied_to_derived_functions(
             {"x": x},
             {},
             {"x": pd.Series([1])},
-            {},
             ["foo", "x"],
             ("x_hh"),
         ),
@@ -431,7 +430,6 @@ def test_annotations_are_applied_to_derived_functions(
             {"hh_id": hh_id, "n2__x": x},
             {},
             {"n2": {"x": pd.Series([1])}},
-            {},
             ["n1", "n2"],
             ("n2__x_hh"),
         ),
@@ -440,7 +438,6 @@ def test_annotations_are_applied_to_derived_functions(
             {"x": x},
             {"x_hh": None},
             {"x": pd.Series([1])},
-            {},
             ["x"],
             ("x_hh"),
         ),
@@ -448,7 +445,7 @@ def test_annotations_are_applied_to_derived_functions(
 )
 def test_derived_aggregation_functions_are_in_correct_namespace(
     functions,
-    inputs,
+    policy_inputs,
     targets,
     data,
     top_level_namespace,
@@ -461,7 +458,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     """
     result = _create_aggregate_by_group_functions(
         functions=functions,
-        inputs=inputs,
+        policy_inputs=policy_inputs,
         targets=targets,
         data=data,
         top_level_namespace=top_level_namespace,
