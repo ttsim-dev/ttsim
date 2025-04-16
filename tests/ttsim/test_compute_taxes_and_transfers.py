@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from mettsim.config import SUPPORTED_GROUPINGS
 
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
+from ttsim.aggregation import AggregateByGroupSpec, AggType
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     _fail_if_foreign_keys_are_invalid_in_data,
@@ -19,10 +19,11 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
-from ttsim.shared import assert_valid_ttsim_pytree
+from ttsim.shared import assert_valid_ttsim_pytree, merge_trees
 from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     agg_by_group_function,
+    agg_by_p_id_function,
     group_creation_function,
     policy_function,
     policy_input,
@@ -31,6 +32,11 @@ from ttsim.ttsim_objects import (
 
 @policy_input()
 def p_id() -> int:
+    pass
+
+
+@policy_input()
+def p_id_someone_else() -> int:
     pass
 
 
@@ -60,8 +66,14 @@ def minimal_input_data_shared_hh():
     out = {
         "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
         "hh_id": pd.Series([0, 0, 1], name="hh_id"),
+        "p_id_someone_else": pd.Series([1, 0, -1], name="p_id_someone_else"),
     }
     return out
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def foo_hh(foo: int, hh_id: int) -> int:
+    pass
 
 
 @pytest.fixture(scope="module")
@@ -493,35 +505,6 @@ def test_user_provided_aggregation_with_time_conversion():
     )
 
 
-def test_aggregate_by_group_specs_missing_group_suffix():
-    data = {
-        "p_id": pd.Series([1, 2, 3], name="p_id"),
-        "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-        "module_name": {
-            "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
-        },
-    }
-    aggregation_specs_tree = {
-        "module_name": {
-            "betrag_agg_m": AggregateByGroupSpec(
-                target="betrag_agg_m",
-                source="betrag_m",
-                agg=AggType.SUM,
-            )
-        }
-    }
-    with pytest.raises(
-        ValueError,
-        match="Name of aggregated column needs to have a suffix",
-    ):
-        compute_taxes_and_transfers(
-            data,
-            PolicyEnvironment({}),
-            targets_tree={"module_name": {"betrag_agg_m": None}},
-            groupings=("hh",),
-        )
-
-
 def test_aggregate_by_group_specs_agg_not_impl():
     with pytest.raises(
         TypeError,
@@ -534,58 +517,47 @@ def test_aggregate_by_group_specs_agg_not_impl():
         )
 
 
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def sum_source_by_p_id_someone_else(
+    source: int, p_id: int, p_id_someone_else: int
+) -> int:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def sum_source_m_by_p_id_someone_else(
+    source_m: int, p_id: int, p_id_someone_else: int
+) -> int:
+    pass
+
+
 @pytest.mark.parametrize(
-    ("aggregation_specs_tree, leaf_name, target_tree, expected"),
+    ("agg_functions, leaf_name, target_tree, expected"),
     [
         (
             {
                 "module": {
-                    "target_func": AggregateByPIDSpec(
-                        target="target_func",
-                        p_id_to_aggregate_by="hh_id",
-                        source="source_func",
-                        agg=AggType.SUM,
-                    )
+                    "sum_source_by_p_id_someone_else": sum_source_by_p_id_someone_else
                 }
             },
-            "source_func",
-            {"module": {"target_func": None}},
+            "source",
+            {"module": {"sum_source_by_p_id_someone_else": None}},
             pd.Series([200, 100, 0]),
         ),
         (
             {
                 "module": {
-                    "target_func_m": AggregateByPIDSpec(
-                        target="target_func_m",
-                        p_id_to_aggregate_by="hh_id",
-                        source="source_func_m",
-                        agg=AggType.SUM,
-                    )
+                    "sum_source_m_by_p_id_someone_else": sum_source_m_by_p_id_someone_else
                 }
             },
-            "source_func_m",
-            {"module": {"target_func_y": None}},
-            pd.Series([2400, 1200, 0]),
-        ),
-        (
-            {
-                "module": {
-                    "target_func_m": AggregateByPIDSpec(
-                        target="target_func_m",
-                        p_id_to_aggregate_by="hh_id",
-                        source="source_func_m",
-                        agg=AggType.SUM,
-                    )
-                }
-            },
-            "source_func_m",
-            {"module": {"target_func_y_hh": None}},
-            pd.Series([3600, 3600, 0]),
+            "source_m",
+            {"module": {"sum_source_m_by_p_id_someone_else": None}},
+            pd.Series([200, 100, 0]),
         ),
     ],
 )
 def test_user_provided_aggregate_by_p_id_specs(
-    aggregation_specs_tree,
+    agg_functions,
     leaf_name,
     target_tree,
     expected,
@@ -593,17 +565,20 @@ def test_user_provided_aggregate_by_p_id_specs(
 ):
     # TODO(@MImmesberger): Remove fake dependency.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-    @policy_function(leaf_name=leaf_name)
-    def source_func(p_id: int) -> int:  # noqa: ARG001
-        return 100
+    @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
+    def source(p_id: int) -> int:  # noqa: ARG001
+        return np.array([100, 200, 300])
 
-    functions_tree = {
-        "module": {leaf_name: source_func},
-        "p_id": p_id,
-        "hh_id": hh_id,
-    }
+    raw_objects_tree = merge_trees(
+        agg_functions,
+        {
+            "module": {leaf_name: source},
+            "p_id": p_id,
+            "p_id_someone_else": p_id_someone_else,
+        },
+    )
 
-    environment = PolicyEnvironment(functions_tree)
+    environment = PolicyEnvironment(raw_objects_tree=raw_objects_tree)
     out = compute_taxes_and_transfers(
         minimal_input_data_shared_hh,
         environment,
@@ -840,15 +815,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
             {"foo", "foo_hh"},
         ),
         (
-            PolicyEnvironment(
-                raw_objects_tree={
-                    # "foo_hh": AggregateByGroupSpec(
-                    #     target="foo_hh",
-                    #     source="foo",
-                    #     agg=AggType.SUM,
-                    # ),
-                },
-            ),
+            PolicyEnvironment(raw_objects_tree={"foo_hh": foo_hh}),
             ["m", "y"],
             ["hh"],
             {"foo", "foo_hh"},
