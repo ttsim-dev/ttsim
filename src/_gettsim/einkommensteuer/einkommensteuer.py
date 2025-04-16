@@ -3,10 +3,21 @@
 from ttsim import (
     AggType,
     RoundingSpec,
+    agg_by_group_function,
     agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
 )
+
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_sn(sn_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.ANY)
+def alleinerziehend_sn(familie__alleinerziehend: bool, sn_id: int) -> bool:
+    pass
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
