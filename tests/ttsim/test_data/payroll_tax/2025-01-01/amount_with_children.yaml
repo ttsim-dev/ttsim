@@ -37,6 +37,14 @@ inputs:
       - 30
       - 30
       - 10
+    parent_is_noble:
+      - false
+      - false
+      - false
+    wealth:
+      - 0.0
+      - 0.0
+      - 0.0
 outputs:
   payroll_tax__income__deductions_y:
     - 200
