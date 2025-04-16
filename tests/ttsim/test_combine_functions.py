@@ -221,7 +221,7 @@ def test_fail_if_targets_are_not_among_functions(
         (
             {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_hh)},
             {},
-            {"n1": {"x": pd.Series([1])}},
+            {"n1__x": pd.Series([1])},
             ("n1__x_hh"),
         ),
         (
