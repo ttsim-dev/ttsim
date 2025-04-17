@@ -2,7 +2,7 @@
 
 import numpy
 
-from ttsim import AggType, agg_by_p_id_function, join_numpy, policy_function
+from ttsim import AggType, agg_by_p_id_function, join, policy_function
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -92,7 +92,7 @@ def kindergeld_zur_bedarfsdeckung_m(
     -------
 
     """
-    return join_numpy(
+    return join(
         kindergeld__p_id_empfänger,
         p_id,
         kindergeld_pro_kind_m,

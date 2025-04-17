@@ -2,7 +2,7 @@
 
 import numpy
 
-from ttsim import AggType, agg_by_p_id_function, join_numpy, policy_function
+from ttsim import AggType, agg_by_p_id_function, join, policy_function
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -203,7 +203,7 @@ def gleiche_fg_wie_empfänger(
     -------
 
     """
-    fg_id_kindergeldempfänger = join_numpy(
+    fg_id_kindergeldempfänger = join(
         p_id_empfänger,
         p_id,
         fg_id,

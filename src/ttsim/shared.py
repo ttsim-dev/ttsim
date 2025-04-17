@@ -7,8 +7,9 @@ import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import dags.tree as dt
-import numpy
 import optree
+
+from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
     from ttsim.ttsim_objects import PolicyFunction
@@ -399,23 +400,23 @@ Key: TypeVar = TypeVar("Key")
 Out: TypeVar = TypeVar("Out")
 
 
-def join_numpy(
-    foreign_key: numpy.ndarray[Key],
-    primary_key: numpy.ndarray[Key],
-    target: numpy.ndarray[Out],
+def join(
+    foreign_key: np.ndarray,
+    primary_key: np.ndarray,
+    target: np.ndarray,
     value_if_foreign_key_is_missing: Out,
-) -> numpy.ndarray[Out]:
+) -> np.ndarray:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
-    the same index as the primary key.
+    the same index as the primary key. When using Jax, does not work on String Arrays.
 
     Parameters
     ----------
-    foreign_key : numpy.ndarray[Key]
+    foreign_key : np.ndarray[Key]
         The foreign keys.
-    primary_key : numpy.ndarray[Key]
+    primary_key : np.ndarray[Key]
         The primary keys.
-    target : numpy.ndarray[Out]
+    target : np.ndarray[Out]
         The targets in the same order as the primary keys.
     value_if_foreign_key_is_missing : Out
         The value to return if no matching primary key is found.
@@ -424,38 +425,20 @@ def join_numpy(
     -------
     The joined array.
     """
-    if len(numpy.unique(primary_key)) != len(primary_key):
-        keys, counts = numpy.unique(primary_key, return_counts=True)
-        duplicate_primary_keys = keys[counts > 1]
-        msg = format_errors_and_warnings(
-            f"Duplicate primary keys: {duplicate_primary_keys}",
-        )
-        raise ValueError(msg)
-
-    invalid_foreign_keys = foreign_key[
-        (foreign_key >= 0) & (~numpy.isin(foreign_key, primary_key))
-    ]
-
-    if len(invalid_foreign_keys) > 0:
-        msg = format_errors_and_warnings(
-            f"Invalid foreign keys: {invalid_foreign_keys}",
-        )
-        raise ValueError(msg)
-
     # For each foreign key and for each primary key, check if they match
     matches_foreign_key = foreign_key[:, None] == primary_key
 
     # For each foreign key, add a column with True at the end, to later fall back to
     # the value for unresolved foreign keys
-    padded_matches_foreign_key = numpy.pad(
+    padded_matches_foreign_key = np.pad(
         matches_foreign_key, ((0, 0), (0, 1)), "constant", constant_values=True
     )
 
     # For each foreign key, compute the index of the first matching primary key
-    indices = numpy.argmax(padded_matches_foreign_key, axis=1)
+    indices = np.argmax(padded_matches_foreign_key, axis=1)
 
     # Add the value for unresolved foreign keys at the end of the target array
-    padded_targets = numpy.pad(
+    padded_targets = np.pad(
         target, (0, 1), "constant", constant_values=value_if_foreign_key_is_missing
     )
 
