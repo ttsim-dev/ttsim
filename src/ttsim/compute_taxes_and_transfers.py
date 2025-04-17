@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import re
 import warnings
 from typing import TYPE_CHECKING, Any
 
@@ -10,27 +11,28 @@ import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
+from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
-    all_variations_of_base_name,
     assert_valid_ttsim_pytree,
+    fail_if_multiple_time_units_for_same_base_name_and_group,
     format_errors_and_warnings,
     format_list_linewise,
+    get_base_name_and_grouping_suffix,
     get_name_of_group_by_id,
-    get_names_of_arguments_without_defaults,
+    get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
+    group_pattern,
     merge_trees,
     partition_by_reference_dict,
 )
-from ttsim.time_conversion import TIME_UNITS
 from ttsim.ttsim_objects import (
     FKType,
     GroupCreationFunction,
-    PolicyInput,
     TTSIMFunction,
 )
 
@@ -38,10 +40,11 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         NestedDataDict,
         NestedTargetDict,
+        NestedTTSIMObjectDict,
         QualNameDataDict,
-        QualNamePolicyInputDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
+        QualNameTTSIMObjectDict,
     )
 
 
@@ -84,37 +87,28 @@ def compute_taxes_and_transfers(
     _fail_if_targets_tree_not_valid(targets_tree)
     _fail_if_data_tree_not_valid(data_tree)
     _fail_if_environment_not_valid(environment)
-
+    _fail_if_group_ids_are_outside_top_level_namespace(
+        environment=environment,
+        groupings=groupings,
+    )
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
-        supported_time_conversions=tuple(TIME_UNITS.keys()),
+        time_units=tuple(TIME_UNIT_LABELS.keys()),
         groupings=groupings,
     )
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
-    functions: QualNameTTSIMFunctionDict = {}
-    policy_inputs: QualNamePolicyInputDict = {}
-    for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
-        if isinstance(f_or_i, TTSIMFunction):
-            functions[name] = dt.one_function_without_tree_logic(
-                function=f_or_i,
-                tree_path=dt.tree_path_from_qual_name(name),
-                top_level_namespace=top_level_namespace,
-            )
-        elif isinstance(f_or_i, PolicyInput):
-            policy_inputs[name] = f_or_i
-        else:
-            raise TypeError(f"Unknown type: {type(f_or_i)}")
-
+    ttsim_objects = remove_tree_logic_from_ttsim_objects_tree(
+        raw_objects_tree=environment.raw_objects_tree,
+        top_level_namespace=top_level_namespace,
+    )
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
-        functions=functions,
+        ttsim_objects=ttsim_objects,
         targets=targets,
         data=data,
-        policy_inputs=policy_inputs,
-        top_level_namespace=top_level_namespace,
         groupings=groupings,
     )
 
@@ -147,11 +141,16 @@ def compute_taxes_and_transfers(
         functions=functions,
         groupings=groupings,
     )
+    _input_data_with_p_id = {
+        "p_id": data["p_id"],
+        **input_data,
+    }
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=input_data,
-        policy_inputs=policy_inputs,
+        data=_input_data_with_p_id,
+        ttsim_objects=ttsim_objects,
     )
-
+    if debug:
+        targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,
@@ -182,9 +181,28 @@ def compute_taxes_and_transfers(
     return result_tree
 
 
+def _fail_if_group_ids_are_outside_top_level_namespace(
+    environment: PolicyEnvironment,
+    groupings: tuple[str, ...],
+) -> None:
+    """Fail if group ids are outside the top level namespace."""
+    group_id_pattern = re.compile(f"(?P<group>{'|'.join(groupings)})_id$")
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(environment.raw_objects_tree)
+        if len(tree_path) > 1 and group_id_pattern.match(tree_path[-1])
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
+        )
+
+
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
-    supported_time_conversions: tuple[str, ...],
+    time_units: tuple[str, ...],
     groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
@@ -200,26 +218,49 @@ def _get_top_level_namespace(
         The top level namespace.
     """
     direct_top_level_names = set(environment.raw_objects_tree.keys())
-    re_pattern = get_re_pattern_for_all_time_units_and_groupings(
+
+    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         groupings=groupings,
-        supported_time_units=supported_time_conversions,
+        time_units=time_units,
     )
 
-    all_top_level_names = set()
+    all_top_level_names = direct_top_level_names.copy()
+    bngs_to_variations = {}
     for name in direct_top_level_names:
-        match = re_pattern.fullmatch(name)
-        base_name = match.group("base_name")
-        create_conversions_for_time_units = bool(match.group("time_unit"))
+        match = pattern_all.fullmatch(name)
+        # We must not find multiple time units for the same base name and group.
+        bngs = get_base_name_and_grouping_suffix(match)
+        if match.group("time_unit"):
+            if bngs not in bngs_to_variations:
+                bngs_to_variations[bngs] = [name]
+            else:
+                bngs_to_variations[bngs].append(name)
+            for time_unit in time_units:
+                all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
+    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-        all_top_level_names_for_name = all_variations_of_base_name(
-            base_name=base_name,
-            supported_time_conversions=supported_time_conversions,
-            groupings=groupings,
-            create_conversions_for_time_units=create_conversions_for_time_units,
-        )
-        all_top_level_names.update(all_top_level_names_for_name)
+    gp = group_pattern(groupings)
+    potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
+
+    for name in potential_base_names:
+        for g in groupings:
+            all_top_level_names.add(f"{name}_{g}")
 
     return all_top_level_names
+
+
+def remove_tree_logic_from_ttsim_objects_tree(
+    raw_objects_tree: NestedTTSIMObjectDict,
+    top_level_namespace: set[str],
+) -> QualNameTTSIMObjectDict:
+    """Map qualified names to TTSIM objects without tree logic."""
+    return {
+        name: f_or_i.remove_tree_logic(
+            tree_path=dt.tree_path_from_qual_name(name),
+            top_level_namespace=top_level_namespace,
+        )
+        for name, f_or_i in dt.flatten_to_qual_names(raw_objects_tree).items()
+    }
 
 
 def _create_input_data_for_concatenated_function(
@@ -290,7 +331,7 @@ def _partial_parameters_to_functions(
     # parameters.
     processed_functions = {}
     for name, function in functions.items():
-        arguments = get_names_of_arguments_without_defaults(function)
+        arguments = get_names_of_required_arguments(function)
         partial_params = {
             arg: params[key]
             for arg in arguments
@@ -381,9 +422,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         Dictionary of functions.
     """
     group_by_functions = {
-        k: v
-        for k, v in functions.items()
-        if isinstance(getattr(v, "__wrapped__", v), GroupCreationFunction)
+        k: v for k, v in functions.items() if isinstance(v, GroupCreationFunction)
     }
 
     faulty_data_columns = []
@@ -442,7 +481,7 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
 
 def _fail_if_foreign_keys_are_invalid_in_data(
     data: QualNameDataDict,
-    policy_inputs: QualNamePolicyInputDict,
+    ttsim_objects: QualNameTTSIMObjectDict,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -453,7 +492,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
 
     valid_ids = set(data["p_id"]) | {-1}
 
-    for fk_name, fk in policy_inputs.items():
+    for fk_name, fk in ttsim_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
         elif fk_name in data:

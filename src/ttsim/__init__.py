@@ -1,4 +1,5 @@
-from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec, AggType
+from ttsim.aggregation import AggType
+from ttsim.automatically_added_functions import create_time_conversion_functions
 from ttsim.combine_functions import combine_policy_functions_and_derived_functions
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
@@ -19,16 +20,14 @@ from ttsim.shared import (
     upsert_path_and_value,
     upsert_tree,
 )
-from ttsim.time_conversion import create_time_conversion_functions
 from ttsim.ttsim_objects import (
     AggByGroupFunction,
     AggByPIDFunction,
-    DerivedAggregationFunction,
-    DerivedTimeConversionFunction,
     FKType,
     GroupCreationFunction,
     PolicyFunction,
     PolicyInput,
+    TimeConversionFunction,
     agg_by_group_function,
     agg_by_p_id_function,
     group_creation_function,
@@ -41,11 +40,7 @@ __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
-    "AggregateByGroupSpec",
-    "AggregateByPIDSpec",
     "ConflictingTimeDependentObjectsError",
-    "DerivedAggregationFunction",
-    "DerivedTimeConversionFunction",
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
@@ -53,6 +48,7 @@ __all__ = [
     "PolicyFunction",
     "PolicyInput",
     "RoundingSpec",
+    "TimeConversionFunction",
     "agg_by_group_function",
     "agg_by_p_id_function",
     "combine_policy_functions_and_derived_functions",

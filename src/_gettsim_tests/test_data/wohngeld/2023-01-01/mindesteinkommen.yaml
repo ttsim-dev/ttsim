@@ -1,7 +1,9 @@
 ---
 info:
-  note: Several households that differ in their eligibility for Wohngeld because of Mindesteinkommen.
-  precision: 0.01
+  note: >-
+    Several households that differ in their eligibility for Wohngeld because of
+    Mindesteinkommen.
+  precision_atol: 0.01
   source: Made up.
 inputs:
   assumed: {}
@@ -336,7 +338,7 @@ outputs:
     - false
     - false
     - false
-  wohngeld__wthh_id:
+  wthh_id:
     - 1
     - 1
     - 100

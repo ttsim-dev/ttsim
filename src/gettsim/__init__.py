@@ -19,8 +19,6 @@ import pytest
 from _gettsim.synthetic import create_synthetic_data
 from _gettsim_tests import TEST_DIR
 from ttsim import (
-    AggregateByGroupSpec,
-    AggregateByPIDSpec,
     FunctionsAndColumnsOverlapWarning,
     GroupCreationFunction,
     PolicyEnvironment,
@@ -50,8 +48,6 @@ def test(*args):
 
 
 __all__ = [
-    "AggregateByGroupSpec",
-    "AggregateByPIDSpec",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
     "PolicyEnvironment",

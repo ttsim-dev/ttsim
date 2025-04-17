@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from ttsim.time_conversion import (
+from ttsim.automatically_added_functions import (
     _create_function_for_time_unit,
     create_time_conversion_functions,
     d_to_m,
@@ -277,11 +277,9 @@ class TestCreateFunctionsForTimeUnits:
     def test_should_create_functions_for_other_time_units_for_functions(
         self, name: str, expected: list[str]
     ) -> None:
-        functions = {name: policy_function(leaf_name=name)(return_one)}
         time_conversion_functions = create_time_conversion_functions(
-            functions=functions,
+            ttsim_objects={name: policy_function(leaf_name=name)(return_one)},
             data={},
-            policy_inputs={},
             groupings=("sn", "hh"),
         )
 
@@ -289,11 +287,9 @@ class TestCreateFunctionsForTimeUnits:
             assert expected_name in time_conversion_functions
 
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
-        functions = {"test1_d": policy_function(leaf_name="test1_d")(return_one)}
         time_conversion_functions = create_time_conversion_functions(
-            functions=functions,
+            ttsim_objects={"test1_d": policy_function(leaf_name="test1_d")(return_one)},
             data={"test2_y": None},
-            policy_inputs={},
             groupings=("sn", "hh"),
         )
 
@@ -303,11 +299,9 @@ class TestCreateFunctionsForTimeUnits:
     def test_should_overwrite_functions_with_data_cols_that_only_differ_in_time_period(
         self,
     ) -> None:
-        functions = {"test_d": policy_function(leaf_name="test_d")(return_one)}
         time_conversion_functions = create_time_conversion_functions(
-            functions=functions,
+            ttsim_objects={"test_d": policy_function(leaf_name="test_d")(return_one)},
             data={"test_y": None},
-            policy_inputs={},
             groupings=("sn", "hh"),
         )
 
@@ -334,11 +328,11 @@ class TestCreateFunctionForTimeUnit:
 
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
 def test_should_not_create_cycle():
-    functions = {"test_d": policy_function(leaf_name="test_d")(lambda test_m: test_m)}
     time_conversion_functions = create_time_conversion_functions(
-        functions=functions,
+        ttsim_objects={
+            "test_d": policy_function(leaf_name="test_d")(lambda test_m: test_m)
+        },
         data={},
-        policy_inputs={},
         groupings=(),
     )
 

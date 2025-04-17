@@ -1,7 +1,7 @@
 ---
 info:
   note: Verified or corrected using source.
-  precision: 0.1
+  precision_atol: 0.1
   source: https://www.deutsche-rentenversicherung.de/DRV/DE/Online-Dienste/Online-Rechner/RentenbeginnUndHoehenRechner/rentenbeginnrechner_node.html
 inputs:
   assumed: {}

@@ -29,19 +29,25 @@ inputs:
     age:
       - 30
       - 30
+    parent_is_noble:
+      - false
+      - false
+    wealth:
+      - 0.0
+      - 0.0
 outputs:
   housing_benefits__amount_m_fam:
-    - (800 - (800 - 100/12)*0.3) * 0.5
-    - (800 - (800 - 100/12)*0.3) * 0.5
+    - 281.0
+    - 281.0
   housing_benefits__income__amount_m:
-    - 800 - (800 - 100/12)*0.3
+    - 562.0
     - 0.0
   housing_benefits__eligibility__requirement_fulfilled_fam:
     - true
     - true
-  housing_benefits__eligibility__number_of_children_considered:
-    - 0
-    - 0
-  housing_benefits__eligibility__number_of_children_fam:
-    - 0
-    - 0
+  housing_benefits__eligibility__number_of_family_members_considered_fam:
+    - 2
+    - 2
+  housing_benefits__eligibility__number_of_individuals_fam:
+    - 2
+    - 2

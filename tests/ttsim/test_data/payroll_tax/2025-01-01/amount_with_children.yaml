@@ -36,18 +36,26 @@ inputs:
     age:
       - 30
       - 30
-      - 30
+      - 10
+    parent_is_noble:
+      - false
+      - false
+      - false
+    wealth:
+      - 0.0
+      - 0.0
+      - 0.0
 outputs:
   payroll_tax__income__deductions_y:
-    - 100
-    - 0.0
-    - 0.0
+    - 200
+    - 100.0
+    - 100.0
   payroll_tax__income__amount_y:
     - 9800
     - 0.0
     - 0.0
   payroll_tax__amount_y:
-    - 9800 * 0.3
+    - 2940
     - 0.0
     - 0.0
   payroll_tax__child_tax_credit__claim_of_child_y:
@@ -55,7 +63,7 @@ outputs:
     - 0.0
     - 100.0
   payroll_tax__child_tax_credit__amount_m:
-    - 100.0
+    - 8.333333
     - 0.0
     - 0.0
   payroll_tax__child_tax_credit__child_eligible:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import inspect
-import itertools
 import re
 import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -43,21 +42,21 @@ def validate_date_range(start: datetime.date, end: datetime.date):
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
-    groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
+    groupings: tuple[str, ...], time_units: tuple[str, ...]
 ) -> re.Pattern:
     """Get a regex pattern for time units and groupings.
 
     The pattern matches strings in any of these formats:
     - <base_name>  (may contain underscores)
     - <base_name>_<time_unit>
-    - <base_name>_<aggregation>
-    - <base_name>_<time_unit>_<aggregation>
+    - <base_name>_<grouping>
+    - <base_name>_<time_unit>_<grouping>
 
     Parameters
     ----------
     groupings
         The supported groupings.
-    supported_time_units
+    time_units
         The supported time units.
 
     Returns
@@ -65,19 +64,25 @@ def get_re_pattern_for_all_time_units_and_groupings(
     pattern
         The regex pattern.
     """
-    re_units = "".join(supported_time_units)
+    re_units = "".join(time_units)
     re_groupings = "|".join(groupings)
     return re.compile(
         f"(?P<base_name>.*?)"
         f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
         f"$"
+    )
+
+
+def group_pattern(groupings: tuple[str, ...]) -> re.Pattern:
+    return re.compile(
+        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
     )
 
 
 def get_re_pattern_for_specific_time_units_and_groupings(
     base_name: str,
-    supported_time_units: tuple[str, ...],
+    all_time_units: tuple[str, ...],
     groupings: tuple[str, ...],
 ) -> re.Pattern:
     """Get a regex for a specific base name with optional time unit and aggregation.
@@ -85,14 +90,14 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     The pattern matches strings in any of these formats:
     - <specific_base_name>
     - <specific_base_name>_<time_unit>
-    - <specific_base_name>_<aggregation>
-    - <specific_base_name>_<time_unit>_<aggregation>
+    - <specific_base_name>_<grouping>
+    - <specific_base_name>_<time_unit>_<grouping>
 
     Parameters
     ----------
     base_name
         The specific base name to match.
-    supported_time_units
+    time_units
         The supported time units.
     groupings
         The supported groupings.
@@ -102,70 +107,31 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     pattern
         The regex pattern.
     """
-    re_units = "".join(supported_time_units)
+    re_units = "".join(all_time_units)
     re_groupings = "|".join(groupings)
     return re.compile(
         f"(?P<base_name>{re.escape(base_name)})"
         f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
         f"$"
     )
 
 
-def all_variations_of_base_name(
-    base_name: str,
-    supported_time_conversions: list[str],
-    groupings: list[str],
-    create_conversions_for_time_units: bool,
-) -> set[str]:
-    """Get possible derived function names given a base function name.
-
-    Examples
-    --------
-    >>> all_variations_of_base_name(
-        base_name="income",
-        supported_time_conversions=["y", "m"],
-        groupings=["hh"],
-        create_conversions_for_time_units=True,
+def get_base_name_and_grouping_suffix(match: re.Match) -> tuple[str, str]:
+    return (
+        match.group("base_name"),
+        f"_{match.group('grouping')}" if match.group("grouping") else "",
     )
-    {'income_m', 'income_y', 'income_hh_y', 'income_hh_m'}
 
-    >>> all_variations_of_base_name(
-        base_name="claims_benefits",
-        supported_time_conversions=["y", "m"],
-        groupings=["hh"],
-        create_conversions_for_time_units=False,
-    )
-    {'claims_benefits_hh'}
 
-    Parameters
-    ----------
-    base_name
-        The base function name.
-    supported_time_conversions
-        The supported time conversions.
-    groupings
-        The supported groupings.
-    create_conversions_for_time_units
-        Whether to create conversions for time units.
-
-    Returns
-    -------
-    The names of all potential targets based on the base name.
-    """
-    result = set()
-    if create_conversions_for_time_units:
-        for time_unit in supported_time_conversions:
-            result.add(f"{base_name}_{time_unit}")
-        for time_unit, aggregation in itertools.product(
-            supported_time_conversions, groupings
-        ):
-            result.add(f"{base_name}_{time_unit}_{aggregation}")
-    else:
-        result.add(base_name)
-        for aggregation in groupings:
-            result.add(f"{base_name}_{aggregation}")
-    return result
+def fail_if_multiple_time_units_for_same_base_name_and_group(
+    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
+) -> None:
+    invalid = {
+        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
+    }
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
 class KeyErrorMessage(str):
@@ -398,7 +364,7 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
     return formatted_text
 
 
-def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[str]:
+def get_names_of_required_arguments(function: PolicyFunction) -> list[str]:
     """Get argument names without defaults.
 
     The detection of argument names also works for partialed functions.
@@ -406,11 +372,14 @@ def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[st
     Examples
     --------
     >>> def func(a, b): pass
-    >>> get_names_of_arguments_without_defaults(func)
+    >>> get_names_of_required_arguments(func)
     ['a', 'b']
+    >>> def g(c=0): pass
+    >>> get_names_of_required_arguments(g)
+    []
     >>> import functools
     >>> func_ = functools.partial(func, a=1)
-    >>> get_names_of_arguments_without_defaults(func_)
+    >>> get_names_of_required_arguments(func_)
     ['b']
 
     """

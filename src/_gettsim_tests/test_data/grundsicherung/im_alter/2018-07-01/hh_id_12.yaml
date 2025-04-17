@@ -2,7 +2,7 @@
 info:
   note: Added minor capital income of 2 euros (no deduction from claim since below allowance
     of 26 euros per year)
-  precision: 0.01
+  precision_atol: 0.01
   source: Adjusted test case based on https://www.bmas.de/SharedDocs/Downloads/DE/Publikationen/a207-sozialhilfe-und-grundsicherung.pdf?__blob=publicationFile&v=1
 inputs:
   assumed: {}

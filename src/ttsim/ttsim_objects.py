@@ -8,6 +8,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, TypeVar
 
 import dags
+import dags.tree as dt
 import numpy
 from pandas.api.types import (
     is_bool_dtype,
@@ -76,6 +77,14 @@ class TTSIMObject:
         """Check if the function is active at a given date."""
         return self.start_date <= date <= self.end_date
 
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> TTSIMObject:
+        """Remove tree logic from the function and update the function signature."""
+        raise NotImplementedError("Subclasses must implement this method.")
+
 
 @dataclass
 class PolicyInput(TTSIMObject):
@@ -96,6 +105,13 @@ class PolicyInput(TTSIMObject):
 
     data_type: type[float | int | bool]
     foreign_key_type: FKType = FKType.IRRELEVANT
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],  # noqa: ARG002
+        top_level_namespace: set[str],  # noqa: ARG002
+    ) -> PolicyInput:
+        return self
 
 
 def policy_input(
@@ -148,57 +164,11 @@ class TTSIMFunction(TTSIMObject):
     """
 
     function: Callable
-    vectorization_strategy: Literal["loop", "vectorize", "not_required"]
-    foreign_key_type: FKType = FKType.IRRELEVANT
-
-    def __call__(self, *args, **kwargs):
-        return self.function(*args, **kwargs)
-
-    @property
-    def dependencies(self) -> set[str]:
-        """The names of input variables that the function depends on."""
-        return set(inspect.signature(self).parameters)
-
-    @property
-    def original_function_name(self) -> str:
-        """The name of the wrapped function."""
-        return self.function.__name__
-
-
-@dataclass
-class PolicyFunction(TTSIMFunction):
-    """
-    A function that computes an output vector based on some input vectors and/or
-    parameters.
-
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    rounding_spec:
-        The rounding specification.
-    vectorization_strategy:
-        Whether and how the function should be vectorized.
-    """
-
     rounding_spec: RoundingSpec | None = None
+    foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __post_init__(self):
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
-        self.function = (
-            self.function
-            if self.vectorization_strategy == "not_required"
-            else _vectorize_func(
-                self.function, vectorization_strategy=self.vectorization_strategy
-            )
-        )
 
         # Expose the signature of the wrapped function for dependency resolution
         functools.update_wrapper(self, self.function)
@@ -243,6 +213,47 @@ class PolicyFunction(TTSIMFunction):
         return self.start_date <= date <= self.end_date
 
 
+@dataclass
+class PolicyFunction(TTSIMFunction):
+    """
+    A function that computes an output vector based on some input vectors and/or
+    parameters.
+
+    Parameters
+    ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    function:
+        The function to wrap. Argument values of the `@policy_function` are reused
+        unless explicitly overwritten.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    rounding_spec:
+        The rounding specification.
+    """
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> PolicyFunction:
+        """Remove tree logic from the function and update the function signature."""
+        return PolicyFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            start_date=self.start_date,
+            end_date=self.end_date,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+        )
+
+
 def policy_function(
     *,
     leaf_name: str | None = None,
@@ -282,6 +293,8 @@ def policy_function(
         The specification to be used for rounding.
     vectorization_strategy:
         Whether and how the function should be vectorized.
+    foreign_key_type:
+        Whether this is a foreign key and, if so, whether it may point to itself.
 
     Returns
     -------
@@ -291,13 +304,17 @@ def policy_function(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable) -> PolicyFunction:
+        func = (
+            func
+            if vectorization_strategy == "not_required"
+            else _vectorize_func(func, vectorization_strategy=vectorization_strategy)
+        )
         return PolicyFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
             start_date=start_date,
             end_date=end_date,
             rounding_spec=rounding_spec,
-            vectorization_strategy=vectorization_strategy,
             foreign_key_type=foreign_key_type,
         )
 
@@ -340,17 +357,24 @@ class GroupCreationFunction(TTSIMFunction):
         The date until which the function is active (inclusive).
     """
 
-    def __post_init__(self):
-        # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = self.function.__annotations__
-        self.__module__ = self.function.__module__
-        self.__name__ = self.function.__name__
-        self.__signature__ = inspect.signature(self.function)
-
-    @property
-    def dependencies(self) -> set[str]:
-        """The names of input variables that the function depends on."""
-        return set(inspect.signature(self).parameters)
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> GroupCreationFunction:
+        """Remove tree logic from the function and update the function signature."""
+        return GroupCreationFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            start_date=self.start_date,
+            end_date=self.end_date,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+        )
 
 
 def group_creation_function(
@@ -371,53 +395,9 @@ def group_creation_function(
             function=func,
             start_date=start_date,
             end_date=end_date,
-            vectorization_strategy="not_required",
         )
 
     return decorator
-
-
-@dataclass
-class DerivedAggregationFunction(TTSIMFunction):
-    """
-    A function that is an aggregation of another function.
-
-    Parameters
-    ----------
-    leaf_name:
-        The leaf name of the function in the functions tree.
-    function:
-        The function performing the aggregation.
-    source:
-        The name of the source function or data column.
-    aggregation_method:
-        The method of aggregation used.
-    start_date:
-        The date from which the function is active (inclusive).
-    end_date:
-        The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    vectorization_strategy:
-        Whether and how the function should be vectorized.
-    """
-
-    source: str | None = None
-    aggregation_method: (
-        Literal["count", "sum", "mean", "min", "max", "any", "all"] | None
-    ) = None
-
-    def __post_init__(self):
-        if self.aggregation_method is None:
-            raise ValueError("The aggregation method must be specified.")
-        if self.source is None and self.aggregation_method != "count":
-            raise ValueError("The source must be specified.")
-
-        # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = self.function.__annotations__
-        self.__module__ = self.function.__module__
-        self.__name__ = self.function.__name__
-        self.__signature__ = inspect.signature(self.function)
 
 
 @dataclass
@@ -443,14 +423,28 @@ class AggByGroupFunction(TTSIMFunction):
         The original location of the function, or "automatically generated".
     """
 
+    # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
 
-    def __post_init__(self):
-        # Expose the signature of the wrapped function for dependency resolution
-        functools.update_wrapper(self, self.function)
-        self.__signature__ = inspect.signature(self.function)
-        self.__globals__ = self.function.__globals__
-        self.__closure__ = self.function.__closure__
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> AggByGroupFunction:
+        """Remove tree logic from the function and update the function signature."""
+        return AggByGroupFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            start_date=self.start_date,
+            end_date=self.end_date,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+            orig_location=self.orig_location,
+        )
 
 
 def agg_by_group_function(
@@ -497,7 +491,6 @@ def agg_by_group_function(
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
-            vectorization_strategy="not_required",
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
         )
@@ -554,14 +547,28 @@ class AggByPIDFunction(TTSIMFunction):
         The original location of the function, or "automatically generated".
     """
 
+    # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
 
-    def __post_init__(self):
-        # Expose the signature of the wrapped function for dependency resolution
-        functools.update_wrapper(self, self.function)
-        self.__signature__ = inspect.signature(self.function)
-        self.__globals__ = self.function.__globals__
-        self.__closure__ = self.function.__closure__
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> AggByGroupFunction:
+        """Remove tree logic from the function and update the function signature."""
+        return AggByGroupFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            start_date=self.start_date,
+            end_date=self.end_date,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+            orig_location=self.orig_location,
+        )
 
 
 def agg_by_p_id_function(
@@ -586,7 +593,11 @@ def agg_by_p_id_function(
     def inner(func: Callable) -> AggByPIDFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
-        other_p_ids = {p for p in args if p.startswith("p_id_")}
+        other_p_ids = {
+            p
+            for p in args
+            if any(e.startswith("p_id_") for e in dt.tree_path_from_qual_name(p))
+        }
         other_args = args - {*other_p_ids, "p_id"}
         _fail_if_p_id_is_not_present(args, orig_location)
         _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
@@ -616,7 +627,6 @@ def agg_by_p_id_function(
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
-            vectorization_strategy="not_required",
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
         )
@@ -642,7 +652,7 @@ def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
 
 
 @dataclass
-class DerivedTimeConversionFunction(TTSIMFunction):
+class TimeConversionFunction(TTSIMFunction):
     """
     A function that is a time conversion of another function.
 
@@ -658,10 +668,6 @@ class DerivedTimeConversionFunction(TTSIMFunction):
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
-    params_key_for_rounding:
-        The key in the params dictionary that should be used for rounding.
-    vectorization_strategy:
-        Whether and how the function should be vectorized.
     """
 
     source: str | None = None
@@ -669,12 +675,27 @@ class DerivedTimeConversionFunction(TTSIMFunction):
     def __post_init__(self):
         if self.source is None:
             raise ValueError("The source must be specified.")
+        super().__post_init__()
 
-        # Expose the signature of the wrapped function for dependency resolution
-        self.__annotations__ = self.function.__annotations__
-        self.__module__ = self.function.__module__
-        self.__name__ = self.function.__name__
-        self.__signature__ = inspect.signature(self.function)
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> TimeConversionFunction:
+        """Remove tree logic from the function and update the function signature."""
+        return TimeConversionFunction(
+            source=self.source,
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            start_date=self.start_date,
+            end_date=self.end_date,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+        )
 
 
 def _convert_and_validate_dates(
