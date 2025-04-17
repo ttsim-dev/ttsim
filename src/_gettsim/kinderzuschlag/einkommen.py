@@ -1,13 +1,18 @@
 """Income relevant for calculation of Kinderzuschlag."""
 
-from ttsim import AggregateByGroupSpec, policy_function
+from ttsim import (
+    AggType,
+    RoundingSpec,
+    agg_by_group_function,
+    policy_function,
+)
 
-aggregation_specs = {
-    "arbeitslosengeld_2__anzahl_kinder_bg": AggregateByGroupSpec(
-        source="kindergeld__anzahl_ansprüche",
-        aggr="sum",
-    ),
-}
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def arbeitslosengeld_2__anzahl_kinder_bg(
+    kindergeld__anzahl_ansprüche: int, bg_id: int
+) -> int:
+    pass
 
 
 @policy_function()
@@ -46,8 +51,48 @@ def bruttoeinkommen_eltern_m(
     return out
 
 
-@policy_function(params_key_for_rounding="kinderzuschl_eink")
-def nettoeinkommen_eltern_m(
+@policy_function(
+    rounding_spec=RoundingSpec(base=10, direction="down", reference="§ 6a Abs. 4 BKGG"),
+    leaf_name="nettoeinkommen_eltern_m",
+    end_date="2019-06-30",
+)
+def nettoeinkommen_eltern_m_mit_grober_rundung(
+    arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m: float,
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__erwachsen: bool,
+) -> float:
+    """Parental income (after deduction of taxes, social insurance contributions, and
+    other deductions) for calculation of child benefit.
+
+    Parameters
+    ----------
+    arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m
+        See :func:`arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m`.
+    kindergeld__grundsätzlich_anspruchsberechtigt
+        See :func:`kindergeld__grundsätzlich_anspruchsberechtigt`.
+    familie__erwachsen
+        See :func:`familie__erwachsen`.
+
+    Returns
+    -------
+
+    """
+    # TODO(@MImmesberger): Redesign the conditions in this function: False for adults
+    # who do not have Kindergeld claims.
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/704
+    if familie__erwachsen and (not kindergeld__grundsätzlich_anspruchsberechtigt):
+        out = arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m
+    else:
+        out = 0.0
+    return out
+
+
+@policy_function(
+    rounding_spec=RoundingSpec(base=1, direction="down", reference="§ 11 Abs. 2 BKGG"),
+    leaf_name="nettoeinkommen_eltern_m",
+    start_date="2019-07-01",
+)
+def nettoeinkommen_eltern_m_mit_genauer_rundung(
     arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m: float,
     kindergeld__grundsätzlich_anspruchsberechtigt: bool,
     familie__erwachsen: bool,
@@ -297,7 +342,7 @@ def regelsatz_m_bg_arbeitsl_geld_2_params_bis_2010(
             * 2
         )
 
-    return float(out)
+    return out
 
 
 # TODO(@MImmesberger): The regelsatz is already calculated in the ALG2 modules. We
@@ -331,7 +376,7 @@ def regelsatz_m_bg(
     else:
         out = arbeitsl_geld_2_params["regelsatz"][2] * 2
 
-    return float(out)
+    return out
 
 
 @policy_function()
@@ -352,3 +397,8 @@ def erwachsenenbedarf_m_bg(
 
     """
     return regelsatz_m_bg + kosten_der_unterkunft_m_bg
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def kinderzuschlag_spec_target(kinderzuschlag_source_field: bool, bg_id: int) -> int:
+    pass

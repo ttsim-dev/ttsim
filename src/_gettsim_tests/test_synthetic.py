@@ -4,7 +4,6 @@ import numpy
 import pandas as pd
 import pytest
 
-from _gettsim.config import DEFAULT_TARGETS
 from _gettsim.synthetic import create_synthetic_data
 from ttsim import compute_taxes_and_transfers, set_up_policy_environment
 
@@ -266,7 +265,7 @@ def test_fail_if_functions_and_columns_overlap(
                     i + 1 if i % 3 == 0 else i - 1 if i % 3 == 1 else -1
                     for i in range(33)
                 ],
-                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
+                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
             },
@@ -295,7 +294,7 @@ def test_fail_if_functions_and_columns_overlap(
                     i + 1 if i % 3 == 0 else i - 1 if i % 3 == 1 else -1
                     for i in range(33)
                 ],
-                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
+                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
                     -1 if i % 3 != 2 else i - 2 for i in range(33)
                 ],
             },
@@ -310,7 +309,7 @@ def test_fail_if_functions_and_columns_overlap(
                 "erziehungsgeld__p_id_empfänger": [-1, 0],
                 "familie__p_id_ehepartner": [-1, -1],
                 "arbeitslosengeld_2__p_id_einstandspartner": [-1, -1],
-                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
+                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
                     -1,
                     0,
                 ],
@@ -326,7 +325,7 @@ def test_fail_if_functions_and_columns_overlap(
                 "erziehungsgeld__p_id_empfänger": [-1, -1],
                 "familie__p_id_ehepartner": [1, 0],
                 "arbeitslosengeld_2__p_id_einstandspartner": [1, 0],
-                "einkommensteuer__abzüge__p_id_betreuungskosten_träger": [
+                "einkommensteuer__abzüge__p_id_betreuungskostenträger": [
                     -1,
                     -1,
                 ],
@@ -349,6 +348,6 @@ def test_default_targets(fixture, policy_date, request):
     environment = set_up_policy_environment(policy_date)
     compute_taxes_and_transfers(
         data_tree=request.getfixturevalue(fixture),
-        targets_tree=DEFAULT_TARGETS,
+        targets_tree=fixme,
         environment=environment,
     )

@@ -16,7 +16,12 @@ priority check, but cannot cover their needs with the Wohngeld calculated in poi
 3. In this sense, this implementation is an approximation of the actual Wohngeld.
 """
 
-from ttsim import policy_function
+from ttsim import AggType, RoundingSpec, agg_by_group_function, policy_function
+
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_wthh(wthh_id: int) -> int:
+    pass
 
 
 @policy_function()
@@ -65,7 +70,13 @@ def betrag_m_wthh(
     return out
 
 
-@policy_function(params_key_for_rounding="wohngeld")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=1,
+        direction="nearest",
+        reference="§ 19 WoGG Abs.2 Anlage 3",
+    )
+)
 def anspruchshöhe_m_wthh(
     anzahl_personen_wthh: int,
     einkommen_m_wthh: float,
@@ -109,7 +120,13 @@ def anspruchshöhe_m_wthh(
     return out
 
 
-@policy_function(params_key_for_rounding="wohngeld")
+@policy_function(
+    rounding_spec=RoundingSpec(
+        base=1,
+        direction="nearest",
+        reference="§ 19 WoGG Abs.2 Anlage 3",
+    )
+)
 def anspruchshöhe_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     einkommen_m_bg: float,

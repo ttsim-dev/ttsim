@@ -1,14 +1,18 @@
 """Functions to compute parental leave benefits (Erziehungsgeld, -2007)."""
 
-from ttsim import AggregateByPIDSpec, policy_function
+from ttsim import (
+    AggType,
+    RoundingSpec,
+    agg_by_p_id_function,
+    policy_function,
+)
 
-aggregation_specs = {
-    "anspruchshöhe_m": AggregateByPIDSpec(
-        p_id_to_aggregate_by="p_id_empfänger",
-        source="anspruchshöhe_kind_m",
-        aggr="sum",
-    ),
-}
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anspruchshöhe_m(
+    anspruchshöhe_kind_m: float, p_id_empfänger: int, p_id: int
+) -> float:
+    pass
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
@@ -43,7 +47,7 @@ def betrag_m(
 @policy_function(
     end_date="2003-12-31",
     leaf_name="anspruchshöhe_kind_m",
-    params_key_for_rounding="erziehungsgeld",
+    rounding_spec=RoundingSpec(base=0.01, direction="nearest"),
 )
 def erziehungsgeld_kind_ohne_budgetsatz_m() -> float:
     raise NotImplementedError(
@@ -58,7 +62,7 @@ def erziehungsgeld_kind_ohne_budgetsatz_m() -> float:
     start_date="2004-01-01",
     end_date="2008-12-31",
     leaf_name="anspruchshöhe_kind_m",
-    params_key_for_rounding="erziehungsgeld",
+    rounding_spec=RoundingSpec(base=0.01, direction="nearest"),
 )
 def anspruchshöhe_kind_mit_budgetsatz_m(
     kind_grundsätzlich_anspruchsberechtigt: bool,
@@ -442,3 +446,10 @@ def einkommensgrenze_ohne_geschwisterbonus(
     out = erziehungsgeld_params["einkommensgrenze"][limit][status_eltern][satz]
 
     return out
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def erziehungsgeld_spec_target(
+    erziehungsgeld_source_field: bool, p_id_field: int, p_id: int
+) -> int:
+    pass

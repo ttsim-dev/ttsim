@@ -68,7 +68,7 @@ def wartezeit_15_jahre_erfüllt(
 
 
 @policy_function()
-def wartezeit_35_jahre_erfüllt(  # noqa: PLR0913
+def wartezeit_35_jahre_erfüllt(
     pflichtbeitragsmonate: float,
     freiwillige_beitragsmonate: float,
     anrechnungsmonate_35_jahre_wartezeit: float,
@@ -115,7 +115,7 @@ def wartezeit_35_jahre_erfüllt(  # noqa: PLR0913
 
 
 @policy_function(start_date="2012-01-01")
-def wartezeit_45_jahre_erfüllt(  # noqa: PLR0913
+def wartezeit_45_jahre_erfüllt(
     pflichtbeitragsmonate: float,
     freiwillige_beitragsmonate: float,
     anrechnungsmonate_45_jahre_wartezeit: float,
@@ -175,7 +175,7 @@ def wartezeit_45_jahre_erfüllt(  # noqa: PLR0913
 
 
 @policy_function()
-def anrechnungsmonate_35_jahre_wartezeit(  # noqa: PLR0913
+def anrechnungsmonate_35_jahre_wartezeit(
     monate_in_arbeitsunfähigkeit: float,
     krankheitszeiten_ab_16_bis_24_monate: float,
     monate_in_mutterschutz: float,

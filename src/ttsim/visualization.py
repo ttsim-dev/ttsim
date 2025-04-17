@@ -11,7 +11,6 @@ import plotly.graph_objects as go
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
-from _gettsim.config import DEFAULT_TARGETS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
@@ -21,7 +20,7 @@ from ttsim.compute_taxes_and_transfers import (
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     format_list_linewise,
-    get_names_of_arguments_without_defaults,
+    get_names_of_required_arguments,
     partition_tree_by_reference_tree,
 )
 
@@ -66,7 +65,7 @@ def plot_dag(
         a hover information. Sometimes, the tooltip is not properly displayed.
 
     """
-    targets = build_targets_tree(DEFAULT_TARGETS if targets is None else targets)  # noqa: F821
+    targets = build_targets_tree(fixme if targets is None else targets)  # noqa: F821
 
     if isinstance(columns_overriding_functions, dict):
         names_of_columns_overriding_functions = dt.flatten_to_qual_names(
@@ -290,12 +289,12 @@ def _mock_parameters_arguments(functions):
     for name, function in functions.items():
         partial_params = {
             i: {}
-            for i in get_names_of_arguments_without_defaults(function)
+            for i in get_names_of_required_arguments(function)
             if i.endswith("_params")
         }
 
         # Fix old functions which requested the whole dictionary. Test if removable.
-        if "params" in get_names_of_arguments_without_defaults(function):
+        if "params" in get_names_of_required_arguments(function):
             partial_params["params"] = {}
 
         mocked_functions[name] = (

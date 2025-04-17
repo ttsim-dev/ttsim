@@ -1,10 +1,14 @@
 ---
 info:
   note: ''
+  precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
+    alter:
+      - 28
+      - 1
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
@@ -17,39 +21,30 @@ inputs:
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
-    familie__alleinerziehend:
-      - true
-      - false
-    alter:
-      - 28
-      - 1
     arbeitsstunden_w:
       - 0.0
       - 0.0
-    geburtsjahr:
-      - 1981
-      - 2008
-    hh_id:
-      - 3
-      - 3
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 2000.0
+      - 0.0
+    familie__alleinerziehend:
+      - true
+      - false
     familie__kind:
       - false
       - true
-    p_id:
-      - 6
-      - 7
     familie__p_id_elternteil_1:
       - -1
       - 6
     familie__p_id_elternteil_2:
       - -1
       - -1
-    vermögen:
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 2000.0
-      - 0.0
+    geburtsjahr:
+      - 1981
+      - 2008
+    hh_id:
+      - 3
+      - 3
     jahr:
       - 2009
       - 2009
@@ -71,10 +66,16 @@ inputs:
     kinderzuschlag__nettoeinkommen_eltern_m:
       - 719.0
       - 0.0
+    p_id:
+      - 6
+      - 7
     unterhalt__tatsächlich_erhaltener_betrag_m:
       - 0.0
       - 0.0
     unterhaltsvorschuss__betrag_m:
+      - 0.0
+      - 0.0
+    vermögen:
       - 0.0
       - 0.0
     wohnen__bruttokaltmiete_m_hh:

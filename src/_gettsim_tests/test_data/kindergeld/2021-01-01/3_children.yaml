@@ -1,0 +1,75 @@
+---
+info:
+  note: ''
+  precision_atol: 0.01
+  source: ''
+inputs:
+  assumed: {}
+  provided:
+    alter:
+      - 35
+      - 35
+      - 12
+      - 10
+      - 8
+    arbeitsstunden_w:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 20000.0
+      - 20000.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__gesamteinkommen_y:
+      - 200000.0
+      - 200000.0
+      - 0.0
+      - 0.0
+      - 0.0
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+      - true
+    hh_id:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    kindergeld__in_ausbildung:
+      - false
+      - false
+      - true
+      - true
+      - true
+    kindergeld__p_id_empfänger:
+      - -1
+      - -1
+      - 0
+      - 0
+      - 0
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+outputs:
+  arbeitslosengeld_2__kindergeld_zur_bedarfsdeckung_m:
+    - 0.0
+    - 0.0
+    - 221.0
+    - 221.0
+    - 221.0
+  kindergeld__betrag_m:
+    - 663.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0

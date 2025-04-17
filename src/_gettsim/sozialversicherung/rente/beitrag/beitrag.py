@@ -123,7 +123,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
 
 
 @policy_function(start_date="2003-04-01", leaf_name="betrag_arbeitgeber_m")
-def betrag_arbeitgeber_m_mit_midijob(  # noqa: PLR0913
+def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_midijob_arbeitgeber_m: float,
     einkommen_m: float,
@@ -214,7 +214,7 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) ->
     params = sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]
     out = params["ost"] if wohnort_ost else params["west"]
 
-    return float(out)
+    return out
 
 
 @policy_function(start_date="2003-04-01")

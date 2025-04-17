@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+import functools
+from dataclasses import dataclass
+from typing import Literal, get_args
+
+import numpy as np
+
+ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
+
+
+@dataclass
+class RoundingSpec:
+    base: int | float
+    direction: ROUNDING_DIRECTION
+    to_add_after_rounding: int | float = 0
+    reference: str | None = None
+
+    def __post_init__(self):
+        """Validate the types of base and to_add_after_rounding."""
+        if type(self.base) not in [int, float]:
+            raise ValueError(f"base needs to be a number, got {self.base!r}")
+        valid_directions = get_args(ROUNDING_DIRECTION)
+        if self.direction not in valid_directions:
+            raise ValueError(
+                f"`direction` must be one of {valid_directions}, got {self.direction!r}"
+            )
+        if type(self.to_add_after_rounding) not in [int, float]:
+            raise ValueError(
+                f"Additive part must be a number, got {self.to_add_after_rounding!r}"
+            )
+
+    def apply_rounding(self, func: callable) -> callable:
+        """Decorator to round the output of a function.
+
+        Parameters
+        ----------
+        func
+            Function to be rounded.
+        name
+            Name of the function to be rounded.
+
+        Returns
+        -------
+        Function with rounding applied.
+        """
+
+        # Make sure that signature is preserved.
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            out = func(*args, **kwargs)
+
+            if self.direction == "up":
+                rounded_out = self.base * np.ceil(out / self.base)
+            elif self.direction == "down":
+                rounded_out = self.base * np.floor(out / self.base)
+            elif self.direction == "nearest":
+                rounded_out = self.base * (out / self.base).round()
+
+            rounded_out += self.to_add_after_rounding
+            return rounded_out
+
+        return wrapper

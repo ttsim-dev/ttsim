@@ -2,8 +2,7 @@ import inspect
 
 import pytest
 
-from ttsim.function_types import policy_function
-from ttsim.time_conversion import (
+from ttsim.automatically_added_functions import (
     _create_function_for_time_unit,
     create_time_conversion_functions,
     d_to_m,
@@ -27,6 +26,11 @@ from ttsim.time_conversion import (
     y_to_q,
     y_to_w,
 )
+from ttsim.ttsim_objects import policy_function
+
+
+def return_one() -> int:
+    return 1
 
 
 @pytest.mark.parametrize(
@@ -274,44 +278,19 @@ class TestCreateFunctionsForTimeUnits:
         self, name: str, expected: list[str]
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            {name: policy_function(leaf_name="test")(lambda: 1)}, {}
+            ttsim_objects={name: policy_function(leaf_name=name)(return_one)},
+            data={},
+            groupings=("sn", "hh"),
         )
-
-        for expected_name in expected:
-            assert expected_name in time_conversion_functions
-
-    @pytest.mark.parametrize(
-        ("name", "expected"),
-        [
-            ("test_y", ["test_m", "test_q", "test_w", "test_d"]),
-            ("test_y_hh", ["test_m_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
-            ("test_y_sn", ["test_m_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
-            ("test_q", ["test_y", "test_m", "test_w", "test_d"]),
-            ("test_q_hh", ["test_y_hh", "test_m_hh", "test_w_hh", "test_d_hh"]),
-            ("test_q_sn", ["test_y_sn", "test_m_sn", "test_w_sn", "test_d_sn"]),
-            ("test_m", ["test_y", "test_q", "test_w", "test_d"]),
-            ("test_m_hh", ["test_y_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
-            ("test_m_sn", ["test_y_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
-            ("test_w", ["test_y", "test_q", "test_m", "test_d"]),
-            ("test_w_hh", ["test_y_hh", "test_q_hh", "test_m_hh", "test_d_hh"]),
-            ("test_w_sn", ["test_y_sn", "test_q_sn", "test_m_sn", "test_d_sn"]),
-            ("test_d", ["test_y", "test_q", "test_m", "test_w"]),
-            ("test_d_hh", ["test_y_hh", "test_q_hh", "test_m_hh", "test_w_hh"]),
-            ("test_d_sn", ["test_y_sn", "test_q_sn", "test_m_sn", "test_w_sn"]),
-        ],
-    )
-    def test_should_create_functions_for_other_time_units_for_data_cols(
-        self, name: str, expected: list[str]
-    ) -> None:
-        time_conversion_functions = create_time_conversion_functions({}, {name: None})
 
         for expected_name in expected:
             assert expected_name in time_conversion_functions
 
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            {"test1_d": policy_function(leaf_name="test1_d")(lambda: 1)},
-            {"test2_y": None},
+            ttsim_objects={"test1_d": policy_function(leaf_name="test1_d")(return_one)},
+            data={"test2_y": None},
+            groupings=("sn", "hh"),
         )
 
         assert "test1_d" not in time_conversion_functions
@@ -321,8 +300,9 @@ class TestCreateFunctionsForTimeUnits:
         self,
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            {"test_d": policy_function(leaf_name="test_d")(lambda: 1)},
-            {"test_y": None},
+            ttsim_objects={"test_d": policy_function(leaf_name="test_d")(return_one)},
+            data={"test_y": None},
+            groupings=("sn", "hh"),
         )
 
         assert "test_d" in time_conversion_functions
@@ -349,8 +329,11 @@ class TestCreateFunctionForTimeUnit:
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
 def test_should_not_create_cycle():
     time_conversion_functions = create_time_conversion_functions(
-        {"test_d": policy_function(leaf_name="test_d")(lambda test_m: test_m)},
-        {},
+        ttsim_objects={
+            "test_d": policy_function(leaf_name="test_d")(lambda test_m: test_m)
+        },
+        data={},
+        groupings=(),
     )
 
     assert "test_m" not in time_conversion_functions

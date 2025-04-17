@@ -5,6 +5,8 @@ import pytest
 from ttsim.shared import (
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
+    get_re_pattern_for_all_time_units_and_groupings,
+    get_re_pattern_for_specific_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
@@ -228,6 +230,7 @@ def test_get_name_of_group_by_id(target_name, group_by_functions, expected):
         get_name_of_group_by_id(
             target_name=target_name,
             group_by_functions=group_by_functions,
+            groupings=("hh", "bg", "eg"),
         )
         == expected
     )
@@ -281,5 +284,68 @@ def test_get_name_of_group_by_id_fails(
 ):
     with pytest.raises(ValueError, match=expected_error_match):
         get_name_of_group_by_id(
-            target_name=target_name, group_by_functions=group_by_functions
+            target_name=target_name,
+            group_by_functions=group_by_functions,
+            groupings=("hh", "bg", "eg"),
         )
+
+
+@pytest.mark.parametrize(
+    (
+        "func_name",
+        "time_units",
+        "groupings",
+        "expected_base_name",
+        "expected_time_unit",
+        "expected_grouping",
+    ),
+    [
+        ("foo", ("m", "y"), ["hh"], "foo", None, None),
+        ("foo_m_hh", ("m", "y"), ["hh"], "foo", "m", "hh"),
+        ("foo_y_hh", ("m", "y"), ["hh"], "foo", "y", "hh"),
+        ("foo_m", ("m", "y"), ["hh"], "foo", "m", None),
+        ("foo_y", ("m", "y"), ["hh"], "foo", "y", None),
+        ("foo_hh", ("m", "y"), ["hh"], "foo", None, "hh"),
+        ("foo_hh_bar", ("m", "y"), ["hh"], "foo_hh_bar", None, None),
+    ],
+)
+def test_get_re_pattern_for_time_units_and_groupings(
+    func_name,
+    time_units,
+    groupings,
+    expected_base_name,
+    expected_time_unit,
+    expected_grouping,
+):
+    result = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=time_units,
+        groupings=groupings,
+    )
+    match = result.fullmatch(func_name)
+    assert match.group("base_name") == expected_base_name
+    assert match.group("time_unit") == expected_time_unit
+    assert match.group("grouping") == expected_grouping
+
+
+@pytest.mark.parametrize(
+    (
+        "base_name",
+        "time_units",
+        "groupings",
+        "expected_match",
+    ),
+    [
+        ("foo", ["m", "y"], ["hh"], "foo_m_hh"),
+        ("foo", ["m", "y"], ["hh", "x"], "foo_m"),
+        ("foo", ["m", "y"], ["hh", "x"], "foo_hh"),
+    ],
+)
+def test_get_re_pattern_for_some_base_name(
+    base_name, time_units, groupings, expected_match
+):
+    re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
+        base_name=base_name,
+        all_time_units=time_units,
+        groupings=groupings,
+    )
+    assert re_pattern.fullmatch(expected_match)

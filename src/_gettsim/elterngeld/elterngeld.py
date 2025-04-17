@@ -1,41 +1,61 @@
 """Parental leave benefits."""
 
-from ttsim import AggregateByGroupSpec, AggregateByPIDSpec, policy_function
-
-aggregation_specs = {
-    "kind_grundsätzlich_anspruchsberechtigt_fg": AggregateByGroupSpec(
-        source="kind_grundsätzlich_anspruchsberechtigt",
-        aggr="any",
-    ),
-    "anzahl_anträge_fg": AggregateByGroupSpec(
-        source="claimed",
-        aggr="sum",
-    ),
-    "bezugsmonate_partner": AggregateByPIDSpec(
-        p_id_to_aggregate_by="arbeitslosengeld_2__p_id_einstandspartner",
-        source="bisherige_bezugsmonate",
-        aggr="sum",
-    ),
-    "alter_monate_jüngstes_mitglied_fg": AggregateByGroupSpec(
-        source="alter_monate",
-        aggr="min",
-    ),
-    "anzahl_kinder_bis_2_fg": AggregateByGroupSpec(
-        source="familie__kind_bis_2",
-        aggr="sum",
-    ),
-    "anzahl_kinder_bis_5_fg": AggregateByGroupSpec(
-        source="familie__kind_bis_5",
-        aggr="sum",
-    ),
-    "anzahl_mehrlinge_jüngstes_kind_fg": AggregateByGroupSpec(
-        source="jüngstes_kind_oder_mehrling",
-        aggr="sum",
-    ),
-}
+from ttsim import (
+    AggType,
+    RoundingSpec,
+    agg_by_group_function,
+    agg_by_p_id_function,
+    policy_function,
+)
 
 
-@policy_function(start_date="2011-01-01", params_key_for_rounding="elterngeld")
+@agg_by_group_function(agg_type=AggType.ANY)
+def kind_grundsätzlich_anspruchsberechtigt_fg(
+    kind_grundsätzlich_anspruchsberechtigt: bool, fg_id: int
+) -> bool:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_anträge_fg(claimed: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def bezugsmonate_partner(
+    bisherige_bezugsmonate: int,
+    arbeitslosengeld_2__p_id_einstandspartner: int,
+    p_id: int,
+) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.MIN)
+def alter_monate_jüngstes_mitglied_fg(alter_monate: float, fg_id: int) -> float:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_2_fg(familie__kind_bis_2: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_5_fg(familie__kind_bis_5: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_mehrlinge_jüngstes_kind_fg(
+    jüngstes_kind_oder_mehrling: bool, fg_id: int
+) -> int:
+    pass
+
+
+@policy_function(
+    start_date="2011-01-01",
+    rounding_spec=RoundingSpec(base=0.01, direction="down"),
+)
 def betrag_m(
     grundsätzlich_anspruchsberechtigt: bool,
     anspruchshöhe_m: float,
@@ -100,7 +120,7 @@ def basisbetrag_m(
     start_date="2007-01-01",
     end_date="2010-12-31",
     leaf_name="betrag_m",
-    params_key_for_rounding="elterngeld",
+    rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
 def elterngeld_not_implemented() -> float:
     raise NotImplementedError("Elterngeld is not implemented prior to 2011.")
@@ -146,7 +166,7 @@ def anspruchshöhe_m(
 
 
 @policy_function(start_date="2007-01-01")
-def grundsätzlich_anspruchsberechtigt(  # noqa: PLR0913
+def grundsätzlich_anspruchsberechtigt(
     claimed: bool,
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
