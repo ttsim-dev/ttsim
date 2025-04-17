@@ -1,7 +1,7 @@
 ---
 info:
   note: Wealth significantly above wealth allowance leading to no claim
-  precision: 0.01
+  precision_atol: 0.01
   source: Inspired by Page 12 of https://www.arbeitsagentur.de/datei/ba146349.pdf
 inputs:
   assumed: {}

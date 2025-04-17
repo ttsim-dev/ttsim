@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 0.01
+  precision_atol: 0.01
   source: Made up.
 inputs:
   assumed:
@@ -147,7 +147,7 @@ inputs:
       - 100.0
   provided: {}
 outputs:
-  arbeitslosengeld_2__bg_id:
+  bg_id:
     - 0
     - 0
     - 100

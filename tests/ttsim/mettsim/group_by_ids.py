@@ -1,9 +1,9 @@
 import numpy
 
-from ttsim import group_by_function
+from ttsim import group_creation_function
 
 
-@group_by_function()
+@group_creation_function()
 def sp_id(
     p_id: numpy.ndarray[int],
     p_id_spouse: numpy.ndarray[int],
@@ -30,7 +30,7 @@ def sp_id(
     return numpy.asarray(result)
 
 
-@group_by_function()
+@group_creation_function()
 def fam_id(
     p_id_spouse: numpy.ndarray[int],
     p_id: numpy.ndarray[int],

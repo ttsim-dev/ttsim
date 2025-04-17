@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 0.1
+  precision_atol: 0.1
   source: own calculations
 inputs:
   assumed:

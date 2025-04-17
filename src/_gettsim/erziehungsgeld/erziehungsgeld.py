@@ -1,20 +1,18 @@
 """Functions to compute parental leave benefits (Erziehungsgeld, -2007)."""
 
 from ttsim import (
-    AggregateByPIDSpec,
-    AggregationType,
+    AggType,
     RoundingSpec,
+    agg_by_p_id_function,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="anspruchshöhe_m",
-        source="anspruchshöhe_kind_m",
-        p_id_to_aggregate_by="p_id_empfänger",
-        agg=AggregationType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anspruchshöhe_m(
+    anspruchshöhe_kind_m: float, p_id_empfänger: int, p_id: int
+) -> float:
+    pass
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
@@ -448,3 +446,10 @@ def einkommensgrenze_ohne_geschwisterbonus(
     out = erziehungsgeld_params["einkommensgrenze"][limit][status_eltern][satz]
 
     return out
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def erziehungsgeld_spec_target(
+    erziehungsgeld_source_field: bool, p_id_field: int, p_id: int
+) -> int:
+    pass

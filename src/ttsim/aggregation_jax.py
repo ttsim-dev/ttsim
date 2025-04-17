@@ -98,15 +98,27 @@ def sum_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="sum_by_p_id")
     fail_if_dtype_not_numeric_or_boolean(column, agg_func="sum_by_p_id")
 
-    if column.dtype in ["bool"]:
+    if column.dtype == bool:
         column = column.astype(int)
+
+    # Build an index mapping from p_id values to positions in p_id_to_store_by.
+    sorted_idx = jnp.argsort(p_id_to_store_by)
+    sorted_store = p_id_to_store_by[sorted_idx]
+
+    # For every element in p_id_to_aggregate_by (even negatives),
+    # use searchsorted to get its candidate index in sorted_store.
+    candidate = jnp.searchsorted(sorted_store, p_id_to_aggregate_by)
+    candidate_idx = sorted_idx[candidate]
+
+    # For invalid (negative) IDs, force a dummy index (0) that will be masked out.
+    mapped_index = jnp.where(p_id_to_aggregate_by >= 0, candidate_idx, 0)
+
+    # Only valid entries contribute to the sum.
+    contributions = jnp.where(p_id_to_aggregate_by >= 0, column, 0)
+
+    # Scatter-add the contributions to the output array.
     out = jnp.zeros_like(p_id_to_store_by, dtype=column.dtype)
-
-    map_p_id_to_position = {p_id: iloc for iloc, p_id in enumerate(p_id_to_store_by)}
-
-    for iloc, id_receiver in enumerate(p_id_to_aggregate_by):
-        if id_receiver >= 0:
-            out = out.at[map_p_id_to_position[id_receiver]].add(column[iloc])
+    out = out.at[mapped_index].add(contributions)
     return out
 
 

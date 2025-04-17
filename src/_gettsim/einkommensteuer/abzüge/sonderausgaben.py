@@ -1,20 +1,18 @@
 """Tax allowances for special expenses."""
 
 from ttsim import (
-    AggregateByPIDSpec,
-    AggregationType,
+    AggType,
     RoundingSpec,
+    agg_by_p_id_function,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="betreuungskosten_elternteil_m",
-        source="betreuungskosten_m",
-        p_id_to_aggregate_by="p_id_betreuungskosten_träger",
-        agg=AggregationType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def betreuungskosten_elternteil_m(
+    betreuungskosten_m: float, p_id_betreuungskostenträger: int, p_id: int
+) -> float:
+    pass
 
 
 @policy_function(end_date="2011-12-31", leaf_name="sonderausgaben_y_sn")
@@ -44,7 +42,7 @@ def sonderausgaben_y_sn_nur_pauschale(
         * einkommensteuer__anzahl_personen_sn
     )
 
-    return float(out)
+    return out
 
 
 @policy_function(start_date="2012-01-01", leaf_name="sonderausgaben_y_sn")
@@ -79,7 +77,7 @@ def sonderausgaben_y_sn_mit_betreuung(
 
     out = max(sonderausgaben_gesamt, pauschale)
 
-    return float(out)
+    return out
 
 
 @policy_function()
@@ -134,4 +132,4 @@ def absetzbare_betreuungskosten_y_sn(
         * eink_st_abzuege_params["kinderbetreuungskosten_abz_anteil"]
     )
 
-    return float(out)
+    return out

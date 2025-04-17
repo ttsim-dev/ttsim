@@ -8,11 +8,10 @@ import pytest
 from _gettsim.config import (
     RESOURCE_DIR,
 )
-from ttsim.loader import (
-    load_aggregation_specs_tree,
-    load_objects_tree_for_date,
-)
+from ttsim.loader import load_objects_tree_for_date
 from ttsim.shared import remove_group_suffix
+
+SUPPORTED_GROUPINGS = ("hh", "sp", "fam")
 
 
 def _nice_output_list_of_strings(list_of_strings):
@@ -29,11 +28,6 @@ def default_input_variables():
 def all_function_names():
     functions = _load_internal_functions()  # noqa: F821
     return sorted([func.leaf_name for func in functions])
-
-
-@pytest.fixture(scope="module")
-def aggregation_dict():
-    return load_aggregation_specs_tree()
 
 
 @pytest.fixture(scope="module")
@@ -65,7 +59,6 @@ def test_all_input_vars_documented(
     default_input_variables,
     time_indep_function_names,
     all_function_names,
-    aggregation_dict,
 ):
     """Test if arguments of all non-internal functions are either the name of another
     function, a documented input variable, or a parameter dictionary."""
@@ -82,16 +75,16 @@ def test_all_input_vars_documented(
     # Remove duplicates
     arguments = list(dict.fromkeys(arguments))
     defined_functions = (
-        time_indep_function_names
-        + all_function_names
-        + default_input_variables
-        + list(aggregation_dict)
+        time_indep_function_names + all_function_names + default_input_variables
     )
     check = [
         c
         for c in arguments
         if (c not in defined_functions)
-        and (remove_group_suffix(c) not in defined_functions)
+        and (
+            remove_group_suffix(c, groupings=SUPPORTED_GROUPINGS)
+            not in defined_functions
+        )
         and (not c.endswith("_params"))
     ]
 
@@ -130,7 +123,7 @@ def test_type_hints():  # noqa: PLR0912
     types = {}
 
     for func in _load_internal_functions():  # noqa: F821
-        if func.skip_vectorization:
+        if func.vectorization_strategy == "not_required":
             continue
 
         name = func.leaf_name

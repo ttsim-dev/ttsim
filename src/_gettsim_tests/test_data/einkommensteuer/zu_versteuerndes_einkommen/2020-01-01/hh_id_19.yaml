@@ -1,7 +1,7 @@
 ---
 info:
   note: Result from source including Betreuungskosten
-  precision: 0.01
+  precision_atol: 0.01
   source: https://www.bmf-steuerrechner.de/bdj/eingabeformbdj.xhtml?jahr=l_k_bdj_2020
 inputs:
   assumed: {}
@@ -31,11 +31,26 @@ inputs:
       - 0.0
       - 80.0
       - 45.0
-    einkommensteuer__abzüge__p_id_betreuungskosten_träger:
+    einkommensteuer__abzüge__p_id_betreuungskostenträger:
       - -1
       - -1
       - 27
       - 27
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_gewerbebetrieb__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_forst_und_landwirtschaft__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
     einkommensteuer__abzüge__vorsorgeaufwendungen_y_sn:
       - 10901.0
       - 10901.0
@@ -172,7 +187,7 @@ outputs:
     - 0
     - 0
     - 0
-  einkommensteuer__einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y:
+  einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y:
     - 41000
     - 23000
     - 0

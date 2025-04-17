@@ -1,7 +1,7 @@
 ---
 info:
   note: Änderung MidiJob 2022 (kinderlos, mit KV-Zusatzbeitrag 1.3%, https://www.tk.de/resource/blob/2031420/94a8837d0957984a165ec6a2d415d7af/beratungsblatt-beschaeftigung-im-uebergangs--midijobbereich-data.pdf)
-  precision: 1
+  precision_atol: 1
   source: https://www.kbs.de/SiteGlobals/Forms/Rechner/Midijobrechner/seite1/node.html
 inputs:
   assumed: {}

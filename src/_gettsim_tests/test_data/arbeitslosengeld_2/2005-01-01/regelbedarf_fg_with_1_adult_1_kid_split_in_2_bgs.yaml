@@ -1,14 +1,14 @@
 ---
 info:
   note: Test Regelsatz when Familiengemeinschaft (1 adult, 1 kid) is split into two Bedarfsgemeinschaften.
-  precision: 0.01
+  precision_atol: 0.01
   source: Made up.
 inputs:
   assumed:
     alter:
       - 40
       - 10
-    arbeitslosengeld_2__bg_id:
+    bg_id:
       - 0
       - 0
     arbeitslosengeld_2__eigenbedarf_gedeckt:

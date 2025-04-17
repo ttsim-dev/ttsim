@@ -34,4 +34,4 @@ def pauschbetrag_behinderung_y(
     # Select appropriate pauschbetrag.
     out = eink_st_abzuege_params["behinderten_pauschbetrag"][selected_bin]
 
-    return float(out)
+    return out

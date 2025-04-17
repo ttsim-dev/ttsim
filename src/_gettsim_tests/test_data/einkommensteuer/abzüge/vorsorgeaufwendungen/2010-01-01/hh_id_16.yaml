@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 1
+  precision_atol: 1
   source: Testcase from zu_verst_eink
 inputs:
   assumed: {}

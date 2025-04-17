@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 import yaml
-from mettsim.config import FOREIGN_KEYS, SUPPORTED_GROUPINGS
+from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 
 from ttsim import merge_trees, set_up_policy_environment
 from ttsim.shared import to_datetime
 
-TEST_DIR = Path(__file__).parent / "test_data"
+TEST_DIR = Path(__file__).parent
 
 if TYPE_CHECKING:
     import datetime
@@ -44,7 +44,7 @@ class PolicyTest:
         return dt.unflatten_from_tree_paths(flat_target_structure)
 
     @property
-    def test_name(self) -> str:
+    def name(self) -> str:
         return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
 
@@ -53,14 +53,13 @@ def execute_test(test: PolicyTest):
 
     from ttsim import compute_taxes_and_transfers
 
-    environment = set_up_policy_environment(date=test.date)
+    environment = set_up_policy_environment(date=test.date, resource_dir=RESOURCE_DIR)
 
     result = compute_taxes_and_transfers(
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
-        foreign_keys=FOREIGN_KEYS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -79,7 +78,7 @@ def execute_test(test: PolicyTest):
 
 def get_policy_test_ids_and_cases() -> dict[str, PolicyTest]:
     all_policy_tests = load_policy_test_data("")
-    return {policy_test.test_name: policy_test for policy_test in all_policy_tests}
+    return {policy_test.name: policy_test for policy_test in all_policy_tests}
 
 
 def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
@@ -166,32 +165,12 @@ def _get_policy_tests_from_raw_test_data(
 
     date: datetime.date = to_datetime(path_to_yaml.parent.name)
 
-    out = []
-    if expected_output_tree == {}:
-        out.append(
-            PolicyTest(
-                info=test_info,
-                input_tree=input_tree,
-                expected_output_tree={},
-                path=path_to_yaml,
-                date=date,
-            )
+    return [
+        PolicyTest(
+            info=test_info,
+            input_tree=input_tree,
+            expected_output_tree=expected_output_tree,
+            path=path_to_yaml,
+            date=date,
         )
-    else:
-        for target_name, output_data in dt.flatten_to_tree_paths(
-            expected_output_tree
-        ).items():
-            one_expected_output: NestedDataDict = dt.unflatten_from_tree_paths(
-                {target_name: output_data}
-            )
-            out.append(
-                PolicyTest(
-                    info=test_info,
-                    input_tree=input_tree,
-                    expected_output_tree=one_expected_output,
-                    path=path_to_yaml,
-                    date=date,
-                )
-            )
-
-    return out
+    ]

@@ -2,16 +2,14 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
+from ttsim import AggType, agg_by_p_id_function, join, policy_function
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="kindergeldübertrag_m",
-        source="differenz_kindergeld_kindbedarf_m",
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        agg=AggregationType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def kindergeldübertrag_m(
+    differenz_kindergeld_kindbedarf_m: float, kindergeld__p_id_empfänger: int, p_id: int
+) -> float:
+    pass
 
 
 @policy_function(end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m")
@@ -66,7 +64,7 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     return kindergeld_params["kindergeld"] if kindergeld__anzahl_ansprüche > 0 else 0.0
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def kindergeld_zur_bedarfsdeckung_m(
     kindergeld_pro_kind_m: float,
     kindergeld__p_id_empfänger: numpy.ndarray[int],
@@ -94,7 +92,7 @@ def kindergeld_zur_bedarfsdeckung_m(
     -------
 
     """
-    return join_numpy(
+    return join(
         kindergeld__p_id_empfänger,
         p_id,
         kindergeld_pro_kind_m,
@@ -162,7 +160,7 @@ def differenz_kindergeld_kindbedarf_m(
     return out
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def in_anderer_bg_als_kindergeldempfänger(
     p_id: numpy.ndarray[int],
     kindergeld__p_id_empfänger: numpy.ndarray[int],

@@ -1,0 +1,80 @@
+---
+info:
+  note: ''
+  precision: 0.01
+  source: ''
+inputs:
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+    hh_id:
+      - 0
+      - 0
+      - 0
+    p_id_parent_1:
+      - -1
+      - -1
+      - 0
+    p_id_parent_2:
+      - -1
+      - -1
+      - 1
+    p_id_spouse:
+      - 1
+      - 0
+      - -1
+    payroll_tax__income__gross_wage_m:
+      - 833.333333
+      - 0
+      - 0
+    payroll_tax__child_tax_credit__p_id_recipient:
+      - -1
+      - -1
+      - 0
+    age:
+      - 30
+      - 30
+      - 10
+    parent_is_noble:
+      - false
+      - false
+      - false
+    wealth:
+      - 0.0
+      - 0.0
+      - 0.0
+outputs:
+  payroll_tax__income__deductions_y:
+    - 200
+    - 100.0
+    - 100.0
+  payroll_tax__income__amount_y:
+    - 9800
+    - 0.0
+    - 0.0
+  payroll_tax__income__amount_y_sp:
+    - 9800
+    - 9800
+    - 0.0
+  payroll_tax__amount_y:
+    - 2940
+    - 0.0
+    - 0.0
+  payroll_tax__child_tax_credit__claim_of_child_y:
+    - 0.0
+    - 0.0
+    - 100.0
+  payroll_tax__child_tax_credit__amount_m:
+    - 8.333333
+    - 0.0
+    - 0.0
+  payroll_tax__child_tax_credit__child_eligible:
+    - false
+    - false
+    - true
+  payroll_tax__child_tax_credit__in_same_household_as_recipient:
+    - false
+    - false
+    - true

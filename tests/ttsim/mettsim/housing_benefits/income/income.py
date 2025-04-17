@@ -9,7 +9,11 @@ from ttsim import RoundingSpec, policy_function
     )
 )
 def amount_m(
-    gross_wage_m: float,
+    payroll_tax__income__gross_wage_m: float,
     payroll_tax__amount_m: float,
+    housing_benefits__eligibility__child: bool,
 ) -> float:
-    return gross_wage_m - payroll_tax__amount_m
+    if housing_benefits__eligibility__child:
+        return 0.0
+    else:
+        return payroll_tax__income__gross_wage_m - payroll_tax__amount_m

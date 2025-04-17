@@ -1,7 +1,7 @@
 ---
 info:
   note: No wealth threshold in place before 2009
-  precision: 0.01
+  precision_atol: 0.01
   source: Regression test.
 inputs:
   assumed: {}

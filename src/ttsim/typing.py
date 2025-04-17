@@ -13,9 +13,8 @@ if TYPE_CHECKING:
         QualNameTargetList,
     )
 
-    from ttsim.aggregation import AggregateByGroupSpec, AggregateByPIDSpec
     from ttsim.config import numpy_or_jax as np
-    from ttsim.function_types import PolicyInput, TTSIMFunction, TTSIMObject
+    from ttsim.ttsim_objects import PolicyInput, TTSIMFunction, TTSIMObject
 
     NestedTTSIMObjectDict = Mapping[str, TTSIMObject | "NestedTTSIMObjectDict"]
     QualNameTTSIMObjectDict = Mapping[str, TTSIMObject]
@@ -29,12 +28,6 @@ if TYPE_CHECKING:
     NestedDataDict = Mapping[str, pd.Series | "NestedDataDict"]
     QualNameDataDict = Mapping[str, pd.Series]
     NestedArrayDict = Mapping[str, np.ndarray | "NestedArrayDict"]
-    NestedAggregationSpecDict = Mapping[
-        str, AggregateByGroupSpec | AggregateByPIDSpec | "NestedAggregationSpecDict"
-    ]
-    QualNameAggregationSpecsDict = Mapping[
-        str, AggregateByGroupSpec | AggregateByPIDSpec
-    ]
 
     DashedISOString = NewType("DashedISOString", str)
     """A string representing a date in the format 'YYYY-MM-DD'."""
