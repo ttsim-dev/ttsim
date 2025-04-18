@@ -157,8 +157,8 @@ def policy_input(
     return inner
 
 
-def _update_wrapper_frozen_dataclass_safe(wrapper: object, wrapped: Callable) -> None:
-    """Update a wrapper dataclass to look like the wrapped function.
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
+    """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
     use the `functools.update_wrapper` function or `self.__signature__ = ...`
@@ -170,14 +170,21 @@ def _update_wrapper_frozen_dataclass_safe(wrapper: object, wrapped: Callable) ->
 
     """
     object.__setattr__(wrapper, "__signature__", inspect.signature(wrapped))
-    object.__setattr__(wrapper, "__globals__", wrapped.__globals__)
-    object.__setattr__(wrapper, "__closure__", wrapped.__closure__)
-    object.__setattr__(wrapper, "__doc__", wrapped.__doc__)
-    object.__setattr__(wrapper, "__name__", wrapped.__name__)
-    object.__setattr__(wrapper, "__qualname__", wrapped.__qualname__)
-    object.__setattr__(wrapper, "__module__", wrapped.__module__)
-    object.__setattr__(wrapper, "__annotations__", wrapped.__annotations__)
-    object.__setattr__(wrapper, "__type_params__", wrapped.__type_params__)
+
+    WRAPPER_ASSIGNMENTS = (  # noqa: N806
+        "__globals__",
+        "__closure__",
+        "__doc__",
+        "__name__",
+        "__qualname__",
+        "__module__",
+        "__annotations__",
+        "__type_params__",
+    )
+    for attr in WRAPPER_ASSIGNMENTS:
+        if hasattr(wrapped, attr):
+            object.__setattr__(wrapper, attr, getattr(wrapped, attr))
+
     getattr(wrapper, "__dict__", {}).update(getattr(wrapped, "__dict__", {}))
 
 
@@ -194,7 +201,7 @@ class TTSIMFunction(TTSIMObject):
     def __post_init__(self):
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
-        _update_wrapper_frozen_dataclass_safe(self, self.function)
+        _frozen_safe_update_wrapper(self, self.function)
 
     def _fail_if_rounding_has_wrong_type(
         self, rounding_spec: RoundingSpec | None
