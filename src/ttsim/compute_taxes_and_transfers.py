@@ -490,7 +490,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
     to the `p_id` of the same row.
     """
 
-    valid_ids = set(data["p_id"]) | {-1}
+    valid_ids = set(data["p_id"].tolist()) | {-1}
 
     for fk_name, fk in ttsim_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
@@ -498,7 +498,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
         elif fk_name in data:
             path = dt.tree_path_from_qual_name(fk_name)
             # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in data[fk_name]):
+            if not all(i in valid_ids for i in data[fk_name].tolist()):
                 message = format_errors_and_warnings(
                     f"""
                     For {path}, the following are not a valid p_id in the input
@@ -509,7 +509,9 @@ def _fail_if_foreign_keys_are_invalid_in_data(
 
             if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
                 equal_to_pid_in_same_row = [
-                    i for i, j in zip(data[fk_name], data["p_id"]) if i == j
+                    i
+                    for i, j in zip(data[fk_name].tolist(), data["p_id"].tolist())
+                    if i == j
                 ]
                 if any(equal_to_pid_in_same_row):
                     message = format_errors_and_warnings(
