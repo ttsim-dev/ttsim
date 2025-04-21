@@ -76,6 +76,6 @@ def test_compute_taxes_and_transfers_kindergeld(kindergeld_policy_test):
         assert_frame_equal(
             result_dataframe,
             expected_dataframe,
-            atol=test.info["precision"],
+            atol=test.info["precision_atol"],
             check_dtype=False,
         )
