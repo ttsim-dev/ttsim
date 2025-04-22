@@ -11,17 +11,17 @@ import pandas as pd
 import pytest
 from mettsim.config import RESOURCE_DIR
 
-from ttsim.function_types import (
-    GroupByFunction,
-    group_by_function,
-    policy_function,
-)
 from ttsim.policy_environment import (
     PolicyEnvironment,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
     load_objects_tree_for_date,
     set_up_policy_environment,
+)
+from ttsim.ttsim_objects import (
+    GroupCreationFunction,
+    group_creation_function,
+    policy_function,
 )
 
 if TYPE_CHECKING:
@@ -30,9 +30,21 @@ if TYPE_CHECKING:
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
 
+def return_one():
+    return 1
+
+
+def return_two():
+    return 2
+
+
+def return_three():
+    return 3
+
+
 class TestPolicyEnvironment:
     def test_func_exists_in_tree(self):
-        function = policy_function(leaf_name="foo")(lambda: 1)
+        function = policy_function(leaf_name="foo")(return_one)
         environment = PolicyEnvironment({"foo": function})
 
         assert environment.raw_objects_tree["foo"] == function
@@ -46,17 +58,17 @@ class TestPolicyEnvironment:
         "environment",
         [
             PolicyEnvironment({}, {}),
-            PolicyEnvironment({"foo": policy_function(leaf_name="foo")(lambda: 1)}),
+            PolicyEnvironment({"foo": policy_function(leaf_name="foo")(return_one)}),
             PolicyEnvironment(
                 {
-                    "foo": policy_function(leaf_name="foo")(lambda: 1),
-                    "bar": policy_function(leaf_name="bar")(lambda: 2),
+                    "foo": policy_function(leaf_name="foo")(return_one),
+                    "bar": policy_function(leaf_name="bar")(return_two),
                 }
             ),
         ],
     )
     def test_upsert_functions(self, environment: PolicyEnvironment):
-        new_function = policy_function(leaf_name="foo")(lambda: 3)
+        new_function = policy_function(leaf_name="foo")(return_three)
         new_environment = environment.upsert_objects({"foo": new_function})
 
         assert new_environment.raw_objects_tree["foo"] == new_function
@@ -76,12 +88,12 @@ class TestPolicyEnvironment:
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="02-29-2020", resource_dir=RESOURCE_DIR)
+    set_up_policy_environment(date="2020-02-29", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="02-30-2020", resource_dir=RESOURCE_DIR)
+        set_up_policy_environment(date="2020-02-30", resource_dir=RESOURCE_DIR)
 
 
 def test_fail_if_invalid_access_different_date():
@@ -149,7 +161,7 @@ def test_load_functions_tree_for_date(
 @pytest.mark.parametrize(
     "functions_tree",
     [
-        {"foo": policy_function(leaf_name="bar")(lambda: 1)},
+        {"foo": policy_function(leaf_name="bar")(return_one)},
     ],
 )
 def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
@@ -161,7 +173,7 @@ def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
 
 def test_dont_destroy_group_by_functions():
     functions_tree = {
-        "foo": group_by_function()(lambda: 1),
+        "foo": group_creation_function()(return_one),
     }
     environment = PolicyEnvironment(functions_tree)
-    assert isinstance(environment.raw_objects_tree["foo"], GroupByFunction)
+    assert isinstance(environment.raw_objects_tree["foo"], GroupCreationFunction)

@@ -214,7 +214,7 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) ->
     params = sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]
     out = params["ost"] if wohnort_ost else params["west"]
 
-    return float(out)
+    return out
 
 
 @policy_function(start_date="2003-04-01")

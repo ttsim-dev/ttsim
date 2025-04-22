@@ -198,7 +198,7 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
     - erziehungsgeld__p_id_empfänger
     - arbeitslosengeld_2__p_id_einstandspartner
     - familie__p_id_ehepartner
-    - einkommensteuer__abzüge__p_id_betreuungskosten_träger
+    - einkommensteuer__abzüge__p_id_betreuungskostenträger
 
     Parameters
     ----------
@@ -224,7 +224,7 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
         data["familie__p_id_elternteil_2"] = -1
     data["kindergeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
     data["erziehungsgeld__p_id_empfänger"] = data["familie__p_id_elternteil_1"]
-    data["einkommensteuer__abzüge__p_id_betreuungskosten_träger"] = data[
+    data["einkommensteuer__abzüge__p_id_betreuungskostenträger"] = data[
         "familie__p_id_elternteil_1"
     ]
 
@@ -260,6 +260,22 @@ def return_df_with_ids_for_aggregation(data, n_adults, n_children, adults_marrie
     return data
 
 
+def _apply_func_familie__p_id_elternteil_1(x, elternteil_1_candidate):
+    """Apply function to find the first parent id."""
+    if x["familie__kind"]:
+        return elternteil_1_candidate[x["p_id"]]
+    else:
+        return -1
+
+
+def _apply_func_familie__p_id_elternteil_2(x):
+    """Apply function to find the second parent id."""
+    if x["familie__kind"]:
+        return x["familie__p_id_elternteil_1"] + 1
+    else:
+        return -1
+
+
 def return_p_id_elternteil(data, n_adults):
     """Find the familie__p_id_elternteil_1 and familie__p_id_elternteil_2."""
     # familie__p_id_elternteil_1 is the first adult in the household
@@ -268,12 +284,11 @@ def return_p_id_elternteil(data, n_adults):
     }
     # Apply candidate id if familie__kind, else -1
     data["familie__p_id_elternteil_1"] = data.apply(
-        lambda x: elternteil_1_candidate[x["hh_id"]] if x["familie__kind"] else -1,
-        axis=1,
+        _apply_func_familie__p_id_elternteil_1, axis=1, args=(elternteil_1_candidate,)
     )
     if n_adults == 2:
         data["familie__p_id_elternteil_2"] = data.apply(
-            lambda x: x["familie__p_id_elternteil_1"] + 1 if x["familie__kind"] else -1,
+            _apply_func_familie__p_id_elternteil_2,
             axis=1,
         )
     else:

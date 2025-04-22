@@ -124,6 +124,7 @@ pytest-cov = "*"
 pytest-profiling = "*"
 pytest-xdist = "*"
 snakeviz = ">=2.2.2,<3"
+mypy = "1.15.0.*"
 
 
 # Development Dependencies (pypi)
@@ -168,7 +169,7 @@ tests = "pytest"
 [tool.pixi.environments]
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
-py312-jax = ["py312", "jax"]
+py312-jax = ["py312", "test", "jax"]
 
 
 # ======================================================================================
@@ -218,6 +219,7 @@ extend-ignore = [
     "FIX002", # Line contains TODO -- Use stuff from TD area.
     "PLC2401", # Allow non-ASCII characters in variable names.
     "PLC2403", # Allow non-ASCII function names for imports.
+    "PLR0913", # Allow too many arguments in function definitions.
     "N999", # Allow non-ASCII characters in file names.
     "PLR0913", # Too many arguments in function definition.
 

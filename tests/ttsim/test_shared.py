@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import pytest
 
 from ttsim.shared import (
-    all_variations_of_base_name,
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
     get_re_pattern_for_all_time_units_and_groupings,
@@ -231,7 +230,7 @@ def test_get_name_of_group_by_id(target_name, group_by_functions, expected):
         get_name_of_group_by_id(
             target_name=target_name,
             group_by_functions=group_by_functions,
-            supported_groupings=("hh", "bg", "eg"),
+            groupings=("hh", "bg", "eg"),
         )
         == expected
     )
@@ -287,75 +286,18 @@ def test_get_name_of_group_by_id_fails(
         get_name_of_group_by_id(
             target_name=target_name,
             group_by_functions=group_by_functions,
-            supported_groupings=("hh", "bg", "eg"),
+            groupings=("hh", "bg", "eg"),
         )
-
-
-@pytest.mark.parametrize(
-    (
-        "base_name",
-        "supported_time_conversions",
-        "supported_groupings",
-        "create_conversions_for_time_units",
-        "expected",
-    ),
-    [
-        (
-            "income",
-            ["y", "m"],
-            ["hh"],
-            True,
-            {"income_m", "income_y", "income_m_hh", "income_y_hh"},
-        ),
-        (
-            "income",
-            ["y", "m"],
-            ["hh", "x"],
-            True,
-            {
-                "income_m",
-                "income_y",
-                "income_m_hh",
-                "income_y_hh",
-                "income_m_x",
-                "income_y_x",
-            },
-        ),
-        (
-            "claims_benefits",
-            ["y", "m"],
-            ["hh", "x"],
-            False,
-            {"claims_benefits", "claims_benefits_hh", "claims_benefits_x"},
-        ),
-    ],
-)
-def test_all_variations_of_base_name(
-    base_name,
-    supported_time_conversions,
-    supported_groupings,
-    create_conversions_for_time_units,
-    expected,
-):
-    assert (
-        all_variations_of_base_name(
-            base_name=base_name,
-            supported_time_conversions=supported_time_conversions,
-            supported_groupings=supported_groupings,
-            create_conversions_for_time_units=create_conversions_for_time_units,
-        )
-        == expected
-    )
 
 
 @pytest.mark.parametrize(
     (
         "func_name",
-        "supported_time_units",
-        "supported_groupings",
+        "time_units",
+        "groupings",
         "expected_base_name",
         "expected_time_unit",
-        "expected_aggregation",
+        "expected_grouping",
     ),
     [
         ("foo", ("m", "y"), ["hh"], "foo", None, None),
@@ -369,27 +311,27 @@ def test_all_variations_of_base_name(
 )
 def test_get_re_pattern_for_time_units_and_groupings(
     func_name,
-    supported_time_units,
-    supported_groupings,
+    time_units,
+    groupings,
     expected_base_name,
     expected_time_unit,
-    expected_aggregation,
+    expected_grouping,
 ):
     result = get_re_pattern_for_all_time_units_and_groupings(
-        supported_time_units=supported_time_units,
-        supported_groupings=supported_groupings,
+        time_units=time_units,
+        groupings=groupings,
     )
     match = result.fullmatch(func_name)
     assert match.group("base_name") == expected_base_name
     assert match.group("time_unit") == expected_time_unit
-    assert match.group("aggregation") == expected_aggregation
+    assert match.group("grouping") == expected_grouping
 
 
 @pytest.mark.parametrize(
     (
         "base_name",
-        "supported_time_units",
-        "supported_groupings",
+        "time_units",
+        "groupings",
         "expected_match",
     ),
     [
@@ -399,11 +341,11 @@ def test_get_re_pattern_for_time_units_and_groupings(
     ],
 )
 def test_get_re_pattern_for_some_base_name(
-    base_name, supported_time_units, supported_groupings, expected_match
+    base_name, time_units, groupings, expected_match
 ):
     re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
         base_name=base_name,
-        supported_time_units=supported_time_units,
-        supported_groupings=supported_groupings,
+        all_time_units=time_units,
+        groupings=groupings,
     )
     assert re_pattern.fullmatch(expected_match)

@@ -2,7 +2,7 @@
 info:
   note: adjusted sozialversicherung__rente__grundrente__mean_entgeltpunkte_zuschlag since
     test case uses 0.8 as maximum instead of 0.8004
-  precision: 1
+  precision_atol: 1
   source: 'Beispiel Richard Frenzel aus: https://www.deutsche-rentenversicherung.de/DRV/DE/Rente/Grundrente/grundrente_fallbeispiele_neu.html'
 inputs:
   assumed: {}

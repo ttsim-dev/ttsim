@@ -10,18 +10,7 @@ import optree
 import pandas as pd
 import yaml
 
-from _gettsim.config import (
-    INTERNAL_PARAMS_GROUPS,
-    RESOURCE_DIR,
-)
-from ttsim.function_types import (
-    TTSIMObject,
-    policy_function,
-)
-from ttsim.loader import (
-    load_aggregation_specs_tree,
-    load_objects_tree_for_date,
-)
+from ttsim.loader import load_objects_tree_for_date
 from ttsim.piecewise_polynomial import (
     _check_thresholds,
     get_piecewise_parameters,
@@ -29,8 +18,13 @@ from ttsim.piecewise_polynomial import (
 )
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
+    to_datetime,
     upsert_path_and_value,
     upsert_tree,
+)
+from ttsim.ttsim_objects import (
+    TTSIMObject,
+    policy_function,
 )
 
 if TYPE_CHECKING:
@@ -38,7 +32,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from ttsim.typing import (
-        NestedAggregationSpecDict,
+        DashedISOString,
         NestedTTSIMObjectDict,
     )
 
@@ -51,22 +45,16 @@ class PolicyEnvironment:
 
     Parameters
     ----------
-    functions_tree
-        The policy functions tree.
+    raw_objects_tree
+        The pytree of TTSIM objects (policy inputs, policy functions, agg functions).
     params
         A dictionary with policy parameters.
-    aggregation_specs_tree
-        The tree with aggregation specifications for aggregations on group levels
-        (defined in config.py) or aggregations by p_id (defined in config.py). The
-        aggregation tree is a nested dictionary with AggregateByGroupSpec or
-        AggregateByPIDSpec dataclasses as leafs.
     """
 
     def __init__(
         self,
         raw_objects_tree: NestedTTSIMObjectDict,
         params: dict[str, Any] | None = None,
-        aggregation_specs_tree: NestedAggregationSpecDict | None = None,
     ):
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_ttsim_pytree(
@@ -81,9 +69,6 @@ class PolicyEnvironment:
 
         # Read in parameters and aggregation specs
         self._params = params if params is not None else {}
-        self._aggregation_specs_tree = (
-            aggregation_specs_tree if aggregation_specs_tree is not None else {}
-        )
 
     @property
     def raw_objects_tree(self) -> NestedTTSIMObjectDict:
@@ -97,14 +82,6 @@ class PolicyEnvironment:
     def params(self) -> dict[str, Any]:
         """The parameters of the policy environment."""
         return self._params
-
-    @property
-    def aggregation_specs_tree(self) -> NestedAggregationSpecDict:
-        """
-        The tree with aggregation specifications for aggregations on group levels
-        (defined in config.py) or aggregations by p_id.
-        """
-        return self._aggregation_specs_tree
 
     def upsert_objects(
         self, tree_to_upsert: NestedTTSIMObjectDict
@@ -141,7 +118,6 @@ class PolicyEnvironment:
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = new_tree  # noqa: SLF001
         result._params = self._params  # noqa: SLF001
-        result._aggregation_specs_tree = self._aggregation_specs_tree  # noqa: SLF001
 
         return result
 
@@ -162,13 +138,12 @@ class PolicyEnvironment:
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = self._raw_objects_tree  # noqa: SLF001
         result._params = params  # noqa: SLF001
-        result._aggregation_specs_tree = self._aggregation_specs_tree  # noqa: SLF001
 
         return result
 
 
 def set_up_policy_environment(
-    resource_dir: Path, date: datetime.date | str | int
+    resource_dir: Path, date: datetime.date | DashedISOString
 ) -> PolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -186,48 +161,41 @@ def set_up_policy_environment(
     The policy environment for the specified date.
     """
     # Check policy date for correct format and convert to datetime.date
-    date = _parse_date(date)
+    date = to_datetime(date)
 
     functions_tree = load_objects_tree_for_date(resource_dir=resource_dir, date=date)
 
     params = {}
-    for group in INTERNAL_PARAMS_GROUPS:
-        params_one_group = _load_parameter_group_from_yaml(date, group)
+    if "_gettsim" in resource_dir.name:
+        from _gettsim.config import INTERNAL_PARAMS_GROUPS as internal_params_groups
+    else:
+        internal_params_groups = [
+            "payroll_tax",
+            "housing_benefits",
+        ]
+    for group in internal_params_groups:
+        params_one_group = _load_parameter_group_from_yaml(
+            date=date,
+            group=group,
+            parameters=None,
+            yaml_path=resource_dir / "parameters",
+        )
 
         # Align parameters for piecewise polynomial functions
         params[group] = _parse_piecewise_parameters(params_one_group)
-    # Extend dictionary with date-specific values which do not need an own function
-    params = _parse_kinderzuschl_max(date, params)
-    params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params)
-    params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
-    aggregation_specs_tree = load_aggregation_specs_tree()
+    if "_gettsim" in resource_dir.name:
+        # Extend dictionary with date-specific values which do not need an own function
+        params = _parse_kinderzuschl_max(date, params)
+        params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
+            date, params
+        )
+        params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
     return PolicyEnvironment(
         functions_tree,
         params,
-        aggregation_specs_tree,
     )
-
-
-def _parse_date(date: datetime.date | str | int) -> datetime.date:
-    """Check the policy date for different input formats.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy system is set up.
-
-    Returns
-    -------
-    The date for which the policy system is set up as datetime.date.
-
-    """
-    if isinstance(date, str):
-        date = pd.to_datetime(date).date()
-    elif isinstance(date, int):
-        date = datetime.date(year=date, month=1, day=1)
-    return date
 
 
 def _convert_to_policy_function_if_not_ttsim_object(
@@ -346,7 +314,7 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
     Updated dictionary.
 
     """
-    jahr = float(date.year)
+    jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
             pd.Series(jahr),
@@ -379,7 +347,7 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
 
     """
 
-    jahr = float(date.year)
+    jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
             pd.Series(jahr),
@@ -401,8 +369,8 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
 def _load_parameter_group_from_yaml(
     date: datetime.date,
     group: str,
+    yaml_path: Path,
     parameters: list[str] | None = None,
-    yaml_path: Path = RESOURCE_DIR / "parameters",
 ) -> dict[str, Any]:
     """Load data from raw yaml group file.
 
@@ -469,8 +437,8 @@ def _load_parameter_group_from_yaml(
                 if "." in future_policy["deviation_from"]:
                     path_list = future_policy["deviation_from"].split(".")
                     params_temp = _load_parameter_group_from_yaml(
-                        date,
-                        path_list[0],
+                        date=date,
+                        group=path_list[0],
                         parameters=[path_list[1]],
                         yaml_path=yaml_path,
                     )

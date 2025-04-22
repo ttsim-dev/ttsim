@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
@@ -8,26 +7,26 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from _gettsim.config import FOREIGN_KEYS, RESOURCE_DIR, SUPPORTED_GROUPINGS
+from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     PolicyEnvironment,
     merge_trees,
     set_up_policy_environment,
 )
-from ttsim.policy_environment import _parse_date
+from ttsim.shared import to_datetime
 
 if TYPE_CHECKING:
+    import datetime
     from pathlib import Path
 
-    from ttsim import NestedDataDict, NestedInputStructureDict
+    from ttsim.typing import DashedISOString, NestedDataDict, NestedInputStructureDict
 
 
 def cached_set_up_policy_environment(
-    date: int | str | datetime.date,
+    date: datetime.date | DashedISOString,
 ) -> PolicyEnvironment:
-    normalized_date = _parse_date(date)
-    return _cached_set_up_policy_environment(normalized_date)
+    return _cached_set_up_policy_environment(to_datetime(date))
 
 
 @lru_cache(maxsize=100)
@@ -60,7 +59,7 @@ class PolicyTest:
         return dt.unflatten_from_tree_paths(flat_target_structure)
 
     @property
-    def test_name(self) -> str:
+    def name(self) -> str:
         return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
 
@@ -76,8 +75,7 @@ def execute_test(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
-        foreign_keys=FOREIGN_KEYS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -89,14 +87,14 @@ def execute_test(test: PolicyTest):
         assert_frame_equal(
             result_dataframe,
             expected_dataframe,
-            atol=test.info["precision"],
+            atol=test.info["precision_atol"],
             check_dtype=False,
         )
 
 
 def get_policy_test_ids_and_cases() -> dict[str, PolicyTest]:
     all_policy_tests = load_policy_test_data("")
-    return {policy_test.test_name: policy_test for policy_test in all_policy_tests}
+    return {policy_test.name: policy_test for policy_test in all_policy_tests}
 
 
 def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
@@ -186,45 +184,14 @@ def _get_policy_tests_from_raw_test_data(
         }
     )
 
-    date: datetime.date = _parse_date_from_dir_name(path_to_yaml.parent.name)
+    date: datetime.date = to_datetime(path_to_yaml.parent.name)
 
-    out = []
-    if expected_output_tree == {}:
-        out.append(
-            PolicyTest(
-                info=test_info,
-                input_tree=input_tree,
-                expected_output_tree={},
-                path=path_to_yaml,
-                date=date,
-            )
+    return [
+        PolicyTest(
+            info=test_info,
+            input_tree=input_tree,
+            expected_output_tree=expected_output_tree,
+            path=path_to_yaml,
+            date=date,
         )
-    else:
-        for target_name, output_data in dt.flatten_to_tree_paths(
-            expected_output_tree
-        ).items():
-            one_expected_output: NestedDataDict = dt.unflatten_from_tree_paths(
-                {target_name: output_data}
-            )
-            out.append(
-                PolicyTest(
-                    info=test_info,
-                    input_tree=input_tree,
-                    expected_output_tree=one_expected_output,
-                    path=path_to_yaml,
-                    date=date,
-                )
-            )
-
-    return out
-
-
-def _parse_date_from_dir_name(date: str) -> datetime.date:
-    parts = date.split("-")
-
-    if len(parts) == 1:
-        return datetime.date(int(parts[0]), 1, 1)
-    if len(parts) == 2:
-        return datetime.date(int(parts[0]), int(parts[1]), 1)
-    if len(parts) == 3:
-        return datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+    ]

@@ -6,7 +6,7 @@ Belastungen and sonstige Abzüge."""
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def gesamteinkommen_y(
     einkünfte__gesamtbetrag_der_einkünfte_y_sn: float,
     abzüge__betrag_y_sn: float,

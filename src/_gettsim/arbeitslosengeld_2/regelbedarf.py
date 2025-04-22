@@ -3,7 +3,7 @@
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def regelbedarf_m(
     regelsatz_m: float,
     kosten_der_unterkunft_m: float,
@@ -90,7 +90,9 @@ def mehrbedarf_alleinerziehend_m(
     return out
 
 
-@policy_function(end_date="2010-12-31", leaf_name="kindersatz_m")
+@policy_function(
+    end_date="2010-12-31", leaf_name="kindersatz_m", vectorization_strategy="vectorize"
+)
 def kindersatz_m_bis_2010(
     alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
@@ -136,10 +138,14 @@ def kindersatz_m_bis_2010(
     else:
         out = 0.0
 
-    return float(out)
+    return out
 
 
-@policy_function(start_date="2011-01-01", leaf_name="kindersatz_m")
+@policy_function(
+    start_date="2011-01-01",
+    leaf_name="kindersatz_m",
+    vectorization_strategy="vectorize",
+)
 def kindersatz_m_ab_2011(
     alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
@@ -164,35 +170,39 @@ def kindersatz_m_ab_2011(
 
     """
 
-    out = arbeitsl_geld_2_params.get("kindersofortzuschl", 0.0)
+    kindersofortzuschlag = arbeitsl_geld_2_params.get("kindersofortzuschl", 0.0)
 
     if (
         alter >= arbeitsl_geld_2_params["regelsatz"][6]["min_alter"]
         and alter <= arbeitsl_geld_2_params["regelsatz"][6]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out += arbeitsl_geld_2_params["regelsatz"][6]["betrag"]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][6]["betrag"]
     elif (
         alter >= arbeitsl_geld_2_params["regelsatz"][5]["min_alter"]
         and alter <= arbeitsl_geld_2_params["regelsatz"][5]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out += arbeitsl_geld_2_params["regelsatz"][5]["betrag"]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][5]["betrag"]
     elif (
         alter >= arbeitsl_geld_2_params["regelsatz"][4]["min_alter"]
         and alter <= arbeitsl_geld_2_params["regelsatz"][4]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out += arbeitsl_geld_2_params["regelsatz"][4]["betrag"]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][4]["betrag"]
     elif kindergeld__gleiche_fg_wie_empfänger:  # adult children with parents in FG
-        out += arbeitsl_geld_2_params["regelsatz"][3]
+        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][3]
     else:
         out = 0.0
 
-    return float(out)
+    return out
 
 
-@policy_function(end_date="2010-12-31", leaf_name="erwachsenensatz_m")
+@policy_function(
+    end_date="2010-12-31",
+    leaf_name="erwachsenensatz_m",
+    vectorization_strategy="vectorize",
+)
 def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
     mehrbedarf_alleinerziehend_m: float,
     kindersatz_m: float,
@@ -231,7 +241,11 @@ def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
     return out * (1 + mehrbedarf_alleinerziehend_m)
 
 
-@policy_function(start_date="2011-01-01", leaf_name="erwachsenensatz_m")
+@policy_function(
+    start_date="2011-01-01",
+    leaf_name="erwachsenensatz_m",
+    vectorization_strategy="vectorize",
+)
 def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
     mehrbedarf_alleinerziehend_m: float,
     kindersatz_m: float,
@@ -270,7 +284,7 @@ def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
     return out * (1 + mehrbedarf_alleinerziehend_m)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def regelsatz_m(
     erwachsenensatz_m: float,
     kindersatz_m: float,
@@ -292,7 +306,11 @@ def regelsatz_m(
     return erwachsenensatz_m + kindersatz_m
 
 
-@policy_function(end_date="2022-12-31", leaf_name="kosten_der_unterkunft_m")
+@policy_function(
+    end_date="2022-12-31",
+    leaf_name="kosten_der_unterkunft_m",
+    vectorization_strategy="vectorize",
+)
 def kosten_der_unterkunft_m_bis_2022(
     berechtigte_wohnfläche: float,
     anerkannte_warmmiete_je_qm_m: float,
@@ -315,7 +333,11 @@ def kosten_der_unterkunft_m_bis_2022(
     return berechtigte_wohnfläche * anerkannte_warmmiete_je_qm_m
 
 
-@policy_function(start_date="2023-01-01", leaf_name="kosten_der_unterkunft_m")
+@policy_function(
+    start_date="2023-01-01",
+    leaf_name="kosten_der_unterkunft_m",
+    vectorization_strategy="vectorize",
+)
 def kosten_der_unterkunft_m_ab_2023(
     bruttokaltmiete_m: float,
     heizkosten_m: float,
@@ -355,7 +377,7 @@ def kosten_der_unterkunft_m_ab_2023(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def anerkannte_warmmiete_je_qm_m(
     bruttokaltmiete_m: float,
     heizkosten_m: float,
@@ -437,7 +459,7 @@ def berechtigte_wohnfläche(
     return min(wohnfläche, maximum / anzahl_personen_hh)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def bruttokaltmiete_m(
     wohnen__bruttokaltmiete_m_hh: float,
     anzahl_personen_hh: int,
@@ -462,7 +484,7 @@ def bruttokaltmiete_m(
     return wohnen__bruttokaltmiete_m_hh / anzahl_personen_hh
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def heizkosten_m(
     wohnen__heizkosten_m_hh: float,
     anzahl_personen_hh: int,
@@ -487,7 +509,7 @@ def heizkosten_m(
     return wohnen__heizkosten_m_hh / anzahl_personen_hh
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def wohnfläche(
     wohnen__wohnfläche_hh: float,
     anzahl_personen_hh: int,

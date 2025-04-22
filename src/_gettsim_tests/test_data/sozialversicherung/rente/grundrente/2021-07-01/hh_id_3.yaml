@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 1
+  precision_atol: 1
   source: Sylvia Dünn, Claudia Bilgen und Sophie-Charlotte Heckenberger, "Das Grundrentengesetz",
     https://www.deutsche-rentenversicherung.de/SharedDocs/Downloads/DE/Zeitschriften/DRV_Hefte_deutsch/2020/ausgewaehlter_artikel_heft_3.pdf?__blob=publicationFile&v=4
 inputs:

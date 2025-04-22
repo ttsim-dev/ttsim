@@ -1,4 +1,5 @@
 import datetime
+import functools
 import inspect
 import string
 from pathlib import Path
@@ -6,17 +7,19 @@ from pathlib import Path
 import dags.tree as dt
 import numpy
 import pytest
+from dags import concatenate_functions
 
-from ttsim.config import USE_JAX
+from ttsim.config import IS_JAX_INSTALLED
 
-if USE_JAX:
+if IS_JAX_INSTALLED:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
-from ttsim.function_types import GroupByFunction, PolicyInput
 from ttsim.loader import load_objects_tree_for_date
+from ttsim.ttsim_objects import GroupCreationFunction, PolicyInput, policy_function
 from ttsim.vectorization import (
     TranslateToVectorizableError,
+    _is_lambda_function,
     make_vectorizable,
     make_vectorizable_source,
 )
@@ -25,10 +28,10 @@ from ttsim.vectorization import (
 # Backend
 # ======================================================================================
 
-backends = ["jax", "numpy"] if USE_JAX else ["numpy"]
+backends = ["jax", "numpy"] if IS_JAX_INSTALLED else ["numpy"]
 
 modules = {"numpy": numpy}
-if USE_JAX:
+if IS_JAX_INSTALLED:
     modules["jax"] = jax.numpy
 
 # ======================================================================================
@@ -350,13 +353,13 @@ def test_notimplemented_error():
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
-def test_unallowed_operation_source(func):
+def test_disallowed_operation_source(func):
     with pytest.raises(TranslateToVectorizableError):
         make_vectorizable_source(func, backend="numpy")
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
-def test_unallowed_operation_wrapper(func):
+def test_disallowed_operation_wrapper(func):
     with pytest.raises(TranslateToVectorizableError):
         make_vectorizable(func, backend="numpy")
 
@@ -366,7 +369,7 @@ def test_unallowed_operation_wrapper(func):
 # ======================================================================================
 
 
-# TODO(@MImmesberger): Remove isinstance check once GroupByFunctions are JAX-compatible.
+# TODO(@MImmesberger): Remove isinstance once GroupCreationFunctions are JAX-compatible.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/515
 for year in range(1990, 2023):
 
@@ -380,7 +383,7 @@ for year in range(1990, 2023):
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).values()
-            if not isinstance(pf, GroupByFunction | PolicyInput)
+            if not isinstance(pf, GroupCreationFunction | PolicyInput)
         ],
     )
     @pytest.mark.parametrize("backend", backends)
@@ -526,3 +529,108 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         elterngeld_params=elterngeld_params,
     )
     assert_array_equal(got, full(shape, exp))
+
+
+# ======================================================================================
+# Lambda functions
+# ======================================================================================
+
+
+def test_is_lambda_function_true():
+    assert _is_lambda_function(lambda x: x)
+
+
+def test_is_lambda_function_wrapped():
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    assert _is_lambda_function(decorator(lambda x: x))
+
+
+def test_is_lambda_function_false():
+    def f(x):
+        return x
+
+    assert not _is_lambda_function(f)
+
+
+def test_is_lambda_function_non_function_input():
+    assert not _is_lambda_function(42)
+    assert not _is_lambda_function("not a function")
+    assert not _is_lambda_function([1, 2, 3])
+    assert not _is_lambda_function({1: "a", 2: "b"})
+    assert not _is_lambda_function(None)
+
+
+def test_lambda_functions_disallowed_make_vectorizable():
+    with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
+        make_vectorizable(lambda x: x, backend="numpy")
+
+
+def test_lambda_functions_disallowed_make_vectorizable_source():
+    with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
+        make_vectorizable_source(lambda x: x, backend="numpy")
+
+
+# ======================================================================================
+# Policy functions
+# ======================================================================================
+
+
+def test_make_vectorizable_policy_func():
+    @policy_function()
+    def alter_bis_24(alter: int) -> bool:
+        return alter <= 24
+
+    vectorized = make_vectorizable(alter_bis_24, backend="numpy")
+
+    got = vectorized(numpy.array([20, 25, 30]))
+    exp = numpy.array([True, False, False])
+    assert_array_equal(got, exp)
+
+
+# ======================================================================================
+# Dags functions
+# ======================================================================================
+
+
+def test_make_vectorizable_concatened_func():
+    def f_a(x: int) -> int:
+        return x
+
+    def f_b(a: int) -> int:
+        return a + 2
+
+    def f_manual(x: int) -> int:
+        return f_b(f_a(x))
+
+    vectorized = make_vectorizable(f_manual, backend="numpy")
+    got = vectorized(numpy.array([1, 2, 3]))
+    exp = numpy.array([3, 4, 5])
+    assert_array_equal(got, exp)
+
+
+@pytest.mark.xfail(reason="Make vectorizable does not work on dags concatenated funcs.")
+def test_make_vectorizable_dags_concatened_func():
+    def f_a(x: int) -> int:
+        return x
+
+    def f_b(a: int) -> int:
+        return a + 2
+
+    f_dags = concatenate_functions(
+        functions={
+            "a": f_a,
+            "b": f_b,
+        },
+        targets={"b"},
+    )
+
+    vectorized = make_vectorizable(f_dags, backend="numpy")
+    got = vectorized(numpy.array([1, 2, 3]))
+    exp = numpy.array([3, 4, 5])
+    assert_array_equal(got, exp)

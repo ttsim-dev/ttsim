@@ -1,32 +1,47 @@
 """Income taxes."""
 
 from ttsim import (
-    AggregateByPIDSpec,
-    AggregationType,
+    AggType,
     RoundingSpec,
+    agg_by_group_function,
+    agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="anzahl_kindergeld_ansprüche_1",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        p_id_to_aggregate_by="familie__p_id_elternteil_1",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByPIDSpec(
-        target="anzahl_kindergeld_ansprüche_2",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        p_id_to_aggregate_by="familie__p_id_elternteil_2",
-        agg=AggregationType.SUM,
-    ),
-)
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_sn(sn_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.ANY)
+def alleinerziehend_sn(familie__alleinerziehend: bool, sn_id: int) -> bool:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anzahl_kindergeld_ansprüche_1(
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__p_id_elternteil_1: int,
+    p_id: int,
+) -> int:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anzahl_kindergeld_ansprüche_2(
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__p_id_elternteil_2: int,
+    p_id: int,
+) -> int:
+    pass
 
 
 @policy_function(
     end_date="1996-12-31",
     leaf_name="betrag_y_sn",
+    vectorization_strategy="vectorize",
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S. 6 EStG"
     ),
@@ -52,6 +67,7 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
 @policy_function(
     start_date="1997-01-01",
     leaf_name="betrag_y_sn",
+    vectorization_strategy="vectorize",
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
@@ -87,7 +103,7 @@ def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def kinderfreibetrag_günstiger_sn(
     betrag_ohne_kinderfreibetrag_y_sn: float,
     betrag_mit_kinderfreibetrag_y_sn: float,
@@ -236,7 +252,11 @@ def relevantes_kindergeld_mit_staffelung_m(
     return relevantes_kindergeld / 2
 
 
-@policy_function(start_date="2023-01-01", leaf_name="relevantes_kindergeld_m")
+@policy_function(
+    start_date="2023-01-01",
+    leaf_name="relevantes_kindergeld_m",
+    vectorization_strategy="vectorize",
+)
 def relevantes_kindergeld_ohne_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,

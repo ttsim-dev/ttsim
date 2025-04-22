@@ -2,51 +2,49 @@ from __future__ import annotations
 
 import functools
 import inspect
+import re
 import warnings
-from typing import TYPE_CHECKING, Any, get_args
+from typing import TYPE_CHECKING, Any
 
 import dags
 import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
+from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.function_types import (
-    DerivedAggregationFunction,
-    GroupByFunction,
-    PolicyFunction,
-    PolicyInput,
-    TTSIMFunction,
-)
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
-    all_variations_of_base_name,
     assert_valid_ttsim_pytree,
+    fail_if_multiple_time_units_for_same_base_name_and_group,
     format_errors_and_warnings,
     format_list_linewise,
+    get_base_name_and_grouping_suffix,
     get_name_of_group_by_id,
-    get_names_of_arguments_without_defaults,
+    get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
+    group_pattern,
     merge_trees,
     partition_by_reference_dict,
 )
-from ttsim.time_conversion import TIME_UNITS
-from ttsim.typing import (
-    check_series_has_expected_type,
-    convert_series_to_internal_type,
+from ttsim.ttsim_objects import (
+    FKType,
+    GroupCreationFunction,
+    TTSIMFunction,
 )
 
 if TYPE_CHECKING:
     from ttsim.typing import (
         NestedDataDict,
         NestedTargetDict,
+        NestedTTSIMObjectDict,
         QualNameDataDict,
-        QualNamePolicyInputDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
+        QualNameTTSIMObjectDict,
     )
 
 
@@ -54,10 +52,10 @@ def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
-    foreign_keys: tuple[tuple[str, ...], ...],
-    supported_groupings: tuple[str, ...],
+    groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
+    jit: bool = False,
 ) -> NestedDataDict:
     """Compute taxes and transfers.
 
@@ -74,6 +72,9 @@ def compute_taxes_and_transfers(
     debug : bool
         If debug is 'True', `compute_taxes_and_transfers` returns the input data tree
         along with the computed targets.
+    jit : bool
+        If jit is 'True', the function is compiled using JAX's JIT compilation. To use
+        this feature, JAX must be installed.
 
     Returns
     -------
@@ -86,40 +87,29 @@ def compute_taxes_and_transfers(
     _fail_if_targets_tree_not_valid(targets_tree)
     _fail_if_data_tree_not_valid(data_tree)
     _fail_if_environment_not_valid(environment)
-
+    _fail_if_group_ids_are_outside_top_level_namespace(
+        environment=environment,
+        groupings=groupings,
+    )
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
-        supported_time_conversions=tuple(TIME_UNITS.keys()),
-        supported_groupings=supported_groupings,
+        time_units=tuple(TIME_UNIT_LABELS.keys()),
+        groupings=groupings,
     )
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
-    aggregation_specs = dt.flatten_to_qual_names(environment.aggregation_specs_tree)
-    functions: QualNameTTSIMFunctionDict = {}
-    inputs: QualNamePolicyInputDict = {}
-    for name, f_or_i in dt.flatten_to_qual_names(environment.raw_objects_tree).items():
-        if isinstance(f_or_i, TTSIMFunction):
-            functions[name] = dt.one_function_without_tree_logic(
-                function=f_or_i,
-                tree_path=dt.tree_path_from_qual_name(name),
-                top_level_namespace=top_level_namespace,
-            )
-        elif isinstance(f_or_i, PolicyInput):
-            inputs[name] = f_or_i
-        else:
-            raise ValueError(f"Unknown type: {type(f_or_i)}")
-
+    ttsim_objects = remove_tree_logic_from_ttsim_objects_tree(
+        raw_objects_tree=environment.raw_objects_tree,
+        top_level_namespace=top_level_namespace,
+    )
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
-        functions=functions,
-        aggregation_specs_from_environment=aggregation_specs,
+        ttsim_objects=ttsim_objects,
         targets=targets,
         data=data,
-        inputs=inputs,
-        top_level_namespace=top_level_namespace,
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
 
     functions_overridden, functions_to_be_used = partition_by_reference_dict(
@@ -128,10 +118,6 @@ def compute_taxes_and_transfers(
     )
 
     _warn_if_functions_overridden_by_data(functions_overridden)
-    # data_with_correct_types = _convert_data_to_correct_types(
-    #     data=data,
-    #     functions_overridden=functions_overridden,
-    # )
 
     functions_with_rounding_specs = (
         _add_rounding_to_functions(functions=functions_to_be_used)
@@ -153,14 +139,18 @@ def compute_taxes_and_transfers(
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
         functions=functions,
-        supported_groupings=supported_groupings,
+        groupings=groupings,
     )
-    _fail_if_foreign_keys_are_invalid(
-        data=input_data,
-        p_id=data.get("p_id", None),
-        foreign_keys=foreign_keys,
+    _input_data_with_p_id = {
+        "p_id": data["p_id"],
+        **input_data,
+    }
+    _fail_if_foreign_keys_are_invalid_in_data(
+        data=_input_data_with_p_id,
+        ttsim_objects=ttsim_objects,
     )
-
+    if debug:
+        targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,
@@ -168,6 +158,15 @@ def compute_taxes_and_transfers(
         aggregator=None,
         enforce_signature=True,
     )
+
+    if jit:
+        try:
+            import jax
+        except ImportError as e:
+            raise ImportError(
+                "JAX is not installed. Please install JAX to use JIT compilation."
+            ) from e
+        tax_transfer_function = jax.jit(tax_transfer_function)
 
     results = tax_transfer_function(**input_data)
 
@@ -182,10 +181,29 @@ def compute_taxes_and_transfers(
     return result_tree
 
 
+def _fail_if_group_ids_are_outside_top_level_namespace(
+    environment: PolicyEnvironment,
+    groupings: tuple[str, ...],
+) -> None:
+    """Fail if group ids are outside the top level namespace."""
+    group_id_pattern = re.compile(f"(?P<group>{'|'.join(groupings)})_id$")
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(environment.raw_objects_tree)
+        if len(tree_path) > 1 and group_id_pattern.match(tree_path[-1])
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
+        )
+
+
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
-    supported_time_conversions: tuple[str, ...],
-    supported_groupings: tuple[str, ...],
+    time_units: tuple[str, ...],
+    groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
 
@@ -199,136 +217,50 @@ def _get_top_level_namespace(
     top_level_namespace:
         The top level namespace.
     """
-    direct_top_level_names = set(environment.raw_objects_tree.keys()) | set(
-        environment.aggregation_specs_tree.keys()
-    )
-    re_pattern = get_re_pattern_for_all_time_units_and_groupings(
-        supported_groupings=supported_groupings,
-        supported_time_units=supported_time_conversions,
+    direct_top_level_names = set(environment.raw_objects_tree.keys())
+
+    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
+        groupings=groupings,
+        time_units=time_units,
     )
 
-    all_top_level_names = set()
+    all_top_level_names = direct_top_level_names.copy()
+    bngs_to_variations = {}
     for name in direct_top_level_names:
-        match = re_pattern.fullmatch(name)
-        base_name = match.group("base_name")
-        create_conversions_for_time_units = bool(match.group("time_unit"))
+        match = pattern_all.fullmatch(name)
+        # We must not find multiple time units for the same base name and group.
+        bngs = get_base_name_and_grouping_suffix(match)
+        if match.group("time_unit"):
+            if bngs not in bngs_to_variations:
+                bngs_to_variations[bngs] = [name]
+            else:
+                bngs_to_variations[bngs].append(name)
+            for time_unit in time_units:
+                all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
+    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-        all_top_level_names_for_name = all_variations_of_base_name(
-            base_name=base_name,
-            supported_time_conversions=supported_time_conversions,
-            supported_groupings=supported_groupings,
-            create_conversions_for_time_units=create_conversions_for_time_units,
-        )
-        all_top_level_names.update(all_top_level_names_for_name)
+    gp = group_pattern(groupings)
+    potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
+
+    for name in potential_base_names:
+        for g in groupings:
+            all_top_level_names.add(f"{name}_{g}")
 
     return all_top_level_names
 
 
-def _convert_data_to_correct_types(
-    data: QualNameDataDict, functions_overridden: QualNameTTSIMFunctionDict
-) -> QualNameDataDict:
-    """Convert all data columns to the type that is expected by GETTSIM.
-
-    Parameters
-    ----------
-    data
-        Data provided by the user.
-    functions_overridden
-        Functions that are overridden by data.
-
-    Returns
-    -------
-    Data with correct types.
-
-    """
-    collected_errors = ["The data types of the following columns are invalid:\n"]
-    collected_conversions = [
-        "The data types of the following input variables have been converted:"
-    ]
-    general_warning = (
-        "Note that the automatic conversion of data types is unsafe and that"
-        " its correctness cannot be guaranteed."
-        " The best solution is to convert all columns to the expected data"
-        " types yourself."
-    )
-
-    data_with_correct_types = {}
-
-    for name, series in data.items():
-        internal_type = None
-
-        # Look for column in TYPES_INPUT_VARIABLES
-        types_qualified_input_variables = dt.flatten_to_qual_names(
-            TYPES_INPUT_VARIABLES
+def remove_tree_logic_from_ttsim_objects_tree(
+    raw_objects_tree: NestedTTSIMObjectDict,
+    top_level_namespace: set[str],
+) -> QualNameTTSIMObjectDict:
+    """Map qualified names to TTSIM objects without tree logic."""
+    return {
+        name: f_or_i.remove_tree_logic(
+            tree_path=dt.tree_path_from_qual_name(name),
+            top_level_namespace=top_level_namespace,
         )
-        if name in types_qualified_input_variables:
-            internal_type = types_qualified_input_variables[name]
-        # Look for column in functions_tree_overridden
-        elif name in functions_overridden:
-            func = functions_overridden[name]
-            func_is_group_by_function = isinstance(
-                getattr(func, "__wrapped__", func), GroupByFunction
-            )
-            func_is_policy_function = isinstance(
-                getattr(func, "__wrapped__", func), PolicyFunction
-            ) and not isinstance(
-                getattr(func, "__wrapped__", func), DerivedAggregationFunction
-            )
-            skip_vectorization = (
-                func.skip_vectorization if func_is_policy_function else True
-            )
-            return_annotation_is_array = (
-                func_is_group_by_function or func_is_policy_function
-            ) and skip_vectorization
-            if return_annotation_is_array:
-                # Assumes that things are annotated with numpy.ndarray([dtype]), might
-                # require a change if using proper numpy.typing. Not changing for now
-                # as we will likely switch to JAX completely.
-                internal_type = get_args(func.__annotations__["return"])[0]
-            elif "return" in func.__annotations__:
-                internal_type = func.__annotations__["return"]
-            else:
-                pass
-        else:
-            pass
-
-        # Make conversion if necessary
-        if internal_type and not check_series_has_expected_type(
-            series=series, internal_type=internal_type
-        ):
-            try:
-                converted_leaf = convert_series_to_internal_type(
-                    series=series, internal_type=internal_type
-                )
-                data_with_correct_types[name] = converted_leaf
-                collected_conversions.append(
-                    f" - {name} from {series.dtype} to {internal_type.__name__}"
-                )
-            except ValueError as e:
-                collected_errors.append(f"\n - {name}: {e}")
-        else:
-            data_with_correct_types[name] = series
-
-    # If any error occured raise Error
-    if len(collected_errors) > 1:
-        msg = """
-            Note that conversion from floating point to integers or Booleans inherently
-            suffers from approximation error. It might well be that your data seemingly
-            obey the restrictions when scrolling through them, but in fact they do not
-            (for example, because 1e-15 is displayed as 0.0). \n The best solution is to
-            convert all columns to the expected data types yourself.
-            """
-        collected_errors = "\n".join(collected_errors)
-        raise ValueError(format_errors_and_warnings(collected_errors + msg))
-    # Otherwise raise warning which lists all successful conversions
-    elif len(collected_conversions) > 1:
-        collected_conversions = format_list_linewise(collected_conversions)
-        warnings.warn(
-            collected_conversions + "\n" + "\n" + general_warning,
-            stacklevel=2,
-        )
-
-    return data_with_correct_types
+        for name, f_or_i in dt.flatten_to_qual_names(raw_objects_tree).items()
+    }
 
 
 def _create_input_data_for_concatenated_function(
@@ -399,7 +331,7 @@ def _partial_parameters_to_functions(
     # parameters.
     processed_functions = {}
     for name, function in functions.items():
-        arguments = get_names_of_arguments_without_defaults(function)
+        arguments = get_names_of_required_arguments(function)
         partial_params = {
             arg: params[key]
             for arg in arguments
@@ -474,7 +406,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
     functions: QualNameTTSIMFunctionDict,
-    supported_groupings: tuple[str, ...],
+    groupings: tuple[str, ...],
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -490,9 +422,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         Dictionary of functions.
     """
     group_by_functions = {
-        k: v
-        for k, v in functions.items()
-        if isinstance(getattr(v, "__wrapped__", v), GroupByFunction)
+        k: v for k, v in functions.items() if isinstance(v, GroupCreationFunction)
     }
 
     faulty_data_columns = []
@@ -501,7 +431,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         group_by_id = get_name_of_group_by_id(
             target_name=name,
             group_by_functions=group_by_functions,
-            supported_groupings=supported_groupings,
+            groupings=groupings,
         )
         if group_by_id in data:
             group_by_id_series = pd.Series(data[group_by_id])
@@ -549,10 +479,9 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
         raise ValueError(message)
 
 
-def _fail_if_foreign_keys_are_invalid(
+def _fail_if_foreign_keys_are_invalid_in_data(
     data: QualNameDataDict,
-    p_id: pd.Series,
-    foreign_keys: tuple[tuple[str, ...], ...],
+    ttsim_objects: QualNameTTSIMObjectDict,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -560,33 +489,38 @@ def _fail_if_foreign_keys_are_invalid(
     Foreign keys must point to an existing `p_id` in the input data and must not refer
     to the `p_id` of the same row.
     """
-    valid_ids = set(p_id) | {-1}
 
-    for name, data_column in data.items():
-        foreign_key_col = dt.tree_path_from_qual_name(name) in foreign_keys
-        path = dt.tree_path_from_qual_name(name)
-        if not foreign_key_col:
+    valid_ids = set(data["p_id"].tolist()) | {-1}
+
+    for fk_name, fk in ttsim_objects.items():
+        if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
+        elif fk_name in data:
+            path = dt.tree_path_from_qual_name(fk_name)
+            # Referenced `p_id` must exist in the input data
+            if not all(i in valid_ids for i in data[fk_name].tolist()):
+                message = format_errors_and_warnings(
+                    f"""
+                    For {path}, the following are not a valid p_id in the input
+                    data: {[i for i in data[fk_name] if i not in valid_ids]}.
+                    """
+                )
+                raise ValueError(message)
 
-        # Referenced `p_id` must exist in the input data
-        if not all(i in valid_ids for i in data_column):
-            message = format_errors_and_warnings(
-                f"""
-                For {path}, the following are not a valid p_id in the input
-                data: {[i for i in data_column if i not in valid_ids]}.
-                """
-            )
-            raise ValueError(message)
-
-        equal_to_pid_in_same_row = [i for i, j in zip(data_column, p_id) if i == j]
-        if any(equal_to_pid_in_same_row):
-            message = format_errors_and_warnings(
-                f"""
-                For {path}, the following are equal to the p_id in the same
-                row: {[i for i, j in zip(data_column, p_id) if i == j]}.
-                """
-            )
-            raise ValueError(message)
+            if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
+                equal_to_pid_in_same_row = [
+                    i
+                    for i, j in zip(data[fk_name].tolist(), data["p_id"].tolist())
+                    if i == j
+                ]
+                if any(equal_to_pid_in_same_row):
+                    message = format_errors_and_warnings(
+                        f"""
+                        For {path}, the following are equal to the p_id in the same
+                        row: {equal_to_pid_in_same_row}.
+                        """
+                    )
+                    raise ValueError(message)
 
 
 def _warn_if_functions_overridden_by_data(

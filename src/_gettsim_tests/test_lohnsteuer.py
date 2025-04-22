@@ -3,14 +3,18 @@ from ttsim import set_up_policy_environment
 
 
 def test_lohnsteuer_rv_anteil():
-    environment = set_up_policy_environment(resource_dir=RESOURCE_DIR, date=2018)
+    environment = set_up_policy_environment(
+        resource_dir=RESOURCE_DIR, date="2018-01-01"
+    )
 
     assert (
         environment.params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"]
         == 0.72
     )
 
-    environment = set_up_policy_environment(resource_dir=RESOURCE_DIR, date=2023)
+    environment = set_up_policy_environment(
+        resource_dir=RESOURCE_DIR, date="2023-01-01"
+    )
 
     assert (
         environment.params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"] == 1

@@ -1,7 +1,7 @@
 ---
 info:
   note: Test with child and positive wealth above wealth allowance
-  precision: 0.01
+  precision_atol: 0.01
   source: https://www.smart-rechner.de/grundsicherung/rechner.php
 inputs:
   assumed: {}

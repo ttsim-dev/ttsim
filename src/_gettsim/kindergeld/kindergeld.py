@@ -2,19 +2,19 @@
 
 import numpy
 
-from ttsim import AggregateByPIDSpec, AggregationType, join_numpy, policy_function
+from ttsim import AggType, agg_by_p_id_function, join, policy_function
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="anzahl_ansprüche",
-        p_id_to_aggregate_by="p_id_empfänger",
-        source="grundsätzlich_anspruchsberechtigt",
-        agg=AggregationType.SUM,
-    ),
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anzahl_ansprüche(
+    grundsätzlich_anspruchsberechtigt: bool, p_id_empfänger: int, p_id: int
+) -> int:
+    pass
+
+
+@policy_function(
+    start_date="2023-01-01", leaf_name="betrag_m", vectorization_strategy="vectorize"
 )
-
-
-@policy_function(start_date="2023-01-01", leaf_name="betrag_m")
 def betrag_ohne_staffelung_m(
     anzahl_ansprüche: int,
     kindergeld_params: dict,
@@ -74,7 +74,11 @@ def betrag_gestaffelt_m(
     return sum_kindergeld
 
 
-@policy_function(end_date="2011-12-31", leaf_name="grundsätzlich_anspruchsberechtigt")
+@policy_function(
+    end_date="2011-12-31",
+    leaf_name="grundsätzlich_anspruchsberechtigt",
+    vectorization_strategy="vectorize",
+)
 def grundsätzlich_anspruchsberechtigt_nach_lohn(
     alter: int,
     in_ausbildung: bool,
@@ -114,7 +118,11 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
     return out
 
 
-@policy_function(start_date="2012-01-01", leaf_name="grundsätzlich_anspruchsberechtigt")
+@policy_function(
+    start_date="2012-01-01",
+    leaf_name="grundsätzlich_anspruchsberechtigt",
+    vectorization_strategy="vectorize",
+)
 def grundsätzlich_anspruchsberechtigt_nach_stunden(
     alter: int,
     in_ausbildung: bool,
@@ -152,7 +160,7 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def kind_bis_10_mit_kindergeld(
     alter: int,
     grundsätzlich_anspruchsberechtigt: bool,
@@ -174,11 +182,11 @@ def kind_bis_10_mit_kindergeld(
     return out
 
 
-@policy_function(skip_vectorization=True)
+@policy_function(vectorization_strategy="not_required")
 def gleiche_fg_wie_empfänger(
     p_id: numpy.ndarray[int],
     p_id_empfänger: numpy.ndarray[int],
-    arbeitslosengeld_2__fg_id: numpy.ndarray[int],
+    fg_id: numpy.ndarray[int],
 ) -> numpy.ndarray[bool]:
     """The child's Kindergeldempfänger is in the same Familiengemeinschaft.
 
@@ -188,18 +196,18 @@ def gleiche_fg_wie_empfänger(
         See basic input variable :ref:`p_id <p_id>`.
     p_id_empfänger
         See basic input variable :ref:`p_id_empfänger <p_id_empfänger>`.
-    arbeitslosengeld_2__fg_id
-        See basic input variable :ref:`arbeitslosengeld_2__fg_id <arbeitslosengeld_2__fg_id>`.
+    fg_id
+        See basic input variable :ref:`fg_id <fg_id>`.
 
     Returns
     -------
 
     """
-    fg_id_kindergeldempfänger = join_numpy(
+    fg_id_kindergeldempfänger = join(
         p_id_empfänger,
         p_id,
-        arbeitslosengeld_2__fg_id,
+        fg_id,
         value_if_foreign_key_is_missing=-1,
     )
 
-    return fg_id_kindergeldempfänger == arbeitslosengeld_2__fg_id
+    return fg_id_kindergeldempfänger == fg_id
