@@ -6,8 +6,6 @@ import types
 from collections.abc import Callable
 from importlib import import_module
 
-import astor
-
 from ttsim.config import numpy_or_jax
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
@@ -71,7 +69,7 @@ def make_vectorizable_source(func: Callable, backend: str) -> str:
 
     module = _module_from_backend(backend)
     tree = _make_vectorizable_ast(func, module=module)
-    return astor.code_gen.to_source(tree)
+    return ast.unparse(tree)
 
 
 def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
@@ -370,7 +368,7 @@ def _disallowed_operation_error_message(node: ast.AST, func_loc: str) -> str:
 
 
 def _node_to_formatted_source(node: ast.AST) -> str:
-    source = astor.code_gen.to_source(node)
+    source = ast.unparse(node)
     return " > " + source[:-1].replace("\n", "\n > ")
 
 
