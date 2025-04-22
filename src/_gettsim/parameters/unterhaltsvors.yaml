@@ -38,6 +38,9 @@ altersgrenzen_bezug:
     reference: G. v. 21.12.2007 BGBl. I S. 3194
 faktor_jüngste_altersgruppe:
   name:
+    de: Faktor für den Unterhaltsvorschuss in der jüngsten Altersgruppe
+    en: Factor for the advance child alimony of the youngest age group
+  description:
     de: >-
       Faktor mit dem das sächliche Existenzminimum multipliziert wird um den
       Unterhaltsvorschuss für Kinder der jüngsten Altersgruppe zu berechnen.

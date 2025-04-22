@@ -1883,7 +1883,7 @@ vermögensgrundfreibetrag:
     en: Since 2009, wealth might be a reason not to grand housing benefit.
   unit: Euro
   1970-01-01:
-    scalar: inf
+    scalar: 999999999
     note: No wealth threshold in place.
   2009-01-01:
     scalar: 60000
@@ -1898,7 +1898,7 @@ vermögensfreibetrag_pers:
     en: null
   unit: Euro
   1970-01-01:
-    scalar: inf
+    scalar: 999999999
     note: No wealth threshold in place
   2009-01-01:
     scalar: 30000
