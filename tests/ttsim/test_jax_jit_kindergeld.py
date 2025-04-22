@@ -46,11 +46,11 @@ def test_kindergeld_policy_func():
 @pytest.fixture
 def kindergeld_policy_test():
     name = "alleinerz_2_children_low_unterhalt.yaml"
-    kindergeld_2024 = load_policy_test_data("kindergeld/2024")
+    kindergeld_2024 = load_policy_test_data("kindergeld/2024-01-01")
     single_test = [
         test_data for test_data in kindergeld_2024 if test_data.path.name == name
     ]
-    return single_test[1]  # index=1 -> betrag_m
+    return single_test[0]
 
 
 @pytest.mark.skipif(not IS_JAX_INSTALLED, reason="JAX is not installed")
@@ -63,6 +63,7 @@ def test_compute_taxes_and_transfers_kindergeld(kindergeld_policy_test):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
+        groupings=(),
         jit=True,
     )
 
@@ -75,6 +76,6 @@ def test_compute_taxes_and_transfers_kindergeld(kindergeld_policy_test):
         assert_frame_equal(
             result_dataframe,
             expected_dataframe,
-            atol=test.info["precision"],
+            atol=test.info["precision_atol"],
             check_dtype=False,
         )
