@@ -1,7 +1,7 @@
 ---
 info:
   note: Test Regelbedarf when Familiengemeinschaft (1 adult, 1 kid) is the same as Bedarfsgemeinschaft.
-  precision: 0.01
+  precision_atol: 0.01
   source: Made up.
 inputs:
   assumed:
@@ -11,7 +11,7 @@ inputs:
     arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
       - false
       - false
-    arbeitslosengeld_2__bg_id:
+    bg_id:
       - 0
       - 0
     arbeitslosengeld_2__eigenbedarf_gedeckt:

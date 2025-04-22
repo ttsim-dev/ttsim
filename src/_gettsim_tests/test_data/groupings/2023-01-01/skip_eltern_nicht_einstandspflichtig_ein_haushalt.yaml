@@ -1,7 +1,7 @@
 ---
 info:
   note: Skipping test for now, because error assertion is not supported yet.
-  precision: 0.01
+  precision_atol: 0.01
   source: ''
 inputs:
   - geburtstag: 1984-07-14

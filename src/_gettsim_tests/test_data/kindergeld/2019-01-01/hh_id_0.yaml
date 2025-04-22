@@ -1,7 +1,7 @@
 ---
 info:
   note: check age cut-offs at 18 and 25.
-  precision: 0.01
+  precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}

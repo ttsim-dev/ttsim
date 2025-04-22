@@ -1,27 +1,41 @@
 """Income taxes."""
 
 from ttsim import (
-    AggregateByPIDSpec,
     AggType,
     RoundingSpec,
+    agg_by_group_function,
+    agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="anzahl_kindergeld_ansprüche_1",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        p_id_to_aggregate_by="familie__p_id_elternteil_1",
-        agg=AggType.SUM,
-    ),
-    AggregateByPIDSpec(
-        target="anzahl_kindergeld_ansprüche_2",
-        source="kindergeld__grundsätzlich_anspruchsberechtigt",
-        p_id_to_aggregate_by="familie__p_id_elternteil_2",
-        agg=AggType.SUM,
-    ),
-)
+
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_sn(sn_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.ANY)
+def alleinerziehend_sn(familie__alleinerziehend: bool, sn_id: int) -> bool:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anzahl_kindergeld_ansprüche_1(
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__p_id_elternteil_1: int,
+    p_id: int,
+) -> int:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anzahl_kindergeld_ansprüche_2(
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    familie__p_id_elternteil_2: int,
+    p_id: int,
+) -> int:
+    pass
 
 
 @policy_function(

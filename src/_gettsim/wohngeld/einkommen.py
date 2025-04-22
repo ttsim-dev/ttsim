@@ -1,21 +1,21 @@
 """Income relevant for housing benefit calculation."""
 
 from ttsim import (
-    AggregateByPIDSpec,
     AggType,
+    agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
 )
 from ttsim.config import numpy_or_jax as np
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="alleinerziehendenbonus",
-        source="kindergeld__kind_bis_10_mit_kindergeld",
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        agg=AggType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def alleinerziehendenbonus(
+    kindergeld__kind_bis_10_mit_kindergeld: bool,
+    kindergeld__p_id_empfänger: int,
+    p_id: int,
+) -> int:
+    pass
 
 
 @policy_function()
@@ -145,7 +145,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
     einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
-    einkommensteuer__renteneinkünfte_m: float,
+    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     abzugsanteil_vom_einkommen_für_steuern_sozialversicherung: float,
@@ -168,8 +168,8 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
     einkommensteuer__einkünfte__sonstige__ohne_renten_m
         See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
-    einkommensteuer__renteneinkünfte_m
-        See :func:`einkommensteuer__renteneinkünfte_m`.
+    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
+        See :func:`einkommensteuer__einkünfte__sonstige__renteneinkünfte_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
         See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
     unterhaltsvorschuss__betrag_m
@@ -190,7 +190,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__renteneinkünfte_m
+        + einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
     )
@@ -210,7 +210,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
     einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
-    einkommensteuer__renteneinkünfte_m: float,
+    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     elterngeld__anrechenbarer_betrag_m: float,
@@ -234,8 +234,8 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
         See :func:`sozialversicherung__arbeitslosen__betrag_m`.
     einkommensteuer__einkünfte__sonstige__ohne_renten_m
         See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
-    einkommensteuer__renteneinkünfte_m
-        See :func:`einkommensteuer__renteneinkünfte_m`.
+    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
+        See :func:`einkommensteuer__einkünfte__sonstige__renteneinkünfte_m`.
     unterhalt__tatsächlich_erhaltener_betrag_m
         See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
     unterhaltsvorschuss__betrag_m
@@ -261,7 +261,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__renteneinkünfte_m
+        + einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
         + elterngeld__anrechenbarer_betrag_m
@@ -433,3 +433,10 @@ def ist_kind_mit_erwerbseinkommen(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m > 0
     ) and kindergeld__grundsätzlich_anspruchsberechtigt
     return out
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def wohngeld_spec_target(
+    wohngeld_source_field: bool, p_id_field: int, p_id: int
+) -> int:
+    pass

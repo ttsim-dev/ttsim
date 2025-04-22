@@ -3,21 +3,19 @@
 import numpy
 
 from ttsim import (
-    AggregateByPIDSpec,
     AggType,
     RoundingSpec,
-    join_numpy,
+    agg_by_p_id_function,
+    join,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByPIDSpec(
-        target="an_elternteil_auszuzahlender_betrag_m",
-        p_id_to_aggregate_by="kindergeld__p_id_empfänger",
-        source="betrag_m",
-        agg=AggType.SUM,
-    ),
-)
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def an_elternteil_auszuzahlender_betrag_m(
+    betrag_m: float, kindergeld__p_id_empfänger: int, p_id: int
+) -> float:
+    pass
 
 
 @policy_function(
@@ -92,7 +90,7 @@ def elternteil_alleinerziehend(
     -------
 
     """
-    return join_numpy(
+    return join(
         foreign_key=kindergeld__p_id_empfänger,
         primary_key=p_id,
         target=familie__alleinerziehend,
@@ -365,7 +363,7 @@ def elternteil_mindesteinkommen_erreicht(
     Returns
     -------
     """
-    return join_numpy(
+    return join(
         kindergeld__p_id_empfänger,
         p_id,
         mindesteinkommen_erreicht,
@@ -442,3 +440,10 @@ def einkommen_m(
     )
 
     return out
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def unterhaltsvorschuss_spec_target(
+    unterhaltsvorschuss_source_field: bool, p_id_field: int, p_id: int
+) -> int:
+    pass

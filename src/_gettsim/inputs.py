@@ -34,16 +34,6 @@ def geburtstag() -> int:
 
 
 @policy_input()
-def hh_id() -> int:
-    pass
-
-
-@policy_input()
-def p_id() -> int:
-    pass
-
-
-@policy_input()
 def schwerbehindert_grad_g() -> bool:
     pass
 

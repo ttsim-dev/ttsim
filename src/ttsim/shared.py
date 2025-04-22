@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import datetime
 import inspect
-import itertools
 import re
 import textwrap
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import dags.tree as dt
-import numpy
 import optree
+
+from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
     from ttsim.ttsim_objects import PolicyFunction
@@ -42,21 +42,21 @@ def validate_date_range(start: datetime.date, end: datetime.date):
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
-    groupings: tuple[str, ...], supported_time_units: tuple[str, ...]
+    groupings: tuple[str, ...], time_units: tuple[str, ...]
 ) -> re.Pattern:
     """Get a regex pattern for time units and groupings.
 
     The pattern matches strings in any of these formats:
     - <base_name>  (may contain underscores)
     - <base_name>_<time_unit>
-    - <base_name>_<aggregation>
-    - <base_name>_<time_unit>_<aggregation>
+    - <base_name>_<grouping>
+    - <base_name>_<time_unit>_<grouping>
 
     Parameters
     ----------
     groupings
         The supported groupings.
-    supported_time_units
+    time_units
         The supported time units.
 
     Returns
@@ -64,13 +64,19 @@ def get_re_pattern_for_all_time_units_and_groupings(
     pattern
         The regex pattern.
     """
-    re_units = "".join(supported_time_units)
+    re_units = "".join(time_units)
     re_groupings = "|".join(groupings)
     return re.compile(
         f"(?P<base_name>.*?)"
         f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
         f"$"
+    )
+
+
+def group_pattern(groupings: tuple[str, ...]) -> re.Pattern:
+    return re.compile(
+        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
     )
 
 
@@ -84,14 +90,14 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     The pattern matches strings in any of these formats:
     - <specific_base_name>
     - <specific_base_name>_<time_unit>
-    - <specific_base_name>_<aggregation>
-    - <specific_base_name>_<time_unit>_<aggregation>
+    - <specific_base_name>_<grouping>
+    - <specific_base_name>_<time_unit>_<grouping>
 
     Parameters
     ----------
     base_name
         The specific base name to match.
-    supported_time_units
+    time_units
         The supported time units.
     groupings
         The supported groupings.
@@ -106,65 +112,26 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     return re.compile(
         f"(?P<base_name>{re.escape(base_name)})"
         f"(?:_(?P<time_unit>[{re_units}]))?"
-        f"(?:_(?P<aggregation>{re_groupings}))?"
+        f"(?:_(?P<grouping>{re_groupings}))?"
         f"$"
     )
 
 
-def all_variations_of_base_name(
-    base_name: str,
-    supported_time_conversions: list[str],
-    groupings: list[str],
-    create_conversions_for_time_units: bool,
-) -> set[str]:
-    """Get possible derived function names given a base function name.
-
-    Examples
-    --------
-    >>> all_variations_of_base_name(
-        base_name="income",
-        supported_time_conversions=["y", "m"],
-        groupings=["hh"],
-        create_conversions_for_time_units=True,
+def get_base_name_and_grouping_suffix(match: re.Match) -> tuple[str, str]:
+    return (
+        match.group("base_name"),
+        f"_{match.group('grouping')}" if match.group("grouping") else "",
     )
-    {'income_m', 'income_y', 'income_hh_y', 'income_hh_m'}
 
-    >>> all_variations_of_base_name(
-        base_name="claims_benefits",
-        supported_time_conversions=["y", "m"],
-        groupings=["hh"],
-        create_conversions_for_time_units=False,
-    )
-    {'claims_benefits_hh'}
 
-    Parameters
-    ----------
-    base_name
-        The base function name.
-    supported_time_conversions
-        The supported time conversions.
-    groupings
-        The supported groupings.
-    create_conversions_for_time_units
-        Whether to create conversions for time units.
-
-    Returns
-    -------
-    The names of all potential targets based on the base name.
-    """
-    result = set()
-    if create_conversions_for_time_units:
-        for time_unit in supported_time_conversions:
-            result.add(f"{base_name}_{time_unit}")
-        for time_unit, aggregation in itertools.product(
-            supported_time_conversions, groupings
-        ):
-            result.add(f"{base_name}_{time_unit}_{aggregation}")
-    else:
-        result.add(base_name)
-        for aggregation in groupings:
-            result.add(f"{base_name}_{aggregation}")
-    return result
+def fail_if_multiple_time_units_for_same_base_name_and_group(
+    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
+) -> None:
+    invalid = {
+        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
+    }
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
 class KeyErrorMessage(str):
@@ -397,7 +364,7 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
     return formatted_text
 
 
-def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[str]:
+def get_names_of_required_arguments(function: PolicyFunction) -> list[str]:
     """Get argument names without defaults.
 
     The detection of argument names also works for partialed functions.
@@ -405,11 +372,14 @@ def get_names_of_arguments_without_defaults(function: PolicyFunction) -> list[st
     Examples
     --------
     >>> def func(a, b): pass
-    >>> get_names_of_arguments_without_defaults(func)
+    >>> get_names_of_required_arguments(func)
     ['a', 'b']
+    >>> def g(c=0): pass
+    >>> get_names_of_required_arguments(g)
+    []
     >>> import functools
     >>> func_ = functools.partial(func, a=1)
-    >>> get_names_of_arguments_without_defaults(func_)
+    >>> get_names_of_required_arguments(func_)
     ['b']
 
     """
@@ -430,23 +400,23 @@ Key: TypeVar = TypeVar("Key")
 Out: TypeVar = TypeVar("Out")
 
 
-def join_numpy(
-    foreign_key: numpy.ndarray[Key],
-    primary_key: numpy.ndarray[Key],
-    target: numpy.ndarray[Out],
+def join(
+    foreign_key: np.ndarray,
+    primary_key: np.ndarray,
+    target: np.ndarray,
     value_if_foreign_key_is_missing: Out,
-) -> numpy.ndarray[Out]:
+) -> np.ndarray:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
-    the same index as the primary key.
+    the same index as the primary key. When using Jax, does not work on String Arrays.
 
     Parameters
     ----------
-    foreign_key : numpy.ndarray[Key]
+    foreign_key : np.ndarray[Key]
         The foreign keys.
-    primary_key : numpy.ndarray[Key]
+    primary_key : np.ndarray[Key]
         The primary keys.
-    target : numpy.ndarray[Out]
+    target : np.ndarray[Out]
         The targets in the same order as the primary keys.
     value_if_foreign_key_is_missing : Out
         The value to return if no matching primary key is found.
@@ -455,38 +425,20 @@ def join_numpy(
     -------
     The joined array.
     """
-    if len(numpy.unique(primary_key)) != len(primary_key):
-        keys, counts = numpy.unique(primary_key, return_counts=True)
-        duplicate_primary_keys = keys[counts > 1]
-        msg = format_errors_and_warnings(
-            f"Duplicate primary keys: {duplicate_primary_keys}",
-        )
-        raise ValueError(msg)
-
-    invalid_foreign_keys = foreign_key[
-        (foreign_key >= 0) & (~numpy.isin(foreign_key, primary_key))
-    ]
-
-    if len(invalid_foreign_keys) > 0:
-        msg = format_errors_and_warnings(
-            f"Invalid foreign keys: {invalid_foreign_keys}",
-        )
-        raise ValueError(msg)
-
     # For each foreign key and for each primary key, check if they match
     matches_foreign_key = foreign_key[:, None] == primary_key
 
     # For each foreign key, add a column with True at the end, to later fall back to
     # the value for unresolved foreign keys
-    padded_matches_foreign_key = numpy.pad(
+    padded_matches_foreign_key = np.pad(
         matches_foreign_key, ((0, 0), (0, 1)), "constant", constant_values=True
     )
 
     # For each foreign key, compute the index of the first matching primary key
-    indices = numpy.argmax(padded_matches_foreign_key, axis=1)
+    indices = np.argmax(padded_matches_foreign_key, axis=1)
 
     # Add the value for unresolved foreign keys at the end of the target array
-    padded_targets = numpy.pad(
+    padded_targets = np.pad(
         target, (0, 1), "constant", constant_values=value_if_foreign_key_is_missing
     )
 

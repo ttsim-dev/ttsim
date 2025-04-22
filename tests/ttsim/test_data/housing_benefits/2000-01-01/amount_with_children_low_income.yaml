@@ -37,13 +37,21 @@ inputs:
       - 30
       - 30
       - 10
+    parent_is_noble:
+      - false
+      - false
+      - false
+    wealth:
+      - 0.0
+      - 0.0
+      - 0.0
 outputs:
   housing_benefits__amount_m_fam:
-    - (800 - (800 - 200/12)*0.3) * 0.5
-    - (800 - (800 - 200/12)*0.3) * 0.5
-    - (800 - (800 - 200/12)*0.3) * 0.5
+    - 282.5
+    - 282.5
+    - 282.5
   housing_benefits__income__amount_m:
-    - 800 - (800 - 200/12)*0.3
+    - 565
     - 0.0
     - 0.0
   housing_benefits__eligibility__requirement_fulfilled_fam:

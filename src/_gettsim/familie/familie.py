@@ -4,18 +4,12 @@ These information are used throughout modules of gettsim.
 
 """
 
-import numpy
+from ttsim import AggType, agg_by_group_function, policy_function
 
-from ttsim import (
-    AggregateByGroupSpec,
-    AggType,
-    group_creation_function,
-    policy_function,
-)
 
-aggregation_specs = (
-    AggregateByGroupSpec(target="anzahl_personen_ehe", source=None, agg=AggType.COUNT),
-)
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_ehe(ehe_id: int) -> int:
+    pass
 
 
 @policy_function()
@@ -130,30 +124,3 @@ def erwachsen(kind: bool) -> bool:
     """
     out = not kind
     return out
-
-
-@group_creation_function()
-def ehe_id(
-    p_id: numpy.ndarray[int],
-    p_id_ehepartner: numpy.ndarray[int],
-) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Ehe for each person.
-    """
-    p_id_to_ehe_id = {}
-    next_ehe_id = 0
-    result = []
-
-    for index, current_p_id in enumerate(p_id):
-        current_p_id_ehepartner = p_id_ehepartner[index]
-
-        if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_ehe_id:
-            result.append(p_id_to_ehe_id[current_p_id_ehepartner])
-            continue
-
-        # New married couple
-        result.append(next_ehe_id)
-        p_id_to_ehe_id[current_p_id] = next_ehe_id
-        next_ehe_id += 1
-
-    return numpy.asarray(result)

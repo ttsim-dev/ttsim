@@ -1,7 +1,7 @@
 ---
 info:
   note: Created with Wohngeldrechner that doesn't check for Mindesteinkommen.
-  precision: 0.01
+  precision_atol: 0.01
   source: https://www.bmwsb.bund.de/Webs/BMWSB/DE/themen/wohnen/wohnraumfoerderung/wohngeld/wohngeldrechner-2023-artikel.html
 inputs:
   assumed: {}
@@ -307,7 +307,7 @@ outputs:
     - true
     - false
     - false
-  wohngeld__wthh_id:
+  wthh_id:
     - 1
     - 1
     - 1

@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 0.01
+  precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}
@@ -43,18 +43,18 @@ inputs:
       - 0
       - 1
 outputs:
-  arbeitslosengeld_2__bg_id:
+  bg_id:
     - 0
     - 0
-  arbeitslosengeld_2__eg_id:
-    - 0
-    - 1
-  arbeitslosengeld_2__fg_id:
-    - 0
-    - 0
-  einkommensteuer__sn_id:
+  eg_id:
     - 0
     - 1
-  familie__ehe_id:
+  fg_id:
+    - 0
+    - 0
+  sn_id:
+    - 0
+    - 1
+  ehe_id:
     - 0
     - 1

@@ -2,7 +2,7 @@
 info:
   note: Test with old income thresholds, adjusted for Kindersofortzuschlag. Constructed test
     case after Karenzzeit with cost for living from testcase in 2011.
-  precision: 0.01
+  precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}

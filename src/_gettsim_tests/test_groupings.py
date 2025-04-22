@@ -14,7 +14,7 @@ from ttsim import compute_taxes_and_transfers
 test_data = load_policy_test_data("groupings")
 
 
-@pytest.mark.parametrize("test", test_data, ids=lambda x: x.test_name)
+@pytest.mark.parametrize("test", test_data, ids=lambda x: x.name)
 def test_groupings(test: PolicyTest):
     environment = cached_set_up_policy_environment(date=test.date)
 
@@ -22,7 +22,7 @@ def test_groupings(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        supported_groupings=SUPPORTED_GROUPINGS,
+        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -54,6 +54,6 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
         compute_taxes_and_transfers(
             data_tree=data,
             environment=environment,
-            targets_tree={"einkommensteuer": {"sn_id": None}},
-            supported_groupings=SUPPORTED_GROUPINGS,
+            targets_tree={"sn_id": None},
+            groupings=SUPPORTED_GROUPINGS,
         )

@@ -1,7 +1,7 @@
 ---
 info:
   note: One child in the lower age group (0-5).
-  precision: 0.01
+  precision_atol: 0.01
   source: https://www.berit-sander.de/2015/aktueller-unterhaltsvorschuss-ab-01-08-2015/
 inputs:
   assumed: {}

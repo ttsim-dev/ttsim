@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 1
+  precision_atol: 1
   source: https://www.ruv.de/ratgeber/altersvorsorge/staatliche-foerderung/basisrente-sonderausgabenabzug
 inputs:
   assumed: {}
