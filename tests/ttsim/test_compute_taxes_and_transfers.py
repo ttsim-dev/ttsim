@@ -424,7 +424,7 @@ def test_user_provided_aggregate_by_group_specs():
         environment=PolicyEnvironment(raw_objects_tree=inputs),
         targets_tree={"module_name": {"betrag_m_fam": None}},
         groupings=("fam",),
-        jit=False,
+        jit=jit,
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -466,7 +466,7 @@ def test_user_provided_aggregation():
         targets_tree={"module_name": {"betrag_m_double_fam": None}},
         groupings=("fam",),
         debug=False,
-        jit=False,
+        jit=jit,
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -510,7 +510,7 @@ def test_user_provided_aggregation_with_time_conversion():
         targets_tree={"module_name": {"max_betrag_double_y_fam": None}},
         groupings=("fam",),
         debug=False,
-        jit=False,
+        jit=jit,
     )
 
     numpy.testing.assert_array_almost_equal(
