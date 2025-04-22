@@ -333,6 +333,7 @@ def test_grouped_all(column_to_aggregate, group_id, expected_res_all):
         "exception_match",
     ],
 )
+@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
 def test_grouped_sum_raises(column_to_aggregate, group_id, error_sum, exception_match):
     with pytest.raises(
         error_sum,
@@ -350,6 +351,7 @@ def test_grouped_sum_raises(column_to_aggregate, group_id, error_sum, exception_
         "exception_match",
     ],
 )
+@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
 def test_grouped_mean_raises(
     column_to_aggregate, group_id, error_mean, exception_match
 ):
@@ -369,6 +371,7 @@ def test_grouped_mean_raises(
         "exception_match",
     ],
 )
+@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
 def test_grouped_max_raises(column_to_aggregate, group_id, error_max, exception_match):
     with pytest.raises(
         error_max,
@@ -386,6 +389,7 @@ def test_grouped_max_raises(column_to_aggregate, group_id, error_max, exception_
         "exception_match",
     ],
 )
+@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
 def test_grouped_min_raises(column_to_aggregate, group_id, error_min, exception_match):
     with pytest.raises(
         error_min,
@@ -403,6 +407,7 @@ def test_grouped_min_raises(column_to_aggregate, group_id, error_min, exception_
         "exception_match",
     ],
 )
+@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
 def test_grouped_any_raises(column_to_aggregate, group_id, error_any, exception_match):
     with pytest.raises(
         error_any,
@@ -420,6 +425,7 @@ def test_grouped_any_raises(column_to_aggregate, group_id, error_any, exception_
         "exception_match",
     ],
 )
+@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
 def test_grouped_all_raises(column_to_aggregate, group_id, error_all, exception_match):
     with pytest.raises(
         error_all,
@@ -468,6 +474,7 @@ def test_sum_by_p_id(
         "exception_match",
     ],
 )
+@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
 def test_sum_by_p_id_raises(
     column_to_aggregate, group_id, p_id_to_store_by, error_sum_by_p_id, exception_match
 ):

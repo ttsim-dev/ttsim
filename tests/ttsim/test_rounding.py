@@ -5,9 +5,15 @@ from pandas._testing import assert_series_equal
 from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.rounding import RoundingSpec
 from ttsim.ttsim_objects import policy_function, policy_input
+
+if IS_JAX_INSTALLED:
+    DTYPE = "float32"
+else:
+    DTYPE = "float64"
 
 
 @policy_input()
@@ -118,7 +124,7 @@ def test_rounding(rounding_spec, input_values, exp_output):
     )
     assert_series_equal(
         pd.Series(calc_result["namespace"]["test_func"]),
-        pd.Series(exp_output),
+        pd.Series(exp_output, dtype=DTYPE),
         check_names=False,
     )
 
@@ -152,7 +158,7 @@ def test_rounding_with_time_conversion():
     )
     assert_series_equal(
         pd.Series(calc_result["test_func_y"]),
-        pd.Series([12.0, 12.0]),
+        pd.Series([12.0, 12.0], dtype=DTYPE),
         check_names=False,
     )
 
@@ -190,7 +196,7 @@ def test_no_rounding(
     )
     assert_series_equal(
         pd.Series(calc_result["test_func"]),
-        pd.Series(input_values_exp_output),
+        pd.Series(input_values_exp_output, dtype=DTYPE),
         check_names=False,
     )
 

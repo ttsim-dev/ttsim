@@ -19,6 +19,7 @@ from ttsim.compute_taxes_and_transfers import (
     _partial_parameters_to_functions,
     compute_taxes_and_transfers,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.shared import assert_valid_ttsim_pytree, merge_trees
@@ -29,6 +30,12 @@ from ttsim.ttsim_objects import (
     policy_function,
     policy_input,
 )
+from ttsim.typing import TTSIMArray
+
+if IS_JAX_INSTALLED:
+    jit = True
+else:
+    jit = False
 
 
 @policy_input()
@@ -49,6 +56,16 @@ def fam_id() -> int:
 @policy_input()
 def betrag_m() -> float:
     pass
+
+
+@policy_function(vectorization_strategy="vectorize")
+def some_func(p_id: int) -> int:
+    return p_id
+
+
+@policy_function(vectorization_strategy="vectorize")
+def another_func(some_func: int) -> int:
+    return some_func
 
 
 @pytest.fixture(scope="module")
@@ -92,56 +109,54 @@ def func_before_partial(arg_1, payroll_tax_params):
 
 
 func_after_partial = _partial_parameters_to_functions(
-    {"test_func": func_before_partial},
+    {"some_func": func_before_partial},
     {"payroll_tax": {"test_param_1": 1}},
-)["test_func"]
+)["some_func"]
 
 
 def test_output_as_tree(minimal_input_data):
     environment = PolicyEnvironment(
         {
             "p_id": p_id,
-            "module": {
-                "test_func": policy_function(leaf_name="test_func")(lambda p_id: p_id)
-            },
+            "module": {"some_func": some_func},
         }
     )
 
     out = compute_taxes_and_transfers(
         data_tree=minimal_input_data,
         environment=environment,
-        targets_tree={"module": {"test_func": None}},
+        targets_tree={"module": {"some_func": None}},
         groupings=("fam",),
+        jit=jit,
     )
 
     assert isinstance(out, dict)
-    assert "test_func" in out["module"]
-    assert isinstance(out["module"]["test_func"], np.ndarray)
+    assert "some_func" in out["module"]
+    assert isinstance(out["module"]["some_func"], TTSIMArray)
 
 
 def test_warn_if_functions_and_columns_overlap():
     environment = PolicyEnvironment(
         {
-            "dupl": policy_function(leaf_name="dupl")(lambda x: x),
-            "some_target": policy_function(leaf_name="some_target")(lambda dupl: dupl),
+            "some_func": some_func,
+            "some_target": another_func,
         }
     )
     with pytest.warns(FunctionsAndColumnsOverlapWarning):
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
-                "dupl": pd.Series([1]),
+                "some_func": pd.Series([1]),
             },
             environment=environment,
             targets_tree={"some_target": None},
             groupings=("fam",),
+            jit=jit,
         )
 
 
 def test_dont_warn_if_functions_and_columns_dont_overlap():
-    environment = PolicyEnvironment(
-        {"some_func": policy_function(leaf_name="some_func")(lambda x: x)}
-    )
+    environment = PolicyEnvironment({"some_func": some_func})
     with warnings.catch_warnings():
         warnings.filterwarnings("error", category=FunctionsAndColumnsOverlapWarning)
         compute_taxes_and_transfers(
@@ -152,14 +167,15 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             environment=environment,
             targets_tree={"some_func": None},
             groupings=("fam",),
+            jit=jit,
         )
 
 
 def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
     environment = PolicyEnvironment(
         {
-            "dupl": policy_function(leaf_name="dupl")(lambda x: x),
-            "unique": policy_function(leaf_name="unique")(lambda x: x**2),
+            "some_func": some_func,
+            "unique": another_func,
         }
     )
     with warnings.catch_warnings(
@@ -169,12 +185,13 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
-                "dupl": pd.Series([1]),
+                "some_func": pd.Series([1]),
                 "x": pd.Series([1]),
             },
             environment=environment,
             targets_tree={"unique": None},
             groupings=("fam",),
+            jit=jit,
         )
 
     assert len(warning_list) == 0
@@ -297,6 +314,7 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             environment=environment,
             targets_tree={"c": None},
             groupings=("fam",),
+            jit=jit,
         )
 
 
@@ -315,6 +333,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         environment=environment,
         targets_tree={"b": None},
         groupings=("fam",),
+        jit=jit,
     )
 
 
@@ -332,6 +351,7 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
             environment=environment,
             targets_tree={"unknown_target": None},
             groupings=("fam",),
+            jit=jit,
         )
 
 
@@ -346,6 +366,7 @@ def test_fail_if_missing_p_id():
             environment=PolicyEnvironment({}),
             targets_tree={},
             groupings=("fam",),
+            jit=jit,
         )
 
 
@@ -362,6 +383,7 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
             environment=PolicyEnvironment({}),
             targets_tree={},
             groupings=("fam",),
+            jit=jit,
         )
 
 
@@ -386,17 +408,13 @@ def test_user_provided_aggregate_by_group_specs():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
-        "module_name": {
-            "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
-        },
+        "module_name": {"betrag_m": pd.Series([100, 100, 100], name="betrag_m")},
     }
 
     inputs = {
         "p_id": p_id,
         "fam_id": fam_id,
-        "module_name": {
-            "betrag_m": betrag_m,
-        },
+        "module_name": {"betrag_m": betrag_m},
     }
 
     expected_res = pd.Series([200, 200, 100])
@@ -406,6 +424,7 @@ def test_user_provided_aggregate_by_group_specs():
         environment=PolicyEnvironment(raw_objects_tree=inputs),
         targets_tree={"module_name": {"betrag_m_fam": None}},
         groupings=("fam",),
+        jit=False,
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -417,9 +436,7 @@ def test_user_provided_aggregation():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
-        "module_name": {
-            "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
-        },
+        "module_name": {"betrag_m": pd.Series([200, 100, 100], name="betrag_m")},
     }
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200])
@@ -448,7 +465,8 @@ def test_user_provided_aggregation():
         environment=environment,
         targets_tree={"module_name": {"betrag_m_double_fam": None}},
         groupings=("fam",),
-        debug=True,
+        debug=False,
+        jit=False,
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -465,7 +483,7 @@ def test_user_provided_aggregation_with_time_conversion():
         },
     }
     # Double up, convert to quarter, then take max fam_id
-    expected = pd.Series([400 * 3, 400 * 3, 200 * 3])
+    expected = pd.Series([400 * 12, 400 * 12, 200 * 12])
 
     @policy_function()
     def betrag_double_m(betrag_m):
@@ -489,13 +507,14 @@ def test_user_provided_aggregation_with_time_conversion():
     actual = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
-        targets_tree={"module_name": {"betrag_double_q_fam": None}},
+        targets_tree={"module_name": {"max_betrag_double_y_fam": None}},
         groupings=("fam",),
-        debug=True,
+        debug=False,
+        jit=False,
     )
 
     numpy.testing.assert_array_almost_equal(
-        actual["module_name"]["max_betrag_double_q_fam"], expected
+        actual["module_name"]["max_betrag_double_y_fam"], expected
     )
 
 
@@ -566,6 +585,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         environment,
         targets_tree=target_tree,
         groupings=("fam",),
+        jit=jit,
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)

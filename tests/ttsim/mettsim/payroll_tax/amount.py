@@ -1,7 +1,7 @@
 from ttsim import AggType, agg_by_group_function, policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def amount_y(
     income__amount_y: float,
     payroll_tax_params: dict,

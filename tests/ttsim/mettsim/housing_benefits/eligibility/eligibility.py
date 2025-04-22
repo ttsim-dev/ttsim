@@ -22,7 +22,11 @@ def number_of_individuals_fam(fam_id: int) -> int:
     """The number of individuals in the family."""
 
 
-@policy_function(end_date="2019-12-31", leaf_name="requirement_fulfilled_fam")
+@policy_function(
+    end_date="2019-12-31",
+    leaf_name="requirement_fulfilled_fam",
+    vectorization_strategy="vectorize",
+)
 def requirement_fulfilled_fam_not_considering_children(
     housing_benefits__income__amount_m_fam: float,
     number_of_adults_fam: int,
@@ -35,7 +39,11 @@ def requirement_fulfilled_fam_not_considering_children(
     )
 
 
-@policy_function(start_date="2020-01-01", leaf_name="requirement_fulfilled_fam")
+@policy_function(
+    start_date="2020-01-01",
+    leaf_name="requirement_fulfilled_fam",
+    vectorization_strategy="vectorize",
+)
 def requirement_fulfilled_fam_considering_children(
     housing_benefits__income__amount_m_fam: float,
     housing_benefits_params: dict,
@@ -47,7 +55,7 @@ def requirement_fulfilled_fam_considering_children(
     )
 
 
-@policy_function(start_date="2020-01-01")
+@policy_function(start_date="2020-01-01", vectorization_strategy="vectorize")
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,
     housing_benefits_params: dict,
@@ -58,7 +66,7 @@ def number_of_family_members_considered_fam(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def child(
     age: int,
     housing_benefits_params: dict,
@@ -66,7 +74,7 @@ def child(
     return age <= housing_benefits_params["max_age_children"]
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def adult(
     age: int,
     housing_benefits_params: dict,

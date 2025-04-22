@@ -48,7 +48,7 @@ class PolicyTest:
         return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
 
-def execute_test(test: PolicyTest):
+def execute_test(test: PolicyTest, jit: bool = False):
     from pandas.testing import assert_frame_equal
 
     from ttsim import compute_taxes_and_transfers
@@ -60,6 +60,7 @@ def execute_test(test: PolicyTest):
         environment=environment,
         targets_tree=test.target_structure,
         groupings=SUPPORTED_GROUPINGS,
+        jit=jit,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
