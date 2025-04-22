@@ -63,7 +63,7 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """For health care deductions, there are two ways to calculate
     the deductions: "Option a" and "Option b".
@@ -85,9 +85,8 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
     Health care deductions for withholding taxes option b
 
     """
-
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["ermäßigt"] / 2
+        ges_krankenv_params["beitr_satz"]["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
@@ -103,7 +102,7 @@ def vorsorge_krankenv_option_b_ab_2019(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """For health care deductions, there are two ways to calculate
     the deductions: "Option a" and "Option b".
@@ -118,8 +117,8 @@ def vorsorge_krankenv_option_b_ab_2019(
         See :func:`sozialversicherung__kranken__beitrag__zusatzbeitragssatz`.
     sozialversicherung__pflege__beitrag__beitragssatz:
         See :func:`sozialversicherung__pflege__beitrag__beitragssatz`.
-    sozialv_beitr_params:
-        See params documentation :ref:`sozialv_beitr_params`
+    ges_krankenv_params:
+        See params documentation :ref:`ges_krankenv_params`
 
 
     Returns
@@ -129,7 +128,7 @@ def vorsorge_krankenv_option_b_ab_2019(
     """
 
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["ermäßigt"] / 2
+        ges_krankenv_params["beitr_satz"]["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
@@ -191,7 +190,7 @@ def vorsorge_krankenv_option_a(
 def vorsorgepauschale_y_ab_2010(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     wohnort_ost: bool,
-    sozialv_beitr_params: dict,
+    ges_rentenv_params: dict,
     vorsorge_krankenv_option_a: float,
     vorsorge_krankenv_option_b: float,
     eink_st_abzuege_params: dict,
@@ -206,8 +205,8 @@ def vorsorgepauschale_y_ab_2010(
       See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y>`.
     wohnort_ost:
       See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
-    sozialv_beitr_params:
-        See params documentation :ref:`sozialv_beitr_params`
+    ges_krankenv_params:
+        See params documentation :ref:`ges_krankenv_params`
     vorsorge_krankenv_option_a:
       See :func:`vorsorge_krankenv_option_a`
     vorsorge_krankenv_option_b:
@@ -226,17 +225,17 @@ def vorsorgepauschale_y_ab_2010(
     if wohnort_ost:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]["ost"],
+            12 * ges_rentenv_params["beitr_bemess_grenze_m"]["ost"],
         )
     else:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_rentenv"]["west"],
+            12 * ges_rentenv_params["beitr_bemess_grenze_m"]["west"],
         )
 
     vorsorg_rentenv = (
         bruttolohn_rente
-        * sozialv_beitr_params["beitr_satz"]["ges_rentenv"]
+        * ges_rentenv_params["beitr_satz"]
         * eink_st_abzuege_params["vorsorgepauschale_rentenv_anteil"]
     )
 

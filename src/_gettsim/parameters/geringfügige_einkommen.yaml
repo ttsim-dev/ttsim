@@ -1,0 +1,150 @@
+---
+grenzen_m:
+  name:
+    de: >-
+      Minijob Grenze und Gleitzone / Midijob Grenze
+    en: Thresholds for marginal employment ('mini' and 'midi' jobs)
+  description:
+    de: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
+    en: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
+  unit: Euro
+  reference_period: Month
+  1984-01-01:
+    minijob:
+      west: 199
+  1985-01-01:
+    deviation_from: previous
+    minijob:
+      west: 205
+  1986-01-01:
+    deviation_from: previous
+    minijob:
+      west: 210
+  1987-01-01:
+    deviation_from: previous
+    minijob:
+      west: 220
+  1988-01-01:
+    deviation_from: previous
+    minijob:
+      west: 225
+  1989-01-01:
+    deviation_from: previous
+    minijob:
+      west: 230
+  1990-01-01:
+    minijob:
+      west: 240
+      ost: 102
+  1991-01-01:
+    minijob:
+      west: 245
+      ost: 120
+  1992-01-01:
+    minijob:
+      west: 256
+      ost: 153
+  1993-01-01:
+    minijob:
+      west: 271
+      ost: 199
+  1994-01-01:
+    minijob:
+      west: 286
+      ost: 225
+  1995-01-01:
+    minijob:
+      west: 297
+      ost: 240
+  1996-01-01:
+    minijob:
+      west: 302
+      ost: 256
+  1997-01-01:
+    minijob:
+      west: 312
+      ost: 266
+  1998-01-01:
+    deviation_from: previous
+    minijob:
+      west: 317
+  1999-01-01:
+    minijob:
+      west: 322
+      ost: 271
+  2000-01-01:
+    minijob: 322
+  2002-01-01:
+    deviation_from: previous
+    minijob: 325
+  2003-04-01:
+    minijob: 400
+    midijob: 800
+  2013-01-01:
+    minijob: 450
+    midijob: 850
+  2019-01-01:
+    deviation_from: previous
+    reference: Art. 4 G. v. 28.11.2018 BGBl. I S. 2016
+    midijob: 1300
+  2022-10-01:
+    minijob: null
+    midijob: 1600
+    reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
+    note: minijob thresholds now calculated based on statutory minimum wage
+  2023-01-01:
+    deviation_from: previous
+    midijob: 2000
+    reference: Art. 3 G. v. 11.11.2022 BGBl. I S. 1985
+faktor_zähler:
+  name:
+    de: Zähler im Faktor für die Berechnung der Geringfügigkeitsgrenze.
+    en: Numerator in the factor for the calculation of the marginal employment threshold.
+  description:
+    de: >-
+      Faktor, mit dem der Mindestlohn in der Berechnung der Geringfügigkeitsgrenze
+      multipliziert wird.
+    en: >-
+      Factor by which the minimum wage is multiplied to calculate the threshold for
+      marginal employment.
+  unit: null
+  reference: §8 (1a) SGB IV
+  2022-10-01:
+    scalar: 130
+    reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
+faktor_nenner:
+  name:
+    de: Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.
+    en: Denominator in the factor for the calculation of the marginal employment threshold.
+  description:
+    de: >-
+      Betrag, durch den der Mindestlohn dividiert wird, um die Geringfügigkeitsgrenze zu
+      erhalten.
+    en: >-
+      Amount by which the minimum wage is divided to obtain the marginal employment
+      threshold.
+  unit: Euro
+  reference: §8 (1a) SGB IV
+  2022-10-01:
+    scalar: 3
+    reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
+arbeitgeberabgaben:
+  name:
+    de: Pauschalabgaben des Arbeitgebers bei geringfügiger Beschäftigung
+    en: Fixed employer contributions for marginal employment
+  description:
+    de: >-
+      Pauschalbeitrag zur Krankenversicherung (§ 249b SGB V), Pauschalbetrag zur
+      Rentenversicherung (§ 168 I Nr. 1b SGB VI), Pauschalierte Lohnsteuer (§40a II
+      EStG)
+    en: Fixed contributions for marginal employment
+  unit: Share
+  access_different_date: jahresanfang
+  1984-01-01:
+    st: 0
+  1999-01-01:
+    st: 0
+  2003-04-01:
+    st: 0.02
+  2007-01-01:
+    st: 0.02

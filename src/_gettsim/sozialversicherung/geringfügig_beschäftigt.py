@@ -41,7 +41,7 @@ def geringfügig_beschäftigt(
     ),
 )
 def minijob_grenze_unterscheidung_ost_west(
-    wohnort_ost: bool, sozialv_beitr_params: dict
+    wohnort_ost: bool, geringfügige_einkommen_params: dict
 ) -> float:
     """Minijob income threshold depending on place of living (East or West Germany).
 
@@ -51,14 +51,14 @@ def minijob_grenze_unterscheidung_ost_west(
     ----------
     wohnort_ost
         See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
+    geringfügige_einkommen_params
+        See params documentation :ref:`geringfügige_einkommen_params <geringfügige_einkommen_params>`.
     Returns
     -------
 
     """
-    west = sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]["west"]
-    ost = sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]["ost"]
+    west = geringfügige_einkommen_params["grenzen_m"]["minijob"]["west"]
+    ost = geringfügige_einkommen_params["grenzen_m"]["minijob"]["ost"]
     out = ost if wohnort_ost else west
     return out
 
@@ -71,7 +71,7 @@ def minijob_grenze_unterscheidung_ost_west(
         base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
     ),
 )
-def minijob_grenze_fixer_betrag(sozialv_beitr_params: dict) -> float:
+def minijob_grenze_fixer_betrag(geringfügige_einkommen_params: dict) -> float:
     """Minijob income threshold depending on place of living.
 
     From 2000 onwards, the threshold is the same for all of Germany. Until September
@@ -79,13 +79,13 @@ def minijob_grenze_fixer_betrag(sozialv_beitr_params: dict) -> float:
 
     Parameters
     ----------
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
+    geringfügige_einkommen_params
+        See params documentation :ref:`geringfügige_einkommen_params <geringfügige_einkommen_params>`.
     Returns
     -------
 
     """
-    return sozialv_beitr_params["geringfügige_eink_grenzen_m"]["minijob"]
+    return geringfügige_einkommen_params["grenzen_m"]["minijob"]
 
 
 @policy_function(
@@ -95,14 +95,16 @@ def minijob_grenze_fixer_betrag(sozialv_beitr_params: dict) -> float:
         base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
     ),
 )
-def minijob_grenze_abgeleitet_von_mindestlohn(sozialv_beitr_params: dict) -> float:
+def minijob_grenze_abgeleitet_von_mindestlohn(
+    geringfügige_einkommen_params: dict,
+) -> float:
     """Minijob income threshold since 10/2022. Since then, it is calculated endogenously
     from the statutory minimum wage.
 
     Parameters
     ----------
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
+    geringfügige_einkommen_params
+        See params documentation :ref:`geringfügige_einkommen_params <geringfügige_einkommen_params>`.
 
     Returns
     -------
@@ -110,7 +112,7 @@ def minijob_grenze_abgeleitet_von_mindestlohn(sozialv_beitr_params: dict) -> flo
 
     """
     return (
-        sozialv_beitr_params["mindestlohn"]
-        * sozialv_beitr_params["geringf_eink_faktor_zähler"]
-        / sozialv_beitr_params["geringf_eink_faktor_nenner"]
+        geringfügige_einkommen_params["mindestlohn"]
+        * geringfügige_einkommen_params["faktor_zähler"]
+        / geringfügige_einkommen_params["faktor_nenner"]
     )
