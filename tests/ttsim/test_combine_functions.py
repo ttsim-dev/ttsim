@@ -5,12 +5,18 @@ from ttsim.aggregation import AggType
 from ttsim.automatically_added_functions import create_agg_by_group_functions
 from ttsim.combine_functions import _fail_if_targets_not_in_functions
 from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.ttsim_objects import (
     agg_by_group_function,
     policy_function,
     policy_input,
 )
+
+if IS_JAX_INSTALLED:
+    jit = True
+else:
+    jit = False
 
 
 @pytest.fixture
@@ -186,6 +192,7 @@ def test_create_agg_by_group_functions(
         data_tree=data_tree,
         targets_tree=targets_tree,
         groupings=("hh",),
+        jit=jit,
     )
 
 
