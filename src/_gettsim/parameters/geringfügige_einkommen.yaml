@@ -128,23 +128,61 @@ faktor_nenner:
   2022-10-01:
     scalar: 3
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
-arbeitgeberabgaben:
+arbeitgeberpauschale_lohnsteuer:
   name:
-    de: Pauschalabgaben des Arbeitgebers bei geringfügiger Beschäftigung
-    en: Fixed employer contributions for marginal employment
+    de: Pauschalierte Lohnsteuer bei geringfügiger Beschäftigung
+    en: Fixed income tax rate for marginal employment
   description:
     de: >-
-      Pauschalbeitrag zur Krankenversicherung (§ 249b SGB V), Pauschalbetrag zur
-      Rentenversicherung (§ 168 I Nr. 1b SGB VI), Pauschalierte Lohnsteuer (§40a II
-      EStG)
-    en: Fixed contributions for marginal employment
+      Pauschalierte Lohnsteuer des Arbeitgebers bei geringfügiger Beschäftigung (§40a II EStG)
+    en: Fixed income tax rate for marginal employment (§40a II EStG)
   unit: Share
   access_different_date: jahresanfang
   1984-01-01:
-    st: 0
+    scalar: 0
   1999-01-01:
-    st: 0
+    scalar: 0
   2003-04-01:
-    st: 0.02
+    scalar: 0.02
   2007-01-01:
-    st: 0.02
+    scalar: 0.02
+  2022-10-01:
+    scalar: null
+mindestlohn:
+  name:
+    de: Allgemeiner gesetzlicher Mindestlohn pro Stunde
+    en: Statutory hourly minimum wage
+  description:
+    de: >-
+      Der Mindestlohn ist der niedrigste Stundenlohn, den ein Arbeitgeber für eine
+      regelmäßige, nicht mehr als 45 Stunden wöchentlich zu leistende Arbeitsleistung
+      zahlen muss.
+    en: >-
+      The minimum wage is the lowest hourly wage that an employer must pay for a
+      regular, not more than 45 hours weekly work.
+  unit: Euro
+  reference: §1 (2) Mindestlohngesetz
+  2015-01-01:
+    scalar: 8.5
+  2017-01-01:
+    scalar: 8.84
+  2019-01-01:
+    scalar: 9.19
+  2020-01-01:
+    scalar: 9.35
+  2021-01-01:
+    scalar: 9.5
+  2021-07-01:
+    scalar: 9.6
+  2022-01-01:
+    scalar: 9.82
+  2022-07-01:
+    scalar: 10.45
+  2022-10-01:
+    scalar: 12
+  2024-01-01:
+    scalar: 12.41
+    reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 321
+  2025-01-01:
+    scalar: 12.82
+    reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 321

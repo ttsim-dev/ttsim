@@ -8,7 +8,6 @@ INTERNAL_PARAMS_GROUPS = [
     "eink_st_abzuege",
     "soli_st",
     "arbeitsl_geld",
-    "sozialv_beitr",
     "arbeitslosenversicherung",
     "geringfügige_einkommen",
     "ges_krankenv",
