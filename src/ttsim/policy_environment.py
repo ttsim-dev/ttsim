@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import numpy
 import optree
-import pandas as pd
 import yaml
 
 from ttsim.loader import load_objects_tree_for_date
