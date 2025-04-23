@@ -317,7 +317,7 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
     jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
-            pd.Series(jahr),
+            jahr,
             thresholds=params["eink_st_abzuege"]["einführungsfaktor"]["thresholds"],
             rates=params["eink_st_abzuege"]["einführungsfaktor"]["rates"],
             intercepts_at_lower_thresholds=params["eink_st_abzuege"][
@@ -326,7 +326,7 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
         )
         params["eink_st_abzuege"][
             "einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005"
-        ] = out.loc[0]
+        ] = out
     return params
 
 
@@ -350,7 +350,7 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
     jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
-            pd.Series(jahr),
+            jahr,
             thresholds=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"][
                 "thresholds"
             ],
@@ -361,7 +361,7 @@ def _parse_vorsorgepauschale_rentenv_anteil(date, params):
                 "vorsorgepauschale_rentenv_anteil"
             ]["intercepts_at_lower_thresholds"],
         )
-        params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"] = out.loc[0]
+        params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"] = out
 
     return params
 

@@ -1,168 +1,53 @@
 import numpy
-from jax import numpy as jnp
+
+from ttsim.config import numpy_or_jax as np
 
 
 def piecewise_polynomial(
-    x, thresholds, rates, intercepts_at_lower_thresholds, rates_multiplier=None
+    x: np.ndarray,
+    thresholds: np.ndarray,
+    rates: np.ndarray,
+    intercepts_at_lower_thresholds: np.ndarray,
+    rates_multiplier: np.ndarray = 1,
 ):
-    """Calculate value of the piecewise function at `x`.
+    """Calculate value of the piecewise function at `x`. If the first interval begins
+    at -inf the polynomial of that interval can only have slope of 0.
 
     Parameters
     ----------
-    x : pd.Series
-        Series with values which piecewise polynomial is applied to.
-    thresholds : numpy.array
+    x : np.ndarray
+        Array with values at which the piecewise polynomial is to be calculated.
+    thresholds : np.array
                 A one-dimensional array containing the thresholds for all intervals.
-    rates : numpy.ndarray
+    coefficients : np.ndarray
             A two-dimensional array where columns are interval sections and rows
-            correspond to the nth polynomial.
-    intercepts_at_lower_thresholds : numpy.ndarray
+            correspond to the coefficient of the nth polynomial.
+    intercepts_at_lower_thresholds : np.ndarray
         The intercepts at the lower threshold of each interval.
-    rates_multiplier : pd.Series, float
+    rates_multiplier : np.ndarray
                        Multiplier to create individual or scaled rates. If given and
                        not equal to 1, the function also calculates new intercepts.
 
     Returns
     -------
-    out : float
-        The value of `x` under the piecewise function.
-
-    """
-    num_intervals = len(thresholds) - 1
-    degree_polynomial = rates.shape[0]
-
-    # Check in which interval each individual is. The thresholds are not exclusive on
-    # the right side.
-    selected_bin = numpy.searchsorted(thresholds, x, side="right") - 1
-
-    # Calc last threshold for each individual
-    threshold = thresholds[selected_bin]
-
-    # Increment for each individual in the corresponding interval.
-    increment_to_calc = x - threshold
-
-    # If each individual has its own rates or the rates are scaled, we can't use the
-    # intercept, which was generated in the parameter loading.
-    if rates_multiplier is not None:
-        # Initialize Series containing 0 for all individuals.
-        out = intercepts_at_lower_thresholds[0]
-
-        # Go through all intervals except the first and last.
-        for i in range(2, num_intervals):
-            threshold_incr = thresholds[i] - thresholds[i - 1]
-            for pol in range(1, degree_polynomial + 1):
-                # We only calculate the intercepts for individuals who are in this or
-                # higher interval. Hence we have to use the individual rates.
-                if selected_bin >= i:
-                    out += (
-                        rates_multiplier * rates[pol - 1, i - 1] * threshold_incr**pol
-                    )
-    # If rates remain the same, everything is a lot easier.
-    else:
-        # We assign each individual the pre-calculated intercept.
-        out = intercepts_at_lower_thresholds[selected_bin]
-    # Intialize a multiplyer for 1 if it is not given.
-    rates_multiplier = 1 if rates_multiplier is None else rates_multiplier
-
-    if selected_bin > 0:
-        # Now add the evaluation of the increment
-        for pol in range(1, degree_polynomial + 1):
-            out += (
-                rates[pol - 1][selected_bin]
-                * rates_multiplier
-                * (increment_to_calc**pol)
-            )
-
-    return out
-
-
-def piecewise_polynomial_numpy(
-    x, thresholds, rates, intercepts_at_lower_thresholds, rates_multiplier=1
-):
-    """Calculate value of the piecewise function at `x`.
-
-    Parameters
-    ----------
-    x : np.array
-        Series with values which piecewise polynomial is applied to.
-    thresholds : numpy.array
-                A one-dimensional array containing the thresholds for all intervals.
-    coefficients : numpy.ndarray
-            A two-dimensional array where columns are interval sections and rows
-            correspond to the coefficient for the nth polynomial.
-    intercepts_at_lower_thresholds : numpy.ndarray
-        The intercepts at the lower threshold of each interval.
-    rates_multiplier : pd.Series, float
-                       Multiplier to create individual or scaled rates. If given and
-                       not equal to 1, the function also calculates new intercepts.
-
-    Returns
-    -------
-    out : float
-        The value of `x` under the piecewise function.
-
-    """
-    if thresholds[0] == -numpy.inf and numpy.any(rates[:, 0]):
-        raise ValueError(
-            "The first interval starts at -inf, but the coefficients of "
-            "the polynomial are not all 0."
-        )
-    order = rates.shape[0]
-    selected_bin = numpy.searchsorted(thresholds, x, side="right") - 1
-    coefficients = rates[:, selected_bin].T
-    increment_to_calc = numpy.where(
-        thresholds[selected_bin] == -numpy.inf, 0, x - thresholds[selected_bin]
-    )
-    out = (
-        intercepts_at_lower_thresholds[selected_bin]
-        + (
-            ((increment_to_calc.reshape(-1, 1)) ** numpy.arange(1, order + 1, 1))
-            * (coefficients)
-        ).sum(axis=1)
-    ) * rates_multiplier
-    return numpy.squeeze(out)
-
-
-def piecewise_polynomial_jax(
-    x, thresholds, rates, intercepts_at_lower_thresholds, rates_multiplier=1
-):
-    """Calculate value of the piecewise function at `x`.
-
-    Parameters
-    ----------
-    x : np.array
-        Series with values which piecewise polynomial is applied to.
-    thresholds : numpy.array
-                A one-dimensional array containing the thresholds for all intervals.
-    coefficients : numpy.ndarray
-            A two-dimensional array where columns are interval sections and rows
-            correspond to the coefficient for the nth polynomial.
-    intercepts_at_lower_thresholds : numpy.ndarray
-        The intercepts at the lower threshold of each interval.
-    rates_multiplier : pd.Series, float
-                       Multiplier to create individual or scaled rates. If given and
-                       not equal to 1, the function also calculates new intercepts.
-
-    Returns
-    -------
-    out : float
+    out : np.ndarray
         The value of `x` under the piecewise function.
 
     """
     order = rates.shape[0]
-    selected_bin = jnp.searchsorted(thresholds, x, side="right") - 1
+    selected_bin = np.searchsorted(thresholds, x, side="right") - 1
     coefficients = rates[:, selected_bin].T
-    increment_to_calc = jnp.where(
-        thresholds[selected_bin] == -jnp.inf, 0, x - thresholds[selected_bin]
+    increment_to_calc = np.where(
+        thresholds[selected_bin] == -np.inf, 0, x - thresholds[selected_bin]
     )
     out = (
         intercepts_at_lower_thresholds[selected_bin]
         + (
-            ((increment_to_calc.reshape(-1, 1)) ** jnp.arange(1, order + 1, 1))
+            ((increment_to_calc.reshape(-1, 1)) ** np.arange(1, order + 1, 1))
             * (coefficients)
         ).sum(axis=1)
     ) * rates_multiplier
-    return jnp.squeeze(out)
+    return np.squeeze(out)
 
 
 def get_piecewise_parameters(parameter_dict, parameter, func_type):

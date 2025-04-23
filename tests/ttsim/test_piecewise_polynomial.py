@@ -5,20 +5,18 @@ Tests for `piecewise_polynomial`
 import numpy
 import pytest
 
+from ttsim.config import numpy_or_jax as np
 from ttsim.piecewise_polynomial import (
     get_piecewise_parameters,
-    piecewise_polynomial_jax,
-    piecewise_polynomial_numpy,
+    piecewise_polynomial,
 )
 
 
 @pytest.fixture
 def eink_st_params():
     params = {
-        "thresholds": numpy.array(
-            [-numpy.inf, 9168.0, 14254.0, 55960.0, 265326.0, numpy.inf]
-        ),
-        "rates": numpy.array(
+        "thresholds": np.array([-np.inf, 9168.0, 14254.0, 55960.0, 265326.0, np.inf]),
+        "rates": np.array(
             [
                 [
                     0.00000000e00,
@@ -36,7 +34,7 @@ def eink_st_params():
                 ],
             ]
         ),
-        "intercepts_at_lower_thresholds": numpy.array(
+        "intercepts_at_lower_thresholds": np.array(
             [0.0, 0.0, 965.5771, 14722.3012, 102656.0212]
         ),
     }
@@ -82,9 +80,9 @@ def test_get_piecewise_parameters_all_intercepts_supplied():
 
 
 def test_piecewise_polynomial(eink_st_params):
-    x_linspace = numpy.linspace(100, 100_000, 100)
+    x_linspace = np.linspace(100, 100_000, 100)
 
-    y_numpy = piecewise_polynomial_numpy(
+    y = piecewise_polynomial(
         x=x_linspace,
         thresholds=eink_st_params["thresholds"],
         rates=eink_st_params["rates"],
@@ -94,44 +92,18 @@ def test_piecewise_polynomial(eink_st_params):
     y_legacy = numpy.array(
         [
             piecewise_polynomial_legacy(
-                x=xi,
-                thresholds=eink_st_params["thresholds"],
-                rates=eink_st_params["rates"],
-                intercepts_at_lower_thresholds=eink_st_params[
-                    "intercepts_at_lower_thresholds"
-                ],
+                x=numpy.array(xi),
+                thresholds=numpy.array(eink_st_params["thresholds"]),
+                rates=numpy.array(eink_st_params["rates"]),
+                intercepts_at_lower_thresholds=numpy.array(
+                    eink_st_params["intercepts_at_lower_thresholds"]
+                ),
                 rates_multiplier=2,
             )
             for xi in x_linspace
         ]
     )
-    numpy.testing.assert_allclose(y_numpy, y_legacy, rtol=1e-6)
-
-
-def test_piecewise_polynomial_jax(eink_st_params):
-    x_linspace = numpy.linspace(100, 100_000, 100)
-    y_jax = piecewise_polynomial_jax(
-        x=x_linspace,
-        thresholds=eink_st_params["thresholds"],
-        rates=eink_st_params["rates"],
-        intercepts_at_lower_thresholds=eink_st_params["intercepts_at_lower_thresholds"],
-        rates_multiplier=2,
-    )
-    y_legacy = numpy.array(
-        [
-            piecewise_polynomial_legacy(
-                x=xi,
-                thresholds=eink_st_params["thresholds"],
-                rates=eink_st_params["rates"],
-                intercepts_at_lower_thresholds=eink_st_params[
-                    "intercepts_at_lower_thresholds"
-                ],
-                rates_multiplier=2,
-            )
-            for xi in x_linspace
-        ]
-    )
-    numpy.testing.assert_allclose(y_jax, y_legacy, rtol=1e-6)
+    numpy.testing.assert_allclose(numpy.array(y), y_legacy, rtol=1e-6)
 
 
 def piecewise_polynomial_legacy(
