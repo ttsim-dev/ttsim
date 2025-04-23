@@ -68,7 +68,7 @@ def beiträge_arbeitgeber_m(
 
 
 @policy_function()
-def beitrag_gesamt_m(
+def beiträge_gesamt_m(
     beiträge_versicherter_m: float,
     beiträge_arbeitgeber_m: float,
 ) -> float:
