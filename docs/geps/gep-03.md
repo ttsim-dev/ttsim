@@ -125,13 +125,14 @@ added.
      reference_period: Week
    ```
 
-(gep-3-access_prior_parameters)=
+(gep-3-access_different_date)=
 
-6. The (optional) `access_prior_parameters` can be used to make the parameter of a
+1. The (optional) `access_different_date` can be used to make the parameter of a
    previous point in time (relative to the date specified in
    {func}`set_up_policy_environment <ttsim.policy_environment.set_up_policy_environment>`)
-   available within GETTSIM functions. It requires the `reference_period` (one of
-   `Year`, `Quarter`, `Month`, `Week`, `Day`) and the `number_of_lags`.
+   available within GETTSIM functions.
+
+   Possible values: `vorjahr` or `jahresanfang`.
 
    Example:
 
@@ -140,9 +141,7 @@ added.
      name:
        de: Rentenwerte alte und neue Bundesländer.
          [...]
-     access_prior_parameters:
-       - reference_period: Year
-       - number_of_lags: 1
+      access_different_date: vorjahr
    ```
 
 1. The YYYY-MM-DD key(s)
@@ -333,9 +332,9 @@ necessary inside the functions. The important changes include:
 - In the YAML files, parameters may be specified as deviations from other values,
   {ref}`see above <gep-3-deviation_from>`. All these are converted so that the relevant
   values are part of the dictionary.
-- Similarly, values from other points in time (via `access_prior_parameters`,
-  {ref}`see above <gep-3-access_prior_parameters>`) of `[param]` will be available as:
-  `[param]_t_minus_[number_of_lags]_[reference_period[0].lower()]`.
+- Similarly, values from the beginning of the year (via `access_different_date`,
+  {ref}`see above <gep-3-access_different_date>`) of `[param]` will be available as:
+  `[param]_[access_different_date]`.
 - Parameters for piecewise polynomials are parsed.
 - Parameters that are derived from other parameters are calculated (examples include
   `kinderzuschlag_max` starting in 2021 or calculating the phasing in of
