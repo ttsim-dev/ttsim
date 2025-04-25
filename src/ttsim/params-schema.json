@@ -45,6 +45,10 @@
           "reference_period": {
             "type": "string",
             "enum": ["Year", "Quarter", "Month", "Week", "Day"]
+          },
+          "access_different_date": {
+            "type": "string",
+            "enum": ["vorjahr", "jahresanfang"]
           }
         },
         "patternProperties": {
