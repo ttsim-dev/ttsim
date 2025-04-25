@@ -35,10 +35,6 @@ from ttsim.ttsim_objects import (
     policy_function,
     policy_input,
 )
-from ttsim.typing import (
-    NestedDataDict,
-    NestedInputToSeriesNameDict,
-)
 from ttsim.visualization import plot_dag
 
 __all__ = [
@@ -49,8 +45,6 @@ __all__ = [
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
-    "NestedDataDict",
-    "NestedInputToSeriesNameDict",
     "PolicyEnvironment",
     "PolicyFunction",
     "PolicyInput",
