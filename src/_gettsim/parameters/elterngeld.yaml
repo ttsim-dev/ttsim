@@ -192,6 +192,9 @@ max_monate_ohne_partnermonate:
     scalar: 12
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 max_eink_vorj:
+  name:
+    de: Maximales zu versteuerndes Einkommen im Jahr vor der Geburt des Kindes.
+    en: Maximum taxable income in the year before the birth of the child.
   description:
     de: >-
       Maximales zu versteuerndes Einkommen im letzten Veranlagungszeitraum vor Geburt
