@@ -3,7 +3,7 @@ import pandas as pd
 from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 from ttsim import (
     compute_taxes_and_transfers,
-    create_data_tree,
+    create_data_tree_from_df,
     set_up_policy_environment,
 )
 from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
@@ -63,7 +63,7 @@ def quickrun(
     ...     df=df,
     ... )
     """
-    data_tree = create_data_tree(
+    data_tree = create_data_tree_from_df(
         input_tree_to_column_map=input_tree_to_column_map,
         df=df,
     )
