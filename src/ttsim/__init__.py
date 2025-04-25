@@ -5,7 +5,6 @@ from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
 )
-from ttsim.create_data_tree_from_df import create_data_tree_from_df
 from ttsim.loader import (
     ConflictingTimeDependentObjectsError,
     get_active_ttsim_objects_tree_from_module,
@@ -54,7 +53,6 @@ __all__ = [
     "agg_by_p_id_function",
     "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
-    "create_data_tree_from_df",
     "create_time_conversion_functions",
     "get_active_ttsim_objects_tree_from_module",
     "get_piecewise_parameters",
