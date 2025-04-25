@@ -1,0 +1,98 @@
+---
+info:
+  note: ''
+  precision: 0.01
+  source: ''
+inputs:
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+    hh_id:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    p_id_parent_1:
+      - -1
+      - -1
+      - 0
+      - 0
+      - 0
+    p_id_parent_2:
+      - -1
+      - -1
+      - 1
+      - 1
+      - 1
+    p_id_spouse:
+      - 1
+      - 0
+      - -1
+      - -1
+      - -1
+    payroll_tax__income__gross_wage_y:
+      - 10000
+      - 0
+      - 0
+      - 0
+      - 0
+    payroll_tax__child_tax_credit__p_id_recipient:
+      - -1
+      - -1
+      - 0
+      - 0
+      - 0
+    age:
+      - 30
+      - 30
+      - 10
+      - 10
+      - 10
+    parent_is_noble:
+      - false
+      - false
+      - false
+      - false
+      - false
+    wealth:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+outputs:
+  housing_benefits__amount_m_fam:
+    - 296.5
+    - 296.5
+    - 296.5
+    - 296.5
+    - 296.5
+  housing_benefits__income__amount_m:
+    - 593.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+  housing_benefits__eligibility__requirement_fulfilled_fam:
+    - true
+    - true
+    - true
+    - true
+    - true
+  housing_benefits__eligibility__number_of_family_members_considered_fam:
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+  housing_benefits__eligibility__number_of_individuals_fam:
+    - 5
+    - 5
+    - 5
+    - 5
+    - 5

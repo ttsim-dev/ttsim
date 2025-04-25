@@ -61,7 +61,7 @@ def alter_monate(geburtsdatum: numpy.datetime64, elterngeld_params: dict) -> flo
     return out.astype(float)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def alter_bis_24(alter: int) -> bool:
     """Age is 24 years at most.
 

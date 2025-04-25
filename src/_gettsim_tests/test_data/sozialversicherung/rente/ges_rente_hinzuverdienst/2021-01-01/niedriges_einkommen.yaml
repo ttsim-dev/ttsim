@@ -1,7 +1,7 @@
 ---
 info:
   note: Low income and high Hinzuverdienstdeckel.
-  precision: 0.01
+  precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}

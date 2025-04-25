@@ -76,7 +76,7 @@ def min_miete_m_hh(anzahl_personen_hh: int, wohngeld_params: dict) -> float:
     out = wohngeld_params["min_miete"][
         min(anzahl_personen_hh, max(wohngeld_params["min_miete"]))
     ]
-    return float(out)
+    return out
 
 
 @policy_function(end_date="2008-12-31", leaf_name="miete_m_hh")

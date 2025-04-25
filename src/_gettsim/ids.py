@@ -1,103 +1,52 @@
+"""Input columns."""
+
 from collections import Counter
 
 import numpy
 
-from ttsim import AggregateByGroupSpec, AggregationType, group_by_function
-
-# TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
-aggregation_specs = (
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_fg",
-        source="familie__erwachsen",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_fg",
-        source="familie__kind",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_6_fg",
-        source="familie__kind_bis_6",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_15_fg",
-        source="familie__kind_bis_15",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_bg",
-        source="familie__erwachsen",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bg",
-        source="familie__kind",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_personen_bg", source=None, agg=AggregationType.COUNT
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_bis_17_bg",
-        source="familie__kind_bis_17",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="alleinerziehend_bg",
-        source="familie__alleinerziehend",
-        agg=AggregationType.ANY,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_erwachsene_eg",
-        source="familie__erwachsen",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_kinder_eg",
-        source="familie__kind",
-        agg=AggregationType.SUM,
-    ),
-    AggregateByGroupSpec(
-        target="anzahl_personen_eg", source=None, agg=AggregationType.COUNT
-    ),
-)
+from ttsim import group_creation_function, policy_input
 
 
-@group_by_function()
-def bg_id(
-    fg_id: numpy.ndarray[int],
-    eigenbedarf_gedeckt: numpy.ndarray[bool],
-    alter: numpy.ndarray[int],
+@policy_input()
+def hh_id() -> int:
+    pass
+
+
+@policy_input()
+def p_id() -> int:
+    pass
+
+
+@group_creation_function()
+def ehe_id(
+    p_id: numpy.ndarray[int],
+    familie__p_id_ehepartner: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
     """
-    Compute the ID of the Bedarfsgemeinschaft for each person.
+    Compute the ID of the Ehe for each person.
     """
-    # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
-    # once Bedarfsgemeinschaften are fully endogenous
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
-    counter = Counter()
+    p_id_to_ehe_id = {}
+    next_ehe_id = 0
     result = []
 
-    for index, current_fg_id in enumerate(fg_id):
-        current_alter = alter[index]
-        current_eigenbedarf_gedeckt = eigenbedarf_gedeckt[index]
-        # TODO(@MImmesberger): Remove hard-coded number
-        # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
-        if current_alter < 25 and current_eigenbedarf_gedeckt:
-            counter[current_fg_id] += 1
-            result.append(current_fg_id * 100 + counter[current_fg_id])
-        else:
-            result.append(current_fg_id * 100)
+    for index, current_p_id in enumerate(p_id):
+        current_p_id_ehepartner = familie__p_id_ehepartner[index]
+
+        if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_ehe_id:
+            result.append(p_id_to_ehe_id[current_p_id_ehepartner])
+            continue
+
+        # New married couple
+        result.append(next_ehe_id)
+        p_id_to_ehe_id[current_p_id] = next_ehe_id
+        next_ehe_id += 1
 
     return numpy.asarray(result)
 
 
-@group_by_function()
+@group_creation_function()
 def fg_id(  # noqa: PLR0912
-    p_id_einstandspartner: numpy.ndarray[int],
+    arbeitslosengeld_2__p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
     hh_id: numpy.ndarray[int],
     alter: numpy.ndarray[int],
@@ -145,7 +94,7 @@ def fg_id(  # noqa: PLR0912
         p_id_to_fg_id[current_p_id] = next_fg_id
 
         current_hh_id = hh_id[index]
-        current_p_id_einstandspartner = p_id_einstandspartner[index]
+        current_p_id_einstandspartner = arbeitslosengeld_2__p_id_einstandspartner[index]
         current_p_id_children = p_id_to_p_ids_children.get(current_p_id, [])
 
         # Assign fg to children
@@ -199,9 +148,38 @@ def fg_id(  # noqa: PLR0912
     return numpy.asarray(result)
 
 
-@group_by_function()
+@group_creation_function()
+def bg_id(
+    fg_id: numpy.ndarray[int],
+    arbeitslosengeld_2__eigenbedarf_gedeckt: numpy.ndarray[bool],
+    alter: numpy.ndarray[int],
+) -> numpy.ndarray[int]:
+    """
+    Compute the ID of the Bedarfsgemeinschaft for each person.
+    """
+    # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
+    # once Bedarfsgemeinschaften are fully endogenous
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
+    counter = Counter()
+    result = []
+
+    for index, current_fg_id in enumerate(fg_id):
+        current_alter = alter[index]
+        current_eigenbedarf_gedeckt = arbeitslosengeld_2__eigenbedarf_gedeckt[index]
+        # TODO(@MImmesberger): Remove hard-coded number
+        # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
+        if current_alter < 25 and current_eigenbedarf_gedeckt:
+            counter[current_fg_id] += 1
+            result.append(current_fg_id * 100 + counter[current_fg_id])
+        else:
+            result.append(current_fg_id * 100)
+
+    return numpy.asarray(result)
+
+
+@group_creation_function()
 def eg_id(
-    p_id_einstandspartner: numpy.ndarray[int],
+    arbeitslosengeld_2__p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
     """
@@ -212,7 +190,7 @@ def eg_id(
     result = []
 
     for index, current_p_id in enumerate(p_id):
-        current_p_id_einstandspartner = p_id_einstandspartner[index]
+        current_p_id_einstandspartner = arbeitslosengeld_2__p_id_einstandspartner[index]
 
         if (
             current_p_id_einstandspartner >= 0
@@ -225,5 +203,75 @@ def eg_id(
         result.append(next_eg_id)
         p_id_to_eg_id[current_p_id] = next_eg_id
         next_eg_id += 1
+
+    return numpy.asarray(result)
+
+
+@group_creation_function()
+def wthh_id(
+    hh_id: numpy.ndarray[int],
+    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: numpy.ndarray[bool],
+    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: numpy.ndarray[
+        bool
+    ],
+) -> numpy.ndarray[int]:
+    """
+    Compute the ID of the wohngeldrechtlicher Teilhaushalt.
+    """
+    result = []
+    for index, current_hh_id in enumerate(hh_id):
+        if (
+            vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg[index]
+            or vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg[
+                index
+            ]
+        ):
+            result.append(current_hh_id * 100 + 1)
+        else:
+            result.append(current_hh_id * 100)
+
+    return numpy.asarray(result)
+
+
+@group_creation_function()
+def sn_id(
+    p_id: numpy.ndarray[int],
+    familie__p_id_ehepartner: numpy.ndarray[int],
+    einkommensteuer__gemeinsam_veranlagt: numpy.ndarray[bool],
+) -> numpy.ndarray[int]:
+    """
+    Compute a Steuernummer (ID) for each person / couple.
+    """
+    p_id_to_sn_id = {}
+    p_id_to_gemeinsam_veranlagt = {}
+    next_sn_id = 0
+    result = []
+
+    for index, current_p_id in enumerate(p_id):
+        current_p_id_ehepartner = familie__p_id_ehepartner[index]
+        current_gemeinsam_veranlagt = einkommensteuer__gemeinsam_veranlagt[index]
+
+        if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_sn_id:
+            gemeinsam_veranlagt_ehepartner = p_id_to_gemeinsam_veranlagt[
+                current_p_id_ehepartner
+            ]
+
+            if current_gemeinsam_veranlagt != gemeinsam_veranlagt_ehepartner:
+                message = (
+                    f"{current_p_id_ehepartner} and {current_p_id} are "
+                    "married, but have different values for "
+                    "gemeinsam_veranlagt."
+                )
+                raise ValueError(message)
+
+            if current_gemeinsam_veranlagt:
+                result.append(p_id_to_sn_id[current_p_id_ehepartner])
+                continue
+
+        # New Steuersubjekt
+        result.append(next_sn_id)
+        p_id_to_sn_id[current_p_id] = next_sn_id
+        p_id_to_gemeinsam_veranlagt[current_p_id] = current_gemeinsam_veranlagt
+        next_sn_id += 1
 
     return numpy.asarray(result)

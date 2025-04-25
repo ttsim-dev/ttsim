@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision: 1
+  precision_atol: 1
   source: https://www.deutsche-rentenversicherung.de/SharedDocs/Downloads/DE/Broschueren/national/grundrente_zuschlag_zur_rente.html
     (Ramona K.)
 inputs:

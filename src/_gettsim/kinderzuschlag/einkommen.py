@@ -1,19 +1,18 @@
 """Income relevant for calculation of Kinderzuschlag."""
 
 from ttsim import (
-    AggregateByGroupSpec,
-    AggregationType,
+    AggType,
     RoundingSpec,
+    agg_by_group_function,
     policy_function,
 )
 
-aggregation_specs = (
-    AggregateByGroupSpec(
-        target="arbeitslosengeld_2__anzahl_kinder_bg",
-        source="kindergeld__anzahl_ansprüche",
-        agg=AggregationType.SUM,
-    ),
-)
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def arbeitslosengeld_2__anzahl_kinder_bg(
+    kindergeld__anzahl_ansprüche: int, bg_id: int
+) -> int:
+    pass
 
 
 @policy_function()
@@ -343,7 +342,7 @@ def regelsatz_m_bg_arbeitsl_geld_2_params_bis_2010(
             * 2
         )
 
-    return float(out)
+    return out
 
 
 # TODO(@MImmesberger): The regelsatz is already calculated in the ALG2 modules. We
@@ -377,7 +376,7 @@ def regelsatz_m_bg(
     else:
         out = arbeitsl_geld_2_params["regelsatz"][2] * 2
 
-    return float(out)
+    return out
 
 
 @policy_function()
@@ -398,3 +397,8 @@ def erwachsenenbedarf_m_bg(
 
     """
     return regelsatz_m_bg + kosten_der_unterkunft_m_bg
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def kinderzuschlag_spec_target(kinderzuschlag_source_field: bool, bg_id: int) -> int:
+    pass

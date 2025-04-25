@@ -2,7 +2,7 @@
 info:
   note: not eligible for potentieller∞_unterhaltsvorschuss if parent in same household is
     married to new partner (unterhalt__anspruch_m unaffected)
-  precision: 0.01
+  precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}
@@ -68,27 +68,27 @@ inputs:
       - 2
       - 3
 outputs:
-  arbeitslosengeld_2__bg_id:
+  bg_id:
     - 0
     - 0
     - 0
     - 100
-  arbeitslosengeld_2__eg_id:
+  eg_id:
     - 0
     - 0
     - 1
     - 2
-  arbeitslosengeld_2__fg_id:
+  fg_id:
     - 0
     - 0
     - 0
     - 1
-  einkommensteuer__sn_id:
+  sn_id:
     - 0
     - 0
     - 1
     - 2
-  familie__ehe_id:
+  ehe_id:
     - 0
     - 0
     - 1

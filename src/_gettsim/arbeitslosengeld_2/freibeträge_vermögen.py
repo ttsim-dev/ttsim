@@ -45,7 +45,7 @@ def grundfreibetrag_vermögen(
     else:
         out = 0.0
 
-    return float(min(out, maximaler_grundfreibetrag_vermögen))
+    return min(out, maximaler_grundfreibetrag_vermögen)
 
 
 @policy_function()
@@ -91,7 +91,7 @@ def maximaler_grundfreibetrag_vermögen(
         else:
             out = obergrenzen[3]
 
-    return float(out)
+    return out
 
 
 @policy_function(start_date="2023-01-01")

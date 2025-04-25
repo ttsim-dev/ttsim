@@ -19,14 +19,12 @@ import pytest
 from _gettsim.synthetic import create_synthetic_data
 from _gettsim_tests import TEST_DIR
 from ttsim import (
-    AggregateByGroupSpec,
-    AggregateByPIDSpec,
     FunctionsAndColumnsOverlapWarning,
-    GroupByFunction,
+    GroupCreationFunction,
     PolicyEnvironment,
     PolicyFunction,
     compute_taxes_and_transfers,
-    group_by_function,
+    group_creation_function,
     plot_dag,
     policy_function,
     set_up_policy_environment,
@@ -50,16 +48,14 @@ def test(*args):
 
 
 __all__ = [
-    "AggregateByGroupSpec",
-    "AggregateByPIDSpec",
     "FunctionsAndColumnsOverlapWarning",
-    "GroupByFunction",
+    "GroupCreationFunction",
     "PolicyEnvironment",
     "PolicyFunction",
     "__version__",
     "compute_taxes_and_transfers",
     "create_synthetic_data",
-    "group_by_function",
+    "group_creation_function",
     "plot_dag",
     "policy_function",
     "set_up_policy_environment",

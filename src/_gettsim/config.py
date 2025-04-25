@@ -105,11 +105,3 @@ _TO_DELETE_DEFAULT_TARGETS = {
     "unterhaltsvorschuss": {"betrag_m": None},
     "grundsicherung": {"im_alter": {"betrag_m_eg": None}},
 }
-
-
-FOREIGN_KEYS = [
-    ("arbeitslosengeld_2", "p_id_einstandspartner"),
-    ("familie", "p_id_ehepartner"),
-    ("familie", "p_id_elternteil_1"),
-    ("familie", "p_id_elternteil_2"),
-]
