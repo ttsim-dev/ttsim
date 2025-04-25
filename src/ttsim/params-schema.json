@@ -45,38 +45,33 @@
           "reference_period": {
             "type": "string",
             "enum": ["Year", "Quarter", "Month", "Week", "Day"]
-          },
-          "access_prior_parameters": {
-            "type": "object",
-            "properties": {
-              "reference_period": {
-                "type": "string",
-                "enum": ["Year", "Quarter", "Month", "Week", "Day"]
-              },
-              "number_of_lags": {
-                "type": "integer",
-                "minimum": 1
-              }
-            },
-            "required": ["reference_period", "number_of_lags"],
-            "additionalProperties": false
           }
         },
         "patternProperties": {
-          "^(19|20|21)[0-9]{2}-[0-9]{2}-[0-9]{2}$": {
+          "^(19|20|21)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {
             "type": "object",
             "properties": {
-              "scalar": { "type": ["number", "null"] },
+              "scalar": { "type": ["number", "string", "null"] },
               "reference": { "type": ["string", "null"] },
               "note": { "type": ["string", "null"] },
               "deviation_from": { "type": ["string", "null"] },
               "unit": { "type": "string" },
               "type": { "type": "string" },
-              "min_alter": { "type": "integer" },
-              "max_alter": { "type": "integer" },
+              "min_alter": { "type": "number" },
+              "max_alter": { "type": "number" },
               "betrag": { "type": "number" },
-              "lower_threshold": { "type": ["number", "string"] },
-              "upper_threshold": { "type": ["number", "string"] },
+              "lower_threshold": {
+                "oneOf": [
+                  { "type": "number" },
+                  { "type": "string", "enum": ["-inf"] }
+                ]
+              },
+              "upper_threshold": {
+                "oneOf": [
+                  { "type": "number" },
+                  { "type": "string", "enum": ["inf"] }
+                ]
+              },
               "rate": { "type": "number" },
               "intercept_at_lower_threshold": { "type": "number" }
             },
