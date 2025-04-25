@@ -5,24 +5,15 @@ import pandas as pd
 from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
 
 
-def df_to_data_tree(
-    df: pd.DataFrame,
-    input_tree_to_column_name_mapping: NestedInputToSeriesNameDict,
+def create_data_tree(
+    input_tree_to_column_map: NestedInputToSeriesNameDict,
+    df: pd.DataFrame | None = None,
 ) -> NestedDataDict:
-    """Convert a pandas DataFrame to a nested data dictionary.
+    """Create a data tree from user data.
 
-    This function transforms a flat DataFrame into a nested dictionary structure based
-    on the provided mapping. The mapping can reference DataFrame columns, pandas Series,
-    or numeric values.
-
-    Args:
-        df:
-            The pandas DataFrame containing the source data.
-        input_tree_to_column_name_mapping:
-            A nested dictionary that defines the structure of the output. Keys are
-            strings that define the nested structure. Values can be: - Strings that
-            reference column names in the DataFrame - pandas Series objects - Numeric
-            values (which will be broadcast to match the DataFrame length)
+    This function creates a data tree using the `input_tree_to_column_map`. It can
+    either transform data from a pandas DataFrame or use numeric values directly from
+    the mapping to construct the nested dictionary structure.
 
     Examples
     --------
@@ -31,7 +22,7 @@ def df_to_data_tree(
         ...     "b": [4, 5, 6],
         ...     "c": [7, 8, 9],
         ... })
-        >>> input_tree_to_column_name_mapping = {
+        >>> input_tree_to_column_map = {
         ...     "n1": {
         ...         "n2": "a",
         ...         "n3": "b",
@@ -39,7 +30,10 @@ def df_to_data_tree(
         ...     "n4": pd.Series([1, 2, 3]),
         ...     "n5": 3,
         ... }
-        >>> result = df_to_data_tree(df, input_tree_to_column_name_mapping)
+        >>> result = create_data_tree(
+        ...     input_tree_to_column_map=input_tree_to_column_map,
+        ...     df=df,
+        ... )
         >>> result
         {
             "n1": {
@@ -50,24 +44,35 @@ def df_to_data_tree(
             "n5": pd.Series([3, 3, 3]),
         }
 
+    Args:
+        input_tree_to_column_map:
+            A nested dictionary that defines the structure of the output tree. Keys are
+            strings that define the nested structure. Values can be:
 
+            - Strings that reference column names in the DataFrame (when df is provided)
+            - pandas Series objects
+            - Numeric or boolean values (which will be used directly if df is None, or
+              broadcast to match the DataFrame length if df is provided)
+        df:
+            Optional. The pandas DataFrame containing the source data.
 
     Returns:
-        A nested data dictionary.
+        A nested dictionary structure containing the data organized according to the
+        mapping definition.
     """
-    _fail_if_mapper_has_incorrect_format(input_tree_to_column_name_mapping)
-    _fail_if_df_has_bool_or_numeric_column_names(df)
-
-    qualified_input_tree_to_column_name_mapping = dt.flatten_to_qual_names(
-        input_tree_to_column_name_mapping
+    _fail_if_mapper_has_incorrect_format(input_tree_to_column_map)
+    qualified_input_tree_to_column_map = dt.flatten_to_qual_names(
+        input_tree_to_column_map
     )
-
     name_to_input_series = {}
-    for (
-        qualified_input_name,
-        input_value,
-    ) in qualified_input_tree_to_column_name_mapping.items():
-        if input_value in df.columns:
+
+    if df:
+        _fail_if_df_has_bool_or_numeric_column_names(df)
+
+    df_columns = set(df.columns) if df else set()
+
+    for qualified_input_name, input_value in qualified_input_tree_to_column_map.items():
+        if input_value in df_columns:
             name_to_input_series[qualified_input_name] = df[input_value]
         elif isinstance(input_value, pd.Series):
             name_to_input_series[qualified_input_name] = input_value
@@ -81,14 +86,14 @@ def df_to_data_tree(
 
 
 def _fail_if_mapper_has_incorrect_format(
-    input_tree_to_column_name_mapping: NestedInputToSeriesNameDict,
+    input_tree_to_column_map: NestedInputToSeriesNameDict,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
-    if not isinstance(input_tree_to_column_name_mapping, dict):
-        msg = "The input tree to column name mapping must be a dictionary."
+    if not isinstance(input_tree_to_column_map, dict):
+        msg = "The input tree to column mapping must be a dictionary."
         raise TypeError(msg)
 
-    inputs = optree.tree_flatten(input_tree_to_column_name_mapping)[0]
+    inputs = optree.tree_flatten(input_tree_to_column_map)[0]
 
     # Check that all Series have the same length
     series_inputs = [x for x in inputs if isinstance(x, pd.Series)]
@@ -99,7 +104,7 @@ def _fail_if_mapper_has_incorrect_format(
         ]
         if mismatched_lengths:
             raise ValueError(
-                "All pd.Series in inputs must have the same length. "
+                "All provided pd.Series must have the same length. "
                 f"Found series with lengths {mismatched_lengths} "
                 f"but expected length {expected_length}."
             )
@@ -108,8 +113,12 @@ def _fail_if_mapper_has_incorrect_format(
 def _fail_if_df_has_bool_or_numeric_column_names(df: pd.DataFrame) -> None:
     """Fail if the DataFrame has bool or numeric column names."""
     common_msg = "The DataFrame must not have bool or numeric column names."
-    bool_column_names = [col for col in df.columns if col.dtype == "bool"]
-    numeric_column_names = [col for col in df.columns if col.isnumeric()]
+    bool_column_names = [col for col in df.columns if isinstance(col, bool)]
+    numeric_column_names = [
+        col
+        for col in df.columns
+        if isinstance(col, (int, float)) or (isinstance(col, str) and col.isnumeric())
+    ]
 
     if bool_column_names or numeric_column_names:
         msg = f"""
