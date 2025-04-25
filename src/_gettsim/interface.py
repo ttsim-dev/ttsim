@@ -11,9 +11,9 @@ from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
 
 def quickrun(
     date: str,
+    df: pd.DataFrame,
     input_tree_to_column_map: NestedInputToSeriesNameDict,
     targets_tree: NestedDataDict,
-    df: pd.DataFrame | None = None,
 ) -> NestedDataDict:
     """Compute taxes and transfers.
 
@@ -21,20 +21,18 @@ def quickrun(
         date:
             The date to compute taxes and transfers for. The date determines the policy
             environment for which the taxes and transfers are computed.
+        df:
+            The DataFrame containing the data.
         input_tree_to_column_map:
             A nested dictionary that maps GETTSIM's expected input structure to the data
             provided by the user. Keys are strings that provide a path to an input.
 
             Values can be:
-
-            - Strings that reference column names in the DataFrame (when df is provided)
-            - pandas Series objects
-            - Numeric or boolean values (which will be used directly if df is None, or
-              broadcast to match the DataFrame length if df is provided)
+            - Strings that reference column names in the DataFrame.
+            - Numeric or boolean values (which will be broadcasted to match the length
+              of the DataFrame).
         targets_tree:
             The targets tree.
-        df:
-            The DataFrame containing the data.
 
 
     Examples:
@@ -49,13 +47,13 @@ def quickrun(
     ...         },
     ...     },
     ...     "alter": 30,
-    ...     "geburtsjahr": pd.Series([1990, 1990, 1990]),
-    ...     "p_id": pd.Series([0, 1, 2]),
+    ...     "p_id": "p_id",
     ... }
     >>> df = pd.DataFrame(
     ...     {
     ...         "gross_wage_m": [1000, 2000, 3000],
     ...         "joint_taxation": [True, True, False],
+    ...         "p_id": [0, 1, 2],
     ...     }
     ... )
     >>> quickrun(
