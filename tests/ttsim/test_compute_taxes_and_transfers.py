@@ -8,27 +8,29 @@ import pandas as pd
 import pytest
 from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 
-from ttsim.aggregation import AggType
-from ttsim.compute_taxes_and_transfers import (
+from ttsim import (
+    AggType,
     FunctionsAndColumnsOverlapWarning,
+    PolicyEnvironment,
+    agg_by_group_function,
+    agg_by_p_id_function,
+    compute_taxes_and_transfers,
+    group_creation_function,
+    merge_trees,
+    policy_function,
+    policy_input,
+    set_up_policy_environment,
+)
+from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
     _fail_if_group_ids_are_outside_top_level_namespace,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
     _get_top_level_namespace,
     _partial_parameters_to_functions,
-    compute_taxes_and_transfers,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
-from ttsim.shared import assert_valid_ttsim_pytree, merge_trees
-from ttsim.ttsim_objects import (
-    agg_by_group_function,
-    agg_by_p_id_function,
-    group_creation_function,
-    policy_function,
-    policy_input,
-)
+from ttsim.shared import assert_valid_ttsim_pytree
 
 
 @policy_input()

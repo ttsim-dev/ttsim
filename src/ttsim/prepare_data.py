@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import dags.tree as dt
 import optree
 import pandas as pd
 
-from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
+if TYPE_CHECKING:
+    from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
 
 
 def create_data_tree_from_df(

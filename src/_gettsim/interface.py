@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pandas as pd
 from dags.tree.typing import NestedTargetDict
 
@@ -7,7 +11,9 @@ from ttsim import (
     create_data_tree_from_df,
     set_up_policy_environment,
 )
-from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
+
+if TYPE_CHECKING:
+    from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
 
 
 def quickrun(

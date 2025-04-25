@@ -8,6 +8,7 @@ import pytest
 from _gettsim.config import (
     RESOURCE_DIR,
 )
+from ttsim import PolicyInput
 from ttsim.loader import load_objects_tree_for_date
 from ttsim.shared import remove_group_suffix
 

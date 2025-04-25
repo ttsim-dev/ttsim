@@ -14,8 +14,8 @@ from ttsim import (
     compute_taxes_and_transfers,
     merge_trees,
     set_up_policy_environment,
+    to_datetime,
 )
-from ttsim.shared import to_datetime
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
