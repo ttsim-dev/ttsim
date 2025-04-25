@@ -1,8 +1,9 @@
 ---
 info:
-  note: Erhöhung der Pflegeversicherungsraten & Änderung der Berechnung für Menschen mit Kindern
-    unter 25 Jahren (ab Juli 2023), Pflegeunterstützungs- und -entlastungsgesetz 1 Kind über
-    25 Jahren und Midijob
+  note: >-
+    Erhöhung der Pflegeversicherungsraten & Änderung der Berechnung für Menschen mit
+    Kindern unter 25 Jahren (ab Juli  2023), Pflegeunterstützungs- und
+    -entlastungsgesetz, 1 Kind über 25 Jahren und Midijob
   precision_atol: 1
   source: https://www.ihre-vorsorge.de/rechner/midijob-rechner
 inputs:

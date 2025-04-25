@@ -256,11 +256,14 @@ beitr_bemess_grenze_m:
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
 arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
   name:
-    de: Pauschalbeitrag des Arbeitgebers zur Krankenversicherung bei geringfügiger Beschäftigung
+    de: >-
+      Pauschalbeitrag des Arbeitgebers zur Krankenversicherung bei geringfügiger
+      Beschäftigung
     en: Fixed employer health insurance contribution for marginal employment
   description:
     de: >-
-      Pauschalbeitrag zur Krankenversicherung (§ 249b SGB V) bei geringfügiger Beschäftigung
+      Pauschalbeitrag des Arbeitgebers zur Krankenversicherung (§ 249b SGB V) bei
+      geringfügiger Beschäftigung
     en: Fixed health insurance contributions for marginal employment (§ 249b SGB V)
   unit: Share
   access_different_date: jahresanfang

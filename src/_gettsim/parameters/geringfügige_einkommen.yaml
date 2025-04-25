@@ -99,7 +99,8 @@ grenzen_m:
 faktor_zähler:
   name:
     de: Zähler im Faktor für die Berechnung der Geringfügigkeitsgrenze.
-    en: Numerator in the factor for the calculation of the marginal employment threshold.
+    en: >-
+      Numerator in the factor for the calculation of the marginal employment threshold.
   description:
     de: >-
       Faktor, mit dem der Mindestlohn in der Berechnung der Geringfügigkeitsgrenze
@@ -115,7 +116,9 @@ faktor_zähler:
 faktor_nenner:
   name:
     de: Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.
-    en: Denominator in the factor for the calculation of the marginal employment threshold.
+    en: >-
+      Denominator in the factor for the calculation of the marginal employment
+      threshold.
   description:
     de: >-
       Betrag, durch den der Mindestlohn dividiert wird, um die Geringfügigkeitsgrenze zu
@@ -134,7 +137,8 @@ arbeitgeberpauschale_lohnsteuer:
     en: Fixed income tax rate for marginal employment
   description:
     de: >-
-      Pauschalierte Lohnsteuer des Arbeitgebers bei geringfügiger Beschäftigung (§40a II EStG)
+      Pauschalierte Lohnsteuer des Arbeitgebers bei geringfügiger Beschäftigung
+      (§40a II EStG)
     en: Fixed income tax rate for marginal employment (§40a II EStG)
   unit: Share
   access_different_date: jahresanfang

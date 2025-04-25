@@ -212,13 +212,18 @@ beitr_bemess_grenze_m:
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
 arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
   name:
-    de: Pauschalbeitrag des Arbeitgebers zur Rentenversicherung bei geringfügiger Beschäftigung
-    en: Fixed employer pension insurance contribution for marginal employment
+    de: >-
+      Pauschalbeitrag des Arbeitgebers zur Rentenversicherung bei geringfügiger
+      Beschäftigung
+    en: >-
+      Fixed employer pension insurance contribution for marginal employment
   description:
     de: >-
-      Pauschalbetrag zur Rentenversicherung (§ 168 I Nr. 1b SGB VI) bei geringfügiger Beschäftigung
-    en: Fixed pension insurance contributions for marginal employment (§ 168 I Nr. 1b SGB
-      VI)
+      Pauschalbetrag zur Rentenversicherung (§ 168 I Nr. 1b SGB VI) bei geringfügiger
+      Beschäftigung
+    en: >-
+      Fixed pension insurance contributions for marginal employment
+      (§ 168 I Nr. 1b SGB VI)
   unit: Share
   access_different_date: jahresanfang
   1984-01-01:

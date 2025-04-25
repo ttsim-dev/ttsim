@@ -1,7 +1,8 @@
 ---
 info:
-  note: Test with old income thresholds with income from self employment, adjusted for Kindersofortzuschlag.
-    Constructed test based on hh 19.
+  note: >-
+    Test with old income thresholds with income from self employment, adjusted for
+    Kindersofortzuschlag. Constructed test based on hh 19.
   precision_atol: 0.01
   source: ''
 inputs:

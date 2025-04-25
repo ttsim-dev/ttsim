@@ -45,8 +45,8 @@ beitr_satz:
   2019-01-01:
     scalar: 0.0125
     note: >-
-      Set to 0.026 in Art. 2 Nr. 15 G. v. 18.12.2018 BGBl. I S. 2651. Temporarily reduced
-      to 0.025 in BeiSaV 2019.
+      Set to 0.026 in Art. 2 Nr. 15 G. v. 18.12.2018 BGBl. I S. 2651. Temporarily
+      reduced to 0.025 in BeiSaV 2019.
     reference: V. v. 21.12.2018 BGBl. I S. 2663
   2020-01-01:
     deviation_from: previous
@@ -57,6 +57,6 @@ beitr_satz:
     deviation_from: previous
     scalar: 0.013
     note: >-
-      Contribution rate was temporarily reduced from 2019 to 2022 in BeiSaV 2019. Now back
+      Contribution rate was temporarily reduced from 2019 to 2022 in BeiSaV 2019. Back
       to level specified in § 341 Abs. 2 SGB III.
     reference: Art. 2 Nr. 15 G. v. 18.12.2018 BGBl. I S. 2651
