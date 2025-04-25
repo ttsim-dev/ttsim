@@ -1,7 +1,9 @@
 ---
 info:
-  note: Erhöhung der Pflegeversicherungsraten & Änderung der Berechnung für Menschen mit Kindern
-    unter 25 Jahren (ab Juli 2023), Pflegeunterstützungs- und -entlastungsgesetz keine Kinder
+  note: >-
+    Erhöhung der Pflegeversicherungsraten & Änderung der Berechnung für Menschen mit
+    Kindern unter 25 Jahren (ab Juli 2023), Pflegeunterstützungs- und
+    -entlastungsgesetz, keine Kinder
   precision_atol: 1
   source: https://www.steuertipps.de/service/rechner/brutto-netto-gehaltsrechner/
 inputs:
@@ -36,7 +38,7 @@ inputs:
 outputs:
   sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m:
     - 52.0
-  sozialversicherung__beitrag_gesamt_m:
+  sozialversicherung__beiträge_gesamt_m:
     - 1656.0
   sozialversicherung__beiträge_arbeitgeber_m:
     - 816.0

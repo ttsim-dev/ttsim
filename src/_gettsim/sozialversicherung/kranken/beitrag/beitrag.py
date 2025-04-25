@@ -99,7 +99,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
@@ -131,7 +131,9 @@ def betrag_arbeitgeber_m_ohne_midijob(
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * sozialv_beitr_params["ag_abgaben_geringf"]["ges_krankenv"]
+            * ges_krankenv_params[
+                "arbeitgeberpauschale_bei_geringfügiger_beschäftigung"
+            ]
         )
     else:
         out = einkommen_m * beitragssatz_arbeitgeber
@@ -147,7 +149,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     betrag_arbeitgeber_midijob_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
@@ -183,7 +185,9 @@ def betrag_arbeitgeber_m_mit_midijob(
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * sozialv_beitr_params["ag_abgaben_geringf"]["ges_krankenv"]
+            * ges_krankenv_params[
+                "arbeitgeberpauschale_bei_geringfügiger_beschäftigung"
+            ]
         )
     elif sozialversicherung__in_gleitzone:
         out = betrag_arbeitgeber_midijob_m
@@ -216,7 +220,7 @@ def betrag_versicherter_regulär_beschäftigt_m(
 @policy_function()
 def betrag_selbstständig_m(
     bemessungsgrundlage_selbstständig_m: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Health insurance contributions for self-employed's income. The self-employed
     pay the full reduced contribution.
@@ -232,7 +236,7 @@ def betrag_selbstständig_m(
     -------
 
     """
-    params = sozialv_beitr_params["beitr_satz"]["ges_krankenv"]
+    params = ges_krankenv_params["beitr_satz"]
     ermäßigter_beitrag = (
         params["ermäßigt"] if ("ermäßigt" in params) else params["mean_allgemein"]
     )

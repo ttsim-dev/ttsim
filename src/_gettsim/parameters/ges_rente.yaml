@@ -1934,6 +1934,12 @@ altersgrenze_arbeitsl_vorzeitig:
       12: 63.0
     vertrauensschutz: 60.0
 first_birthyear_without_rente_für_arbeitsl:
+  name:
+    de: Erster Geburtsjahrgang ohne Rente für Arbeitslose
+    en: First birth cohort without pension for unemployed
+  description:
+    de: >-
+      Erster Geburtsjahrgang ohne Rente für Arbeitslose
   reference: Rentenreformgesetz 1999. BGBl. I S. 2998 1997
   note: Abolishment starting from birth cohort 1952.
   1997-12-16:
@@ -1975,6 +1981,11 @@ altersgrenze_langj_versicherte_abschlagsfrei:
   name:
     de: Eintrittsalter für langjährig Versicherte - abschlagsfrei
     en: Entry age for long term insured (35 insurance years) without deductions (FRA)
+  description:
+    de: >-
+      Eintrittsalter für langjährig Versicherte - abschlagsfrei
+    en: >-
+      Entry age for long term insured (35 insurance years) without deductions (FRA)
   reference: § 236 SGB VI
   note:
     de: >-
@@ -2388,6 +2399,12 @@ mindestpflichtbeitragsjahre_für_anrechnbarkeit_freiwilliger_beiträge:
       angerechnet werden.
     en: >-
       Minimum statutory contribution years for the inclusion of voluntary contributions
+  description:
+    de: >-
+      Anzahl der Mindestpflichtbeitragsjahre, von der an freiwillige Beiträge
+      angerechnet werden.
+    en: >-
+      Minimum statutory contribution years for the inclusion of voluntary contributions
   reference: § 51 Abs. 3a SGB VI
   note: https://www.gesetze-im-internet.de/sgb_6/__51.html
   1980-01-01:
@@ -2396,6 +2413,11 @@ abzugsrate_hinzuverdienst:
   name:
     de: Abzugsrate für Hinzuverdienst vor der Regelaltersgrenze
     en: Deduction rate for additional earnings during early retirement
+  description:
+    de: >-
+      Abzugsrate für Hinzuverdienst vor der Regelaltersgrenze
+    en: >-
+      Deduction rate for additional earnings during early retirement
   reference: § 34 SGB VI; Artikel 1 G. v. 08.12.2016 BGBl. I S. 2838
   note: Revoked in 2017.
   2017-07-01:
@@ -2404,6 +2426,11 @@ hinzuverdienstgrenze:
   name:
     de: Hinzuverdienstgrenze vor der Regelaltersgrenze
     en: Additional earnings threshold during early retirement
+  description:
+    de: >-
+      Hinzuverdienstgrenze vor der Regelaltersgrenze
+    en: >-
+      Additional earnings threshold during early retirement
   reference: § 34 SGB VI
   note: Revoked in 2023.
   2002-01-01:

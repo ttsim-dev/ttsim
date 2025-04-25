@@ -118,7 +118,7 @@ def betrag_versicherter_regulär_beschäftigt_m(
 def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__kranken__beitrag__einkommen_m: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
     """Employer's long-term care insurance contribution.
@@ -144,7 +144,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
         sozialversicherung__kranken__beitrag__einkommen_m
-        * sozialv_beitr_params["beitr_satz"]["ges_pflegev"]
+        * ges_pflegev_params["beitr_satz"]
     )
 
     if (
@@ -163,7 +163,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_arbeitgeber_midijob_m: float,
     sozialversicherung__kranken__beitrag__einkommen_m: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
@@ -194,7 +194,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
         sozialversicherung__kranken__beitrag__einkommen_m
-        * sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+        * ges_pflegev_params["beitr_satz"]["standard"]
     )
 
     if (
@@ -247,7 +247,7 @@ def betrag_selbstständig_m_ohne_zusatz_für_kinderlose(
 def betrag_selbstständig_m_mit_zusatz_für_kinderlose(
     sozialversicherung__kranken__beitrag__bemessungsgrundlage_selbstständig_m: float,
     beitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Self-employed individuals' long-term care insurance contribution since 2005.
 
@@ -272,7 +272,7 @@ def betrag_selbstständig_m_mit_zusatz_für_kinderlose(
 
     """
     return sozialversicherung__kranken__beitrag__bemessungsgrundlage_selbstständig_m * (
-        beitragssatz + sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+        beitragssatz + ges_pflegev_params["beitr_satz"]["standard"]
     )
 
 
@@ -341,7 +341,7 @@ def betrag_rentner_m_ohne_zusatz_für_kinderlose(
 def betrag_rentner_m_mit_zusatz_für_kinderlose(
     sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m: float,
     beitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Health insurance contribution from pension income since 2005.
 
@@ -363,7 +363,7 @@ def betrag_rentner_m_mit_zusatz_für_kinderlose(
 
     """
     return sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m * (
-        beitragssatz + sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+        beitragssatz + ges_pflegev_params["beitr_satz"]["standard"]
     )
 
 
@@ -375,7 +375,7 @@ def betrag_rentner_m_mit_zusatz_für_kinderlose(
 def betrag_gesamt_m_bis_2004(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Sum of employee and employer long-term care insurance contributions until 2004.
 
@@ -396,7 +396,7 @@ def betrag_gesamt_m_bis_2004(
     """
 
     return sozialversicherung__midijob_bemessungsentgelt_m * (
-        beitragssatz + sozialv_beitr_params["beitr_satz"]["ges_pflegev"]
+        beitragssatz + ges_pflegev_params["beitr_satz"]
     )
 
 
@@ -407,7 +407,7 @@ def betrag_gesamt_m_bis_2004(
 def betrag_gesamt_m_ab_2005(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Sum of employee and employer long-term care insurance contributions since 2005.
 
@@ -427,7 +427,7 @@ def betrag_gesamt_m_ab_2005(
     """
 
     return sozialversicherung__midijob_bemessungsentgelt_m * (
-        beitragssatz + sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+        beitragssatz + ges_pflegev_params["beitr_satz"]["standard"]
     )
 
 
@@ -437,7 +437,7 @@ def betrag_gesamt_m_ab_2005(
 )
 def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Employer's long-term care insurance contribution until December 2004.
 
@@ -458,7 +458,7 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
 
     out = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * sozialv_beitr_params["beitr_satz"]["ges_pflegev"]
+        * ges_pflegev_params["beitr_satz"]
     )
 
     return out
@@ -471,7 +471,7 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
 )
 def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_ab_2005(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Employers' contribution to long-term care insurance between 2005 and September
     2022.
@@ -491,7 +491,7 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_ab_2005(
     """
     out = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+        * ges_pflegev_params["beitr_satz"]["standard"]
     )
     return out
 
@@ -557,7 +557,7 @@ def betrag_versicherter_midijob_m_mit_zusatzbeitrag_für_kinderlos(
     zusatzbetrag_kinderlos: bool,
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     sozialversicherung__midijob_bemessungsentgelt_m: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Employee's long-term care insurance contribution between October 2022 and
     June 2023.
@@ -581,14 +581,14 @@ def betrag_versicherter_midijob_m_mit_zusatzbeitrag_für_kinderlos(
     # Calculate the employee care insurance contribution
     an_beitr_midijob_m = (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        * sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+        * ges_pflegev_params["beitr_satz"]["standard"]
     )
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
         an_beitr_midijob_m += (
             sozialversicherung__midijob_bemessungsentgelt_m
-            * sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["zusatz_kinderlos"]
+            * ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
         )
 
     return an_beitr_midijob_m
@@ -600,7 +600,7 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
     zusatzbetrag_kinderlos: bool,
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     sozialversicherung__midijob_bemessungsentgelt_m: float,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Employee's long-term care insurance contribution since July 2023.
 
@@ -623,13 +623,13 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
 
     """
     # Calculate the employee care insurance rate
-    ges_pflegev_rate = sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+    ges_pflegev_rate = ges_pflegev_params["beitr_satz"]["standard"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        ges_pflegev_rate -= sozialv_beitr_params["beitr_satz"]["ges_pflegev"][
-            "abschlag_kinder"
-        ] * min(anzahl_kinder_bis_24 - 1, 4)
+        ges_pflegev_rate -= ges_pflegev_params["beitr_satz"]["abschlag_kinder"] * min(
+            anzahl_kinder_bis_24 - 1, 4
+        )
 
     # Calculate the employee care insurance contribution
     an_beitr_midijob_m = (
@@ -641,7 +641,7 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
     if zusatzbetrag_kinderlos:
         an_beitr_midijob_m += (
             sozialversicherung__midijob_bemessungsentgelt_m
-            * sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["zusatz_kinderlos"]
+            * ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
         )
 
     return an_beitr_midijob_m
