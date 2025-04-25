@@ -2,7 +2,7 @@ import dags.tree as dt
 import pandas as pd
 import pytest
 
-from ttsim.shared import create_data_tree_from_df
+from ttsim import create_data_tree_from_df
 
 
 @pytest.mark.parametrize(

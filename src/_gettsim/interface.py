@@ -3,9 +3,9 @@ import pandas as pd
 from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 from ttsim import (
     compute_taxes_and_transfers,
+    create_data_tree_from_df,
     set_up_policy_environment,
 )
-from ttsim.shared import create_data_tree_from_df
 
 
 def quickrun(

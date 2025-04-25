@@ -12,6 +12,7 @@ from ttsim.loader import (
 )
 from ttsim.piecewise_polynomial import get_piecewise_parameters, piecewise_polynomial
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
+from ttsim.prepare_data import create_data_tree_from_df
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import (
     insert_path_and_value,
@@ -53,6 +54,7 @@ __all__ = [
     "agg_by_p_id_function",
     "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
+    "create_data_tree_from_df",
     "create_time_conversion_functions",
     "get_active_ttsim_objects_tree_from_module",
     "get_piecewise_parameters",
