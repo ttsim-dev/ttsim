@@ -705,12 +705,12 @@ def _fail_if_mapper_has_incorrect_format(
         msg = "The input tree to column mapping must be a dictionary."
         raise TypeError(msg)
 
-    inputs = optree.tree_flatten(input_tree_to_column_map)[0]
+    inputs = optree.tree_flatten(input_tree_to_column_map, none_is_leaf=True)[0]
     if not all(isinstance(x, str | int | bool) for x in inputs):
         found_types = {type(x) for x in inputs if not isinstance(x, str | int | bool)}
-        msg = f"""
-        Values of the input tree to column mapping must be strings, integers, or
-        booleans. Found values of type {found_types}."
+        msg = f"""Values of the input tree to column mapping must be strings, integers,
+        or booleans.
+        Found values of type {found_types}.
         """
         raise TypeError(msg)
 
