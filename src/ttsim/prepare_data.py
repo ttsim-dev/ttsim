@@ -2,11 +2,13 @@ import dags.tree as dt
 import optree
 import pandas as pd
 
+from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
+
 
 def create_data_tree_from_df(
-    input_tree_to_column_map,
+    input_tree_to_column_map: NestedInputToSeriesNameDict,
     df: pd.DataFrame,
-):
+) -> NestedDataDict:
     """Transform a pandas DataFrame to a nested dictionary expected by TTSIM.
     `
         Args
@@ -76,7 +78,7 @@ def create_data_tree_from_df(
 
 
 def _fail_if_mapper_has_incorrect_format(
-    input_tree_to_column_map,
+    input_tree_to_column_map: NestedInputToSeriesNameDict,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
     if not isinstance(input_tree_to_column_map, dict):
