@@ -2,8 +2,6 @@ import pandas as pd
 
 from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 from ttsim import (
-    NestedDataDict,
-    NestedInputToSeriesNameDict,
     compute_taxes_and_transfers,
     set_up_policy_environment,
 )
@@ -13,9 +11,9 @@ from ttsim.shared import create_data_tree_from_df
 def quickrun(
     date: str,
     df: pd.DataFrame,
-    input_tree_to_column_map: NestedInputToSeriesNameDict,
-    targets_tree: NestedDataDict,
-) -> NestedDataDict:
+    input_tree_to_column_map,
+    targets_tree,
+):
     """Compute taxes and transfers.
 
     Args:
