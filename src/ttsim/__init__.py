@@ -6,7 +6,7 @@ from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
 from ttsim.loader import ConflictingTimeDependentObjectsError
-from ttsim.piecewise_polynomial import get_piecewise_parameters, piecewise_polynomial
+from ttsim.piecewise_polynomial import piecewise_polynomial
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.prepare_data import create_data_tree_from_df
 from ttsim.rounding import RoundingSpec
