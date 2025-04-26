@@ -7,7 +7,7 @@ from ttsim import create_data_tree_from_df
 
 @pytest.mark.parametrize(
     (
-        "input_tree_to_column_map",
+        "inputs_tree_to_df_columns",
         "df",
         "expected_output",
     ),
@@ -44,12 +44,12 @@ from ttsim import create_data_tree_from_df
     ],
 )
 def test_create_data_tree_from_df(
-    input_tree_to_column_map,
+    inputs_tree_to_df_columns,
     df,
     expected_output,
 ):
     result = create_data_tree_from_df(
-        input_tree_to_column_map=input_tree_to_column_map,
+        inputs_tree_to_df_columns=inputs_tree_to_df_columns,
         df=df,
     )
     flat_result = dt.flatten_to_qual_names(result)
@@ -73,18 +73,18 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
         ValueError, match="The DataFrame must not have bool or numeric column names."
     ):
-        create_data_tree_from_df(input_tree_to_column_map={}, df=df)
+        create_data_tree_from_df(inputs_tree_to_df_columns={}, df=df)
 
 
 @pytest.mark.parametrize(
     (
-        "input_tree_to_column_map",
+        "inputs_tree_to_df_columns",
         "expected_error_message",
     ),
     [
         (
             [],
-            "The input tree to column mapping must be a dictionary.",
+            "The input tree to column mapping must be a \\(nested\\) dictionary.",
         ),
         (
             {
@@ -92,7 +92,7 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
                     "n2": pd.Series([1, 2, 3]),
                 },
             },
-            "Found values of type {<class 'pandas.core.series.Series'>}.",
+            "n1__n2: Series",
         ),
         (
             {
@@ -100,14 +100,14 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
                     "n2": None,
                 },
             },
-            "Found values of type {<class 'NoneType'>}.",
+            "n1__n2: NoneType",
         ),
     ],
 )
 def test_create_data_tree_fails_if_mapper_has_incorrect_format(
-    input_tree_to_column_map, expected_error_message
+    inputs_tree_to_df_columns, expected_error_message
 ):
     with pytest.raises(TypeError, match=expected_error_message):
         create_data_tree_from_df(
-            input_tree_to_column_map=input_tree_to_column_map, df=pd.DataFrame()
+            inputs_tree_to_df_columns=inputs_tree_to_df_columns, df=pd.DataFrame()
         )

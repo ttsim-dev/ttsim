@@ -2,9 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pandas as pd
-from dags.tree.typing import NestedTargetDict
-
 from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 from ttsim import (
     compute_taxes_and_transfers,
@@ -13,16 +10,19 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedDataDict, NestedInputToSeriesNameDict
+    import pandas as pd
+    from dags.tree.typing import NestedTargetDict
+
+    from ttsim.typing import NestedDataDict, NestedInputsPathsToDfColumns
 
 
-def quickrun(
+def oss(
     date: str,
     df: pd.DataFrame,
-    input_tree_to_column_map: NestedInputToSeriesNameDict,
+    inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
     targets_tree: NestedTargetDict,
 ) -> NestedDataDict:
-    """Compute taxes and transfers.
+    """One-stop-shop for computing taxes and transfers.
 
     Args:
         date:
@@ -30,7 +30,7 @@ def quickrun(
             environment for which the taxes and transfers are computed.
         df:
             The DataFrame containing the data.
-        input_tree_to_column_map:
+        inputs_tree_to_df_columns:
             A nested dictionary that maps GETTSIM's expected input structure to the data
             provided by the user. Keys are strings that provide a path to an input.
 
@@ -44,7 +44,7 @@ def quickrun(
 
     Examples:
     --------
-    >>> input_tree_to_column_map = {
+    >>> inputs_tree_to_df_columns = {
     ...     "einkommensteuer": {
     ...         "gemeinsam_veranlagt": "joint_taxation",
     ...         "einkünfte": {
@@ -63,15 +63,15 @@ def quickrun(
     ...         "p_id": [0, 1, 2],
     ...     }
     ... )
-    >>> quickrun(
+    >>> oss(
     ...     date="2024-01-01",
-    ...     input_tree_to_column_map=input_tree_to_column_map,
+    ...     inputs_tree_to_df_columns=inputs_tree_to_df_columns,
     ...     targets_tree=targets_tree,
     ...     df=df,
     ... )
     """
     data_tree = create_data_tree_from_df(
-        input_tree_to_column_map=input_tree_to_column_map,
+        inputs_tree_to_df_columns=inputs_tree_to_df_columns,
         df=df,
     )
     policy_environment = set_up_policy_environment(

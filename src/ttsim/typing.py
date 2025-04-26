@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     QualNamePolicyInputDict = Mapping[str, PolicyInput]
 
     # Specialise from dags' NestedInputDict to GETTSIM's types.
-    NestedInputToSeriesNameDict = Mapping[str, Any | "NestedInputToSeriesNameDict"]
+    NestedInputsPathsToDfColumns = Mapping[str, Any | "NestedInputsPathsToDfColumns"]
     NestedDataDict = Mapping[str, pd.Series | "NestedDataDict"]
     QualNameDataDict = Mapping[str, pd.Series]
     NestedArrayDict = Mapping[str, np.ndarray | "NestedArrayDict"]
