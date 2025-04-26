@@ -15,8 +15,8 @@ if IS_JAX_INSTALLED:
     import jax.numpy
 from numpy.testing import assert_array_equal
 
+from ttsim import GroupCreationFunction, PolicyInput, policy_function
 from ttsim.loader import load_objects_tree_for_date
-from ttsim.ttsim_objects import GroupCreationFunction, PolicyInput, policy_function
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,

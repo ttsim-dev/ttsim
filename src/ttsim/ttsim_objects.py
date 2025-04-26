@@ -63,7 +63,7 @@ class FKType(StrEnum):
     MUST_NOT_POINT_TO_SELF = "must not point to self"
 
 
-@dataclass
+@dataclass(frozen=True)
 class TTSIMObject:
     """
     Abstract base class for all TTSIM Functions and Inputs.
@@ -86,7 +86,7 @@ class TTSIMObject:
         raise NotImplementedError("Subclasses must implement this method.")
 
 
-@dataclass
+@dataclass(frozen=True)
 class PolicyInput(TTSIMObject):
     """
     A dummy function representing an input variable.
@@ -157,7 +157,38 @@ def policy_input(
     return inner
 
 
-@dataclass
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
+    """Update a frozen wrapper dataclass to look like the wrapped function.
+
+    This is necessary because the wrapper is a frozen dataclass, so we cannot
+    use the `functools.update_wrapper` function or `self.__signature__ = ...`
+    assigments in the `__post_init__` method.
+
+    Args:
+        wrapper: The wrapper dataclass to update.
+        wrapped: The function to update the wrapper to.
+
+    """
+    object.__setattr__(wrapper, "__signature__", inspect.signature(wrapped))
+
+    WRAPPER_ASSIGNMENTS = (  # noqa: N806
+        "__globals__",
+        "__closure__",
+        "__doc__",
+        "__name__",
+        "__qualname__",
+        "__module__",
+        "__annotations__",
+        "__type_params__",
+    )
+    for attr in WRAPPER_ASSIGNMENTS:
+        if hasattr(wrapped, attr):
+            object.__setattr__(wrapper, attr, getattr(wrapped, attr))
+
+    getattr(wrapper, "__dict__", {}).update(getattr(wrapped, "__dict__", {}))
+
+
+@dataclass(frozen=True)
 class TTSIMFunction(TTSIMObject):
     """
     Base class for all TTSIM functions.
@@ -169,12 +200,8 @@ class TTSIMFunction(TTSIMObject):
 
     def __post_init__(self):
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
-
         # Expose the signature of the wrapped function for dependency resolution
-        functools.update_wrapper(self, self.function)
-        self.__signature__ = inspect.signature(self.function)
-        self.__globals__ = self.function.__globals__
-        self.__closure__ = self.function.__closure__
+        _frozen_safe_update_wrapper(self, self.function)
 
     def _fail_if_rounding_has_wrong_type(
         self, rounding_spec: RoundingSpec | None
@@ -213,7 +240,7 @@ class TTSIMFunction(TTSIMObject):
         return self.start_date <= date <= self.end_date
 
 
-@dataclass
+@dataclass(frozen=True)
 class PolicyFunction(TTSIMFunction):
     """
     A function that computes an output vector based on some input vectors and/or
@@ -340,7 +367,7 @@ def _vectorize_func(
     return vectorized
 
 
-@dataclass
+@dataclass(frozen=True)
 class GroupCreationFunction(TTSIMFunction):
     """
     A function that computes endogenous group_by IDs.
@@ -400,7 +427,7 @@ def group_creation_function(
     return decorator
 
 
-@dataclass
+@dataclass(frozen=True)
 class AggByGroupFunction(TTSIMFunction):
     """
     A function that is an aggregation of another column by some group id.
@@ -524,7 +551,7 @@ def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str):
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class AggByPIDFunction(TTSIMFunction):
     """
     A function that is an aggregation of another column by some group id.
@@ -651,7 +678,7 @@ def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class TimeConversionFunction(TTSIMFunction):
     """
     A function that is a time conversion of another function.

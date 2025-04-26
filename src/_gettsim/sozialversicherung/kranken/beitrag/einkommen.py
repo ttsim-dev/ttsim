@@ -69,7 +69,7 @@ def bemessungsgrundlage_selbstständig_m(
     einkommensteuer__einkünfte__ist_selbstständig: bool,
     privat_versichert: bool,
     beitragsbemessungsgrenze_m: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Self-employed income which is subject to health insurance contributions.
 
@@ -105,7 +105,7 @@ def bemessungsgrundlage_selbstständig_m(
             beitragsbemessungsgrenze_m,
             max(
                 bezugsgröße_selbstständig_m
-                * sozialv_beitr_params[
+                * ges_krankenv_params[
                     "mindestanteil_bezugsgröße_beitragspf_einnahme_selbst"
                 ],
                 einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m,
@@ -118,7 +118,7 @@ def bemessungsgrundlage_selbstständig_m(
 
 
 @policy_function()
-def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) -> float:
+def beitragsbemessungsgrenze_m(wohnort_ost: bool, ges_krankenv_params: dict) -> float:
     """Income threshold up to which health insurance payments apply.
 
     Parameters
@@ -133,7 +133,7 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) ->
     The income threshold up to which the rate of health insurance contributions apply.
 
     """
-    params = sozialv_beitr_params["beitr_bemess_grenze_m"]["ges_krankenv"]
+    params = ges_krankenv_params["beitr_bemess_grenze_m"]
 
     out = params["ost"] if wohnort_ost else params["west"]
 
@@ -141,7 +141,7 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, sozialv_beitr_params: dict) ->
 
 
 @policy_function()
-def bezugsgröße_selbstständig_m(wohnort_ost: bool, sozialv_beitr_params: dict) -> float:
+def bezugsgröße_selbstständig_m(wohnort_ost: bool, ges_krankenv_params: dict) -> float:
     """Threshold for self employment income subject to health insurance.
 
     Selecting by place of living the income threshold for self employed up to which the
@@ -159,9 +159,9 @@ def bezugsgröße_selbstständig_m(wohnort_ost: bool, sozialv_beitr_params: dict
 
     """
     out = (
-        sozialv_beitr_params["bezugsgröße_selbst_m"]["ost"]
+        ges_krankenv_params["bezugsgröße_selbst_m"]["ost"]
         if wohnort_ost
-        else sozialv_beitr_params["bezugsgröße_selbst_m"]["west"]
+        else ges_krankenv_params["bezugsgröße_selbst_m"]["west"]
     )
 
     return out

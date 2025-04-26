@@ -41,7 +41,6 @@ classifiers = [
 # Dependencies and requirements
 requires-python = ">=3.11"
 dependencies = [
-    "astor",
     "dags>=0.3.0",
     "ipywidgets",
     "networkx",
@@ -110,7 +109,6 @@ pandas = ">=2.1"
 numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
-astor = "*"
 ipywidgets = "*"
 jupyterlab = "*"
 networkx = "*" # Remove once dags is a proper dependency
@@ -254,8 +252,14 @@ exclude = []
 "src/ttsim/policy_environment.py" = ["S506", "PLR"]
 "src/ttsim/visualization.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
-"src/_gettsim_tests/test_synthetic.py" = ["E501"]
 "docs/**/*.ipynb" = ["T201"]
+
+# Files which should be ignored until we have rewritten them
+# =========================================================
+"src/_gettsim/synthetic.py" = ["F821"]
+"src/_gettsim_tests/test_synthetic.py" = ["F821", "E501"]
+"outdated_docs/**/*.ipynb" = ["T201"]
+"tests/ttsim/test_docs.py" = ["F821"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

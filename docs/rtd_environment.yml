@@ -10,7 +10,6 @@ dependencies:
   - jupyterlab
 
   # gettsim dependencies
-  - astor
   - dags>=0.3.0
   - ipywidgets
   - networkx

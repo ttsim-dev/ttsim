@@ -66,7 +66,7 @@ abschlag_faktor:
     en: Deduction factor
   description:
     de: >-
-      Faktor zur Berechnung des Abschlag des Erziehungsgeld bei einer
+      Faktor zur Berechnung des Abschlags des Erziehungsgeldes bei einer
       Überschreitung der Einkommensgrenze ab dem 7 Lebensmonat.
       Der Faktor wird mit dem relevanten Einkommen multipliziert und
       das Produkt entsprechend vom Erziehungsgeld Anspruch abgezogen
@@ -75,7 +75,7 @@ abschlag_faktor:
       exceeding the income threshold after the 7th month of life.
       The factor is multiplied by the relevant income and
       the product is deducted from the parental leave benefit entitlement accordingly.
-  unit: faktor
+  unit: null
   reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
   note: >-
     https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_
@@ -104,7 +104,7 @@ pauschal_abzug_auf_einkommen:
     scalar: 0.76
 arbeitsstunden_w_grenze:
   name:
-    de: Wochenarbeitsstunden Grenze
+    de: Wochenarbeitsstundengrenze
     en: Weekly working hours limit
   description:
     de: >-
@@ -123,6 +123,11 @@ end_age_m_regelsatz:
   name:
     de: Alter des Kindes in Monaten bis zu dem der Regelsatz bezogen werden kann.
     en: Age of the child in months up to which the Regelsatz can be claimed.
+  description:
+    de: >-
+      Alter des Kindes in Monaten bis zu dem der Regelsatz bezogen werden kann.
+    en: >-
+      Age of the child in months up to which the Regelsatz can be claimed.
   reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
   2004-01-01:
     scalar: 24
@@ -130,6 +135,11 @@ end_age_m_budgetsatz:
   name:
     de: Alter des Kindes in Monaten bis zu dem der Budgetsatz bezogen werden kann.
     en: Age of the child in months up to which the Budgetsatz can be claimed.
+  description:
+    de: >-
+      Alter des Kindes in Monaten bis zu dem der Budgetsatz bezogen werden kann.
+    en: >-
+      Age of the child in months up to which the Budgetsatz can be claimed.
   reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
   2004-01-01:
     scalar: 12

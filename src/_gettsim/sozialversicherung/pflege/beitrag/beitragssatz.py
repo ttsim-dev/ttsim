@@ -27,7 +27,7 @@ def anzahl_kinder_bis_24_elternteil_2(
     leaf_name="beitragssatz",
 )
 def beitragssatz_ohne_zusatz_für_kinderlose(
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
@@ -43,7 +43,7 @@ def beitragssatz_ohne_zusatz_für_kinderlose(
 
     """
 
-    return sozialv_beitr_params["beitr_satz"]["ges_pflegev"]
+    return ges_pflegev_params["beitr_satz"]
 
 
 @policy_function(
@@ -53,7 +53,7 @@ def beitragssatz_ohne_zusatz_für_kinderlose(
 )
 def beitragssatz_zusatz_kinderlos_dummy(
     zusatzbetrag_kinderlos: bool,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
@@ -70,11 +70,11 @@ def beitragssatz_zusatz_kinderlos_dummy(
     -------
 
     """
-    out = sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+    out = ges_pflegev_params["beitr_satz"]["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["zusatz_kinderlos"]
+        out += ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
 
     return out
 
@@ -83,7 +83,7 @@ def beitragssatz_zusatz_kinderlos_dummy(
 def beitragssatz_mit_kinder_abschlag(
     anzahl_kinder_bis_24: int,
     zusatzbetrag_kinderlos: bool,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
@@ -103,17 +103,17 @@ def beitragssatz_mit_kinder_abschlag(
     -------
 
     """
-    out = sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["standard"]
+    out = ges_pflegev_params["beitr_satz"]["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += sozialv_beitr_params["beitr_satz"]["ges_pflegev"]["zusatz_kinderlos"]
+        out += ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        out -= sozialv_beitr_params["beitr_satz"]["ges_pflegev"][
-            "abschlag_kinder"
-        ] * min(anzahl_kinder_bis_24 - 1, 4)
+        out -= ges_pflegev_params["beitr_satz"]["abschlag_kinder"] * min(
+            anzahl_kinder_bis_24 - 1, 4
+        )
 
     return out
 
@@ -122,7 +122,7 @@ def beitragssatz_mit_kinder_abschlag(
 def zusatzbetrag_kinderlos(
     hat_kinder: bool,
     alter: int,
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
 ) -> bool:
     """Whether additional care insurance contribution for childless individuals applies.
 
@@ -135,14 +135,14 @@ def zusatzbetrag_kinderlos(
         See basic input variable :ref:`hat_kinder <hat_kinder>`.
     alter
         See basic input variable :ref:`alter <alter>`.
-    sozialv_beitr_params: dict,
+    ges_pflegev_params: dict,
         See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
 
     Returns
     -------
 
     """
-    mindestalter = sozialv_beitr_params["ges_pflegev_zusatz_kinderlos_mindestalter"]
+    mindestalter = ges_pflegev_params["zusatz_kinderlos_mindestalter"]
     return (not hat_kinder) and alter >= mindestalter
 
 

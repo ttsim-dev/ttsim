@@ -1,7 +1,8 @@
 ---
 info:
-  note: Test with new income thresholds and new Kindergeld, adjusted for Kindersofortzuschlag
-    of 20€.
+  note: >-
+    Test with new income thresholds and new Kindergeld, adjusted for
+    Kindersofortzuschlag of 20€.
   precision_atol: 0.01
   source: https://buergergeld-rechner.org/
 inputs:
