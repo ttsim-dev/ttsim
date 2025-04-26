@@ -134,6 +134,7 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
             raw_test_data: NestedDataDict = yaml.safe_load(file)
 
         # TODO(@MImmesberger): Remove this before merging this PR.
+        # https://github.com/iza-institute-of-labor-economics/gettsim/pull/884
         raw_test_data["inputs"], raw_test_data["outputs"] = get_test_data_as_tree(
             raw_test_data
         )

@@ -167,7 +167,9 @@ def set_up_policy_environment(
 
     params = {}
     if "_gettsim" in resource_dir.name:
-        from _gettsim.config import INTERNAL_PARAMS_GROUPS as internal_params_groups
+        from _gettsim.config import (
+            INTERNAL_PARAMS_GROUPS as internal_params_groups,  # noqa: N811
+        )
     else:
         internal_params_groups = [
             "payroll_tax",
