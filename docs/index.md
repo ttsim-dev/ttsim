@@ -26,6 +26,8 @@ caption: Table of Contents
 maxdepth: 1
 ---
 installation
+tutorials/index
+how_to_guides/index
 gettsim_objects/index
 gettsim_developer/index
 geps
