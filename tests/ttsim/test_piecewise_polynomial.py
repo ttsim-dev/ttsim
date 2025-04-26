@@ -4,9 +4,7 @@ Tests for `piecewise_polynomial`
 
 import numpy
 
-from ttsim.piecewise_polynomial import (
-    get_piecewise_parameters,
-)
+from ttsim.piecewise_polynomial import get_piecewise_parameters
 
 
 def test_get_piecewise_parameters_all_intercepts_supplied():

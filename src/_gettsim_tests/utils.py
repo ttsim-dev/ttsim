@@ -14,8 +14,8 @@ from ttsim import (
     compute_taxes_and_transfers,
     merge_trees,
     set_up_policy_environment,
+    to_datetime,
 )
-from ttsim.shared import to_datetime
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
@@ -134,6 +134,7 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
             raw_test_data: NestedDataDict = yaml.safe_load(file)
 
         # TODO(@MImmesberger): Remove this before merging this PR.
+        # https://github.com/iza-institute-of-labor-economics/gettsim/pull/884
         raw_test_data["inputs"], raw_test_data["outputs"] = get_test_data_as_tree(
             raw_test_data
         )
