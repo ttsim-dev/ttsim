@@ -308,7 +308,8 @@ def create_constant_across_households_variables(df, n_adults, n_children, policy
     # Defaults for Wohnfläche, Kaltmiete, Heizkosten are taken from official data
     bg_daten = _load_parameter_group_from_yaml(
         datetime.date(policy_year, 1, 1),
-        RESOURCE_DIR / "synthetic_data" / "bedarfsgemeinschaften",
+        group="bedarfsgemeinschaften",
+        yaml_path=RESOURCE_DIR / "synthetic_data",
     )
 
     # Use data for 2 children if there are more than 2 children in the household.
