@@ -1,16 +1,16 @@
 import pandas as pd
 import pytest
 
-from ttsim.aggregation import AggType
-from ttsim.automatically_added_functions import create_agg_by_group_functions
-from ttsim.combine_functions import _fail_if_targets_not_in_functions
-from ttsim.compute_taxes_and_transfers import compute_taxes_and_transfers
-from ttsim.policy_environment import PolicyEnvironment
-from ttsim.ttsim_objects import (
+from ttsim import (
+    AggType,
+    PolicyEnvironment,
     agg_by_group_function,
+    compute_taxes_and_transfers,
     policy_function,
     policy_input,
 )
+from ttsim.automatically_added_functions import create_agg_by_group_functions
+from ttsim.combine_functions import _fail_if_targets_not_in_functions
 
 
 @pytest.fixture

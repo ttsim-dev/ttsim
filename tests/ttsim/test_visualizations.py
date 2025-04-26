@@ -2,14 +2,13 @@ import networkx as nx
 import pytest
 from mettsim.config import RESOURCE_DIR
 
-from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
+from ttsim import PolicyEnvironment, plot_dag, set_up_policy_environment
 from ttsim.visualization import (
     _get_selected_nodes,
     _kth_order_neighbors,
     _node_and_ancestors,
     _node_and_descendants,
     _select_nodes_in_dag,
-    plot_dag,
 )
 
 environment = set_up_policy_environment(date="2020-01-01", resource_dir=RESOURCE_DIR)

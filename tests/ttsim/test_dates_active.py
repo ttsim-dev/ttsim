@@ -2,11 +2,8 @@ import datetime
 
 import pytest
 
-from ttsim.loader import (
-    ConflictingTimeDependentObjectsError,
-    _fail_if_multiple_ttsim_objects_are_active_at_the_same_time,
-)
-from ttsim.ttsim_objects import policy_function
+from ttsim import ConflictingTimeDependentObjectsError, policy_function
+from ttsim.loader import _fail_if_multiple_ttsim_objects_are_active_at_the_same_time
 
 # Start date -----------------------------------------------
 
