@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import optree
 import pandas as pd
 
-from ttsim.shared import format_errors_and_warnings
+from ttsim.shared import format_errors_and_warnings, format_list_linewise
 
 if TYPE_CHECKING:
     from ttsim.typing import NestedDataDict, NestedInputsPathsToDfColumns
@@ -97,10 +98,26 @@ def _fail_if_mapper_has_incorrect_format(
         )
         raise TypeError(msg)
 
-    flat_inputs = dt.flatten_to_qual_names(inputs_tree_to_df_columns)
+    non_string_paths = [
+        str(path)
+        for path in optree.tree_paths(inputs_tree_to_df_columns, none_is_leaf=True)
+        if not all(isinstance(part, str) for part in path)
+    ]
+    if non_string_paths:
+        msg = format_errors_and_warnings(
+            f"""All path elements of `inputs_tree_to_df_columns` must be strings.
+            Found the following paths that contain non-string elements:
+
+            {format_list_linewise(non_string_paths)}
+
+            Call `create_input_structure` to create a template.
+            """
+        )
+        raise TypeError(msg)
+
     incorrect_types = {
         k: type(v)
-        for k, v in flat_inputs.items()
+        for k, v in dt.flatten_to_qual_names(inputs_tree_to_df_columns).items()
         if not isinstance(v, str | int | bool)
     }
     if incorrect_types:
@@ -121,7 +138,10 @@ def _fail_if_mapper_has_incorrect_format(
 def _fail_if_df_has_bool_or_numeric_column_names(df: pd.DataFrame) -> None:
     """Fail if the DataFrame has bool or numeric column names."""
     common_msg = format_errors_and_warnings(
-        "The DataFrame must not have bool or numeric column names."
+        """DataFrame column names cannot be booleans or numbers. This restriction
+        prevents ambiguity between actual column references and values intended for
+        broadcasting.
+        """
     )
     bool_column_names = [col for col in df.columns if isinstance(col, bool)]
     numeric_column_names = [
@@ -134,6 +154,7 @@ def _fail_if_df_has_bool_or_numeric_column_names(df: pd.DataFrame) -> None:
         msg = format_errors_and_warnings(
             f"""
             {common_msg}
+
             Boolean column names: {bool_column_names}.
             Numeric column names: {numeric_column_names}.
             """

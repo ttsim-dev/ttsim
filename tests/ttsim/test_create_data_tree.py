@@ -71,7 +71,7 @@ def test_create_data_tree_from_df(
 )
 def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
-        ValueError, match="The DataFrame must not have bool or numeric column names."
+        ValueError, match="DataFrame column names cannot be booleans or numbers."
     ):
         create_data_tree_from_df(inputs_tree_to_df_columns={}, df=df)
 
@@ -101,6 +101,14 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
                 },
             },
             "n1__n2: NoneType",
+        ),
+        (
+            {
+                "n1": {
+                    True: 2,
+                },
+            },
+            "All path elements of `inputs_tree_to_df_columns` must be strings.",
         ),
     ],
 )
