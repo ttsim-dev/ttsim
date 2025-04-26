@@ -7,7 +7,7 @@ from ttsim import policy_function
 def betrag_versicherter_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__rente__beitrag__einkommen_m: float,
-    sozialv_beitr_params: dict,
+    arbeitslosenversicherung_params: dict,
 ) -> float:
     """Unemployment insurance contributions paid by the insured person.
 
@@ -26,7 +26,7 @@ def betrag_versicherter_m_ohne_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * sozialv_beitr_params["beitr_satz"]["arbeitslosenversicherung"]
+        * arbeitslosenversicherung_params["beitr_satz"]
     )
 
     # Set to 0 for minijobs
@@ -44,7 +44,7 @@ def betrag_versicherter_m_mit_midijob(
     sozialversicherung__in_gleitzone: bool,
     betrag_versicherter_midijob_m: float,
     sozialversicherung__rente__beitrag__einkommen_m: float,
-    sozialv_beitr_params: dict,
+    arbeitslosenversicherung_params: dict,
 ) -> float:
     """Unemployment insurance contributions paid by the insured person.
 
@@ -67,7 +67,7 @@ def betrag_versicherter_m_mit_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * sozialv_beitr_params["beitr_satz"]["arbeitslosenversicherung"]
+        * arbeitslosenversicherung_params["beitr_satz"]
     )
 
     # Set to 0 for minijobs
@@ -85,7 +85,7 @@ def betrag_versicherter_m_mit_midijob(
 def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__rente__beitrag__einkommen_m: float,
-    sozialv_beitr_params: dict,
+    arbeitslosenversicherung_params: dict,
 ) -> float:
     """Employer's unemployment insurance contribution until March 2003.
 
@@ -104,7 +104,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * sozialv_beitr_params["beitr_satz"]["arbeitslosenversicherung"]
+        * arbeitslosenversicherung_params["beitr_satz"]
     )
 
     # Set to 0 for minijobs
@@ -122,7 +122,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__in_gleitzone: bool,
     betrag_arbeitgeber_midijob_m: float,
     sozialversicherung__rente__beitrag__einkommen_m: float,
-    sozialv_beitr_params: dict,
+    arbeitslosenversicherung_params: dict,
 ) -> float:
     """Employer's unemployment insurance contribution since April 2003.
 
@@ -145,7 +145,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * sozialv_beitr_params["beitr_satz"]["arbeitslosenversicherung"]
+        * arbeitslosenversicherung_params["beitr_satz"]
     )
 
     # Set to 0 for minijobs
@@ -162,7 +162,7 @@ def betrag_arbeitgeber_m_mit_midijob(
 @policy_function(start_date="2003-04-01")
 def betrag_gesamt_midijob_m(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
-    sozialv_beitr_params: dict,
+    arbeitslosenversicherung_params: dict,
 ) -> float:
     """Sum of employee's and employer's unemployment insurance contribution
     for midijobs.
@@ -181,7 +181,7 @@ def betrag_gesamt_midijob_m(
     return (
         sozialversicherung__midijob_bemessungsentgelt_m
         * 2
-        * sozialv_beitr_params["beitr_satz"]["arbeitslosenversicherung"]
+        * arbeitslosenversicherung_params["beitr_satz"]
     )
 
 
@@ -192,7 +192,7 @@ def betrag_gesamt_midijob_m(
 )
 def betrag_arbeitgeber_midijob_m_anteil_bruttolohn(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    sozialv_beitr_params: dict,
+    arbeitslosenversicherung_params: dict,
 ) -> float:
     """Employers' unemployment insurance contribution for Midijobs until September
     2022.
@@ -210,7 +210,7 @@ def betrag_arbeitgeber_midijob_m_anteil_bruttolohn(
     """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * sozialv_beitr_params["beitr_satz"]["arbeitslosenversicherung"]
+        * arbeitslosenversicherung_params["beitr_satz"]
     )
 
 
@@ -264,7 +264,7 @@ def betrag_versicherter_midijob_m_als_differenz_von_gesamt_und_arbeitgeberbeitra
 @policy_function(start_date="2022-10-01", leaf_name="betrag_versicherter_midijob_m")
 def betrag_versicherter_midijob_m_mit_festem_beitragssatz(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
-    sozialv_beitr_params: dict,
+    arbeitslosenversicherung_params: dict,
 ) -> float:
     """Employee's unemployment insurance contribution since October 2022.
 
@@ -281,5 +281,5 @@ def betrag_versicherter_midijob_m_mit_festem_beitragssatz(
     """
     return (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        * sozialv_beitr_params["beitr_satz"]["arbeitslosenversicherung"]
+        * arbeitslosenversicherung_params["beitr_satz"]
     )

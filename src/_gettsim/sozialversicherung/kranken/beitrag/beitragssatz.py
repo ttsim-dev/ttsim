@@ -7,7 +7,7 @@ from ttsim import policy_function
     end_date="2005-06-30",
 )
 def beitragssatz_arbeitnehmer(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate until June 2005.
 
@@ -24,14 +24,14 @@ def beitragssatz_arbeitnehmer(
 
     """
 
-    return sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["mean_allgemein"] / 2
+    return ges_krankenv_params["beitr_satz"]["mean_allgemein"] / 2
 
 
 @policy_function(
     end_date="2005-06-30",
 )
 def beitragssatz_arbeitnehmer_jahresanfang(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate for the beginning of the year until
     June 2005.
@@ -48,12 +48,7 @@ def beitragssatz_arbeitnehmer_jahresanfang(
     Beitragssatz for statutory health insurance at the begging of the year.
 
     """
-    return (
-        sozialv_beitr_params["beitr_satz_jahresanfang"]["ges_krankenv"][
-            "mean_allgemein"
-        ]
-        / 2
-    )
+    return ges_krankenv_params["beitr_satz_jahresanfang"]["mean_allgemein"] / 2
 
 
 @policy_function(
@@ -63,7 +58,7 @@ def beitragssatz_arbeitnehmer_jahresanfang(
 )
 def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate.
 
@@ -84,9 +79,7 @@ def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
 
     """
 
-    mean_allgemein = sozialv_beitr_params["beitr_satz"]["ges_krankenv"][
-        "mean_allgemein"
-    ]
+    mean_allgemein = ges_krankenv_params["beitr_satz"]["mean_allgemein"]
 
     return mean_allgemein / 2 + zusatzbeitragssatz
 
@@ -98,7 +91,7 @@ def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
 
@@ -119,9 +112,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbe
 
     """
 
-    mean_allgemein = sozialv_beitr_params["beitr_satz_jahresanfang"]["ges_krankenv"][
-        "mean_allgemein"
-    ]
+    mean_allgemein = ges_krankenv_params["beitr_satz_jahresanfang"]["mean_allgemein"]
 
     return mean_allgemein / 2 + zusatzbeitragssatz
 
@@ -133,7 +124,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbe
 )
 def beitragssatz_arbeitnehmer_einheitlicher_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate.
 
@@ -154,7 +145,7 @@ def beitragssatz_arbeitnehmer_einheitlicher_zusatzbeitrag(
 
     """
 
-    allgemein = sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["allgemein"]
+    allgemein = ges_krankenv_params["beitr_satz"]["allgemein"]
 
     return allgemein / 2 + zusatzbeitragssatz
 
@@ -166,7 +157,7 @@ def beitragssatz_arbeitnehmer_einheitlicher_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
 
@@ -187,9 +178,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_zusatzbeitrag(
 
     """
 
-    allgemein = sozialv_beitr_params["beitr_satz_jahresanfang"]["ges_krankenv"][
-        "allgemein"
-    ]
+    allgemein = ges_krankenv_params["beitr_satz_jahresanfang"]["allgemein"]
 
     return allgemein / 2 + zusatzbeitragssatz
 
@@ -200,7 +189,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate.
 
@@ -215,9 +204,7 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     -------
 
     """
-    allgemeiner_beitr_satz = sozialv_beitr_params["beitr_satz"]["ges_krankenv"][
-        "allgemein"
-    ]
+    allgemeiner_beitr_satz = ges_krankenv_params["beitr_satz"]["allgemein"]
     return (allgemeiner_beitr_satz + zusatzbeitragssatz) / 2
 
 
@@ -227,7 +214,7 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
 
@@ -242,9 +229,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     -------
 
     """
-    allgemeiner_beitr_satz = sozialv_beitr_params["beitr_satz_jahresanfang"][
-        "ges_krankenv"
-    ]["allgemein"]
+    allgemeiner_beitr_satz = ges_krankenv_params["beitr_satz_jahresanfang"]["allgemein"]
     return (allgemeiner_beitr_satz + zusatzbeitragssatz) / 2
 
 
@@ -253,7 +238,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     leaf_name="beitragssatz_arbeitgeber",
 )
 def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employer's health insurance contribution rate.
 
@@ -269,7 +254,7 @@ def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
 
     """
 
-    return sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["mean_allgemein"] / 2
+    return ges_krankenv_params["beitr_satz"]["mean_allgemein"] / 2
 
 
 @policy_function(
@@ -277,7 +262,7 @@ def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
 )
 def beitragssatz_arbeitgeber_jahresanfang_mittlerer_kassenspezifischer(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employer's health insurance contribution rate at the begging of the year.
 
@@ -293,12 +278,7 @@ def beitragssatz_arbeitgeber_jahresanfang_mittlerer_kassenspezifischer(
 
     """
 
-    return (
-        sozialv_beitr_params["beitr_satz_jahresanfang"]["ges_krankenv"][
-            "mean_allgemein"
-        ]
-        / 2
-    )
+    return ges_krankenv_params["beitr_satz_jahresanfang"]["mean_allgemein"] / 2
 
 
 @policy_function(
@@ -307,7 +287,7 @@ def beitragssatz_arbeitgeber_jahresanfang_mittlerer_kassenspezifischer(
     leaf_name="beitragssatz_arbeitgeber",
 )
 def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employer's health insurance contribution rate.
 
@@ -324,7 +304,7 @@ def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
 
     """
 
-    return sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["allgemein"] / 2
+    return ges_krankenv_params["beitr_satz"]["allgemein"] / 2
 
 
 @policy_function(
@@ -333,7 +313,7 @@ def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
 )
 def beitragssatz_arbeitgeber_jahresanfang_einheitlicher_zusatzbeitrag(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Employer's health insurance contribution rate at the beginning of the year.
 
@@ -350,9 +330,7 @@ def beitragssatz_arbeitgeber_jahresanfang_einheitlicher_zusatzbeitrag(
 
     """
 
-    return (
-        sozialv_beitr_params["beitr_satz_jahresanfang"]["ges_krankenv"]["allgemein"] / 2
-    )
+    return ges_krankenv_params["beitr_satz_jahresanfang"]["allgemein"] / 2
 
 
 @policy_function(
@@ -409,7 +387,7 @@ def beitragssatz_arbeitgeber_jahresanfang_paritätischer_zusatzbeitrag(
     leaf_name="zusatzbeitragssatz",
 )
 def zusatzbeitragssatz_von_sonderbeitrag(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Health insurance top-up (Zusatzbeitrag) rate until December 2014.
 
@@ -424,7 +402,7 @@ def zusatzbeitragssatz_von_sonderbeitrag(
 
     """
 
-    return sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["sonderbeitrag"]
+    return ges_krankenv_params["beitr_satz"]["sonderbeitrag"]
 
 
 @policy_function(
@@ -432,7 +410,7 @@ def zusatzbeitragssatz_von_sonderbeitrag(
     leaf_name="zusatzbeitragssatz",
 )
 def zusatzbeitragssatz_von_mean_zusatzbeitrag(
-    sozialv_beitr_params: dict,
+    ges_krankenv_params: dict,
 ) -> float:
     """Health insurance top-up rate (Zusatzbeitrag) since January 2015.
 
@@ -447,4 +425,4 @@ def zusatzbeitragssatz_von_mean_zusatzbeitrag(
 
     """
 
-    return sozialv_beitr_params["beitr_satz"]["ges_krankenv"]["mean_zusatzbeitrag"]
+    return ges_krankenv_params["beitr_satz"]["mean_zusatzbeitrag"]

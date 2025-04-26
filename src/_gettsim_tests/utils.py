@@ -11,10 +11,15 @@ from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     PolicyEnvironment,
+    compute_taxes_and_transfers,
     merge_trees,
     set_up_policy_environment,
+    to_datetime,
 )
-from ttsim.shared import to_datetime
+
+# Set display options to show all columns without truncation
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", None)
 
 if TYPE_CHECKING:
     import datetime
@@ -64,11 +69,6 @@ class PolicyTest:
 
 
 def execute_test(test: PolicyTest):
-    from pandas.testing import assert_frame_equal
-
-    from _gettsim_tests.utils import cached_set_up_policy_environment
-    from ttsim import compute_taxes_and_transfers
-
     environment = cached_set_up_policy_environment(date=test.date)
 
     result = compute_taxes_and_transfers(
@@ -82,14 +82,40 @@ def execute_test(test: PolicyTest):
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
 
     if flat_expected_output_tree:
-        result_dataframe = pd.DataFrame(flat_result)
-        expected_dataframe = pd.DataFrame(flat_expected_output_tree)
-        assert_frame_equal(
-            result_dataframe,
-            expected_dataframe,
-            atol=test.info["precision_atol"],
-            check_dtype=False,
-        )
+        result_df = pd.DataFrame(flat_result)
+        expected_df = pd.DataFrame(flat_expected_output_tree)
+        try:
+            pd.testing.assert_frame_equal(
+                result_df,
+                expected_df,
+                atol=test.info["precision_atol"],
+                check_dtype=False,
+            )
+        except AssertionError as e:
+            assert set(result_df.columns) == set(expected_df.columns)
+            cols_with_differences = []
+            for col in expected_df.columns:
+                try:
+                    pd.testing.assert_series_equal(
+                        result_df[col],
+                        expected_df[col],
+                        atol=test.info["precision_atol"],
+                        check_dtype=False,
+                    )
+                except AssertionError:
+                    cols_with_differences.append(col)
+            raise AssertionError(
+                f"""actual != expected in columns: {cols_with_differences}.
+
+actual[cols_with_differences]:
+
+{result_df[cols_with_differences]}
+
+expected[cols_with_differences]:
+
+{expected_df[cols_with_differences]}
+"""
+            ) from e
 
 
 def get_policy_test_ids_and_cases() -> dict[str, PolicyTest]:
@@ -108,6 +134,7 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
             raw_test_data: NestedDataDict = yaml.safe_load(file)
 
         # TODO(@MImmesberger): Remove this before merging this PR.
+        # https://github.com/iza-institute-of-labor-economics/gettsim/pull/884
         raw_test_data["inputs"], raw_test_data["outputs"] = get_test_data_as_tree(
             raw_test_data
         )

@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from ttsim.ttsim_objects import (
+from ttsim import (
     AggType,
     PolicyFunction,
     PolicyInput,

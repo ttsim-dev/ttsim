@@ -17,4 +17,6 @@ inputs:
     hh_id: 0
     id: 1
 outputs:
-  - error: Informationen zur gemeinsamen Veranlagung widersprechen sich zwischen Ehepartnern
+  - error: >-
+      Informationen zur gemeinsamen Veranlagung widersprechen sich zwischen
+      Ehepartnern

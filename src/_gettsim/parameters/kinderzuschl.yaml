@@ -60,8 +60,8 @@ kindersofortzuschl:
       steigt der Höchstbetrag im Kinderzuschlag um 20 Euro.
     en: >-
       With the introduction of the immediate supplement from July 1, 2022,
-      the maximum amount in the child supplement increases by 20 euros.
-  unit: Euros
+      the maximum amount in the child supplement increases by 20 Euro.
+  unit: Euro
   reference: § 6a Abs. 2 Satz 4 BKGG
   2022-07-01:
     scalar: 20

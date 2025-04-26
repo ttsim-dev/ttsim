@@ -2,6 +2,7 @@ import inspect
 
 import pytest
 
+from ttsim import policy_function
 from ttsim.automatically_added_functions import (
     _create_function_for_time_unit,
     create_time_conversion_functions,
@@ -26,7 +27,6 @@ from ttsim.automatically_added_functions import (
     y_to_q,
     y_to_w,
 )
-from ttsim.ttsim_objects import policy_function
 
 
 def return_one() -> int:
