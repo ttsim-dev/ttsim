@@ -1,12 +1,11 @@
-from typing import TYPE_CHECKING, NewType
+from typing import TYPE_CHECKING, Any, NewType
 
 from ttsim.config import IS_JAX_INSTALLED
 
 if IS_JAX_INSTALLED:
     from jax import Array as TTSIMArray
 else:
-    from numpy import ndarray as TTSIMArray
-
+    from numpy import ndarray as TTSIMArray  # noqa: N812, TC002
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
     QualNamePolicyInputDict = Mapping[str, PolicyInput]
 
     # Specialise from dags' NestedInputDict to GETTSIM's types.
+    NestedInputsPathsToDfColumns = Mapping[str, Any | "NestedInputsPathsToDfColumns"]
     NestedDataDict = Mapping[str, TTSIMArray | "NestedDataDict"]
     QualNameDataDict = Mapping[str, TTSIMArray]
 

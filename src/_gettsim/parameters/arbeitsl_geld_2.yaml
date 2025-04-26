@@ -423,8 +423,8 @@ kindersofortzuschl:
     en: >-
       Children, adolescents and young  adults who are entitled to unemployment benefits
       or social benefits (Regelbedarfsstufen 3,4,5,6) receive an instant surcharge
-      of 20 euros.
-  unit: Euros
+      of 20 Euro.
+  unit: Euro
   reference: 72 SGB II
   2022-07-01:
     scalar: 20
@@ -581,8 +581,8 @@ schonvermögen_bürgergeld:
     en: >-
       Since the introduction of the citizen's allowance as of 01.01.2023, every member
       of the need community is allowed to own 15,000 Euro after the end of the waiting
-      period of 1 year. During the waiting period wealth of 40,000 euros are allowed for
-      the first person in a needs-based community and 15,000 euros for each additional
+      period of 1 year. During the waiting period wealth of 40,000 Euro are allowed for
+      the first person in a needs-based community and 15,000 Euro for each additional
       person.
   unit: Euro
   2023-01-01:

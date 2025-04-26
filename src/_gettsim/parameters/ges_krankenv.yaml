@@ -1,0 +1,432 @@
+---
+beitr_satz:
+  name:
+    de: Beitragssätze zur gesetzlichen Krankenversicherung
+    en: Contribution rate to statutory health insurance
+  description:
+    de: >-
+      Beitragssätze für gesetzliche Krankenversicherung. mean_allgemein -
+      durchschnittlicher Beitragssatz, bis 2008 allgemein - allgemeiner Satz (§241 SGB
+      V), ab 2009 sonderbeitrag - bezahlt von Arbeitnehmern, ab Jul 2005 bis 2014
+      ermäßigt - ermäßigter Satz (§243 SGB V) zusatz - durchschnittlicher
+      Zusatzbeitragssatz.
+    en: >-
+      Statury Contribution Rates for mandatory health insurance. mean_allgemein -
+      average contribution rate, 1992 to 2008 allgemein - general statutory
+      contribution rate, since 2009 sonderbeitrag - paid by employees, Jul 2005 to
+      2014 ermäßigt - reduced rate zusatz - average top-up contribution rate
+  unit: Share
+  access_different_date: jahresanfang
+  1984-01-01:
+    mean_allgemein: 0.1144
+  1985-01-01:
+    mean_allgemein: 0.118
+  1986-01-01:
+    mean_allgemein: 0.122
+  1987-01-01:
+    mean_allgemein: 0.1248
+  1988-01-01:
+    mean_allgemein: 0.1288
+  1989-01-01:
+    mean_allgemein: 0.129
+  1990-01-01:
+    mean_allgemein: 0.125
+  1991-01-01:
+    mean_allgemein: 0.128
+  1993-01-01:
+    mean_allgemein: 0.134
+  1995-01-01:
+    mean_allgemein: 0.132
+  1997-01-01:
+    mean_allgemein: 0.134
+  1998-01-01:
+    mean_allgemein: 0.136
+  2000-01-01:
+    mean_allgemein: 0.1357
+  2001-01-01:
+    mean_allgemein: 0.1358
+  2002-01-01:
+    mean_allgemein: 0.14
+  2003-01-01:
+    mean_allgemein: 0.144
+  2004-01-01:
+    mean_allgemein: 0.142
+  2005-01-01:
+    mean_allgemein: 0.142
+  2005-07-01:
+    mean_allgemein: 0.133
+    sonderbeitrag: 0.009
+    note: >-
+      Allgemeiner Beitragssatz wird nicht mehr gleichmäßig aufgeteilt, Einführung des
+      Sonderbeitrags
+    reference: Art. 1 G. v. 15.12.2004, BGBl I S. 3445.
+  2007-01-01:
+    deviation_from: previous
+    mean_allgemein: 0.139
+  2008-01-01:
+    mean_allgemein: 0.14
+    sonderbeitrag: 0.009
+  2009-01-01:
+    allgemein: 0.146
+    sonderbeitrag: 0.009
+    ermäßigt: 0.140
+  2009-07-01:
+    allgemein: 0.14
+    sonderbeitrag: 0.009
+    ermäßigt: 0.134
+  2011-01-01:
+    deviation_from: previous
+    allgemein: 0.146
+    ermäßigt: 0.14
+    reference: Art. 1 G. v. 22.12.2010 BGBl. I S. 2309
+  2015-01-01:
+    allgemein: 0.146
+    ermäßigt: 0.14
+    mean_zusatzbeitrag: 0.009
+    note: Abschaffung Sonderbeitrag, Einführung kassenabhängiger Zusatzbeitrag
+  2016-01-01:
+    deviation_from: previous
+    mean_zusatzbeitrag: 0.011
+    note: Bekanntmachung Bundesanzeiger 30.12.2015
+  2018-01-01:
+    deviation_from: previous
+    mean_zusatzbeitrag: 0.01
+  2019-01-01:
+    allgemein: 0.146
+    ermäßigt: 0.14
+    mean_zusatzbeitrag: 0.009
+    note: Wieder-Einführung der Parität. Art. 2 G. v. 11.12.2018, BGBl. I S. 2387
+  2020-01-01:
+    deviation_from: previous
+    mean_zusatzbeitrag: 0.011
+    reference: BAnz AT 28.10.2019 B3
+  2021-01-01:
+    deviation_from: previous
+    mean_zusatzbeitrag: 0.013
+    reference: BAnz AT 30.10.2020 B5
+  2023-01-01:
+    deviation_from: previous
+    mean_zusatzbeitrag: 0.016
+    reference: BAnz AT 31.10.2022 B5
+  2024-01-01:
+    deviation_from: previous
+    mean_zusatzbeitrag: 0.017
+    reference: BAnz AT 31.10.2023 B3
+  2025-01-01:
+    deviation_from: previous
+    mean_zusatzbeitrag: 0.025
+    reference: BAnz AT 07.11.2024 B4
+beitr_bemess_grenze_m:
+  name:
+    de: Beitragsbemessungsgrenzen für die Krankenversicherung
+    en: Income Threshold for health insurance
+  description:
+    de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
+    en: The income threshold is the same for health and long-term care insurance.
+  unit: Euro
+  reference_period: Month
+  1984-01-01:
+    west: 1994
+  1985-01-01:
+    west: 2071
+  1986-01-01:
+    west: 2147
+  1987-01-01:
+    west: 2186
+  1988-01-01:
+    west: 2301
+  1989-01-01:
+    west: 2339
+  1990-01-01:
+    west: 2416
+    ost: 1035
+  1991-01-01:
+    west: 2493
+    ost: 1151
+  1992-01-01:
+    west: 2608
+    ost: 1841
+  1993-01-01:
+    west: 2761
+    ost: 2032
+  1994-01-01:
+    west: 2914
+    ost: 2262
+  1995-01-01:
+    west: 2991
+    ost: 2454
+  1996-01-01:
+    west: 3068
+    ost: 2608
+  1997-01-01:
+    west: 3144
+    ost: 2723
+  1998-01-01:
+    west: 3221
+    ost: 2684
+  1999-01-01:
+    west: 3259
+    ost: 2761
+  2000-01-01:
+    west: 3298
+    ost: 2723
+  2001-01-01:
+    west: 3336
+    ost: 3336
+  2002-01-01:
+    west: 3375
+    ost: 3375
+  2003-01-01:
+    west: 3450
+    ost: 3375
+  2004-01-01:
+    west: 3488
+    ost: 3488
+  2005-01-01:
+    west: 3525
+    ost: 3525
+  2006-01-01:
+    west: 3562.5
+    ost: 3562.5
+  2008-01-01:
+    west: 3600
+    ost: 3600
+  2009-01-01:
+    west: 3675
+    ost: 3675
+  2010-01-01:
+    west: 3750
+    ost: 3750
+  2011-01-01:
+    west: 3712.5
+    ost: 3712.5
+  2012-01-01:
+    west: 3825
+    ost: 3825
+  2013-01-01:
+    west: 3937.5
+    ost: 3937.5
+  2014-01-01:
+    west: 4050
+    ost: 4050
+    note: >-
+      http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
+  2015-01-01:
+    west: 4125
+    ost: 4125
+  2016-01-01:
+    west: 4237.5
+    ost: 4237.5
+    note: >-
+      https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
+  2017-01-01:
+    west: 4350
+    ost: 4350
+    note: >-
+      https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
+  2018-01-01:
+    west: 4425
+    ost: 4425
+  2019-01-01:
+    west: 4537.5
+    ost: 4537.5
+  2020-01-01:
+    west: 4687.5
+    ost: 4687.5
+    reference: V. v. 17.12.2019 BGBl. I S. 2848
+  2021-01-01:
+    west: 4837.5
+    ost: 4837.5
+    reference: §3, §4 V. v. 30.11.2020, BGBl. I S. 2612.
+  2022-01-01:
+    west: 4837.5
+    ost: 4837.5
+    reference: §3 V. v. 30.11.2021, BGBl. I S. 5044.
+  2023-01-01:
+    west: 4987.5
+    ost: 4987.5
+    reference: V. v. 28.11.2022 BGBl. I. S. 2128.
+  2024-01-01:
+    west: 5175
+    ost: 5175
+    reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 322
+  2025-01-01:
+    west: 5512.5
+    ost: 5512.5
+    reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
+arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
+  name:
+    de: >-
+      Pauschalbeitrag des Arbeitgebers zur Krankenversicherung bei geringfügiger
+      Beschäftigung
+    en: Fixed employer health insurance contribution for marginal employment
+  description:
+    de: >-
+      Pauschalbeitrag des Arbeitgebers zur Krankenversicherung (§ 249b SGB V) bei
+      geringfügiger Beschäftigung
+    en: Fixed health insurance contributions for marginal employment (§ 249b SGB V)
+  unit: Share
+  access_different_date: jahresanfang
+  1984-01-01:
+    scalar: 0
+  1999-01-01:
+    scalar: 0.1
+  2003-04-01:
+    scalar: 0.11
+  2007-01-01:
+    scalar: 0.13
+bezugsgröße_selbst_m:
+  name:
+    de: Monatliche Bezugsgröße für Selbstständige
+    en: Monthly reference size for self employed
+  description:
+    de: §18 SGB IV ynd https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
+    en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
+  unit: Euro
+  reference_period: Month
+  1984-01-01:
+    west: 1396
+  1985-01-01:
+    west: 1432
+  1986-01-01:
+    west: 1467
+  1987-01-01:
+    west: 1539
+  1988-01-01:
+    west: 1575
+  1989-01-01:
+    west: 1611
+  1990-01-01:
+    west: 1682
+    ost: 715.8086336747059
+  1991-01-01:
+    west: 1718
+    ost: 787.3894970421765
+  1992-01-01:
+    west: 1790
+    ost: 1073.712950512059
+  1993-01-01:
+    west: 1897
+    ost: 1395.826835665677
+  1994-01-01:
+    west: 2004
+    ost: 1574.778994084353
+  1995-01-01:
+    west: 2076
+    ost: 1682.150289135559
+  1996-01-01:
+    west: 2112
+    ost: 1789.521584186765
+  1997-01-01:
+    west: 2183
+    ost: 1861.102447554235
+  1998-01-01:
+    west: 2219
+    ost: 1896.892879237971
+  1999-01-01:
+    west: 2255
+    ost: 1896.892879237971
+  2000-01-01:
+    west: 2291
+    ost: 1861.102447554235
+  2001-01-01:
+    deviation_from: previous
+    ost: 1932.683310921706
+  2002-01-01:
+    west: 2345
+    ost: 1960
+  2003-01-01:
+    west: 2380
+    ost: 1995
+  2004-01-01:
+    west: 2415
+    ost: 2030
+  2006-01-01:
+    west: 2450
+    ost: 2065
+  2007-01-01:
+    deviation_from: previous
+    ost: 2100
+  2008-01-01:
+    deviation_from: previous
+    west: 2485
+  2009-01-01:
+    west: 2520
+    ost: 2135
+  2010-01-01:
+    west: 2555
+    ost: 2170
+  2011-01-01:
+    deviation_from: previous
+    ost: 2240
+  2012-01-01:
+    deviation_from: previous
+    west: 2625
+  2013-01-01:
+    west: 2695
+    ost: 2275
+  2014-01-01:
+    note: >-
+      http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
+    west: 2765
+    ost: 2345
+  2015-01-01:
+    west: 2835
+    ost: 2415
+  2016-01-01:
+    note: >-
+      https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
+    west: 2905
+    ost: 2520
+  2017-01-01:
+    note: >-
+      https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
+    west: 2975
+    ost: 2660
+  2018-01-01:
+    west: 3045
+    ost: 2695
+  2019-01-01:
+    note: Sozialversicherungs-Rechengrößenverordnung 2019, BGBl I S. 2024, 27.11.2018
+    west: 3115
+    ost: 2870
+  2020-01-01:
+    reference: §2 V. v. 17.12.2019 BGBl. I S. 2848
+    west: 3185
+    ost: 3010
+  2021-01-01:
+    west: 3290
+    ost: 3115
+    reference: §2 V. v. 30.11.2020, BGBl. I S. 2612.
+  2022-01-01:
+    west: 3290
+    ost: 3150
+    reference: §2 V. v. 30.11.2021, BGBl. I S. 5044.
+  2023-01-01:
+    west: 3395
+    ost: 3290
+    reference: V. v. 28.11.2022 BGBl. I. S. 2128.
+  2024-01-01:
+    west: 3535
+    ost: 3465
+    reference: V. v. 29.11.2023 BGBl. 2023 I Nr. 322.
+  2025-01-01:
+    west: 3745
+    ost: 3745
+    reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365.
+mindestanteil_bezugsgröße_beitragspf_einnahme_selbst:
+  name:
+    de: Mindestberechungsbeitrag für Selbstständige als Anteil der Bezugsgröße
+    en: Minimum contribution for self employed as fraction of Bezugsgröße
+  description:
+    de: >-
+      Als beitragspflichtige Einnahmen gilt für den Kalendertag mindestens der
+      neunzigste Teil der monatlichen Bezugsgröße (1/90*30)
+    en: >-
+      Health Insurance contributions have to be payed, at the minimum, on the ninetieth
+      part of the monthly Bezugsgröße for each calender day
+  unit: Share
+  reference: §240 SGB V Abs. 4
+  note: Exact date of introduction of this parameter unclear (was in place in 2006)
+  1990-01-01:
+    scalar: 0.33333333

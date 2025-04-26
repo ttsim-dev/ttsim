@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import re
 import warnings
@@ -8,28 +10,30 @@ import pandas as pd
 import pytest
 from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 
-from ttsim.aggregation import AggType
-from ttsim.compute_taxes_and_transfers import (
+from ttsim import (
+    AggType,
     FunctionsAndColumnsOverlapWarning,
+    PolicyEnvironment,
+    agg_by_group_function,
+    agg_by_p_id_function,
+    compute_taxes_and_transfers,
+    group_creation_function,
+    merge_trees,
+    policy_function,
+    policy_input,
+    set_up_policy_environment,
+)
+from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
     _fail_if_group_ids_are_outside_top_level_namespace,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
     _get_top_level_namespace,
     _partial_parameters_to_functions,
-    compute_taxes_and_transfers,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
-from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
-from ttsim.shared import assert_valid_ttsim_pytree, merge_trees
-from ttsim.ttsim_objects import (
-    agg_by_group_function,
-    agg_by_p_id_function,
-    group_creation_function,
-    policy_function,
-    policy_input,
-)
+from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import TTSIMArray
 
 if IS_JAX_INSTALLED:
@@ -548,7 +552,7 @@ def sum_source_m_by_p_id_someone_else(
         (
             {
                 "module": {
-                    "sum_source_m_by_p_id_someone_else": sum_source_m_by_p_id_someone_else
+                    "sum_source_m_by_p_id_someone_else": sum_source_m_by_p_id_someone_else  # noqa: E501
                 }
             },
             "source_m",
@@ -589,175 +593,6 @@ def test_user_provided_aggregate_by_p_id_specs(
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
-
-
-# @pytest.mark.parametrize(
-#     "input_data, expected_type, expected_output_data",
-#     [
-#         (pd.Series([0, 1, 0]), bool, pd.Series([False, True, False])),
-#         (pd.Series([1.0, 0.0, 1]), bool, pd.Series([True, False, True])),
-#         (pd.Series([200, 550, 237]), float, pd.Series([200.0, 550.0, 237.0])),
-#         (pd.Series([1.0, 4.0, 10.0]), int, pd.Series([1, 4, 10])),
-#         (pd.Series([200.0, 567.0]), int, pd.Series([200, 567])),
-#         (pd.Series([1.0, 0.0]), bool, pd.Series([True, False])),
-#     ],
-# )
-# def test_convert_series_to_internal_types(
-#     input_data, expected_type, expected_output_data
-# ):
-#     adjusted_input = convert_series_to_internal_type(input_data, expected_type)
-#     pd.testing.assert_series_equal(adjusted_input, expected_output_data)
-
-
-# @pytest.mark.parametrize(
-#     "input_data, expected_type, error_match",
-#     [
-#         (
-#             pd.Series(["Hallo", 200, 325]),
-#             float,
-#             "Conversion from input type object to float failed.",
-#         ),
-#         (
-#             pd.Series([True, False]),
-#             float,
-#             "Conversion from input type bool to float failed.",
-#         ),
-#         (
-#             pd.Series(["a", "b", "c"]).astype("category"),
-#             float,
-#             "Conversion from input type category to float failed.",
-#         ),
-#         (
-#             pd.Series(["2.0", "3.0"]),
-#             int,
-#             "Conversion from input type object to int failed.",
-#         ),
-#         (
-#             pd.Series([1.5, 1.0, 2.9]),
-#             int,
-#             "Conversion from input type float64 to int failed.",
-#         ),
-#         (
-#             pd.Series(["a", "b", "c"]).astype("category"),
-#             int,
-#             "Conversion from input type category to int failed.",
-#         ),
-#         (
-#             pd.Series([5, 2, 3]),
-#             bool,
-#             "Conversion from input type int64 to bool failed.",
-#         ),
-#         (
-#             pd.Series([1.5, 1.0, 35.0]),
-#             bool,
-#             "Conversion from input type float64 to bool failed.",
-#         ),
-#         (
-#             pd.Series(["a", "b", "c"]).astype("category"),
-#             bool,
-#             "Conversion from input type category to bool failed.",
-#         ),
-#         (
-#             pd.Series(["richtig"]),
-#             bool,
-#             "Conversion from input type object to bool failed.",
-#         ),
-#         (
-#             pd.Series(["True", "False", ""]),
-#             bool,
-#             "Conversion from input type object to bool failed.",
-#         ),
-#         (
-#             pd.Series(["true"]),
-#             bool,
-#             "Conversion from input type object to bool failed.",
-#         ),
-#         (
-#             pd.Series(["zweitausendzwanzig"]),
-#             numpy.datetime64,
-#             "Conversion from input type object to datetime64 failed.",
-#         ),
-#         (
-#             pd.Series([True, True]),
-#             numpy.datetime64,
-#             "Conversion from input type bool to datetime64 failed.",
-#         ),
-#         (
-#             pd.Series([2020]),
-#             str,
-#             "The internal type <class 'str'> is not yet supported.",
-#         ),
-#     ],
-# )
-# def test_fail_if_cannot_be_converted_to_internal_type(
-#     input_data, expected_type, error_match
-# ):
-#     with pytest.raises(ValueError, match=error_match):
-#         convert_series_to_internal_type(input_data, expected_type)
-
-
-# @pytest.mark.skip
-# @pytest.mark.parametrize(
-#     "data, functions_overridden",
-#     [
-#         (
-#             {"sp_id": pd.Series([1, 2, 3])},
-#             {"sp_id": sp_id},
-#         ),
-#         (
-#             {"fam_id": pd.Series([1, 2, 3])},
-#             {"fam_id": fam_id},
-#         ),
-#     ],
-# )
-# def test_provide_endogenous_groupings(data, functions_overridden):
-#     """Test whether TTSIM handles user-provided grouping IDs, which would otherwise be
-#     set endogenously."""
-#     _convert_data_to_correct_types(data, functions_overridden)
-
-
-# @pytest.mark.skip
-# @pytest.mark.parametrize(
-#     "data, functions_overridden, error_match",
-#     [
-#         (
-#             {"fam_id": pd.Series([1, 1.1, 2])},
-#             {},
-#             "- fam_id: Conversion from input type float64 to int",
-#         ),
-#         (
-#             {"gondorian": pd.Series([1.1, 0.0, 1.0])},
-#             {},
-#             "- gondorian: Conversion from input type float64 to bool",
-#         ),
-#         (
-#             {
-#                 "fam_id": pd.Series([1.0, 2.0, 3.0]),
-#                 "gondorian": pd.Series([2, 0, 1]),
-#             },
-#             {},
-#             "- gondorian: Conversion from input type int64 to bool",
-#         ),
-#         (
-#             {"gondorian": pd.Series(["True", "False"])},
-#             {},
-#             "- gondorian: Conversion from input type object to bool",
-#         ),
-#         (
-#             {
-#                 "fam_id": pd.Series([1, "1", 2]),
-#                 "payroll_tax__amount": pd.Series(["2000", 3000, 4000]),
-#             },
-#             {},
-#             "- fam_id: Conversion from input type object to int failed.",
-#         ),
-#     ],
-# )
-# def test_fail_if_cannot_be_converted_to_correct_type(
-#     data, functions_overridden, error_match
-# ):
-#     with pytest.raises(ValueError, match=error_match):
-#         _convert_data_to_correct_types(data, functions_overridden)
 
 
 @pytest.mark.parametrize(

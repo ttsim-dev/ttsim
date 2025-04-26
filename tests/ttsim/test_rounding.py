@@ -2,13 +2,14 @@ import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
-from ttsim.compute_taxes_and_transfers import (
+from ttsim import (
+    PolicyEnvironment,
+    RoundingSpec,
     compute_taxes_and_transfers,
+    policy_function,
+    policy_input,
 )
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.policy_environment import PolicyEnvironment
-from ttsim.rounding import RoundingSpec
-from ttsim.ttsim_objects import policy_function, policy_input
 
 if IS_JAX_INSTALLED:
     DTYPE = "float32"

@@ -1,7 +1,7 @@
 import pytest
 
+from ttsim import join
 from ttsim.config import numpy_or_jax as np
-from ttsim.shared import join
 
 
 @pytest.mark.parametrize(

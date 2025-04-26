@@ -1,0 +1,90 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "patternProperties": {
+      "^[a-zA-Z0-9äöüßÄÖÜ_]+$": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "object",
+            "properties": {
+              "de": { "type": "string" },
+              "en": { "type": ["string", "null"] }
+            },
+            "required": ["de"],
+            "additionalProperties": false
+          },
+          "description": {
+            "type": "object",
+            "properties": {
+              "de": { "type": "string" },
+              "en": { "type": ["string", "null"] }
+            },
+            "required": ["de"],
+            "additionalProperties": false
+          },
+          "unit": {
+            "type": ["string", "null"],
+            "enum": [
+              "Euro",
+              "DM",
+              "Share",
+              "Percent",
+              "Factor",
+              "Year",
+              "Month",
+              "Hour",
+              "Square Meter",
+              "Euro / Square Meter",
+              null
+            ]
+          },
+          "type": {
+            "type": "string"
+          },
+          "reference_period": {
+            "type": "string",
+            "enum": ["Year", "Quarter", "Month", "Week", "Day"]
+          },
+          "access_different_date": {
+            "type": "string",
+            "enum": ["vorjahr", "jahresanfang"]
+          }
+        },
+        "patternProperties": {
+          "^(19|20|21)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {
+            "type": "object",
+            "properties": {
+              "scalar": { "type": ["number", "string", "null"] },
+              "reference": { "type": ["string", "null"] },
+              "note": { "type": ["string", "null"] },
+              "deviation_from": { "type": ["string", "null"] },
+              "unit": { "type": "string" },
+              "type": { "type": "string" },
+              "min_alter": { "type": "number" },
+              "max_alter": { "type": "number" },
+              "betrag": { "type": "number" },
+              "lower_threshold": {
+                "oneOf": [
+                  { "type": "number" },
+                  { "type": "string", "enum": ["-inf"] }
+                ]
+              },
+              "upper_threshold": {
+                "oneOf": [
+                  { "type": "number" },
+                  { "type": "string", "enum": ["inf"] }
+                ]
+              },
+              "rate": { "type": "number" },
+              "intercept_at_lower_threshold": { "type": "number" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "required": ["name", "description"],
+        "additionalProperties": true
+      }
+    },
+    "additionalProperties": false
+  }

@@ -8,15 +8,24 @@ import pandas as pd
 import yaml
 from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
 
-from ttsim import merge_trees, set_up_policy_environment
+from ttsim import compute_taxes_and_transfers, merge_trees, set_up_policy_environment
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.shared import to_datetime
 
 TEST_DIR = Path(__file__).parent
+# Set display options to show all columns without truncation
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", None)
 
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim import NestedDataDict, NestedInputStructureDict
+    from ttsim.typing import NestedDataDict, NestedInputStructureDict
+
+if IS_JAX_INSTALLED:
+    jit = True
+else:
+    jit = False
 
 
 class PolicyTest:
@@ -48,11 +57,7 @@ class PolicyTest:
         return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
 
-def execute_test(test: PolicyTest, jit: bool = False):
-    from pandas.testing import assert_frame_equal
-
-    from ttsim import compute_taxes_and_transfers
-
+def execute_test(test: PolicyTest, jit: bool = False) -> None:
     environment = set_up_policy_environment(date=test.date, resource_dir=RESOURCE_DIR)
 
     result = compute_taxes_and_transfers(
@@ -67,14 +72,40 @@ def execute_test(test: PolicyTest, jit: bool = False):
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
 
     if flat_expected_output_tree:
-        result_dataframe = pd.DataFrame(flat_result)
-        expected_dataframe = pd.DataFrame(flat_expected_output_tree)
-        assert_frame_equal(
-            result_dataframe,
-            expected_dataframe,
-            atol=test.info["precision"],
-            check_dtype=False,
-        )
+        result_df = pd.DataFrame(flat_result)
+        expected_df = pd.DataFrame(flat_expected_output_tree)
+        try:
+            pd.testing.assert_frame_equal(
+                result_df,
+                expected_df,
+                atol=test.info["precision_atol"],
+                check_dtype=False,
+            )
+        except AssertionError as e:
+            assert set(result_df.columns) == set(expected_df.columns)
+            cols_with_differences = []
+            for col in expected_df.columns:
+                try:
+                    pd.testing.assert_series_equal(
+                        result_df[col],
+                        expected_df[col],
+                        atol=test.info["precision_atol"],
+                        check_dtype=False,
+                    )
+                except AssertionError:
+                    cols_with_differences.append(col)
+            raise AssertionError(
+                f"""actual != expected in columns: {cols_with_differences}.
+
+actual[cols_with_differences]:
+
+{result_df[cols_with_differences]}
+
+expected[cols_with_differences]:
+
+{expected_df[cols_with_differences]}
+"""
+            ) from e
 
 
 def get_policy_test_ids_and_cases() -> dict[str, PolicyTest]:
