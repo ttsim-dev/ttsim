@@ -58,27 +58,31 @@ def monate_verbleibender_anspruchsdauer(
     """
     nach_alter = piecewise_polynomial(
         alter,
-        thresholds=[
-            *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
-            np.inf,
-        ],
+        thresholds=np.array(
+            [
+                *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
+                np.inf,
+            ]
+        ),
         rates=np.array(
             [[0] * len(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"])]
         ),
-        intercepts_at_lower_thresholds=list(
-            arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values()
+        intercepts_at_lower_thresholds=np.array(
+            list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values())
         ),
     )
     nach_versich_pfl = piecewise_polynomial(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        thresholds=[
-            *list(
-                arbeitsl_geld_params["anspruchsdauer"][
-                    "nach_versicherungspflichtigen_monaten"
-                ]
-            ),
-            np.inf,
-        ],
+        thresholds=np.array(
+            [
+                *list(
+                    arbeitsl_geld_params["anspruchsdauer"][
+                        "nach_versicherungspflichtigen_monaten"
+                    ]
+                ),
+                np.inf,
+            ]
+        ),
         rates=np.array(
             [
                 [0]
@@ -89,10 +93,12 @@ def monate_verbleibender_anspruchsdauer(
                 )
             ]
         ),
-        intercepts_at_lower_thresholds=list(
-            arbeitsl_geld_params["anspruchsdauer"][
-                "nach_versicherungspflichtigen_monaten"
-            ].values()
+        intercepts_at_lower_thresholds=np.array(
+            list(
+                arbeitsl_geld_params["anspruchsdauer"][
+                    "nach_versicherungspflichtigen_monaten"
+                ].values()
+            )
         ),
     )
     if anwartschaftszeit:
