@@ -11,7 +11,8 @@ def piecewise_polynomial(
     rates_multiplier: np.ndarray = 1,
 ):
     """Calculate value of the piecewise function at `x`. If the first interval begins
-    at -inf the polynomial of that interval can only have slope of 0.
+    at -inf the polynomial of that interval can only have slope of 0. Requesting a
+    value outside of the provided thresholds will lead to undefined behaviour.
 
     Parameters
     ----------
@@ -25,8 +26,7 @@ def piecewise_polynomial(
     intercepts_at_lower_thresholds : np.ndarray
         The intercepts at the lower threshold of each interval.
     rates_multiplier : np.ndarray
-                       Multiplier to create individual or scaled rates. If given and
-                       not equal to 1, the function also calculates new intercepts.
+                       Multiplier to create individual or scaled rates.
 
     Returns
     -------
@@ -35,11 +35,14 @@ def piecewise_polynomial(
 
     """
     order = rates.shape[0]
+    # Get interval of requested value
     selected_bin = np.searchsorted(thresholds, x, side="right") - 1
     coefficients = rates[:, selected_bin].T
+    # Calculate distance from X to lower threshold
     increment_to_calc = np.where(
         thresholds[selected_bin] == -np.inf, 0, x - thresholds[selected_bin]
     )
+    # Evaluate polynomial at X
     out = (
         intercepts_at_lower_thresholds[selected_bin]
         + (
