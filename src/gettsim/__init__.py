@@ -13,6 +13,7 @@ except ImportError:
 
 import itertools
 import warnings
+from typing import Any
 
 import pytest
 
@@ -33,7 +34,7 @@ from ttsim import (
 COUNTER_TEST_EXECUTIONS = itertools.count()
 
 
-def test(*args):
+def test(*args: Any) -> None:
     n_test_executions = next(COUNTER_TEST_EXECUTIONS)
 
     if n_test_executions == 0:
