@@ -51,7 +51,6 @@ def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
-    groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
     jit: bool = False,
@@ -91,8 +90,8 @@ def compute_taxes_and_transfers(
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
         time_units=tuple(TIME_UNIT_LABELS.keys()),
-        groupings=groupings,
     )
+    groupings = environment.grouping_levels
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
@@ -180,7 +179,6 @@ def compute_taxes_and_transfers(
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
     time_units: tuple[str, ...],
-    groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
 
@@ -195,7 +193,7 @@ def _get_top_level_namespace(
         The top level namespace.
     """
     direct_top_level_names = set(environment.raw_objects_tree.keys())
-
+    groupings = environment.grouping_levels
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         groupings=groupings,
         time_units=time_units,

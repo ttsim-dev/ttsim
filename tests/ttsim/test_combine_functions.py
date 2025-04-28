@@ -185,7 +185,6 @@ def test_create_agg_by_group_functions(
         environment=environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
-        groupings=("hh",),
     )
 
 

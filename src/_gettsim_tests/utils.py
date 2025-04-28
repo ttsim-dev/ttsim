@@ -7,7 +7,7 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
+from _gettsim.config import RESOURCE_DIR
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     PolicyEnvironment,
@@ -75,7 +75,6 @@ def execute_test(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

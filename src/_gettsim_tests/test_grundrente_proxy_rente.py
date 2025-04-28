@@ -4,7 +4,6 @@ import dags.tree as dt
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim_tests.utils import (
     PolicyTest,
     cached_set_up_policy_environment,
@@ -29,7 +28,6 @@ def test_grundrente_proxy_rente_vorjahr_comparison(test: PolicyTest):
                 "rente": {"grundrente": {"proxy_rente_vorjahr_m": None}}
             }
         },
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     # Calculate pension of last year
@@ -41,7 +39,6 @@ def test_grundrente_proxy_rente_vorjahr_comparison(test: PolicyTest):
         targets_tree={
             "sozialversicherung": {"rente": {"altersrente": {"bruttorente_m": None}}}
         },
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

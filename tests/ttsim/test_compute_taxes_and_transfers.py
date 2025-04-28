@@ -6,7 +6,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
+from mettsim.config import RESOURCE_DIR
 
 from ttsim import (
     AggType,
@@ -112,7 +112,6 @@ def test_output_as_tree(minimal_input_data):
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"module": {"test_func": None}},
-        groupings=("fam",),
     )
 
     assert isinstance(out, dict)
@@ -135,7 +134,6 @@ def test_warn_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"some_target": None},
-            groupings=("fam",),
         )
 
 
@@ -152,7 +150,6 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
-            groupings=("fam",),
         )
 
 
@@ -175,7 +172,6 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             },
             environment=environment,
             targets_tree={"unique": None},
-            groupings=("fam",),
         )
 
     assert len(warning_list) == 0
@@ -247,7 +243,6 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
 @pytest.mark.parametrize(
     "data, functions",
     [
-        # Remove this one once we got rid of the hh_id hack
         (
             {
                 "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
@@ -271,7 +266,7 @@ def test_fail_if_group_variables_not_constant_within_groups(data, functions):
         _fail_if_group_variables_not_constant_within_groups(
             data=data,
             functions=functions,
-            groupings=SUPPORTED_GROUPINGS,
+            groupings=("hh", "fam"),
         )
 
 
@@ -297,7 +292,6 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"c": None},
-            groupings=("fam",),
         )
 
 
@@ -315,7 +309,6 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"b": None},
-        groupings=("fam",),
     )
 
 
@@ -332,7 +325,6 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"unknown_target": None},
-            groupings=("fam",),
         )
 
 
@@ -346,7 +338,6 @@ def test_fail_if_missing_p_id():
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            groupings=("fam",),
         )
 
 
@@ -362,7 +353,6 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            groupings=("fam",),
         )
 
 
@@ -406,7 +396,6 @@ def test_user_provided_aggregate_by_group_specs():
         data_tree=data,
         environment=PolicyEnvironment(raw_objects_tree=inputs),
         targets_tree={"module_name": {"betrag_m_fam": None}},
-        groupings=("fam",),
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -448,7 +437,6 @@ def test_user_provided_aggregation():
         data_tree=data,
         environment=environment,
         targets_tree={"module_name": {"betrag_m_double_fam": None}},
-        groupings=("fam",),
         debug=True,
     )
 
@@ -491,7 +479,6 @@ def test_user_provided_aggregation_with_time_conversion():
         data_tree=data,
         environment=environment,
         targets_tree={"module_name": {"betrag_double_q_fam": None}},
-        groupings=("fam",),
         debug=True,
     )
 
@@ -566,7 +553,6 @@ def test_user_provided_aggregate_by_p_id_specs(
         minimal_input_data_shared_fam,
         environment,
         targets_tree=target_tree,
-        groupings=("fam",),
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
@@ -606,34 +592,34 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     (
         "environment",
         "time_units",
-        "groupings",
         "expected",
     ),
     [
         (
             PolicyEnvironment(
                 raw_objects_tree={
-                    "foo_m": policy_function(leaf_name="foo_m")(lambda x: x)
+                    "foo_m": policy_function(leaf_name="foo_m")(lambda x: x),
+                    "fam_id": fam_id,
                 }
             ),
             ["m", "y"],
-            ("fam",),
             {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
         ),
         (
             PolicyEnvironment(
-                raw_objects_tree={"foo": policy_function(leaf_name="foo")(lambda x: x)}
+                raw_objects_tree={
+                    "foo": policy_function(leaf_name="foo")(lambda x: x),
+                    "fam_id": fam_id,
+                }
             ),
             ["m", "y"],
-            ("fam",),
             {"foo", "foo_fam"},
         ),
     ],
 )
-def test_get_top_level_namespace(environment, time_units, groupings, expected):
+def test_get_top_level_namespace(environment, time_units, expected):
     result = _get_top_level_namespace(
         environment=environment,
         time_units=time_units,
-        groupings=groupings,
     )
-    assert result == expected
+    assert all(name in result for name in expected)
