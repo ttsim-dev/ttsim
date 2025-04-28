@@ -122,7 +122,6 @@ pytest-cov = "*"
 pytest-profiling = "*"
 pytest-xdist = "*"
 snakeviz = ">=2.2.2,<3"
-mypy = "1.15.0.*"
 
 
 # Development Dependencies (pypi)
@@ -155,16 +154,25 @@ jaxlib = ">=0.4.20"
 jax = { version = ">=0.4.20", extras = ["cpu"] }
 jaxlib = ">=0.4.20"
 
+[tool.pixi.feature.mypy.pypi-dependencies]
+mypy = "==1.15.0"
+types-PyYAML = "*"
+types-pytz = "*"
+
 # Tasks
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.feature.test.tasks]
 tests = "pytest"
 
+[tool.pixi.feature.mypy.tasks]
+mypy = "mypy"
+
 # Environments
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.environments]
+mypy = ["mypy"]
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
 py312-jax = ["py312", "test", "jax"]

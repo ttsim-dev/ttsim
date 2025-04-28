@@ -2,17 +2,15 @@ from __future__ import annotations
 
 import functools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar, get_args
+from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
-import numpy as np
-from numpy.typing import NDArray
+from ttsim.config import numpy_or_jax as np
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-R = TypeVar("R", bound=NDArray[np.float64])
 P = ParamSpec("P")
 
 
@@ -37,7 +35,7 @@ class RoundingSpec:
                 f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             )
 
-    def apply_rounding(self, func: Callable[P, R]) -> Callable[P, R]:
+    def apply_rounding(self, func: Callable[P, np.ndarray]) -> Callable[P, np.ndarray]:
         """Decorator to round the output of a function.
 
         Parameters
@@ -52,7 +50,7 @@ class RoundingSpec:
 
         # Make sure that signature is preserved.
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> np.ndarray:
             out = func(*args, **kwargs)
 
             if self.direction == "up":
