@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import inspect
-import re
 import warnings
 from typing import TYPE_CHECKING, Any
 
@@ -87,10 +86,7 @@ def compute_taxes_and_transfers(
     _fail_if_targets_tree_not_valid(targets_tree)
     _fail_if_data_tree_not_valid(data_tree)
     _fail_if_environment_not_valid(environment)
-    _fail_if_group_ids_are_outside_top_level_namespace(
-        environment=environment,
-        groupings=groupings,
-    )
+
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
@@ -179,25 +175,6 @@ def compute_taxes_and_transfers(
         )
 
     return result_tree
-
-
-def _fail_if_group_ids_are_outside_top_level_namespace(
-    environment: PolicyEnvironment,
-    groupings: tuple[str, ...],
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_id_pattern = re.compile(f"(?P<group>{'|'.join(groupings)})_id$")
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(environment.raw_objects_tree)
-        if len(tree_path) > 1 and group_id_pattern.match(tree_path[-1])
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
 
 
 def _get_top_level_namespace(

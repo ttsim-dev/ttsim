@@ -23,7 +23,6 @@ from ttsim import (
 )
 from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
-    _fail_if_group_ids_are_outside_top_level_namespace,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
     _get_top_level_namespace,
@@ -638,13 +637,3 @@ def test_get_top_level_namespace(environment, time_units, groupings, expected):
         groupings=groupings,
     )
     assert result == expected
-
-
-def test_fail_if_group_ids_are_outside_top_level_namespace():
-    with pytest.raises(
-        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
-    ):
-        _fail_if_group_ids_are_outside_top_level_namespace(
-            environment=PolicyEnvironment(raw_objects_tree={"n1": {"fam_id": fam_id}}),
-            groupings=("fam",),
-        )
