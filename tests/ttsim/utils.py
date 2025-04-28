@@ -126,32 +126,6 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
     return out
 
 
-def get_test_data_as_tree(test_data: NestedDataDict) -> NestedDataDict:
-    provided_inputs = test_data["inputs"].get("provided", {})
-    assumed_inputs = test_data["inputs"].get("assumed", {})
-
-    unflattened_dict = {}
-    unflattened_dict["inputs"] = {}
-    unflattened_dict["outputs"] = {}
-
-    if provided_inputs:
-        unflattened_dict["inputs"]["provided"] = dt.unflatten_from_qual_names(
-            provided_inputs
-        )
-    else:
-        unflattened_dict["inputs"]["provided"] = {}
-    if assumed_inputs:
-        unflattened_dict["inputs"]["assumed"] = dt.unflatten_from_qual_names(
-            assumed_inputs
-        )
-    else:
-        unflattened_dict["inputs"]["assumed"] = {}
-
-    unflattened_dict["outputs"] = dt.unflatten_from_qual_names(test_data["outputs"])
-
-    return unflattened_dict["inputs"], unflattened_dict["outputs"]
-
-
 def _is_skipped(test_file: Path) -> bool:
     return "skip" in test_file.stem or "skip" in test_file.parent.name
 

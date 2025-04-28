@@ -120,7 +120,7 @@ class PolicyEnvironment:
 
         return result
 
-    def replace_all_parameters(self, params: dict[str, Any]):
+    def replace_all_parameters(self, params: dict[str, Any]) -> PolicyEnvironment:
         """
         Replace all parameters of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
@@ -225,7 +225,7 @@ def _convert_to_policy_function_if_not_ttsim_object(
     return converted_object
 
 
-def _parse_piecewise_parameters(tax_data):
+def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
     """Check if parameters are stored in implicit structures and align to general
     structure.
 
@@ -239,7 +239,7 @@ def _parse_piecewise_parameters(tax_data):
     Parsed parameters ready to use in gettsim.
 
     """
-    for param in tax_data:
+    for param in tax_data:  # noqa: PLC0206
         if isinstance(tax_data[param], dict):
             if "type" in tax_data[param]:
                 if tax_data[param]["type"].startswith("piecewise"):
@@ -259,7 +259,9 @@ def _parse_piecewise_parameters(tax_data):
     return tax_data
 
 
-def _parse_kinderzuschl_max(date, params):
+def _parse_kinderzuschl_max(
+    date: datetime.date, params: dict[str, Any]
+) -> dict[str, Any]:
     """Prior to 2021, the maximum amount of the Kinderzuschlag was specified directly in
     the laws and directives.
 
@@ -294,7 +296,9 @@ def _parse_kinderzuschl_max(date, params):
     return params
 
 
-def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
+def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
+    date: datetime.date, params: dict[str, Any]
+) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
     current year as follows:
 
@@ -331,7 +335,9 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
     return params
 
 
-def _parse_vorsorgepauschale_rentenv_anteil(date, params):
+def _parse_vorsorgepauschale_rentenv_anteil(
+    date: datetime.date, params: dict[str, Any]
+) -> dict[str, Any]:
     """Calculate the share of pension contributions to be deducted for Lohnsteuer
     increases by year.
 
@@ -392,7 +398,7 @@ def _load_parameter_group_from_yaml(
 
     """
 
-    def subtract_years_from_date(date, years):
+    def subtract_years_from_date(date: datetime.date, years: int) -> datetime.date:
         """Subtract one or more years from a date object."""
         try:
             date = date.replace(year=date.year - years)
@@ -402,7 +408,7 @@ def _load_parameter_group_from_yaml(
             date = date.replace(year=date.year - years, day=date.day - 1)
         return date
 
-    def set_date_to_beginning_of_year(date):
+    def set_date_to_beginning_of_year(date: datetime.date) -> datetime.date:
         """Set date to the beginning of the year."""
 
         date = date.replace(month=1, day=1)
@@ -478,7 +484,7 @@ def _load_parameter_group_from_yaml(
                             yaml_path=yaml_path,
                         )[path_list[1]]
                     for key in value_keys:
-                        key_list = []
+                        key_list: list[str] = []
                         out_params[param][key] = transfer_dictionary(
                             policy_in_place[key],
                             copy.deepcopy(out_params[param][key]),
@@ -578,11 +584,13 @@ def _load_rounding_parameters(
     return out
 
 
-def transfer_dictionary(remaining_dict, new_dict, key_list):
+def transfer_dictionary(
+    remaining_dict: dict[str, Any] | Any, new_dict: dict[str, Any], key_list: list[str]
+) -> dict[str, Any]:
     # To call recursive, always check if object is a dict
     if isinstance(remaining_dict, dict):
         for key in remaining_dict:
-            key_list_updated = [*key_list, key]
+            key_list_updated: list[str] = [*key_list, key]
             new_dict = transfer_dictionary(
                 remaining_dict[key], new_dict, key_list_updated
             )
@@ -614,7 +622,9 @@ def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
             )
 
 
-def add_progressionsfaktor(params_dict, parameter):
+def add_progressionsfaktor(
+    params_dict: dict[str | int, Any], parameter: str
+) -> dict[str | int, Any]:
     """Quadratic factor of tax tariff function.
 
     The German tax tariff is defined on several income intervals with distinct
@@ -631,9 +641,9 @@ def add_progressionsfaktor(params_dict, parameter):
     out_dict = copy.deepcopy(params_dict)
     interval_keys = sorted(key for key in out_dict if isinstance(key, int))
     # Check and extract lower thresholds.
-    lower_thresholds, upper_thresholds, thresholds = check_and_get_thresholds(
+    lower_thresholds, upper_thresholds = check_and_get_thresholds(
         params_dict, parameter, interval_keys
-    )
+    )[:2]
     for key in interval_keys:
         if "rate_quadratic" not in out_dict[key]:
             out_dict[key]["rate_quadratic"] = (

@@ -463,7 +463,7 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
         raise ValueError("The input data must contain the p_id.")
 
     # Check for non-unique p_ids
-    p_id_counts = {}
+    p_id_counts: dict[int, int] = {}
     for i in p_id:
         if i in p_id_counts:
             p_id_counts[i] += 1

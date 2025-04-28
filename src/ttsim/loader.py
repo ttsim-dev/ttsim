@@ -14,6 +14,7 @@ from ttsim.ttsim_objects import TTSIMFunction, TTSIMObject
 
 if TYPE_CHECKING:
     import datetime
+    from collections.abc import Iterable
     from pathlib import Path
     from types import ModuleType
 
@@ -39,7 +40,7 @@ def load_objects_tree_for_date(
     """
     paths_to_objects = _find_python_files_recursively(resource_dir)
 
-    objects_tree = {}
+    objects_tree: NestedTTSIMObjectDict = {}
 
     for path in paths_to_objects:
         new_objects_tree = get_active_ttsim_objects_tree_from_module(
@@ -99,8 +100,8 @@ def get_active_ttsim_objects_tree_from_module(
 
 
 def _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-    ttsim_objects: list[TTSIMObject],
-    module_name: str,
+    ttsim_objects: Iterable[TTSIMObject],
+    module_name: Path,
 ) -> None:
     """Raises an ConflictingTimeDependentObjectsError if multiple objects with the
     same leaf name are active at the same time.
@@ -118,7 +119,7 @@ def _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
         If multiple objects with the same leaf name are active at the same time.
     """
     # Create mapping from leaf names to objects.
-    leaf_names_to_objects = {}
+    leaf_names_to_objects: dict[str, list[TTSIMObject]] = {}
     for obj in ttsim_objects:
         if obj.leaf_name in leaf_names_to_objects:
             leaf_names_to_objects[obj.leaf_name].append(obj)
@@ -144,17 +145,17 @@ class ConflictingTimeDependentObjectsError(Exception):
         self,
         affected_ttsim_objects: list[TTSIMObject],
         leaf_name: str,
-        module_name: str,
+        module_name: Path,
         overlap_start: datetime.date,
         overlap_end: datetime.date,
-    ):
+    ) -> None:
         self.affected_ttsim_objects = affected_ttsim_objects
         self.leaf_name = leaf_name
         self.module_name = module_name
         self.overlap_start = overlap_start
         self.overlap_end = overlap_end
 
-    def __str__(self):
+    def __str__(self) -> str:
         overlapping_objects = [
             obj.__getattribute__("original_function_name", obj.leaf_name)
             for obj in self.affected_ttsim_objects
@@ -185,10 +186,12 @@ def _find_python_files_recursively(root_path: Path) -> list[Path]:
 
 def _load_module(path: Path, root_path: Path) -> ModuleType:
     name = path.relative_to(root_path).with_suffix("").as_posix().replace("/", ".")
-    spec = importlib.util.spec_from_file_location(
-        name=name,
-        location=path,
-    )
+    spec = importlib.util.spec_from_file_location(name=name, location=path)
+    # Assert that spec is not None and spec.loader is not None, required for mypy
+    _msg = f"Could not load module spec for {path},  {root_path}"
+    if spec is None:
+        raise ImportError(_msg)
+    assert spec.loader is not None, _msg
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)

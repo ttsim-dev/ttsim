@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
-def to_datetime(date: datetime.date | DashedISOString):
+def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
     if isinstance(date, datetime.date):
         return date
     if isinstance(date, str) and _DASHED_ISO_DATE_REGEX.fullmatch(date):
@@ -36,7 +36,7 @@ def to_datetime(date: datetime.date | DashedISOString):
         )
 
 
-def validate_date_range(start: datetime.date, end: datetime.date):
+def validate_date_range(start: datetime.date, end: datetime.date) -> None:
     if start > end:
         raise ValueError(f"The start date {start} must be before the end date {end}.")
 
@@ -139,12 +139,12 @@ class KeyErrorMessage(str):
 
     __slots__ = ()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
-def format_list_linewise(list_):
-    formatted_list = '",\n    "'.join(list_)
+def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
+    formatted_list = '",\n    "'.join(some_list)
     return textwrap.dedent(
         """
         [
@@ -388,7 +388,7 @@ def get_names_of_required_arguments(function: PolicyFunction) -> list[str]:
     return [p for p in parameters if parameters[p].default == parameters[p].empty]
 
 
-def remove_group_suffix(col, groupings):
+def remove_group_suffix(col: str, groupings: tuple[str, ...]) -> str:
     out = col
     for g in groupings:
         out = out.removesuffix(f"_{g}")
@@ -396,8 +396,8 @@ def remove_group_suffix(col, groupings):
     return out
 
 
-Key: TypeVar = TypeVar("Key")
-Out: TypeVar = TypeVar("Out")
+Key = TypeVar("Key")
+Out = TypeVar("Out")
 
 
 def join(
@@ -506,7 +506,7 @@ def get_name_of_group_by_id(
     target_name: str,
     group_by_functions: QualNameTTSIMFunctionDict,
     groupings: tuple[str, ...],
-) -> str:
+) -> str | None:
     """Get the group-by-identifier name for some target.
 
     The group-by-identifier is the name of the group identifier that is embedded in the
@@ -585,15 +585,14 @@ def _select_group_by_id_from_candidates(
                 all_candidate_names=candidate_names,
                 target_name=target_name,
             )
-    else:
-        return candidate_names[0]
+    return candidate_names[0]
 
 
 def _fail_because_of_ambiguous_group_by_identifier(
     candidate_names_in_matching_namespace: list[str],
     all_candidate_names: list[str],
     target_name: str,
-):
+) -> None:
     if len(candidate_names_in_matching_namespace) == 0:
         paths = "\n    ".join(
             [str(dt.tree_path_from_qual_name(p)) for p in all_candidate_names]

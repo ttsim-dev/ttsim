@@ -250,7 +250,7 @@ exclude = []
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/policy_environment.py" = ["S506", "PLR"]
-"src/ttsim/visualization.py" = ["PLR"]
+"src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
 "docs/**/*.ipynb" = ["T201"]
 
@@ -285,6 +285,8 @@ module = [
     "src.gettsim",
     "src._gettsim.*",
     "src._gettsim_tests.*",
+    "src.ttsim.plot_dag",
+    "tests.ttsim.test_docs",
 ]
 disallow_untyped_defs = false
 ignore_errors = true

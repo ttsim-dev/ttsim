@@ -198,7 +198,7 @@ class TTSIMFunction(TTSIMObject):
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
@@ -525,7 +525,7 @@ def agg_by_group_function(
     return inner
 
 
-def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
+def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str) -> None:
     if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
@@ -534,7 +534,7 @@ def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
+def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str) -> None:
     if other_args:
         raise ValueError(
             "There must be no argument besides identifiers for counting. Got: "
@@ -542,7 +542,7 @@ def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str):
+def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str) -> None:
     if len(other_args) != 1:
         raise ValueError(
             "There must be exactly one argument besides identifiers for aggregations. "
@@ -661,7 +661,7 @@ def agg_by_p_id_function(
     return inner
 
 
-def _fail_if_p_id_is_not_present(args: set[str], orig_location: str):
+def _fail_if_p_id_is_not_present(args: set[str], orig_location: str) -> None:
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
@@ -669,7 +669,7 @@ def _fail_if_p_id_is_not_present(args: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
+def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) -> None:
     if len(other_p_ids) != 1:
         raise ValueError(
             "Require exactly one identifier starting with 'p_id_' for "
@@ -699,7 +699,7 @@ class TimeConversionFunction(TTSIMFunction):
 
     source: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.source is None:
             raise ValueError("The source must be specified.")
         super().__post_init__()
