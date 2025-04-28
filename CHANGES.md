@@ -6,11 +6,24 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 
 ## Unpublished
 
+- {gh}`880` Validate parameter files using json scheme ({ghuser}`hmgaudecker`).
+- {gh}`876` Add DataFrame to NestedDataDict conversion ({ghuser}`MImmesberger`).
+- {gh}`873` Implement aggregation decorators ({ghuser}`hmgaudecker`, `MImmesberger`).
+- {gh}`859` Add RoundingSpec dataclass ({ghuser}`hmgaudecker`, `MImmesberger`).
+- {gh}`854` Add PolicyInput class and update hierarchy of TTSIM objects
+  ({ghuser}`timmens`, `hmgaudecker`, `MImmesberger`).
+- {gh}`871` Require dashed iso date everywhere ({ghuser}`hmgaudecker`).
+- {gh}`865` Make top-level namespace include potential derived functions
+  ({ghuser}`MImmesberger`).
+- {gh}`860` Use AggType instead of strings ({ghuser}`timmens`).
+- {gh}`864` Make `compute_taxes_and_transfers` jax-jittable ({ghuser}`timmens`).
+- {gh}`863` Add join_jax ({ghuser}`mj023`).
+- {gh}`862` Add all types of Einkünfte, introduce concept of Gesamtbetrag der Einkünfte
+  ({ghuser}`MImmesberger`).
 - {gh}`861` Make fg_id invariant to ordering of data ({ghuser}`mj023`).
+- {gh}`858` Apply tree logic to GETTSIM tests ({ghuser}`felixschmitz`).
 - {gh}`856` Add METTSIM to test TTSIM part ({ghuser}`hmgaudecker`, `timmens`,
   `MImmesberger`).
-- {gh}`860` Use AggType instead of strings ({ghuser}`timmens`).
-- {gh}`858` Apply tree logic to GETTSIM tests ({ghuser}`felixschmitz`).
 - {gh}`850` Split GETTSIM from TTSIM functions ({ghuser}`hmgaudecker`, `MImmesberger`).
 - {gh}`805` Rename taxes and transers using new tree structure ({ghuser}`hmgaudecker`,
   `MImmesberger`).

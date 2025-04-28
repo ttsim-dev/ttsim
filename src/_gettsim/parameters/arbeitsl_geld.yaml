@@ -163,8 +163,8 @@ stundengrenze:
     reference: Art. 2 G. v. 20.12.2011 BGBl I S. 2854
 anspruchsdauer:
   name:
-    de: Anspruchsdauer für ALG 1
-    en: lenght of ALG 1 eligibility
+    de: Anspruchsdauer für ALG 1.
+    en: Period of ALG 1 eligibility.
   description:
     de: >-
       Dauer des Anspruchs auf ALG 1 richtet sich nach Alter und wie viele Monate
@@ -179,7 +179,8 @@ anspruchsdauer:
       50: 15
       55: 18
       58: 24
-    nach_versicherungspflichtige_monate:
+    nach_versicherungspflichtigen_monaten:
+      0: 0
       12: 6
       18: 8
       20: 10
