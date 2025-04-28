@@ -319,6 +319,14 @@ disable_error_code = [
     "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
 
+[[tool.mypy.overrides]]
+module = [
+    "tests.ttsim.test_vectorization",
+]
+disable_error_code = [
+    "assignment"
+]
+
 [tool.check-manifest]
 ignore = ["src/_gettsim/_version.py"]
 

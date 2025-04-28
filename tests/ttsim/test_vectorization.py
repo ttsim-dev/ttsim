@@ -232,13 +232,11 @@ def f15_exp(x):
 
 
 def f16(x):
-    n = int(sum(x))
-    return max(n)
+    return float(sum(x))
 
 
 def f16_exp(x):
-    n = int(numpy.sum(x))
-    return numpy.max(n)
+    return float(numpy.sum(x))
 
 
 def f17(x):
@@ -254,13 +252,11 @@ def f17_exp(x):
 
 
 def f18(x):
-    n = int(any(x)) + 1
-    return sum(n)
+    return int(any(x)) + 1
 
 
 def f18_exp(x):
-    n = int(numpy.any(x)) + 1
-    return numpy.sum(n)
+    return int(numpy.any(x)) + 1
 
 
 x = numpy.arange(-10, 10)
@@ -413,7 +409,7 @@ def mock__elterngeld__geschwisterbonus_m(
 
 @pytest.mark.parametrize("backend", backends)
 def test_geschwisterbonus_m(backend):
-    full = modules.get(backend).full
+    full = modules[backend].full
 
     # Test original gettsim function on scalar input
     # ==================================================================================
@@ -476,7 +472,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
 
 @pytest.mark.parametrize("backend", backends)
 def test_grundsätzlich_anspruchsberechtigt(backend):
-    full = modules.get(backend).full
+    full = modules[backend].full
 
     # Test original gettsim function on scalar input
     # ==================================================================================
@@ -627,7 +623,7 @@ def test_make_vectorizable_dags_concatened_func():
             "a": f_a,
             "b": f_b,
         },
-        targets={"b"},
+        targets=["b"],
     )
 
     vectorized = make_vectorizable(f_dags, backend="numpy")
