@@ -528,60 +528,7 @@ def _load_parameter_group_from_yaml(
 
     out_params["datum"] = numpy.datetime64(date)
 
-    # Load rounding parameters if they exist
-    if "rounding" in raw_group_data:
-        out_params["rounding"] = _load_rounding_parameters(
-            date, raw_group_data["rounding"]
-        )
     return out_params
-
-
-def _load_rounding_parameters(
-    date: datetime.date,
-    rounding_spec: dict[str, Any],
-) -> dict[str, Any]:
-    """Load rounding parameters for a specific date from a dictionary.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy system is set up.
-    rounding_spec
-          - Keys: Functions to be rounded.
-          - Values: Rounding parameters for all dates
-
-    Returns
-    -------
-    Loaded rounding parameters.
-        - Keys: Functions to be rounded.
-        - Values: Rounding parameters for the specified date
-
-    """
-    out = {}
-    rounding_parameters = ["direction", "base"]
-
-    # Load values of all parameters at the specified date.
-    for function_name, rounding_spec_func in rounding_spec.items():
-        # Find all specified policy dates before date.
-        policy_dates_before_date = sorted(
-            key
-            for key in rounding_spec_func
-            if isinstance(key, datetime.date) and key <= date
-        )
-
-        # If any rounding specs are defined for a date before the specified
-        # date, copy them to params dictionary.
-        # If no appropriate rounding specs are found for the requested date,
-        # the function will not appear in the returned dictionary.
-        # Note this will raise an error later unless the user adds an
-        # appropriate rounding specification to the parameters dictionary.
-        if policy_dates_before_date:
-            policy_date_in_place = numpy.max(policy_dates_before_date)
-            policy_in_place = rounding_spec_func[policy_date_in_place]
-            out[function_name] = {}
-            for key in [k for k in policy_in_place if k in rounding_parameters]:
-                out[function_name][key] = policy_in_place[key]
-    return out
 
 
 def transfer_dictionary(
