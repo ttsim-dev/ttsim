@@ -18,7 +18,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 - {gh}`860` Use AggType instead of strings ({ghuser}`timmens`).
 - {gh}`864` Make `compute_taxes_and_transfers` jax-jittable ({ghuser}`timmens`).
 - {gh}`863` Add join_jax ({ghuser}`mj023`).
-- {gh}`862` Add all types of Einkünfte, introduce concept of Gesamtbetrag der Einkünfte ({ghuser}`MImmesberger`).
+- {gh}`862` Add all types of Einkünfte, introduce concept of Gesamtbetrag der Einkünfte
+  ({ghuser}`MImmesberger`).
 - {gh}`861` Make fg_id invariant to ordering of data ({ghuser}`mj023`).
 - {gh}`858` Apply tree logic to GETTSIM tests ({ghuser}`felixschmitz`).
 - {gh}`856` Add METTSIM to test TTSIM part ({ghuser}`hmgaudecker`, `timmens`,
