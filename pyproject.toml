@@ -282,8 +282,8 @@ explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = [
-    "src._gettsim_tests.*",
     "src._gettsim.synthetic",
+    "src._gettsim_tests.test_synthetic",
     "src.ttsim.plot_dag",
     "tests.ttsim.test_docs",
 ]
@@ -291,7 +291,10 @@ disallow_untyped_defs = false
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "tests.*"
+module = [
+    "tests.*",
+    "src._gettsim_tests.*",
+]
 disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
     "empty-body",  # Happens for all functions decorated with @policy_input

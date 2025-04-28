@@ -153,7 +153,7 @@ def get_test_data_as_tree(test_data: NestedDataDict) -> NestedDataDict:
     provided_inputs = test_data["inputs"].get("provided", {})
     assumed_inputs = test_data["inputs"].get("assumed", {})
 
-    unflattened_dict = {}
+    unflattened_dict = {}  # type: ignore[var-annotated]
     unflattened_dict["inputs"] = {}
     unflattened_dict["outputs"] = {}
 
