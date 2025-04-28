@@ -1,17 +1,27 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 try:
     import jax.numpy as jnp
     from jax.ops import segment_max, segment_min, segment_sum
 except ImportError:
     pass
 
+if TYPE_CHECKING:
+    try:
+        import jax.numpy as jnp
+    except ImportError:
+        import numpy as jnp  # noqa: TC004
 
-def grouped_count(group_id):
+
+def grouped_count(group_id: jnp.ndarray) -> jnp.ndarray:
     out_on_hh = segment_sum(jnp.ones(len(group_id)), group_id)
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_sum(column, group_id):
+def grouped_sum(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
     if column.dtype in ["bool"]:
         column = column.astype(int)
 
@@ -20,7 +30,7 @@ def grouped_sum(column, group_id):
     return out
 
 
-def grouped_mean(column, group_id):
+def grouped_mean(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
     sum_on_hh = segment_sum(column, group_id)
     sizes = segment_sum(jnp.ones(len(column)), group_id)
     mean_on_hh = sum_on_hh / sizes
@@ -28,19 +38,19 @@ def grouped_mean(column, group_id):
     return out
 
 
-def grouped_max(column, group_id):
+def grouped_max(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
     out_on_hh = segment_max(column, group_id)
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_min(column, group_id):
+def grouped_min(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
     out_on_hh = segment_min(column, group_id)
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_any(column, group_id):
+def grouped_any(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
         my_col = column.astype("bool")
@@ -52,7 +62,7 @@ def grouped_any(column, group_id):
     return out
 
 
-def grouped_all(column, group_id):
+def grouped_all(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
         column = column.astype("bool")
@@ -62,11 +72,17 @@ def grouped_all(column, group_id):
     return out
 
 
-def count_by_p_id(p_id_to_aggregate_by, p_id_to_store_by):
+def count_by_p_id(
+    p_id_to_aggregate_by: jnp.ndarray, p_id_to_store_by: jnp.ndarray
+) -> jnp.ndarray:
     raise NotImplementedError
 
 
-def sum_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def sum_by_p_id(
+    column: jnp.ndarray,
+    p_id_to_aggregate_by: jnp.ndarray,
+    p_id_to_store_by: jnp.ndarray,
+) -> jnp.ndarray:
     if column.dtype == bool:
         column = column.astype(int)
 
@@ -91,21 +107,41 @@ def sum_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
     return out
 
 
-def mean_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def mean_by_p_id(
+    column: jnp.ndarray,
+    p_id_to_aggregate_by: jnp.ndarray,
+    p_id_to_store_by: jnp.ndarray,
+) -> jnp.ndarray:
     raise NotImplementedError
 
 
-def max_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def max_by_p_id(
+    column: jnp.ndarray,
+    p_id_to_aggregate_by: jnp.ndarray,
+    p_id_to_store_by: jnp.ndarray,
+) -> jnp.ndarray:
     raise NotImplementedError
 
 
-def min_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def min_by_p_id(
+    column: jnp.ndarray,
+    p_id_to_aggregate_by: jnp.ndarray,
+    p_id_to_store_by: jnp.ndarray,
+) -> jnp.ndarray:
     raise NotImplementedError
 
 
-def any_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def any_by_p_id(
+    column: jnp.ndarray,
+    p_id_to_aggregate_by: jnp.ndarray,
+    p_id_to_store_by: jnp.ndarray,
+) -> jnp.ndarray:
     raise NotImplementedError
 
 
-def all_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def all_by_p_id(
+    column: jnp.ndarray,
+    p_id_to_aggregate_by: jnp.ndarray,
+    p_id_to_store_by: jnp.ndarray,
+) -> jnp.ndarray:
     raise NotImplementedError
