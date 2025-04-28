@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import functools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, get_args
+from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar, get_args
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+R = TypeVar("R", bound=NDArray[np.float64])
+P = ParamSpec("P")
 
 
 @dataclass
@@ -33,15 +37,13 @@ class RoundingSpec:
                 f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             )
 
-    def apply_rounding(self, func: Callable) -> Callable:
+    def apply_rounding(self, func: Callable[P, R]) -> Callable[P, R]:
         """Decorator to round the output of a function.
 
         Parameters
         ----------
         func
             Function to be rounded.
-        name
-            Name of the function to be rounded.
 
         Returns
         -------
@@ -50,7 +52,7 @@ class RoundingSpec:
 
         # Make sure that signature is preserved.
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             out = func(*args, **kwargs)
 
             if self.direction == "up":
