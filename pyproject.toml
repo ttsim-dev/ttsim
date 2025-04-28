@@ -283,6 +283,7 @@ explicit_package_bases = true
 [[tool.mypy.overrides]]
 module = [
     "src._gettsim_tests.*",
+    "src._gettsim.synthetic",
     "src.ttsim.plot_dag",
     "tests.ttsim.test_docs",
 ]
