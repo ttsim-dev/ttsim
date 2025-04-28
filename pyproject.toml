@@ -205,7 +205,7 @@ extend-ignore = [
     "ANN401", # flake8-annotate typing.Any
     "PD", # pandas-vet
     "E731", # do not assign a lambda expression, use a def
-    "RET", # unnecessary elif or else statements after return, rais, continue, ...
+    "RET", # unnecessary elif or else statements after return, raise, continue, ...
     "S324", # Probable use of insecure hash function.
     "COM812", # trailing comma missing, but black takes care of that
     "PT007", # wrong type in parametrize, gave false positives
@@ -291,8 +291,18 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
-disallow_untyped_defs = false
-disable_error_code = ["empty-body"]
+disable_error_code = [
+    "no-untyped-def",  # All tests return None, don't clutter source code.
+    "empty-body",  # Happens for all functions decorated with @policy_input
+    "type-arg" # TODO: Remove once we have proper types for parameters.
+]
+
+[[tool.mypy.overrides]]
+module = "src.ttsim.*"
+disable_error_code = [
+    "empty-body",  # Happens for all functions decorated with @policy_input
+    "type-arg" # TODO: Remove once we have proper types for parameters.
+]
 
 [tool.check-manifest]
 ignore = ["src/_gettsim/_version.py"]

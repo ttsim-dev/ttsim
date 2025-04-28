@@ -30,7 +30,7 @@ def claim_of_child_y(
 def child_eligible(
     age: int,
     payroll_tax_params: dict,
-    in_same_household_as_recipient: float,
+    in_same_household_as_recipient: bool,
 ) -> bool:
     return (
         age <= payroll_tax_params["child_tax_credit"]["max_age"]

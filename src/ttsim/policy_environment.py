@@ -11,7 +11,7 @@ import yaml
 
 from ttsim.loader import load_objects_tree_for_date
 from ttsim.piecewise_polynomial import (
-    _check_thresholds,
+    check_and_get_thresholds,
     get_piecewise_parameters,
     piecewise_polynomial,
 )
@@ -631,7 +631,7 @@ def add_progressionsfaktor(params_dict, parameter):
     out_dict = copy.deepcopy(params_dict)
     interval_keys = sorted(key for key in out_dict if isinstance(key, int))
     # Check and extract lower thresholds.
-    lower_thresholds, upper_thresholds, thresholds = _check_thresholds(
+    lower_thresholds, upper_thresholds, thresholds = check_and_get_thresholds(
         params_dict, parameter, interval_keys
     )
     for key in interval_keys:

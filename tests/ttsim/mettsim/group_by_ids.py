@@ -11,9 +11,9 @@ def sp_id(
     """
     Compute the spouse (sp) group ID for each person.
     """
-    p_id_to_sp_id = {}
-    next_sp_id = 0
-    result = []
+    p_id_to_sp_id: dict[int, int] = {}
+    next_sp_id: int = 0
+    result: list[int] = []
 
     for index, current_p_id in enumerate(p_id):
         current_p_id_spouse = p_id_spouse[index]
@@ -42,8 +42,8 @@ def fam_id(
     Compute the family ID for each person.
     """
     # Build indexes
-    p_id_to_index = {}
-    p_id_to_p_ids_children = {}
+    p_id_to_index: dict[int, int] = {}
+    p_id_to_p_ids_children: dict[int, list[int]] = {}
 
     for index, current_p_id in enumerate(p_id):
         p_id_to_index[current_p_id] = index

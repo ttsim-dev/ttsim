@@ -25,7 +25,7 @@ rounding_specs_and_exp_results = [
     (
         RoundingSpec(base=1, direction="up"),
         [100.24, 100.78],
-        [101.0, 105.0],
+        [101.0, 101.0],
     ),
     (
         RoundingSpec(base=1, direction="down"),
