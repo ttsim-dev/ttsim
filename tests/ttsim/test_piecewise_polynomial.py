@@ -3,8 +3,42 @@ Tests for `piecewise_polynomial`
 """
 
 import numpy
+import pytest
 
-from ttsim.piecewise_polynomial import get_piecewise_parameters
+from ttsim.config import numpy_or_jax as np
+from ttsim.piecewise_polynomial import (
+    get_piecewise_parameters,
+    piecewise_polynomial,
+)
+
+
+@pytest.fixture
+def eink_st_params():
+    params = {
+        "thresholds": np.array([-np.inf, 9168.0, 14254.0, 55960.0, 265326.0, np.inf]),
+        "rates": np.array(
+            [
+                [
+                    0.00000000e00,
+                    1.40000000e-01,
+                    2.39700000e-01,
+                    4.20000000e-01,
+                    4.50000000e-01,
+                ],
+                [
+                    0.00000000e00,
+                    9.80141565e-06,
+                    2.16155949e-06,
+                    0.00000000e00,
+                    0.00000000e00,
+                ],
+            ]
+        ),
+        "intercepts_at_lower_thresholds": np.array(
+            [0.0, 0.0, 965.5771, 14722.3012, 102656.0212]
+        ),
+    }
+    return params
 
 
 def test_get_piecewise_parameters_all_intercepts_supplied():
@@ -43,3 +77,17 @@ def test_get_piecewise_parameters_all_intercepts_supplied():
     expected = numpy.array([0.27, 0.5, 0.8, 1])
 
     numpy.testing.assert_almost_equal(actual, expected, decimal=10)
+
+
+def test_piecewise_polynomial(eink_st_params):
+    x = np.array([-1_000, 1_000, 10_000, 30_000, 100_000, 1_000_000])
+    expected = np.array([0.0, 0.0, 246.53, 10551.65, 66438.2, 866518.64])
+
+    actual = piecewise_polynomial(
+        x=x,
+        thresholds=eink_st_params["thresholds"],
+        rates=eink_st_params["rates"],
+        intercepts_at_lower_thresholds=eink_st_params["intercepts_at_lower_thresholds"],
+        rates_multiplier=2,
+    )
+    numpy.testing.assert_allclose(numpy.array(actual), expected, atol=0.01)

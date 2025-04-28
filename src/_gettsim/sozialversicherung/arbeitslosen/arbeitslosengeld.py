@@ -53,62 +53,52 @@ def monate_verbleibender_anspruchsdauer(
     arbeitsl_geld_params: dict,
 ) -> int:
     """Calculate the remaining amount of months a person can receive unemployment
-    benefit this year.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
-        See basic input variable :ref:`monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren <monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren>`.
-    anwartschaftszeit
-        See basic input variable :ref:`anwartschaftszeit <anwartschaftszeit>`.
-    monate_durchgängigen_bezugs_von_arbeitslosengeld
-        See basic input variable :ref:`monate_durchgängigen_bezugs_von_arbeitslosengeld <monate_durchgängigen_bezugs_von_arbeitslosengeld>`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-
-    Returns
-    -------
+    benefits.
 
     """
     nach_alter = piecewise_polynomial(
         alter,
-        thresholds=[
-            *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
-            np.inf,
-        ],
+        thresholds=np.array(
+            [
+                *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
+                np.inf,
+            ]
+        ),
         rates=np.array(
             [[0] * len(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"])]
         ),
-        intercepts_at_lower_thresholds=list(
-            arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values()
+        intercepts_at_lower_thresholds=np.array(
+            list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values())
         ),
     )
     nach_versich_pfl = piecewise_polynomial(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        thresholds=[
-            *list(
-                arbeitsl_geld_params["anspruchsdauer"][
-                    "nach_versicherungspflichtige_monate"
-                ]
-            ),
-            np.inf,
-        ],
+        thresholds=np.array(
+            [
+                *list(
+                    arbeitsl_geld_params["anspruchsdauer"][
+                        "nach_versicherungspflichtigen_monaten"
+                    ]
+                ),
+                np.inf,
+            ]
+        ),
         rates=np.array(
             [
                 [0]
                 * len(
                     arbeitsl_geld_params["anspruchsdauer"][
-                        "nach_versicherungspflichtige_monate"
+                        "nach_versicherungspflichtigen_monaten"
                     ]
                 )
             ]
         ),
-        intercepts_at_lower_thresholds=list(
-            arbeitsl_geld_params["anspruchsdauer"][
-                "nach_versicherungspflichtige_monate"
-            ].values()
+        intercepts_at_lower_thresholds=np.array(
+            list(
+                arbeitsl_geld_params["anspruchsdauer"][
+                    "nach_versicherungspflichtigen_monaten"
+                ].values()
+            )
         ),
     )
     if anwartschaftszeit:
