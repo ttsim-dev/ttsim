@@ -607,9 +607,7 @@ def _fail_if_root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-def _func_depends_on_parameters_only(
-    func: TTSIMFunction,
-) -> bool:
+def _func_depends_on_parameters_only(func: TTSIMFunction) -> bool:
     """Check if a function depends on parameters only."""
     return (
         len(
