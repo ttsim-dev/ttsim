@@ -86,7 +86,7 @@ def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
     tree = _func_to_ast(func)
 
     # get function location for error messages
-    func_loc = func.__module__ + "/" + func.__name__
+    func_loc = f"{func.__module__}/{func.__name__}"
 
     # transform tree nodes
     new_tree = Transformer(module, func_loc).visit(tree)
