@@ -91,7 +91,6 @@ def compute_taxes_and_transfers(
         environment=environment,
         time_units=tuple(TIME_UNIT_LABELS.keys()),
     )
-    groupings = environment.grouping_levels
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
@@ -104,7 +103,7 @@ def compute_taxes_and_transfers(
         ttsim_objects=ttsim_objects,
         targets=targets,
         data=data,
-        groupings=groupings,
+        groupings=environment.grouping_levels,
     )
 
     functions_overridden, functions_to_be_used = partition_by_reference_dict(
@@ -134,7 +133,7 @@ def compute_taxes_and_transfers(
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
         functions=functions,
-        groupings=groupings,
+        groupings=environment.grouping_levels,
     )
     _input_data_with_p_id = {
         "p_id": data["p_id"],
@@ -193,9 +192,8 @@ def _get_top_level_namespace(
         The top level namespace.
     """
     direct_top_level_names = set(environment.raw_objects_tree.keys())
-    groupings = environment.grouping_levels
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        groupings=groupings,
+        groupings=environment.grouping_levels,
         time_units=time_units,
     )
 
@@ -214,11 +212,11 @@ def _get_top_level_namespace(
                 all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    gp = group_pattern(groupings)
+    gp = group_pattern(environment.grouping_levels)
     potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
 
     for name in potential_base_names:
-        for g in groupings:
+        for g in environment.grouping_levels:
             all_top_level_names.add(f"{name}_{g}")
 
     return all_top_level_names
