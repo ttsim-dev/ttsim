@@ -7,10 +7,9 @@ import optree
 import pandas as pd
 
 from ttsim.shared import format_errors_and_warnings, format_list_linewise
-from ttsim.typing import NestedInputsPathsToDfColumns
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedDataDict
+    from ttsim.typing import NestedDataDict, NestedInputsPathsToDfColumns
 
 
 def create_data_tree_from_df(
@@ -92,7 +91,7 @@ def _fail_if_mapper_has_incorrect_format(
     inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
-    if not isinstance(inputs_tree_to_df_columns, NestedInputsPathsToDfColumns):
+    if not isinstance(inputs_tree_to_df_columns, dict):
         msg = format_errors_and_warnings(
             """The input tree to column mapping must be a (nested) dictionary. Call
             `create_input_structure` to create a template."""
@@ -101,7 +100,7 @@ def _fail_if_mapper_has_incorrect_format(
 
     non_string_paths = [
         str(path)
-        for path in optree.tree_paths(inputs_tree_to_df_columns, none_is_leaf=True)
+        for path in optree.tree_paths(inputs_tree_to_df_columns, none_is_leaf=True)  # type: ignore[arg-type]
         if not all(isinstance(part, str) for part in path)
     ]
     if non_string_paths:

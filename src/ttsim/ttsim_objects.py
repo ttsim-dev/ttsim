@@ -47,9 +47,9 @@ if TYPE_CHECKING:
     from ttsim.config import numpy_or_jax as np
     from ttsim.typing import DashedISOString
 
-    T = TypeVar("T")
-    P = ParamSpec("P")
-    R = TypeVar("R")
+T = TypeVar("T")
+P = ParamSpec("P")
+R = TypeVar("R")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
 DEFAULT_END_DATE = datetime.date(2100, 12, 31)
