@@ -432,15 +432,17 @@ def _load_parameter_group_from_yaml(
         policy_dates = sorted(
             key for key in raw_group_data[param] if isinstance(key, datetime.date)
         )
-
         past_policies = [d for d in policy_dates if d <= date]
+
+        min_policy_date = numpy.array(policy_dates).min()
+        max_past_policy_date = numpy.array(past_policies).max()
 
         if not past_policies:
             # If no policy exists, then we check if the policy maybe agrees right now
             # with another one.
             # Otherwise, do not create an entry for this parameter.
-            if "deviation_from" in raw_group_data[param][numpy.min(policy_dates)]:
-                future_policy = raw_group_data[param][numpy.min(policy_dates)]
+            if "deviation_from" in raw_group_data[param][min_policy_date]:
+                future_policy = raw_group_data[param][min_policy_date]
                 if "." in future_policy["deviation_from"]:
                     path_list = future_policy["deviation_from"].split(".")
                     params_temp = _load_parameter_group_from_yaml(
@@ -453,7 +455,7 @@ def _load_parameter_group_from_yaml(
                         out_params[param] = params_temp[path_list[1]]
 
         else:
-            policy_in_place = raw_group_data[param][numpy.max(past_policies)]
+            policy_in_place = raw_group_data[param][max_past_policy_date]
             if "scalar" in policy_in_place:
                 if policy_in_place["scalar"] == "inf":
                     out_params[param] = numpy.inf
@@ -471,7 +473,7 @@ def _load_parameter_group_from_yaml(
                 )
                 if "deviation_from" in policy_in_place:
                     if policy_in_place["deviation_from"] == "previous":
-                        new_date = numpy.max(past_policies) - datetime.timedelta(days=1)
+                        new_date = max_past_policy_date - datetime.timedelta(days=1)
                         out_params[param] = _load_parameter_group_from_yaml(
                             new_date, group, parameters=[param], yaml_path=yaml_path
                         )[param]
