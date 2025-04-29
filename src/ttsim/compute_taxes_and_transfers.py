@@ -178,15 +178,22 @@ def compute_taxes_and_transfers(
         static_argnames = []
         if "num_segments" in argnames:
             static_argnames.append("num_segments")
+            if "num_segments" not in input_data:
+                raise ValueError(
+                    "The input data must contain the num_segments. "
+                    "Please provide it as a column in the input data."
+                )
+            else:
+                # Make sure that the static argument is an integer (hashable). This
+                # should most likely be done by simply not converting it to an array
+                # prior.
+                input_data["num_segments"] = int(input_data["num_segments"])
 
         # JIT the function, setting the number of segments as a static argument.
         tax_transfer_function = jax.jit(
             tax_transfer_function,
             static_argnames=static_argnames,
         )
-        # Make sure that the static argument is an integer (hashable). This should
-        # most likely be done by simply not converting it to an array prior.
-        input_data["num_segments"] = int(input_data["num_segments"])
 
     results = tax_transfer_function(**input_data)
 
