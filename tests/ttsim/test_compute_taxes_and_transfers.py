@@ -15,7 +15,6 @@ from ttsim import (
     agg_by_group_function,
     agg_by_p_id_function,
     compute_taxes_and_transfers,
-    group_creation_function,
     merge_trees,
     policy_function,
     policy_input,
@@ -240,33 +239,15 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
     )
 
 
-@pytest.mark.parametrize(
-    "data, functions",
-    [
-        (
-            {
-                "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
-                "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-            },
-            {},
-        ),
-        (
-            {
-                "foo_fam": pd.Series([1, 2, 2], name="foo_fam"),
-                "fam_id": pd.Series([1, 1, 2], name="fam_id"),
-            },
-            {
-                "fam_id": group_creation_function()(lambda x: x),
-            },
-        ),
-    ],
-)
-def test_fail_if_group_variables_not_constant_within_groups(data, functions):
+def test_fail_if_group_variables_not_constant_within_groups():
+    data = {
+        "foo_kin": pd.Series([1, 2, 2], name="foo_kin"),
+        "kin_id": pd.Series([1, 1, 2], name="kin_id"),
+    }
     with pytest.raises(ValueError):
         _fail_if_group_variables_not_constant_within_groups(
             data=data,
-            functions=functions,
-            groupings=("hh", "fam"),
+            groupings=("kin",),
         )
 
 

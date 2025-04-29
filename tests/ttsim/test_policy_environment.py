@@ -202,7 +202,7 @@ def test_input_is_recognized_as_potential_group_id():
     environment = set_up_policy_environment(
         resource_dir=RESOURCE_DIR, date="2020-01-01"
     )
-    assert "hh" in environment.grouping_levels
+    assert "kin" in environment.grouping_levels
 
 
 def test_p_id_not_recognized_as_potential_group_id():

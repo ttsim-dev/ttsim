@@ -31,7 +31,6 @@ from ttsim.shared import (
 )
 from ttsim.ttsim_objects import (
     FKType,
-    GroupCreationFunction,
     TTSIMFunction,
 )
 
@@ -132,7 +131,6 @@ def compute_taxes_and_transfers(
 
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
-        functions=functions,
         groupings=environment.grouping_levels,
     )
     _input_data_with_p_id = {
@@ -378,7 +376,6 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
-    functions: QualNameTTSIMFunctionDict,
     groupings: tuple[str, ...],
 ) -> None:
     """
@@ -391,19 +388,14 @@ def _fail_if_group_variables_not_constant_within_groups(
     ----------
     data
         Dictionary of data.
-    functions
-        Dictionary of functions.
+    groupings
+        The groupings available in the policy environment.
     """
-    group_by_functions = {
-        k: v for k, v in functions.items() if isinstance(v, GroupCreationFunction)
-    }
-
     faulty_data_columns = []
 
     for name, data_column in data.items():
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            group_by_functions=group_by_functions,
             groupings=groupings,
         )
         if group_by_id in data:
