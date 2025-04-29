@@ -21,7 +21,7 @@ from ttsim import (
 from ttsim.policy_environment import (
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
-    load_objects_tree_for_date,
+    active_ttsim_objects_tree,
 )
 
 if TYPE_CHECKING:
@@ -145,10 +145,10 @@ def test_load_functions_tree_for_date(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = load_objects_tree_for_date(
+    functions_last_day = active_ttsim_objects_tree(
         resource_dir=RESOURCE_DIR, date=last_day
     )
-    functions_next_day = load_objects_tree_for_date(
+    functions_next_day = active_ttsim_objects_tree(
         resource_dir=RESOURCE_DIR, date=last_day + timedelta(days=1)
     )
 

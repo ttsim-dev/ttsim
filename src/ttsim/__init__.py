@@ -5,7 +5,6 @@ from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
 )
-from ttsim.loader import ConflictingTimeDependentObjectsError
 from ttsim.piecewise_polynomial import piecewise_polynomial
 from ttsim.plot_dag import plot_dag
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
@@ -38,7 +37,6 @@ __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
-    "ConflictingTimeDependentObjectsError",
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",

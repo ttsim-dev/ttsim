@@ -16,7 +16,7 @@ if IS_JAX_INSTALLED:
 from numpy.testing import assert_array_equal
 
 from ttsim import GroupCreationFunction, PolicyInput, policy_function
-from ttsim.loader import load_objects_tree_for_date
+from ttsim.policy_environment import active_ttsim_objects_tree
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -374,7 +374,7 @@ for year in range(1990, 2023):
         [
             pf.function
             for pf in dt.flatten_to_tree_paths(
-                load_objects_tree_for_date(
+                active_ttsim_objects_tree(
                     resource_dir=Path(__file__).parent / "mettsim",
                     date=datetime.date(year=year, month=1, day=1),
                 )

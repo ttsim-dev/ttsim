@@ -9,7 +9,7 @@ from _gettsim.config import (
     RESOURCE_DIR,
 )
 from ttsim import PolicyInput
-from ttsim.loader import load_objects_tree_for_date
+from ttsim.policy_environment import active_ttsim_objects_tree
 from ttsim.shared import remove_group_suffix
 
 SUPPORTED_GROUPINGS = ("hh", "sp", "fam")
@@ -35,7 +35,7 @@ def all_function_names():
 def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
     for year in range(1990, 2023):
-        year_functions = load_objects_tree_for_date(
+        year_functions = active_ttsim_objects_tree(
             resource_dir=RESOURCE_DIR,
             date=datetime.date(year=year, month=1, day=1),
         )
