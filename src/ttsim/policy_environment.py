@@ -508,13 +508,11 @@ def _load_parameter_group_from_yaml(
         )
         past_policies = [d for d in policy_dates if d <= date]
 
-        min_policy_date = numpy.array(policy_dates).min()
-        max_past_policy_date = numpy.array(past_policies).max()
-
         if not past_policies:
             # If no policy exists, then we check if the policy maybe agrees right now
             # with another one.
             # Otherwise, do not create an entry for this parameter.
+            min_policy_date = numpy.array(policy_dates).min()
             if "deviation_from" in raw_group_data[param][min_policy_date]:
                 future_policy = raw_group_data[param][min_policy_date]
                 if "." in future_policy["deviation_from"]:
@@ -529,6 +527,7 @@ def _load_parameter_group_from_yaml(
                         out_params[param] = params_temp[path_list[1]]
 
         else:
+            max_past_policy_date = numpy.array(past_policies).max()
             policy_in_place = raw_group_data[param][max_past_policy_date]
             if "scalar" in policy_in_place:
                 if policy_in_place["scalar"] == "inf":
