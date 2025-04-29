@@ -1,11 +1,18 @@
+from __future__ import annotations
+
 import datetime
+from typing import TYPE_CHECKING
 
 import pytest
 
-from ttsim import ConflictingTimeDependentObjectsError, policy_function
-from ttsim.loader import _fail_if_multiple_ttsim_objects_are_active_at_the_same_time
+from ttsim import policy_function
+from ttsim.policy_environment import (
+    ConflictingTimeDependentObjectsError,
+    fail_if_multiple_ttsim_objects_are_active_at_the_same_time,
+)
 
-# Start date -----------------------------------------------
+if TYPE_CHECKING:
+    from ttsim.typing import FlatTTSIMObjectDict
 
 
 @pytest.mark.parametrize(
@@ -125,83 +132,136 @@ def identity(x):
 
 
 @pytest.mark.parametrize(
-    "functions",
+    "orig_ttsim_objects_tree",
     [
-        [
-            policy_function(
+        # Same global module, no overlapping periods.
+        {
+            ("a",): policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
             )(identity),
-            policy_function(
+            ("b",): policy_function(
                 start_date="2023-02-01",
                 end_date="2023-02-28",
                 leaf_name="f",
             )(identity),
-        ],
-        [
-            policy_function(
+        },
+        # Same submodule, no overlapping periods.
+        {
+            ("c", "a"): policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
             )(identity),
-            policy_function(
+            ("c", "b"): policy_function(
                 start_date="2023-01-01",
                 end_date="2023-02-28",
                 leaf_name="g",
             )(identity),
-        ],
+        },
+        # Different modules, no overlapping periods.
+        {
+            ("c", "f"): policy_function(
+                start_date="2023-01-01",
+                end_date="2023-01-31",
+            )(identity),
+            ("d", "f"): policy_function(
+                start_date="2023-02-01",
+                end_date="2023-02-28",
+            )(identity),
+        },
+        # Different paths, overlapping periods.
+        {
+            ("x", "c", "a"): policy_function(
+                start_date="2023-01-01",
+                end_date="2023-01-31",
+                leaf_name="f",
+            )(identity),
+            ("y", "c", "b"): policy_function(
+                start_date="2023-01-01",
+                end_date="2023-02-28",
+                leaf_name="g",
+            )(identity),
+        },
     ],
 )
-def test_dates_active_no_conflicts(functions):
-    _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-        ttsim_objects=functions, module_name=""
+def test_dates_active_no_conflicts(orig_ttsim_objects_tree):
+    fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+        orig_ttsim_objects_tree=orig_ttsim_objects_tree
     )
 
 
 @pytest.mark.parametrize(
-    "functions",
+    "orig_ttsim_objects_tree",
     [
-        [
-            policy_function(
+        # Exact overlap.
+        {
+            ("a",): policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
             )(identity),
-            policy_function(
+            ("b",): policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
             )(identity),
-        ],
-        [
-            policy_function(
+        },
+        # Active period for "a" is subset of "b".
+        {
+            ("a"): policy_function(
                 start_date="2023-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
             )(identity),
-            policy_function(
+            ("b"): policy_function(
                 start_date="2021-01-02",
                 end_date="2023-02-01",
                 leaf_name="f",
             )(identity),
-        ],
-        [
-            policy_function(
+        },
+        # Some overlap.
+        {
+            ("a",): policy_function(
                 start_date="2023-01-02",
                 end_date="2023-02-01",
                 leaf_name="f",
             )(identity),
-            policy_function(
+            ("b",): policy_function(
                 start_date="2022-01-01",
                 end_date="2023-01-31",
                 leaf_name="f",
             )(identity),
-        ],
+        },
+        # Same as before, but defined in different modules.
+        {
+            ("c", "a"): policy_function(
+                start_date="2023-01-02",
+                end_date="2023-02-01",
+                leaf_name="f",
+            )(identity),
+            ("d", "b"): policy_function(
+                start_date="2022-01-01",
+                end_date="2023-01-31",
+                leaf_name="f",
+            )(identity),
+        },
+        # Same as before, but defined in different modules without leaf name.
+        {
+            ("c", "f"): policy_function(
+                start_date="2023-01-02",
+                end_date="2023-02-01",
+            )(identity),
+            ("d", "f"): policy_function(
+                start_date="2022-01-01",
+                end_date="2023-01-31",
+            )(identity),
+        },
     ],
 )
-def test_dates_active_with_conflicts(functions):
+def test_dates_active_with_conflicts(orig_ttsim_objects_tree: FlatTTSIMObjectDict):
     with pytest.raises(ConflictingTimeDependentObjectsError):
-        _fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-            ttsim_objects=functions, module_name=""
+        fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+            orig_ttsim_objects_tree=orig_ttsim_objects_tree
         )

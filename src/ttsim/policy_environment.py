@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
+import itertools
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -9,7 +10,7 @@ import numpy
 import optree
 import yaml
 
-from ttsim.loader import load_objects_tree_for_date
+from ttsim.loader import active_ttsim_objects_tree, orig_ttsim_objects_tree
 from ttsim.piecewise_polynomial import (
     check_and_get_thresholds,
     get_piecewise_parameters,
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         DashedISOString,
+        FlatTTSIMObjectDict,
         NestedTTSIMObjectDict,
     )
 
@@ -162,7 +164,10 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
-    functions_tree = load_objects_tree_for_date(resource_dir=resource_dir, date=date)
+    # Will move this line out eventually. Just include in tests, do not run every time.
+    fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+        orig_ttsim_objects_tree=orig_ttsim_objects_tree(resource_dir)
+    )
 
     params = {}
     if "_gettsim" in resource_dir.name:
@@ -194,9 +199,78 @@ def set_up_policy_environment(
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
     return PolicyEnvironment(
-        functions_tree,
-        params,
+        raw_objects_tree=active_ttsim_objects_tree(
+            resource_dir=resource_dir, date=date
+        ),
+        params=params,
     )
+
+
+def fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+) -> None:
+    """Check overlapping time periods of TTSIMObjects.
+
+    Raises
+    ------
+    ConflictingTimeDependentObjectsError
+        If multiple objects with the same leaf name are active at the same time.
+    """
+
+    # Create mapping from leaf names to objects.
+    checker: dict[tuple[str, ...], list[TTSIMObject]] = {}
+    for orig_path, obj in orig_ttsim_objects_tree.items():
+        path = (*orig_path[:-2], obj.leaf_name)
+        if path in checker:
+            checker[path].append(obj)
+        else:
+            checker[path] = [obj]
+
+    # Check for overlapping start and end dates for time-dependent functions.
+    for path, objects in checker.items():
+        dates_active = [(f.start_date, f.end_date) for f in objects]
+        for (start1, end1), (start2, end2) in itertools.combinations(dates_active, 2):
+            if start1 <= end2 and start2 <= end1:
+                raise ConflictingTimeDependentObjectsError(
+                    affected_ttsim_objects=objects,
+                    path=path,
+                    overlap_start=max(start1, start2),
+                    overlap_end=min(end1, end2),
+                )
+
+
+class ConflictingTimeDependentObjectsError(Exception):
+    def __init__(
+        self,
+        affected_ttsim_objects: list[TTSIMObject],
+        path: tuple[str, ...],
+        overlap_start: datetime.date,
+        overlap_end: datetime.date,
+    ) -> None:
+        self.affected_ttsim_objects = affected_ttsim_objects
+        self.path = path
+        self.overlap_start = overlap_start
+        self.overlap_end = overlap_end
+
+    def __str__(self) -> str:
+        overlapping_objects = [
+            obj.__getattribute__("original_function_name")
+            for obj in self.affected_ttsim_objects
+            if obj
+        ]
+        return f"""
+        Functions with path
+
+          {self.path}
+
+        have overlapping start and end dates. The following functions are affected:
+
+          {
+            '''
+          '''.join(overlapping_objects)
+        }
+
+        Overlap from {self.overlap_start} to {self.overlap_end}."""
 
 
 def _convert_to_policy_function_if_not_ttsim_object(
