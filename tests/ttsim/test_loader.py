@@ -8,15 +8,13 @@ from mettsim.config import RESOURCE_DIR
 
 from ttsim import policy_function
 from ttsim.loader import (
-    _convert_path_to_tree_path,
-    _find_python_files_recursively,
+    _find_modules_recursively,
     _load_module,
 )
 from ttsim.ttsim_objects import _vectorize_func
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from pathlib import Path
 
 
 def test_load_path():
@@ -29,7 +27,7 @@ def test_load_path():
 def test_dont_load_init_py():
     """Don't load __init__.py files as sources for PolicyFunctions and
     AggregationSpecs."""
-    all_files = _find_python_files_recursively(RESOURCE_DIR)
+    all_files = _find_modules_recursively(RESOURCE_DIR)
     assert "__init__.py" not in [file.name for file in all_files]
 
 
@@ -55,28 +53,4 @@ def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:
 def test_vectorize_func(vectorized_function: Callable) -> None:
     assert numpy.array_equal(
         vectorized_function(numpy.array([-1, 0, 2, 3])), numpy.array([0, 0, 4, 6])
-    )
-
-
-@pytest.mark.parametrize(
-    (
-        "path",
-        "root_path",
-        "expected_tree_path",
-    ),
-    [
-        (
-            RESOURCE_DIR / "payroll_tax" / "child_tax_credit" / "child_tax_credit.py",
-            RESOURCE_DIR,
-            ("payroll_tax", "child_tax_credit"),
-        ),
-        (RESOURCE_DIR / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
-        (RESOURCE_DIR / "foo.py", RESOURCE_DIR, tuple()),  # noqa: C408
-    ],
-)
-def test_convert_path_to_tree_path(
-    path: Path, root_path: Path, expected_tree_path: tuple[str, ...]
-) -> None:
-    assert (
-        _convert_path_to_tree_path(path=path, root_path=root_path) == expected_tree_path
     )
