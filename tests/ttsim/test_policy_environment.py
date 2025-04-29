@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import optree
 import pandas as pd
@@ -140,7 +140,7 @@ def test_access_different_date_jahresanfang():
     ],
 )
 def test_load_functions_tree_for_date(
-    tree: dict[str, Any],
+    tree: NestedTTSIMObjectDict,
     last_day: date,
     function_name_last_day: str,
     function_name_next_day: str,
