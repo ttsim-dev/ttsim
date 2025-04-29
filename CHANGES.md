@@ -6,7 +6,11 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 
 ## Unpublished
 
-- {gh}`880` Validate parameter files using json scheme ({ghuser}`hmgaudecker`).
+- {gh}`887` Typing ({ghuser}`hmgaudecker`, {ghuser}`timmens`).
+- {gh}`888` Remove SUPPORTED_GROUPINGS entirely, infer groupings from object names
+  ({ghuser}`MImmesberger`).
+- {gh}`889` Refactor loader and fix check for time-dependent functions to span multiple
+  modules that end up in the same namespace ({ghuser}`hmgaudecker`).
 - {gh}`876` Add DataFrame to NestedDataDict conversion ({ghuser}`MImmesberger`).
 - {gh}`873` Implement aggregation decorators ({ghuser}`hmgaudecker`, `MImmesberger`).
 - {gh}`859` Add RoundingSpec dataclass ({ghuser}`hmgaudecker`, `MImmesberger`).
