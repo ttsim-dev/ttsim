@@ -237,6 +237,23 @@ def _convert_to_policy_function_if_not_ttsim_object(
     return converted_object
 
 
+def _fail_if_group_ids_are_outside_top_level_namespace(
+    raw_objects_tree: NestedTTSIMObjectDict,
+) -> None:
+    """Fail if group ids are outside the top level namespace."""
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
+        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
+        )
+
+
 def _parse_piecewise_parameters(tax_data):
     """Check if parameters are stored in implicit structures and align to general
     structure.
@@ -652,20 +669,3 @@ def add_progressionsfaktor(params_dict, parameter):
                 out_dict[key + 1]["rate_linear"] - out_dict[key]["rate_linear"]
             ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
     return out_dict
-
-
-def _fail_if_group_ids_are_outside_top_level_namespace(
-    raw_objects_tree: NestedTTSIMObjectDict,
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
-        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
