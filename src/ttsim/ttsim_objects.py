@@ -5,7 +5,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
 
 import dags
 import dags.tree as dt
@@ -47,7 +47,8 @@ if TYPE_CHECKING:
     from ttsim.config import numpy_or_jax as np
     from ttsim.typing import DashedISOString
 
-T = TypeVar("T")
+FunArgTypes = ParamSpec("FunArgTypes")
+ReturnType = TypeVar("ReturnType")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
 DEFAULT_END_DATE = datetime.date(2100, 12, 31)
@@ -119,7 +120,7 @@ def policy_input(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> PolicyInput:
+) -> Callable[[Callable], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
 
@@ -140,7 +141,7 @@ def policy_input(
 
     Returns
     -------
-    A PolicyInput object.
+    A decorator that returns a PolicyInput object.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
@@ -189,16 +190,16 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
 
 
 @dataclass(frozen=True)
-class TTSIMFunction(TTSIMObject):
+class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
     """
     Base class for all TTSIM functions.
     """
 
-    function: Callable
+    function: Callable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
@@ -222,7 +223,9 @@ class TTSIMFunction(TTSIMObject):
             f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
         )
 
-    def __call__(self, *args, **kwargs):
+    def __call__(
+        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+    ) -> ReturnType:
         return self.function(*args, **kwargs)
 
     @property
@@ -289,7 +292,7 @@ def policy_function(
     rounding_spec: RoundingSpec | None = None,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> PolicyFunction:
+) -> Callable[[Callable], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
 
@@ -325,7 +328,7 @@ def policy_function(
 
     Returns
     -------
-    A PolicyFunction object.
+    A decorator that returns a PolicyFunction object.
     """
 
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
@@ -353,9 +356,9 @@ def _vectorize_func(
 ) -> Callable:
     if vectorization_strategy == "loop":
         vectorized = functools.wraps(func)(numpy.vectorize(func))
-        vectorized.__signature__ = inspect.signature(func)
-        vectorized.__globals__ = func.__globals__
-        vectorized.__closure__ = func.__closure__
+        vectorized.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
+        vectorized.__globals__ = func.__globals__  # type: ignore[attr-defined]
+        vectorized.__closure__ = func.__closure__  # type: ignore[attr-defined]
     elif vectorization_strategy == "vectorize":
         backend = "jax" if IS_JAX_INSTALLED else "numpy"
         vectorized = make_vectorizable(func, backend=backend)
@@ -409,7 +412,7 @@ def group_creation_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> GroupCreationFunction:
+) -> Callable[[Callable], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
     """
@@ -480,7 +483,7 @@ def agg_by_group_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> AggByGroupFunction:
+) -> Callable[[Callable], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -511,7 +514,7 @@ def agg_by_group_function(
         )
 
         functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
+        agg_func.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
 
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -525,7 +528,7 @@ def agg_by_group_function(
     return inner
 
 
-def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
+def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str) -> None:
     if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
@@ -534,7 +537,7 @@ def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
+def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str) -> None:
     if other_args:
         raise ValueError(
             "There must be no argument besides identifiers for counting. Got: "
@@ -542,7 +545,7 @@ def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str):
+def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str) -> None:
     if len(other_args) != 1:
         raise ValueError(
             "There must be exactly one argument besides identifiers for aggregations. "
@@ -604,7 +607,7 @@ def agg_by_p_id_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> AggByPIDFunction:
+) -> Callable[[Callable], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -647,7 +650,7 @@ def agg_by_p_id_function(
         )
 
         functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
+        agg_func.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
 
         return AggByPIDFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -661,7 +664,7 @@ def agg_by_p_id_function(
     return inner
 
 
-def _fail_if_p_id_is_not_present(args: set[str], orig_location: str):
+def _fail_if_p_id_is_not_present(args: set[str], orig_location: str) -> None:
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
@@ -669,7 +672,7 @@ def _fail_if_p_id_is_not_present(args: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
+def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) -> None:
     if len(other_p_ids) != 1:
         raise ValueError(
             "Require exactly one identifier starting with 'p_id_' for "
@@ -699,7 +702,7 @@ class TimeConversionFunction(TTSIMFunction):
 
     source: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.source is None:
             raise ValueError("The source must be specified.")
         super().__post_init__()

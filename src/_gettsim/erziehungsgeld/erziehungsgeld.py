@@ -19,7 +19,7 @@ def anspruchshöhe_m(
 def betrag_m(
     anspruchshöhe_m: int,
     grundsätzlich_anspruchsberechtigt: bool,
-) -> bool:
+) -> float:
     """Total parental leave benefits (Erziehungsgeld) received by the parent.
 
     Legal reference: BErzGG (BGBl. I 1985 S. 2154; BGBl. I 2004 S. 206)
@@ -37,7 +37,7 @@ def betrag_m(
 
     """
     if grundsätzlich_anspruchsberechtigt:
-        out = anspruchshöhe_m
+        out: float = anspruchshöhe_m
     else:
         out = 0.0
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import optree
 import pandas as pd
@@ -21,7 +21,7 @@ from ttsim import (
 from ttsim.policy_environment import (
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
-    load_objects_tree_for_date,
+    active_ttsim_objects_tree,
 )
 
 if TYPE_CHECKING:
@@ -145,15 +145,15 @@ def test_access_different_date_jahresanfang():
     ],
 )
 def test_load_functions_tree_for_date(
-    tree: dict[str, Any],
+    tree: NestedTTSIMObjectDict,
     last_day: date,
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = load_objects_tree_for_date(
+    functions_last_day = active_ttsim_objects_tree(
         resource_dir=RESOURCE_DIR, date=last_day
     )
-    functions_next_day = load_objects_tree_for_date(
+    functions_next_day = active_ttsim_objects_tree(
         resource_dir=RESOURCE_DIR, date=last_day + timedelta(days=1)
     )
 

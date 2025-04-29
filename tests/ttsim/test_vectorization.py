@@ -16,7 +16,7 @@ if IS_JAX_INSTALLED:
 from numpy.testing import assert_array_equal
 
 from ttsim import GroupCreationFunction, PolicyInput, policy_function
-from ttsim.loader import load_objects_tree_for_date
+from ttsim.policy_environment import active_ttsim_objects_tree
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -232,13 +232,11 @@ def f15_exp(x):
 
 
 def f16(x):
-    n = int(sum(x))
-    return max(n)
+    return float(sum(x))
 
 
 def f16_exp(x):
-    n = int(numpy.sum(x))
-    return numpy.max(n)
+    return float(numpy.sum(x))
 
 
 def f17(x):
@@ -254,13 +252,11 @@ def f17_exp(x):
 
 
 def f18(x):
-    n = int(any(x)) + 1
-    return sum(n)
+    return int(any(x)) + 1
 
 
 def f18_exp(x):
-    n = int(numpy.any(x)) + 1
-    return numpy.sum(n)
+    return int(numpy.any(x)) + 1
 
 
 x = numpy.arange(-10, 10)
@@ -378,7 +374,7 @@ for year in range(1990, 2023):
         [
             pf.function
             for pf in dt.flatten_to_tree_paths(
-                load_objects_tree_for_date(
+                active_ttsim_objects_tree(
                     resource_dir=Path(__file__).parent / "mettsim",
                     date=datetime.date(year=year, month=1, day=1),
                 )
@@ -413,7 +409,7 @@ def mock__elterngeld__geschwisterbonus_m(
 
 @pytest.mark.parametrize("backend", backends)
 def test_geschwisterbonus_m(backend):
-    full = modules.get(backend).full
+    full = modules[backend].full
 
     # Test original gettsim function on scalar input
     # ==================================================================================
@@ -476,7 +472,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
 
 @pytest.mark.parametrize("backend", backends)
 def test_grundsätzlich_anspruchsberechtigt(backend):
-    full = modules.get(backend).full
+    full = modules[backend].full
 
     # Test original gettsim function on scalar input
     # ==================================================================================
@@ -627,7 +623,7 @@ def test_make_vectorizable_dags_concatened_func():
             "a": f_a,
             "b": f_b,
         },
-        targets={"b"},
+        targets=["b"],
     )
 
     vectorized = make_vectorizable(f_dags, backend="numpy")

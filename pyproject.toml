@@ -122,7 +122,6 @@ pytest-cov = "*"
 pytest-profiling = "*"
 pytest-xdist = "*"
 snakeviz = ">=2.2.2,<3"
-mypy = "1.15.0.*"
 
 
 # Development Dependencies (pypi)
@@ -155,16 +154,25 @@ jaxlib = ">=0.4.20"
 jax = { version = ">=0.4.20", extras = ["cpu"] }
 jaxlib = ">=0.4.20"
 
+[tool.pixi.feature.mypy.pypi-dependencies]
+mypy = "==1.15.0"
+types-PyYAML = "*"
+types-pytz = "*"
+
 # Tasks
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.feature.test.tasks]
 tests = "pytest"
 
+[tool.pixi.feature.mypy.tasks]
+mypy = "mypy --ignore-missing-imports"
+
 # Environments
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.environments]
+mypy = ["mypy"]
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
 py312-jax = ["py312", "test", "jax"]
@@ -205,7 +213,7 @@ extend-ignore = [
     "ANN401", # flake8-annotate typing.Any
     "PD", # pandas-vet
     "E731", # do not assign a lambda expression, use a def
-    "RET", # unnecessary elif or else statements after return, rais, continue, ...
+    "RET", # unnecessary elif or else statements after return, raise, continue, ...
     "S324", # Probable use of insecure hash function.
     "COM812", # trailing comma missing, but black takes care of that
     "PT007", # wrong type in parametrize, gave false positives
@@ -250,7 +258,7 @@ exclude = []
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/policy_environment.py" = ["S506", "PLR"]
-"src/ttsim/visualization.py" = ["PLR"]
+"src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
 "docs/**/*.ipynb" = ["T201"]
 
@@ -272,7 +280,7 @@ convention = "numpy"
 [tool.mypy]
 files = ["src", "tests"]
 check_untyped_defs = true
-disallow_any_generics = false
+disallow_any_generics = true
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
 no_implicit_optional = true
@@ -282,15 +290,42 @@ explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = [
-    "src._gettsim_tests.*",
-    "src.gettsim",
-    "src._gettsim.*",
-    "src.ttsim.*",
-    "tests.*",
+    "src._gettsim.synthetic",
+    "src._gettsim_tests.test_synthetic",
+    "src.ttsim.plot_dag",
+    "tests.ttsim.test_docs",
 ]
 disallow_untyped_defs = false
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = [
+    "tests.*",
+    "src._gettsim_tests.*",
+]
+disable_error_code = [
+    "no-untyped-def",  # All tests return None, don't clutter source code.
+    "empty-body",  # Happens for all functions decorated with @policy_input
+    "type-arg" # TODO: Remove once we have proper types for parameters.
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "src.ttsim.*",
+    "src._gettsim.*",
+]
+disable_error_code = [
+    "empty-body",  # Happens for all functions decorated with @policy_input
+    "type-arg" # TODO: Remove once we have proper types for parameters.
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.ttsim.test_vectorization",
+]
+disable_error_code = [
+    "assignment"
+]
 
 [tool.check-manifest]
 ignore = ["src/_gettsim/_version.py"]

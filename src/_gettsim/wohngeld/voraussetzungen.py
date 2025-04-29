@@ -217,26 +217,14 @@ def vermögensprüfung(
     vermögen: float,
     anzahl_personen: int,
     params: dict,
-) -> float:
+) -> bool:
     """Wealth check for housing benefit calculation.
 
     The payment depends on the wealth of the household and the number of household
     members.
 
     Note: This function is not a direct target in the DAG, but a helper function to
-    store the code for Wohngeld calculation.
-
-    Parameters
-    ----------
-    vermögen
-        Relevant wealth of the Wohngeld recipients.
-    anzahl_personen
-        Number of people Wohngeld is being calculated for.
-    params
-        See params documentation :ref:`params <params>`.
-
-    Returns
-    -------
+    re-use code in various places
 
     """
 

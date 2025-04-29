@@ -5,8 +5,8 @@ from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
     compute_taxes_and_transfers,
 )
-from ttsim.loader import ConflictingTimeDependentObjectsError
 from ttsim.piecewise_polynomial import piecewise_polynomial
+from ttsim.plot_dag import plot_dag
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.prepare_data import create_data_tree_from_df
 from ttsim.rounding import RoundingSpec
@@ -32,13 +32,11 @@ from ttsim.ttsim_objects import (
     policy_function,
     policy_input,
 )
-from ttsim.visualization import plot_dag
 
 __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
-    "ConflictingTimeDependentObjectsError",
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
