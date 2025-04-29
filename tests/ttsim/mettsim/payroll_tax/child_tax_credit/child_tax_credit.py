@@ -41,15 +41,15 @@ def child_eligible(
 @policy_function(vectorization_strategy="not_required")
 def in_same_household_as_recipient(
     p_id: int,
-    hh_id: int,
+    kin_id: int,
     p_id_recipient: int,
 ) -> bool:
     return (
         join(
             foreign_key=p_id_recipient,
             primary_key=p_id,
-            target=hh_id,
+            target=kin_id,
             value_if_foreign_key_is_missing=-1,
         )
-        == hh_id
+        == kin_id
     )

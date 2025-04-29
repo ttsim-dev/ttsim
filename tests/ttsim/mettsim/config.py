@@ -8,4 +8,4 @@ from pathlib import Path
 
 RESOURCE_DIR = Path(__file__).parent
 
-SUPPORTED_GROUPINGS = ("fam", "sp", "hh")
+SUPPORTED_GROUPINGS = ("fam", "sp", "kin")

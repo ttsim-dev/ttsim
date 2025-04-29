@@ -2,7 +2,6 @@ import dags.tree as dt
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim_tests.utils import (
     PolicyTest,
     cached_set_up_policy_environment,
@@ -21,7 +20,6 @@ def test_aggregate_by_p_id(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

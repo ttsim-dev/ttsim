@@ -42,6 +42,11 @@ def return_three():
     return 3
 
 
+@group_creation_function()
+def fam_id() -> int:
+    pass
+
+
 class TestPolicyEnvironment:
     def test_func_exists_in_tree(self):
         function = policy_function(leaf_name="foo")(return_one)
@@ -177,3 +182,31 @@ def test_dont_destroy_group_by_functions():
     }
     environment = PolicyEnvironment(functions_tree)
     assert isinstance(environment.raw_objects_tree["foo"], GroupCreationFunction)
+
+
+def test_creating_environment_fails_when_group_ids_are_outside_top_level_namespace():
+    with pytest.raises(
+        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+    ):
+        PolicyEnvironment({"n1": {"fam_id": fam_id}})
+
+
+def test_upserting_group_ids_outside_top_level_namespace_fails():
+    with pytest.raises(
+        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+    ):
+        PolicyEnvironment({}).upsert_objects({"n1": {"fam_id": fam_id}})
+
+
+def test_input_is_recognized_as_potential_group_id():
+    environment = set_up_policy_environment(
+        resource_dir=RESOURCE_DIR, date="2020-01-01"
+    )
+    assert "kin" in environment.grouping_levels
+
+
+def test_p_id_not_recognized_as_potential_group_id():
+    environment = set_up_policy_environment(
+        resource_dir=RESOURCE_DIR, date="2020-01-01"
+    )
+    assert "p" not in environment.grouping_levels

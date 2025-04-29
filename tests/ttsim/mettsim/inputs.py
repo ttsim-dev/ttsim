@@ -7,8 +7,8 @@ def p_id() -> int:
 
 
 @policy_input()
-def hh_id() -> int:
-    """Household id (will delete once fam_id is enough)."""
+def kin_id() -> int:
+    """Kinstead ID."""
 
 
 @policy_input(foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)

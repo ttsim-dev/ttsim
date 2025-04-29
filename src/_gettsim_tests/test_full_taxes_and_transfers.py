@@ -1,7 +1,6 @@
 import dags.tree as dt
 import pytest
 
-from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim_tests.utils import (
     PolicyTest,
     cached_set_up_policy_environment,
@@ -21,7 +20,6 @@ def test_full_taxes_transfers(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
     )
 
 
@@ -33,7 +31,6 @@ def test_data_types(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_types_input_variables = {
@@ -71,5 +68,4 @@ def test_allow_none_as_target_tree(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=None,
-        groupings=SUPPORTED_GROUPINGS,
     )
