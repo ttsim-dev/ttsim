@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 import yaml
-from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
+from mettsim.config import RESOURCE_DIR
 
 from ttsim import compute_taxes_and_transfers, merge_trees, set_up_policy_environment
 from ttsim.shared import to_datetime
@@ -58,7 +58,6 @@ def execute_test(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)

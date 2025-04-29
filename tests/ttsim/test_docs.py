@@ -4,6 +4,7 @@ import datetime
 import inspect
 
 import pytest
+from mettsim.config import SUPPORTED_GROUPINGS
 
 from _gettsim.config import (
     RESOURCE_DIR,
@@ -11,8 +12,6 @@ from _gettsim.config import (
 from ttsim import PolicyInput
 from ttsim.loader import load_objects_tree_for_date
 from ttsim.shared import remove_group_suffix
-
-SUPPORTED_GROUPINGS = ("hh", "sp", "fam")
 
 
 def _nice_output_list_of_strings(list_of_strings):

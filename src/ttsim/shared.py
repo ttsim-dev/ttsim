@@ -18,7 +18,6 @@ if TYPE_CHECKING:
         GenericCallable,
         NestedDataDict,
         NestedTTSIMObjectDict,
-        QualNameTTSIMFunctionDict,
     )
 
 
@@ -504,118 +503,25 @@ def assert_valid_ttsim_pytree(
 
 def get_name_of_group_by_id(
     target_name: str,
-    group_by_functions: QualNameTTSIMFunctionDict,
     groupings: tuple[str, ...],
 ) -> str:
     """Get the group-by-identifier name for some target.
 
     The group-by-identifier is the name of the group identifier that is embedded in the
-    name of the target. E.g., "einkommen_hh" has "hh_id" as its group-by-identifier. In
-    this sense, the group-by-identifiers live in a global namespace. We generally expect
-    them to be unique.
-
-    There is an exception, though: It is enough for them to be unique within the
-    uppermost namespace. In that case, however, they cannot be used outside of that
-    namespace.
+    name of the target. E.g., "income_kin" has "kin_id" as its group-by-identifier.
 
     Parameters
     ----------
     target_name
         The name of the target.
-    group_by_functions
-        The group-by functions.
+    groupings
+        The supported groupings.
 
     Returns
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
     for g in groupings:
-        if target_name.endswith(f"_{g}") and g == "hh":
-            # Hardcode because hh_id is not part of the functions tree
-            return "hh_id"
-        elif target_name.endswith(f"_{g}"):
-            return _select_group_by_id_from_candidates(
-                candidate_names=[
-                    p for p in group_by_functions if p.endswith(f"{g}_id")
-                ],
-                target_name=target_name,
-            )
+        if target_name.endswith(f"_{g}"):
+            return f"{g}_id"
     return None
-
-
-def _select_group_by_id_from_candidates(
-    candidate_names: list[str],
-    target_name: str,
-) -> str:
-    """Select the group-by-identifier name from the candidates.
-
-    If there are multiple candidates, the function takes the one that shares the
-    first part of the path (uppermost level of namespace) with the aggregation target.
-
-    Raises
-    ------
-    ValueError
-        Raised if the group-by-identifier is ambiguous.
-
-    Parameters
-    ----------
-    candidates
-        The candidates.
-    target_path
-        The target path.
-    nice_target_name
-        The nice target name.
-
-    Returns
-    -------
-    The group-by-identifier.
-    """
-    if len(candidate_names) > 1:
-        candidate_names_in_matching_namespace = [
-            p
-            for p in candidate_names
-            if dt.tree_path_from_qual_name(p)[0]
-            == dt.tree_path_from_qual_name(target_name)[0]
-        ]
-        if len(candidate_names_in_matching_namespace) == 1:
-            return candidate_names_in_matching_namespace[0]
-        else:
-            _fail_because_of_ambiguous_group_by_identifier(
-                candidate_names_in_matching_namespace=candidate_names_in_matching_namespace,
-                all_candidate_names=candidate_names,
-                target_name=target_name,
-            )
-    else:
-        return candidate_names[0]
-
-
-def _fail_because_of_ambiguous_group_by_identifier(
-    candidate_names_in_matching_namespace: list[str],
-    all_candidate_names: list[str],
-    target_name: str,
-):
-    if len(candidate_names_in_matching_namespace) == 0:
-        paths = "\n    ".join(
-            [str(dt.tree_path_from_qual_name(p)) for p in all_candidate_names]
-        )
-    else:
-        paths = "\n    ".join(
-            [
-                str(dt.tree_path_from_qual_name(p))
-                for p in candidate_names_in_matching_namespace
-            ]
-        )
-
-    target_path = dt.tree_path_from_qual_name(target_name)
-    msg = format_errors_and_warnings(
-        f"""
-        Group-by-identifier for target:\n\n    {target_path}\n
-        is ambiguous. Group-by-identifiers must be
-
-        1. unique at the uppermost level of the functions tree.
-        2. inside the uppermost namespace if there are namespaced identifiers
-
-        Found candidates:\n\n    {paths}
-        """
-    )
-    raise ValueError(msg)

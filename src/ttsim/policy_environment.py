@@ -65,6 +65,7 @@ class PolicyEnvironment:
             lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
             raw_objects_tree,
         )
+        _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
 
         # Read in parameters and aggregation specs
         self._params = params if params is not None else {}
@@ -81,6 +82,15 @@ class PolicyEnvironment:
     def params(self) -> dict[str, Any]:
         """The parameters of the policy environment."""
         return self._params
+
+    @property
+    def grouping_levels(self) -> tuple[str, ...]:
+        """The grouping levels of the policy environment."""
+        return tuple(
+            name.rsplit("_", 1)[0]
+            for name in self._raw_objects_tree
+            if name.endswith("_id") and name != "p_id"
+        )
 
     def upsert_objects(
         self, tree_to_upsert: NestedTTSIMObjectDict
@@ -113,6 +123,8 @@ class PolicyEnvironment:
             base={**self._raw_objects_tree},
             to_upsert=tree_to_upsert_with_correct_types,
         )
+
+        _fail_if_group_ids_are_outside_top_level_namespace(new_tree)
 
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = new_tree  # noqa: SLF001
@@ -223,6 +235,23 @@ def _convert_to_policy_function_if_not_ttsim_object(
         )
 
     return converted_object
+
+
+def _fail_if_group_ids_are_outside_top_level_namespace(
+    raw_objects_tree: NestedTTSIMObjectDict,
+) -> None:
+    """Fail if group ids are outside the top level namespace."""
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
+        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
+        )
 
 
 def _parse_piecewise_parameters(tax_data):
