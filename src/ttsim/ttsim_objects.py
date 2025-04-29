@@ -5,7 +5,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
 
 import dags
 import dags.tree as dt
@@ -47,7 +47,9 @@ if TYPE_CHECKING:
     from ttsim.config import numpy_or_jax as np
     from ttsim.typing import DashedISOString
 
-T = TypeVar("T")
+    T = TypeVar("T")
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
 DEFAULT_END_DATE = datetime.date(2100, 12, 31)
@@ -119,7 +121,7 @@ def policy_input(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> PolicyInput:
+) -> Callable[[Callable], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
 
@@ -140,7 +142,7 @@ def policy_input(
 
     Returns
     -------
-    A PolicyInput object.
+    A decorator that returns a PolicyInput object.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
@@ -189,12 +191,12 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
 
 
 @dataclass(frozen=True)
-class TTSIMFunction(TTSIMObject):
+class TTSIMFunction(TTSIMObject, Generic[P, R]):
     """
     Base class for all TTSIM functions.
     """
 
-    function: Callable
+    function: Callable[P, R]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
@@ -222,7 +224,7 @@ class TTSIMFunction(TTSIMObject):
             f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
         )
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.function(*args, **kwargs)
 
     @property
@@ -289,7 +291,7 @@ def policy_function(
     rounding_spec: RoundingSpec | None = None,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> PolicyFunction:
+) -> Callable[[Callable], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
 
@@ -325,7 +327,7 @@ def policy_function(
 
     Returns
     -------
-    A PolicyFunction object.
+    A decorator that returns a PolicyFunction object.
     """
 
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
@@ -353,9 +355,9 @@ def _vectorize_func(
 ) -> Callable:
     if vectorization_strategy == "loop":
         vectorized = functools.wraps(func)(numpy.vectorize(func))
-        vectorized.__signature__ = inspect.signature(func)
-        vectorized.__globals__ = func.__globals__
-        vectorized.__closure__ = func.__closure__
+        vectorized.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
+        vectorized.__globals__ = func.__globals__  # type: ignore[attr-defined]
+        vectorized.__closure__ = func.__closure__  # type: ignore[attr-defined]
     elif vectorization_strategy == "vectorize":
         backend = "jax" if IS_JAX_INSTALLED else "numpy"
         vectorized = make_vectorizable(func, backend=backend)
@@ -409,7 +411,7 @@ def group_creation_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> GroupCreationFunction:
+) -> Callable[[Callable], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
     """
@@ -480,7 +482,7 @@ def agg_by_group_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> AggByGroupFunction:
+) -> Callable[[Callable], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -511,7 +513,7 @@ def agg_by_group_function(
         )
 
         functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
+        agg_func.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
 
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -604,7 +606,7 @@ def agg_by_p_id_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> AggByPIDFunction:
+) -> Callable[[Callable], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -647,7 +649,7 @@ def agg_by_p_id_function(
         )
 
         functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
+        agg_func.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
 
         return AggByPIDFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
