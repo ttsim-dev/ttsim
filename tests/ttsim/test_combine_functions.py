@@ -101,7 +101,9 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(return_n1__x_hh),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_n1__x_hh),
                     "x": x,
                 },
             },
@@ -110,6 +112,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
         (
@@ -117,13 +120,19 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
             {
                 "hh_id": hh_id,
                 "p_id": p_id,
-                "n1": {"f": policy_function(leaf_name="f")(return_x_hh), "x": x},
+                "n1": {
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_x_hh),
+                    "x": x,
+                },
             },
             {"n1": {"f": None}},
             {
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
         (
@@ -132,7 +141,9 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(some_x),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(some_x),
                     "x": x,
                 },
             },
@@ -141,6 +152,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
         (
@@ -149,7 +161,9 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(some_x),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(some_x),
                     "x": x,
                 },
                 "y_hh": y_hh,
@@ -159,6 +173,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
         (
@@ -167,7 +182,9 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "hh_id": hh_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(return_y_hh),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_y_hh),
                     "y_hh": y_hh_namespaced_input,
                 },
                 "inputs": {"x": x},
@@ -177,6 +194,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "inputs": {"x": pd.Series([1, 1, 1])},
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
     ],
