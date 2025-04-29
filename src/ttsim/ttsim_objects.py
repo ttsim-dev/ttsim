@@ -47,9 +47,8 @@ if TYPE_CHECKING:
     from ttsim.config import numpy_or_jax as np
     from ttsim.typing import DashedISOString
 
-T = TypeVar("T")
-P = ParamSpec("P")
-R = TypeVar("R")
+FunArgTypes = ParamSpec("FunArgTypes")
+ReturnType = TypeVar("ReturnType")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
 DEFAULT_END_DATE = datetime.date(2100, 12, 31)
@@ -191,12 +190,12 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
 
 
 @dataclass(frozen=True)
-class TTSIMFunction(TTSIMObject, Generic[P, R]):
+class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
     """
     Base class for all TTSIM functions.
     """
 
-    function: Callable[P, R]
+    function: Callable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
@@ -224,7 +223,9 @@ class TTSIMFunction(TTSIMObject, Generic[P, R]):
             f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
         )
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+    def __call__(
+        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+    ) -> ReturnType:
         return self.function(*args, **kwargs)
 
     @property
