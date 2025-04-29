@@ -4,7 +4,7 @@ import datetime
 import inspect
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import optree
@@ -399,15 +399,11 @@ def remove_group_suffix(col: str, groupings: tuple[str, ...]) -> str:
     return out
 
 
-Key = TypeVar("Key")
-Out = TypeVar("Out")
-
-
 def join(
     foreign_key: np.ndarray,
     primary_key: np.ndarray,
     target: np.ndarray,
-    value_if_foreign_key_is_missing: Out,
+    value_if_foreign_key_is_missing: float | bool,
 ) -> np.ndarray:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
