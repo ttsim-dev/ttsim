@@ -414,6 +414,7 @@ def test_user_provided_aggregation():
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
         "module_name": {"betrag_m": pd.Series([200, 100, 100], name="betrag_m")},
     }
+    data["num_segments"] = len(data["fam_id"].unique())
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200])
 
