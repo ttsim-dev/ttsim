@@ -187,7 +187,9 @@ def create_tree_from_path_and_value(
     return nested_dict
 
 
-def merge_trees(left: dict, right: dict) -> dict:
+def merge_trees(
+    left: NestedTTSIMObjectDict, right: NestedTTSIMObjectDict
+) -> NestedTTSIMObjectDict:
     """
     Merge two pytrees, raising an error if a path is present in both trees.
 
@@ -209,7 +211,9 @@ def merge_trees(left: dict, right: dict) -> dict:
     return upsert_tree(base=left, to_upsert=right)
 
 
-def upsert_tree(base: dict, to_upsert: dict) -> dict:
+def upsert_tree(
+    base: NestedTTSIMObjectDict, to_upsert: NestedTTSIMObjectDict
+) -> NestedTTSIMObjectDict:
     """
     Upsert a tree into another tree for trees defined by dictionaries only.
 
