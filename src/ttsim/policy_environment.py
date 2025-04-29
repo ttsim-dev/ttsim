@@ -265,7 +265,10 @@ class ConflictingTimeDependentObjectsError(Exception):
 
         have overlapping start and end dates. The following functions are affected:
 
-          {"\n          ".join(overlapping_objects)}
+          {
+            '''
+          '''.join(overlapping_objects)
+        }
 
         Overlap from {self.overlap_start} to {self.overlap_end}."""
 
