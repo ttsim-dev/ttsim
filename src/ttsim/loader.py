@@ -94,7 +94,9 @@ def get_active_ttsim_objects_tree_from_module(
     }
 
     return create_tree_from_path_and_value(
-        path=_convert_path_to_tree_path(path=path, root_path=root_path),
+        path=_convert_path_to_tree_path(
+            path=path, root_path=root_path, remove_module=True
+        ),
         value=active_ttsim_objects,
     )
 
@@ -199,7 +201,9 @@ def _load_module(path: Path, root_path: Path) -> ModuleType:
     return module
 
 
-def _convert_path_to_tree_path(path: Path, root_path: Path) -> tuple[str, ...]:
+def _convert_path_to_tree_path(
+    *, path: Path, root_path: Path, remove_module: bool
+) -> tuple[str, ...]:
     """
     Convert the path from the package root to a tree path.
 
@@ -225,5 +229,7 @@ def _convert_path_to_tree_path(path: Path, root_path: Path) -> tuple[str, ...]:
     ("dir")
     """
     parts = path.relative_to(root_path).parts
-
-    return parts[:-1]
+    if remove_module:
+        return parts[:-1]
+    else:
+        return parts

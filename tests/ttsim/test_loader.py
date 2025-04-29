@@ -62,21 +62,30 @@ def test_vectorize_func(vectorized_function: Callable) -> None:
     (
         "path",
         "root_path",
+        "remove_module",
         "expected_tree_path",
     ),
     [
         (
             RESOURCE_DIR / "payroll_tax" / "child_tax_credit" / "child_tax_credit.py",
             RESOURCE_DIR,
+            True,
             ("payroll_tax", "child_tax_credit"),
         ),
-        (RESOURCE_DIR / "foo" / "bar.py", RESOURCE_DIR, ("foo",)),
-        (RESOURCE_DIR / "foo.py", RESOURCE_DIR, tuple()),  # noqa: C408
+        (RESOURCE_DIR / "foo" / "bar.py", RESOURCE_DIR, True, ("foo",)),
+        (RESOURCE_DIR / "foo" / "bar.py", RESOURCE_DIR, False, ("foo", "bar.py")),
+        (RESOURCE_DIR / "foo.py", RESOURCE_DIR, True, tuple()),  # noqa: C408
     ],
 )
 def test_convert_path_to_tree_path(
-    path: Path, root_path: Path, expected_tree_path: tuple[str, ...]
+    path: Path,
+    root_path: Path,
+    remove_module: bool,
+    expected_tree_path: tuple[str, ...],
 ) -> None:
     assert (
-        _convert_path_to_tree_path(path=path, root_path=root_path) == expected_tree_path
+        _convert_path_to_tree_path(
+            path=path, root_path=root_path, remove_module=remove_module
+        )
+        == expected_tree_path
     )
