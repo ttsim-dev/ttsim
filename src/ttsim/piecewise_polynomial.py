@@ -1,3 +1,5 @@
+from typing import TypedDict
+
 import numpy
 
 from ttsim.config import numpy_or_jax as np
@@ -181,6 +183,11 @@ def check_and_get_thresholds(
     return lower_thresholds, upper_thresholds, thresholds
 
 
+class Options(TypedDict):
+    necessary_keys: list[str]
+    rates_size: int
+
+
 def _check_and_get_rates(
     parameter_dict: dict,
     parameter: str,
@@ -204,14 +211,14 @@ def _check_and_get_rates(
 
     """
     options_dict = {
-        "quadratic": {
-            "necessary_keys": ["rate_linear", "rate_quadratic"],
-            "rates_size": 2,
-        },
-        "cubic": {
-            "necessary_keys": ["rate_linear", "rate_quadratic", "rate_cubic"],
-            "rates_size": 3,
-        },
+        "quadratic": Options(
+            necessary_keys=["rate_linear", "rate_quadratic"],
+            rates_size=2,
+        ),
+        "cubic": Options(
+            necessary_keys=["rate_linear", "rate_quadratic", "rate_cubic"],
+            rates_size=3,
+        ),
     }
     # Allow for specification of rate with "rate" and "rate_linear"
     if func_type == "linear":
@@ -227,7 +234,7 @@ def _check_and_get_rates(
                 )
     elif func_type in options_dict:
         rates = numpy.zeros((options_dict[func_type]["rates_size"], len(keys)))
-        for i, rate_type in enumerate(options_dict[func_type]["necessary_keys"]):  # type: ignore[var-annotated, arg-type]
+        for i, rate_type in enumerate(options_dict[func_type]["necessary_keys"]):
             for interval in keys:
                 if rate_type in parameter_dict[interval]:
                     rates[i, interval] = parameter_dict[interval][rate_type]
