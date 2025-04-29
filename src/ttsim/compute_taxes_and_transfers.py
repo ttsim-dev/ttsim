@@ -15,6 +15,7 @@ from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
@@ -160,13 +161,32 @@ def compute_taxes_and_transfers(
     )
 
     if jit:
-        try:
-            import jax
-        except ImportError as e:
+        if not IS_JAX_INSTALLED:
             raise ImportError(
                 "JAX is not installed. Please install JAX to use JIT compilation."
-            ) from e
-        tax_transfer_function = jax.jit(tax_transfer_function)
+            )
+        import jax
+
+        # Create a list of static argument names. These correspond to the number of
+        # segments for each grouping variable.
+        # ------------------------------------------------------------------------------
+        # The following is assuming that there is only one grouping variable. If it is
+        # possible that there are multiple, we need one 'num_segments' for each. It is
+        # also assuming that the 'num_segments' is present in the input data.
+        argnames = list(inspect.signature(tax_transfer_function).parameters)
+
+        static_argnames = []
+        if "num_segments" in argnames:
+            static_argnames.append("num_segments")
+
+        # JIT the function, setting the number of segments as a static argument.
+        tax_transfer_function = jax.jit(
+            tax_transfer_function,
+            static_argnames=static_argnames,
+        )
+        # Make sure that the static argument is an integer (hashable). This should
+        # most likely be done by simply not converting it to an array prior.
+        input_data["num_segments"] = int(input_data["num_segments"])
 
     results = tax_transfer_function(**input_data)
 
@@ -397,7 +417,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=data_tree,
-        leaf_checker=lambda leaf: isinstance(leaf, pd.Series | np.ndarray),
+        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
         tree_name="data_tree",
     )
     _fail_if_p_id_is_non_unique(data_tree)
