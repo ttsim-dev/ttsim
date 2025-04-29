@@ -63,7 +63,6 @@ def test_compute_taxes_and_transfers_kindergeld(kindergeld_policy_test):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=(),
         jit=True,
     )
 

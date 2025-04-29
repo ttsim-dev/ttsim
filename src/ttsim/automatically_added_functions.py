@@ -466,7 +466,7 @@ def create_time_conversion_functions(
 
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    converted_ttsim_objects = {}
+    converted_ttsim_objects: dict[str, TTSIMObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for qual_name_data in data:
             # If base_name is in provided data, base time conversions on that.

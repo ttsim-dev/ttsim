@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import optree
 import pandas as pd
@@ -21,7 +21,7 @@ from ttsim import (
 from ttsim.policy_environment import (
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
-    load_objects_tree_for_date,
+    active_ttsim_objects_tree,
 )
 
 if TYPE_CHECKING:
@@ -40,6 +40,11 @@ def return_two():
 
 def return_three():
     return 3
+
+
+@group_creation_function()
+def fam_id() -> int:
+    pass
 
 
 class TestPolicyEnvironment:
@@ -140,15 +145,15 @@ def test_access_different_date_jahresanfang():
     ],
 )
 def test_load_functions_tree_for_date(
-    tree: dict[str, Any],
+    tree: NestedTTSIMObjectDict,
     last_day: date,
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = load_objects_tree_for_date(
+    functions_last_day = active_ttsim_objects_tree(
         resource_dir=RESOURCE_DIR, date=last_day
     )
-    functions_next_day = load_objects_tree_for_date(
+    functions_next_day = active_ttsim_objects_tree(
         resource_dir=RESOURCE_DIR, date=last_day + timedelta(days=1)
     )
 
@@ -177,3 +182,31 @@ def test_dont_destroy_group_by_functions():
     }
     environment = PolicyEnvironment(functions_tree)
     assert isinstance(environment.raw_objects_tree["foo"], GroupCreationFunction)
+
+
+def test_creating_environment_fails_when_group_ids_are_outside_top_level_namespace():
+    with pytest.raises(
+        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+    ):
+        PolicyEnvironment({"n1": {"fam_id": fam_id}})
+
+
+def test_upserting_group_ids_outside_top_level_namespace_fails():
+    with pytest.raises(
+        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+    ):
+        PolicyEnvironment({}).upsert_objects({"n1": {"fam_id": fam_id}})
+
+
+def test_input_is_recognized_as_potential_group_id():
+    environment = set_up_policy_environment(
+        resource_dir=RESOURCE_DIR, date="2020-01-01"
+    )
+    assert "kin" in environment.grouping_levels
+
+
+def test_p_id_not_recognized_as_potential_group_id():
+    environment = set_up_policy_environment(
+        resource_dir=RESOURCE_DIR, date="2020-01-01"
+    )
+    assert "p" not in environment.grouping_levels

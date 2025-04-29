@@ -1,3 +1,5 @@
+from typing import TypedDict
+
 import numpy
 
 from ttsim.config import numpy_or_jax as np
@@ -9,7 +11,7 @@ def piecewise_polynomial(
     rates: np.ndarray,
     intercepts_at_lower_thresholds: np.ndarray,
     rates_multiplier: np.ndarray = 1,
-):
+) -> np.ndarray:
     """Calculate value of the piecewise function at `x`. If the first interval begins
     at -inf the polynomial of that interval can only have slope of 0. Requesting a
     value outside of the provided thresholds will lead to undefined behaviour.
@@ -53,7 +55,11 @@ def piecewise_polynomial(
     return np.squeeze(out)
 
 
-def get_piecewise_parameters(parameter_dict, parameter, func_type):
+def get_piecewise_parameters(
+    parameter_dict: dict,
+    parameter: str,
+    func_type: str,
+) -> dict:
     """Create the objects for piecewise polynomial.
 
     Parameters
@@ -77,19 +83,19 @@ def get_piecewise_parameters(parameter_dict, parameter, func_type):
         )
 
     # Extract lower thresholds.
-    lower_thresholds, upper_thresholds, thresholds = _check_thresholds(
+    lower_thresholds, upper_thresholds, thresholds = check_and_get_thresholds(
         parameter_dict=parameter_dict, parameter=parameter, keys=keys
     )
 
     # Create and fill rates-array
-    rates = _check_rates(
+    rates = _check_and_get_rates(
         parameter_dict=parameter_dict,
         parameter=parameter,
         keys=keys,
         func_type=func_type,
     )
     # Create and fill interecept-array
-    intercepts = _check_intercepts(
+    intercepts = _check_and_get_intercepts(
         parameter_dict=parameter_dict,
         parameter=parameter,
         lower_thresholds=lower_thresholds,
@@ -106,7 +112,11 @@ def get_piecewise_parameters(parameter_dict, parameter, func_type):
     return piecewise_elements
 
 
-def _check_thresholds(parameter_dict, parameter, keys):
+def check_and_get_thresholds(
+    parameter_dict: dict,
+    parameter: str,
+    keys: list[int],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Check and transfer raw threshold data.
 
     Transfer and check raw threshold data, which needs to be specified in a
@@ -173,7 +183,17 @@ def _check_thresholds(parameter_dict, parameter, keys):
     return lower_thresholds, upper_thresholds, thresholds
 
 
-def _check_rates(parameter_dict, parameter, keys, func_type):
+class Options(TypedDict):
+    necessary_keys: list[str]
+    rates_size: int
+
+
+def _check_and_get_rates(
+    parameter_dict: dict,
+    parameter: str,
+    keys: list[int],
+    func_type: str,
+) -> np.ndarray:
     """Check and transfer raw rates data.
 
     Transfer and check raw rates data, which needs to be specified in a
@@ -191,14 +211,14 @@ def _check_rates(parameter_dict, parameter, keys, func_type):
 
     """
     options_dict = {
-        "quadratic": {
-            "necessary_keys": ["rate_linear", "rate_quadratic"],
-            "rates_size": 2,
-        },
-        "cubic": {
-            "necessary_keys": ["rate_linear", "rate_quadratic", "rate_cubic"],
-            "rates_size": 3,
-        },
+        "quadratic": Options(
+            necessary_keys=["rate_linear", "rate_quadratic"],
+            rates_size=2,
+        ),
+        "cubic": Options(
+            necessary_keys=["rate_linear", "rate_quadratic", "rate_cubic"],
+            rates_size=3,
+        ),
     }
     # Allow for specification of rate with "rate" and "rate_linear"
     if func_type == "linear":
@@ -227,9 +247,14 @@ def _check_rates(parameter_dict, parameter, keys, func_type):
     return rates
 
 
-def _check_intercepts(
-    parameter_dict, parameter, lower_thresholds, upper_thresholds, rates, keys
-):
+def _check_and_get_intercepts(
+    parameter_dict: dict,
+    parameter: str,
+    lower_thresholds: np.ndarray,
+    upper_thresholds: np.ndarray,
+    rates: np.ndarray,
+    keys: list[int],
+) -> np.ndarray:
     """Check and transfer raw intercepte data. If necessary create intercepts.
 
     Transfer and check raw rates data, which needs to be specified in a
@@ -272,15 +297,18 @@ def _check_intercepts(
             pass
 
         else:
-            intercepts = create_intercepts(
+            intercepts = _create_intercepts(
                 lower_thresholds, upper_thresholds, rates, intercepts[0]
             )
     return intercepts
 
 
-def create_intercepts(
-    lower_thresholds, upper_thresholds, rates, intercept_at_lowest_threshold
-):
+def _create_intercepts(
+    lower_thresholds: np.ndarray,
+    upper_thresholds: np.ndarray,
+    rates: np.ndarray,
+    intercept_at_lowest_threshold: np.ndarray,
+) -> np.ndarray:
     """Create intercepts from raw data.
 
     Parameters
@@ -309,7 +337,7 @@ def create_intercepts(
     intercepts_at_lower_thresholds = numpy.full_like(upper_thresholds, numpy.nan)
     intercepts_at_lower_thresholds[0] = intercept_at_lowest_threshold
     for i, up_thr in enumerate(upper_thresholds[:-1]):
-        intercepts_at_lower_thresholds[i + 1] = calculate_intercepts(
+        intercepts_at_lower_thresholds[i + 1] = _calculate_one_intercept(
             x=up_thr,
             lower_thresholds=lower_thresholds,
             upper_thresholds=upper_thresholds,
@@ -319,9 +347,13 @@ def create_intercepts(
     return intercepts_at_lower_thresholds
 
 
-def calculate_intercepts(
-    x, lower_thresholds, upper_thresholds, rates, intercepts_at_lower_thresholds
-):
+def _calculate_one_intercept(
+    x: float,
+    lower_thresholds: np.ndarray,
+    upper_thresholds: np.ndarray,
+    rates: np.ndarray,
+    intercepts_at_lower_thresholds: np.ndarray,
+) -> float:
     """Calculate the intercepts from the raw data.
 
     Parameters

@@ -258,19 +258,19 @@ class TestCreateFunctionsForTimeUnits:
         ("name", "expected"),
         [
             ("test_y", ["test_m", "test_q", "test_w", "test_d"]),
-            ("test_y_hh", ["test_m_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
+            ("test_y_kin", ["test_m_kin", "test_q_kin", "test_w_kin", "test_d_kin"]),
             ("test_y_sn", ["test_m_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
             ("test_q", ["test_y", "test_m", "test_w", "test_d"]),
-            ("test_q_hh", ["test_y_hh", "test_m_hh", "test_w_hh", "test_d_hh"]),
+            ("test_q_kin", ["test_y_kin", "test_m_kin", "test_w_kin", "test_d_kin"]),
             ("test_q_sn", ["test_y_sn", "test_m_sn", "test_w_sn", "test_d_sn"]),
             ("test_m", ["test_y", "test_q", "test_w", "test_d"]),
-            ("test_m_hh", ["test_y_hh", "test_q_hh", "test_w_hh", "test_d_hh"]),
+            ("test_m_kin", ["test_y_kin", "test_q_kin", "test_w_kin", "test_d_kin"]),
             ("test_m_sn", ["test_y_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
             ("test_w", ["test_y", "test_m", "test_q", "test_d"]),
-            ("test_w_hh", ["test_y_hh", "test_m_hh", "test_q_hh", "test_d_hh"]),
+            ("test_w_kin", ["test_y_kin", "test_m_kin", "test_q_kin", "test_d_kin"]),
             ("test_w_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_d_sn"]),
             ("test_d", ["test_y", "test_m", "test_q", "test_w"]),
-            ("test_d_hh", ["test_y_hh", "test_m_hh", "test_q_hh", "test_w_hh"]),
+            ("test_d_kin", ["test_y_kin", "test_m_kin", "test_q_kin", "test_w_kin"]),
             ("test_d_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_w_sn"]),
         ],
     )
@@ -280,7 +280,7 @@ class TestCreateFunctionsForTimeUnits:
         time_conversion_functions = create_time_conversion_functions(
             ttsim_objects={name: policy_function(leaf_name=name)(return_one)},
             data={},
-            groupings=("sn", "hh"),
+            groupings=("sn", "kin"),
         )
 
         for expected_name in expected:
@@ -290,7 +290,7 @@ class TestCreateFunctionsForTimeUnits:
         time_conversion_functions = create_time_conversion_functions(
             ttsim_objects={"test1_d": policy_function(leaf_name="test1_d")(return_one)},
             data={"test2_y": None},
-            groupings=("sn", "hh"),
+            groupings=("sn", "kin"),
         )
 
         assert "test1_d" not in time_conversion_functions
@@ -302,7 +302,7 @@ class TestCreateFunctionsForTimeUnits:
         time_conversion_functions = create_time_conversion_functions(
             ttsim_objects={"test_d": policy_function(leaf_name="test_d")(return_one)},
             data={"test_y": None},
-            groupings=("sn", "hh"),
+            groupings=("sn", "kin"),
         )
 
         assert "test_d" in time_conversion_functions

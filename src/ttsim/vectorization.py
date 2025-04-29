@@ -5,6 +5,7 @@ import textwrap
 import types
 from collections.abc import Callable
 from importlib import import_module
+from typing import cast
 
 from ttsim.config import numpy_or_jax
 
@@ -83,10 +84,9 @@ def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
         AST of new function with altered ast.
     """
     tree = _func_to_ast(func)
-    tree = _add_parent_attr_to_ast(tree)
 
     # get function location for error messages
-    func_loc = func.__module__ + "/" + func.__name__
+    func_loc = f"{func.__module__}/{func.__name__}"
 
     # transform tree nodes
     new_tree = Transformer(module, func_loc).visit(tree)
@@ -108,13 +108,6 @@ def _remove_decorator_lines(source: str) -> str:
         return "def " + source.split("\ndef ")[1]
 
 
-def _add_parent_attr_to_ast(tree: ast.AST) -> ast.AST:
-    for node in ast.walk(tree):
-        for child in ast.iter_child_nodes(node):
-            child.parent = node
-    return tree
-
-
 # ======================================================================================
 # Transformation class
 # ======================================================================================
@@ -131,20 +124,22 @@ class Transformer(ast.NodeTransformer):
             node, module=self.module, func_loc=self.func_loc
         )
 
-    def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.AST:  # noqa: N802
+    def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:  # noqa: N802
         if isinstance(node.op, ast.Not):
-            out = _not_to_call(node, module=self.module)
+            return _not_to_call(node, module=self.module)
         else:
-            out = node
-        return out
+            return node
 
-    def visit_BoolOp(self, node: ast.BoolOp) -> ast.AST:  # noqa: N802
+    def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:  # noqa: N802
         self.generic_visit(node)
         return _boolop_to_call(node, module=self.module)
 
-    def visit_If(self, node: ast.If) -> ast.AST:  # noqa: N802
+    def visit_If(  # noqa: N802
+        self, node: ast.If
+    ) -> ast.Call | ast.Return | ast.Assign | ast.AugAssign:
         self.generic_visit(node)
         call = _if_to_call(node, module=self.module, func_loc=self.func_loc)
+        out: ast.Call | ast.Return | ast.Assign | ast.AugAssign
         if isinstance(node.body[0], ast.Return):
             out = ast.Return(call)
         elif isinstance(node.body[0], (ast.Assign, ast.AugAssign)):
@@ -179,19 +174,19 @@ def _not_to_call(node: ast.UnaryOp, module: str) -> ast.Call:
 
 def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     """Transform If statement to Call."""
-    args = [node.test, node.body[0].value]
+    args = [node.test, node.body[0].value]  # type: ignore[attr-defined]
 
     if len(node.orelse) > 1 or len(node.body) > 1:
         msg = _too_many_operations_error_message(node, func_loc=func_loc)
         raise TranslateToVectorizableError(msg)
     elif node.orelse == []:
         if isinstance(node.body[0], ast.Return):
-            msg = _return_and_no_else_error_message(node, func_loc=func_loc)
+            msg = _return_and_no_else_error_message(node.body[0], func_loc=func_loc)
             raise TranslateToVectorizableError(msg)
         elif hasattr(node.body[0], "targets"):
             name = ast.Name(id=node.body[0].targets[0].id, ctx=ast.Load())
         else:
-            name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())
+            name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # type: ignore[attr-defined]
         args.append(name)
     elif isinstance(node.orelse[0], ast.Return):
         args.append(node.orelse[0].value)
@@ -240,7 +235,7 @@ def _boolop_to_call(node: ast.BoolOp, module: str) -> ast.Call:
     """Transform BoolOp operation to Call."""
     operation = {ast.And: "logical_and", ast.Or: "logical_or"}[type(node.op)]
 
-    def _constructor(left: ast.AST, right: ast.AST) -> ast.Call:
+    def _constructor(left: ast.Call | ast.expr, right: ast.Call | ast.expr) -> ast.Call:
         """Construct calls of the form `module.logical_(and|or)(left, right)`."""
         return ast.Call(
             func=ast.Attribute(
@@ -252,12 +247,12 @@ def _boolop_to_call(node: ast.BoolOp, module: str) -> ast.Call:
             keywords=[],
         )
 
-    values = [
+    values: list[ast.Call | ast.expr] = [
         _boolop_to_call(v, module=module) if isinstance(v, ast.BoolOp) else v
         for v in node.values
     ]
 
-    return functools.reduce(_constructor, values)
+    return cast("ast.Call", functools.reduce(_constructor, values))
 
 
 def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast.AST:
@@ -269,7 +264,7 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
     if not transform_node:
         return node
 
-    func_id = node.func.id
+    func_id = node.func.id  # type: ignore[attr-defined]
     call = node
     args = node.args
 
@@ -315,7 +310,7 @@ class TranslateToVectorizableError(ValueError):
 
 def _too_many_arguments_call_error_message(node: ast.Call, func_loc: str) -> str:
     source = _node_to_formatted_source(node)
-    _func_name = node.func.id
+    _func_name = node.func.id  # type: ignore[attr-defined]
     return (
         "\n\n"
         f"The function {_func_name} is called with too many arguments. Please only use "

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import inspect
-import re
 import warnings
 from typing import TYPE_CHECKING, Any
 
@@ -33,7 +32,6 @@ from ttsim.shared import (
 )
 from ttsim.ttsim_objects import (
     FKType,
-    GroupCreationFunction,
     TTSIMFunction,
 )
 
@@ -53,7 +51,6 @@ def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
-    groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
     jit: bool = False,
@@ -88,15 +85,11 @@ def compute_taxes_and_transfers(
     _fail_if_targets_tree_not_valid(targets_tree)
     _fail_if_data_tree_not_valid(data_tree)
     _fail_if_environment_not_valid(environment)
-    _fail_if_group_ids_are_outside_top_level_namespace(
-        environment=environment,
-        groupings=groupings,
-    )
+
     # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
         time_units=tuple(TIME_UNIT_LABELS.keys()),
-        groupings=groupings,
     )
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
@@ -110,7 +103,7 @@ def compute_taxes_and_transfers(
         ttsim_objects=ttsim_objects,
         targets=targets,
         data=data,
-        groupings=groupings,
+        groupings=environment.grouping_levels,
     )
 
     functions_overridden, functions_to_be_used = partition_by_reference_dict(
@@ -139,8 +132,7 @@ def compute_taxes_and_transfers(
 
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
-        functions=functions,
-        groupings=groupings,
+        groupings=environment.grouping_levels,
     )
     _input_data_with_p_id = {
         "p_id": data["p_id"],
@@ -208,29 +200,9 @@ def compute_taxes_and_transfers(
     return result_tree
 
 
-def _fail_if_group_ids_are_outside_top_level_namespace(
-    environment: PolicyEnvironment,
-    groupings: tuple[str, ...],
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_id_pattern = re.compile(f"(?P<group>{'|'.join(groupings)})_id$")
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(environment.raw_objects_tree)
-        if len(tree_path) > 1 and group_id_pattern.match(tree_path[-1])
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
-
-
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
     time_units: tuple[str, ...],
-    groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
 
@@ -245,9 +217,8 @@ def _get_top_level_namespace(
         The top level namespace.
     """
     direct_top_level_names = set(environment.raw_objects_tree.keys())
-
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        groupings=groupings,
+        groupings=environment.grouping_levels,
         time_units=time_units,
     )
 
@@ -266,11 +237,11 @@ def _get_top_level_namespace(
                 all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    gp = group_pattern(groupings)
+    gp = group_pattern(environment.grouping_levels)
     potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
 
     for name in potential_base_names:
-        for g in groupings:
+        for g in environment.grouping_levels:
             all_top_level_names.add(f"{name}_{g}")
 
     return all_top_level_names
@@ -432,7 +403,6 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
-    functions: QualNameTTSIMFunctionDict,
     groupings: tuple[str, ...],
 ) -> None:
     """
@@ -445,19 +415,14 @@ def _fail_if_group_variables_not_constant_within_groups(
     ----------
     data
         Dictionary of data.
-    functions
-        Dictionary of functions.
+    groupings
+        The groupings available in the policy environment.
     """
-    group_by_functions = {
-        k: v for k, v in functions.items() if isinstance(v, GroupCreationFunction)
-    }
-
     faulty_data_columns = []
 
     for name, data_column in data.items():
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            group_by_functions=group_by_functions,
             groupings=groupings,
         )
         if group_by_id in data:
@@ -490,7 +455,7 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
         raise ValueError("The input data must contain the p_id.")
 
     # Check for non-unique p_ids
-    p_id_counts = {}
+    p_id_counts: dict[int, int] = {}
     for i in p_id:
         if i in p_id_counts:
             p_id_counts[i] += 1
@@ -661,9 +626,7 @@ def _fail_if_root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-def _func_depends_on_parameters_only(
-    func: TTSIMFunction,
-) -> bool:
+def _func_depends_on_parameters_only(func: TTSIMFunction) -> bool:
     """Check if a function depends on parameters only."""
     return (
         len(

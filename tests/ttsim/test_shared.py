@@ -191,103 +191,22 @@ def test_partition_tree_by_reference_tree(tree_to_partition, reference_tree, exp
 
 
 @pytest.mark.parametrize(
-    "target_name, group_by_functions, expected",
+    "target_name, expected",
     [
-        (("namespace1__foo"), {}, None),
-        (("namespace1__foo_hh"), {}, "hh_id"),
-        (
-            ("namespace1__foo_hh"),
-            {"namespace1__hh_id": None},
-            "hh_id",
-        ),
-        (
-            ("namespace1__foo_bg"),
-            {"arbeitslosengeld_2__bg_id": None},
-            "arbeitslosengeld_2__bg_id",
-        ),
-        (
-            ("namespace1__foo_eg"),
-            {"grundsicherung__eg_id": None},
-            "grundsicherung__eg_id",
-        ),
-        (
-            ("namespace1__foo_eg"),
-            {"arbeitslosengeld_2__eg_id": None},
-            "arbeitslosengeld_2__eg_id",
-        ),
-        (
-            ("arbeitslosengeld_2__einkommen_eg"),
-            {
-                "arbeitslosengeld_2__eg_id": None,
-                "grundsicherung__eg_id": None,
-            },
-            "arbeitslosengeld_2__eg_id",
-        ),
+        (("namespace1__foo"), None),
+        (("foo_kin"), "kin_id"),
+        (("namespace1__foo_kin"), "kin_id"),
+        (("namespace1__foo_fam"), "fam_id"),
     ],
 )
-def test_get_name_of_group_by_id(target_name, group_by_functions, expected):
+def test_get_name_of_group_by_id(target_name, expected):
     assert (
         get_name_of_group_by_id(
             target_name=target_name,
-            group_by_functions=group_by_functions,
-            groupings=("hh", "bg", "eg"),
+            groupings=("kin", "fam"),
         )
         == expected
     )
-
-
-@pytest.mark.parametrize(
-    "target_name, group_by_functions, expected_error_match",
-    [
-        (
-            ("outermost__foo_bg"),
-            {
-                "outermost__bg_id": None,
-                "outermost__nested__bg_id": None,
-            },
-            (
-                r"Group-by-identifier for target:[\s\S]+"
-                r"\('outermost', 'foo_bg'\)[\s\S]+is ambiguous[\s\S]+"
-                r"Found candidates[\s\S]+"
-                r"\('outermost', 'bg_id'\)[\s\S]+"
-                r"\('outermost', 'nested', 'bg_id'\)"
-            ),
-        ),
-        (
-            ("outermost__foo_bg"),
-            {
-                "outermost__inner1__bg_id": None,
-                "outermost__inner2__bg_id": None,
-            },
-            r"Group-by-identifier for target:[\s\S]+"
-            r"\('outermost', 'foo_bg'\)[\s\S]+is ambiguous[\s\S]+"
-            r"Found candidates[\s\S]+"
-            r"\('outermost', 'inner1', 'bg_id'\)[\s\S]+"
-            r"\('outermost', 'inner2', 'bg_id'\)",
-        ),
-        (
-            ("new_transfer__einkommen_eg"),
-            {
-                "arbeitslosengeld_2__eg_id": None,
-                "grundsicherung__eg_id": None,
-            },
-            r"Group-by-identifier for target:[\s\S]+"
-            r"\('new_transfer', 'einkommen_eg'\)[\s\S]+is ambiguous[\s\S]+"
-            r"Found candidates[\s\S]+"
-            r"\('arbeitslosengeld_2', 'eg_id'\)[\s\S]+"
-            r"\('grundsicherung', 'eg_id'\)",
-        ),
-    ],
-)
-def test_get_name_of_group_by_id_fails(
-    target_name, group_by_functions, expected_error_match
-):
-    with pytest.raises(ValueError, match=expected_error_match):
-        get_name_of_group_by_id(
-            target_name=target_name,
-            group_by_functions=group_by_functions,
-            groupings=("hh", "bg", "eg"),
-        )
 
 
 @pytest.mark.parametrize(
@@ -300,13 +219,13 @@ def test_get_name_of_group_by_id_fails(
         "expected_grouping",
     ),
     [
-        ("foo", ("m", "y"), ["hh"], "foo", None, None),
-        ("foo_m_hh", ("m", "y"), ["hh"], "foo", "m", "hh"),
-        ("foo_y_hh", ("m", "y"), ["hh"], "foo", "y", "hh"),
-        ("foo_m", ("m", "y"), ["hh"], "foo", "m", None),
-        ("foo_y", ("m", "y"), ["hh"], "foo", "y", None),
-        ("foo_hh", ("m", "y"), ["hh"], "foo", None, "hh"),
-        ("foo_hh_bar", ("m", "y"), ["hh"], "foo_hh_bar", None, None),
+        ("foo", ("m", "y"), ["kin"], "foo", None, None),
+        ("foo_m_kin", ("m", "y"), ["kin"], "foo", "m", "kin"),
+        ("foo_y_kin", ("m", "y"), ["kin"], "foo", "y", "kin"),
+        ("foo_m", ("m", "y"), ["kin"], "foo", "m", None),
+        ("foo_y", ("m", "y"), ["kin"], "foo", "y", None),
+        ("foo_kin", ("m", "y"), ["kin"], "foo", None, "kin"),
+        ("foo_kin_bar", ("m", "y"), ["kin"], "foo_kin_bar", None, None),
     ],
 )
 def test_get_re_pattern_for_time_units_and_groupings(
@@ -335,9 +254,9 @@ def test_get_re_pattern_for_time_units_and_groupings(
         "expected_match",
     ),
     [
-        ("foo", ["m", "y"], ["hh"], "foo_m_hh"),
-        ("foo", ["m", "y"], ["hh", "x"], "foo_m"),
-        ("foo", ["m", "y"], ["hh", "x"], "foo_hh"),
+        ("foo", ["m", "y"], ["kin"], "foo_m_kin"),
+        ("foo", ["m", "y"], ["kin", "x"], "foo_m"),
+        ("foo", ["m", "y"], ["kin", "x"], "foo_kin"),
     ],
 )
 def test_get_re_pattern_for_some_base_name(

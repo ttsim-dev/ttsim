@@ -25,9 +25,9 @@ def ehe_id(
     """
     Compute the ID of the Ehe for each person.
     """
-    p_id_to_ehe_id = {}
+    p_id_to_ehe_id: dict[int, int] = {}
     next_ehe_id = 0
-    result = []
+    result: list[int] = []
 
     for index, current_p_id in enumerate(p_id):
         current_p_id_ehepartner = familie__p_id_ehepartner[index]
@@ -57,8 +57,8 @@ def fg_id(  # noqa: PLR0912
     Compute the ID of the Familiengemeinschaft for each person.
     """
     # Build indexes
-    p_id_to_index = {}
-    p_id_to_p_ids_children = {}
+    p_id_to_index: dict[int, int] = {}
+    p_id_to_p_ids_children: dict[int, list[int]] = {}
 
     for index, current_p_id in enumerate(p_id):
         # Fast access from p_id to index
@@ -160,8 +160,8 @@ def bg_id(
     # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
     # once Bedarfsgemeinschaften are fully endogenous
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
-    counter = Counter()
-    result = []
+    counter: Counter[int] = Counter()
+    result: list[int] = []
 
     for index, current_fg_id in enumerate(fg_id):
         current_alter = alter[index]
@@ -185,9 +185,9 @@ def eg_id(
     """
     Compute the ID of the Einstandsgemeinschaft for each person.
     """
-    p_id_to_eg_id = {}
+    p_id_to_eg_id: dict[int, int] = {}
     next_eg_id = 0
-    result = []
+    result: list[int] = []
 
     for index, current_p_id in enumerate(p_id):
         current_p_id_einstandspartner = arbeitslosengeld_2__p_id_einstandspartner[index]
@@ -218,7 +218,7 @@ def wthh_id(
     """
     Compute the ID of the wohngeldrechtlicher Teilhaushalt.
     """
-    result = []
+    result: list[int] = []
     for index, current_hh_id in enumerate(hh_id):
         if (
             vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg[index]
@@ -242,10 +242,10 @@ def sn_id(
     """
     Compute a Steuernummer (ID) for each person / couple.
     """
-    p_id_to_sn_id = {}
-    p_id_to_gemeinsam_veranlagt = {}
+    p_id_to_sn_id: dict[int, int] = {}
+    p_id_to_gemeinsam_veranlagt: dict[int, bool] = {}
     next_sn_id = 0
-    result = []
+    result: list[int] = []
 
     for index, current_p_id in enumerate(p_id):
         current_p_id_ehepartner = familie__p_id_ehepartner[index]

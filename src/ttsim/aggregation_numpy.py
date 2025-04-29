@@ -2,7 +2,7 @@ import numpy
 import numpy_groupies as npg
 
 
-def grouped_count(group_id):
+def grouped_count(group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_count")
     out_on_hh = npg.aggregate(
         group_id, numpy.ones(len(group_id)), func="sum", fill_value=0
@@ -12,7 +12,7 @@ def grouped_count(group_id):
     return out
 
 
-def grouped_sum(column, group_id):
+def grouped_sum(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_sum")
     fail_if_dtype_not_numeric_or_boolean(column, agg_func="grouped_sum")
     if column.dtype == bool:
@@ -24,7 +24,7 @@ def grouped_sum(column, group_id):
     return out
 
 
-def grouped_mean(column, group_id):
+def grouped_mean(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_mean")
     fail_if_dtype_not_float(column, agg_func="grouped_mean")
 
@@ -35,7 +35,7 @@ def grouped_mean(column, group_id):
     return out
 
 
-def grouped_max(column, group_id):
+def grouped_max(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_max")
     fail_if_dtype_not_numeric_or_datetime(column, agg_func="grouped_max")
 
@@ -60,7 +60,7 @@ def grouped_max(column, group_id):
     return out
 
 
-def grouped_min(column, group_id):
+def grouped_min(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_min")
     fail_if_dtype_not_numeric_or_datetime(column, agg_func="grouped_min")
 
@@ -88,7 +88,7 @@ def grouped_min(column, group_id):
     return out
 
 
-def grouped_any(column, group_id):
+def grouped_any(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_any")
     fail_if_dtype_not_boolean_or_int(column, agg_func="grouped_any")
 
@@ -99,7 +99,7 @@ def grouped_any(column, group_id):
     return out
 
 
-def grouped_all(column, group_id):
+def grouped_all(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_all")
     fail_if_dtype_not_boolean_or_int(column, agg_func="grouped_all")
 
@@ -110,14 +110,20 @@ def grouped_all(column, group_id):
     return out
 
 
-def count_by_p_id(p_id_to_aggregate_by, p_id_to_store_by):
+def count_by_p_id(
+    p_id_to_aggregate_by: numpy.ndarray, p_id_to_store_by: numpy.ndarray
+) -> numpy.ndarray:
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="count_by_p_id")
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="count_by_p_id")
 
     raise NotImplementedError
 
 
-def sum_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def sum_by_p_id(
+    column: numpy.ndarray,
+    p_id_to_aggregate_by: numpy.ndarray,
+    p_id_to_store_by: numpy.ndarray,
+) -> numpy.ndarray:
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="sum_by_p_id")
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="sum_by_p_id")
     fail_if_dtype_not_numeric_or_boolean(column, agg_func="sum_by_p_id")
@@ -134,42 +140,62 @@ def sum_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
     return out
 
 
-def mean_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def mean_by_p_id(
+    column: numpy.ndarray,
+    p_id_to_aggregate_by: numpy.ndarray,
+    p_id_to_store_by: numpy.ndarray,
+) -> numpy.ndarray:
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="mean_by_p_id")
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="mean_by_p_id")
     fail_if_dtype_not_float(column, agg_func="mean_by_p_id")
     raise NotImplementedError
 
 
-def max_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def max_by_p_id(
+    column: numpy.ndarray,
+    p_id_to_aggregate_by: numpy.ndarray,
+    p_id_to_store_by: numpy.ndarray,
+) -> numpy.ndarray:
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="max_by_p_id")
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="max_by_p_id")
     fail_if_dtype_not_numeric_or_datetime(column, agg_func="max_by_p_id")
     raise NotImplementedError
 
 
-def min_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def min_by_p_id(
+    column: numpy.ndarray,
+    p_id_to_aggregate_by: numpy.ndarray,
+    p_id_to_store_by: numpy.ndarray,
+) -> numpy.ndarray:
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="min_by_p_id")
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="min_by_p_id")
     fail_if_dtype_not_numeric_or_datetime(column, agg_func="min_by_p_id")
     raise NotImplementedError
 
 
-def any_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def any_by_p_id(
+    column: numpy.ndarray,
+    p_id_to_aggregate_by: numpy.ndarray,
+    p_id_to_store_by: numpy.ndarray,
+) -> numpy.ndarray:
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="any_by_p_id")
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="any_by_p_id")
     fail_if_dtype_not_boolean_or_int(column, agg_func="any_by_p_id")
     raise NotImplementedError
 
 
-def all_by_p_id(column, p_id_to_aggregate_by, p_id_to_store_by):
+def all_by_p_id(
+    column: numpy.ndarray,
+    p_id_to_aggregate_by: numpy.ndarray,
+    p_id_to_store_by: numpy.ndarray,
+) -> numpy.ndarray:
     fail_if_dtype_not_int(p_id_to_store_by, agg_func="all_by_p_id")
     fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func="all_by_p_id")
     fail_if_dtype_not_boolean_or_int(column, agg_func="all_by_p_id")
     raise NotImplementedError
 
 
-def fail_if_dtype_not_numeric(column, agg_func):
+def fail_if_dtype_not_numeric(column: numpy.ndarray, agg_func: str) -> None:
     if not numpy.issubdtype(column.dtype, numpy.number):
         raise TypeError(
             f"Aggregation function {agg_func} was applied to a column "
@@ -177,7 +203,7 @@ def fail_if_dtype_not_numeric(column, agg_func):
         )
 
 
-def fail_if_dtype_not_float(column, agg_func):
+def fail_if_dtype_not_float(column: numpy.ndarray, agg_func: str) -> None:
     if not numpy.issubdtype(column.dtype, numpy.floating):
         raise TypeError(
             f"Aggregation function {agg_func} was applied to a column "
@@ -185,7 +211,7 @@ def fail_if_dtype_not_float(column, agg_func):
         )
 
 
-def fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func):
+def fail_if_dtype_not_int(p_id_to_aggregate_by: numpy.ndarray, agg_func: str) -> None:
     if not numpy.issubdtype(p_id_to_aggregate_by.dtype, numpy.integer):
         raise TypeError(
             f"The dtype of id columns must be integer. Aggregation function {agg_func} "
@@ -193,7 +219,7 @@ def fail_if_dtype_not_int(p_id_to_aggregate_by, agg_func):
         )
 
 
-def fail_if_dtype_not_numeric_or_boolean(column, agg_func):
+def fail_if_dtype_not_numeric_or_boolean(column: numpy.ndarray, agg_func: str) -> None:
     if not (numpy.issubdtype(column.dtype, numpy.number) or column.dtype == "bool"):
         raise TypeError(
             f"Aggregation function {agg_func} was applied to a column with dtype "
@@ -201,7 +227,7 @@ def fail_if_dtype_not_numeric_or_boolean(column, agg_func):
         )
 
 
-def fail_if_dtype_not_numeric_or_datetime(column, agg_func):
+def fail_if_dtype_not_numeric_or_datetime(column: numpy.ndarray, agg_func: str) -> None:
     if not (
         numpy.issubdtype(column.dtype, numpy.number)
         or numpy.issubdtype(column.dtype, numpy.datetime64)
@@ -212,7 +238,7 @@ def fail_if_dtype_not_numeric_or_datetime(column, agg_func):
         )
 
 
-def fail_if_dtype_not_boolean_or_int(column, agg_func):
+def fail_if_dtype_not_boolean_or_int(column: numpy.ndarray, agg_func: str) -> None:
     if not (
         numpy.issubdtype(column.dtype, numpy.integer)
         or numpy.issubdtype(column.dtype, numpy.bool_)

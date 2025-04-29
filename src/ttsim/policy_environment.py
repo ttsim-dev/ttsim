@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
+import itertools
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -9,9 +10,9 @@ import numpy
 import optree
 import yaml
 
-from ttsim.loader import load_objects_tree_for_date
+from ttsim.loader import active_ttsim_objects_tree, orig_ttsim_objects_tree
 from ttsim.piecewise_polynomial import (
-    _check_thresholds,
+    check_and_get_thresholds,
     get_piecewise_parameters,
     piecewise_polynomial,
 )
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         DashedISOString,
+        FlatTTSIMObjectDict,
         NestedTTSIMObjectDict,
     )
 
@@ -65,6 +67,7 @@ class PolicyEnvironment:
             lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
             raw_objects_tree,
         )
+        _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
 
         # Read in parameters and aggregation specs
         self._params = params if params is not None else {}
@@ -81,6 +84,15 @@ class PolicyEnvironment:
     def params(self) -> dict[str, Any]:
         """The parameters of the policy environment."""
         return self._params
+
+    @property
+    def grouping_levels(self) -> tuple[str, ...]:
+        """The grouping levels of the policy environment."""
+        return tuple(
+            name.rsplit("_", 1)[0]
+            for name in self._raw_objects_tree.keys()  # noqa: SIM118
+            if name.endswith("_id") and name != "p_id"
+        )
 
     def upsert_objects(
         self, tree_to_upsert: NestedTTSIMObjectDict
@@ -114,13 +126,15 @@ class PolicyEnvironment:
             to_upsert=tree_to_upsert_with_correct_types,
         )
 
+        _fail_if_group_ids_are_outside_top_level_namespace(new_tree)
+
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = new_tree  # noqa: SLF001
         result._params = self._params  # noqa: SLF001
 
         return result
 
-    def replace_all_parameters(self, params: dict[str, Any]):
+    def replace_all_parameters(self, params: dict[str, Any]) -> PolicyEnvironment:
         """
         Replace all parameters of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
@@ -162,7 +176,10 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
-    functions_tree = load_objects_tree_for_date(resource_dir=resource_dir, date=date)
+    # Will move this line out eventually. Just include in tests, do not run every time.
+    fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+        orig_ttsim_objects_tree=orig_ttsim_objects_tree(resource_dir)
+    )
 
     params = {}
     if "_gettsim" in resource_dir.name:
@@ -194,9 +211,78 @@ def set_up_policy_environment(
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
     return PolicyEnvironment(
-        functions_tree,
-        params,
+        raw_objects_tree=active_ttsim_objects_tree(
+            resource_dir=resource_dir, date=date
+        ),
+        params=params,
     )
+
+
+def fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+) -> None:
+    """Check overlapping time periods of TTSIMObjects.
+
+    Raises
+    ------
+    ConflictingTimeDependentObjectsError
+        If multiple objects with the same leaf name are active at the same time.
+    """
+
+    # Create mapping from leaf names to objects.
+    checker: dict[tuple[str, ...], list[TTSIMObject]] = {}
+    for orig_path, obj in orig_ttsim_objects_tree.items():
+        path = (*orig_path[:-2], obj.leaf_name)
+        if path in checker:
+            checker[path].append(obj)
+        else:
+            checker[path] = [obj]
+
+    # Check for overlapping start and end dates for time-dependent functions.
+    for path, objects in checker.items():
+        dates_active = [(f.start_date, f.end_date) for f in objects]
+        for (start1, end1), (start2, end2) in itertools.combinations(dates_active, 2):
+            if start1 <= end2 and start2 <= end1:
+                raise ConflictingTimeDependentObjectsError(
+                    affected_ttsim_objects=objects,
+                    path=path,
+                    overlap_start=max(start1, start2),
+                    overlap_end=min(end1, end2),
+                )
+
+
+class ConflictingTimeDependentObjectsError(Exception):
+    def __init__(
+        self,
+        affected_ttsim_objects: list[TTSIMObject],
+        path: tuple[str, ...],
+        overlap_start: datetime.date,
+        overlap_end: datetime.date,
+    ) -> None:
+        self.affected_ttsim_objects = affected_ttsim_objects
+        self.path = path
+        self.overlap_start = overlap_start
+        self.overlap_end = overlap_end
+
+    def __str__(self) -> str:
+        overlapping_objects = [
+            obj.__getattribute__("original_function_name")
+            for obj in self.affected_ttsim_objects
+            if obj
+        ]
+        return f"""
+        Functions with path
+
+          {self.path}
+
+        have overlapping start and end dates. The following functions are affected:
+
+          {
+            '''
+          '''.join(overlapping_objects)
+        }
+
+        Overlap from {self.overlap_start} to {self.overlap_end}."""
 
 
 def _convert_to_policy_function_if_not_ttsim_object(
@@ -225,7 +311,24 @@ def _convert_to_policy_function_if_not_ttsim_object(
     return converted_object
 
 
-def _parse_piecewise_parameters(tax_data):
+def _fail_if_group_ids_are_outside_top_level_namespace(
+    raw_objects_tree: NestedTTSIMObjectDict,
+) -> None:
+    """Fail if group ids are outside the top level namespace."""
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
+        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
+        )
+
+
+def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
     """Check if parameters are stored in implicit structures and align to general
     structure.
 
@@ -239,7 +342,7 @@ def _parse_piecewise_parameters(tax_data):
     Parsed parameters ready to use in gettsim.
 
     """
-    for param in tax_data:
+    for param in tax_data:  # noqa: PLC0206
         if isinstance(tax_data[param], dict):
             if "type" in tax_data[param]:
                 if tax_data[param]["type"].startswith("piecewise"):
@@ -259,7 +362,9 @@ def _parse_piecewise_parameters(tax_data):
     return tax_data
 
 
-def _parse_kinderzuschl_max(date, params):
+def _parse_kinderzuschl_max(
+    date: datetime.date, params: dict[str, Any]
+) -> dict[str, Any]:
     """Prior to 2021, the maximum amount of the Kinderzuschlag was specified directly in
     the laws and directives.
 
@@ -294,7 +399,9 @@ def _parse_kinderzuschl_max(date, params):
     return params
 
 
-def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
+def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
+    date: datetime.date, params: dict[str, Any]
+) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
     current year as follows:
 
@@ -331,7 +438,9 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(date, params):
     return params
 
 
-def _parse_vorsorgepauschale_rentenv_anteil(date, params):
+def _parse_vorsorgepauschale_rentenv_anteil(
+    date: datetime.date, params: dict[str, Any]
+) -> dict[str, Any]:
     """Calculate the share of pension contributions to be deducted for Lohnsteuer
     increases by year.
 
@@ -392,7 +501,7 @@ def _load_parameter_group_from_yaml(
 
     """
 
-    def subtract_years_from_date(date, years):
+    def subtract_years_from_date(date: datetime.date, years: int) -> datetime.date:
         """Subtract one or more years from a date object."""
         try:
             date = date.replace(year=date.year - years)
@@ -402,7 +511,7 @@ def _load_parameter_group_from_yaml(
             date = date.replace(year=date.year - years, day=date.day - 1)
         return date
 
-    def set_date_to_beginning_of_year(date):
+    def set_date_to_beginning_of_year(date: datetime.date) -> datetime.date:
         """Set date to the beginning of the year."""
 
         date = date.replace(month=1, day=1)
@@ -426,15 +535,15 @@ def _load_parameter_group_from_yaml(
         policy_dates = sorted(
             key for key in raw_group_data[param] if isinstance(key, datetime.date)
         )
-
         past_policies = [d for d in policy_dates if d <= date]
 
         if not past_policies:
             # If no policy exists, then we check if the policy maybe agrees right now
             # with another one.
             # Otherwise, do not create an entry for this parameter.
-            if "deviation_from" in raw_group_data[param][numpy.min(policy_dates)]:
-                future_policy = raw_group_data[param][numpy.min(policy_dates)]
+            min_policy_date = numpy.array(policy_dates).min()
+            if "deviation_from" in raw_group_data[param][min_policy_date]:
+                future_policy = raw_group_data[param][min_policy_date]
                 if "." in future_policy["deviation_from"]:
                     path_list = future_policy["deviation_from"].split(".")
                     params_temp = _load_parameter_group_from_yaml(
@@ -447,7 +556,8 @@ def _load_parameter_group_from_yaml(
                         out_params[param] = params_temp[path_list[1]]
 
         else:
-            policy_in_place = raw_group_data[param][numpy.max(past_policies)]
+            max_past_policy_date = numpy.array(past_policies).max()
+            policy_in_place = raw_group_data[param][max_past_policy_date]
             if "scalar" in policy_in_place:
                 if policy_in_place["scalar"] == "inf":
                     out_params[param] = numpy.inf
@@ -465,7 +575,7 @@ def _load_parameter_group_from_yaml(
                 )
                 if "deviation_from" in policy_in_place:
                     if policy_in_place["deviation_from"] == "previous":
-                        new_date = numpy.max(past_policies) - datetime.timedelta(days=1)
+                        new_date = max_past_policy_date - datetime.timedelta(days=1)
                         out_params[param] = _load_parameter_group_from_yaml(
                             new_date, group, parameters=[param], yaml_path=yaml_path
                         )[param]
@@ -478,7 +588,7 @@ def _load_parameter_group_from_yaml(
                             yaml_path=yaml_path,
                         )[path_list[1]]
                     for key in value_keys:
-                        key_list = []
+                        key_list: list[str] = []
                         out_params[param][key] = transfer_dictionary(
                             policy_in_place[key],
                             copy.deepcopy(out_params[param][key]),
@@ -522,67 +632,16 @@ def _load_parameter_group_from_yaml(
 
     out_params["datum"] = numpy.datetime64(date)
 
-    # Load rounding parameters if they exist
-    if "rounding" in raw_group_data:
-        out_params["rounding"] = _load_rounding_parameters(
-            date, raw_group_data["rounding"]
-        )
     return out_params
 
 
-def _load_rounding_parameters(
-    date: datetime.date,
-    rounding_spec: dict[str, Any],
+def transfer_dictionary(
+    remaining_dict: dict[str, Any] | Any, new_dict: dict[str, Any], key_list: list[str]
 ) -> dict[str, Any]:
-    """Load rounding parameters for a specific date from a dictionary.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy system is set up.
-    rounding_spec
-          - Keys: Functions to be rounded.
-          - Values: Rounding parameters for all dates
-
-    Returns
-    -------
-    Loaded rounding parameters.
-        - Keys: Functions to be rounded.
-        - Values: Rounding parameters for the specified date
-
-    """
-    out = {}
-    rounding_parameters = ["direction", "base"]
-
-    # Load values of all parameters at the specified date.
-    for function_name, rounding_spec_func in rounding_spec.items():
-        # Find all specified policy dates before date.
-        policy_dates_before_date = sorted(
-            key
-            for key in rounding_spec_func
-            if isinstance(key, datetime.date) and key <= date
-        )
-
-        # If any rounding specs are defined for a date before the specified
-        # date, copy them to params dictionary.
-        # If no appropriate rounding specs are found for the requested date,
-        # the function will not appear in the returned dictionary.
-        # Note this will raise an error later unless the user adds an
-        # appropriate rounding specification to the parameters dictionary.
-        if policy_dates_before_date:
-            policy_date_in_place = numpy.max(policy_dates_before_date)
-            policy_in_place = rounding_spec_func[policy_date_in_place]
-            out[function_name] = {}
-            for key in [k for k in policy_in_place if k in rounding_parameters]:
-                out[function_name][key] = policy_in_place[key]
-    return out
-
-
-def transfer_dictionary(remaining_dict, new_dict, key_list):
     # To call recursive, always check if object is a dict
     if isinstance(remaining_dict, dict):
         for key in remaining_dict:
-            key_list_updated = [*key_list, key]
+            key_list_updated: list[str] = [*key_list, key]
             new_dict = transfer_dictionary(
                 remaining_dict[key], new_dict, key_list_updated
             )
@@ -614,7 +673,9 @@ def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
             )
 
 
-def add_progressionsfaktor(params_dict, parameter):
+def add_progressionsfaktor(
+    params_dict: dict[str | int, Any], parameter: str
+) -> dict[str | int, Any]:
     """Quadratic factor of tax tariff function.
 
     The German tax tariff is defined on several income intervals with distinct
@@ -631,9 +692,9 @@ def add_progressionsfaktor(params_dict, parameter):
     out_dict = copy.deepcopy(params_dict)
     interval_keys = sorted(key for key in out_dict if isinstance(key, int))
     # Check and extract lower thresholds.
-    lower_thresholds, upper_thresholds, thresholds = _check_thresholds(
+    lower_thresholds, upper_thresholds = check_and_get_thresholds(
         params_dict, parameter, interval_keys
-    )
+    )[:2]
     for key in interval_keys:
         if "rate_quadratic" not in out_dict[key]:
             out_dict[key]["rate_quadratic"] = (

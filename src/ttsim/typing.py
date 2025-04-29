@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from ttsim.ttsim_objects import PolicyInput, TTSIMFunction, TTSIMObject
 
     NestedTTSIMObjectDict = Mapping[str, TTSIMObject | "NestedTTSIMObjectDict"]
+    FlatTTSIMObjectDict = Mapping[tuple[str, ...], TTSIMObject]
     QualNameTTSIMObjectDict = Mapping[str, TTSIMObject]
 
     # Specialise from dags' GenericCallable types to GETTSIM's functions.

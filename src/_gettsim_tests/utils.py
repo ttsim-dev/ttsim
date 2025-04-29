@@ -7,7 +7,7 @@ import dags.tree as dt
 import pandas as pd
 import yaml
 
-from _gettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
+from _gettsim.config import RESOURCE_DIR
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     PolicyEnvironment,
@@ -75,7 +75,6 @@ def execute_test(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -153,7 +152,7 @@ def get_test_data_as_tree(test_data: NestedDataDict) -> NestedDataDict:
     provided_inputs = test_data["inputs"].get("provided", {})
     assumed_inputs = test_data["inputs"].get("assumed", {})
 
-    unflattened_dict = {}
+    unflattened_dict = {}  # type: ignore[var-annotated]
     unflattened_dict["inputs"] = {}
     unflattened_dict["outputs"] = {}
 

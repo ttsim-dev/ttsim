@@ -46,17 +46,17 @@ def p_id() -> int:
 
 
 @policy_input()
-def hh_id() -> int:
+def kin_id() -> int:
     pass
 
 
-@agg_by_group_function(leaf_name="y_hh", agg_type=AggType.SUM)
-def y_hh(hh_id: int, x: int) -> int:
+@agg_by_group_function(leaf_name="y_kin", agg_type=AggType.SUM)
+def y_kin(kin_id: int, x: int) -> int:
     pass
 
 
-@agg_by_group_function(leaf_name="y_hh", agg_type=AggType.SUM)
-def y_hh_namespaced_input(hh_id: int, inputs__x: int) -> int:
+@agg_by_group_function(leaf_name="y_kin", agg_type=AggType.SUM)
+def y_kin_namespaced_input(kin_id: int, inputs__x: int) -> int:
     pass
 
 
@@ -76,16 +76,16 @@ def some_x(x):
     return x
 
 
-def return_x_hh(x_hh: int) -> int:
-    return x_hh
+def return_x_kin(x_kin: int) -> int:
+    return x_kin
 
 
-def return_y_hh(y_hh: int) -> int:
-    return y_hh
+def return_y_kin(y_kin: int) -> int:
+    return y_kin
 
 
-def return_n1__x_hh(n1__x_hh: int) -> int:
-    return n1__x_hh
+def return_n1__x_kin(n1__x_kin: int) -> int:
+    return n1__x_kin
 
 
 @pytest.mark.parametrize(
@@ -98,19 +98,19 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
         (
             # Aggregations derived from simple function arguments
             {
-                "hh_id": hh_id,
+                "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
                         leaf_name="f", vectorization_strategy="vectorize"
-                    )(return_n1__x_hh),
+                    )(return_n1__x_kin),
                     "x": x,
                 },
             },
             {"n1": {"f": None}},
             {
                 "n1": {"x": pd.Series([1, 1, 1])},
-                "hh_id": pd.Series([0, 0, 0]),
+                "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
                 "num_segments": 1,
             },
@@ -118,19 +118,19 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
         (
             # Aggregations derived from namespaced function arguments
             {
-                "hh_id": hh_id,
+                "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
                         leaf_name="f", vectorization_strategy="vectorize"
-                    )(return_x_hh),
+                    )(return_x_kin),
                     "x": x,
                 },
             },
             {"n1": {"f": None}},
             {
                 "n1": {"x": pd.Series([1, 1, 1])},
-                "hh_id": pd.Series([0, 0, 0]),
+                "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
                 "num_segments": 1,
             },
@@ -138,7 +138,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
         (
             # Aggregations derived from target
             {
-                "hh_id": hh_id,
+                "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
@@ -147,10 +147,10 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                     "x": x,
                 },
             },
-            {"n1": {"f_hh": None}},
+            {"n1": {"f_kin": None}},
             {
                 "n1": {"x": pd.Series([1, 1, 1])},
-                "hh_id": pd.Series([0, 0, 0]),
+                "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
                 "num_segments": 1,
             },
@@ -158,7 +158,7 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
         (
             # Explicit aggregation via objects tree with leaf name input
             {
-                "hh_id": hh_id,
+                "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
@@ -166,12 +166,12 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                     )(some_x),
                     "x": x,
                 },
-                "y_hh": y_hh,
+                "y_kin": y_kin,
             },
             {"n1": {"f": None}},
             {
                 "n1": {"x": pd.Series([1, 1, 1])},
-                "hh_id": pd.Series([0, 0, 0]),
+                "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
                 "num_segments": 1,
             },
@@ -179,20 +179,20 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
         (
             # Explicit aggregation via objects tree with namespaced input
             {
-                "hh_id": hh_id,
+                "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
                         leaf_name="f", vectorization_strategy="vectorize"
-                    )(return_y_hh),
-                    "y_hh": y_hh_namespaced_input,
+                    )(return_y_kin),
+                    "y_kin": y_kin_namespaced_input,
                 },
                 "inputs": {"x": x},
             },
             {"n1": {"f": None}},
             {
                 "inputs": {"x": pd.Series([1, 1, 1])},
-                "hh_id": pd.Series([0, 0, 0]),
+                "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
                 "num_segments": 1,
             },
@@ -209,7 +209,6 @@ def test_create_agg_by_group_functions(
         environment=environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
-        groupings=("hh",),
         jit=jit,
     )
 
@@ -238,22 +237,22 @@ def test_fail_if_targets_are_not_among_functions(
     ),
     [
         (
-            {"foo": policy_function(leaf_name="foo")(return_x_hh)},
+            {"foo": policy_function(leaf_name="foo")(return_x_kin)},
             {},
             {"x": pd.Series([1])},
-            ("x_hh"),
+            ("x_kin"),
         ),
         (
-            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_hh)},
+            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
             {},
             {"n1__x": pd.Series([1])},
-            ("n1__x_hh"),
+            ("n1__x_kin"),
         ),
         (
             {},
-            {"x_hh": None},
+            {"x_kin": None},
             {"x": pd.Series([1])},
-            ("x_hh"),
+            ("x_kin"),
         ),
     ],
 )
@@ -272,6 +271,6 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         ttsim_functions_with_time_conversions=functions,
         data=data,
         targets=targets,
-        groupings=("hh",),
+        groupings=("kin",),
     )
     assert expected in result
