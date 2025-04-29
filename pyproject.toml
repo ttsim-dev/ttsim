@@ -166,7 +166,7 @@ types-pytz = "*"
 tests = "pytest"
 
 [tool.pixi.feature.mypy.tasks]
-mypy = "mypy"
+mypy = "mypy --ignore-missing-imports"
 
 # Environments
 # --------------------------------------------------------------------------------------
