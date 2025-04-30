@@ -391,9 +391,6 @@ def _fail_if_group_variables_not_constant_within_groups(
     """
     Check that group variables are constant within each group.
 
-    If the user provides a supported grouping ID (see SUPPORTED_GROUPINGS in config.py),
-    the function checks that the corresponding data is constant within each group.
-
     Parameters
     ----------
     data

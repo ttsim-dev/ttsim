@@ -8,13 +8,13 @@ from ttsim import group_creation_function, policy_input
 
 
 @policy_input()
-def hh_id() -> int:
-    pass
+def p_id() -> int:
+    """Unique identifier for each person. Always required, must be unique."""
 
 
 @policy_input()
-def p_id() -> int:
-    pass
+def hh_id() -> int:
+    """Individuals living together in a household in the Wohngeld sense (§5 WoGG)."""
 
 
 @group_creation_function()
@@ -22,9 +22,7 @@ def ehe_id(
     p_id: numpy.ndarray[int],
     familie__p_id_ehepartner: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Ehe for each person.
-    """
+    """Couples that are either married or in a civil union."""
     p_id_to_ehe_id: dict[int, int] = {}
     next_ehe_id = 0
     result: list[int] = []
@@ -53,8 +51,10 @@ def fg_id(  # noqa: PLR0912
     familie__p_id_elternteil_1: numpy.ndarray[int],
     familie__p_id_elternteil_2: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Familiengemeinschaft for each person.
+    """Familiengemeinschaft. Base unit for some transfers.
+
+    Maximum of two generations, the relevant base unit for Bürgergeld / Arbeitslosengeld
+    2, before excluding children who have enough income fend for themselves.
     """
     # Build indexes
     p_id_to_index: dict[int, int] = {}
@@ -154,8 +154,10 @@ def bg_id(
     arbeitslosengeld_2__eigenbedarf_gedeckt: numpy.ndarray[bool],
     alter: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Bedarfsgemeinschaft for each person.
+    """Bedarfsgemeinschaft
+
+    Familiengemeinschaft except for children who have enough income to fend for
+    themselves. Relevant unit for Bürgergeld / Arbeitslosengeld 2
     """
     # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
     # once Bedarfsgemeinschaften are fully endogenous
@@ -182,8 +184,9 @@ def eg_id(
     arbeitslosengeld_2__p_id_einstandspartner: numpy.ndarray[int],
     p_id: numpy.ndarray[int],
 ) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Einstandsgemeinschaft for each person.
+    """Einstandsgemeinschaft / Einstandspartner according to SGB II.
+
+    A couple whose members are deemed to be responsible for each other.
     """
     p_id_to_eg_id: dict[int, int] = {}
     next_eg_id = 0
@@ -215,8 +218,10 @@ def wthh_id(
         bool
     ],
 ) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the wohngeldrechtlicher Teilhaushalt.
+    """Wohngeldrechtlicher Teilhaushalt.
+
+    The relevant unit for Wohngeld. Members of a household for whom the Wohngeld
+    priority check compared to Bürgergeld yields the same result ∈ {True, False}.
     """
     result: list[int] = []
     for index, current_hh_id in enumerate(hh_id):
@@ -239,8 +244,9 @@ def sn_id(
     familie__p_id_ehepartner: numpy.ndarray[int],
     einkommensteuer__gemeinsam_veranlagt: numpy.ndarray[bool],
 ) -> numpy.ndarray[int]:
-    """
-    Compute a Steuernummer (ID) for each person / couple.
+    """Steuernummer.
+
+    Spouses filing taxes jointly or individuals.
     """
     p_id_to_sn_id: dict[int, int] = {}
     p_id_to_gemeinsam_veranlagt: dict[int, bool] = {}

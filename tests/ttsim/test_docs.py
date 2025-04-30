@@ -4,7 +4,6 @@ import datetime
 import inspect
 
 import pytest
-from mettsim.config import SUPPORTED_GROUPINGS
 
 from _gettsim.config import (
     RESOURCE_DIR,
@@ -82,7 +81,7 @@ def test_all_input_vars_documented(
         for c in arguments
         if (c not in defined_functions)
         and (
-            remove_group_suffix(c, groupings=SUPPORTED_GROUPINGS)
+            remove_group_suffix(c, groupings=environment.grouping_levels)
             not in defined_functions
         )
         and (not c.endswith("_params"))
