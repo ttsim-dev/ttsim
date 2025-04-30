@@ -516,9 +516,6 @@ def agg_by_group_function(
             mapper=mapper,
         )
 
-        # functools.update_wrapper(agg_func, func)
-        # agg_func.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
-
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=agg_func,
