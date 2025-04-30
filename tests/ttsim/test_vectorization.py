@@ -10,6 +10,7 @@ import pytest
 from dags import concatenate_functions
 
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.ttsim_objects import AggByGroupFunction, AggByPIDFunction
 
 if IS_JAX_INSTALLED:
     import jax.numpy
@@ -365,25 +366,30 @@ def test_disallowed_operation_wrapper(func):
 # ======================================================================================
 
 
-# TODO(@MImmesberger): Remove isinstance once GroupCreationFunctions are JAX-compatible.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/515
 for year in range(1990, 2023):
 
     @pytest.mark.parametrize(
-        "func",
+        "funcname, func",
         [
-            pf.function
-            for pf in dt.flatten_to_tree_paths(
+            (funcname, pf.function)
+            for funcname, pf in dt.flatten_to_tree_paths(
                 active_ttsim_objects_tree(
                     resource_dir=Path(__file__).parent / "mettsim",
                     date=datetime.date(year=year, month=1, day=1),
                 )
-            ).values()
-            if not isinstance(pf, GroupCreationFunction | PolicyInput)
+            ).items()
+            if not isinstance(
+                pf,
+                GroupCreationFunction
+                | AggByGroupFunction
+                | AggByPIDFunction
+                | PolicyInput,
+            )
         ],
     )
     @pytest.mark.parametrize("backend", backends)
-    def test_convertible(func, backend):
+    def test_convertible(funcname, func, backend):  # noqa: ARG001
+        # Leave funcname for debugging purposes.
         make_vectorizable(func, backend=backend)
 
 
