@@ -474,27 +474,6 @@ def test_grouped_all_raises(column_to_aggregate, group_id, error_all, exception_
         grouped_all(column_to_aggregate, group_id)
 
 
-def _run_agg_by_p_id(
-    agg_func,
-    column_to_aggregate,
-    p_id_to_aggregate_by,
-    p_id_to_store_by,
-):
-    if IS_JAX_INSTALLED:
-        return agg_func(
-            column=column_to_aggregate,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-            num_segments=p_id_to_aggregate_by.max() + 1,
-        )
-    else:
-        return agg_func(
-            column=column_to_aggregate,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-        )
-
-
 @parameterize_based_on_dict(
     test_grouped_specs,
     keys_of_test_cases=[
@@ -512,13 +491,10 @@ def test_sum_by_p_id(
     expected_res,
     expected_type,
 ):
-    result = numpy.array(
-        _run_agg_by_p_id(
-            agg_func=sum_by_p_id,
-            column_to_aggregate=column_to_aggregate,
-            p_id_to_aggregate_by=p_id_to_aggregate_by,
-            p_id_to_store_by=p_id_to_store_by,
-        )
+    result = sum_by_p_id(
+        column=column_to_aggregate,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
     )
     numpy.testing.assert_array_almost_equal(result, expected_res)
     assert numpy.issubdtype(result.dtype.type, expected_type), (
