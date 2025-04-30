@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -75,15 +76,22 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
             jit=False,
         )
         data_tree = merge_trees(test.input_tree, result_ids)
+        targets_tree = copy.deepcopy(test.target_structure)
+        for i in [i for i in ids if i in targets_tree]:
+            del targets_tree[i]
     else:
         data_tree = test.input_tree
+        targets_tree = test.target_structure
 
-    result = compute_taxes_and_transfers(
-        data_tree=data_tree,
-        environment=environment,
-        targets_tree=test.target_structure,
-        jit=jit,
-    )
+    if targets_tree:
+        result = compute_taxes_and_transfers(
+            data_tree=data_tree,
+            environment=environment,
+            targets_tree=targets_tree,
+            jit=jit,
+        )
+    else:
+        result = {}
 
     flat_result = dt.flatten_to_qual_names(result)
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
@@ -93,7 +101,9 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
         result_df = pd.DataFrame(flat_result)
         if IS_JAX_INSTALLED:
             for i in [i for i in ids if i in expected_df]:
-                result_df = pd.concat([result_df, pd.Series(result_ids[i])], axis=1)
+                result_df = pd.concat(
+                    [result_df, pd.Series(result_ids[i], name=i)], axis=1
+                )
         try:
             pd.testing.assert_frame_equal(
                 result_df.sort_index(axis="columns"),
