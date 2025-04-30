@@ -4,13 +4,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import optree
 import pandas as pd
 import yaml
 from mettsim.config import RESOURCE_DIR
 
 from ttsim import compute_taxes_and_transfers, merge_trees, set_up_policy_environment
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
 from ttsim.shared import to_datetime
+from ttsim.ttsim_objects import GroupCreationFunction
 
 TEST_DIR = Path(__file__).parent
 # Set display options to show all columns without truncation
@@ -21,11 +24,6 @@ if TYPE_CHECKING:
     import datetime
 
     from ttsim.typing import NestedDataDict, NestedInputStructureDict
-
-if IS_JAX_INSTALLED:
-    jit = True
-else:
-    jit = False
 
 
 class PolicyTest:
@@ -40,7 +38,7 @@ class PolicyTest:
         date: datetime.date,
     ) -> None:
         self.info = info
-        self.input_tree = input_tree
+        self.input_tree = optree.tree_map(np.array, input_tree)
         self.expected_output_tree = expected_output_tree
         self.path = path
         self.date = date
@@ -60,8 +58,28 @@ class PolicyTest:
 def execute_test(test: PolicyTest, jit: bool = False) -> None:
     environment = set_up_policy_environment(date=test.date, resource_dir=RESOURCE_DIR)
 
+    if IS_JAX_INSTALLED:
+        ids = dict.fromkeys(
+            {f"{g}_id" for g in environment.grouping_levels}.intersection(
+                {
+                    g
+                    for g, t in environment.raw_objects_tree.items()
+                    if isinstance(t, GroupCreationFunction)
+                }
+            )
+        )
+        result_ids = compute_taxes_and_transfers(
+            data_tree=test.input_tree,
+            environment=environment,
+            targets_tree=ids,
+            jit=False,
+        )
+        data_tree = merge_trees(test.input_tree, result_ids)
+    else:
+        data_tree = test.input_tree
+
     result = compute_taxes_and_transfers(
-        data_tree=test.input_tree,
+        data_tree=data_tree,
         environment=environment,
         targets_tree=test.target_structure,
         jit=jit,
@@ -71,12 +89,15 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
 
     if flat_expected_output_tree:
-        result_df = pd.DataFrame(flat_result)
         expected_df = pd.DataFrame(flat_expected_output_tree)
+        result_df = pd.DataFrame(flat_result)
+        if IS_JAX_INSTALLED:
+            for i in [i for i in ids if i in expected_df]:
+                result_df = pd.concat([result_df, pd.Series(result_ids[i])], axis=1)
         try:
             pd.testing.assert_frame_equal(
-                result_df,
-                expected_df,
+                result_df.sort_index(axis="columns"),
+                expected_df.sort_index(axis="columns"),
                 atol=test.info["precision_atol"],
                 check_dtype=False,
             )

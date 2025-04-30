@@ -230,7 +230,6 @@ def _get_top_level_namespace(
     # Add num_segments to grouping variables
     for g in environment.grouping_levels:
         all_top_level_names.add(f"{g}_id_num_segments")
-
     return all_top_level_names
 
 
@@ -443,7 +442,8 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
 
     # Check for non-unique p_ids
     p_id_counts: dict[int, int] = {}
-    for i in p_id:
+    # Need the map because Jax loop items are 1-element arrays.
+    for i in map(int, p_id):
         if i in p_id_counts:
             p_id_counts[i] += 1
         else:

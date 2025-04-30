@@ -17,6 +17,6 @@ policy_test_ids_and_cases = get_policy_test_ids_and_cases()
 )
 def test_mettsim(test: PolicyTest):
     if IS_JAX_INSTALLED:
-        execute_test(test, jit=False)
+        execute_test(test, jit=True)
     else:
         execute_test(test, jit=False)
