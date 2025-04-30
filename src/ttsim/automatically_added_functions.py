@@ -8,6 +8,7 @@ import dags.tree as dt
 from dags import rename_arguments
 
 from ttsim.aggregation import grouped_sum
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.shared import (
     fail_if_multiple_time_units_for_same_base_name_and_group,
     get_base_name_and_grouping_suffix,
@@ -578,9 +579,12 @@ def create_agg_by_group_functions(
         base_name_with_time_unit = match.group("base_name_with_time_unit")
         if base_name_with_time_unit in potential_agg_by_group_sources:
             group_id = f"{match.group('group')}_id"
+            mapper = {"group_id": group_id, "column": base_name_with_time_unit}
+            if IS_JAX_INSTALLED:
+                mapper["num_segments"] = f"{group_id}_num_segments"
             agg_func = dags.rename_arguments(
                 func=grouped_sum,
-                mapper={"group_id": group_id, "column": base_name_with_time_unit},
+                mapper=mapper,
             )
             out[abgfn] = AggByGroupFunction(
                 leaf_name=dt.tree_path_from_qual_name(abgfn)[-1],

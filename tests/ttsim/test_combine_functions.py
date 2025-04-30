@@ -112,7 +112,6 @@ def return_n1__x_hh(n1__x_hh: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "hh_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 1,
             },
         ),
         (

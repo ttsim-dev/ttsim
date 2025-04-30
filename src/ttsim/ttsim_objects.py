@@ -497,21 +497,24 @@ def agg_by_group_function(
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
-        other_args = args - group_ids
         _fail_if_group_id_is_invalid(group_ids, orig_location)
+        group_id = group_ids.pop()
+        other_args = args - {group_id}
         if agg_type == AggType.COUNT:
             _fail_if_other_arg_is_present(other_args, orig_location)
-            mapper = {"group_id": group_ids.pop()}
+            mapper = {"group_id": group_id}
         else:
             _fail_if_other_arg_is_invalid(other_args, orig_location)
-            mapper = {"group_id": group_ids.pop(), "column": other_args.pop()}
+            mapper = {"group_id": group_id, "column": other_args.pop()}
+        if IS_JAX_INSTALLED:
+            mapper["num_segments"] = f"{group_id}_num_segments"
         agg_func = dags.rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
 
-        functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
+        # functools.update_wrapper(agg_func, func)
+        # agg_func.__signature__ = inspect.signature(func)
 
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,

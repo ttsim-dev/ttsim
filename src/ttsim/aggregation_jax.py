@@ -101,7 +101,7 @@ def grouped_all(
 
 
 def count_by_p_id(
-    p_id_to_aggregate_by: jnp.ndarray, p_id_to_store_by: jnp.ndarray, num_segments: int
+    p_id_to_aggregate_by: jnp.ndarray, p_id_to_store_by: jnp.ndarray
 ) -> jnp.ndarray:
     raise NotImplementedError
 
@@ -110,7 +110,6 @@ def sum_by_p_id(
     column: jnp.ndarray,
     p_id_to_aggregate_by: jnp.ndarray,
     p_id_to_store_by: jnp.ndarray,
-    num_segments: int,  # noqa: ARG001
 ) -> jnp.ndarray:
     if column.dtype == bool:
         column = column.astype(int)
@@ -140,7 +139,6 @@ def mean_by_p_id(
     column: jnp.ndarray,
     p_id_to_aggregate_by: jnp.ndarray,
     p_id_to_store_by: jnp.ndarray,
-    num_segments: int,
 ) -> jnp.ndarray:
     raise NotImplementedError
 
@@ -149,7 +147,6 @@ def max_by_p_id(
     column: jnp.ndarray,
     p_id_to_aggregate_by: jnp.ndarray,
     p_id_to_store_by: jnp.ndarray,
-    num_segments: int,
 ) -> jnp.ndarray:
     raise NotImplementedError
 
@@ -158,7 +155,6 @@ def min_by_p_id(
     column: jnp.ndarray,
     p_id_to_aggregate_by: jnp.ndarray,
     p_id_to_store_by: jnp.ndarray,
-    num_segments: int,
 ) -> jnp.ndarray:
     raise NotImplementedError
 
@@ -167,7 +163,6 @@ def any_by_p_id(
     column: jnp.ndarray,
     p_id_to_aggregate_by: jnp.ndarray,
     p_id_to_store_by: jnp.ndarray,
-    num_segments: int,
 ) -> jnp.ndarray:
     raise NotImplementedError
 
@@ -176,6 +171,5 @@ def all_by_p_id(
     column: jnp.ndarray,
     p_id_to_aggregate_by: jnp.ndarray,
     p_id_to_store_by: jnp.ndarray,
-    num_segments: int,
 ) -> jnp.ndarray:
     raise NotImplementedError
