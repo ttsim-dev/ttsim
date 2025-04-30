@@ -88,7 +88,6 @@ def minimal_input_data_shared_fam():
         "fam_id": pd.Series([0, 0, 1], name="fam_id"),
         "p_id_someone_else": pd.Series([1, 0, -1], name="p_id_someone_else"),
     }
-    out["num_segments"] = len(out["fam_id"].unique())
     return out
 
 
@@ -385,8 +384,6 @@ def test_user_provided_aggregate_by_group_specs():
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
         "module_name": {"betrag_m": pd.Series([100, 100, 100], name="betrag_m")},
     }
-    # pre-compute the number of segments
-    data["num_segments"] = len(data["fam_id"].unique())
 
     inputs = {
         "p_id": p_id,
@@ -458,7 +455,6 @@ def test_user_provided_aggregation_with_time_conversion():
             "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
         },
     }
-    data["num_segments"] = len(data["fam_id"].unique())
 
     # Double up, convert to quarter, then take max fam_id
     expected = pd.Series([400 * 12, 400 * 12, 200 * 12])

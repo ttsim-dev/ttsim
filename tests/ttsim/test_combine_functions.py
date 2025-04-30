@@ -112,7 +112,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 1,
             },
         ),
         (

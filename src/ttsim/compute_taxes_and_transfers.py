@@ -144,6 +144,7 @@ def compute_taxes_and_transfers(
     )
     if debug:
         targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
+
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,
@@ -159,34 +160,16 @@ def compute_taxes_and_transfers(
             )
         import jax
 
-        # Create a list of static argument names. These correspond to the number of
-        # segments for each grouping variable.
-        # ------------------------------------------------------------------------------
-        # The following is assuming that there is only one grouping variable. If it is
-        # possible that there are multiple, we need one 'num_segments' for each. It is
-        # also assuming that the 'num_segments' is present in the input data.
-        argnames = list(inspect.signature(tax_transfer_function).parameters)
-
-        static_argnames = []
-        if "num_segments" in argnames:
-            static_argnames.append("num_segments")
-            if "num_segments" not in input_data:
-                raise ValueError(
-                    "The input data must contain the num_segments. "
-                    "Please provide it as a column in the input data."
-                )
-            else:
-                # Make sure that the static argument is an integer (hashable). This
-                # should most likely be done by simply not converting it to an array
-                # prior.
-                input_data["num_segments"] = int(input_data["num_segments"])
-
-        # JIT the function, setting the number of segments as a static argument.
+        static_args = {
+            argname: data[argname.removesuffix("_num_segments")].max() + 1
+            for argname in inspect.signature(tax_transfer_function).parameters
+            if argname.endswith("_num_segments")
+        }
+        tax_transfer_function = functools.partial(tax_transfer_function, **static_args)
         tax_transfer_function = jax.jit(
             tax_transfer_function,
-            static_argnames=static_argnames,
+            static_argnames=static_args.keys(),
         )
-
     results = tax_transfer_function(**input_data)
 
     result_tree = dt.unflatten_from_qual_names(results)
@@ -613,11 +596,11 @@ def _fail_if_root_nodes_are_missing(
                 # Function depends on parameters only, so it does not have to be present
                 # in the data tree.
                 continue
-        elif node in data:
+        elif node in data or node.endswith("_num_segments"):
             # Root node is present in the data tree.
             continue
         else:
-            missing_nodes.append(str(node))
+            missing_nodes.append(node)
 
     if missing_nodes:
         formatted = format_list_linewise(
