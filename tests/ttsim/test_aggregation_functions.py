@@ -55,10 +55,10 @@ test_grouped_specs = {
         "column_to_aggregate": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
         "group_id": np.array([0, 1, 0, 1, 0]),
         "expected_res_count": np.array([3, 2, 3, 2, 3]),
-        "expected_res_sum": np.array([3, 2, 3, 2, 3]),
-        "expected_res_mean": np.array([1, 1, 1, 1, 1]),
-        "expected_res_max": np.array([1, 1, 1, 1, 1]),
-        "expected_res_min": np.array([1, 1, 1, 1, 1]),
+        "expected_res_sum": np.array([3.0, 2.0, 3.0, 2.0, 3.0]),
+        "expected_res_mean": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
+        "expected_res_max": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
+        "expected_res_min": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
     },
     "basic_case": {
         "column_to_aggregate": np.array([0, 1, 2, 3, 4]),
@@ -73,27 +73,27 @@ test_grouped_specs = {
         "column_to_aggregate": np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
         "group_id": np.array([0, 0, 3, 3, 3]),
         "expected_res_count": np.array([2, 2, 3, 3, 3]),
-        "expected_res_sum": np.array([1, 1, 9, 9, 9]),
-        "expected_res_mean": np.array([0.5, 0.5, 3, 3, 3]),
-        "expected_res_max": np.array([1, 1, 4, 4, 4]),
-        "expected_res_min": np.array([0, 0, 2, 2, 2]),
+        "expected_res_sum": np.array([1.0, 1.0, 9.0, 9.0, 9.0]),
+        "expected_res_mean": np.array([0.5, 0.5, 3.0, 3.0, 3.0]),
+        "expected_res_max": np.array([1.0, 1.0, 4.0, 4.0, 4.0]),
+        "expected_res_min": np.array([0.0, 0.0, 2.0, 2.0, 2.0]),
     },
     "float_column": {
         "column_to_aggregate": np.array([0.0, 1.5, 2.0, 3.0, 4.0]),
         "group_id": np.array([0, 0, 3, 3, 3]),
-        "expected_res_sum": np.array([1.5, 1.5, 9, 9, 9]),
-        "expected_res_mean": np.array([0.75, 0.75, 3, 3, 3]),
-        "expected_res_max": np.array([1.5, 1.5, 4, 4, 4]),
+        "expected_res_sum": np.array([1.5, 1.5, 9.0, 9.0, 9.0]),
+        "expected_res_mean": np.array([0.75, 0.75, 3.0, 3.0, 3.0]),
+        "expected_res_max": np.array([1.5, 1.5, 4.0, 4.0, 4.0]),
         "expected_res_min": np.array([0.0, 0.0, 2.0, 2.0, 2.0]),
     },
     "more_than_two_groups": {
         "column_to_aggregate": np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
         "group_id": np.array([1, 0, 1, 1, 3]),
         "expected_res_count": np.array([3, 1, 3, 3, 1]),
-        "expected_res_sum": np.array([5, 1, 5, 5, 4]),
-        "expected_res_mean": np.array([5 / 3, 1, 5 / 3, 5 / 3, 4]),
-        "expected_res_max": np.array([3, 1, 3, 3, 4]),
-        "expected_res_min": np.array([0, 1, 0, 0, 4]),
+        "expected_res_sum": np.array([5.0, 1.0, 5.0, 5.0, 4.0]),
+        "expected_res_mean": np.array([5.0 / 3.0, 1.0, 5.0 / 3.0, 5.0 / 3.0, 4.0]),
+        "expected_res_max": np.array([3.0, 1.0, 3.0, 3.0, 4.0]),
+        "expected_res_min": np.array([0.0, 1.0, 0.0, 0.0, 4.0]),
     },
     "basic_case_bool": {
         "column_to_aggregate": np.array([True, False, True, False, False]),
@@ -244,7 +244,7 @@ def test_grouped_count(group_id, expected_res_count):
     if IS_JAX_INSTALLED:
         result = grouped_count(
             group_id=group_id,
-            num_segments=len(np.unique(group_id)),
+            num_segments=group_id.max() + 1,
         )
     else:
         result = grouped_count(group_id=group_id)
@@ -256,7 +256,7 @@ def _run_agg_by_group(agg_func, column_to_aggregate, group_id):
         return agg_func(
             column=column_to_aggregate,
             group_id=group_id,
-            num_segments=len(np.unique(group_id)),
+            num_segments=group_id.max() + 1,
         )
     else:
         return agg_func(column=column_to_aggregate, group_id=group_id)
@@ -485,7 +485,7 @@ def _run_agg_by_p_id(
             column=column_to_aggregate,
             p_id_to_aggregate_by=p_id_to_aggregate_by,
             p_id_to_store_by=p_id_to_store_by,
-            num_segments=len(np.unique(p_id_to_aggregate_by)),
+            num_segments=p_id_to_aggregate_by.max() + 1,
         )
     else:
         return agg_func(
