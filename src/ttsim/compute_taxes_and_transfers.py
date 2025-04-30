@@ -166,10 +166,7 @@ def compute_taxes_and_transfers(
             if argname.endswith("_num_segments")
         }
         tax_transfer_function = functools.partial(tax_transfer_function, **static_args)
-        tax_transfer_function = jax.jit(
-            tax_transfer_function,
-            static_argnames=static_args.keys(),
-        )
+        tax_transfer_function = jax.jit(tax_transfer_function)
     results = tax_transfer_function(**input_data)
 
     result_tree = dt.unflatten_from_qual_names(results)
