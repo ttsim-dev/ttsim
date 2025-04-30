@@ -6,6 +6,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 
 ## Unpublished
 
+- {gh}`879` Vectorize METTSIM ({ghuser}`timmens`, {ghuser}`hmgaudecker`).
 - {gh}`887` Enable typing ({ghuser}`hmgaudecker`, {ghuser}`timmens`).
 - {gh}`888` Remove SUPPORTED_GROUPINGS entirely, infer groupings from object names
   ({ghuser}`MImmesberger`).
