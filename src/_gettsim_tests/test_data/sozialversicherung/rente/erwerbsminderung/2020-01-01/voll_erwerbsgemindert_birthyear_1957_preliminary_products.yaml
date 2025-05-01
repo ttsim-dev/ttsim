@@ -9,8 +9,6 @@ inputs:
       - 1957
     geburtsmonat:
       - 6
-    jahr:
-      - 2020
     p_id:
       - 28
     sozialversicherung__rente__bezieht_rente:

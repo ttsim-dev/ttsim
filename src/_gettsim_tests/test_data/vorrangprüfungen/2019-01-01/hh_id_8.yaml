@@ -30,8 +30,6 @@ inputs:
       - 1939
     hh_id:
       - 8
-    jahr:
-      - 2019
     kinderzuschlag__basisbetrag_m_bg:
       - 0.0
     p_id:

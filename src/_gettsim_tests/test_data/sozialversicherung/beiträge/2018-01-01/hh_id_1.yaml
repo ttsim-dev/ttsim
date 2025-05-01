@@ -16,8 +16,6 @@ inputs:
       - false
     hh_id:
       - 1
-    jahr:
-      - 2018
     p_id:
       - 8
     sozialversicherung__kranken__beitrag__privat_versichert:

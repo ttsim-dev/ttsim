@@ -75,9 +75,6 @@ inputs:
     hh_id:
       - 13
       - 13
-    jahr:
-      - 2019
-      - 2019
     kindergeld__in_ausbildung:
       - false
       - false

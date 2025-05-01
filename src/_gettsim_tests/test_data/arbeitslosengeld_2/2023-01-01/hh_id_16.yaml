@@ -46,8 +46,6 @@ inputs:
       - 1978
     hh_id:
       - 16
-    jahr:
-      - 2023
     kindergeld__betrag_m_bg:
       - 0.0
     kindergeld__in_ausbildung:

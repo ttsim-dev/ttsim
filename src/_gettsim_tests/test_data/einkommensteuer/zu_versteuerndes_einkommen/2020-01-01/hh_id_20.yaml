@@ -121,11 +121,6 @@ inputs:
       - 20
       - 20
       - 20
-    jahr:
-      - 2020
-      - 2020
-      - 2020
-      - 2020
     kindergeld__in_ausbildung:
       - false
       - false

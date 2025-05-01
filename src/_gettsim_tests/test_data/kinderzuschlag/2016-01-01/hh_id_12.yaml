@@ -64,10 +64,6 @@ inputs:
       - 12
       - 12
       - 12
-    jahr:
-      - 2016
-      - 2016
-      - 2016
     kindergeld__betrag_m_hh:
       - 190.0
       - 190.0

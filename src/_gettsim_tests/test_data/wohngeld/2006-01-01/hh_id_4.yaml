@@ -144,12 +144,6 @@ inputs:
       - 4
       - 4
       - 4
-    jahr:
-      - 2006
-      - 2006
-      - 2006
-      - 2006
-      - 2006
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
       - false

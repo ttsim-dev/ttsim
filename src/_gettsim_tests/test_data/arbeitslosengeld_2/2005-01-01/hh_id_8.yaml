@@ -46,8 +46,6 @@ inputs:
       - 1960
     hh_id:
       - 8
-    jahr:
-      - 2005
     kindergeld__betrag_m_bg:
       - 0.0
     kindergeld__in_ausbildung:

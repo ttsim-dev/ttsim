@@ -16,8 +16,6 @@ inputs:
       - false
     hh_id:
       - 20
-    jahr:
-      - 2022
     p_id:
       - 20
     sozialversicherung__kranken__beitrag__privat_versichert:

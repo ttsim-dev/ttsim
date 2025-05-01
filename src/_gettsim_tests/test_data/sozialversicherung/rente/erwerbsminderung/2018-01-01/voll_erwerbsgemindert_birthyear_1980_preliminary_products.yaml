@@ -9,8 +9,6 @@ inputs:
       - 1980
     geburtsmonat:
       - 6
-    jahr:
-      - 2018
     p_id:
       - 23
     sozialversicherung__rente__bezieht_rente:

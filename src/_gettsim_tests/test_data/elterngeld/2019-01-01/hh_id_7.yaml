@@ -78,10 +78,6 @@ inputs:
       - 7
       - 7
       - 7
-    jahr:
-      - 2019
-      - 2019
-      - 2019
     kindergeld__in_ausbildung:
       - false
       - false

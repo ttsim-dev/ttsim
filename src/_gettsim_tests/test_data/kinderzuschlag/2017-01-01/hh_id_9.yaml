@@ -76,11 +76,6 @@ inputs:
       - 9
       - 9
       - 9
-    jahr:
-      - 2017
-      - 2017
-      - 2017
-      - 2017
     kindergeld__betrag_m_hh:
       - 384.0
       - 384.0

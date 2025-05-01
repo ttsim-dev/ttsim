@@ -62,10 +62,6 @@ inputs:
       - 10
       - 10
       - 10
-    jahr:
-      - 2021
-      - 2021
-      - 2021
     kindergeld__betrag_m_hh:
       - 219.0
       - 219.0

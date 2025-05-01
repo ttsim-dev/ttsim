@@ -16,8 +16,6 @@ inputs:
       - false
     hh_id:
       - 13
-    jahr:
-      - 2002
     p_id:
       - 111
     sozialversicherung__kranken__beitrag__privat_versichert:

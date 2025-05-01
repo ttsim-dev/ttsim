@@ -34,9 +34,6 @@ inputs:
     hh_id:
       - 0
       - 0
-    jahr:
-      - 2005
-      - 2005
     kindergeld__p_id_empfänger:
       - -1
       - 0

@@ -66,9 +66,6 @@ inputs:
     hh_id:
       - 3
       - 3
-    jahr:
-      - 2009
-      - 2009
     kindergeld__betrag_m:
       - 164.0
       - 0.0

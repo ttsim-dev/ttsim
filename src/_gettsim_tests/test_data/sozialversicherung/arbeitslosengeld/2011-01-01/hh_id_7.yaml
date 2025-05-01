@@ -31,8 +31,6 @@ inputs:
       - 1945
     hh_id:
       - 7
-    jahr:
-      - 2011
     p_id:
       - 11
     wohnort_ost:

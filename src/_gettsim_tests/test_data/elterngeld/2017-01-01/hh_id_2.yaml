@@ -44,8 +44,6 @@ inputs:
       - 3
     hh_id:
       - 2
-    jahr:
-      - 2017
     kindergeld__in_ausbildung:
       - false
     lohnsteuer__steuerklasse:

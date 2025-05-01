@@ -89,10 +89,6 @@ inputs:
       - 0
       - 0
       - 0
-    jahr:
-      - 2024
-      - 2024
-      - 2024
     kindergeld__in_ausbildung:
       - false
       - false

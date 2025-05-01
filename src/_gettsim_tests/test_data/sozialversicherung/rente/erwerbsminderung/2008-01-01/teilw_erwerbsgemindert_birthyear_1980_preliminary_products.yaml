@@ -9,8 +9,6 @@ inputs:
       - 1980
     geburtsmonat:
       - 10
-    jahr:
-      - 2008
     p_id:
       - 15
     sozialversicherung__rente__bezieht_rente:

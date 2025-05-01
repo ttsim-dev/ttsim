@@ -88,10 +88,6 @@ inputs:
       - 19
       - 19
       - 19
-    jahr:
-      - 2023
-      - 2023
-      - 2023
     kindergeld__anzahl_ansprüche:
       - 0
       - 0

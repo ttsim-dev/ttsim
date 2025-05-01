@@ -50,10 +50,6 @@ inputs:
       - 4
       - 4
       - 4
-    jahr:
-      - 2019
-      - 2019
-      - 2019
     kindergeld__p_id_empfänger:
       - -1
       - 39

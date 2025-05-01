@@ -18,8 +18,6 @@ inputs:
       - -1
     hh_id:
       - 16
-    jahr:
-      - 2010
     p_id:
       - 17
     sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m:

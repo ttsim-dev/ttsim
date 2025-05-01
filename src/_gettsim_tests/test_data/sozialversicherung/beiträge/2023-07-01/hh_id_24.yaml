@@ -19,8 +19,6 @@ inputs:
       - false
     hh_id:
       - 24
-    jahr:
-      - 2023
     p_id:
       - 24
     sozialversicherung__kranken__beitrag__privat_versichert:

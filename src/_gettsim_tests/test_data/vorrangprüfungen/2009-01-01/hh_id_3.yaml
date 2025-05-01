@@ -42,9 +42,6 @@ inputs:
     hh_id:
       - 3
       - 3
-    jahr:
-      - 2009
-      - 2009
     kindergeld__p_id_empfänger:
       - -1
       - 6

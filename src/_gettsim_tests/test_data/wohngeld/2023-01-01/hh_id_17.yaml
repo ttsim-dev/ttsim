@@ -156,12 +156,6 @@ inputs:
       - 17
       - 17
       - 17
-    jahr:
-      - 2023
-      - 2023
-      - 2023
-      - 2023
-      - 2023
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
       - false
