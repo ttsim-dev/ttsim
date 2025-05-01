@@ -7,7 +7,7 @@ from _gettsim.solidaritätszuschlag.solidaritätszuschlag import (
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_m(
     einkommen_y: float,
     eink_st_params: dict,
@@ -32,7 +32,7 @@ def betrag_m(
     return lohnsteuerformel(einkommen_y, eink_st_params, lohnst_params, steuerklasse)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_mit_kinderfreibetrag_m(
     einkommen_y: float,
     kinderfreibetrag_soli_y: float,
@@ -65,7 +65,7 @@ def betrag_mit_kinderfreibetrag_m(
     return lohnsteuerformel(eink, eink_st_params, lohnst_params, steuerklasse)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_soli_y(betrag_mit_kinderfreibetrag_y: float, soli_st_params: dict) -> float:
     """Solidarity surcharge on Lohnsteuer (withholding tax on earnings).
 
@@ -85,7 +85,7 @@ def betrag_soli_y(betrag_mit_kinderfreibetrag_y: float, soli_st_params: dict) ->
     return solidaritätszuschlagstarif(betrag_mit_kinderfreibetrag_y, soli_st_params)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def kinderfreibetrag_soli_y(
     steuerklasse: int,
     einkommensteuer__anzahl_kinderfreibeträge: int,

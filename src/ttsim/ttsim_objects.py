@@ -290,7 +290,7 @@ def policy_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     rounding_spec: RoundingSpec | None = None,
-    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize",
     foreign_key_type: FKType = FKType.IRRELEVANT,
 ) -> Callable[[Callable], PolicyFunction]:
     """

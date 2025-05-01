@@ -54,9 +54,8 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     allg_sozialv_beitr = (
         ges_rentenv_params["beitr_satz_jahresanfang"]
         + arbeitslosenversicherung_params["beitr_satz_jahresanfang"]
+        + ges_pflegev_params["beitr_satz_jahresanfang"]
     )
-
-    allg_sozialv_beitr += ges_pflegev_params["beitr_satz_jahresanfang"]
 
     # Then calculate specific shares
     an_anteil = (
@@ -106,11 +105,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005(
     allg_sozialv_beitr = (
         ges_rentenv_params["beitr_satz_jahresanfang"]
         + arbeitslosenversicherung_params["beitr_satz_jahresanfang"]
+        + ges_pflegev_params["beitr_satz_jahresanfang"]["standard"]
     )
 
-    allg_sozialv_beitr += ges_pflegev_params["beitr_satz_jahresanfang"]["standard"]
-
-    # Then calculate specific shares
     an_anteil = (
         allg_sozialv_beitr
         + sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang
@@ -137,6 +134,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005(
     start_date="2022-10-01",
     leaf_name="midijob_faktor_f",
     rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
+    vectorization_strategy="loop",
 )
 def midijob_faktor_f_ohne_minijob_steuerpauschale(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,

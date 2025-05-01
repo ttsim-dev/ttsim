@@ -61,6 +61,11 @@ def betrag_m() -> float:
 
 
 @policy_function(vectorization_strategy="vectorize")
+def identity(x: int) -> int:
+    return x
+
+
+@policy_function(vectorization_strategy="vectorize")
 def some_func(p_id: int) -> int:
     return p_id
 
@@ -297,9 +302,9 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
 
 
 def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input_data):
-    @policy_function(leaf_name="a")
-    def a():
-        return pd.Series(range(minimal_input_data["p_id"].size))
+    @policy_function(leaf_name="a", vectorization_strategy="not_required")
+    def a() -> np.ndarray:
+        return np.array(range(minimal_input_data["p_id"].size))
 
     @policy_function(leaf_name="b")
     def b(a):
@@ -603,7 +608,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
         (
             PolicyEnvironment(
                 raw_objects_tree={
-                    "foo_m": policy_function(leaf_name="foo_m")(lambda x: x),
+                    "foo_m": policy_function(leaf_name="foo_m")(identity),
                     "fam_id": fam_id,
                 }
             ),
@@ -613,7 +618,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
         (
             PolicyEnvironment(
                 raw_objects_tree={
-                    "foo": policy_function(leaf_name="foo")(lambda x: x),
+                    "foo": policy_function(leaf_name="foo")(identity),
                     "fam_id": fam_id,
                 }
             ),

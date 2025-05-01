@@ -5,7 +5,7 @@ import numpy
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def geburtsdatum(
     geburtsjahr: int,
     geburtsmonat: int,
@@ -36,7 +36,7 @@ def geburtsdatum(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def alter_monate(geburtsdatum: numpy.datetime64, elterngeld_params: dict) -> float:
     """Calculate age of youngest child in months.
 
@@ -61,7 +61,7 @@ def alter_monate(geburtsdatum: numpy.datetime64, elterngeld_params: dict) -> flo
     return out.astype(float)
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def alter_bis_24(alter: int) -> bool:
     """Age is 24 years at most.
 

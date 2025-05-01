@@ -148,6 +148,7 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
+    vectorization_strategy="loop",
 )
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
@@ -183,7 +184,8 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
-    )
+    ),
+    vectorization_strategy="loop",
 )
 def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
@@ -214,7 +216,11 @@ def betrag_ohne_kinderfreibetrag_y_sn(
     return out
 
 
-@policy_function(end_date="2022-12-31", leaf_name="relevantes_kindergeld_m")
+@policy_function(
+    end_date="2022-12-31",
+    leaf_name="relevantes_kindergeld_m",
+    vectorization_strategy="loop",
+)
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,

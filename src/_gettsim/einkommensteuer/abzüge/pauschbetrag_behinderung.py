@@ -4,7 +4,7 @@ from ttsim import policy_function
 from ttsim.config import numpy_or_jax as np
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def pauschbetrag_behinderung_y(
     behinderungsgrad: int, eink_st_abzuege_params: dict
 ) -> float:

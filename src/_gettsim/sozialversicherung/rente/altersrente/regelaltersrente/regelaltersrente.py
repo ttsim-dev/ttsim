@@ -39,7 +39,9 @@ def altersgrenze_ohne_staffelung(
     return ges_rente_params["regelaltersgrenze"]
 
 
-@policy_function(start_date="2007-04-20", leaf_name="altersgrenze")
+@policy_function(
+    start_date="2007-04-20", leaf_name="altersgrenze", vectorization_strategy="loop"
+)
 def altersgrenze_mit_staffelung(geburtsjahr: int, ges_rente_params: dict) -> float:
     """Normal retirement age (NRA).
 

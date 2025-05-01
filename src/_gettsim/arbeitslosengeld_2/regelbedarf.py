@@ -29,7 +29,7 @@ def regelbedarf_m(
     return regelsatz_m + kosten_der_unterkunft_m
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def mehrbedarf_alleinerziehend_m(
     familie__alleinerziehend: bool,
     anzahl_kinder_fg: int,
@@ -410,7 +410,7 @@ def anerkannte_warmmiete_je_qm_m(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def berechtigte_wohnfläche(
     wohnfläche: float,
     wohnen__bewohnt_eigentum_hh: bool,

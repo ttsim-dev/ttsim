@@ -35,7 +35,9 @@ def altersgrenze_ohne_staffelung(
     return ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"]
 
 
-@policy_function(start_date="1989-12-18", leaf_name="altersgrenze")
+@policy_function(
+    start_date="1989-12-18", leaf_name="altersgrenze", vectorization_strategy="loop"
+)
 def altersgrenze_mit_staffelung(
     geburtsjahr: int,
     geburtsmonat: int,
@@ -121,6 +123,7 @@ def altersgrenze_vorzeitig_ohne_staffelung(
     start_date="1989-12-18",
     end_date="1996-09-26",
     leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="loop",
 )
 def altersgrenze_vorzeitig_mit_staffelung(
     geburtsjahr: int,

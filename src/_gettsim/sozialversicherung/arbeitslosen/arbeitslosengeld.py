@@ -5,7 +5,7 @@ from ttsim import piecewise_polynomial, policy_function
 from ttsim.config import numpy_or_jax as np
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     grundsätzlich_anspruchsberechtigt: bool,
@@ -44,7 +44,7 @@ def betrag_m(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def monate_verbleibender_anspruchsdauer(
     alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
@@ -159,7 +159,7 @@ def grundsätzlich_anspruchsberechtigt(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,

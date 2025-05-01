@@ -39,6 +39,7 @@ def altersgrenze_ohne_staffelung(
     start_date="1989-12-18",
     end_date="1996-07-28",
     leaf_name="altersgrenze",
+    vectorization_strategy="loop",
 )
 def altersgrenze_ohne_vertrauensschutzprüfung_bis_1996(
     altersgrenze_ohne_vertrauensschutzprüfung: float,
@@ -64,6 +65,7 @@ def altersgrenze_ohne_vertrauensschutzprüfung_bis_1996(
     start_date="1996-07-29",
     end_date="2009-12-31",
     leaf_name="altersgrenze",
+    vectorization_strategy="loop",
 )
 def altersgrenze_mit_vertrauensschutzprüfung(
     geburtsjahr: int,
@@ -122,6 +124,7 @@ def altersgrenze_mit_vertrauensschutzprüfung(
     start_date="2010-01-01",
     end_date="2017-12-31",
     leaf_name="altersgrenze",
+    vectorization_strategy="loop",
 )
 def altersgrenze_ohne_vertrauensschutzprüfung_ab_2010(
     altersgrenze_ohne_vertrauensschutzprüfung: float,
@@ -316,7 +319,7 @@ def ges_rente_arbeitsl_vorzeitig_mit_vertrauenss_ab_2004_07(
     return arbeitsl_vorzeitig
 
 
-@policy_function(end_date="2017-12-31")
+@policy_function(end_date="2017-12-31", vectorization_strategy="loop")
 def altersgrenze_ohne_vertrauensschutzprüfung(
     geburtsjahr: int,
     geburtsmonat: int,
@@ -369,7 +372,7 @@ def altersgrenze_ohne_vertrauensschutzprüfung(
     return out
 
 
-@policy_function(end_date="2017-12-31")
+@policy_function(end_date="2017-12-31", vectorization_strategy="loop")
 def altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung(
     geburtsjahr: int,
     geburtsmonat: int,
