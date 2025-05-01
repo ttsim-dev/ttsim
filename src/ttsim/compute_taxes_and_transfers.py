@@ -14,6 +14,7 @@ from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.combine_functions import (
     combine_policy_functions_and_derived_functions,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
@@ -143,6 +144,7 @@ def compute_taxes_and_transfers(
     )
     if debug:
         targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
+
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,
@@ -152,14 +154,19 @@ def compute_taxes_and_transfers(
     )
 
     if jit:
-        try:
-            import jax
-        except ImportError as e:
+        if not IS_JAX_INSTALLED:
             raise ImportError(
                 "JAX is not installed. Please install JAX to use JIT compilation."
-            ) from e
-        tax_transfer_function = jax.jit(tax_transfer_function)
+            )
+        import jax
 
+        static_args = {
+            argname: data[argname.removesuffix("_num_segments")].max() + 1
+            for argname in inspect.signature(tax_transfer_function).parameters
+            if argname.endswith("_num_segments")
+        }
+        tax_transfer_function = functools.partial(tax_transfer_function, **static_args)
+        tax_transfer_function = jax.jit(tax_transfer_function)
     results = tax_transfer_function(**input_data)
 
     result_tree = dt.unflatten_from_qual_names(results)
@@ -217,6 +224,9 @@ def _get_top_level_namespace(
         for g in environment.grouping_levels:
             all_top_level_names.add(f"{name}_{g}")
 
+    # Add num_segments to grouping variables
+    for g in environment.grouping_levels:
+        all_top_level_names.add(f"{g}_id_num_segments")
     return all_top_level_names
 
 
@@ -368,7 +378,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=data_tree,
-        leaf_checker=lambda leaf: isinstance(leaf, pd.Series | np.ndarray),
+        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
         tree_name="data_tree",
     )
     _fail_if_p_id_is_non_unique(data_tree)
@@ -429,7 +439,8 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
 
     # Check for non-unique p_ids
     p_id_counts: dict[int, int] = {}
-    for i in p_id:
+    # Need the map because Jax loop items are 1-element arrays.
+    for i in map(int, p_id):
         if i in p_id_counts:
             p_id_counts[i] += 1
         else:
@@ -586,11 +597,11 @@ def _fail_if_root_nodes_are_missing(
                 # Function depends on parameters only, so it does not have to be present
                 # in the data tree.
                 continue
-        elif node in data:
+        elif node in data or node.endswith("_num_segments"):
             # Root node is present in the data tree.
             continue
         else:
-            missing_nodes.append(str(node))
+            missing_nodes.append(node)
 
     if missing_nodes:
         formatted = format_list_linewise(

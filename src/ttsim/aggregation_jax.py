@@ -15,59 +15,87 @@ if TYPE_CHECKING:
         import numpy as jnp  # noqa: TC004
 
 
-def grouped_count(group_id: jnp.ndarray) -> jnp.ndarray:
-    out_on_hh = segment_sum(jnp.ones(len(group_id)), group_id)
+def grouped_count(group_id: jnp.ndarray, num_segments: int) -> jnp.ndarray:
+    out_on_hh = segment_sum(
+        data=jnp.ones(len(group_id)), segment_ids=group_id, num_segments=num_segments
+    )
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_sum(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
+def grouped_sum(
+    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
+) -> jnp.ndarray:
     if column.dtype in ["bool"]:
         column = column.astype(int)
 
-    out_on_hh = segment_sum(column, group_id)
+    out_on_hh = segment_sum(
+        data=column, segment_ids=group_id, num_segments=num_segments
+    )
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_mean(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
-    sum_on_hh = segment_sum(column, group_id)
-    sizes = segment_sum(jnp.ones(len(column)), group_id)
+def grouped_mean(
+    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
+) -> jnp.ndarray:
+    sum_on_hh = segment_sum(
+        data=column, segment_ids=group_id, num_segments=num_segments
+    )
+    sizes = segment_sum(
+        data=jnp.ones(len(column)), segment_ids=group_id, num_segments=num_segments
+    )
     mean_on_hh = sum_on_hh / sizes
     out = mean_on_hh[group_id]
     return out
 
 
-def grouped_max(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
-    out_on_hh = segment_max(column, group_id)
+def grouped_max(
+    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
+) -> jnp.ndarray:
+    out_on_hh = segment_max(
+        data=column, segment_ids=group_id, num_segments=num_segments
+    )
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_min(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
-    out_on_hh = segment_min(column, group_id)
+def grouped_min(
+    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
+) -> jnp.ndarray:
+    out_on_hh = segment_min(
+        data=column, segment_ids=group_id, num_segments=num_segments
+    )
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_any(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
+def grouped_any(
+    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
+) -> jnp.ndarray:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
         my_col = column.astype("bool")
     else:
         my_col = column
 
-    out_on_hh = segment_max(my_col, group_id)
+    out_on_hh = segment_max(
+        data=my_col, segment_ids=group_id, num_segments=num_segments
+    )
     out = out_on_hh[group_id]
     return out
 
 
-def grouped_all(column: jnp.ndarray, group_id: jnp.ndarray) -> jnp.ndarray:
+def grouped_all(
+    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
+) -> jnp.ndarray:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
         column = column.astype("bool")
 
-    out_on_hh = segment_min(column, group_id)
+    out_on_hh = segment_min(
+        data=column, segment_ids=group_id, num_segments=num_segments
+    )
     out = out_on_hh[group_id]
     return out
 

@@ -11,6 +11,12 @@ from ttsim import (
 )
 from ttsim.automatically_added_functions import create_agg_by_group_functions
 from ttsim.combine_functions import _fail_if_targets_not_in_functions
+from ttsim.config import IS_JAX_INSTALLED
+
+if IS_JAX_INSTALLED:
+    jit = True
+else:
+    jit = False
 
 
 @pytest.fixture
@@ -95,7 +101,9 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(return_n1__x_kin),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_n1__x_kin),
                     "x": x,
                 },
             },
@@ -111,13 +119,19 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
             {
                 "kin_id": kin_id,
                 "p_id": p_id,
-                "n1": {"f": policy_function(leaf_name="f")(return_x_kin), "x": x},
+                "n1": {
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_x_kin),
+                    "x": x,
+                },
             },
             {"n1": {"f": None}},
             {
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
         (
@@ -126,7 +140,9 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(some_x),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(some_x),
                     "x": x,
                 },
             },
@@ -135,6 +151,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
         (
@@ -143,7 +160,9 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(some_x),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(some_x),
                     "x": x,
                 },
                 "y_kin": y_kin,
@@ -153,6 +172,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
         (
@@ -161,7 +181,9 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(leaf_name="f")(return_y_kin),
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_y_kin),
                     "y_kin": y_kin_namespaced_input,
                 },
                 "inputs": {"x": x},
@@ -171,6 +193,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "inputs": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
             },
         ),
     ],
@@ -185,6 +208,7 @@ def test_create_agg_by_group_functions(
         environment=environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
+        jit=jit,
     )
 
 

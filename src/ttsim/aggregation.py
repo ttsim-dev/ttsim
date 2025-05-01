@@ -1,35 +1,7 @@
 from enum import StrEnum
 
-from ttsim.aggregation_jax import all_by_p_id as all_by_p_id_jax
-from ttsim.aggregation_jax import any_by_p_id as any_by_p_id_jax
-from ttsim.aggregation_jax import count_by_p_id as count_by_p_id_jax
-from ttsim.aggregation_jax import grouped_all as grouped_all_jax
-from ttsim.aggregation_jax import grouped_any as grouped_any_jax
-from ttsim.aggregation_jax import grouped_count as grouped_count_jax
-from ttsim.aggregation_jax import grouped_max as grouped_max_jax
-from ttsim.aggregation_jax import grouped_mean as grouped_mean_jax
-from ttsim.aggregation_jax import grouped_min as grouped_min_jax
-from ttsim.aggregation_jax import grouped_sum as grouped_sum_jax
-from ttsim.aggregation_jax import max_by_p_id as max_by_p_id_jax
-from ttsim.aggregation_jax import mean_by_p_id as mean_by_p_id_jax
-from ttsim.aggregation_jax import min_by_p_id as min_by_p_id_jax
-from ttsim.aggregation_jax import sum_by_p_id as sum_by_p_id_jax
-from ttsim.aggregation_numpy import all_by_p_id as all_by_p_id_numpy
-from ttsim.aggregation_numpy import any_by_p_id as any_by_p_id_numpy
-from ttsim.aggregation_numpy import count_by_p_id as count_by_p_id_numpy
-from ttsim.aggregation_numpy import grouped_all as grouped_all_numpy
-from ttsim.aggregation_numpy import grouped_any as grouped_any_numpy
-from ttsim.aggregation_numpy import grouped_count as grouped_count_numpy
-from ttsim.aggregation_numpy import grouped_max as grouped_max_numpy
-from ttsim.aggregation_numpy import grouped_mean as grouped_mean_numpy
-from ttsim.aggregation_numpy import grouped_min as grouped_min_numpy
-from ttsim.aggregation_numpy import grouped_sum as grouped_sum_numpy
-from ttsim.aggregation_numpy import max_by_p_id as max_by_p_id_numpy
-from ttsim.aggregation_numpy import mean_by_p_id as mean_by_p_id_numpy
-from ttsim.aggregation_numpy import min_by_p_id as min_by_p_id_numpy
-from ttsim.aggregation_numpy import sum_by_p_id as sum_by_p_id_numpy
+from ttsim import aggregation_jax, aggregation_numpy
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
 
 
 class AggType(StrEnum):
@@ -46,113 +18,21 @@ class AggType(StrEnum):
     ALL = "all"
 
 
-def grouped_count(group_id: np.ndarray) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return grouped_count_jax(group_id)
-    else:
-        return grouped_count_numpy(group_id)
+aggregation_module = aggregation_jax if IS_JAX_INSTALLED else aggregation_numpy
 
-
-def grouped_sum(column: np.ndarray, group_id: np.ndarray) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return grouped_sum_jax(column, group_id)
-    else:
-        return grouped_sum_numpy(column, group_id)
-
-
-def grouped_mean(column: np.ndarray, group_id: np.ndarray) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return grouped_mean_jax(column, group_id)
-    else:
-        return grouped_mean_numpy(column, group_id)
-
-
-def grouped_max(column: np.ndarray, group_id: np.ndarray) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return grouped_max_jax(column, group_id)
-    else:
-        return grouped_max_numpy(column, group_id)
-
-
-def grouped_min(column: np.ndarray, group_id: np.ndarray) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return grouped_min_jax(column, group_id)
-    else:
-        return grouped_min_numpy(column, group_id)
-
-
-def grouped_any(column: np.ndarray, group_id: np.ndarray) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return grouped_any_jax(column, group_id)
-    else:
-        return grouped_any_numpy(column, group_id)
-
-
-def grouped_all(column: np.ndarray, group_id: np.ndarray) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return grouped_all_jax(column, group_id)
-    else:
-        return grouped_all_numpy(column, group_id)
-
-
-def count_by_p_id(
-    p_id_to_aggregate_by: np.ndarray, p_id_to_store_by: np.ndarray
-) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return count_by_p_id_jax(p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return count_by_p_id_numpy(p_id_to_aggregate_by, p_id_to_store_by)
-
-
-def sum_by_p_id(
-    column: np.ndarray, p_id_to_aggregate_by: np.ndarray, p_id_to_store_by: np.ndarray
-) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return sum_by_p_id_jax(column, p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return sum_by_p_id_numpy(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-
-def mean_by_p_id(
-    column: np.ndarray, p_id_to_aggregate_by: np.ndarray, p_id_to_store_by: np.ndarray
-) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return mean_by_p_id_jax(column, p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return mean_by_p_id_numpy(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-
-def max_by_p_id(
-    column: np.ndarray, p_id_to_aggregate_by: np.ndarray, p_id_to_store_by: np.ndarray
-) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return max_by_p_id_jax(column, p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return max_by_p_id_numpy(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-
-def min_by_p_id(
-    column: np.ndarray, p_id_to_aggregate_by: np.ndarray, p_id_to_store_by: np.ndarray
-) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return min_by_p_id_jax(column, p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return min_by_p_id_numpy(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-
-def any_by_p_id(
-    column: np.ndarray, p_id_to_aggregate_by: np.ndarray, p_id_to_store_by: np.ndarray
-) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return any_by_p_id_jax(column, p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return any_by_p_id_numpy(column, p_id_to_aggregate_by, p_id_to_store_by)
-
-
-def all_by_p_id(
-    column: np.ndarray, p_id_to_aggregate_by: np.ndarray, p_id_to_store_by: np.ndarray
-) -> np.ndarray:
-    if IS_JAX_INSTALLED:
-        return all_by_p_id_jax(column, p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return all_by_p_id_numpy(column, p_id_to_aggregate_by, p_id_to_store_by)
+# The signature of the functions must be the same in both modules, except that all JAX
+# functions have the additional `num_segments` argument.
+grouped_count = aggregation_module.grouped_count
+grouped_sum = aggregation_module.grouped_sum
+grouped_mean = aggregation_module.grouped_mean
+grouped_max = aggregation_module.grouped_max
+grouped_min = aggregation_module.grouped_min
+grouped_any = aggregation_module.grouped_any
+grouped_all = aggregation_module.grouped_all
+count_by_p_id = aggregation_module.count_by_p_id
+sum_by_p_id = aggregation_module.sum_by_p_id
+mean_by_p_id = aggregation_module.mean_by_p_id
+max_by_p_id = aggregation_module.max_by_p_id
+min_by_p_id = aggregation_module.min_by_p_id
+any_by_p_id = aggregation_module.any_by_p_id
+all_by_p_id = aggregation_module.all_by_p_id

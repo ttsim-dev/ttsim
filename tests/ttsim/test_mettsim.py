@@ -5,6 +5,8 @@ from utils import (
     get_policy_test_ids_and_cases,
 )
 
+from ttsim.config import IS_JAX_INSTALLED
+
 policy_test_ids_and_cases = get_policy_test_ids_and_cases()
 
 
@@ -14,4 +16,7 @@ policy_test_ids_and_cases = get_policy_test_ids_and_cases()
     ids=policy_test_ids_and_cases.keys(),
 )
 def test_mettsim(test: PolicyTest):
-    execute_test(test)
+    if IS_JAX_INSTALLED:
+        execute_test(test, jit=True)
+    else:
+        execute_test(test, jit=False)

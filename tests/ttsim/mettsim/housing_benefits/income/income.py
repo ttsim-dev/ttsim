@@ -6,7 +6,8 @@ from ttsim import RoundingSpec, policy_function
         base=1,
         direction="down",
         reference="§ 4 Gondorian Housing Benefit Law",
-    )
+    ),
+    vectorization_strategy="vectorize",
 )
 def amount_m(
     payroll_tax__income__gross_wage_m: float,
