@@ -9,8 +9,6 @@ inputs:
       - 1950
     geburtsmonat:
       - 2
-    jahr:
-      - 2008
     p_id:
       - 11
     sozialversicherung__rente__bezieht_rente:

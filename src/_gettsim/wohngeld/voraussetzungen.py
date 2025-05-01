@@ -51,7 +51,7 @@ def grundsätzlich_anspruchsberechtigt_bg(
     return mindesteinkommen_erreicht_bg and vermögensgrenze_unterschritten_bg
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def vermögensgrenze_unterschritten_wthh(
     vermögen_wthh: float,
     anzahl_personen_wthh: int,
@@ -80,7 +80,7 @@ def vermögensgrenze_unterschritten_wthh(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def vermögensgrenze_unterschritten_bg(
     vermögen_bg: float,
     arbeitslosengeld_2__anzahl_personen_bg: int,

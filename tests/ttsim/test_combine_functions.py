@@ -120,9 +120,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(
-                        leaf_name="f", vectorization_strategy="vectorize"
-                    )(return_x_kin),
+                    "f": policy_function(leaf_name="f")(return_x_kin),
                     "x": x,
                 },
             },

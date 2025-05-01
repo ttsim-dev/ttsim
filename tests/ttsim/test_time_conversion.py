@@ -328,10 +328,11 @@ class TestCreateFunctionForTimeUnit:
 
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
 def test_should_not_create_cycle():
+    def x(test_m: int) -> int:
+        return test_m
+
     time_conversion_functions = create_time_conversion_functions(
-        ttsim_objects={
-            "test_d": policy_function(leaf_name="test_d")(lambda test_m: test_m)
-        },
+        ttsim_objects={"test_d": policy_function(leaf_name="test_d")(x)},
         data={},
         groupings=(),
     )

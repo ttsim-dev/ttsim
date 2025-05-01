@@ -90,6 +90,7 @@ def einkommen_m(
         base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
     ),
     start_date="2021-01-01",
+    vectorization_strategy="loop",
 )
 def anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
@@ -283,6 +284,7 @@ def höchstbetrag_m(
         reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
+    vectorization_strategy="loop",
 )
 def mean_entgeltpunkte_zuschlag(
     durchschnittliche_entgeltpunkte: float,

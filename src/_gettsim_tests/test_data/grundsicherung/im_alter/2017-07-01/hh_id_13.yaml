@@ -70,9 +70,6 @@ inputs:
     hh_id:
       - 13
       - 13
-    jahr:
-      - 2017
-      - 2017
     kindergeld__betrag_m_eg:
       - 0.0
       - 0.0

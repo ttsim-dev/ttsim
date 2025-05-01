@@ -52,8 +52,6 @@ inputs:
       - 1975
     hh_id:
       - 16
-    jahr:
-      - 2015
     kindergeld__in_ausbildung:
       - false
     kindergeld__p_id_empfänger:

@@ -52,8 +52,6 @@ inputs:
       - 1978
     hh_id:
       - 10
-    jahr:
-      - 2018
     kindergeld__in_ausbildung:
       - false
     kindergeld__p_id_empfänger:

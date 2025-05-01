@@ -75,9 +75,6 @@ inputs:
     hh_id:
       - 18
       - 18
-    jahr:
-      - 2017
-      - 2017
     kindergeld__in_ausbildung:
       - false
       - false

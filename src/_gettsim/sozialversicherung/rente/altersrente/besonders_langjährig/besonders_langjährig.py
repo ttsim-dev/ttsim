@@ -40,7 +40,9 @@ def altersgrenze_ohne_staffelung(
     return ges_rente_params["altersgrenze_besond_langj_versicherte"]
 
 
-@policy_function(start_date="2014-06-23", leaf_name="altersgrenze")
+@policy_function(
+    start_date="2014-06-23", leaf_name="altersgrenze", vectorization_strategy="loop"
+)
 def altersgrenze_mit_staffelung(
     geburtsjahr: int,
     ges_rente_params: dict,

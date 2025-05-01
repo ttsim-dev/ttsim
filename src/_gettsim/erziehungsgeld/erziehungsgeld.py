@@ -15,7 +15,9 @@ def anspruchshöhe_m(
     pass
 
 
-@policy_function(start_date="2004-01-01", end_date="2008-12-31")
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
 def betrag_m(
     anspruchshöhe_m: int,
     grundsätzlich_anspruchsberechtigt: bool,
@@ -357,7 +359,9 @@ def anzurechnendes_einkommen_y(
     return out
 
 
-@policy_function(start_date="2004-01-01", end_date="2008-12-31")
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
 def einkommensgrenze_y(
     einkommensgrenze_ohne_geschwisterbonus: float,
     arbeitslosengeld_2__anzahl_kinder_fg: float,
@@ -394,7 +398,9 @@ def einkommensgrenze_y(
     return out
 
 
-@policy_function(start_date="2004-01-01", end_date="2008-12-31")
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
 def einkommensgrenze_ohne_geschwisterbonus(
     familie__alleinerziehend_fg: bool,
     alter_monate: float,

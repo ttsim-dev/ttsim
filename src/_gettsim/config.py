@@ -28,59 +28,6 @@ INTERNAL_PARAMS_GROUPS = [
     "erziehungsgeld",
 ]
 
-SUPPORTED_GROUPINGS = {
-    "hh": {
-        "name": "Haushalt",
-        "namespace": "top-level",
-        "description": "Individuals living together in a household in the Wohngeld"
-        " sense (§5 WoGG).",
-        "potentially_endogenous": False,
-    },
-    "wthh": {
-        "name": "wohngeldrechtlicher Teilhaushalt",
-        "namespace": "wohngeld",
-        "description": "The relevant unit for Wohngeld. Members of a household for whom"
-        " the Wohngeld priority check compared to Bürgergeld yields the same result"
-        " ∈ {True, False}.",
-        "potentially_endogenous": True,
-    },
-    "fg": {
-        "name": "Familiengemeinschaft",
-        "namespace": "arbeitslosengeld_2",
-        "description": "Maximum of two generations, the relevant base unit for"
-        " Bürgergeld / Arbeitslosengeld 2, before excluding children who have enough"
-        " income fend for themselves.",
-        "potentially_endogenous": True,
-    },
-    "bg": {
-        "name": "Bedarfsgemeinschaft",
-        "namespace": "arbeitslosengeld_2",
-        "description": "Familiengemeinschaft except for children who have enough income"
-        " to fend for themselves. Relevant unit for Bürgergeld / Arbeitslosengeld 2",
-        "potentially_endogenous": True,
-    },
-    "eg": {
-        "name": "Einstandsgemeinschaft / Einstandspartner",
-        "namespace": "arbeitslosengeld_2",
-        "description": "A couple whose members are deemed to be responsible for each"
-        " other.",
-        "potentially_endogenous": True,
-    },
-    "ehe": {
-        "name": "Ehepartner",
-        "namespace": "familie",
-        "description": "Couples that are either married or in a civil union.",
-        "potentially_endogenous": True,
-    },
-    "sn": {
-        "name": "Steuernummer",
-        "namespace": "einkommensteuer",
-        "description": "Spouses filing taxes jointly or individuals.",
-        "potentially_endogenous": True,
-    },
-}
-
-
 _TO_DELETE_DEFAULT_TARGETS = {
     "einkommensteuer": {
         "betrag_y_sn": None,

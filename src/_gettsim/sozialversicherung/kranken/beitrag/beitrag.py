@@ -217,7 +217,7 @@ def betrag_versicherter_regulär_beschäftigt_m(
     return beitragssatz_arbeitnehmer * einkommen_m
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_selbstständig_m(
     bemessungsgrundlage_selbstständig_m: float,
     ges_krankenv_params: dict,
@@ -237,6 +237,7 @@ def betrag_selbstständig_m(
 
     """
     params = ges_krankenv_params["beitr_satz"]
+    # The below must be done via dates_active in order to enable vectorization.
     ermäßigter_beitrag = (
         params["ermäßigt"] if ("ermäßigt" in params) else params["mean_allgemein"]
     )

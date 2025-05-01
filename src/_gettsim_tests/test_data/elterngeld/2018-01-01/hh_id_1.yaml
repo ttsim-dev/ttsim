@@ -42,8 +42,6 @@ inputs:
       - 1
     hh_id:
       - 1
-    jahr:
-      - 2018
     kindergeld__in_ausbildung:
       - false
     lohnsteuer__steuerklasse:

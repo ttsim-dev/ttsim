@@ -54,8 +54,6 @@ inputs:
       - 1
     hh_id:
       - 10
-    jahr:
-      - 2021
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
     kindergeld__p_id_empfänger:

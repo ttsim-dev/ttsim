@@ -16,8 +16,6 @@ inputs:
       - 1
     hh_id:
       - 5
-    jahr:
-      - 2010
     p_id:
       - 5
     sozialversicherung__rente__altersrente__für_frauen__pflichtsbeitragsjahre_ab_alter_40:

@@ -68,9 +68,6 @@ inputs:
     hh_id:
       - 9
       - 9
-    jahr:
-      - 2021
-      - 2021
     kindergeld__betrag_m_eg:
       - 0.0
       - 0.0

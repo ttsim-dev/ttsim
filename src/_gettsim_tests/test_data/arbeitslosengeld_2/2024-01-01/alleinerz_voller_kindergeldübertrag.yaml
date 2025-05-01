@@ -7,7 +7,11 @@ info:
   precision_atol: 0.01
   source: Made up.
 inputs:
-  assumed: {}
+  assumed:
+    bg_id:
+      - 0
+      - 0
+      - 1
   provided:
     alter:
       - 40
@@ -17,10 +21,6 @@ inputs:
       - false
       - false
       - false
-    bg_id:
-      - 0
-      - 0
-      - 1
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1
@@ -89,10 +89,6 @@ inputs:
       - 0
       - 0
       - 0
-    jahr:
-      - 2024
-      - 2024
-      - 2024
     kindergeld__in_ausbildung:
       - false
       - false
@@ -132,7 +128,7 @@ inputs:
     unterhalt__tatsächlich_erhaltener_betrag_m:
       - 0.0
       - 0.0
-      - 450.0
+      - 800.0
     unterhaltsvorschuss__betrag_m:
       - 0.0
       - 0.0
@@ -167,23 +163,23 @@ outputs:
     - 0.0
     - 0.0
   arbeitslosengeld_2__anzurechnendes_einkommen_m:
-    - 353.33
+    - 530.0
     - 250.0
-    - 700.0
+    - 1050.0
   arbeitslosengeld_2__betrag_m_bg:
-    - 1005.68
-    - 1005.68
+    - 829.01
+    - 829.01
     - 0.0
   arbeitslosengeld_2__differenz_kindergeld_kindbedarf_m:
     - 0.0
     - 0.0
-    - 73.33
+    - 250.0
   arbeitslosengeld_2__kindergeld_pro_kind_m:
     - 250.0
     - 0.0
     - 0.0
   arbeitslosengeld_2__kindergeldübertrag_m:
-    - 73.33
+    - 250.0
     - 0.0
     - 0.0
   arbeitslosengeld_2__kindersatz_m_bg:

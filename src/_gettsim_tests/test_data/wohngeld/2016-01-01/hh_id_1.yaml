@@ -102,10 +102,6 @@ inputs:
       - 1
       - 1
       - 1
-    jahr:
-      - 2016
-      - 2016
-      - 2016
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
       - false

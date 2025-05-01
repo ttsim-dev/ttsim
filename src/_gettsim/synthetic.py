@@ -6,10 +6,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 
-from _gettsim.config import (
-    RESOURCE_DIR,
-    SUPPORTED_GROUPINGS,
-)
+from _gettsim.config import RESOURCE_DIR
 from ttsim.policy_environment import _load_parameter_group_from_yaml
 
 current_year = datetime.datetime.today().year
@@ -174,7 +171,7 @@ def create_basic_households(
 
     exogenous_groupings = [
         key
-        for key, value in SUPPORTED_GROUPINGS.items()
+        for key, value in environment.grouping_levels.items()
         if not value.get("potentially_endogenous", True)
     ]
     group_ids = [f"{g}_id" for g in exogenous_groupings]

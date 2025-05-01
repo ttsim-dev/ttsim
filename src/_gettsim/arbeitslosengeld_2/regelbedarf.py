@@ -3,7 +3,7 @@
 from ttsim import policy_function
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def regelbedarf_m(
     regelsatz_m: float,
     kosten_der_unterkunft_m: float,
@@ -29,7 +29,7 @@ def regelbedarf_m(
     return regelsatz_m + kosten_der_unterkunft_m
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def mehrbedarf_alleinerziehend_m(
     familie__alleinerziehend: bool,
     anzahl_kinder_fg: int,
@@ -90,9 +90,7 @@ def mehrbedarf_alleinerziehend_m(
     return out
 
 
-@policy_function(
-    end_date="2010-12-31", leaf_name="kindersatz_m", vectorization_strategy="vectorize"
-)
+@policy_function(end_date="2010-12-31", leaf_name="kindersatz_m")
 def kindersatz_m_bis_2010(
     alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
@@ -144,7 +142,6 @@ def kindersatz_m_bis_2010(
 @policy_function(
     start_date="2011-01-01",
     leaf_name="kindersatz_m",
-    vectorization_strategy="vectorize",
 )
 def kindersatz_m_ab_2011(
     alter: int,
@@ -201,7 +198,6 @@ def kindersatz_m_ab_2011(
 @policy_function(
     end_date="2010-12-31",
     leaf_name="erwachsenensatz_m",
-    vectorization_strategy="vectorize",
 )
 def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
     mehrbedarf_alleinerziehend_m: float,
@@ -244,7 +240,6 @@ def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
 @policy_function(
     start_date="2011-01-01",
     leaf_name="erwachsenensatz_m",
-    vectorization_strategy="vectorize",
 )
 def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
     mehrbedarf_alleinerziehend_m: float,
@@ -284,7 +279,7 @@ def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
     return out * (1 + mehrbedarf_alleinerziehend_m)
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def regelsatz_m(
     erwachsenensatz_m: float,
     kindersatz_m: float,
@@ -309,7 +304,6 @@ def regelsatz_m(
 @policy_function(
     end_date="2022-12-31",
     leaf_name="kosten_der_unterkunft_m",
-    vectorization_strategy="vectorize",
 )
 def kosten_der_unterkunft_m_bis_2022(
     berechtigte_wohnfläche: float,
@@ -336,7 +330,6 @@ def kosten_der_unterkunft_m_bis_2022(
 @policy_function(
     start_date="2023-01-01",
     leaf_name="kosten_der_unterkunft_m",
-    vectorization_strategy="vectorize",
 )
 def kosten_der_unterkunft_m_ab_2023(
     bruttokaltmiete_m: float,
@@ -377,7 +370,7 @@ def kosten_der_unterkunft_m_ab_2023(
     return out
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def anerkannte_warmmiete_je_qm_m(
     bruttokaltmiete_m: float,
     heizkosten_m: float,
@@ -410,7 +403,7 @@ def anerkannte_warmmiete_je_qm_m(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def berechtigte_wohnfläche(
     wohnfläche: float,
     wohnen__bewohnt_eigentum_hh: bool,
@@ -459,7 +452,7 @@ def berechtigte_wohnfläche(
     return min(wohnfläche, maximum / anzahl_personen_hh)
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def bruttokaltmiete_m(
     wohnen__bruttokaltmiete_m_hh: float,
     anzahl_personen_hh: int,
@@ -484,7 +477,7 @@ def bruttokaltmiete_m(
     return wohnen__bruttokaltmiete_m_hh / anzahl_personen_hh
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def heizkosten_m(
     wohnen__heizkosten_m_hh: float,
     anzahl_personen_hh: int,
@@ -509,7 +502,7 @@ def heizkosten_m(
     return wohnen__heizkosten_m_hh / anzahl_personen_hh
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def wohnfläche(
     wohnen__wohnfläche_hh: float,
     anzahl_personen_hh: int,

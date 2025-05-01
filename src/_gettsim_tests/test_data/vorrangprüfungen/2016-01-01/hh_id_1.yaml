@@ -54,10 +54,6 @@ inputs:
       - 1
       - 1
       - 1
-    jahr:
-      - 2016
-      - 2016
-      - 2016
     kinderzuschlag__basisbetrag_m_bg:
       - 140.0
       - 140.0

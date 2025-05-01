@@ -58,7 +58,7 @@ class RoundingSpec:
             elif self.direction == "down":
                 rounded_out = self.base * np.floor(out / self.base)
             elif self.direction == "nearest":
-                rounded_out = self.base * (out / self.base).round()
+                rounded_out = self.base * (np.asarray(out) / self.base).round()
 
             rounded_out += self.to_add_after_rounding
             return rounded_out

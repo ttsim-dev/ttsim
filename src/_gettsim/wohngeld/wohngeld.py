@@ -75,7 +75,8 @@ def betrag_m_wthh(
         base=1,
         direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
-    )
+    ),
+    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_wthh(
     anzahl_personen_wthh: int,
@@ -125,7 +126,8 @@ def anspruchshöhe_m_wthh(
         base=1,
         direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
-    )
+    ),
+    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,

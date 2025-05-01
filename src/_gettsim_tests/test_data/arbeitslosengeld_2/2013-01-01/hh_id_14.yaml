@@ -68,9 +68,6 @@ inputs:
     hh_id:
       - 14
       - 14
-    jahr:
-      - '2013'
-      - '2013'
     kindergeld__betrag_m:
       - 0.0
       - 0.0

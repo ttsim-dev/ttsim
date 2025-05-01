@@ -25,6 +25,7 @@ def anzahl_kinder_bis_24_elternteil_2(
     start_date="1995-01-01",
     end_date="2004-12-31",
     leaf_name="beitragssatz",
+    vectorization_strategy="loop",
 )
 def beitragssatz_ohne_zusatz_für_kinderlose(
     ges_pflegev_params: dict,
@@ -50,6 +51,7 @@ def beitragssatz_ohne_zusatz_für_kinderlose(
     start_date="2005-01-01",
     end_date="2023-06-30",
     leaf_name="beitragssatz",
+    vectorization_strategy="loop",
 )
 def beitragssatz_zusatz_kinderlos_dummy(
     zusatzbetrag_kinderlos: bool,
@@ -79,7 +81,9 @@ def beitragssatz_zusatz_kinderlos_dummy(
     return out
 
 
-@policy_function(start_date="2023-07-01", leaf_name="beitragssatz")
+@policy_function(
+    start_date="2023-07-01", leaf_name="beitragssatz", vectorization_strategy="loop"
+)
 def beitragssatz_mit_kinder_abschlag(
     anzahl_kinder_bis_24: int,
     zusatzbetrag_kinderlos: bool,
@@ -118,7 +122,7 @@ def beitragssatz_mit_kinder_abschlag(
     return out
 
 
-@policy_function(start_date="2005-01-01")
+@policy_function(start_date="2005-01-01", vectorization_strategy="loop")
 def zusatzbetrag_kinderlos(
     hat_kinder: bool,
     alter: int,

@@ -18,7 +18,7 @@ def alleinerziehendenbonus(
     pass
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def einkommen_m_wthh(
     anzahl_personen_wthh: int,
     freibetrag_m_wthh: float,
@@ -55,7 +55,7 @@ def einkommen_m_wthh(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def einkommen_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     freibetrag_m_bg: float,
@@ -92,7 +92,7 @@ def einkommen_m_bg(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     einkommensteuer__betrag_y_sn: float,
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
@@ -274,7 +274,9 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     return out
 
 
-@policy_function(end_date="2015-12-31", leaf_name="freibetrag_m")
+@policy_function(
+    end_date="2015-12-31", leaf_name="freibetrag_m", vectorization_strategy="loop"
+)
 def freibetrag_m_bis_2015(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     ist_kind_mit_erwerbseinkommen: bool,

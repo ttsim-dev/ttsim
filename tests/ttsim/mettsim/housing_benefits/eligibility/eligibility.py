@@ -25,7 +25,6 @@ def number_of_individuals_fam(fam_id: int) -> int:
 @policy_function(
     end_date="2019-12-31",
     leaf_name="requirement_fulfilled_fam",
-    vectorization_strategy="vectorize",
 )
 def requirement_fulfilled_fam_not_considering_children(
     housing_benefits__income__amount_m_fam: float,
@@ -42,7 +41,6 @@ def requirement_fulfilled_fam_not_considering_children(
 @policy_function(
     start_date="2020-01-01",
     leaf_name="requirement_fulfilled_fam",
-    vectorization_strategy="vectorize",
 )
 def requirement_fulfilled_fam_considering_children(
     housing_benefits__income__amount_m_fam: float,

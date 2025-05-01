@@ -12,9 +12,7 @@ def anzahl_ansprüche(
     pass
 
 
-@policy_function(
-    start_date="2023-01-01", leaf_name="betrag_m", vectorization_strategy="vectorize"
-)
+@policy_function(start_date="2023-01-01", leaf_name="betrag_m")
 def betrag_ohne_staffelung_m(
     anzahl_ansprüche: int,
     kindergeld_params: dict,
@@ -39,7 +37,9 @@ def betrag_ohne_staffelung_m(
     return kindergeld_params["kindergeld"] * anzahl_ansprüche
 
 
-@policy_function(end_date="2022-12-31", leaf_name="betrag_m")
+@policy_function(
+    end_date="2022-12-31", leaf_name="betrag_m", vectorization_strategy="loop"
+)
 def betrag_gestaffelt_m(
     anzahl_ansprüche: int,
     kindergeld_params: dict,
@@ -77,7 +77,6 @@ def betrag_gestaffelt_m(
 @policy_function(
     end_date="2011-12-31",
     leaf_name="grundsätzlich_anspruchsberechtigt",
-    vectorization_strategy="vectorize",
 )
 def grundsätzlich_anspruchsberechtigt_nach_lohn(
     alter: int,
@@ -121,7 +120,6 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
 @policy_function(
     start_date="2012-01-01",
     leaf_name="grundsätzlich_anspruchsberechtigt",
-    vectorization_strategy="vectorize",
 )
 def grundsätzlich_anspruchsberechtigt_nach_stunden(
     alter: int,
@@ -160,7 +158,7 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
     return out
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def kind_bis_10_mit_kindergeld(
     alter: int,
     grundsätzlich_anspruchsberechtigt: bool,

@@ -9,8 +9,6 @@ inputs:
       - 1960
     geburtsmonat:
       - 2
-    jahr:
-      - 2018
     p_id:
       - 21
     sozialversicherung__rente__bezieht_rente:

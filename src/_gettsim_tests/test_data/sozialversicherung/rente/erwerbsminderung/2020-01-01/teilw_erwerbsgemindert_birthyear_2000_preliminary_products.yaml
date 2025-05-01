@@ -9,8 +9,6 @@ inputs:
       - 2000
     geburtsmonat:
       - 10
-    jahr:
-      - 2020
     p_id:
       - 30
     sozialversicherung__rente__bezieht_rente:

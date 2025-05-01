@@ -9,8 +9,6 @@ inputs:
       - 1970
     geburtsmonat:
       - 6
-    jahr:
-      - 2008
     p_id:
       - 13
     sozialversicherung__rente__bezieht_rente:

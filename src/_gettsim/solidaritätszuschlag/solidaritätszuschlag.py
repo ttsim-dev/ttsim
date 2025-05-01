@@ -3,7 +3,9 @@
 from ttsim import piecewise_polynomial, policy_function
 
 
-@policy_function(end_date="2008-12-31", leaf_name="betrag_y_sn")
+@policy_function(
+    end_date="2008-12-31", leaf_name="betrag_y_sn", vectorization_strategy="loop"
+)
 def betrag_y_sn_ohne_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
@@ -46,7 +48,9 @@ def betrag_y_sn_ohne_abgelt_st(
     return out
 
 
-@policy_function(start_date="2009-01-01", leaf_name="betrag_y_sn")
+@policy_function(
+    start_date="2009-01-01", leaf_name="betrag_y_sn", vectorization_strategy="loop"
+)
 def betrag_y_sn_mit_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,

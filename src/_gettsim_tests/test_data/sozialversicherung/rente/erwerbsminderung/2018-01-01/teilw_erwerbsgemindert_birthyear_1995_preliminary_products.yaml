@@ -9,8 +9,6 @@ inputs:
       - 1995
     geburtsmonat:
       - 10
-    jahr:
-      - 2018
     p_id:
       - 25
     sozialversicherung__rente__bezieht_rente:

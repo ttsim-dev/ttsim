@@ -42,6 +42,7 @@ def altersgrenze_ohne_staffelung(
     start_date="1989-12-18",
     end_date="2007-04-19",
     leaf_name="altersgrenze",
+    vectorization_strategy="loop",
 )
 def altersgrenze_mit_staffelung_nach_geburtsmonat(
     geburtsjahr: int,
@@ -99,7 +100,9 @@ def altersgrenze_mit_staffelung_nach_geburtsmonat(
     return out
 
 
-@policy_function(start_date="2007-04-20", leaf_name="altersgrenze")
+@policy_function(
+    start_date="2007-04-20", leaf_name="altersgrenze", vectorization_strategy="loop"
+)
 def altersgrenze_mit_staffelung_nach_geburtsjahr(
     geburtsjahr: int,
     geburtsmonat: int,
@@ -190,6 +193,7 @@ def altersgrenze_vorzeitig_ohne_staffelung(
     start_date="1989-12-18",
     end_date="1996-09-26",
     leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="loop",
 )
 def altersgrenze_vorzeitig_mit_staffelung(
     geburtsjahr: int,

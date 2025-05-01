@@ -52,8 +52,6 @@ inputs:
       - 1970
     hh_id:
       - 4
-    jahr:
-      - 2010
     kindergeld__in_ausbildung:
       - false
     kindergeld__p_id_empfänger:

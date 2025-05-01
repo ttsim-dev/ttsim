@@ -18,8 +18,6 @@ inputs:
       - -1
     hh_id:
       - 13
-    jahr:
-      - 2020
     p_id:
       - 14
     sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m:

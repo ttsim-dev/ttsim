@@ -39,9 +39,6 @@ inputs:
     hh_id:
       - 5
       - 5
-    jahr:
-      - 2018
-      - 2018
     kindergeld__p_id_empfänger:
       - -1
       - 6
