@@ -18,7 +18,7 @@ def anzahl_personen_hh(hh_id: int) -> int:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def erwachsene_alle_rentenbezieher_hh(
     anzahl_erwachsene_hh: int, anzahl_rentenbezieher_hh: int
 ) -> bool:

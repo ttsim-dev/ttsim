@@ -15,7 +15,7 @@ def amount_y(
     """The amount of child tax credit at the recipient level."""
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def claim_of_child_y(
     child_eligible: bool,
     payroll_tax_params: dict,
@@ -26,7 +26,7 @@ def claim_of_child_y(
         return 0
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def child_eligible(
     age: int,
     payroll_tax_params: dict,

@@ -1,7 +1,7 @@
 from ttsim import policy_function
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def amount_m_fam(
     eligibility__requirement_fulfilled_fam: bool,
     income__amount_m_fam: float,

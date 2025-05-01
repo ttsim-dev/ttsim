@@ -60,17 +60,17 @@ def betrag_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def identity(x: int) -> int:
     return x
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def some_func(p_id: int) -> int:
     return p_id
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def another_func(some_func: int) -> int:
     return some_func
 
@@ -420,7 +420,7 @@ def test_user_provided_aggregation():
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200])
 
-    @policy_function(vectorization_strategy="vectorize")
+    @policy_function()
     def betrag_m_double(betrag_m):
         return 2 * betrag_m
 
@@ -464,7 +464,7 @@ def test_user_provided_aggregation_with_time_conversion():
     # Double up, convert to quarter, then take max fam_id
     expected = pd.Series([400 * 12, 400 * 12, 200 * 12])
 
-    @policy_function(vectorization_strategy="vectorize")
+    @policy_function()
     def betrag_double_m(betrag_m):
         return 2 * betrag_m
 
