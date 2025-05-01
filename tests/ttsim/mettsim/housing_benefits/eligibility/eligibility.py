@@ -53,7 +53,7 @@ def requirement_fulfilled_fam_considering_children(
     )
 
 
-@policy_function(start_date="2020-01-01")
+@policy_function(start_date="2020-01-01", vectorization_strategy="vectorize")
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,
     housing_benefits_params: dict,
@@ -64,7 +64,7 @@ def number_of_family_members_considered_fam(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def child(
     age: int,
     housing_benefits_params: dict,
@@ -72,7 +72,7 @@ def child(
     return age <= housing_benefits_params["max_age_children"]
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def adult(
     age: int,
     housing_benefits_params: dict,

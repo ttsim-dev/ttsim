@@ -1,7 +1,7 @@
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def amount_y(
     gross_wage_y: float,
     deductions_y: float,
