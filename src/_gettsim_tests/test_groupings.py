@@ -1,5 +1,4 @@
 import dags.tree as dt
-import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
@@ -9,6 +8,7 @@ from _gettsim_tests.utils import (
     load_policy_test_data,
 )
 from ttsim import compute_taxes_and_transfers
+from ttsim.config import numpy_or_jax as np
 
 test_data = load_policy_test_data("groupings")
 
