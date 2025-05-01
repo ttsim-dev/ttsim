@@ -17,7 +17,7 @@ inputs:
     hh_id:
       - 13
     jahr:
-      - '2004-04-01'
+      - 2004
     p_id:
       - 111
     sozialversicherung__kranken__beitrag__privat_versichert:

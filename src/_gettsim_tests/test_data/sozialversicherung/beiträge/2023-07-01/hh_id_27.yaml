@@ -20,7 +20,7 @@ inputs:
     hh_id:
       - 27
     jahr:
-      - 2023-07
+      - 2023
     p_id:
       - 27
     sozialversicherung__kranken__beitrag__privat_versichert:

@@ -67,8 +67,8 @@ inputs:
       - 13
       - 13
     jahr:
-      - '2013'
-      - '2013'
+      - 2013
+      - 2013
     kindergeld__betrag_m_bg:
       - 0.0
       - 0.0

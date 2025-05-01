@@ -17,7 +17,7 @@ inputs:
     hh_id:
       - 25
     jahr:
-      - '2020'
+      - 2020
     p_id:
       - 4987
     sozialversicherung__kranken__beitrag__privat_versichert:

@@ -17,7 +17,7 @@ inputs:
     hh_id:
       - 23
     jahr:
-      - '2019'
+      - 2019
     p_id:
       - 3657
     sozialversicherung__kranken__beitrag__privat_versichert:

@@ -17,7 +17,7 @@ inputs:
     hh_id:
       - 7
     jahr:
-      - '2010'
+      - 2010
     p_id:
       - 3483
     sozialversicherung__kranken__beitrag__privat_versichert:

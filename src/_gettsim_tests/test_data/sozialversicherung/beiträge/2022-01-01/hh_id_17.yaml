@@ -17,7 +17,7 @@ inputs:
     hh_id:
       - 17
     jahr:
-      - '2022'
+      - 2022
     p_id:
       - 224
     sozialversicherung__kranken__beitrag__privat_versichert:
