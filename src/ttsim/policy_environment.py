@@ -10,7 +10,11 @@ import numpy
 import optree
 import yaml
 
-from ttsim.loader import active_ttsim_objects_tree, orig_ttsim_objects_tree
+from ttsim.loader import (
+    active_ttsim_objects_tree,
+    orig_ttsim_objects_tree,
+    orig_yaml_tree,
+)
 from ttsim.piecewise_polynomial import (
     check_and_get_thresholds,
     get_piecewise_parameters,
@@ -35,6 +39,8 @@ if TYPE_CHECKING:
         DashedISOString,
         FlatTTSIMObjectDict,
         NestedTTSIMObjectDict,
+        OrigYamlParamSpec,
+        OrigYamlTree,
     )
 
 
@@ -176,10 +182,14 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
+    _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
+    _orig_yaml_tree = orig_yaml_tree(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
-    fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-        orig_ttsim_objects_tree=orig_ttsim_objects_tree(root)
+    fail_because_of_clashes(
+        orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
+        orig_yaml_tree=_orig_yaml_tree,
     )
+    breakpoint()
 
     params = {}
     if "_gettsim" in root.name:
@@ -216,28 +226,36 @@ def set_up_policy_environment(
     )
 
 
-def fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
+def fail_because_of_clashes(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+    orig_yaml_tree: OrigYamlTree,
 ) -> None:
-    """Check overlapping time periods of TTSIMObjects.
+    """Fail because of clashes of names.
+
+    Two scenarios are checked:
+    - Within TTSIMObjects, active periods of a leaf name could overlap
+    - There may be name clashes involving parameters (parameters from multiple files
+      or parameters named in the same way as a leaf name).
 
     Raises
     ------
     ConflictingTimeDependentObjectsError
         If multiple objects with the same leaf name are active at the same time.
+    ConflictingNamesError
+        If there are name clashes involving parameters.
     """
 
-    # Create mapping from leaf names to objects.
-    checker: dict[tuple[str, ...], list[TTSIMObject]] = {}
+    # Create mapping from leaf names to TTSIM objects.
+    overlap_checker: dict[tuple[str, ...], list[TTSIMObject]] = {}
     for orig_path, obj in orig_ttsim_objects_tree.items():
         path = (*orig_path[:-2], obj.leaf_name)
-        if path in checker:
-            checker[path].append(obj)
+        if path in overlap_checker:
+            overlap_checker[path].append(obj)
         else:
-            checker[path] = [obj]
+            overlap_checker[path] = [obj]
 
     # Check for overlapping start and end dates for time-dependent functions.
-    for path, objects in checker.items():
+    for path, objects in overlap_checker.items():
         dates_active = [(f.start_date, f.end_date) for f in objects]
         for (start1, end1), (start2, end2) in itertools.combinations(dates_active, 2):
             if start1 <= end2 and start2 <= end1:
@@ -247,6 +265,25 @@ def fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
                 )
+
+    # Start with a single element each.
+    name_checker: dict[tuple[str, ...], list[TTSIMObject | OrigYamlParamSpec]] = {}
+    for path, objects in overlap_checker.items():
+        name_checker[path] = [objects[0]]
+    # Now add the yaml objects.
+    for orig_path, obj in orig_yaml_tree.items():
+        path = (*orig_path[:-2], orig_path[-1])
+        if path in name_checker:
+            name_checker[path].append(obj)
+        else:
+            name_checker[path] = [obj]
+
+    for path, objects in name_checker.items():
+        if len(objects) > 1:
+            raise ConflictingNamesError(
+                affected_objects=objects,
+                path=path,
+            )
 
 
 class ConflictingTimeDependentObjectsError(Exception):
@@ -281,6 +318,37 @@ class ConflictingTimeDependentObjectsError(Exception):
         }
 
         Overlap from {self.overlap_start} to {self.overlap_end}."""
+
+
+class ConflictingNamesError(Exception):
+    def __init__(
+        self,
+        affected_objects: list[TTSIMObject | OrigYamlParamSpec],
+        path: tuple[str, ...],
+    ) -> None:
+        self.affected_ttsim_objects = affected_objects
+        self.path = path
+
+    def __str__(self) -> str:
+        objects = []
+        for obj in self.affected_objects:
+            if isinstance(obj, TTSIMObject):
+                objects.append(obj.__getattribute__("original_function_name"))
+            else:
+                objects.append(obj)
+        return f"""
+        Objects with path
+
+          {self.path}
+
+        clash. The following functions are affected:
+
+          {
+            '''
+          '''.join(objects)
+        }
+
+        """
 
 
 def _convert_to_policy_function_if_not_ttsim_object(

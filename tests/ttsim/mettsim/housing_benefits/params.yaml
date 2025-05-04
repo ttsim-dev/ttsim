@@ -1,0 +1,31 @@
+---
+eligibility:
+  name:
+    de: Anspruchsvoraussetzungen
+    en: Eligibility
+  description:
+    de: In Mittelerde passiert nichts.
+    en: In Middle Earth nothing happens.
+  1900-01-01:
+    subsistence_income_per_spouse_m: 500.0
+  2020-01-01:
+    subsistence_income_per_individual_m: 500.0
+    max_number_of_family_members: 4
+assistance_rate:
+  name:
+    de: Unterstützungssatz
+    en: Assistance rate
+  description:
+    de: In Mittelerde passiert immer noch nichts.
+    en: Still nothing happens in Middle Earth.
+  1900-01-01:
+    scalar: 0.5
+max_age_children:
+  name:
+    de: Maximalalter der Kinder
+    en: Maximum age of children
+  description:
+    de: In Mittelerde passiert nichts, niemals.
+    en: In Middle Earth nothing happens, ever.
+  1900-01-01:
+    scalar: 18

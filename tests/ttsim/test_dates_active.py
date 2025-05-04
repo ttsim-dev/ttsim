@@ -8,7 +8,7 @@ import pytest
 from ttsim import policy_function
 from ttsim.policy_environment import (
     ConflictingTimeDependentObjectsError,
-    fail_if_multiple_ttsim_objects_are_active_at_the_same_time,
+    fail_because_of_clashes,
 )
 
 if TYPE_CHECKING:
@@ -187,8 +187,9 @@ def identity(x):
     ],
 )
 def test_dates_active_no_conflicts(orig_ttsim_objects_tree):
-    fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-        orig_ttsim_objects_tree=orig_ttsim_objects_tree
+    fail_because_of_clashes(
+        orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+        orig_yaml_tree={},
     )
 
 
@@ -262,6 +263,7 @@ def test_dates_active_no_conflicts(orig_ttsim_objects_tree):
 )
 def test_dates_active_with_conflicts(orig_ttsim_objects_tree: FlatTTSIMObjectDict):
     with pytest.raises(ConflictingTimeDependentObjectsError):
-        fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-            orig_ttsim_objects_tree=orig_ttsim_objects_tree
+        fail_because_of_clashes(
+            orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+            orig_yaml_tree={},
         )
