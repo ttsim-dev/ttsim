@@ -76,7 +76,7 @@ def oss(
     )
     policy_environment = set_up_policy_environment(
         date=date,
-        resource_dir=GETTSIM_ROOT,
+        root=GETTSIM_ROOT,
     )
     return compute_taxes_and_transfers(
         data_tree=data_tree,

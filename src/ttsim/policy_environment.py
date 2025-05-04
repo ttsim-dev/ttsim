@@ -156,14 +156,14 @@ class PolicyEnvironment:
 
 
 def set_up_policy_environment(
-    resource_dir: Path, date: datetime.date | DashedISOString
+    root: Path, date: datetime.date | DashedISOString
 ) -> PolicyEnvironment:
     """
     Set up the policy environment for a particular date.
 
     Parameters
     ----------
-    resource_dir
+    root
         The directory to load the policy environment from.
     date
         The date for which the policy system is set up. An integer is
@@ -178,11 +178,11 @@ def set_up_policy_environment(
 
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_if_multiple_ttsim_objects_are_active_at_the_same_time(
-        orig_ttsim_objects_tree=orig_ttsim_objects_tree(resource_dir)
+        orig_ttsim_objects_tree=orig_ttsim_objects_tree(root)
     )
 
     params = {}
-    if "_gettsim" in resource_dir.name:
+    if "_gettsim" in root.name:
         from _gettsim.config import (
             INTERNAL_PARAMS_GROUPS as internal_params_groups,  # noqa: N811
         )
@@ -196,13 +196,13 @@ def set_up_policy_environment(
             date=date,
             group=group,
             parameters=None,
-            yaml_path=resource_dir / "parameters",
+            yaml_path=root / "parameters",
         )
 
         # Align parameters for piecewise polynomial functions
         params[group] = _parse_piecewise_parameters(params_one_group)
 
-    if "_gettsim" in resource_dir.name:
+    if "_gettsim" in root.name:
         # Extend dictionary with date-specific values which do not need an own function
         params = _parse_kinderzuschl_max(date, params)
         params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
@@ -211,9 +211,7 @@ def set_up_policy_environment(
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
 
     return PolicyEnvironment(
-        raw_objects_tree=active_ttsim_objects_tree(
-            resource_dir=resource_dir, date=date
-        ),
+        raw_objects_tree=active_ttsim_objects_tree(root=root, date=date),
         params=params,
     )
 

@@ -57,7 +57,7 @@ class PolicyTest:
 
 
 def execute_test(test: PolicyTest, jit: bool = False) -> None:
-    environment = set_up_policy_environment(date=test.date, resource_dir=METTSIM_ROOT)
+    environment = set_up_policy_environment(date=test.date, root=METTSIM_ROOT)
 
     if IS_JAX_INSTALLED:
         ids = dict.fromkeys(

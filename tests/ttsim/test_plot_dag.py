@@ -11,7 +11,7 @@ from ttsim.plot_dag import (
     _select_nodes_in_dag,
 )
 
-environment = set_up_policy_environment(date="2020-01-01", resource_dir=METTSIM_ROOT)
+environment = set_up_policy_environment(date="2020-01-01", root=METTSIM_ROOT)
 
 
 @pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")

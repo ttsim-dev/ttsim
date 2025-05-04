@@ -93,12 +93,12 @@ class TestPolicyEnvironment:
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="2020-02-29", resource_dir=METTSIM_ROOT)
+    set_up_policy_environment(date="2020-02-29", root=METTSIM_ROOT)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="2020-02-30", resource_dir=METTSIM_ROOT)
+        set_up_policy_environment(date="2020-02-30", root=METTSIM_ROOT)
 
 
 def test_fail_if_invalid_access_different_date():
@@ -150,11 +150,9 @@ def test_load_functions_tree_for_date(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    functions_last_day = active_ttsim_objects_tree(
-        resource_dir=METTSIM_ROOT, date=last_day
-    )
+    functions_last_day = active_ttsim_objects_tree(root=METTSIM_ROOT, date=last_day)
     functions_next_day = active_ttsim_objects_tree(
-        resource_dir=METTSIM_ROOT, date=last_day + timedelta(days=1)
+        root=METTSIM_ROOT, date=last_day + timedelta(days=1)
     )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
@@ -199,14 +197,10 @@ def test_upserting_group_ids_outside_top_level_namespace_fails():
 
 
 def test_input_is_recognized_as_potential_group_id():
-    environment = set_up_policy_environment(
-        resource_dir=METTSIM_ROOT, date="2020-01-01"
-    )
+    environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
     assert "kin" in environment.grouping_levels
 
 
 def test_p_id_not_recognized_as_potential_group_id():
-    environment = set_up_policy_environment(
-        resource_dir=METTSIM_ROOT, date="2020-01-01"
-    )
+    environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
     assert "p" not in environment.grouping_levels

@@ -104,7 +104,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 @pytest.fixture(scope="module")
 def mettsim_environment():
     return set_up_policy_environment(
-        resource_dir=METTSIM_ROOT,
+        root=METTSIM_ROOT,
         date="2025-01-01",
     )
 

@@ -17,15 +17,13 @@ if TYPE_CHECKING:
     from ttsim.typing import FlatTTSIMObjectDict, NestedTTSIMObjectDict
 
 
-def active_ttsim_objects_tree(
-    resource_dir: Path, date: datetime.date
-) -> NestedTTSIMObjectDict:
+def active_ttsim_objects_tree(root: Path, date: datetime.date) -> NestedTTSIMObjectDict:
     """
-    Traverse `resource_dir` and return all TTSIMObjects for a given date.
+    Traverse `root` and return all TTSIMObjects for a given date.
 
     Parameters
     ----------
-    resource_dir:
+    root:
         The directory to traverse.
     date:
         The date for which policy objects should be loaded.
@@ -35,7 +33,7 @@ def active_ttsim_objects_tree(
     A tree of active TTSIMObjects.
     """
 
-    orig_flat_objects_tree = orig_ttsim_objects_tree(resource_dir)
+    orig_flat_objects_tree = orig_ttsim_objects_tree(root)
 
     flat_objects_tree = {
         (*orig_path[:-2], obj.leaf_name): obj
@@ -46,7 +44,7 @@ def active_ttsim_objects_tree(
     return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
-def orig_ttsim_objects_tree(resource_dir: Path) -> FlatTTSIMObjectDict:
+def orig_ttsim_objects_tree(root: Path) -> FlatTTSIMObjectDict:
     """
     Load the original TTSIMObjects tree from the resource directory.
 
@@ -56,29 +54,24 @@ def orig_ttsim_objects_tree(resource_dir: Path) -> FlatTTSIMObjectDict:
 
     Parameters
     ----------
-    resource_dir:
+    root:
         The resource directory to load the TTSIMObjects tree from.
     """
     return {
         k: v
-        for path in _find_files_recursively(root=resource_dir, suffix=".py")
-        for k, v in _get_orig_ttsim_objects_from_module(
-            path=path, root_path=resource_dir
-        ).items()
+        for path in _find_files_recursively(root=root, suffix=".py")
+        for k, v in _get_orig_ttsim_objects_from_module(path=path, root=root).items()
     }
 
 
-def _get_orig_ttsim_objects_from_module(
-    path: Path,
-    root_path: Path,
-) -> FlatTTSIMObjectDict:
+def _get_orig_ttsim_objects_from_module(path: Path, root: Path) -> FlatTTSIMObjectDict:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 
     Parameters
     ----------
     path
         The path to the module from which to extract the active functions.
-    root_path
+    root
         The path to the directory that contains the functions.
     date
         The date for which to extract the active functions.
@@ -87,8 +80,8 @@ def _get_orig_ttsim_objects_from_module(
     -------
     A flat tree of TTSIMObjects.
     """
-    module = _load_module(path=path, root_path=root_path)
-    tree_path = path.relative_to(root_path).parts
+    module = _load_module(path=path, root=root)
+    tree_path = path.relative_to(root).parts
     return {
         (*tree_path, name): obj
         for name, obj in inspect.getmembers(module)
@@ -117,11 +110,11 @@ def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list
     ]
 
 
-def _load_module(path: Path, root_path: Path) -> ModuleType:
-    name = path.relative_to(root_path).with_suffix("").as_posix().replace("/", ".")
+def _load_module(path: Path, root: Path) -> ModuleType:
+    name = path.relative_to(root).with_suffix("").as_posix().replace("/", ".")
     spec = importlib.util.spec_from_file_location(name=name, location=path)
     # Assert that spec is not None and spec.loader is not None, required for mypy
-    _msg = f"Could not load module spec for {path},  {root_path}"
+    _msg = f"Could not load module spec for {path},  {root}"
     if spec is None:
         raise ImportError(_msg)
     assert spec.loader is not None, _msg

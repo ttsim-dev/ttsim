@@ -34,7 +34,7 @@ def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
     for year in range(1990, 2023):
         year_functions = active_ttsim_objects_tree(
-            resource_dir=GETTSIM_ROOT,
+            root=GETTSIM_ROOT,
             date=datetime.date(year=year, month=1, day=1),
         )
         new_dict = {func.function.__name__: func.leaf_name for func in year_functions}

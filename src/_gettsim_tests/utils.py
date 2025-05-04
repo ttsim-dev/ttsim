@@ -41,7 +41,7 @@ def cached_set_up_policy_environment(
 
 @lru_cache(maxsize=100)
 def _cached_set_up_policy_environment(date: datetime.date) -> PolicyEnvironment:
-    return set_up_policy_environment(date=date, resource_dir=GETTSIM_ROOT)
+    return set_up_policy_environment(date=date, root=GETTSIM_ROOT)
 
 
 class PolicyTest:

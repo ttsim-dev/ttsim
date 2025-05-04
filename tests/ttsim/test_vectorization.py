@@ -374,7 +374,7 @@ for year in range(1990, 2023):
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
                 active_ttsim_objects_tree(
-                    resource_dir=Path(__file__).parent / "mettsim",
+                    root=Path(__file__).parent / "mettsim",
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).items()

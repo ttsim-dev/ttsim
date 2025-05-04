@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 def test_load_path():
     assert _load_module(
         path=METTSIM_ROOT / "payroll_tax" / "amount.py",
-        root_path=METTSIM_ROOT,
+        root=METTSIM_ROOT,
     )
 
 

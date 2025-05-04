@@ -3,9 +3,7 @@ from ttsim import set_up_policy_environment
 
 
 def test_parsing_lohnsteuer_rv_anteil():
-    environment = set_up_policy_environment(
-        resource_dir=GETTSIM_ROOT, date="2018-01-01"
-    )
+    environment = set_up_policy_environment(root=GETTSIM_ROOT, date="2018-01-01")
 
     assert (
         abs(
@@ -15,9 +13,7 @@ def test_parsing_lohnsteuer_rv_anteil():
         < 1e-6
     )
 
-    environment = set_up_policy_environment(
-        resource_dir=GETTSIM_ROOT, date="2023-01-01"
-    )
+    environment = set_up_policy_environment(root=GETTSIM_ROOT, date="2023-01-01")
 
     assert (
         abs(
