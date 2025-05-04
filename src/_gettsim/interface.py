@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from _gettsim.config import RESOURCE_DIR
+from _gettsim.config import GETTSIM_ROOT
 from ttsim import (
     compute_taxes_and_transfers,
     create_data_tree_from_df,
@@ -76,7 +76,7 @@ def oss(
     )
     policy_environment = set_up_policy_environment(
         date=date,
-        resource_dir=RESOURCE_DIR,
+        resource_dir=GETTSIM_ROOT,
     )
     return compute_taxes_and_transfers(
         data_tree=data_tree,

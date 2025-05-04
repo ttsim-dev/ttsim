@@ -8,7 +8,7 @@ import dags.tree as dt
 import optree
 import pandas as pd
 import yaml
-from mettsim.config import RESOURCE_DIR
+from mettsim.config import METTSIM_ROOT
 
 from ttsim import compute_taxes_and_transfers, merge_trees, set_up_policy_environment
 from ttsim.config import IS_JAX_INSTALLED
@@ -57,7 +57,7 @@ class PolicyTest:
 
 
 def execute_test(test: PolicyTest, jit: bool = False) -> None:
-    environment = set_up_policy_environment(date=test.date, resource_dir=RESOURCE_DIR)
+    environment = set_up_policy_environment(date=test.date, resource_dir=METTSIM_ROOT)
 
     if IS_JAX_INSTALLED:
         ids = dict.fromkeys(

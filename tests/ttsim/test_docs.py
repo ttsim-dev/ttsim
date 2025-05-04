@@ -6,7 +6,7 @@ import inspect
 import pytest
 
 from _gettsim.config import (
-    RESOURCE_DIR,
+    GETTSIM_ROOT,
 )
 from ttsim import PolicyInput
 from ttsim.policy_environment import active_ttsim_objects_tree
@@ -34,7 +34,7 @@ def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
     for year in range(1990, 2023):
         year_functions = active_ttsim_objects_tree(
-            resource_dir=RESOURCE_DIR,
+            resource_dir=GETTSIM_ROOT,
             date=datetime.date(year=year, month=1, day=1),
         )
         new_dict = {func.function.__name__: func.leaf_name for func in year_functions}
@@ -95,19 +95,19 @@ def test_funcs_in_doc_module_and_func_from_internal_files_are_the_same():
     documented_functions = {
         f.leaf_name
         for f in _load_functions(
-            RESOURCE_DIR / "functions" / "all_functions_for_docs.py",
-            package_root=RESOURCE_DIR,
+            GETTSIM_ROOT / "functions" / "all_functions_for_docs.py",
+            package_root=GETTSIM_ROOT,
             include_imported_functions=True,
         )
     }
 
-    internal_function_files = [RESOURCE_DIR.joinpath(p) for p in RESOURCE_DIR]
+    internal_function_files = [GETTSIM_ROOT.joinpath(p) for p in GETTSIM_ROOT]
 
     internal_functions = {
         f.leaf_name
         for f in _load_functions(
             internal_function_files,
-            package_root=RESOURCE_DIR,
+            package_root=GETTSIM_ROOT,
             include_imported_functions=True,
         )
         if not f.original_function_name.startswith("_")

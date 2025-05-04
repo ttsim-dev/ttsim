@@ -6,7 +6,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 
-from _gettsim.config import RESOURCE_DIR
+from _gettsim.config import GETTSIM_ROOT
 from ttsim.policy_environment import _load_parameter_group_from_yaml
 
 current_year = datetime.datetime.today().year
@@ -306,7 +306,7 @@ def create_constant_across_households_variables(df, n_adults, n_children, policy
     bg_daten = _load_parameter_group_from_yaml(
         datetime.date(policy_year, 1, 1),
         group="bedarfsgemeinschaften",
-        yaml_path=RESOURCE_DIR / "synthetic_data",
+        yaml_path=GETTSIM_ROOT / "synthetic_data",
     )
 
     # Use data for 2 children if there are more than 2 children in the household.

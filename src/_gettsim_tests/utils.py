@@ -9,7 +9,7 @@ import optree
 import pandas as pd
 import yaml
 
-from _gettsim.config import RESOURCE_DIR
+from _gettsim.config import GETTSIM_ROOT
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     GroupCreationFunction,
@@ -41,7 +41,7 @@ def cached_set_up_policy_environment(
 
 @lru_cache(maxsize=100)
 def _cached_set_up_policy_environment(date: datetime.date) -> PolicyEnvironment:
-    return set_up_policy_environment(date=date, resource_dir=RESOURCE_DIR)
+    return set_up_policy_environment(date=date, resource_dir=GETTSIM_ROOT)
 
 
 class PolicyTest:

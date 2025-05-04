@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Obtain the root directory of the package.
-RESOURCE_DIR = Path(__file__).parent.resolve()
+GETTSIM_ROOT = Path(__file__).parent.resolve()
 
 INTERNAL_PARAMS_GROUPS = [
     "eink_st",
