@@ -8,7 +8,7 @@ from mettsim.config import RESOURCE_DIR
 
 from ttsim import policy_function
 from ttsim.loader import (
-    _find_modules_recursively,
+    _find_files_recursively,
     _load_module,
 )
 from ttsim.ttsim_objects import _vectorize_func
@@ -19,15 +19,15 @@ if TYPE_CHECKING:
 
 def test_load_path():
     assert _load_module(
-        RESOURCE_DIR / "payroll_tax" / "amount.py",
-        RESOURCE_DIR,
+        path=RESOURCE_DIR / "payroll_tax" / "amount.py",
+        root_path=RESOURCE_DIR,
     )
 
 
 def test_dont_load_init_py():
     """Don't load __init__.py files as sources for PolicyFunctions and
     AggregationSpecs."""
-    all_files = _find_modules_recursively(RESOURCE_DIR)
+    all_files = _find_files_recursively(root=RESOURCE_DIR, suffix=".py")
     assert "__init__.py" not in [file.name for file in all_files]
 
 

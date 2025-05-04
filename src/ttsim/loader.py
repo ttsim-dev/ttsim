@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.util
 import inspect
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 
@@ -61,7 +61,7 @@ def orig_ttsim_objects_tree(resource_dir: Path) -> FlatTTSIMObjectDict:
     """
     return {
         k: v
-        for path in _find_modules_recursively(resource_dir)
+        for path in _find_files_recursively(root=resource_dir, suffix=".py")
         for k, v in _get_orig_ttsim_objects_from_module(
             path=path, root_path=resource_dir
         ).items()
@@ -96,20 +96,25 @@ def _get_orig_ttsim_objects_from_module(
     }
 
 
-def _find_modules_recursively(root_path: Path) -> list[Path]:
+def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list[Path]:
     """
-    Find all Python files reachable from the given root path.
+    Find all files with *suffix* in *root* and its subdirectories.
 
     Parameters
     ----------
-    root_path:
+    root:
         The path from which to start the search for Python files.
+    suffix:
+        The suffix of files to look for.
 
     Returns
     -------
-    Absolute paths to all discovered Python files.
+    Absolute paths to all discovered files with *suffix*.
     """
-    return [file for file in root_path.rglob("*.py") if file.name != "__init__.py"]
+    names_to_exclude = {"__init__.py"}
+    return [
+        file for file in root.rglob(f"*{suffix}") if file.name not in names_to_exclude
+    ]
 
 
 def _load_module(path: Path, root_path: Path) -> ModuleType:
