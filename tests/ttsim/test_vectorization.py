@@ -2,7 +2,6 @@ import datetime
 import functools
 import inspect
 import string
-from pathlib import Path
 
 import dags.tree as dt
 import numpy
@@ -14,10 +13,11 @@ from ttsim.ttsim_objects import AggByGroupFunction, AggByPIDFunction
 
 if IS_JAX_INSTALLED:
     import jax.numpy
+from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
 from ttsim import GroupCreationFunction, PolicyInput, policy_function
-from ttsim.policy_environment import active_ttsim_objects_tree
+from ttsim.loader import active_ttsim_objects_tree, orig_ttsim_objects_tree
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -38,6 +38,8 @@ if IS_JAX_INSTALLED:
 # ======================================================================================
 # String comparison
 # ======================================================================================
+
+ORIG_METTSIM_OBJECTS_TREE = orig_ttsim_objects_tree(root=METTSIM_ROOT / "mettsim")
 
 
 def string_equal(s1, s2):
@@ -374,7 +376,7 @@ for year in range(1990, 2023):
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
                 active_ttsim_objects_tree(
-                    root=Path(__file__).parent / "mettsim",
+                    orig_ttsim_objects_tree=ORIG_METTSIM_OBJECTS_TREE,
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).items()

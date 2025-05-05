@@ -87,8 +87,8 @@
           }
         },
         "additionalProperties": false,
-        "anyOf": [
-          { "required": ["name", "description", "type"] ,
+        "allOf": [
+          { "required": ["name", "description", "type"] },
           {
             "minProperties": 1,
             "patternProperties": {

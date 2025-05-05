@@ -23,33 +23,6 @@ if TYPE_CHECKING:
     )
 
 
-def active_ttsim_objects_tree(root: Path, date: datetime.date) -> NestedTTSIMObjectDict:
-    """
-    Traverse `root` and return all TTSIMObjects for a given date.
-
-    Parameters
-    ----------
-    root:
-        The directory to traverse.
-    date:
-        The date for which policy objects should be loaded.
-
-    Returns
-    -------
-    A tree of active TTSIMObjects.
-    """
-
-    orig_flat_objects_tree = orig_ttsim_objects_tree(root)
-
-    flat_objects_tree = {
-        (*orig_path[:-2], obj.leaf_name): obj
-        for orig_path, obj in orig_flat_objects_tree.items()
-        if obj.is_active(date)
-    }
-
-    return dt.unflatten_from_tree_paths(flat_objects_tree)
-
-
 def orig_ttsim_objects_tree(root: Path) -> FlatTTSIMObjectDict:
     """
     Load the original TTSIMObjects tree from the resource directory.
@@ -68,6 +41,33 @@ def orig_ttsim_objects_tree(root: Path) -> FlatTTSIMObjectDict:
         for path in _find_files_recursively(root=root, suffix=".py")
         for k, v in _tree_path_to_orig_ttsim_objects(path=path, root=root).items()
     }
+
+
+def active_ttsim_objects_tree(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict, date: datetime.date
+) -> NestedTTSIMObjectDict:
+    """
+    Traverse `root` and return all TTSIMObjects for a given date.
+
+    Parameters
+    ----------
+    root:
+        The directory to traverse.
+    date:
+        The date for which policy objects should be loaded.
+
+    Returns
+    -------
+    A tree of active TTSIMObjects.
+    """
+
+    flat_objects_tree = {
+        (*orig_path[:-2], obj.leaf_name): obj
+        for orig_path, obj in orig_ttsim_objects_tree.items()
+        if obj.is_active(date)
+    }
+
+    return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
 def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list[Path]:

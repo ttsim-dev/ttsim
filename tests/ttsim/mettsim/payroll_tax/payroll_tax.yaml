@@ -6,6 +6,7 @@ child_tax_credit:
   description:
     de: In Mittelerde passiert nichts.
     en: In Middle Earth nothing happens.
+  type: dict
   1900-01-01:
     child_amount_y: 100.0
     max_age: 18
@@ -16,6 +17,7 @@ income:
   description:
     de: Name ergibt wenig Sinn.
     en: The name makes little sense.
+  type: dict
   1900-01-01:
     lump_sum_deduction_y: 100.0
     rate: 0.3
@@ -27,5 +29,6 @@ wealth_threshold_for_reduced_tax_rate:
   description:
     de: Umgekehrte Bennenung schiene sinnvoll.
     en: The reverse naming would seem more sensible.
+  type: scalar
   1900-01-01:
     scalar: 50000

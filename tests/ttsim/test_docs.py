@@ -5,11 +5,9 @@ import inspect
 
 import pytest
 
-from _gettsim.config import (
-    GETTSIM_ROOT,
-)
+from _gettsim.config import GETTSIM_ROOT
 from ttsim import PolicyInput
-from ttsim.policy_environment import active_ttsim_objects_tree
+from ttsim.loader import active_ttsim_objects_tree, orig_ttsim_objects_tree
 from ttsim.shared import remove_group_suffix
 
 
@@ -32,9 +30,10 @@ def all_function_names():
 @pytest.fixture(scope="module")
 def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
+    _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root=GETTSIM_ROOT)
     for year in range(1990, 2023):
         year_functions = active_ttsim_objects_tree(
-            root=GETTSIM_ROOT,
+            orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
             date=datetime.date(year=year, month=1, day=1),
         )
         new_dict = {func.function.__name__: func.leaf_name for func in year_functions}

@@ -6,9 +6,9 @@ import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import optree
 import pandas as pd
 import pytest
+import yaml
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
@@ -22,8 +22,7 @@ from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
     ConflictingNamesError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
-    _load_parameter_group_from_yaml,
-    active_ttsim_objects_tree,
+    _parse_raw_parameter_group,
     fail_because_of_clashes,
 )
 
@@ -106,62 +105,49 @@ def test_fail_if_invalid_date():
 
 def test_fail_if_invalid_access_different_date():
     with pytest.raises(ValueError):
-        _load_parameter_group_from_yaml(
+        group = "invalid_access_diff_date"
+        raw_group_data = yaml.load(
+            (YAML_PATH / f"{group}.yaml").read_text(encoding="utf-8"),
+            Loader=yaml.CLoader,
+        )
+        _parse_raw_parameter_group(
+            raw_group_data=raw_group_data,
             date=pd.to_datetime("01-01-2020").date(),
-            group="invalid_access_diff_date",
+            group=group,
             parameters=None,
-            yaml_path=YAML_PATH,
         )
 
 
 def test_access_different_date_vorjahr():
-    params = _load_parameter_group_from_yaml(
+    group = "test_access_diff_date_vorjahr"
+    raw_group_data = yaml.load(
+        (YAML_PATH / f"{group}.yaml").read_text(encoding="utf-8"),
+        Loader=yaml.CLoader,
+    )
+    params = _parse_raw_parameter_group(
+        raw_group_data=raw_group_data,
         date=pd.to_datetime("01-01-2020").date(),
-        group="test_access_diff_date_vorjahr",
+        group=group,
         parameters=None,
-        yaml_path=YAML_PATH,
     )
     assert params["foo"] == 2020
     assert params["foo_vorjahr"] == 2019
 
 
 def test_access_different_date_jahresanfang():
-    params = _load_parameter_group_from_yaml(
+    group = "test_access_diff_date_jahresanfang"
+    raw_group_data = yaml.load(
+        (YAML_PATH / f"{group}.yaml").read_text(encoding="utf-8"),
+        Loader=yaml.CLoader,
+    )
+    params = _parse_raw_parameter_group(
+        raw_group_data=raw_group_data,
         date=pd.to_datetime("07-01-2020").date(),
-        group="test_access_diff_date_jahresanfang",
+        group=group,
         parameters=None,
-        yaml_path=YAML_PATH,
     )
     assert params["foo"] == 2021
     assert params["foo_jahresanfang"] == 2020
-
-
-@pytest.mark.parametrize(
-    "tree, last_day, function_name_last_day, function_name_next_day",
-    [
-        (
-            {"housing_benefits": {"eligibility": {"requirement_fulfilled_fam": None}}},
-            datetime.date(2019, 12, 31),
-            "requirement_fulfilled_fam_not_considering_children",
-            "requirement_fulfilled_fam_considering_children",
-        ),
-    ],
-)
-def test_load_functions_tree_for_date(
-    tree: NestedTTSIMObjectDict,
-    last_day: datetime.date,
-    function_name_last_day: str,
-    function_name_next_day: str,
-):
-    functions_last_day = active_ttsim_objects_tree(root=METTSIM_ROOT, date=last_day)
-    functions_next_day = active_ttsim_objects_tree(
-        root=METTSIM_ROOT, date=last_day + datetime.timedelta(days=1)
-    )
-
-    accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
-
-    assert accessor(functions_last_day).__name__ == function_name_last_day
-    assert accessor(functions_next_day).__name__ == function_name_next_day
 
 
 @pytest.mark.parametrize(

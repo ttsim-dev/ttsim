@@ -195,32 +195,33 @@ def set_up_policy_environment(
         from _gettsim.config import (
             INTERNAL_PARAMS_GROUPS as internal_params_groups,  # noqa: N811
         )
-    else:
-        internal_params_groups = [
-            "payroll_tax",
-            "housing_benefits",
-        ]
-    for group in internal_params_groups:
-        params_one_group = _load_parameter_group_from_yaml(
-            date=date,
-            group=group,
-            parameters=None,
-            yaml_path=root / "parameters",
-        )
 
-        # Align parameters for piecewise polynomial functions
-        params[group] = _parse_piecewise_parameters(params_one_group)
+        for group in internal_params_groups:
+            raw_group_data = yaml.load(
+                (root / "parameters" / f"{group}.yaml").read_text(encoding="utf-8"),
+                Loader=yaml.CLoader,
+            )
+            params_one_group = _parse_raw_parameter_group(
+                raw_group_data=raw_group_data,
+                date=date,
+                group=group,
+                parameters=None,
+            )
 
-    if "_gettsim" in root.name:
-        # Extend dictionary with date-specific values which do not need an own function
+            # Align parameters for piecewise polynomial functions
+            params[group] = _parse_piecewise_parameters(params_one_group)
         params = _parse_kinderzuschl_max(date, params)
         params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
             date, params
         )
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
+    else:
+        params = {}
 
     return PolicyEnvironment(
-        raw_objects_tree=active_ttsim_objects_tree(root=root, date=date),
+        raw_objects_tree=active_ttsim_objects_tree(
+            orig_ttsim_objects_tree=_orig_ttsim_objects_tree, date=date
+        ),
         params=params,
     )
 
@@ -541,10 +542,10 @@ def _parse_vorsorgepauschale_rentenv_anteil(
     return params
 
 
-def _load_parameter_group_from_yaml(
+def _parse_raw_parameter_group(
+    raw_group_data: dict[str, Any],
     date: datetime.date,
     group: str,
-    yaml_path: Path,
     parameters: list[str] | None = None,
 ) -> dict[str, Any]:
     """Load data from raw yaml group file.
@@ -583,17 +584,12 @@ def _load_parameter_group_from_yaml(
 
         return date
 
-    raw_group_data = yaml.load(
-        (yaml_path / f"{group}.yaml").read_text(encoding="utf-8"),
-        Loader=yaml.CLoader,
-    )
-
     # Load parameters (exclude 'rounding' parameters which are handled at the
     # end of this function)
     not_trans_keys = ["note", "reference", "deviation_from", "access_different_date"]
-    out_params = {}
+    out_params: dict[str, Any] = {}
     if not parameters:
-        parameters = [k for k in raw_group_data if k != "rounding"]
+        parameters = list(raw_group_data.keys())
 
     # Load values of all parameters at the specified date
     for param in parameters:
@@ -606,20 +602,7 @@ def _load_parameter_group_from_yaml(
             # If no policy exists, then we check if the policy maybe agrees right now
             # with another one.
             # Otherwise, do not create an entry for this parameter.
-            min_policy_date = numpy.array(policy_dates).min()
-            if "deviation_from" in raw_group_data[param][min_policy_date]:
-                future_policy = raw_group_data[param][min_policy_date]
-                if "." in future_policy["deviation_from"]:
-                    path_list = future_policy["deviation_from"].split(".")
-                    params_temp = _load_parameter_group_from_yaml(
-                        date=date,
-                        group=path_list[0],
-                        parameters=[path_list[1]],
-                        yaml_path=yaml_path,
-                    )
-                    if path_list[1] in params_temp:
-                        out_params[param] = params_temp[path_list[1]]
-
+            pass
         else:
             max_past_policy_date = numpy.array(past_policies).max()
             policy_in_place = raw_group_data[param][max_past_policy_date]
@@ -641,16 +624,23 @@ def _load_parameter_group_from_yaml(
                 if "deviation_from" in policy_in_place:
                     if policy_in_place["deviation_from"] == "previous":
                         new_date = max_past_policy_date - datetime.timedelta(days=1)
-                        out_params[param] = _load_parameter_group_from_yaml(
-                            new_date, group, parameters=[param], yaml_path=yaml_path
+                        out_params[param] = _parse_raw_parameter_group(
+                            raw_group_data=raw_group_data,
+                            date=new_date,
+                            group=group,
+                            parameters=[param],
                         )[param]
                     elif "." in policy_in_place["deviation_from"]:
+                        assert (
+                            group == "arbeitsl_geld_2"
+                            and param == "eink_anr_frei_kinder"
+                        )
                         path_list = policy_in_place["deviation_from"].split(".")
-                        out_params[param] = _load_parameter_group_from_yaml(
-                            date,
-                            path_list[0],
+                        out_params[param] = _parse_raw_parameter_group(
+                            raw_group_data=raw_group_data,
+                            date=date,
+                            group=path_list[0],
                             parameters=[path_list[1]],
-                            yaml_path=yaml_path,
                         )[path_list[1]]
                     for key in value_keys:
                         key_list: list[str] = []
@@ -667,8 +657,11 @@ def _load_parameter_group_from_yaml(
             if "access_different_date" in raw_group_data[param]:
                 if raw_group_data[param]["access_different_date"] == "vorjahr":
                     date_last_year = subtract_years_from_date(date, years=1)
-                    params_last_year = _load_parameter_group_from_yaml(
-                        date_last_year, group, parameters=[param], yaml_path=yaml_path
+                    params_last_year = _parse_raw_parameter_group(
+                        raw_group_data=raw_group_data,
+                        date=date_last_year,
+                        group=group,
+                        parameters=[param],
                     )
                     if param in params_last_year:
                         out_params[f"{param}_vorjahr"] = params_last_year[param]
@@ -677,11 +670,11 @@ def _load_parameter_group_from_yaml(
                     if date_beginning_of_year == date:
                         out_params[f"{param}_jahresanfang"] = out_params[param]
                     else:
-                        params_beginning_of_year = _load_parameter_group_from_yaml(
-                            date_beginning_of_year,
-                            group,
+                        params_beginning_of_year = _parse_raw_parameter_group(
+                            raw_group_data=raw_group_data,
+                            date=date_beginning_of_year,
+                            group=group,
                             parameters=[param],
-                            yaml_path=yaml_path,
                         )
                         if param in params_beginning_of_year:
                             out_params[f"{param}_jahresanfang"] = (

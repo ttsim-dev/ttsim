@@ -7,7 +7,7 @@ import numpy
 import pandas as pd
 
 from _gettsim.config import GETTSIM_ROOT
-from ttsim.policy_environment import _load_parameter_group_from_yaml
+from ttsim.policy_environment import _parse_raw_parameter_group
 
 current_year = datetime.datetime.today().year
 
@@ -303,7 +303,7 @@ def create_constant_across_households_variables(df, n_adults, n_children, policy
     df = df.copy()
 
     # Defaults for Wohnfläche, Kaltmiete, Heizkosten are taken from official data
-    bg_daten = _load_parameter_group_from_yaml(
+    bg_daten = _parse_raw_parameter_group(
         datetime.date(policy_year, 1, 1),
         group="bedarfsgemeinschaften",
         yaml_path=GETTSIM_ROOT / "synthetic_data",
