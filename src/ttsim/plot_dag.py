@@ -11,11 +11,9 @@ import plotly.graph_objects as go
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
-from ttsim.combine_functions import (
-    combine_policy_functions_and_derived_functions,
-)
 from ttsim.compute_taxes_and_transfers import (
     _partial_parameters_to_functions,
+    combine_policy_functions_and_derived_functions,
 )
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (

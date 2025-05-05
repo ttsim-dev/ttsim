@@ -1,8 +1,8 @@
 from ttsim.aggregation import AggType
 from ttsim.automatically_added_functions import create_time_conversion_functions
-from ttsim.combine_functions import combine_policy_functions_and_derived_functions
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
+    combine_policy_functions_and_derived_functions,
     compute_taxes_and_transfers,
 )
 from ttsim.piecewise_polynomial import piecewise_polynomial
