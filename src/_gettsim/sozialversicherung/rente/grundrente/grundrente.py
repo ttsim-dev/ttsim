@@ -28,7 +28,7 @@ def betrag_m(basisbetrag_m: float, anzurechnendes_einkommen_m: float) -> float:
 
 @policy_function(start_date="2021-01-01")
 def einkommen_m(
-    proxy_rente_vorjahr_m: float,
+    einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
@@ -57,8 +57,8 @@ def einkommen_m(
 
     Parameters
     ----------
-    proxy_rente_vorjahr_m
-        See :func:`proxy_rente_vorjahr_m`.
+    einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m
+        See :func:`einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m`.
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m
         See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m`.
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
@@ -75,7 +75,7 @@ def einkommen_m(
 
     # Sum income over different income sources.
     out = (
-        proxy_rente_vorjahr_m
+        einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m
         + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m  # income from self-employment
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m  # rental income
@@ -334,79 +334,6 @@ def mean_entgeltpunkte_zuschlag(
 
     # Multiply additional Engeltpunkte by factor
     out = out * ges_rente_params["grundr_faktor_bonus"]
-
-    return out
-
-
-@policy_function(
-    rounding_spec=RoundingSpec(
-        base=0.0001,
-        direction="nearest",
-        reference="§ 123 SGB VI Abs. 1",
-    ),
-    start_date="2021-01-01",
-)
-def proxy_rente_vorjahr_m(
-    sozialversicherung__rente__bezieht_rente: bool,
-    sozialversicherung__rente__private_rente_betrag_m: float,
-    sozialversicherung__rente__jahr_renteneintritt: int,
-    geburtsjahr: int,
-    alter: int,
-    sozialversicherung__rente__entgeltpunkte_west: float,
-    sozialversicherung__rente__entgeltpunkte_ost: float,
-    sozialversicherung__rente__altersrente__zugangsfaktor: float,
-    ges_rente_params: dict,
-) -> float:
-    """Estimated amount of public pensions of last year excluding Grundrentenzuschlag.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__bezieht_rente
-        See basic input variable :ref:`sozialversicherung__rente__bezieht_rente <sozialversicherung__rente__bezieht_rente>`.
-    sozialversicherung__rente__private_rente_betrag_m
-        See basic input variable :ref:`sozialversicherung__rente__private_rente_betrag_m <sozialversicherung__rente__private_rente_betrag_m>`. Assume this did not
-        change from last year.
-    sozialversicherung__rente__jahr_renteneintritt
-        See basic input variable :ref:`sozialversicherung__rente__jahr_renteneintritt <sozialversicherung__rente__jahr_renteneintritt>`.
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    sozialversicherung__rente__entgeltpunkte_west
-        See basic input variable :ref:`sozialversicherung__rente__entgeltpunkte_west <sozialversicherung__rente__entgeltpunkte_west>`.
-    sozialversicherung__rente__entgeltpunkte_ost
-        See basic input variable :ref:`sozialversicherung__rente__entgeltpunkte_ost <sozialversicherung__rente__entgeltpunkte_ost>`.
-    sozialversicherung__rente__altersrente__zugangsfaktor
-        See :func:`sozialversicherung__rente__altersrente__zugangsfaktor`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-
-    """
-
-    # Calculate if subect was retired last year
-    if sozialversicherung__rente__bezieht_rente:
-        rentner_vorjahr = (
-            sozialversicherung__rente__jahr_renteneintritt < geburtsjahr + alter
-        )
-    else:
-        rentner_vorjahr = False
-
-    if rentner_vorjahr:
-        out = (
-            (
-                sozialversicherung__rente__entgeltpunkte_west
-                * ges_rente_params["rentenwert_vorjahr"]["west"]
-                + sozialversicherung__rente__entgeltpunkte_ost
-                * ges_rente_params["rentenwert_vorjahr"]["ost"]
-            )
-            * sozialversicherung__rente__altersrente__zugangsfaktor
-            + sozialversicherung__rente__private_rente_betrag_m
-        )
-    else:
-        out = 0.0
 
     return out
 
