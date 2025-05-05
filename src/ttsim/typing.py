@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     DashedISOString = NewType("DashedISOString", str)
     """A string representing a date in the format 'YYYY-MM-DD'."""
 
-    OrigYamlParamSpec = (
+    OrigParamSpec = (
         str
         | dict[
             datetime.date,
@@ -56,5 +56,8 @@ if TYPE_CHECKING:
         ]
     )
     """The contents of a yaml files with parameters, excluding the outermost key."""
-    OrigYamlTree = dict[tuple[str, ...], OrigYamlParamSpec]
+    FlatOrigParamSpecDict = dict[tuple[str, ...], OrigParamSpec]
     """A flat tree of yaml contents; the outermost key in a file is part of the path."""
+
+    NestedTTSIMParamsDict = Mapping[str, TTSIMObject | "NestedTTSIMParamsDict"]
+    """A nested tree of TTSIM parameters."""

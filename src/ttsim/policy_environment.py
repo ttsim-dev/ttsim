@@ -11,9 +11,8 @@ import optree
 import yaml
 
 from ttsim.loader import (
-    active_ttsim_objects_tree,
+    orig_params_tree,
     orig_ttsim_objects_tree,
-    orig_yaml_tree,
 )
 from ttsim.piecewise_polynomial import (
     check_and_get_thresholds,
@@ -30,6 +29,7 @@ from ttsim.ttsim_objects import (
     TTSIMObject,
     policy_function,
 )
+from ttsim.ttsim_params import TTSIMParam
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -37,10 +37,11 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         DashedISOString,
+        FlatOrigParamSpecDict,
         FlatTTSIMObjectDict,
+        FlatTTSIMParamDict,
         NestedTTSIMObjectDict,
-        OrigYamlParamSpec,
-        OrigYamlTree,
+        OrigParamSpec,
     )
 
 
@@ -62,6 +63,7 @@ class PolicyEnvironment:
         self,
         raw_objects_tree: NestedTTSIMObjectDict,
         params: dict[str, Any] | None = None,
+        params_tree: FlatTTSIMParamsDict | None = None,
     ):
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_ttsim_pytree(
@@ -77,6 +79,7 @@ class PolicyEnvironment:
 
         # Read in parameters and aggregation specs
         self._params = params if params is not None else {}
+        self._params_tree = params_tree if params_tree is not None else {}
 
     @property
     def raw_objects_tree(self) -> NestedTTSIMObjectDict:
@@ -183,11 +186,11 @@ def set_up_policy_environment(
     date = to_datetime(date)
 
     _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
-    _orig_yaml_tree = orig_yaml_tree(root)
+    _orig_yaml_tree = orig_params_tree(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_of_clashes(
         orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
-        orig_yaml_tree=_orig_yaml_tree,
+        orig_params_tree=_orig_yaml_tree,
     )
 
     params = {}
@@ -215,20 +218,24 @@ def set_up_policy_environment(
             date, params
         )
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
+        params_tree = None
     else:
-        params = {}
-
+        params = None
+        params_tree = active_ttsim_params_tree(
+            orig_params_tree=_orig_yaml_tree, date=date
+        )
     return PolicyEnvironment(
         raw_objects_tree=active_ttsim_objects_tree(
             orig_ttsim_objects_tree=_orig_ttsim_objects_tree, date=date
         ),
         params=params,
+        params_tree=params_tree,
     )
 
 
 def fail_because_of_clashes(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
-    orig_yaml_tree: OrigYamlTree,
+    orig_params_tree: FlatOrigParamSpecDict,
 ) -> None:
     """Fail because of clashes of names.
 
@@ -267,11 +274,11 @@ def fail_because_of_clashes(
                 )
 
     # Start with a single element each.
-    name_checker: dict[tuple[str, ...], list[TTSIMObject | OrigYamlParamSpec]] = {}
+    name_checker: dict[tuple[str, ...], list[TTSIMObject | OrigParamSpec]] = {}
     for path, objects in overlap_checker.items():
         name_checker[path] = [objects[0]]
     # Now add the yaml objects.
-    for orig_path, obj in orig_yaml_tree.items():
+    for orig_path, obj in orig_params_tree.items():
         path = (*orig_path[:-2], orig_path[-1])
         if path in name_checker:
             name_checker[path].append(obj)
@@ -323,7 +330,7 @@ class ConflictingActivePeriodsError(Exception):
 class ConflictingNamesError(Exception):
     def __init__(
         self,
-        affected_objects: list[TTSIMObject | OrigYamlParamSpec],
+        affected_objects: list[TTSIMObject | OrigParamSpec],
         path: tuple[str, ...],
     ) -> None:
         self.affected_objects = affected_objects
@@ -349,6 +356,33 @@ class ConflictingNamesError(Exception):
         }
 
         """
+
+
+def active_ttsim_objects_tree(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict, date: datetime.date
+) -> NestedTTSIMObjectDict:
+    """
+    Traverse `root` and return all TTSIMObjects for a given date.
+
+    Parameters
+    ----------
+    root:
+        The directory to traverse.
+    date:
+        The date for which policy objects should be loaded.
+
+    Returns
+    -------
+    A tree of active TTSIMObjects.
+    """
+
+    flat_objects_tree = {
+        (*orig_path[:-2], obj.leaf_name): obj
+        for orig_path, obj in orig_ttsim_objects_tree.items()
+        if obj.is_active(date)
+    }
+
+    return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
 def _convert_to_policy_function_if_not_ttsim_object(
@@ -392,6 +426,85 @@ def _fail_if_group_ids_are_outside_top_level_namespace(
             f"{group_ids_outside_top_level_namespace}\n\n"
             "To fix this error, move the group identifiers to the top-level namespace."
         )
+
+
+def active_ttsim_params_tree(
+    orig_params_tree: FlatOrigParamSpecDict,
+    date: datetime.date,
+) -> FlatTTSIMParamDict:
+    """Parse the original yaml tree."""
+    flat_params_tree = {
+        (*orig_path[:-2], orig_path[:-1]): parse_one_params_spec(
+            spec=orig_params_spec, date=date
+        )
+        for orig_path, orig_params_spec in orig_params_tree.items()
+    }
+    return dt.unflatten_from_tree_paths(flat_params_tree)
+
+
+def parse_one_params_spec(
+    spec: OrigParamSpec,
+    date: datetime.date,
+) -> TTSIMParam:
+    """Parse the original specification found in the yaml tree."""
+    policy_dates = sorted(key for key in spec if isinstance(key, datetime.date))
+    past_policy_dates = [d for d in policy_dates if d <= date]
+    assert past_policy_dates, f"No policy dates found for {spec} at {date}"
+    current_policy_date = numpy.array(past_policy_dates).max()
+    current_spec = spec[current_policy_date]
+    # For scalars, there is no need to think about deviations from prior parameters.
+    if spec["type"] == "scalar":
+        # TODO: Move elsewhere, will need the same stuff for dicts and lists.
+        if current_spec["scalar"] == "inf":
+            current_spec["scalar"] = numpy.inf
+        elif current_spec["scalar"] == "-inf":
+            current_spec["scalar"] = -numpy.inf
+    else:
+        # Build up recursively if we are updating some previous parameter values.
+        if current_spec.get("updates_previous", False):
+            former_spec = parse_one_params_spec(
+                spec=spec,
+                date=current_policy_date - datetime.timedelta(days=1),
+            )
+            breakpoint()
+            for key in value_keys:
+                key_list: list[str] = []
+                out_params[param][key] = transfer_dictionary(
+                    current_spec[key],
+                    copy.deepcopy(out_params[param][key]),
+                    key_list,
+                )
+    return current_spec
+
+    # Also load earlier parameter values if this is specified in yaml
+    if "access_different_date" in spec:
+        if spec["access_different_date"] == "vorjahr":
+            date_last_year = subtract_years_from_date(date, years=1)
+            params_last_year = _parse_raw_parameter_group(
+                raw_group_data=raw_group_data,
+                date=date_last_year,
+                group=group,
+                parameters=[param],
+            )
+            if param in params_last_year:
+                out_params[f"{param}_vorjahr"] = params_last_year[param]
+        elif spec["access_different_date"] == "jahresanfang":
+            date_beginning_of_year = set_date_to_beginning_of_year(date)
+            if date_beginning_of_year == date:
+                out_params[f"{param}_jahresanfang"] = out_params[param]
+            else:
+                params_beginning_of_year = _parse_raw_parameter_group(
+                    raw_group_data=raw_group_data,
+                    date=date_beginning_of_year,
+                    group=group,
+                    parameters=[param],
+                )
+                if param in params_beginning_of_year:
+                    out_params[f"{param}_jahresanfang"] = params_beginning_of_year[
+                        param
+                    ]
+
+    return {}
 
 
 def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:

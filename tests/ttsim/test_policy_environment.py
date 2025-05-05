@@ -18,16 +18,22 @@ from ttsim import (
     policy_function,
     set_up_policy_environment,
 )
+from ttsim.loader import orig_ttsim_objects_tree
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
     ConflictingNamesError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _parse_raw_parameter_group,
+    active_ttsim_objects_tree,
     fail_because_of_clashes,
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import FlatTTSIMObjectDict, NestedTTSIMObjectDict, OrigYamlTree
+    from ttsim.typing import (
+        FlatOrigParamSpecDict,
+        FlatTTSIMObjectDict,
+        NestedTTSIMObjectDict,
+    )
 
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
@@ -287,7 +293,7 @@ def identity(x):
 
 
 @pytest.mark.parametrize(
-    "orig_ttsim_objects_tree, orig_yaml_tree",
+    "orig_ttsim_objects_tree, orig_params_tree",
     [
         # Same global module, no overlapping periods, no name clashes.
         (
@@ -363,11 +369,11 @@ def identity(x):
 )
 def test_fail_because_of_clashes_no_conflicts(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
-    orig_yaml_tree: OrigYamlTree,
+    orig_params_tree: FlatOrigParamSpecDict,
 ):
     fail_because_of_clashes(
         orig_ttsim_objects_tree=orig_ttsim_objects_tree,
-        orig_yaml_tree=orig_yaml_tree,
+        orig_params_tree=orig_params_tree,
     )
 
 
@@ -445,12 +451,12 @@ def test_fail_because_of_conflicting_active_periods(
     with pytest.raises(ConflictingActivePeriodsError):
         fail_because_of_clashes(
             orig_ttsim_objects_tree=orig_ttsim_objects_tree,
-            orig_yaml_tree={},
+            orig_params_tree={},
         )
 
 
 @pytest.mark.parametrize(
-    "orig_ttsim_objects_tree, orig_yaml_tree",
+    "orig_ttsim_objects_tree, orig_params_tree",
     [
         # Same global module, no overlapping periods, name clashes leaf name / yaml.
         (
@@ -496,10 +502,42 @@ def test_fail_because_of_conflicting_active_periods(
 )
 def test_fail_because_of_conflicting_names(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
-    orig_yaml_tree: OrigYamlTree,
+    orig_params_tree: FlatOrigParamSpecDict,
 ):
     with pytest.raises(ConflictingNamesError):
         fail_because_of_clashes(
             orig_ttsim_objects_tree=orig_ttsim_objects_tree,
-            orig_yaml_tree=orig_yaml_tree,
+            orig_params_tree=orig_params_tree,
         )
+
+
+@pytest.mark.parametrize(
+    "tree, last_day, function_name_last_day, function_name_next_day",
+    [
+        (
+            {"housing_benefits": {"eligibility": {"requirement_fulfilled_fam": None}}},
+            datetime.date(2019, 12, 31),
+            "requirement_fulfilled_fam_not_considering_children",
+            "requirement_fulfilled_fam_considering_children",
+        ),
+    ],
+)
+def test_active_ttsim_objects_tree(
+    tree: NestedTTSIMObjectDict,
+    last_day: datetime.date,
+    function_name_last_day: str,
+    function_name_next_day: str,
+):
+    _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root=METTSIM_ROOT)
+    functions_last_day = active_ttsim_objects_tree(
+        orig_ttsim_objects_tree=_orig_ttsim_objects_tree, date=last_day
+    )
+    functions_next_day = active_ttsim_objects_tree(
+        orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
+        date=last_day + datetime.timedelta(days=1),
+    )
+
+    accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
+
+    assert accessor(functions_last_day).__name__ == function_name_last_day
+    assert accessor(functions_next_day).__name__ == function_name_next_day

@@ -7,7 +7,8 @@ import pytest
 
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import PolicyInput
-from ttsim.loader import active_ttsim_objects_tree, orig_ttsim_objects_tree
+from ttsim.loader import orig_ttsim_objects_tree
+from ttsim.policy_environment import active_ttsim_objects_tree
 from ttsim.shared import remove_group_suffix
 
 

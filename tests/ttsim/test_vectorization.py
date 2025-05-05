@@ -17,7 +17,8 @@ from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
 from ttsim import GroupCreationFunction, PolicyInput, policy_function
-from ttsim.loader import active_ttsim_objects_tree, orig_ttsim_objects_tree
+from ttsim.loader import orig_ttsim_objects_tree
+from ttsim.policy_environment import active_ttsim_objects_tree
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,

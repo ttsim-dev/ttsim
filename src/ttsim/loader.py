@@ -5,21 +5,18 @@ import inspect
 import sys
 from typing import TYPE_CHECKING, Literal
 
-import dags.tree as dt
 import yaml
 
 from ttsim.ttsim_objects import TTSIMObject
 
 if TYPE_CHECKING:
-    import datetime
     from pathlib import Path
     from types import ModuleType
 
     from ttsim.typing import (
+        FlatOrigParamSpecDict,
         FlatTTSIMObjectDict,
-        NestedTTSIMObjectDict,
-        OrigYamlParamSpec,
-        OrigYamlTree,
+        OrigParamSpec,
     )
 
 
@@ -41,33 +38,6 @@ def orig_ttsim_objects_tree(root: Path) -> FlatTTSIMObjectDict:
         for path in _find_files_recursively(root=root, suffix=".py")
         for k, v in _tree_path_to_orig_ttsim_objects(path=path, root=root).items()
     }
-
-
-def active_ttsim_objects_tree(
-    orig_ttsim_objects_tree: FlatTTSIMObjectDict, date: datetime.date
-) -> NestedTTSIMObjectDict:
-    """
-    Traverse `root` and return all TTSIMObjects for a given date.
-
-    Parameters
-    ----------
-    root:
-        The directory to traverse.
-    date:
-        The date for which policy objects should be loaded.
-
-    Returns
-    -------
-    A tree of active TTSIMObjects.
-    """
-
-    flat_objects_tree = {
-        (*orig_path[:-2], obj.leaf_name): obj
-        for orig_path, obj in orig_ttsim_objects_tree.items()
-        if obj.is_active(date)
-    }
-
-    return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
 def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list[Path]:
@@ -129,7 +99,7 @@ def _load_module(path: Path, root: Path) -> ModuleType:
     return module
 
 
-def orig_yaml_tree(root: Path) -> OrigYamlTree:
+def orig_params_tree(root: Path) -> FlatOrigParamSpecDict:
     """
     Load the original contents of yaml files found in *root*.
 
@@ -152,7 +122,7 @@ def orig_yaml_tree(root: Path) -> OrigYamlTree:
     }
 
 
-def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> OrigYamlTree:
+def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> FlatOrigParamSpecDict:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 
     Parameters
@@ -166,7 +136,7 @@ def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> OrigYamlTree:
     -------
     A flat tree of yaml contents.
     """
-    raw_contents: dict[str, OrigYamlParamSpec] = yaml.load(
+    raw_contents: dict[str, OrigParamSpec] = yaml.load(
         path.read_text(encoding="utf-8"),
         Loader=yaml.CLoader,
     )
