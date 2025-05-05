@@ -57,10 +57,9 @@ eink_anr_frei:
   2011-04-01:
     reference: Artikel 1 G. v. 20.12.2011 BGBl. I 2854.
     note: >-
-      Neuer Betrag durch Neufassung des SGB II. B. v. 13.5.2011 BGBl. I S. 850
-      . Artikel 5.
-      ToDo: Check these laws -- did they really happen months
-      after the date of the policy change? I cannot fina anything...
+      Neufassung des SGB II. B. v. 13.5.2011 BGBl. I S. 850. Artikel 5.
+      ToDo: Check these laws -- did they really happen months after the date of the
+      policy change?
     deviation_from: previous
     2:
       upper_threshold: 1000
@@ -603,7 +602,7 @@ vermögensfreibetrag_austattung:
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
-    note: Ceased to exist with Bürgergeldgesetz
+    note: Ceased to exist with Bürgergeld-Gesetz
 vermögensfreibetrag_kind:
   name:
     de: Vermögensgrundfreibetrag je Kind
@@ -620,7 +619,7 @@ vermögensfreibetrag_kind:
     reference: Artikel 1 G. v. 20.07.2006 BGBl. I S. 1706.
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
-    note: Ceased to exist with Bürgergeldgesetz
+    note: Ceased to exist with Bürgergeld-Gesetz
 vermög_freib_alter:
   name:
     de: Altersgrenzen für Vermögensfreibetrag

@@ -2382,7 +2382,6 @@ thresholds_wartezeiten:
       Time thresholds for accomplishing waiting times
       (in years).
   reference: See paragraphs of respective pensions.
-  note: null
   1980-01-01:
     wartezeit_5: 5
     wartezeit_15: 15

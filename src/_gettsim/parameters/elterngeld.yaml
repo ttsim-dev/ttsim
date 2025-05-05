@@ -166,7 +166,7 @@ sozialv_pausch:
   2012-09-18:
     scalar: 0.21
     reference: Art. 1 G. v. 10.09.2012 BGBl. I S. 1878
-    note: .09 + .1 + .02
+    note: 0.09 + 0.1 + 0.02
 max_monate_mit_partnermonate:
   name:
     de: Maximale Anzahl an Monaten, inklusiver Partnermonate.

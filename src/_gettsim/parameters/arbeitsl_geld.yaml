@@ -27,85 +27,58 @@ sozialv_pausch:
   unit: Share
   1984-01-01:
     scalar: 0.1727
-    reference: null
   1985-01-01:
     scalar: 0.1745
-    reference: null
   1986-01-01:
     scalar: 0.1775
-    reference: null
   1987-01-01:
     scalar: 0.1774
-    reference: .
   1988-01-01:
     scalar: 0.1794
-    reference: .
   1989-01-01:
     scalar: 0.1795
-    reference: null
   1990-01-01:
     scalar: 0.1775
-    reference: .
   1991-01-01:
     scalar: 0.179
-    reference: null
   1992-01-01:
     scalar: 0.184
-    reference: .
   1993-01-01:
     scalar: 0.187
-    reference: .
   1994-01-01:
     scalar: 0.1955
-    reference: null
   1995-01-01:
     scalar: 0.1915
-    reference: .
   1996-01-01:
     scalar: 0.1995
-    reference: .
   1997-01-01:
     scalar: 0.2095
-    reference: .
   1998-01-01:
     scalar: 0.2105
-    reference: null
   2000-01-01:
     scalar: 0.20535
-    reference: .
   2001-01-01:
     scalar: 0.2044
-    reference: .
   2002-01-01:
     scalar: 0.2065
-    reference: null
   2003-01-01:
     scalar: 0.2105
-    reference: null
   2004-01-01:
     scalar: 0.2095
-    reference: null
   2005-01-01:
     scalar: 0.2074
-    reference: null
   2006-01-01:
     scalar: 0.2141
-    reference: null
   2007-01-01:
     scalar: 0.2075
-    reference: null
   2008-01-01:
     scalar: 0.20475
-    reference: null
   2009-01-01:
     scalar: 0.20525
-    reference: null
   2010-01-01:
     scalar: 0.20225
-    reference: null
   2011-01-01:
     scalar: 0.20625
-    reference: null
   2012-01-01:
     scalar: 0.21
     reference: Art. 2 G. v. 20.12.2011 BGBl. I S. 2854
@@ -151,7 +124,6 @@ stundengrenze:
     en: null
   1969-07-01:
     scalar: 20
-    reference: null
   1986-01-01:
     scalar: 19
     reference: Art. 1 G. v. 20.12.1985 BGBl I S. 2484

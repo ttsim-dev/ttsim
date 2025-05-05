@@ -33,7 +33,6 @@ kinderfreib:
     note: Laut Gesetz 261 DM pro Monat.
   1997-01-01:
     sächl_existenzmin: 1767
-    reference: null
     note: Laut Gesetz 288 DM pro Monat (ab 2000 3456 DM pro Jahr)
   2000-01-01:
     beitr_erz_ausb: 774
@@ -114,40 +113,28 @@ vorsorge2004_vorwegabzug:
   reference_period: Year
   1985-01-01:
     scalar: 1534
-    reference: null
   1989-01-01:
     scalar: 2045
-    reference: null
   1993-01-01:
     scalar: 3068
-    reference: .
   2011-01-01:
     scalar: 2700
-    reference: null
   2012-01-01:
     scalar: 2400
-    reference: null
   2013-01-01:
     scalar: 2100
-    reference: null
   2014-01-01:
     scalar: 1800
-    reference: null
   2015-01-01:
     scalar: 1500
-    reference: null
   2016-01-01:
     scalar: 1200
-    reference: null
   2017-01-01:
     scalar: 900
-    reference: null
   2018-01-01:
     scalar: 600
-    reference: null
   2019-01-01:
     scalar: 300
-    reference: null
 werbungskostenpauschale:
   name:
     de: Werbungskostenpauschbetrag bei nichtselbstständiger Arbeit.
@@ -162,11 +149,9 @@ werbungskostenpauschale:
     note: 564 DM
   1990-01-01:
     scalar: 1044
-    reference: null
     note: 2000 DM.
   2004-01-01:
     scalar: 920
-    reference: null
   2012-01-01:
     scalar: 1000
     reference: Art. 1 G. v. 01.11.2011 BGBl. I S. 2131.
@@ -188,7 +173,6 @@ sonderausgabenpauschbetrag:
   reference_period: Year
   1984-01-01:
     single: 138
-    reference: null
   1988-01-01:
     single: 55
     reference: Art. 1 G. v. 25.07.1988, BGBl. I S. 1093
@@ -224,10 +208,8 @@ sparerpauschbetrag:
     reference: Art. 1 G. v. 19.12.2000 BGBl I S. 1790.
   2004-01-01:
     scalar: 1370
-    note: null
   2007-01-01:
     scalar: 750
-    note: null
   2009-01-01:
     scalar: 801
     reference: Art. 1 G. v. 14.08.2007 BGBl. I S. 1912
@@ -251,7 +233,6 @@ sparer_werbungskosten_pauschbetrag:
     note: 100 DM.
   2009-01-01:
     scalar: 0
-    note: null
 vorsorge_2004_grundhöchstbetrag:
   name:
     de: Allgemeine Vorsorgepauschale Grundhöchstbetrag, Grundtabelle
@@ -263,10 +244,8 @@ vorsorge_2004_grundhöchstbetrag:
   reference_period: Year
   1985-01-01:
     scalar: 1196
-    reference: null
   1992-01-01:
     scalar: 1334
-    reference: .
 altersentlastungsbetrag_max:
   name:
     de: Höchstbetrag des Altersentlastungsbetrags
@@ -285,13 +264,10 @@ altersentlastungsbetrag_max:
   reference_period: Year
   1984-01-01:
     scalar: 1534
-    reference: null
   1989-01-01:
     scalar: 1902
-    reference: null
   2002-01-01:
     scalar: 1908
-    reference: null
   2005-01-01:
     reference: Artikel 1 G. v. 05.07.2004 BGBl. I S. 1427.
     1940: 1900
@@ -346,7 +322,6 @@ altersentlastung_quote:
   unit: Share
   1984-01-01:
     scalar: 0.4
-    reference: null
   2005-01-01:
     reference: Artikel 1 G. v. 05.07.2004 BGBl. I S. 1427.
     1940: 0.4
@@ -457,22 +432,16 @@ alleinerziehendenfreibetrag:
   reference_period: Year
   1984-01-01:
     scalar: 2154
-    reference: null
   1986-01-01:
     scalar: 2319
-    reference: null
   1989-01-01:
     scalar: 2871
-    reference: null
   2001-01-01:
     scalar: 2916
-    reference: .
   2002-01-01:
     scalar: 2340
-    reference: null
   2004-01-01:
     scalar: 1308
-    reference: null
   2015-01-01:
     scalar: 1908
     reference: Art. 1 G. v. 16.07.2015 BGBl. I S.1202
@@ -511,10 +480,8 @@ vorsorge2004_kürzung_vorwegabzug:
     note: entspricht Beitrag zur RV
   1986-01-01:
     scalar: 0.096
-    note: null
   1987-01-01:
     scalar: 0.0935
-    note: .
   1989-01-01:
     scalar: 0.12
     reference: Art. 1 G. v. 25.07.1988 BGBl. I S. 1093
@@ -558,28 +525,28 @@ vorsorge_altersaufw_max:
       knappschaftliche Beitragsbemessungsgrenze
   2016-01-01:
     scalar: 22766
-    note: .248 * 91800
+    note: 0.248 * 91800
   2017-01-01:
     scalar: 23362
-    note: .248 * 94200
+    note: 0.248 * 94200
   2018-01-01:
     scalar: 23712
-    note: .247 * 96000
+    note: 0.247 * 96000
   2019-01-01:
     scalar: 24305
-    note: .247 * 98400
+    note: 0.247 * 98400
   2020-01-01:
     scalar: 25046
     reference: Art. 3 V. v. 17.12.2019 BGBl I S. 2848.
-    note: .247 * 101400
+    note: 0.247 * 101400
   2021-01-01:
     scalar: 25787
     reference: §3 V. v. 30.11.2020 BGBl. I S. 2612.
-    note: .247 * 104400
+    note: 0.247 * 104400
   2022-01-01:
     scalar: 25640
     reference: §3 V. v. 30.11.2021, BGBl. I S. 5044.
-    note: .247 * 103800
+    note: 0.247 * 103800
 vorsorge_kranken_minderung:
   name:
     de: >-
