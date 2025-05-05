@@ -66,9 +66,7 @@ class FKType(StrEnum):
 
 @dataclass(frozen=True)
 class TTSIMObject:
-    """
-    Abstract base class for all TTSIM Functions and Inputs.
-    """
+    """Abstract base class for all TTSIM Functions and Data Inputs."""
 
     leaf_name: str
     start_date: datetime.date

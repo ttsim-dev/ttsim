@@ -19,9 +19,8 @@ maximum:
     reference: Art. 1 G. v. 29.04.2019 BGBl. I S. 530.
     note: For 2020, Art. 2 Nr. 4 G. v. 29.04.2019 BGBl. I S. 530.
   2021-01-01:
-    scalar: null
     reference: § 6a (2) BKGG
-    note: Ab 2021 wird der Betrag aus anderen Parametern berechnet.
+    note: Starting in 2021, the value is being calculated base on other parameters.
   2023-01-01:
     scalar: 250
     reference: Art. 6 G. v. 08.12.2022 BGBl. I S. 2230.
@@ -66,7 +65,6 @@ kindersofortzuschl:
   2022-07-01:
     scalar: 20
   2023-01-01:
-    scalar: null
     note: Included in maximum Kinderzuschlag since 2023.
 min_eink_paare:
   name:

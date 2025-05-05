@@ -151,7 +151,7 @@ arbeitgeberpauschale_lohnsteuer:
   2007-01-01:
     scalar: 0.02
   2022-10-01:
-    scalar: null
+    note: Ceased to exist
 mindestlohn:
   name:
     de: Allgemeiner gesetzlicher Mindestlohn pro Stunde

@@ -55,7 +55,12 @@
           "^(19|20|21)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {
             "type": "object",
             "properties": {
-              "scalar": { "type": ["number", "string", "null"] },
+              "scalar": {
+                "oneOf": [
+                { "type": ["number"] },
+                { "type": "string", "enum": ["inf", "-inf"] }
+              ]
+            },
               "reference": { "type": ["string", "null"] },
               "note": { "type": ["string", "null"] },
               "deviation_from": { "type": ["string", "null"] },
