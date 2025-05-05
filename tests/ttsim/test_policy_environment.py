@@ -19,7 +19,8 @@ from ttsim import (
     set_up_policy_environment,
 )
 from ttsim.policy_environment import (
-    ConflictingTimeDependentObjectsError,
+    ConflictingActivePeriodsError,
+    ConflictingNamesError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _load_parameter_group_from_yaml,
     active_ttsim_objects_tree,
@@ -27,7 +28,7 @@ from ttsim.policy_environment import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import FlatTTSIMObjectDict, NestedTTSIMObjectDict
+    from ttsim.typing import FlatTTSIMObjectDict, NestedTTSIMObjectDict, OrigYamlTree
 
 YAML_PATH = Path(__file__).parent / "test_parameters"
 
@@ -287,29 +288,7 @@ def test_end_date_missing():
     assert test_func.end_date == datetime.date(2100, 12, 31)
 
 
-# Change name ----------------------------------------------
-
-
-def test_dates_active_change_name_given():
-    @policy_function(leaf_name="renamed_func")
-    def test_func():
-        pass
-
-    assert test_func.leaf_name == "renamed_func"
-
-
-def test_dates_active_change_name_missing():
-    @policy_function()
-    def test_func():
-        pass
-
-    assert test_func.leaf_name == "test_func"
-
-
-# Empty interval -------------------------------------------
-
-
-def test_dates_active_empty_interval():
+def test_active_period_is_empty():
     with pytest.raises(ValueError):
 
         @policy_function(start_date="2023-01-20", end_date="2023-01-19")
@@ -317,72 +296,92 @@ def test_dates_active_empty_interval():
             pass
 
 
-# Conflicts ------------------------------------------------
-
-
 def identity(x):
     return x
 
 
 @pytest.mark.parametrize(
-    "orig_ttsim_objects_tree",
+    "orig_ttsim_objects_tree, orig_yaml_tree",
     [
-        # Same global module, no overlapping periods.
-        {
-            ("a",): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-            ("b",): policy_function(
-                start_date="2023-02-01",
-                end_date="2023-02-28",
-                leaf_name="f",
-            )(identity),
-        },
-        # Same submodule, no overlapping periods.
-        {
-            ("c", "a"): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-            ("c", "b"): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-02-28",
-                leaf_name="g",
-            )(identity),
-        },
-        # Different modules, no overlapping periods.
-        {
-            ("c", "f"): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-            )(identity),
-            ("d", "f"): policy_function(
-                start_date="2023-02-01",
-                end_date="2023-02-28",
-            )(identity),
-        },
-        # Different paths, overlapping periods.
-        {
-            ("x", "c", "a"): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-            ("y", "c", "b"): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-02-28",
-                leaf_name="g",
-            )(identity),
-        },
+        # Same global module, no overlapping periods, no name clashes.
+        (
+            {
+                ("c", "a"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("c", "b"): policy_function(
+                    start_date="2023-02-01",
+                    end_date="2023-02-28",
+                    leaf_name="f",
+                )(identity),
+            },
+            {("c", "g"): {datetime.date(2023, 1, 1): {"scalar": 1}}},
+        ),
+        # Same submodule, overlapping periods, different leaf names so no name clashes.
+        (
+            {
+                ("x", "c", "a"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("x", "c", "b"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-02-28",
+                    leaf_name="g",
+                )(identity),
+            },
+            {("x", "c", "h"): {datetime.date(2023, 1, 1): {"scalar": 2}}},
+        ),
+        # Different submodules, no overlapping periods, no name clashes.
+        (
+            {
+                ("x", "c", "f"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                )(identity),
+                ("x", "d", "f"): policy_function(
+                    start_date="2023-02-01",
+                    end_date="2023-02-28",
+                )(identity),
+            },
+            {("x", "c", "g"): {datetime.date(2023, 1, 1): {"scalar": 3}}},
+        ),
+        # Different paths, overlapping periods, same names but no clashes.
+        (
+            {
+                ("x", "a", "b"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("y", "a", "b"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-02-28",
+                    leaf_name="f",
+                )(identity),
+            },
+            {("z", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 4}}},
+        ),
+        # Different yaml files, no name clashes because of different names.
+        (
+            {},
+            {
+                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 5}},
+                ("x", "b", "g"): {datetime.date(2023, 1, 1): {"scalar": 6}},
+            },
+        ),
     ],
 )
-def test_dates_active_no_conflicts(orig_ttsim_objects_tree):
+def test_fail_because_of_clashes_no_conflicts(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+    orig_yaml_tree: OrigYamlTree,
+):
     fail_because_of_clashes(
         orig_ttsim_objects_tree=orig_ttsim_objects_tree,
-        orig_yaml_tree={},
+        orig_yaml_tree=orig_yaml_tree,
     )
 
 
@@ -454,9 +453,67 @@ def test_dates_active_no_conflicts(orig_ttsim_objects_tree):
         },
     ],
 )
-def test_dates_active_with_conflicts(orig_ttsim_objects_tree: FlatTTSIMObjectDict):
-    with pytest.raises(ConflictingTimeDependentObjectsError):
+def test_fail_because_of_conflicting_active_periods(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+):
+    with pytest.raises(ConflictingActivePeriodsError):
         fail_because_of_clashes(
             orig_ttsim_objects_tree=orig_ttsim_objects_tree,
             orig_yaml_tree={},
+        )
+
+
+@pytest.mark.parametrize(
+    "orig_ttsim_objects_tree, orig_yaml_tree",
+    [
+        # Same global module, no overlapping periods, name clashes leaf name / yaml.
+        (
+            {
+                ("c", "a"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("c", "b"): policy_function(
+                    start_date="2023-02-01",
+                    end_date="2023-02-28",
+                    leaf_name="f",
+                )(identity),
+            },
+            {("c", "f"): {datetime.date(2023, 1, 1): {"scalar": 1}}},
+        ),
+        # Same paths, no overlapping periods, name clashes leaf name / yaml.
+        (
+            {
+                ("x", "a", "b"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("x", "a", "c"): policy_function(
+                    start_date="2023-02-01",
+                    end_date="2023-02-28",
+                    leaf_name="f",
+                )(identity),
+            },
+            {("x", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 2}}},
+        ),
+        # Same paths, name clashes within params from different yaml files.
+        (
+            {},
+            {
+                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 3}},
+                ("x", "b", "f"): {datetime.date(2023, 1, 1): {"scalar": 4}},
+            },
+        ),
+    ],
+)
+def test_fail_because_of_conflicting_names(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+    orig_yaml_tree: OrigYamlTree,
+):
+    with pytest.raises(ConflictingNamesError):
+        fail_because_of_clashes(
+            orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+            orig_yaml_tree=orig_yaml_tree,
         )

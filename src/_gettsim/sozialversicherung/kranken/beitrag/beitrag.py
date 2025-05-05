@@ -237,7 +237,7 @@ def betrag_selbstständig_m(
 
     """
     params = ges_krankenv_params["beitr_satz"]
-    # The below must be done via dates_active in order to enable vectorization.
+    # The below must be done via start_date/end_date in order to enable vectorization.
     ermäßigter_beitrag = (
         params["ermäßigt"] if ("ermäßigt" in params) else params["mean_allgemein"]
     )

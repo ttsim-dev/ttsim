@@ -189,7 +189,6 @@ def set_up_policy_environment(
         orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
         orig_yaml_tree=_orig_yaml_tree,
     )
-    breakpoint()
 
     params = {}
     if "_gettsim" in root.name:
@@ -239,7 +238,7 @@ def fail_because_of_clashes(
 
     Raises
     ------
-    ConflictingTimeDependentObjectsError
+    ConflictingActivePeriodsError
         If multiple objects with the same leaf name are active at the same time.
     ConflictingNamesError
         If there are name clashes involving parameters.
@@ -256,10 +255,10 @@ def fail_because_of_clashes(
 
     # Check for overlapping start and end dates for time-dependent functions.
     for path, objects in overlap_checker.items():
-        dates_active = [(f.start_date, f.end_date) for f in objects]
-        for (start1, end1), (start2, end2) in itertools.combinations(dates_active, 2):
+        active_period = [(f.start_date, f.end_date) for f in objects]
+        for (start1, end1), (start2, end2) in itertools.combinations(active_period, 2):
             if start1 <= end2 and start2 <= end1:
-                raise ConflictingTimeDependentObjectsError(
+                raise ConflictingActivePeriodsError(
                     affected_ttsim_objects=objects,
                     path=path,
                     overlap_start=max(start1, start2),
@@ -286,7 +285,7 @@ def fail_because_of_clashes(
             )
 
 
-class ConflictingTimeDependentObjectsError(Exception):
+class ConflictingActivePeriodsError(Exception):
     def __init__(
         self,
         affected_ttsim_objects: list[TTSIMObject],
@@ -326,7 +325,7 @@ class ConflictingNamesError(Exception):
         affected_objects: list[TTSIMObject | OrigYamlParamSpec],
         path: tuple[str, ...],
     ) -> None:
-        self.affected_ttsim_objects = affected_objects
+        self.affected_objects = affected_objects
         self.path = path
 
     def __str__(self) -> str:
@@ -335,13 +334,13 @@ class ConflictingNamesError(Exception):
             if isinstance(obj, TTSIMObject):
                 objects.append(obj.__getattribute__("original_function_name"))
             else:
-                objects.append(obj)
+                objects.append(str(obj))
         return f"""
         Objects with path
 
           {self.path}
 
-        clash. The following functions are affected:
+        clash. The following objects are affected:
 
           {
             '''
