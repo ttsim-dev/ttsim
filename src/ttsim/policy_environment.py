@@ -26,10 +26,16 @@ from ttsim.shared import (
     upsert_tree,
 )
 from ttsim.ttsim_objects import (
+    DEFAULT_END_DATE,
     TTSIMObject,
     policy_function,
 )
-from ttsim.ttsim_params import TTSIMParam
+from ttsim.ttsim_params import (
+    DictTTSIMParam,
+    ListTTSIMParam,
+    ScalarTTSIMParam,
+    TTSIMParam,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -63,7 +69,7 @@ class PolicyEnvironment:
         self,
         raw_objects_tree: NestedTTSIMObjectDict,
         params: dict[str, Any] | None = None,
-        params_tree: FlatTTSIMParamsDict | None = None,
+        params_tree: FlatTTSIMParamDict | None = None,
     ):
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_ttsim_pytree(
@@ -434,77 +440,91 @@ def active_ttsim_params_tree(
 ) -> FlatTTSIMParamDict:
     """Parse the original yaml tree."""
     flat_params_tree = {
-        (*orig_path[:-2], orig_path[:-1]): parse_one_params_spec(
-            spec=orig_params_spec, date=date
+        (*orig_path[:-2], orig_path[-1]): parse_one_params_spec(
+            leaf_name=orig_path[-1],
+            spec=orig_params_spec,
+            date=date,
         )
         for orig_path, orig_params_spec in orig_params_tree.items()
     }
+    for orig_path, orig_params_spec in orig_params_tree.items():
+        if orig_params_spec.get("add_jahresanfang", False):
+            date_jahresanfang = date.replace(month=1, day=1)
+            flat_params_tree[(*orig_path[:-2], f"{orig_path[-1]}_jahresanfang")] = (
+                parse_one_params_spec(
+                    leaf_name=f"{orig_path[-1]}_jahresanfang",
+                    spec=orig_params_spec,
+                    date=date_jahresanfang,
+                )
+            )
     return dt.unflatten_from_tree_paths(flat_params_tree)
 
 
 def parse_one_params_spec(
+    leaf_name: str,
     spec: OrigParamSpec,
     date: datetime.date,
 ) -> TTSIMParam:
     """Parse the original specification found in the yaml tree."""
-    policy_dates = sorted(key for key in spec if isinstance(key, datetime.date))
-    past_policy_dates = [d for d in policy_dates if d <= date]
-    assert past_policy_dates, f"No policy dates found for {spec} at {date}"
-    current_policy_date = numpy.array(past_policy_dates).max()
-    current_spec = spec[current_policy_date]
-    # For scalars, there is no need to think about deviations from prior parameters.
+    cleaned_spec = prep_one_params_spec(leaf_name=leaf_name, spec=spec, date=date)
     if spec["type"] == "scalar":
-        # TODO: Move elsewhere, will need the same stuff for dicts and lists.
-        if current_spec["scalar"] == "inf":
-            current_spec["scalar"] = numpy.inf
-        elif current_spec["scalar"] == "-inf":
-            current_spec["scalar"] = -numpy.inf
+        return ScalarTTSIMParam(**cleaned_spec)
+    elif spec["type"] == "dict":
+        return DictTTSIMParam(**cleaned_spec)
+    elif spec["type"] == "list":
+        return ListTTSIMParam(**cleaned_spec)
+    elif spec["type"] == "piecewise_linear":
+        return PiecewiseLinearTTSIMParam(**cleaned_spec)
+    elif spec["type"] == "piecewise_quadratic":
+        return PiecewiseQuadraticTTSIMParam(**cleaned_spec)
     else:
-        # Build up recursively if we are updating some previous parameter values.
-        if current_spec.get("updates_previous", False):
-            former_spec = parse_one_params_spec(
-                spec=spec,
-                date=current_policy_date - datetime.timedelta(days=1),
-            )
-            breakpoint()
-            for key in value_keys:
-                key_list: list[str] = []
-                out_params[param][key] = transfer_dictionary(
-                    current_spec[key],
-                    copy.deepcopy(out_params[param][key]),
-                    key_list,
-                )
-    return current_spec
+        raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
-    # Also load earlier parameter values if this is specified in yaml
-    if "access_different_date" in spec:
-        if spec["access_different_date"] == "vorjahr":
-            date_last_year = subtract_years_from_date(date, years=1)
-            params_last_year = _parse_raw_parameter_group(
-                raw_group_data=raw_group_data,
-                date=date_last_year,
-                group=group,
-                parameters=[param],
-            )
-            if param in params_last_year:
-                out_params[f"{param}_vorjahr"] = params_last_year[param]
-        elif spec["access_different_date"] == "jahresanfang":
-            date_beginning_of_year = set_date_to_beginning_of_year(date)
-            if date_beginning_of_year == date:
-                out_params[f"{param}_jahresanfang"] = out_params[param]
-            else:
-                params_beginning_of_year = _parse_raw_parameter_group(
-                    raw_group_data=raw_group_data,
-                    date=date_beginning_of_year,
-                    group=group,
-                    parameters=[param],
-                )
-                if param in params_beginning_of_year:
-                    out_params[f"{param}_jahresanfang"] = params_beginning_of_year[
-                        param
-                    ]
 
-    return {}
+def prep_one_params_spec(
+    leaf_name: str, spec: OrigParamSpec, date: datetime.date
+) -> OrigParamSpec:
+    """Prepare the specification of one parameter for creating a TTSIMParam."""
+    policy_dates = numpy.array(
+        sorted(key for key in spec if isinstance(key, datetime.date))
+    )
+    idx = numpy.searchsorted(policy_dates, date, side="right")
+    assert idx > 0, f"No policy date ≤ {date} found for {spec}"
+
+    out = {}
+    out["leaf_name"] = leaf_name
+    out["start_date"] = policy_dates[idx - 1]
+    out["end_date"] = (
+        policy_dates[idx] - datetime.timedelta(days=1)
+        if len(policy_dates) > idx
+        else DEFAULT_END_DATE
+    )
+    out["unit"] = spec.get("unit", None)
+    out["reference_period"] = spec.get("reference_period", None)
+    out["name"] = spec["name"]
+    out["description"] = spec["description"]
+    if spec["type"] == "scalar":
+        out["value"] = spec[policy_dates[idx - 1]]["scalar"]
+    else:
+        out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
+    # Do this only after _get_params_contents, because the former may have old notes.
+    out["note"] = spec.get("note", None)
+    out["reference"] = spec.get("reference", None)
+    return out
+
+
+def _get_params_contents(
+    relevant_specs: list[dict[str | int, Any]],
+) -> dict[str | int, Any]:
+    if relevant_specs[-1].get("updates_previous", False):
+        assert len(relevant_specs) > 1, (
+            f"updates_previous cannot be missing in the first spec, found {relevant_specs}"
+        )
+        params = copy.deepcopy(_get_params_contents(relevant_specs[:-1]))
+        params.update(relevant_specs[-1])
+        return params
+    else:
+        return relevant_specs[-1]
 
 
 def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:

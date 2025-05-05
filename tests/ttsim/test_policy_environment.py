@@ -6,6 +6,7 @@ import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import optree
 import pandas as pd
 import pytest
 import yaml
@@ -18,13 +19,14 @@ from ttsim import (
     policy_function,
     set_up_policy_environment,
 )
-from ttsim.loader import orig_ttsim_objects_tree
+from ttsim.loader import orig_params_tree, orig_ttsim_objects_tree
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
     ConflictingNamesError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _parse_raw_parameter_group,
     active_ttsim_objects_tree,
+    active_ttsim_params_tree,
     fail_because_of_clashes,
 )
 
@@ -34,8 +36,6 @@ if TYPE_CHECKING:
         FlatTTSIMObjectDict,
         NestedTTSIMObjectDict,
     )
-
-YAML_PATH = Path(__file__).parent / "test_parameters"
 
 
 def return_one():
@@ -109,30 +109,45 @@ def test_fail_if_invalid_date():
         set_up_policy_environment(date="2020-02-30", root=METTSIM_ROOT)
 
 
-def test_fail_if_invalid_access_different_date():
+def test_add_jahresanfang():
+    _orig_params_tree = orig_params_tree(root=Path(__file__).parent / "test_parameters")
+    k = ("test_add_jahresanfang.yaml", "foo")
+    _active_ttsim_params_tree = active_ttsim_params_tree(
+        orig_params_tree={k: _orig_params_tree[k]},
+        date=pd.to_datetime("2020-07-01").date(),
+    )
+    assert _active_ttsim_params_tree["foo"].value == 2
+    assert _active_ttsim_params_tree["foo_jahresanfang"].value == 1
+
+
+def test_fail_if_invalid_access_different_date_old():
     with pytest.raises(ValueError):
         group = "invalid_access_diff_date"
         raw_group_data = yaml.load(
-            (YAML_PATH / f"{group}.yaml").read_text(encoding="utf-8"),
+            (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
+                encoding="utf-8"
+            ),
             Loader=yaml.CLoader,
         )
         _parse_raw_parameter_group(
             raw_group_data=raw_group_data,
-            date=pd.to_datetime("01-01-2020").date(),
+            date=pd.to_datetime("2020-01-01").date(),
             group=group,
             parameters=None,
         )
 
 
-def test_access_different_date_vorjahr():
+def test_access_different_date_vorjahr_old():
     group = "test_access_diff_date_vorjahr"
     raw_group_data = yaml.load(
-        (YAML_PATH / f"{group}.yaml").read_text(encoding="utf-8"),
+        (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
+            encoding="utf-8"
+        ),
         Loader=yaml.CLoader,
     )
     params = _parse_raw_parameter_group(
         raw_group_data=raw_group_data,
-        date=pd.to_datetime("01-01-2020").date(),
+        date=pd.to_datetime("2020-01-01").date(),
         group=group,
         parameters=None,
     )
@@ -140,15 +155,17 @@ def test_access_different_date_vorjahr():
     assert params["foo_vorjahr"] == 2019
 
 
-def test_access_different_date_jahresanfang():
+def test_access_different_date_jahresanfang_old():
     group = "test_access_diff_date_jahresanfang"
     raw_group_data = yaml.load(
-        (YAML_PATH / f"{group}.yaml").read_text(encoding="utf-8"),
+        (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
+            encoding="utf-8"
+        ),
         Loader=yaml.CLoader,
     )
     params = _parse_raw_parameter_group(
         raw_group_data=raw_group_data,
-        date=pd.to_datetime("07-01-2020").date(),
+        date=pd.to_datetime("2020-07-01").date(),
         group=group,
         parameters=None,
     )
@@ -239,9 +256,6 @@ def test_start_date_missing():
     assert test_func.start_date == datetime.date(1900, 1, 1)
 
 
-# End date -------------------------------------------------
-
-
 @pytest.mark.parametrize(
     "date_string, expected",
     [
@@ -277,7 +291,7 @@ def test_end_date_missing():
     def test_func():
         pass
 
-    assert test_func.end_date == datetime.date(2100, 12, 31)
+    assert test_func.end_date == datetime.date(2099, 12, 31)
 
 
 def test_active_period_is_empty():

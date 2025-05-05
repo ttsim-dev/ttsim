@@ -32,18 +32,32 @@ from ttsim.ttsim_objects import (
     policy_function,
     policy_input,
 )
+from ttsim.ttsim_params import (
+    DictTTSIMParam,
+    ListTTSIMParam,
+    # PiecewiseLinearTTSIMParam,
+    # PiecewiseQuadraticTTSIMParam,
+    ScalarTTSIMParam,
+    TTSIMParam,
+)
 
 __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
+    "DictTTSIMParam",
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
+    "ListTTSIMParam",
+    # "PiecewiseLinearTTSIMParam",
+    # "PiecewiseQuadraticTTSIMParam",
     "PolicyEnvironment",
     "PolicyFunction",
     "PolicyInput",
     "RoundingSpec",
+    "ScalarTTSIMParam",
+    "TTSIMParam",
     "TimeConversionFunction",
     "agg_by_group_function",
     "agg_by_p_id_function",

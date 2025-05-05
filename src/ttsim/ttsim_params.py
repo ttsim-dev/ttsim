@@ -61,7 +61,7 @@ class ScalarTTSIMParam(TTSIMParam):
     A scalar TTSIM parameter directly read from a YAML file.
     """
 
-    scalar: bool | int | float
+    value: bool | int | float
 
 
 @dataclass(frozen=True)

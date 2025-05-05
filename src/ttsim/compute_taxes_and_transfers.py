@@ -123,6 +123,10 @@ def compute_taxes_and_transfers(
         functions=functions_with_rounding_specs,
         params=environment.params,
     )
+    functions_with_partialled_parameters = _partial_params_tree_to_functions(
+        functions=functions_with_partialled_parameters,
+        params_tree=environment._params_tree,
+    )
 
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
@@ -404,6 +408,42 @@ def _partial_parameters_to_functions(
             for arg in arguments
             for key in params
             if arg.endswith(f"{key}_params")
+        }
+        if partial_params:
+            processed_functions[name] = functools.partial(function, **partial_params)
+        else:
+            processed_functions[name] = function
+
+    return processed_functions
+
+
+def _partial_params_tree_to_functions(
+    functions: QualNameTTSIMFunctionDict,
+    params_tree: NestedTTSIMParamDict,
+) -> QualNameTTSIMFunctionDict:
+    """Round and partial parameters into functions.
+
+    Parameters
+    ----------
+    functions
+        The functions dict with qualified function names as keys and functions as
+        values.
+    params
+        Dictionary of parameters.
+
+    Returns
+    -------
+    Functions tree with parameters partialled.
+
+    """
+    # Partial parameters to functions such that they disappear in the DAG.
+    # Note: Needs to be done after rounding such that dags recognizes partialled
+    # parameters.
+    p = dt.flatten_to_qual_names(params_tree)
+    processed_functions = {}
+    for name, function in functions.items():
+        partial_params = {
+            arg: p[arg] for arg in get_names_of_required_arguments(function) if arg in p
         }
         if partial_params:
             processed_functions[name] = functools.partial(function, **partial_params)

@@ -1,0 +1,17 @@
+---
+schedule:
+  name:
+    de: Einkommensteuertarif
+    en: Income tax schedule
+  description:
+    de: Name ergibt wenig Sinn.
+    en: The name makes little sense.
+  type: dict
+  1900-01-01:
+    lump_sum_deduction_y: 100.0
+    rate: 0.3
+    reduced_rate: 0.15
+  2021-01-01:
+    updates_previous: true
+    rate: 0.3
+    reduced_rate: 0.15

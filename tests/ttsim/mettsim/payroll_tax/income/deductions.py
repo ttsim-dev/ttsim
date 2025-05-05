@@ -1,12 +1,11 @@
-from ttsim import policy_function
+from ttsim import DictTTSIMParam, policy_function
 
 
 @policy_function(vectorization_strategy="vectorize")
 def deductions_y(
     payroll_tax__child_tax_credit__amount_y: float,
-    payroll_tax_params: dict,
+    schedule: DictTTSIMParam,
 ) -> float:
     return (
-        payroll_tax_params["income"]["lump_sum_deduction_y"]
-        + payroll_tax__child_tax_credit__amount_y
+        schedule.value["lump_sum_deduction_y"] + payroll_tax__child_tax_credit__amount_y
     )

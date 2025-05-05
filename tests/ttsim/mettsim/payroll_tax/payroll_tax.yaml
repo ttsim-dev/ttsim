@@ -1,27 +1,4 @@
 ---
-child_tax_credit:
-  name:
-    de: Kinderfreibetrag
-    en: Child tax credit
-  description:
-    de: In Mittelerde passiert nichts.
-    en: In Middle Earth nothing happens.
-  type: dict
-  1900-01-01:
-    child_amount_y: 100.0
-    max_age: 18
-income:
-  name:
-    de: Einkommensteuertarif
-    en: Income tax schedule
-  description:
-    de: Name ergibt wenig Sinn.
-    en: The name makes little sense.
-  type: dict
-  1900-01-01:
-    lump_sum_deduction_y: 100.0
-    rate: 0.3
-    reduced_rate: 0.15
 wealth_threshold_for_reduced_tax_rate:
   name:
     de: Vermögensschwelle, bis zu der der niedrigere Steuersatz gilt
