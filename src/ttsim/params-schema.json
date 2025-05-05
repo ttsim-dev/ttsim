@@ -40,7 +40,8 @@
             ]
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "enum": ["scalar", "dict", "list", "piecewise_linear", "piecewise_quadratic", "require_converter"]
           },
           "reference_period": {
             "type": "string",
@@ -87,7 +88,7 @@
         },
         "additionalProperties": false,
         "anyOf": [
-          { "required": ["name", "description"] },
+          { "required": ["name", "description", "type"] ,
           {
             "minProperties": 1,
             "patternProperties": {
