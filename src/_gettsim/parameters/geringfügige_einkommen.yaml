@@ -103,13 +103,14 @@ faktor_zähler:
       Numerator in the factor for the calculation of the marginal employment threshold.
   description:
     de: >-
+      §8 (1a) SGB IV
       Faktor, mit dem der Mindestlohn in der Berechnung der Geringfügigkeitsgrenze
       multipliziert wird.
     en: >-
+      §8 (1a) SGB IV
       Factor by which the minimum wage is multiplied to calculate the threshold for
       marginal employment.
   unit: null
-  reference: §8 (1a) SGB IV
   2022-10-01:
     scalar: 130
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
@@ -121,13 +122,14 @@ faktor_nenner:
       threshold.
   description:
     de: >-
+      §8 (1a) SGB IV
       Betrag, durch den der Mindestlohn dividiert wird, um die Geringfügigkeitsgrenze zu
       erhalten.
     en: >-
+      §8 (1a) SGB IV
       Amount by which the minimum wage is divided to obtain the marginal employment
       threshold.
   unit: Euro
-  reference: §8 (1a) SGB IV
   2022-10-01:
     scalar: 3
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
@@ -158,14 +160,15 @@ mindestlohn:
     en: Statutory hourly minimum wage
   description:
     de: >-
+      §1 (2) Mindestlohngesetz
       Der Mindestlohn ist der niedrigste Stundenlohn, den ein Arbeitgeber für eine
       regelmäßige, nicht mehr als 45 Stunden wöchentlich zu leistende Arbeitsleistung
       zahlen muss.
     en: >-
+      §1 (2) Mindestlohngesetz
       The minimum wage is the lowest hourly wage that an employer must pay for a
       regular, not more than 45 hours weekly work.
   unit: Euro
-  reference: §1 (2) Mindestlohngesetz
   2015-01-01:
     scalar: 8.5
   2017-01-01:

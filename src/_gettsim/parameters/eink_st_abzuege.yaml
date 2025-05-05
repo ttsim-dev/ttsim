@@ -372,9 +372,9 @@ altersentlastungsbetrag_altersgrenze:
     en: >-
       The old-age relief amount is granted to a taxpayer who, before the start of the
       calendar year in which he received his income, had reached the age of 64.
-  reference: § 24a Art. 3 EStG
   1984-01-01:
     scalar: 64
+    reference: § 24a Art. 3 EStG
 einführungsfaktor:
   name:
     de: Einführungsfaktor für Altersvorsorge Aufwendung
@@ -391,9 +391,9 @@ einführungsfaktor:
       percentage points each year from 60% in 2005 to 94% in 2022. It was planned that
       100% are reached in 2025. Deviating from this plan, the deductible contributions
       were set to 100% already in 2023.
-  reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
   type: piecewise_linear
   2005-01-01:
+    reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
     0:
       lower_threshold: -inf
       rate_linear: 0
@@ -637,20 +637,18 @@ vorsorgepauschale_rentenv_anteil:
     en: Share of deducted pension insurance contributions
   description:
     de: >-
-      Funktion für den Anteil der Rentenversicherungsbeiträge, die bei der
-      Lohnsteuerberechnung abgezogen werden
-    en: >-
-      Function for the share of pension insurance contributions deducted in the
-      withholding tax calculation.
-  unit: Share
-  reference: § 39b (4) EStG
-  note:
-    de: >-
+      § 39b (4) EStG
+      Der Anteil der Rentenversicherungsbeiträge, die bei der Lohnsteuerberechnung
+      abgezogen werden
       Funktion erst ab 2005 vorhanden. Steigt zwischen 2005 und 2025 jährlich um 4
       Prozentpunkte. 2023 wurde der Wert vorzeitig auf 100% gesetzt.
     en: >-
+      § 39b (4) EStG
+      The share of pension insurance contributions deducted in the withholding tax
+      calculation.
       rises between 2005 and 2025 by 4 percentage points annually. In 2023, it was
       prematurely set to 100 percent.
+  unit: Share
   type: piecewise_linear
   2005-01-01:
     0:
@@ -690,12 +688,13 @@ vorsorgepauschale_mindestanteil:
     en: Minimum share for Mindestvorsorgepauschale
   description:
     de: >-
+      39b (2) Nr.3 EStG
       Mindestanteil an Beiträgen zu GKV und GPV, der abgesetzt wird bei
       Mindestvorsorgepauschale
     en: >-
+      39b (2) Nr.3 EStG
       Minimum share of minimum contributions to health care and care insurance deducted
       from Mindestvorsorgepauschale
-  reference: 39b (2) Nr.3 EStG
   unit: Share
   2009-07-23:
     scalar: 0.12
@@ -706,14 +705,15 @@ vorsorgepauschale_kv_max:
     en: Maximum amount Mindestvorsorgepauschale
   description:
     de: >-
+      39b (2) Nr.3 EStG. Depends on Steuerklasse.
       Höchsbetrag für Mindestvorsorgepauschale der Beiträge zu GKV und PKV, die von der
       Lohnsteuer abgesetzt werden können.
     en: >-
+      39b (2) Nr.3 EStG. Depends on Steuerklasse.
       Maximum amount considered for Mindestvorsorgepauschale of contributions to health
       care and care insurance that can be deducted from withholding tax
-  reference: 39b (2) Nr.3 EStG. Depends on Steuerklasse.
   unit: Euro
-  time: year
+  reference_period: Year
   2009-07-23:
     steuerklasse_3: 3000
     steuerklasse_nicht3: 1900

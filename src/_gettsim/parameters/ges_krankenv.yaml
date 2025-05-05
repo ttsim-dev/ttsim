@@ -426,7 +426,7 @@ mindestanteil_bezugsgröße_beitragspf_einnahme_selbst:
       Health Insurance contributions have to be payed, at the minimum, on the ninetieth
       part of the monthly Bezugsgröße for each calender day
   unit: Share
-  reference: §240 SGB V Abs. 4
-  note: Exact date of introduction of this parameter unclear (was in place in 2006)
   1990-01-01:
+    reference: §240 SGB V Abs. 4
+    note: Exact date of introduction of this parameter unclear (was in place in 2006)
     scalar: 0.33333333

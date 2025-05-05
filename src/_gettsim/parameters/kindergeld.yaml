@@ -13,10 +13,10 @@ altersgrenze:
       children up to a specified age are entitled to child benefit under certain
       conditions.
   unit: Year
-  reference: § 32 Art. 2-4 EStG.
   1984-01-01:
     mit_bedingungen: 27
     ohne_bedingungen: 18
+    reference: § 32 Art. 2-4 EStG.
   2007-01-01:
     mit_bedingungen: 25
     ohne_bedingungen: 18

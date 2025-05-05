@@ -181,6 +181,6 @@ zusatz_kinderlos_mindestalter:
       Childless members of the social care insurance, who have reached the age of 23,
       have to pay a higher contribution rate since January 1, 2005.
   unit: Year
-  reference: § 55 Abs. 3 SGB XI, KiBG Art. 1
   2005-01-01:
+    reference: § 55 Abs. 3 SGB XI, KiBG Art. 1
     scalar: 23

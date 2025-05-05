@@ -21,13 +21,14 @@ altersgrenzen_bezug:
     en: Age limits for receiving alimony payments until June 2017.
   description:
     de: >-
+      § 1 Abs. 1, 1a UhVorschG
       Kinder, die das 12. Lebensjahr noch nicht vollendet haben und bei einem
       alleinerziehenden Elternteil leben haben Anspruch auf Unterhaltszahlungen. Seit
       Juli 2017 gelten die Altersgrenzen des Mindestunterhalts.
     en: >-
+      § 1 Abs. 1, 1a UhVorschG
       Children under the age of 12 living with a single parent are entitled to alimony
       payments. Since July 2017, the age limits of the minimum alimony apply.
-  reference: § 1 Abs. 1, 1a UhVorschG
   2008-01-01:
     1:
       min_alter: 0

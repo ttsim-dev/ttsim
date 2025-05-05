@@ -99,8 +99,8 @@ eink_anr_frei_kinder:
       wird aktuell noch nicht im Code beachtet). § 30 SGB II. Seit 01.04.2011 § 11b SGB
       II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v. 24.03.2011
       BGBl. I S. 453).
+      Ersetzt Parameter in eink_anr_frei, falls nicht vorhanden
     en: null
-  note: Ersetzt Parameter in eink_anr_frei, falls nicht vorhanden
   type: piecewise_linear
   2005-10-01:
     reference: Artikel 1 G. v. 14.08.2005 BGBl. I S. 2407.
@@ -121,12 +121,8 @@ regelsatz:
     de: >-
       § 20 V SGB II. Für 2005 bis 2010 siehe Bekanntmachungen zu § 20. Seit 2011
       wird der Regelbedarf durch das Regelbedarfs-Ermittlungsgesetz (RBEG) ermittelt.
-      Neufassung SGB II § 20 (1a) und (2) durch Artikel 6 G. v. 22.12.2016 BGBl. I
-      S.
+      Neufassung SGB II § 20 (1a) und (2) durch Artikel 6 G. v. 22.12.2016 BGBl. I S.
       3159.
-    en: null
-  note:
-    de: >-
       Regelbedafstufen (1 bis 6):
       1: Alleinstehender Erwachsener;
       2: Erwachsene in Partnerschaft;
@@ -135,9 +131,13 @@ regelsatz:
       5: Kinder 6 bis 13;
       6: Kinder 0 bis 5
     en: >-
-      Regelbedarfsstufe (1 to 6); 1: Single Adult;
-      2: Adults in a partner relationship; 3: Adults not in a partner relationship;
-      4: Children 14 to 17 years; 5: Children 6 to 13 years; 6: Children 0 to 5 years.
+      Regelbedarfsstufe (1 to 6):
+      1: Single Adult;
+      2: Adults in a partner relationship;
+      3: Adults not in a partner relationship;
+      4: Children 14 to 17 years;
+      5: Children 6 to 13 years
+      6: Children 0 to 5 years.
   unit: Euro
   reference_period: Month
   2005-01-01:
@@ -416,15 +416,16 @@ kindersofortzuschl:
     en: Instant surcharge for children for unemployment benefit
   description:
     de: >-
+      § 72 SGB II
       Kinder, Jugendliche  und junge Erwachsene, die Anspruch auf
       Arbeitslosengeld II oder Sozialgeld haben (Regelbedarfsstufen 3,4,5,6),
       erhalten einen Sofortzuschlag von 20€.
     en: >-
+      § 72 SGB II
       Children, adolescents and young  adults who are entitled to unemployment benefits
       or social benefits (Regelbedarfsstufen 3,4,5,6) receive an instant surcharge
       of 20 Euro.
   unit: Euro
-  reference: 72 SGB II
   2022-07-01:
     scalar: 20
   2025-01-01:
@@ -440,11 +441,7 @@ anteil_regelsatz_erwachsene:
   description:
     de: >-
       § 20 (3) SGB II, eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V
-      derselben Norm. 2005 bis 2010.
-    en: null
-  note:
-    de: >-
-      2005-2010 der Regelsatz für weitere Haushaltsmitglieder wurden als Anteil
+      derselben Norm. Der Regelsatz für weitere Haushaltsmitglieder wurde als Anteil
       des Standardsatzes bestimmt.
     en: null
   unit: Share
@@ -452,6 +449,8 @@ anteil_regelsatz_erwachsene:
     zwei_erwachsene: 0.9
     weitere_erwachsene: 0.8
     reference: Artikel 1 § 20 G. v. 24.12.2003 BGBl. I S. 2954.
+  2011-01-01:
+    note: Andere Berechnungsart
 anteil_regelsatz_kinder:
   name:
     de: Anteil am Regelsatz für Kinder
@@ -461,9 +460,6 @@ anteil_regelsatz_kinder:
       § 20 (3) SGB II, eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V derselben
       Norm. 2005 bis 2010: Der Regelsatz für Kinder wurden als Anteil des Standardsatzes
       bestimmt.
-    en: null
-  note:
-    de: null
     en: null
   unit: Share
   2005-01-01:
@@ -664,15 +660,16 @@ max_miete_pro_qm:
     en: Upper limit rent per square meter
   description:
     de: >-
+      § 22 SGB II
       Die Miete pro Quadratmeter darf einen angemessenen Betrag nicht übersteigen, um
       für ALG2 berechtigt zu sein. Diese Grenze ist nicht konkret im Gesetz
       festgehalten, sondern wird als Faustregel von den Arbeitsargenturen verwendet.
     en: >-
+      § 22 SGB II
       The rent per square meter must not exceed a reasonable amount in order to remain
       eligible for ALG2. This limit is not specifically laid down in the law, but is a
       rule of thumb used by the employment agencies.
   unit: Euro / Square Meter
-  reference: § 22 SGB II
   1984-01-01:
     max: 10
 berechtigte_wohnfläche_miete:

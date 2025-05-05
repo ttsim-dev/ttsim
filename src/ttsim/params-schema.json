@@ -85,8 +85,16 @@
             "additionalProperties": true
           }
         },
-        "required": ["name", "description"],
-        "additionalProperties": true
+        "additionalProperties": false,
+        "anyOf": [
+          { "required": ["name", "description"] },
+          {
+            "minProperties": 1,
+            "patternProperties": {
+              "^(19|20|21)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {}
+            }
+          }
+        ]
       }
     },
     "additionalProperties": false

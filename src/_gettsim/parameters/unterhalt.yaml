@@ -114,8 +114,8 @@ abzugsrate_kindergeld:
       the child receives the child benefit for a minor child, the other parent liable
       for child alimony payments can deduct half of the child benefit when calculating
       alimony.
-  reference: § 1612b BGB
   unit: Share
   2008-01-01:
     kind: 0.5
     erwachsener: 1
+    reference: § 1612b BGB
