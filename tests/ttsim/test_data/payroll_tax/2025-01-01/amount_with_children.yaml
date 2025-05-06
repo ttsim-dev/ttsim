@@ -55,7 +55,7 @@ outputs:
     - 0.0
     - 0.0
   payroll_tax__amount_y:
-    - 2940
+    - 2920.0
     - 0.0
     - 0.0
   payroll_tax__child_tax_credit__claim_of_child_y:
