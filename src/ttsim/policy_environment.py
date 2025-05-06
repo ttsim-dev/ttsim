@@ -522,7 +522,7 @@ def prep_one_params_spec(
         assert "updates_previous" not in current_spec, (
             "'updates_previous' cannot be specified for scalar parameters"
         )
-        out["value"] = current_spec["scalar"]
+        out["value"] = current_spec["value"]
     else:
         out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
     return out

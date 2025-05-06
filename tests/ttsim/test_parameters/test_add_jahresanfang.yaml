@@ -9,6 +9,6 @@ foo:
   type: scalar
   add_jahresanfang: true
   2020-01-01:
-    scalar: 1
+    value: 1
   2020-07-01:
-    scalar: 2
+    value: 2
