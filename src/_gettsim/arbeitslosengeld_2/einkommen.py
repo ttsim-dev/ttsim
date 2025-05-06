@@ -169,7 +169,7 @@ def bruttoeinkommen_m(
 
 
 @policy_function(end_date="2005-09-30")
-def nettoquote_m(
+def nettoquote(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__betrag_m_sn: float,
     solidaritätszuschlag__betrag_m_sn: float,
@@ -225,7 +225,7 @@ def nettoquote_m(
 )
 def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    nettoquote_m: float,
+    nettoquote: float,
     arbeitsl_geld_2_params: dict,
 ) -> float:
     """Share of income which remains to the individual.
@@ -234,8 +234,8 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    nettoquote_m
-        See :func:`nettoquote_m`.
+    nettoquote
+        See :func:`nettoquote`.
     arbeitsl_geld_2_params
         See params documentation :ref:`arbeitsl_geld_2_params <arbeitsl_geld_2_params>`.
 
@@ -248,7 +248,7 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
         thresholds=arbeitsl_geld_2_params["eink_anr_frei"]["thresholds"],
         rates=arbeitsl_geld_2_params["eink_anr_frei"]["rates"],
         intercepts=arbeitsl_geld_2_params["eink_anr_frei"]["intercepts"],
-        rates_multiplier=nettoquote_m,
+        rates_multiplier=nettoquote,
     )
     return out
 
