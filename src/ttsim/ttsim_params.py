@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -15,13 +14,12 @@ from pandas.api.types import (
 from ttsim.shared import to_datetime, validate_date_range
 
 if TYPE_CHECKING:
+    import datetime
+
     import pandas as pd
 
     from ttsim.config import numpy_or_jax as np
     from ttsim.typing import DashedISOString
-
-DEFAULT_START_DATE = datetime.date(1900, 1, 1)
-DEFAULT_END_DATE = datetime.date(2100, 12, 31)
 
 
 @dataclass(frozen=True)

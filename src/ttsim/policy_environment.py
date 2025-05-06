@@ -47,8 +47,8 @@ if TYPE_CHECKING:
         DashedISOString,
         FlatOrigParamSpecDict,
         FlatTTSIMObjectDict,
-        FlatTTSIMParamDict,
         NestedTTSIMObjectDict,
+        NestedTTSIMParamDict,
         OrigParamSpec,
     )
 
@@ -71,7 +71,7 @@ class PolicyEnvironment:
         self,
         raw_objects_tree: NestedTTSIMObjectDict,
         params: dict[str, Any] | None = None,
-        params_tree: FlatTTSIMParamDict | None = None,
+        params_tree: NestedTTSIMParamDict | None = None,
     ):
         # Check functions tree and convert functions to PolicyFunction if necessary
         assert_valid_ttsim_pytree(
@@ -248,9 +248,10 @@ def fail_because_of_clashes(
     """Fail because of clashes of names.
 
     Two scenarios are checked:
-    - Within TTSIMObjects, active periods of a leaf name could overlap
+    - Within TTSIMObjects, active periods of a path + leaf name could overlap
     - There may be name clashes involving parameters (parameters from multiple files
-      or parameters named in the same way as a leaf name).
+      that end up having the same path or parameters named in the same way as a path +
+      leaf name).
 
     Raises
     ------
@@ -439,7 +440,7 @@ def _fail_if_group_ids_are_outside_top_level_namespace(
 def active_ttsim_params_tree(
     orig_params_tree: FlatOrigParamSpecDict,
     date: datetime.date,
-) -> FlatTTSIMParamDict:
+) -> NestedTTSIMParamDict:
     """Parse the original yaml tree."""
     flat_params_tree = {}
     for orig_path, orig_params_spec in orig_params_tree.items():
@@ -693,7 +694,7 @@ def _parse_vorsorgepauschale_rentenv_anteil(
     return params
 
 
-def _parse_raw_parameter_group(
+def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
     raw_group_data: dict[str, Any],
     date: datetime.date,
     group: str,

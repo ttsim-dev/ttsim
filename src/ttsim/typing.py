@@ -59,5 +59,5 @@ if TYPE_CHECKING:
     FlatOrigParamSpecDict = dict[tuple[str, ...], OrigParamSpec]
     """A flat tree of yaml contents; the outermost key in a file is part of the path."""
 
-    NestedTTSIMParamsDict = Mapping[str, TTSIMObject | "NestedTTSIMParamsDict"]
+    NestedTTSIMParamDict = Mapping[str, TTSIMObject | "NestedTTSIMParamDict"]
     """A nested tree of TTSIM parameters."""
