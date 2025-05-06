@@ -34,9 +34,7 @@ def eink_st_params():
                 ],
             ]
         ),
-        "intercepts_at_lower_thresholds": np.array(
-            [0.0, 0.0, 965.5771, 14722.3012, 102656.0212]
-        ),
+        "intercepts": np.array([0.0, 0.0, 965.5771, 14722.3012, 102656.0212]),
     }
     return params
 
@@ -73,7 +71,7 @@ def test_get_piecewise_parameters_all_intercepts_supplied():
         parameter_dict=params_dict,
         parameter="test",
         func_type="linear",
-    )["intercepts_at_lower_thresholds"]
+    )["intercepts"]
     expected = numpy.array([0.27, 0.5, 0.8, 1])
 
     numpy.testing.assert_almost_equal(actual, expected, decimal=10)
@@ -87,7 +85,7 @@ def test_piecewise_polynomial(eink_st_params):
         x=x,
         thresholds=eink_st_params["thresholds"],
         rates=eink_st_params["rates"],
-        intercepts_at_lower_thresholds=eink_st_params["intercepts_at_lower_thresholds"],
+        intercepts=eink_st_params["intercepts"],
         rates_multiplier=2,
     )
     numpy.testing.assert_allclose(numpy.array(actual), expected, atol=0.01)

@@ -136,9 +136,7 @@ def anzurechnendes_einkommen_m(
             x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
             thresholds=einkommensanr_params["thresholds"],
             rates=einkommensanr_params["rates"],
-            intercepts_at_lower_thresholds=einkommensanr_params[
-                "intercepts_at_lower_thresholds"
-            ],
+            intercepts=einkommensanr_params["intercepts"],
         )
         * sozialversicherung__rente__altersrente__rentenwert
     )

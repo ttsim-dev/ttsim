@@ -9,7 +9,7 @@ def piecewise_polynomial(
     x: np.ndarray,
     thresholds: np.ndarray,
     rates: np.ndarray,
-    intercepts_at_lower_thresholds: np.ndarray,
+    intercepts: np.ndarray,
     rates_multiplier: np.ndarray = 1,
 ) -> np.ndarray:
     """Calculate value of the piecewise function at `x`. If the first interval begins
@@ -25,7 +25,7 @@ def piecewise_polynomial(
     coefficients : np.ndarray
             A two-dimensional array where columns are interval sections and rows
             correspond to the coefficient of the nth polynomial.
-    intercepts_at_lower_thresholds : np.ndarray
+    intercepts : np.ndarray
         The intercepts at the lower threshold of each interval.
     rates_multiplier : np.ndarray
                        Multiplier to create individual or scaled rates.
@@ -46,7 +46,7 @@ def piecewise_polynomial(
     )
     # Evaluate polynomial at X
     out = (
-        intercepts_at_lower_thresholds[selected_bin]
+        intercepts[selected_bin]
         + (
             ((increment_to_calc.reshape(-1, 1)) ** np.arange(1, order + 1, 1))
             * (coefficients)
@@ -106,7 +106,7 @@ def get_piecewise_parameters(
     piecewise_elements = {
         "thresholds": numpy.array(thresholds),
         "rates": rates,
-        "intercepts_at_lower_thresholds": intercepts,
+        "intercepts": intercepts,
     }
 
     return piecewise_elements
@@ -244,6 +244,7 @@ def _check_and_get_rates(
                     )
     else:
         raise ValueError(f"Piecewise function {func_type} not specified.")
+
     return rates
 
 
@@ -255,7 +256,7 @@ def _check_and_get_intercepts(
     rates: np.ndarray,
     keys: list[int],
 ) -> np.ndarray:
-    """Check and transfer raw intercepte data. If necessary create intercepts.
+    """Check and transfer raw intercept data. If necessary create intercepts.
 
     Transfer and check raw rates data, which needs to be specified in a
     piecewise_polynomial layout in the yaml file.
@@ -334,17 +335,17 @@ def _create_intercepts(
     -------
 
     """
-    intercepts_at_lower_thresholds = numpy.full_like(upper_thresholds, numpy.nan)
-    intercepts_at_lower_thresholds[0] = intercept_at_lowest_threshold
+    intercepts = numpy.full_like(upper_thresholds, numpy.nan)
+    intercepts[0] = intercept_at_lowest_threshold
     for i, up_thr in enumerate(upper_thresholds[:-1]):
-        intercepts_at_lower_thresholds[i + 1] = _calculate_one_intercept(
+        intercepts[i + 1] = _calculate_one_intercept(
             x=up_thr,
             lower_thresholds=lower_thresholds,
             upper_thresholds=upper_thresholds,
             rates=rates,
-            intercepts_at_lower_thresholds=intercepts_at_lower_thresholds,
+            intercepts=intercepts,
         )
-    return intercepts_at_lower_thresholds
+    return intercepts
 
 
 def _calculate_one_intercept(
@@ -352,7 +353,7 @@ def _calculate_one_intercept(
     lower_thresholds: np.ndarray,
     upper_thresholds: np.ndarray,
     rates: np.ndarray,
-    intercepts_at_lower_thresholds: np.ndarray,
+    intercepts: np.ndarray,
 ) -> float:
     """Calculate the intercepts from the raw data.
 
@@ -367,7 +368,7 @@ def _calculate_one_intercept(
     rates : numpy.ndarray
         A two-dimensional array where columns are interval sections and rows correspond
         to the nth polynomial.
-    intercepts_at_lower_thresholds : numpy.ndarray
+    intercepts : numpy.ndarray
         The intercepts at the lower threshold of each interval.
 
     Returns
@@ -381,7 +382,7 @@ def _calculate_one_intercept(
     if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or numpy.isnan(x):
         return numpy.nan
     index_interval = numpy.searchsorted(upper_thresholds, x, side="left")
-    intercept_interval = intercepts_at_lower_thresholds[index_interval]
+    intercept_interval = intercepts[index_interval]
 
     # Select threshold and calculate corresponding increment into interval
     lower_threshold_interval = lower_thresholds[index_interval]

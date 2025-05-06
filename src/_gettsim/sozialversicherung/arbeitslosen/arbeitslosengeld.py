@@ -67,7 +67,7 @@ def monate_verbleibender_anspruchsdauer(
         rates=np.array(
             [[0] * len(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"])]
         ),
-        intercepts_at_lower_thresholds=np.array(
+        intercepts=np.array(
             list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values())
         ),
     )
@@ -93,7 +93,7 @@ def monate_verbleibender_anspruchsdauer(
                 )
             ]
         ),
-        intercepts_at_lower_thresholds=np.array(
+        intercepts=np.array(
             list(
                 arbeitsl_geld_params["anspruchsdauer"][
                     "nach_versicherungspflichtigen_monaten"
@@ -212,9 +212,7 @@ def einkommen_vorjahr_proxy_m(
         prox_tax,
         thresholds=soli_st_params["soli_st"]["thresholds"],
         rates=soli_st_params["soli_st"]["rates"],
-        intercepts_at_lower_thresholds=soli_st_params["soli_st"][
-            "intercepts_at_lower_thresholds"
-        ],
+        intercepts=soli_st_params["soli_st"]["intercepts"],
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     out = max(out, 0.0)

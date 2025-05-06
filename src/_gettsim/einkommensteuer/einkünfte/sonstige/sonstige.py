@@ -34,7 +34,5 @@ def rente_ertragsanteil(
         x=sozialversicherung__rente__jahr_renteneintritt,
         thresholds=eink_st_params["rente_ertragsanteil"]["thresholds"],
         rates=eink_st_params["rente_ertragsanteil"]["rates"],
-        intercepts_at_lower_thresholds=eink_st_params["rente_ertragsanteil"][
-            "intercepts_at_lower_thresholds"
-        ],
+        intercepts=eink_st_params["rente_ertragsanteil"]["intercepts"],
     )

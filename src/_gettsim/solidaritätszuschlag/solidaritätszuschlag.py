@@ -118,9 +118,7 @@ def solidaritätszuschlagstarif(st_per_individual: float, soli_st_params: dict) 
         st_per_individual,
         thresholds=soli_st_params["soli_st"]["thresholds"],
         rates=soli_st_params["soli_st"]["rates"],
-        intercepts_at_lower_thresholds=soli_st_params["soli_st"][
-            "intercepts_at_lower_thresholds"
-        ],
+        intercepts=soli_st_params["soli_st"]["intercepts"],
     )
 
     return out

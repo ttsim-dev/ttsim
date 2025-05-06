@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
     import datetime
 
+    from ttsim.config import numpy_or_jax as np
+
 
 @dataclass(frozen=True)
 class TTSIMParam:
@@ -73,43 +75,20 @@ class ListTTSIMParam(TTSIMParam):
 
 
 @dataclass(frozen=True)
-class PiecewiseLinearTTSIMParam(TTSIMParam):
-    """
-    A TTSIM parameter directly read from a YAML file that specifies a piecewise linear
-    function.
-    """
+class PiecewisePolynomialParameters:
+    """The parameters expected by piecewise_polynomial"""
 
-    value: dict[
-        int,
-        dict[
-            Literal[
-                "lower_threshold",
-                "upper_threshold",
-                "intercept_at_lower_threshold",
-                "rate",
-            ],
-            float,
-        ],
-    ]
+    thresholds: np.ndarray
+    intercepts: np.ndarray
+    rates: np.ndarray
 
 
 @dataclass(frozen=True)
-class PiecewiseQuadraticTTSIMParam(TTSIMParam):
-    """
-    A TTSIM parameter directly read from a YAML file that specifies a piecewise
-    quadratic function.
+class PiecewisePolynomialTTSIMParam(TTSIMParam):
+    """A TTSIM parameter with its contents read and converted from a YAML file.
+
+    Its value is a PiecewisePolynomialParameters object, i.e., it contains the
+    parameters for calling `piecewise_polynomial`.
     """
 
-    value: dict[
-        int,
-        dict[
-            Literal[
-                "lower_threshold",
-                "upper_threshold",
-                "intercept_at_lower_threshold",
-                "rate_linear",
-                "rate_quadratic",
-            ],
-            float,
-        ],
-    ]
+    value: PiecewisePolynomialParameters

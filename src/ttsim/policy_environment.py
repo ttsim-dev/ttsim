@@ -33,8 +33,7 @@ from ttsim.ttsim_objects import (
 from ttsim.ttsim_params import (
     DictTTSIMParam,
     ListTTSIMParam,
-    PiecewiseLinearTTSIMParam,
-    PiecewiseQuadraticTTSIMParam,
+    PiecewisePolynomialTTSIMParam,
     ScalarTTSIMParam,
     TTSIMParam,
 )
@@ -482,10 +481,8 @@ def get_one_ttsim_param(
         return DictTTSIMParam(**cleaned_spec)
     elif spec["type"] == "list":
         return ListTTSIMParam(**cleaned_spec)
-    elif spec["type"] == "piecewise_linear":
-        return PiecewiseLinearTTSIMParam(**cleaned_spec)
-    elif spec["type"] == "piecewise_quadratic":
-        return PiecewiseQuadraticTTSIMParam(**cleaned_spec)
+    elif spec["type"].startswith("piecewise_"):
+        return PiecewisePolynomialTTSIMParam(**cleaned_spec)
     else:
         raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
@@ -646,9 +643,7 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
             jahr,
             thresholds=params["eink_st_abzuege"]["einführungsfaktor"]["thresholds"],
             rates=params["eink_st_abzuege"]["einführungsfaktor"]["rates"],
-            intercepts_at_lower_thresholds=params["eink_st_abzuege"][
-                "einführungsfaktor"
-            ]["intercepts_at_lower_thresholds"],
+            intercepts=params["eink_st_abzuege"]["einführungsfaktor"]["intercepts"],
         )
         params["eink_st_abzuege"][
             "einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005"
@@ -685,9 +680,9 @@ def _parse_vorsorgepauschale_rentenv_anteil(
             rates=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"][
                 "rates"
             ],
-            intercepts_at_lower_thresholds=params["eink_st_abzuege"][
-                "vorsorgepauschale_rentenv_anteil"
-            ]["intercepts_at_lower_thresholds"],
+            intercepts=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"][
+                "intercepts"
+            ],
         )
         params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"] = out
 

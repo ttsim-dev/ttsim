@@ -313,7 +313,7 @@ def freibetrag_m_bis_2015(
         behinderungsgrad,
         thresholds=np.array([*list(wohngeld_params["freibetrag_behinderung"]), np.inf]),
         rates=np.array([[0] * len(wohngeld_params["freibetrag_behinderung"])]),
-        intercepts_at_lower_thresholds=[
+        intercepts=[
             yearly_v / 12
             for yearly_v in wohngeld_params["freibetrag_behinderung"].values()
         ],

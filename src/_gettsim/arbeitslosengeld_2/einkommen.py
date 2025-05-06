@@ -247,9 +247,7 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
         x=einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
         thresholds=arbeitsl_geld_2_params["eink_anr_frei"]["thresholds"],
         rates=arbeitsl_geld_2_params["eink_anr_frei"]["rates"],
-        intercepts_at_lower_thresholds=arbeitsl_geld_2_params["eink_anr_frei"][
-            "intercepts_at_lower_thresholds"
-        ],
+        intercepts=arbeitsl_geld_2_params["eink_anr_frei"]["intercepts"],
         rates_multiplier=nettoquote_m,
     )
     return out
@@ -301,17 +299,13 @@ def anrechnungsfreies_einkommen_m(
             x=eink_erwerbstätigkeit,
             thresholds=arbeitsl_geld_2_params["eink_anr_frei_kinder"]["thresholds"],
             rates=arbeitsl_geld_2_params["eink_anr_frei_kinder"]["rates"],
-            intercepts_at_lower_thresholds=arbeitsl_geld_2_params[
-                "eink_anr_frei_kinder"
-            ]["intercepts_at_lower_thresholds"],
+            intercepts=arbeitsl_geld_2_params["eink_anr_frei_kinder"]["intercepts"],
         )
     else:
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
             thresholds=arbeitsl_geld_2_params["eink_anr_frei"]["thresholds"],
             rates=arbeitsl_geld_2_params["eink_anr_frei"]["rates"],
-            intercepts_at_lower_thresholds=arbeitsl_geld_2_params["eink_anr_frei"][
-                "intercepts_at_lower_thresholds"
-            ],
+            intercepts=arbeitsl_geld_2_params["eink_anr_frei"]["intercepts"],
         )
     return out
