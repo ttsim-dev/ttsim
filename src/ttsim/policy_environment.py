@@ -518,7 +518,7 @@ def prep_one_params_spec(
             f"'updates_previous' cannot be specified as the only element, found{spec}"
         )
         # Parameter ceased to exist
-    elif current_spec["type"] == "scalar":
+    elif spec["type"] == "scalar":
         assert "updates_previous" not in current_spec, (
             "'updates_previous' cannot be specified for scalar parameters"
         )
