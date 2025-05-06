@@ -7,10 +7,7 @@ from ttsim import policy_function
 
 
 @policy_function(end_date="1989-12-17", leaf_name="altersgrenze")
-def altersgrenze_ohne_staffelung(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """Full retirement age (FRA) for women.
 
     FRA is the same for each birth cohort.
@@ -29,8 +26,6 @@ def altersgrenze_ohne_staffelung(
     Full retirement age for women.
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"]
 
@@ -90,10 +85,7 @@ def altersgrenze_mit_staffelung(
 
 
 @policy_function(end_date="1989-12-17", leaf_name="altersgrenze_vorzeitig")
-def altersgrenze_vorzeitig_ohne_staffelung(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
 
     ERA does not depend on birth year and month.
@@ -112,9 +104,6 @@ def altersgrenze_vorzeitig_ohne_staffelung(
     Early retirement age
 
     """
-
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
 
@@ -177,10 +166,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
 
 
 @policy_function(start_date="1996-09-27", leaf_name="altersgrenze_vorzeitig")
-def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(ges_rente_params: dict) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
 
     ERA does not depend on birth year and month.
@@ -199,9 +185,6 @@ def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
     Early retirement age
 
     """
-
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
 
     return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
 
