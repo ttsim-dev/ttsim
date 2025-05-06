@@ -310,8 +310,18 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
-    "src.ttsim.*",
     "src._gettsim.*",
+]
+disable_error_code = [
+    "empty-body",  # Happens for all functions decorated with @policy_input
+    "type-arg" # TODO: Remove once we have proper types for parameters.
+]
+
+
+[[tool.mypy.overrides]]
+module = [
+    "src.ttsim.*",
+    # "src._gettsim.*",
 ]
 disable_error_code = [
     "empty-body",  # Happens for all functions decorated with @policy_input
