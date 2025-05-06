@@ -264,8 +264,6 @@ exclude = []
 
 # Files which should be ignored until we have rewritten them
 # =========================================================
-"src/_gettsim/synthetic.py" = ["F821"]
-"src/_gettsim_tests/test_synthetic.py" = ["F821", "E501"]
 "outdated_docs/**/*.ipynb" = ["T201"]
 "tests/ttsim/test_docs.py" = ["F821"]
 
@@ -290,8 +288,6 @@ explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = [
-    "src._gettsim.synthetic",
-    "src._gettsim_tests.test_synthetic",
     "src.ttsim.plot_dag",
     "tests.ttsim.test_docs",
 ]

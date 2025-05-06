@@ -17,7 +17,6 @@ from typing import Any
 
 import pytest
 
-from _gettsim.synthetic import create_synthetic_data
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     FunctionsAndColumnsOverlapWarning,
@@ -55,7 +54,6 @@ __all__ = [
     "PolicyFunction",
     "__version__",
     "compute_taxes_and_transfers",
-    "create_synthetic_data",
     "group_creation_function",
     "plot_dag",
     "policy_function",
