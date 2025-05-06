@@ -19,7 +19,6 @@ maximum:
     reference: Art. 1 G. v. 29.04.2019 BGBl. I S. 530.
     note: For 2020, Art. 2 Nr. 4 G. v. 29.04.2019 BGBl. I S. 530.
   2021-01-01:
-    reference: § 6a (2) BKGG
     note: Starting in 2021, the value is being calculated base on other parameters.
   2023-01-01:
     scalar: 250
@@ -52,15 +51,16 @@ kindersofortzuschl:
     en: Instant surcharge for children for additional child benefit
   description:
     de: >-
+      § 6a Abs. 2 Satz 4 BKGG
       Mit Einführung des Sofortzuschlags zum 1. Juli 2022
       steigt der Höchstbetrag im Kinderzuschlag um 20 Euro.
     en: >-
+      § 6a Abs. 2 Satz 4 BKGG
       With the introduction of the immediate supplement from July 1, 2022,
       the maximum amount in the child supplement increases by 20 Euro.
   unit: Euro
   2022-07-01:
     scalar: 20
-    reference: § 6a Abs. 2 Satz 4 BKGG
   2023-01-01:
     note: Included in maximum Kinderzuschlag since 2023.
 min_eink_paare:

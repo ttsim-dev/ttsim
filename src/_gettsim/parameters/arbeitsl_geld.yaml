@@ -139,13 +139,14 @@ anspruchsdauer:
     en: Period of ALG 1 eligibility.
   description:
     de: >-
+      § 147 Abs. 2 SGB III
       Dauer des Anspruchs auf ALG 1 richtet sich nach Alter und wie viele Monate
       eine Person versicherungsplichtig in den letzten 5 Jahren war.
     en: >-
+      § 147 Abs. 2 SGB III
       The lenght of ALG 1 eligibility depends on age and on how many months a
       person was subject to compulsory insurance
   1997-03-24:
-    reference: § 147 Abs. 2 SGB III
     nach_alter:
       0: 12
       50: 15

@@ -43,14 +43,15 @@ faktor_jüngste_altersgruppe:
     en: Factor for the advance child alimony of the youngest age group
   description:
     de: >-
+      § 1612a Abs. 1 BGB
       Faktor mit dem das sächliche Existenzminimum multipliziert wird um den
       Unterhaltsvorschuss für Kinder der jüngsten Altersgruppe zu berechnen.
     en: >-
+      § 1612a Abs. 1 BGB
       Factor by which the sächliche Existenzminimum is multiplied to calculate
       the advance child alimony for children of the youngest age group.
   2009-01-01:
     scalar: 0.87
-    reference: § 1612a Abs. 1 BGB
 anwendungsvorschrift:
   name:
     de: Unterhaltsvorschuss für Kinder entsprechend Anwendungsvorschriften

@@ -111,13 +111,14 @@ geschwisterbonus_altersgrenzen:
     en: Age limit for sibling bonus
   description:
     de: >-
+      § 2a BEEG
       Leben im Haushalt zwei Kinder unter 3 Jahren oder mehr als zwei unter 6 Jahren
       wird das Elterngeld um 10% (max. um 75€) erhöht.
     en: >-
+      § 2a BEEG
       If there are two children under the age of 3 or more than two under the age of 6
       living in the household, Parental allowance is increased by 10% (max. by €75).
   2007-01-01:
-    reference: § 2a BEEG
     3: 2
     6: 3
 geschwisterbonus_aufschlag:

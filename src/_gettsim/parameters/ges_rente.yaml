@@ -641,15 +641,16 @@ grundr_höchstwert:
     en: Maximum value of Entgeltpunkte for Grundrente
   description:
     de: >-
+      § 76g Abs. 4 S. 3, 4 SGB VI
       Konstante zur Bestimmung des Höchstwerts der durchschnittlichen Entgeltpunkte und
       des Effekts eines weiteren Monats an Grundrentenzeiten auf Höchstwert.
     en: >-
+      § 76g Abs. 4 S. 3, 4 SGB VI
       constant to determine Höchstwert of additional Entgeltpunkte and effect of an
       additional month of Grundrentenzeiten on Höchstwert.
   2021-01-01:
     base: 0.0334
     increment: 0.001389
-    reference: § 76g Abs. 4 S. 3, 4 SGB VI
 grundrente_zugangsfaktor_max:
   name:
     de: Zugangsfaktor bei Grundrente
@@ -665,17 +666,18 @@ grundrentenzeiten_monate:
     en: Months needed for basic pension
   description:
     de: >-
+      § 76g Abs. 4 S. 5,6 / Abs. 1 S. 1 SGB VI
       Minimal benötigte Grundrentenzeiten um zur Grundrente berechtigt zu sein und Zahl
       an Grundrentenzeiten ab der zusätzliche Monate an Grundrentenzeiten nicht
       berücksichtigt werden
     en: >-
+      § 76g Abs. 4 S. 5,6 / Abs. 1 S. 1 SGB VI
       Minimal number of Grundrentenzeiten required to be entitled to Grundrente and
       maximum number of months that are considered for Grundrente.
   unit: Month
   2021-01-01:
     min: 396
     max: 420
-    reference: § 76g Abs. 4 S. 5,6 / Abs. 1 S. 1 SGB VI
 grundr_einkommensanr_single:
   name:
     de: Einkommensanrechnung Grundrente für Personen ohne verheiratetem Partner
@@ -734,15 +736,16 @@ grundr_faktor_bonus:
     en: Bonus factor from basic pension
   description:
     de: >-
+      §§ 76g Abs. 4 S. 3, 4 SGB VI
       Faktor mit dem die durch die Grundrente zusätzlich erhaltenen Entgeltpunkte
       multipliziert werden.
     en: >-
+      §§ 76g Abs. 4 S. 3, 4 SGB VI
       The additional Entgeltpunkte from the basic pension are multiplied with this
       factor.
   unit: Factor
   2021-01-01:
     scalar: 0.875
-    reference: §§ 76g Abs. 4 S. 3, 4 SGB VI
 zugangsfaktor_veränderung_pro_jahr:
   name:
     de: Veränderung des Zugangsfaktors pro Jahr
@@ -1151,13 +1154,12 @@ first_birthyear_without_rente_für_frauen:
   description:
     de: >-
       Kohorte, ab der die Rente für Frauen abgeschafft ist.
-      § 237a SGB VI, Rentenreformgesetz 1999. BGBl. I 1997 S. 2998
       https://www.sozialgesetzbuch-sgb.de/sgbvi/237a.html
     en: >-
       Cohort from which pension for women has been abolished
-      § 237a SGB VI, Rentenreformgesetz 1999. BGBl. I 1997 S. 2998
       https://www.sozialgesetzbuch-sgb.de/sgbvi/237a.html
   1997-12-16:
+    reference: § 237a SGB VI, Rentenreformgesetz 1999. BGBl. I 1997 S. 2998
     scalar: 1952
 rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40:
   name:
@@ -1573,15 +1575,16 @@ altersgrenze_arbeitsl_abschlagsfrei:
     vertrauensschutz:
       name:
         de: >-
+          § 237 SGB VI Abs. 4
           Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
           (abschlagsfrei).
         en: >-
+          § 237 SGB VI Abs. 4
           Age threshold for pension for unemployed (without deductions) with
           Vertrauensschutz
       description: >-
         Increase of full retirement age according to old law (RRG 1992) for individuals
         covered under Vertrauensschutz.
-      reference: § 237 SGB VI Abs. 4
       max_birthyear_old_regime: 1940
       entry_age_old_regime: 60.0
       1941:
@@ -1701,15 +1704,16 @@ altersgrenze_arbeitsl_abschlagsfrei:
     vertrauensschutz:
       name:
         de: >-
+          § 237 SGB VI Abs. 4
           Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
           (abschlagsfrei).
         en: >-
+          § 237 SGB VI Abs. 4
           Age threshold for pension for unemployed (without deductions)
           with Vertrauensschutz
       description: >-
         Increase of full retirement age according to old law (RRG 1992) for individuals
         covered under Vertrauensschutz.
-      reference: § 237 SGB VI Abs. 4
       entry_age_old_regime: 60.0
       max_birthyear_old_regime: 1940
       1941:

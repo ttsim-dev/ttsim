@@ -8,7 +8,7 @@ einkommensgrenze:
     en: Income threshold for deduction-free parental leave benefit
   unit: Euro
   2004-02-09:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.209)
+    reference: 09.02.2004 BGBl. I S. 209
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
       Reduced income limit for children older than 6 months.
@@ -36,7 +36,7 @@ aufschlag_einkommen:
     en: Increase in the income threshold per additional child
   unit: Euro
   2004-02-09:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.209)
+    reference: 09.02.2004 BGBl. I S. 209
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     scalar: 3140
@@ -49,7 +49,7 @@ erziehungsgeld_satz:
     en: Amount of the parental leave benefit depending on the rate applied for
   unit: Euro
   2004-02-09:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 § 5 (p.208)
+    reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     regelsatz: 300
@@ -71,7 +71,7 @@ abschlag_faktor:
       the product is deducted from the parental leave benefit entitlement accordingly.
   unit: null
   2004-02-09:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
+    reference: § 5 G. v. 09.02.2004 BGBl. I S. 207
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     scalar: 0.052
@@ -88,7 +88,7 @@ pauschal_abzug_auf_einkommen:
       relevant income
   unit: null
   2004-02-09:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 § 6 (p.209)
+    reference: § 5 G. v. 09.02.2004 BGBl. I S. 209
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     scalar: 0.76
@@ -103,7 +103,7 @@ arbeitsstunden_w_grenze:
       Limit of weekly working hours up to which parental leave benefit is paid
   unit: null
   2004-02-09:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 § 15 (p.211)
+    reference: § 5 G. v. 09.02.2004 BGBl. I S. 211
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     scalar: 30
@@ -117,7 +117,7 @@ end_age_m_regelsatz:
     en: >-
       Age of the child in months up to which the Regelsatz can be claimed.
   2004-01-01:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
+    reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
     scalar: 24
 end_age_m_budgetsatz:
   name:
@@ -129,7 +129,7 @@ end_age_m_budgetsatz:
     en: >-
       Age of the child in months up to which the Budgetsatz can be claimed.
   2004-01-01:
-    reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
+    reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
     scalar: 12
 abolishment_cohort:
   name:
@@ -141,5 +141,5 @@ abolishment_cohort:
     en: >-
       Erziehungsgeld is replaced by Elterngeld.
   2006-12-11:
-    reference: Bundesgesetzblatt Jahrgang 2006 Teil I Nr. 56 Art. 3
+    reference: Art. 3 G. v. 5.12.2006 BGBl. I S. 2748
     scalar: 2006

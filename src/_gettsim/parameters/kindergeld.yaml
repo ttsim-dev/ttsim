@@ -5,10 +5,12 @@ altersgrenze:
     en: Age at which child benefit is no longer paid.
   description:
     de: >-
+      § 32 Art. 2-4 EStG.
       Für minderjährige Kinder besteht ohne Bedingungen ein Anspruch auf Kindergeld.
       Auch für erwachsene Kinder kann bis zu einer Altersgrenze unter bestimmten
       Bedingungen ein Anspruch auf Kindergeld bestehen.
     en: >-
+      § 32 Art. 2-4 EStG.
       Underage children are entitled to child benefit without any conditions. Also adult
       children up to a specified age are entitled to child benefit under certain
       conditions.
@@ -16,7 +18,6 @@ altersgrenze:
   1984-01-01:
     mit_bedingungen: 27
     ohne_bedingungen: 18
-    reference: § 32 Art. 2-4 EStG.
   2007-01-01:
     mit_bedingungen: 25
     ohne_bedingungen: 18

@@ -366,34 +366,36 @@ altersentlastungsbetrag_altersgrenze:
     en: Age limit for old-age relief amount
   description:
     de: >-
+      § 24a Art. 3 EStG
       Der Altersentlastungsbetrag wird einem Steuerpflichtigen gewährt, der vor dem
       Beginn des Kalenderjahres, in dem er sein Einkommen bezogen hat, das 64.
       Lebensjahr vollendet hatte.
     en: >-
+      § 24a Art. 3 EStG
       The old-age relief amount is granted to a taxpayer who, before the start of the
       calendar year in which he received his income, had reached the age of 64.
   1984-01-01:
     scalar: 64
-    reference: § 24a Art. 3 EStG
 einführungsfaktor:
   name:
     de: Einführungsfaktor für Altersvorsorge Aufwendung
     en: Introductory factor for pension expense
   description:
     de: >-
+      § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
       In den Jahren 2005-2022 stieg der Anteil der abzugsfähigen Beiträge von 60% in
       2005 jährlich um 2 Prozentpunkte an bis 94% in 2022 erreicht wurden. Eigentlich
       war geplant, dass der Parameter weiter mit dieser Rate steigt, bis ab 2025 100%
       erreicht sind. Abweichend von diesem Plan, wurden die abzugfähigen Beiträge schon
       2023 auf 100% gesetzt.
     en: >-
+      § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
       In the years 2005-2022, the share of deductible contributions increased by 2
       percentage points each year from 60% in 2005 to 94% in 2022. It was planned that
       100% are reached in 2025. Deviating from this plan, the deductible contributions
       were set to 100% already in 2023.
   type: piecewise_linear
   2005-01-01:
-    reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
     0:
       lower_threshold: -inf
       rate_linear: 0
@@ -406,6 +408,7 @@ einführungsfaktor:
       upper_threshold: inf
       rate_linear: 0
   2023-01-01:
+    reference: G. v. 20.12.2022 BGBl. I S. 2294.
     0:
       lower_threshold: -inf
       rate_linear: 0
@@ -420,7 +423,6 @@ einführungsfaktor:
     3:
       upper_threshold: inf
       rate_linear: 0
-    reference: G. v. 20.12.2022 BGBl. I S. 2294.
 alleinerziehendenfreibetrag:
   name:
     de: Entlastungsbetrag für Alleinerziehende
