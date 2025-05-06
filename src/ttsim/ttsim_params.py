@@ -70,7 +70,14 @@ class DictTTSIMParam(TTSIMParam):
     A TTSIM parameter directly read from a YAML file that is a flat dictionary.
     """
 
-    value: dict[str | int, float | int | bool]
+    value: (
+        dict[str, int]
+        | dict[str, float]
+        | dict[str, bool]
+        | dict[int, int]
+        | dict[int, float]
+        | dict[int, bool]
+    )
 
 
 @dataclass(frozen=True)
@@ -79,7 +86,7 @@ class ListTTSIMParam(TTSIMParam):
     A TTSIM parameter directly read from a YAML file that is a list.
     """
 
-    value: list[float | int | bool]
+    value: list[float] | list[int] | list[bool]
 
 
 def _convert_and_validate_dates(

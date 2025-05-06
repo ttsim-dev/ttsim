@@ -224,9 +224,9 @@ def set_up_policy_environment(
             date, params
         )
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
-        params_tree = None
+        params_tree = {}
     else:
-        params = None
+        params = {}
         params_tree = active_ttsim_params_tree(
             orig_params_tree=_orig_yaml_tree, date=date
         )
@@ -439,35 +439,41 @@ def active_ttsim_params_tree(
     date: datetime.date,
 ) -> FlatTTSIMParamDict:
     """Parse the original yaml tree."""
-    flat_params_tree = {
-        (*orig_path[:-2], orig_path[-1]): parse_one_params_spec(
-            leaf_name=orig_path[-1],
+    flat_params_tree = {}
+    for orig_path, orig_params_spec in orig_params_tree.items():
+        path_to_keep = orig_path[:-2]
+        leaf_name = orig_path[-1]
+        param = get_one_ttsim_param(
+            leaf_name=leaf_name,
             spec=orig_params_spec,
             date=date,
         )
-        for orig_path, orig_params_spec in orig_params_tree.items()
-    }
-    for orig_path, orig_params_spec in orig_params_tree.items():
+        if param is not None:
+            flat_params_tree[(*path_to_keep, leaf_name)] = param
         if orig_params_spec.get("add_jahresanfang", False):
-            date_jahresanfang = date.replace(month=1, day=1)
-            flat_params_tree[(*orig_path[:-2], f"{orig_path[-1]}_jahresanfang")] = (
-                parse_one_params_spec(
-                    leaf_name=f"{orig_path[-1]}_jahresanfang",
-                    spec=orig_params_spec,
-                    date=date_jahresanfang,
-                )
+            date_jan1 = date.replace(month=1, day=1)
+            leaf_name_jan1 = f"{leaf_name}_jahresanfang"
+            param = get_one_ttsim_param(
+                leaf_name=leaf_name_jan1,
+                spec=orig_params_spec,
+                date=date_jan1,
             )
+            if param is not None:
+                flat_params_tree[(*path_to_keep, leaf_name_jan1)] = param
     return dt.unflatten_from_tree_paths(flat_params_tree)
 
 
-def parse_one_params_spec(
+def get_one_ttsim_param(
     leaf_name: str,
     spec: OrigParamSpec,
     date: datetime.date,
 ) -> TTSIMParam:
     """Parse the original specification found in the yaml tree."""
     cleaned_spec = prep_one_params_spec(leaf_name=leaf_name, spec=spec, date=date)
-    if spec["type"] == "scalar":
+
+    if cleaned_spec is None:
+        return None
+    elif spec["type"] == "scalar":
         return ScalarTTSIMParam(**cleaned_spec)
     elif spec["type"] == "dict":
         return DictTTSIMParam(**cleaned_spec)
@@ -483,15 +489,14 @@ def parse_one_params_spec(
 
 def prep_one_params_spec(
     leaf_name: str, spec: OrigParamSpec, date: datetime.date
-) -> OrigParamSpec:
+) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a TTSIMParam."""
-    policy_dates = numpy.array(
-        sorted(key for key in spec if isinstance(key, datetime.date))
-    )
-    idx = numpy.searchsorted(policy_dates, date, side="right")
-    assert idx > 0, f"No policy date ≤ {date} found for {spec}"
+    policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
+    idx = numpy.searchsorted(policy_dates, date, side="right")  # type: ignore[call-overload]
+    if idx == 0:
+        return None
 
-    out = {}
+    out: dict[str, Any] = {}
     out["leaf_name"] = leaf_name
     out["start_date"] = policy_dates[idx - 1]
     out["end_date"] = (
@@ -503,13 +508,23 @@ def prep_one_params_spec(
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
-    if spec["type"] == "scalar":
-        out["value"] = spec[policy_dates[idx - 1]]["scalar"]
+    current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
+    out["note"] = current_spec.pop("note", None)
+    out["reference"] = current_spec.pop("reference", None)
+    if len(current_spec) == 0:
+        return None
+    elif len(current_spec) == 1 and "updates_previous" in current_spec:
+        raise ValueError(
+            f"'updates_previous' cannot be specified as the only element, found{spec}"
+        )
+        # Parameter ceased to exist
+    elif current_spec["type"] == "scalar":
+        assert "updates_previous" not in current_spec, (
+            "'updates_previous' cannot be specified for scalar parameters"
+        )
+        out["value"] = current_spec["scalar"]
     else:
         out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
-    # Do this only after _get_params_contents, because the former may have old notes.
-    out["note"] = spec.get("note", None)
-    out["reference"] = spec.get("reference", None)
     return out
 
 
@@ -518,7 +533,8 @@ def _get_params_contents(
 ) -> dict[str | int, Any]:
     if relevant_specs[-1].get("updates_previous", False):
         assert len(relevant_specs) > 1, (
-            f"updates_previous cannot be missing in the first spec, found {relevant_specs}"
+            "'updates_previous' cannot be missing in the initial spec, found "
+            f"{relevant_specs}"
         )
         params = copy.deepcopy(_get_params_contents(relevant_specs[:-1]))
         params.update(relevant_specs[-1])
@@ -764,7 +780,7 @@ def _parse_raw_parameter_group(
                             parameters=[param],
                         )[param]
                     elif "." in policy_in_place["deviation_from"]:
-                        assert (
+                        assert (  # noqa: PT018
                             group == "arbeitsl_geld_2"
                             and param == "eink_anr_frei_kinder"
                         )

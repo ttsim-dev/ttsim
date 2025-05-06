@@ -33,11 +33,11 @@ def number_of_individuals_fam(fam_id: int) -> int:
 def requirement_fulfilled_fam_not_considering_children(
     housing_benefits__income__amount_m_fam: float,
     number_of_adults_fam: int,
-    requirements: dict[str, int | float],
+    subsistence_income_level: dict[str, float],
 ) -> bool:
     return (
         housing_benefits__income__amount_m_fam
-        < requirements["subsistence_income_per_spouse_m"] * number_of_adults_fam
+        < subsistence_income_level["per_spouse_m"] * number_of_adults_fam
     )
 
 
@@ -48,10 +48,10 @@ def requirement_fulfilled_fam_not_considering_children(
 def requirement_fulfilled_fam_considering_children(
     housing_benefits__income__amount_m_fam: float,
     number_of_family_members_considered_fam: int,
-    requirements: dict[str, int | float],
+    subsistence_income_level: dict[str, float],
 ) -> bool:
     return housing_benefits__income__amount_m_fam < (
-        requirements["subsistence_income_per_individual_m"]
+        subsistence_income_level["per_individual_m"]
         * number_of_family_members_considered_fam
     )
 
@@ -59,12 +59,9 @@ def requirement_fulfilled_fam_considering_children(
 @policy_function(start_date="2020-01-01", vectorization_strategy="vectorize")
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,
-    requirements: dict[str, int | float],
+    max_number_of_family_members: int,
 ) -> int:
-    return min(
-        number_of_individuals_fam,
-        requirements["max_number_of_family_members"],
-    )
+    return min(number_of_individuals_fam, max_number_of_family_members)
 
 
 @policy_function(vectorization_strategy="vectorize")
