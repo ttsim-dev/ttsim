@@ -1,17 +1,12 @@
 ---
-schedule:
+lump_sum_deduction_y:
   name:
-    de: Einkommensteuertarif
-    en: Income tax schedule
+    de: Lohnsteuerpauschalabzug
+    en: Lump sum deduction for payroll tax
   description:
-    de: Name ergibt wenig Sinn.
-    en: The name makes little sense.
-  type: dict
+    de: Lohnsteuerpauschalabzug
+    en: Lump sum deduction for payroll tax
+  type: scalar
+  reference_period: Year
   1900-01-01:
-    lump_sum_deduction_y: 100.0
-    rate: 0.3
-    reduced_rate: 0.15
-  2021-01-01:
-    updates_previous: true
-    rate: 0.3
-    reduced_rate: 0.15
+    value: 100.0

@@ -1,24 +1,57 @@
 from ttsim import (
     AggType,
     agg_by_group_function,
+    piecewise_polynomial,
     policy_function,
 )
 
 
 @policy_function(vectorization_strategy="vectorize")
 def amount_y(
-    income__amount_y: float,
+    amount_standard_y: float,
+    amount_reduced_y: float,
     parent_is_noble_fam: bool,
     wealth_fam: float,
     wealth_threshold_for_reduced_tax_rate: float,
-    income__schedule: dict[str, float],
 ) -> float:
     if parent_is_noble_fam:
         return 0.0
     elif wealth_fam >= wealth_threshold_for_reduced_tax_rate:
-        return income__amount_y * income__schedule["reduced_rate"]
+        return amount_standard_y
     else:
-        return income__amount_y * income__schedule["rate"]
+        return amount_reduced_y
+
+
+@policy_function(vectorization_strategy="vectorize")
+def amount_standard_y(
+    income__amount_y: float,
+    tax_schedule_standard: dict[str, float],
+) -> float:
+    """Payroll tax amount for the standard tax schedule."""
+    return piecewise_polynomial(
+        x=income__amount_y,
+        thresholds=tax_schedule_standard["thresholds"],
+        rates=tax_schedule_standard["rates"],
+        intercepts_at_lower_thresholds=tax_schedule_standard[
+            "intercepts_at_lower_thresholds"
+        ],
+    )
+
+
+@policy_function(vectorization_strategy="vectorize")
+def amount_reduced_y(
+    income__amount_y: float,
+    tax_schedule_reduced: dict[str, float],
+) -> float:
+    """Payroll tax amount for the reduced tax schedule."""
+    return piecewise_polynomial(
+        x=income__amount_y,
+        thresholds=tax_schedule_reduced["thresholds"],
+        rates=tax_schedule_reduced["rates"],
+        intercepts_at_lower_thresholds=tax_schedule_reduced[
+            "intercepts_at_lower_thresholds"
+        ],
+    )
 
 
 @agg_by_group_function(agg_type=AggType.ANY)
