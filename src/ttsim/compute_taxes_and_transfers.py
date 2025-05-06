@@ -41,6 +41,7 @@ if TYPE_CHECKING:
         NestedDataDict,
         NestedTargetDict,
         NestedTTSIMObjectDict,
+        NestedTTSIMParamDict,
         QualNameDataDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
@@ -443,7 +444,9 @@ def _partial_params_tree_to_functions(
     processed_functions = {}
     for name, function in functions.items():
         partial_params = {
-            arg: p[arg] for arg in get_names_of_required_arguments(function) if arg in p
+            arg: p[arg].value
+            for arg in get_names_of_required_arguments(function)
+            if arg in p
         }
         if partial_params:
             processed_functions[name] = functools.partial(function, **partial_params)

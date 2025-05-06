@@ -1,6 +1,5 @@
 from ttsim import (
     AggType,
-    DictTTSIMParam,
     agg_by_p_id_function,
     join,
     policy_function,
@@ -19,10 +18,10 @@ def amount_y(
 @policy_function(vectorization_strategy="vectorize")
 def claim_of_child_y(
     child_eligible: bool,
-    schedule: DictTTSIMParam,
+    schedule: dict[str, float],
 ) -> float:
     if child_eligible:
-        return schedule.value["child_amount_y"]
+        return schedule["child_amount_y"]
     else:
         return 0
 
@@ -30,10 +29,10 @@ def claim_of_child_y(
 @policy_function(vectorization_strategy="vectorize")
 def child_eligible(
     age: int,
-    schedule: DictTTSIMParam,
+    schedule: dict[str, float],
     in_same_household_as_recipient: bool,
 ) -> bool:
-    return age <= schedule.value["max_age"] and in_same_household_as_recipient
+    return age <= schedule["max_age"] and in_same_household_as_recipient
 
 
 @policy_function(vectorization_strategy="not_required")

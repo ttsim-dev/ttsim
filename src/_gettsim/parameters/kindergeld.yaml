@@ -184,7 +184,6 @@ einkommensgrenze:
     note: Originalwert 12000 DM.
   1999-01-01:
     scalar: 6657
-    referemce: null
   2000-01-01:
     scalar: 6902
   2001-01-01:
@@ -197,7 +196,9 @@ einkommensgrenze:
   2009-01-01:
     scalar: 8004
     reference: Art. 1 G. v. 16.07.2009 BGBl. I S. 1959
-    note: Zurückdatiert auf das volle Kalenderjahr 2009.
+    note: Zurückdatiert auf das volle Kalenderjahr 2009
+  2012-01-01:
+    note: Revoked in favour of stundengrenze
 stundengrenze:
   name:
     de: Wochenstundengrenze für Kindergeldanspruch
