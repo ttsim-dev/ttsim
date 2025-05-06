@@ -20,7 +20,7 @@ max_number_of_family_members:
     en: Only relevant after 2020 reform.
   type: scalar
   2020-01-01:
-    scalar: 4
+    value: 4
 max_age_children:
   name:
     de: Maximalalter der Kinder
@@ -30,4 +30,4 @@ max_age_children:
     en: In Middle Earth nothing happens, ever.
   type: scalar
   1900-01-01:
-    scalar: 18
+    value: 18

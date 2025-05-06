@@ -8,4 +8,4 @@ assistance_rate:
     en: Still nothing happens in Middle Earth.
   type: scalar
   1900-01-01:
-    scalar: 0.5
+    value: 0.5

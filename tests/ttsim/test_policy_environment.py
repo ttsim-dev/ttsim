@@ -323,7 +323,7 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            {("c", "g"): {datetime.date(2023, 1, 1): {"scalar": 1}}},
+            {("c", "g"): {datetime.date(2023, 1, 1): {"value": 1}}},
         ),
         # Same submodule, overlapping periods, different leaf names so no name clashes.
         (
@@ -339,7 +339,7 @@ def identity(x):
                     leaf_name="g",
                 )(identity),
             },
-            {("x", "c", "h"): {datetime.date(2023, 1, 1): {"scalar": 2}}},
+            {("x", "c", "h"): {datetime.date(2023, 1, 1): {"value": 2}}},
         ),
         # Different submodules, no overlapping periods, no name clashes.
         (
@@ -353,7 +353,7 @@ def identity(x):
                     end_date="2023-02-28",
                 )(identity),
             },
-            {("x", "c", "g"): {datetime.date(2023, 1, 1): {"scalar": 3}}},
+            {("x", "c", "g"): {datetime.date(2023, 1, 1): {"value": 3}}},
         ),
         # Different paths, overlapping periods, same names but no clashes.
         (
@@ -369,14 +369,14 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            {("z", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 4}}},
+            {("z", "a", "f"): {datetime.date(2023, 1, 1): {"value": 4}}},
         ),
         # Different yaml files, no name clashes because of different names.
         (
             {},
             {
-                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 5}},
-                ("x", "b", "g"): {datetime.date(2023, 1, 1): {"scalar": 6}},
+                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"value": 5}},
+                ("x", "b", "g"): {datetime.date(2023, 1, 1): {"value": 6}},
             },
         ),
     ],
@@ -486,7 +486,7 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            {("c", "f"): {datetime.date(2023, 1, 1): {"scalar": 1}}},
+            {("c", "f"): {datetime.date(2023, 1, 1): {"value": 1}}},
         ),
         # Same paths, no overlapping periods, name clashes leaf name / yaml.
         (
@@ -502,14 +502,14 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            {("x", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 2}}},
+            {("x", "a", "f"): {datetime.date(2023, 1, 1): {"value": 2}}},
         ),
         # Same paths, name clashes within params from different yaml files.
         (
             {},
             {
-                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"scalar": 3}},
-                ("x", "b", "f"): {datetime.date(2023, 1, 1): {"scalar": 4}},
+                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"value": 3}},
+                ("x", "b", "f"): {datetime.date(2023, 1, 1): {"value": 4}},
             },
         ),
     ],

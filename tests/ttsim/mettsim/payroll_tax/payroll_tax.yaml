@@ -8,4 +8,4 @@ wealth_threshold_for_reduced_tax_rate:
     en: The reverse naming would seem more sensible.
   type: scalar
   1900-01-01:
-    scalar: 50000
+    value: 50000
