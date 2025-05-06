@@ -8,10 +8,7 @@ from ttsim import policy_function
     end_date="2014-06-22",
     leaf_name="altersgrenze",
 )
-def altersgrenze_ohne_staffelung(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """
     Full retirement age (FRA) for very long term insured.
 
@@ -34,9 +31,6 @@ def altersgrenze_ohne_staffelung(
     Full retirement age (without deductions) for very long term insured.
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-
     return ges_rente_params["altersgrenze_besond_langj_versicherte"]
 
 

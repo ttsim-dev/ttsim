@@ -793,10 +793,8 @@ def test_user_provided_aggregate_by_p_id_specs(
     expected,
     minimal_input_data_shared_fam,
 ):
-    # TODO(@MImmesberger): Remove fake dependency.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
     @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
-    def source(p_id: int) -> int:  # noqa: ARG001
+    def source() -> int:
         return np.array([100, 200, 300])
 
     raw_objects_tree = merge_trees(
