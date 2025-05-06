@@ -127,7 +127,7 @@ def test_fail_if_invalid_access_different_date_old():
             (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
                 encoding="utf-8"
             ),
-            Loader=yaml.CLoader,
+            Loader=yaml.CLoader,  # noqa: S506
         )
         _parse_raw_parameter_group(
             raw_group_data=raw_group_data,
@@ -143,7 +143,7 @@ def test_access_different_date_vorjahr_old():
         (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
             encoding="utf-8"
         ),
-        Loader=yaml.CLoader,
+        Loader=yaml.CLoader,  # noqa: S506
     )
     params = _parse_raw_parameter_group(
         raw_group_data=raw_group_data,
@@ -161,7 +161,7 @@ def test_access_different_date_jahresanfang_old():
         (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
             encoding="utf-8"
         ),
-        Loader=yaml.CLoader,
+        Loader=yaml.CLoader,  # noqa: S506
     )
     params = _parse_raw_parameter_group(
         raw_group_data=raw_group_data,
