@@ -89,6 +89,49 @@ class ListTTSIMParam(TTSIMParam):
     value: list[float] | list[int] | list[bool]
 
 
+@dataclass(frozen=True)
+class PiecewiseLinearTTSIMParam(TTSIMParam):
+    """
+    A TTSIM parameter directly read from a YAML file that specifies a piecewise linear
+    function.
+    """
+
+    value: dict[
+        int,
+        dict[
+            Literal[
+                "lower_threshold",
+                "upper_threshold",
+                "rate",
+                "intercept_at_lower_threshold",
+            ],
+            float,
+        ],
+    ]
+
+
+@dataclass(frozen=True)
+class PiecewiseQuadraticTTSIMParam(TTSIMParam):
+    """
+    A TTSIM parameter directly read from a YAML file that specifies a piecewise
+    quadratic function.
+    """
+
+    value: dict[
+        int,
+        dict[
+            Literal[
+                "lower_threshold",
+                "upper_threshold",
+                "rate_linear",
+                "rate_quadratic",
+                "intercept_at_lower_threshold",
+            ],
+            float,
+        ],
+    ]
+
+
 def _convert_and_validate_dates(
     start_date: datetime.date | DashedISOString,
     end_date: datetime.date | DashedISOString,

@@ -35,8 +35,8 @@ from ttsim.ttsim_objects import (
 from ttsim.ttsim_params import (
     DictTTSIMParam,
     ListTTSIMParam,
-    # PiecewiseLinearTTSIMParam,
-    # PiecewiseQuadraticTTSIMParam,
+    PiecewiseLinearTTSIMParam,
+    PiecewiseQuadraticTTSIMParam,
     ScalarTTSIMParam,
     TTSIMParam,
 )
@@ -50,8 +50,8 @@ __all__ = [
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
     "ListTTSIMParam",
-    # "PiecewiseLinearTTSIMParam",
-    # "PiecewiseQuadraticTTSIMParam",
+    "PiecewiseLinearTTSIMParam",
+    "PiecewiseQuadraticTTSIMParam",
     "PolicyEnvironment",
     "PolicyFunction",
     "PolicyInput",

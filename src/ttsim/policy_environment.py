@@ -33,6 +33,8 @@ from ttsim.ttsim_objects import (
 from ttsim.ttsim_params import (
     DictTTSIMParam,
     ListTTSIMParam,
+    PiecewiseLinearTTSIMParam,
+    PiecewiseQuadraticTTSIMParam,
     ScalarTTSIMParam,
     TTSIMParam,
 )
