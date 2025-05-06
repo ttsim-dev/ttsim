@@ -208,7 +208,7 @@ def set_up_policy_environment(
         for group in internal_params_groups:
             raw_group_data = yaml.load(
                 (root / "parameters" / f"{group}.yaml").read_text(encoding="utf-8"),
-                Loader=yaml.CLoader,
+                Loader=yaml.CLoader,  # noqa: S506
             )
             params_one_group = _parse_raw_parameter_group(
                 raw_group_data=raw_group_data,
