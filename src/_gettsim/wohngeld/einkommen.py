@@ -2,12 +2,10 @@
 
 from ttsim import (
     AggType,
-    PiecewisePolynomialParameters,
     agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
 )
-from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -311,17 +309,12 @@ def freibetrag_m_bis_2015(
 
     """
 
-    parameters = PiecewisePolynomialParameters(
-        thresholds=np.array([*list(wohngeld_params["freibetrag_behinderung"]), np.inf]),
-        rates=np.array([[0] * len(wohngeld_params["freibetrag_behinderung"])]),
-        intercepts=[
-            yearly_v / 12
-            for yearly_v in wohngeld_params["freibetrag_behinderung"].values()
-        ],
-    )
-    freibetrag_behinderung_m = piecewise_polynomial(
-        behinderungsgrad,
-        parameters=parameters,
+    freibetrag_bei_behinderung_m = (
+        piecewise_polynomial(
+            behinderungsgrad,
+            parameters=wohngeld_params["freibetrag_bei_behinderung_gestaffelt_y"],
+        )
+        / 12
     )
 
     # Subtraction for single parents and working children
@@ -338,7 +331,7 @@ def freibetrag_m_bis_2015(
         )
     else:
         freibetrag_kinder_m = 0.0
-    return freibetrag_behinderung_m + freibetrag_kinder_m
+    return freibetrag_bei_behinderung_m + freibetrag_kinder_m
 
 
 @policy_function(start_date="2016-01-01", leaf_name="freibetrag_m")
@@ -369,8 +362,10 @@ def freibetrag_m_ab_2016(
     -------
 
     """
-    freibetrag_behinderung_m = (
-        wohngeld_params["freibetrag_behinderung"] / 12 if behinderungsgrad > 0 else 0
+    freibetrag_bei_behinderung_m = (
+        wohngeld_params["freibetrag_bei_behinderung_pauschal_y"] / 12
+        if behinderungsgrad > 0
+        else 0
     )
 
     if ist_kind_mit_erwerbseinkommen:
@@ -383,7 +378,7 @@ def freibetrag_m_ab_2016(
     else:
         freibetrag_kinder_m = 0.0
 
-    return freibetrag_behinderung_m + freibetrag_kinder_m
+    return freibetrag_bei_behinderung_m + freibetrag_kinder_m
 
 
 def einkommen(

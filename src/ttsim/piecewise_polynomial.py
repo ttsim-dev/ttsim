@@ -4,7 +4,16 @@ from typing import Literal, get_args
 import numpy
 
 from ttsim.config import numpy_or_jax as np
-from ttsim.ttsim_params import PiecewisePolynomialParameters
+
+
+@dataclass(frozen=True)
+class PiecewisePolynomialParameters:
+    """The parameters expected by piecewise_polynomial"""
+
+    thresholds: np.ndarray
+    intercepts: np.ndarray
+    rates: np.ndarray
+
 
 FUNC_TYPES = Literal[
     "piecewise_constant",

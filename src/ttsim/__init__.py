@@ -5,7 +5,10 @@ from ttsim.compute_taxes_and_transfers import (
     combine_policy_functions_and_derived_functions,
     compute_taxes_and_transfers,
 )
-from ttsim.piecewise_polynomial import piecewise_polynomial
+from ttsim.piecewise_polynomial import (
+    PiecewisePolynomialParameters,
+    piecewise_polynomial,
+)
 from ttsim.plot_dag import plot_dag
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.prepare_data import create_data_tree_from_df
@@ -35,7 +38,6 @@ from ttsim.ttsim_objects import (
 from ttsim.ttsim_params import (
     DictTTSIMParam,
     ListTTSIMParam,
-    PiecewisePolynomialParameters,
     PiecewisePolynomialTTSIMParam,
     ScalarTTSIMParam,
     TTSIMParam,

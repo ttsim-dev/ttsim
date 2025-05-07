@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim.config import numpy_or_jax as np
+    from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
 
 
 @dataclass(frozen=True)
@@ -72,15 +72,6 @@ class ListTTSIMParam(TTSIMParam):
     """
 
     value: list[float] | list[int] | list[bool]
-
-
-@dataclass(frozen=True)
-class PiecewisePolynomialParameters:
-    """The parameters expected by piecewise_polynomial"""
-
-    thresholds: np.ndarray
-    intercepts: np.ndarray
-    rates: np.ndarray
 
 
 @dataclass(frozen=True)

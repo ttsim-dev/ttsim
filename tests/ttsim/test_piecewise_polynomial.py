@@ -7,10 +7,10 @@ import pytest
 
 from ttsim.config import numpy_or_jax as np
 from ttsim.piecewise_polynomial import (
+    PiecewisePolynomialParameters,
     get_piecewise_parameters,
     piecewise_polynomial,
 )
-from ttsim.ttsim_params import PiecewisePolynomialParameters
 
 
 @pytest.fixture

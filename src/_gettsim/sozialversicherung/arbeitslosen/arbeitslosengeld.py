@@ -1,8 +1,7 @@
 """Unemployment benefits (Arbeitslosengeld)."""
 
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
-from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
-from ttsim.config import numpy_or_jax as np
+from ttsim import piecewise_polynomial, policy_function
 
 
 @policy_function(vectorization_strategy="loop")
@@ -56,53 +55,15 @@ def monate_verbleibender_anspruchsdauer(
     benefits.
 
     """
-    parameters_nach_alter = PiecewisePolynomialParameters(
-        thresholds=np.array(
-            [*list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]), np.inf]
-        ),
-        rates=np.array(
-            [[0] * len(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"])]
-        ),
-        intercepts=np.array(
-            list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values())
-        ),
-    )
     nach_alter = piecewise_polynomial(
         alter,
-        parameters=parameters_nach_alter,
-    )
-    parameters_nach_versich_pfl = PiecewisePolynomialParameters(
-        thresholds=np.array(
-            [
-                *list(
-                    arbeitsl_geld_params["anspruchsdauer"][
-                        "nach_versicherungspflichtigen_monaten"
-                    ]
-                ),
-                np.inf,
-            ]
-        ),
-        rates=np.array(
-            [
-                [0]
-                * len(
-                    arbeitsl_geld_params["anspruchsdauer"][
-                        "nach_versicherungspflichtigen_monaten"
-                    ]
-                )
-            ]
-        ),
-        intercepts=np.array(
-            list(
-                arbeitsl_geld_params["anspruchsdauer"][
-                    "nach_versicherungspflichtigen_monaten"
-                ].values()
-            )
-        ),
+        parameters=arbeitsl_geld_params["anspruchsdauer_nach_alter"],
     )
     nach_versich_pfl = piecewise_polynomial(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        parameters=parameters_nach_versich_pfl,
+        parameters=arbeitsl_geld_params[
+            "anspruchsdauer_nach_versicherungspflichtigen_monaten"
+        ],
     )
     if anwartschaftszeit:
         anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
