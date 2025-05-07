@@ -6,7 +6,7 @@ Three tax brackets:
     - large acre
 """
 
-from ttsim import policy_function, piecewise_polynomial, PiecewisePolynomialParameters
+from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
 
 
 @policy_function(vectorization_strategy="vectorize")
