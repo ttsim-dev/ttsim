@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     )
 
     from ttsim.ttsim_objects import PolicyInput, TTSIMFunction, TTSIMObject
+    from ttsim.ttsim_params import TTSIMParam
 
     NestedTTSIMObjectDict = Mapping[str, TTSIMObject | "NestedTTSIMObjectDict"]
     FlatTTSIMObjectDict = Mapping[tuple[str, ...], TTSIMObject]
@@ -59,5 +60,5 @@ if TYPE_CHECKING:
     FlatOrigParamSpecDict = dict[tuple[str, ...], OrigParamSpec]
     """A flat tree of yaml contents; the outermost key in a file is part of the path."""
 
-    NestedTTSIMParamDict = Mapping[str, TTSIMObject | "NestedTTSIMParamDict"]
+    NestedTTSIMParamDict = Mapping[str, TTSIMParam | "NestedTTSIMParamDict"]
     """A nested tree of TTSIM parameters."""
