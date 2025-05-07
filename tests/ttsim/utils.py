@@ -97,14 +97,8 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
 
     if flat_expected_output_tree:
-        expected_df = pd.DataFrame.from_dict(
-            {k: pd.Series(v) for k, v in flat_expected_output_tree.items()},
-            orient="columns",
-        )
-        result_df = pd.DataFrame.from_dict(
-            {k: pd.Series(v) for k, v in flat_result.items()},
-            orient="columns",
-        )
+        expected_df = pd.DataFrame(flat_expected_output_tree)
+        result_df = pd.DataFrame(flat_result)
         if IS_JAX_INSTALLED:
             for i in [i for i in ids if i in expected_df]:
                 result_df = pd.concat(
