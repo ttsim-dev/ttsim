@@ -19,41 +19,41 @@ eink_anr_frei:
     0:
       lower_threshold: -inf
       upper_threshold: 0
-      rate: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
     1:
       lower_threshold: 0
       upper_threshold: 400
-      rate: 0.15
+      rate_linear: 0.15
     2:
       upper_threshold: 900
-      rate: 0.3
+      rate_linear: 0.3
     3:
       upper_threshold: 1500
-      rate: 0.15
+      rate_linear: 0.15
     4:
       upper_threshold: inf
-      rate: 0
+      rate_linear: 0
   2005-10-01:
     reference: Artikel 1 G. v. 14.08.2005 BGBl. I S. 2407.
     0:
       lower_threshold: -inf
       upper_threshold: 0
-      rate: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
     1:
       lower_threshold: 0
       upper_threshold: 100
-      rate: 1.0
+      rate_linear: 1.0
     2:
       upper_threshold: 800
-      rate: 0.2
+      rate_linear: 0.2
     3:
       upper_threshold: 1200
-      rate: 0.1
+      rate_linear: 0.1
     4:
       upper_threshold: inf
-      rate: 0
+      rate_linear: 0
   2011-04-01:
     reference: Artikel 1 G. v. 20.12.2011 BGBl. I 2854.
     note: >-
@@ -69,24 +69,24 @@ eink_anr_frei:
     0:
       lower_threshold: -inf
       upper_threshold: 0
-      rate: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
     1:
       lower_threshold: 0
       upper_threshold: 100
-      rate: 1.0
+      rate_linear: 1.0
     2:
       upper_threshold: 520
-      rate: 0.2
+      rate_linear: 0.2
     3:
       upper_threshold: 1000
-      rate: 0.3
+      rate_linear: 0.3
     4:
       upper_threshold: 1200
-      rate: 0.1
+      rate_linear: 0.1
     5:
       upper_threshold: inf
-      rate: 0
+      rate_linear: 0
 eink_anr_frei_kinder:
   name:
     de: Abweichende anrechnungsfreie Einkommensanteile falls Kinder im Haushalt

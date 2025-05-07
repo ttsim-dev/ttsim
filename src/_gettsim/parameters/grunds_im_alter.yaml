@@ -46,21 +46,21 @@ ges_rente_anr_frei:
     0:
       lower_threshold: -inf
       upper_threshold: inf
-      rate: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
   2021-01-01:
     0:
       lower_threshold: -inf
       upper_threshold: 0
-      rate: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
     1:
       lower_threshold: 0
       upper_threshold: 100
-      rate: 1
+      rate_linear: 1
     2:
       upper_threshold: inf
-      rate: 0.3
+      rate_linear: 0.3
 kapitaleink_anr_frei:
   name:
     de: Freibetrag des Kapitaleinkommens für Grundsicherung
@@ -119,21 +119,21 @@ priv_rente_anr_frei:
     0:
       lower_threshold: -inf
       upper_threshold: inf
-      rate: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
   2005-01-01:
     0:
       lower_threshold: -inf
       upper_threshold: 0
-      rate: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
     1:
       lower_threshold: 0
       upper_threshold: 100
-      rate: 1
+      rate_linear: 1
     2:
       upper_threshold: inf
-      rate: 0.3
+      rate_linear: 0.3
 mehrbedarf_bei_schwerbehinderungsgrad_g:
   name:
     de: Mehrbedarf bei Schwerbehinderung

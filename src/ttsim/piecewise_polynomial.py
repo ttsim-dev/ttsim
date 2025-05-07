@@ -1,9 +1,47 @@
-from typing import Literal, TypedDict
+from dataclasses import dataclass
+from typing import Literal, get_args
 
 import numpy
 
 from ttsim.config import numpy_or_jax as np
 from ttsim.ttsim_params import PiecewisePolynomialParameters
+
+FUNC_TYPES = Literal[
+    "piecewise_constant",
+    "piecewise_linear",
+    "piecewise_quadratic",
+    "piecewise_cubic",
+]
+
+
+@dataclass(frozen=True)
+class RatesOptions:
+    required_keys: tuple[Literal["rate_linear", "rate_quadratic", "rate_cubic"], ...]
+    rates_size: int
+
+
+OPTIONS_REGISTRY = {
+    "piecewise_constant": RatesOptions(
+        required_keys=(),
+        rates_size=1,
+    ),
+    "piecewise_linear": RatesOptions(
+        required_keys=("rate_linear",),
+        rates_size=1,
+    ),
+    "piecewise_quadratic": RatesOptions(
+        required_keys=("rate_linear", "rate_quadratic"),
+        rates_size=2,
+    ),
+    "piecewise_cubic": RatesOptions(
+        required_keys=("rate_linear", "rate_quadratic", "rate_cubic"),
+        rates_size=3,
+    ),
+}
+
+assert set(OPTIONS_REGISTRY.keys()) == set(get_args(FUNC_TYPES)), (
+    "Keys in OPTIONS_REGISTRY must match FUNC_TYPES"
+)
 
 
 def piecewise_polynomial(
@@ -58,12 +96,7 @@ def piecewise_polynomial(
 
 def get_piecewise_parameters(
     leaf_name: str,
-    func_type: Literal[
-        "piecewise_constant",
-        "piecewise_linear",
-        "piecewise_quadratic",
-        "piecewise_cubic",
-    ],
+    func_type: FUNC_TYPES,
     parameter_dict: dict[int, dict[str, float]],
 ) -> PiecewisePolynomialParameters:
     """Create the objects for piecewise polynomial.
@@ -188,19 +221,9 @@ def check_and_get_thresholds(
     return np.array(lower_thresholds), np.array(upper_thresholds), np.array(thresholds)
 
 
-class Options(TypedDict):
-    necessary_keys: list[str]
-    rates_size: int
-
-
 def _check_and_get_rates(
     leaf_name: str,
-    func_type: Literal[
-        "piecewise_constant",
-        "piecewise_linear",
-        "piecewise_quadratic",
-        "piecewise_cubic",
-    ],
+    func_type: FUNC_TYPES,
     parameter_dict: dict[int, dict[str, float]],
 ) -> np.ndarray:
     """Check and transfer raw rates data.
@@ -219,42 +242,16 @@ def _check_and_get_rates(
     -------
 
     """
-    options_dict = {
-        "piecewise_quadratic": Options(
-            necessary_keys=["rate_linear", "rate_quadratic"],
-            rates_size=2,
-        ),
-        "piecewise_cubic": Options(
-            necessary_keys=["rate_linear", "rate_quadratic", "rate_cubic"],
-            rates_size=3,
-        ),
-    }
     keys = sorted(parameter_dict.keys())
-    # Allow for specification of rate with "rate" and "rate_linear"
-    if func_type == "piecewise_linear":
-        rates = numpy.zeros((1, len(keys)))
+    rates = numpy.zeros((OPTIONS_REGISTRY[func_type].rates_size, len(keys)))
+    for i, rate_type in enumerate(OPTIONS_REGISTRY[func_type].required_keys):
         for interval in keys:
-            if "rate" in parameter_dict[interval]:
-                rates[0, interval] = parameter_dict[interval]["rate"]
-            elif "rate_linear" in parameter_dict[interval]:
-                rates[0, interval] = parameter_dict[interval]["rate_linear"]
+            if rate_type in parameter_dict[interval]:
+                rates[i, interval] = parameter_dict[interval][rate_type]
             else:
                 raise ValueError(
-                    f"In {interval} of {leaf_name} there is no rate specified."
+                    f"In interval {interval} of {leaf_name}, {rate_type} is missing."
                 )
-    elif func_type in options_dict:
-        rates = numpy.zeros((options_dict[func_type]["rates_size"], len(keys)))
-        for i, rate_type in enumerate(options_dict[func_type]["necessary_keys"]):
-            for interval in keys:
-                if rate_type in parameter_dict[interval]:
-                    rates[i, interval] = parameter_dict[interval][rate_type]
-                else:
-                    raise ValueError(
-                        f"In {interval} of {leaf_name} {rate_type} is missing."
-                    )
-    else:
-        raise ValueError(f"Piecewise function {func_type} not specified.")
-
     return np.array(rates)
 
 
