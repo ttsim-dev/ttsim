@@ -7,6 +7,7 @@ from ttsim import policy_function
     start_date="2012-01-01",
     end_date="2014-06-22",
     leaf_name="altersgrenze",
+    vectorization_strategy="not_required",
 )
 def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """

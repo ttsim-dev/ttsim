@@ -6,7 +6,11 @@ Revoked for birth cohorts after 1951.
 from ttsim import policy_function
 
 
-@policy_function(end_date="1989-12-17", leaf_name="altersgrenze")
+@policy_function(
+    end_date="1989-12-17",
+    leaf_name="altersgrenze",
+    vectorization_strategy="not_required",
+)
 def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """Full retirement age for unemployed.
 
@@ -144,7 +148,11 @@ def altersgrenze_ohne_vertrauensschutzprüfung_ab_2010(
     return altersgrenze_ohne_vertrauensschutzprüfung
 
 
-@policy_function(end_date="1989-12-17", leaf_name="altersgrenze_vorzeitig")
+@policy_function(
+    end_date="1989-12-17",
+    leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="not_required",
+)
 def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
     """Early retirement age of pension for unemployed.
 
@@ -237,6 +245,7 @@ def altersgrenze_vorzeitig_mit_vertrauensschutz_ab_1996_07_bis_1996_09(
     start_date="1996-09-27",
     end_date="2004-07-25",
     leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="not_required",
 )
 def altersgrenze_vorzeitig_ohne_staffelung_ab_1996_09(ges_rente_params: dict) -> float:
     """Early retirement age of pension for unemployed.
