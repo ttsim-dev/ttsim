@@ -20,13 +20,15 @@ tax_schedule_standard:
   1900-01-01:
     0:
       lower_threshold: -inf
-      upper_threshold: 100
-      rate_linear: 0.1
+      upper_threshold: 0
+      rate_linear: 0.0
       intercept_at_lower_threshold: 0
     1:
+      upper_threshold: 100
+      rate_linear: 0.1
+    2:
       upper_threshold: inf
       rate_linear: 0.3
-      intercept_at_lower_threshold: 0
 tax_schedule_reduced:
   name:
     de: Lohnsteuersatz
@@ -38,10 +40,12 @@ tax_schedule_reduced:
   1900-01-01:
     0:
       lower_threshold: -inf
-      upper_threshold: 100
-      rate_linear: 0.1
+      upper_threshold: 0
+      rate_linear: 0
       intercept_at_lower_threshold: 0
     1:
+      upper_threshold: 100
+      rate_linear: 0.1
+    2:
       upper_threshold: inf
       rate_linear: 0.15
-      intercept_at_lower_threshold: 0
