@@ -828,6 +828,15 @@ def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
                         f"For parameter {param} a different string is specified."
                     )
 
+    for p in out_params.values():
+        if isinstance(p, dict) and "type" in p:
+            if p["type"] == "dict":
+                for k, v in p.items():
+                    if v in {"inf", "-inf"}:
+                        p[k] = float(v)
+            if not p["type"].startswith("piecewise"):
+                p.pop("type", None)
+
     out_params["datum"] = numpy.datetime64(date)
 
     return out_params

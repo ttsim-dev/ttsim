@@ -124,7 +124,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     -------
 
     """
-    abzug_stufen = (
+    stufe = (
         (einkommensteuer__betrag_y_sn > 0)
         + (sozialversicherung__rente__beitrag__betrag_versicherter_y > 0)
         + (sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0)
@@ -132,7 +132,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     if familie__kind:
         out = 0.0
     else:
-        out = wohngeld_params["abzug_stufen"][abzug_stufen]
+        out = wohngeld_params["abzugsbeträge_steuern_sozialversicherung"][stufe]
     return out
 
 
