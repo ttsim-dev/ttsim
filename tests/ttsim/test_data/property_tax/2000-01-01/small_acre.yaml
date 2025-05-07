@@ -9,7 +9,7 @@ inputs:
       - 0
       - 1
     property_tax__acre_size_in_hectares:
-      - 10
+      - 5
 outputs:
   property_tax__amount_y:
     - 0.0
