@@ -177,13 +177,14 @@ def lohnsteuerformel(
     )
     max_lohnsteuer = (
         lohnsteuer_grenze_1
-        + (einkommen_y - grenze_1) * eink_st_params["eink_st_tarif"].rates[0, 3]
+        + (einkommen_y - grenze_1)
+        * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
     )
     lohnsteuer_grenze_2 = basis_für_klassen_5_6(
         einkommen_y=grenze_2, eink_st_params=eink_st_params
     )
     lohnsteuer_zw_grenze_2_3 = (grenze_3 - grenze_2) * eink_st_params[
-        "eink_st_tarif"
+        "parameter_einkommensteuertarif"
     ].rates[0, 3]
     lohnsteuer_klasse5_6_tmp = lohnsteuer_grenze_2 + lohnsteuer_zw_grenze_2_3
 
@@ -199,12 +200,14 @@ def lohnsteuerformel(
     elif grenze_2 <= einkommen_y < grenze_3:
         lohnsteuer_klasse5_6 = (
             lohnsteuer_grenze_2
-            + (einkommen_y - grenze_2) * eink_st_params["eink_st_tarif"].rates[0, 3]
+            + (einkommen_y - grenze_2)
+            * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
         )
     else:
         lohnsteuer_klasse5_6 = (
             lohnsteuer_klasse5_6_tmp
-            + (einkommen_y - grenze_3) * eink_st_params["eink_st_tarif"].rates[0, 4]
+            + (einkommen_y - grenze_3)
+            * eink_st_params["parameter_einkommensteuertarif"].rates[0, 4]
         )
 
     if steuerklasse in {1, 2, 4}:
@@ -253,7 +256,7 @@ def basis_für_klassen_5_6(einkommen_y: float, eink_st_params: dict) -> float:
             einkommensteuertarif(einkommen_y * 1.25, eink_st_params)
             - einkommensteuertarif(einkommen_y * 0.75, eink_st_params)
         ),
-        einkommen_y * eink_st_params["eink_st_tarif"].rates[0, 1],
+        einkommen_y * eink_st_params["parameter_einkommensteuertarif"].rates[0, 1],
     )
 
     return out
