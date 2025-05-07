@@ -235,17 +235,19 @@ def bezugsmonate_unter_grenze_fg(
     if familie__alleinerziehend or bezugsmonate_partner >= 2:
         out = (
             bisherige_bezugsmonate_fg
-            < elterngeld_params["max_monate_mit_partnermonate"]
+            < elterngeld_params["max_bezugsmonate"]["basismonate"]
+            + elterngeld_params["max_bezugsmonate"]["partnermonate"]
         )
     elif anzahl_anträge_fg > 1:
         out = (
             bisherige_bezugsmonate_fg + 1
-            < elterngeld_params["max_monate_mit_partnermonate"]
+            < elterngeld_params["max_bezugsmonate"]["basismonate"]
+            + elterngeld_params["max_bezugsmonate"]["partnermonate"]
         )
     else:
         out = (
             bisherige_bezugsmonate_fg
-            < elterngeld_params["max_monate_ohne_partnermonate"]
+            < elterngeld_params["max_bezugsmonate"]["basismonate"]
         )
     return out
 
@@ -268,7 +270,11 @@ def kind_grundsätzlich_anspruchsberechtigt(
     -------
 
     """
-    return alter <= elterngeld_params["max_monate_mit_partnermonate"]
+    return (
+        alter
+        <= elterngeld_params["max_bezugsmonate"]["basismonate"]
+        + elterngeld_params["max_bezugsmonate"]["partnermonate"]
+    )
 
 
 @policy_function(start_date="2011-01-01")
@@ -302,31 +308,31 @@ def lohnersatzanteil(
     # Higher replacement rate if considered income is below a threshold
     if (
         nettoeinkommen_vorjahr_m
-        < elterngeld_params["nettoeinkommen_stufen"]["lower_threshold"]
+        < elterngeld_params["nettoeinkommensstufen"]["lower_threshold"]
         and nettoeinkommen_vorjahr_m > 0
     ):
-        out = elterngeld_params["faktor"] + (
+        out = elterngeld_params["satz"] + (
             lohnersatzanteil_einkommen_untere_grenze
-            / elterngeld_params["eink_schritt_korrektur"]
+            / elterngeld_params["einkommensschritte_korrektur"]
             * elterngeld_params["prozent_korrektur"]
         )
     # Lower replacement rate if considered income is above a threshold
     elif (
         nettoeinkommen_vorjahr_m
-        > elterngeld_params["nettoeinkommen_stufen"]["upper_threshold"]
+        > elterngeld_params["nettoeinkommensstufen"]["upper_threshold"]
     ):
         # Replacement rate is only lowered up to a specific value
         out = max(
-            elterngeld_params["faktor"]
+            elterngeld_params["satz"]
             - (
                 lohnersatzanteil_einkommen_obere_grenze
-                / elterngeld_params["eink_schritt_korrektur"]
+                / elterngeld_params["einkommensschritte_korrektur"]
                 * elterngeld_params["prozent_korrektur"]
             ),
             elterngeld_params["prozent_minimum"],
         )
     else:
-        out = elterngeld_params["faktor"]
+        out = elterngeld_params["satz"]
 
     return out
 
