@@ -179,9 +179,7 @@ def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m_amount_exempt = (
         piecewise_polynomial(
             x=sozialversicherung__rente__private_rente_betrag_m,
-            thresholds=grunds_im_alter_params["priv_rente_anr_frei"]["thresholds"],
-            rates=grunds_im_alter_params["priv_rente_anr_frei"]["rates"],
-            intercepts=grunds_im_alter_params["priv_rente_anr_frei"]["intercepts"],
+            parameters=grunds_im_alter_params["priv_rente_anr_frei"],
         )
     )
     upper = arbeitsl_geld_2_params["regelsatz"][1] / 2
@@ -246,9 +244,7 @@ def gesetzliche_rente_m_ab_2021(
 
     angerechnete_rente = piecewise_polynomial(
         x=sozialversicherung__rente__altersrente__betrag_m,
-        thresholds=grunds_im_alter_params["ges_rente_anr_frei"]["thresholds"],
-        rates=grunds_im_alter_params["ges_rente_anr_frei"]["rates"],
-        intercepts=grunds_im_alter_params["ges_rente_anr_frei"]["intercepts"],
+        parameters=grunds_im_alter_params["ges_rente_anr_frei"],
     )
 
     upper = arbeitsl_geld_2_params["regelsatz"][1] / 2

@@ -134,9 +134,7 @@ def anzurechnendes_einkommen_m(
     out = (
         piecewise_polynomial(
             x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
-            thresholds=einkommensanr_params["thresholds"],
-            rates=einkommensanr_params["rates"],
-            intercepts=einkommensanr_params["intercepts"],
+            parameters=einkommensanr_params,
         )
         * sozialversicherung__rente__altersrente__rentenwert
     )

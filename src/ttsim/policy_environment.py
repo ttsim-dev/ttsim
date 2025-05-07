@@ -482,6 +482,11 @@ def get_one_ttsim_param(
     elif spec["type"] == "list":
         return ListTTSIMParam(**cleaned_spec)
     elif spec["type"].startswith("piecewise_"):
+        cleaned_spec["value"] = get_piecewise_parameters(
+            leaf_name=leaf_name,
+            func_type=spec["type"],
+            parameter_dict=cleaned_spec["value"],
+        )
         return PiecewisePolynomialTTSIMParam(**cleaned_spec)
     else:
         raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
@@ -567,12 +572,10 @@ def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
                                 tax_data[param], param
                             )
                     tax_data[param] = get_piecewise_parameters(
-                        tax_data[param],
-                        param,
-                        func_type=tax_data[param]["type"].split("_")[1],
+                        leaf_name=param,
+                        func_type=tax_data[param]["type"],
+                        parameter_dict=tax_data[param],
                     )
-            for key in ["type", "progressionsfaktor"]:
-                tax_data[param].pop(key, None)
 
     return tax_data
 
@@ -640,10 +643,8 @@ def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
     jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
-            jahr,
-            thresholds=params["eink_st_abzuege"]["einführungsfaktor"]["thresholds"],
-            rates=params["eink_st_abzuege"]["einführungsfaktor"]["rates"],
-            intercepts=params["eink_st_abzuege"]["einführungsfaktor"]["intercepts"],
+            x=jahr,
+            parameters=params["eink_st_abzuege"]["einführungsfaktor"],
         )
         params["eink_st_abzuege"][
             "einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005"
@@ -673,16 +674,8 @@ def _parse_vorsorgepauschale_rentenv_anteil(
     jahr = date.year
     if jahr >= 2005:
         out = piecewise_polynomial(
-            jahr,
-            thresholds=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"][
-                "thresholds"
-            ],
-            rates=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"][
-                "rates"
-            ],
-            intercepts=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"][
-                "intercepts"
-            ],
+            x=jahr,
+            parameters=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"],
         )
         params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"] = out
 
@@ -894,15 +887,19 @@ def add_progressionsfaktor(
     (rate_fiv - rate_iv) / (2 * (upper_thres - low_thres))
 
     """
-    out_dict = copy.deepcopy(params_dict)
-    interval_keys = sorted(key for key in out_dict if isinstance(key, int))
+    out: dict[str | int, Any] = copy.deepcopy(
+        {k: v for k, v in params_dict.items() if isinstance(k, int)}
+    )
+
     # Check and extract lower thresholds.
     lower_thresholds, upper_thresholds = check_and_get_thresholds(
-        params_dict, parameter, interval_keys
+        leaf_name=parameter, parameter_dict=out
     )[:2]
-    for key in interval_keys:
-        if "rate_quadratic" not in out_dict[key]:
-            out_dict[key]["rate_quadratic"] = (
-                out_dict[key + 1]["rate_linear"] - out_dict[key]["rate_linear"]
+    for key in sorted(out.keys()):
+        if "rate_quadratic" not in out[key]:
+            out[key]["rate_quadratic"] = (
+                out[key + 1]["rate_linear"] - out[key]["rate_linear"]  # type: ignore[operator]
             ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
-    return out_dict
+    # FixMe: Add type back in. This whole function needs to be refactored
+    out["type"] = params_dict["type"]
+    return out

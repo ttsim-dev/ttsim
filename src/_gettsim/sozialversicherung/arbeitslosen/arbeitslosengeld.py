@@ -1,7 +1,7 @@
 """Unemployment benefits (Arbeitslosengeld)."""
 
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
-from ttsim import piecewise_polynomial, policy_function
+from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
 from ttsim.config import numpy_or_jax as np
 
 
@@ -56,13 +56,9 @@ def monate_verbleibender_anspruchsdauer(
     benefits.
 
     """
-    nach_alter = piecewise_polynomial(
-        alter,
+    parameters_nach_alter = PiecewisePolynomialParameters(
         thresholds=np.array(
-            [
-                *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
-                np.inf,
-            ]
+            [*list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]), np.inf]
         ),
         rates=np.array(
             [[0] * len(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"])]
@@ -71,8 +67,11 @@ def monate_verbleibender_anspruchsdauer(
             list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values())
         ),
     )
-    nach_versich_pfl = piecewise_polynomial(
-        monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
+    nach_alter = piecewise_polynomial(
+        alter,
+        parameters=parameters_nach_alter,
+    )
+    parameters_nach_versich_pfl = PiecewisePolynomialParameters(
         thresholds=np.array(
             [
                 *list(
@@ -100,6 +99,10 @@ def monate_verbleibender_anspruchsdauer(
                 ].values()
             )
         ),
+    )
+    nach_versich_pfl = piecewise_polynomial(
+        monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
+        parameters=parameters_nach_versich_pfl,
     )
     if anwartschaftszeit:
         anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
@@ -208,12 +211,7 @@ def einkommen_vorjahr_proxy_m(
         12 * max_wage - eink_st_abzuege_params["werbungskostenpauschale"],
         eink_st_params,
     )
-    prox_soli = piecewise_polynomial(
-        prox_tax,
-        thresholds=soli_st_params["soli_st"]["thresholds"],
-        rates=soli_st_params["soli_st"]["rates"],
-        intercepts=soli_st_params["soli_st"]["intercepts"],
-    )
+    prox_soli = piecewise_polynomial(x=prox_tax, parameters=soli_st_params["soli_st"])
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     out = max(out, 0.0)
     return out

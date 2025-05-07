@@ -1,5 +1,6 @@
 from ttsim import (
     AggType,
+    PiecewisePolynomialParameters,
     agg_by_group_function,
     piecewise_polynomial,
     policy_function,
@@ -25,32 +26,24 @@ def amount_y(
 @policy_function(vectorization_strategy="vectorize")
 def amount_standard_y(
     income__amount_y: float,
-    tax_schedule_standard: dict[str, float],
+    tax_schedule_standard: PiecewisePolynomialParameters,
 ) -> float:
     """Payroll tax amount for the standard tax schedule."""
     return piecewise_polynomial(
         x=income__amount_y,
-        thresholds=tax_schedule_standard["thresholds"],
-        rates=tax_schedule_standard["rates"],
-        intercepts_at_lower_thresholds=tax_schedule_standard[
-            "intercepts_at_lower_thresholds"
-        ],
+        parameters=tax_schedule_standard,
     )
 
 
 @policy_function(vectorization_strategy="vectorize")
 def amount_reduced_y(
     income__amount_y: float,
-    tax_schedule_reduced: dict[str, float],
+    tax_schedule_reduced: PiecewisePolynomialParameters,
 ) -> float:
     """Payroll tax amount for the reduced tax schedule."""
     return piecewise_polynomial(
         x=income__amount_y,
-        thresholds=tax_schedule_reduced["thresholds"],
-        rates=tax_schedule_reduced["rates"],
-        intercepts_at_lower_thresholds=tax_schedule_reduced[
-            "intercepts_at_lower_thresholds"
-        ],
+        parameters=tax_schedule_reduced,
     )
 
 

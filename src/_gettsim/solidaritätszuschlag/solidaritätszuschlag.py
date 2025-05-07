@@ -92,7 +92,7 @@ def betrag_y_sn_mit_abgelt_st(
     out = (
         einkommensteuer__anzahl_personen_sn
         * solidaritätszuschlagstarif(eink_st_per_individual, soli_st_params)
-        + soli_st_params["soli_st"]["rates"][0, -1]
+        + soli_st_params["soli_st"].rates[0, -1]
         * einkommensteuer__abgeltungssteuer__betrag_y_sn
     )
 
@@ -116,9 +116,7 @@ def solidaritätszuschlagstarif(st_per_individual: float, soli_st_params: dict) 
 
     out = piecewise_polynomial(
         st_per_individual,
-        thresholds=soli_st_params["soli_st"]["thresholds"],
-        rates=soli_st_params["soli_st"]["rates"],
-        intercepts=soli_st_params["soli_st"]["intercepts"],
+        parameters=soli_st_params["soli_st"],
     )
 
     return out

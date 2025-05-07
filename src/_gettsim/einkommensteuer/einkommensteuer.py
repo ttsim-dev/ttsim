@@ -303,8 +303,6 @@ def einkommensteuertarif(x: float, params: dict) -> float:
     """
     out = piecewise_polynomial(
         x=x,
-        thresholds=params["eink_st_tarif"]["thresholds"],
-        rates=params["eink_st_tarif"]["rates"],
-        intercepts=params["eink_st_tarif"]["intercepts"],
+        parameters=params["eink_st_tarif"],
     )
     return out

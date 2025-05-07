@@ -2,6 +2,7 @@
 
 from ttsim import (
     AggType,
+    PiecewisePolynomialParameters,
     agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
@@ -309,14 +310,18 @@ def freibetrag_m_bis_2015(
     -------
 
     """
-    freibetrag_behinderung_m = piecewise_polynomial(
-        behinderungsgrad,
+
+    parameters = PiecewisePolynomialParameters(
         thresholds=np.array([*list(wohngeld_params["freibetrag_behinderung"]), np.inf]),
         rates=np.array([[0] * len(wohngeld_params["freibetrag_behinderung"])]),
         intercepts=[
             yearly_v / 12
             for yearly_v in wohngeld_params["freibetrag_behinderung"].values()
         ],
+    )
+    freibetrag_behinderung_m = piecewise_polynomial(
+        behinderungsgrad,
+        parameters=parameters,
     )
 
     # Subtraction for single parents and working children

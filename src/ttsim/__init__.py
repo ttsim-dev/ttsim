@@ -35,6 +35,7 @@ from ttsim.ttsim_objects import (
 from ttsim.ttsim_params import (
     DictTTSIMParam,
     ListTTSIMParam,
+    PiecewisePolynomialParameters,
     PiecewisePolynomialTTSIMParam,
     ScalarTTSIMParam,
     TTSIMParam,
@@ -49,6 +50,7 @@ __all__ = [
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
     "ListTTSIMParam",
+    "PiecewisePolynomialParameters",
     "PiecewisePolynomialTTSIMParam",
     "PolicyEnvironment",
     "PolicyFunction",
