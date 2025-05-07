@@ -31,9 +31,9 @@ def betrag_m(
     """
 
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
-        arbeitsl_geld_satz = arbeitsl_geld_params["satz_ohne_kinder"]
+        arbeitsl_geld_satz = arbeitsl_geld_params["satz"]["allgemein"]
     elif einkommensteuer__anzahl_kinderfreibeträge > 0:
-        arbeitsl_geld_satz = arbeitsl_geld_params["satz_mit_kindern"]
+        arbeitsl_geld_satz = arbeitsl_geld_params["satz"]["erhöht"]
 
     if grundsätzlich_anspruchsberechtigt:
         out = einkommen_vorjahr_proxy_m * arbeitsl_geld_satz
@@ -161,7 +161,7 @@ def einkommen_vorjahr_proxy_m(
     )
 
     # We need to deduct lump-sum amounts for contributions, taxes and soli
-    prox_ssc = arbeitsl_geld_params["sozialv_pausch"] * max_wage
+    prox_ssc = arbeitsl_geld_params["sozialversicherungspauschale"] * max_wage
 
     # Fictive taxes (Lohnsteuer) are approximated by applying the wage to the tax tariff
     # Caution: currently wrong calculation due to
