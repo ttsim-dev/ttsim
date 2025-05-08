@@ -51,7 +51,6 @@ if TYPE_CHECKING:
                 | float
                 | int
                 | bool
-                | list[float | int | bool]
                 | dict[str | int, float | int | bool],
             ],
         ]
