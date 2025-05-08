@@ -47,11 +47,7 @@ if TYPE_CHECKING:
             datetime.date,
             dict[
                 str | int,
-                str
-                | float
-                | int
-                | bool
-                | dict[str | int, float | int | bool],
+                str | float | int | bool | dict[str | int, float | int | bool],
             ],
         ]
     )
