@@ -4,12 +4,11 @@ orc_hunting_bounty:
     de: Belohnung für das Jagen von Orks (tot oder lebendig)
     en: Bounty for orc hunting (dead or alive)
   description:
-    de: Belohnung für das Jagen von Orks (tot oder lebendig)
-    en: Bounty for orc hunting (dead or alive)
-  type: dict
+    de: Test für den Typ require_converter
+    en: Test the require_converter type
+  type: require_converter
   1900-01-01:
-    small_orc:
-      value: 100
+    small_orc: 100
     large_orc:
       hunter_not_noble: 200
       hunter_noble: 100
