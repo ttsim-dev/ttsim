@@ -5,12 +5,13 @@ lohnst_einkommensgrenzen:
     en: Thresholds for withholding tax classes 5 and 6
   description:
     de: >-
-      Einkommensgrenzen für Steuerklassen 5 und 6, innerhalb derer
-      Mindest- und Maximalsteuern festgelegt sind.
+      § 39b Absatz 2 Satz 7 EStG
+      Einkommensgrenzen für Steuerklassen 5 und 6, innerhalb derer Mindest- und
+      Maximalsteuern festgelegt sind.
     en: >-
-      Thresholds for withholding tax classes 5 and 6, where
-      minimum and maximum tax rates apply.
-  reference: § 39b Absatz 2 Satz 7 EStG
+      § 39b Absatz 2 Satz 7 EStG
+      Thresholds for withholding tax classes 5 and 6, where minimum and maximum tax
+      rates apply.
   unit: Euro
   reference_period: Year
   2002-01-01:

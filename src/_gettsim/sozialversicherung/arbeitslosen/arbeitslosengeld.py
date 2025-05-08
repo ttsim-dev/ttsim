@@ -2,7 +2,6 @@
 
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from ttsim import piecewise_polynomial, policy_function
-from ttsim.config import numpy_or_jax as np
 
 
 @policy_function(vectorization_strategy="loop")
@@ -58,48 +57,13 @@ def monate_verbleibender_anspruchsdauer(
     """
     nach_alter = piecewise_polynomial(
         alter,
-        thresholds=np.array(
-            [
-                *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
-                np.inf,
-            ]
-        ),
-        rates=np.array(
-            [[0] * len(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"])]
-        ),
-        intercepts_at_lower_thresholds=np.array(
-            list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values())
-        ),
+        parameters=arbeitsl_geld_params["anspruchsdauer_nach_alter"],
     )
     nach_versich_pfl = piecewise_polynomial(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        thresholds=np.array(
-            [
-                *list(
-                    arbeitsl_geld_params["anspruchsdauer"][
-                        "nach_versicherungspflichtigen_monaten"
-                    ]
-                ),
-                np.inf,
-            ]
-        ),
-        rates=np.array(
-            [
-                [0]
-                * len(
-                    arbeitsl_geld_params["anspruchsdauer"][
-                        "nach_versicherungspflichtigen_monaten"
-                    ]
-                )
-            ]
-        ),
-        intercepts_at_lower_thresholds=np.array(
-            list(
-                arbeitsl_geld_params["anspruchsdauer"][
-                    "nach_versicherungspflichtigen_monaten"
-                ].values()
-            )
-        ),
+        parameters=arbeitsl_geld_params[
+            "anspruchsdauer_nach_versicherungspflichtigen_monaten"
+        ],
     )
     if anwartschaftszeit:
         anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
@@ -208,14 +172,7 @@ def einkommen_vorjahr_proxy_m(
         12 * max_wage - eink_st_abzuege_params["werbungskostenpauschale"],
         eink_st_params,
     )
-    prox_soli = piecewise_polynomial(
-        prox_tax,
-        thresholds=soli_st_params["soli_st"]["thresholds"],
-        rates=soli_st_params["soli_st"]["rates"],
-        intercepts_at_lower_thresholds=soli_st_params["soli_st"][
-            "intercepts_at_lower_thresholds"
-        ],
-    )
+    prox_soli = piecewise_polynomial(x=prox_tax, parameters=soli_st_params["soli_st"])
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     out = max(out, 0.0)
     return out

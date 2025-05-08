@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 
 import numpy
 import pytest
-from mettsim.config import RESOURCE_DIR
+from mettsim.config import METTSIM_ROOT
 
 from ttsim import policy_function
 from ttsim.loader import (
-    _find_modules_recursively,
+    _find_files_recursively,
     _load_module,
 )
 from ttsim.ttsim_objects import _vectorize_func
@@ -19,15 +19,15 @@ if TYPE_CHECKING:
 
 def test_load_path():
     assert _load_module(
-        RESOURCE_DIR / "payroll_tax" / "amount.py",
-        RESOURCE_DIR,
+        path=METTSIM_ROOT / "payroll_tax" / "amount.py",
+        root=METTSIM_ROOT,
     )
 
 
 def test_dont_load_init_py():
     """Don't load __init__.py files as sources for PolicyFunctions and
     AggregationSpecs."""
-    all_files = _find_modules_recursively(RESOURCE_DIR)
+    all_files = _find_files_recursively(root=METTSIM_ROOT, suffix=".py")
     assert "__init__.py" not in [file.name for file in all_files]
 
 

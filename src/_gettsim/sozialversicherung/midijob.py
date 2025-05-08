@@ -86,7 +86,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     leaf_name="midijob_faktor_f",
     rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
-def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005(
+def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     ges_rentenv_params: dict,

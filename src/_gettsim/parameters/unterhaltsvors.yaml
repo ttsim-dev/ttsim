@@ -21,13 +21,14 @@ altersgrenzen_bezug:
     en: Age limits for receiving alimony payments until June 2017.
   description:
     de: >-
+      § 1 Abs. 1, 1a UhVorschG
       Kinder, die das 12. Lebensjahr noch nicht vollendet haben und bei einem
       alleinerziehenden Elternteil leben haben Anspruch auf Unterhaltszahlungen. Seit
       Juli 2017 gelten die Altersgrenzen des Mindestunterhalts.
     en: >-
+      § 1 Abs. 1, 1a UhVorschG
       Children under the age of 12 living with a single parent are entitled to alimony
       payments. Since July 2017, the age limits of the minimum alimony apply.
-  reference: § 1 Abs. 1, 1a UhVorschG
   2008-01-01:
     1:
       min_alter: 0
@@ -42,14 +43,15 @@ faktor_jüngste_altersgruppe:
     en: Factor for the advance child alimony of the youngest age group
   description:
     de: >-
+      § 1612a Abs. 1 BGB
       Faktor mit dem das sächliche Existenzminimum multipliziert wird um den
       Unterhaltsvorschuss für Kinder der jüngsten Altersgruppe zu berechnen.
     en: >-
+      § 1612a Abs. 1 BGB
       Factor by which the sächliche Existenzminimum is multiplied to calculate
       the advance child alimony for children of the youngest age group.
   2009-01-01:
     scalar: 0.87
-    reference: § 1612a Abs. 1 BGB
 anwendungsvorschrift:
   name:
     de: Unterhaltsvorschuss für Kinder entsprechend Anwendungsvorschriften
@@ -77,7 +79,6 @@ anwendungsvorschrift:
   2015-01-01:
     1: 133
     2: 180
-    reference: null
     note: >-
       Durch Anpassung des Kinderfreibetrags in der Mitte des Jahres gilt eine vorläufige
       Anwendungsvorschrift, welche den Mindestunterhalt basierend auf dem alten

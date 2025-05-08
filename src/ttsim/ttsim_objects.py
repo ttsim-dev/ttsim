@@ -51,7 +51,7 @@ FunArgTypes = ParamSpec("FunArgTypes")
 ReturnType = TypeVar("ReturnType")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
-DEFAULT_END_DATE = datetime.date(2100, 12, 31)
+DEFAULT_END_DATE = datetime.date(2099, 12, 31)
 
 
 class FKType(StrEnum):
@@ -66,9 +66,7 @@ class FKType(StrEnum):
 
 @dataclass(frozen=True)
 class TTSIMObject:
-    """
-    Abstract base class for all TTSIM Functions and Inputs.
-    """
+    """Abstract base class for all TTSIM Functions and Data Inputs."""
 
     leaf_name: str
     start_date: datetime.date

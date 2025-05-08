@@ -9,7 +9,11 @@ Policy regime starting in 2020:
     - Subsistence income is calculated per spouse and child
 """
 
-from ttsim import AggType, agg_by_group_function, policy_function
+from ttsim import (
+    AggType,
+    agg_by_group_function,
+    policy_function,
+)
 
 
 @agg_by_group_function(agg_type=AggType.SUM, end_date="2019-12-31")
@@ -29,12 +33,11 @@ def number_of_individuals_fam(fam_id: int) -> int:
 def requirement_fulfilled_fam_not_considering_children(
     housing_benefits__income__amount_m_fam: float,
     number_of_adults_fam: int,
-    housing_benefits_params: dict,
+    subsistence_income_level: dict[str, float],
 ) -> bool:
     return (
         housing_benefits__income__amount_m_fam
-        < housing_benefits_params["eligibility"]["subsistence_income_per_spouse_m"]
-        * number_of_adults_fam
+        < subsistence_income_level["per_spouse_m"] * number_of_adults_fam
     )
 
 
@@ -44,11 +47,11 @@ def requirement_fulfilled_fam_not_considering_children(
 )
 def requirement_fulfilled_fam_considering_children(
     housing_benefits__income__amount_m_fam: float,
-    housing_benefits_params: dict,
     number_of_family_members_considered_fam: int,
+    subsistence_income_level: dict[str, float],
 ) -> bool:
     return housing_benefits__income__amount_m_fam < (
-        housing_benefits_params["eligibility"]["subsistence_income_per_individual_m"]
+        subsistence_income_level["per_individual_m"]
         * number_of_family_members_considered_fam
     )
 
@@ -56,25 +59,22 @@ def requirement_fulfilled_fam_considering_children(
 @policy_function(start_date="2020-01-01", vectorization_strategy="vectorize")
 def number_of_family_members_considered_fam(
     number_of_individuals_fam: int,
-    housing_benefits_params: dict,
+    max_number_of_family_members: int,
 ) -> int:
-    return min(
-        number_of_individuals_fam,
-        housing_benefits_params["eligibility"]["max_number_of_family_members"],
-    )
+    return min(number_of_individuals_fam, max_number_of_family_members)
 
 
 @policy_function(vectorization_strategy="vectorize")
 def child(
     age: int,
-    housing_benefits_params: dict,
+    max_age_children: int,
 ) -> bool:
-    return age <= housing_benefits_params["max_age_children"]
+    return age <= max_age_children
 
 
 @policy_function(vectorization_strategy="vectorize")
 def adult(
     age: int,
-    housing_benefits_params: dict,
+    max_age_children: int,
 ) -> bool:
-    return age > housing_benefits_params["max_age_children"]
+    return age > max_age_children

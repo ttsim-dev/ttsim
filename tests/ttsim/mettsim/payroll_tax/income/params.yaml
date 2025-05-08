@@ -1,0 +1,12 @@
+---
+lump_sum_deduction_y:
+  name:
+    de: Lohnsteuerpauschalabzug
+    en: Lump sum deduction for payroll tax
+  description:
+    de: Lohnsteuerpauschalabzug
+    en: Lump sum deduction for payroll tax
+  type: scalar
+  reference_period: Year
+  1900-01-01:
+    value: 100.0

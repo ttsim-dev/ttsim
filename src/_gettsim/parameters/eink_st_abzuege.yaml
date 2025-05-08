@@ -33,7 +33,6 @@ kinderfreib:
     note: Laut Gesetz 261 DM pro Monat.
   1997-01-01:
     sächl_existenzmin: 1767
-    reference: null
     note: Laut Gesetz 288 DM pro Monat (ab 2000 3456 DM pro Jahr)
   2000-01-01:
     beitr_erz_ausb: 774
@@ -114,40 +113,28 @@ vorsorge2004_vorwegabzug:
   reference_period: Year
   1985-01-01:
     scalar: 1534
-    reference: null
   1989-01-01:
     scalar: 2045
-    reference: null
   1993-01-01:
     scalar: 3068
-    reference: .
   2011-01-01:
     scalar: 2700
-    reference: null
   2012-01-01:
     scalar: 2400
-    reference: null
   2013-01-01:
     scalar: 2100
-    reference: null
   2014-01-01:
     scalar: 1800
-    reference: null
   2015-01-01:
     scalar: 1500
-    reference: null
   2016-01-01:
     scalar: 1200
-    reference: null
   2017-01-01:
     scalar: 900
-    reference: null
   2018-01-01:
     scalar: 600
-    reference: null
   2019-01-01:
     scalar: 300
-    reference: null
 werbungskostenpauschale:
   name:
     de: Werbungskostenpauschbetrag bei nichtselbstständiger Arbeit.
@@ -162,11 +149,9 @@ werbungskostenpauschale:
     note: 564 DM
   1990-01-01:
     scalar: 1044
-    reference: null
     note: 2000 DM.
   2004-01-01:
     scalar: 920
-    reference: null
   2012-01-01:
     scalar: 1000
     reference: Art. 1 G. v. 01.11.2011 BGBl. I S. 2131.
@@ -188,7 +173,6 @@ sonderausgabenpauschbetrag:
   reference_period: Year
   1984-01-01:
     single: 138
-    reference: null
   1988-01-01:
     single: 55
     reference: Art. 1 G. v. 25.07.1988, BGBl. I S. 1093
@@ -224,10 +208,8 @@ sparerpauschbetrag:
     reference: Art. 1 G. v. 19.12.2000 BGBl I S. 1790.
   2004-01-01:
     scalar: 1370
-    note: null
   2007-01-01:
     scalar: 750
-    note: null
   2009-01-01:
     scalar: 801
     reference: Art. 1 G. v. 14.08.2007 BGBl. I S. 1912
@@ -251,7 +233,6 @@ sparer_werbungskosten_pauschbetrag:
     note: 100 DM.
   2009-01-01:
     scalar: 0
-    note: null
 vorsorge_2004_grundhöchstbetrag:
   name:
     de: Allgemeine Vorsorgepauschale Grundhöchstbetrag, Grundtabelle
@@ -263,10 +244,8 @@ vorsorge_2004_grundhöchstbetrag:
   reference_period: Year
   1985-01-01:
     scalar: 1196
-    reference: null
   1992-01-01:
     scalar: 1334
-    reference: .
 altersentlastungsbetrag_max:
   name:
     de: Höchstbetrag des Altersentlastungsbetrags
@@ -285,13 +264,10 @@ altersentlastungsbetrag_max:
   reference_period: Year
   1984-01-01:
     scalar: 1534
-    reference: null
   1989-01-01:
     scalar: 1902
-    reference: null
   2002-01-01:
     scalar: 1908
-    reference: null
   2005-01-01:
     reference: Artikel 1 G. v. 05.07.2004 BGBl. I S. 1427.
     1940: 1900
@@ -346,7 +322,6 @@ altersentlastung_quote:
   unit: Share
   1984-01-01:
     scalar: 0.4
-    reference: null
   2005-01-01:
     reference: Artikel 1 G. v. 05.07.2004 BGBl. I S. 1427.
     1940: 0.4
@@ -391,13 +366,14 @@ altersentlastungsbetrag_altersgrenze:
     en: Age limit for old-age relief amount
   description:
     de: >-
+      § 24a Art. 3 EStG
       Der Altersentlastungsbetrag wird einem Steuerpflichtigen gewährt, der vor dem
       Beginn des Kalenderjahres, in dem er sein Einkommen bezogen hat, das 64.
       Lebensjahr vollendet hatte.
     en: >-
+      § 24a Art. 3 EStG
       The old-age relief amount is granted to a taxpayer who, before the start of the
       calendar year in which he received his income, had reached the age of 64.
-  reference: § 24a Art. 3 EStG
   1984-01-01:
     scalar: 64
 einführungsfaktor:
@@ -406,17 +382,18 @@ einführungsfaktor:
     en: Introductory factor for pension expense
   description:
     de: >-
+      § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
       In den Jahren 2005-2022 stieg der Anteil der abzugsfähigen Beiträge von 60% in
       2005 jährlich um 2 Prozentpunkte an bis 94% in 2022 erreicht wurden. Eigentlich
       war geplant, dass der Parameter weiter mit dieser Rate steigt, bis ab 2025 100%
       erreicht sind. Abweichend von diesem Plan, wurden die abzugfähigen Beiträge schon
       2023 auf 100% gesetzt.
     en: >-
+      § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
       In the years 2005-2022, the share of deductible contributions increased by 2
       percentage points each year from 60% in 2005 to 94% in 2022. It was planned that
       100% are reached in 2025. Deviating from this plan, the deductible contributions
       were set to 100% already in 2023.
-  reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
   type: piecewise_linear
   2005-01-01:
     0:
@@ -431,6 +408,7 @@ einführungsfaktor:
       upper_threshold: inf
       rate_linear: 0
   2023-01-01:
+    reference: G. v. 20.12.2022 BGBl. I S. 2294.
     0:
       lower_threshold: -inf
       rate_linear: 0
@@ -445,7 +423,6 @@ einführungsfaktor:
     3:
       upper_threshold: inf
       rate_linear: 0
-    reference: G. v. 20.12.2022 BGBl. I S. 2294.
 alleinerziehendenfreibetrag:
   name:
     de: Entlastungsbetrag für Alleinerziehende
@@ -457,22 +434,16 @@ alleinerziehendenfreibetrag:
   reference_period: Year
   1984-01-01:
     scalar: 2154
-    reference: null
   1986-01-01:
     scalar: 2319
-    reference: null
   1989-01-01:
     scalar: 2871
-    reference: null
   2001-01-01:
     scalar: 2916
-    reference: .
   2002-01-01:
     scalar: 2340
-    reference: null
   2004-01-01:
     scalar: 1308
-    reference: null
   2015-01-01:
     scalar: 1908
     reference: Art. 1 G. v. 16.07.2015 BGBl. I S.1202
@@ -511,10 +482,8 @@ vorsorge2004_kürzung_vorwegabzug:
     note: entspricht Beitrag zur RV
   1986-01-01:
     scalar: 0.096
-    note: null
   1987-01-01:
     scalar: 0.0935
-    note: .
   1989-01-01:
     scalar: 0.12
     reference: Art. 1 G. v. 25.07.1988 BGBl. I S. 1093
@@ -558,28 +527,28 @@ vorsorge_altersaufw_max:
       knappschaftliche Beitragsbemessungsgrenze
   2016-01-01:
     scalar: 22766
-    note: .248 * 91800
+    note: 0.248 * 91800
   2017-01-01:
     scalar: 23362
-    note: .248 * 94200
+    note: 0.248 * 94200
   2018-01-01:
     scalar: 23712
-    note: .247 * 96000
+    note: 0.247 * 96000
   2019-01-01:
     scalar: 24305
-    note: .247 * 98400
+    note: 0.247 * 98400
   2020-01-01:
     scalar: 25046
     reference: Art. 3 V. v. 17.12.2019 BGBl I S. 2848.
-    note: .247 * 101400
+    note: 0.247 * 101400
   2021-01-01:
     scalar: 25787
     reference: §3 V. v. 30.11.2020 BGBl. I S. 2612.
-    note: .247 * 104400
+    note: 0.247 * 104400
   2022-01-01:
     scalar: 25640
     reference: §3 V. v. 30.11.2021, BGBl. I S. 5044.
-    note: .247 * 103800
+    note: 0.247 * 103800
 vorsorge_kranken_minderung:
   name:
     de: >-
@@ -670,20 +639,18 @@ vorsorgepauschale_rentenv_anteil:
     en: Share of deducted pension insurance contributions
   description:
     de: >-
-      Funktion für den Anteil der Rentenversicherungsbeiträge, die bei der
-      Lohnsteuerberechnung abgezogen werden
-    en: >-
-      Function for the share of pension insurance contributions deducted in the
-      withholding tax calculation.
-  unit: Share
-  reference: § 39b (4) EStG
-  note:
-    de: >-
+      § 39b (4) EStG
+      Der Anteil der Rentenversicherungsbeiträge, die bei der Lohnsteuerberechnung
+      abgezogen werden
       Funktion erst ab 2005 vorhanden. Steigt zwischen 2005 und 2025 jährlich um 4
       Prozentpunkte. 2023 wurde der Wert vorzeitig auf 100% gesetzt.
     en: >-
+      § 39b (4) EStG
+      The share of pension insurance contributions deducted in the withholding tax
+      calculation.
       rises between 2005 and 2025 by 4 percentage points annually. In 2023, it was
       prematurely set to 100 percent.
+  unit: Share
   type: piecewise_linear
   2005-01-01:
     0:
@@ -723,12 +690,13 @@ vorsorgepauschale_mindestanteil:
     en: Minimum share for Mindestvorsorgepauschale
   description:
     de: >-
+      39b (2) Nr.3 EStG
       Mindestanteil an Beiträgen zu GKV und GPV, der abgesetzt wird bei
       Mindestvorsorgepauschale
     en: >-
+      39b (2) Nr.3 EStG
       Minimum share of minimum contributions to health care and care insurance deducted
       from Mindestvorsorgepauschale
-  reference: 39b (2) Nr.3 EStG
   unit: Share
   2009-07-23:
     scalar: 0.12
@@ -739,14 +707,15 @@ vorsorgepauschale_kv_max:
     en: Maximum amount Mindestvorsorgepauschale
   description:
     de: >-
+      39b (2) Nr.3 EStG. Depends on Steuerklasse.
       Höchsbetrag für Mindestvorsorgepauschale der Beiträge zu GKV und PKV, die von der
       Lohnsteuer abgesetzt werden können.
     en: >-
+      39b (2) Nr.3 EStG. Depends on Steuerklasse.
       Maximum amount considered for Mindestvorsorgepauschale of contributions to health
       care and care insurance that can be deducted from withholding tax
-  reference: 39b (2) Nr.3 EStG. Depends on Steuerklasse.
   unit: Euro
-  time: year
+  reference_period: Year
   2009-07-23:
     steuerklasse_3: 3000
     steuerklasse_nicht3: 1900

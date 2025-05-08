@@ -47,11 +47,11 @@ inputs:
       - 0.0
 outputs:
   housing_benefits__amount_m_fam:
-    - 527.5
-    - 527.5
-    - 527.5
+    - 528.0
+    - 528.0
+    - 528.0
   housing_benefits__income__amount_m:
-    - 1055
+    - 1056.0
     - 0.0
     - 0.0
   housing_benefits__eligibility__requirement_fulfilled_fam:

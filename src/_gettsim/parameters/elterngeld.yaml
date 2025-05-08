@@ -55,7 +55,7 @@ nettoeinkommen_stufen:
   2011-01-01:
     lower_threshold: 1000.0
     upper_threshold: 1201.0
-  reference: Art. 14 G. v. 09.12.2010 BGBl. I S. 1885
+    reference: Art. 14 G. v. 09.12.2010 BGBl. I S. 1885
 mindestbetrag:
   name:
     de: Mindestbetrag des Elterngeldes
@@ -111,12 +111,13 @@ geschwisterbonus_altersgrenzen:
     en: Age limit for sibling bonus
   description:
     de: >-
+      § 2a BEEG
       Leben im Haushalt zwei Kinder unter 3 Jahren oder mehr als zwei unter 6 Jahren
       wird das Elterngeld um 10% (max. um 75€) erhöht.
     en: >-
+      § 2a BEEG
       If there are two children under the age of 3 or more than two under the age of 6
       living in the household, Parental allowance is increased by 10% (max. by €75).
-  reference: § 2a BEEG
   2007-01-01:
     3: 2
     6: 3
@@ -166,16 +167,16 @@ sozialv_pausch:
   2012-09-18:
     scalar: 0.21
     reference: Art. 1 G. v. 10.09.2012 BGBl. I S. 1878
-    note: .09 + .1 + .02
+    note: 0.09 + 0.1 + 0.02
 max_monate_mit_partnermonate:
   name:
     de: Maximale Anzahl an Monaten, inklusiver Partnermonate.
     en: Maximum number of months, including "Partnermonate".
   description:
     de: >-
+      § 4 (3) BEEG
       Basismonate plus "Partnermonate" bei gleichzeitiger Inanspruchnahme von Elterngeld
       bei Paaren. Basismonate bei Alleinerziehenden.
-  reference: § 4 (3) BEEG
   2007-01-01:
     scalar: 14
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
@@ -185,9 +186,8 @@ max_monate_ohne_partnermonate:
       Maximale Anzahl an Monaten bei Paaren, die nicht gleichzeitig Elterngeld beziehen.
     en: Maximum number of months for couples not receiving Elterngeld simultaneously.
   description:
-    de: Basismonate ohne Partnermonate.
+    de: § 4 (3) BEEG, Basismonate ohne Partnermonate.
     en: null
-  reference: § 4 (3) BEEG
   2007-01-01:
     scalar: 12
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
@@ -203,9 +203,6 @@ max_eink_vorj:
     en: >-
       Maximum taxable income in the year before the birth of the child. Income above
       this threshold disqualifies the parent from receiving Elterngeld.
-  reference:
-    de: null
-    en: null
   unit: Euro
   2011-01-01:
     single: 250000.0

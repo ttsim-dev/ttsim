@@ -27,85 +27,58 @@ sozialv_pausch:
   unit: Share
   1984-01-01:
     scalar: 0.1727
-    reference: null
   1985-01-01:
     scalar: 0.1745
-    reference: null
   1986-01-01:
     scalar: 0.1775
-    reference: null
   1987-01-01:
     scalar: 0.1774
-    reference: .
   1988-01-01:
     scalar: 0.1794
-    reference: .
   1989-01-01:
     scalar: 0.1795
-    reference: null
   1990-01-01:
     scalar: 0.1775
-    reference: .
   1991-01-01:
     scalar: 0.179
-    reference: null
   1992-01-01:
     scalar: 0.184
-    reference: .
   1993-01-01:
     scalar: 0.187
-    reference: .
   1994-01-01:
     scalar: 0.1955
-    reference: null
   1995-01-01:
     scalar: 0.1915
-    reference: .
   1996-01-01:
     scalar: 0.1995
-    reference: .
   1997-01-01:
     scalar: 0.2095
-    reference: .
   1998-01-01:
     scalar: 0.2105
-    reference: null
   2000-01-01:
     scalar: 0.20535
-    reference: .
   2001-01-01:
     scalar: 0.2044
-    reference: .
   2002-01-01:
     scalar: 0.2065
-    reference: null
   2003-01-01:
     scalar: 0.2105
-    reference: null
   2004-01-01:
     scalar: 0.2095
-    reference: null
   2005-01-01:
     scalar: 0.2074
-    reference: null
   2006-01-01:
     scalar: 0.2141
-    reference: null
   2007-01-01:
     scalar: 0.2075
-    reference: null
   2008-01-01:
     scalar: 0.20475
-    reference: null
   2009-01-01:
     scalar: 0.20525
-    reference: null
   2010-01-01:
     scalar: 0.20225
-    reference: null
   2011-01-01:
     scalar: 0.20625
-    reference: null
   2012-01-01:
     scalar: 0.21
     reference: Art. 2 G. v. 20.12.2011 BGBl. I S. 2854
@@ -151,7 +124,6 @@ stundengrenze:
     en: null
   1969-07-01:
     scalar: 20
-    reference: null
   1986-01-01:
     scalar: 19
     reference: Art. 1 G. v. 20.12.1985 BGBl I S. 2484
@@ -161,30 +133,74 @@ stundengrenze:
   2012-04-01:
     scalar: 15
     reference: Art. 2 G. v. 20.12.2011 BGBl I S. 2854
-anspruchsdauer:
+anspruchsdauer_nach_alter:
   name:
-    de: Anspruchsdauer für ALG 1.
-    en: Period of ALG 1 eligibility.
+    de: Anspruchsdauer für ALG 1 nach Alter.
+    en: Period of ALG 1 eligibility based on age.
   description:
     de: >-
+      § 147 Abs. 2 SGB III
       Dauer des Anspruchs auf ALG 1 richtet sich nach Alter und wie viele Monate
       eine Person versicherungsplichtig in den letzten 5 Jahren war.
     en: >-
-      The lenght of ALG 1 eligibility depends on age and on how many months a
+      § 147 Abs. 2 SGB III
+      The length of ALG 1 eligibility depends on age and on how many months a
       person was subject to compulsory insurance
-  reference: § 147 Abs. 2 SGB III
+  type: piecewise_constant
   1997-03-24:
-    nach_alter:
-      0: 12
-      50: 15
-      55: 18
-      58: 24
-    nach_versicherungspflichtigen_monaten:
-      0: 0
-      12: 6
-      18: 8
-      20: 10
-      24: 12
-      30: 15
-      36: 18
-      48: 24
+    0:
+      lower_threshold: -inf
+      intercept_at_lower_threshold: 0
+    1:
+      lower_threshold: 0
+      intercept_at_lower_threshold: 12
+    2:
+      lower_threshold: 50
+      intercept_at_lower_threshold: 15
+    3:
+      lower_threshold: 55
+      intercept_at_lower_threshold: 18
+    4:
+      lower_threshold: 58
+      upper_threshold: inf
+      intercept_at_lower_threshold: 24
+anspruchsdauer_nach_versicherungspflichtigen_monaten:
+  name:
+    de: Anspruchsdauer für ALG 1 nach versicherungspflichtigen Monaten.
+    en: Period of ALG 1 eligibility based on months of compulsory insurance.
+  description:
+    de: >-
+      § 147 Abs. 2 SGB III
+      Dauer des Anspruchs auf ALG 1 richtet sich nach Alter und wie viele Monate
+      eine Person versicherungsplichtig in den letzten 5 Jahren war.
+    en: >-
+      § 147 Abs. 2 SGB III
+      The length of ALG 1 eligibility depends on age and on how many months a
+      person was subject to compulsory insurance
+  type: piecewise_constant
+  1997-03-24:
+    0:
+      lower_threshold: -inf
+      intercept_at_lower_threshold: 0
+    1:
+      lower_threshold: 12
+      intercept_at_lower_threshold: 6
+    2:
+      lower_threshold: 18
+      intercept_at_lower_threshold: 8
+    3:
+      lower_threshold: 20
+      intercept_at_lower_threshold: 10
+    4:
+      lower_threshold: 24
+      intercept_at_lower_threshold: 12
+    5:
+      lower_threshold: 30
+      intercept_at_lower_threshold: 15
+    6:
+      lower_threshold: 36
+      intercept_at_lower_threshold: 18
+    7:
+      lower_threshold: 48
+      upper_threshold: inf
+      intercept_at_lower_threshold: 24

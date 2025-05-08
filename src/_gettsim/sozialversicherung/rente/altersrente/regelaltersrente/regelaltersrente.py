@@ -3,7 +3,11 @@
 from ttsim import policy_function
 
 
-@policy_function(end_date="2007-04-19", leaf_name="altersgrenze")
+@policy_function(
+    end_date="2007-04-19",
+    leaf_name="altersgrenze",
+    vectorization_strategy="not_required",
+)
 def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """Normal retirement age (NRA).
 

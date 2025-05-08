@@ -113,7 +113,11 @@ def not_implemented_m() -> float:
     )
 
 
-@policy_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
+@policy_function(
+    start_date="2023-01-01",
+    leaf_name="kindergeld_erstes_kind_m",
+    vectorization_strategy="not_required",
+)
 def kindergeld_erstes_kind_ohne_staffelung_m(kindergeld_params: dict) -> float:
     """Kindergeld for first child when Kindergeld does not depend on number of children.
 
@@ -130,7 +134,11 @@ def kindergeld_erstes_kind_ohne_staffelung_m(kindergeld_params: dict) -> float:
     return kindergeld_params["kindergeld"]
 
 
-@policy_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
+@policy_function(
+    end_date="2022-12-31",
+    leaf_name="kindergeld_erstes_kind_m",
+    vectorization_strategy="not_required",
+)
 def kindergeld_erstes_kind_gestaffelt_m(kindergeld_params: dict) -> float:
     """Kindergeld for first child when Kindergeld does depend on number of children.
 

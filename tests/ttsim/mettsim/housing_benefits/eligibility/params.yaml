@@ -1,0 +1,33 @@
+---
+subsistence_income_level:
+  name:
+    de: Anspruchsvoraussetzung Einkommen pro Partner/Person
+    en: Eligibility income per spouse/person
+  description:
+    de: Dict, da es sich über die Jahre ändert, aber der Paramtername gleich bleibt.
+    en: Dict, because it changes over time, but the parameter name remains the same.
+  type: dict
+  1900-01-01:
+    per_spouse_m: 500.0
+  2020-01-01:
+    per_individual_m: 500.0
+max_number_of_family_members:
+  name:
+    de: Maximalzahl der zu berücksichtigenden Personen
+    en: Maximum number of persons to consider
+  description:
+    de: Erst nach Reform 2020 relevant.
+    en: Only relevant after 2020 reform.
+  type: scalar
+  2020-01-01:
+    value: 4
+max_age_children:
+  name:
+    de: Maximalalter der Kinder
+    en: Maximum age of children
+  description:
+    de: In Mittelerde passiert nichts, niemals.
+    en: In Middle Earth nothing happens, ever.
+  type: scalar
+  1900-01-01:
+    value: 18
