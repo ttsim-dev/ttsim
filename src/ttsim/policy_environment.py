@@ -485,6 +485,8 @@ def get_one_ttsim_param(
             parameter_dict=cleaned_spec["value"],
         )
         return PiecewisePolynomialTTSIMParam(**cleaned_spec)
+    elif spec["type"] == "require_converter":
+        return None
     else:
         raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
