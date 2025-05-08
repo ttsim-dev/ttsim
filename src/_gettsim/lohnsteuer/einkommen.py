@@ -86,7 +86,7 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
 
     """
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["beitr_satz"]["ermäßigt"] / 2
+        ges_krankenv_params["beitragssatz"]["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
@@ -128,7 +128,7 @@ def vorsorge_krankenv_option_b_ab_2019(
     """
 
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["beitr_satz"]["ermäßigt"] / 2
+        ges_krankenv_params["beitragssatz"]["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
@@ -235,7 +235,7 @@ def vorsorgepauschale_y_ab_2010(
 
     vorsorg_rentenv = (
         bruttolohn_rente
-        * ges_rentenv_params["beitr_satz"]
+        * ges_rentenv_params["beitragssatz"]
         * eink_st_abzuege_params["vorsorgepauschale_rentenv_anteil"]
     )
 

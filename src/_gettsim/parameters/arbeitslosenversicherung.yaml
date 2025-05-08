@@ -1,14 +1,13 @@
 ---
-beitr_satz:
+beitragssatz:
   name:
-    de: Beitragssätze zur Arbeitslosenversicherung
-    en: Contribution rate to unemployment insurance
+    de: Arbeitnehmerbeitragssatz zur Arbeitslosenversicherung
+    en: Employees' contribution rate to unemployment insurance.
   description:
-    de: >-
-      Beitragssätze zur Arbeitslosenversicherung für Arbeitnehmer.
-    en: >-
-      Employees contribution rate for unemployment insurance.
+    de: Arbeitnehmerbeitragssatz zur Arbeitslosenversicherung
+    en: Employees' contribution rate to unemployment insurance.
   unit: Share
+  type: scalar
   access_different_date: jahresanfang
   1984-01-01:
     scalar: 0.023

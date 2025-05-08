@@ -26,7 +26,7 @@ def betrag_versicherter_m_ohne_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * arbeitslosenversicherung_params["beitr_satz"]
+        * arbeitslosenversicherung_params["beitragssatz"]
     )
 
     # Set to 0 for minijobs
@@ -67,7 +67,7 @@ def betrag_versicherter_m_mit_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * arbeitslosenversicherung_params["beitr_satz"]
+        * arbeitslosenversicherung_params["beitragssatz"]
     )
 
     # Set to 0 for minijobs
@@ -104,7 +104,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * arbeitslosenversicherung_params["beitr_satz"]
+        * arbeitslosenversicherung_params["beitragssatz"]
     )
 
     # Set to 0 for minijobs
@@ -145,7 +145,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     """
     betrag_arbeitgeber_regulär_beschäftigt_m = (
         sozialversicherung__rente__beitrag__einkommen_m
-        * arbeitslosenversicherung_params["beitr_satz"]
+        * arbeitslosenversicherung_params["beitragssatz"]
     )
 
     # Set to 0 for minijobs
@@ -181,7 +181,7 @@ def betrag_gesamt_midijob_m(
     return (
         sozialversicherung__midijob_bemessungsentgelt_m
         * 2
-        * arbeitslosenversicherung_params["beitr_satz"]
+        * arbeitslosenversicherung_params["beitragssatz"]
     )
 
 
@@ -210,7 +210,7 @@ def betrag_arbeitgeber_midijob_m_anteil_bruttolohn(
     """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * arbeitslosenversicherung_params["beitr_satz"]
+        * arbeitslosenversicherung_params["beitragssatz"]
     )
 
 
@@ -281,5 +281,5 @@ def betrag_versicherter_midijob_m_mit_festem_beitragssatz(
     """
     return (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        * arbeitslosenversicherung_params["beitr_satz"]
+        * arbeitslosenversicherung_params["beitragssatz"]
     )
