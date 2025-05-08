@@ -122,9 +122,11 @@ geschwisterbonus_altersgrenzen:
   description:
     de: >-
       § 2a BEEG
+      § 2a BEEG
       Leben im Haushalt zwei Kinder unter 3 Jahren oder mehr als zwei unter 6 Jahren
       wird das Elterngeld erhöht.
     en: >-
+      § 2a BEEG
       § 2a BEEG
       If there are two children under the age of 3 or more than two under the age of 6
       living in the household, Elterngeld increases.
@@ -190,6 +192,7 @@ max_bezugsmonate:
     en: Maximum number of months of Elterngeld receipt.
   description:
     de: >-
+      § 4 (3) BEEG
       § 4 (3) BEEG
       Basismonate plus "Partnermonate" bei gleichzeitiger Inanspruchnahme von Elterngeld
       bei Paaren. Basismonate bei Alleinerziehenden.

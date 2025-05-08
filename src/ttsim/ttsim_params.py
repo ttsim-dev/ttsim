@@ -66,15 +66,6 @@ class DictTTSIMParam(TTSIMParam):
 
 
 @dataclass(frozen=True)
-class ListTTSIMParam(TTSIMParam):
-    """
-    A TTSIM parameter directly read from a YAML file that is a list.
-    """
-
-    value: list[float] | list[int] | list[bool]
-
-
-@dataclass(frozen=True)
 class PiecewisePolynomialTTSIMParam(TTSIMParam):
     """A TTSIM parameter with its contents read and converted from a YAML file.
 

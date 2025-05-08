@@ -18,9 +18,9 @@ def amount_y(
     if parent_is_noble_fam:
         return 0.0
     elif wealth_fam >= wealth_threshold_for_reduced_tax_rate:
-        return amount_standard_y
-    else:
         return amount_reduced_y
+    else:
+        return amount_standard_y
 
 
 @policy_function(vectorization_strategy="vectorize")

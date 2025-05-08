@@ -32,7 +32,6 @@ from ttsim.ttsim_objects import (
 )
 from ttsim.ttsim_params import (
     DictTTSIMParam,
-    ListTTSIMParam,
     PiecewisePolynomialTTSIMParam,
     ScalarTTSIMParam,
     TTSIMParam,
@@ -479,8 +478,6 @@ def get_one_ttsim_param(
         return ScalarTTSIMParam(**cleaned_spec)
     elif spec["type"] == "dict":
         return DictTTSIMParam(**cleaned_spec)
-    elif spec["type"] == "list":
-        return ListTTSIMParam(**cleaned_spec)
     elif spec["type"].startswith("piecewise_"):
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,

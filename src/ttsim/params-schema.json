@@ -44,7 +44,6 @@
           "enum": [
             "scalar",
             "dict",
-            "list",
             "piecewise_constant",
             "piecewise_linear",
             "piecewise_quadratic",
