@@ -65,7 +65,7 @@ beitragssatz:
     scalar: 0.093
   2019-01-01:
     scalar: 0.093
-beitr_bemess_grenze_m:
+beitragsbemessungsgrenze_m:
   name:
     de: Beitragsbemessungsgrenzen für die Rentenversicherung
     en: Income Threshold for pension insurance

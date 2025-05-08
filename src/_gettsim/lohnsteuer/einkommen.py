@@ -225,12 +225,12 @@ def vorsorgepauschale_y_ab_2010(
     if wohnort_ost:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["beitr_bemess_grenze_m"]["ost"],
+            12 * ges_rentenv_params["beitragsbemessungsgrenze_m"]["ost"],
         )
     else:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["beitr_bemess_grenze_m"]["west"],
+            12 * ges_rentenv_params["beitragsbemessungsgrenze_m"]["west"],
         )
 
     vorsorg_rentenv = (
