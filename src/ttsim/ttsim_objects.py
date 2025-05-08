@@ -282,6 +282,30 @@ class PolicyFunction(TTSIMFunction):
         )
 
 
+# Never returns a column, require precise annotation
+def params_function(
+    *,
+    leaf_name: str | None = None,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+) -> Callable[[Callable], ParamsFunction]:
+    """
+    Decorator that makes a `ParamsFunction` from a function.
+    """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    def inner(func: Callable) -> ParamsFunction:
+        return ParamsFunction(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    return inner
+
+
+# Always returns a column
 def policy_function(
     *,
     leaf_name: str | None = None,
