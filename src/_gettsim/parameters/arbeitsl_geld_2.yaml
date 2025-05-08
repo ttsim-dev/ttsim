@@ -1,17 +1,19 @@
 ---
-eink_anr_frei:
+parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
   name:
-    de: Anrechnungsfreie Einkommensanteile
-    en: Income shares not subject to transfer withdrawal
+    de: >-
+      Parameter der Berechnung des anrechnungsfreien Einkommens wenn keine Kinder in
+      Bedarfsgemeinschaft leben
+    en: >-
+      Parameter for calculation of income not subject to transfer withdrawal when no
+      children are in the Bedarfsgemeinschaft
   description:
     de: >-
-      Einkommensanteile, die anrechnungsfrei bleiben. § 30 SGB II. Seit 01.10.2005
-      zudem
-      definiert durch Freibetrag in § 11 SGB II, s. § 67 SGB II. Seit 01.04.2011
-      § 11b (2) SGB II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2
-      G. v. 24.03.2011 BGBl. I S. 453).
-    en: >-
-      Income shares which do not lead to tapering of benefits.
+      Parameter für die Berechnung des anrechnungsfreien Einkommens ohne Kinder in der
+      Bedarfsgemeinschaft. § 30 SGB II. Seit 01.10.2005 zudem definiert durch Freibetrag
+      in § 11 SGB II, s. § 67 SGB II. Seit 01.04.2011 § 11b (2) SGB II (neugefasst durch
+      B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v. 24.03.2011 BGBl. I S. 453).
+    en: null
   type: piecewise_linear
   reference_period: Month
   2005-01-01:
@@ -87,30 +89,35 @@ eink_anr_frei:
     5:
       upper_threshold: inf
       rate_linear: 0
-eink_anr_frei_kinder:
+parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
   name:
-    de: Abweichende anrechnungsfreie Einkommensanteile falls Kinder im Haushalt
-    en: null
+    de: >-
+      Parameter der Berechnung des anrechnungsfreien Einkommens wenn Kinder in der
+      Bedarfsgemeinschaft leben
+    en: >-
+      Parameter for calculation of income not subject to transfer withdrawal when
+      children are in the Bedarfsgemeinschaft
   description:
     de: >-
-      Obere Einkommensgrenze bei anzurechnendem Einkommen, Intervall 3, Haushalt mit
-      Kindern. Gilt statt der Parameter in eink_anr_frei für Leistungsbezieher, die mit
-      minderjährigem Kind in BG leben oder die ein minderjähriges Kind haben (zweiteres
-      wird aktuell noch nicht im Code beachtet). § 30 SGB II. Seit 01.04.2011 § 11b SGB
-      II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v. 24.03.2011
-      BGBl. I S. 453).
-      Ersetzt Parameter in eink_anr_frei, falls nicht vorhanden
+      Obere Einkommensgrenze bei anzurechnendem Einkommen, Intervall 3,
+      Bedarfsgemeinschaft mit Kindern. Gilt statt der Parameter in
+      parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg für Leistungsbezieher, die
+      mit minderjährigem Kind in BG leben oder die ein minderjähriges Kind haben
+      (zweiteres wird aktuell noch nicht im Code beachtet). § 30 SGB II. Seit 01.04.2011
+      § 11b SGB II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v.
+      24.03.2011 BGBl. I S. 453). Ersetzt Parameter in
+      parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg, falls nicht vorhanden
     en: null
   type: piecewise_linear
   2005-10-01:
     reference: Artikel 1 G. v. 14.08.2005 BGBl. I S. 2407.
-    deviation_from: arbeitsl_geld_2.eink_anr_frei
+    deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     3:
       upper_threshold: 1500
   2023-07-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Bürgergeld-Gesetz
-    deviation_from: arbeitsl_geld_2.eink_anr_frei
+    deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     4:
       upper_threshold: 1500
 regelsatz:
@@ -139,17 +146,37 @@ regelsatz:
       5: Children 6 to 13 years
       6: Children 0 to 5 years.
   unit: Euro
+  type: require_converter
   reference_period: Month
   2005-01-01:
-    scalar: 338
+    basissatz: 338
+    anteil_vom_regelsatz_bei_zwei_erwachsenen: 0.9
+    anteil_vom_regelsatz_bei_weiteren_erwachsenen: 0.8
+    anteil_vom_regelsatz_für_kinder:
+      zwischen_14_und_24_jahre:
+        min_alter: 14
+        max_alter: 24
+        anteil: 0.8
+      zwischen_6_und_13_jahre:
+        min_alter: 6
+        max_alter: 13
+        anteil: 0.6
+      bis_5_jahre:
+        min_alter: 0
+        max_alter: 5
+        anteil: 0.6
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
     note: >-
-      Der tatsächliche Wert unterscheidet sich zwischen Ost und West. Korrekte
-      Werte sind in den alten Bundesländern einschließlich Berlin (Ost) 345 Euro,
-      in
-      den neuen Bundesländern 331 Euro.
+      Der tatsächliche Wert unterscheidet sich zwischen Ost und West. Korrekte Werte
+      sind in den alten Bundesländern einschließlich Berlin (Ost) 345 Euro, in den neuen
+      Bundesländern 331 Euro.
+      Anteile vom Regelsatz für erwachsene Haushaltsmitglieder laut § 20 (3) SGB II.
+      Eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V derselben Norm. Der
+      Regelsatz für weitere Haushaltsmitglieder wurde als Anteil des Standardsatzes
+      bestimmt.
   2005-07-01:
-    scalar: 338
+    deviation_from: previous
+    basissatz: 338
     reference: B. v. 01.09.2005 BGBl. I S. 2718.
     note: >-
       Betrag unverändert. Der tatsächliche Wert unterscheidet sich zwischen Ost und
@@ -157,19 +184,28 @@ regelsatz:
       Korrekte Werte für die Zeit ab 1. Juli 2005 sind in den alten Bundesländern
       einschließlich Berlin (Ost) 345 Euro, in den neuen Bundesländern 331 Euro.
   2006-07-01:
-    scalar: 345
+    deviation_from: previous
+    basissatz: 345
     reference: B. v. 20.07.2006 BGBl. I S. 1702.
   2007-07-01:
-    scalar: 347
+    deviation_from: previous
+    basissatz: 347
     reference: B. v. 18.06.2007 BGBl. I S. 1139.
   2008-07-01:
-    scalar: 351
+    deviation_from: previous
+    basissatz: 351
     reference: B. v. 26.06.2008 BGBl. I S. 1102.
   2009-07-01:
-    scalar: 359
+    deviation_from: previous
+    basissatz: 359
+    zwischen_6_und_13_jahre:
+      min_alter: 6
+      max_alter: 13
+      anteil: 0.7
     reference: B. v. 17.06.2009 BGBl. I S. 1342.
   2010-07-01:
-    scalar: 359
+    deviation_from: previous
+    basissatz: 359
     reference: B. v. 07.06.2010 BGBl. I S. 820. Betrag unverändert.
   2011-01-01:
     1: 364
@@ -410,7 +446,7 @@ regelsatz:
       max_alter: 5
       betrag: 357
     reference: §2 V. v. 24.10.2024 BGBl. I Nr. 287
-kindersofortzuschl:
+kindersofortzuschlag:
   name:
     de: Kindersofortzuschlag für Arbeitslosengeld II
     en: Instant surcharge for children for unemployment benefit
@@ -426,64 +462,17 @@ kindersofortzuschl:
       or social benefits (Regelbedarfsstufen 3,4,5,6) receive an instant surcharge
       of 20 Euro.
   unit: Euro
+  type: scalar
+  reference_period: Month
   2022-07-01:
-    scalar: 20
+    value: 20
   2025-01-01:
-    scalar: 25
+    value: 25
     note: >-
       Gesetz zur Fortentwicklung des Steuerrechts und zur  Anpassung des Einkommen-
       steuertarifs (Steuerfortentwicklungsgesetz - SteFeG)
     reference: Art. 7 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
-anteil_regelsatz_erwachsene:
-  name:
-    de: Anteil am Regelsatz für weitere Erwachsene in der Bedarfsgemeinschaft
-    en: Fraction of standard rate for additional adults in the household
-  description:
-    de: >-
-      § 20 (3) SGB II, eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V
-      derselben Norm. Der Regelsatz für weitere Haushaltsmitglieder wurde als Anteil
-      des Standardsatzes bestimmt.
-    en: null
-  unit: Share
-  2005-01-01:
-    zwei_erwachsene: 0.9
-    weitere_erwachsene: 0.8
-    reference: Artikel 1 § 20 G. v. 24.12.2003 BGBl. I S. 2954.
-  2011-01-01:
-    note: Andere Berechnungsart
-anteil_regelsatz_kinder:
-  name:
-    de: Anteil am Regelsatz für Kinder
-    en: Fraction of standard rate for children
-  description:
-    de: >-
-      § 20 (3) SGB II, eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V derselben
-      Norm. 2005 bis 2010: Der Regelsatz für Kinder wurden als Anteil des Standardsatzes
-      bestimmt.
-    en: null
-  unit: Share
-  2005-01-01:
-    kind_zwischen_14_und_24:
-      min_alter: 14
-      max_alter: 24
-      anteil: 0.8
-    kind_zwischen_6_und_13:
-      min_alter: 6
-      max_alter: 13
-      anteil: 0.6
-    kind_bis_5:
-      min_alter: 0
-      max_alter: 5
-      anteil: 0.6
-    reference: Artikel 1 § 20 G. v. 24.12.2003 BGBl. I S. 2954.
-  2009-07-01:
-    deviation_from: previous
-    reference: Artikel 1 G. v. 02.03.2009 BGBl. I S. 416.
-    kind_zwischen_6_und_13:
-      min_alter: 6
-      max_alter: 13
-      share: 0.7
-mehrbedarf_anteil:
+anteil_mehrbedarf_alleinerziehend:
   name:
     de: >-
       ``kind_bis_6_oder_mehrere_bis_15`` gibt Mehrbedarf AE bei mind. einem Kind unter 7
@@ -499,6 +488,7 @@ mehrbedarf_anteil:
     de: § 21 (3) Nr. 1 SGB II.
     en: null
   unit: Share
+  type: dict
   reference_period: Month
   2005-01-01:
     min_1_kind: 0.12
@@ -511,12 +501,11 @@ vermögensgrundfreibetrag_obergrenze:
     en: Maximum of basic allowance
   description:
     de: >-
-      § 12 (2) Satz 1 Nr. 1 SGB II. Ausnahmeregelung für Personen,
-      die vor 1948 geboren wurden. Die Ausnahmeregelung taucht im aktuellen Gesetz nicht
-      mehr auf und ist nicht mehr relevant,
-      da alle betroffenen Personen zu alt für ALG 2 sind.
+      § 12 (2) Satz 1 Nr. 1 SGB II. Ausnahmeregelung für Personen, die vor 1948 geboren
+      wurden.
     en: Differs by birth year.
   unit: Euro
+  type: dict
   2005-01-01:
     1947: 33800
     1948: 13000
@@ -535,13 +524,6 @@ vermögensgrundfreibetrag_obergrenze:
     1958: 9900
     1964: 10050
     note: Artikel 1 G. v. 20.04.2007 BGBl. I S. 554.
-  2023-01-01:
-    1947: null
-    1948: null
-    1958: null
-    1964: null
-    reference: G. v. 20.12.2022 BGBl. I S. 2328.
-    note: Bürgergeld-Gesetz
 vermögensgrundfreibetrag:
   name:
     de: Vermögensgrundfreibetrag je Lebensjahr
@@ -594,7 +576,7 @@ vermögensfreibetrag_austattung:
     en: null
   unit: Euro
   2005-01-01:
-    scalar: 750
+    value: 750
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
@@ -608,10 +590,10 @@ vermögensfreibetrag_kind:
     en: null
   unit: Euro
   2005-01-01:
-    scalar: 4100
+    value: 4100
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
   2006-08-01:
-    scalar: 3100
+    value: 3100
     reference: Artikel 1 G. v. 20.07.2006 BGBl. I S. 1706.
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.

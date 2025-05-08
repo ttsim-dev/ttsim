@@ -772,7 +772,8 @@ def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
                     elif "." in policy_in_place["deviation_from"]:
                         assert (  # noqa: PT018
                             group == "arbeitsl_geld_2"
-                            and param == "eink_anr_frei_kinder"
+                            and param
+                            == "parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg"
                         )
                         path_list = policy_in_place["deviation_from"].split(".")
                         out_params[param] = _parse_raw_parameter_group(

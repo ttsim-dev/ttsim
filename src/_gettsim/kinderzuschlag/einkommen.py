@@ -153,8 +153,8 @@ def maximales_nettoeinkommen_m_bg(
         + kinderzuschl_params["maximum"] * arbeitslosengeld_2__anzahl_kinder_bg
     )
 
-    kindersofortzuschl = kinderzuschl_params.get("kindersofortzuschl", 0.0)
-    out += kindersofortzuschl * arbeitslosengeld_2__anzahl_kinder_bg
+    kindersofortzuschlag = kinderzuschl_params.get("kindersofortzuschlag", 0.0)
+    out += kindersofortzuschlag * arbeitslosengeld_2__anzahl_kinder_bg
 
     return out
 
@@ -332,13 +332,15 @@ def regelsatz_m_bg_arbeitsl_geld_2_params_bis_2010(
 
     """
     if familie__alleinerziehend_bg:
-        out = arbeitsl_geld_2_params["regelsatz"] * (
+        out = arbeitsl_geld_2_params["regelsatz"]["basissatz"] * (
             1 + arbeitslosengeld_2__mehrbedarf_alleinerziehend_m_bg
         )
     else:
         out = (
-            arbeitsl_geld_2_params["regelsatz"]
-            * arbeitsl_geld_2_params["anteil_regelsatz_erwachsene"]["zwei_erwachsene"]
+            arbeitsl_geld_2_params["regelsatz"]["basissatz"]
+            * arbeitsl_geld_2_params["regelsatz"][
+                "anteil_vom_regelsatz_bei_zwei_erwachsenen"
+            ]
             * 2
         )
 

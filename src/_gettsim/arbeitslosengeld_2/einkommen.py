@@ -245,7 +245,9 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     """
     out = piecewise_polynomial(
         x=einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
-        parameters=arbeitsl_geld_2_params["eink_anr_frei"],
+        parameters=arbeitsl_geld_2_params[
+            "parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg"
+        ],
         rates_multiplier=nettoquote,
     )
     return out
@@ -295,11 +297,15 @@ def anrechnungsfreies_einkommen_m(
     if anzahl_kinder_bis_17_bg > 0 or einkommensteuer__anzahl_kinderfreibeträge > 0:
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
-            parameters=arbeitsl_geld_2_params["eink_anr_frei_kinder"],
+            parameters=arbeitsl_geld_2_params[
+                "parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg"
+            ],
         )
     else:
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
-            parameters=arbeitsl_geld_2_params["eink_anr_frei"],
+            parameters=arbeitsl_geld_2_params[
+                "parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg"
+            ],
         )
     return out

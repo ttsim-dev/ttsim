@@ -71,11 +71,13 @@ def mehrbedarf_alleinerziehend_m(
         out = min(
             max(
                 # Minimal Mehrbedarf share. Minimal rate times number of children
-                arbeitsl_geld_2_params["mehrbedarf_anteil"]["min_1_kind"]
+                arbeitsl_geld_2_params["anteil_mehrbedarf_alleinerziehend"][
+                    "min_1_kind"
+                ]
                 * anzahl_kinder_fg,
                 # Increased rated if children up to 6 and/or 2-3 up to 15 are present.
                 (
-                    arbeitsl_geld_2_params["mehrbedarf_anteil"][
+                    arbeitsl_geld_2_params["anteil_mehrbedarf_alleinerziehend"][
                         "kind_bis_6_oder_mehrere_bis_15"
                     ]
                     if (anzahl_kinder_bis_6_fg >= 1)
@@ -83,7 +85,7 @@ def mehrbedarf_alleinerziehend_m(
                     else 0.0
                 ),
             ),
-            arbeitsl_geld_2_params["mehrbedarf_anteil"]["max"],
+            arbeitsl_geld_2_params["anteil_mehrbedarf_alleinerziehend"]["max"],
         )
     else:
         out = 0.0
@@ -112,27 +114,27 @@ def kindersatz_m_bis_2010(
     float with SGB II needs of children until year 2010.
 
     """
-    anteile = arbeitsl_geld_2_params["anteil_regelsatz_kinder"]
-    regelsatz = arbeitsl_geld_2_params["regelsatz"]
+    anteile = arbeitsl_geld_2_params["regelsatz"]["anteil_vom_regelsatz_für_kinder"]
+    basissatz = arbeitsl_geld_2_params["regelsatz"]["basissatz"]
 
     if (
-        alter >= anteile["kind_zwischen_14_und_24"]["min_alter"]
-        and alter <= anteile["kind_zwischen_14_und_24"]["max_alter"]
+        alter >= anteile["zwischen_14_und_24_jahre"]["min_alter"]
+        and alter <= anteile["zwischen_14_und_24_jahre"]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = regelsatz * anteile["kind_zwischen_14_und_24"]["anteil"]
+        out = basissatz * anteile["zwischen_14_und_24_jahre"]["anteil"]
     elif (
-        alter >= anteile["kind_zwischen_6_und_13"]["min_alter"]
-        and alter <= anteile["kind_zwischen_6_und_13"]["max_alter"]
+        alter >= anteile["zwischen_6_und_13_jahre"]["min_alter"]
+        and alter <= anteile["zwischen_6_und_13_jahre"]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = regelsatz * anteile["kind_zwischen_6_und_13"]["anteil"]
+        out = basissatz * anteile["zwischen_6_und_13_jahre"]["anteil"]
     elif (
-        alter >= anteile["kind_bis_5"]["min_alter"]
-        and alter <= anteile["kind_bis_5"]["max_alter"]
+        alter >= anteile["bis_5_jahre"]["min_alter"]
+        and alter <= anteile["bis_5_jahre"]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = regelsatz * anteile["kind_bis_5"]["anteil"]
+        out = basissatz * anteile["bis_5_jahre"]["anteil"]
     else:
         out = 0.0
 
@@ -167,7 +169,7 @@ def kindersatz_m_ab_2011(
 
     """
 
-    kindersofortzuschlag = arbeitsl_geld_2_params.get("kindersofortzuschl", 0.0)
+    kindersofortzuschlag = arbeitsl_geld_2_params.get("kindersofortzuschlag", 0.0)
 
     if (
         alter >= arbeitsl_geld_2_params["regelsatz"][6]["min_alter"]
@@ -225,12 +227,16 @@ def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
     # BG has 2 adults
     if p_id_einstandspartner >= 0:
         out = (
-            arbeitsl_geld_2_params["regelsatz"]
-            * (arbeitsl_geld_2_params["anteil_regelsatz_erwachsene"]["zwei_erwachsene"])
+            arbeitsl_geld_2_params["regelsatz"]["basissatz"]
+            * (
+                arbeitsl_geld_2_params["regelsatz"][
+                    "anteil_vom_regelsatz_bei_zwei_erwachsenen"
+                ]
+            )
         )
     # This observation is not a child, so BG has 1 adult
     elif kindersatz_m == 0.0:
-        out = arbeitsl_geld_2_params["regelsatz"]
+        out = arbeitsl_geld_2_params["regelsatz"]["basissatz"]
     else:
         out = 0.0
 
