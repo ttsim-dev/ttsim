@@ -252,8 +252,7 @@ class PolicyFunction(TTSIMFunction):
     leaf_name:
         The leaf name of the function in the functions tree.
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
+        The function that is called when the PolicyFunction is evaluated.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -294,6 +293,11 @@ def policy_function(
     """
     Decorator that makes a `PolicyFunction` from a function.
 
+    PolicyFunctions are typically defined on scalars, but work on data columns (i.e.,
+    arrays of the same length as `p_id`). TTSIM will handle this (see
+    `vectorization_strategy` below). Use `params_function` / `ParamsFunction` for
+    functions that convert the parameters of the taxes and transfers system, which do
+    not require any columns from the data.
 
     Parameters
     ----------
@@ -819,6 +823,66 @@ class PiecewisePolynomialTTSIMParam(TTSIMParam):
     value: PiecewisePolynomialParameters
 
 
+@dataclass(frozen=True)
+class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
+    """
+    Compute a scalar or custom object from parameters of the taxes and transfers system.
+
+    Parameters
+    ----------
+    leaf_name:
+        The leaf name of the function in the objects tree.
+    function:
+        The function that is called when the ParamsFunction is evaluated.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    """
+
+    function: Callable[FunArgTypes, ReturnType]
+
+    def __post_init__(self) -> None:
+        # Expose the signature of the wrapped function for dependency resolution
+        _frozen_safe_update_wrapper(self, self.function)
+
+    def __call__(
+        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+    ) -> ReturnType:
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
+
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
+
+    def is_active(self, date: datetime.date) -> bool:
+        """Check if the function is active at a given date."""
+        return self.start_date <= date <= self.end_date
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> ParamsFunction:
+        """Remove tree logic from the function and update the function signature."""
+        return ParamsFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            start_date=self.start_date,
+            end_date=self.end_date,
+        )
+
+
 # Never returns a column, require precise annotation
 def params_function(
     *,
@@ -828,6 +892,30 @@ def params_function(
 ) -> Callable[[Callable], ParamsFunction]:
     """
     Decorator that makes a `ParamsFunction` from a function.
+
+    ParamsFunctions convert complex parameters (i.e., anything that is not a scalar, a
+    flat homogenous dictionary, or a set of parameters of a piecewise polynomial
+    function) to custom representations. They must not use any data columns (i.e.,
+    arrays of the same length as `p_id`). Use `policy_function` / `PolicyFunction` for
+    functions that operate on data columns.
+
+    As a consequence, the arguments of the decorated function must be found in the
+    params tree. They are typically defined as outermost keys in the yaml files with
+    parameters of the taxes and transfers system.
+
+    Parameters
+    ----------
+    leaf_name
+        The name that should be used as the ParamsFunction's leaf name in the DAG. If
+        omitted, we use the name of the function as defined.
+    start_date
+        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    end_date
+        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+
+    Returns
+    -------
+    A decorator that returns a ParamsFunction object.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
