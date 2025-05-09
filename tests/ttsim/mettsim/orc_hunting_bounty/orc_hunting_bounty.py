@@ -1,6 +1,6 @@
 """Orc Hunting Bounty"""
 
-from ttsim import DictTTSIMParam, policy_function
+from ttsim import policy_function
 
 
 @policy_function(vectorization_strategy="vectorize")
@@ -8,7 +8,7 @@ def amount(
     small_orcs_hunted: int,
     large_orcs_hunted: int,
     parent_is_noble: bool,
-    orc_hunting_bounty: DictTTSIMParam,
+    orc_hunting_bounty: dict,
 ) -> float:
     """Orc-hunting bounty."""
     bounty_small_orcs = orc_hunting_bounty["small_orc"] * small_orcs_hunted

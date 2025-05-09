@@ -88,10 +88,16 @@ def compute_taxes_and_transfers(
     _fail_if_data_tree_not_valid(data_tree)
     _fail_if_environment_not_valid(environment)
 
-    # Transform functions tree to qualified names dict with qualified arguments
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
         time_units=tuple(TIME_UNIT_LABELS.keys()),
+    )
+    # Check that all paths in the params tree are valid
+    dt.fail_if_paths_are_invalid(
+        functions=environment.combined_tree,
+        data_tree=data_tree,
+        targets=targets_tree,
+        top_level_namespace=top_level_namespace,
     )
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
@@ -126,7 +132,7 @@ def compute_taxes_and_transfers(
     )
     functions_with_partialled_parameters = _partial_params_tree_to_functions(
         functions=functions_with_partialled_parameters,
-        params_tree=environment._params_tree,
+        params_tree=environment.params_tree,
     )
 
     # Remove unnecessary elements from user-provided data.
@@ -202,15 +208,21 @@ def _get_top_level_namespace(
     top_level_namespace:
         The top level namespace.
     """
-    direct_top_level_names = set(environment.raw_objects_tree.keys())
+
+    direct_top_level_names = set(environment.combined_tree.keys())
+
+    # Do not create variations for lower-level namespaces.
+    top_level_objects_for_variations = direct_top_level_names - {
+        k for k, v in environment.combined_tree.items() if isinstance(v, dict)
+    }
+
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         groupings=environment.grouping_levels,
         time_units=time_units,
     )
-
-    all_top_level_names = direct_top_level_names.copy()
     bngs_to_variations = {}
-    for name in direct_top_level_names:
+    all_top_level_names = direct_top_level_names.copy()
+    for name in top_level_objects_for_variations:
         match = pattern_all.fullmatch(name)
         # We must not find multiple time units for the same base name and group.
         bngs = get_base_name_and_grouping_suffix(match)

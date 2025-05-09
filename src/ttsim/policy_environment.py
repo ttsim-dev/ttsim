@@ -29,6 +29,7 @@ from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DictTTSIMParam,
     PiecewisePolynomialTTSIMParam,
+    RawTTSIMParam,
     ScalarTTSIMParam,
     TTSIMObject,
     TTSIMParam,
@@ -69,7 +70,7 @@ class PolicyEnvironment:
         params: dict[str, Any] | None = None,
         params_tree: NestedTTSIMParamDict | None = None,
     ):
-        # Check functions tree and convert functions to PolicyFunction if necessary
+        # Check tree with TTSIM objects (policy inputs / functions, params functions)
         assert_valid_ttsim_pytree(
             tree=raw_objects_tree,
             leaf_checker=lambda leaf: isinstance(leaf, TTSIMObject),
@@ -81,9 +82,17 @@ class PolicyEnvironment:
         )
         _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
 
-        # Read in parameters and aggregation specs
+        # FixMe: Delete
+        params_tree = params_tree if params_tree is not None else {}
         self._params = params if params is not None else {}
-        self._params_tree = params_tree if params_tree is not None else {}
+
+        # Check tree with params
+        assert_valid_ttsim_pytree(
+            tree=params_tree,
+            leaf_checker=lambda leaf: isinstance(leaf, TTSIMParam),
+            tree_name="raw_objects_tree",
+        )
+        self._params_tree = params_tree
 
     @property
     def raw_objects_tree(self) -> NestedTTSIMObjectDict:
@@ -97,6 +106,16 @@ class PolicyEnvironment:
     def params(self) -> dict[str, Any]:
         """The parameters of the policy environment."""
         return self._params
+
+    @property
+    def params_tree(self) -> dict[str, Any]:
+        """The parameters of the policy environment."""
+        return self._params_tree
+
+    @property
+    def combined_tree(self) -> dict[str, Any]:
+        """The combined tree of raw objects and params."""
+        return {**self._raw_objects_tree, **self._params_tree}
 
     @property
     def grouping_levels(self) -> tuple[str, ...]:
@@ -190,11 +209,11 @@ def set_up_policy_environment(
     date = to_datetime(date)
 
     _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
-    _orig_yaml_tree = orig_params_tree(root)
+    _orig_params_tree = orig_params_tree(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_of_clashes(
         orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
-        orig_params_tree=_orig_yaml_tree,
+        orig_params_tree=_orig_params_tree,
     )
 
     params = {}
@@ -226,7 +245,7 @@ def set_up_policy_environment(
     else:
         params = {}
         params_tree = active_ttsim_params_tree(
-            orig_params_tree=_orig_yaml_tree, date=date
+            orig_params_tree=_orig_params_tree, date=date
         )
     return PolicyEnvironment(
         raw_objects_tree=active_ttsim_objects_tree(
@@ -484,7 +503,7 @@ def get_one_ttsim_param(
         )
         return PiecewisePolynomialTTSIMParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
-        return None
+        return RawTTSIMParam(**cleaned_spec)
     else:
         raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 

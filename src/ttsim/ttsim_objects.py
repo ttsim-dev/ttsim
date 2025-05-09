@@ -5,7 +5,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
 
 import dags
 import dags.tree as dt
@@ -821,6 +821,15 @@ class PiecewisePolynomialTTSIMParam(TTSIMParam):
     """
 
     value: PiecewisePolynomialParameters
+
+
+@dataclass(frozen=True)
+class RawTTSIMParam(TTSIMParam):
+    """
+    A TTSIM parameter directly read from a YAML file that is a flat dictionary.
+    """
+
+    value: dict[str | int, Any]
 
 
 @dataclass(frozen=True)
