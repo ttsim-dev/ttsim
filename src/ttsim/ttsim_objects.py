@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from ttsim.config import numpy_or_jax as np
+    from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
     from ttsim.typing import DashedISOString
 
 FunArgTypes = ParamSpec("FunArgTypes")
@@ -244,8 +245,7 @@ class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
 @dataclass(frozen=True)
 class PolicyFunction(TTSIMFunction):
     """
-    A function that computes an output vector based on some input vectors and/or
-    parameters.
+    Computes a column based on at least one input column and/or parameters.
 
     Parameters
     ----------
@@ -282,30 +282,6 @@ class PolicyFunction(TTSIMFunction):
         )
 
 
-# Never returns a column, require precise annotation
-def params_function(
-    *,
-    leaf_name: str | None = None,
-    start_date: str | datetime.date = DEFAULT_START_DATE,
-    end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> Callable[[Callable], ParamsFunction]:
-    """
-    Decorator that makes a `ParamsFunction` from a function.
-    """
-    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
-
-    def inner(func: Callable) -> ParamsFunction:
-        return ParamsFunction(
-            leaf_name=leaf_name if leaf_name else func.__name__,
-            function=func,
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-    return inner
-
-
-# Always returns a column
 def policy_function(
     *,
     leaf_name: str | None = None,
@@ -318,19 +294,6 @@ def policy_function(
     """
     Decorator that makes a `PolicyFunction` from a function.
 
-    **Dates active (start_date, end_date, leaf_name):**
-
-    Specifies that a PolicyFunction is only active between two dates, `start` and `end`.
-    By using the `leaf_name` argument, you can specify a different name for the
-    PolicyFunction in the functions tree.
-
-    Note that even if you use this decorator with the `leaf_name` argument, you must
-    ensure that the function name is unique in the file where it is defined. Otherwise,
-    the function would be overwritten by the last function with the same name.
-
-    **Rounding specification (rounding_spec):**
-
-    Adds the way rounding is to be done to a PolicyFunction.
 
     Parameters
     ----------
@@ -344,7 +307,11 @@ def policy_function(
     rounding_spec
         The specification to be used for rounding.
     vectorization_strategy:
-        Whether and how the function should be vectorized.
+        Whether and how the function should be vectorized. Typically, functions will be
+        defined on scalars and will be vectorized by TTSIM. Stick to the default of
+        'vectorize'. Exceptions: 'loop' for constructs that cannot be vectorized by
+        numpy or jax; 'not_required' if the function works natively with arrays (e.g.,
+        joining two columns).
     foreign_key_type:
         Whether this is a foreign key and, if so, whether it may point to itself.
 
@@ -783,3 +750,93 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
         out = False
 
     return out
+
+
+@dataclass(frozen=True)
+class TTSIMParam:
+    """
+    Abstract base class for all TTSIM Parameters.
+    """
+
+    leaf_name: str
+    start_date: datetime.date
+    end_date: datetime.date
+    unit: (
+        None
+        | Literal[
+            "Euro",
+            "DM",
+            "Share",
+            "Percent",
+            "Factor",
+            "Year",
+            "Month",
+            "Hour",
+            "Square Meter",
+            "Euro / Square Meter",
+        ]
+    )
+    reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
+    name: dict[Literal["de", "en"], str]
+    description: dict[Literal["de", "en"], str]
+    note: str | None
+    reference: str | None
+
+
+@dataclass(frozen=True)
+class ScalarTTSIMParam(TTSIMParam):
+    """
+    A scalar TTSIM parameter directly read from a YAML file.
+    """
+
+    value: bool | int | float
+
+
+@dataclass(frozen=True)
+class DictTTSIMParam(TTSIMParam):
+    """
+    A TTSIM parameter directly read from a YAML file that is a flat dictionary.
+    """
+
+    value: (
+        dict[str, int]
+        | dict[str, float]
+        | dict[str, bool]
+        | dict[int, int]
+        | dict[int, float]
+        | dict[int, bool]
+    )
+
+
+@dataclass(frozen=True)
+class PiecewisePolynomialTTSIMParam(TTSIMParam):
+    """A TTSIM parameter with its contents read and converted from a YAML file.
+
+    Its value is a PiecewisePolynomialParameters object, i.e., it contains the
+    parameters for calling `piecewise_polynomial`.
+    """
+
+    value: PiecewisePolynomialParameters
+
+
+# Never returns a column, require precise annotation
+def params_function(
+    *,
+    leaf_name: str | None = None,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+) -> Callable[[Callable], ParamsFunction]:
+    """
+    Decorator that makes a `ParamsFunction` from a function.
+    """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    def inner(func: Callable) -> ParamsFunction:
+        return ParamsFunction(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    return inner

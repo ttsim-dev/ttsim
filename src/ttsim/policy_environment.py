@@ -27,14 +27,12 @@ from ttsim.shared import (
 )
 from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
-    TTSIMObject,
-    policy_function,
-)
-from ttsim.ttsim_params import (
     DictTTSIMParam,
     PiecewisePolynomialTTSIMParam,
     ScalarTTSIMParam,
+    TTSIMObject,
     TTSIMParam,
+    policy_function,
 )
 
 if TYPE_CHECKING:

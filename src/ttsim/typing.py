@@ -21,8 +21,7 @@ if TYPE_CHECKING:
         QualNameTargetList,
     )
 
-    from ttsim.ttsim_objects import PolicyInput, TTSIMFunction, TTSIMObject
-    from ttsim.ttsim_params import TTSIMParam
+    from ttsim.ttsim_objects import PolicyInput, TTSIMFunction, TTSIMObject, TTSIMParam
 
     NestedTTSIMObjectDict = Mapping[str, TTSIMObject | "NestedTTSIMObjectDict"]
     FlatTTSIMObjectDict = Mapping[tuple[str, ...], TTSIMObject]

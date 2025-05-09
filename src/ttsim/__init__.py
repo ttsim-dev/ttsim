@@ -24,22 +24,20 @@ from ttsim.shared import (
 from ttsim.ttsim_objects import (
     AggByGroupFunction,
     AggByPIDFunction,
+    DictTTSIMParam,
     FKType,
     GroupCreationFunction,
+    PiecewisePolynomialTTSIMParam,
     PolicyFunction,
     PolicyInput,
+    ScalarTTSIMParam,
     TimeConversionFunction,
+    TTSIMParam,
     agg_by_group_function,
     agg_by_p_id_function,
     group_creation_function,
     policy_function,
     policy_input,
-)
-from ttsim.ttsim_params import (
-    DictTTSIMParam,
-    PiecewisePolynomialTTSIMParam,
-    ScalarTTSIMParam,
-    TTSIMParam,
 )
 
 __all__ = [
