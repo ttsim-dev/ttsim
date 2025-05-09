@@ -37,7 +37,7 @@ from ttsim.aggregation import (
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import to_datetime, validate_date_range
-from ttsim.vectorization import make_vectorizable
+from ttsim.vectorization import vectorize_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -359,7 +359,7 @@ def policy_function(
         func = (
             func
             if vectorization_strategy == "not_required"
-            else _vectorize_func(func, vectorization_strategy=vectorization_strategy)
+            else vectorize_function(func, vectorization_strategy=vectorization_strategy)
         )
         return PolicyFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -371,25 +371,6 @@ def policy_function(
         )
 
     return inner
-
-
-def _vectorize_func(
-    func: Callable, vectorization_strategy: Literal["loop", "vectorize"]
-) -> Callable:
-    if vectorization_strategy == "loop":
-        vectorized = functools.wraps(func)(numpy.vectorize(func))
-        vectorized.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
-        vectorized.__globals__ = func.__globals__  # type: ignore[attr-defined]
-        vectorized.__closure__ = func.__closure__  # type: ignore[attr-defined]
-    elif vectorization_strategy == "vectorize":
-        backend = "jax" if IS_JAX_INSTALLED else "numpy"
-        vectorized = make_vectorizable(func, backend=backend)
-    else:
-        raise ValueError(
-            f"Vectorization strategy {vectorization_strategy} is not supported. "
-            "Use 'loop' or 'vectorize'."
-        )
-    return vectorized
 
 
 @dataclass(frozen=True)

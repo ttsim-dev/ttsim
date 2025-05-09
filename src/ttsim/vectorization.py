@@ -5,14 +5,37 @@ import textwrap
 import types
 from collections.abc import Callable
 from importlib import import_module
-from typing import cast
+from typing import Literal, cast
 
-from ttsim.config import numpy_or_jax
+import numpy
+
+from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
-def make_vectorizable(func: Callable, backend: str) -> Callable:
+def vectorize_function(
+    func: Callable, vectorization_strategy: Literal["loop", "vectorize"]
+) -> Callable:
+    vectorized: Callable
+    if vectorization_strategy == "loop":
+        vectorized = functools.wraps(func)(numpy.vectorize(func))
+        vectorized.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
+        vectorized.__globals__ = func.__globals__  # type: ignore[attr-defined]
+        vectorized.__closure__ = func.__closure__  # type: ignore[attr-defined]
+    elif vectorization_strategy == "vectorize":
+        backend = "jax" if IS_JAX_INSTALLED else "numpy"
+        vectorized = _make_vectorizable(func, backend=backend)
+    else:
+        raise ValueError(
+            f"Vectorization strategy {vectorization_strategy} is not supported. "
+            "Use 'loop' or 'vectorize'."
+        )
+    return vectorized
+
+
+def _make_vectorizable(func: Callable, backend: str) -> Callable:
     """Redefine function to be vectorizable given backend.
 
     Args:
@@ -269,9 +292,9 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
     args = node.args
 
     if len(args) == 1:
-        if type(args) not in (list, tuple, numpy_or_jax.ndarray):
+        if type(args) not in (list, tuple, np.ndarray):
             raise TranslateToVectorizableError(
-                f"Argument of function {func_id} is not a list or tuple."
+                f"Argument of function {func_id} is not a list, tuple, or valid array."
                 f"\n\nFunction: {func_loc}\n\n"
                 f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
             )
