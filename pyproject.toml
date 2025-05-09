@@ -296,6 +296,14 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
     "tests.*",
+]
+disable_error_code = [
+    "no-untyped-def",  # All tests return None, don't clutter source code.
+    "empty-body",  # Happens for all functions decorated with @policy_input
+]
+
+[[tool.mypy.overrides]]
+module = [
     "src._gettsim_tests.*",
 ]
 disable_error_code = [
@@ -321,7 +329,6 @@ module = [
 ]
 disable_error_code = [
     "empty-body",  # Happens for all functions decorated with @policy_input
-    "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
 
 [[tool.mypy.overrides]]
