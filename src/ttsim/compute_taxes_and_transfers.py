@@ -33,7 +33,11 @@ from ttsim.shared import (
 )
 from ttsim.ttsim_objects import (
     FKType,
+    ParamsFunction,
+    PolicyInput,
+    RawTTSIMParam,
     TTSIMFunction,
+    TTSIMParam,
 )
 
 if TYPE_CHECKING:
@@ -46,6 +50,7 @@ if TYPE_CHECKING:
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
         QualNameTTSIMObjectDict,
+        QualNameTTSIMParamDict,
     )
 
 
@@ -106,6 +111,14 @@ def compute_taxes_and_transfers(
         raw_objects_tree=environment.raw_objects_tree,
         top_level_namespace=top_level_namespace,
     )
+    # Process parameters
+    processed_params_tree = _process_params_tree(
+        params_tree=environment.params_tree,
+        params_functions={
+            k: v for k, v in ttsim_objects.items() if isinstance(v, ParamsFunction)
+        },
+    )
+
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
         ttsim_objects=ttsim_objects,
@@ -118,7 +131,6 @@ def compute_taxes_and_transfers(
         to_partition=functions,
         reference_dict=data,
     )
-
     _warn_if_functions_overridden_by_data(functions_overridden)
 
     functions_with_rounding_specs = (
@@ -130,11 +142,10 @@ def compute_taxes_and_transfers(
         functions=functions_with_rounding_specs,
         params=environment.params,
     )
-    functions_with_partialled_parameters = _partial_params_tree_to_functions(
+    functions_with_partialled_parameters = _partial_params_to_functions(
         functions=functions_with_partialled_parameters,
-        params_tree=environment.params_tree,
+        params=processed_params_tree,
     )
-
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
         data=data,
@@ -299,22 +310,22 @@ def combine_policy_functions_and_derived_functions(
         data=data,
         groupings=groupings,
     )
-    current_functions = {
+    out = {
         **{qn: f for qn, f in ttsim_objects.items() if isinstance(f, TTSIMFunction)},
         **time_conversion_functions,
     }
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
-        ttsim_functions_with_time_conversions=current_functions,
+        ttsim_functions_with_time_conversions=out,
         data=data,
         targets=targets,
         groupings=groupings,
     )
-    current_functions = {**aggregate_by_group_functions, **current_functions}
+    out = {**aggregate_by_group_functions, **out}
 
-    _fail_if_targets_not_in_functions(functions=current_functions, targets=targets)
+    _fail_if_targets_not_in_functions(functions=out, targets=targets)
 
-    return current_functions
+    return out
 
 
 def _fail_if_targets_not_in_functions(
@@ -391,6 +402,31 @@ def _create_input_data_for_concatenated_function(
     return {k: np.array(v) for k, v in data.items() if k in root_nodes}
 
 
+def _process_params_tree(
+    params_tree: NestedTTSIMParamDict,
+    params_functions: QualNameTTSIMFunctionDict,
+) -> QualNameTTSIMParamDict:
+    """Process the params tree."""
+
+    qual_name_params = dt.flatten_to_qual_names(params_tree)
+    process = dags.concatenate_functions(
+        functions=params_functions,
+        return_type="dict",
+        aggregator=None,
+        enforce_signature=False,
+    )
+    processed = process(**{k: v.value for k, v in qual_name_params.items()})
+
+    return {
+        **{
+            k: v
+            for k, v in qual_name_params.items()
+            if not isinstance(v, RawTTSIMParam)
+        },
+        **processed,
+    }
+
+
 def _partial_parameters_to_functions(
     functions: QualNameTTSIMFunctionDict,
     params: dict[str, Any],
@@ -430,9 +466,9 @@ def _partial_parameters_to_functions(
     return processed_functions
 
 
-def _partial_params_tree_to_functions(
+def _partial_params_to_functions(
     functions: QualNameTTSIMFunctionDict,
-    params_tree: NestedTTSIMParamDict,
+    params: QualNameTTSIMParamDict,
 ) -> QualNameTTSIMFunctionDict:
     """Round and partial parameters into functions.
 
@@ -452,18 +488,18 @@ def _partial_params_tree_to_functions(
     # Partial parameters to functions such that they disappear in the DAG.
     # Note: Needs to be done after rounding such that dags recognizes partialled
     # parameters.
-    p = dt.flatten_to_qual_names(params_tree)
     processed_functions = {}
-    for name, function in functions.items():
-        partial_params = {
-            arg: p[arg].value
-            for arg in get_names_of_required_arguments(function)
-            if arg in p
-        }
+    for name, func in functions.items():
+        partial_params = {}
+        for arg in [a for a in get_names_of_required_arguments(func) if a in params]:
+            if isinstance(params[arg], TTSIMParam):
+                partial_params[arg] = params[arg].value
+            else:
+                partial_params[arg] = params[arg]
         if partial_params:
-            processed_functions[name] = functools.partial(function, **partial_params)
+            processed_functions[name] = functools.partial(func, **partial_params)
         else:
-            processed_functions[name] = function
+            processed_functions[name] = func
 
     return processed_functions
 
@@ -605,8 +641,13 @@ def _fail_if_foreign_keys_are_invalid_in_data(
     """
 
     valid_ids = set(data["p_id"].tolist()) | {-1}
+    relevant_objects = {
+        k: v
+        for k, v in ttsim_objects.items()
+        if isinstance(v, PolicyInput | TTSIMFunction)
+    }
 
-    for fk_name, fk in ttsim_objects.items():
+    for fk_name, fk in relevant_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
         elif fk_name in data:
