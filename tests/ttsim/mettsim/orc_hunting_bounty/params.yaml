@@ -1,5 +1,5 @@
 ---
-orc_hunting_bounty:
+parameters_orc_hunting_bounty:
   name:
     de: Belohnung für das Jagen von Orks (tot oder lebendig)
     en: Bounty for orc hunting (dead or alive)
