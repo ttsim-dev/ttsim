@@ -533,14 +533,19 @@ def prep_one_params_spec(
 def _get_params_contents(
     relevant_specs: list[dict[str | int, Any]],
 ) -> dict[str | int, Any]:
+    """Get the contents of the parameters.
+
+    Implementation is a recursion in order to handle the 'updates_previous' machinery.
+
+    """
     if relevant_specs[-1].get("updates_previous", False):
         assert len(relevant_specs) > 1, (
             "'updates_previous' cannot be missing in the initial spec, found "
             f"{relevant_specs}"
         )
-        params = copy.deepcopy(_get_params_contents(relevant_specs[:-1]))
-        params.update(relevant_specs[-1])
-        return params
+        return upsert_tree(
+            base=_get_params_contents(relevant_specs[:-1]), tree=relevant_specs[-1]
+        )
     else:
         return relevant_specs[-1]
 
