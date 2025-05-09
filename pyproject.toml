@@ -284,6 +284,7 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 explicit_package_bases = true
+disallow_empty_bodies = false
 
 [[tool.mypy.overrides]]
 module = [
@@ -299,7 +300,15 @@ module = [
 ]
 disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
-    "empty-body",  # Happens for all functions decorated with @policy_input
+]
+
+
+[[tool.mypy.overrides]]
+module = [
+    "src.ttsim.aggregation_numpy",
+]
+disable_error_code = [
+    "type-arg" # ndarray is not typed further.
 ]
 
 [[tool.mypy.overrides]]
@@ -308,7 +317,6 @@ module = [
 ]
 disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
-    "empty-body",  # Happens for all functions decorated with @policy_input
     "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
 
@@ -317,19 +325,9 @@ module = [
     "src._gettsim.*",
 ]
 disable_error_code = [
-    "empty-body",  # Happens for all functions decorated with @policy_input
     "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
 
-
-[[tool.mypy.overrides]]
-module = [
-    "src.ttsim.*",
-    # "src._gettsim.*",
-]
-disable_error_code = [
-    "empty-body",  # Happens for all functions decorated with @policy_input
-]
 
 [[tool.mypy.overrides]]
 module = [

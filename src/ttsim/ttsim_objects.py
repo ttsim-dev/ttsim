@@ -40,13 +40,11 @@ from ttsim.shared import to_datetime, validate_date_range
 from ttsim.vectorization import vectorize_function
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     import pandas as pd
 
     from ttsim.config import numpy_or_jax as np
     from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
-    from ttsim.typing import DashedISOString
+    from ttsim.typing import DashedISOString, GenericCallable
 
 FunArgTypes = ParamSpec("FunArgTypes")
 ReturnType = TypeVar("ReturnType")
@@ -119,7 +117,7 @@ def policy_input(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> Callable[[Callable], PolicyInput]:
+) -> GenericCallable[[GenericCallable], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
 
@@ -144,7 +142,7 @@ def policy_input(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: Callable) -> PolicyInput:
+    def inner(func: GenericCallable) -> PolicyInput:
         data_type = func.__annotations__["return"]
         return PolicyInput(
             leaf_name=func.__name__,
@@ -157,7 +155,7 @@ def policy_input(
     return inner
 
 
-def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> None:
     """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
@@ -194,7 +192,7 @@ class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
     Base class for all TTSIM functions.
     """
 
-    function: Callable[FunArgTypes, ReturnType]
+    function: GenericCallable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
@@ -243,7 +241,7 @@ class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
 
 
 @dataclass(frozen=True)
-class PolicyFunction(TTSIMFunction):
+class PolicyFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     Computes a column based on at least one input column and/or parameters.
 
@@ -289,7 +287,7 @@ def policy_function(
     rounding_spec: RoundingSpec | None = None,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize",
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> Callable[[Callable], PolicyFunction]:
+) -> GenericCallable[[GenericCallable], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
 
@@ -326,7 +324,7 @@ def policy_function(
 
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: Callable) -> PolicyFunction:
+    def inner(func: GenericCallable) -> PolicyFunction:
         func = (
             func
             if vectorization_strategy == "not_required"
@@ -345,7 +343,7 @@ def policy_function(
 
 
 @dataclass(frozen=True)
-class GroupCreationFunction(TTSIMFunction):
+class GroupCreationFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that computes endogenous group_by IDs.
 
@@ -386,13 +384,13 @@ def group_creation_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> Callable[[Callable], GroupCreationFunction]:
+) -> GenericCallable[[GenericCallable], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def decorator(func: Callable) -> GroupCreationFunction:
+    def decorator(func: GenericCallable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
         return GroupCreationFunction(
             leaf_name=_leaf_name,
@@ -405,7 +403,7 @@ def group_creation_function(
 
 
 @dataclass(frozen=True)
-class AggByGroupFunction(TTSIMFunction):
+class AggByGroupFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -457,7 +455,7 @@ def agg_by_group_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> Callable[[Callable], AggByGroupFunction]:
+) -> GenericCallable[[GenericCallable], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -470,7 +468,7 @@ def agg_by_group_function(
         AggType.COUNT: grouped_count,
     }
 
-    def inner(func: Callable) -> AggByGroupFunction:
+    def inner(func: GenericCallable) -> AggByGroupFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
@@ -529,7 +527,7 @@ def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str) -> N
 
 
 @dataclass(frozen=True)
-class AggByPIDFunction(TTSIMFunction):
+class AggByPIDFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -581,7 +579,7 @@ def agg_by_p_id_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> Callable[[Callable], AggByPIDFunction]:
+) -> GenericCallable[[GenericCallable], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -594,7 +592,7 @@ def agg_by_p_id_function(
         AggType.COUNT: count_by_p_id,
     }
 
-    def inner(func: Callable) -> AggByPIDFunction:
+    def inner(func: GenericCallable) -> AggByPIDFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         other_p_ids = {
@@ -656,7 +654,7 @@ def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) ->
 
 
 @dataclass(frozen=True)
-class TimeConversionFunction(TTSIMFunction):
+class TimeConversionFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that is a time conversion of another function.
 
@@ -849,7 +847,7 @@ class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
         The date until which the function is active (inclusive).
     """
 
-    function: Callable[FunArgTypes, ReturnType]
+    function: GenericCallable[FunArgTypes, ReturnType]
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -878,7 +876,7 @@ class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
         self,
         tree_path: tuple[str, ...],
         top_level_namespace: set[str],
-    ) -> ParamsFunction:
+    ) -> ParamsFunction:  # type: ignore[type-arg]
         """Remove tree logic from the function and update the function signature."""
         return ParamsFunction(
             leaf_name=self.leaf_name,
@@ -898,7 +896,7 @@ def params_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> Callable[[Callable], ParamsFunction]:
+) -> GenericCallable[[GenericCallable], ParamsFunction]:
     """
     Decorator that makes a `ParamsFunction` from a function.
 
@@ -928,7 +926,7 @@ def params_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: Callable) -> ParamsFunction:
+    def inner(func: GenericCallable) -> ParamsFunction:  # type: ignore[type-arg]
         return ParamsFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,

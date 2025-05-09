@@ -406,7 +406,7 @@ for year in range(1990, 2023):
 def mock__elterngeld__geschwisterbonus_m(
     basisbetrag_m: float,
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg: bool,
-    elterngeld_params: dict,
+    elterngeld_params: dict[str, float],
 ) -> float:
     if geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg:
         out = max(
@@ -472,7 +472,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
-    elterngeld_params: dict,
+    elterngeld_params: dict[str, float],
 ) -> bool:
     return (
         claimed
@@ -653,7 +653,7 @@ def scalar_func(x: int) -> int:
 
 
 @policy_function(vectorization_strategy="not_required")
-def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:
+def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:  # type: ignore[type-arg]
     return numpy.where(x < 0, 0, x * 2)
 
 
@@ -664,7 +664,7 @@ def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:
         already_vectorized_func,
     ],
 )
-def test_vectorize_func(vectorized_function: Callable) -> None:
+def test_vectorize_func(vectorized_function: Callable):  # type: ignore[type-arg]
     assert numpy.array_equal(
         vectorized_function(numpy.array([-1, 0, 2, 3])), numpy.array([0, 0, 4, 6])
     )

@@ -37,13 +37,13 @@ from ttsim.ttsim_objects import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
 
     from ttsim.typing import (
         DashedISOString,
         FlatOrigParamSpecDict,
         FlatTTSIMObjectDict,
+        GenericCallable,
         NestedTTSIMObjectDict,
         NestedTTSIMParamDict,
         OrigParamSpec,
@@ -410,7 +410,7 @@ def active_ttsim_objects_tree(
 
 
 def _convert_to_policy_function_if_not_ttsim_object(
-    input_object: Callable | TTSIMObject,
+    input_object: GenericCallable | TTSIMObject,
 ) -> TTSIMObject:
     """Convert an object to a PolicyFunction if it is not already a TTSIMObject.
 
