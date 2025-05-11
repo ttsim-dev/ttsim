@@ -404,7 +404,7 @@ def anerkannte_warmmiete_je_qm_m(
     out = (bruttokaltmiete_m + heizkosten_m) / wohnfläche
 
     # Consider maximum considered rent per square meter
-    out = min(out, arbeitsl_geld_2_params["max_miete_pro_qm"]["max"])
+    out = min(out, arbeitsl_geld_2_params["mietobergrenze_pro_qm"]["max"])
 
     return out
 

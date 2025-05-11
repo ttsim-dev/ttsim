@@ -504,7 +504,7 @@ anteil_mehrbedarf_alleinerziehend:
     kind_bis_6_oder_mehrere_bis_15: 0.36
     max: 0.6
     reference: G. v. 24.12.2003 BGBl. I S. 2954.
-vermögensgrundfreibetrag_obergrenze:
+obergrenze_vermögensgrundfreibetrag:
   name:
     de: Maximaler Vermögensgrundfreibetrag
     en: Maximum of basic allowance
@@ -533,7 +533,7 @@ vermögensgrundfreibetrag_obergrenze:
     1958: 9900
     1964: 10050
     note: Artikel 1 G. v. 20.04.2007 BGBl. I S. 554.
-vermögensgrundfreibetrag:
+vermögensgrundfreibetrag_je_lebensjahr:
   name:
     de: Vermögensgrundfreibetrag je Lebensjahr
     en: Basic allowance per year of life
@@ -541,17 +541,16 @@ vermögensgrundfreibetrag:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.  Gestaffelt nach Geburtsjahr
     en: Differs by year of birth.
   unit: Euro
+  type: dict
   2005-01-01:
     1947: 520
     1948: 200
     reference: Artikel 1 G. v. 30.12.2002 BGBl. I S. 4619.
   2006-08-01:
-    deviation_from: previous
+    1947: 520
     1948: 150
     reference: Artikel 1 G. v. 20.07.2006 BGBl. I S. 1706.
   2023-01-01:
-    1947: null
-    1948: null
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Bürgergeld-Gesetz
 schonvermögen_bürgergeld:
@@ -571,6 +570,7 @@ schonvermögen_bürgergeld:
       the first person in a needs-based community and 15,000 Euro for each additional
       person.
   unit: Euro
+  type: dict
   2023-01-01:
     während_karenzzeit: 40000
     normaler_satz: 15000
@@ -584,6 +584,7 @@ vermögensfreibetrag_austattung:
     de: § 12 (2) Satz 1 Nr. 4 SGB II.
     en: null
   unit: Euro
+  type: scalar
   2005-01-01:
     value: 750
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
@@ -598,6 +599,7 @@ vermögensfreibetrag_kind:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.
     en: null
   unit: Euro
+  type: scalar
   2005-01-01:
     value: 4100
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
@@ -607,24 +609,7 @@ vermögensfreibetrag_kind:
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Ceased to exist with Bürgergeld-Gesetz
-vermög_freib_alter:
-  name:
-    de: Altersgrenzen für Vermögensfreibetrag
-    en: Age limits for wealth allowance
-  description:
-    de: Vermögensfreibetrag ändert sich nach Geburtsjahr
-    en: Wealth allowance changes depending on the year of birth
-  2005-01-01:
-    1: 1948
-    2: 1958
-    3: 1963
-  2023-01-01:
-    1: null
-    2: null
-    3: null
-    reference: G. v. 20.12.2022 BGBl. I S. 2328.
-    note: Bürgergeld-Gesetz
-abzugsfähige_pausch:
+abzugsfähige_pauschalen:
   name:
     de: Abzugsfähige Pauschalen für Werbungskosten und Versicherung
     en: Allowance for expenses and insurance
@@ -635,17 +620,18 @@ abzugsfähige_pausch:
       § 3 Alg II-V. Seit 01.01.2008 in § 6 Alg II-V.
     en: null
   unit: Euro
+  type: dict
   reference_period: Month
   2005-01-01:
     werbung: 15.33
     versicherung: 30
     reference: V. v. 20.10.2004 BGBl. I S. 2622
   2011-01-01:
-    deviation_from: previous
+    versicherung: 30
     werbung: 15.33
     reference: V. v. 21.06.2011 BGBl. I S. 1175.
     note: Betrag unverändert. Warum haben wir das? Es ändert sich nichts
-max_miete_pro_qm:
+mietobergrenze_pro_qm:
   name:
     de: Obergenze Miete pro Quadratmeter
     en: Upper limit rent per square meter
@@ -661,6 +647,8 @@ max_miete_pro_qm:
       eligible for ALG2. This limit is not specifically laid down in the law, but is a
       rule of thumb used by the employment agencies.
   unit: Euro / Square Meter
+  type: dict
+  reference_period: Month
   1984-01-01:
     max: 10
 berechtigte_wohnfläche_miete:
@@ -674,6 +662,8 @@ berechtigte_wohnfläche_miete:
     en: >-
       A rental apartment may be 45 square meters for a single person (+15 for each
       additional person).
+  unit: Square Meter
+  type: dict
   1984-01-01:
     single: 45
     je_weitere_person: 15
@@ -683,16 +673,13 @@ berechtigte_wohnfläche_eigentum:
     en: Property space eligible for ALG2-recipients
   description:
     de: >-
-      Vor 2023 gilt, dass Eigentum für zwei Personen im Haushalt 80 Quadratmeter (+20
-      für jede weitere Person) groß sein darf. Ab 2023 ist die erlaubte Größe für
-      Eigenheime auf 140 Quadratmeter (für Eigentumswohnungen aus 130 Quadratmeter)
-      gestiegen und wird ab 5 Personen im Haushalt um 20 Quadratmeter pro Person
-      angehoben.
+      Ab 2023 gilt diese Obergrenze nur für Eigenheime. Eigentumswohnungen dürfen nur
+      bis zu 130qm groß sein.
     en: >-
-      Before 2023, property for two people in the household may be 80 square meters (+20
-      for each additional person). From 2023, the permitted size for owner-occupied
-      homes has risen to 140 square meters (for condominiums from 130 square meters) and
-      will be increased by 20 square meters per person from 5 persons in the household.
+      After 2023, this upper limit only applies to owner-occupied homes. Condominiums
+      may only be up to 130 square meters in size.
+  unit: Square Meter
+  type: dict
   1984-01-01:
     1: 80
     2: 80
@@ -703,8 +690,9 @@ berechtigte_wohnfläche_eigentum:
   2023-01-01:
     reference: Art. 1 Nr.12 Abschnitt 5, G. v. 20.12.2022 BGBl. I S. 2328
     note: Gilt für Eigenheime. Eigentumswohnungen dürfen nur bis zu 130qm groß sein.
-    deviation_from: previous
     1: 140
     2: 140
     3: 140
     4: 140
+    je_weitere_person: 20
+    max_anzahl_direkt: 4

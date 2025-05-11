@@ -207,8 +207,8 @@ def nettoquote(
             - (einkommensteuer__betrag_m_sn / einkommensteuer__anzahl_personen_sn)
             - (solidaritätszuschlag__betrag_m_sn / einkommensteuer__anzahl_personen_sn)
             - sozialversicherung__beiträge_versicherter_m
-            - arbeitsl_geld_2_params["abzugsfähige_pausch"]["werbung"]
-            - arbeitsl_geld_2_params["abzugsfähige_pausch"]["versicherung"]
+            - arbeitsl_geld_2_params["abzugsfähige_pauschalen"]["werbung"]
+            - arbeitsl_geld_2_params["abzugsfähige_pauschalen"]["versicherung"]
         ),
         0,
     )
