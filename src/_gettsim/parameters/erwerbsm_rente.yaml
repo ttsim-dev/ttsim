@@ -1,5 +1,5 @@
 ---
-altersgrenze_abschlagsfrei:
+parameter_altersgrenze_abschlagsfrei:
   name:
     de: Regelaltersgrenze
     en: Statutory retirement age
@@ -16,7 +16,8 @@ altersgrenze_abschlagsfrei:
       deductions. Up to 2012, the standard retirement age was 63.
       From then on gradual increase until 65.
       https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/295-erwerbsminderungsrente-und-rentenabschlaege.html
-  unit: Year
+  unit: Age
+  type: scalar
   2001-01-01:
     scalar: 63
   2012-01-01:
@@ -55,7 +56,7 @@ altersgrenze_abschlagsfrei:
     scalar: 64.833333
   2024-01-01:
     scalar: 65
-altersgrenze_langj_versicherte_abschlagsfrei:
+parameter_altersgrenze_langjährig_versicherte_abschlagsfrei:
   name:
     de: Regelaltersgrenze für langjährige Versicherte
     en: Statutory retirement age for long-term insured persons
@@ -70,7 +71,8 @@ altersgrenze_langj_versicherte_abschlagsfrei:
       Age limit up to which one can claim the public disability insurance
       without deductions under certain time conditions.
       These conditions are defined in § 77 4 SGB VI.
-  unit: Year
+  unit: Age
+  type: scalar
   2001-01-01:
     scalar: 63
 wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
@@ -86,7 +88,8 @@ wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
       § 264d SGB VI
       Number of waiting time years in accordance with § 51 Absatz 3a SGB VI,
       which must be proven for a public disability pension at 63 without deductions.
-  unit: Year
+  unit: Age
+  type: scalar
   2001-01-01:
     scalar: 35
   2024-01-01:
@@ -111,7 +114,8 @@ zurechnungszeitgrenze:
       Age limit for the supplementary period of the public disability insurance.
       Increase from 2020 to 2027 by 1 month per year, and from 2028
       by 2 months each year until 67 is reached.
-  unit: Year
+  unit: Age
+  type: scalar
   2001-01-01:
     scalar: 62.916666
   2001-02-01:
@@ -224,6 +228,7 @@ min_zugangsfaktor:
       http://www.portal-sozialpolitik.de/index.php?page=rentenversicherung
     en: Deductions for early retirement are capped at 10.8%.
   unit: Factor
+  type: scalar
   2000-01-01:
     scalar: 0.892
 rentenartfaktor:
@@ -243,6 +248,7 @@ rentenartfaktor:
       pension.
       https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/1051-rentenartfaktor.html
   unit: Factor
+  type: dict
   2001-01-01:
     teilw: 0.5
     voll: 1.0
@@ -260,5 +266,6 @@ altersgrenze_grundbewertung:
       As part of the "Grundbewertung" the "belegungsfähige Gesamtzeitraum" will be
       calculated, which is the period from the age of 17 until the start of the pension.
   unit: Year
+  type: scalar
   2001-01-01:
     scalar: 16

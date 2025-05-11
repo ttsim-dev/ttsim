@@ -267,10 +267,12 @@ def zugangsfaktor(
 
     if wartezeit_langjährig_versichert_erfüllt:
         altersgrenze_abschlagsfrei = erwerbsm_rente_params[
-            "altersgrenze_langj_versicherte_abschlagsfrei"
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
         ]
     else:
-        altersgrenze_abschlagsfrei = erwerbsm_rente_params["altersgrenze_abschlagsfrei"]
+        altersgrenze_abschlagsfrei = erwerbsm_rente_params[
+            "parameter_altersgrenze_abschlagsfrei"
+        ]
 
     zugangsfaktor = (
         1

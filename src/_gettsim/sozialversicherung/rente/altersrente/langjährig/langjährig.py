@@ -33,7 +33,9 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     Full retirement age for long term insured.
 
     """
-    return ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"]
+    return ges_rente_params[
+        "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+    ]
 
 
 @policy_function(
@@ -74,26 +76,26 @@ def altersgrenze_mit_staffelung_nach_geburtsmonat(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "max_birthyear_old_regime"
-        ]
+        <= ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["max_birthyear_old_regime"]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "entry_age_old_regime"
-        ]
+        out = ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["entry_age_old_regime"]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "min_birthyear_new_regime"
-        ]
+        >= ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["min_birthyear_new_regime"]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "entry_age_new_regime"
-        ]
+        out = ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["entry_age_new_regime"]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            geburtsjahr
-        ][geburtsmonat]
+        out = ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ][geburtsjahr][geburtsmonat]
 
     return out
 
@@ -133,26 +135,26 @@ def altersgrenze_mit_staffelung_nach_geburtsjahr(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "max_birthyear_old_regime"
-        ]
+        <= ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["max_birthyear_old_regime"]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "entry_age_old_regime"
-        ]
+        out = ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["entry_age_old_regime"]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "min_birthyear_new_regime"
-        ]
+        >= ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["min_birthyear_new_regime"]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            "entry_age_new_regime"
-        ]
+        out = ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ]["entry_age_new_regime"]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
-            geburtsjahr
-        ][geburtsmonat]
+        out = ges_rente_params[
+            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+        ][geburtsjahr][geburtsmonat]
 
     return out
 
