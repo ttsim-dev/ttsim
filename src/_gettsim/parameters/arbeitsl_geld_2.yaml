@@ -533,6 +533,9 @@ obergrenze_vermögensgrundfreibetrag:
     1958: 9900
     1964: 10050
     note: Artikel 1 G. v. 20.04.2007 BGBl. I S. 554.
+  2023-01-01:
+    reference: G. v. 20.12.2022 BGBl. I S. 2328.
+    note: Bürgergeld-Gesetz
 vermögensgrundfreibetrag_je_lebensjahr:
   name:
     de: Vermögensgrundfreibetrag je Lebensjahr

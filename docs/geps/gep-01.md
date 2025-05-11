@@ -108,7 +108,7 @@ If a column is only present for internal use, it starts with an underscore and t
 no restriction on the number of characters. Internal columns should be used sparingly.
 
 Across variations that include the same identifier, this identifier should not be
-changed, even if it leads to long variable names (e.g., `kinderfreib`,
+changed, even if it leads to long variable names (e.g., `parameter_kinderfreibetrag`,
 `einkommensteuer__gesamteinkommen_y`). This makes searching for identifiers easier and
 less error-prone.
 

@@ -170,11 +170,11 @@ def vorsorge_krankenv_option_a(
 
     if steuerklasse == 3:
         vorsorge_krankenv_option_a_max = eink_st_abzuege_params[
-            "vorsorgepauschale_kv_max"
+            "maximal_absetzbare_krankenversicherungskosten"
         ]["steuerklasse_3"]
     else:
         vorsorge_krankenv_option_a_max = eink_st_abzuege_params[
-            "vorsorgepauschale_kv_max"
+            "maximal_absetzbare_krankenversicherungskosten"
         ]["steuerklasse_nicht3"]
 
     out = min(vorsorge_krankenv_option_a_max, vorsorge_krankenv_option_a_basis)
@@ -236,7 +236,7 @@ def vorsorgepauschale_y_ab_2010(
     vorsorg_rentenv = (
         bruttolohn_rente
         * ges_rentenv_params["beitragssatz"]
-        * eink_st_abzuege_params["vorsorgepauschale_rentenv_anteil"]
+        * eink_st_abzuege_params["anteil_absetzbare_rentenversicherungskosten"]
     )
 
     # 2. Krankenversicherungsbeiträge, §39b (2) Nr. 3b EStG.

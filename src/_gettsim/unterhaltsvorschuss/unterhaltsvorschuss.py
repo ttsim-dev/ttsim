@@ -196,9 +196,9 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/575
     altersgrenzen = unterhaltsvors_params["altersgrenzen_bezug"]
 
-    kinderfreibetrag_sächl_existenzmin = eink_st_abzuege_params["kinderfreib"][
-        "sächl_existenzmin"
-    ]
+    kinderfreibetrag_sächl_existenzmin = eink_st_abzuege_params[
+        "parameter_kinderfreibetrag"
+    ]["sächl_existenzmin"]
 
     if altersgrenzen[1]["min_alter"] <= alter <= altersgrenzen[1]["max_alter"]:
         out = (

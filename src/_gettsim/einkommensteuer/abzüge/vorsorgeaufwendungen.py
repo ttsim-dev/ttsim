@@ -153,7 +153,9 @@ def vorsorgeaufwendungen_regime_bis_2004_y_sn(
 
     item_1 = (1 / einkommensteuer__anzahl_personen_sn) * multiplikator1
 
-    höchstbetrag = eink_st_abzuege_params["vorsorge_2004_grundhöchstbetrag"]
+    höchstbetrag = eink_st_abzuege_params["vorsorgeaufwendungen_regime_bis_2004"][
+        "grundhöchstbetrag"
+    ]
 
     if item_1 > höchstbetrag:
         multiplikator2 = höchstbetrag
@@ -216,7 +218,7 @@ def vorsorgeaufwendungen_globale_kappung_y_sn(
     )
     max_value = (
         einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["vorsorge_sonstige_aufw_max"]
+        * eink_st_abzuege_params["maximalbetrag_sonstige_vorsorgeaufwendungen"]
     )
 
     sum_vorsorge = min(sum_vorsorge, max_value)
@@ -261,12 +263,17 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     """
     basiskrankenversicherung = (
         sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn
-        + (1 - eink_st_abzuege_params["vorsorge_kranken_minderung"])
+        + (
+            1
+            - eink_st_abzuege_params[
+                "minderungsanteil_vorsorgeaufwendungen_für_krankenversicherungsbeiträge"
+            ]
+        )
         * sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn
     )
 
     sonst_vors_max = (
-        eink_st_abzuege_params["vorsorge_sonstige_aufw_max"]
+        eink_st_abzuege_params["maximalbetrag_sonstige_vorsorgeaufwendungen"]
         * einkommensteuer__anzahl_personen_sn
     )
     sonst_vors_before_basiskrankenv = min(
@@ -326,7 +333,7 @@ def altersvorsorge_y_sn_phase_in(
     )
     max_value = (
         einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["vorsorge_altersaufw_max"]
+        * eink_st_abzuege_params["maximalbetrag_altersvorsorgeaufwendungen"]
     )
     out = min(out, max_value)
 
@@ -363,7 +370,7 @@ def altersvorsorge_y_sn_volle_anrechnung(
     )
     max_value = (
         einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["vorsorge_altersaufw_max"]
+        * eink_st_abzuege_params["maximalbetrag_altersvorsorgeaufwendungen"]
     )
 
     return min(out, max_value)
@@ -392,8 +399,10 @@ def vorwegabzug_lohnsteuer_y_sn(
     """
     out = (1 / einkommensteuer__anzahl_personen_sn) * (
         einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["vorsorge2004_vorwegabzug"]
-        - eink_st_abzuege_params["vorsorge2004_kürzung_vorwegabzug"]
+        * eink_st_abzuege_params["vorsorgeaufwendungen_regime_bis_2004"]["vorwegabzug"]
+        - eink_st_abzuege_params["vorsorgeaufwendungen_regime_bis_2004"][
+            "kürzungsanteil_abhängig_beschäftigte"
+        ]
         * einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y_sn
     )
 

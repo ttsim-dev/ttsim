@@ -674,9 +674,11 @@ def _parse_vorsorgepauschale_rentenv_anteil(
     if jahr >= 2005:
         out = piecewise_polynomial(
             x=jahr,
-            parameters=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"],
+            parameters=params["eink_st_abzuege"][
+                "anteil_absetzbare_rentenversicherungskosten"
+            ],
         )
-        params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"] = out
+        params["eink_st_abzuege"]["anteil_absetzbare_rentenversicherungskosten"] = out
 
     return params
 
