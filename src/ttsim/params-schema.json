@@ -54,7 +54,7 @@
         },
         "reference_period": {
           "type": "string",
-          "enum": ["Year", "Quarter", "Month", "Week", "Day"]
+          "enum": ["Year", "Quarter", "Month", "Week", "Day", "Hour"]
         },
         "access_different_date": {
           "type": "string",
