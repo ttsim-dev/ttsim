@@ -40,8 +40,8 @@ def betrag_m(
     if grundsätzlich_anspruchsberechtigt:
         out = (
             (
-                entgeltpunkte_west * ges_rente_params["rentenwert"]["west"]
-                + entgeltpunkte_ost * ges_rente_params["rentenwert"]["ost"]
+                entgeltpunkte_west * ges_rente_params["parameter_rentenwert"]["west"]
+                + entgeltpunkte_ost * ges_rente_params["parameter_rentenwert"]["ost"]
             )
             * zugangsfaktor
             * rentenartfaktor
@@ -267,7 +267,7 @@ def zugangsfaktor(
 
     if wartezeit_langjährig_versichert_erfüllt:
         altersgrenze_abschlagsfrei = erwerbsm_rente_params[
-            "parameter_altersgrenze_langjährig_versicherte_abschlagsfrei"
+            "altersgrenze_langjährig_versicherte_abschlagsfrei"
         ]
     else:
         altersgrenze_abschlagsfrei = erwerbsm_rente_params[

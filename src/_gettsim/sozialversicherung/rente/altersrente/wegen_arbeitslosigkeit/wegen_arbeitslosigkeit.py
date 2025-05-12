@@ -31,7 +31,7 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
 
     """
 
-    return ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"]
+    return ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"]
 
 
 @policy_function(
@@ -101,18 +101,18 @@ def altersgrenze_mit_vertrauensschutzprüfung(
     if (
         vertrauensschutz_1997
         and geburtsjahr
-        <= ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"]["vertrauensschutz"][
-            "max_birthyear_old_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"][
+        <= ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"][
             "vertrauensschutz"
-        ]["entry_age_old_regime"]
+        ]["max_birthyear_old_regime"]
+    ):
+        out = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
+        ]["vertrauensschutz"]["entry_age_old_regime"]
 
     elif vertrauensschutz_1997:
-        out = ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"][
-            "vertrauensschutz"
-        ][geburtsjahr][geburtsmonat]
+        out = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
+        ]["vertrauensschutz"][geburtsjahr][geburtsmonat]
     else:
         out = altersgrenze_ohne_vertrauensschutzprüfung
 
@@ -172,7 +172,7 @@ def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
 
     """
 
-    return ges_rente_params["altersgrenze_arbeitsl_vorzeitig"]
+    return ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"]
 
 
 @policy_function(
@@ -232,9 +232,9 @@ def altersgrenze_vorzeitig_mit_vertrauensschutz_ab_1996_07_bis_1996_09(
     """
 
     if vertrauensschutz_1997:
-        arbeitsl_vorzeitig = ges_rente_params["altersgrenze_arbeitsl_vorzeitig"][
-            "vertrauensschutz"
-        ]
+        arbeitsl_vorzeitig = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"
+        ]["vertrauensschutz"]
     else:
         arbeitsl_vorzeitig = altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung
 
@@ -266,7 +266,7 @@ def altersgrenze_vorzeitig_ohne_staffelung_ab_1996_09(ges_rente_params: dict) ->
 
     """
 
-    return ges_rente_params["altersgrenze_arbeitsl_vorzeitig"]
+    return ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"]
 
 
 @policy_function(
@@ -302,9 +302,9 @@ def ges_rente_arbeitsl_vorzeitig_mit_vertrauenss_ab_2004_07(
     """
 
     if vertrauensschutz_2004:
-        arbeitsl_vorzeitig = ges_rente_params["altersgrenze_arbeitsl_vorzeitig"][
-            "vertrauensschutz"
-        ]
+        arbeitsl_vorzeitig = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"
+        ]["vertrauensschutz"]
     else:
         arbeitsl_vorzeitig = altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung
 
@@ -340,26 +340,26 @@ def altersgrenze_ohne_vertrauensschutzprüfung(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"][
+        <= ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"][
-            "entry_age_old_regime"
-        ]
+        out = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
+        ]["entry_age_old_regime"]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"][
+        >= ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"][
             "min_birthyear_new_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"][
-            "entry_age_new_regime"
-        ]
+        out = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
+        ]["entry_age_new_regime"]
     else:
-        out = ges_rente_params["altersgrenze_arbeitsl_abschlagsfrei"][geburtsjahr][
-            geburtsmonat
-        ]
+        out = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
+        ][geburtsjahr][geburtsmonat]
 
     return out
 
@@ -392,26 +392,26 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung(
 
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_arbeitsl_vorzeitig"][
+        <= ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"][
             "max_birthyear_old_regime"
         ]
     ):
-        arbeitsl_vorzeitig = ges_rente_params["altersgrenze_arbeitsl_vorzeitig"][
-            "entry_age_old_regime"
-        ]
+        arbeitsl_vorzeitig = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"
+        ]["entry_age_old_regime"]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_arbeitsl_vorzeitig"][
+        >= ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"][
             "min_birthyear_new_regime"
         ]
     ):
-        arbeitsl_vorzeitig = ges_rente_params["altersgrenze_arbeitsl_vorzeitig"][
-            "entry_age_new_regime"
-        ]
+        arbeitsl_vorzeitig = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"
+        ]["entry_age_new_regime"]
     else:
-        arbeitsl_vorzeitig = ges_rente_params["altersgrenze_arbeitsl_vorzeitig"][
-            geburtsjahr
-        ][geburtsmonat]
+        arbeitsl_vorzeitig = ges_rente_params[
+            "altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"
+        ][geburtsjahr][geburtsmonat]
 
     return arbeitsl_vorzeitig
 
@@ -500,7 +500,8 @@ def grundsätzlich_anspruchsberechtigt_ab_2007(
         arbeitslos_für_1_jahr_nach_alter_58_ein_halb
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtbeitragsjahre_8_von_10
-        and geburtsjahr < ges_rente_params["first_birthyear_without_rente_für_arbeitsl"]
+        and geburtsjahr
+        < ges_rente_params["first_birthyear_without_rente_wegen_arbeitslosigkeit"]
     )
 
     return out
