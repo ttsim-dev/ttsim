@@ -95,7 +95,14 @@
       },
       "additionalProperties": false,
       "allOf": [
-        { "required": ["name", "description", "type"] },
+        { "required": [
+          "name",
+          "description",
+          "unit",
+          "reference_period",
+          "type"
+        ]
+      },
         {
           "minProperties": 1,
           "patternProperties": {
