@@ -6,104 +6,104 @@ parameter_kinderfreibetrag:
   description:
     de: >-
       sächliches Existenzminimum des Kindes, seit 2000 auch der Freibetrag für
-      Betreuungs-, Erziehungs- und Ausbildungskosten. Wird verdoppelt für gemeinsam
-      veranlagte Paare. §32 (6) EStG, seit 2000.
+      Betreuungs-, Erziehungs- oder Ausbildungsbedarf. Wird verdoppelt für gemeinsam
+      veranlagte Paare. §32 (6) EStG.
     en: null
   unit: Euros
   type: require_converter
   reference_period: Year
   1983-01-01:
-    sächl_existenzmin: 110
+    sächliches_existenzminimum: 110
     reference: Art. 1 G. v. 23.12.1982 BGBl. I S. 1857.
     note: Der Betrag laut Gesetz ist 216 DM.
   1986-01-01:
-    sächl_existenzmin: 635
+    sächliches_existenzminimum: 635
     reference: Art. 1 G. v. 26.06.1985 BGBl. I S. 1153.
     note: Der Betrag im Gesetz lautet 1242 DM.
   1990-01-01:
-    sächl_existenzmin: 773
+    sächliches_existenzminimum: 773
     reference: Artikel 1 G. v. 25.07.1988 BGBl. I S. 1093.
     note: Der Betrag im Gesetz lautet 1512 DM.
   1992-01-01:
-    sächl_existenzmin: 1049
+    sächliches_existenzminimum: 1049
     reference: Art. 1 G. v. 25.02.1992 BGBl. I S. 297.
     note: Wert laut Gesetz 2052 DM.
   1996-01-01:
-    sächl_existenzmin: 1601
+    sächliches_existenzminimum: 1601
     reference: Art. 1. G. v. 11.10.1995 BGBl. I S. 1250.
     note: Laut Gesetz 261 DM pro Monat.
   1997-01-01:
-    sächl_existenzmin: 1767
+    sächliches_existenzminimum: 1767
     note: Laut Gesetz 288 DM pro Monat (ab 2000 3456 DM pro Jahr)
   2000-01-01:
-    beitr_erz_ausb: 774
-    sächl_existenzmin: 1767
+    sächliches_existenzminimum: 1767
+    betreuung_erziehung_ausbildung: 774
     reference: Art. 1 G. v. 28.12.1999 BGBl. I. S. 2552.
-    note: Wert für beitr_erz_ausb laut Gesetz 1512 DM.
+    note: Wert für betreuung_erziehung_ausbildung laut Gesetz 1512 DM.
   2002-01-01:
-    beitr_erz_ausb: 1080
-    sächl_existenzmin: 1824
+    sächliches_existenzminimum: 1824
+    betreuung_erziehung_ausbildung: 1080
     reference: Art. 1 G. v. 16.08.2001 BGBl. I S. 2074
   2009-01-01:
     deviation_from: previous
-    sächl_existenzmin: 1932
+    sächliches_existenzminimum: 1932
     reference: Art. 1 G. v. 22.12.2008 BGBl. I S. 2955
   2010-01-01:
-    beitr_erz_ausb: 1320
-    sächl_existenzmin: 2184
+    sächliches_existenzminimum: 2184
+    betreuung_erziehung_ausbildung: 1320
     reference: Art. 1 G. v. 22.12.2009 BGBl. I S. 3950
   2015-01-01:
     deviation_from: previous
-    sächl_existenzmin: 2256
+    sächliches_existenzminimum: 2256
     reference: Art. 1 G. v. 16.07.2015 BGBl. I S. 1202
   2016-01-01:
     deviation_from: previous
-    sächl_existenzmin: 2304
+    sächliches_existenzminimum: 2304
     reference: Art. 2 G. v. 16.07.2015 BGBl. I S. 1202
   2017-01-01:
     deviation_from: previous
-    sächl_existenzmin: 2358
+    sächliches_existenzminimum: 2358
     reference: Art. 8 G. v. 20.12.2016 BGBl. I. S. 3000
   2018-01-01:
     deviation_from: previous
-    sächl_existenzmin: 2394
+    sächliches_existenzminimum: 2394
     reference: Art. 9 G. v. 20.12.2016 BGBl. I. S. 3000
   2019-01-01:
     deviation_from: previous
-    sächl_existenzmin: 2490
+    sächliches_existenzminimum: 2490
     reference: Art. 1 G. v. 29.11.2018 BGBl. I S. 2210
   2020-01-01:
     deviation_from: previous
-    sächl_existenzmin: 2586
+    sächliches_existenzminimum: 2586
     reference: Art. 3 G. v. 29.11.2018 BGBl. I S. 2210
   2021-01-01:
-    sächl_existenzmin: 2730
-    beitr_erz_ausb: 1464
+    betreuung_erziehung_ausbildung: 1464
+    sächliches_existenzminimum: 2730
     reference: Art. 1 G. v. 01.12.2020 BGBl. I S. 2616
   2022-01-01:
     deviation_from: previous
-    sächl_existenzmin: 2810
+    sächliches_existenzminimum: 2810
     reference: Art. 1 G. v. 08.12.2022 BGBl. I S. 2230.
   2023-01-01:
     deviation_from: previous
-    sächl_existenzmin: 3012
+    sächliches_existenzminimum: 3012
     reference: Art. 2 G. v. 08.12.2022 BGBl. I S. 2230.
   2024-01-01:
     deviation_from: previous
-    sächl_existenzmin: 3306
+    sächliches_existenzminimum: 3306
     reference: Art. 1 G. v. 05.12.2024 BGBl. 2024 I Nr. 386.
   2025-01-01:
     deviation_from: previous
-    sächl_existenzmin: 3336
+    sächliches_existenzminimum: 3336
     reference: Art. 1 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
   2026-01-01:
     deviation_from: previous
-    sächl_existenzmin: 3414
+    sächliches_existenzminimum: 3414
     reference: Art. 2 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
 vorsorgeaufwendungen_regime_bis_2004:
   name:
-    de: Vorsorgeaufwendungen nach Rechtslage vor 2004.
-    en: Deduction for pension expenses, regime before 2004.
+    de: Vorsorgeaufwendungen nach Rechtslage bis 2004.
+    en: Deduction for pension expenses, regime until 2004.
   description:
     de: >-
       Vorwegabzug:
@@ -217,14 +217,14 @@ sonderausgabenpauschbetrag:
   2002-01-01:
     single: 36
     note: Art. 1 G. v. 19.12.2000, BGBl. I S. 1790
-sparerpauschbetrag:
+sparerfreibetrag:
   name:
-    de: Sparerpauschbetrag
+    de: Sparerfreibetrag
     en: Allowance for Capital Gains
   description:
     de: >-
-      § 20 (9) EStG. Früher § 20 (4) EStG. Wert für Singles. Wird verdoppelt für
-      gemeinsam veranlagte. seit 2009. vor 2008 Sparerfreibetrag.
+      Früher § 20 (4) EStG. Wert für Einzelpersonen. Wird verdoppelt für
+      gemeinsam veranlagte Paare.
     en: null
   unit: Euros
   type: scalar
@@ -249,20 +249,15 @@ sparerpauschbetrag:
   2007-01-01:
     value: 750
   2009-01-01:
-    value: 801
-    reference: Art. 1 G. v. 14.08.2007 BGBl. I S. 1912
     note: >-
-      Integration von Werbungskostenpauschbetrag für Zinseinkünfte in
-      Sparerpauschbetrag.
-  2023-01-01:
-    value: 1000
-    reference: G. v. 20.12.2022 BGBl. I S. 2294.
+      Integration von Sparerfreibetrag, Werbungskostenpauschbetrag bei
+      Zinseinkünften in Sparerpauschbetrag.
 sparer_werbungskosten_pauschbetrag:
   name:
     de: Werbungskostenpauschbetrag bei Zinseinkünften
     en: null
   description:
-    de: § 9a EStG, bis 2009
+    de: § 9a EStG
     en: null
   unit: Euros
   type: scalar
@@ -271,7 +266,30 @@ sparer_werbungskosten_pauschbetrag:
     value: 51
     note: 100 DM.
   2009-01-01:
-    value: 0
+    note: >-
+      Integration von Sparerfreibetrag, Werbungskostenpauschbetrag bei
+      Zinseinkünften in Sparerpauschbetrag.
+sparerpauschbetrag:
+  name:
+    de: Sparerpauschbetrag
+    en: Allowance for Capital Gains
+  description:
+    de: >-
+      § 20 (9) EStG. Wert für Einzelpersonen. Wird verdoppelt für
+      gemeinsam veranlagte Paare.
+    en: null
+  unit: Euros
+  type: scalar
+  reference_period: Year
+  2009-01-01:
+    value: 801
+    reference: Art. 1 G. v. 14.08.2007 BGBl. I S. 1912
+    note: >-
+      Integration von Werbungskostenpauschbetrag für Zinseinkünfte in
+      Sparerpauschbetrag.
+  2023-01-01:
+    value: 1000
+    reference: G. v. 20.12.2022 BGBl. I S. 2294.
 maximaler_altersentlastungsbetrag:
   name:
     de: Höchstbetrag des Altersentlastungsbetrags
@@ -408,8 +426,8 @@ altersentlastungsbetrag_altersgrenze:
     value: 64
 einführungsfaktor:
   name:
-    de: Einführungsfaktor für Altersvorsorge Aufwendung
-    en: Introductory factor for pension expense
+    de: Einführungsfaktor für Altersvorsorgeaufwendungen
+    en: Introductory factor for pension contributions
   description:
     de: >-
       § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
@@ -424,6 +442,8 @@ einführungsfaktor:
       percentage points each year from 60% in 2005 to 94% in 2022. It was planned that
       100% are reached in 2025. Deviating from this plan, the deductible contributions
       were set to 100% already in 2023.
+  unit: null
+  # type: require_converter
   type: piecewise_linear
   2005-01-01:
     0:
@@ -486,8 +506,8 @@ alleinerziehendenfreibetrag:
     reference: G. v. 20.12.2022 BGBl. I S. 2294.
 alleinerziehendenfreibetrag_zusatz:
   name:
-    de: Entlastungsbetrag für Alleinerziehende, Zusatzbetrag
-    en: Income Tax Allowance for Single Parents; additional amount
+    de: Zusätzlicher Entlastungsbetrag für Alleinerziehende
+    en: Additional income tax allowance for Single Parents
   description:
     de: >-
       §24b (2) S. 2 EStG. Alleinerziehenden-Entlastungsbetrag, Zusatzbetrag pro Kind ab
@@ -562,8 +582,8 @@ maximalbetrag_altersvorsorgeaufwendungen:
 minderungsanteil_vorsorgeaufwendungen_für_krankenversicherungsbeiträge:
   name:
     de: >-
-      Anteil, um den Krankenversicherungsbeiträge gemindert werden bei abhängig
-      Beschäftigten.
+      Anteil, um den Krankenversicherungsbeiträge bei abhängig Beschäftigten
+      gemindert werden .
     en: null
   description:
     de: §10 (3) a) S.4 EStG
@@ -573,9 +593,9 @@ minderungsanteil_vorsorgeaufwendungen_für_krankenversicherungsbeiträge:
   2009-07-23:
     value: 0.04
     reference: Art. 1 G. v. 16.07.2009 BGBl. I S. 1959
-behinderten_pauschbetrag:
+behindertenpauschbetrag:
   name:
-    de: Behinderten-Pauschbetrag, in Abhängigkeit des Behinderungsgrads.
+    de: Behindertenpauschbetrag in Abhängigkeit des Behinderungsgrads.
     en: Tax Credit for disabled, depending on degree of disability.
   description:
     de: § 33b (3) EStG.
@@ -665,6 +685,7 @@ anteil_absetzbare_rentenversicherungskosten:
       rises between 2005 and 2025 by 4 percentage points annually. In 2023, it was
       prematurely set to 100 percent.
   unit: Share
+  # type: require_converter
   type: piecewise_linear
   2005-01-01:
     0:
@@ -734,5 +755,5 @@ maximal_absetzbare_krankenversicherungskosten:
   type: dict
   2009-07-23:
     steuerklasse_3: 3000
-    steuerklasse_nicht3: 1900
+    steuerklasse_nicht_3: 1900
     reference: Art. 1 G. v. 16.07.2009 BGBl. I S. 1959

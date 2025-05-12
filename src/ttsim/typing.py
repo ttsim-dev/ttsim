@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 
     NestedTTSIMParamDict = Mapping[str, TTSIMParam | "NestedTTSIMParamDict"]
     """A nested tree of TTSIM parameters."""
-    QualNameTTSIMParamDict = Mapping[str, TTSIMParam | "NestedTTSIMParamDict"]
+    QualNameTTSIMParamDict = Mapping[str, TTSIMParam]
     """A mapping of qualified names to TTSIM parameters."""
 
     RawParamsRequiringConversion = Mapping[
