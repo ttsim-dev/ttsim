@@ -26,7 +26,9 @@ def betrag_versicherter_m_ohne_midijob(
     -------
 
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * ges_rentenv_params["beitragssatz"]
+    ges_rentenv_beitr_regular_job_m = (
+        einkommen_m * ges_rentenv_params["parameter_beitragssatz"]
+    )
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -65,7 +67,9 @@ def betrag_versicherter_m_mit_midijob(
     -------
 
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * ges_rentenv_params["beitragssatz"]
+    ges_rentenv_beitr_regular_job_m = (
+        einkommen_m * ges_rentenv_params["parameter_beitragssatz"]
+    )
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -103,7 +107,9 @@ def betrag_arbeitgeber_m_ohne_midijob(
     -------
 
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * ges_rentenv_params["beitragssatz"]
+    ges_rentenv_beitr_regular_job_m = (
+        einkommen_m * ges_rentenv_params["parameter_beitragssatz"]
+    )
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -148,7 +154,9 @@ def betrag_arbeitgeber_m_mit_midijob(
     -------
 
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * ges_rentenv_params["beitragssatz"]
+    ges_rentenv_beitr_regular_job_m = (
+        einkommen_m * ges_rentenv_params["parameter_beitragssatz"]
+    )
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -231,7 +239,7 @@ def betrag_midijob_gesamt_m(
     return (
         sozialversicherung__midijob_bemessungsentgelt_m
         * 2
-        * ges_rentenv_params["beitragssatz"]
+        * ges_rentenv_params["parameter_beitragssatz"]
     )
 
 
@@ -258,7 +266,7 @@ def betrag_midijob_arbeitgeber_m_mit_festem_beitragssatz(
     """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * ges_rentenv_params["beitragssatz"]
+        * ges_rentenv_params["parameter_beitragssatz"]
     )
 
 
@@ -327,5 +335,5 @@ def betrag_midijob_arbeitnehmer_m_mit_festem_beitragssatz(
     """
     return (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        * ges_rentenv_params["beitragssatz"]
+        * ges_rentenv_params["parameter_beitragssatz"]
     )

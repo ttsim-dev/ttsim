@@ -24,7 +24,7 @@ def beitragssatz_arbeitnehmer(
 
     """
 
-    return ges_krankenv_params["beitragssatz"]["mean_allgemein"] / 2
+    return ges_krankenv_params["parameter_beitragssatz"]["mean_allgemein"] / 2
 
 
 @policy_function(
@@ -48,7 +48,9 @@ def beitragssatz_arbeitnehmer_jahresanfang(
     Beitragssatz for statutory health insurance at the begging of the year.
 
     """
-    return ges_krankenv_params["beitragssatz_jahresanfang"]["mean_allgemein"] / 2
+    return (
+        ges_krankenv_params["parameter_beitragssatz_jahresanfang"]["mean_allgemein"] / 2
+    )
 
 
 @policy_function(
@@ -79,7 +81,7 @@ def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
 
     """
 
-    mean_allgemein = ges_krankenv_params["beitragssatz"]["mean_allgemein"]
+    mean_allgemein = ges_krankenv_params["parameter_beitragssatz"]["mean_allgemein"]
 
     return mean_allgemein / 2 + zusatzbeitragssatz
 
@@ -112,7 +114,9 @@ def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbe
 
     """
 
-    mean_allgemein = ges_krankenv_params["beitragssatz_jahresanfang"]["mean_allgemein"]
+    mean_allgemein = ges_krankenv_params["parameter_beitragssatz_jahresanfang"][
+        "mean_allgemein"
+    ]
 
     return mean_allgemein / 2 + zusatzbeitragssatz
 
@@ -145,7 +149,7 @@ def beitragssatz_arbeitnehmer_einheitlicher_zusatzbeitrag(
 
     """
 
-    allgemein = ges_krankenv_params["beitragssatz"]["allgemein"]
+    allgemein = ges_krankenv_params["parameter_beitragssatz"]["allgemein"]
 
     return allgemein / 2 + zusatzbeitragssatz
 
@@ -178,7 +182,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_zusatzbeitrag(
 
     """
 
-    allgemein = ges_krankenv_params["beitragssatz_jahresanfang"]["allgemein"]
+    allgemein = ges_krankenv_params["parameter_beitragssatz_jahresanfang"]["allgemein"]
 
     return allgemein / 2 + zusatzbeitragssatz
 
@@ -204,7 +208,9 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     -------
 
     """
-    allgemeiner_beitragssatz = ges_krankenv_params["beitragssatz"]["allgemein"]
+    allgemeiner_beitragssatz = ges_krankenv_params["parameter_beitragssatz"][
+        "allgemein"
+    ]
     return (allgemeiner_beitragssatz + zusatzbeitragssatz) / 2
 
 
@@ -229,9 +235,9 @@ def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     -------
 
     """
-    allgemeiner_beitragssatz = ges_krankenv_params["beitragssatz_jahresanfang"][
-        "allgemein"
-    ]
+    allgemeiner_beitragssatz = ges_krankenv_params[
+        "parameter_beitragssatz_jahresanfang"
+    ]["allgemein"]
     return (allgemeiner_beitragssatz + zusatzbeitragssatz) / 2
 
 
@@ -256,7 +262,7 @@ def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
 
     """
 
-    return ges_krankenv_params["beitragssatz"]["mean_allgemein"] / 2
+    return ges_krankenv_params["parameter_beitragssatz"]["mean_allgemein"] / 2
 
 
 @policy_function(
@@ -280,7 +286,9 @@ def beitragssatz_arbeitgeber_jahresanfang_mittlerer_kassenspezifischer(
 
     """
 
-    return ges_krankenv_params["beitragssatz_jahresanfang"]["mean_allgemein"] / 2
+    return (
+        ges_krankenv_params["parameter_beitragssatz_jahresanfang"]["mean_allgemein"] / 2
+    )
 
 
 @policy_function(
@@ -306,7 +314,7 @@ def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
 
     """
 
-    return ges_krankenv_params["beitragssatz"]["allgemein"] / 2
+    return ges_krankenv_params["parameter_beitragssatz"]["allgemein"] / 2
 
 
 @policy_function(
@@ -332,7 +340,7 @@ def beitragssatz_arbeitgeber_jahresanfang_einheitlicher_zusatzbeitrag(
 
     """
 
-    return ges_krankenv_params["beitragssatz_jahresanfang"]["allgemein"] / 2
+    return ges_krankenv_params["parameter_beitragssatz_jahresanfang"]["allgemein"] / 2
 
 
 @policy_function(
@@ -404,7 +412,7 @@ def zusatzbeitragssatz_von_sonderbeitrag(
 
     """
 
-    return ges_krankenv_params["beitragssatz"]["sonderbeitrag"]
+    return ges_krankenv_params["parameter_beitragssatz"]["sonderbeitrag"]
 
 
 @policy_function(
@@ -427,4 +435,4 @@ def zusatzbeitragssatz_von_mean_zusatzbeitrag(
 
     """
 
-    return ges_krankenv_params["beitragssatz"]["mean_zusatzbeitrag"]
+    return ges_krankenv_params["parameter_beitragssatz"]["mean_zusatzbeitrag"]

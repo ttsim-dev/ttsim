@@ -156,7 +156,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
         sozialversicherung__kranken__beitrag__einkommen_m
-        * ges_pflegev_params["beitragssatz"]
+        * ges_pflegev_params["parameter_beitragssatz"]
     )
 
     if (
@@ -210,7 +210,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
         sozialversicherung__kranken__beitrag__einkommen_m
-        * ges_pflegev_params["beitragssatz"]["standard"]
+        * ges_pflegev_params["parameter_beitragssatz"]["standard"]
     )
 
     if (
@@ -293,7 +293,7 @@ def betrag_selbstständig_m_mit_zusatz_für_kinderlose(
 
     """
     return sozialversicherung__kranken__beitrag__bemessungsgrundlage_selbstständig_m * (
-        beitragssatz + ges_pflegev_params["beitragssatz"]["standard"]
+        beitragssatz + ges_pflegev_params["parameter_beitragssatz"]["standard"]
     )
 
 
@@ -388,7 +388,7 @@ def betrag_rentner_m_mit_zusatz_für_kinderlose(
 
     """
     return sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m * (
-        beitragssatz + ges_pflegev_params["beitragssatz"]["standard"]
+        beitragssatz + ges_pflegev_params["parameter_beitragssatz"]["standard"]
     )
 
 
@@ -422,7 +422,7 @@ def betrag_gesamt_m_bis_2004(
     """
 
     return sozialversicherung__midijob_bemessungsentgelt_m * (
-        beitragssatz + ges_pflegev_params["beitragssatz"]
+        beitragssatz + ges_pflegev_params["parameter_beitragssatz"]
     )
 
 
@@ -454,7 +454,7 @@ def betrag_gesamt_m_ab_2005(
     """
 
     return sozialversicherung__midijob_bemessungsentgelt_m * (
-        beitragssatz + ges_pflegev_params["beitragssatz"]["standard"]
+        beitragssatz + ges_pflegev_params["parameter_beitragssatz"]["standard"]
     )
 
 
@@ -486,7 +486,7 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
 
     out = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * ges_pflegev_params["beitragssatz"]
+        * ges_pflegev_params["parameter_beitragssatz"]
     )
 
     return out
@@ -520,7 +520,7 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_ab_2005(
     """
     out = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * ges_pflegev_params["beitragssatz"]["standard"]
+        * ges_pflegev_params["parameter_beitragssatz"]["standard"]
     )
     return out
 
@@ -612,14 +612,14 @@ def betrag_versicherter_midijob_m_mit_zusatzbeitrag_für_kinderlos(
     # Calculate the employee care insurance contribution
     an_beitr_midijob_m = (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        * ges_pflegev_params["beitragssatz"]["standard"]
+        * ges_pflegev_params["parameter_beitragssatz"]["standard"]
     )
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
         an_beitr_midijob_m += (
             sozialversicherung__midijob_bemessungsentgelt_m
-            * ges_pflegev_params["beitragssatz"]["zusatz_kinderlos"]
+            * ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
         )
 
     return an_beitr_midijob_m
@@ -658,13 +658,13 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
 
     """
     # Calculate the employee care insurance rate
-    ges_pflegev_rate = ges_pflegev_params["beitragssatz"]["standard"]
+    ges_pflegev_rate = ges_pflegev_params["parameter_beitragssatz"]["standard"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        ges_pflegev_rate -= ges_pflegev_params["beitragssatz"]["abschlag_kinder"] * min(
-            anzahl_kinder_bis_24 - 1, 4
-        )
+        ges_pflegev_rate -= ges_pflegev_params["parameter_beitragssatz"][
+            "abschlag_kinder"
+        ] * min(anzahl_kinder_bis_24 - 1, 4)
 
     # Calculate the employee care insurance contribution
     an_beitr_midijob_m = (
@@ -676,7 +676,7 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
     if zusatzbetrag_kinderlos:
         an_beitr_midijob_m += (
             sozialversicherung__midijob_bemessungsentgelt_m
-            * ges_pflegev_params["beitragssatz"]["zusatz_kinderlos"]
+            * ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
         )
 
     return an_beitr_midijob_m
