@@ -9,7 +9,7 @@ parameter_kinderfreibetrag:
       Betreuungs-, Erziehungs- und Ausbildungskosten. Wird verdoppelt für gemeinsam
       veranlagte Paare. §32 (6) EStG, seit 2000.
     en: null
-  unit: Euro
+  unit: Euros
   type: require_converter
   reference_period: Year
   1983-01-01:
@@ -116,7 +116,7 @@ vorsorgeaufwendungen_regime_bis_2004:
       §10 (3) S. 2 EStG (vor 2004). Der Vorwegabzug wird pauschal um einen Anteil
       gekürzt bei abhängig Beschäftigten (vereinfacht).
     en: null
-  unit: Euro
+  unit: Euros
   type: require_converter
   reference_period: Year
   1985-01-01:
@@ -177,7 +177,7 @@ werbungskostenpauschale:
   description:
     de: § 9a Nr. 1a) EStG
     en: This is the minimum amount deducted from any employment income.
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   1975-01-01:
@@ -205,7 +205,7 @@ sonderausgabenpauschbetrag:
   description:
     de: § 10c EStG
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   1984-01-01:
@@ -226,7 +226,7 @@ sparerpauschbetrag:
       § 20 (9) EStG. Früher § 20 (4) EStG. Wert für Singles. Wird verdoppelt für
       gemeinsam veranlagte. seit 2009. vor 2008 Sparerfreibetrag.
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   1975-01-01:
@@ -264,7 +264,7 @@ sparer_werbungskosten_pauschbetrag:
   description:
     de: § 9a EStG, bis 2009
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   1975-01-01:
@@ -286,7 +286,7 @@ maximaler_altersentlastungsbetrag:
       If someone receives employment income above the age of 64, a share up to this
       amount is deducted. Since 2005, this amount additionally depends on the birth
       year.
-  unit: Euro
+  unit: Euros
   type: require_converter
   reference_period: Year
   1984-01-01:
@@ -402,7 +402,7 @@ altersentlastungsbetrag_altersgrenze:
       § 24a Art. 3 EStG
       The old-age relief amount is granted to a taxpayer who, before the start of the
       calendar year in which he received his income, had reached the age of 64.
-  unit: Year
+  unit: Years
   type: require_converter
   1984-01-01:
     value: 64
@@ -460,7 +460,7 @@ alleinerziehendenfreibetrag:
   description:
     de: § 24b (1) EStG. vor 2004 "Haushaltsfreibetrag", § 32 (7) EStG
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   1984-01-01:
@@ -493,7 +493,7 @@ alleinerziehendenfreibetrag_zusatz:
       §24b (2) S. 2 EStG. Alleinerziehenden-Entlastungsbetrag, Zusatzbetrag pro Kind ab
       dem 2. Kind.
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   2015-01-01:
@@ -508,7 +508,7 @@ maximalbetrag_sonstige_vorsorgeaufwendungen:
   description:
     de: §10 Abs. 4 S.1 EStG
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   2005-01-01:
@@ -524,7 +524,7 @@ maximalbetrag_altersvorsorgeaufwendungen:
   description:
     de: §10 (3) EStG, Anlage 2 SGB VI
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   2005-01-01:
@@ -580,7 +580,7 @@ behinderten_pauschbetrag:
   description:
     de: § 33b (3) EStG.
     en: null
-  unit: Euro
+  unit: Euros
   type: dict
   reference_period: Year
   1975-01-01:
@@ -641,7 +641,7 @@ maximal_absetzbare_kinderbetreuungskosten:
   description:
     de: §10 (1) Nr. 5 EStG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Year
   type: scalar
   2012-01-01:
@@ -729,7 +729,7 @@ maximal_absetzbare_krankenversicherungskosten:
       39b (2) Nr.3 EStG. Depends on Steuerklasse.
       Maximum amount considered for Mindestvorsorgepauschale of contributions to health
       care and care insurance that can be deducted from withholding tax
-  unit: Euro
+  unit: Euros
   reference_period: Year
   type: dict
   2009-07-23:

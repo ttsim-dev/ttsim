@@ -124,7 +124,7 @@ beitragsbemessungsgrenze_m:
   description:
     de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
     en: The income threshold is the same for health and long-term care insurance.
-  unit: Euro
+  unit: Euros
   type: require_converter
   reference_period: Month
   1984-01-01:
@@ -261,7 +261,7 @@ bezugsgröße_selbst_m:
   description:
     de: §18 SGB IV ynd https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
     en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
-  unit: Euro
+  unit: Euros
   type: dict
   reference_period: Month
   1984-01-01:

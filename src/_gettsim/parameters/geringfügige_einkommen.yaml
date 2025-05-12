@@ -7,7 +7,7 @@ grenzen_m:
   description:
     de: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
     en: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: require_converter
   1984-01-01:
@@ -172,7 +172,7 @@ mindestlohn:
       §1 (2) Mindestlohngesetz
       The minimum wage is the lowest hourly wage that an employer must pay for a
       regular, not more than 45 hours weekly work.
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Hour
   2015-01-01:

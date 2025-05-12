@@ -6,7 +6,7 @@ maximum:
   description:
     de: § 6a (2) BKGG. Betrag pro Kind
     en: Amount per child.
-  unit: Euro
+  unit: Euros
   reference_period: Month
   2005-01-01:
     scalar: 140
@@ -58,7 +58,7 @@ kindersofortzuschlag:
       § 6a Abs. 2 Satz 4 BKGG
       With the introduction of the immediate supplement from July 1, 2022,
       the maximum amount in the child supplement increases by 20 Euro.
-  unit: Euro
+  unit: Euros
   2022-07-01:
     scalar: 20
   2023-01-01:
@@ -70,7 +70,7 @@ min_eink_paare:
   description:
     de: § 6a (1) Nr. 2 BKGG.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   2005-01-01:
     scalar: 0
@@ -85,7 +85,7 @@ min_eink_alleinerz:
   description:
     de: § 6a (1) Nr. 2 BKGG.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   2005-01-01:
     scalar: 0
@@ -144,7 +144,7 @@ existenzminimum:
     en: >-
       Every two years, the government calculates the subsistence levels 'to be allowed
       from taxation'. These form the basis for a number of kiz parameters.
-  unit: Euro
+  unit: Euros
   reference_period: Year
   2005-01-01:
     regelsatz:

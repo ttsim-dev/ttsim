@@ -129,7 +129,7 @@ regelsatz_anteilsbasiert:
       § 20 V SGB II. Für 2005 bis 2010 siehe Bekanntmachungen zu § 20.
     en: >-
       § 20 V SGB II. Für 2005 bis 2010 see regulations for § 20.
-  unit: Euro
+  unit: Euros
   type: require_converter
   reference_period: Month
   2005-01-01:
@@ -225,7 +225,7 @@ regelsatz_nach_regelbedarfsstufen:
       4: Adolescents
       5: Older children
       6: Youngest children
-  unit: Euro
+  unit: Euros
   type: require_converter
   reference_period: Month
   2011-01-01:
@@ -482,7 +482,7 @@ kindersofortzuschlag:
       Children, adolescents and young  adults who are entitled to unemployment benefits
       or social benefits (Regelbedarfsstufen 3,4,5,6) receive an instant surcharge
       of 20 Euro.
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Month
   2022-07-01:
@@ -525,7 +525,7 @@ obergrenze_vermögensgrundfreibetrag:
       § 12 (2) Satz 1 Nr. 1 SGB II. Ausnahmeregelung für Personen, die vor 1948 geboren
       wurden.
     en: Differs by birth year.
-  unit: Euro
+  unit: Euros
   type: dict
   2005-01-01:
     1947: 33800
@@ -555,7 +555,7 @@ vermögensgrundfreibetrag_je_lebensjahr:
   description:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.  Gestaffelt nach Geburtsjahr
     en: Differs by year of birth.
-  unit: Euro
+  unit: Euros
   type: dict
   2005-01-01:
     1947: 520
@@ -584,7 +584,7 @@ schonvermögen_bürgergeld:
       period of 1 year. During the waiting period wealth of 40,000 Euro are allowed for
       the first person in a needs-based community and 15,000 Euro for each additional
       person.
-  unit: Euro
+  unit: Euros
   type: dict
   2023-01-01:
     während_karenzzeit: 40000
@@ -598,7 +598,7 @@ vermögensfreibetrag_austattung:
   description:
     de: § 12 (2) Satz 1 Nr. 4 SGB II.
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   2005-01-01:
     value: 750
@@ -613,7 +613,7 @@ vermögensfreibetrag_kind:
   description:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.
     en: null
-  unit: Euro
+  unit: Euros
   type: scalar
   2005-01-01:
     value: 4100
@@ -634,7 +634,7 @@ abzugsfähige_pauschalen:
       .2016 BGBl. I S. 1858 entfallen. Wie entfallen?
       § 3 Alg II-V. Seit 01.01.2008 in § 6 Alg II-V.
     en: null
-  unit: Euro
+  unit: Euros
   type: dict
   reference_period: Month
   2005-01-01:
@@ -661,7 +661,7 @@ mietobergrenze_pro_qm:
       The rent per square meter must not exceed a reasonable amount in order to remain
       eligible for ALG2. This limit is not specifically laid down in the law, but is a
       rule of thumb used by the employment agencies.
-  unit: Euro / Square Meter
+  unit: Euros / Square Meter
   type: dict
   reference_period: Month
   1984-01-01:
@@ -677,7 +677,7 @@ berechtigte_wohnfläche_miete:
     en: >-
       A rental apartment may be 45 square meters for a single person (+15 for each
       additional person).
-  unit: Square Meter
+  unit: Square Meters
   type: dict
   1984-01-01:
     single: 45
@@ -693,7 +693,7 @@ berechtigte_wohnfläche_eigentum:
     en: >-
       After 2023, this upper limit only applies to owner-occupied homes. Condominiums
       may only be up to 130 square meters in size.
-  unit: Square Meter
+  unit: Square Meters
   type: dict
   1984-01-01:
     1: 80

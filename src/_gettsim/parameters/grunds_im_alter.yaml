@@ -14,7 +14,7 @@ vermögensfreibetrag:
       assets exceed this threshold.
       § 1 Verordnung zur Durchführung des § 90 Abs. 2 Nr. 9 des Zwölften Buches
       Sozialgesetzbuch
-  unit: Euro
+  unit: Euros
   1984-01-01:
     adult: 0
     child: 0
@@ -74,7 +74,7 @@ kapitaleink_anr_frei:
       § 82 SGB XII Abs. 2
       Only the capital income above the threshold is considered for the calculation of
       the Grundsicherung im Alter.
-  unit: Euro
+  unit: Euros
   reference_period: Year
   1984-01-01:
     scalar: 0

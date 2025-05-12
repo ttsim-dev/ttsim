@@ -12,7 +12,7 @@ lohnst_einkommensgrenzen:
       § 39b Absatz 2 Satz 7 EStG
       Thresholds for withholding tax classes 5 and 6, where minimum and maximum tax
       rates apply.
-  unit: Euro
+  unit: Euros
   reference_period: Year
   2002-01-01:
     0: 8946

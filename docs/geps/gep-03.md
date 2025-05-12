@@ -107,7 +107,7 @@ These work differently and they are
    kindergeld:
      name:
        de: Kindergeld, Betrag je nach Reihenfolge der Kinder.
-     unit: Euro
+     unit: Euros
    ```
 
 1. The (optional) `type` key may contain a reference to a particular function that is

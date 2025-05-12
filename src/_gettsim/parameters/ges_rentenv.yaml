@@ -72,7 +72,7 @@ beitragsbemessungsgrenze_m:
   description:
     de: Beitragsbemessungsgrenze für die gesetzliche Rentenversicherung.
     en: Income threshold for statutory pension insurance.
-  unit: Euro
+  unit: Euros
   reference_period: Month
   1984-01-01:
     west: 2659

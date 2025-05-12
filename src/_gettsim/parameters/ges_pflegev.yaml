@@ -62,7 +62,7 @@ beitragsbemessungsgrenze_m:
   description:
     de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
     en: The income threshold is the same for health and long-term care insurance.
-  unit: Euro
+  unit: Euros
   type: dict
   reference_period: Month
   1995-01-01:
@@ -184,7 +184,7 @@ zusatz_kinderlos_mindestalter:
       § 55 Abs. 3 SGB XI, KiBG Art. 1
       Childless members of the social care insurance, who have reached the age of 23,
       have to pay a higher contribution rate since January 1, 2005.
-  unit: Year
+  unit: Years
   type: scalar
   2005-01-01:
     scalar: 23

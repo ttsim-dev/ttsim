@@ -10,7 +10,7 @@ mindesteinkommen:
   description:
     de: § 1 (1a) Nr. 2 Unterhaltsvorschussgesetz
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   2017-01-01:
     scalar: 600
@@ -74,7 +74,7 @@ anwendungsvorschrift:
       apply, which can be based on unchanged values for Kindergeld or child child
       allowance can be assumed. Here, the corresponding values for the advance child
       alimony (i.e. after deduction of the assumed Kindergeld) are used.
-  unit: Euro
+  unit: Euros
   reference_period: Month
   2015-01-01:
     1: 133

@@ -26,16 +26,16 @@
         "unit": {
           "type": ["string", "null"],
           "enum": [
-            "Euro",
+            "Euros",
             "DM",
             "Share",
             "Percent",
             "Factor",
-            "Year",
-            "Month",
-            "Hour",
-            "Square Meter",
-            "Euro / Square Meter",
+            "Years",
+            "Months",
+            "Hours",
+            "Square Meters",
+            "Euros / Square Meter",
             null
           ]
         },

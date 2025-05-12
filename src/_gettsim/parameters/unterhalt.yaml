@@ -10,7 +10,7 @@ mindestunterhalt:
     en: >-
       Minimum Child Alimony depending on age of child (0 - 5 years, 6 - 11 years, 12 -
       17 years).
-  unit: Euro
+  unit: Euros
   reference_period: Month
   2016-01-01:
     1:

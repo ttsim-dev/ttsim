@@ -6,7 +6,7 @@ einkommensgrenze:
   description:
     de: Einkommensgrenze für abzugsfreies Erziehungsgeld
     en: Income threshold for deduction-free parental leave benefit
-  unit: Euro
+  unit: Euros
   type: require_converter
   reference_period: Year
   2004-02-09:
@@ -36,7 +36,7 @@ aufschlag_einkommen:
   description:
     de: Erhöhung der Einkommensgrenze pro weiterem Kind
     en: Increase in the income threshold per additional child
-  unit: Euro
+  unit: Euros
   type: scalar
   reference_period: Year
   2004-02-09:
@@ -51,7 +51,7 @@ satz:
   description:
     de: Höhe des Erziehungsgeldes abhängig vom beantragtem Satz
     en: Amount of the parental leave benefit depending on the rate applied for
-  unit: Euro
+  unit: Euros
   type: dict
   reference_period: Month
   2004-02-09:
@@ -109,7 +109,7 @@ maximale_wochenarbeitszeit:
       Grenze der wöchentlichen Arbeitsstunden bis zu der Erziehungsgeld ausgezahlt wird
     en: >-
       Limit of weekly working hours up to which parental leave benefit is paid
-  unit: Hour
+  unit: Hours
   type: scalar
   reference_period: Week
   2004-02-09:
@@ -126,7 +126,7 @@ maximales_kindsalter_regelsatz:
       Alter des Kindes in Monaten bis zu dem der Regelsatz bezogen werden kann.
     en: >-
       Age of the child in months up to which the Regelsatz can be claimed.
-  unit: Month
+  unit: Months
   type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
@@ -140,7 +140,7 @@ maximales_kindsalter_budgetsatz:
       Alter des Kindes in Monaten bis zu dem der Budgetsatz bezogen werden kann.
     en: >-
       Age of the child in months up to which the Budgetsatz can be claimed.
-  unit: Month
+  unit: Months
   type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
@@ -154,7 +154,7 @@ abolishment_cohort:
       Erziehungsgeld wird durch das Elterngeld ersetzt.
     en: >-
       Erziehungsgeld is replaced by Elterngeld.
-  unit: Year
+  unit: Years
   type: scalar
   2006-12-11:
     reference: Art. 3 G. v. 5.12.2006 BGBl. I S. 2748

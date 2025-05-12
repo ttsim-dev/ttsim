@@ -489,7 +489,7 @@ bonus_sehr_große_haushalte:
       Households with more than 12 persons receive an additional amount per person,
       which is counted towards the housing allowance for a household of 12 people.
       §19 Abs. 3 WoGG
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: dict
   2001-01-01:
@@ -548,7 +548,7 @@ min_miete:
   description:
     de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
     en: null
-  unit: Euro
+  unit: Euros
   type: dict
   1984-01-01:
     1: 0
@@ -624,7 +624,7 @@ min_eink:
   description:
     de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
     en: null
-  unit: Euro
+  unit: Euros
   type: dict
   1984-01-01:
     1: 0
@@ -714,7 +714,7 @@ freibetrag_kinder_m:
   description:
     de: § 17 (4/5) WoGG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: dict
   1984-01-01:
@@ -744,7 +744,7 @@ freibetrag_bei_behinderung_gestaffelt_y:
       Achtung: Die Zahlen vor 1991 erscheinen falsch. Senkung in 1986 unwahrscheinlich,
       im Zweifel wurde dort eher die Stufe mit Behinderungsgrad 1-80% eingeführt.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Year
   type: piecewise_constant
   1984-01-01:
@@ -797,7 +797,7 @@ freibetrag_bei_behinderung_pauschal_y:
       gem. §14 SGB XI. und gleichzeitig Häusliche/teilstationäre/Kurzzeit-Pflege
       vorliegen. Dies ist aktuell nicht implementiert.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Year
   type: scalar
   2016-01-01:
@@ -819,7 +819,7 @@ max_miete:
       - maximales Baujahr des Hauses (vor 2009)
       - Mietstufe
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: require_converter
   1981-01-01:
@@ -1908,7 +1908,7 @@ vermögensfreibetrag:
       Wohngeld sein kann. Die genauen Werte regelt die Verwaltungsvorschrift vom April
       2009. Vorher war hohes Vermögen laut WoGG kein Ausschlussgrund.
     en: Since 2009, wealth might be a reason not to grand housing benefit.
-  unit: Euro
+  unit: Euros
   type: dict
   1970-01-01:
     grundfreibetrag: inf
@@ -1930,7 +1930,7 @@ heizkostenentlastung_m:
     en: >-
       Amount of relief in heating costs due to CO2 pricing in Euro depending on
       household size
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: dict
   2021-01-01:
@@ -1952,7 +1952,7 @@ dauerhafte_heizkostenkomponente_m:
     en: >-
       Permanent heating cost component depending on household size introduced with the
       housing subsidy reform 2023
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: dict
   2023-01-01:
@@ -1976,7 +1976,7 @@ klimakomponente_m:
       Surcharge to be taken into account as climate component in addition to the maximum
       amounts pursuant to § 12 (1) in Euro depending on the size of the household;
       introduced with the housing subsidy reform 2023
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: dict
   2023-01-01:

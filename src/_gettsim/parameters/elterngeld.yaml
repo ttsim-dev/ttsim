@@ -20,7 +20,7 @@ höchstbetrag:
   description:
     de: § 2 (1) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: scalar
   2007-01-01:
@@ -33,7 +33,7 @@ max_zu_berücksichtigendes_einkommen:
   description:
     de: § 2 (3) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: scalar
   2007-01-01:
@@ -51,7 +51,7 @@ nettoeinkommensstufen:
       § 2 (2) BEEG. Maßgeblich ist das durchschnittlich erzielte monatliche Einkommen
       vor der Geburt
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: dict
   2007-01-01:
@@ -69,7 +69,7 @@ mindestbetrag:
   description:
     de: § 2 (5) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: scalar
   2007-01-01:
@@ -109,7 +109,7 @@ einkommensschritte_korrektur:
   description:
     de: § 2 (2) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: scalar
   2007-01-01:
@@ -131,7 +131,7 @@ geschwisterbonus_altersgrenzen:
       If there are two children under the age of 3 or more than two under the age of 6
       living in the household, Elterngeld increases.
   type: dict
-  unit: Year
+  unit: Years
   2007-01-01:
     3: 2
     6: 3
@@ -154,7 +154,7 @@ geschwisterbonus_minimum:
   description:
     de: § 2a (1) BEEG. Früher §2 (4)  BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: scalar
   2007-01-01:
@@ -167,7 +167,7 @@ mehrlingsbonus:
   description:
     de: § 2a (4) BEEG, früher §2 (6) BEEG.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
   type: scalar
   2007-01-01:
@@ -197,7 +197,7 @@ max_bezugsmonate:
       Basismonate plus "Partnermonate" bei gleichzeitiger Inanspruchnahme von Elterngeld
       bei Paaren. Basismonate bei Alleinerziehenden.
   type: dict
-  unit: Month
+  unit: Months
   2007-01-01:
     basismonate: 12
     partnermonate: 2
@@ -214,7 +214,7 @@ max_zu_versteuerndes_einkommen_vorjahr_nach_alleinerziehendenstatus:
     en: >-
       Maximum taxable income in the year before the birth of the child. Income above
       this threshold disqualifies the parent from receiving Elterngeld.
-  unit: Euro
+  unit: Euros
   type: dict
   2011-01-01:
     alleinerziehend: 250000.0
@@ -239,7 +239,7 @@ max_zu_versteuerndes_einkommen_vorjahr_pauschal:
     en: >-
       Maximum taxable income in the year before the birth of the child. Income above
       this threshold disqualifies the parent from receiving Elterngeld.
-  unit: Euro
+  unit: Euros
   type: scalar
   2024-04-01:
     scalar: 200000.0
@@ -260,7 +260,7 @@ max_arbeitsstunden_w:
   description:
     de: §1 (6) BEEG
     en: null
-  unit: Hour
+  unit: Hours
   reference_period: Week
   type: scalar
   2007-01-01:

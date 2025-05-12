@@ -55,7 +55,7 @@ beitragsvolumen:
     en: >-
       Sum of contributions to the pension insurance of all employees subject to pension
       insurance, marginally employed and recipients of ALG.
-  unit: Euro
+  unit: Euros
   1991-01-01:
     scalar: 108688000
   1992-01-01:
@@ -127,7 +127,7 @@ eckrente:
       § 154 Abs. 3 Satz 1 Nr. 2 SGB VI
       Amount of a pension without discounts when reaching 45 Entgeltpunkte, which is
       calculated by multiplying 45 with the Rentenwert.
-  unit: Euro
+  unit: Euros
   1995-01-01:
     scalar: 988.15
   1996-01-01:
@@ -183,7 +183,7 @@ durchschnittslohn:
   description:
     de: Durchschnittsbruttolohn aller Arbeitnehmer:innen in einem Jahr
     en: Mean gross wage of all employees per year
-  unit: Euro
+  unit: Euros
   reference_period: Year
   2005-01-01:
     scalar: 28468.23
@@ -220,7 +220,7 @@ beitragspflichtiges_durchschnittsentgelt:
     en: >-
       Anlage 1 SGB VI, Mean wage of all insured people in the sense of the German social
       insurance, which is needed to calculate the Entgeltpunkte.
-  unit: Euro
+  unit: Euros
   reference_period: Year
   2005-01-01:
     scalar: 29202
@@ -457,7 +457,7 @@ gesamtes_rentenvolumen:
   description:
     de: Gesamtvolumen der ausgezahlten Renten
     en: Total amount of paid pensions
-  unit: Euro
+  unit: Euros
   reference_period: Year
   1991-01-01:
     scalar: 117912000
@@ -530,7 +530,7 @@ rentenwert:
       statistik-rente.de/drv,  § 68 SGB VI
       The current pension value expresses the amount of monthly pension paid for one
       Entgeltpunkt.
-  unit: Euro
+  unit: Euros
   access_different_date: vorjahr
   1992-01-01:
     west: 21.19
@@ -674,7 +674,7 @@ grundrentenzeiten_monate:
       § 76g Abs. 4 S. 5,6 / Abs. 1 S. 1 SGB VI
       Minimal number of Grundrentenzeiten required to be entitled to Grundrente and
       maximum number of months that are considered for Grundrente.
-  unit: Month
+  unit: Months
   2021-01-01:
     min: 396
     max: 420

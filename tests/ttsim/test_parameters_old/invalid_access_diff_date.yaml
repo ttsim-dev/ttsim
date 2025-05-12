@@ -3,7 +3,7 @@ sozialversicherung__rente__altersrente__rentenwert:
   description:
     de: Historische Rentenwerte alte und neue Bundesländer. statistik-rente.de/drv
     en: null
-  unit: Euro
+  unit: Euros
   access_different_date: vormonat
   2018-07-01:
     west: 32.03
