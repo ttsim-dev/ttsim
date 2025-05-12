@@ -36,7 +36,7 @@ from ttsim.compute_taxes_and_transfers import (
     _fail_if_p_id_is_non_unique,
     _fail_if_targets_not_in_functions,
     _get_top_level_namespace,
-    _partial_parameters_to_functions,
+    _partial_params_to_functions,
     _process_params_tree,
     create_agg_by_group_functions,
 )
@@ -111,75 +111,67 @@ def some_converting_params_func(
     )
 
 
-@pytest.fixture(scope="module")
-def raw_ttsim_param():
-    return RawTTSIMParam(
-        value={
-            "some_float_param": 1,
-            "some_bool_param": False,
-        },
-        leaf_name="raw_param_spec",
-        start_date="2025-01-01",
-        end_date="2025-12-31",
-        name="raw_param_spec",
-        description="Some raw param spec",
-        unit=None,
-        reference_period=None,
-        note=None,
-        reference=None,
-    )
+SOME_RAW_TTSIM_PARAM = RawTTSIMParam(
+    value={
+        "some_float_param": 1,
+        "some_bool_param": False,
+    },
+    leaf_name="raw_param_spec",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="raw_param_spec",
+    description="Some raw param spec",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
 
 
-@pytest.fixture(scope="module")
-def some_int_param():
-    return ScalarTTSIMParam(
-        value=1,
-        leaf_name="some_int_param",
-        start_date="2025-01-01",
-        end_date="2025-12-31",
-        name="some_int_param",
-        description="Some int param",
-        unit=None,
-        reference_period=None,
-        note=None,
-        reference=None,
-    )
+SOME_INT_PARAM = ScalarTTSIMParam(
+    value=1,
+    leaf_name="some_int_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="some_int_param",
+    description="Some int param",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
 
 
-@pytest.fixture(scope="module")
-def some_dict_param():
-    return DictTTSIMParam(
-        value={"a": 1, "b": False},
-        leaf_name="some_dict_param",
-        start_date="2025-01-01",
-        end_date="2025-12-31",
-        name="some_dict_param",
-        description="Some dict param",
-        unit=None,
-        reference_period=None,
-        note=None,
-        reference=None,
-    )
+SOME_DICT_PARAM = DictTTSIMParam(
+    value={"a": 1, "b": False},
+    leaf_name="some_dict_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="some_dict_param",
+    description="Some dict param",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
 
 
-@pytest.fixture(scope="module")
-def some_piecewise_polynomial_param():
-    return PiecewisePolynomialTTSIMParam(
-        value=PiecewisePolynomialParameters(
-            thresholds=[1, 2, 3],
-            intercepts=[1, 2, 3],
-            rates=[1, 2, 3],
-        ),
-        leaf_name="some_piecewise_polynomial_param",
-        start_date="2025-01-01",
-        end_date="2025-12-31",
-        name="some_piecewise_polynomial_param",
-        description="Some piecewise polynomial param",
-        unit=None,
-        reference_period=None,
-        note=None,
-        reference=None,
-    )
+SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialTTSIMParam(
+    value=PiecewisePolynomialParameters(
+        thresholds=[1, 2, 3],
+        intercepts=[1, 2, 3],
+        rates=[1, 2, 3],
+    ),
+    leaf_name="some_piecewise_polynomial_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="some_piecewise_polynomial_param",
+    description="Some piecewise polynomial param",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
 
 
 @pytest.fixture(scope="module")
@@ -218,13 +210,13 @@ def mettsim_environment():
 
 # Create a function which is used by some tests below
 @policy_function()
-def func_before_partial(arg_1, payroll_tax_params):
-    return arg_1 + payroll_tax_params["test_param_1"]
+def func_before_partial(arg_1, some_param):
+    return arg_1 + some_param
 
 
-func_after_partial = _partial_parameters_to_functions(
+func_after_partial = _partial_params_to_functions(
     {"some_func": func_before_partial},
-    {"payroll_tax": {"test_param_1": 1}},
+    {"some_param": SOME_INT_PARAM},
 )["some_func"]
 
 
@@ -722,21 +714,21 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
         )
 
 
-def test_partial_parameters_to_functions():
+def test_partial_params_to_functions():
     # Partial function produces correct result
     assert func_after_partial(2) == 3
 
 
-def test_partial_parameters_to_functions_removes_argument():
+def test_partial_params_to_functions_removes_argument():
     # Fails if params is added to partial function
     with pytest.raises(
         TypeError,
         match=("got multiple values for argument "),
     ):
-        func_after_partial(2, {"test_param_1": 1})
+        func_after_partial(2, 1)
 
     # No error for original function
-    func_before_partial(2, {"test_param_1": 1})
+    func_before_partial(2, 1)
 
 
 def test_user_provided_aggregate_by_group_specs():
@@ -989,14 +981,12 @@ def test_get_top_level_namespace(environment, time_units, expected):
     assert all(name in result for name in expected)
 
 
-def test_params_tree_is_processed(
-    raw_ttsim_param, some_int_param, some_dict_param, some_piecewise_polynomial_param
-):
+def test_params_tree_is_processed():
     params_tree = {
-        "raw_param_spec": raw_ttsim_param,
-        "some_int_param": some_int_param,
-        "some_dict_param": some_dict_param,
-        "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
+        "raw_param_spec": SOME_RAW_TTSIM_PARAM,
+        "some_int_param": SOME_INT_PARAM,
+        "some_dict_param": SOME_DICT_PARAM,
+        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
     }
     params_functions = {
         "some_scalar_params_func": some_scalar_params_func,
@@ -1012,8 +1002,8 @@ def test_params_tree_is_processed(
             some_bool_param=False,
         ),
         "some_scalar_params_func": 1,
-        "some_int_param": some_int_param,
-        "some_dict_param": some_dict_param,
-        "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
+        "some_int_param": SOME_INT_PARAM,
+        "some_dict_param": SOME_DICT_PARAM,
+        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
     }
     assert processed_params_tree == expected
