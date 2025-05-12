@@ -5,15 +5,16 @@ alpha:
     en: alpha
   description:
     de: >-
+      §68 Abs. 4 S. 6 SGB VI
       Teil des Nachhaltigkeitsfaktors in der Rentenanpassungsformel, welche das
       Verhältnis von Rentnern zu Beitragszahlern modifiziert
     en: >-
+      §68 Abs. 4 S. 6 SGB VI
       Part of the sustainability factor in the pension adjustment formula which modifies
       the ratio of pentioners to contributors
   unit: null
   reference_period: null
   type: scalar
-  reference: §68 Abs. 4 S. 6 SGB VI
   1984-01-01:
     value: 0.0
   2002-01-01:
@@ -23,12 +24,11 @@ altersvorsogeanteil:
     de: Altersvorsorgeanteil (AVA)
     en: Personal pension share
   description:
-    de: Teil des Riesterfaktors in der Rentenanpassungsformel
-    en: Part of the Riesterfaktor in the pension adjustment formular
+    de: §68 Abs. 5 SGB VI (Teil des Riesterfaktors in der Rentenanpassungsformel)
+    en: §68 Abs. 5 SGB VI (Part of the Riesterfaktor in the pension adjustment formular)
   unit: null
   reference_period: null
   type: scalar
-  reference: §68 Abs. 5 SGB VI
   1993-01-01:
     value: 0.0
   2002-01-01:
@@ -126,15 +126,16 @@ eckrente:
     en: Standard pension
   description:
     de: >-
+      § 154 Abs. 3 Satz 1 Nr. 2 SGB VI
       Höhe einer abschlagsfreien Rente bei 45 Entgeltpunkten. Ergibt sich aus
       Multiplikation des Rentenwerts mit 45. statistik-rente.de/drv
     en: >-
+      § 154 Abs. 3 Satz 1 Nr. 2 SGB VI
       Amount of a pension without discounts when reaching 45 Entgeltpunkte, which is
       calculated by multiplying 45 with the Rentenwert.
   unit: Euros
   reference_period: Year
   type: scalar
-  reference: § 154 Abs. 3 Satz 1 Nr. 2 SGB VI
   1995-01-01:
     value: 988.15
   1996-01-01:
