@@ -752,6 +752,11 @@ def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
                     out_params[param] = numpy.inf
                 else:
                     out_params[param] = policy_in_place["scalar"]
+            elif "value" in policy_in_place:
+                if policy_in_place["value"] == "inf":
+                    out_params[param] = numpy.inf
+                else:
+                    out_params[param] = policy_in_place["value"]
             else:
                 out_params[param] = {}
                 # Keys which if given are transferred
