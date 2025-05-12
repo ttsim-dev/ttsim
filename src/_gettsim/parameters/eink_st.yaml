@@ -277,7 +277,7 @@ parameter_ertragsanteil_an_rente:
       Diese Funktion ist hier ab 2002 angegeben. Vor 2002 das Steuersystem ist nicht
       implementiert.
     en: null
-  type: piecewise_linear
+  type: require_converter
   2002-01-01:
     0:
       lower_threshold: -inf
