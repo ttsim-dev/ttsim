@@ -82,7 +82,8 @@
           "name",
           "description",
           "unit",
-          "reference_period"
+          "reference_period",
+          "type"
         ]
       },
         {
