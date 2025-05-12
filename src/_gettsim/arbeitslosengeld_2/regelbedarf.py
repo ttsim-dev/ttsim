@@ -114,7 +114,7 @@ def kindersatz_m_bis_2010(
     float with SGB II needs of children until year 2010.
 
     """
-    anteile = arbeitsl_geld_2_params["regelsatz"]["anteil_vom_regelsatz_für_kinder"]
+    anteile = arbeitsl_geld_2_params["regelsatz"]["anteil_vom_basissatz_für_kinder"]
     basissatz = arbeitsl_geld_2_params["regelsatz"]["basissatz"]
 
     if (
@@ -230,7 +230,7 @@ def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
             arbeitsl_geld_2_params["regelsatz"]["basissatz"]
             * (
                 arbeitsl_geld_2_params["regelsatz"][
-                    "anteil_vom_regelsatz_bei_zwei_erwachsenen"
+                    "anteil_vom_basissatz_bei_zwei_erwachsenen"
                 ]
             )
         )

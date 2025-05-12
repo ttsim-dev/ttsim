@@ -339,7 +339,7 @@ def regelsatz_m_bg_arbeitsl_geld_2_params_bis_2010(
         out = (
             arbeitsl_geld_2_params["regelsatz"]["basissatz"]
             * arbeitsl_geld_2_params["regelsatz"][
-                "anteil_vom_regelsatz_bei_zwei_erwachsenen"
+                "anteil_vom_basissatz_bei_zwei_erwachsenen"
             ]
             * 2
         )

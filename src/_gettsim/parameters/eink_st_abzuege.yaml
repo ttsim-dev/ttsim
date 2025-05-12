@@ -103,7 +103,7 @@ parameter_kinderfreibetrag:
 vorsorgeaufwendungen_regime_bis_2004:
   name:
     de: Vorsorgeaufwendungen nach Rechtslage vor 2004.
-    en: Deduction for pension expenses, before 2004.
+    en: Deduction for pension expenses, regime before 2004.
   description:
     de: >-
       Vorwegabzug:
@@ -132,7 +132,7 @@ vorsorgeaufwendungen_regime_bis_2004:
   1989-01-01:
     deviation_from: previous
     vorwegabzug: 2045
-    value: 0.12
+    kürzungsanteil_abhängig_beschäftigte: 0.12
   1992-01-01:
     deviation_from: previous
     grundhöchstbetrag: 1334
