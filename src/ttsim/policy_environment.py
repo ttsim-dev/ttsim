@@ -21,6 +21,7 @@ from ttsim.piecewise_polynomial import (
 )
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
+    merge_trees,
     to_datetime,
     upsert_path_and_value,
     upsert_tree,
@@ -115,7 +116,7 @@ class PolicyEnvironment:
     @property
     def combined_tree(self) -> NestedTTSIMObjectDict:
         """The combined tree of raw objects and params."""
-        return {**self._raw_objects_tree, **self._params_tree}
+        return merge_trees(self._raw_objects_tree, self._params_tree)
 
     @property
     def grouping_levels(self) -> tuple[str, ...]:
