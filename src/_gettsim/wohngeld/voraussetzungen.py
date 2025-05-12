@@ -228,9 +228,11 @@ def vermögensprüfung(
 
     """
 
-    vermögensfreibetrag = params["vermögensfreibetrag"]["grundfreibetrag"] + params[
-        "vermögensfreibetrag"
-    ]["je_weitere_person"] * (anzahl_personen - 1)
+    vermögensfreibetrag = params["parameter_vermögensfreibetrag"][
+        "grundfreibetrag"
+    ] + params["parameter_vermögensfreibetrag"]["je_weitere_person"] * (
+        anzahl_personen - 1
+    )
 
     if vermögen <= vermögensfreibetrag:
         out = True

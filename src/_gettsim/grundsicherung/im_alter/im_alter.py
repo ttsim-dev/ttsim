@@ -120,9 +120,9 @@ def vermögensfreibetrag_eg(
 
     """
     out = (
-        grunds_im_alter_params["vermögensfreibetrag"]["adult"]
+        grunds_im_alter_params["parameter_vermögensfreibetrag"]["adult"]
         * arbeitslosengeld_2__anzahl_erwachsene_fg
-        + grunds_im_alter_params["vermögensfreibetrag"]["child"]
+        + grunds_im_alter_params["parameter_vermögensfreibetrag"]["child"]
         * arbeitslosengeld_2__anzahl_kinder_fg
     )
     return out
