@@ -1,5 +1,5 @@
 ---
-lohnst_einkommensgrenzen:
+lohnsteuer_einkommensgrenzen:
   name:
     de: Einkommensgrenzen für Steuerklassen 5 und 6
     en: Thresholds for withholding tax classes 5 and 6
@@ -14,6 +14,7 @@ lohnst_einkommensgrenzen:
       rates apply.
   unit: Euros
   reference_period: Year
+  type: dict
   2002-01-01:
     0: 8946
     1: 27306
