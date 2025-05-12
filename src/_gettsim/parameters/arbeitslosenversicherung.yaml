@@ -18,7 +18,6 @@ beitragssatz:
   1987-01-01:
     scalar: 0.0215
   1992-01-01:
-    deviation_from: previous
     scalar: 0.0315
   1993-01-01:
     scalar: 0.0325
@@ -29,15 +28,12 @@ beitragssatz:
   2005-01-01:
     scalar: 0.0325
   2007-01-01:
-    deviation_from: previous
     scalar: 0.021
   2008-01-01:
     scalar: 0.016
   2009-01-01:
-    deviation_from: previous
     scalar: 0.014
   2011-01-01:
-    deviation_from: previous
     scalar: 0.015
   2015-01-01:
     scalar: 0.015
@@ -48,12 +44,10 @@ beitragssatz:
       reduced to 0.025 in BeiSaV 2019.
     reference: V. v. 21.12.2018 BGBl. I S. 2663
   2020-01-01:
-    deviation_from: previous
     scalar: 0.012
     note: Temporarily reduced to 0.024 in BeiSaV 2019.
     reference: V. v. 02.12.2019 BGBl. I S. 1998
   2023-01-01:
-    deviation_from: previous
     scalar: 0.013
     note: >-
       Contribution rate was temporarily reduced from 2019 to 2022 in BeiSaV 2019. Back
