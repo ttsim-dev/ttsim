@@ -108,7 +108,7 @@ parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
       24.03.2011 BGBl. I S. 453). Ersetzt Parameter in
       parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg, falls nicht vorhanden
     en: null
-  type: piecewise_linear
+  type: require_converter
   2005-10-01:
     reference: Artikel 1 G. v. 14.08.2005 BGBl. I S. 2407.
     deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
