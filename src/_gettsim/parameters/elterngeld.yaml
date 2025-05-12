@@ -9,6 +9,7 @@ satz:
       Faktor bei der ElG-Berechung, 2. Stufe.
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   2007-01-01:
     scalar: 0.67
@@ -83,6 +84,7 @@ prozent_korrektur:
     de: § 2 (2) BEEG
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   2007-01-01:
     scalar: 0.001
@@ -95,6 +97,7 @@ prozent_minimum:
     de: § 2 (2) BEEG
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   2007-01-01:
     scalar: 0.67
@@ -130,8 +133,9 @@ geschwisterbonus_altersgrenzen:
       § 2a BEEG
       If there are two children under the age of 3 or more than two under the age of 6
       living in the household, Elterngeld increases.
-  type: dict
   unit: Years
+  reference_period: null
+  type: dict
   2007-01-01:
     3: 2
     6: 3
@@ -143,6 +147,7 @@ geschwisterbonus_aufschlag:
     de: § 2a (1) BEEG. Früher § 2 (4) BEEG
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   2007-01-01:
     scalar: 0.1
@@ -181,6 +186,7 @@ sozialversicherungspauschale:
     de: §2f BEEG. Vor 2012 waren es die eigentlichen Pflichtbeiträge.
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   2012-09-18:
     scalar: 0.21
@@ -196,8 +202,9 @@ max_bezugsmonate:
       § 4 (3) BEEG
       Basismonate plus "Partnermonate" bei gleichzeitiger Inanspruchnahme von Elterngeld
       bei Paaren. Basismonate bei Alleinerziehenden.
-  type: dict
   unit: Months
+  reference_period: null
+  type: dict
   2007-01-01:
     basismonate: 12
     partnermonate: 2
@@ -215,6 +222,7 @@ max_zu_versteuerndes_einkommen_vorjahr_nach_alleinerziehendenstatus:
       Maximum taxable income in the year before the birth of the child. Income above
       this threshold disqualifies the parent from receiving Elterngeld.
   unit: Euros
+  reference_period: null
   type: dict
   2011-01-01:
     alleinerziehend: 250000.0
@@ -240,6 +248,7 @@ max_zu_versteuerndes_einkommen_vorjahr_pauschal:
       Maximum taxable income in the year before the birth of the child. Income above
       this threshold disqualifies the parent from receiving Elterngeld.
   unit: Euros
+  reference_period: null
   type: scalar
   2024-04-01:
     scalar: 200000.0

@@ -15,6 +15,8 @@ vermögensfreibetrag:
       § 1 Verordnung zur Durchführung des § 90 Abs. 2 Nr. 9 des Zwölften Buches
       Sozialgesetzbuch
   unit: Euros
+  reference_period: null
+  type: dict
   1984-01-01:
     adult: 0
     child: 0
@@ -40,6 +42,7 @@ ges_rente_anr_frei:
       Public pension shares not subject to transfer withdrawal for subjects whose
       Grundrentenzeiten exceeds 33 years.
   unit: Share
+  reference_period: null
   type: piecewise_linear
   1984-01-01:
     reference: No income could be deducted
@@ -76,6 +79,7 @@ kapitaleink_anr_frei:
       the Grundsicherung im Alter.
   unit: Euros
   reference_period: Year
+  type: scalar
   1984-01-01:
     scalar: 0
   2016-01-01:
@@ -94,9 +98,8 @@ erwerbseink_anr_frei:
       Share of income, which is not added to the total income when calculating the
       Grundsicherung.
   unit: Share
-  1984-01-01:
-    scalar: 0
-    note: Unclear how it was handled before 2005
+  reference_period: null
+  type: scalar
   2005-01-01:
     scalar: 0.3
 priv_rente_anr_frei:
@@ -113,6 +116,7 @@ priv_rente_anr_frei:
       Share of privat pension, which is not added to total income when calculating the
       Grundsicherung.
   unit: Share
+  reference_period: null
   type: piecewise_linear
   1984-01-01:
     reference: Unclear how it was handled before 2005
@@ -141,14 +145,16 @@ mehrbedarf_bei_schwerbehinderungsgrad_g:
   description:
     de: >-
       § 30 Abs. 1 SGB XII, https://www.buzer.de/gesetz/3415/al0-3758.htm
-      Dieser Prozentanteil des Regelbedarfs wird Menschen mit Schwerbehindertenausweis
-      mit Merkzeichen G, die Grundsicherung im Alter oder bei Erwerbsminderung bekommen,
-      als Mehrbedarf anerkannt.
+      Dieser Anteil des Regelbedarfs wird Menschen mit Schwerbehindertenausweis mit
+      Merkzeichen G, die Grundsicherung im Alter oder bei Erwerbsminderung bekommen, als
+      Mehrbedarf anerkannt.
     en: >-
       § 30 Abs. 1 SGB XII, https://www.buzer.de/gesetz/3415/al0-3758.htm
-      This percentage of the normal requirement is added as an additional requirement
-      for someone who has a severly disabled ID card which shows the code 'G' and is
-      entitled to the Grundsicherung.
-  unit: Percent
+      This share of the Regelbedarf is added as an additional requirement for someone
+      who has a severly disabled ID card which shows the code 'G' and is entitled to the
+      Grundsicherung.
+  unit: Share
+  reference_period: null
+  type: scalar
   2006-12-07:
     scalar: 0.17

@@ -6,6 +6,8 @@ faktor_berechnungsformel:
   description:
     de: Anlage 2 WoGG zu §19 Abs. 2 WoGG
     en: null
+  unit: null
+  reference_period: null
   type: scalar
   1984-01-01:
     scalar: 1
@@ -25,6 +27,8 @@ koeffizienten_berechnungsformel:
       Wohngeldverordnung (WoGV).
       Die Schlüssel von 1 to 12 beziehen sich auf die Haushaltsgröße.
     en: The keys from 1 to 12 below refer to the household size.
+  unit: null
+  reference_period: null
   type: require_converter
   1984-01-01:
     note: Parameter aus Regressionsanalyse der Wohngeldtabellen
@@ -524,6 +528,8 @@ abzugsbeträge_steuern_sozialversicherung:
       Kriterien sind entrichtete Steuern / entrichtete GKV- und GPV-Beiträge /
       entrichtete GRV-Beiträge
     en: null
+  unit: Share
+  reference_period: null
   type: dict
   1984-01-01:
     0: 0.06
@@ -549,6 +555,7 @@ min_miete:
     de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
     en: null
   unit: Euros
+  reference_period: Month
   type: dict
   1984-01-01:
     1: 0
@@ -617,7 +624,7 @@ min_miete:
     10: 146
     11: 180
     12: 286
-min_eink:
+min_einkommen:
   name:
     de: Minimalwert für Parameter Y
     en: null
@@ -625,6 +632,7 @@ min_eink:
     de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
     en: null
   unit: Euros
+  reference_period: Month
   type: dict
   1984-01-01:
     1: 0
@@ -1909,6 +1917,7 @@ vermögensfreibetrag:
       2009. Vorher war hohes Vermögen laut WoGG kein Ausschlussgrund.
     en: Since 2009, wealth might be a reason not to grand housing benefit.
   unit: Euros
+  reference_period: null
   type: dict
   1970-01-01:
     grundfreibetrag: inf

@@ -15,6 +15,7 @@ altersgrenze:
       children up to a specified age are entitled to child benefit under certain
       conditions.
   unit: Years
+  reference_period: null
   1984-01-01:
     mit_bedingungen: 27
     ohne_bedingungen: 18

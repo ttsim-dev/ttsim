@@ -6,6 +6,8 @@ raw_bounties_per_orc:
   description:
     de: Test für den Typ require_converter
     en: Test the require_converter type
+  unit: Euros
+  reference_period: null
   type: require_converter
   1900-01-01:
     small_orc: 100

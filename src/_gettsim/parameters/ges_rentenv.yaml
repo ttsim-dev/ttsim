@@ -9,6 +9,7 @@ beitragssatz:
     en: >-
       Employees contribution rate for pension insurance.
   unit: Share
+  reference_period: null
   access_different_date: jahresanfang
   1984-01-01:
     scalar: 0.0925
@@ -225,6 +226,7 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
       Fixed pension insurance contributions for marginal employment
       (§ 168 I Nr. 1b SGB VI)
   unit: Share
+  reference_period: null
   access_different_date: jahresanfang
   1984-01-01:
     scalar: 0

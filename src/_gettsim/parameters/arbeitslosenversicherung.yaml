@@ -7,6 +7,7 @@ beitragssatz:
     de: Arbeitnehmerbeitragssatz zur Arbeitslosenversicherung
     en: Employees' contribution rate to unemployment insurance.
   unit: Share
+  reference_period: null
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:

@@ -16,6 +16,7 @@ beitragssatz:
       contribution rate, since 2009 sonderbeitrag - paid by employees, Jul 2005 to
       2014 ermäßigt - reduced rate zusatz - average top-up contribution rate
   unit: Share
+  reference_period: null
   type: dict
   access_different_date: jahresanfang
   1984-01-01:
@@ -125,8 +126,8 @@ beitragsbemessungsgrenze_m:
     de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
     en: The income threshold is the same for health and long-term care insurance.
   unit: Euros
-  type: require_converter
   reference_period: Month
+  type: require_converter
   1984-01-01:
     west: 1994
   1985-01-01:
@@ -244,6 +245,7 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
       geringfügiger Beschäftigung
     en: Fixed health insurance contributions for marginal employment (§ 249b SGB V)
   unit: Share
+  reference_period: null
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:
@@ -262,8 +264,9 @@ bezugsgröße_selbstständige_m:
     de: §18 SGB IV ynd https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
     en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
   unit: Euros
-  type: dict
   reference_period: Month
+  type: dict
+  access_different_date: jahresanfang
   1984-01-01:
     west: 1396
     mindestanteil: 0.33333333
@@ -409,6 +412,7 @@ mindestanteil_bezugsgröße_selbstständige:
       Health Insurance contributions have to be payed, at the minimum, on the ninetieth
       part of the monthly Bezugsgröße for each calender day
   unit: Share
+  reference_period: null
   type: scalar
   1990-01-01:
     note: Exact date of introduction of this parameter unclear (was in place in 2006)

@@ -117,6 +117,7 @@ abzugsrate_kindergeld:
       for child alimony payments can deduct half of the child benefit when calculating
       alimony.
   unit: Share
+  reference_period: null
   2008-01-01:
     kind: 0.5
     erwachsener: 1

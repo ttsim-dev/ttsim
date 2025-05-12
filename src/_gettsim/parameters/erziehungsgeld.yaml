@@ -7,8 +7,8 @@ einkommensgrenze:
     de: Einkommensgrenze für abzugsfreies Erziehungsgeld
     en: Income threshold for deduction-free parental leave benefit
   unit: Euros
-  type: require_converter
   reference_period: Year
+  type: require_converter
   2004-02-09:
     reference: 09.02.2004 BGBl. I S. 209
     note: >-
@@ -37,8 +37,8 @@ aufschlag_einkommen:
     de: Erhöhung der Einkommensgrenze pro weiterem Kind
     en: Increase in the income threshold per additional child
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   2004-02-09:
     reference: 09.02.2004 BGBl. I S. 209
     note: >-
@@ -52,8 +52,8 @@ satz:
     de: Höhe des Erziehungsgeldes abhängig vom beantragtem Satz
     en: Amount of the parental leave benefit depending on the rate applied for
   unit: Euros
-  type: dict
   reference_period: Month
+  type: dict
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
     note: >-
@@ -76,6 +76,7 @@ abschlagsfaktor:
       The factor is multiplied by the relevant income and
       the product is deducted from the parental leave benefit entitlement accordingly.
   unit: null
+  reference_period: null
   type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 207
@@ -94,6 +95,7 @@ pauschaler_abzug_vom_einkommen:
       Factor by which the income is reduced in a lump sum in order to calculate the
       relevant income
   unit: null
+  reference_period: null
   type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 209
@@ -110,8 +112,8 @@ maximale_wochenarbeitszeit:
     en: >-
       Limit of weekly working hours up to which parental leave benefit is paid
   unit: Hours
-  type: scalar
   reference_period: Week
+  type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 211
     note: >-
@@ -127,6 +129,7 @@ maximales_kindsalter_regelsatz:
     en: >-
       Age of the child in months up to which the Regelsatz can be claimed.
   unit: Months
+  reference_period: null
   type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
@@ -141,6 +144,7 @@ maximales_kindsalter_budgetsatz:
     en: >-
       Age of the child in months up to which the Budgetsatz can be claimed.
   unit: Months
+  reference_period: null
   type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
@@ -155,6 +159,7 @@ abolishment_cohort:
     en: >-
       Erziehungsgeld is replaced by Elterngeld.
   unit: Years
+  reference_period: null
   type: scalar
   2006-12-11:
     reference: Art. 3 G. v. 5.12.2006 BGBl. I S. 2748
