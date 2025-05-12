@@ -175,7 +175,7 @@ def vorsorge_krankenv_option_a(
     else:
         vorsorge_krankenv_option_a_max = eink_st_abzuege_params[
             "maximal_absetzbare_krankenversicherungskosten"
-        ]["steuerklasse_nicht3"]
+        ]["steuerklasse_nicht_3"]
 
     out = min(vorsorge_krankenv_option_a_max, vorsorge_krankenv_option_a_basis)
 

@@ -111,8 +111,12 @@ def kinderfreibetrag_soli_y(
     """
 
     kinderfreibetrag_basis = (
-        eink_st_abzuege_params["parameter_kinderfreibetrag"]["sächl_existenzmin"]
-        + eink_st_abzuege_params["parameter_kinderfreibetrag"]["beitr_erz_ausb"]
+        eink_st_abzuege_params["parameter_kinderfreibetrag"][
+            "sächliches_existenzminimum"
+        ]
+        + eink_st_abzuege_params["parameter_kinderfreibetrag"][
+            "betreuung_erziehung_ausbildung"
+        ]
     )
 
     # For certain tax brackets, twice the child allowance can be deducted
