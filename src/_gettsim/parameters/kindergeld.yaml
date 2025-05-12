@@ -24,7 +24,7 @@ altersgrenze:
     mit_bedingungen: 25
     ohne_bedingungen: 18
     reference: Art. 1 G. v. 19.07.2006 BGBl I S. 1652
-kindergeld:
+kindergeldsatz:
   name:
     de: Kindergeld, Betrag je nach Reihenfolge der Kinder.
     en: Child benefit amount, depending on succession of children.
