@@ -32,7 +32,7 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     Full retirement age (without deductions) for very long term insured.
 
     """
-    return ges_rente_params["altersgrenze_besond_langj_versicherte"]
+    return ges_rente_params["altersgrenze_besonders_langjährig_versicherte"]
 
 
 @policy_function(
@@ -66,24 +66,26 @@ def altersgrenze_mit_staffelung(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_besond_langj_versicherte"][
+        <= ges_rente_params["altersgrenze_besonders_langjährig_versicherte"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_besond_langj_versicherte"][
+        out = ges_rente_params["altersgrenze_besonders_langjährig_versicherte"][
             "entry_age_old_regime"
         ]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_besond_langj_versicherte"][
+        >= ges_rente_params["altersgrenze_besonders_langjährig_versicherte"][
             "min_birthyear_new_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_besond_langj_versicherte"][
+        out = ges_rente_params["altersgrenze_besonders_langjährig_versicherte"][
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_besond_langj_versicherte"][geburtsjahr]
+        out = ges_rente_params["altersgrenze_besonders_langjährig_versicherte"][
+            geburtsjahr
+        ]
 
     return out
 

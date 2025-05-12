@@ -187,9 +187,9 @@ def mindestbruttoeinkommen_m_bg(
     if arbeitslosengeld_2__anzahl_kinder_bg == 0:
         out = 0.0
     elif familie__alleinerziehend_bg:
-        out = kinderzuschl_params["min_eink_alleinerz"]
+        out = kinderzuschl_params["mindesteinkommen_alleinerziehende"]
     else:
-        out = kinderzuschl_params["min_eink_paare"]
+        out = kinderzuschl_params["mindesteinkommen_paare"]
 
     return out
 

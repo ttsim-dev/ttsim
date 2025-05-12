@@ -635,7 +635,7 @@ def _parse_kinderzuschl_max(
                 "kinder"
             ]
             + params["kinderzuschl"]["existenzminimum"]["heizkosten"]["kinder"]
-        ) / 12 - params["kindergeld"]["kindergeld"][1]
+        ) / 12 - params["kindergeld"]["kindergeldsatz"][1]
 
     return params
 

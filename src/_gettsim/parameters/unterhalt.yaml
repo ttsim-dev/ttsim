@@ -12,6 +12,7 @@ mindestunterhalt:
       17 years).
   unit: Euros
   reference_period: Month
+  type: require_converter
   2016-01-01:
     1:
       min_alter: 0
@@ -118,6 +119,7 @@ abzugsrate_kindergeld:
       alimony.
   unit: Share
   reference_period: null
+  type: dict
   2008-01-01:
     kind: 0.5
     erwachsener: 1

@@ -12,20 +12,6 @@ def einkommen_m(
 
     This affects marginally employed persons and high wages for above the assessment
     ceiling.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m`.
-    sozialversicherung__regulär_beschäftigt
-        See :func:`sozialversicherung__regulär_beschäftigt`.
-    beitragsbemessungsgrenze_m
-        See :func:`beitragsbemessungsgrenze_m`.
-
-
-    Returns
-    -------
-
     """
     if sozialversicherung__regulär_beschäftigt:
         out = einkommen_regulär_beschäftigt_m
@@ -133,7 +119,7 @@ def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
     The income threshold up to which the rate of health insurance contributions apply.
 
     """
-    params = ges_krankenv_params["beitragsbemessungsgrenze_m"]
+    params = ges_krankenv_params["parameter_beitragsbemessungsgrenze"]
 
     out = params["ost"] if wohnort_ost else params["west"]
 
@@ -145,7 +131,7 @@ def beitragsbemessungsgrenze_m_ohne_ost_west_unterschied(
     ges_krankenv_params: dict,
 ) -> float:
     """Income threshold up to which health insurance payments apply."""
-    return ges_krankenv_params["beitragsbemessungsgrenze_m"]
+    return ges_krankenv_params["parameter_beitragsbemessungsgrenze"]
 
 
 @policy_function()

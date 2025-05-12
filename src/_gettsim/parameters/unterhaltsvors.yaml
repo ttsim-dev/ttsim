@@ -12,8 +12,9 @@ mindesteinkommen:
     en: null
   unit: Euros
   reference_period: Month
+  type: scalar
   2017-01-01:
-    scalar: 600
+    value: 600
     reference: Art. 23 G. v. 14.08.2017 BGBl. I S. 3122.
 altersgrenzen_bezug:
   name:
@@ -31,7 +32,7 @@ altersgrenzen_bezug:
       payments. Since July 2017, the age limits of the minimum alimony apply.
   unit: Years
   reference_period: null
-  type: dict
+  type: require_converter
   2008-01-01:
     1:
       min_alter: 0
@@ -53,11 +54,11 @@ faktor_jüngste_altersgruppe:
       § 1612a Abs. 1 BGB
       Factor by which the sächliche Existenzminimum is multiplied to calculate
       the advance child alimony for children of the youngest age group.
-  unit: Euros
+  unit: null
   reference_period: null
   type: scalar
   2009-01-01:
-    scalar: 0.87
+    value: 0.87
 anwendungsvorschrift:
   name:
     de: Unterhaltsvorschuss für Kinder entsprechend Anwendungsvorschriften
@@ -82,6 +83,7 @@ anwendungsvorschrift:
       alimony (i.e. after deduction of the assumed Kindergeld) are used.
   unit: Euros
   reference_period: Month
+  type: dict
   2015-01-01:
     1: 133
     2: 180

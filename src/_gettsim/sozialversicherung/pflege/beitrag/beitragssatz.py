@@ -44,7 +44,7 @@ def beitragssatz_ohne_zusatz_für_kinderlose(
 
     """
 
-    return ges_pflegev_params["beitragssatz"]
+    return ges_pflegev_params["parameter_beitragssatz"]
 
 
 @policy_function(
@@ -72,11 +72,11 @@ def beitragssatz_zusatz_kinderlos_dummy(
     -------
 
     """
-    out = ges_pflegev_params["beitragssatz"]["standard"]
+    out = ges_pflegev_params["parameter_beitragssatz"]["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["beitragssatz"]["zusatz_kinderlos"]
+        out += ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
 
     return out
 
@@ -107,15 +107,15 @@ def beitragssatz_mit_kinder_abschlag(
     -------
 
     """
-    out = ges_pflegev_params["beitragssatz"]["standard"]
+    out = ges_pflegev_params["parameter_beitragssatz"]["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["beitragssatz"]["zusatz_kinderlos"]
+        out += ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        out -= ges_pflegev_params["beitragssatz"]["abschlag_kinder"] * min(
+        out -= ges_pflegev_params["parameter_beitragssatz"]["abschlag_kinder"] * min(
             anzahl_kinder_bis_24 - 1, 4
         )
 

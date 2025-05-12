@@ -131,7 +131,7 @@ def kindergeld_erstes_kind_ohne_staffelung_m(kindergeld_params: dict) -> float:
     -------
 
     """
-    return kindergeld_params["kindergeld"]
+    return kindergeld_params["kindergeldsatz"]
 
 
 @policy_function(
@@ -152,7 +152,7 @@ def kindergeld_erstes_kind_gestaffelt_m(kindergeld_params: dict) -> float:
     -------
 
     """
-    return kindergeld_params["kindergeld"][1]
+    return kindergeld_params["kindergeldsatz"][1]
 
 
 @policy_function(

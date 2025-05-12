@@ -102,7 +102,9 @@ def erwerbseinkommen_m(
     earnings_after_max_deduction = (
         earnings - arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
     )
-    earnings = (1 - grunds_im_alter_params["erwerbseink_anr_frei"]) * earnings
+    earnings = (
+        1 - grunds_im_alter_params["anrechnungsfreier_anteil_erwerbseinkünfte"]
+    ) * earnings
 
     out = max(earnings, earnings_after_max_deduction)
 
@@ -135,7 +137,7 @@ def kapitaleinkommen_brutto_m(
     # Can deduct allowance from yearly capital income
     capital_income_y = (
         einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y
-        - grunds_im_alter_params["kapitaleink_anr_frei"]
+        - grunds_im_alter_params["anrechnungsfreie_kapitaleinkünfte"]
     )
 
     # Calculate and return monthly capital income (after deduction)
@@ -172,7 +174,9 @@ def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m_amount_exempt = (
         piecewise_polynomial(
             x=sozialversicherung__rente__private_rente_betrag_m,
-            parameters=grunds_im_alter_params["priv_rente_anr_frei"],
+            parameters=grunds_im_alter_params[
+                "anrechnungsfreier_anteil_private_renteneinkünfte"
+            ],
         )
     )
     upper = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
@@ -237,7 +241,7 @@ def gesetzliche_rente_m_ab_2021(
 
     angerechnete_rente = piecewise_polynomial(
         x=sozialversicherung__rente__altersrente__betrag_m,
-        parameters=grunds_im_alter_params["ges_rente_anr_frei"],
+        parameters=grunds_im_alter_params["anrechnungsfreier_anteil_gesetzliche_rente"],
     )
 
     upper = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2

@@ -172,7 +172,9 @@ def einkommen_vorjahr_proxy_m(
         12 * max_wage - eink_st_abzuege_params["werbungskostenpauschale"],
         eink_st_params,
     )
-    prox_soli = piecewise_polynomial(x=prox_tax, parameters=soli_st_params["soli_st"])
+    prox_soli = piecewise_polynomial(
+        x=prox_tax, parameters=soli_st_params["parameter_solidaritätszuschlag"]
+    )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     out = max(out, 0.0)
     return out

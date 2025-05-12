@@ -1,5 +1,5 @@
 ---
-beitragssatz:
+parameter_beitragssatz:
   name:
     de: Beitragssätze zur gesetzlichen Pflegeversicherung
     en: Contribution rate to statutory care insurance
@@ -56,7 +56,7 @@ beitragssatz:
     standard: 0.018
     reference: >-
       Pflege-Beitragssatz-Anpassungsverordnung 2025, Bundestag-Drucksache 20/1371
-beitragsbemessungsgrenze_m:
+parameter_beitragsbemessungsgrenze:
   name:
     de: Beitragsbemessungsgrenzen für die Pflegeversicherung
     en: Income Threshold for care insurance

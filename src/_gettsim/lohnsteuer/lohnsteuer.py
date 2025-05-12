@@ -172,9 +172,9 @@ def lohnsteuerformel(
         einkommen_y=einkommen_y, eink_st_params=eink_st_params
     )
 
-    grenze_1 = lohnst_params["lohnst_einkommensgrenzen"][0]
-    grenze_2 = lohnst_params["lohnst_einkommensgrenzen"][1]
-    grenze_3 = lohnst_params["lohnst_einkommensgrenzen"][2]
+    grenze_1 = lohnst_params["lohnsteuer_einkommensgrenzen"][0]
+    grenze_2 = lohnst_params["lohnsteuer_einkommensgrenzen"][1]
+    grenze_3 = lohnst_params["lohnsteuer_einkommensgrenzen"][2]
 
     lohnsteuer_grenze_1 = basis_für_klassen_5_6(
         einkommen_y=grenze_1, eink_st_params=eink_st_params

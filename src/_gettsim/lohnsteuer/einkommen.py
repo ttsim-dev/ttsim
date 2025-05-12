@@ -86,7 +86,7 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
 
     """
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["beitragssatz"]["ermäßigt"] / 2
+        ges_krankenv_params["parameter_beitragssatz"]["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
@@ -128,7 +128,7 @@ def vorsorge_krankenv_option_b_ab_2019(
     """
 
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["beitragssatz"]["ermäßigt"] / 2
+        ges_krankenv_params["parameter_beitragssatz"]["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
@@ -225,17 +225,17 @@ def vorsorgepauschale_y_ab_2010(
     if wohnort_ost:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["beitragsbemessungsgrenze_m"]["ost"],
+            12 * ges_rentenv_params["parameter_beitragsbemessungsgrenze"]["ost"],
         )
     else:
         bruttolohn_rente = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["beitragsbemessungsgrenze_m"]["west"],
+            12 * ges_rentenv_params["parameter_beitragsbemessungsgrenze"]["west"],
         )
 
     vorsorg_rentenv = (
         bruttolohn_rente
-        * ges_rentenv_params["beitragssatz"]
+        * ges_rentenv_params["parameter_beitragssatz"]
         * eink_st_abzuege_params["anteil_absetzbare_rentenversicherungskosten"]
     )
 

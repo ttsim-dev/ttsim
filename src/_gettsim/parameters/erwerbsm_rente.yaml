@@ -57,7 +57,7 @@ parameter_altersgrenze_abschlagsfrei:
     scalar: 64.833333
   2024-01-01:
     scalar: 65
-parameter_altersgrenze_langjährig_versicherte_abschlagsfrei:
+altersgrenze_langjährig_versicherte_abschlagsfrei:
   name:
     de: Regelaltersgrenze für langjährige Versicherte
     en: Statutory retirement age for long-term insured persons
