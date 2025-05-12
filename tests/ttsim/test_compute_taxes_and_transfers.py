@@ -216,7 +216,7 @@ def func_before_partial(arg_1, some_param):
 
 func_after_partial = _partial_params_to_functions(
     {"some_func": func_before_partial},
-    {"some_param": SOME_INT_PARAM},
+    {"some_param": SOME_INT_PARAM.value},
 )["some_func"]
 
 
@@ -1002,8 +1002,8 @@ def test_params_tree_is_processed():
             some_bool_param=False,
         ),
         "some_scalar_params_func": 1,
-        "some_int_param": SOME_INT_PARAM,
-        "some_dict_param": SOME_DICT_PARAM,
-        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
+        "some_int_param": SOME_INT_PARAM.value,
+        "some_dict_param": SOME_DICT_PARAM.value,
+        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM.value,
     }
     assert processed_params_tree == expected

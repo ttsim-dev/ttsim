@@ -37,7 +37,6 @@ from ttsim.ttsim_objects import (
     PolicyInput,
     RawTTSIMParam,
     TTSIMFunction,
-    TTSIMParam,
 )
 
 if TYPE_CHECKING:
@@ -47,10 +46,10 @@ if TYPE_CHECKING:
         NestedTTSIMObjectDict,
         NestedTTSIMParamDict,
         QualNameDataDict,
+        QualNameProcessedParamDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
         QualNameTTSIMObjectDict,
-        QualNameTTSIMParamDict,
     )
 
 
@@ -405,21 +404,34 @@ def _create_input_data_for_concatenated_function(
 def _process_params_tree(
     params_tree: NestedTTSIMParamDict,
     params_functions: QualNameTTSIMFunctionDict,
-) -> QualNameTTSIMParamDict:
-    """Process the params tree."""
+) -> QualNameProcessedParamDict:
+    """Return a mapping of qualified names to processed parameter values.
+
+    Notes:
+
+    - This gets rid of the TTSIMParam objects and all meta-information like
+      extended names, descriptions, units, etc.
+    - RawParamsRequiringConversion are filtered out, converted values are left.
+
+    """
 
     qual_name_params = dt.flatten_to_qual_names(params_tree)
+
+    # Construct a function for the processing of all params.
     process = dags.concatenate_functions(
         functions=params_functions,
+        targets=None,
         return_type="dict",
         aggregator=None,
         enforce_signature=False,
     )
+    # Call the processing function.
     processed = process(**{k: v.value for k, v in qual_name_params.items()})
 
+    # Return the processed parameters
     return {
         **{
-            k: v
+            k: v.value
             for k, v in qual_name_params.items()
             if not isinstance(v, RawTTSIMParam)
         },
@@ -429,7 +441,7 @@ def _process_params_tree(
 
 def _partial_parameters_to_functions(
     functions: QualNameTTSIMFunctionDict,
-    params: dict[str, Any],
+    params: QualNameProcessedParamDict,
 ) -> QualNameTTSIMFunctionDict:
     """Round and partial parameters into functions.
 
@@ -468,7 +480,7 @@ def _partial_parameters_to_functions(
 
 def _partial_params_to_functions(
     functions: QualNameTTSIMFunctionDict,
-    params: QualNameTTSIMParamDict,
+    params: QualNameProcessedParamDict,
 ) -> QualNameTTSIMFunctionDict:
     """Round and partial parameters into functions.
 
@@ -492,10 +504,7 @@ def _partial_params_to_functions(
     for name, func in functions.items():
         partial_params = {}
         for arg in [a for a in get_names_of_required_arguments(func) if a in params]:
-            if isinstance(params[arg], TTSIMParam):
-                partial_params[arg] = params[arg].value
-            else:
-                partial_params[arg] = params[arg]
+            partial_params[arg] = params[arg]
         if partial_params:
             processed_functions[name] = functools.partial(func, **partial_params)
         else:

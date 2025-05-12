@@ -62,3 +62,6 @@ if TYPE_CHECKING:
     RawParamsRequiringConversion = Mapping[
         str, float | int | bool | str | "RawParamsRequiringConversion"
     ]
+
+    QualNameProcessedParamDict = Mapping[str, Any]
+    """A mapping of qualified names to processed TTSIM parameters."""
