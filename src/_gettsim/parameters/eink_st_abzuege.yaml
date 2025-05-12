@@ -402,7 +402,7 @@ altersentlastungsbetrag_altersgrenze:
       § 24a Art. 3 EStG
       The old-age relief amount is granted to a taxpayer who, before the start of the
       calendar year in which he received his income, had reached the age of 64.
-  unit: Age
+  unit: Year
   type: require_converter
   1984-01-01:
     value: 64

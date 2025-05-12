@@ -16,7 +16,7 @@ parameter_altersgrenze_abschlagsfrei:
       deductions. Up to 2012, the standard retirement age was 63.
       From then on gradual increase until 65.
       https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/295-erwerbsminderungsrente-und-rentenabschlaege.html
-  unit: Age
+  unit: Year
   type: scalar
   2001-01-01:
     scalar: 63
@@ -71,7 +71,7 @@ parameter_altersgrenze_langjährig_versicherte_abschlagsfrei:
       Age limit up to which one can claim the public disability insurance
       without deductions under certain time conditions.
       These conditions are defined in § 77 4 SGB VI.
-  unit: Age
+  unit: Year
   type: scalar
   2001-01-01:
     scalar: 63
@@ -88,7 +88,7 @@ wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
       § 264d SGB VI
       Number of waiting time years in accordance with § 51 Absatz 3a SGB VI,
       which must be proven for a public disability pension at 63 without deductions.
-  unit: Age
+  unit: Year
   type: scalar
   2001-01-01:
     scalar: 35
@@ -114,7 +114,7 @@ zurechnungszeitgrenze:
       Age limit for the supplementary period of the public disability insurance.
       Increase from 2020 to 2027 by 1 month per year, and from 2028
       by 2 months each year until 67 is reached.
-  unit: Age
+  unit: Year
   type: scalar
   2001-01-01:
     scalar: 62.916666
