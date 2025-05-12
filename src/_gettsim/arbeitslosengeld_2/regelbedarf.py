@@ -114,8 +114,10 @@ def kindersatz_m_bis_2010(
     float with SGB II needs of children until year 2010.
 
     """
-    anteile = arbeitsl_geld_2_params["regelsatz"]["anteil_vom_basissatz_für_kinder"]
-    basissatz = arbeitsl_geld_2_params["regelsatz"]["basissatz"]
+    basissatz = arbeitsl_geld_2_params["regelsatz_anteilsbasiert"]["basissatz"]
+    anteile = arbeitsl_geld_2_params["regelsatz_anteilsbasiert"][
+        "anteil_vom_basissatz_für_kinder"
+    ]
 
     if (
         alter >= anteile["zwischen_14_und_24_jahre"]["min_alter"]
@@ -172,25 +174,43 @@ def kindersatz_m_ab_2011(
     kindersofortzuschlag = arbeitsl_geld_2_params.get("kindersofortzuschlag", 0.0)
 
     if (
-        alter >= arbeitsl_geld_2_params["regelsatz"][6]["min_alter"]
-        and alter <= arbeitsl_geld_2_params["regelsatz"][6]["max_alter"]
+        alter
+        >= arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][6]["min_alter"]
+        and alter
+        <= arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][6]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][6]["betrag"]
+        out = (
+            kindersofortzuschlag
+            + arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][6]["betrag"]
+        )
     elif (
-        alter >= arbeitsl_geld_2_params["regelsatz"][5]["min_alter"]
-        and alter <= arbeitsl_geld_2_params["regelsatz"][5]["max_alter"]
+        alter
+        >= arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][5]["min_alter"]
+        and alter
+        <= arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][5]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][5]["betrag"]
+        out = (
+            kindersofortzuschlag
+            + arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][5]["betrag"]
+        )
     elif (
-        alter >= arbeitsl_geld_2_params["regelsatz"][4]["min_alter"]
-        and alter <= arbeitsl_geld_2_params["regelsatz"][4]["max_alter"]
+        alter
+        >= arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][4]["min_alter"]
+        and alter
+        <= arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][4]["max_alter"]
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][4]["betrag"]
+        out = (
+            kindersofortzuschlag
+            + arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][4]["betrag"]
+        )
     elif kindergeld__gleiche_fg_wie_empfänger:  # adult children with parents in FG
-        out = kindersofortzuschlag + arbeitsl_geld_2_params["regelsatz"][3]
+        out = (
+            kindersofortzuschlag
+            + arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][3]
+        )
     else:
         out = 0.0
 
@@ -227,16 +247,16 @@ def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
     # BG has 2 adults
     if p_id_einstandspartner >= 0:
         out = (
-            arbeitsl_geld_2_params["regelsatz"]["basissatz"]
+            arbeitsl_geld_2_params["regelsatz_anteilsbasiert"]["basissatz"]
             * (
-                arbeitsl_geld_2_params["regelsatz"][
+                arbeitsl_geld_2_params["regelsatz_anteilsbasiert"][
                     "anteil_vom_basissatz_bei_zwei_erwachsenen"
                 ]
             )
         )
     # This observation is not a child, so BG has 1 adult
     elif kindersatz_m == 0.0:
-        out = arbeitsl_geld_2_params["regelsatz"]["basissatz"]
+        out = arbeitsl_geld_2_params["regelsatz_anteilsbasiert"]["basissatz"]
     else:
         out = 0.0
 
@@ -275,10 +295,10 @@ def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
     """
     # BG has 2 adults
     if p_id_einstandspartner >= 0:
-        out = arbeitsl_geld_2_params["regelsatz"][2]
+        out = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][2]
     # This observation is not a child, so BG has 1 adult
     elif kindersatz_m == 0.0:
-        out = arbeitsl_geld_2_params["regelsatz"][1]
+        out = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1]
     else:
         out = 0.0
 

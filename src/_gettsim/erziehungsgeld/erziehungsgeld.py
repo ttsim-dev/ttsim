@@ -139,9 +139,9 @@ def basisbetrag_m(
     ):
         out = 0.0
     elif budgetsatz:
-        out = erziehungsgeld_params["erziehungsgeld_satz"]["budgetsatz"]
+        out = erziehungsgeld_params["satz"]["budgetsatz"]
     else:
-        out = erziehungsgeld_params["erziehungsgeld_satz"]["regelsatz"]
+        out = erziehungsgeld_params["satz"]["regelsatz"]
 
     return out
 

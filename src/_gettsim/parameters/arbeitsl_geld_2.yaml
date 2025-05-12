@@ -120,31 +120,15 @@ parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
     deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     4:
       upper_threshold: 1500
-regelsatz:
+regelsatz_anteilsbasiert:
   name:
-    de: Regelsatz, seit 2011 Beträge differenzieren sich nach Regelbedarfsstufen
-    en: Standard rate, since 2011 amounts differ by "Regelbedarfsstufen"
+    de: Regelsatz
+    en: Standard rate
   description:
     de: >-
-      § 20 V SGB II. Für 2005 bis 2010 siehe Bekanntmachungen zu § 20. Seit 2011
-      wird der Regelbedarf durch das Regelbedarfs-Ermittlungsgesetz (RBEG) ermittelt.
-      Neufassung SGB II § 20 (1a) und (2) durch Artikel 6 G. v. 22.12.2016 BGBl. I S.
-      3159.
-      Regelbedafstufen ab 2011 (1 bis 6):
-      1: Alleinstehender Erwachsener;
-      2: Erwachsene in Partnerschaft;
-      3: Erwachsene nicht in Partnerschaft;
-      4: Kinder 14 bis 17;
-      5: Kinder 6 bis 13;
-      6: Kinder 0 bis 5
+      § 20 V SGB II. Für 2005 bis 2010 siehe Bekanntmachungen zu § 20.
     en: >-
-      Regelbedarfsstufe since 2011 (1 to 6):
-      1: Single Adult;
-      2: Adults in a partner relationship;
-      3: Adults not in a partner relationship;
-      4: Children 14 to 17 years;
-      5: Children 6 to 13 years
-      6: Children 0 to 5 years.
+      § 20 V SGB II. Für 2005 bis 2010 see regulations for § 20.
   unit: Euro
   type: require_converter
   reference_period: Month
@@ -216,6 +200,34 @@ regelsatz:
     deviation_from: previous
     basissatz: 359
     reference: B. v. 07.06.2010 BGBl. I S. 820. Betrag unverändert.
+  2011-01-01:
+    note: Calculation method changed, see regelsatz_nach_regelbedarfsstufen.
+regelsatz_nach_regelbedarfsstufen:
+  name:
+    de: Regelsatz mit direkter Angabe für Regelbedarfsstufen
+    en: Standard rate with direct specification of "Regelbedarfsstufen"
+  description:
+    de: >-
+      § 20 V SGB II.  Neufassung SGB II § 20 (1a) und (2) durch
+      Artikel 6 G. v. 22.12.2016 BGBl. I S. 3159.
+      Regelbedafstufen:
+      1: Alleinstehender Erwachsener
+      2: Erwachsene in Partnerschaft
+      3: Erwachsene nicht in Partnerschaft
+      4: Jugendliche
+      5: Ältere Kinder
+      6: Jüngste Kinder
+    en: >-
+      Regelbedarfsstufen:
+      1: Single Adult
+      2: Adults in a partner relationship
+      3: Adults not in a partner relationship
+      4: Adolescents
+      5: Older children
+      6: Youngest children
+  unit: Euro
+  type: require_converter
+  reference_period: Month
   2011-01-01:
     1: 364
     2: 328

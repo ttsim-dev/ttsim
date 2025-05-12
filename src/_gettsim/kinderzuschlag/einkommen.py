@@ -332,13 +332,13 @@ def regelsatz_m_bg_arbeitsl_geld_2_params_bis_2010(
 
     """
     if familie__alleinerziehend_bg:
-        out = arbeitsl_geld_2_params["regelsatz"]["basissatz"] * (
+        out = arbeitsl_geld_2_params["regelsatz_anteilsbasiert"]["basissatz"] * (
             1 + arbeitslosengeld_2__mehrbedarf_alleinerziehend_m_bg
         )
     else:
         out = (
-            arbeitsl_geld_2_params["regelsatz"]["basissatz"]
-            * arbeitsl_geld_2_params["regelsatz"][
+            arbeitsl_geld_2_params["regelsatz_anteilsbasiert"]["basissatz"]
+            * arbeitsl_geld_2_params["regelsatz_anteilsbasiert"][
                 "anteil_vom_basissatz_bei_zwei_erwachsenen"
             ]
             * 2
@@ -372,11 +372,11 @@ def regelsatz_m_bg(
 
     """
     if familie__alleinerziehend_bg:
-        out = arbeitsl_geld_2_params["regelsatz"][1] * (
+        out = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] * (
             1 + arbeitslosengeld_2__mehrbedarf_alleinerziehend_m_bg
         )
     else:
-        out = arbeitsl_geld_2_params["regelsatz"][2] * 2
+        out = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][2] * 2
 
     return out
 
