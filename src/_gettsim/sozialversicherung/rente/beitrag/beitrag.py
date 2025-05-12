@@ -196,6 +196,8 @@ def einkommen_m(
     )
 
 
+# TODO: Differentiate by regime, i.e., just a parameter in years where we do not have
+# Ost/West distinction. Same for all Sozialversicherunbsbeiträge!
 @policy_function()
 def beitragsbemessungsgrenze_m(wohnort_ost: bool, ges_rentenv_params: dict) -> float:
     """Income threshold up to which pension insurance payments apply.
