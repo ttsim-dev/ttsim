@@ -594,7 +594,6 @@ def test_get_params_contents_with_updated_previous(
 ):
     params_contents = _get_params_contents(some_params_spec_with_updates_previous)
     expected = {
-        "updates_previous": True,
         "a": 1,
         "b": 4,
     }

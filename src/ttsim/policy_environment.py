@@ -558,7 +558,8 @@ def _get_params_contents(
     Implementation is a recursion in order to handle the 'updates_previous' machinery.
 
     """
-    if relevant_specs[-1].get("updates_previous", False):
+    updates_previous = relevant_specs[-1].pop("updates_previous", False)
+    if updates_previous:
         assert len(relevant_specs) > 1, (
             "'updates_previous' cannot be missing in the initial spec, found "
             f"{relevant_specs}"
