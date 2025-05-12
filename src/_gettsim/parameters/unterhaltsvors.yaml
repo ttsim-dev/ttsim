@@ -14,7 +14,7 @@ mindesteinkommen:
   reference_period: Month
   type: scalar
   2017-01-01:
-    scalar: 600
+    value: 600
     reference: Art. 23 G. v. 14.08.2017 BGBl. I S. 3122.
 altersgrenzen_bezug:
   name:
@@ -58,7 +58,7 @@ faktor_jüngste_altersgruppe:
   reference_period: null
   type: scalar
   2009-01-01:
-    scalar: 0.87
+    value: 0.87
 anwendungsvorschrift:
   name:
     de: Unterhaltsvorschuss für Kinder entsprechend Anwendungsvorschriften

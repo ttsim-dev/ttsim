@@ -12,6 +12,7 @@ mindestunterhalt:
       17 years).
   unit: Euros
   reference_period: Month
+  type: dict
   2016-01-01:
     1:
       min_alter: 0
@@ -116,7 +117,9 @@ abzugsrate_kindergeld:
       the child receives the child benefit for a minor child, the other parent liable
       for child alimony payments can deduct half of the child benefit when calculating
       alimony.
-  unit: Share
+  unit: null
+  reference_period: null
+  type: dict
   2008-01-01:
     kind: 0.5
     erwachsener: 1
