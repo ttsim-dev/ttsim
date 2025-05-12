@@ -82,7 +82,7 @@ abschlagsfaktor:
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     scalar: 0.052
-pauschal_abzug_vom_einkommen:
+pauschaler_abzug_vom_einkommen:
   name:
     de: Pauschaler Abzug vom Einkommen
     en: null
@@ -147,8 +147,8 @@ maximales_kindsalter_budgetsatz:
     scalar: 12
 abolishment_cohort:
   name:
-    de: Letzte Geburtskohorte für die Erziehungsgeld ausgezahlt wird
-    en: Abolishment cohort
+    de: Letzte Geburtskohorte, für die Erziehungsgeld ausgezahlt wird
+    en: Last birth cohort for which parental leave benefit is paid
   description:
     de: >-
       Erziehungsgeld wird durch das Elterngeld ersetzt.

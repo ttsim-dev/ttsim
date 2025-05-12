@@ -353,7 +353,7 @@ def anzurechnendes_einkommen_y(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
             - eink_st_abzuege_params["werbungskostenpauschale"]
             * arbeitslosengeld_2__anzahl_erwachsene_fg
-        ) * erziehungsgeld_params["pauschal_abzug_vom_einkommen"]
+        ) * erziehungsgeld_params["pauschaler_abzug_vom_einkommen"]
     else:
         out = 0.0
     return out

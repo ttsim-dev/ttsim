@@ -254,7 +254,7 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
     scalar: 0.11
   2007-01-01:
     scalar: 0.13
-bezugsgröße_selbst_m:
+bezugsgröße_selbstständige_m:
   name:
     de: Monatliche Bezugsgröße für Selbstständige
     en: Monthly reference size for self employed
@@ -266,6 +266,7 @@ bezugsgröße_selbst_m:
   reference_period: Month
   1984-01-01:
     west: 1396
+    mindestanteil: 0.33333333
   1985-01-01:
     west: 1432
   1986-01-01:
@@ -394,7 +395,7 @@ bezugsgröße_selbst_m:
     west: 3745
     ost: 3745
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365.
-mindestanteil_bezugsgröße_beitragspf_einnahme_selbst:
+mindestanteil_bezugsgröße_selbstständige:
   name:
     de: Mindestberechungsbeitrag für Selbstständige als Anteil der Bezugsgröße
     en: Minimum contribution for self employed as fraction of Bezugsgröße

@@ -105,9 +105,7 @@ def bemessungsgrundlage_selbstständig_m(
             beitragsbemessungsgrenze_m,
             max(
                 bezugsgröße_selbstständig_m
-                * ges_krankenv_params[
-                    "mindestanteil_bezugsgröße_beitragspf_einnahme_selbst"
-                ],
+                * ges_krankenv_params["mindestanteil_bezugsgröße_selbstständige"],
                 einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m,
             ),
         )
@@ -169,9 +167,9 @@ def bezugsgröße_selbstständig_m(wohnort_ost: bool, ges_krankenv_params: dict)
 
     """
     out = (
-        ges_krankenv_params["bezugsgröße_selbst_m"]["ost"]
+        ges_krankenv_params["bezugsgröße_selbstständige_m"]["ost"]
         if wohnort_ost
-        else ges_krankenv_params["bezugsgröße_selbst_m"]["west"]
+        else ges_krankenv_params["bezugsgröße_selbstständige_m"]["west"]
     )
 
     return out

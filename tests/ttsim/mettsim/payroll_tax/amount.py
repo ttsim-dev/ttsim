@@ -1,7 +1,5 @@
 from ttsim import (
-    AggType,
     PiecewisePolynomialParameters,
-    agg_by_group_function,
     piecewise_polynomial,
     policy_function,
 )
@@ -45,11 +43,3 @@ def amount_reduced_y(
         x=income__amount_y,
         parameters=tax_schedule_reduced,
     )
-
-
-@agg_by_group_function(agg_type=AggType.ANY)
-def parent_is_noble_fam(
-    parent_is_noble: bool,
-    fam_id: int,
-) -> bool:
-    pass

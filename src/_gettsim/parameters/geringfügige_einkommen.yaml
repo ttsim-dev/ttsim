@@ -97,6 +97,7 @@ grenzen_m:
     deviation_from: previous
     midijob: 2000
     reference: Art. 3 G. v. 11.11.2022 BGBl. I S. 1985
+# Todo: Put both zähler and nenner into one parameter and parse.
 faktor_minijobformel_zähler:
   name:
     de: Zähler im Faktor für die Berechnung der Geringfügigkeitsgrenze.
@@ -113,6 +114,7 @@ faktor_minijobformel_zähler:
       marginal employment.
   unit: null
   type: scalar
+  # type: require_converter
   2022-10-01:
     scalar: 130
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
