@@ -108,12 +108,12 @@ class PolicyEnvironment:
         return self._params
 
     @property
-    def params_tree(self) -> dict[str, Any]:
+    def params_tree(self) -> NestedTTSIMObjectDict:
         """The parameters of the policy environment."""
         return self._params_tree
 
     @property
-    def combined_tree(self) -> dict[str, Any]:
+    def combined_tree(self) -> NestedTTSIMObjectDict:
         """The combined tree of raw objects and params."""
         return {**self._raw_objects_tree, **self._params_tree}
 
