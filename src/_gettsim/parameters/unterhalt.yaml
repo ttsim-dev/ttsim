@@ -12,7 +12,7 @@ mindestunterhalt:
       17 years).
   unit: Euros
   reference_period: Month
-  type: dict
+  type: require_converter
   2016-01-01:
     1:
       min_alter: 0

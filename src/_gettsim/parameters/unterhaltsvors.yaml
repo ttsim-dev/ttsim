@@ -32,7 +32,7 @@ altersgrenzen_bezug:
       payments. Since July 2017, the age limits of the minimum alimony apply.
   unit: Years
   reference_period: null
-  type: dict
+  type: require_converter
   2008-01-01:
     1:
       min_alter: 0
