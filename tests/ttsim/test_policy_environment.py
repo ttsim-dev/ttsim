@@ -15,6 +15,7 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     GroupCreationFunction,
     PolicyEnvironment,
+    ScalarTTSIMParam,
     group_creation_function,
     policy_function,
     set_up_policy_environment,
@@ -68,6 +69,22 @@ def some_params_spec_with_updates_previous():
             "b": 4,
         },
     ]
+
+
+@pytest.fixture(scope="module")
+def some_int_param():
+    return ScalarTTSIMParam(
+        value=1,
+        leaf_name="some_int_param",
+        start_date="2025-01-01",
+        end_date="2025-12-31",
+        name="some_int_param",
+        description="Some int param",
+        unit=None,
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
 
 
 class TestPolicyEnvironment:
@@ -582,3 +599,18 @@ def test_get_params_contents_with_updated_previous(
         "b": 4,
     }
     assert params_contents == expected
+
+
+def test_combining_trees_works_with_overlapping_keys(some_int_param):
+    policy_environment = PolicyEnvironment(
+        raw_objects_tree={
+            "a": {"b": policy_function(leaf_name="a")(return_one)},
+        },
+        params_tree={"a": {"c": some_int_param}},
+    )
+    expected: NestedTTSIMObjectDict = {
+        "a": {"b": policy_function(leaf_name="a")(return_one), "c": some_int_param},
+    }
+    assert optree.tree_paths(policy_environment.combined_tree) == optree.tree_paths(
+        expected
+    )
