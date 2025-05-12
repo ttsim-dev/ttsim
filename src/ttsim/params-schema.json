@@ -71,24 +71,7 @@
             },
             "reference": { "type": "string" },
             "note": { "type": "string" },
-            "deviation_from": { "type": "string" },
-            "min_alter": { "type": "number" },
-            "max_alter": { "type": "number" },
-            "betrag": { "type": "number" },
-            "lower_threshold": {
-              "oneOf": [
-                { "type": "number" },
-                { "type": "string", "enum": ["-inf"] }
-              ]
-            },
-            "upper_threshold": {
-              "oneOf": [
-                { "type": "number" },
-                { "type": "string", "enum": ["inf"] }
-              ]
-            },
-            "rate": { "type": "number" },
-            "intercept_at_lower_threshold": { "type": "number" }
+            "deviation_from": { "type": "string" }
           },
           "additionalProperties": true
         }
