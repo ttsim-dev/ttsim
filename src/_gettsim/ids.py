@@ -59,17 +59,17 @@ def fg_id(
     fg_id = np.where(
         (familie__p_id_elternteil_1 >= 0)
         * (hh_id == hh_id[familie__p_id_elternteil_1])
-        * alter
-        < 25 * (1 - children),
+        * (alter < 25)
+        * (1 - children),
         fg_id[familie__p_id_elternteil_1],
         fg_id,
     )
     fg_id = np.where(
         (familie__p_id_elternteil_2 >= 0)
         * (hh_id == hh_id[familie__p_id_elternteil_2])
-        * alter
-        < 25 * (1 - children),
-        fg_id[familie__p_id_elternteil_1],
+        * (alter < 25)
+        * (1 - children),
+        fg_id[familie__p_id_elternteil_2],
         fg_id,
     )
 
