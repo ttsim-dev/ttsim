@@ -75,7 +75,7 @@ abschlagsfaktor:
       exceeding the income threshold after the 7th month of life.
       The factor is multiplied by the relevant income and
       the product is deducted from the parental leave benefit entitlement accordingly.
-  unit: Factor
+  unit: null
   type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 207
@@ -93,7 +93,7 @@ pauschal_abzug_vom_einkommen:
     en: >-
       Factor by which the income is reduced in a lump sum in order to calculate the
       relevant income
-  unit: Factor
+  unit: null
   type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 209

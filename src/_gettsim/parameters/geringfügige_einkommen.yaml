@@ -111,7 +111,7 @@ faktor_minijobformel_zähler:
       §8 (1a) SGB IV
       Factor by which the minimum wage is multiplied to calculate the threshold for
       marginal employment.
-  unit: Factor
+  unit: null
   type: scalar
   2022-10-01:
     scalar: 130
@@ -131,7 +131,7 @@ faktor_minijobformel_nenner:
       §8 (1a) SGB IV
       Amount by which the minimum wage is divided to obtain the marginal employment
       threshold.
-  unit: Factor
+  unit: null
   type: scalar
   2022-10-01:
     scalar: 3

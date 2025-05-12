@@ -12,7 +12,7 @@ alpha:
       §68 Abs. 4 S. 6 SGB VI
       Part of the sustainability factor in the pension adjustment formula which modifies
       the ratio of pentioners to contributors
-  unit: Factor
+  unit: null
   1984-01-01:
     scalar: 0.0
   2002-01-01:
@@ -24,7 +24,7 @@ altersvorsogeanteil:
   description:
     de: §68 Abs. 5 SGB VI. Teil des Riesterfaktors in der Rentenanpassungsformel
     en: §68 Abs. 5 SGB VI. Part of the Riesterfaktor in the pension adjustment formula
-  unit: Factor
+  unit: null
   1993-01-01:
     scalar: 0.0
   2002-01-01:
@@ -287,7 +287,7 @@ umrechnung_entgeltpunkte_beitrittsgebiet:
       §256a SGB VI and Anlage 10 SGB VI
       To calculate the Entgeltpunkte, income in the former GDR is increased by this
       factor.
-  unit: Factor
+  unit: null
   1945-01-01:
     scalar: 1.0000
   1946-01-01:
@@ -743,7 +743,7 @@ grundr_faktor_bonus:
       §§ 76g Abs. 4 S. 3, 4 SGB VI
       The additional Entgeltpunkte from the basic pension are multiplied with this
       factor.
-  unit: Factor
+  unit: null
   2021-01-01:
     scalar: 0.875
 zugangsfaktor_veränderung_pro_jahr:
@@ -759,7 +759,7 @@ zugangsfaktor_veränderung_pro_jahr:
       §77 Abs. 2 Nr. 2 SGB VI
       Factor with which the Zugangsfaktor / "access factor" for receiving the statutory
       pension is increased/ decreased for each month of less / more work
-  unit: Factor
+  unit: null
   reference_period: Year
   2001-01-01:
     vorzeitiger_renteneintritt: 0.036

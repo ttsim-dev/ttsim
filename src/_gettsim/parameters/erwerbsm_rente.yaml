@@ -227,7 +227,7 @@ min_zugangsfaktor:
       § 77 SGB VI, Rentenreformgesetz 1999 (RRG 1999)
       http://www.portal-sozialpolitik.de/index.php?page=rentenversicherung
     en: Deductions for early retirement are capped at 10.8%.
-  unit: Factor
+  unit: null
   type: scalar
   2000-01-01:
     scalar: 0.892
@@ -247,7 +247,7 @@ rentenartfaktor:
       determines the security target of the pension type in relation to an old-age
       pension.
       https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/1051-rentenartfaktor.html
-  unit: Factor
+  unit: null
   type: dict
   2001-01-01:
     teilw: 0.5

@@ -766,16 +766,15 @@ class TTSIMParam:
     unit: (
         None
         | Literal[
-            "Euro",
+            "Euros",
             "DM",
             "Share",
             "Percent",
-            "Factor",
-            "Year",
-            "Month",
-            "Hour",
-            "Square Meter",
-            "Euro / Square Meter",
+            "Years",
+            "Months",
+            "Hours",
+            "Square Meters",
+            "Euros / Square Meter",
         ]
     )
     reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
