@@ -59,7 +59,7 @@ These work differently and they are
    Example (from `arbeitsl_geld_2`):
 
    ```yaml
-   eink_anr_frei:
+   parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
      name:
        de: Anrechnungsfreies Einkommen
        en: Income shares not subject to transfer withdrawal
@@ -78,7 +78,7 @@ These work differently and they are
      Example:
 
      ```yaml
-     eink_anr_frei:
+     parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
 
        description:
          de: >-
@@ -181,7 +181,7 @@ These work differently and they are
 Example:
 
 ```yaml
-eink_anr_frei:
+parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
   name:
     de: Anrechnungsfreie Einkommensanteile
   2005-01-01:
@@ -204,11 +204,11 @@ be avoided in the value key (see the `piecewise_linear` function above).
 The key could either reference another value explicitly:
 
 ```yaml
-eink_anr_frei_kinder:
+parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
   name:
     de: Abweichende anrechnungsfreie Einkommensanteile falls Kinder im Haushalt
   2005-10-01:
-    deviation_from: arbeitsl_geld_2.eink_anr_frei
+    deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     3:
       upper_threshold: 1500
 ```
@@ -217,7 +217,7 @@ A special keyword is `previous`, which just refers to the set of values in the p
 law change.
 
 ```yaml
-eink_anr_frei:
+parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
   name:
     de: Anrechnungsfreie Einkommensanteile
   2011-04-01:
@@ -282,7 +282,7 @@ The following walks through several cases.
 - Another example would be referring to the parameters of a piecewise linear function:
 
   > ```yaml
-  > eink_anr_frei:
+  > parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
   >   name:
   >     de: Anrechnungsfreie Einkommensanteile
   >     en: Income shares not subject to transfer withdrawal

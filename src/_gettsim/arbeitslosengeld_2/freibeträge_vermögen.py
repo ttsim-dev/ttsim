@@ -3,7 +3,7 @@
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(end_date="2022-12-31")
 def grundfreibetrag_vermögen(
     familie__kind: bool,
     alter: int,
@@ -32,15 +32,28 @@ def grundfreibetrag_vermögen(
     -------
 
     """
-    threshold_years = list(arbeitsl_geld_2_params["vermögensgrundfreibetrag"].keys())
+    threshold_years = list(
+        arbeitsl_geld_2_params["vermögensgrundfreibetrag_je_lebensjahr"].keys()
+    )
     if geburtsjahr <= threshold_years[0]:
         out = (
-            next(iter(arbeitsl_geld_2_params["vermögensgrundfreibetrag"].values()))
+            next(
+                iter(
+                    arbeitsl_geld_2_params[
+                        "vermögensgrundfreibetrag_je_lebensjahr"
+                    ].values()
+                )
+            )
             * alter
         )
     elif (geburtsjahr >= threshold_years[1]) and (not familie__kind):
         out = (
-            list(arbeitsl_geld_2_params["vermögensgrundfreibetrag"].values())[1] * alter
+            list(
+                arbeitsl_geld_2_params[
+                    "vermögensgrundfreibetrag_je_lebensjahr"
+                ].values()
+            )[1]
+            * alter
         )
     else:
         out = 0.0
@@ -48,7 +61,7 @@ def grundfreibetrag_vermögen(
     return min(out, maximaler_grundfreibetrag_vermögen)
 
 
-@policy_function()
+@policy_function(end_date="2022-12-31")
 def maximaler_grundfreibetrag_vermögen(
     geburtsjahr: int,
     familie__kind: bool,
@@ -74,10 +87,10 @@ def maximaler_grundfreibetrag_vermögen(
 
     """
     threshold_years = list(
-        arbeitsl_geld_2_params["vermögensgrundfreibetrag_obergrenze"].keys()
+        arbeitsl_geld_2_params["obergrenze_vermögensgrundfreibetrag"].keys()
     )
     obergrenzen = list(
-        arbeitsl_geld_2_params["vermögensgrundfreibetrag_obergrenze"].values()
+        arbeitsl_geld_2_params["obergrenze_vermögensgrundfreibetrag"].values()
     )
     if familie__kind:
         out = 0.0

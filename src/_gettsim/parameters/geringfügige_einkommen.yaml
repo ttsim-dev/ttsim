@@ -9,6 +9,7 @@ grenzen_m:
     en: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
   unit: Euro
   reference_period: Month
+  type: require_converter
   1984-01-01:
     minijob:
       west: 199
@@ -96,7 +97,7 @@ grenzen_m:
     deviation_from: previous
     midijob: 2000
     reference: Art. 3 G. v. 11.11.2022 BGBl. I S. 1985
-faktor_zähler:
+faktor_minijobformel_zähler:
   name:
     de: Zähler im Faktor für die Berechnung der Geringfügigkeitsgrenze.
     en: >-
@@ -110,11 +111,12 @@ faktor_zähler:
       §8 (1a) SGB IV
       Factor by which the minimum wage is multiplied to calculate the threshold for
       marginal employment.
-  unit: null
+  unit: Factor
+  type: scalar
   2022-10-01:
     scalar: 130
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
-faktor_nenner:
+faktor_minijobformel_nenner:
   name:
     de: Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.
     en: >-
@@ -129,7 +131,8 @@ faktor_nenner:
       §8 (1a) SGB IV
       Amount by which the minimum wage is divided to obtain the marginal employment
       threshold.
-  unit: Euro
+  unit: Factor
+  type: scalar
   2022-10-01:
     scalar: 3
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
@@ -143,6 +146,7 @@ arbeitgeberpauschale_lohnsteuer:
       (§40a II EStG)
     en: Fixed income tax rate for marginal employment (§40a II EStG)
   unit: Share
+  type: scalar
   access_different_date: jahresanfang
   1984-01-01:
     scalar: 0
@@ -169,6 +173,8 @@ mindestlohn:
       The minimum wage is the lowest hourly wage that an employer must pay for a
       regular, not more than 45 hours weekly work.
   unit: Euro
+  type: scalar
+  reference_period: Hour
   2015-01-01:
     scalar: 8.5
   2017-01-01:

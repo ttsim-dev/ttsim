@@ -1,5 +1,5 @@
 ---
-beitr_satz:
+beitragssatz:
   name:
     de: Beitragssätze zur gesetzlichen Krankenversicherung
     en: Contribution rate to statutory health insurance
@@ -16,6 +16,7 @@ beitr_satz:
       contribution rate, since 2009 sonderbeitrag - paid by employees, Jul 2005 to
       2014 ermäßigt - reduced rate zusatz - average top-up contribution rate
   unit: Share
+  type: dict
   access_different_date: jahresanfang
   1984-01-01:
     mean_allgemein: 0.1144
@@ -116,7 +117,7 @@ beitr_satz:
     deviation_from: previous
     mean_zusatzbeitrag: 0.025
     reference: BAnz AT 07.11.2024 B4
-beitr_bemess_grenze_m:
+beitragsbemessungsgrenze_m:
   name:
     de: Beitragsbemessungsgrenzen für die Krankenversicherung
     en: Income Threshold for health insurance
@@ -124,6 +125,7 @@ beitr_bemess_grenze_m:
     de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
     en: The income threshold is the same for health and long-term care insurance.
   unit: Euro
+  type: require_converter
   reference_period: Month
   1984-01-01:
     west: 1994
@@ -171,88 +173,64 @@ beitr_bemess_grenze_m:
     west: 3298
     ost: 2723
   2001-01-01:
-    west: 3336
-    ost: 3336
+    value: 3336
   2002-01-01:
-    west: 3375
-    ost: 3375
+    value: 3375
   2003-01-01:
-    west: 3450
-    ost: 3375
+    value: 3450
   2004-01-01:
-    west: 3488
-    ost: 3488
+    value: 3488
   2005-01-01:
-    west: 3525
-    ost: 3525
+    value: 3525
   2006-01-01:
-    west: 3562.5
-    ost: 3562.5
+    value: 3562.5
   2008-01-01:
-    west: 3600
-    ost: 3600
+    value: 3600
   2009-01-01:
-    west: 3675
-    ost: 3675
+    value: 3675
   2010-01-01:
-    west: 3750
-    ost: 3750
+    value: 3750
   2011-01-01:
-    west: 3712.5
-    ost: 3712.5
+    value: 3712.5
   2012-01-01:
-    west: 3825
-    ost: 3825
+    value: 3825
   2013-01-01:
-    west: 3937.5
-    ost: 3937.5
+    value: 3937.5
   2014-01-01:
-    west: 4050
-    ost: 4050
+    value: 4050
     note: >-
       http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
   2015-01-01:
-    west: 4125
-    ost: 4125
+    value: 4125
   2016-01-01:
-    west: 4237.5
-    ost: 4237.5
+    value: 4237.5
     note: >-
       https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
   2017-01-01:
-    west: 4350
-    ost: 4350
+    value: 4350
     note: >-
       https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
   2018-01-01:
-    west: 4425
-    ost: 4425
+    value: 4425
   2019-01-01:
-    west: 4537.5
-    ost: 4537.5
+    value: 4537.5
   2020-01-01:
-    west: 4687.5
-    ost: 4687.5
+    value: 4687.5
     reference: V. v. 17.12.2019 BGBl. I S. 2848
   2021-01-01:
-    west: 4837.5
-    ost: 4837.5
+    value: 4837.5
     reference: §3, §4 V. v. 30.11.2020, BGBl. I S. 2612.
   2022-01-01:
-    west: 4837.5
-    ost: 4837.5
+    value: 4837.5
     reference: §3 V. v. 30.11.2021, BGBl. I S. 5044.
   2023-01-01:
-    west: 4987.5
-    ost: 4987.5
+    value: 4987.5
     reference: V. v. 28.11.2022 BGBl. I. S. 2128.
   2024-01-01:
-    west: 5175
-    ost: 5175
+    value: 5175
     reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 322
   2025-01-01:
-    west: 5512.5
-    ost: 5512.5
+    value: 5512.5
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
 arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
   name:
@@ -266,6 +244,7 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
       geringfügiger Beschäftigung
     en: Fixed health insurance contributions for marginal employment (§ 249b SGB V)
   unit: Share
+  type: scalar
   access_different_date: jahresanfang
   1984-01-01:
     scalar: 0
@@ -283,6 +262,7 @@ bezugsgröße_selbst_m:
     de: §18 SGB IV ynd https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
     en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
   unit: Euro
+  type: dict
   reference_period: Month
   1984-01-01:
     west: 1396
@@ -428,6 +408,7 @@ mindestanteil_bezugsgröße_beitragspf_einnahme_selbst:
       Health Insurance contributions have to be payed, at the minimum, on the ninetieth
       part of the monthly Bezugsgröße for each calender day
   unit: Share
+  type: scalar
   1990-01-01:
     note: Exact date of introduction of this parameter unclear (was in place in 2006)
     scalar: 0.33333333

@@ -1995,7 +1995,7 @@ altersgrenze_langj_versicherte_vorzeitig:
     reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
     note: ERA back to 63.
     scalar: 63.0
-altersgrenze_langj_versicherte_abschlagsfrei:
+parameter_altersgrenze_langjährig_versicherte_abschlagsfrei:
   name:
     de: Eintrittsalter für langjährig Versicherte - abschlagsfrei
     en: Entry age for long term insured (35 insurance years) without deductions (FRA)

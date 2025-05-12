@@ -1,17 +1,19 @@
 ---
-eink_anr_frei:
+parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
   name:
-    de: Anrechnungsfreie Einkommensanteile
-    en: Income shares not subject to transfer withdrawal
+    de: >-
+      Parameter der Berechnung des anrechnungsfreien Einkommens wenn keine Kinder in
+      Bedarfsgemeinschaft leben
+    en: >-
+      Parameter for calculation of income not subject to transfer withdrawal when no
+      children are in the Bedarfsgemeinschaft
   description:
     de: >-
-      Einkommensanteile, die anrechnungsfrei bleiben. § 30 SGB II. Seit 01.10.2005
-      zudem
-      definiert durch Freibetrag in § 11 SGB II, s. § 67 SGB II. Seit 01.04.2011
-      § 11b (2) SGB II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2
-      G. v. 24.03.2011 BGBl. I S. 453).
-    en: >-
-      Income shares which do not lead to tapering of benefits.
+      Parameter für die Berechnung des anrechnungsfreien Einkommens ohne Kinder in der
+      Bedarfsgemeinschaft. § 30 SGB II. Seit 01.10.2005 zudem definiert durch Freibetrag
+      in § 11 SGB II, s. § 67 SGB II. Seit 01.04.2011 § 11b (2) SGB II (neugefasst durch
+      B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v. 24.03.2011 BGBl. I S. 453).
+    en: null
   type: piecewise_linear
   reference_period: Month
   2005-01-01:
@@ -87,69 +89,78 @@ eink_anr_frei:
     5:
       upper_threshold: inf
       rate_linear: 0
-eink_anr_frei_kinder:
+parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
   name:
-    de: Abweichende anrechnungsfreie Einkommensanteile falls Kinder im Haushalt
-    en: null
+    de: >-
+      Parameter der Berechnung des anrechnungsfreien Einkommens wenn Kinder in der
+      Bedarfsgemeinschaft leben
+    en: >-
+      Parameter for calculation of income not subject to transfer withdrawal when
+      children are in the Bedarfsgemeinschaft
   description:
     de: >-
-      Obere Einkommensgrenze bei anzurechnendem Einkommen, Intervall 3, Haushalt mit
-      Kindern. Gilt statt der Parameter in eink_anr_frei für Leistungsbezieher, die mit
-      minderjährigem Kind in BG leben oder die ein minderjähriges Kind haben (zweiteres
-      wird aktuell noch nicht im Code beachtet). § 30 SGB II. Seit 01.04.2011 § 11b SGB
-      II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v. 24.03.2011
-      BGBl. I S. 453).
-      Ersetzt Parameter in eink_anr_frei, falls nicht vorhanden
+      Obere Einkommensgrenze bei anzurechnendem Einkommen, Intervall 3,
+      Bedarfsgemeinschaft mit Kindern. Gilt statt der Parameter in
+      parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg für Leistungsbezieher, die
+      mit minderjährigem Kind in BG leben oder die ein minderjähriges Kind haben
+      (zweiteres wird aktuell noch nicht im Code beachtet). § 30 SGB II. Seit 01.04.2011
+      § 11b SGB II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v.
+      24.03.2011 BGBl. I S. 453). Ersetzt Parameter in
+      parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg, falls nicht vorhanden
     en: null
-  type: piecewise_linear
+  type: require_converter
   2005-10-01:
     reference: Artikel 1 G. v. 14.08.2005 BGBl. I S. 2407.
-    deviation_from: arbeitsl_geld_2.eink_anr_frei
+    deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     3:
       upper_threshold: 1500
   2023-07-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Bürgergeld-Gesetz
-    deviation_from: arbeitsl_geld_2.eink_anr_frei
+    deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     4:
       upper_threshold: 1500
-regelsatz:
+regelsatz_anteilsbasiert:
   name:
-    de: Regelsatz, seit 2011 Beträge differenzieren sich nach Regelbedarfsstufen
-    en: Standard rate, since 2011 amounts differ by "Regelbedarfsstufen"
+    de: Regelsatz
+    en: Standard rate
   description:
     de: >-
-      § 20 V SGB II. Für 2005 bis 2010 siehe Bekanntmachungen zu § 20. Seit 2011
-      wird der Regelbedarf durch das Regelbedarfs-Ermittlungsgesetz (RBEG) ermittelt.
-      Neufassung SGB II § 20 (1a) und (2) durch Artikel 6 G. v. 22.12.2016 BGBl. I S.
-      3159.
-      Regelbedafstufen (1 bis 6):
-      1: Alleinstehender Erwachsener;
-      2: Erwachsene in Partnerschaft;
-      3: Erwachsene nicht in Partnerschaft;
-      4: Kinder 14 bis 17;
-      5: Kinder 6 bis 13;
-      6: Kinder 0 bis 5
+      § 20 V SGB II. Für 2005 bis 2010 siehe Bekanntmachungen zu § 20.
     en: >-
-      Regelbedarfsstufe (1 to 6):
-      1: Single Adult;
-      2: Adults in a partner relationship;
-      3: Adults not in a partner relationship;
-      4: Children 14 to 17 years;
-      5: Children 6 to 13 years
-      6: Children 0 to 5 years.
+      § 20 V SGB II. Für 2005 bis 2010 see regulations for § 20.
   unit: Euro
+  type: require_converter
   reference_period: Month
   2005-01-01:
-    scalar: 338
+    basissatz: 338
+    anteil_vom_basissatz_bei_zwei_erwachsenen: 0.9
+    anteil_vom_basissatz_bei_weiteren_erwachsenen: 0.8
+    anteil_vom_basissatz_für_kinder:
+      zwischen_14_und_24_jahre:
+        min_alter: 14
+        max_alter: 24
+        anteil: 0.8
+      zwischen_6_und_13_jahre:
+        min_alter: 6
+        max_alter: 13
+        anteil: 0.6
+      bis_5_jahre:
+        min_alter: 0
+        max_alter: 5
+        anteil: 0.6
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
     note: >-
-      Der tatsächliche Wert unterscheidet sich zwischen Ost und West. Korrekte
-      Werte sind in den alten Bundesländern einschließlich Berlin (Ost) 345 Euro,
-      in
-      den neuen Bundesländern 331 Euro.
+      Der tatsächliche Wert unterscheidet sich zwischen Ost und West. Korrekte Werte
+      sind in den alten Bundesländern einschließlich Berlin (Ost) 345 Euro, in den neuen
+      Bundesländern 331 Euro.
+      Anteile vom Regelsatz für erwachsene Haushaltsmitglieder laut § 20 (3) SGB II.
+      Eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V derselben Norm. Der
+      Regelsatz für weitere Haushaltsmitglieder wurde als Anteil des Standardsatzes
+      bestimmt.
   2005-07-01:
-    scalar: 338
+    deviation_from: previous
+    basissatz: 338
     reference: B. v. 01.09.2005 BGBl. I S. 2718.
     note: >-
       Betrag unverändert. Der tatsächliche Wert unterscheidet sich zwischen Ost und
@@ -157,20 +168,66 @@ regelsatz:
       Korrekte Werte für die Zeit ab 1. Juli 2005 sind in den alten Bundesländern
       einschließlich Berlin (Ost) 345 Euro, in den neuen Bundesländern 331 Euro.
   2006-07-01:
-    scalar: 345
+    deviation_from: previous
+    basissatz: 345
     reference: B. v. 20.07.2006 BGBl. I S. 1702.
   2007-07-01:
-    scalar: 347
+    deviation_from: previous
+    basissatz: 347
     reference: B. v. 18.06.2007 BGBl. I S. 1139.
   2008-07-01:
-    scalar: 351
+    deviation_from: previous
+    basissatz: 351
     reference: B. v. 26.06.2008 BGBl. I S. 1102.
   2009-07-01:
-    scalar: 359
+    deviation_from: previous
+    basissatz: 359
+    anteil_vom_basissatz_für_kinder:
+      zwischen_14_und_24_jahre:
+        min_alter: 14
+        max_alter: 24
+        anteil: 0.8
+      zwischen_6_und_13_jahre:
+        min_alter: 6
+        max_alter: 13
+        anteil: 0.7
+      bis_5_jahre:
+        min_alter: 0
+        max_alter: 5
+        anteil: 0.6
     reference: B. v. 17.06.2009 BGBl. I S. 1342.
   2010-07-01:
-    scalar: 359
+    deviation_from: previous
+    basissatz: 359
     reference: B. v. 07.06.2010 BGBl. I S. 820. Betrag unverändert.
+  2011-01-01:
+    note: Calculation method changed, see regelsatz_nach_regelbedarfsstufen.
+regelsatz_nach_regelbedarfsstufen:
+  name:
+    de: Regelsatz mit direkter Angabe für Regelbedarfsstufen
+    en: Standard rate with direct specification of "Regelbedarfsstufen"
+  description:
+    de: >-
+      § 20 V SGB II.  Neufassung SGB II § 20 (1a) und (2) durch
+      Artikel 6 G. v. 22.12.2016 BGBl. I S. 3159.
+      Regelbedafstufen:
+      1: Alleinstehender Erwachsener
+      2: Erwachsene in Partnerschaft
+      3: Erwachsene nicht in Partnerschaft
+      4: Jugendliche
+      5: Ältere Kinder
+      6: Jüngste Kinder
+    en: >-
+      Regelbedarfsstufen:
+      1: Single Adult
+      2: Adults in a partner relationship
+      3: Adults not in a partner relationship
+      4: Adolescents
+      5: Older children
+      6: Youngest children
+  unit: Euro
+  type: require_converter
+  reference_period: Month
   2011-01-01:
     1: 364
     2: 328
@@ -410,7 +467,7 @@ regelsatz:
       max_alter: 5
       betrag: 357
     reference: §2 V. v. 24.10.2024 BGBl. I Nr. 287
-kindersofortzuschl:
+kindersofortzuschlag:
   name:
     de: Kindersofortzuschlag für Arbeitslosengeld II
     en: Instant surcharge for children for unemployment benefit
@@ -426,64 +483,17 @@ kindersofortzuschl:
       or social benefits (Regelbedarfsstufen 3,4,5,6) receive an instant surcharge
       of 20 Euro.
   unit: Euro
+  type: scalar
+  reference_period: Month
   2022-07-01:
-    scalar: 20
+    value: 20
   2025-01-01:
-    scalar: 25
+    value: 25
     note: >-
       Gesetz zur Fortentwicklung des Steuerrechts und zur  Anpassung des Einkommen-
       steuertarifs (Steuerfortentwicklungsgesetz - SteFeG)
     reference: Art. 7 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
-anteil_regelsatz_erwachsene:
-  name:
-    de: Anteil am Regelsatz für weitere Erwachsene in der Bedarfsgemeinschaft
-    en: Fraction of standard rate for additional adults in the household
-  description:
-    de: >-
-      § 20 (3) SGB II, eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V
-      derselben Norm. Der Regelsatz für weitere Haushaltsmitglieder wurde als Anteil
-      des Standardsatzes bestimmt.
-    en: null
-  unit: Share
-  2005-01-01:
-    zwei_erwachsene: 0.9
-    weitere_erwachsene: 0.8
-    reference: Artikel 1 § 20 G. v. 24.12.2003 BGBl. I S. 2954.
-  2011-01-01:
-    note: Andere Berechnungsart
-anteil_regelsatz_kinder:
-  name:
-    de: Anteil am Regelsatz für Kinder
-    en: Fraction of standard rate for children
-  description:
-    de: >-
-      § 20 (3) SGB II, eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V derselben
-      Norm. 2005 bis 2010: Der Regelsatz für Kinder wurden als Anteil des Standardsatzes
-      bestimmt.
-    en: null
-  unit: Share
-  2005-01-01:
-    kind_zwischen_14_und_24:
-      min_alter: 14
-      max_alter: 24
-      anteil: 0.8
-    kind_zwischen_6_und_13:
-      min_alter: 6
-      max_alter: 13
-      anteil: 0.6
-    kind_bis_5:
-      min_alter: 0
-      max_alter: 5
-      anteil: 0.6
-    reference: Artikel 1 § 20 G. v. 24.12.2003 BGBl. I S. 2954.
-  2009-07-01:
-    deviation_from: previous
-    reference: Artikel 1 G. v. 02.03.2009 BGBl. I S. 416.
-    kind_zwischen_6_und_13:
-      min_alter: 6
-      max_alter: 13
-      share: 0.7
-mehrbedarf_anteil:
+anteil_mehrbedarf_alleinerziehend:
   name:
     de: >-
       ``kind_bis_6_oder_mehrere_bis_15`` gibt Mehrbedarf AE bei mind. einem Kind unter 7
@@ -499,24 +509,24 @@ mehrbedarf_anteil:
     de: § 21 (3) Nr. 1 SGB II.
     en: null
   unit: Share
+  type: dict
   reference_period: Month
   2005-01-01:
     min_1_kind: 0.12
     kind_bis_6_oder_mehrere_bis_15: 0.36
     max: 0.6
     reference: G. v. 24.12.2003 BGBl. I S. 2954.
-vermögensgrundfreibetrag_obergrenze:
+obergrenze_vermögensgrundfreibetrag:
   name:
     de: Maximaler Vermögensgrundfreibetrag
     en: Maximum of basic allowance
   description:
     de: >-
-      § 12 (2) Satz 1 Nr. 1 SGB II. Ausnahmeregelung für Personen,
-      die vor 1948 geboren wurden. Die Ausnahmeregelung taucht im aktuellen Gesetz nicht
-      mehr auf und ist nicht mehr relevant,
-      da alle betroffenen Personen zu alt für ALG 2 sind.
+      § 12 (2) Satz 1 Nr. 1 SGB II. Ausnahmeregelung für Personen, die vor 1948 geboren
+      wurden.
     en: Differs by birth year.
   unit: Euro
+  type: dict
   2005-01-01:
     1947: 33800
     1948: 13000
@@ -536,13 +546,9 @@ vermögensgrundfreibetrag_obergrenze:
     1964: 10050
     note: Artikel 1 G. v. 20.04.2007 BGBl. I S. 554.
   2023-01-01:
-    1947: null
-    1948: null
-    1958: null
-    1964: null
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Bürgergeld-Gesetz
-vermögensgrundfreibetrag:
+vermögensgrundfreibetrag_je_lebensjahr:
   name:
     de: Vermögensgrundfreibetrag je Lebensjahr
     en: Basic allowance per year of life
@@ -550,17 +556,16 @@ vermögensgrundfreibetrag:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.  Gestaffelt nach Geburtsjahr
     en: Differs by year of birth.
   unit: Euro
+  type: dict
   2005-01-01:
     1947: 520
     1948: 200
     reference: Artikel 1 G. v. 30.12.2002 BGBl. I S. 4619.
   2006-08-01:
-    deviation_from: previous
+    1947: 520
     1948: 150
     reference: Artikel 1 G. v. 20.07.2006 BGBl. I S. 1706.
   2023-01-01:
-    1947: null
-    1948: null
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Bürgergeld-Gesetz
 schonvermögen_bürgergeld:
@@ -580,6 +585,7 @@ schonvermögen_bürgergeld:
       the first person in a needs-based community and 15,000 Euro for each additional
       person.
   unit: Euro
+  type: dict
   2023-01-01:
     während_karenzzeit: 40000
     normaler_satz: 15000
@@ -593,8 +599,9 @@ vermögensfreibetrag_austattung:
     de: § 12 (2) Satz 1 Nr. 4 SGB II.
     en: null
   unit: Euro
+  type: scalar
   2005-01-01:
-    scalar: 750
+    value: 750
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
@@ -607,33 +614,17 @@ vermögensfreibetrag_kind:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.
     en: null
   unit: Euro
+  type: scalar
   2005-01-01:
-    scalar: 4100
+    value: 4100
     reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
   2006-08-01:
-    scalar: 3100
+    value: 3100
     reference: Artikel 1 G. v. 20.07.2006 BGBl. I S. 1706.
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Ceased to exist with Bürgergeld-Gesetz
-vermög_freib_alter:
-  name:
-    de: Altersgrenzen für Vermögensfreibetrag
-    en: Age limits for wealth allowance
-  description:
-    de: Vermögensfreibetrag ändert sich nach Geburtsjahr
-    en: Wealth allowance changes depending on the year of birth
-  2005-01-01:
-    1: 1948
-    2: 1958
-    3: 1963
-  2023-01-01:
-    1: null
-    2: null
-    3: null
-    reference: G. v. 20.12.2022 BGBl. I S. 2328.
-    note: Bürgergeld-Gesetz
-abzugsfähige_pausch:
+abzugsfähige_pauschalen:
   name:
     de: Abzugsfähige Pauschalen für Werbungskosten und Versicherung
     en: Allowance for expenses and insurance
@@ -644,17 +635,18 @@ abzugsfähige_pausch:
       § 3 Alg II-V. Seit 01.01.2008 in § 6 Alg II-V.
     en: null
   unit: Euro
+  type: dict
   reference_period: Month
   2005-01-01:
     werbung: 15.33
     versicherung: 30
     reference: V. v. 20.10.2004 BGBl. I S. 2622
   2011-01-01:
-    deviation_from: previous
+    versicherung: 30
     werbung: 15.33
     reference: V. v. 21.06.2011 BGBl. I S. 1175.
     note: Betrag unverändert. Warum haben wir das? Es ändert sich nichts
-max_miete_pro_qm:
+mietobergrenze_pro_qm:
   name:
     de: Obergenze Miete pro Quadratmeter
     en: Upper limit rent per square meter
@@ -670,6 +662,8 @@ max_miete_pro_qm:
       eligible for ALG2. This limit is not specifically laid down in the law, but is a
       rule of thumb used by the employment agencies.
   unit: Euro / Square Meter
+  type: dict
+  reference_period: Month
   1984-01-01:
     max: 10
 berechtigte_wohnfläche_miete:
@@ -683,6 +677,8 @@ berechtigte_wohnfläche_miete:
     en: >-
       A rental apartment may be 45 square meters for a single person (+15 for each
       additional person).
+  unit: Square Meter
+  type: dict
   1984-01-01:
     single: 45
     je_weitere_person: 15
@@ -692,16 +688,13 @@ berechtigte_wohnfläche_eigentum:
     en: Property space eligible for ALG2-recipients
   description:
     de: >-
-      Vor 2023 gilt, dass Eigentum für zwei Personen im Haushalt 80 Quadratmeter (+20
-      für jede weitere Person) groß sein darf. Ab 2023 ist die erlaubte Größe für
-      Eigenheime auf 140 Quadratmeter (für Eigentumswohnungen aus 130 Quadratmeter)
-      gestiegen und wird ab 5 Personen im Haushalt um 20 Quadratmeter pro Person
-      angehoben.
+      Ab 2023 gilt diese Obergrenze nur für Eigenheime. Eigentumswohnungen dürfen nur
+      bis zu 130qm groß sein.
     en: >-
-      Before 2023, property for two people in the household may be 80 square meters (+20
-      for each additional person). From 2023, the permitted size for owner-occupied
-      homes has risen to 140 square meters (for condominiums from 130 square meters) and
-      will be increased by 20 square meters per person from 5 persons in the household.
+      After 2023, this upper limit only applies to owner-occupied homes. Condominiums
+      may only be up to 130 square meters in size.
+  unit: Square Meter
+  type: dict
   1984-01-01:
     1: 80
     2: 80
@@ -712,8 +705,9 @@ berechtigte_wohnfläche_eigentum:
   2023-01-01:
     reference: Art. 1 Nr.12 Abschnitt 5, G. v. 20.12.2022 BGBl. I S. 2328
     note: Gilt für Eigenheime. Eigentumswohnungen dürfen nur bis zu 130qm groß sein.
-    deviation_from: previous
     1: 140
     2: 140
     3: 140
     4: 140
+    je_weitere_person: 20
+    max_anzahl_direkt: 4

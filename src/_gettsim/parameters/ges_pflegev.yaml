@@ -1,5 +1,5 @@
 ---
-beitr_satz:
+beitragssatz:
   name:
     de: Beitragssätze zur gesetzlichen Pflegeversicherung
     en: Contribution rate to statutory care insurance
@@ -14,6 +14,7 @@ beitr_satz:
       employees contribution rate zusatz_kinderlos - contribution rate for insured
       people without children and at least 23 years old. paid by employees. est. 2005
   unit: Share
+  type: dict
   access_different_date: jahresanfang
   1995-01-01:
     scalar: 0.005
@@ -54,7 +55,7 @@ beitr_satz:
     standard: 0.018
     reference: >-
       Pflege-Beitragssatz-Anpassungsverordnung 2025, Bundestag-Drucksache 20/1371
-beitr_bemess_grenze_m:
+beitragsbemessungsgrenze_m:
   name:
     de: Beitragsbemessungsgrenzen für die Pflegeversicherung
     en: Income Threshold for care insurance
@@ -62,6 +63,7 @@ beitr_bemess_grenze_m:
     de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
     en: The income threshold is the same for health and long-term care insurance.
   unit: Euro
+  type: dict
   reference_period: Month
   1995-01-01:
     west: 2991
@@ -183,5 +185,6 @@ zusatz_kinderlos_mindestalter:
       Childless members of the social care insurance, who have reached the age of 23,
       have to pay a higher contribution rate since January 1, 2005.
   unit: Year
+  type: scalar
   2005-01-01:
     scalar: 23
