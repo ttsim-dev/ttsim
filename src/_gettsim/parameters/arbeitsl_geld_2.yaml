@@ -475,12 +475,12 @@ kindersofortzuschlag:
     de: >-
       § 72 SGB II
       Kinder, Jugendliche  und junge Erwachsene, die Anspruch auf
-      Arbeitslosengeld II oder Sozialgeld haben (Regelbedarfsstufen 3,4,5,6),
+      Arbeitslosengeld II oder Sozialgeld haben (Regelbedarfsstufen 3, 4, 5, 6),
       erhalten einen Sofortzuschlag von 20€.
     en: >-
       § 72 SGB II
-      Children, adolescents and young  adults who are entitled to unemployment benefits
-      or social benefits (Regelbedarfsstufen 3,4,5,6) receive an instant surcharge
+      Children, adolescents and young adults who are entitled to unemployment benefits
+      or social benefits (Regelbedarfsstufen 3, 4, 5, 6) receive an instant surcharge
       of 20 Euro.
   unit: Euros
   type: scalar
@@ -638,14 +638,9 @@ abzugsfähige_pauschalen:
   type: dict
   reference_period: Month
   2005-01-01:
-    werbung: 15.33
     versicherung: 30
+    werbung: 15.33
     reference: V. v. 20.10.2004 BGBl. I S. 2622
-  2011-01-01:
-    versicherung: 30
-    werbung: 15.33
-    reference: V. v. 21.06.2011 BGBl. I S. 1175.
-    note: Betrag unverändert. Warum haben wir das? Es ändert sich nichts
 mietobergrenze_pro_qm:
   name:
     de: Obergenze Miete pro Quadratmeter
@@ -694,7 +689,7 @@ berechtigte_wohnfläche_eigentum:
       After 2023, this upper limit only applies to owner-occupied homes. Condominiums
       may only be up to 130 square meters in size.
   unit: Square Meters
-  type: dict
+  type: require_converter
   1984-01-01:
     1: 80
     2: 80
