@@ -117,7 +117,7 @@ parameter_beitragssatz:
     deviation_from: previous
     mean_zusatzbeitrag: 0.025
     reference: BAnz AT 07.11.2024 B4
-beitragsbemessungsgrenze_m:
+parameter_beitragsbemessungsgrenze:
   name:
     de: Beitragsbemessungsgrenzen für die Krankenversicherung
     en: Income Threshold for health insurance

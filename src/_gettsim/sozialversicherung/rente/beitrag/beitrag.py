@@ -211,7 +211,7 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, ges_rentenv_params: dict) -> f
     -------
 
     """
-    params = ges_rentenv_params["beitragsbemessungsgrenze_m"]
+    params = ges_rentenv_params["parameter_beitragsbemessungsgrenze"]
     out = params["ost"] if wohnort_ost else params["west"]
 
     return out
