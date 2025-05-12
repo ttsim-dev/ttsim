@@ -15,6 +15,8 @@ altersgrenze:
       children up to a specified age are entitled to child benefit under certain
       conditions.
   unit: Years
+  reference_period: null
+  type: dict
   1984-01-01:
     mit_bedingungen: 27
     ohne_bedingungen: 18
@@ -34,6 +36,7 @@ kindergeld:
     en: null
   unit: Euros
   reference_period: Month
+  type: require_converter
   1975-01-01:
     1: 26
     2: 36
@@ -157,16 +160,16 @@ kindergeld:
   2023-01-01:
     reference: Art. 6 G. v. 08.12.2022 BGBl. I S. 2230.
     note: Inflationsausgleichsgesetz
-    scalar: 250
+    value: 250
   2025-01-01:
-    scalar: 255
+    value: 255
     note: Steuerfortentwicklungsgesetz (SteFeG)
     reference: Art. 5 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
   2026-01-01:
-    scalar: 259
+    value: 259
     note: Steuerfortentwicklungsgesetz (SteFeG) 2024
     reference: Art. 6 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
-einkommensgrenze:
+maximales_einkommen_des_kindes:
   name:
     de: Einkommensgrenze der Kinder für Kindergeldanspruch
     en: Income Ceiling for children in order to get child benefit.
@@ -177,30 +180,31 @@ einkommensgrenze:
     en: null
   unit: Euros
   reference_period: Year
+  type: scalar
   1984-01-01:
-    scalar: 0
+    value: 0
   1996-01-01:
-    scalar: 6136
+    value: 6136
     reference: Art. 1 G. v. 11.10.1995 BGBl. I S. 1250
     note: Originalwert 12000 DM.
   1999-01-01:
-    scalar: 6657
+    value: 6657
   2000-01-01:
-    scalar: 6902
+    value: 6902
   2001-01-01:
-    scalar: 7179
+    value: 7179
   2002-01-01:
-    scalar: 7188
+    value: 7188
     reference: Art. 1 G. v. 16.08.2001 BGBl. I S. 2074
   2004-01-01:
-    scalar: 7680
+    value: 7680
   2009-01-01:
-    scalar: 8004
+    value: 8004
     reference: Art. 1 G. v. 16.07.2009 BGBl. I S. 1959
     note: Zurückdatiert auf das volle Kalenderjahr 2009
   2012-01-01:
-    note: Revoked in favour of stundengrenze
-stundengrenze:
+    note: Revoked in favour of maximale_wöchentliche_arbeitsstunden_des_kindes
+maximale_wöchentliche_arbeitsstunden_des_kindes:
   name:
     de: Wochenstundengrenze für Kindergeldanspruch
     en: Working hours threshold for child benefit eligibility
@@ -211,8 +215,9 @@ stundengrenze:
     en: null
   unit: Hours
   reference_period: Week
+  type: scalar
   2012-01-01:
-    scalar: 20
+    value: 20
     reference: Art. 1 G. v. 01.11.2011 BGBl. I S. 2131
 kinderbonus:
   name:
@@ -226,14 +231,15 @@ kinderbonus:
     en: null
   unit: Euros
   reference_period: Year
+  type: scalar
   1984-01-01:
-    scalar: 0
+    value: 0
   2020-01-01:
     reference: Art. 1 Zweites Corona-Steuerhilfegesetz v. 29.06.2020 BGBl. I S. 1512
-    scalar: 300
+    value: 300
   2021-01-01:
     reference: Art. 1 Drittes Corona-Steuerhilfegesetz v. 10.03.2021 BGBl. I S. 330
-    scalar: 150
+    value: 150
   2022-01-01:
     note: only one-time payment
-    scalar: 0
+    value: 0
