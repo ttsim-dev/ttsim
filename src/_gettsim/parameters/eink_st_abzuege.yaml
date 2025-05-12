@@ -703,6 +703,7 @@ anteil_absetzbare_rentenversicherungskosten:
       upper_threshold: inf
       rate_linear: 0
       intercept_at_lower_threshold: 1
+  # ToDo: Set to missing and just set the parameter to 1 in parser.
   2023-01-01:
     0:
       lower_threshold: -inf
