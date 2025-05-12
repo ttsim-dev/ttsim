@@ -823,7 +823,8 @@ class PiecewisePolynomialTTSIMParam(TTSIMParam):
 @dataclass(frozen=True)
 class RawTTSIMParam(TTSIMParam):
     """
-    A TTSIM parameter directly read from a YAML file that is a flat dictionary.
+    A TTSIM parameter directly read from a YAML file that is an arbitrarily nested
+    dictionary.
     """
 
     value: dict[str | int, Any]

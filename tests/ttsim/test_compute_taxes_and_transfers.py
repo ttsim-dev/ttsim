@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 import re
 import warnings
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy
@@ -12,12 +14,18 @@ from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
     AggType,
+    DictTTSIMParam,
     FunctionsAndColumnsOverlapWarning,
+    PiecewisePolynomialParameters,
+    PiecewisePolynomialTTSIMParam,
     PolicyEnvironment,
+    RawTTSIMParam,
+    ScalarTTSIMParam,
     agg_by_group_function,
     agg_by_p_id_function,
     compute_taxes_and_transfers,
     merge_trees,
+    params_function,
     policy_function,
     policy_input,
     set_up_policy_environment,
@@ -29,12 +37,17 @@ from ttsim.compute_taxes_and_transfers import (
     _fail_if_targets_not_in_functions,
     _get_top_level_namespace,
     _partial_parameters_to_functions,
+    _process_params_tree,
     create_agg_by_group_functions,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import TTSIMArray
+
+if TYPE_CHECKING:
+    from ttsim.typing import RawParamsRequiringConversion
+
 
 if IS_JAX_INSTALLED:
     jit = True
@@ -75,6 +88,98 @@ def some_func(p_id: int) -> int:
 @policy_function()
 def another_func(some_func: int) -> int:
     return some_func
+
+
+@params_function()
+def some_scalar_params_func(some_int_param: int) -> int:
+    return some_int_param
+
+
+@dataclass(frozen=True)
+class ConvertedParam:
+    some_float_param: float
+    some_bool_param: bool
+
+
+@params_function()
+def some_converting_params_func(
+    raw_param_spec: RawParamsRequiringConversion,
+) -> ConvertedParam:
+    return ConvertedParam(
+        some_float_param=raw_param_spec["some_float_param"],
+        some_bool_param=raw_param_spec["some_bool_param"],
+    )
+
+
+@pytest.fixture(scope="module")
+def raw_ttsim_param():
+    return RawTTSIMParam(
+        value={
+            "some_float_param": 1,
+            "some_bool_param": False,
+        },
+        leaf_name="raw_param_spec",
+        start_date="2025-01-01",
+        end_date="2025-12-31",
+        name="raw_param_spec",
+        description="Some raw param spec",
+        unit=None,
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
+
+
+@pytest.fixture(scope="module")
+def some_int_param():
+    return ScalarTTSIMParam(
+        value=1,
+        leaf_name="some_int_param",
+        start_date="2025-01-01",
+        end_date="2025-12-31",
+        name="some_int_param",
+        description="Some int param",
+        unit=None,
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
+
+
+@pytest.fixture(scope="module")
+def some_dict_param():
+    return DictTTSIMParam(
+        value={"a": 1, "b": False},
+        leaf_name="some_dict_param",
+        start_date="2025-01-01",
+        end_date="2025-12-31",
+        name="some_dict_param",
+        description="Some dict param",
+        unit=None,
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
+
+
+@pytest.fixture(scope="module")
+def some_piecewise_polynomial_param():
+    return PiecewisePolynomialTTSIMParam(
+        value=PiecewisePolynomialParameters(
+            thresholds=[1, 2, 3],
+            intercepts=[1, 2, 3],
+            rates=[1, 2, 3],
+        ),
+        leaf_name="some_piecewise_polynomial_param",
+        start_date="2025-01-01",
+        end_date="2025-12-31",
+        name="some_piecewise_polynomial_param",
+        description="Some piecewise polynomial param",
+        unit=None,
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -882,3 +987,33 @@ def test_get_top_level_namespace(environment, time_units, expected):
         time_units=time_units,
     )
     assert all(name in result for name in expected)
+
+
+def test_params_tree_is_processed(
+    raw_ttsim_param, some_int_param, some_dict_param, some_piecewise_polynomial_param
+):
+    params_tree = {
+        "raw_param_spec": raw_ttsim_param,
+        "some_int_param": some_int_param,
+        "some_dict_param": some_dict_param,
+        "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
+    }
+    params_functions = {
+        "some_scalar_params_func": some_scalar_params_func,
+        "some_converting_params_func": some_converting_params_func,
+    }
+    processed_params_tree = _process_params_tree(
+        params_tree=params_tree,
+        params_functions=params_functions,
+    )
+    expected = {
+        "some_converting_params_func": ConvertedParam(
+            some_float_param=1,
+            some_bool_param=False,
+        ),
+        "some_scalar_params_func": 1,
+        "some_int_param": some_int_param,
+        "some_dict_param": some_dict_param,
+        "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
+    }
+    assert processed_params_tree == expected
