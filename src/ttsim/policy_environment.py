@@ -564,7 +564,7 @@ def _get_params_contents(
             f"{relevant_specs}"
         )
         return upsert_tree(
-            base=_get_params_contents(relevant_specs[:-1]), tree=relevant_specs[-1]
+            base=_get_params_contents(relevant_specs[:-1]), to_upsert=relevant_specs[-1]
         )
     else:
         return relevant_specs[-1]

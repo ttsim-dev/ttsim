@@ -24,6 +24,7 @@ from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
     ConflictingNamesError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
+    _get_params_contents,
     _parse_raw_parameter_group,
     active_ttsim_objects_tree,
     active_ttsim_params_tree,
@@ -53,6 +54,20 @@ def return_three():
 @group_creation_function()
 def fam_id() -> int:
     pass
+
+
+@pytest.fixture(scope="module")
+def some_params_spec_with_updates_previous():
+    return [
+        {
+            "a": 1,
+            "b": 2,
+        },
+        {
+            "updates_previous": True,
+            "b": 4,
+        },
+    ]
 
 
 class TestPolicyEnvironment:
@@ -555,3 +570,15 @@ def test_active_ttsim_objects_tree(
 
     assert accessor(functions_last_day).__name__ == function_name_last_day
     assert accessor(functions_next_day).__name__ == function_name_next_day
+
+
+def test_get_params_contents_with_updated_previous(
+    some_params_spec_with_updates_previous,
+):
+    params_contents = _get_params_contents(some_params_spec_with_updates_previous)
+    expected = {
+        "updates_previous": True,
+        "a": 1,
+        "b": 4,
+    }
+    assert params_contents == expected
