@@ -65,8 +65,8 @@ parameter_beitragsbemessungsgrenze:
     de: Beitragsbemessungsgrenze für die gesetzliche Rentenversicherung.
     en: Income threshold for statutory pension insurance.
   unit: Euros
-  type: dict
   reference_period: Month
+  type: dict
   1984-01-01:
     west: 2659
   1985-01-01:
