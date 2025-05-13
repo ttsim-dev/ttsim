@@ -246,13 +246,13 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:
-    scalar: 0
+    value: 0
   1999-01-01:
-    scalar: 0.1
+    value: 0.1
   2003-04-01:
-    scalar: 0.11
+    value: 0.11
   2007-01-01:
-    scalar: 0.13
+    value: 0.13
 bezugsgröße_selbstständige_m:
   name:
     de: Monatliche Bezugsgröße für Selbstständige
@@ -409,4 +409,4 @@ mindestanteil_bezugsgröße_selbstständige:
   type: scalar
   1990-01-01:
     note: Exact date of introduction of this parameter unclear (was in place in 2006)
-    scalar: 0.33333333
+    value: 0.33333333

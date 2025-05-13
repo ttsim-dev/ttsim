@@ -20,43 +20,43 @@ parameter_altersgrenze_abschlagsfrei:
   reference_period: null
   type: scalar
   2001-01-01:
-    scalar: 63
+    value: 63
   2012-01-01:
-    scalar: 63.083333
+    value: 63.083333
   2012-02-01:
-    scalar: 63.166666
+    value: 63.166666
   2012-03-01:
-    scalar: 63.25
+    value: 63.25
   2012-04-01:
-    scalar: 63.333333
+    value: 63.333333
   2012-05-01:
-    scalar: 63.416666
+    value: 63.416666
   2012-06-01:
-    scalar: 63.5
+    value: 63.5
   2013-01-01:
-    scalar: 63.583333
+    value: 63.583333
   2014-01-01:
-    scalar: 63.666666
+    value: 63.666666
   2015-01-01:
-    scalar: 63.75
+    value: 63.75
   2016-01-01:
-    scalar: 63.833333
+    value: 63.833333
   2017-01-01:
-    scalar: 63.916666
+    value: 63.916666
   2018-01-01:
-    scalar: 64
+    value: 64
   2019-01-01:
-    scalar: 64.166666
+    value: 64.166666
   2020-01-01:
-    scalar: 64.333333
+    value: 64.333333
   2021-01-01:
-    scalar: 64.5
+    value: 64.5
   2022-01-01:
-    scalar: 64.666666
+    value: 64.666666
   2023-01-01:
-    scalar: 64.833333
+    value: 64.833333
   2024-01-01:
-    scalar: 65
+    value: 65
 altersgrenze_langjährig_versicherte_abschlagsfrei:
   name:
     de: Regelaltersgrenze für langjährige Versicherte
@@ -75,7 +75,7 @@ altersgrenze_langjährig_versicherte_abschlagsfrei:
   reference_period: null
   type: scalar
   2001-01-01:
-    scalar: 63
+    value: 63
 wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
   name:
     de: Wartezeitgrenze für abschlagsfreie Erwerbsminderungsrente
@@ -93,9 +93,9 @@ wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
   reference_period: null
   type: scalar
   2001-01-01:
-    scalar: 35
+    value: 35
   2024-01-01:
-    scalar: 40
+    value: 40
 zurechnungszeitgrenze:
   name:
     de: Zurechnungszeitgrenze
@@ -120,105 +120,105 @@ zurechnungszeitgrenze:
   reference_period: null
   type: scalar
   2001-01-01:
-    scalar: 62.916666
+    value: 62.916666
   2001-02-01:
-    scalar: 62.833333
+    value: 62.833333
   2001-03-01:
-    scalar: 62.75
+    value: 62.75
   2001-04-01:
-    scalar: 62.666666
+    value: 62.666666
   2001-05-01:
-    scalar: 62.583333
+    value: 62.583333
   2001-06-01:
-    scalar: 62.5
+    value: 62.5
   2001-07-01:
-    scalar: 62.416666
+    value: 62.416666
   2001-08-01:
-    scalar: 62.333333
+    value: 62.333333
   2001-09-01:
-    scalar: 62.25
+    value: 62.25
   2001-10-01:
-    scalar: 62.166666
+    value: 62.166666
   2001-11-01:
-    scalar: 62.083333
+    value: 62.083333
   2001-12-01:
-    scalar: 62
+    value: 62
   2002-01-01:
-    scalar: 61.916666
+    value: 61.916666
   2002-02-01:
-    scalar: 61.833333
+    value: 61.833333
   2002-03-01:
-    scalar: 61.75
+    value: 61.75
   2002-04-01:
-    scalar: 61.666666
+    value: 61.666666
   2002-05-01:
-    scalar: 61.583333
+    value: 61.583333
   2002-06-01:
-    scalar: 61.5
+    value: 61.5
   2002-07-01:
-    scalar: 61.416666
+    value: 61.416666
   2002-08-01:
-    scalar: 61.333333
+    value: 61.333333
   2002-09-01:
-    scalar: 61.25
+    value: 61.25
   2002-10-01:
-    scalar: 61.166666
+    value: 61.166666
   2002-11-01:
-    scalar: 61.083333
+    value: 61.083333
   2002-12-01:
-    scalar: 61
+    value: 61
   2003-01-01:
-    scalar: 60.916666
+    value: 60.916666
   2003-02-01:
-    scalar: 60.833333
+    value: 60.833333
   2003-03-01:
-    scalar: 60.75
+    value: 60.75
   2003-04-01:
-    scalar: 60.666666
+    value: 60.666666
   2003-05-01:
-    scalar: 60.583333
+    value: 60.583333
   2003-06-01:
-    scalar: 60.5
+    value: 60.5
   2003-07-01:
-    scalar: 60.416666
+    value: 60.416666
   2003-08-01:
-    scalar: 60.333333
+    value: 60.333333
   2003-09-01:
-    scalar: 60.25
+    value: 60.25
   2003-10-01:
-    scalar: 60.166666
+    value: 60.166666
   2003-11-01:
-    scalar: 60.083333
+    value: 60.083333
   2003-12-01:
-    scalar: 60
+    value: 60
   2014-07-01:
-    scalar: 62
+    value: 62
   2019-01-01:
-    scalar: 65.666666
+    value: 65.666666
   2020-01-01:
-    scalar: 65.75
+    value: 65.75
   2021-01-01:
-    scalar: 65.833333
+    value: 65.833333
   2022-01-01:
-    scalar: 65.916666
+    value: 65.916666
   2023-01-01:
-    scalar: 66
+    value: 66
   2024-01-01:
-    scalar: 66.083333
+    value: 66.083333
   2025-01-01:
-    scalar: 66.166666
+    value: 66.166666
   2026-01-01:
-    scalar: 66.25
+    value: 66.25
   2027-01-01:
-    scalar: 66.333333
+    value: 66.333333
   2028-01-01:
-    scalar: 66.5
+    value: 66.5
   2029-01-01:
-    scalar: 66.666666
+    value: 66.666666
   2030-01-01:
-    scalar: 66.833333
+    value: 66.833333
   2031-01-01:
-    scalar: 67
+    value: 67
 min_zugangsfaktor:
   name:
     de: Kleinster möglicher Zugangsfaktor bei der Erwerbsminderungsrente
@@ -234,7 +234,7 @@ min_zugangsfaktor:
   reference_period: null
   type: scalar
   2000-01-01:
-    scalar: 0.892
+    value: 0.892
 rentenartfaktor:
   name:
     de: Rentenartfaktor für teilweise Erwerbsminderungsrente
@@ -274,4 +274,4 @@ altersgrenze_grundbewertung:
   reference_period: null
   type: scalar
   2001-01-01:
-    scalar: 16
+    value: 16

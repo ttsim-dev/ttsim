@@ -10,11 +10,11 @@ freibetrag_nebeneinkommen:
   reference_period: Month
   type: scalar
   1999-08-01:
-    scalar: 161
+    value: 161
     reference: Art. 1 G. v. 21.07.1999 BGBl. I S. 1648
     note: Originalwert 315 DM.
   2002-01-01:
-    scalar: 165
+    value: 165
     reference: Art. 3 G. v. 21.12.2000 BGBl. I S. 1983
 sozialversicherungspauschale:
   name:
@@ -29,64 +29,64 @@ sozialversicherungspauschale:
   reference_period: null
   type: scalar
   1984-01-01:
-    scalar: 0.1727
+    value: 0.1727
   1985-01-01:
-    scalar: 0.1745
+    value: 0.1745
   1986-01-01:
-    scalar: 0.1775
+    value: 0.1775
   1987-01-01:
-    scalar: 0.1774
+    value: 0.1774
   1988-01-01:
-    scalar: 0.1794
+    value: 0.1794
   1989-01-01:
-    scalar: 0.1795
+    value: 0.1795
   1990-01-01:
-    scalar: 0.1775
+    value: 0.1775
   1991-01-01:
-    scalar: 0.179
+    value: 0.179
   1992-01-01:
-    scalar: 0.184
+    value: 0.184
   1993-01-01:
-    scalar: 0.187
+    value: 0.187
   1994-01-01:
-    scalar: 0.1955
+    value: 0.1955
   1995-01-01:
-    scalar: 0.1915
+    value: 0.1915
   1996-01-01:
-    scalar: 0.1995
+    value: 0.1995
   1997-01-01:
-    scalar: 0.2095
+    value: 0.2095
   1998-01-01:
-    scalar: 0.2105
+    value: 0.2105
   2000-01-01:
-    scalar: 0.20535
+    value: 0.20535
   2001-01-01:
-    scalar: 0.2044
+    value: 0.2044
   2002-01-01:
-    scalar: 0.2065
+    value: 0.2065
   2003-01-01:
-    scalar: 0.2105
+    value: 0.2105
   2004-01-01:
-    scalar: 0.2095
+    value: 0.2095
   2005-01-01:
-    scalar: 0.2074
+    value: 0.2074
   2006-01-01:
-    scalar: 0.2141
+    value: 0.2141
   2007-01-01:
-    scalar: 0.2075
+    value: 0.2075
   2008-01-01:
-    scalar: 0.20475
+    value: 0.20475
   2009-01-01:
-    scalar: 0.20525
+    value: 0.20525
   2010-01-01:
-    scalar: 0.20225
+    value: 0.20225
   2011-01-01:
-    scalar: 0.20625
+    value: 0.20625
   2012-01-01:
-    scalar: 0.21
+    value: 0.21
     reference: Art. 2 G. v. 20.12.2011 BGBl. I S. 2854
   2019-01-01:
-    scalar: 0.2
+    value: 0.2
     reference: Art. 1 G. v. 18.12.2018 BGBl. I S. 2651
 satz:
   name:
@@ -118,15 +118,15 @@ stundengrenze:
   reference_period: Week
   type: scalar
   1969-07-01:
-    scalar: 20
+    value: 20
   1986-01-01:
-    scalar: 19
+    value: 19
     reference: Art. 1 G. v. 20.12.1985 BGBl I S. 2484
   1989-01-01:
-    scalar: 18
+    value: 18
     reference: Art. 1 G. v. 20.12.1988 BGBl I S. 2343
   2012-04-01:
-    scalar: 15
+    value: 15
     reference: Art. 2 G. v. 20.12.2011 BGBl I S. 2854
 anspruchsdauer_nach_alter:
   name:

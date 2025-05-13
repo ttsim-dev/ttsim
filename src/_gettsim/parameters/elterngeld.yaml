@@ -12,7 +12,7 @@ satz:
   reference_period: null
   type: scalar
   2007-01-01:
-    scalar: 0.67
+    value: 0.67
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 höchstbetrag:
   name:
@@ -25,7 +25,7 @@ höchstbetrag:
   reference_period: Month
   type: scalar
   2007-01-01:
-    scalar: 1800.0
+    value: 1800.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 max_zu_berücksichtigendes_einkommen:
   name:
@@ -38,10 +38,10 @@ max_zu_berücksichtigendes_einkommen:
   reference_period: Month
   type: scalar
   2007-01-01:
-    scalar: 2700.0
+    value: 2700.0
     reference: BGBl. I S. 2748 Art. 1 G. v. 05.12.2006
   2012-09-18:
-    scalar: 2770.0
+    value: 2770.0
     reference: Artikel 1 G. v. 10.09.2012 BGBl. I S. 1878
 nettoeinkommensstufen:
   name:
@@ -74,7 +74,7 @@ mindestbetrag:
   reference_period: Month
   type: scalar
   2007-01-01:
-    scalar: 300
+    value: 300
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 prozent_korrektur:
   name:
@@ -87,7 +87,7 @@ prozent_korrektur:
   reference_period: null
   type: scalar
   2007-01-01:
-    scalar: 0.001
+    value: 0.001
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 prozent_minimum:
   name:
@@ -100,10 +100,10 @@ prozent_minimum:
   reference_period: null
   type: scalar
   2007-01-01:
-    scalar: 0.67
+    value: 0.67
     note: implizit
   2011-01-01:
-    scalar: 0.65
+    value: 0.65
     reference: Art. 14 G. v. 09.12.2010 BGBl. I S. 1885
 einkommensschritte_korrektur:
   name:
@@ -116,7 +116,7 @@ einkommensschritte_korrektur:
   reference_period: Month
   type: scalar
   2007-01-01:
-    scalar: 2
+    value: 2
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 geschwisterbonus_altersgrenzen:
   name:
@@ -150,7 +150,7 @@ geschwisterbonus_aufschlag:
   reference_period: null
   type: scalar
   2007-01-01:
-    scalar: 0.1
+    value: 0.1
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 geschwisterbonus_minimum:
   name:
@@ -163,7 +163,7 @@ geschwisterbonus_minimum:
   reference_period: Month
   type: scalar
   2007-01-01:
-    scalar: 75.0
+    value: 75.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 mehrlingsbonus:
   name:
@@ -176,7 +176,7 @@ mehrlingsbonus:
   reference_period: Month
   type: scalar
   2007-01-01:
-    scalar: 300.0
+    value: 300.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 sozialversicherungspauschale:
   name:
@@ -189,7 +189,7 @@ sozialversicherungspauschale:
   reference_period: null
   type: scalar
   2012-09-18:
-    scalar: 0.21
+    value: 0.21
     reference: Art. 1 G. v. 10.09.2012 BGBl. I S. 1878
     note: 0.09 + 0.1 + 0.02
 max_bezugsmonate:
@@ -251,12 +251,12 @@ max_zu_versteuerndes_einkommen_vorjahr_pauschal:
   reference_period: null
   type: scalar
   2024-04-01:
-    scalar: 200000.0
+    value: 200000.0
     reference: >-
       Single: Art. 7 G. v. 27.03.2024 BGBl. 2024 I Nr. 107, Paar: Art. 1 G. v.
       22.12.2023 BGBl. 2023 I Nr. 412
   2025-04-01:
-    scalar: 175000.0
+    value: 175000.0
     reference: >-
       Single: Art. 7 G. v. 27.03.2024 BGBl. 2024 I Nr. 107, Paar: Art. 1 G. v.
       22.12.2023 BGBl. 2023 I Nr. 412
@@ -273,8 +273,8 @@ max_arbeitsstunden_w:
   reference_period: Week
   type: scalar
   2007-01-01:
-    scalar: 30.0
+    value: 30.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
   2021-09-01:
-    scalar: 32.0
+    value: 32.0
     reference: Art. 1 G. v. 15.02.2021 BGBl. I S. 239

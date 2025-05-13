@@ -772,10 +772,7 @@ def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
             max_past_policy_date = numpy.array(past_policies).max()
             policy_in_place = raw_group_data[param][max_past_policy_date]
             if "scalar" in policy_in_place:
-                if policy_in_place["scalar"] == "inf":
-                    out_params[param] = numpy.inf
-                else:
-                    out_params[param] = policy_in_place["scalar"]
+                raise ValueError(f"{raw_group_data[param]}")
             elif "value" in policy_in_place:
                 if policy_in_place["value"] == "inf":
                     out_params[param] = numpy.inf

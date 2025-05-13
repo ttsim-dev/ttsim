@@ -13,9 +13,9 @@ parameter_beitragssatz:
   type: dict
   access_different_date: jahresanfang
   1995-01-01:
-    scalar: 0.005
+    value: 0.005
   1997-01-01:
-    scalar: 0.0085
+    value: 0.0085
   2005-01-01:
     standard: 0.0085
     zusatz_kinderlos: 0.0025
@@ -69,4 +69,4 @@ zusatz_kinderlos_mindestalter:
   reference_period: null
   type: scalar
   2005-01-01:
-    scalar: 23
+    value: 23

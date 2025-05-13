@@ -241,7 +241,7 @@ The following walks through several cases.
     name:
       de: Wochenstundengrenze für Kindergeldanspruch
     2012-01-01:
-      scalar: 20
+      value: 20
   ```
 
 - There could be a dictionary, potentially nested:
@@ -304,7 +304,7 @@ The following walks through several cases.
 - If a parameter ceases to be relevant, is superseded by something else, etc., there
   must be a `YYYY-MM-DD` key with a note on this.
 
-  Generally, this `YYYY-MM-DD` key will have an entry `scalar: null` regardless of the
+  Generally, this `YYYY-MM-DD` key will have an entry `value: null` regardless of the
   previous structure. Ideally, there would be a `reference` and potentially a `note`
   key. Example:
 

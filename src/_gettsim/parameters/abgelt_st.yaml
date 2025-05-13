@@ -10,5 +10,5 @@ satz:
   reference_period: null
   type: scalar
   2009-01-01:
-    scalar: 0.25
+    value: 0.25
     reference: Art. 1 G. v. 14.08.2007

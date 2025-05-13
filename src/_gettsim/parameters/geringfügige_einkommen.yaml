@@ -110,7 +110,7 @@ faktor_minijobformel_zähler:
   type: scalar
   # type: require_converter
   2022-10-01:
-    scalar: 130
+    value: 130
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
 faktor_minijobformel_nenner:
   name:
@@ -131,7 +131,7 @@ faktor_minijobformel_nenner:
   reference_period: null
   type: scalar
   2022-10-01:
-    scalar: 3
+    value: 3
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
 arbeitgeberpauschale_lohnsteuer:
   name:
@@ -147,13 +147,13 @@ arbeitgeberpauschale_lohnsteuer:
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:
-    scalar: 0
+    value: 0
   1999-01-01:
-    scalar: 0
+    value: 0
   2003-04-01:
-    scalar: 0.02
+    value: 0.02
   2007-01-01:
-    scalar: 0.02
+    value: 0.02
   2022-10-01:
     note: Ceased to exist
 mindestlohn:
@@ -174,26 +174,26 @@ mindestlohn:
   reference_period: Hour
   type: scalar
   2015-01-01:
-    scalar: 8.5
+    value: 8.5
   2017-01-01:
-    scalar: 8.84
+    value: 8.84
   2019-01-01:
-    scalar: 9.19
+    value: 9.19
   2020-01-01:
-    scalar: 9.35
+    value: 9.35
   2021-01-01:
-    scalar: 9.5
+    value: 9.5
   2021-07-01:
-    scalar: 9.6
+    value: 9.6
   2022-01-01:
-    scalar: 9.82
+    value: 9.82
   2022-07-01:
-    scalar: 10.45
+    value: 10.45
   2022-10-01:
-    scalar: 12
+    value: 12
   2024-01-01:
-    scalar: 12.41
+    value: 12.41
     reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 321
   2025-01-01:
-    scalar: 12.82
+    value: 12.82
     reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 321

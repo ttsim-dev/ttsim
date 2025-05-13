@@ -43,7 +43,7 @@ aufschlag_einkommen:
     reference: 09.02.2004 BGBl. I S. 209
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 3140
+    value: 3140
 satz:
   name:
     de: Erziehungsgeldsatz
@@ -82,7 +82,7 @@ abschlagsfaktor:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 207
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 0.052
+    value: 0.052
 pauschaler_abzug_vom_einkommen:
   name:
     de: Pauschaler Abzug vom Einkommen
@@ -101,7 +101,7 @@ pauschaler_abzug_vom_einkommen:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 209
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 0.76
+    value: 0.76
 maximale_wochenarbeitszeit:
   name:
     de: Wochenarbeitsstundengrenze
@@ -118,7 +118,7 @@ maximale_wochenarbeitszeit:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 211
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 30
+    value: 30
 maximales_kindsalter_regelsatz:
   name:
     de: Alter des Kindes in Monaten bis zu dem der Regelsatz bezogen werden kann.
@@ -133,7 +133,7 @@ maximales_kindsalter_regelsatz:
   type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
-    scalar: 24
+    value: 24
 maximales_kindsalter_budgetsatz:
   name:
     de: Alter des Kindes in Monaten bis zu dem der Budgetsatz bezogen werden kann.
@@ -148,7 +148,7 @@ maximales_kindsalter_budgetsatz:
   type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
-    scalar: 12
+    value: 12
 abolishment_cohort:
   name:
     de: Letzte Geburtskohorte, für die Erziehungsgeld ausgezahlt wird
@@ -163,4 +163,4 @@ abolishment_cohort:
   type: scalar
   2006-12-11:
     reference: Art. 3 G. v. 5.12.2006 BGBl. I S. 2748
-    scalar: 2006
+    value: 2006
