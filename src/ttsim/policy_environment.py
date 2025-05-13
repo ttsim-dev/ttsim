@@ -210,7 +210,7 @@ def set_up_policy_environment(
     date = to_datetime(date)
 
     _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
-    _orig_params_tree = orig_params_tree(root)
+    _orig_params_tree = merge_trees(left=orig_params_tree(root), right={})
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_of_clashes(
         orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
@@ -247,6 +247,19 @@ def set_up_policy_environment(
         params_tree = active_ttsim_params_tree(
             orig_params_tree=_orig_params_tree, date=date
         )
+    assert "evaluationsjahr" not in params_tree, "evaluationsjahr must not be specified"
+    params_tree["evaluationsjahr"] = ScalarTTSIMParam(
+        leaf_name="evaluationsjahr",
+        start_date=date,
+        end_date=date,
+        value=date.year,
+        name={"de": "Evaluationsjahr. Implementation wird noch verbessert."},
+        description={"de": "Der Zeitpunkt, für den die Berechnung durchgeführt wird."},
+        unit="Year",
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
     return PolicyEnvironment(
         raw_objects_tree=active_ttsim_objects_tree(
             orig_ttsim_objects_tree=_orig_ttsim_objects_tree, date=date
