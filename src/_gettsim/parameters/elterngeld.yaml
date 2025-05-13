@@ -248,7 +248,7 @@ max_zu_versteuerndes_einkommen_vorjahr_pauschal:
       Maximum taxable income in the year before the birth of the child. Income above
       this threshold disqualifies the parent from receiving Elterngeld.
   unit: Euros
-  reference_period: null
+  reference_period: Year
   type: scalar
   2024-04-01:
     value: 200000.0

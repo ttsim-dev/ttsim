@@ -18,7 +18,7 @@ tax_schedule_standard:
   description:
     de: Für Angehörige von Familien mit niedrigem Vermögen
     en: For member of families with low wealth
-  unit: null
+  unit: Euros
   reference_period: Year
   type: piecewise_linear
   1900-01-01:
@@ -40,7 +40,7 @@ tax_schedule_reduced:
   description:
     de: Für Angehörige von Familien mit hohem Vermögen
     en: For member of families with high wealth
-  unit: null
+  unit: Euros
   reference_period: Year
   type: piecewise_linear
   1900-01-01:
