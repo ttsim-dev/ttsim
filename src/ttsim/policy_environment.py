@@ -242,7 +242,9 @@ def set_up_policy_environment(
             date, params
         )
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
-        params_tree = {}
+        params_tree = active_ttsim_params_tree(
+            orig_params_tree=_orig_params_tree, date=date
+        )
     else:
         params = {}
         params_tree = active_ttsim_params_tree(

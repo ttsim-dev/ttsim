@@ -4,28 +4,13 @@ from ttsim import policy_function
 
 
 @policy_function(start_date="2009-01-01")
-def betrag_y_sn(
-    zu_versteuerndes_einkommen_y_sn: float,
-    abgelt_st_params: dict,
-) -> float:
-    """Abgeltungssteuer on Steuernummer level.
-
-    Parameters
-    ----------
-    zu_versteuerndes_einkommen_y_sn
-        See :func:`zu_versteuerndes_einkommen_y_sn`.
-    abgelt_st_params
-        See params documentation :ref:`abgelt_st_params <abgelt_st_params>`.
-
-    Returns
-    -------
-
-    """
-    return abgelt_st_params["satz"] * zu_versteuerndes_einkommen_y_sn
+def betrag_y_sn(zu_versteuerndes_kapitaleinkommen_y_sn: float, satz: float) -> float:
+    """Abgeltungssteuer on Steuernummer level."""
+    return satz * zu_versteuerndes_kapitaleinkommen_y_sn
 
 
 @policy_function(start_date="2009-01-01")
-def zu_versteuerndes_einkommen_y_sn(
+def zu_versteuerndes_kapitaleinkommen_y_sn(
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y_sn: float,
     einkommensteuer__anzahl_personen_sn: float,
     eink_st_abzuege_params: dict,

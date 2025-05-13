@@ -15,7 +15,6 @@ INTERNAL_PARAMS_GROUPS = [
     "ges_rentenv",
     "unterhalt",
     "unterhaltsvors",
-    "abgelt_st",
     "wohngeld",
     "kinderzuschl",
     "kindergeld",
