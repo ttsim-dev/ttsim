@@ -1,4 +1,10 @@
-from ttsim import RoundingSpec, policy_function
+from typing import Any
+
+from ttsim import RoundingSpec, piecewise_polynomial, policy_function
+from ttsim.piecewise_polynomial import (
+    PiecewisePolynomialParameters,
+)
+from ttsim.ttsim_objects import params_function
 
 
 @policy_function(
@@ -120,6 +126,7 @@ def vorsorgeaufwendungen_regime_bis_2004_y_sn(
     sozialversicherung__rente__beitrag__betrag_versicherter_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
     eink_st_abzuege_params: dict,
+    parameter_altersvorsorgeaufwendungen_regime_bis_2004: dict[str, float],
 ) -> float:
     """Vorsorgeaufwendungen calculated using the pre-2005 regime.
 
@@ -153,7 +160,7 @@ def vorsorgeaufwendungen_regime_bis_2004_y_sn(
 
     item_1 = (1 / einkommensteuer__anzahl_personen_sn) * multiplikator1
 
-    höchstbetrag = eink_st_abzuege_params["vorsorgeaufwendungen_regime_bis_2004"][
+    höchstbetrag = parameter_altersvorsorgeaufwendungen_regime_bis_2004[
         "grundhöchstbetrag"
     ]
 
@@ -292,6 +299,37 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     return out
 
 
+@params_function(start_date="2005-01-01", end_date="2022-12-31")
+def rate_abzugsfähige_altersvorsorgeaufwendungen(
+    evaluationsjahr: int,
+    parameter_einführungsfaktor_altersvorsorgeaufwendungen: PiecewisePolynomialParameters,
+) -> dict[str, Any]:
+    """Calculate introductory factor for pension expense deductions which depends on the
+    current year as follows:
+
+    In the years 2005-2025 the share of deductible contributions increases by
+    2 percentage points each year from 60% in 2005 to 100% in 2025.
+
+    Reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
+
+    Parameters
+    ----------
+    date
+        The date for which the policy parameters are set up.
+    params
+        A dictionary with parameters from the policy environment.
+
+    Returns
+    -------
+    Updated dictionary.
+
+    """
+    return piecewise_polynomial(
+        x=evaluationsjahr,
+        parameters=parameter_einführungsfaktor_altersvorsorgeaufwendungen,
+    )
+
+
 @policy_function(
     start_date="2005-01-01",
     end_date="2022-12-31",
@@ -301,30 +339,16 @@ def altersvorsorge_y_sn_phase_in(
     sozialversicherung__rente__beitrag__betrag_versicherter_y_sn: float,
     beitrag_private_rentenversicherung_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    eink_st_abzuege_params: dict,
+    rate_abzugsfähige_altersvorsorgeaufwendungen: float,
+    maximalbetrag_altersvorsorgeaufwendungen: float,
 ) -> float:
     """Contributions to retirement savings deductible from taxable income.
 
     The share of deductible contributions increases each year from 60% in 2005 to 100%
     in 2025.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__rente__beitrag__betrag_versicherter_y_sn`.
-    beitrag_private_rentenversicherung_y_sn
-        See :func:`beitrag_private_rentenversicherung_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
     """
     out = (
-        eink_st_abzuege_params["einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005"]
+        rate_abzugsfähige_altersvorsorgeaufwendungen
         * (
             2 * sozialversicherung__rente__beitrag__betrag_versicherter_y_sn
             + beitrag_private_rentenversicherung_y_sn
@@ -332,8 +356,7 @@ def altersvorsorge_y_sn_phase_in(
         - sozialversicherung__rente__beitrag__betrag_versicherter_y_sn
     )
     max_value = (
-        einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["maximalbetrag_altersvorsorgeaufwendungen"]
+        einkommensteuer__anzahl_personen_sn * maximalbetrag_altersvorsorgeaufwendungen
     )
     out = min(out, max_value)
 
@@ -347,23 +370,7 @@ def altersvorsorge_y_sn_volle_anrechnung(
     einkommensteuer__anzahl_personen_sn: int,
     eink_st_abzuege_params: dict,
 ) -> float:
-    """Contributions to retirement savings deductible from taxable income.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__rente__beitrag__betrag_versicherter_y_sn`.
-    beitrag_private_rentenversicherung_y_sn
-        See :func:`beitrag_private_rentenversicherung_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
-    """
+    """Contributions to retirement savings deductible from taxable income."""
     out = (
         sozialversicherung__rente__beitrag__betrag_versicherter_y_sn
         + beitrag_private_rentenversicherung_y_sn
@@ -380,27 +387,13 @@ def altersvorsorge_y_sn_volle_anrechnung(
 def vorwegabzug_lohnsteuer_y_sn(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    eink_st_abzuege_params: dict,
+    parameter_altersvorsorgeaufwendungen_regime_bis_2004: dict[str, float],
 ) -> float:
-    """Vorwegabzug for Vorsorgeaufwendungen via Lohnsteuer.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y_sn
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
-    """
+    """Vorwegabzug for Vorsorgeaufwendungen via Lohnsteuer."""
     out = (1 / einkommensteuer__anzahl_personen_sn) * (
         einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["vorsorgeaufwendungen_regime_bis_2004"]["vorwegabzug"]
-        - eink_st_abzuege_params["vorsorgeaufwendungen_regime_bis_2004"][
+        * parameter_altersvorsorgeaufwendungen_regime_bis_2004["vorwegabzug"]
+        - parameter_altersvorsorgeaufwendungen_regime_bis_2004[
             "kürzungsanteil_abhängig_beschäftigte"
         ]
         * einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y_sn

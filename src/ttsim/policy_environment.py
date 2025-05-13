@@ -238,9 +238,6 @@ def set_up_policy_environment(
             # Align parameters for piecewise polynomial functions
             params[group] = _parse_piecewise_parameters(params_one_group)
         params = _parse_kinderzuschl_max(date, params)
-        params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
-            date, params
-        )
         params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
         params_tree = active_ttsim_params_tree(
             orig_params_tree=_orig_params_tree, date=date
@@ -650,41 +647,6 @@ def _parse_kinderzuschl_max(
             + params["kinderzuschl"]["existenzminimum"]["heizkosten"]["kinder"]
         ) / 12 - params["kindergeld"]["kindergeldsatz"][1]
 
-    return params
-
-
-def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
-    date: datetime.date, params: dict[str, Any]
-) -> dict[str, Any]:
-    """Calculate introductory factor for pension expense deductions which depends on the
-    current year as follows:
-
-    In the years 2005-2025 the share of deductible contributions increases by
-    2 percentage points each year from 60% in 2005 to 100% in 2025.
-
-    Reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
-
-    Parameters
-    ----------
-    date
-        The date for which the policy parameters are set up.
-    params
-        A dictionary with parameters from the policy environment.
-
-    Returns
-    -------
-    Updated dictionary.
-
-    """
-    jahr = date.year
-    if jahr >= 2005:
-        out = piecewise_polynomial(
-            x=jahr,
-            parameters=params["eink_st_abzuege"]["einführungsfaktor"],
-        )
-        params["eink_st_abzuege"][
-            "einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005"
-        ] = out
     return params
 
 
