@@ -9,6 +9,7 @@ parameter_beitragssatz:
     en: >-
       Statutory Contribution Rates for mandatory long-term care insurance.
   unit: Share
+  reference_period: null
   type: dict
   access_different_date: jahresanfang
   1995-01-01:
@@ -65,6 +66,7 @@ zusatz_kinderlos_mindestalter:
       Childless members of the social care insurance, who have reached the age of 23,
       have to pay a higher contribution rate since January 1, 2005.
   unit: Years
+  reference_period: null
   type: scalar
   2005-01-01:
     scalar: 23

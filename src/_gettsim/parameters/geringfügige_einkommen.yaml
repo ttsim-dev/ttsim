@@ -106,6 +106,7 @@ faktor_minijobformel_zähler:
       Factor by which the minimum wage is multiplied to calculate the threshold for
       marginal employment.
   unit: null
+  reference_period: null
   type: scalar
   # type: require_converter
   2022-10-01:
@@ -127,6 +128,7 @@ faktor_minijobformel_nenner:
       Amount by which the minimum wage is divided to obtain the marginal employment
       threshold.
   unit: null
+  reference_period: null
   type: scalar
   2022-10-01:
     scalar: 3
@@ -141,6 +143,7 @@ arbeitgeberpauschale_lohnsteuer:
       (§40a II EStG)
     en: Fixed income tax rate for marginal employment (§40a II EStG)
   unit: Share
+  reference_period: null
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:
@@ -168,8 +171,8 @@ mindestlohn:
       The minimum wage is the lowest hourly wage that an employer must pay for a
       regular, not more than 45 hours weekly work.
   unit: Euros
-  type: scalar
   reference_period: Hour
+  type: scalar
   2015-01-01:
     scalar: 8.5
   2017-01-01:

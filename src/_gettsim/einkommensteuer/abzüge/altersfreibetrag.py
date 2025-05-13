@@ -43,7 +43,7 @@ def altersfreibetrag_y_bis_2004(
     )
     if alter > altersgrenze:
         out = min(
-            eink_st_abzuege_params["altersentlastung_quote"]
+            eink_st_abzuege_params["altersentlastungsquote"]
             * (
                 einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
                 + weiteres_einkommen
@@ -120,7 +120,7 @@ def altersfreibetrag_y_ab_2005(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y,
         0.0,
     )
-    out_quote = eink_st_abzuege_params["altersentlastung_quote"][selected_bin] * (
+    out_quote = eink_st_abzuege_params["altersentlastungsquote"][selected_bin] * (
         einkommen_lohn + weiteres_einkommen
     )
 

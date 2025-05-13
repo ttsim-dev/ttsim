@@ -14,8 +14,9 @@ parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
       in § 11 SGB II, s. § 67 SGB II. Seit 01.04.2011 § 11b (2) SGB II (neugefasst durch
       B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v. 24.03.2011 BGBl. I S. 453).
     en: null
-  type: piecewise_linear
+  unit: Euros
   reference_period: Month
+  type: piecewise_linear
   2005-01-01:
     reference: Artikel 1. G. v. 24.12.2003 BGBl. I S. 2954.
     0:
@@ -108,6 +109,8 @@ parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
       24.03.2011 BGBl. I S. 453). Ersetzt Parameter in
       parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg, falls nicht vorhanden
     en: null
+  unit: Euros
+  reference_period: Month
   type: require_converter
   2005-10-01:
     reference: Artikel 1 G. v. 14.08.2005 BGBl. I S. 2407.
@@ -122,16 +125,16 @@ parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
       upper_threshold: 1500
 regelsatz_anteilsbasiert:
   name:
-    de: Regelsatz
-    en: Standard rate
+    de: Berechnungsgrundlagen für den Regelsatz
+    en: Calculation basis for the standard rate
   description:
     de: >-
-      § 20 V SGB II. Für 2005 bis 2010 siehe Bekanntmachungen zu § 20.
+      § 20 V SGB II, siehe Bekanntmachungen zu § 20.
     en: >-
-      § 20 V SGB II. Für 2005 bis 2010 see regulations for § 20.
-  unit: Euros
-  type: require_converter
+      § 20 V SGB II, see regulations for § 20.
+  unit: null
   reference_period: Month
+  type: require_converter
   2005-01-01:
     basissatz: 338
     anteil_vom_basissatz_bei_zwei_erwachsenen: 0.9
@@ -226,8 +229,8 @@ regelsatz_nach_regelbedarfsstufen:
       5: Older children
       6: Youngest children
   unit: Euros
-  type: require_converter
   reference_period: Month
+  type: require_converter
   2011-01-01:
     1: 364
     2: 328
@@ -483,8 +486,8 @@ kindersofortzuschlag:
       or social benefits (Regelbedarfsstufen 3, 4, 5, 6) receive an instant surcharge
       of 20 Euro.
   unit: Euros
-  type: scalar
   reference_period: Month
+  type: scalar
   2022-07-01:
     value: 20
   2025-01-01:
@@ -509,8 +512,8 @@ anteil_mehrbedarf_alleinerziehend:
     de: § 21 (3) Nr. 1 SGB II.
     en: null
   unit: Share
-  type: dict
   reference_period: Month
+  type: dict
   2005-01-01:
     min_1_kind: 0.12
     kind_bis_6_oder_mehrere_bis_15: 0.36
@@ -526,6 +529,7 @@ obergrenze_vermögensgrundfreibetrag:
       wurden.
     en: Differs by birth year.
   unit: Euros
+  reference_period: null
   type: dict
   2005-01-01:
     1947: 33800
@@ -556,6 +560,7 @@ vermögensgrundfreibetrag_je_lebensjahr:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.  Gestaffelt nach Geburtsjahr
     en: Differs by year of birth.
   unit: Euros
+  reference_period: null
   type: dict
   2005-01-01:
     1947: 520
@@ -585,6 +590,7 @@ schonvermögen_bürgergeld:
       the first person in a needs-based community and 15,000 Euro for each additional
       person.
   unit: Euros
+  reference_period: null
   type: dict
   2023-01-01:
     während_karenzzeit: 40000
@@ -599,6 +605,7 @@ vermögensfreibetrag_austattung:
     de: § 12 (2) Satz 1 Nr. 4 SGB II.
     en: null
   unit: Euros
+  reference_period: null
   type: scalar
   2005-01-01:
     value: 750
@@ -606,14 +613,15 @@ vermögensfreibetrag_austattung:
   2023-01-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Ceased to exist with Bürgergeld-Gesetz
-vermögensfreibetrag_kind:
+vermögensgrundfreibetrag_je_kind:
   name:
     de: Vermögensgrundfreibetrag je Kind
-    en: Allowance for furniture
+    en: Wealth exemption per child
   description:
     de: § 12 (2) Satz 1 Nr. 1 SGB II.
     en: null
   unit: Euros
+  reference_period: null
   type: scalar
   2005-01-01:
     value: 4100
@@ -635,8 +643,8 @@ abzugsfähige_pauschalen:
       § 3 Alg II-V. Seit 01.01.2008 in § 6 Alg II-V.
     en: null
   unit: Euros
-  type: dict
   reference_period: Month
+  type: dict
   2005-01-01:
     versicherung: 30
     werbung: 15.33
@@ -657,13 +665,13 @@ mietobergrenze_pro_qm:
       eligible for ALG2. This limit is not specifically laid down in the law, but is a
       rule of thumb used by the employment agencies.
   unit: Euros / Square Meter
-  type: dict
   reference_period: Month
+  type: dict
   1984-01-01:
     max: 10
 berechtigte_wohnfläche_miete:
   name:
-    de: Berechtigte Miet-Wohnfläche für ALG2-Empfänger*innen
+    de: Berechtigte Mietwohnfläche für ALG2-Empfänger*innen
     en: Living rental space eligible for ALG2-recipients
   description:
     de: >-
@@ -673,6 +681,7 @@ berechtigte_wohnfläche_miete:
       A rental apartment may be 45 square meters for a single person (+15 for each
       additional person).
   unit: Square Meters
+  reference_period: null
   type: dict
   1984-01-01:
     single: 45
@@ -689,6 +698,7 @@ berechtigte_wohnfläche_eigentum:
       After 2023, this upper limit only applies to owner-occupied homes. Condominiums
       may only be up to 130 square meters in size.
   unit: Square Meters
+  reference_period: null
   type: require_converter
   1984-01-01:
     1: 80

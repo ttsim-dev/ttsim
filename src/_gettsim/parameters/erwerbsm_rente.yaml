@@ -17,6 +17,7 @@ parameter_altersgrenze_abschlagsfrei:
       From then on gradual increase until 65.
       https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/295-erwerbsminderungsrente-und-rentenabschlaege.html
   unit: Years
+  reference_period: null
   type: scalar
   2001-01-01:
     scalar: 63
@@ -71,6 +72,7 @@ altersgrenze_langjährig_versicherte_abschlagsfrei:
       Age limit up to which one can claim public disability insurance without deductions
       under certain time conditions. These conditions are defined in § 77 4 SGB VI.
   unit: Years
+  reference_period: null
   type: scalar
   2001-01-01:
     scalar: 63
@@ -88,6 +90,7 @@ wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
       Number of waiting years in accordance with § 51 Absatz 3a SGB VI, which must be
       proven for a public disability pension at 63 without deductions.
   unit: Years
+  reference_period: null
   type: scalar
   2001-01-01:
     scalar: 35
@@ -114,6 +117,7 @@ zurechnungszeitgrenze:
       Increase from 2020 to 2027 by 1 month per year, and from 2028
       by 2 months each year until 67 is reached.
   unit: Years
+  reference_period: null
   type: scalar
   2001-01-01:
     scalar: 62.916666
@@ -227,6 +231,7 @@ min_zugangsfaktor:
       http://www.portal-sozialpolitik.de/index.php?page=rentenversicherung
     en: Deductions for early retirement are capped at 10.8%.
   unit: null
+  reference_period: null
   type: scalar
   2000-01-01:
     scalar: 0.892
@@ -247,6 +252,7 @@ rentenartfaktor:
       pension.
       https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/1051-rentenartfaktor.html
   unit: null
+  reference_period: null
   type: dict
   2001-01-01:
     teilw: 0.5
@@ -265,6 +271,7 @@ altersgrenze_grundbewertung:
       As part of the "Grundbewertung" the "belegungsfähige Gesamtzeitraum" will be
       calculated, which is the period from the age of 17 until the start of the pension.
   unit: Years
+  reference_period: null
   type: scalar
   2001-01-01:
     scalar: 16

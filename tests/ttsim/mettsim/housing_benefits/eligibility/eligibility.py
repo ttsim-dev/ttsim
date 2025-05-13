@@ -37,7 +37,7 @@ def requirement_fulfilled_fam_not_considering_children(
 ) -> bool:
     return (
         housing_benefits__income__amount_m_fam
-        < subsistence_income_level["per_spouse_m"] * number_of_adults_fam
+        < subsistence_income_level["per_spouse"] * number_of_adults_fam
     )
 
 
@@ -51,7 +51,7 @@ def requirement_fulfilled_fam_considering_children(
     subsistence_income_level: dict[str, float],
 ) -> bool:
     return housing_benefits__income__amount_m_fam < (
-        subsistence_income_level["per_individual_m"]
+        subsistence_income_level["per_individual"]
         * number_of_family_members_considered_fam
     )
 

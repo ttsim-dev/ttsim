@@ -26,6 +26,7 @@ sozialversicherungspauschale:
       Elterngeld gibt es eine ähnliche Größe.
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   1984-01-01:
     scalar: 0.1727
@@ -98,6 +99,7 @@ satz:
       Kinder im Sinne des EStG.
     en: null
   unit: Share
+  reference_period: null
   type: dict
   1998-08-01:
     allgemein: 0.6
@@ -140,6 +142,7 @@ anspruchsdauer_nach_alter:
       The length of ALG 1 eligibility depends on age and on how many months a
       person was subject to compulsory insurance
   unit: Months
+  reference_period: null
   type: piecewise_constant
   1997-03-24:
     0:
@@ -172,6 +175,7 @@ anspruchsdauer_nach_versicherungspflichtigen_monaten:
       The length of ALG 1 eligibility depends on age and on how many months a
       person was subject to compulsory insurance
   unit: Months
+  reference_period: null
   type: piecewise_constant
   1997-03-24:
     0:

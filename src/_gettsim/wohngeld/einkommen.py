@@ -407,7 +407,9 @@ def einkommen(
 
     """
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommen_freibetrag
-    unteres_eink = params["min_eink"][min(anzahl_personen, max(params["min_eink"]))]
+    unteres_eink = params["min_einkommen"][
+        min(anzahl_personen, max(params["min_einkommen"]))
+    ]
 
     out = max(eink_nach_abzug_m_hh, unteres_eink)
     return out

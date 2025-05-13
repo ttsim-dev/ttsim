@@ -10,8 +10,8 @@ parameter_kinderfreibetrag:
       veranlagte Paare. §32 (6) EStG.
     en: null
   unit: Euros
-  type: require_converter
   reference_period: Year
+  type: require_converter
   1983-01-01:
     sächliches_existenzminimum: 110
     reference: Art. 1 G. v. 23.12.1982 BGBl. I S. 1857.
@@ -117,8 +117,8 @@ vorsorgeaufwendungen_regime_bis_2004:
       gekürzt bei abhängig Beschäftigten (vereinfacht).
     en: null
   unit: Euros
-  type: require_converter
   reference_period: Year
+  type: require_converter
   1985-01-01:
     vorwegabzug: 1534
     grundhöchstbetrag: 1196
@@ -178,8 +178,8 @@ werbungskostenpauschale:
     de: § 9a Nr. 1a) EStG
     en: This is the minimum amount deducted from any employment income.
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   1975-01-01:
     value: 288
     note: 564 DM
@@ -206,8 +206,8 @@ sonderausgabenpauschbetrag:
     de: § 10c EStG
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   1984-01-01:
     single: 138
   1988-01-01:
@@ -227,8 +227,8 @@ sparerfreibetrag:
       gemeinsam veranlagte Paare.
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   1975-01-01:
     value: 153
     note: 300 DM.
@@ -260,8 +260,8 @@ sparer_werbungskostenpauschbetrag:
     de: § 9a EStG
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   1975-01-01:
     value: 51
     note: 100 DM.
@@ -279,8 +279,8 @@ sparerpauschbetrag:
       gemeinsam veranlagte Paare.
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   2009-01-01:
     value: 801
     reference: Art. 1 G. v. 14.08.2007 BGBl. I S. 1912
@@ -305,8 +305,8 @@ maximaler_altersentlastungsbetrag:
       amount is deducted. Since 2005, this amount additionally depends on the birth
       year.
   unit: Euros
-  type: require_converter
   reference_period: Year
+  type: require_converter
   1984-01-01:
     value: 1534
   1989-01-01:
@@ -351,7 +351,7 @@ maximaler_altersentlastungsbetrag:
     1973: 76
     1974: 38
     1975: 0
-altersentlastung_quote:
+altersentlastungsquote:
   name:
     de: Anteil des Altersentlastungsbetrags
     en: Income share deducted for older employees.
@@ -365,6 +365,7 @@ altersentlastung_quote:
       If someone receives employment income above the age of 64, this share of income is
       deducted. Since 2005, this share additionally depends on the birth year.
   unit: Share
+  reference_period: null
   type: require_converter
   1984-01-01:
     value: 0.4
@@ -421,6 +422,7 @@ altersentlastungsbetrag_altersgrenze:
       The old-age relief amount is granted to a taxpayer who, before the start of the
       calendar year in which he received his income, had reached the age of 64.
   unit: Years
+  reference_period: null
   type: require_converter
   1984-01-01:
     value: 64
@@ -443,6 +445,7 @@ einführungsfaktor:
       100% are reached in 2025. Deviating from this plan, the deductible contributions
       were set to 100% already in 2023.
   unit: null
+  reference_period: null
   # type: require_converter
   type: piecewise_linear
   2005-01-01:
@@ -481,8 +484,8 @@ alleinerziehendenfreibetrag:
     de: § 24b (1) EStG. vor 2004 "Haushaltsfreibetrag", § 32 (7) EStG
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   1984-01-01:
     value: 2154
   1986-01-01:
@@ -514,8 +517,8 @@ alleinerziehendenfreibetrag_zusatz:
       dem 2. Kind.
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   2015-01-01:
     value: 240
     reference: Art. 1 G. vs. 16.07.2015 BGBl. I S.1202
@@ -529,8 +532,8 @@ maximalbetrag_sonstige_vorsorgeaufwendungen:
     de: §10 Abs. 4 S.1 EStG
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   2005-01-01:
     value: 1500
     reference: Art. 1 G. v. 05.07.2004 BGBl. I S.1427
@@ -545,8 +548,8 @@ maximalbetrag_altersvorsorgeaufwendungen:
     de: §10 (3) EStG, Anlage 2 SGB VI
     en: null
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   2005-01-01:
     value: 20000
     note: Art. 1 G. v. 05.07.2004 BGBl. I S.1427
@@ -589,6 +592,7 @@ minderungsanteil_vorsorgeaufwendungen_für_krankenversicherungsbeiträge:
     de: §10 (3) a) S.4 EStG
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   2009-07-23:
     value: 0.04
@@ -601,8 +605,8 @@ behindertenpauschbetrag:
     de: § 33b (3) EStG.
     en: null
   unit: Euros
-  type: dict
   reference_period: Year
+  type: dict
   1975-01-01:
     reference: G. v. 05.08.1974 BGBl. I S. 1769.
     0: 0
@@ -650,6 +654,7 @@ anteil_absetzbare_kinderbetreuungskosten:
     de: §10 (1) Nr. 5 EStG
     en: null
   unit: Share
+  reference_period: null
   type: scalar
   2012-01-01:
     value: 0.6666666
@@ -685,6 +690,7 @@ anteil_absetzbare_rentenversicherungskosten:
       rises between 2005 and 2025 by 4 percentage points annually. In 2023, it was
       prematurely set to 100 percent.
   unit: Share
+  reference_period: null
   # type: require_converter
   type: piecewise_linear
   2005-01-01:
@@ -734,6 +740,7 @@ vorsorgepauschale_mindestanteil:
       Minimum share of minimum contributions to health care and care insurance deducted
       from Mindestvorsorgepauschale
   unit: Share
+  reference_period: null
   type: scalar
   2009-07-23:
     value: 0.12

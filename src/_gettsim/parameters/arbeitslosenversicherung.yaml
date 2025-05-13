@@ -11,6 +11,7 @@ parameter_beitragssatz:
       Contribution rate to unemployment insurance, identical for employees and
       employers.
   unit: Share
+  reference_period: null
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:
