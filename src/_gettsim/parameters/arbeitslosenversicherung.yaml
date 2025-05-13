@@ -1,11 +1,15 @@
 ---
 parameter_beitragssatz:
   name:
-    de: Arbeitnehmerbeitragssatz zur Arbeitslosenversicherung
-    en: Employees' contribution rate to unemployment insurance.
+    de: Beitragssatz zur Arbeitslosenversicherung
+    en: Unemployment insurance contribution rate.
   description:
-    de: Arbeitnehmerbeitragssatz zur Arbeitslosenversicherung
-    en: Employees' contribution rate to unemployment insurance.
+    de: >-
+      Beitragssatz zur Arbeitslosenversicherung, identisch für Arbeitnehmer und
+      Arbeitgeber.
+    en: >-
+      Contribution rate to unemployment insurance, identical for employees and
+      employers.
   unit: Share
   type: scalar
   access_different_date: jahresanfang
@@ -40,12 +44,12 @@ parameter_beitragssatz:
   2019-01-01:
     scalar: 0.0125
     note: >-
-      Set to 0.026 in Art. 2 Nr. 15 G. v. 18.12.2018 BGBl. I S. 2651. Temporarily
-      reduced to 0.025 in BeiSaV 2019.
+      Set to 0.013 in Art. 2 Nr. 15 G. v. 18.12.2018 BGBl. I S. 2651. Temporarily
+      reduced to 0.0125 in BeiSaV 2019.
     reference: V. v. 21.12.2018 BGBl. I S. 2663
   2020-01-01:
     scalar: 0.012
-    note: Temporarily reduced to 0.024 in BeiSaV 2019.
+    note: Temporarily reduced to 0.012 in BeiSaV 2019.
     reference: V. v. 02.12.2019 BGBl. I S. 1998
   2023-01-01:
     scalar: 0.013

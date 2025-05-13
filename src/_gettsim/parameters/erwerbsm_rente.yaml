@@ -63,14 +63,13 @@ altersgrenze_langjährig_versicherte_abschlagsfrei:
   description:
     de: >-
       § 77 Abs. 4 SGB VI
-      Altersgrenze bis zu der man die Erwerbsminderungsrente ohne Abzüge in
-      Anspruch nehmen kann wenn man bestimmte zeitliche Bedingungen
-      erfüllt. Bedingungen werden in § 77 Abs. 4 SGB VI definiert.
+      Altersgrenze bis zu der man die Erwerbsminderungsrente ohne Abzüge in Anspruch
+      nehmen kann, wenn man bestimmte zeitliche Bedingungen erfüllt. Bedingungen werden
+      in § 77 Abs. 4 SGB VI definiert.
     en: >-
       § 77 Abs. 4 SGB VI
-      Age limit up to which one can claim the public disability insurance
-      without deductions under certain time conditions.
-      These conditions are defined in § 77 4 SGB VI.
+      Age limit up to which one can claim public disability insurance without deductions
+      under certain time conditions. These conditions are defined in § 77 4 SGB VI.
   unit: Years
   type: scalar
   2001-01-01:
@@ -86,8 +85,8 @@ wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
       Erwerbsminderungsrente mit 63 nachgewiesen werden müssen.
     en: >-
       § 264d SGB VI
-      Number of waiting time years in accordance with § 51 Absatz 3a SGB VI,
-      which must be proven for a public disability pension at 63 without deductions.
+      Number of waiting years in accordance with § 51 Absatz 3a SGB VI, which must be
+      proven for a public disability pension at 63 without deductions.
   unit: Years
   type: scalar
   2001-01-01:
@@ -96,7 +95,7 @@ wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
     scalar: 40
 zurechnungszeitgrenze:
   name:
-    de: zurechnungszeitgrenze
+    de: Zurechnungszeitgrenze
     en: Supplementary time limit
   description:
     de: >-
@@ -255,7 +254,7 @@ rentenartfaktor:
 altersgrenze_grundbewertung:
   name:
     de: Altersgrenze des belegungsfähigen Gesamtzeitraum
-    en: Age limit of belegungsfähigen Gesamtzeitraum
+    en: Age limit of belegungsfähiger Gesamtzeitraum
   description:
     de: >-
       SGB VI § 72

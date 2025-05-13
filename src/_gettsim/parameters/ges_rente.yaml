@@ -1,8 +1,8 @@
 ---
 alpha:
   name:
-    de: alpha
-    en: alpha
+    de: Parameter alpha der Rentenanpassungsformel
+    en: Parameter alpha of the pension adjustment formula
   description:
     de: >-
       §68 Abs. 4 S. 6 SGB VI
@@ -11,12 +11,10 @@ alpha:
     en: >-
       §68 Abs. 4 S. 6 SGB VI
       Part of the sustainability factor in the pension adjustment formula which modifies
-      the ratio of pentioners to contributors
+      the ratio of pensioners to contributors
   unit: null
   reference_period: null
   type: scalar
-  1984-01-01:
-    value: 0.0
   2002-01-01:
     value: 0.25
 altersvorsogeanteil:
@@ -25,12 +23,10 @@ altersvorsogeanteil:
     en: Personal pension share
   description:
     de: §68 Abs. 5 SGB VI (Teil des Riesterfaktors in der Rentenanpassungsformel)
-    en: §68 Abs. 5 SGB VI (Part of the Riesterfaktor in the pension adjustment formular)
+    en: §68 Abs. 5 SGB VI (Part of the Riesterfaktor in the pension adjustment formula)
   unit: null
   reference_period: null
   type: scalar
-  1993-01-01:
-    value: 0.0
   2002-01-01:
     value: 0.5
   2003-01-01:
@@ -120,70 +116,6 @@ beitragsvolumen:
     value: 236404000
   2019-01-01:
     value: 247949000
-eckrente:
-  name:
-    de: Regelaltersrente/ Standardrente
-    en: Standard pension
-  description:
-    de: >-
-      § 154 Abs. 3 Satz 1 Nr. 2 SGB VI
-      Höhe einer abschlagsfreien Rente bei 45 Entgeltpunkten. Ergibt sich aus
-      Multiplikation des Rentenwerts mit 45. statistik-rente.de/drv
-    en: >-
-      § 154 Abs. 3 Satz 1 Nr. 2 SGB VI
-      Amount of a pension without discounts when reaching 45 Entgeltpunkte, which is
-      calculated by multiplying 45 with the Rentenwert.
-  unit: Euros
-  reference_period: Year
-  type: scalar
-  1995-01-01:
-    value: 988.15
-  1996-01-01:
-    value: 992.72
-  1997-01-01:
-    value: 1009.1
-  1998-01-01:
-    value: 1012.47
-  1999-01-01:
-    value: 1026.62
-  2000-01-01:
-    value: 1032.79
-  2001-01-01:
-    value: 1051.99
-  2002-01-01:
-    value: 1072.35
-  2003-01-01:
-    value: 1081.79
-  2004-01-01:
-    value: 1071.79
-  2005-01-01:
-    value: 1063.41
-  2006-01-01:
-    value: 1066.35
-  2007-01-01:
-    value: 1067.8
-  2008-01-01:
-    value: 1077.02
-  2009-01-01:
-    value: 1100.84
-  2010-01-01:
-    value: 1102.67
-  2011-01-01:
-    value: 1109.91
-  2012-01-01:
-    value: 1134.15
-  2013-01-01:
-    value: 1135.71
-  2014-01-01:
-    value: 1154.68
-  2015-01-01:
-    value: 1174.96
-  2016-01-01:
-    value: 1222.09
-  2017-01-01:
-    value: 1242.58
-  2018-01-01:
-    value: 1284.06
 durchschnittslohn:
   name:
     de: Durchschnittslohn
@@ -790,7 +722,7 @@ zugangsfaktor_veränderung_pro_jahr:
     en: >-
       §77 Abs. 2 Nr. 2 SGB VI
       Factor with which the Zugangsfaktor / "access factor" for receiving the statutory
-      pension is increased/ decreased for each month of less / more work
+      pension is increased/decreased for each month of less/more work
   unit: null
   reference_period: Year
   type: scalar
@@ -2038,7 +1970,7 @@ altersgrenze_langjährig_versicherte_vorzeitig:
     value: 63.0
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
-    note: Early retirement age descreased from 63 to 62 starting from birth cohort 1944.
+    note: Early retirement age decreased from 63 to 62 starting from birth cohort 1944.
     entry_age_old_regime: 63.0
     entry_age_new_regime: 62.0
     max_birthyear_old_regime: 1943
@@ -2462,8 +2394,7 @@ wartezeitgrenzen:
     de: >-
       Zeitgrenzen, die für Erfüllung einer Wartezeit  notwendig sind (in Jahren).
     en: >-
-      Time thresholds for accomplishing waiting times
-      (in years).
+      Time thresholds for accomplishing waiting times (in years).
   unit: Years
   reference_period: null
   type: dict
@@ -2476,7 +2407,7 @@ wartezeitgrenzen:
     wartezeit_15: 15
     wartezeit_35: 35
     wartezeit_45: 45
-mindestpflichtbeitragsjahre_für_anrechnbarkeit_freiwilliger_beiträge:
+mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge:
   name:
     de: >-
       Anzahl der Mindestpflichtbeitragsjahre, von der an freiwillige Beiträge
@@ -2485,12 +2416,9 @@ mindestpflichtbeitragsjahre_für_anrechnbarkeit_freiwilliger_beiträge:
       Minimum statutory contribution years for the inclusion of voluntary contributions
   description:
     de: >-
-      Anzahl der Mindestpflichtbeitragsjahre, von der an freiwillige Beiträge
-      angerechnet werden.
       § 51 Abs. 3a SGB VI
       https://www.gesetze-im-internet.de/sgb_6/__51.html
     en: >-
-      Minimum statutory contribution years for the inclusion of voluntary contributions
       § 51 Abs. 3a SGB VI
       https://www.gesetze-im-internet.de/sgb_6/__51.html
   unit: Years
@@ -2506,16 +2434,16 @@ abzugsrate_hinzuverdienst:
     de: >-
       Abzugsrate für Hinzuverdienst vor der Regelaltersgrenze
       § 34 SGB VI; Artikel 1 G. v. 08.12.2016 BGBl. I S. 2838
-      Revoked in 2017.
     en: >-
       Deduction rate for additional earnings during early retirement
       § 34 SGB VI; Artikel 1 G. v. 08.12.2016 BGBl. I S. 2838
-      Revoked in 2017.
   unit: Years
   reference_period: null
   type: scalar
   2017-07-01:
     value: 0.4
+  2023-01-01:
+    note: Revoked in 2023.
 hinzuverdienstgrenze:
   name:
     de: Hinzuverdienstgrenze vor der Regelaltersgrenze
@@ -2525,9 +2453,11 @@ hinzuverdienstgrenze:
       § 34 SGB VI, Hinzuverdienstgrenze vor der Regelaltersgrenze
     en: >-
       § 34 SGB VI, additional earnings threshold during early retirement
-  unit: Years
-  reference_period: null
+  unit: Euros
+  reference_period: Year
   type: dict
+  # Values need to be fixed
+  # https://github.com/iza-institute-of-labor-economics/gettsim/issues/808
   2002-01-01:
     value: 350.0
   2008-01-01:

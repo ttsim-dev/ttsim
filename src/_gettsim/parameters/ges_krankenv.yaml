@@ -65,15 +65,15 @@ parameter_beitragssatz:
     deviation_from: previous
     mean_allgemein: 0.139
   2008-01-01:
+    deviation_from: previous
     mean_allgemein: 0.14
-    sonderbeitrag: 0.009
   2009-01-01:
     allgemein: 0.146
     sonderbeitrag: 0.009
     ermäßigt: 0.140
   2009-07-01:
+    deviation_from: previous
     allgemein: 0.14
-    sonderbeitrag: 0.009
     ermäßigt: 0.134
   2011-01-01:
     deviation_from: previous
@@ -96,7 +96,7 @@ parameter_beitragssatz:
     allgemein: 0.146
     ermäßigt: 0.14
     mean_zusatzbeitrag: 0.009
-    note: Wieder-Einführung der Parität. Art. 2 G. v. 11.12.2018, BGBl. I S. 2387
+    note: Wiedereinführung der Parität. Art. 2 G. v. 11.12.2018, BGBl. I S. 2387
   2020-01-01:
     deviation_from: previous
     mean_zusatzbeitrag: 0.011
@@ -198,18 +198,15 @@ parameter_beitragsbemessungsgrenze:
     value: 3937.5
   2014-01-01:
     value: 4050
-    note: >-
-      http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
+    note: http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
   2015-01-01:
     value: 4125
   2016-01-01:
     value: 4237.5
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
+    note: https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
   2017-01-01:
     value: 4350
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
+    note: https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
   2018-01-01:
     value: 4425
   2019-01-01:
@@ -266,7 +263,6 @@ bezugsgröße_selbstständige_m:
   reference_period: Month
   1984-01-01:
     west: 1396
-    mindestanteil: 0.33333333
   1985-01-01:
     west: 1432
   1986-01-01:
@@ -347,21 +343,18 @@ bezugsgröße_selbstständige_m:
     west: 2695
     ost: 2275
   2014-01-01:
-    note: >-
-      http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
+    note: http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
     west: 2765
     ost: 2345
   2015-01-01:
     west: 2835
     ost: 2415
   2016-01-01:
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
+    note: https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
     west: 2905
     ost: 2520
   2017-01-01:
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
+    note: https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
     west: 2975
     ost: 2660
   2018-01-01:

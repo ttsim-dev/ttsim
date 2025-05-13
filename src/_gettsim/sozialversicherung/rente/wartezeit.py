@@ -157,7 +157,7 @@ def wartezeit_45_jahre_erfüllt(
     if (
         pflichtbeitragsmonate / 12
         >= ges_rente_params[
-            "mindestpflichtbeitragsjahre_für_anrechnbarkeit_freiwilliger_beiträge"
+            "mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge"
         ]
     ):
         freiwillige_beitragszeiten = freiwillige_beitragsmonate

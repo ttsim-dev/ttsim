@@ -14,23 +14,18 @@ grenzen_m:
     minijob:
       west: 199
   1985-01-01:
-    deviation_from: previous
     minijob:
       west: 205
   1986-01-01:
-    deviation_from: previous
     minijob:
       west: 210
   1987-01-01:
-    deviation_from: previous
     minijob:
       west: 220
   1988-01-01:
-    deviation_from: previous
     minijob:
       west: 225
   1989-01-01:
-    deviation_from: previous
     minijob:
       west: 230
   1990-01-01:
@@ -76,7 +71,6 @@ grenzen_m:
   2000-01-01:
     minijob: 322
   2002-01-01:
-    deviation_from: previous
     minijob: 325
   2003-04-01:
     minijob: 400
@@ -89,7 +83,6 @@ grenzen_m:
     reference: Art. 4 G. v. 28.11.2018 BGBl. I S. 2016
     midijob: 1300
   2022-10-01:
-    minijob: null
     midijob: 1600
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
     note: minijob thresholds now calculated based on statutory minimum wage
