@@ -597,7 +597,7 @@ def create_agg_by_group_functions(
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(
     functions: QualNameTTSIMFunctionDict,
-    group_pattern: re.Pattern,
+    group_pattern: re.Pattern[str],
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.
 

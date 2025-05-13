@@ -11,6 +11,7 @@ from ttsim import (
     policy_function,
     policy_input,
 )
+from ttsim.ttsim_objects import ParamsFunction, params_function
 
 # ======================================================================================
 # PolicyFunction and policy_function
@@ -23,7 +24,7 @@ def simple_policy_function(x):
 
 
 @policy_function(leaf_name="simple_policy_function")
-def policy_function_with_internal_name(x):
+def policy_function_with_different_leaf_name(x):
     return x
 
 
@@ -36,7 +37,7 @@ def policy_function_with_dates(x):
     "function",
     [
         simple_policy_function,
-        policy_function_with_internal_name,
+        policy_function_with_different_leaf_name,
     ],
 )
 def test_policy_function_type(function):
@@ -47,7 +48,7 @@ def test_policy_function_type(function):
     "function",
     [
         simple_policy_function,
-        policy_function_with_internal_name,
+        policy_function_with_different_leaf_name,
     ],
 )
 def test_policy_function_name(function):
@@ -57,6 +58,53 @@ def test_policy_function_name(function):
 def test_policy_function_with_dates():
     assert str(policy_function_with_dates.start_date) == "2007-01-01"
     assert str(policy_function_with_dates.end_date) == "2011-12-31"
+
+
+# ======================================================================================
+# ParamsFunction and params_function
+# ======================================================================================
+
+
+@params_function()
+def simple_params_function(x):
+    return x
+
+
+@params_function(leaf_name="simple_params_function")
+def params_function_with_different_leaf_name(x):
+    return x
+
+
+@params_function(start_date="2007-01-01", end_date="2011-12-31")
+def params_function_with_dates(x):
+    return x
+
+
+@pytest.mark.parametrize(
+    "function",
+    [
+        simple_params_function,
+        params_function_with_different_leaf_name,
+    ],
+)
+def test_params_function_type(function):
+    assert isinstance(function, ParamsFunction)
+
+
+@pytest.mark.parametrize(
+    "function",
+    [
+        simple_params_function,
+        params_function_with_different_leaf_name,
+    ],
+)
+def test_params_function_name(function):
+    assert function.leaf_name == "simple_params_function"
+
+
+def test_params_function_with_dates():
+    assert str(params_function_with_dates.start_date) == "2007-01-01"
+    assert str(params_function_with_dates.end_date) == "2011-12-31"
 
 
 # ======================================================================================

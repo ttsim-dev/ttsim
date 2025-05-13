@@ -100,7 +100,7 @@ def ausgaben_für_betreuung_y(
     """
     out = min(
         betreuungskosten_elternteil_y,
-        eink_st_abzuege_params["kinderbetreuungskosten_abz_maximum"],
+        eink_st_abzuege_params["maximal_absetzbare_kinderbetreuungskosten"],
     )
     return out
 
@@ -129,7 +129,7 @@ def absetzbare_betreuungskosten_y_sn(
 
     out = (
         ausgaben_für_betreuung_y_sn
-        * eink_st_abzuege_params["kinderbetreuungskosten_abz_anteil"]
+        * eink_st_abzuege_params["anteil_absetzbare_kinderbetreuungskosten"]
     )
 
     return out

@@ -10,8 +10,9 @@ mindestunterhalt:
     en: >-
       Minimum Child Alimony depending on age of child (0 - 5 years, 6 - 11 years, 12 -
       17 years).
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: require_converter
   2016-01-01:
     1:
       min_alter: 0
@@ -117,6 +118,8 @@ abzugsrate_kindergeld:
       for child alimony payments can deduct half of the child benefit when calculating
       alimony.
   unit: Share
+  reference_period: null
+  type: dict
   2008-01-01:
     kind: 0.5
     erwachsener: 1

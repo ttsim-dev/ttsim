@@ -23,7 +23,7 @@ def betrag_y(kindergeld__betrag_y: float, kindergeld_params: dict) -> float:
     # Kinderbonus parameter is specified on the yearly level
     # kindergeld__betrag_y is zero for all adults
     if kindergeld__betrag_y > 0:
-        out = kindergeld_params["kinderbonus"]
+        out = kindergeld_params["kinderbonus_pro_kind"]
     else:
         out = 0.0
 

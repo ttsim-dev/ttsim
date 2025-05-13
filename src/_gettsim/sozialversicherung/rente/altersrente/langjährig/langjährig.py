@@ -33,7 +33,7 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     Full retirement age for long term insured.
 
     """
-    return ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"]
+    return ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"]
 
 
 @policy_function(
@@ -74,24 +74,24 @@ def altersgrenze_mit_staffelung_nach_geburtsmonat(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        <= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_old_regime"
         ]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        >= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "min_birthyear_new_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             geburtsjahr
         ][geburtsmonat]
 
@@ -133,24 +133,24 @@ def altersgrenze_mit_staffelung_nach_geburtsjahr(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        <= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_old_regime"
         ]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        >= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "min_birthyear_new_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             geburtsjahr
         ][geburtsmonat]
 
@@ -182,7 +182,7 @@ def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
 
     """
 
-    return ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"]
+    return ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"]
 
 
 @policy_function(
@@ -215,15 +215,15 @@ def altersgrenze_vorzeitig_mit_staffelung(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"][
+        <= ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
             "entry_age_old_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
             "entry_age_new_regime"
         ]
 
@@ -253,7 +253,7 @@ def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(ges_rente_params: dict) -> 
     -------
     Early retirement age
     """
-    return ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"]
+    return ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"]
 
 
 @policy_function()

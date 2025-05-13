@@ -1,26 +1,31 @@
 ---
-faktor:
+satz:
   name:
-    de: Faktor bei der ElG-Berechung, 2. Stufe
-    en: Replacement Rate of Parental Benefit, second bracket.
+    de: Ersatzrate des Elterngelds
+    en: Replacement rate of Elterngeld
   description:
-    de: § 2 (1) BEEG
+    de: >-
+      § 2 (1) BEEG
+      Faktor bei der ElG-Berechung, 2. Stufe.
     en: null
   unit: Share
+  reference_period: null
+  type: scalar
   2007-01-01:
-    scalar: 0.67
+    value: 0.67
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 höchstbetrag:
   name:
     de: Höchstbetrag des Elterngeldes
-    en: Maximum Parental Benefit
+    en: Maximum Elterngeld
   description:
     de: § 2 (1) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: scalar
   2007-01-01:
-    scalar: 1800.0
+    value: 1800.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 max_zu_berücksichtigendes_einkommen:
   name:
@@ -29,15 +34,16 @@ max_zu_berücksichtigendes_einkommen:
   description:
     de: § 2 (3) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: scalar
   2007-01-01:
-    scalar: 2700.0
+    value: 2700.0
     reference: BGBl. I S. 2748 Art. 1 G. v. 05.12.2006
   2012-09-18:
-    scalar: 2770.0
+    value: 2770.0
     reference: Artikel 1 G. v. 10.09.2012 BGBl. I S. 1878
-nettoeinkommen_stufen:
+nettoeinkommensstufen:
   name:
     de: Nettoeinkommen an 1. und 2. Stufe
     en: Net income where the first and second bracket starts
@@ -46,8 +52,9 @@ nettoeinkommen_stufen:
       § 2 (2) BEEG. Maßgeblich ist das durchschnittlich erzielte monatliche Einkommen
       vor der Geburt
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: dict
   2007-01-01:
     lower_threshold: 1000.0
     upper_threshold: 1001.0
@@ -63,10 +70,11 @@ mindestbetrag:
   description:
     de: § 2 (5) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: scalar
   2007-01-01:
-    scalar: 300
+    value: 300
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 prozent_korrektur:
   name:
@@ -76,8 +84,10 @@ prozent_korrektur:
     de: § 2 (2) BEEG
     en: null
   unit: Share
+  reference_period: null
+  type: scalar
   2007-01-01:
-    scalar: 0.001
+    value: 0.001
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 prozent_minimum:
   name:
@@ -87,23 +97,26 @@ prozent_minimum:
     de: § 2 (2) BEEG
     en: null
   unit: Share
+  reference_period: null
+  type: scalar
   2007-01-01:
-    scalar: 0.67
-    note: implizit, exisitiert vorher nicht
+    value: 0.67
+    note: implizit
   2011-01-01:
-    scalar: 0.65
+    value: 0.65
     reference: Art. 14 G. v. 09.12.2010 BGBl. I S. 1885
-eink_schritt_korrektur:
+einkommensschritte_korrektur:
   name:
     de: Einkommensschritte für die Korrektur
     en: Income steps for percentage correction
   description:
     de: § 2 (2) BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: scalar
   2007-01-01:
-    scalar: 2
+    value: 2
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 geschwisterbonus_altersgrenzen:
   name:
@@ -112,12 +125,17 @@ geschwisterbonus_altersgrenzen:
   description:
     de: >-
       § 2a BEEG
+      § 2a BEEG
       Leben im Haushalt zwei Kinder unter 3 Jahren oder mehr als zwei unter 6 Jahren
-      wird das Elterngeld um 10% (max. um 75€) erhöht.
+      wird das Elterngeld erhöht.
     en: >-
       § 2a BEEG
+      § 2a BEEG
       If there are two children under the age of 3 or more than two under the age of 6
-      living in the household, Parental allowance is increased by 10% (max. by €75).
+      living in the household, Elterngeld increases.
+  unit: Years
+  reference_period: null
+  type: dict
   2007-01-01:
     3: 2
     6: 3
@@ -129,8 +147,10 @@ geschwisterbonus_aufschlag:
     de: § 2a (1) BEEG. Früher § 2 (4) BEEG
     en: null
   unit: Share
+  reference_period: null
+  type: scalar
   2007-01-01:
-    scalar: 0.1
+    value: 0.1
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
 geschwisterbonus_minimum:
   name:
@@ -139,24 +159,26 @@ geschwisterbonus_minimum:
   description:
     de: § 2a (1) BEEG. Früher §2 (4)  BEEG
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: scalar
   2007-01-01:
-    scalar: 75.0
+    value: 75.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
-mehrlingbonus:
+mehrlingsbonus:
   name:
     de: Pauschale für jedes weitere Mehrlingskind
     en: Twin, triplet bonus per additional child
   description:
     de: § 2a (4) BEEG, früher §2 (6) BEEG.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: scalar
   2007-01-01:
-    scalar: 300.0
+    value: 300.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
-sozialv_pausch:
+sozialversicherungspauschale:
   name:
     de: Sozialversicherungspauschale zur Berechnung des Nettoeinkommens
     en: null
@@ -164,34 +186,30 @@ sozialv_pausch:
     de: §2f BEEG. Vor 2012 waren es die eigentlichen Pflichtbeiträge.
     en: null
   unit: Share
+  reference_period: null
+  type: scalar
   2012-09-18:
-    scalar: 0.21
+    value: 0.21
     reference: Art. 1 G. v. 10.09.2012 BGBl. I S. 1878
     note: 0.09 + 0.1 + 0.02
-max_monate_mit_partnermonate:
+max_bezugsmonate:
   name:
-    de: Maximale Anzahl an Monaten, inklusiver Partnermonate.
-    en: Maximum number of months, including "Partnermonate".
+    de: Maximale Anzahl an Elterngeldbezugsmonaten.
+    en: Maximum number of months of Elterngeld receipt.
   description:
     de: >-
       § 4 (3) BEEG
+      § 4 (3) BEEG
       Basismonate plus "Partnermonate" bei gleichzeitiger Inanspruchnahme von Elterngeld
       bei Paaren. Basismonate bei Alleinerziehenden.
+  unit: Months
+  reference_period: null
+  type: dict
   2007-01-01:
-    scalar: 14
+    basismonate: 12
+    partnermonate: 2
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
-max_monate_ohne_partnermonate:
-  name:
-    de: >-
-      Maximale Anzahl an Monaten bei Paaren, die nicht gleichzeitig Elterngeld beziehen.
-    en: Maximum number of months for couples not receiving Elterngeld simultaneously.
-  description:
-    de: § 4 (3) BEEG, Basismonate ohne Partnermonate.
-    en: null
-  2007-01-01:
-    scalar: 12
-    reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
-max_eink_vorj:
+max_zu_versteuerndes_einkommen_vorjahr_nach_alleinerziehendenstatus:
   name:
     de: Maximales zu versteuerndes Einkommen im Jahr vor der Geburt des Kindes.
     en: Maximum taxable income in the year before the birth of the child.
@@ -203,22 +221,42 @@ max_eink_vorj:
     en: >-
       Maximum taxable income in the year before the birth of the child. Income above
       this threshold disqualifies the parent from receiving Elterngeld.
-  unit: Euro
+  unit: Euros
+  reference_period: null
+  type: dict
   2011-01-01:
-    single: 250000.0
+    alleinerziehend: 250000.0
     paar: 500000.0
     reference: Art. 14 G. v. 09.12.2010 BGBl. I S. 1885
   2021-09-01:
     deviation_from: previous
     paar: 300000.0
     reference: Art. 1 G. v. 15.02.2021 BGBl. I S. 239
+  # FixMe: Comment in after moving to new infrastructure
+  # 2024-04-01:
+  #   note: Pauschalisiert, siehe 'max_zu_versteuerndes_einkommen_vorjahr_pauschal'
+max_zu_versteuerndes_einkommen_vorjahr_pauschal:
+  name:
+    de: Maximales zu versteuerndes Einkommen im Jahr vor der Geburt des Kindes.
+    en: Maximum taxable income in the year before the birth of the child.
+  description:
+    de: >-
+      Maximales zu versteuerndes Einkommen im letzten Veranlagungszeitraum vor Geburt
+      des Kindes. Einkommen über dieser Grenze schließt den Bezug von Elterngeld aus (§
+      1 (8) BEEG).
+    en: >-
+      Maximum taxable income in the year before the birth of the child. Income above
+      this threshold disqualifies the parent from receiving Elterngeld.
+  unit: Euros
+  reference_period: Year
+  type: scalar
   2024-04-01:
-    scalar: 200000.0
+    value: 200000.0
     reference: >-
       Single: Art. 7 G. v. 27.03.2024 BGBl. 2024 I Nr. 107, Paar: Art. 1 G. v.
       22.12.2023 BGBl. 2023 I Nr. 412
   2025-04-01:
-    scalar: 175000.0
+    value: 175000.0
     reference: >-
       Single: Art. 7 G. v. 27.03.2024 BGBl. 2024 I Nr. 107, Paar: Art. 1 G. v.
       22.12.2023 BGBl. 2023 I Nr. 412
@@ -227,13 +265,16 @@ max_arbeitsstunden_w:
     de: >-
       Maximale Wochenstunden die bei Elterngeldbezug gearbeitet werden dürfen
     en: >-
-      Maximum amount of weekly hours one is allowed to work, when receiving Elterngeld
+      Maximum amount of weekly hours one is allowed to work while receiving Elterngeld
   description:
     de: §1 (6) BEEG
     en: null
+  unit: Hours
+  reference_period: Week
+  type: scalar
   2007-01-01:
-    scalar: 30.0
+    value: 30.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
   2021-09-01:
-    scalar: 32.0
+    value: 32.0
     reference: Art. 1 G. v. 15.02.2021 BGBl. I S. 239

@@ -12,20 +12,6 @@ def einkommen_m(
 
     This affects marginally employed persons and high wages for above the assessment
     ceiling.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m`.
-    sozialversicherung__regulär_beschäftigt
-        See :func:`sozialversicherung__regulär_beschäftigt`.
-    beitragsbemessungsgrenze_m
-        See :func:`beitragsbemessungsgrenze_m`.
-
-
-    Returns
-    -------
-
     """
     if sozialversicherung__regulär_beschäftigt:
         out = einkommen_regulär_beschäftigt_m
@@ -105,9 +91,7 @@ def bemessungsgrundlage_selbstständig_m(
             beitragsbemessungsgrenze_m,
             max(
                 bezugsgröße_selbstständig_m
-                * ges_krankenv_params[
-                    "mindestanteil_bezugsgröße_beitragspf_einnahme_selbst"
-                ],
+                * ges_krankenv_params["mindestanteil_bezugsgröße_selbstständige"],
                 einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m,
             ),
         )
@@ -117,8 +101,10 @@ def bemessungsgrundlage_selbstständig_m(
     return out
 
 
-@policy_function()
-def beitragsbemessungsgrenze_m(wohnort_ost: bool, ges_krankenv_params: dict) -> float:
+@policy_function(end_date="2000-12-31", leaf_name="beitragsbemessungsgrenze_m")
+def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
+    wohnort_ost: bool, ges_krankenv_params: dict
+) -> float:
     """Income threshold up to which health insurance payments apply.
 
     Parameters
@@ -133,11 +119,19 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, ges_krankenv_params: dict) -> 
     The income threshold up to which the rate of health insurance contributions apply.
 
     """
-    params = ges_krankenv_params["beitr_bemess_grenze_m"]
+    params = ges_krankenv_params["parameter_beitragsbemessungsgrenze"]
 
     out = params["ost"] if wohnort_ost else params["west"]
 
     return out
+
+
+@policy_function(start_date="2001-01-01", leaf_name="beitragsbemessungsgrenze_m")
+def beitragsbemessungsgrenze_m_ohne_ost_west_unterschied(
+    ges_krankenv_params: dict,
+) -> float:
+    """Income threshold up to which health insurance payments apply."""
+    return ges_krankenv_params["parameter_beitragsbemessungsgrenze"]
 
 
 @policy_function()
@@ -159,9 +153,9 @@ def bezugsgröße_selbstständig_m(wohnort_ost: bool, ges_krankenv_params: dict)
 
     """
     out = (
-        ges_krankenv_params["bezugsgröße_selbst_m"]["ost"]
+        ges_krankenv_params["bezugsgröße_selbstständige_m"]["ost"]
         if wohnort_ost
-        else ges_krankenv_params["bezugsgröße_selbst_m"]["west"]
+        else ges_krankenv_params["bezugsgröße_selbstständige_m"]["west"]
     )
 
     return out

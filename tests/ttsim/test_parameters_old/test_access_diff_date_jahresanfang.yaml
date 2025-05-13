@@ -6,6 +6,6 @@ foo:
   unit: null
   access_different_date: jahresanfang
   2020-01-01:
-    scalar: 2020
+    value: 2020
   2020-07-01:
-    scalar: 2021
+    value: 2021

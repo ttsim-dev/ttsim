@@ -7,7 +7,9 @@ def test_parsing_lohnsteuer_rv_anteil():
 
     assert (
         abs(
-            environment.params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"]
+            environment.params["eink_st_abzuege"][
+                "anteil_absetzbare_rentenversicherungskosten"
+            ]
             - 0.72
         )
         < 1e-6
@@ -17,7 +19,9 @@ def test_parsing_lohnsteuer_rv_anteil():
 
     assert (
         abs(
-            environment.params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"]
+            environment.params["eink_st_abzuege"][
+                "anteil_absetzbare_rentenversicherungskosten"
+            ]
             - 1
         )
         < 1e-6

@@ -1,8 +1,8 @@
 ---
-eink_st_tarif:
+parameter_einkommensteuertarif:
   name:
-    de: Einkommensteuertarif
-    en: Income Tax tarif
+    de: Parameter des Einkommensteuertarifs
+    en: Parameters of the income tax schedule
   description:
     de: >-
       §32a EStG
@@ -13,6 +13,8 @@ eink_st_tarif:
       §32a EStG
       The quadratic rate is calculated by gettsim with the formula of the
       Progressionsfaktor. For details see the docstring of add_progressionsfaktor.
+  unit: Euros
+  reference_period: Year
   type: piecewise_quadratic
   2002-01-01:
     0:
@@ -263,7 +265,7 @@ eink_st_tarif:
       upper_threshold: 17799
     2:
       upper_threshold: 69878
-rente_ertragsanteil:
+parameter_ertragsanteil_an_rente:
   name:
     de: >-
       Ertragsanteil-Funktion für den Anteil an sozialversicherungspflichtigen
@@ -277,7 +279,10 @@ rente_ertragsanteil:
       Diese Funktion ist hier ab 2002 angegeben. Vor 2002 das Steuersystem ist nicht
       implementiert.
     en: null
+  unit: null
+  reference_period: null
   type: piecewise_linear
+  #   type: require_converter
   2002-01-01:
     0:
       lower_threshold: -inf

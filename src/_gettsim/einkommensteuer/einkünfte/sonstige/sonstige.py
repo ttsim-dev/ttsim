@@ -32,5 +32,5 @@ def rente_ertragsanteil(
     """Share of pensions subject to income taxation."""
     return piecewise_polynomial(
         x=sozialversicherung__rente__jahr_renteneintritt,
-        parameters=eink_st_params["rente_ertragsanteil"],
+        parameters=eink_st_params["parameter_ertragsanteil_an_rente"],
     )

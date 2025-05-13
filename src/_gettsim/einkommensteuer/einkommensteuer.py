@@ -247,8 +247,8 @@ def relevantes_kindergeld_mit_staffelung_m(
         relevantes_kindergeld = 0.0
     else:
         relevantes_kindergeld = sum(
-            kindergeld_params["kindergeld"][
-                (min(i, max(kindergeld_params["kindergeld"])))
+            kindergeld_params["kindergeldsatz"][
+                (min(i, max(kindergeld_params["kindergeldsatz"])))
             ]
             for i in range(1, kindergeld_ansprüche + 1)
         )
@@ -284,7 +284,7 @@ def relevantes_kindergeld_ohne_staffelung_m(
 
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
-    return kindergeld_params["kindergeld"] * kindergeld_ansprüche / 2
+    return kindergeld_params["kindergeldsatz"] * kindergeld_ansprüche / 2
 
 
 def einkommensteuertarif(x: float, params: dict) -> float:
@@ -303,6 +303,6 @@ def einkommensteuertarif(x: float, params: dict) -> float:
     """
     out = piecewise_polynomial(
         x=x,
-        parameters=params["eink_st_tarif"],
+        parameters=params["parameter_einkommensteuertarif"],
     )
     return out

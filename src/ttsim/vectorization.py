@@ -1,18 +1,46 @@
+from __future__ import annotations
+
 import ast
 import functools
 import inspect
 import textwrap
 import types
-from collections.abc import Callable
 from importlib import import_module
-from typing import cast
+from typing import TYPE_CHECKING, Literal, cast
 
-from ttsim.config import numpy_or_jax
+import numpy
+
+from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
+
+if TYPE_CHECKING:
+    from ttsim.typing import GenericCallable
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
-def make_vectorizable(func: Callable, backend: str) -> Callable:
+def vectorize_function(
+    func: GenericCallable,
+    vectorization_strategy: Literal["loop", "vectorize"],
+) -> GenericCallable:
+    vectorized: GenericCallable
+    if vectorization_strategy == "loop":
+        vectorized = functools.wraps(func)(numpy.vectorize(func))
+        vectorized.__signature__ = inspect.signature(func)
+        vectorized.__globals__ = func.__globals__
+        vectorized.__closure__ = func.__closure__
+    elif vectorization_strategy == "vectorize":
+        backend = "jax" if IS_JAX_INSTALLED else "numpy"
+        vectorized = _make_vectorizable(func, backend=backend)
+    else:
+        raise ValueError(
+            f"Vectorization strategy {vectorization_strategy} is not supported. "
+            "Use 'loop' or 'vectorize'."
+        )
+    return vectorized
+
+
+def _make_vectorizable(func: GenericCallable, backend: str) -> GenericCallable:
     """Redefine function to be vectorizable given backend.
 
     Args:
@@ -50,7 +78,7 @@ def make_vectorizable(func: Callable, backend: str) -> Callable:
     return functools.wraps(func)(new_func)
 
 
-def make_vectorizable_source(func: Callable, backend: str) -> str:
+def make_vectorizable_source(func: GenericCallable, backend: str) -> str:
     """Redefine function source to be vectorizable given backend.
 
     Args:
@@ -73,7 +101,7 @@ def make_vectorizable_source(func: Callable, backend: str) -> str:
     return ast.unparse(tree)
 
 
-def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
+def _make_vectorizable_ast(func: GenericCallable, module: str) -> ast.Module:
     """Change if statement to where call in the ast of func and return new ast.
 
     Args:
@@ -93,7 +121,7 @@ def _make_vectorizable_ast(func: Callable, module: str) -> ast.Module:
     return ast.fix_missing_locations(new_tree)
 
 
-def _func_to_ast(func: Callable) -> ast.Module:
+def _func_to_ast(func: GenericCallable) -> ast.Module:
     source = inspect.getsource(func)
     source_dedented = textwrap.dedent(source)
     source_without_decorators = _remove_decorator_lines(source_dedented)
@@ -269,9 +297,9 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
     args = node.args
 
     if len(args) == 1:
-        if type(args) not in (list, tuple, numpy_or_jax.ndarray):
+        if type(args) not in (list, tuple, np.ndarray):
             raise TranslateToVectorizableError(
-                f"Argument of function {func_id} is not a list or tuple."
+                f"Argument of function {func_id} is not a list, tuple, or valid array."
                 f"\n\nFunction: {func_loc}\n\n"
                 f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
             )

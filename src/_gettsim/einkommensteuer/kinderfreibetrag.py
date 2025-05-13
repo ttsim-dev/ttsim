@@ -39,8 +39,10 @@ def kinderfreibetrag_y(
     -------
 
     """
-    kinderfreib = list(eink_st_abzuege_params["kinderfreib"].values())
-    return sum(kinderfreib) * anzahl_kinderfreibeträge
+    parameter_kinderfreibetrag = list(
+        eink_st_abzuege_params["parameter_kinderfreibetrag"].values()
+    )
+    return sum(parameter_kinderfreibetrag) * anzahl_kinderfreibeträge
 
 
 @policy_function()

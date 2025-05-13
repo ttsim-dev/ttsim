@@ -10,10 +10,11 @@ mindesteinkommen:
   description:
     de: § 1 (1a) Nr. 2 Unterhaltsvorschussgesetz
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: scalar
   2017-01-01:
-    scalar: 600
+    value: 600
     reference: Art. 23 G. v. 14.08.2017 BGBl. I S. 3122.
 altersgrenzen_bezug:
   name:
@@ -29,6 +30,9 @@ altersgrenzen_bezug:
       § 1 Abs. 1, 1a UhVorschG
       Children under the age of 12 living with a single parent are entitled to alimony
       payments. Since July 2017, the age limits of the minimum alimony apply.
+  unit: Years
+  reference_period: null
+  type: require_converter
   2008-01-01:
     1:
       min_alter: 0
@@ -50,8 +54,11 @@ faktor_jüngste_altersgruppe:
       § 1612a Abs. 1 BGB
       Factor by which the sächliche Existenzminimum is multiplied to calculate
       the advance child alimony for children of the youngest age group.
+  unit: null
+  reference_period: null
+  type: scalar
   2009-01-01:
-    scalar: 0.87
+    value: 0.87
 anwendungsvorschrift:
   name:
     de: Unterhaltsvorschuss für Kinder entsprechend Anwendungsvorschriften
@@ -74,8 +81,9 @@ anwendungsvorschrift:
       apply, which can be based on unchanged values for Kindergeld or child child
       allowance can be assumed. Here, the corresponding values for the advance child
       alimony (i.e. after deduction of the assumed Kindergeld) are used.
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: dict
   2015-01-01:
     1: 133
     2: 180

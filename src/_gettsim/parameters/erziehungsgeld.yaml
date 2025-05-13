@@ -6,7 +6,9 @@ einkommensgrenze:
   description:
     de: Einkommensgrenze für abzugsfreies Erziehungsgeld
     en: Income threshold for deduction-free parental leave benefit
-  unit: Euro
+  unit: Euros
+  reference_period: Year
+  type: require_converter
   2004-02-09:
     reference: 09.02.2004 BGBl. I S. 209
     note: >-
@@ -34,27 +36,31 @@ aufschlag_einkommen:
   description:
     de: Erhöhung der Einkommensgrenze pro weiterem Kind
     en: Increase in the income threshold per additional child
-  unit: Euro
+  unit: Euros
+  reference_period: Year
+  type: scalar
   2004-02-09:
     reference: 09.02.2004 BGBl. I S. 209
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 3140
-erziehungsgeld_satz:
+    value: 3140
+satz:
   name:
     de: Erziehungsgeldsatz
     en: null
   description:
     de: Höhe des Erziehungsgeldes abhängig vom beantragtem Satz
     en: Amount of the parental leave benefit depending on the rate applied for
-  unit: Euro
+  unit: Euros
+  reference_period: Month
+  type: dict
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     regelsatz: 300
     budgetsatz: 450
-abschlag_faktor:
+abschlagsfaktor:
   name:
     de: Abschlagsfaktor
     en: Deduction factor
@@ -70,12 +76,14 @@ abschlag_faktor:
       The factor is multiplied by the relevant income and
       the product is deducted from the parental leave benefit entitlement accordingly.
   unit: null
+  reference_period: null
+  type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 207
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 0.052
-pauschal_abzug_auf_einkommen:
+    value: 0.052
+pauschaler_abzug_vom_einkommen:
   name:
     de: Pauschaler Abzug vom Einkommen
     en: null
@@ -87,12 +95,14 @@ pauschal_abzug_auf_einkommen:
       Factor by which the income is reduced in a lump sum in order to calculate the
       relevant income
   unit: null
+  reference_period: null
+  type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 209
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 0.76
-arbeitsstunden_w_grenze:
+    value: 0.76
+maximale_wochenarbeitszeit:
   name:
     de: Wochenarbeitsstundengrenze
     en: Weekly working hours limit
@@ -101,13 +111,15 @@ arbeitsstunden_w_grenze:
       Grenze der wöchentlichen Arbeitsstunden bis zu der Erziehungsgeld ausgezahlt wird
     en: >-
       Limit of weekly working hours up to which parental leave benefit is paid
-  unit: null
+  unit: Hours
+  reference_period: Week
+  type: scalar
   2004-02-09:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 211
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
-    scalar: 30
-end_age_m_regelsatz:
+    value: 30
+maximales_kindsalter_regelsatz:
   name:
     de: Alter des Kindes in Monaten bis zu dem der Regelsatz bezogen werden kann.
     en: Age of the child in months up to which the Regelsatz can be claimed.
@@ -116,10 +128,13 @@ end_age_m_regelsatz:
       Alter des Kindes in Monaten bis zu dem der Regelsatz bezogen werden kann.
     en: >-
       Age of the child in months up to which the Regelsatz can be claimed.
+  unit: Months
+  reference_period: null
+  type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
-    scalar: 24
-end_age_m_budgetsatz:
+    value: 24
+maximales_kindsalter_budgetsatz:
   name:
     de: Alter des Kindes in Monaten bis zu dem der Budgetsatz bezogen werden kann.
     en: Age of the child in months up to which the Budgetsatz can be claimed.
@@ -128,18 +143,24 @@ end_age_m_budgetsatz:
       Alter des Kindes in Monaten bis zu dem der Budgetsatz bezogen werden kann.
     en: >-
       Age of the child in months up to which the Budgetsatz can be claimed.
+  unit: Months
+  reference_period: null
+  type: scalar
   2004-01-01:
     reference: § 5 G. v. 09.02.2004 BGBl. I S. 208
-    scalar: 12
+    value: 12
 abolishment_cohort:
   name:
-    de: Letzte Geburtskohorte für die Erziehungsgeld ausgezahlt wird
-    en: Abolishment cohort
+    de: Letzte Geburtskohorte, für die Erziehungsgeld ausgezahlt wird
+    en: Last birth cohort for which parental leave benefit is paid
   description:
     de: >-
       Erziehungsgeld wird durch das Elterngeld ersetzt.
     en: >-
       Erziehungsgeld is replaced by Elterngeld.
+  unit: Years
+  reference_period: null
+  type: scalar
   2006-12-11:
     reference: Art. 3 G. v. 5.12.2006 BGBl. I S. 2748
-    scalar: 2006
+    value: 2006

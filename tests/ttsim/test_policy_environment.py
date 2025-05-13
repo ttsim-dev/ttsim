@@ -15,6 +15,7 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     GroupCreationFunction,
     PolicyEnvironment,
+    ScalarTTSIMParam,
     group_creation_function,
     policy_function,
     set_up_policy_environment,
@@ -24,6 +25,7 @@ from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
     ConflictingNamesError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
+    _get_params_contents,
     _parse_raw_parameter_group,
     active_ttsim_objects_tree,
     active_ttsim_params_tree,
@@ -53,6 +55,36 @@ def return_three():
 @group_creation_function()
 def fam_id() -> int:
     pass
+
+
+@pytest.fixture(scope="module")
+def some_params_spec_with_updates_previous():
+    return [
+        {
+            "a": 1,
+            "b": 2,
+        },
+        {
+            "updates_previous": True,
+            "b": 4,
+        },
+    ]
+
+
+@pytest.fixture(scope="module")
+def some_int_param():
+    return ScalarTTSIMParam(
+        value=1,
+        leaf_name="some_int_param",
+        start_date="2025-01-01",
+        end_date="2025-12-31",
+        name="some_int_param",
+        description="Some int param",
+        unit=None,
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
 
 
 class TestPolicyEnvironment:
@@ -555,3 +587,29 @@ def test_active_ttsim_objects_tree(
 
     assert accessor(functions_last_day).__name__ == function_name_last_day
     assert accessor(functions_next_day).__name__ == function_name_next_day
+
+
+def test_get_params_contents_with_updated_previous(
+    some_params_spec_with_updates_previous,
+):
+    params_contents = _get_params_contents(some_params_spec_with_updates_previous)
+    expected = {
+        "a": 1,
+        "b": 4,
+    }
+    assert params_contents == expected
+
+
+def test_combining_trees_works_with_overlapping_keys(some_int_param):
+    policy_environment = PolicyEnvironment(
+        raw_objects_tree={
+            "a": {"b": policy_function(leaf_name="a")(return_one)},
+        },
+        params_tree={"a": {"c": some_int_param}},
+    )
+    expected: NestedTTSIMObjectDict = {
+        "a": {"b": policy_function(leaf_name="a")(return_one), "c": some_int_param},
+    }
+    assert optree.tree_paths(policy_environment.combined_tree) == optree.tree_paths(
+        expected
+    )

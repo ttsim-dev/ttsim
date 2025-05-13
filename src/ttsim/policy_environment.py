@@ -21,30 +21,30 @@ from ttsim.piecewise_polynomial import (
 )
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
+    merge_trees,
     to_datetime,
     upsert_path_and_value,
     upsert_tree,
 )
 from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
-    TTSIMObject,
-    policy_function,
-)
-from ttsim.ttsim_params import (
     DictTTSIMParam,
     PiecewisePolynomialTTSIMParam,
+    RawTTSIMParam,
     ScalarTTSIMParam,
+    TTSIMObject,
     TTSIMParam,
+    policy_function,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
 
     from ttsim.typing import (
         DashedISOString,
         FlatOrigParamSpecDict,
         FlatTTSIMObjectDict,
+        GenericCallable,
         NestedTTSIMObjectDict,
         NestedTTSIMParamDict,
         OrigParamSpec,
@@ -71,7 +71,7 @@ class PolicyEnvironment:
         params: dict[str, Any] | None = None,
         params_tree: NestedTTSIMParamDict | None = None,
     ):
-        # Check functions tree and convert functions to PolicyFunction if necessary
+        # Check tree with TTSIM objects (policy inputs / functions, params functions)
         assert_valid_ttsim_pytree(
             tree=raw_objects_tree,
             leaf_checker=lambda leaf: isinstance(leaf, TTSIMObject),
@@ -83,9 +83,17 @@ class PolicyEnvironment:
         )
         _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
 
-        # Read in parameters and aggregation specs
+        # FixMe: Delete
+        params_tree = params_tree if params_tree is not None else {}
         self._params = params if params is not None else {}
-        self._params_tree = params_tree if params_tree is not None else {}
+
+        # Check tree with params
+        assert_valid_ttsim_pytree(
+            tree=params_tree,
+            leaf_checker=lambda leaf: isinstance(leaf, TTSIMParam),
+            tree_name="raw_objects_tree",
+        )
+        self._params_tree = params_tree
 
     @property
     def raw_objects_tree(self) -> NestedTTSIMObjectDict:
@@ -99,6 +107,16 @@ class PolicyEnvironment:
     def params(self) -> dict[str, Any]:
         """The parameters of the policy environment."""
         return self._params
+
+    @property
+    def params_tree(self) -> NestedTTSIMObjectDict:
+        """The parameters of the policy environment."""
+        return self._params_tree
+
+    @property
+    def combined_tree(self) -> NestedTTSIMObjectDict:
+        """The combined tree of raw objects and params."""
+        return merge_trees(self._raw_objects_tree, self._params_tree)
 
     @property
     def grouping_levels(self) -> tuple[str, ...]:
@@ -192,11 +210,11 @@ def set_up_policy_environment(
     date = to_datetime(date)
 
     _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
-    _orig_yaml_tree = orig_params_tree(root)
+    _orig_params_tree = orig_params_tree(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_of_clashes(
         orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
-        orig_params_tree=_orig_yaml_tree,
+        orig_params_tree=_orig_params_tree,
     )
 
     params = {}
@@ -228,7 +246,7 @@ def set_up_policy_environment(
     else:
         params = {}
         params_tree = active_ttsim_params_tree(
-            orig_params_tree=_orig_yaml_tree, date=date
+            orig_params_tree=_orig_params_tree, date=date
         )
     return PolicyEnvironment(
         raw_objects_tree=active_ttsim_objects_tree(
@@ -393,7 +411,7 @@ def active_ttsim_objects_tree(
 
 
 def _convert_to_policy_function_if_not_ttsim_object(
-    input_object: Callable | TTSIMObject,
+    input_object: GenericCallable | TTSIMObject,
 ) -> TTSIMObject:
     """Convert an object to a PolicyFunction if it is not already a TTSIMObject.
 
@@ -485,6 +503,8 @@ def get_one_ttsim_param(
             parameter_dict=cleaned_spec["value"],
         )
         return PiecewisePolynomialTTSIMParam(**cleaned_spec)
+    elif spec["type"] == "require_converter":
+        return RawTTSIMParam(**cleaned_spec)
     else:
         raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
@@ -533,14 +553,20 @@ def prep_one_params_spec(
 def _get_params_contents(
     relevant_specs: list[dict[str | int, Any]],
 ) -> dict[str | int, Any]:
-    if relevant_specs[-1].get("updates_previous", False):
+    """Get the contents of the parameters.
+
+    Implementation is a recursion in order to handle the 'updates_previous' machinery.
+
+    """
+    updates_previous = relevant_specs[-1].pop("updates_previous", False)
+    if updates_previous:
         assert len(relevant_specs) > 1, (
             "'updates_previous' cannot be missing in the initial spec, found "
             f"{relevant_specs}"
         )
-        params = copy.deepcopy(_get_params_contents(relevant_specs[:-1]))
-        params.update(relevant_specs[-1])
-        return params
+        return upsert_tree(
+            base=_get_params_contents(relevant_specs[:-1]), to_upsert=relevant_specs[-1]
+        )
     else:
         return relevant_specs[-1]
 
@@ -609,7 +635,7 @@ def _parse_kinderzuschl_max(
                 "kinder"
             ]
             + params["kinderzuschl"]["existenzminimum"]["heizkosten"]["kinder"]
-        ) / 12 - params["kindergeld"]["kindergeld"][1]
+        ) / 12 - params["kindergeld"]["kindergeldsatz"][1]
 
     return params
 
@@ -672,9 +698,11 @@ def _parse_vorsorgepauschale_rentenv_anteil(
     if jahr >= 2005:
         out = piecewise_polynomial(
             x=jahr,
-            parameters=params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"],
+            parameters=params["eink_st_abzuege"][
+                "anteil_absetzbare_rentenversicherungskosten"
+            ],
         )
-        params["eink_st_abzuege"]["vorsorgepauschale_rentenv_anteil"] = out
+        params["eink_st_abzuege"]["anteil_absetzbare_rentenversicherungskosten"] = out
 
     return params
 
@@ -744,10 +772,12 @@ def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
             max_past_policy_date = numpy.array(past_policies).max()
             policy_in_place = raw_group_data[param][max_past_policy_date]
             if "scalar" in policy_in_place:
-                if policy_in_place["scalar"] == "inf":
+                raise ValueError(f"{raw_group_data[param]}")
+            elif "value" in policy_in_place:
+                if policy_in_place["value"] == "inf":
                     out_params[param] = numpy.inf
                 else:
-                    out_params[param] = policy_in_place["scalar"]
+                    out_params[param] = policy_in_place["value"]
             else:
                 out_params[param] = {}
                 # Keys which if given are transferred
@@ -770,7 +800,8 @@ def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
                     elif "." in policy_in_place["deviation_from"]:
                         assert (  # noqa: PT018
                             group == "arbeitsl_geld_2"
-                            and param == "eink_anr_frei_kinder"
+                            and param
+                            == "parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg"
                         )
                         path_list = policy_in_place["deviation_from"].split(".")
                         out_params[param] = _parse_raw_parameter_group(
@@ -824,6 +855,15 @@ def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
                         "'jahresanfang' (beginning of the year). "
                         f"For parameter {param} a different string is specified."
                     )
+
+    for p in out_params.values():
+        if isinstance(p, dict) and "type" in p:
+            if p["type"] == "dict":
+                for k, v in p.items():
+                    if v in {"inf", "-inf"}:
+                        p[k] = float(v)
+            if not p["type"].startswith("piecewise"):
+                p.pop("type", None)
 
     out_params["datum"] = numpy.datetime64(date)
 
