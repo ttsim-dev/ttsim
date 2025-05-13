@@ -1,48 +1,20 @@
 """Tax allowances for individuals or couples with children."""
 
-from ttsim import AggType, agg_by_p_id_function, policy_function
-
-
-@agg_by_p_id_function(agg_type=AggType.SUM)
-def anzahl_kinderfreibeträge_1(
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
-    p_id_kinderfreibetragsempfänger_1: int,
-    p_id: int,
-) -> int:
-    pass
-
-
-@agg_by_p_id_function(agg_type=AggType.SUM)
-def anzahl_kinderfreibeträge_2(
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
-    p_id_kinderfreibetragsempfänger_2: int,
-    p_id: int,
-) -> int:
-    pass
+from ttsim import AggType, agg_by_p_id_function, params_function, policy_function
 
 
 @policy_function()
 def kinderfreibetrag_y(
     anzahl_kinderfreibeträge: int,
-    eink_st_abzuege_params: dict,
+    kinderfreibetrag_pro_kind_y: float,
 ) -> float:
-    """Individual child allowance.
+    """Individual child allowance."""
+    return kinderfreibetrag_pro_kind_y * anzahl_kinderfreibeträge
 
-    Parameters
-    ----------
-    anzahl_kinderfreibeträge
-        See :func:`anzahl_kinderfreibeträge`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
 
-    Returns
-    -------
-
-    """
-    parameter_kinderfreibetrag = list(
-        eink_st_abzuege_params["parameter_kinderfreibetrag"].values()
-    )
-    return sum(parameter_kinderfreibetrag) * anzahl_kinderfreibeträge
+@params_function()
+def kinderfreibetrag_pro_kind_y(parameter_kinderfreibetrag: dict[str, float]) -> float:
+    return sum(parameter_kinderfreibetrag.values())
 
 
 @policy_function()
@@ -67,6 +39,24 @@ def anzahl_kinderfreibeträge(
 
     """
     return anzahl_kinderfreibeträge_1 + anzahl_kinderfreibeträge_2
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anzahl_kinderfreibeträge_1(
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    p_id_kinderfreibetragsempfänger_1: int,
+    p_id: int,
+) -> int:
+    pass
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM)
+def anzahl_kinderfreibeträge_2(
+    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    p_id_kinderfreibetragsempfänger_2: int,
+    p_id: int,
+) -> int:
+    pass
 
 
 @policy_function()

@@ -88,42 +88,19 @@ def betrag_soli_y(betrag_mit_kinderfreibetrag_y: float, soli_st_params: dict) ->
 @policy_function(vectorization_strategy="loop")
 def kinderfreibetrag_soli_y(
     steuerklasse: int,
-    einkommensteuer__anzahl_kinderfreibeträge: int,
-    eink_st_abzuege_params: dict,
+    einkommensteuer__kinderfreibetrag_y: int,
 ) -> float:
     """Child Allowance (Kinderfreibetrag) for Lohnsteuer-Soli.
 
-    For the purpose of Soli on Lohnsteuer, the child allowance not only depends on the
-    number of children, but also on the steuerklasse
-
-    Parameters
-    ----------
-    steuerklasse
-        See :func:`steuerklasse`.
-    einkommensteuer__anzahl_kinderfreibeträge
-        See :func:`einkommensteuer__anzahl_kinderfreibeträge`.
-    eink_st_abzuege_params
-        See params documenation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-    Kinderfreibetrag for Lohnsteuer-Soli.
+    For the purpose of Soli on Lohnsteuer, Steuerklasse 1/2/3 gets twice the child
+    benefit, Steuerklasse 4 gets the child benefit once, and Steuerklasse 5/6 gets
+    nothing.
     """
 
-    kinderfreibetrag_basis = (
-        eink_st_abzuege_params["parameter_kinderfreibetrag"][
-            "sächliches_existenzminimum"
-        ]
-        + eink_st_abzuege_params["parameter_kinderfreibetrag"][
-            "betreuung_erziehung_ausbildung"
-        ]
-    )
-
-    # For certain tax brackets, twice the child allowance can be deducted
     if steuerklasse in {1, 2, 3}:
-        out = kinderfreibetrag_basis * 2 * einkommensteuer__anzahl_kinderfreibeträge
+        out = 2 * einkommensteuer__kinderfreibetrag_y
     elif steuerklasse == 4:
-        out = kinderfreibetrag_basis * einkommensteuer__anzahl_kinderfreibeträge
+        out = einkommensteuer__kinderfreibetrag_y
     else:
         out = 0
     return out
