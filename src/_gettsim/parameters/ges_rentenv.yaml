@@ -46,9 +46,7 @@ parameter_beitragssatz:
     value: 0.0995
   2012-01-01:
     value: 0.098
-    note: >-
-      Quelle
-      http://www.bmas.de/DE/Service/Presse/Pressemitteilungen/rentenbericht-16-11-2011.html
+    note: http://www.bmas.de/DE/Service/Presse/Pressemitteilungen/rentenbericht-16-11-2011.html
   2013-01-01:
     value: 0.0945
   2015-01-01:

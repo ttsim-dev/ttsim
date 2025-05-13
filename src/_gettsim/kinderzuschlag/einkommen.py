@@ -217,7 +217,7 @@ def anzurechnendes_einkommen_eltern_m_bg(
     -------
 
     """
-    out = kinderzuschl_params["entzugsrate_eltern"] * (
+    out = kinderzuschl_params["entzugsrate_elterneinkommen"] * (
         nettoeinkommen_eltern_m_bg - erwachsenenbedarf_m_bg
     )
 

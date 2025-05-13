@@ -171,8 +171,8 @@ kindergeldsatz:
     reference: Art. 6 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
 maximales_einkommen_des_kindes:
   name:
-    de: Einkommensgrenze der Kinder für Kindergeldanspruch
-    en: Income Ceiling for children in order to get child benefit.
+    de: Einkommensgrenze der Kinder, ab welcher kein Kindergeldanspruch besteht
+    en: Income ceiling for children in order to get child benefit.
   description:
     de: >-
       § 32 (4) EStG. Wurde 2012 durch eine Höchstgrenze der gearbeiteten Stunden
@@ -203,8 +203,8 @@ maximales_einkommen_des_kindes:
     reference: Art. 1 G. v. 16.07.2009 BGBl. I S. 1959
     note: Zurückdatiert auf das volle Kalenderjahr 2009
   2012-01-01:
-    note: Revoked in favour of maximale_wöchentliche_arbeitsstunden_des_kindes
-maximale_wöchentliche_arbeitsstunden_des_kindes:
+    note: Revoked in favour of maximale_arbeitsstunden_des_kindes
+maximale_arbeitsstunden_des_kindes:
   name:
     de: Wochenstundengrenze für Kindergeldanspruch
     en: Working hours threshold for child benefit eligibility
@@ -219,9 +219,9 @@ maximale_wöchentliche_arbeitsstunden_des_kindes:
   2012-01-01:
     value: 20
     reference: Art. 1 G. v. 01.11.2011 BGBl. I S. 2131
-kinderbonus:
+kinderbonus_pro_kind:
   name:
-    de: Kinderbonus (Einmalzahlung)
+    de: Kinderbonus pro Kind
     en: Child bonus (one-time payment)
   description:
     de: >-
@@ -232,8 +232,6 @@ kinderbonus:
   unit: Euros
   reference_period: Year
   type: scalar
-  1984-01-01:
-    value: 0
   2020-01-01:
     reference: Art. 1 Zweites Corona-Steuerhilfegesetz v. 29.06.2020 BGBl. I S. 1512
     value: 300
@@ -242,4 +240,3 @@ kinderbonus:
     value: 150
   2022-01-01:
     note: only one-time payment
-    value: 0

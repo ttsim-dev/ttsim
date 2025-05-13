@@ -172,45 +172,49 @@ def lohnsteuerformel(
         einkommen_y=einkommen_y, eink_st_params=eink_st_params
     )
 
-    grenze_1 = lohnst_params["lohnsteuer_einkommensgrenzen"][0]
-    grenze_2 = lohnst_params["lohnsteuer_einkommensgrenzen"][1]
-    grenze_3 = lohnst_params["lohnsteuer_einkommensgrenzen"][2]
-
     lohnsteuer_grenze_1 = basis_für_klassen_5_6(
-        einkommen_y=grenze_1, eink_st_params=eink_st_params
+        einkommen_y=lohnst_params["einkommensgrenzen"][1], eink_st_params=eink_st_params
     )
     max_lohnsteuer = (
         lohnsteuer_grenze_1
-        + (einkommen_y - grenze_1)
+        + (einkommen_y - lohnst_params["einkommensgrenzen"][1])
         * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
     )
     lohnsteuer_grenze_2 = basis_für_klassen_5_6(
-        einkommen_y=grenze_2, eink_st_params=eink_st_params
+        einkommen_y=lohnst_params["einkommensgrenzen"][2], eink_st_params=eink_st_params
     )
-    lohnsteuer_zw_grenze_2_3 = (grenze_3 - grenze_2) * eink_st_params[
-        "parameter_einkommensteuertarif"
-    ].rates[0, 3]
+    lohnsteuer_zw_grenze_2_3 = (
+        lohnst_params["einkommensgrenzen"][3] - lohnst_params["einkommensgrenzen"][2]
+    ) * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
     lohnsteuer_klasse5_6_tmp = lohnsteuer_grenze_2 + lohnsteuer_zw_grenze_2_3
 
-    if einkommen_y < grenze_1:
+    if einkommen_y < lohnst_params["einkommensgrenzen"][1]:
         lohnsteuer_klasse5_6 = lohnsteuer_5_6_basis
-    elif grenze_1 <= einkommen_y < grenze_2:
+    elif (
+        lohnst_params["einkommensgrenzen"][1]
+        <= einkommen_y
+        < lohnst_params["einkommensgrenzen"][2]
+    ):
         lohnsteuer_klasse5_6 = min(
             max_lohnsteuer,
             basis_für_klassen_5_6(
                 einkommen_y=einkommen_y, eink_st_params=eink_st_params
             ),
         )
-    elif grenze_2 <= einkommen_y < grenze_3:
+    elif (
+        lohnst_params["einkommensgrenzen"][2]
+        <= einkommen_y
+        < lohnst_params["einkommensgrenzen"][3]
+    ):
         lohnsteuer_klasse5_6 = (
             lohnsteuer_grenze_2
-            + (einkommen_y - grenze_2)
+            + (einkommen_y - lohnst_params["einkommensgrenzen"][2])
             * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
         )
     else:
         lohnsteuer_klasse5_6 = (
             lohnsteuer_klasse5_6_tmp
-            + (einkommen_y - grenze_3)
+            + (einkommen_y - lohnst_params["einkommensgrenzen"][3])
             * eink_st_params["parameter_einkommensteuertarif"].rates[0, 4]
         )
 

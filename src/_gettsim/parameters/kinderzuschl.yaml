@@ -98,7 +98,7 @@ mindesteinkommen_alleinerziehende:
   2008-10-01:
     value: 600
     reference: Art. 1 G. v. 24.09.2008 BGBl. I S. 1854.
-entzugsrate_eltern:
+entzugsrate_elterneinkommen:
   name:
     de: Minderungsrate durch Einkommen der Eltern über BMG
     en: Transfer withdrawal rate for parent's income
@@ -121,7 +121,7 @@ entzugsrate_eltern:
   2020-01-01:
     value: 0.45
     reference: Art. 1 G. v. 29.04.2019 BGBl. I S. 530.
-entzugsrate_kind:
+entzugsrate_kindeseinkommen:
   name:
     de: Minderungsrate durch Einkommen des Kindes
     en: Rate at which benefit is reduced by child income
@@ -264,8 +264,8 @@ existenzminimum:
       paare: 1008
       kinder: 180
     reference: >-
-      10. Existenzminimumsbericht, Bundestag Drucksache 17/5550,
-      Übersicht 4. Werte für Paare unverändert.
+      10. Existenzminimumsbericht, Bundestag Drucksache 17/5550, Übersicht 4.
+    note: Werte für Paare unverändert.
   2016-01-01:
     regelsatz:
       single: 4872

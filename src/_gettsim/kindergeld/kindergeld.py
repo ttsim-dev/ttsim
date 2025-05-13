@@ -153,8 +153,7 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
         (alter < kindergeld_params["altersgrenze"]["mit_bedingungen"])
         and in_ausbildung
         and (
-            arbeitsstunden_w
-            <= kindergeld_params["maximale_wöchentliche_arbeitsstunden_des_kindes"]
+            arbeitsstunden_w <= kindergeld_params["maximale_arbeitsstunden_des_kindes"]
         )
     )
 
