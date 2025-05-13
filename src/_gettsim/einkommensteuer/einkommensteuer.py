@@ -193,18 +193,6 @@ def betrag_ohne_kinderfreibetrag_y_sn(
     """Taxes without child allowance on Steuernummer level. Also referred to as
     "tarifliche ESt II".
 
-    Parameters
-    ----------
-    gesamteinkommen_y
-        See :func:`gesamteinkommen_y`.
-    anzahl_personen_sn
-        See :func:`anzahl_personen_sn`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params <eink_st_params>`.
-
-    Returns
-    -------
-
     """
     zu_verst_eink_per_indiv = gesamteinkommen_y / anzahl_personen_sn
     out = anzahl_personen_sn * einkommensteuertarif(
@@ -222,7 +210,7 @@ def betrag_ohne_kinderfreibetrag_y_sn(
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld_params: dict,
+    kindergeld__satz_gestaffelt: dict[int, float],
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
@@ -230,16 +218,6 @@ def relevantes_kindergeld_mit_staffelung_m(
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."
 
-    Parameters
-    ----------
-    anzahl_kindergeld_ansprüche_1
-        See :func:`anzahl_kindergeld_ansprüche_1`.
-    anzahl_kindergeld_ansprüche_2
-        See :func:`anzahl_kindergeld_ansprüche_2`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-    Returns
-    -------
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
 
@@ -247,9 +225,7 @@ def relevantes_kindergeld_mit_staffelung_m(
         relevantes_kindergeld = 0.0
     else:
         relevantes_kindergeld = sum(
-            kindergeld_params["kindergeldsatz"][
-                (min(i, max(kindergeld_params["kindergeldsatz"])))
-            ]
+            kindergeld__satz_gestaffelt[(min(i, max(kindergeld__satz_gestaffelt)))]
             for i in range(1, kindergeld_ansprüche + 1)
         )
 
@@ -263,7 +239,7 @@ def relevantes_kindergeld_mit_staffelung_m(
 def relevantes_kindergeld_ohne_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld_params: dict,
+    kindergeld__satz_einheitlich: float,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
@@ -271,20 +247,9 @@ def relevantes_kindergeld_ohne_staffelung_m(
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."
 
-    Parameters
-    ----------
-    anzahl_kindergeld_ansprüche_1
-        See :func:`anzahl_kindergeld_ansprüche_1`.
-    anzahl_kindergeld_ansprüche_2
-        See :func:`anzahl_kindergeld_ansprüche_2`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-    Returns
-    -------
-
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
-    return kindergeld_params["kindergeldsatz"] * kindergeld_ansprüche / 2
+    return kindergeld__satz_einheitlich * kindergeld_ansprüche / 2
 
 
 def einkommensteuertarif(x: float, params: dict) -> float:

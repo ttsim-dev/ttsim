@@ -7,6 +7,7 @@ from ttsim import (
     RoundingSpec,
     agg_by_p_id_function,
     join,
+    params_function,
     policy_function,
 )
 
@@ -113,46 +114,20 @@ def not_implemented_m() -> float:
     )
 
 
-@policy_function(
-    start_date="2023-01-01",
-    leaf_name="kindergeld_erstes_kind_m",
-    vectorization_strategy="not_required",
-)
-def kindergeld_erstes_kind_ohne_staffelung_m(kindergeld_params: dict) -> float:
-    """Kindergeld for first child when Kindergeld does not depend on number of children.
-
-    Parameters
-    ----------
-
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
-    """
-    return kindergeld_params["kindergeldsatz"]
+@params_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
+def kindergeld_erstes_kind_ohne_staffelung_m(
+    kindergeld__satz_einheitlich: float,
+) -> float:
+    """Kindergeld for first child when Kindergeld does not depend on number of children."""
+    return kindergeld__satz_einheitlich
 
 
-@policy_function(
-    end_date="2022-12-31",
-    leaf_name="kindergeld_erstes_kind_m",
-    vectorization_strategy="not_required",
-)
-def kindergeld_erstes_kind_gestaffelt_m(kindergeld_params: dict) -> float:
-    """Kindergeld for first child when Kindergeld does depend on number of children.
-
-    Parameters
-    ----------
-
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
-    """
-    return kindergeld_params["kindergeldsatz"][1]
+@params_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
+def kindergeld_erstes_kind_gestaffelt_m(
+    kindergeld__satz_gestaffelt: dict[int, float],
+) -> float:
+    """Kindergeld for first child when Kindergeld depends on number of children."""
+    return kindergeld__satz_gestaffelt[1]
 
 
 @policy_function(
