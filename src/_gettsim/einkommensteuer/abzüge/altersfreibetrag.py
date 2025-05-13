@@ -13,27 +13,7 @@ def altersfreibetrag_y_bis_2004(
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y: float,
     eink_st_abzuege_params: dict,
 ) -> float:
-    """Calculate tax deduction allowance for elderly until 2004.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y>`.
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y <einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y>`.
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y
-        See :func:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y`.
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y <einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y>`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
-    """
+    """Calculate tax deduction allowance for elderly until 2004."""
     altersgrenze = eink_st_abzuege_params["altersentlastungsbetrag_altersgrenze"]
     weiteres_einkommen = max(
         einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y

@@ -8,38 +8,24 @@ def einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     steuerklasse: int,
     vorsorgepauschale_y: float,
-    eink_st_abzuege_params: dict,
+    einkommensteuer__abzüge__alleinerziehendenfreibetrag: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
+    einkommensteuer__abzüge__sonderausgabenpauschbetrag: float,
 ) -> float:
-    """Calculate tax base for Lohnsteuer (withholding tax on earnings).
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y:
-      See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y>`.
-    steuerklasse:
-      See :func:`steuerklasse`
-    eink_st_abzuege_params:
-      See :func:`eink_st_abzuege_params`
-    vorsorgepauschale_y
-        See :func:`vorsorgepauschale_y`
-
-    Returns
-    -------
-
-    """
-    entlastung_freibetrag_alleinerz = (steuerklasse == 2) * eink_st_abzuege_params[
-        "alleinerziehendenfreibetrag"
-    ]
+    """Calculate tax base for Lohnsteuer (withholding tax on earnings)."""
+    entlastung_freibetrag_alleinerz = (
+        steuerklasse == 2
+    ) * einkommensteuer__abzüge__alleinerziehendenfreibetrag
 
     if steuerklasse == 6:
-        werbungskosten = 0
+        werbungskosten = 0.0
     else:
-        werbungskosten = eink_st_abzuege_params["werbungskostenpauschale"]
+        werbungskosten = einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale
 
     if steuerklasse == 6:
-        sonderausgaben = 0
+        sonderausgaben = 0.0
     else:
-        sonderausgaben = eink_st_abzuege_params["sonderausgabenpauschbetrag"]["single"]
+        sonderausgaben = einkommensteuer__abzüge__sonderausgabenpauschbetrag
 
     # Zu versteuerndes Einkommen / tax base for Lohnsteuer.
     out = max(

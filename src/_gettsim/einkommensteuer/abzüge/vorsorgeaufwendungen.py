@@ -15,17 +15,7 @@ from ttsim.ttsim_objects import params_function
 def vorsorgeaufwendungen_y_sn_bis_2004(
     vorsorgeaufwendungen_regime_bis_2004_y_sn: float,
 ) -> float:
-    """Vorsorgeaufwendungen until 2004.
-
-    Parameters
-    ----------
-    vorsorgeaufwendungen_regime_bis_2004_y_sn
-        See :func:`vorsorgeaufwendungen_regime_bis_2004_y_sn`.
-
-    Returns
-    -------
-
-    """
+    """Vorsorgeaufwendungen until 2004."""
     return vorsorgeaufwendungen_regime_bis_2004_y_sn
 
 
@@ -41,17 +31,7 @@ def vorsorgeaufwendungen_y_sn_ab_2005_bis_2009(
 ) -> float:
     """Vorsorgeaufwendungen from 2005 to 2009.
 
-    Günstigerprüfung against the pre-2005 regime.
-
-    Parameters
-    ----------
-    vorsorgeaufwendungen_regime_bis_2004_y_sn
-        See :func:`vorsorgeaufwendungen_regime_bis_2004_y_sn`.
-    vorsorgeaufwendungen_globale_kappung_y_sn
-        See :func:`vorsorgeaufwendungen_globale_kappung_y_sn`.
-
-    Returns
-    -------
+    Günstigerprüfung against the regime until 2004.
 
     """
 
@@ -73,17 +53,7 @@ def vorsorgeaufwendungen_y_sn_ab_2010_bis_2019(
 ) -> float:
     """Vorsorgeaufwendungen from 2010 to 2019.
 
-    Günstigerprüfung against the pre-2005 regime.
-
-    Parameters
-    ----------
-    vorsorgeaufwendungen_regime_bis_2004_y_sn
-        See :func:`vorsorgeaufwendungen_regime_bis_2004_y_sn`.
-    vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn
-        See :func:`vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn`.
-
-    Returns
-    -------
+    Günstigerprüfung against the regime until 2004.
 
     """
 
@@ -103,50 +73,21 @@ def vorsorgeaufwendungen_y_sn_ab_2020(
 ) -> float:
     """Vorsorgeaufwendungen since 2020.
 
-    Günstigerprüfung against the regime before 2005 revoked.
-
-    Parameters
-    ----------
-    vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn
-        See :func:`vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn`.
-
-    Returns
-    -------
+    Günstigerprüfung against the regime until 2004 is revoked.
 
     """
     return vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn
 
 
-@policy_function(
-    end_date="2019-12-31",
-)
+@policy_function(end_date="2019-12-31")
 def vorsorgeaufwendungen_regime_bis_2004_y_sn(
     vorwegabzug_lohnsteuer_y_sn: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn: float,
     sozialversicherung__rente__beitrag__betrag_versicherter_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    eink_st_abzuege_params: dict,
     parameter_altersvorsorgeaufwendungen_regime_bis_2004: dict[str, float],
 ) -> float:
-    """Vorsorgeaufwendungen calculated using the pre-2005 regime.
-
-    Parameters
-    ----------
-    vorwegabzug_lohnsteuer_y_sn
-        See :func:`vorwegabzug_lohnsteuer_y_sn`.
-    sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn`.
-    sozialversicherung__rente__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__rente__beitrag__betrag_versicherter_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
-    """
+    """Vorsorgeaufwendungen calculated using the regime until 2004."""
     multiplikator1 = max(
         (
             (
@@ -199,24 +140,6 @@ def vorsorgeaufwendungen_globale_kappung_y_sn(
 
     All deductions for social insurance contributions are capped.
 
-    Parameters
-    ----------
-    altersvorsorge_y_sn
-        See :func:`altersvorsorge_y_sn`.
-    sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn`.
-    sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn`.
-    sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
     """
     sum_vorsorge = (
         sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn
@@ -248,24 +171,6 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     """Vorsorgeaufwendungen.
 
     Expenses for health insurance contributions are not subject to any caps.
-
-    Parameters
-    ----------
-    altersvorsorge_y_sn
-        See :func:`altersvorsorge_y_sn`.
-    sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn`.
-    sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn`.
-    sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn
-        See :func:`sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
 
     """
     basiskrankenversicherung = (
@@ -312,16 +217,6 @@ def rate_abzugsfähige_altersvorsorgeaufwendungen(
 
     Reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
 
-    Parameters
-    ----------
-    date
-        The date for which the policy parameters are set up.
-    params
-        A dictionary with parameters from the policy environment.
-
-    Returns
-    -------
-    Updated dictionary.
 
     """
     return piecewise_polynomial(

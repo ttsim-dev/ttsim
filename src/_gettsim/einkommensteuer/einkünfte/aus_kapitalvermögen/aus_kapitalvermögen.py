@@ -6,7 +6,8 @@ from ttsim import policy_function
 @policy_function(end_date="2008-12-31", leaf_name="betrag_y")
 def betrag_y_mit_sparerfreibetrag_und_werbungskostenpauschbetrag(
     kapitalerträge_y: float,
-    eink_st_abzuege_params: dict,
+    sparerfreibetrag: float,
+    sparer_werbungskostenpauschbetrag: float,
 ) -> float:
     """Calculate taxable capital income on Steuernummer level.
 
@@ -21,18 +22,15 @@ def betrag_y_mit_sparerfreibetrag_und_werbungskostenpauschbetrag(
     -------
 
     """
-    out = kapitalerträge_y - (
-        eink_st_abzuege_params["sparerfreibetrag"]
-        + eink_st_abzuege_params["sparer_werbungskostenpauschbetrag"]
+    return max(
+        kapitalerträge_y - sparerfreibetrag + sparer_werbungskostenpauschbetrag, 0.0
     )
-
-    return max(out, 0.0)
 
 
 @policy_function(start_date="2009-01-01", leaf_name="betrag_y")
 def betrag_y_mit_sparerpauschbetrag(
     kapitalerträge_y: float,
-    eink_st_abzuege_params: dict,
+    sparerpauschbetrag: float,
 ) -> float:
     """Calculate taxable capital income on Steuernummer level.
 
@@ -47,6 +45,4 @@ def betrag_y_mit_sparerpauschbetrag(
     -------
 
     """
-    out = kapitalerträge_y - eink_st_abzuege_params["sparerpauschbetrag"]
-
-    return max(out, 0.0)
+    return max(kapitalerträge_y - sparerpauschbetrag, 0.0)

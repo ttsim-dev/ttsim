@@ -129,7 +129,7 @@ def einkommen_vorjahr_proxy_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
     arbeitsl_geld_params: dict,
     eink_st_params: dict,
-    eink_st_abzuege_params: dict,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
     soli_st_params: dict,
 ) -> float:
     """Approximate last years income for unemployment benefit.
@@ -165,11 +165,12 @@ def einkommen_vorjahr_proxy_m(
 
     # Fictive taxes (Lohnsteuer) are approximated by applying the wage to the tax tariff
     # Caution: currently wrong calculation due to
-    # 12 * max_wage - eink_st_abzuege_params["werbungskostenpauschale"] not being
+    # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale not being
     # the same as zu versteuerndes einkommen
     # waiting for PR Lohnsteuer #150 to be merged to correct this problem
     prox_tax = einkommensteuertarif(
-        12 * max_wage - eink_st_abzuege_params["werbungskostenpauschale"],
+        12 * max_wage
+        - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
         eink_st_params,
     )
     prox_soli = piecewise_polynomial(

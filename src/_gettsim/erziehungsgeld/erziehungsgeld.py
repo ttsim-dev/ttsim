@@ -321,7 +321,7 @@ def anzurechnendes_einkommen_y(
     arbeitslosengeld_2__anzahl_erwachsene_fg: int,
     kind_grundsätzlich_anspruchsberechtigt: bool,
     erziehungsgeld_params: dict,
-    eink_st_abzuege_params: dict,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
 ) -> float:
     """Income relevant for means testing for parental leave benefit (Erziehungsgeld).
 
@@ -330,28 +330,12 @@ def anzurechnendes_einkommen_y(
     There is special rule for "Beamte, Soldaten und Richter" which is not
     implemented yet.
 
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg`.
-    arbeitslosengeld_2__anzahl_erwachsene_fg
-        See :func:`arbeitslosengeld_2__anzahl_erwachsene_fg`.
-    kind_grundsätzlich_anspruchsberechtigt
-        See :func:`kind_grundsätzlich_anspruchsberechtigt`.
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-    Relevant income
     """
 
     if kind_grundsätzlich_anspruchsberechtigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
-            - eink_st_abzuege_params["werbungskostenpauschale"]
+            - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale
             * arbeitslosengeld_2__anzahl_erwachsene_fg
         ) * erziehungsgeld_params["pauschaler_abzug_vom_einkommen"]
     else:
