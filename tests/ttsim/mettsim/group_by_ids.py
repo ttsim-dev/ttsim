@@ -12,13 +12,12 @@ def sp_id(
     """
     n = 1000000
     p_id_spouse = np.where(p_id_spouse < 0, p_id, p_id_spouse)
-    result = np.maximum(p_id, p_id_spouse) + np.minimum(p_id, p_id_spouse) * n
+    sp_id = np.maximum(p_id, p_id_spouse) + np.minimum(p_id, p_id_spouse) * n
 
-    return result
+    return sp_id
 
 
 @group_creation_function()
-@jax.jit
 def fam_id(
     p_id_spouse: np.ndarray,
     p_id: np.ndarray,
@@ -31,20 +30,20 @@ def fam_id(
     """
     n = 1000000
     children = np.isin(p_id, p_id_parent_1) + np.isin(p_id, p_id_parent_2)
-    fg_id = np.where(
+    fam_id = np.where(
         p_id_spouse < 0,
         p_id + p_id * n,
         np.maximum(p_id, p_id_spouse) + np.minimum(p_id, p_id_spouse) * n,
     )
-    fg_id = np.where(
-        (p_id_parent_1 >= 0) * (age < 25) * (1 - children),
-        fg_id[p_id_parent_1],
-        fg_id,
+    fam_id = np.where(
+        (fam_id == p_id + p_id * n) * (p_id_parent_1 >= 0) * (age < 25) * (1 - children),
+        fam_id[p_id_parent_1],
+        fam_id,
     )
-    fg_id = np.where(
-        (p_id_parent_2 >= 0) * (age < 25) * (1 - children),
-        fg_id[p_id_parent_2],
-        fg_id,
+    fam_id = np.where(
+        (fam_id == p_id + p_id * n) * (p_id_parent_2 >= 0) * (age < 25) * (1 - children),
+        fam_id[p_id_parent_2],
+        fam_id,
     )
 
-    return fg_id
+    return fam_id

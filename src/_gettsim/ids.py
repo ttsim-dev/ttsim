@@ -58,6 +58,7 @@ def fg_id(
     )
     fg_id = np.where(
         (familie__p_id_elternteil_1 >= 0)
+        * (fg_id == p_id + p_id * n)
         * (hh_id == hh_id[familie__p_id_elternteil_1])
         * (alter < 25)
         * (1 - children),
@@ -66,6 +67,7 @@ def fg_id(
     )
     fg_id = np.where(
         (familie__p_id_elternteil_2 >= 0)
+        * (fg_id == p_id + p_id * n)
         * (hh_id == hh_id[familie__p_id_elternteil_2])
         * (alter < 25)
         * (1 - children),
@@ -137,13 +139,10 @@ def wthh_id(
     The relevant unit for Wohngeld. Members of a household for whom the Wohngeld
     priority check compared to Bürgergeld yields the same result ∈ {True, False}.
     """
-    p_id = np.arange(hh_id.shape[0])
     hh_id = np.where(
-        np.logical_or(
-            vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg,
-            vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg,
-        ),
-        hh_id * hh_id.shape[0] + p_id,
+        vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg |
+        vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg,
+        hh_id + hh_id.shape[0],
         hh_id,
     )
     return hh_id
