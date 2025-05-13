@@ -429,14 +429,14 @@ def _process_params_tree(
     processed = process(**{k: v.value for k, v in qual_name_params.items()})
 
     # Return the processed parameters
-    return {
-        **{
+    return merge_trees(
+        left={
             k: v.value
             for k, v in qual_name_params.items()
             if not isinstance(v, RawTTSIMParam)
         },
-        **processed,
-    }
+        right=processed,
+    )
 
 
 def _partial_parameters_to_functions(
@@ -482,7 +482,10 @@ def _partial_params_to_functions(
     functions: QualNameTTSIMFunctionDict,
     params: QualNameProcessedParamDict,
 ) -> QualNameTTSIMFunctionDict:
-    """Round and partial parameters into functions.
+    """Partial parameters to functions such that they disappear from the DAG.
+
+    Note: Needs to be done after rounding such that dags recognizes partialled
+    parameters.
 
     Parameters
     ----------
@@ -497,9 +500,6 @@ def _partial_params_to_functions(
     Functions tree with parameters partialled.
 
     """
-    # Partial parameters to functions such that they disappear in the DAG.
-    # Note: Needs to be done after rounding such that dags recognizes partialled
-    # parameters.
     processed_functions = {}
     for name, func in functions.items():
         partial_params = {}

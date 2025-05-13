@@ -535,6 +535,10 @@ def prep_one_params_spec(
     current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
+    # TODO: Remove this again once we have transferred all files.
+    assert "deviation_from" not in current_spec, (
+        f"'deviation_from' replaces 'updates_previous', {leaf_name}"
+    )
     if len(current_spec) == 0:
         return None
     elif len(current_spec) == 1 and "updates_previous" in current_spec:
@@ -549,6 +553,9 @@ def prep_one_params_spec(
         out["value"] = current_spec["value"]
     else:
         out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
+        # TODO: Remove this again once we have transferred all files.
+        assert "reference" not in out["value"], leaf_name
+        assert "note" not in out["value"], leaf_name
     return out
 
 
@@ -560,17 +567,21 @@ def _get_params_contents(
     Implementation is a recursion in order to handle the 'updates_previous' machinery.
 
     """
-    updates_previous = relevant_specs[-1].pop("updates_previous", False)
+    current_spec = relevant_specs[-1].copy()
+    updates_previous = current_spec.pop("updates_previous", False)
+    current_spec.pop("note", None)
+    current_spec.pop("reference", None)
     if updates_previous:
         assert len(relevant_specs) > 1, (
             "'updates_previous' cannot be missing in the initial spec, found "
             f"{relevant_specs}"
         )
         return upsert_tree(
-            base=_get_params_contents(relevant_specs[:-1]), to_upsert=relevant_specs[-1]
+            base=_get_params_contents(relevant_specs=relevant_specs[:-1]),
+            to_upsert=current_spec,
         )
     else:
-        return relevant_specs[-1]
+        return current_spec
 
 
 def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
