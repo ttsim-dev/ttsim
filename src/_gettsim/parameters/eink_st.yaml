@@ -13,6 +13,8 @@ parameter_einkommensteuertarif:
       §32a EStG
       The quadratic rate is calculated by gettsim with the formula of the
       Progressionsfaktor. For details see the docstring of add_progressionsfaktor.
+  unit: null
+  reference_period: null
   type: piecewise_quadratic
   2002-01-01:
     0:
@@ -277,6 +279,8 @@ parameter_ertragsanteil_an_rente:
       Diese Funktion ist hier ab 2002 angegeben. Vor 2002 das Steuersystem ist nicht
       implementiert.
     en: null
+  unit: null
+  reference_period: null
   type: piecewise_linear
   #   type: require_converter
   2002-01-01:

@@ -170,7 +170,8 @@ def freibetrag_vermögen_bg_bis_2022(
     """
     out = (
         grundfreibetrag_vermögen_bg
-        + anzahl_kinder_bis_17_bg * arbeitsl_geld_2_params["vermögensfreibetrag_kind"]
+        + anzahl_kinder_bis_17_bg
+        * arbeitsl_geld_2_params["vermögensgrundfreibetrag_je_kind"]
         + anzahl_personen_bg * arbeitsl_geld_2_params["vermögensfreibetrag_austattung"]
     )
     return out

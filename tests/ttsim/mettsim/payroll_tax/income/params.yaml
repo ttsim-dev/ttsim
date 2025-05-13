@@ -6,7 +6,8 @@ lump_sum_deduction_y:
   description:
     de: Lohnsteuerpauschalabzug
     en: Lump sum deduction for payroll tax
-  type: scalar
+  unit: Euros
   reference_period: Year
+  type: scalar
   1900-01-01:
     value: 100.0

@@ -124,7 +124,7 @@ entzugsrate_eltern:
 entzugsrate_kind:
   name:
     de: Minderungsrate durch Einkommen des Kindes
-    en: Rate at which child income is deducted
+    en: Rate at which benefit is reduced by child income
   description:
     de: >-
       § 6a (3) BKGG. Einkommen des Kindes beinhaltet auch Unterhalt und

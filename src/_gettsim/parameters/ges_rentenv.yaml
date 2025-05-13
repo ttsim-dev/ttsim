@@ -9,6 +9,7 @@ parameter_beitragssatz:
     en: >-
       Employees contribution rate for pension insurance.
   unit: Share
+  reference_period: null
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:
@@ -64,8 +65,8 @@ parameter_beitragsbemessungsgrenze:
     de: Beitragsbemessungsgrenze für die gesetzliche Rentenversicherung.
     en: Income threshold for statutory pension insurance.
   unit: Euros
-  type: dict
   reference_period: Month
+  type: dict
   1984-01-01:
     west: 2659
   1985-01-01:
@@ -214,6 +215,7 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
       Fixed pension insurance contributions for marginal employment
       (§ 168 I Nr. 1b SGB VI)
   unit: Share
+  reference_period: null
   type: scalar
   access_different_date: jahresanfang
   1984-01-01:

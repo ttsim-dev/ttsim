@@ -298,8 +298,8 @@ beitragspflichtiges_durchschnittsentgelt:
       Anlage 1 SGB VI, Mean wage of all insured people in the sense of the German social
       insurance, which is needed to calculate the Entgeltpunkte.
   unit: Euros
-  type: scalar
   reference_period: Year
+  type: scalar
   2005-01-01:
     value: 29202
   2006-01-01:
@@ -547,8 +547,8 @@ parameter_rentenwert:
       The current pension value expresses the amount of monthly pension paid for one
       Entgeltpunkt.
   unit: Euros
-  type: require_converter
   reference_period: null
+  type: require_converter
   access_different_date: vorjahr
   1992-01-01:
     west: 21.19
@@ -699,7 +699,7 @@ grundrente_berücksichtigte_wartezeit:
       Minimal number of Grundrentenzeiten required to be entitled to Grundrente and
       maximum number of months that are considered for Grundrente.
   unit: Months
-  reference_period: Months
+  reference_period: Month
   type: dict
   2021-01-01:
     min: 396
