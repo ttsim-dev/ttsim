@@ -140,8 +140,8 @@ def wthh_id(
     priority check compared to Bürgergeld yields the same result ∈ {True, False}.
     """
     hh_id = np.where(
-        vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg |
-        vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg,
+        vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg
+        | vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg,
         hh_id + hh_id.shape[0],
         hh_id,
     )

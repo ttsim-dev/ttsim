@@ -1,6 +1,6 @@
 from ttsim import group_creation_function
 from ttsim.config import numpy_or_jax as np
-import jax
+
 
 @group_creation_function()
 def sp_id(
@@ -36,12 +36,18 @@ def fam_id(
         np.maximum(p_id, p_id_spouse) + np.minimum(p_id, p_id_spouse) * n,
     )
     fam_id = np.where(
-        (fam_id == p_id + p_id * n) * (p_id_parent_1 >= 0) * (age < 25) * (1 - children),
+        (fam_id == p_id + p_id * n)
+        * (p_id_parent_1 >= 0)
+        * (age < 25)
+        * (1 - children),
         fam_id[p_id_parent_1],
         fam_id,
     )
     fam_id = np.where(
-        (fam_id == p_id + p_id * n) * (p_id_parent_2 >= 0) * (age < 25) * (1 - children),
+        (fam_id == p_id + p_id * n)
+        * (p_id_parent_2 >= 0)
+        * (age < 25)
+        * (1 - children),
         fam_id[p_id_parent_2],
         fam_id,
     )
