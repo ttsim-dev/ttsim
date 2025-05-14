@@ -3,6 +3,7 @@
 from ttsim import group_creation_function, policy_input
 from ttsim.config import numpy_or_jax as np
 
+
 @policy_input()
 def p_id() -> int:
     """Unique identifier for each person. Always required, must be unique."""
@@ -50,9 +51,13 @@ def fg_id(
     familie__p_id_elternteil_1_loc = familie__p_id_elternteil_1
     familie__p_id_elternteil_2_loc = familie__p_id_elternteil_2
     for i in range(p_id.shape[0]):
-        familie__p_id_elternteil_1_loc = np.where(familie__p_id_elternteil_1 == p_id[i], i, familie__p_id_elternteil_1_loc)
-        familie__p_id_elternteil_2_loc = np.where(familie__p_id_elternteil_2 == p_id[i], i, familie__p_id_elternteil_2_loc)
-    
+        familie__p_id_elternteil_1_loc = np.where(
+            familie__p_id_elternteil_1 == p_id[i], i, familie__p_id_elternteil_1_loc
+        )
+        familie__p_id_elternteil_2_loc = np.where(
+            familie__p_id_elternteil_2 == p_id[i], i, familie__p_id_elternteil_2_loc
+        )
+
     children = np.isin(p_id, familie__p_id_elternteil_1) + np.isin(
         p_id, familie__p_id_elternteil_2
     )
