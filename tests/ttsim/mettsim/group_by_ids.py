@@ -29,6 +29,13 @@ def fam_id(
     Compute the family ID for each person.
     """
     n = 1000000
+
+    p_id_parent_1_loc = p_id_parent_1
+    p_id_parent_2_loc = p_id_parent_2
+    for i in range(p_id.shape[0]):
+        p_id_parent_1_loc = np.where(p_id_parent_1_loc == p_id[i], i, p_id_parent_1_loc)
+        p_id_parent_2_loc = np.where(p_id_parent_2_loc == p_id[i], i, p_id_parent_2_loc)
+
     children = np.isin(p_id, p_id_parent_1) + np.isin(p_id, p_id_parent_2)
     fam_id = np.where(
         p_id_spouse < 0,
@@ -37,18 +44,18 @@ def fam_id(
     )
     fam_id = np.where(
         (fam_id == p_id + p_id * n)
-        * (p_id_parent_1 >= 0)
+        * (p_id_parent_1_loc >= 0)
         * (age < 25)
         * (1 - children),
-        fam_id[p_id_parent_1],
+        fam_id[p_id_parent_1_loc],
         fam_id,
     )
     fam_id = np.where(
         (fam_id == p_id + p_id * n)
-        * (p_id_parent_2 >= 0)
+        * (p_id_parent_2_loc >= 0)
         * (age < 25)
         * (1 - children),
-        fam_id[p_id_parent_2],
+        fam_id[p_id_parent_2_loc],
         fam_id,
     )
 
