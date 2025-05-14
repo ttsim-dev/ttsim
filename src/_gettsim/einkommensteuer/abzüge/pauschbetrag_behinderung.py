@@ -6,7 +6,7 @@ from ttsim.config import numpy_or_jax as np
 
 @policy_function(vectorization_strategy="loop")
 def pauschbetrag_behinderung_y(
-    behinderungsgrad: int, eink_st_abzuege_params: dict
+    behinderungsgrad: int, behindertenpauschbetrag: dict[int, float]
 ) -> float:
     """Assign tax deduction allowance for handicaped to different handicap degrees.
 
@@ -23,7 +23,7 @@ def pauschbetrag_behinderung_y(
     """
 
     # Get disability degree thresholds
-    bins = sorted(eink_st_abzuege_params["behindertenpauschbetrag"])
+    bins = sorted(behindertenpauschbetrag)
 
     # Select corresponding bin.
     selected_bin_index = (
@@ -32,6 +32,6 @@ def pauschbetrag_behinderung_y(
     selected_bin = bins[selected_bin_index]
 
     # Select appropriate pauschbetrag.
-    out = eink_st_abzuege_params["behindertenpauschbetrag"][selected_bin]
+    out = behindertenpauschbetrag[selected_bin]
 
     return out
