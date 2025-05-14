@@ -14,10 +14,7 @@ from ttsim.loader import (
     orig_params_tree,
     orig_ttsim_objects_tree,
 )
-from ttsim.piecewise_polynomial import (
-    check_and_get_thresholds,
-    get_piecewise_parameters,
-)
+from ttsim.piecewise_polynomial import get_piecewise_parameters
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
     merge_trees,
@@ -209,7 +206,7 @@ def set_up_policy_environment(
     date = to_datetime(date)
 
     _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
-    _orig_params_tree = merge_trees(left=orig_params_tree(root), right={})
+    _orig_params_tree = orig_params_tree(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_of_clashes(
         orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
@@ -545,7 +542,7 @@ def prep_one_params_spec(
     out["reference"] = current_spec.pop("reference", None)
     # TODO: Remove this again once we have transferred all files.
     assert "deviation_from" not in current_spec, (
-        f"'deviation_from' replaces 'updates_previous', {leaf_name}"
+        f"'updates_previous' replaces 'deviation_from', {leaf_name}"
     )
     if len(current_spec) == 0:
         return None
@@ -610,11 +607,6 @@ def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
         if isinstance(tax_data[param], dict):
             if "type" in tax_data[param]:
                 if tax_data[param]["type"].startswith("piecewise"):
-                    if "progressionsfaktor" in tax_data[param]:
-                        if tax_data[param]["progressionsfaktor"]:
-                            tax_data[param] = add_progressionsfaktor(
-                                tax_data[param], param
-                            )
                     tax_data[param] = get_piecewise_parameters(
                         leaf_name=param,
                         func_type=tax_data[param]["type"],
@@ -860,37 +852,3 @@ def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
                 is not compatible with the PolicyFunction {function.leaf_name}.
                 """
             )
-
-
-def add_progressionsfaktor(
-    params_dict: dict[str | int, Any], parameter: str
-) -> dict[str | int, Any]:
-    """Quadratic factor of tax tariff function.
-
-    The German tax tariff is defined on several income intervals with distinct
-    marginal tax rates at the thresholds. To ensure an almost linear increase of
-    the average tax rate, the German tax tariff is defined as a quadratic function,
-    where the quadratic rate is the so called linear Progressionsfaktor. For its
-    calculation one needs the lower (low_thres) and upper (upper_thres) thresholds of
-    the interval as well as the marginal tax rate of the interval (rate_iv) and of the
-    following interval (rate_fiv). The formula is then given by:
-
-    (rate_fiv - rate_iv) / (2 * (upper_thres - low_thres))
-
-    """
-    out: dict[str | int, Any] = copy.deepcopy(
-        {k: v for k, v in params_dict.items() if isinstance(k, int)}
-    )
-
-    # Check and extract lower thresholds.
-    lower_thresholds, upper_thresholds = check_and_get_thresholds(
-        leaf_name=parameter, parameter_dict=out
-    )[:2]
-    for key in sorted(out.keys()):
-        if "rate_quadratic" not in out[key]:
-            out[key]["rate_quadratic"] = (
-                out[key + 1]["rate_linear"] - out[key]["rate_linear"]  # type: ignore[operator]
-            ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
-    # TODO: Add type back in. This whole function needs to be refactored
-    out["type"] = params_dict["type"]
-    return out

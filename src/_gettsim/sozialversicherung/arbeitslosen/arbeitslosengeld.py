@@ -1,7 +1,7 @@
 """Unemployment benefits (Arbeitslosengeld)."""
 
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
-from ttsim import piecewise_polynomial, policy_function
+from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
 
 
 @policy_function(vectorization_strategy="loop")
@@ -91,7 +91,7 @@ def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
     arbeitsl_geld_params: dict,
-    eink_st_params: dict,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
     soli_st_params: dict,
 ) -> float:
@@ -113,7 +113,7 @@ def einkommen_vorjahr_proxy_m(
     prox_tax = einkommensteuertarif(
         12 * max_wage
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
-        eink_st_params,
+        einkommensteuer__parameter_einkommensteuertarif,
     )
     prox_soli = piecewise_polynomial(
         x=prox_tax, parameters=soli_st_params["parameter_solidaritätszuschlag"]
