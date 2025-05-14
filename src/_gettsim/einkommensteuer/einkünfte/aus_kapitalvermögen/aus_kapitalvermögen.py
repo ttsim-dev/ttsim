@@ -9,19 +9,7 @@ def betrag_y_mit_sparerfreibetrag_und_werbungskostenpauschbetrag(
     sparerfreibetrag: float,
     sparer_werbungskostenpauschbetrag: float,
 ) -> float:
-    """Calculate taxable capital income on Steuernummer level.
-
-    Parameters
-    ----------
-    kapitalerträge_y
-        See :func:`kapitalerträge_y`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
-    """
+    """Calculate taxable capital income on Steuernummer level."""
     return max(
         kapitalerträge_y - sparerfreibetrag + sparer_werbungskostenpauschbetrag, 0.0
     )
@@ -32,17 +20,5 @@ def betrag_y_mit_sparerpauschbetrag(
     kapitalerträge_y: float,
     sparerpauschbetrag: float,
 ) -> float:
-    """Calculate taxable capital income on Steuernummer level.
-
-    Parameters
-    ----------
-    kapitalerträge_y
-        See :func:`kapitalerträge_y`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
-    """
+    """Calculate taxable capital income on Steuernummer level."""
     return max(kapitalerträge_y - sparerpauschbetrag, 0.0)

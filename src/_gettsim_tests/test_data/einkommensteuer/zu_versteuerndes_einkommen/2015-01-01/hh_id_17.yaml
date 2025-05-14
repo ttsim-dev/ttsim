@@ -18,10 +18,10 @@ inputs:
     einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
       - 0.0
       - 0.0
-    einkommensteuer__abzüge__betreuungskosten_m:
+    einkommensteuer__abzüge__kinderbetreuungskosten_m:
       - 0.0
       - 0.0
-    einkommensteuer__abzüge__p_id_betreuungskostenträger:
+    einkommensteuer__abzüge__p_id_kinderbetreuungskostenträger:
       - -1
       - -1
     einkommensteuer__einkünfte__sonstige__ohne_renten_m:

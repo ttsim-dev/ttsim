@@ -11,24 +11,7 @@ def betrag_m(
     einkommen_vorjahr_proxy_m: float,
     arbeitsl_geld_params: dict,
 ) -> float:
-    """Calculate individual unemployment benefit.
-
-    Parameters
-    ----------
-    einkommensteuer__anzahl_kinderfreibeträge
-        See :func:
-        `einkommensteuer__anzahl_kinderfreibeträge`.
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt`.
-    einkommen_vorjahr_proxy_m
-        See :func:`einkommen_vorjahr_proxy_m`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-
-    Returns
-    -------
-
-    """
+    """Calculate individual unemployment benefit."""
 
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
         arbeitsl_geld_satz = arbeitsl_geld_params["satz"]["allgemein"]
@@ -88,27 +71,7 @@ def grundsätzlich_anspruchsberechtigt(
     arbeitsl_geld_params: dict,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
 ) -> bool:
-    """Check eligibility for unemployment benefit.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    arbeitssuchend
-        See basic input variable :ref:`arbeitssuchend <arbeitssuchend>`.
-    monate_verbleibender_anspruchsdauer
-        See :func:`monate_verbleibender_anspruchsdauer`.
-    arbeitsstunden_w
-        See basic input variable :ref:`arbeitsstunden_w <arbeitsstunden_w>`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
-        See :func:`sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze`.
-
-    Returns
-    -------
-
-    """
+    """Check eligibility for unemployment benefit."""
     regelaltersgrenze = (
         sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     )
@@ -132,28 +95,7 @@ def einkommen_vorjahr_proxy_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
     soli_st_params: dict,
 ) -> float:
-    """Approximate last years income for unemployment benefit.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m
-        See :func:
-        `sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m`.
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m>`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params <eink_st_params>`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-    soli_st_params
-        See params documentation :ref:`soli_st_params <soli_st_params>`.
-
-    Returns
-    -------
-
-    """
+    """Approximate last years income for unemployment benefit."""
     # Relevant wage is capped at the contribution thresholds
     max_wage = min(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m,

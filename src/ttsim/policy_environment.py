@@ -17,7 +17,6 @@ from ttsim.loader import (
 from ttsim.piecewise_polynomial import (
     check_and_get_thresholds,
     get_piecewise_parameters,
-    piecewise_polynomial,
 )
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
@@ -83,7 +82,7 @@ class PolicyEnvironment:
         )
         _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
 
-        # FixMe: Delete
+        # TODO: Delete
         params_tree = params_tree if params_tree is not None else {}
         self._params = params if params is not None else {}
 
@@ -238,7 +237,6 @@ def set_up_policy_environment(
             # Align parameters for piecewise polynomial functions
             params[group] = _parse_piecewise_parameters(params_one_group)
         params = _parse_kinderzuschl_max(date, params)
-        params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
         params_tree = active_ttsim_params_tree(
             orig_params_tree=_orig_params_tree, date=date
         )
@@ -663,38 +661,6 @@ def _parse_kinderzuschl_max(
     return params
 
 
-def _parse_vorsorgepauschale_rentenv_anteil(
-    date: datetime.date, params: dict[str, Any]
-) -> dict[str, Any]:
-    """Calculate the share of pension contributions to be deducted for Lohnsteuer
-    increases by year.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy parameters are set up.
-    params
-        A dictionary with parameters from the policy environment.
-
-    Returns
-    -------
-    out
-
-    """
-
-    jahr = date.year
-    if jahr >= 2005:
-        out = piecewise_polynomial(
-            x=jahr,
-            parameters=params["eink_st_abzuege"][
-                "anteil_absetzbare_rentenversicherungskosten"
-            ],
-        )
-        params["eink_st_abzuege"]["anteil_absetzbare_rentenversicherungskosten"] = out
-
-    return params
-
-
 def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
     raw_group_data: dict[str, Any],
     date: datetime.date,
@@ -925,6 +891,6 @@ def add_progressionsfaktor(
             out[key]["rate_quadratic"] = (
                 out[key + 1]["rate_linear"] - out[key]["rate_linear"]  # type: ignore[operator]
             ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
-    # FixMe: Add type back in. This whole function needs to be refactored
+    # TODO: Add type back in. This whole function needs to be refactored
     out["type"] = params_dict["type"]
     return out

@@ -55,42 +55,15 @@ def altersfreibetrag_y_ab_2005(
     maximaler_altersentlastungsbetrag_gestaffelt: dict[int, float],
     altersentlastungsquote_gestaffelt: dict[int, float],
 ) -> float:
-    """Calculate tax deduction allowance for elderly since 2005.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y>`.
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y <einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y>`.
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y
-        See :func:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y`.
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y <einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y>`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-    sozialversicherung__geringfügig_beschäftigt
-        See :func:`sozialversicherung__geringfügig_beschäftigt`.
-
-    Returns
-    -------
-
-    """
-    # Maximum tax credit by birth year.
+    """Calculate tax deduction allowance for elderly since 2005."""
     bins = sorted(maximaler_altersentlastungsbetrag_gestaffelt.keys())
     if geburtsjahr <= 1939:
         selected_bin = 1940
     else:
-        # Select corresponding bin.
         selected_bin = bins[
             np.searchsorted(np.asarray([*bins, np.inf]), geburtsjahr, side="right") - 1
         ]
 
-    # Select appropriate tax credit threshold and quota.
     out_max = maximaler_altersentlastungsbetrag_gestaffelt[selected_bin]
 
     einkommen_lohn = (

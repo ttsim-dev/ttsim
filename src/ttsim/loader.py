@@ -117,7 +117,7 @@ def orig_params_tree(root: Path) -> FlatOrigParamSpecDict:
         k: v
         for path in _find_files_recursively(root=root, suffix=".yaml")
         for k, v in _tree_path_to_orig_yaml_object(path=path, root=root).items()
-        # FixMe: Temporary solution so that old stuff works in parallel.
+        # TODO: Temporary solution so that old stuff works in parallel.
         if "parameters" not in k
     }
 

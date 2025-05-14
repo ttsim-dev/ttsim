@@ -134,7 +134,7 @@ def vorsorgeaufwendungen_globale_kappung_y_sn(
     sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn: float,
     sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    eink_st_abzuege_params: dict,
+    maximalbetrag_sonstige_vorsorgeaufwendungen: float,
 ) -> float:
     """Vorsorgeaufwendungen before favorability checks from 2005 to 2009.
 
@@ -148,7 +148,7 @@ def vorsorgeaufwendungen_globale_kappung_y_sn(
     )
     max_value = (
         einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["maximalbetrag_sonstige_vorsorgeaufwendungen"]
+        * maximalbetrag_sonstige_vorsorgeaufwendungen
     )
 
     sum_vorsorge = min(sum_vorsorge, max_value)
@@ -166,7 +166,8 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn: float,
     sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    eink_st_abzuege_params: dict,
+    maximalbetrag_sonstige_vorsorgeaufwendungen: float,
+    minderungsanteil_vorsorgeaufwendungen_für_krankenversicherungsbeiträge: float,
 ) -> float:
     """Vorsorgeaufwendungen.
 
@@ -175,17 +176,12 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     """
     basiskrankenversicherung = (
         sozialversicherung__pflege__beitrag__betrag_versicherter_y_sn
-        + (
-            1
-            - eink_st_abzuege_params[
-                "minderungsanteil_vorsorgeaufwendungen_für_krankenversicherungsbeiträge"
-            ]
-        )
+        + (1 - minderungsanteil_vorsorgeaufwendungen_für_krankenversicherungsbeiträge)
         * sozialversicherung__kranken__beitrag__betrag_versicherter_y_sn
     )
 
     sonst_vors_max = (
-        eink_st_abzuege_params["maximalbetrag_sonstige_vorsorgeaufwendungen"]
+        maximalbetrag_sonstige_vorsorgeaufwendungen
         * einkommensteuer__anzahl_personen_sn
     )
     sonst_vors_before_basiskrankenv = min(
@@ -263,7 +259,7 @@ def altersvorsorge_y_sn_volle_anrechnung(
     sozialversicherung__rente__beitrag__betrag_versicherter_y_sn: float,
     beitrag_private_rentenversicherung_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    eink_st_abzuege_params: dict,
+    maximalbetrag_altersvorsorgeaufwendungen: float,
 ) -> float:
     """Contributions to retirement savings deductible from taxable income."""
     out = (
@@ -271,8 +267,7 @@ def altersvorsorge_y_sn_volle_anrechnung(
         + beitrag_private_rentenversicherung_y_sn
     )
     max_value = (
-        einkommensteuer__anzahl_personen_sn
-        * eink_st_abzuege_params["maximalbetrag_altersvorsorgeaufwendungen"]
+        einkommensteuer__anzahl_personen_sn * maximalbetrag_altersvorsorgeaufwendungen
     )
 
     return min(out, max_value)

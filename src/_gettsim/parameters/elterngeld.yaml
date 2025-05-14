@@ -232,7 +232,7 @@ max_zu_versteuerndes_einkommen_vorjahr_nach_alleinerziehendenstatus:
     deviation_from: previous
     paar: 300000.0
     reference: Art. 1 G. v. 15.02.2021 BGBl. I S. 239
-  # FixMe: Comment in after moving to new infrastructure
+  # TODO: Comment in after moving to new infrastructure
   # 2024-04-01:
   #   note: Pauschalisiert, siehe 'max_zu_versteuerndes_einkommen_vorjahr_pauschal'
 max_zu_versteuerndes_einkommen_vorjahr_pauschal:

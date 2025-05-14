@@ -152,20 +152,6 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     Rule was in priciple also active for 2015 but has been overwritten by an
     Anwendungsvorschrift as Kinderfreibetrag and Kindergeld changed on July 2015.
 
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    kindergeld_erstes_kind_m
-        See :func:`kindergeld_erstes_kind_m`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-    unterhaltsvors_params
-        See params documentation :ref:`unterhaltsvors_params <unterhaltsvors_params>`.
-
-    Returns
-    -------
-
     """
     # TODO(@MImmesberger): Remove explicit parameter conversion.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/575
