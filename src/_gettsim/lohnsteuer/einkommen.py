@@ -8,14 +8,14 @@ def einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     steuerklasse: int,
     vorsorgepauschale_y: float,
-    einkommensteuer__abzüge__alleinerziehendenfreibetrag: float,
+    einkommensteuer__abzüge__alleinerziehendenfreibetrag_basis: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
     einkommensteuer__abzüge__sonderausgabenpauschbetrag: float,
 ) -> float:
     """Calculate tax base for Lohnsteuer (withholding tax on earnings)."""
     entlastung_freibetrag_alleinerz = (
         steuerklasse == 2
-    ) * einkommensteuer__abzüge__alleinerziehendenfreibetrag
+    ) * einkommensteuer__abzüge__alleinerziehendenfreibetrag_basis
 
     if steuerklasse == 6:
         werbungskosten = 0.0

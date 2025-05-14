@@ -406,7 +406,7 @@ alleinerziehendenfreibetrag:
   2023-01-01:
     value: 4260
     reference: G. v. 20.12.2022 BGBl. I S. 2294.
-alleinerziehendenfreibetrag_zusatz:
+alleinerziehendenfreibetrag_zusatz_pro_kind:
   name:
     de: Zusätzlicher Entlastungsbetrag für Alleinerziehende
     en: Additional income tax allowance for Single Parents
