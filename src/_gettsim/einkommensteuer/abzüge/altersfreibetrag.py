@@ -11,10 +11,12 @@ def altersfreibetrag_y_bis_2004(
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y: float,
-    eink_st_abzuege_params: dict,
+    altersentlastungsbetrag_altersgrenze: int,
+    maximaler_altersentlastungsbetrag_einheitlich: float,
+    altersentlastungsquote_einheitlich: float,
 ) -> float:
     """Calculate tax deduction allowance for elderly until 2004."""
-    altersgrenze = eink_st_abzuege_params["altersentlastungsbetrag_altersgrenze"]
+    altersgrenze = altersentlastungsbetrag_altersgrenze
     weiteres_einkommen = max(
         einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y
@@ -23,12 +25,12 @@ def altersfreibetrag_y_bis_2004(
     )
     if alter > altersgrenze:
         out = min(
-            eink_st_abzuege_params["altersentlastungsquote"]
+            altersentlastungsquote_einheitlich
             * (
                 einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
                 + weiteres_einkommen
             ),
-            eink_st_abzuege_params["maximaler_altersentlastungsbetrag"],
+            maximaler_altersentlastungsbetrag_einheitlich,
         )
     else:
         out = 0.0
@@ -49,7 +51,9 @@ def altersfreibetrag_y_ab_2005(
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y: float,
-    eink_st_abzuege_params: dict,
+    altersentlastungsbetrag_altersgrenze: int,
+    maximaler_altersentlastungsbetrag_gestaffelt: dict[int, float],
+    altersentlastungsquote_gestaffelt: dict[int, float],
 ) -> float:
     """Calculate tax deduction allowance for elderly since 2005.
 
@@ -77,7 +81,7 @@ def altersfreibetrag_y_ab_2005(
 
     """
     # Maximum tax credit by birth year.
-    bins = sorted(eink_st_abzuege_params["maximaler_altersentlastungsbetrag"])
+    bins = sorted(maximaler_altersentlastungsbetrag_gestaffelt.keys())
     if geburtsjahr <= 1939:
         selected_bin = 1940
     else:
@@ -87,7 +91,7 @@ def altersfreibetrag_y_ab_2005(
         ]
 
     # Select appropriate tax credit threshold and quota.
-    out_max = eink_st_abzuege_params["maximaler_altersentlastungsbetrag"][selected_bin]
+    out_max = maximaler_altersentlastungsbetrag_gestaffelt[selected_bin]
 
     einkommen_lohn = (
         0
@@ -100,11 +104,11 @@ def altersfreibetrag_y_ab_2005(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y,
         0.0,
     )
-    out_quote = eink_st_abzuege_params["altersentlastungsquote"][selected_bin] * (
+    out_quote = altersentlastungsquote_gestaffelt[selected_bin] * (
         einkommen_lohn + weiteres_einkommen
     )
 
-    if alter > eink_st_abzuege_params["altersentlastungsbetrag_altersgrenze"]:
+    if alter > altersentlastungsbetrag_altersgrenze:
         out = min(out_quote, out_max)
     else:
         out = 0.0
