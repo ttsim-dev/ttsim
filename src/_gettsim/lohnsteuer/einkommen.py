@@ -45,35 +45,38 @@ def einkommen_y(
     return out
 
 
-@policy_function()
-def vorsorge_krankenv_option_a(
+@policy_function(start_date="2010-01-01")
+def vorsorge_krankenversicherungsbeiträge_option_a(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     steuerklasse: int,
     vorsorgepauschale_mindestanteil: float,
-    maximal_absetzbare_krankenversicherungskosten: dict,
+    maximal_absetzbare_krankenversicherungskosten: dict[str, float],
 ) -> float:
     """Option a for calculating deductible health insurance contributions.
 
-    This function calculates option a where at least 12% of earnings
-    of earnings can be deducted, but only up to a certain threshold.
+    This function calculates option a where at least 12% of earnings can be deducted,
+    but only up to a certain threshold.
 
     """
 
-    vorsorge_krankenv_option_a_basis = (
+    vorsorge_krankenversicherungsbeiträge_option_a_basis = (
         vorsorgepauschale_mindestanteil
         * sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y
     )
 
     if steuerklasse == 3:
-        vorsorge_krankenv_option_a_max = maximal_absetzbare_krankenversicherungskosten[
-            "steuerklasse_3"
-        ]
+        vorsorge_krankenversicherungsbeiträge_option_a_max = (
+            maximal_absetzbare_krankenversicherungskosten["steuerklasse_3"]
+        )
     else:
-        vorsorge_krankenv_option_a_max = maximal_absetzbare_krankenversicherungskosten[
-            "steuerklasse_nicht_3"
-        ]
+        vorsorge_krankenversicherungsbeiträge_option_a_max = (
+            maximal_absetzbare_krankenversicherungskosten["steuerklasse_nicht_3"]
+        )
 
-    out = min(vorsorge_krankenv_option_a_max, vorsorge_krankenv_option_a_basis)
+    out = min(
+        vorsorge_krankenversicherungsbeiträge_option_a_max,
+        vorsorge_krankenversicherungsbeiträge_option_a_basis,
+    )
 
     return out
 
@@ -81,9 +84,9 @@ def vorsorge_krankenv_option_a(
 @policy_function(
     start_date="2015-01-01",
     end_date="2018-12-31",
-    leaf_name="vorsorge_krankenv_option_b",
+    leaf_name="vorsorge_krankenversicherungsbeiträge_option_b",
 )
-def vorsorge_krankenv_option_b_ab_2015_bis_2018(
+def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
@@ -106,9 +109,9 @@ def vorsorge_krankenv_option_b_ab_2015_bis_2018(
 
 @policy_function(
     start_date="2019-01-01",
-    leaf_name="vorsorge_krankenv_option_b",
+    leaf_name="vorsorge_krankenversicherungsbeiträge_option_b",
 )
-def vorsorge_krankenv_option_b_ab_2019(
+def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
@@ -160,8 +163,8 @@ def einführungsfaktor_rentenversicherungsaufwendungen(
 def vorsorgepauschale_y_ab_2010_bis_2022(
     sozialversicherung__rente__beitrag__einkommen_y: float,
     ges_rentenv_params: dict,
-    vorsorge_krankenv_option_a: float,
-    vorsorge_krankenv_option_b: float,
+    vorsorge_krankenversicherungsbeiträge_option_a: float,
+    vorsorge_krankenversicherungsbeiträge_option_b: float,
     einführungsfaktor_rentenversicherungsaufwendungen: float,
 ) -> float:
     """Calculate Vorsorgepauschale for Lohnsteuer valid since 2010. Those are deducted
@@ -175,7 +178,10 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
         * ges_rentenv_params["parameter_beitragssatz"]
         * einführungsfaktor_rentenversicherungsaufwendungen
     )
-    kranken = max(vorsorge_krankenv_option_a, vorsorge_krankenv_option_b)
+    kranken = max(
+        vorsorge_krankenversicherungsbeiträge_option_a,
+        vorsorge_krankenversicherungsbeiträge_option_b,
+    )
 
     return rente + kranken
 
@@ -188,8 +194,8 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
 def vorsorgepauschale_y_ab_2023(
     sozialversicherung__rente__beitrag__einkommen_y: float,
     ges_rentenv_params: dict,
-    vorsorge_krankenv_option_a: float,
-    vorsorge_krankenv_option_b: float,
+    vorsorge_krankenversicherungsbeiträge_option_a: float,
+    vorsorge_krankenversicherungsbeiträge_option_b: float,
 ) -> float:
     """Calculate Vorsorgepauschale for Lohnsteuer valid since 2010. Those are deducted
     from gross earnings. Idea is similar, but not identical, to Vorsorgeaufwendungen
@@ -201,7 +207,10 @@ def vorsorgepauschale_y_ab_2023(
         sozialversicherung__rente__beitrag__einkommen_y
         * ges_rentenv_params["parameter_beitragssatz"]
     )
-    kranken = max(vorsorge_krankenv_option_a, vorsorge_krankenv_option_b)
+    kranken = max(
+        vorsorge_krankenversicherungsbeiträge_option_a,
+        vorsorge_krankenversicherungsbeiträge_option_b,
+    )
 
     return rente + kranken
 
