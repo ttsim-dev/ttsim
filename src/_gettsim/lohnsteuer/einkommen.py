@@ -158,8 +158,7 @@ def einführungsfaktor_rentenversicherungsaufwendungen(
     rounding_spec=RoundingSpec(base=1, direction="up"),
 )
 def vorsorgepauschale_y_ab_2010_bis_2022(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    wohnort_ost: bool,
+    sozialversicherung__rente__beitrag__einkommen_y: float,
     ges_rentenv_params: dict,
     vorsorge_krankenv_option_a: float,
     vorsorge_krankenv_option_b: float,
@@ -171,37 +170,14 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
 
     """
 
-    # 1. Rentenversicherungsbeiträge, §39b (2) Nr. 3a EStG.
-    if wohnort_ost:
-        bruttolohn_rente = min(
-            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["parameter_beitragsbemessungsgrenze"]["ost"],
-        )
-    else:
-        bruttolohn_rente = min(
-            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["parameter_beitragsbemessungsgrenze"]["west"],
-        )
-
-    vorsorg_rentenv = (
-        bruttolohn_rente
+    rente = (
+        sozialversicherung__rente__beitrag__einkommen_y
         * ges_rentenv_params["parameter_beitragssatz"]
         * einführungsfaktor_rentenversicherungsaufwendungen
     )
+    kranken = max(vorsorge_krankenv_option_a, vorsorge_krankenv_option_b)
 
-    # 2. Krankenversicherungsbeiträge, §39b (2) Nr. 3b EStG.
-    # For health care deductions, there are two ways to calculate
-    # the deuctions.
-    # a) at least 12% of earnings of earnings can be deducted,
-    #    but only up to a certain threshold
-    #  b) Take the actual contributions (usually the better option),
-    #   but apply the reduced rate
-
-    vorsorg_krankenv = max(vorsorge_krankenv_option_a, vorsorge_krankenv_option_b)
-
-    # add both RV and KV deductions. For KV, take the larger amount.
-    out = vorsorg_rentenv + vorsorg_krankenv
-    return out
+    return rente + kranken
 
 
 @policy_function(
@@ -210,8 +186,7 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
     rounding_spec=RoundingSpec(base=1, direction="up"),
 )
 def vorsorgepauschale_y_ab_2023(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    wohnort_ost: bool,
+    sozialversicherung__rente__beitrag__einkommen_y: float,
     ges_rentenv_params: dict,
     vorsorge_krankenv_option_a: float,
     vorsorge_krankenv_option_b: float,
@@ -222,33 +197,13 @@ def vorsorgepauschale_y_ab_2023(
 
     """
 
-    # 1. Rentenversicherungsbeiträge, §39b (2) Nr. 3a EStG.
-    if wohnort_ost:
-        bruttolohn_rente = min(
-            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["parameter_beitragsbemessungsgrenze"]["ost"],
-        )
-    else:
-        bruttolohn_rente = min(
-            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
-            12 * ges_rentenv_params["parameter_beitragsbemessungsgrenze"]["west"],
-        )
+    rente = (
+        sozialversicherung__rente__beitrag__einkommen_y
+        * ges_rentenv_params["parameter_beitragssatz"]
+    )
+    kranken = max(vorsorge_krankenv_option_a, vorsorge_krankenv_option_b)
 
-    vorsorg_rentenv = bruttolohn_rente * ges_rentenv_params["parameter_beitragssatz"]
-
-    # 2. Krankenversicherungsbeiträge, §39b (2) Nr. 3b EStG.
-    # For health care deductions, there are two ways to calculate
-    # the deuctions.
-    # a) at least 12% of earnings of earnings can be deducted,
-    #    but only up to a certain threshold
-    #  b) Take the actual contributions (usually the better option),
-    #   but apply the reduced rate
-
-    vorsorg_krankenv = max(vorsorge_krankenv_option_a, vorsorge_krankenv_option_b)
-
-    # add both RV and KV deductions. For KV, take the larger amount.
-    out = vorsorg_rentenv + vorsorg_krankenv
-    return out
+    return rente + kranken
 
 
 @policy_function(
