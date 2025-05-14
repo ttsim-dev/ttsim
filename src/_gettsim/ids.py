@@ -92,6 +92,7 @@ def fg_id(
 @group_creation_function()
 def bg_id(
     fg_id: np.ndarray,
+    p_id: np.ndarray,
     arbeitslosengeld_2__eigenbedarf_gedeckt: np.ndarray,
     alter: np.ndarray,
 ) -> np.ndarray:
@@ -107,7 +108,6 @@ def bg_id(
     # TODO(@MImmesberger): Remove hard-coded number
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
     n = 1000000
-    p_id = np.arange(fg_id.shape[0])
     hh_id = np.where(
         np.logical_and(arbeitslosengeld_2__eigenbedarf_gedeckt, alter < 25),
         p_id + p_id * n,
