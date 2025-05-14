@@ -3,7 +3,6 @@
 from ttsim import group_creation_function, policy_input
 from ttsim.config import numpy_or_jax as np
 
-
 @policy_input()
 def p_id() -> int:
     """Unique identifier for each person. Always required, must be unique."""
@@ -47,6 +46,13 @@ def fg_id(
     2, before excluding children who have enough income fend for themselves.
     """
     n = 1000000
+
+    familie__p_id_elternteil_1_loc = familie__p_id_elternteil_1
+    familie__p_id_elternteil_2_loc = familie__p_id_elternteil_2
+    for i in range(p_id.shape[0]):
+        familie__p_id_elternteil_1_loc = np.where(familie__p_id_elternteil_1 == p_id[i], i, familie__p_id_elternteil_1_loc)
+        familie__p_id_elternteil_2_loc = np.where(familie__p_id_elternteil_2 == p_id[i], i, familie__p_id_elternteil_2_loc)
+    
     children = np.isin(p_id, familie__p_id_elternteil_1) + np.isin(
         p_id, familie__p_id_elternteil_2
     )
@@ -57,21 +63,21 @@ def fg_id(
         + np.minimum(p_id, arbeitslosengeld_2__p_id_einstandspartner) * n,
     )
     fg_id = np.where(
-        (familie__p_id_elternteil_1 >= 0)
+        (familie__p_id_elternteil_1_loc >= 0)
         * (fg_id == p_id + p_id * n)
-        * (hh_id == hh_id[familie__p_id_elternteil_1])
+        * (hh_id == hh_id[familie__p_id_elternteil_1_loc])
         * (alter < 25)
         * (1 - children),
-        fg_id[familie__p_id_elternteil_1],
+        fg_id[familie__p_id_elternteil_1_loc],
         fg_id,
     )
     fg_id = np.where(
-        (familie__p_id_elternteil_2 >= 0)
+        (familie__p_id_elternteil_2_loc >= 0)
         * (fg_id == p_id + p_id * n)
-        * (hh_id == hh_id[familie__p_id_elternteil_2])
+        * (hh_id == hh_id[familie__p_id_elternteil_2_loc])
         * (alter < 25)
         * (1 - children),
-        fg_id[familie__p_id_elternteil_2],
+        fg_id[familie__p_id_elternteil_2_loc],
         fg_id,
     )
 
@@ -139,10 +145,11 @@ def wthh_id(
     The relevant unit for Wohngeld. Members of a household for whom the Wohngeld
     priority check compared to Bürgergeld yields the same result ∈ {True, False}.
     """
+    offset = np.max(hh_id) + 1
     hh_id = np.where(
         vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg
         | vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg,
-        hh_id + hh_id.shape[0],
+        hh_id + offset,
         hh_id,
     )
     return hh_id
