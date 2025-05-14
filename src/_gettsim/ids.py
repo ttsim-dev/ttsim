@@ -20,7 +20,7 @@ def ehe_id(
     familie__p_id_ehepartner: np.ndarray,
 ) -> np.ndarray:
     """Couples that are either married or in a civil union."""
-    n = 1000000
+    n = np.max(p_id) + 1
     familie__p_id_ehepartner = np.where(
         familie__p_id_ehepartner < 0, p_id, familie__p_id_ehepartner
     )
@@ -46,7 +46,7 @@ def fg_id(
     Maximum of two generations, the relevant base unit for Bürgergeld / Arbeitslosengeld
     2, before excluding children who have enough income fend for themselves.
     """
-    n = 1000000
+    n = np.max(p_id) + 1
 
     familie__p_id_elternteil_1_loc = familie__p_id_elternteil_1
     familie__p_id_elternteil_2_loc = familie__p_id_elternteil_2
@@ -107,7 +107,7 @@ def bg_id(
 
     # TODO(@MImmesberger): Remove hard-coded number
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
-    n = 1000000
+    n = np.max(p_id) + 1
     hh_id = np.where(
         np.logical_and(arbeitslosengeld_2__eigenbedarf_gedeckt, alter < 25),
         p_id + p_id * n,
@@ -125,7 +125,7 @@ def eg_id(
 
     A couple whose members are deemed to be responsible for each other.
     """
-    n = 1000000
+    n = np.max(p_id) + 1
     arbeitslosengeld_2__p_id_einstandspartner = np.where(
         arbeitslosengeld_2__p_id_einstandspartner < 0,
         p_id,
@@ -171,7 +171,7 @@ def sn_id(
     Spouses filing taxes jointly or individuals.
     """
 
-    n = 1000000
+    n = np.max(p_id) + 1
     familie__p_id_ehepartner = np.where(
         np.logical_and(
             familie__p_id_ehepartner >= 0, einkommensteuer__gemeinsam_veranlagt
