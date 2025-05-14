@@ -52,23 +52,16 @@ def betrag_mit_kinderfreibetrag_m(
 
 
 @policy_function(vectorization_strategy="loop")
-def betrag_soli_y(betrag_mit_kinderfreibetrag_y: float, soli_st_params: dict) -> float:
-    """Solidarity surcharge on Lohnsteuer (withholding tax on earnings).
+def betrag_soli_y(
+    betrag_mit_kinderfreibetrag_y: float,
+    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+) -> float:
+    """Solidarity surcharge on Lohnsteuer (withholding tax on earnings)."""
 
-    Parameters
-    ----------
-    betrag_mit_kinderfreibetrag_y
-        See :func:`betrag_mit_kinderfreibetrag_y`.
-    soli_st_params
-        See params documentation :ref:`soli_st_params <soli_st_params>`.
-
-    Returns
-        Solidarity Surcharge on Lohnsteuer
-    -------
-
-    """
-
-    return solidaritätszuschlagstarif(betrag_mit_kinderfreibetrag_y, soli_st_params)
+    return solidaritätszuschlagstarif(
+        x=betrag_mit_kinderfreibetrag_y,
+        parameter_solidaritätszuschlag=solidaritätszuschlag__parameter_solidaritätszuschlag,
+    )
 
 
 @policy_function(vectorization_strategy="loop")

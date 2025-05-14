@@ -93,7 +93,7 @@ def einkommen_vorjahr_proxy_m(
     arbeitsl_geld_params: dict,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
-    soli_st_params: dict,
+    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
 ) -> float:
     """Approximate last years income for unemployment benefit."""
     # Relevant wage is capped at the contribution thresholds
@@ -116,7 +116,8 @@ def einkommen_vorjahr_proxy_m(
         einkommensteuer__parameter_einkommensteuertarif,
     )
     prox_soli = piecewise_polynomial(
-        x=prox_tax, parameters=soli_st_params["parameter_solidaritätszuschlag"]
+        x=prox_tax,
+        parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     out = max(out, 0.0)
