@@ -13,7 +13,7 @@ parameter_beitragssatz:
   unit: Share
   reference_period: null
   type: scalar
-  access_different_date: jahresanfang
+  add_jahresanfang: true
   1984-01-01:
     value: 0.023
   1985-01-01:
