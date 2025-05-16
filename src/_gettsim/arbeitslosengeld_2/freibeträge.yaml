@@ -258,6 +258,5 @@ raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
   2023-07-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Bürgergeld-Gesetz
-    deviation_from: parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     4:
       upper_threshold: 1500

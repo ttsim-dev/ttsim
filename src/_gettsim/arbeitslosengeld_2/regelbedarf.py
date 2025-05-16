@@ -126,13 +126,13 @@ def regelsatz_nach_regelbedarfsstufen(
     )
     return RegelsatzNachRegelbedarfsstufen(
         regelbedarfsstufe_1=RegelbedarfsstufeErwachsener(
-            regelsatz=parameter_regelsatz_nach_regelbedarfsstufen[1]
+            parameter_regelsatz_nach_regelbedarfsstufen[1]
         ),
         regelbedarfsstufe_2=RegelbedarfsstufeErwachsener(
-            regelsatz=parameter_regelsatz_nach_regelbedarfsstufen[2]
+            parameter_regelsatz_nach_regelbedarfsstufen[2]
         ),
         regelbedarfsstufe_3=RegelbedarfsstufeErwachsener(
-            regelsatz=parameter_regelsatz_nach_regelbedarfsstufen[3]
+            parameter_regelsatz_nach_regelbedarfsstufen[3]
         ),
         regelbedarfsstufe_4=regelbedarfsstufe_4,
         regelbedarfsstufe_5=regelbedarfsstufe_5,
@@ -256,9 +256,49 @@ def kindersatz_m_bis_2010(
 
 @policy_function(
     start_date="2011-01-01",
+    end_date="2022-06-30",
     leaf_name="kindersatz_m",
 )
-def kindersatz_m_ab_2011(
+def kindersatz_m_ab_2011_ohne_sofortzuschlag(
+    alter: int,
+    kindergeld__gleiche_fg_wie_empfänger: bool,
+    regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
+) -> float:
+    """Basic monthly subsistence / SGB II needs of children since 2011.
+
+    Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
+    """
+    if (
+        alter >= regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_6.min_alter
+        and alter <= regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_6.max_alter
+        and kindergeld__gleiche_fg_wie_empfänger
+    ):
+        out = regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_6.regelsatz
+    elif (
+        alter >= regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_5.min_alter
+        and alter <= regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_5.max_alter
+        and kindergeld__gleiche_fg_wie_empfänger
+    ):
+        out = regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_5.regelsatz
+    elif (
+        alter >= regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_4.min_alter
+        and alter <= regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_4.max_alter
+        and kindergeld__gleiche_fg_wie_empfänger
+    ):
+        out = regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_4.regelsatz
+    elif kindergeld__gleiche_fg_wie_empfänger:  # adult children with parents in FG
+        out = regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_3.regelsatz
+    else:
+        out = 0.0
+
+    return out
+
+
+@policy_function(
+    start_date="2022-07-01",
+    leaf_name="kindersatz_m",
+)
+def kindersatz_m_ab_2011_mit_sofortzuschlag(
     alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
     regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
