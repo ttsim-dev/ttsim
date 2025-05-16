@@ -1,11 +1,14 @@
 from ttsim.aggregation import AggType
 from ttsim.automatically_added_functions import create_time_conversion_functions
-from ttsim.combine_functions import combine_policy_functions_and_derived_functions
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndColumnsOverlapWarning,
+    combine_policy_functions_and_derived_functions,
     compute_taxes_and_transfers,
 )
-from ttsim.piecewise_polynomial import piecewise_polynomial
+from ttsim.piecewise_polynomial import (
+    PiecewisePolynomialParameters,
+    piecewise_polynomial,
+)
 from ttsim.plot_dag import plot_dag
 from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
 from ttsim.prepare_data import create_data_tree_from_df
@@ -21,14 +24,21 @@ from ttsim.shared import (
 from ttsim.ttsim_objects import (
     AggByGroupFunction,
     AggByPIDFunction,
+    DictTTSIMParam,
     FKType,
     GroupCreationFunction,
+    ParamsFunction,
+    PiecewisePolynomialTTSIMParam,
     PolicyFunction,
     PolicyInput,
+    RawTTSIMParam,
+    ScalarTTSIMParam,
     TimeConversionFunction,
+    TTSIMParam,
     agg_by_group_function,
     agg_by_p_id_function,
     group_creation_function,
+    params_function,
     policy_function,
     policy_input,
 )
@@ -37,13 +47,20 @@ __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
+    "DictTTSIMParam",
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
+    "ParamsFunction",
+    "PiecewisePolynomialParameters",
+    "PiecewisePolynomialTTSIMParam",
     "PolicyEnvironment",
     "PolicyFunction",
     "PolicyInput",
+    "RawTTSIMParam",
     "RoundingSpec",
+    "ScalarTTSIMParam",
+    "TTSIMParam",
     "TimeConversionFunction",
     "agg_by_group_function",
     "agg_by_p_id_function",
@@ -55,6 +72,7 @@ __all__ = [
     "insert_path_and_value",
     "join",
     "merge_trees",
+    "params_function",
     "piecewise_polynomial",
     "plot_dag",
     "policy_function",

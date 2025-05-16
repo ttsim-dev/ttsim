@@ -52,9 +52,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["beitr_satz_jahresanfang"]
-        + arbeitslosenversicherung_params["beitr_satz_jahresanfang"]
-        + ges_pflegev_params["beitr_satz_jahresanfang"]
+        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
+        + arbeitslosenversicherung_params["parameter_beitragssatz_jahresanfang"]
+        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]
     )
 
     # Then calculate specific shares
@@ -86,7 +86,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     leaf_name="midijob_faktor_f",
     rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
-def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005(
+def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     ges_rentenv_params: dict,
@@ -103,9 +103,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["beitr_satz_jahresanfang"]
-        + arbeitslosenversicherung_params["beitr_satz_jahresanfang"]
-        + ges_pflegev_params["beitr_satz_jahresanfang"]["standard"]
+        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
+        + arbeitslosenversicherung_params["parameter_beitragssatz_jahresanfang"]
+        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]["standard"]
     )
 
     an_anteil = (
@@ -156,9 +156,9 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["beitr_satz_jahresanfang"]
-        + ges_pflegev_params["beitr_satz_jahresanfang"]["standard"]
-        + arbeitslosenversicherung_params["beitr_satz_jahresanfang"]
+        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
+        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]["standard"]
+        + arbeitslosenversicherung_params["parameter_beitragssatz_jahresanfang"]
     )
 
     # Then calculate specific shares

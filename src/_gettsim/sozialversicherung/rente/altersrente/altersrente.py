@@ -338,9 +338,9 @@ def bruttorente_basisbetrag_m(
     if sozialversicherung__rente__bezieht_rente:
         out = (
             sozialversicherung__rente__entgeltpunkte_west
-            * ges_rente_params["rentenwert"]["west"]
+            * ges_rente_params["parameter_rentenwert"]["west"]
             + sozialversicherung__rente__entgeltpunkte_ost
-            * ges_rente_params["rentenwert"]["ost"]
+            * ges_rente_params["parameter_rentenwert"]["ost"]
         ) * zugangsfaktor
     else:
         out = 0.0
@@ -363,7 +363,7 @@ def rentenwert(wohnort_ost: bool, ges_rente_params: dict) -> float:
     -------
 
     """
-    params = ges_rente_params["rentenwert"]
+    params = ges_rente_params["parameter_rentenwert"]
 
     out = params["ost"] if wohnort_ost else params["west"]
 

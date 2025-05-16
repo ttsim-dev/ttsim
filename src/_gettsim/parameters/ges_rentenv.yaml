@@ -1,5 +1,5 @@
 ---
-beitr_satz:
+parameter_beitragssatz:
   name:
     de: Beitragssätze zur gesetzlichen Rentenversicherung
     en: Contribution rate to statutory pension insurance
@@ -9,71 +9,62 @@ beitr_satz:
     en: >-
       Employees contribution rate for pension insurance.
   unit: Share
+  reference_period: null
+  type: scalar
   access_different_date: jahresanfang
   1984-01-01:
-    scalar: 0.0925
+    value: 0.0925
   1985-01-01:
-    scalar: 0.0935
+    value: 0.0935
   1986-01-01:
-    scalar: 0.096
+    value: 0.096
   1987-01-01:
-    scalar: 0.0935
+    value: 0.0935
   1992-01-01:
-    deviation_from: previous
-    scalar: 0.0885
+    value: 0.0885
   1993-01-01:
-    scalar: 0.0875
+    value: 0.0875
   1994-01-01:
-    deviation_from: previous
-    scalar: 0.096
+    value: 0.096
   1995-01-01:
-    scalar: 0.093
+    value: 0.093
   1996-01-01:
-    deviation_from: previous
-    scalar: 0.096
+    value: 0.096
   1997-01-01:
-    scalar: 0.1015
+    value: 0.1015
   2000-01-01:
-    deviation_from: previous
-    scalar: 0.0965
+    value: 0.0965
   2001-01-01:
-    deviation_from: previous
-    scalar: 0.0955
+    value: 0.0955
   2003-01-01:
-    deviation_from: previous
-    scalar: 0.0975
+    value: 0.0975
   2005-01-01:
-    scalar: 0.0975
+    value: 0.0975
   2007-01-01:
-    deviation_from: previous
-    scalar: 0.0995
+    value: 0.0995
   2008-01-01:
-    scalar: 0.0995
+    value: 0.0995
   2012-01-01:
-    deviation_from: previous
-    scalar: 0.098
-    note: >-
-      Quelle
-      http://www.bmas.de/DE/Service/Presse/Pressemitteilungen/rentenbericht-16-11-2011.html
+    value: 0.098
+    note: http://www.bmas.de/DE/Service/Presse/Pressemitteilungen/rentenbericht-16-11-2011.html
   2013-01-01:
-    deviation_from: previous
-    scalar: 0.0945
+    value: 0.0945
   2015-01-01:
-    scalar: 0.0935
+    value: 0.0935
   2018-01-01:
-    deviation_from: previous
-    scalar: 0.093
+    value: 0.093
   2019-01-01:
-    scalar: 0.093
-beitr_bemess_grenze_m:
+    value: 0.093
+parameter_beitragsbemessungsgrenze:
   name:
     de: Beitragsbemessungsgrenzen für die Rentenversicherung
     en: Income Threshold for pension insurance
   description:
     de: Beitragsbemessungsgrenze für die gesetzliche Rentenversicherung.
     en: Income threshold for statutory pension insurance.
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: dict
   1984-01-01:
     west: 2659
   1985-01-01:
@@ -138,7 +129,6 @@ beitr_bemess_grenze_m:
     west: 5250
     ost: 4400
   2007-01-01:
-    deviation_from: previous
     west: 5250
     ost: 4550
   2008-01-01:
@@ -151,11 +141,9 @@ beitr_bemess_grenze_m:
     west: 5500
     ost: 4650
   2011-01-01:
-    deviation_from: previous
     west: 5500
     ost: 4800
   2012-01-01:
-    deviation_from: previous
     west: 5600
     ost: 4800
   2013-01-01:
@@ -164,21 +152,18 @@ beitr_bemess_grenze_m:
   2014-01-01:
     west: 5950
     ost: 5000
-    note: >-
-      http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
+    note: http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
   2015-01-01:
     west: 6050
     ost: 5200
   2016-01-01:
     west: 6200
     ost: 5400
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
+    note: https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
   2017-01-01:
     west: 6350
     ost: 5700
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
+    note: https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
   2018-01-01:
     west: 6500
     ost: 5800
@@ -225,12 +210,14 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
       Fixed pension insurance contributions for marginal employment
       (§ 168 I Nr. 1b SGB VI)
   unit: Share
+  reference_period: null
+  type: scalar
   access_different_date: jahresanfang
   1984-01-01:
-    scalar: 0
+    value: 0
   1999-01-01:
-    scalar: 0.12
+    value: 0.12
   2003-04-01:
-    scalar: 0.12
+    value: 0.12
   2007-01-01:
-    scalar: 0.15
+    value: 0.15

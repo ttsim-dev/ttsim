@@ -64,7 +64,9 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     -------
 
     """
-    return kindergeld_params["kindergeld"] if kindergeld__anzahl_ansprüche > 0 else 0.0
+    return (
+        kindergeld_params["kindergeldsatz"] if kindergeld__anzahl_ansprüche > 0 else 0.0
+    )
 
 
 @policy_function(vectorization_strategy="not_required")

@@ -169,7 +169,7 @@ def bruttoeinkommen_m(
 
 
 @policy_function(end_date="2005-09-30")
-def nettoquote_m(
+def nettoquote(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__betrag_m_sn: float,
     solidaritätszuschlag__betrag_m_sn: float,
@@ -207,8 +207,8 @@ def nettoquote_m(
             - (einkommensteuer__betrag_m_sn / einkommensteuer__anzahl_personen_sn)
             - (solidaritätszuschlag__betrag_m_sn / einkommensteuer__anzahl_personen_sn)
             - sozialversicherung__beiträge_versicherter_m
-            - arbeitsl_geld_2_params["abzugsfähige_pausch"]["werbung"]
-            - arbeitsl_geld_2_params["abzugsfähige_pausch"]["versicherung"]
+            - arbeitsl_geld_2_params["abzugsfähige_pauschalen"]["werbung"]
+            - arbeitsl_geld_2_params["abzugsfähige_pauschalen"]["versicherung"]
         ),
         0,
     )
@@ -225,7 +225,7 @@ def nettoquote_m(
 )
 def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    nettoquote_m: float,
+    nettoquote: float,
     arbeitsl_geld_2_params: dict,
 ) -> float:
     """Share of income which remains to the individual.
@@ -234,8 +234,8 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     ----------
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    nettoquote_m
-        See :func:`nettoquote_m`.
+    nettoquote
+        See :func:`nettoquote`.
     arbeitsl_geld_2_params
         See params documentation :ref:`arbeitsl_geld_2_params <arbeitsl_geld_2_params>`.
 
@@ -245,12 +245,10 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     """
     out = piecewise_polynomial(
         x=einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
-        thresholds=arbeitsl_geld_2_params["eink_anr_frei"]["thresholds"],
-        rates=arbeitsl_geld_2_params["eink_anr_frei"]["rates"],
-        intercepts_at_lower_thresholds=arbeitsl_geld_2_params["eink_anr_frei"][
-            "intercepts_at_lower_thresholds"
+        parameters=arbeitsl_geld_2_params[
+            "parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg"
         ],
-        rates_multiplier=nettoquote_m,
+        rates_multiplier=nettoquote,
     )
     return out
 
@@ -299,19 +297,15 @@ def anrechnungsfreies_einkommen_m(
     if anzahl_kinder_bis_17_bg > 0 or einkommensteuer__anzahl_kinderfreibeträge > 0:
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
-            thresholds=arbeitsl_geld_2_params["eink_anr_frei_kinder"]["thresholds"],
-            rates=arbeitsl_geld_2_params["eink_anr_frei_kinder"]["rates"],
-            intercepts_at_lower_thresholds=arbeitsl_geld_2_params[
-                "eink_anr_frei_kinder"
-            ]["intercepts_at_lower_thresholds"],
+            parameters=arbeitsl_geld_2_params[
+                "parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg"
+            ],
         )
     else:
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
-            thresholds=arbeitsl_geld_2_params["eink_anr_frei"]["thresholds"],
-            rates=arbeitsl_geld_2_params["eink_anr_frei"]["rates"],
-            intercepts_at_lower_thresholds=arbeitsl_geld_2_params["eink_anr_frei"][
-                "intercepts_at_lower_thresholds"
+            parameters=arbeitsl_geld_2_params[
+                "parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg"
             ],
         )
     return out

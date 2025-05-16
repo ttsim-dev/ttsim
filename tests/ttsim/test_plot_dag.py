@@ -1,6 +1,6 @@
 import networkx as nx
 import pytest
-from mettsim.config import RESOURCE_DIR
+from mettsim.config import METTSIM_ROOT
 
 from ttsim import PolicyEnvironment, plot_dag, set_up_policy_environment
 from ttsim.plot_dag import (
@@ -11,7 +11,7 @@ from ttsim.plot_dag import (
     _select_nodes_in_dag,
 )
 
-environment = set_up_policy_environment(date="2020-01-01", resource_dir=RESOURCE_DIR)
+environment = set_up_policy_environment(date="2020-01-01", root=METTSIM_ROOT)
 
 
 @pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")

@@ -257,7 +257,6 @@ exclude = []
 "src/ttsim/functions/all_functions_for_docs.py" = ["F401", "E501", "F403"]
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
-"src/ttsim/policy_environment.py" = ["S506", "PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
 "docs/**/*.ipynb" = ["T201"]
@@ -285,6 +284,7 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 explicit_package_bases = true
+disallow_empty_bodies = false
 
 [[tool.mypy.overrides]]
 module = [
@@ -297,23 +297,37 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
     "tests.*",
+]
+disable_error_code = [
+    "no-untyped-def",  # All tests return None, don't clutter source code.
+]
+
+
+[[tool.mypy.overrides]]
+module = [
+    "src.ttsim.aggregation_numpy",
+]
+disable_error_code = [
+    "type-arg" # ndarray is not typed further.
+]
+
+[[tool.mypy.overrides]]
+module = [
     "src._gettsim_tests.*",
 ]
 disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
-    "empty-body",  # Happens for all functions decorated with @policy_input
     "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
 
 [[tool.mypy.overrides]]
 module = [
-    "src.ttsim.*",
     "src._gettsim.*",
 ]
 disable_error_code = [
-    "empty-body",  # Happens for all functions decorated with @policy_input
     "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
+
 
 [[tool.mypy.overrides]]
 module = [

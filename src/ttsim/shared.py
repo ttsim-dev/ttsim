@@ -42,7 +42,7 @@ def validate_date_range(start: datetime.date, end: datetime.date) -> None:
 
 def get_re_pattern_for_all_time_units_and_groupings(
     groupings: tuple[str, ...], time_units: tuple[str, ...]
-) -> re.Pattern:
+) -> re.Pattern[str]:
     """Get a regex pattern for time units and groupings.
 
     The pattern matches strings in any of these formats:
@@ -73,7 +73,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
     )
 
 
-def group_pattern(groupings: tuple[str, ...]) -> re.Pattern:
+def group_pattern(groupings: tuple[str, ...]) -> re.Pattern[str]:
     return re.compile(
         f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
     )
@@ -83,7 +83,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     base_name: str,
     all_time_units: tuple[str, ...],
     groupings: tuple[str, ...],
-) -> re.Pattern:
+) -> re.Pattern[str]:
     """Get a regex for a specific base name with optional time unit and aggregation.
 
     The pattern matches strings in any of these formats:
@@ -116,7 +116,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     )
 
 
-def get_base_name_and_grouping_suffix(match: re.Match) -> tuple[str, str]:
+def get_base_name_and_grouping_suffix(match: re.Match[str]) -> tuple[str, str]:
     return (
         match.group("base_name"),
         f"_{match.group('grouping')}" if match.group("grouping") else "",

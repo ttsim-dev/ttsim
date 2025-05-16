@@ -7,29 +7,25 @@ grenzen_m:
   description:
     de: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
     en: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: require_converter
   1984-01-01:
     minijob:
       west: 199
   1985-01-01:
-    deviation_from: previous
     minijob:
       west: 205
   1986-01-01:
-    deviation_from: previous
     minijob:
       west: 210
   1987-01-01:
-    deviation_from: previous
     minijob:
       west: 220
   1988-01-01:
-    deviation_from: previous
     minijob:
       west: 225
   1989-01-01:
-    deviation_from: previous
     minijob:
       west: 230
   1990-01-01:
@@ -75,7 +71,6 @@ grenzen_m:
   2000-01-01:
     minijob: 322
   2002-01-01:
-    deviation_from: previous
     minijob: 325
   2003-04-01:
     minijob: 400
@@ -88,7 +83,6 @@ grenzen_m:
     reference: Art. 4 G. v. 28.11.2018 BGBl. I S. 2016
     midijob: 1300
   2022-10-01:
-    minijob: null
     midijob: 1600
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
     note: minijob thresholds now calculated based on statutory minimum wage
@@ -96,24 +90,29 @@ grenzen_m:
     deviation_from: previous
     midijob: 2000
     reference: Art. 3 G. v. 11.11.2022 BGBl. I S. 1985
-faktor_zähler:
+# Todo: Put both zähler and nenner into one parameter and parse.
+faktor_minijobformel_zähler:
   name:
     de: Zähler im Faktor für die Berechnung der Geringfügigkeitsgrenze.
     en: >-
       Numerator in the factor for the calculation of the marginal employment threshold.
   description:
     de: >-
+      §8 (1a) SGB IV
       Faktor, mit dem der Mindestlohn in der Berechnung der Geringfügigkeitsgrenze
       multipliziert wird.
     en: >-
+      §8 (1a) SGB IV
       Factor by which the minimum wage is multiplied to calculate the threshold for
       marginal employment.
   unit: null
-  reference: §8 (1a) SGB IV
+  reference_period: null
+  type: scalar
+  # type: require_converter
   2022-10-01:
-    scalar: 130
+    value: 130
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
-faktor_nenner:
+faktor_minijobformel_nenner:
   name:
     de: Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.
     en: >-
@@ -121,15 +120,18 @@ faktor_nenner:
       threshold.
   description:
     de: >-
+      §8 (1a) SGB IV
       Betrag, durch den der Mindestlohn dividiert wird, um die Geringfügigkeitsgrenze zu
       erhalten.
     en: >-
+      §8 (1a) SGB IV
       Amount by which the minimum wage is divided to obtain the marginal employment
       threshold.
-  unit: Euro
-  reference: §8 (1a) SGB IV
+  unit: null
+  reference_period: null
+  type: scalar
   2022-10-01:
-    scalar: 3
+    value: 3
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
 arbeitgeberpauschale_lohnsteuer:
   name:
@@ -141,52 +143,57 @@ arbeitgeberpauschale_lohnsteuer:
       (§40a II EStG)
     en: Fixed income tax rate for marginal employment (§40a II EStG)
   unit: Share
+  reference_period: null
+  type: scalar
   access_different_date: jahresanfang
   1984-01-01:
-    scalar: 0
+    value: 0
   1999-01-01:
-    scalar: 0
+    value: 0
   2003-04-01:
-    scalar: 0.02
+    value: 0.02
   2007-01-01:
-    scalar: 0.02
+    value: 0.02
   2022-10-01:
-    scalar: null
+    note: Ceased to exist
 mindestlohn:
   name:
     de: Allgemeiner gesetzlicher Mindestlohn pro Stunde
     en: Statutory hourly minimum wage
   description:
     de: >-
+      §1 (2) Mindestlohngesetz
       Der Mindestlohn ist der niedrigste Stundenlohn, den ein Arbeitgeber für eine
       regelmäßige, nicht mehr als 45 Stunden wöchentlich zu leistende Arbeitsleistung
       zahlen muss.
     en: >-
+      §1 (2) Mindestlohngesetz
       The minimum wage is the lowest hourly wage that an employer must pay for a
       regular, not more than 45 hours weekly work.
-  unit: Euro
-  reference: §1 (2) Mindestlohngesetz
+  unit: Euros
+  reference_period: Hour
+  type: scalar
   2015-01-01:
-    scalar: 8.5
+    value: 8.5
   2017-01-01:
-    scalar: 8.84
+    value: 8.84
   2019-01-01:
-    scalar: 9.19
+    value: 9.19
   2020-01-01:
-    scalar: 9.35
+    value: 9.35
   2021-01-01:
-    scalar: 9.5
+    value: 9.5
   2021-07-01:
-    scalar: 9.6
+    value: 9.6
   2022-01-01:
-    scalar: 9.82
+    value: 9.82
   2022-07-01:
-    scalar: 10.45
+    value: 10.45
   2022-10-01:
-    scalar: 12
+    value: 12
   2024-01-01:
-    scalar: 12.41
+    value: 12.41
     reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 321
   2025-01-01:
-    scalar: 12.82
+    value: 12.82
     reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 321

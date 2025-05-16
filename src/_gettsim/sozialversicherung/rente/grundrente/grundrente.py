@@ -127,18 +127,18 @@ def anzurechnendes_einkommen_m(
     # Note: Thresholds are defined relativ to rentenwert which is implemented by
     # dividing the income by rentenwert and multiply rentenwert to the result.
     if familie__anzahl_personen_ehe == 2:
-        einkommensanr_params = ges_rente_params["grundr_einkommensanr_verheiratet"]
+        einkommensanr_params = ges_rente_params[
+            "grundrente_anzurechnendes_einkommen_mit_partner"
+        ]
     else:
-        einkommensanr_params = ges_rente_params["grundr_einkommensanr_single"]
+        einkommensanr_params = ges_rente_params[
+            "grundrente_anzurechnendes_einkommen_ohne_partner"
+        ]
 
     out = (
         piecewise_polynomial(
             x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
-            thresholds=einkommensanr_params["thresholds"],
-            rates=einkommensanr_params["rates"],
-            intercepts_at_lower_thresholds=einkommensanr_params[
-                "intercepts_at_lower_thresholds"
-            ],
+            parameters=einkommensanr_params,
         )
         * sozialversicherung__rente__altersrente__rentenwert
     )
@@ -187,11 +187,11 @@ def basisbetrag_m(
     # Winsorize Bewertungszeiten and Zugangsfaktor at maximum values
     bewertungszeiten_monate_wins = min(
         bewertungszeiten_monate,
-        ges_rente_params["grundrentenzeiten_monate"]["max"],
+        ges_rente_params["grundrente_berücksichtigte_wartezeit"]["max"],
     )
     ges_rente_zugangsfaktor_wins = min(
         sozialversicherung__rente__altersrente__zugangsfaktor,
-        ges_rente_params["grundrente_zugangsfaktor_max"],
+        ges_rente_params["grundrente_maximaler_zugangsfaktor"],
     )
 
     out = (
@@ -263,15 +263,16 @@ def höchstbetrag_m(
     months_above_thresh = (
         min(
             grundrentenzeiten_monate,
-            ges_rente_params["grundrentenzeiten_monate"]["max"],
+            ges_rente_params["grundrente_berücksichtigte_wartezeit"]["max"],
         )
-        - ges_rente_params["grundrentenzeiten_monate"]["min"]
+        - ges_rente_params["grundrente_berücksichtigte_wartezeit"]["min"]
     )
 
     # Calculate höchstwert
     out = (
-        ges_rente_params["grundr_höchstwert"]["base"]
-        + ges_rente_params["grundr_höchstwert"]["increment"] * months_above_thresh
+        ges_rente_params["grundrente_höchstwert_der_entgeltpunkte"]["base"]
+        + ges_rente_params["grundrente_höchstwert_der_entgeltpunkte"]["increment"]
+        * months_above_thresh
     )
 
     return out
@@ -317,7 +318,10 @@ def mean_entgeltpunkte_zuschlag(
     """
 
     # Return 0 if Grundrentenzeiten below minimum
-    if grundrentenzeiten_monate < ges_rente_params["grundrentenzeiten_monate"]["min"]:
+    if (
+        grundrentenzeiten_monate
+        < ges_rente_params["grundrente_berücksichtigte_wartezeit"]["min"]
+    ):
         out = 0.0
     else:
         # Case 1: Entgeltpunkte less than half of Höchstwert
@@ -333,7 +337,7 @@ def mean_entgeltpunkte_zuschlag(
             out = 0.0
 
     # Multiply additional Engeltpunkte by factor
-    out = out * ges_rente_params["grundr_faktor_bonus"]
+    out = out * ges_rente_params["grundrente_bonusfaktor"]
 
     return out
 
@@ -357,6 +361,7 @@ def grundsätzlich_anspruchsberechtigt(
 
     """
     out = (
-        grundrentenzeiten_monate >= ges_rente_params["grundrentenzeiten_monate"]["min"]
+        grundrentenzeiten_monate
+        >= ges_rente_params["grundrente_berücksichtigte_wartezeit"]["min"]
     )
     return out

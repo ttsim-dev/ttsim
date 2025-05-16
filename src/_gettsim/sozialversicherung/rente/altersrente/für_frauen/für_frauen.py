@@ -6,7 +6,11 @@ Revoked for birth cohorts after 1951.
 from ttsim import policy_function
 
 
-@policy_function(end_date="1989-12-17", leaf_name="altersgrenze")
+@policy_function(
+    end_date="1989-12-17",
+    leaf_name="altersgrenze",
+    vectorization_strategy="not_required",
+)
 def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """Full retirement age (FRA) for women.
 
@@ -84,7 +88,11 @@ def altersgrenze_mit_staffelung(
     return out
 
 
-@policy_function(end_date="1989-12-17", leaf_name="altersgrenze_vorzeitig")
+@policy_function(
+    end_date="1989-12-17",
+    leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="not_required",
+)
 def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
 
@@ -165,7 +173,11 @@ def altersgrenze_vorzeitig_mit_staffelung(
     return out
 
 
-@policy_function(start_date="1996-09-27", leaf_name="altersgrenze_vorzeitig")
+@policy_function(
+    start_date="1996-09-27",
+    leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="not_required",
+)
 def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(ges_rente_params: dict) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
 

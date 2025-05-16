@@ -23,7 +23,7 @@ def pauschbetrag_behinderung_y(
     """
 
     # Get disability degree thresholds
-    bins = sorted(eink_st_abzuege_params["behinderten_pauschbetrag"])
+    bins = sorted(eink_st_abzuege_params["behindertenpauschbetrag"])
 
     # Select corresponding bin.
     selected_bin_index = (
@@ -32,6 +32,6 @@ def pauschbetrag_behinderung_y(
     selected_bin = bins[selected_bin_index]
 
     # Select appropriate pauschbetrag.
-    out = eink_st_abzuege_params["behinderten_pauschbetrag"][selected_bin]
+    out = eink_st_abzuege_params["behindertenpauschbetrag"][selected_bin]
 
     return out

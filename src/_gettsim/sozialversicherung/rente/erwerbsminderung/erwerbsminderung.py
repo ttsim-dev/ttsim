@@ -40,8 +40,8 @@ def betrag_m(
     if grundsätzlich_anspruchsberechtigt:
         out = (
             (
-                entgeltpunkte_west * ges_rente_params["rentenwert"]["west"]
-                + entgeltpunkte_ost * ges_rente_params["rentenwert"]["ost"]
+                entgeltpunkte_west * ges_rente_params["parameter_rentenwert"]["west"]
+                + entgeltpunkte_ost * ges_rente_params["parameter_rentenwert"]["ost"]
             )
             * zugangsfaktor
             * rentenartfaktor
@@ -267,10 +267,12 @@ def zugangsfaktor(
 
     if wartezeit_langjährig_versichert_erfüllt:
         altersgrenze_abschlagsfrei = erwerbsm_rente_params[
-            "altersgrenze_langj_versicherte_abschlagsfrei"
+            "altersgrenze_langjährig_versicherte_abschlagsfrei"
         ]
     else:
-        altersgrenze_abschlagsfrei = erwerbsm_rente_params["altersgrenze_abschlagsfrei"]
+        altersgrenze_abschlagsfrei = erwerbsm_rente_params[
+            "parameter_altersgrenze_abschlagsfrei"
+        ]
 
     zugangsfaktor = (
         1
@@ -342,7 +344,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     if (
         sozialversicherung__rente__pflichtbeitragsmonate / 12
         >= ges_rente_params[
-            "mindestpflichtbeitragsjahre_für_anrechnbarkeit_freiwilliger_beiträge"
+            "mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge"
         ]
     ):
         freiwillige_beitragszeiten = (

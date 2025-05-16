@@ -272,7 +272,7 @@ def basisbetrag_kind_m(
     """
     out = kindergeld__grundsätzlich_anspruchsberechtigt * (
         kinderzuschl_params["maximum"]
-        - kinderzuschl_params["entzugsrate_kind"]
+        - kinderzuschl_params["entzugsrate_kindeseinkommen"]
         * (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
             + unterhalt__tatsächlich_erhaltener_betrag_m

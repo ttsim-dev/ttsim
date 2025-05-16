@@ -34,7 +34,7 @@ def betrag_ohne_staffelung_m(
 
     """
 
-    return kindergeld_params["kindergeld"] * anzahl_ansprüche
+    return kindergeld_params["kindergeldsatz"] * anzahl_ansprüche
 
 
 @policy_function(
@@ -65,8 +65,8 @@ def betrag_gestaffelt_m(
         sum_kindergeld = 0.0
     else:
         sum_kindergeld = sum(
-            kindergeld_params["kindergeld"][
-                (min(i, max(kindergeld_params["kindergeld"])))
+            kindergeld_params["kindergeldsatz"][
+                (min(i, max(kindergeld_params["kindergeldsatz"])))
             ]
             for i in range(1, anzahl_ansprüche + 1)
         )
@@ -110,7 +110,7 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
         and in_ausbildung
         and (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            <= kindergeld_params["einkommensgrenze"] / 12
+            <= kindergeld_params["maximales_einkommen_des_kindes"] / 12
         )
     )
 
@@ -152,7 +152,9 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
     out = (alter < kindergeld_params["altersgrenze"]["ohne_bedingungen"]) or (
         (alter < kindergeld_params["altersgrenze"]["mit_bedingungen"])
         and in_ausbildung
-        and (arbeitsstunden_w <= kindergeld_params["stundengrenze"])
+        and (
+            arbeitsstunden_w <= kindergeld_params["maximale_arbeitsstunden_des_kindes"]
+        )
     )
 
     return out
