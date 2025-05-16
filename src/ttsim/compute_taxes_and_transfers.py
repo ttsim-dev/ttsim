@@ -172,6 +172,7 @@ def compute_taxes_and_transfers(
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
+        set_annotations=True,
     )
 
     if jit:
@@ -423,6 +424,7 @@ def _process_params_tree(
         return_type="dict",
         aggregator=None,
         enforce_signature=False,
+        set_annotations=True,
     )
     # Call the processing function.
     processed = process(**{k: v.value for k, v in qual_name_params.items()})
