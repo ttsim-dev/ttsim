@@ -11,6 +11,7 @@ import networkx as nx
 import numpy
 import pandas as pd
 import plotly.graph_objects as go
+from dags import get_free_arguments
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
@@ -20,7 +21,6 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.shared import (
     format_list_linewise,
-    get_names_of_required_arguments,
     partition_tree_by_reference_tree,
 )
 
@@ -291,13 +291,11 @@ def _mock_parameters_arguments(functions):
     mocked_functions = {}
     for name, function in functions.items():
         partial_params = {
-            i: {}
-            for i in get_names_of_required_arguments(function)
-            if i.endswith("_params")
+            i: {} for i in get_free_arguments(function) if i.endswith("_params")
         }
 
         # Fix old functions which requested the whole dictionary. Test if removable.
-        if "params" in get_names_of_required_arguments(function):
+        if "params" in get_free_arguments(function):
             partial_params["params"] = {}
 
         mocked_functions[name] = (
