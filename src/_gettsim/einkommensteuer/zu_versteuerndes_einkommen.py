@@ -1,5 +1,7 @@
 """Taxable income."""
 
+from __future__ import annotations
+
 from ttsim import RoundingSpec, policy_function
 
 

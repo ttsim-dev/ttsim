@@ -3,6 +3,8 @@
 Einkommen are Einkünfte minus Sonderausgaben, Vorsorgeaufwendungen, außergewöhnliche
 Belastungen and sonstige Abzüge."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

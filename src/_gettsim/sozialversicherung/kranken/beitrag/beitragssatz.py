@@ -1,5 +1,7 @@
 """Contribution rate for health insurance."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

@@ -1,4 +1,6 @@
-"""Parental leave benefits."""
+"""Elterngeld (parental leave benefit)."""
+
+from __future__ import annotations
 
 from ttsim import (
     AggType,

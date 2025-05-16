@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim.aggregation import AggType
 from ttsim.automatically_added_functions import create_time_conversion_functions
 from ttsim.compute_taxes_and_transfers import (

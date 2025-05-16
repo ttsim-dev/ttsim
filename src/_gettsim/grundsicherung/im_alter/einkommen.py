@@ -1,4 +1,6 @@
-"""Income considered in the calculation of Grundsicherung im Alter."""
+"""Relevant income for Grundsicherung im Alter."""
+
+from __future__ import annotations
 
 from ttsim import piecewise_polynomial, policy_function
 

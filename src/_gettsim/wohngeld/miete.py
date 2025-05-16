@@ -1,5 +1,7 @@
 """Renting costs relevant for housing benefit calculation."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 from ttsim.config import numpy_or_jax as np
 

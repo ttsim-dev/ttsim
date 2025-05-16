@@ -1,5 +1,7 @@
 """Unemployment benefits (Arbeitslosengeld)."""
 
+from __future__ import annotations
+
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from ttsim import piecewise_polynomial, policy_function
 

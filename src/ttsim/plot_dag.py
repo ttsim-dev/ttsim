@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import functools
 import inspect
 import operator
 from functools import reduce
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import networkx as nx
@@ -15,12 +18,14 @@ from ttsim.compute_taxes_and_transfers import (
     _partial_parameters_to_functions,
     combine_policy_functions_and_derived_functions,
 )
-from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     format_list_linewise,
     get_names_of_required_arguments,
     partition_tree_by_reference_tree,
 )
+
+if TYPE_CHECKING:
+    from ttsim.policy_environment import PolicyEnvironment
 
 
 def plot_dag(
