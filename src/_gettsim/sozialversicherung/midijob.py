@@ -42,7 +42,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     ges_rentenv_params: dict,
     arbeitslosenversicherung__parameter_beitragssatz_jahresanfang: float,
     ges_krankenv_params: dict,
-    ges_pflegev_params: dict,
+    sozialversicherung__pflege__beitrag__beitragssatz_uniform: dict,
     geringfügige_einkommen_params: dict,
 ) -> float:
     """Midijob Faktor F until December 2004.
@@ -54,7 +54,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     allg_sozialv_beitr = (
         ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
         + arbeitslosenversicherung__parameter_beitragssatz_jahresanfang
-        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]
+        + sozialversicherung__pflege__beitrag__beitragssatz_uniform
     )
 
     # Then calculate specific shares
@@ -92,7 +92,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     ges_rentenv_params: dict,
     arbeitslosenversicherung__parameter_beitragssatz_jahresanfang: float,
     ges_krankenv_params: dict,
-    ges_pflegev_params: dict,
+    sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict,
     geringfügige_einkommen_params: dict,
 ) -> float:
     """Midijob Faktor F between 2005 and September 2025.
@@ -105,7 +105,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     allg_sozialv_beitr = (
         ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
         + arbeitslosenversicherung__parameter_beitragssatz_jahresanfang
-        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]["standard"]
+        + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
+            "standard"
+        ]
     )
 
     an_anteil = (
@@ -140,7 +142,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     ges_rentenv_params: dict,
-    ges_pflegev_params: dict,
+    sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict,
     arbeitslosenversicherung__parameter_beitragssatz_jahresanfang: float,
     ges_krankenv_params: dict,
 ) -> float:
@@ -157,7 +159,9 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
         ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
-        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]["standard"]
+        + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
+            "standard"
+        ]
         + arbeitslosenversicherung__parameter_beitragssatz_jahresanfang
     )
 

@@ -7,7 +7,6 @@ INTERNAL_PARAMS_GROUPS = [
     "arbeitsl_geld",
     "geringfügige_einkommen",
     "ges_krankenv",
-    "ges_pflegev",
     "ges_rentenv",
     "unterhalt",
     "unterhaltsvors",
