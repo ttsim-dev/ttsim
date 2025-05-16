@@ -63,7 +63,7 @@ parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
       Neufassung des SGB II. B. v. 13.5.2011 BGBl. I S. 850. Artikel 5.
       ToDo: Check these laws -- did they really happen months after the date of the
       policy change?
-    deviation_from: previous
+    updates_previous: true
     2:
       upper_threshold: 1000
   2023-07-01:
@@ -90,7 +90,7 @@ parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg:
     5:
       upper_threshold: inf
       rate_linear: 0
-parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
+raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
   name:
     de: >-
       Parameter der Berechnung des anrechnungsfreien Einkommens wenn Kinder in der
@@ -106,24 +106,23 @@ parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg:
       mit minderjährigem Kind in BG leben oder die ein minderjähriges Kind haben
       (zweiteres wird aktuell noch nicht im Code beachtet). § 30 SGB II. Seit 01.04.2011
       § 11b SGB II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2 G. v.
-      24.03.2011 BGBl. I S. 453). Ersetzt Parameter in
-      parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg, falls nicht vorhanden
+      24.03.2011 BGBl. I S. 453). Bezieht sich auf die Parameter in
+      parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg.
     en: null
   unit: Euros
   reference_period: Month
   type: require_converter
   2005-10-01:
     reference: Artikel 1 G. v. 14.08.2005 BGBl. I S. 2407.
-    deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     3:
       upper_threshold: 1500
   2023-07-01:
     reference: G. v. 20.12.2022 BGBl. I S. 2328.
     note: Bürgergeld-Gesetz
-    deviation_from: arbeitsl_geld_2.parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
+    deviation_from: parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg
     4:
       upper_threshold: 1500
-regelsatz_anteilsbasiert:
+parameter_regelsatz_anteilsbasiert:
   name:
     de: Berechnungsgrundlagen für den Regelsatz
     en: Calculation basis for the standard rate
@@ -162,7 +161,7 @@ regelsatz_anteilsbasiert:
       Regelsatz für weitere Haushaltsmitglieder wurde als Anteil des Standardsatzes
       bestimmt.
   2005-07-01:
-    deviation_from: previous
+    updates_previous: true
     basissatz: 338
     reference: B. v. 01.09.2005 BGBl. I S. 2718.
     note: >-
@@ -171,19 +170,19 @@ regelsatz_anteilsbasiert:
       Korrekte Werte für die Zeit ab 1. Juli 2005 sind in den alten Bundesländern
       einschließlich Berlin (Ost) 345 Euro, in den neuen Bundesländern 331 Euro.
   2006-07-01:
-    deviation_from: previous
+    updates_previous: true
     basissatz: 345
     reference: B. v. 20.07.2006 BGBl. I S. 1702.
   2007-07-01:
-    deviation_from: previous
+    updates_previous: true
     basissatz: 347
     reference: B. v. 18.06.2007 BGBl. I S. 1139.
   2008-07-01:
-    deviation_from: previous
+    updates_previous: true
     basissatz: 351
     reference: B. v. 26.06.2008 BGBl. I S. 1102.
   2009-07-01:
-    deviation_from: previous
+    updates_previous: true
     basissatz: 359
     anteil_vom_basissatz_für_kinder:
       zwischen_14_und_24_jahre:
@@ -200,12 +199,12 @@ regelsatz_anteilsbasiert:
         anteil: 0.6
     reference: B. v. 17.06.2009 BGBl. I S. 1342.
   2010-07-01:
-    deviation_from: previous
+    updates_previous: true
     basissatz: 359
     reference: B. v. 07.06.2010 BGBl. I S. 820. Betrag unverändert.
   2011-01-01:
     note: Calculation method changed, see regelsatz_nach_regelbedarfsstufen.
-regelsatz_nach_regelbedarfsstufen:
+parameter_regelsatz_nach_regelbedarfsstufen:
   name:
     de: Regelsatz mit direkter Angabe für Regelbedarfsstufen
     en: Standard rate with direct specification of "Regelbedarfsstufen"
@@ -216,7 +215,7 @@ regelsatz_nach_regelbedarfsstufen:
       Regelbedafstufen:
       1: Alleinstehender Erwachsener
       2: Erwachsene in Partnerschaft
-      3: Erwachsene nicht in Partnerschaft
+      3: Erwachsene unter 25 im Haushalt der Eltern
       4: Jugendliche
       5: Ältere Kinder
       6: Jüngste Kinder
@@ -224,7 +223,7 @@ regelsatz_nach_regelbedarfsstufen:
       Regelbedarfsstufen:
       1: Single Adult
       2: Adults in a partner relationship
-      3: Adults not in a partner relationship
+      3: Adults under 25 in the household of their parents
       4: Adolescents
       5: Older children
       6: Youngest children
@@ -666,9 +665,9 @@ mietobergrenze_pro_qm:
       rule of thumb used by the employment agencies.
   unit: Euros / Square Meter
   reference_period: Month
-  type: dict
+  type: scalar
   1984-01-01:
-    max: 10
+    value: 10
 berechtigte_wohnfläche_miete:
   name:
     de: Berechtigte Mietwohnfläche für ALG2-Empfänger*innen
@@ -686,7 +685,7 @@ berechtigte_wohnfläche_miete:
   1984-01-01:
     single: 45
     je_weitere_person: 15
-berechtigte_wohnfläche_eigentum:
+parameter_berechtigte_wohnfläche_eigentum:
   name:
     de: Berechtigte Eigentumsfläche für ALG2-Empfänger*innen
     en: Property space eligible for ALG2-recipients

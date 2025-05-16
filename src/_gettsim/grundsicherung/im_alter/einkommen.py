@@ -1,6 +1,13 @@
 """Income considered in the calculation of Grundsicherung im Alter."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ttsim import piecewise_polynomial, policy_function
+
+if TYPE_CHECKING:
+    from _gettsim.arbeitslosengeld_2.regelbedarf import RegelsatzNachRegelbedarfsstufen
 
 
 @policy_function()
@@ -19,35 +26,6 @@ def einkommen_m(
 ) -> float:
     """Calculate individual income considered in the calculation of Grundsicherung im
     Alter.
-
-    Parameters
-    ----------
-    erwerbseinkommen_m
-        See :func:`erwerbseinkommen_m`.
-    private_rente_betrag_m
-        See :func:`private_rente_betrag_m`.
-    gesetzliche_rente_m
-        See :func:`gesetzliche_rente_m`.
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m
-        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
-        See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
-    kapitaleinkommen_brutto_m
-        See :func:`kapitaleinkommen_brutto_m`.
-    einkommensteuer__betrag_m_sn
-        See :func:`einkommensteuer__betrag_m_sn`.
-    solidaritätszuschlag__betrag_m_sn
-        See :func:`solidaritätszuschlag__betrag_m_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    sozialversicherung__beiträge_versicherter_m
-        See :func:`sozialversicherung__beiträge_versicherter_m`.
-    elterngeld__anrechenbarer_betrag_m
-        See :func:`elterngeld__anrechenbarer_betrag_m`.
-
-    Returns
-    -------
-
     """
 
     # Income
@@ -75,8 +53,8 @@ def einkommen_m(
 def erwerbseinkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
-    arbeitsl_geld_2_params: dict,
     grunds_im_alter_params: dict,
+    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
 ) -> float:
     """Calculate individual earnings considered in the calculation of Grundsicherung im
     Alter.
@@ -90,8 +68,6 @@ def erwerbseinkommen_m(
       which was introduced in 2011.
     - The cap at 1/2 of Regelbedarf was only introduced in 2006 (which is currently
       not implemented): https://www.buzer.de/gesetz/3415/al3764-0.htm
-
-
     """
     earnings = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
@@ -100,7 +76,9 @@ def erwerbseinkommen_m(
 
     # Can deduct 30% of earnings (but no more than 1/2 of regelbedarf)
     earnings_after_max_deduction = (
-        earnings - arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
+        earnings
+        - arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_1.regelsatz
+        / 2
     )
     earnings = (
         1 - grunds_im_alter_params["anrechnungsfreier_anteil_erwerbseinkünfte"]
@@ -120,19 +98,6 @@ def kapitaleinkommen_brutto_m(
     Grundsicherung im Alter.
 
     Legal reference: § 82 SGB XII Abs. 2
-
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y
-        See :func:`einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y`.
-    grunds_im_alter_params
-        See params documentation :ref:`grunds_im_alter_params
-        <grunds_im_alter_params>`.
-
-    Returns
-    -------
-
     """
     # Can deduct allowance from yearly capital income
     capital_income_y = (
@@ -146,30 +111,16 @@ def kapitaleinkommen_brutto_m(
     return out
 
 
-@policy_function()
+@policy_function(start_date="2011-01-01")
 def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m: float,
-    arbeitsl_geld_2_params: dict,
     grunds_im_alter_params: dict,
+    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
 ) -> float:
     """Calculate individual private pension benefits considered in the calculation of
     Grundsicherung im Alter.
 
     Legal reference: § 82 SGB XII Abs. 4
-
-    Parameters
-    ----------
-    sozialversicherung__rente__private_rente_betrag_m
-        See basic input variable :ref:`sozialversicherung__rente__private_rente_betrag_m <sozialversicherung__rente__private_rente_betrag_m>`.
-    arbeitsl_geld_2_params
-        See params documentation :ref:`arbeitsl_geld_2_params
-        <arbeitsl_geld_2_params>`.
-    grunds_im_alter_params
-        See params documentation :ref:`grunds_im_alter_params <grunds_im_alter_params>`.
-
-    Returns
-    -------
-
     """
     sozialversicherung__rente__private_rente_betrag_m_amount_exempt = (
         piecewise_polynomial(
@@ -179,7 +130,10 @@ def private_rente_betrag_m(
             ],
         )
     )
-    upper = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
+    upper = (
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_1.regelsatz
+        / 2
+    )
 
     out = sozialversicherung__rente__private_rente_betrag_m - min(
         sozialversicherung__rente__private_rente_betrag_m_amount_exempt, upper
@@ -196,15 +150,6 @@ def gesetzliche_rente_m_bis_2020(
     calculation of Grundsicherung im Alter until 2020.
 
     Until 2020: No deduction is possible.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__altersrente__betrag_m
-        See basic input variable :ref:`sozialversicherung__rente__altersrente__betrag_m <sozialversicherung__rente__altersrente__betrag_m>`.
-
-    Returns
-    -------
-
     """
     return sozialversicherung__rente__altersrente__betrag_m
 
@@ -213,7 +158,7 @@ def gesetzliche_rente_m_bis_2020(
 def gesetzliche_rente_m_ab_2021(
     sozialversicherung__rente__altersrente__betrag_m: float,
     sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt: bool,
-    arbeitsl_geld_2_params: dict,
+    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
     grunds_im_alter_params: dict,
 ) -> float:
     """Calculate individual public pension benefits which are considered in the
@@ -221,22 +166,6 @@ def gesetzliche_rente_m_ab_2021(
 
     Starting from 2021: If eligible for Grundrente, can deduct 100€ completely and 30%
     of private pension above 100 (but no more than 1/2 of regelbedarf)
-
-    Parameters
-    ----------
-    sozialversicherung__rente__altersrente__betrag_m
-        See basic input variable :ref:`sozialversicherung__rente__altersrente__betrag_m <sozialversicherung__rente__altersrente__betrag_m>`.
-    sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt
-        See :func:`sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt`.
-    arbeitsl_geld_2_params
-        See params documentation :ref:`arbeitsl_geld_2_params
-        <arbeitsl_geld_2_params>`.
-    grunds_im_alter_params
-        See params documentation :ref:`grunds_im_alter_params <grunds_im_alter_params>`.
-
-    Returns
-    -------
-
     """
 
     angerechnete_rente = piecewise_polynomial(
@@ -244,7 +173,10 @@ def gesetzliche_rente_m_ab_2021(
         parameters=grunds_im_alter_params["anrechnungsfreier_anteil_gesetzliche_rente"],
     )
 
-    upper = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
+    upper = (
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_1.regelsatz
+        / 2
+    )
     if sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt:
         angerechnete_rente = min(angerechnete_rente, upper)
     else:
