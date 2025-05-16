@@ -162,7 +162,7 @@ def einführungsfaktor_rentenversicherungsaufwendungen(
 )
 def vorsorgepauschale_y_ab_2010_bis_2022(
     sozialversicherung__rente__beitrag__einkommen_y: float,
-    ges_rentenv_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz: float,
     vorsorge_krankenversicherungsbeiträge_option_a: float,
     vorsorge_krankenversicherungsbeiträge_option_b: float,
     einführungsfaktor_rentenversicherungsaufwendungen: float,
@@ -175,7 +175,7 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
 
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
-        * ges_rentenv_params["parameter_beitragssatz"]
+        * sozialversicherung__rente__beitrag__parameter_beitragssatz
         * einführungsfaktor_rentenversicherungsaufwendungen
     )
     kranken = max(
@@ -193,7 +193,7 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
 )
 def vorsorgepauschale_y_ab_2023(
     sozialversicherung__rente__beitrag__einkommen_y: float,
-    ges_rentenv_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz: float,
     vorsorge_krankenversicherungsbeiträge_option_a: float,
     vorsorge_krankenversicherungsbeiträge_option_b: float,
 ) -> float:
@@ -205,7 +205,7 @@ def vorsorgepauschale_y_ab_2023(
 
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
-        * ges_rentenv_params["parameter_beitragssatz"]
+        * sozialversicherung__rente__beitrag__parameter_beitragssatz
     )
     kranken = max(
         vorsorge_krankenversicherungsbeiträge_option_a,

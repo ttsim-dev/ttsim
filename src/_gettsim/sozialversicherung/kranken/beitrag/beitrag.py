@@ -59,7 +59,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    ges_krankenv_params: dict,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
@@ -71,9 +71,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * ges_krankenv_params[
-                "arbeitgeberpauschale_bei_geringfügiger_beschäftigung"
-            ]
+            * sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         )
     else:
         out = einkommen_m * beitragssatz_arbeitgeber
@@ -89,7 +87,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     betrag_arbeitgeber_midijob_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    ges_krankenv_params: dict,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
@@ -101,9 +99,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * ges_krankenv_params[
-                "arbeitgeberpauschale_bei_geringfügiger_beschäftigung"
-            ]
+            * sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         )
     elif sozialversicherung__in_gleitzone:
         out = betrag_arbeitgeber_midijob_m

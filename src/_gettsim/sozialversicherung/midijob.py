@@ -39,11 +39,12 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
 def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
-    ges_rentenv_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang: float,
     sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
-    sozialversicherung__pflege__beitrag__beitragssatz_uniform: dict,
+    sozialversicherung__pflege__beitrag__beitragssatz_uniform: float,
     geringfügige_einkommen_params: dict,
     sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F until December 2004.
 
@@ -52,7 +53,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
+        +sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
         + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
         + sozialversicherung__pflege__beitrag__beitragssatz_uniform
     )
@@ -70,7 +71,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
         sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
-        + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
+        + sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         + geringfügige_einkommen_params["arbeitgeberpauschale_lohnsteuer"]
     )
 
@@ -89,11 +90,12 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
 def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
-    ges_rentenv_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang: float,
     sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
     sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict,
     geringfügige_einkommen_params: dict,
     sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F between 2005 and September 2025.
 
@@ -103,7 +105,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
+        sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
         + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
         + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
             "standard"
@@ -122,7 +124,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
         sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
-        + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
+        + sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         + geringfügige_einkommen_params["arbeitgeberpauschale_lohnsteuer"]
     )
 
@@ -141,10 +143,13 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
 def midijob_faktor_f_ohne_minijob_steuerpauschale(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
-    ges_rentenv_params: dict,
-    sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict[
+        str, float
+    ],
     sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
     sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F since October 2022.
 
@@ -158,7 +163,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
+        sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
         + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
             "standard"
         ]
@@ -180,7 +185,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # and pension insurance
     pausch_mini = (
         sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
-        + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
+        + sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
     )
 
     # Now calculate final factor f
