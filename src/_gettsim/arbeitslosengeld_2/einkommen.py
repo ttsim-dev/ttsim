@@ -20,18 +20,31 @@ if TYPE_CHECKING:
 @params_function(start_date="2005-10-01")
 def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
     raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg: RawParamsRequiringConversion,
-    parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: PiecewisePolynomialParameters,
+    raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParamsRequiringConversion,
 ) -> PiecewisePolynomialParameters:
     """Parameter for calculation of income not subject to transfer withdrawal when
     children are in the Bedarfsgemeinschaft."""
     updated_parameters: dict[int, dict[str, float]] = upsert_tree(
-        base=parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
-        to_upsert=raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg.value,
+        base=raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
+        to_upsert=raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg,
     )
     return get_piecewise_parameters(
         leaf_name="parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg",
         func_type="piecewise_linear",
         parameter_dict=updated_parameters,
+    )
+
+
+@params_function()
+def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
+    raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParamsRequiringConversion,
+) -> PiecewisePolynomialParameters:
+    """Parameter for calculation of income not subject to transfer withdrawal when
+    children are not in the Bedarfsgemeinschaft."""
+    return get_piecewise_parameters(
+        leaf_name="parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg",
+        func_type="piecewise_linear",
+        parameter_dict=raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
     )
 
 
