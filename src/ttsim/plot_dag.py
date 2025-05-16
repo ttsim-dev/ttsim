@@ -93,7 +93,7 @@ def plot_dag(
     )[1]
 
     # Create parameter input structure.
-    input_structure = dt.create_input_structure_tree(
+    input_structure = dt.create_tree_with_input_types(
         functions=functions_not_overridden,
         targets=None,  # None because no functions should be filtered out
     )
@@ -113,7 +113,7 @@ def plot_dag(
         params=environment.params,
     )
 
-    input_structure = dt.create_input_structure_tree(
+    input_structure = dt.create_tree_with_input_types(
         functions=processed_functions,
         targets=None,
     )
