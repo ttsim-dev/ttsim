@@ -6,7 +6,13 @@ from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(end_date="1998-07-31", leaf_name="betrag_m")
+def betrag_m_not_implemented() -> float:
+    """Calculate individual unemployment benefit."""
+    raise NotImplementedError("Not implemented yet.")
+
+
+@policy_function(vectorization_strategy="loop", start_date="1998-08-01")
 def betrag_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     grundsätzlich_anspruchsberechtigt: bool,
