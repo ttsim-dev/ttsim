@@ -17,24 +17,6 @@ def betrag_m_bg(
     """Calculate final monthly subsistence payment on household level.
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
-
-    Parameters
-    ----------
-    anspruchshöhe_m_bg
-        See :func:`anspruchshöhe_m_bg`.
-    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg
-        See :func:`vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg`.
-    vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
-        See :func:`vorrangprüfungen__kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
-    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg
-        See :func:`vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg`.
-    erwachsene_alle_rentenbezieher_hh
-        See :func:`erwachsene_alle_rentenbezieher_hh`.
-
-    Returns
-    -------
-    float with the income by unemployment insurance on household level.
-
     """
     # TODO (@MImmesberger): No interaction between Wohngeld/ALG2 and Grundsicherung im
     # Alter (SGB XII) is implemented yet. We assume for now that households with only
@@ -65,21 +47,6 @@ def anspruchshöhe_m_bg(
     """Calculate potential basic subsistence (after income deduction and wealth check).
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
-
-    Parameters
-    ----------
-    regelbedarf_m_bg
-        See :func:`regelbedarf_m_bg`.
-    anzurechnendes_einkommen_m_bg
-        See :func:`anzurechnendes_einkommen_m_bg`.
-    freibetrag_vermögen_bg
-        See :func:`freibetrag_vermögen_bg`.
-    vermögen_bg
-        See basic input variable :ref:`vermögen_bg <vermögen_bg>`.
-
-    Returns
-    -------
-
     """
     # Check wealth exemption
     if vermögen_bg > freibetrag_vermögen_bg:

@@ -51,24 +51,6 @@ def anzurechnendes_einkommen_m(
     necessary because the Kindergeld received by the child may enter
     `anzurechnendes_einkommen_m_hh` twice: once as Kindergeld and once as
     Kindergeldübertrag.
-
-    Parameters
-    ----------
-    nettoeinkommen_nach_abzug_freibetrag_m
-        See :func:`nettoeinkommen_nach_abzug_freibetrag_m`.
-    unterhalt__tatsächlich_erhaltener_betrag_m
-        See :func:`unterhalt__tatsächlich_erhaltener_betrag_m`.
-    unterhaltsvorschuss__betrag_m
-        See :func:`unterhaltsvorschuss__betrag_m`.
-    kindergeld_zur_bedarfsdeckung_m
-        See :func:`kindergeld_zur_bedarfsdeckung_m`.
-    kindergeldübertrag_m
-        See :func:`kindergeldübertrag_m`.
-
-    Returns
-    -------
-    Income according to SGB II.
-
     """
     return (
         nettoeinkommen_nach_abzug_freibetrag_m

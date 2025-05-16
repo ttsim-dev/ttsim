@@ -89,27 +89,6 @@ def differenz_kindergeld_kindbedarf_m(
 
     Kindergeldübertrag (`kindergeldübertrag_m`) is obtained by aggregating this function
     to the parental level.
-
-    Parameters
-    ----------
-    regelbedarf_m_bg
-        See :func:`regelbedarf_m_bg`.
-    nettoeinkommen_nach_abzug_freibetrag_m
-        See :func:`_arbeitsl_geld_2
-    wohngeld__anspruchshöhe_m_bg
-        See :func:`wohngeld__anspruchshöhe_m_bg`.
-    kindergeld_zur_bedarfsdeckung_m
-        See :func:`kindergeld_zur_bedarfsdeckung_m`.
-    unterhalt__tatsächlich_erhaltener_betrag_m
-        See :func:`unterhalt__tatsächlich_erhaltener_betrag_m`.
-    unterhaltsvorschuss__betrag_m
-        See :func:`unterhaltsvorschuss__betrag_m`.
-    in_anderer_bg_als_kindergeldempfänger
-        See :func:`in_anderer_bg_als_kindergeldempfänger`.
-
-    Returns
-    -------
-
     """
     fehlbetrag = max(
         regelbedarf_m_bg
@@ -139,19 +118,6 @@ def in_anderer_bg_als_kindergeldempfänger(
 ) -> numpy.ndarray[bool]:
     """True if the person is in a different Bedarfsgemeinschaft than the
     Kindergeldempfänger of that person.
-
-    Parameters
-    ----------
-    p_id
-        See basic input variable :ref:`p_id <p_id>`
-    kindergeld__p_id_empfänger
-        See basic input variable :ref:`kindergeld__p_id_empfänger <kindergeld__p_id_empfänger>`
-    bg_id
-        See :func:`bg_id`.
-
-    Returns
-    -------
-
     """
     # Create a dictionary to map p_id to bg_id
     p_id_to_bg_id = dict(zip(p_id, bg_id))
