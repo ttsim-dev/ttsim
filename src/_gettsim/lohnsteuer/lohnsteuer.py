@@ -59,7 +59,7 @@ def betrag_soli_y(
     """Solidarity surcharge on Lohnsteuer (withholding tax on earnings)."""
 
     return solidaritätszuschlagstarif(
-        x=betrag_mit_kinderfreibetrag_y,
+        steuer_pro_person=betrag_mit_kinderfreibetrag_y,
         parameter_solidaritätszuschlag=solidaritätszuschlag__parameter_solidaritätszuschlag,
     )
 

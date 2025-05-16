@@ -82,25 +82,25 @@ parameter_solidaritätszuschlag:
       upper_threshold: inf
   2023-01-01:
     reference: Art. 4 G. v. 08.12.2022 BGBl. I S. 2230.
-    deviation_from: previous
+    updates_previous: true
     0:
       upper_threshold: 17543
     1:
       upper_threshold: 32619.02
   2024-01-01:
     reference: Art. 5 G. v. 08.12.2022 BGBl. I S. 2230.
-    deviation_from: previous
+    updates_previous: true
     0:
       upper_threshold: 18130
     1:
       upper_threshold: 33710.47
   2025-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 3 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
     0:
       upper_threshold: 19950
   2026-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 4 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
     0:
       upper_treshold: 20350
