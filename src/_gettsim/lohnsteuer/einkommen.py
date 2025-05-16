@@ -90,7 +90,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    ges_krankenv_params: dict,
+    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict,
 ) -> float:
     """Option b for calculating deductible health insurance cont.
 
@@ -99,7 +99,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     are used.
     """
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["parameter_beitragssatz"]["ermäßigt"] / 2
+        sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
@@ -115,7 +115,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    ges_krankenv_params: dict,
+    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict,
 ) -> float:
     """Option b for calculating deductible health insurance cont.
 
@@ -125,7 +125,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     """
 
     out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["parameter_beitragssatz"]["ermäßigt"] / 2
+        sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
         + sozialversicherung__pflege__beitrag__beitragssatz
     )

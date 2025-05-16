@@ -41,9 +41,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     ges_rentenv_params: dict,
     sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
-    ges_krankenv_params: dict,
     sozialversicherung__pflege__beitrag__beitragssatz_uniform: dict,
     geringfügige_einkommen_params: dict,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F until December 2004.
 
@@ -69,7 +69,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
 
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
-        ges_krankenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
+        sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
         + geringfügige_einkommen_params["arbeitgeberpauschale_lohnsteuer"]
     )
@@ -91,9 +91,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     ges_rentenv_params: dict,
     sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
-    ges_krankenv_params: dict,
     sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict,
     geringfügige_einkommen_params: dict,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F between 2005 and September 2025.
 
@@ -121,7 +121,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
 
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
-        ges_krankenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
+        sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
         + geringfügige_einkommen_params["arbeitgeberpauschale_lohnsteuer"]
     )
@@ -144,7 +144,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     ges_rentenv_params: dict,
     sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict,
     sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
-    ges_krankenv_params: dict,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F since October 2022.
 
@@ -179,7 +179,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # New formula only inludes the lump-sum contributions to health care
     # and pension insurance
     pausch_mini = (
-        ges_krankenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
+        sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
     )
 

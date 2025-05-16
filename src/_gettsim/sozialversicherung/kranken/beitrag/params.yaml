@@ -18,43 +18,43 @@ parameter_beitragssatz:
   unit: Share
   reference_period: null
   type: dict
-  access_different_date: jahresanfang
+  add_jahresanfang: true
   1984-01-01:
-    mean_allgemein: 0.1144
+    value: 0.1144
   1985-01-01:
-    mean_allgemein: 0.118
+    value: 0.118
   1986-01-01:
-    mean_allgemein: 0.122
+    value: 0.122
   1987-01-01:
-    mean_allgemein: 0.1248
+    value: 0.1248
   1988-01-01:
-    mean_allgemein: 0.1288
+    value: 0.1288
   1989-01-01:
-    mean_allgemein: 0.129
+    value: 0.129
   1990-01-01:
-    mean_allgemein: 0.125
+    value: 0.125
   1991-01-01:
-    mean_allgemein: 0.128
+    value: 0.128
   1993-01-01:
-    mean_allgemein: 0.134
+    value: 0.134
   1995-01-01:
-    mean_allgemein: 0.132
+    value: 0.132
   1997-01-01:
-    mean_allgemein: 0.134
+    value: 0.134
   1998-01-01:
-    mean_allgemein: 0.136
+    value: 0.136
   2000-01-01:
-    mean_allgemein: 0.1357
+    value: 0.1357
   2001-01-01:
-    mean_allgemein: 0.1358
+    value: 0.1358
   2002-01-01:
-    mean_allgemein: 0.14
+    value: 0.14
   2003-01-01:
-    mean_allgemein: 0.144
+    value: 0.144
   2004-01-01:
-    mean_allgemein: 0.142
+    value: 0.142
   2005-01-01:
-    mean_allgemein: 0.142
+    value: 0.142
   2005-07-01:
     mean_allgemein: 0.133
     sonderbeitrag: 0.009
@@ -63,21 +63,21 @@ parameter_beitragssatz:
       Sonderbeitrags
     reference: Art. 1 G. v. 15.12.2004, BGBl I S. 3445.
   2007-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_allgemein: 0.139
   2008-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_allgemein: 0.14
   2009-01-01:
     allgemein: 0.146
     sonderbeitrag: 0.009
     ermäßigt: 0.140
   2009-07-01:
-    deviation_from: previous
+    updates_previous: true
     allgemein: 0.14
     ermäßigt: 0.134
   2011-01-01:
-    deviation_from: previous
+    updates_previous: true
     allgemein: 0.146
     ermäßigt: 0.14
     reference: Art. 1 G. v. 22.12.2010 BGBl. I S. 2309
@@ -87,11 +87,11 @@ parameter_beitragssatz:
     mean_zusatzbeitrag: 0.009
     note: Abschaffung Sonderbeitrag, Einführung kassenabhängiger Zusatzbeitrag
   2016-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_zusatzbeitrag: 0.011
     note: Bekanntmachung Bundesanzeiger 30.12.2015
   2018-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_zusatzbeitrag: 0.01
   2019-01-01:
     allgemein: 0.146
@@ -99,23 +99,23 @@ parameter_beitragssatz:
     mean_zusatzbeitrag: 0.009
     note: Wiedereinführung der Parität. Art. 2 G. v. 11.12.2018, BGBl. I S. 2387
   2020-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_zusatzbeitrag: 0.011
     reference: BAnz AT 28.10.2019 B3
   2021-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_zusatzbeitrag: 0.013
     reference: BAnz AT 30.10.2020 B5
   2023-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_zusatzbeitrag: 0.016
     reference: BAnz AT 31.10.2022 B5
   2024-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_zusatzbeitrag: 0.017
     reference: BAnz AT 31.10.2023 B3
   2025-01-01:
-    deviation_from: previous
+    updates_previous: true
     mean_zusatzbeitrag: 0.025
     reference: BAnz AT 07.11.2024 B4
 parameter_beitragsbemessungsgrenze:
@@ -129,17 +129,23 @@ parameter_beitragsbemessungsgrenze:
   reference_period: Month
   type: require_converter
   1984-01-01:
-    west: 1994
+    value: 1994
+    note: Refers to West Germany.
   1985-01-01:
-    west: 2071
+    value: 2071
+    note: Refers to West Germany.
   1986-01-01:
-    west: 2147
+    value: 2147
+    note: Refers to West Germany.
   1987-01-01:
-    west: 2186
+    value: 2186
+    note: Refers to West Germany.
   1988-01-01:
-    west: 2301
+    value: 2301
+    note: Refers to West Germany.
   1989-01-01:
-    west: 2339
+    value: 2339
+    note: Refers to West Germany.
   1990-01-01:
     west: 2416
     ost: 1035
@@ -244,7 +250,7 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
   unit: Share
   reference_period: null
   type: scalar
-  access_different_date: jahresanfang
+  add_jahresanfang: true
   1984-01-01:
     value: 0
   1999-01-01:
@@ -253,7 +259,7 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
     value: 0.11
   2007-01-01:
     value: 0.13
-bezugsgröße_selbstständige_m:
+raw_parameter_bezugsgröße_selbstständige:
   name:
     de: Monatliche Bezugsgröße für Selbstständige
     en: Monthly reference size for self employed
@@ -262,20 +268,20 @@ bezugsgröße_selbstständige_m:
     en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
   unit: Euros
   reference_period: Month
-  type: dict
-  access_different_date: jahresanfang
+  type: require_converter
+  add_jahresanfang: true
   1984-01-01:
-    west: 1396
+    value: 1396
   1985-01-01:
-    west: 1432
+    value: 1432
   1986-01-01:
-    west: 1467
+    value: 1467
   1987-01-01:
-    west: 1539
+    value: 1539
   1988-01-01:
-    west: 1575
+    value: 1575
   1989-01-01:
-    west: 1611
+    value: 1611
   1990-01-01:
     west: 1682
     ost: 715.8086336747059
@@ -310,7 +316,7 @@ bezugsgröße_selbstständige_m:
     west: 2291
     ost: 1861.102447554235
   2001-01-01:
-    deviation_from: previous
+    updates_previous: true
     ost: 1932.683310921706
   2002-01-01:
     west: 2345
@@ -325,10 +331,10 @@ bezugsgröße_selbstständige_m:
     west: 2450
     ost: 2065
   2007-01-01:
-    deviation_from: previous
+    updates_previous: true
     ost: 2100
   2008-01-01:
-    deviation_from: previous
+    updates_previous: true
     west: 2485
   2009-01-01:
     west: 2520
@@ -337,10 +343,10 @@ bezugsgröße_selbstständige_m:
     west: 2555
     ost: 2170
   2011-01-01:
-    deviation_from: previous
+    updates_previous: true
     ost: 2240
   2012-01-01:
-    deviation_from: previous
+    updates_previous: true
     west: 2625
   2013-01-01:
     west: 2695
