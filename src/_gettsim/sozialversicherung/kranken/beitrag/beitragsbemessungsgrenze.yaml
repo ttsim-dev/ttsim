@@ -1,8 +1,8 @@
 ---
 parameter_beitragsbemessungsgrenze_einheitlich:
   name:
-    de: Beitragsbemessungsgrenzen für die Krankenversicherung
-    en: Income Threshold for health insurance
+    de: Beitragsbemessungsgrenze der gesetzlichen Krankenversicherung
+    en: Maximum income subject to health insurance contributions
   description:
     de: >-
       Die Beitragsbemessungsgrenze ist einheitlich in der gesamten BRD. Die
@@ -88,8 +88,8 @@ parameter_beitragsbemessungsgrenze_einheitlich:
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
 parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied:
   name:
-    de: Beitragsbemessungsgrenzen für die Krankenversicherung
-    en: Income Threshold for health insurance
+    de: Beitragsbemessungsgrenze der gesetzlichen Krankenversicherung
+    en: Maximum income subject to health insurance contributions
   description:
     de: >-
       Die Beitragsbemessungsgrenze für Krankenversicherung ist unterschiedlich

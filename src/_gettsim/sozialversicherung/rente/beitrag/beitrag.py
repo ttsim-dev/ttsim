@@ -1,6 +1,37 @@
 """Public pension insurance contributions."""
 
-from ttsim import policy_function
+from ttsim import params_function, policy_function
+
+
+@params_function(
+    end_date="1989-12-31",
+    leaf_name="parameter_beitragsbemessungsgrenze",
+)
+def parameter_beitragsbemessungsgrenze_vor_wiedervereinigung(
+    raw_parameter_beitragsbemessungsgrenze_einheitlich: float,
+) -> float:
+    return raw_parameter_beitragsbemessungsgrenze_einheitlich
+
+
+@params_function(
+    start_date="1990-01-01",
+    end_date="2024-12-31",
+    leaf_name="parameter_beitragsbemessungsgrenze",
+)
+def parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied(
+    raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied: float,
+) -> float:
+    return raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied
+
+
+@params_function(
+    start_date="2025-01-01",
+    leaf_name="parameter_beitragsbemessungsgrenze",
+)
+def parameter_beitragsbemessungsgrenze_einheitlich(
+    raw_parameter_beitragsbemessungsgrenze_einheitlich: float,
+) -> float:
+    return raw_parameter_beitragsbemessungsgrenze_einheitlich
 
 
 @policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")
@@ -113,10 +144,20 @@ def einkommen_m(
     )
 
 
-# TODO: Differentiate by regime, i.e., just a parameter in years where we do not have
-# Ost/West distinction. Same for all Sozialversicherunbsbeiträge!
-@policy_function()
-def beitragsbemessungsgrenze_m(
+@policy_function(end_date="1989-12-31", leaf_name="beitragsbemessungsgrenze_m")
+def beitragsbemessungsgrenze_m_vor_wiedervereinigung(
+    parameter_beitragsbemessungsgrenze: float,
+) -> float:
+    """Income threshold up to which pension insurance payments apply."""
+    return parameter_beitragsbemessungsgrenze
+
+
+@policy_function(
+    start_date="1990-01-01",
+    end_date="2024-12-31",
+    leaf_name="beitragsbemessungsgrenze_m",
+)
+def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
     wohnort_ost: bool, parameter_beitragsbemessungsgrenze: dict[str, float]
 ) -> float:
     """Income threshold up to which pension insurance payments apply."""
@@ -125,6 +166,14 @@ def beitragsbemessungsgrenze_m(
         if wohnort_ost
         else parameter_beitragsbemessungsgrenze["west"]
     )
+
+
+@policy_function(start_date="2025-01-01", leaf_name="beitragsbemessungsgrenze_m")
+def beitragsbemessungsgrenze_m_einheitlich(
+    parameter_beitragsbemessungsgrenze: float,
+) -> float:
+    """Income threshold up to which pension insurance payments apply."""
+    return parameter_beitragsbemessungsgrenze
 
 
 @policy_function(start_date="2003-04-01")
