@@ -9,6 +9,7 @@ from ttsim import params_function, policy_function
 def parameter_beitragsbemessungsgrenze_einheitlich_vor_wiedervereinigung(
     parameter_beitragsbemessungsgrenze_einheitlich: float,
 ) -> float:
+    """Parameter for maximum income subject to health insurance contributions."""
     return parameter_beitragsbemessungsgrenze_einheitlich
 
 
@@ -20,6 +21,7 @@ def parameter_beitragsbemessungsgrenze_einheitlich_vor_wiedervereinigung(
 def parameter_beitragsbemessungsgrenze_ab_1990(
     parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied: dict[str, float],
 ) -> dict[str, float]:
+    """Parameter for maximum income subject to health insurance contributions."""
     return parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied
 
 
@@ -29,6 +31,7 @@ def parameter_beitragsbemessungsgrenze_ab_1990(
 def parameter_beitragsbemessungsgrenze_einheitlich_ab_2001(
     parameter_beitragsbemessungsgrenze_einheitlich: float,
 ) -> float:
+    """Parameter for maximum income subject to health insurance contributions."""
     return parameter_beitragsbemessungsgrenze_einheitlich
 
 
@@ -38,6 +41,7 @@ def parameter_beitragsbemessungsgrenze_einheitlich_ab_2001(
 def parameter_bezugsgröße_selbstständige_vor_wiedervereinigung(
     raw_parameter_bezugsgröße_selbstständige_einheitlich: float,
 ) -> float:
+    """Parameter for health insurance Bezugsgröße for self-employed."""
     return raw_parameter_bezugsgröße_selbstständige_einheitlich
 
 
@@ -47,6 +51,7 @@ def parameter_bezugsgröße_selbstständige_vor_wiedervereinigung(
 def parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied(
     raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied: dict[str, float],
 ) -> dict[str, float]:
+    """Parameter for health insurance Bezugsgröße for self-employed."""
     return raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied
 
 

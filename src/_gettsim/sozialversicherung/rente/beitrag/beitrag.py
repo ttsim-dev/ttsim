@@ -10,6 +10,7 @@ from ttsim import params_function, policy_function
 def parameter_beitragsbemessungsgrenze_vor_wiedervereinigung(
     raw_parameter_beitragsbemessungsgrenze_einheitlich: float,
 ) -> float:
+    """Parameter maximum income subject to pension insurance contributions."""
     return raw_parameter_beitragsbemessungsgrenze_einheitlich
 
 
@@ -19,8 +20,9 @@ def parameter_beitragsbemessungsgrenze_vor_wiedervereinigung(
     leaf_name="parameter_beitragsbemessungsgrenze",
 )
 def parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied(
-    raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied: float,
-) -> float:
+    raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied: dict[str, float],
+) -> dict[str, float]:
+    """Parameter maximum income subject to pension insurance contributions."""
     return raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied
 
 

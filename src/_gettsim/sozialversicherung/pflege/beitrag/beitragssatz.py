@@ -46,7 +46,7 @@ def beitragssatz_ohne_zusatz_für_kinderlose(
 )
 def beitragssatz_zusatz_kinderlos_dummy(
     zusatzbetrag_kinderlos: bool,
-    beitragssatz_abhängig_von_anzahl_kinder: dict,
+    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
@@ -67,7 +67,7 @@ def beitragssatz_zusatz_kinderlos_dummy(
 def beitragssatz_mit_kinder_abschlag(
     anzahl_kinder_bis_24: int,
     zusatzbetrag_kinderlos: bool,
-    beitragssatz_abhängig_von_anzahl_kinder: dict,
+    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 

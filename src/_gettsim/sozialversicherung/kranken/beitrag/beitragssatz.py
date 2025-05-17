@@ -9,7 +9,7 @@ from ttsim import params_function, policy_function
 def parameter_beitragssatz_einheitlich(
     raw_parameter_beitragssatz_einheitlich: float,
 ) -> float:
-    """Parameter for health insurance contribution rate before reunification."""
+    """Parameter for health insurance contribution rate."""
     return raw_parameter_beitragssatz_einheitlich
 
 
@@ -17,7 +17,7 @@ def parameter_beitragssatz_einheitlich(
 def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag(
     raw_parameter_beitragssatz_mit_zusatzbeitrag: dict[str, float],
 ) -> dict[str, float]:
-    """Parameter for health insurance contribution rate after reunification."""
+    """Parameter for health insurance contribution rate."""
     return raw_parameter_beitragssatz_mit_zusatzbeitrag
 
 
@@ -25,7 +25,7 @@ def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag(
 def parameter_beitragssatz_einheitlich_jahresanfang(
     raw_parameter_beitragssatz_einheitlich_jahresanfang: float,
 ) -> float:
-    """Parameter for health insurance contribution rate before reunification."""
+    """Parameter for health insurance contribution rate."""
     return raw_parameter_beitragssatz_einheitlich_jahresanfang
 
 
@@ -35,7 +35,7 @@ def parameter_beitragssatz_einheitlich_jahresanfang(
 def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag_jahresanfang(
     raw_parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang: dict[str, float],
 ) -> dict[str, float]:
-    """Parameter for health insurance contribution rate after reunification."""
+    """Parameter for health insurance contribution rate."""
     return raw_parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang
 
 

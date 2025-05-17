@@ -7,6 +7,7 @@ from ttsim import RoundingSpec, params_function, policy_function
 def beitragspflichtiges_durchschnittsentgelt_y(
     parameter_beitragspflichtiges_durchschnittsentgelt: float,
 ) -> float:
+    """Beitragspflichtiges Durchschnittsentgelt."""
     return parameter_beitragspflichtiges_durchschnittsentgelt
 
 
@@ -18,13 +19,15 @@ def beitragspflichtiges_durchschnittsentgelt_y(
 def parameter_rentenwert_mit_ost_west_unterschied(
     raw_parameter_rentenwert_mit_ost_west_unterschied: dict[str, float],
 ) -> dict[str, float]:
+    """Parameter Rentenwert mit Ost-West-Unterschied."""
     return raw_parameter_rentenwert_mit_ost_west_unterschied
 
 
-@params_function(start_date="2023-07-01", leaf_name="parameter_rentenwert")
+@params_function(start_date="2023-07-01", leaf_name="rentenwert")
 def parameter_rentenwert_einheitlich(
     raw_parameter_rentenwert_einheitlich: float,
 ) -> float:
+    """Parameter Rentenwert einheitlich."""
     return raw_parameter_rentenwert_einheitlich
 
 
@@ -103,7 +106,7 @@ def bruttorente_basisbetrag_m(
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__bezieht_rente: bool,
-    parameter_rentenwert: float,
+    rentenwert: float,
 ) -> float:
     """Old-Age Pensions claim. The function follows the following equation:
 
@@ -122,7 +125,7 @@ def bruttorente_basisbetrag_m(
                 sozialversicherung__rente__entgeltpunkte_west
                 + sozialversicherung__rente__entgeltpunkte_ost
             )
-            * parameter_rentenwert
+            * rentenwert
             * zugangsfaktor
         )
     else:
@@ -138,14 +141,6 @@ def rentenwert_mit_ost_west_unterschied(
 ) -> float:
     """Rentenwert."""
     return parameter_rentenwert["ost"] if wohnort_ost else parameter_rentenwert["west"]
-
-
-@policy_function(start_date="2023-07-01", leaf_name="rentenwert")
-def rentenwert_einheitlich(
-    parameter_rentenwert: float,
-) -> float:
-    """Rentenwert."""
-    return parameter_rentenwert
 
 
 @policy_function()

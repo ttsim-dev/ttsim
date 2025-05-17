@@ -40,7 +40,7 @@ def betrag_m_einheitlich(
     entgeltpunkte_ost: float,
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
-    sozialversicherung__rente__altersrente__parameter_rentenwert: float,
+    sozialversicherung__rente__altersrente__rentenwert: float,
 ) -> float:
     """Erwerbsminderungsrente (amount paid by public disability insurance if claimed)
 
@@ -51,7 +51,7 @@ def betrag_m_einheitlich(
         out = (
             (entgeltpunkte_ost + entgeltpunkte_west)
             * zugangsfaktor
-            * sozialversicherung__rente__altersrente__parameter_rentenwert
+            * sozialversicherung__rente__altersrente__rentenwert
             * rentenartfaktor
         )
     else:
