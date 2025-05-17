@@ -6,7 +6,7 @@ Note: Since 2023, Arbeitslosengeld II is referred to as Bürgergeld.
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def betrag_m_bg(
     anspruchshöhe_m_bg: float,
     vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: bool,
@@ -37,7 +37,7 @@ def betrag_m_bg(
     return out
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def anspruchshöhe_m_bg(
     regelbedarf_m_bg: float,
     anzurechnendes_einkommen_m_bg: float,

@@ -3,7 +3,7 @@
 from ttsim import policy_function
 
 
-@policy_function(end_date="2022-12-31")
+@policy_function(start_date="2005-01-01", end_date="2022-12-31")
 def grundfreibetrag_vermögen(
     familie__kind: bool,
     alter: int,
@@ -28,7 +28,7 @@ def grundfreibetrag_vermögen(
 
 # TODO(@MImmesberger): Parameter should be defined as a piecewise_constant.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/911
-@policy_function(end_date="2022-12-31")
+@policy_function(start_date="2005-01-01", end_date="2022-12-31")
 def maximaler_grundfreibetrag_vermögen(
     geburtsjahr: int,
     familie__kind: bool,
@@ -72,7 +72,9 @@ def vermögensfreibetrag_in_karenzzeit_bg(
     )
 
 
-@policy_function(end_date="2022-12-31", leaf_name="vermögensfreibetrag_bg")
+@policy_function(
+    start_date="2005-01-01", end_date="2022-12-31", leaf_name="vermögensfreibetrag_bg"
+)
 def vermögensfreibetrag_bg_bis_2022(
     grundfreibetrag_vermögen_bg: float,
     anzahl_kinder_bis_17_bg: int,

@@ -30,7 +30,7 @@ def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
     )
 
 
-@params_function(start_date="2005-10-01")
+@params_function(start_date="2005-01-01")
 def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
     raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg: RawParamsRequiringConversion,
     raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParamsRequiringConversion,
@@ -48,7 +48,7 @@ def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
     )
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def anzurechnendes_einkommen_m(
     nettoeinkommen_nach_abzug_freibetrag_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
@@ -74,7 +74,7 @@ def anzurechnendes_einkommen_m(
     )
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def nettoeinkommen_nach_abzug_freibetrag_m(
     nettoeinkommen_vor_abzug_freibetrag_m: float,
     anrechnungsfreies_einkommen_m: float,
@@ -83,23 +83,11 @@ def nettoeinkommen_nach_abzug_freibetrag_m(
     (Arbeitslosengeld II / Bürgergeld).
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
-
-    Parameters
-    ----------
-    nettoeinkommen_vor_abzug_freibetrag_m
-        See :func:`nettoeinkommen_vor_abzug_freibetrag_m`.
-    anrechnungsfreies_einkommen_m
-        See :func:`anrechnungsfreies_einkommen_m`.
-
-    Returns
-    -------
-    Income after taxes, social insurance contributions, and other deductions.
-
     """
     return nettoeinkommen_vor_abzug_freibetrag_m - anrechnungsfreies_einkommen_m
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def nettoeinkommen_vor_abzug_freibetrag_m(
     bruttoeinkommen_m: float,
     einkommensteuer__betrag_m_sn: float,
@@ -111,24 +99,6 @@ def nettoeinkommen_vor_abzug_freibetrag_m(
     Bürgergeld).
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
-
-    Parameters
-    ----------
-    bruttoeinkommen_m
-        See :func:`bruttoeinkommen_m`.
-    einkommensteuer__betrag_m_sn
-        See :func:`einkommensteuer__betrag_m_sn`.
-    solidaritätszuschlag__betrag_m_sn
-        See :func:`solidaritätszuschlag__betrag_m_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    sozialversicherung__beiträge_versicherter_m
-        See :func:`sozialversicherung__beiträge_versicherter_m`.
-
-    Returns
-    -------
-    Income after taxes, social insurance contributions, and other deductions.
-
     """
     return (
         bruttoeinkommen_m
@@ -138,7 +108,7 @@ def nettoeinkommen_vor_abzug_freibetrag_m(
     )
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def bruttoeinkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
@@ -153,32 +123,6 @@ def bruttoeinkommen_m(
     """Sum up the gross income for calculation of basic subsistence.
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`hh_id <hh_id>`.
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__sonstige__ohne_renten_m <einkommensteuer__einkünfte__sonstige__ohne_renten_m>`.
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m <einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m>`.
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m <einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m>`.
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
-        See :func:`einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m`.
-    sozialversicherung__rente__altersrente__betrag_m
-        See :func:`sozialversicherung__rente__altersrente__betrag_m`.
-    sozialversicherung__rente__private_rente_betrag_m
-        See :func:`sozialversicherung__rente__private_rente_betrag_m`.
-    sozialversicherung__arbeitslosen__betrag_m
-        See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-    elterngeld__betrag_m
-        See :func:`elterngeld__betrag_m`.
-
-    Returns
-    -------
-    Income by unemployment insurance before tax.
-
     """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
@@ -226,6 +170,7 @@ def nettoquote(
 
 
 @policy_function(
+    start_date="2005-01-01",
     end_date="2005-09-30",
     leaf_name="anrechnungsfreies_einkommen_m",
 )
