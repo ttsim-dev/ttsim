@@ -178,8 +178,7 @@ def kinderfreibetrag_günstiger_sn(
         betrag_ohne_kinderfreibetrag_y_sn - betrag_mit_kinderfreibetrag_y_sn
     )
 
-    out = unterschiedsbeitrag > relevantes_kindergeld_y_sn
-    return out
+    return unterschiedsbeitrag > relevantes_kindergeld_y_sn
 
 
 @policy_function(
@@ -214,11 +213,9 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_verst_eink_per_indiv = (
         zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn / anzahl_personen_sn
     )
-    out = anzahl_personen_sn * einkommensteuertarif(
+    return anzahl_personen_sn * einkommensteuertarif(
         x=zu_verst_eink_per_indiv, params=parameter_einkommensteuertarif
     )
-
-    return out
 
 
 @policy_function(
@@ -308,8 +305,7 @@ def einkommensteuertarif(x: float, params: dict) -> float:
     -------
 
     """
-    out = piecewise_polynomial(
+    return piecewise_polynomial(
         x=x,
         parameters=params,
     )
-    return out

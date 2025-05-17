@@ -446,13 +446,11 @@ def grundsätzlich_anspruchsberechtigt_bis_2007(
 
     """
 
-    out = (
+    return (
         arbeitslos_für_1_jahr_nach_alter_58_ein_halb
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtbeitragsjahre_8_von_10
     )
-
-    return out
 
 
 @policy_function(
@@ -496,12 +494,10 @@ def grundsätzlich_anspruchsberechtigt_ab_2007(
 
     """
 
-    out = (
+    return (
         arbeitslos_für_1_jahr_nach_alter_58_ein_halb
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtbeitragsjahre_8_von_10
         and geburtsjahr
         < ges_rente_params["first_birthyear_without_rente_wegen_arbeitslosigkeit"]
     )
-
-    return out

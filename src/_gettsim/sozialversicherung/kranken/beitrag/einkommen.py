@@ -151,13 +151,11 @@ def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
     parameter_beitragsbemessungsgrenze: ParameterMitOstWestUnterschied,
 ) -> float:
     """Income threshold up to which health insurance payments apply."""
-    out = (
+    return (
         parameter_beitragsbemessungsgrenze.ost
         if wohnort_ost
         else parameter_beitragsbemessungsgrenze.west
     )
-
-    return out
 
 
 @policy_function(start_date="2001-01-01", leaf_name="beitragsbemessungsgrenze_m")
@@ -168,7 +166,7 @@ def beitragsbemessungsgrenze_m_ohne_ost_west_unterschied(
     return parameter_beitragsbemessungsgrenze
 
 
-@policy_function(start_date="1990-01-01", leaf_name="bezugsgröße_selbstständige_m")
+@policy_function(end_date="1989-12-31", leaf_name="bezugsgröße_selbstständige_m")
 def bezugsgröße_selbstständig_m_vor_wiedervereinigung(
     parameter_bezugsgröße_selbstständige: float,
 ) -> float:

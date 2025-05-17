@@ -46,26 +46,6 @@ maximum:
       calculated according to § 6a (2) BKGG. Satz 1 und 2: (6696-348)/12-259=270. KiZ
       Höchstbetrag nach Satz 3: max(270,272)=272. Plus KiZ Sofortzuschlag nach Satz 4:
       25.
-kindersofortzuschlag:
-  name:
-    de: Kindersofortzuschlag für Kinderzuschlag
-    en: Instant surcharge for children for additional child benefit
-  description:
-    de: >-
-      § 6a Abs. 2 Satz 4 BKGG
-      Mit Einführung des Sofortzuschlags zum 1. Juli 2022
-      steigt der Höchstbetrag im Kinderzuschlag um 20 Euro.
-    en: >-
-      § 6a Abs. 2 Satz 4 BKGG
-      With the introduction of the immediate supplement from July 1, 2022,
-      the maximum amount in the child supplement increases by 20 Euro.
-  unit: Euros
-  reference_period: Month
-  type: scalar
-  2022-07-01:
-    value: 20
-  2023-01-01:
-    note: Included in maximum Kinderzuschlag since 2023.
 mindesteinkommen_paare:
   name:
     de: Mindesteinkommen für Paare

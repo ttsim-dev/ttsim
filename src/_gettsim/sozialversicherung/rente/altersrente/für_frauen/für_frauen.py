@@ -233,14 +233,12 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
 
     """
 
-    out = (
+    return (
         weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtsbeitragsjahre_ab_alter_40
         > ges_rente_params["rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40"]
     )
-
-    return out
 
 
 @policy_function(
@@ -282,12 +280,10 @@ def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
 
     """
 
-    out = (
+    return (
         weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtsbeitragsjahre_ab_alter_40
         > ges_rente_params["rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40"]
         and geburtsjahr < ges_rente_params["first_birthyear_without_rente_für_frauen"]
     )
-
-    return out

@@ -5,14 +5,16 @@ import numpy
 from ttsim import AggType, agg_by_p_id_function, join, policy_function
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM)
+@agg_by_p_id_function(start_date="2005-01-01", agg_type=AggType.SUM)
 def kindergeldübertrag_m(
     differenz_kindergeld_kindbedarf_m: float, kindergeld__p_id_empfänger: int, p_id: int
 ) -> float:
     pass
 
 
-@policy_function(end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m")
+@policy_function(
+    start_date="2005-01-01", end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m"
+)
 def _mean_kindergeld_per_child_gestaffelt_m(
     kindergeld__betrag_m: float,
     kindergeld__anzahl_ansprüche: int,
@@ -47,7 +49,7 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     return kindergeld__satz_einheitlich if kindergeld__anzahl_ansprüche > 0 else 0.0
 
 
-@policy_function(vectorization_strategy="not_required")
+@policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def kindergeld_zur_bedarfsdeckung_m(
     kindergeld_pro_kind_m: float,
     kindergeld__p_id_empfänger: numpy.ndarray[int],
@@ -71,7 +73,7 @@ def kindergeld_zur_bedarfsdeckung_m(
     )
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def differenz_kindergeld_kindbedarf_m(
     regelbedarf_m_bg: float,
     nettoeinkommen_nach_abzug_freibetrag_m: float,
@@ -89,27 +91,6 @@ def differenz_kindergeld_kindbedarf_m(
 
     Kindergeldübertrag (`kindergeldübertrag_m`) is obtained by aggregating this function
     to the parental level.
-
-    Parameters
-    ----------
-    regelbedarf_m_bg
-        See :func:`regelbedarf_m_bg`.
-    nettoeinkommen_nach_abzug_freibetrag_m
-        See :func:`_arbeitsl_geld_2
-    wohngeld__anspruchshöhe_m_bg
-        See :func:`wohngeld__anspruchshöhe_m_bg`.
-    kindergeld_zur_bedarfsdeckung_m
-        See :func:`kindergeld_zur_bedarfsdeckung_m`.
-    unterhalt__tatsächlich_erhaltener_betrag_m
-        See :func:`unterhalt__tatsächlich_erhaltener_betrag_m`.
-    unterhaltsvorschuss__betrag_m
-        See :func:`unterhaltsvorschuss__betrag_m`.
-    in_anderer_bg_als_kindergeldempfänger
-        See :func:`in_anderer_bg_als_kindergeldempfänger`.
-
-    Returns
-    -------
-
     """
     fehlbetrag = max(
         regelbedarf_m_bg
@@ -131,7 +112,7 @@ def differenz_kindergeld_kindbedarf_m(
     return out
 
 
-@policy_function(vectorization_strategy="not_required")
+@policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def in_anderer_bg_als_kindergeldempfänger(
     p_id: numpy.ndarray[int],
     kindergeld__p_id_empfänger: numpy.ndarray[int],
@@ -139,19 +120,6 @@ def in_anderer_bg_als_kindergeldempfänger(
 ) -> numpy.ndarray[bool]:
     """True if the person is in a different Bedarfsgemeinschaft than the
     Kindergeldempfänger of that person.
-
-    Parameters
-    ----------
-    p_id
-        See basic input variable :ref:`p_id <p_id>`
-    kindergeld__p_id_empfänger
-        See basic input variable :ref:`kindergeld__p_id_empfänger <kindergeld__p_id_empfänger>`
-    bg_id
-        See :func:`bg_id`.
-
-    Returns
-    -------
-
     """
     # Create a dictionary to map p_id to bg_id
     p_id_to_bg_id = dict(zip(p_id, bg_id))

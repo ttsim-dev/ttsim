@@ -4,7 +4,6 @@ from pathlib import Path
 GETTSIM_ROOT = Path(__file__).parent.resolve()
 
 INTERNAL_PARAMS_GROUPS = [
-    "arbeitsl_geld",
     "geringfügige_einkommen",
     "unterhalt",
     "unterhaltsvors",
@@ -14,7 +13,6 @@ INTERNAL_PARAMS_GROUPS = [
     "elterngeld",
     "ges_rente",
     "erwerbsm_rente",
-    "arbeitsl_geld_2",
     "grunds_im_alter",
     "lohnst",
     "erziehungsgeld",
