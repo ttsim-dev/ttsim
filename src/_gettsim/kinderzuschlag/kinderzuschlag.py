@@ -97,40 +97,40 @@ def anspruchshöhe_m_bg(
 
 @policy_function(end_date="2022-12-31", leaf_name="vermögensfreibetrag_bg")
 def vermögensfreibetrag_bg_bis_2022(
-    arbeitslosengeld_2__freibetrag_vermögen_bg: float,
+    arbeitslosengeld_2__vermögensfreibetrag_bg: float,
 ) -> float:
     """Wealth exemptions for Kinderzuschlag until 2022.
 
     Parameters
     ----------
-    arbeitslosengeld_2__freibetrag_vermögen_bg
-        See :func:`arbeitslosengeld_2__freibetrag_vermögen_bg`.
+    arbeitslosengeld_2__vermögensfreibetrag_bg
+        See :func:`arbeitslosengeld_2__vermögensfreibetrag_bg`.
 
     Returns
     -------
 
     """
 
-    return arbeitslosengeld_2__freibetrag_vermögen_bg
+    return arbeitslosengeld_2__vermögensfreibetrag_bg
 
 
 @policy_function(start_date="2023-01-01", leaf_name="vermögensfreibetrag_bg")
 def vermögensfreibetrag_bg_ab_2023(
-    arbeitslosengeld_2__freibetrag_vermögen_in_karenzzeit_bg: float,
+    arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg: float,
 ) -> float:
     """Wealth exemptions for Kinderzuschlag since 2023.
 
     Parameters
     ----------
-    arbeitslosengeld_2__freibetrag_vermögen_in_karenzzeit_bg
-        See :func:`arbeitslosengeld_2__freibetrag_vermögen_in_karenzzeit_bg`.
+    arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg
+        See :func:`arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg`.
 
     Returns
     -------
 
     """
 
-    return arbeitslosengeld_2__freibetrag_vermögen_in_karenzzeit_bg
+    return arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg
 
 
 @policy_function(

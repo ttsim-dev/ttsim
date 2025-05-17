@@ -392,7 +392,7 @@ def einkommen_m(
     -------
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
@@ -402,8 +402,6 @@ def einkommen_m(
         + sozialversicherung__rente__private_rente_betrag_m
         + sozialversicherung__arbeitslosen__betrag_m
     )
-
-    return out
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

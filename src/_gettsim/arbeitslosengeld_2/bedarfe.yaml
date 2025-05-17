@@ -1,0 +1,403 @@
+---
+parameter_regelsatz_anteilsbasiert:
+  name:
+    de: Berechnungsgrundlagen für den Regelsatz
+    en: Calculation basis for the standard rate
+  description:
+    de: >-
+      § 20 V SGB II, siehe Bekanntmachungen zu § 20.
+    en: >-
+      § 20 V SGB II, see regulations for § 20.
+  unit: null
+  reference_period: Month
+  type: require_converter
+  2005-01-01:
+    basissatz: 338
+    anteil_vom_basissatz_bei_zwei_erwachsenen: 0.9
+    anteil_vom_basissatz_bei_weiteren_erwachsenen: 0.8
+    anteil_vom_basissatz_für_kinder:
+      jugendliche_und_junge_erwachsene:
+        min_alter: 14
+        max_alter: 24
+        anteil: 0.8
+      schulkind:
+        min_alter: 6
+        max_alter: 13
+        anteil: 0.6
+      kleinkind:
+        min_alter: 0
+        max_alter: 5
+        anteil: 0.6
+    reference: Artikel 1 G. v. 24.12.2003 BGBl. I S. 2954.
+    note: >-
+      Der tatsächliche Wert unterscheidet sich zwischen Ost und West. Korrekte Werte
+      sind in den alten Bundesländern einschließlich Berlin (Ost) 345 Euro, in den neuen
+      Bundesländern 331 Euro.
+      Anteile vom Regelsatz für erwachsene Haushaltsmitglieder laut § 20 (3) SGB II.
+      Eigentliche Wirknorm ist § 20 IV SGB II i.V.m Absatz V derselben Norm. Der
+      Regelsatz für weitere Haushaltsmitglieder wurde als Anteil des Standardsatzes
+      bestimmt.
+  2005-07-01:
+    updates_previous: true
+    basissatz: 338
+    reference: B. v. 01.09.2005 BGBl. I S. 2718.
+    note: >-
+      Betrag unverändert. Der tatsächliche Wert unterscheidet sich zwischen Ost und
+      West. Hier wurde vereinfachend 338 Euro als ungewichteter Mittelwert genommen.
+      Korrekte Werte für die Zeit ab 1. Juli 2005 sind in den alten Bundesländern
+      einschließlich Berlin (Ost) 345 Euro, in den neuen Bundesländern 331 Euro.
+  2006-07-01:
+    updates_previous: true
+    basissatz: 345
+    reference: B. v. 20.07.2006 BGBl. I S. 1702.
+  2007-07-01:
+    updates_previous: true
+    basissatz: 347
+    reference: B. v. 18.06.2007 BGBl. I S. 1139.
+  2008-07-01:
+    updates_previous: true
+    basissatz: 351
+    reference: B. v. 26.06.2008 BGBl. I S. 1102.
+  2009-07-01:
+    updates_previous: true
+    basissatz: 359
+    anteil_vom_basissatz_für_kinder:
+      jugendliche_und_junge_erwachsene:
+        min_alter: 14
+        max_alter: 24
+        anteil: 0.8
+      schulkind:
+        min_alter: 6
+        max_alter: 13
+        anteil: 0.7
+      kleinkind:
+        min_alter: 0
+        max_alter: 5
+        anteil: 0.6
+    reference: B. v. 17.06.2009 BGBl. I S. 1342.
+  2010-07-01:
+    updates_previous: true
+    basissatz: 359
+    reference: B. v. 07.06.2010 BGBl. I S. 820. Betrag unverändert.
+  2011-01-01:
+    note: Calculation method changed, see regelsatz_nach_regelbedarfsstufen.
+parameter_regelsatz_nach_regelbedarfsstufen:
+  name:
+    de: Regelsatz mit direkter Angabe für Regelbedarfsstufen
+    en: Standard rate with direct specification of "Regelbedarfsstufen"
+  description:
+    de: >-
+      § 20 V SGB II.  Neufassung SGB II § 20 (1a) und (2) durch
+      Artikel 6 G. v. 22.12.2016 BGBl. I S. 3159.
+      Regelbedafstufen:
+      1: Alleinstehender Erwachsener
+      2: Erwachsene in Partnerschaft
+      3: Erwachsene unter 25 im Haushalt der Eltern
+      4: Jugendliche
+      5: Ältere Kinder
+      6: Jüngste Kinder
+    en: >-
+      Regelbedarfsstufen:
+      1: Single Adult
+      2: Adults in a partner relationship
+      3: Adults under 25 in the household of their parents
+      4: Adolescents
+      5: Older children
+      6: Youngest children
+  unit: Euros
+  reference_period: Month
+  type: require_converter
+  2011-01-01:
+    1: 364
+    2: 328
+    3: 291
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 287
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 251
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 215
+    reference: Artikel 1 G. v. 24.03.2011 BGBl. I S. 453.
+  2012-01-01:
+    1: 374
+    2: 337
+    3: 299
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 287
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 251
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 219
+    reference: V. v. 20.10.2011 BGBl. I S. 2093.
+  2013-01-01:
+    1: 382
+    2: 345
+    3: 306
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 289
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 255
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 224
+    reference: B. v. 18.10.2012 BGBl. I S. 2175.
+  2014-01-01:
+    1: 391
+    2: 353
+    3: 313
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 296
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 261
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 229
+    reference: B. v. 16.10.2013 BGBl. I S. 3857.
+  2015-01-01:
+    1: 399
+    2: 360
+    3: 320
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 302
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 267
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 234
+    reference: B. v. 15.10.2014 BGBl. I S. 1620.
+  2016-01-01:
+    1: 404
+    2: 364
+    3: 324
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 306
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 270
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 237
+    reference: B. v. 22.10.2015 BGBl. I S. 1792.
+  2017-01-01:
+    1: 409
+    2: 368
+    3: 327
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 311
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 291
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 236
+    reference: G. v. 22.12.2016 BGBl. I S. 3159.
+  2018-01-01:
+    1: 416
+    2: 374
+    3: 332
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 316
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 296
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 240
+    reference: V. v. 08.11.2017 BGBl. I S. 3767.
+  2019-01-01:
+    1: 424
+    2: 382
+    3: 339
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 322
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 302
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 245
+    reference: V. v. 19.10.2018 BGBl. I S. 1766.
+  2020-01-01:
+    1: 432
+    2: 389
+    3: 345
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 328
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 308
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 250
+    reference: V. v. 15.10.2019 BGBl. I S. 1452.
+  2021-01-01:
+    1: 446
+    2: 401
+    3: 357
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 373
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 309
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 283
+    reference: G. v. 09.12.2020 BGBl. I S. 2855.
+  2022-01-01:
+    1: 449
+    2: 404
+    3: 360
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 376
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 311
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 285
+    reference: V. v. 13.10.2021 BGBl. I S. 4674.
+  2023-01-01:
+    1: 502
+    2: 451
+    3: 402
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 420
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 348
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 318
+    reference: G. v. 20.12.2022 BGBl. I S. 2328.
+    note: Bürgergeld-Gesetz
+  2024-01-01:
+    1: 563
+    2: 506
+    3: 451
+    4:
+      min_alter: 14
+      max_alter: 17
+      betrag: 471
+    5:
+      min_alter: 6
+      max_alter: 13
+      betrag: 390
+    6:
+      min_alter: 0
+      max_alter: 5
+      betrag: 357
+    reference: §2 V. v. 24.10.2024 BGBl. I Nr. 287
+kindersofortzuschlag:
+  name:
+    de: Kindersofortzuschlag für Arbeitslosengeld II
+    en: Instant surcharge for children for unemployment benefit
+  description:
+    de: >-
+      § 72 SGB II
+      Kinder, Jugendliche  und junge Erwachsene, die Anspruch auf
+      Arbeitslosengeld II oder Sozialgeld haben (Regelbedarfsstufen 3, 4, 5, 6),
+      erhalten einen Sofortzuschlag von 20€.
+    en: >-
+      § 72 SGB II
+      Children, adolescents and young adults who are entitled to unemployment benefits
+      or social benefits (Regelbedarfsstufen 3, 4, 5, 6) receive an instant surcharge
+      of 20 Euro.
+  unit: Euros
+  reference_period: Month
+  type: scalar
+  2022-07-01:
+    value: 20
+  2025-01-01:
+    value: 25
+    note: >-
+      Gesetz zur Fortentwicklung des Steuerrechts und zur  Anpassung des Einkommen-
+      steuertarifs (Steuerfortentwicklungsgesetz - SteFeG)
+    reference: Art. 7 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
+parameter_mehrbedarf_alleinerziehend:
+  name:
+    de: Parameter zur Berechnung des Mehrbedarfs von Alleinerziehenden
+    en: Parameter for calculating the additional need of single parents
+  description:
+    de: >-
+      § 21 (3) Nr. 1 SGB II. Mehrbedarfe für Alleinerziehende sind als Anteile vom
+      maßgebenden Regelbedarf angegeben. ``kind_bis_6_oder_mehrere_bis_15`` gibt den
+      Anteil bei mind. einem Kind bis 6 Jahren oder zwei oder drei Kindern bis 15 Jahre
+      an. ``min_1_kind`` gibt den maßgeblichen Anteil vom Regelbedarf je Kind an, wenn
+      der daraus resultierende Anspruch größer ist als der Anspruch durch
+      ``kind_bis_6_oder_mehrere_bis_15``. ``max`` gibt den Maximalanteil vom Regelbedarf
+      an, der für Alleinerziehende als Mehrbedarf berücksichtigt wird.
+    en: >-
+      § 21 (3) Nr. 1 SGB II. Additional needs for single parents are given as shares of
+      the relevant Regelbedarf. ``kind_bis_6_oder_mehrere_bis_15`` gives the share when
+      there is at least one child up to 6 years or two or three children up to 15 years.
+      ``min_1_kind`` gives the relevant share of the Regelbedarf per child when the
+      resulting claim is greater than the claim through
+      ``kind_bis_6_oder_mehrere_bis_15``. ``max`` gives the maximum share of the
+      Regelbedarf that is considered as an additional need for single parents.
+  unit: Share
+  reference_period: Month
+  type: dict
+  2005-01-01:
+    min_1_kind: 0.12
+    kind_bis_6_oder_mehrere_bis_15: 0.36
+    max: 0.6
+    reference: G. v. 24.12.2003 BGBl. I S. 2954.

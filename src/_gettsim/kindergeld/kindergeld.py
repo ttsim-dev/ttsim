@@ -70,7 +70,7 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
     child benefit
 
     """
-    out = (alter < altersgrenze["ohne_bedingungen"]) or (
+    return (alter < altersgrenze["ohne_bedingungen"]) or (
         (alter < altersgrenze["mit_bedingungen"])
         and in_ausbildung
         and (
@@ -78,8 +78,6 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
             <= maximales_einkommen_des_kindes
         )
     )
-
-    return out
 
 
 @policy_function(
@@ -100,13 +98,11 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
     hour and are below 25.
 
     """
-    out = (alter < altersgrenze["ohne_bedingungen"]) or (
+    return (alter < altersgrenze["ohne_bedingungen"]) or (
         (alter < altersgrenze["mit_bedingungen"])
         and in_ausbildung
         and (arbeitsstunden_w <= maximale_arbeitsstunden_des_kindes)
     )
-
-    return out
 
 
 @policy_function()
@@ -127,8 +123,7 @@ def kind_bis_10_mit_kindergeld(
     -------
 
     """
-    out = grundsätzlich_anspruchsberechtigt and (alter <= 10)
-    return out
+    return grundsätzlich_anspruchsberechtigt and (alter <= 10)
 
 
 @policy_function(vectorization_strategy="not_required")

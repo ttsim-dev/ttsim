@@ -74,15 +74,13 @@ def einkommen_m(
     """
 
     # Sum income over different income sources.
-    out = (
+    return (
         einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m
         + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m  # income from self-employment
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m  # rental income
         + einkommensteuer__einkünfte__aus_kapitalvermögen__betrag_m
     )
-
-    return out
 
 
 @policy_function(
@@ -194,13 +192,12 @@ def basisbetrag_m(
         ges_rente_params["grundrente_maximaler_zugangsfaktor"],
     )
 
-    out = (
+    return (
         mean_entgeltpunkte_zuschlag
         * bewertungszeiten_monate_wins
         * sozialversicherung__rente__altersrente__rentenwert
         * ges_rente_zugangsfaktor_wins
     )
-    return out
 
 
 @policy_function(start_date="2021-01-01")
@@ -269,13 +266,11 @@ def höchstbetrag_m(
     )
 
     # Calculate höchstwert
-    out = (
+    return (
         ges_rente_params["grundrente_höchstwert_der_entgeltpunkte"]["base"]
         + ges_rente_params["grundrente_höchstwert_der_entgeltpunkte"]["increment"]
         * months_above_thresh
     )
-
-    return out
 
 
 @policy_function(
@@ -337,9 +332,7 @@ def mean_entgeltpunkte_zuschlag(
             out = 0.0
 
     # Multiply additional Engeltpunkte by factor
-    out = out * ges_rente_params["grundrente_bonusfaktor"]
-
-    return out
+    return out * ges_rente_params["grundrente_bonusfaktor"]
 
 
 @policy_function(start_date="2021-01-01")
@@ -360,8 +353,7 @@ def grundsätzlich_anspruchsberechtigt(
     -------
 
     """
-    out = (
+    return (
         grundrentenzeiten_monate
         >= ges_rente_params["grundrente_berücksichtigte_wartezeit"]["min"]
     )
-    return out

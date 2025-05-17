@@ -336,13 +336,11 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_rente_arbeitsl_frauen(
 
     """
 
-    out = (
+    return (
         sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt
         or sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt
         or sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt
     )
-
-    return out
 
 
 @policy_function(

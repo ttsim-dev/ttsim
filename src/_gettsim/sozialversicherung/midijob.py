@@ -25,9 +25,7 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
         - minijob_grenze
     )
 
-    out = quotient * einkommen_diff
-
-    return out
+    return quotient * einkommen_diff
 
 
 @policy_function(
@@ -75,9 +73,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     )
 
     # Now calculate final factor
-    out = pausch_mini / (an_anteil + ag_anteil)
-
-    return out
+    return pausch_mini / (an_anteil + ag_anteil)
 
 
 @policy_function(
@@ -125,9 +121,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     )
 
     # Now calculate final factor
-    out = pausch_mini / (an_anteil + ag_anteil)
-
-    return out
+    return pausch_mini / (an_anteil + ag_anteil)
 
 
 @policy_function(
@@ -180,9 +174,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     )
 
     # Now calculate final factor f
-    out = pausch_mini / (an_anteil + ag_anteil)
-
-    return out
+    return pausch_mini / (an_anteil + ag_anteil)
 
 
 @policy_function(
@@ -252,9 +244,8 @@ def midijob_bemessungsentgelt_m_ab_10_2022(
 
     faktor1 = midijob_faktor_f * minijob_grenze
     faktor2 = (quotient1 - quotient2 * midijob_faktor_f) * einkommen_diff
-    out = faktor1 + faktor2
 
-    return out
+    return faktor1 + faktor2
 
 
 @policy_function(start_date="2003-04-01")
@@ -271,8 +262,7 @@ def in_gleitzone(
     Legal reference: § 20 Abs. 2 SGB IV
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         <= geringfügige_einkommen_params["grenzen_m"]["midijob"]
     ) and (not geringfügig_beschäftigt)
-    return out

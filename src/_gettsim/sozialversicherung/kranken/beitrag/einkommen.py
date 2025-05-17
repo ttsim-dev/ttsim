@@ -121,9 +121,7 @@ def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
     """
     params = ges_krankenv_params["parameter_beitragsbemessungsgrenze"]
 
-    out = params["ost"] if wohnort_ost else params["west"]
-
-    return out
+    return params["ost"] if wohnort_ost else params["west"]
 
 
 @policy_function(start_date="2001-01-01", leaf_name="beitragsbemessungsgrenze_m")
@@ -152,13 +150,11 @@ def bezugsgröße_selbstständig_m(wohnort_ost: bool, ges_krankenv_params: dict)
     -------
 
     """
-    out = (
+    return (
         ges_krankenv_params["bezugsgröße_selbstständige_m"]["ost"]
         if wohnort_ost
         else ges_krankenv_params["bezugsgröße_selbstständige_m"]["west"]
     )
-
-    return out
 
 
 @policy_function()
