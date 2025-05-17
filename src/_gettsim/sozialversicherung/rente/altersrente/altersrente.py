@@ -41,12 +41,12 @@ def betrag_m_mit_grundrente(
     end_date="2023-06-30",
     leaf_name="bruttorente_basisbetrag_m",
 )
-def bruttorente_basisbetrag_m_mit_ost_west_unterschied(
+def bruttorente_basisbetrag_m_nach_wohnort(
     zugangsfaktor: float,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__bezieht_rente: bool,
-    parameter_rentenwert: dict[str, float],
+    parameter_rentenwert_nach_wohnort: dict[str, float],
 ) -> float:
     """Old-Age Pensions claim. The function follows the following equation:
 
@@ -61,8 +61,10 @@ def bruttorente_basisbetrag_m_mit_ost_west_unterschied(
 
     if sozialversicherung__rente__bezieht_rente:
         out = (
-            sozialversicherung__rente__entgeltpunkte_west * parameter_rentenwert["west"]
-            + sozialversicherung__rente__entgeltpunkte_ost * parameter_rentenwert["ost"]
+            sozialversicherung__rente__entgeltpunkte_west
+            * parameter_rentenwert_nach_wohnort["west"]
+            + sozialversicherung__rente__entgeltpunkte_ost
+            * parameter_rentenwert_nach_wohnort["ost"]
         ) * zugangsfaktor
     else:
         out = 0.0
@@ -107,15 +109,15 @@ def bruttorente_basisbetrag_m(
 
 
 @policy_function(start_date="1992-01-01", end_date="2023-06-30", leaf_name="rentenwert")
-def rentenwert_mit_ost_west_unterschied(
+def rentenwert_nach_wohnort(
     wohnort_ost: bool,
-    parameter_rentenwert_mit_ost_west_unterschied: dict[str, float],
+    parameter_rentenwert_nach_wohnort: dict[str, float],
 ) -> float:
     """Rentenwert."""
     return (
-        parameter_rentenwert_mit_ost_west_unterschied["ost"]
+        parameter_rentenwert_nach_wohnort["ost"]
         if wohnort_ost
-        else parameter_rentenwert_mit_ost_west_unterschied["west"]
+        else parameter_rentenwert_nach_wohnort["west"]
     )
 
 

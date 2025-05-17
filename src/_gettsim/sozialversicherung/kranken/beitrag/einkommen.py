@@ -83,22 +83,20 @@ def beitragsbemessungsgrenze_einheitlich_vor_wiedervereinigung(
     end_date="2000-12-31",
     leaf_name="beitragsbemessungsgrenze_m",
 )
-def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
+def beitragsbemessungsgrenze_m_nach_wohnort(
     wohnort_ost: bool,
-    parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied: dict[str, float],
+    parameter_beitragsbemessungsgrenze_nach_wohnort: dict[str, float],
 ) -> float:
     """Income threshold up to which health insurance payments apply."""
     return (
-        parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied["ost"]
+        parameter_beitragsbemessungsgrenze_nach_wohnort["ost"]
         if wohnort_ost
-        else parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied["west"]
+        else parameter_beitragsbemessungsgrenze_nach_wohnort["west"]
     )
 
 
-@params_function(
-    start_date="2001-01-01", leaf_name="parameter_beitragsbemessungsgrenze"
-)
-def parameter_beitragsbemessungsgrenze_einheitlich_ab_2001(
+@params_function(start_date="2001-01-01", leaf_name="beitragsbemessungsgrenze_m")
+def beitragsbemessungsgrenze_m_einheitlich_ab_2001(
     parameter_beitragsbemessungsgrenze_einheitlich: float,
 ) -> float:
     """Parameter for maximum income subject to health insurance contributions."""
@@ -118,7 +116,7 @@ def bezugsgröße_selbstständige_m_vor_wiedervereinigung(
 
 
 @policy_function(start_date="1990-01-01", leaf_name="bezugsgröße_selbstständige_m")
-def bezugsgröße_selbstständige_m_mit_ost_west_unterschied(
+def bezugsgröße_selbstständige_m_nach_wohnort(
     wohnort_ost: bool,
     parameter_bezugsgröße_selbstständige_nach_wohnort: dict[str, float],
 ) -> float:

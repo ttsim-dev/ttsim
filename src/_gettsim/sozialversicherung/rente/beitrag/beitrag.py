@@ -129,15 +129,15 @@ def beitragsbemessungsgrenze_m_vor_wiedervereinigung(
     end_date="2024-12-31",
     leaf_name="beitragsbemessungsgrenze_m",
 )
-def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
+def beitragsbemessungsgrenze_m_nach_wohnort(
     wohnort_ost: bool,
-    parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied: dict[str, float],
+    parameter_beitragsbemessungsgrenze_nach_wohnort: dict[str, float],
 ) -> float:
     """Income threshold up to which pension insurance payments apply."""
     return (
-        parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied["ost"]
+        parameter_beitragsbemessungsgrenze_nach_wohnort["ost"]
         if wohnort_ost
-        else parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied["west"]
+        else parameter_beitragsbemessungsgrenze_nach_wohnort["west"]
     )
 
 

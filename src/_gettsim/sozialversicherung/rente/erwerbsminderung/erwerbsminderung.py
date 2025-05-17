@@ -4,13 +4,15 @@ from ttsim import policy_function
 
 
 @policy_function(start_date="2001-01-01", end_date="2023-06-30", leaf_name="betrag_m")
-def betrag_m_mit_ost_west_unterschied(
+def betrag_m_nach_wohnort(
     zugangsfaktor: float,
     entgeltpunkte_west: float,
     entgeltpunkte_ost: float,
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
-    sozialversicherung__rente__altersrente__parameter_rentenwert: dict[str, float],
+    sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort: dict[
+        str, float
+    ],
 ) -> float:
     """Erwerbsminderungsrente (amount paid by public disability insurance if claimed)
 
@@ -21,9 +23,13 @@ def betrag_m_mit_ost_west_unterschied(
         out = (
             (
                 entgeltpunkte_west
-                * sozialversicherung__rente__altersrente__parameter_rentenwert["west"]
+                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
+                    "west"
+                ]
                 + entgeltpunkte_ost
-                * sozialversicherung__rente__altersrente__parameter_rentenwert["ost"]
+                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
+                    "ost"
+                ]
             )
             * zugangsfaktor
             * rentenartfaktor

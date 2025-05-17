@@ -25,8 +25,8 @@ parameter_bezugsgröße_selbstständige_einheitlich:
   1990-01-01:
     note: >-
       Die Bezugsgröße unterscheidet sich zwischen West und Ost. Siehe
-      ``parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied``.
-parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied:
+      ``parameter_bezugsgröße_selbstständige_nach_wohnort``.
+parameter_bezugsgröße_selbstständige_nach_wohnort:
   name:
     de: Monatliche Bezugsgröße für Selbstständige mit Unterschied zwischen West und Ost
     en: Monthly reference size for self employed with different values for West and East

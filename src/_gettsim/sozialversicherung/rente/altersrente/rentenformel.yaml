@@ -257,7 +257,7 @@ umrechnung_entgeltpunkte_beitrittsgebiet:
   2025-01-01:
     value: 1.0000
     note: Umrechnung entfällt.
-parameter_rentenwert_mit_ost_west_unterschied:
+parameter_rentenwert_nach_wohnort:
   name:
     de: Rentenwerte alte und neue Bundesländer
     en: Pension value old and new federal states

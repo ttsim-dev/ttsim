@@ -28,7 +28,7 @@ parameter_beitragsbemessungsgrenze_einheitlich:
   1990-01-01:
     note: >-
       The Bemessungsgrenze differs between West and East Germany. See
-      ``parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied``.
+      ``parameter_beitragsbemessungsgrenze_nach_wohnort``.
   2001-01-01:
     value: 3336
   2002-01-01:
@@ -86,7 +86,7 @@ parameter_beitragsbemessungsgrenze_einheitlich:
   2025-01-01:
     value: 5512.5
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
-parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied:
+parameter_beitragsbemessungsgrenze_nach_wohnort:
   name:
     de: Beitragsbemessungsgrenze der gesetzlichen Krankenversicherung
     en: Maximum income subject to health insurance contributions
