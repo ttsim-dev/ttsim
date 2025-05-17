@@ -28,7 +28,7 @@ hinzuverdienstgrenze:
       § 34 SGB VI, additional earnings threshold during early retirement
   unit: Euros
   reference_period: Year
-  type: dict
+  type: scalar
   # Values need to be fixed
   # https://github.com/iza-institute-of-labor-economics/gettsim/issues/808
   2002-01-01:
