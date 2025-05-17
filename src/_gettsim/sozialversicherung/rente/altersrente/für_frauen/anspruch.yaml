@@ -1,5 +1,5 @@
 ---
-first_birthyear_without_rente_für_frauen:
+kohorte_abschaffung:
   name:
     de: Kohorte Abschaffung Rente für Frauen
     en: Cohort abolishment pension for women
@@ -16,7 +16,7 @@ first_birthyear_without_rente_für_frauen:
   1997-12-16:
     reference: § 237a SGB VI, Rentenreformgesetz 1999. BGBl. I 1997 S. 2998
     value: 1952
-rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40:
+mindestpflichtbeitragsjahre_ab_alter_40:
   name:
     de: Mindestpflichbeitragsjahre ab 40 für Rente für Frauen
     en: Minimum contribution since 40 pension for women.

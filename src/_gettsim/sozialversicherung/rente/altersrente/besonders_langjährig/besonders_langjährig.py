@@ -19,18 +19,6 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     years) can claim their full pension without deductions.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age (without deductions) for very long term insured.
-
     """
     return ges_rente_params["altersgrenze_besonders_langjährig_versicherte"]
 
@@ -51,18 +39,6 @@ def altersgrenze_mit_staffelung(
     years) can claim their full pension without deductions.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age (without deductions) for very long term insured.
-
     """
     if (
         geburtsjahr
@@ -96,17 +72,6 @@ def grundsätzlich_anspruchsberechtigt(
 ) -> bool:
     """Determining the eligibility for Altersrente für besonders langjährig Versicherte
     (pension for very long-term insured). Wartezeit 45 years. aka "Rente mit 63".
-
-    Parameters
-    ----------
-    sozialversicherung__rente__wartezeit_45_jahre_erfüllt
-        See :func:`sozialversicherung__rente__wartezeit_45_jahre_erfüllt`
-
-
-    Returns
-    -------
-    Eligibility as bool.
-
     """
 
     return sozialversicherung__rente__wartezeit_45_jahre_erfüllt

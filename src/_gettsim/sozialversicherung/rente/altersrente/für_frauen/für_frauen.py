@@ -17,18 +17,6 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     FRA is the same for each birth cohort.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age for women.
-
     """
 
     return ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"]
@@ -47,20 +35,6 @@ def altersgrenze_mit_staffelung(
     FRA differs by birth cohort.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age for women.
-
     """
     if (
         geburtsjahr
@@ -99,18 +73,6 @@ def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
     ERA does not depend on birth year and month.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age
-
     """
 
     return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
@@ -132,20 +94,6 @@ def altersgrenze_vorzeitig_mit_staffelung(
     ERA depends on birth year and month.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age
-
     """
     if (
         geburtsjahr
@@ -184,18 +132,6 @@ def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(ges_rente_params: dict) -> 
     ERA does not depend on birth year and month.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age
-
     """
 
     return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
@@ -206,7 +142,7 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     weiblich: bool,
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtsbeitragsjahre_ab_alter_40: float,
-    ges_rente_params: dict,
+    mindestpflichtbeitragsjahre_ab_alter_40: int,
 ) -> bool:
     """Eligibility for Altersrente für Frauen (pension for women).
 
@@ -214,30 +150,12 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
 
     Policy becomes inactive in 2018 because then all potential beneficiaries have
     reached the normal retirement age.
-
-    Parameters
-    ----------
-    weiblich
-        See basic input variable :ref:`weiblich <weiblich>`.
-    sozialversicherung__rente__wartezeit_15_jahre_erfüllt
-        See :func:`sozialversicherung__rente__wartezeit_15_jahre_erfüllt`
-    pflichtsbeitragsjahre_ab_alter_40
-        See basic input variable :ref:`pflichtsbeitragsjahre_ab_alter_40
-        <pflichtsbeitragsjahre_ab_alter_40>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Eligibility as bool.
-
     """
 
     return (
         weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
-        and pflichtsbeitragsjahre_ab_alter_40
-        > ges_rente_params["rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40"]
+        and pflichtsbeitragsjahre_ab_alter_40 > mindestpflichtbeitragsjahre_ab_alter_40
     )
 
 
@@ -251,7 +169,8 @@ def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtsbeitragsjahre_ab_alter_40: float,
     geburtsjahr: int,
-    ges_rente_params: dict,
+    kohorte_abschaffung: int,
+    mindestpflichtbeitragsjahre_ab_alter_40: int,
 ) -> bool:
     """Eligibility for Altersrente für Frauen (pension for women).
 
@@ -260,30 +179,11 @@ def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
     Wartezeit 15 years, contributions for 10 years after age 40, being a woman. Policy
     becomes inactive in 2018 because then all potential beneficiaries have reached the
     normal retirement age.
-
-    Parameters
-    ----------
-    weiblich
-        See basic input variable :ref:`weiblich <weiblich>`.
-    sozialversicherung__rente__wartezeit_15_jahre_erfüllt
-        See :func:`sozialversicherung__rente__wartezeit_15_jahre_erfüllt`
-    pflichtsbeitragsjahre_ab_alter_40
-        See basic input variable :ref:`pflichtsbeitragsjahre_ab_alter_40 <pflichtsbeitragsjahre_ab_alter_40>`.
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Eligibility as bool.
-
     """
 
     return (
         weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
-        and pflichtsbeitragsjahre_ab_alter_40
-        > ges_rente_params["rente_für_frauen_mindestpflichtbeitragsjahre_ab_alter_40"]
-        and geburtsjahr < ges_rente_params["first_birthyear_without_rente_für_frauen"]
+        and pflichtsbeitragsjahre_ab_alter_40 > mindestpflichtbeitragsjahre_ab_alter_40
+        and geburtsjahr < kohorte_abschaffung
     )

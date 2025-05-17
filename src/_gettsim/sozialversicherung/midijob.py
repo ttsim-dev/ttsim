@@ -150,8 +150,6 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     """Midijob Faktor F since October 2022.
 
     Legal reference: § 163 Abs. 10 SGB VI
-
-
     """
     # Calculate the Gesamtsozialversicherungsbeitragssatz by summing social
     # insurance contributions for employer and employee and
