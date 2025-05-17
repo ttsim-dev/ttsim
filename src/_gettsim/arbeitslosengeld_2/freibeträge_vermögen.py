@@ -56,9 +56,9 @@ def maximaler_grundfreibetrag_vermögen(
 
 
 @policy_function(start_date="2023-01-01")
-def freibetrag_vermögen_in_karenzzeit_bg(
-    schonvermögen_bürgergeld: dict[str, float],
+def vermögensfreibetrag_in_karenzzeit_bg(
     anzahl_personen_bg: int,
+    vermögensfreibetrag_je_person_nach_karenzzeit: dict[str, float],
 ) -> float:
     """Calculate wealth exemptions since 2023 during Karenzzeit. This variable is also
     reffered to as 'erhebliches Vermögen'.
@@ -66,13 +66,14 @@ def freibetrag_vermögen_in_karenzzeit_bg(
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     return (
-        schonvermögen_bürgergeld["während_karenzzeit"]
-        + (anzahl_personen_bg - 1) * schonvermögen_bürgergeld["normaler_satz"]
+        vermögensfreibetrag_je_person_nach_karenzzeit["während_karenzzeit"]
+        + (anzahl_personen_bg - 1)
+        * vermögensfreibetrag_je_person_nach_karenzzeit["normaler_satz"]
     )
 
 
-@policy_function(end_date="2022-12-31", leaf_name="freibetrag_vermögen_bg")
-def freibetrag_vermögen_bg_bis_2022(
+@policy_function(end_date="2022-12-31", leaf_name="vermögensfreibetrag_bg")
+def vermögensfreibetrag_bg_bis_2022(
     grundfreibetrag_vermögen_bg: float,
     anzahl_kinder_bis_17_bg: int,
     anzahl_personen_bg: int,
@@ -91,12 +92,12 @@ def freibetrag_vermögen_bg_bis_2022(
     return out
 
 
-@policy_function(start_date="2023-01-01", leaf_name="freibetrag_vermögen_bg")
-def freibetrag_vermögen_bg_ab_2023(
+@policy_function(start_date="2023-01-01", leaf_name="vermögensfreibetrag_bg")
+def vermögensfreibetrag_bg_ab_2023(
     anzahl_personen_bg: int,
-    freibetrag_vermögen_in_karenzzeit_bg: float,
+    vermögensfreibetrag_in_karenzzeit_bg: float,
     arbeitslosengeld_2_bezug_im_vorjahr: bool,
-    schonvermögen_bürgergeld: dict[str, float],
+    vermögensfreibetrag_je_person_nach_karenzzeit: dict[str, float],
 ) -> float:
     """Calculate actual wealth exemptions since 2023.
 
@@ -105,8 +106,11 @@ def freibetrag_vermögen_bg_ab_2023(
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     if arbeitslosengeld_2_bezug_im_vorjahr:
-        out = anzahl_personen_bg * schonvermögen_bürgergeld["normaler_satz"]
+        out = (
+            anzahl_personen_bg
+            * vermögensfreibetrag_je_person_nach_karenzzeit["normaler_satz"]
+        )
     else:
-        out = freibetrag_vermögen_in_karenzzeit_bg
+        out = vermögensfreibetrag_in_karenzzeit_bg
 
     return out

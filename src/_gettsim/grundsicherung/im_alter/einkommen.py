@@ -77,8 +77,7 @@ def erwerbseinkommen_m(
     # Can deduct 30% of earnings (but no more than 1/2 of regelbedarf)
     earnings_after_max_deduction = (
         earnings
-        - arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_1.regelsatz
-        / 2
+        - arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz / 2
     )
     earnings = (
         1 - grunds_im_alter_params["anrechnungsfreier_anteil_erwerbseinkünfte"]
@@ -126,10 +125,7 @@ def private_rente_betrag_m(
             ],
         )
     )
-    upper = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_1.regelsatz
-        / 2
-    )
+    upper = arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz / 2
 
     return sozialversicherung__rente__private_rente_betrag_m - min(
         sozialversicherung__rente__private_rente_betrag_m_amount_exempt, upper
@@ -167,10 +163,7 @@ def gesetzliche_rente_m_ab_2021(
         parameters=grunds_im_alter_params["anrechnungsfreier_anteil_gesetzliche_rente"],
     )
 
-    upper = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_1.regelsatz
-        / 2
-    )
+    upper = arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz / 2
     if sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt:
         angerechnete_rente = min(angerechnete_rente, upper)
     else:

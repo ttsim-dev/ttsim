@@ -42,7 +42,7 @@ a nutshell and without explanations, these conventions are:
      Internal variables should be used sparingly.
 
 1. If names need to be concatenated for making clear what a column name refers to (e.g.,
-   `arbeitslosengeld_2__freibetrag_vermögen_bg` vs.
+   `arbeitslosengeld_2__vermögensfreibetrag_bg` vs.
    `grundsicherung__im_alter__vermögensfreibetrag_eg`), the group (i.e., the tax or
    transfer) that a variable refers to appears first.
 
@@ -113,7 +113,7 @@ changed, even if it leads to long variable names (e.g., `kinderfreib`,
 less error-prone.
 
 If names need to be concatenated for making clear what a column name refers to (e.g.,
-`arbeitslosengeld_2__freibetrag_vermögen_bg` vs.
+`arbeitslosengeld_2__vermögensfreibetrag_bg` vs.
 `grundsicherung__im_alter__vermögensfreibetrag_eg`), the group (i.e., the tax or
 transfer) that a variable refers to appears first.
 

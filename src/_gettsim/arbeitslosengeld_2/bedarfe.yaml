@@ -16,15 +16,15 @@ parameter_regelsatz_anteilsbasiert:
     anteil_vom_basissatz_bei_zwei_erwachsenen: 0.9
     anteil_vom_basissatz_bei_weiteren_erwachsenen: 0.8
     anteil_vom_basissatz_für_kinder:
-      zwischen_14_und_24_jahre:
+      jugendliche_und_junge_erwachsene:
         min_alter: 14
         max_alter: 24
         anteil: 0.8
-      zwischen_6_und_13_jahre:
+      schulkind:
         min_alter: 6
         max_alter: 13
         anteil: 0.6
-      bis_5_jahre:
+      kleinkind:
         min_alter: 0
         max_alter: 5
         anteil: 0.6
@@ -62,15 +62,15 @@ parameter_regelsatz_anteilsbasiert:
     updates_previous: true
     basissatz: 359
     anteil_vom_basissatz_für_kinder:
-      zwischen_14_und_24_jahre:
+      jugendliche_und_junge_erwachsene:
         min_alter: 14
         max_alter: 24
         anteil: 0.8
-      zwischen_6_und_13_jahre:
+      schulkind:
         min_alter: 6
         max_alter: 13
         anteil: 0.7
-      bis_5_jahre:
+      kleinkind:
         min_alter: 0
         max_alter: 5
         anteil: 0.6

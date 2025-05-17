@@ -42,14 +42,14 @@ def anspruchshöhe_m_bg(
     regelbedarf_m_bg: float,
     anzurechnendes_einkommen_m_bg: float,
     vermögen_bg: float,
-    freibetrag_vermögen_bg: float,
+    vermögensfreibetrag_bg: float,
 ) -> float:
     """Calculate potential basic subsistence (after income deduction and wealth check).
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     # Check wealth exemption
-    if vermögen_bg > freibetrag_vermögen_bg:
+    if vermögen_bg > vermögensfreibetrag_bg:
         out = 0.0
     else:
         # Deduct income from various sources

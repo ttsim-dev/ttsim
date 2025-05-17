@@ -80,10 +80,10 @@ def mehrbedarf_schwerbehinderung_g_m(
     """Calculate additional allowance for individuals with disabled person's pass G."""
 
     mehrbedarf_single = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_1.regelsatz
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz
     ) * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
     mehrbedarf_in_couple = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.regelbedarfsstufe_2.regelsatz
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_2.regelsatz
     ) * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
 
     if (schwerbehindert_grad_g) and (arbeitslosengeld_2__anzahl_erwachsene_eg == 1):

@@ -12,7 +12,7 @@ def betrag_m_not_implemented() -> float:
     raise NotImplementedError("Not implemented yet.")
 
 
-@policy_function(vectorization_strategy="loop", start_date="1998-08-01")
+@policy_function(start_date="1998-08-01")
 def betrag_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     grundsätzlich_anspruchsberechtigt: bool,
@@ -23,7 +23,7 @@ def betrag_m(
 
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
         arbeitsl_geld_satz = satz["allgemein"]
-    elif einkommensteuer__anzahl_kinderfreibeträge > 0:
+    else:
         arbeitsl_geld_satz = satz["erhöht"]
 
     if grundsätzlich_anspruchsberechtigt:
