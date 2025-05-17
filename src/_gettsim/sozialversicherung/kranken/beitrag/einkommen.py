@@ -2,26 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
-
 from ttsim import params_function, policy_function
-
-if TYPE_CHECKING:
-    from ttsim.typing import RawParamsRequiringConversion
 
 
 @params_function(end_date="1989-12-31", leaf_name="parameter_beitragsbemessungsgrenze")
-def parameter_beitragsbemessungsgrenze_vor_wiedervereinigung(
-    raw_parameter_beitragsbemessungsgrenze: RawParamsRequiringConversion,
+def parameter_beitragsbemessungsgrenze_einheitlich_vor_wiedervereinigung(
+    parameter_beitragsbemessungsgrenze_einheitlich: float,
 ) -> float:
-    return raw_parameter_beitragsbemessungsgrenze["value"]
-
-
-@dataclass(frozen=True)
-class ParameterMitOstWestUnterschied:
-    ost: float
-    west: float
+    return parameter_beitragsbemessungsgrenze_einheitlich
 
 
 @params_function(
@@ -29,43 +17,37 @@ class ParameterMitOstWestUnterschied:
     end_date="2000-12-31",
     leaf_name="parameter_beitragsbemessungsgrenze",
 )
-def parameter_beitragsbemessungsgrenze_mit_unterschied_ost_west(
-    raw_parameter_beitragsbemessungsgrenze: RawParamsRequiringConversion,
-) -> ParameterMitOstWestUnterschied:
-    return ParameterMitOstWestUnterschied(
-        ost=raw_parameter_beitragsbemessungsgrenze["ost"],
-        west=raw_parameter_beitragsbemessungsgrenze["west"],
-    )
+def parameter_beitragsbemessungsgrenze_ab_1990(
+    parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied: dict[str, float],
+) -> dict[str, float]:
+    return parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied
 
 
 @params_function(
     start_date="2001-01-01", leaf_name="parameter_beitragsbemessungsgrenze"
 )
-def parameter_beitragsbemessungsgrenze_uniform(
-    raw_parameter_beitragsbemessungsgrenze: RawParamsRequiringConversion,
+def parameter_beitragsbemessungsgrenze_einheitlich_ab_2001(
+    parameter_beitragsbemessungsgrenze_einheitlich: float,
 ) -> float:
-    return raw_parameter_beitragsbemessungsgrenze["value"]
+    return parameter_beitragsbemessungsgrenze_einheitlich
 
 
 @params_function(
     end_date="1989-12-31", leaf_name="parameter_bezugsgröße_selbstständige"
 )
 def parameter_bezugsgröße_selbstständige_vor_wiedervereinigung(
-    raw_parameter_bezugsgröße_selbstständige: RawParamsRequiringConversion,
+    raw_parameter_bezugsgröße_selbstständige_einheitlich: float,
 ) -> float:
-    return raw_parameter_bezugsgröße_selbstständige["value"]
+    return raw_parameter_bezugsgröße_selbstständige_einheitlich
 
 
 @params_function(
     start_date="1990-01-01", leaf_name="parameter_bezugsgröße_selbstständige"
 )
 def parameter_bezugsgröße_selbstständige_mit_unterschied_ost_west(
-    raw_parameter_bezugsgröße_selbstständige: RawParamsRequiringConversion,
-) -> ParameterMitOstWestUnterschied:
-    return ParameterMitOstWestUnterschied(
-        ost=raw_parameter_bezugsgröße_selbstständige["ost"],
-        west=raw_parameter_bezugsgröße_selbstständige["west"],
-    )
+    raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied: dict[str, float],
+) -> dict[str, float]:
+    return raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied
 
 
 @policy_function()
@@ -105,7 +87,7 @@ def einkommen_regulär_beschäftigt_m(
 @policy_function(start_date="1990-01-01")
 def bemessungsgrundlage_selbstständig_m(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
-    bezugsgröße_selbstständig_m: float,
+    bezugsgröße_selbstständige_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
     privat_versichert: bool,
     beitragsbemessungsgrenze_m: float,
@@ -123,7 +105,7 @@ def bemessungsgrundlage_selbstständig_m(
         out = min(
             beitragsbemessungsgrenze_m,
             max(
-                bezugsgröße_selbstständig_m * mindestanteil_bezugsgröße_selbstständige,
+                bezugsgröße_selbstständige_m * mindestanteil_bezugsgröße_selbstständige,
                 einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m,
             ),
         )
@@ -148,13 +130,13 @@ def beitragsbemessungsgrenze_m_vor_wiedervereinigung(
 )
 def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
     wohnort_ost: bool,
-    parameter_beitragsbemessungsgrenze: ParameterMitOstWestUnterschied,
+    parameter_beitragsbemessungsgrenze: dict[str, float],
 ) -> float:
     """Income threshold up to which health insurance payments apply."""
     return (
-        parameter_beitragsbemessungsgrenze.ost
+        parameter_beitragsbemessungsgrenze["ost"]
         if wohnort_ost
-        else parameter_beitragsbemessungsgrenze.west
+        else parameter_beitragsbemessungsgrenze["west"]
     )
 
 
@@ -167,7 +149,7 @@ def beitragsbemessungsgrenze_m_ohne_ost_west_unterschied(
 
 
 @policy_function(end_date="1989-12-31", leaf_name="bezugsgröße_selbstständige_m")
-def bezugsgröße_selbstständig_m_vor_wiedervereinigung(
+def bezugsgröße_selbstständige_m_vor_wiedervereinigung(
     parameter_bezugsgröße_selbstständige: float,
 ) -> float:
     """Threshold for self employment income subject to health insurance.
@@ -179,9 +161,9 @@ def bezugsgröße_selbstständig_m_vor_wiedervereinigung(
 
 
 @policy_function(start_date="1990-01-01", leaf_name="bezugsgröße_selbstständige_m")
-def bezugsgröße_selbstständig_m_mit_unterschied_ost_west(
+def bezugsgröße_selbstständige_m_mit_unterschied_ost_west(
     wohnort_ost: bool,
-    parameter_bezugsgröße_selbstständige: ParameterMitOstWestUnterschied,
+    parameter_bezugsgröße_selbstständige: dict[str, float],
 ) -> float:
     """Threshold for self employment income subject to health insurance.
 
@@ -189,9 +171,9 @@ def bezugsgröße_selbstständig_m_mit_unterschied_ost_west(
     rate of health insurance contributions apply.
     """
     return (
-        parameter_bezugsgröße_selbstständige.ost
+        parameter_bezugsgröße_selbstständige["ost"]
         if wohnort_ost
-        else parameter_bezugsgröße_selbstständige.west
+        else parameter_bezugsgröße_selbstständige["west"]
     )
 
 

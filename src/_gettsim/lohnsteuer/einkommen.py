@@ -86,7 +86,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict,
+    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Option b for calculating deductible health insurance cont.
 
@@ -109,7 +109,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict,
+    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Option b for calculating deductible health insurance cont.
 

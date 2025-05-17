@@ -2,30 +2,41 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ttsim import params_function, policy_function
-
-if TYPE_CHECKING:
-    from ttsim.typing import RawParamsRequiringConversion
 
 
 @params_function(end_date="2005-06-30", leaf_name="parameter_beitragssatz")
-def parameter_beitragssatz_uniform(
-    raw_parameter_beitragssatz: RawParamsRequiringConversion,
+def parameter_beitragssatz_einheitlich(
+    raw_parameter_beitragssatz_einheitlich: float,
 ) -> float:
     """Parameter for health insurance contribution rate before reunification."""
-    return raw_parameter_beitragssatz["value"]
+    return raw_parameter_beitragssatz_einheitlich
+
+
+@params_function(start_date="2005-07-01", leaf_name="parameter_beitragssatz")
+def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag(
+    raw_parameter_beitragssatz_mit_zusatzbeitrag: dict[str, float],
+) -> dict[str, float]:
+    """Parameter for health insurance contribution rate after reunification."""
+    return raw_parameter_beitragssatz_mit_zusatzbeitrag
+
+
+@params_function(end_date="2005-06-30", leaf_name="parameter_beitragssatz_jahresanfang")
+def parameter_beitragssatz_einheitlich_jahresanfang(
+    raw_parameter_beitragssatz_einheitlich_jahresanfang: float,
+) -> float:
+    """Parameter for health insurance contribution rate before reunification."""
+    return raw_parameter_beitragssatz_einheitlich_jahresanfang
 
 
 @params_function(
-    start_date="2005-07-01", end_date="2008-12-31", leaf_name="parameter_beitragssatz"
+    start_date="2005-07-01", leaf_name="parameter_beitragssatz_jahresanfang"
 )
-def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag(
-    raw_parameter_beitragssatz: RawParamsRequiringConversion,
-) -> dict:
+def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag_jahresanfang(
+    raw_parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang: dict[str, float],
+) -> dict[str, float]:
     """Parameter for health insurance contribution rate after reunification."""
-    return raw_parameter_beitragssatz
+    return raw_parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang
 
 
 @policy_function(
@@ -63,7 +74,7 @@ def beitragssatz_arbeitnehmer_jahresanfang(
 )
 def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate.
 
@@ -81,7 +92,7 @@ def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    parameter_beitragssatz_jahresanfang: dict,
+    parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
 
@@ -101,7 +112,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbe
 )
 def beitragssatz_arbeitnehmer_einheitlicher_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate.
 
@@ -119,7 +130,7 @@ def beitragssatz_arbeitnehmer_einheitlicher_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    parameter_beitragssatz_jahresanfang: dict,
+    parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
 
@@ -136,7 +147,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate.
 
@@ -160,7 +171,7 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
 )
 def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     zusatzbeitragssatz: float,
-    parameter_beitragssatz_jahresanfang: dict,
+    parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
 
@@ -205,7 +216,7 @@ def beitragssatz_arbeitgeber_jahresanfang_mittlerer_kassenspezifischer(
     leaf_name="beitragssatz_arbeitgeber",
 )
 def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Employer's health insurance contribution rate.
 
@@ -222,7 +233,7 @@ def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
 )
 def beitragssatz_arbeitgeber_jahresanfang_einheitlicher_zusatzbeitrag(
-    parameter_beitragssatz_jahresanfang: dict,
+    parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employer's health insurance contribution rate at the beginning of the year.
 
@@ -269,7 +280,7 @@ def beitragssatz_arbeitgeber_jahresanfang_paritätischer_zusatzbeitrag(
     leaf_name="zusatzbeitragssatz",
 )
 def zusatzbeitragssatz_von_sonderbeitrag(
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance top-up (Zusatzbeitrag) rate until December 2014."""
 
@@ -281,7 +292,7 @@ def zusatzbeitragssatz_von_sonderbeitrag(
     leaf_name="zusatzbeitragssatz",
 )
 def zusatzbeitragssatz_von_mean_zusatzbeitrag(
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance top-up rate (Zusatzbeitrag) since January 2015."""
 

@@ -1,14 +1,14 @@
 ---
-raw_parameter_bezugsgröße_selbstständige:
+raw_parameter_bezugsgröße_selbstständige_einheitlich:
   name:
-    de: Monatliche Bezugsgröße für Selbstständige
-    en: Monthly reference size for self employed
+    de: Einheitliche monatliche Bezugsgröße für Selbstständige
+    en: Uniform monthly reference size for self employed
   description:
     de: §18 SGB IV ynd https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
     en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
   unit: Euros
   reference_period: Month
-  type: require_converter
+  type: scalar
   add_jahresanfang: true
   1984-01-01:
     value: 1396
@@ -22,6 +22,21 @@ raw_parameter_bezugsgröße_selbstständige:
     value: 1575
   1989-01-01:
     value: 1611
+  1990-01-01:
+    note: >-
+      Die Bezugsgröße unterscheidet sich zwischen West und Ost. Siehe
+      ``raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied``.
+raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied:
+  name:
+    de: Monatliche Bezugsgröße für Selbstständige mit Unterschied zwischen West und Ost
+    en: Monthly reference size for self employed with different values for West and East
+  description:
+    de: §18 SGB IV und https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
+    en: §18 SGB IV and https://de.wikipedia.org/wiki/Bezugsgr%C3%B6%C3%9Fe
+  unit: Euros
+  reference_period: Month
+  type: dict
+  add_jahresanfang: true
   1990-01-01:
     west: 1682
     ost: 715.8086336747059

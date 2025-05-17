@@ -117,7 +117,7 @@ def einkommen_m(
 # Ost/West distinction. Same for all Sozialversicherunbsbeiträge!
 @policy_function()
 def beitragsbemessungsgrenze_m(
-    wohnort_ost: bool, parameter_beitragsbemessungsgrenze: dict
+    wohnort_ost: bool, parameter_beitragsbemessungsgrenze: dict[str, float]
 ) -> float:
     """Income threshold up to which pension insurance payments apply."""
     return (

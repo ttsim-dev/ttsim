@@ -39,7 +39,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang: float,
     sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
-    sozialversicherung__pflege__beitrag__beitragssatz_uniform: float,
+    sozialversicherung__pflege__beitrag__beitragssatz_einheitlich: float,
     geringfügige_einkommen_params: dict,
     sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
     sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
@@ -51,9 +51,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        +sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
+        sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
         + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
-        + sozialversicherung__pflege__beitrag__beitragssatz_uniform
+        + sozialversicherung__pflege__beitrag__beitragssatz_einheitlich
     )
 
     # Then calculate specific shares

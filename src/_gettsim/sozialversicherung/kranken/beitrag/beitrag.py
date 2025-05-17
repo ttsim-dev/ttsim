@@ -112,10 +112,10 @@ def betrag_arbeitgeber_m_mit_midijob(
 @policy_function()
 def betrag_versicherter_regulär_beschäftigt_m(
     einkommen_m: float,
-    beitragssatz_arbeitnehmer: dict,
+    beitragssatz_arbeitnehmer: float,
 ) -> float:
     """Employee's health insurance contributions for regular jobs."""
-    return beitragssatz_arbeitnehmer["mean_allgemein"] * einkommen_m
+    return beitragssatz_arbeitnehmer * einkommen_m
 
 
 @policy_function(
@@ -123,7 +123,7 @@ def betrag_versicherter_regulär_beschäftigt_m(
     end_date="2005-06-30",
     leaf_name="betrag_selbstständig_m",
 )
-def betrag_selbstständig_m_mit_uniformen_beitragssatz(
+def betrag_selbstständig_m_mit_einheitlichen_beitragssatz(
     bemessungsgrundlage_selbstständig_m: float,
     parameter_beitragssatz: float,
 ) -> float:
@@ -141,7 +141,7 @@ def betrag_selbstständig_m_mit_uniformen_beitragssatz(
 )
 def betrag_selbstständig_m_ohne_ermäßigtem_beitragssatz(
     bemessungsgrundlage_selbstständig_m: float,
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance contributions for self-employed's income. The self-employed
     pay the full reduced contribution.
@@ -154,14 +154,33 @@ def betrag_selbstständig_m_ohne_ermäßigtem_beitragssatz(
 @policy_function(
     vectorization_strategy="loop",
     start_date="2009-01-01",
+    end_date="2014-12-31",
     leaf_name="betrag_selbstständig_m",
 )
-def betrag_selbstständig_m(
+def betrag_selbstständig_m_ohne_zusatzbeitrag(
     bemessungsgrundlage_selbstständig_m: float,
-    parameter_beitragssatz: dict,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance contributions for self-employed's income. The self-employed
     pay the full reduced contribution.
+    """
+    return parameter_beitragssatz["ermäßigt"] * bemessungsgrundlage_selbstständig_m
+
+
+@policy_function(
+    vectorization_strategy="loop",
+    start_date="2015-01-01",
+    leaf_name="betrag_selbstständig_m",
+)
+def betrag_selbstständig_m_mit_zusatzbeitrag(
+    bemessungsgrundlage_selbstständig_m: float,
+    parameter_beitragssatz: dict[str, float],
+) -> float:
+    """Health insurance contributions for self-employed's income. The self-employed
+    pay the full reduced contribution.
+
+    Contribution rate includes the insurance provider-specific Zusatzbeitrag introduced
+    in 2015.
     """
     beitrag = (
         parameter_beitragssatz["ermäßigt"]

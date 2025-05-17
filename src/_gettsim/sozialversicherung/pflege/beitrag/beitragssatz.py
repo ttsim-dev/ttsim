@@ -28,14 +28,14 @@ def anzahl_kinder_bis_24_elternteil_2(
     vectorization_strategy="loop",
 )
 def beitragssatz_ohne_zusatz_für_kinderlose(
-    beitragssatz_uniform: float,
+    beitragssatz_einheitlich: float,
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
     Before 2005, the contribution rate was independent of the number of children.
     """
 
-    return beitragssatz_uniform
+    return beitragssatz_einheitlich
 
 
 @policy_function(

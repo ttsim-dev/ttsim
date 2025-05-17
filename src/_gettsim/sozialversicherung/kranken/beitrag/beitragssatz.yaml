@@ -1,23 +1,18 @@
 ---
-parameter_beitragssatz:
+raw_parameter_beitragssatz_einheitlich:
   name:
-    de: Beitragssätze zur gesetzlichen Krankenversicherung
-    en: Contribution rate to statutory health insurance
+    de: Einheitlicher Beitragssatz zur gesetzlichen Krankenversicherung
+    en: Uniform contribution rate to statutory health insurance
   description:
     de: >-
-      Beitragssätze für gesetzliche Krankenversicherung. mean_allgemein -
-      durchschnittlicher Beitragssatz, bis 2008 allgemein - allgemeiner Satz (§241 SGB
-      V), ab 2009 sonderbeitrag - bezahlt von Arbeitnehmern, ab Jul 2005 bis 2014
-      ermäßigt - ermäßigter Satz (§243 SGB V) zusatz - durchschnittlicher
-      Zusatzbeitragssatz.
+      Einheitlicher Beitragssatz für die gesetzliche Krankenversicherung über alle
+      Versicherungsträger.
     en: >-
-      Statury Contribution Rates for mandatory health insurance. mean_allgemein -
-      average contribution rate, 1992 to 2008 allgemein - general statutory
-      contribution rate, since 2009 sonderbeitrag - paid by employees, Jul 2005 to
-      2014 ermäßigt - reduced rate zusatz - average top-up contribution rate
+      Uniform contribution rate for statutory health insurance over all insurance
+      providers.
   unit: Share
   reference_period: null
-  type: dict
+  type: scalar
   add_jahresanfang: true
   1984-01-01:
     value: 0.1144
@@ -55,6 +50,30 @@ parameter_beitragssatz:
     value: 0.142
   2005-01-01:
     value: 0.142
+  2005-07-01:
+    note: >-
+      Einführung von Sonder- und Zusatzbeiträgen. See
+      ``parameter_beitragssatz_mit_zusatzbeitrag``.
+raw_parameter_beitragssatz_mit_zusatzbeitrag:
+  name:
+    de: Beitragssatz zur gesetzlichen Krankenversicherung mit Zusatzbeitrag
+    en: Contribution rate to statutory health insurance with top-up contribution
+  description:
+    de: >-
+      Beitragssätze für gesetzliche Krankenversicherung. mean_allgemein -
+      durchschnittlicher Beitragssatz, bis 2008 allgemein - allgemeiner Satz (§241 SGB
+      V), ab 2009 sonderbeitrag - bezahlt von Arbeitnehmern, ab Jul 2005 bis 2014
+      ermäßigt - ermäßigter Satz (§243 SGB V) zusatz - durchschnittlicher
+      Zusatzbeitragssatz.
+    en: >-
+      Statury Contribution Rates for mandatory health insurance. mean_allgemein -
+      average contribution rate, 1992 to 2008 allgemein - general statutory
+      contribution rate, since 2009 sonderbeitrag - paid by employees, Jul 2005 to
+      2014 ermäßigt - reduced rate zusatz - average top-up contribution rate
+  unit: Share
+  reference_period: null
+  type: dict
+  add_jahresanfang: true
   2005-07-01:
     mean_allgemein: 0.133
     sonderbeitrag: 0.009

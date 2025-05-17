@@ -77,7 +77,7 @@ def betrag_versicherter_regulär_beschäftigt_m(
 def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__kranken__beitrag__einkommen_m: float,
-    beitragssatz_uniform: float,
+    beitragssatz_einheitlich: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
     """Employer's long-term care insurance contribution.
@@ -86,7 +86,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     """
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
-        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz_uniform
+        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz_einheitlich
     )
 
     if (
@@ -106,11 +106,11 @@ def betrag_arbeitgeber_m_ohne_midijob(
     leaf_name="betrag_arbeitgeber_m",
     vectorization_strategy="loop",
 )
-def betrag_arbeitgeber_m_mit_midijob_uniformer_beitragssatz(
+def betrag_arbeitgeber_m_mit_midijob_einheitlicher_beitragssatz(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_arbeitgeber_midijob_m: float,
     sozialversicherung__kranken__beitrag__einkommen_m: float,
-    beitragssatz_uniform: float,
+    beitragssatz_einheitlich: float,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
@@ -120,7 +120,7 @@ def betrag_arbeitgeber_m_mit_midijob_uniformer_beitragssatz(
     """
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
-        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz_uniform
+        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz_einheitlich
     )
 
     if (
@@ -278,12 +278,12 @@ def betrag_rentner_m_mit_zusatz_für_kinderlose(
 def betrag_gesamt_m_bis_2004(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz: float,
-    beitragssatz_uniform: float,
+    beitragssatz_einheitlich: float,
 ) -> float:
     """Sum of employee and employer long-term care insurance contributions until 2004."""
 
     return sozialversicherung__midijob_bemessungsentgelt_m * (
-        beitragssatz + beitragssatz_uniform
+        beitragssatz + beitragssatz_einheitlich
     )
 
 
@@ -311,13 +311,13 @@ def betrag_gesamt_m_ab_2005(
 )
 def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    beitragssatz_uniform: float,
+    beitragssatz_einheitlich: float,
 ) -> float:
     """Employer's long-term care insurance contribution until December 2004."""
 
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * beitragssatz_uniform
+        * beitragssatz_einheitlich
     )
 
 
