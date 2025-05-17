@@ -31,8 +31,7 @@ def grouped_sum(
     out_on_hh = segment_sum(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_mean(
@@ -45,8 +44,7 @@ def grouped_mean(
         data=jnp.ones(len(column)), segment_ids=group_id, num_segments=num_segments
     )
     mean_on_hh = sum_on_hh / sizes
-    out = mean_on_hh[group_id]
-    return out
+    return mean_on_hh[group_id]
 
 
 def grouped_max(
@@ -55,8 +53,7 @@ def grouped_max(
     out_on_hh = segment_max(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_min(
@@ -65,8 +62,7 @@ def grouped_min(
     out_on_hh = segment_min(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_any(
@@ -81,8 +77,7 @@ def grouped_any(
     out_on_hh = segment_max(
         data=my_col, segment_ids=group_id, num_segments=num_segments
     )
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_all(
@@ -95,8 +90,7 @@ def grouped_all(
     out_on_hh = segment_min(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def count_by_p_id(
@@ -130,8 +124,7 @@ def sum_by_p_id(
 
     # Scatter-add the contributions to the output array.
     out = jnp.zeros_like(p_id_to_store_by, dtype=column.dtype)
-    out = out.at[mapped_index].add(contributions)
-    return out
+    return out.at[mapped_index].add(contributions)
 
 
 def mean_by_p_id(

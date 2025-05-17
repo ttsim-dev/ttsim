@@ -15,11 +15,10 @@ def regulär_beschäftigt_vor_midijob(
     regular employed.
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         >= minijob_grenze
     )
-    return out
 
 
 @policy_function(start_date="2003-04-01", leaf_name="regulär_beschäftigt")
@@ -34,8 +33,7 @@ def regulär_beschäftigt_mit_midijob(
     regular employed.
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         >= geringfügige_einkommen_params["grenzen_m"]["midijob"]
     )
-    return out

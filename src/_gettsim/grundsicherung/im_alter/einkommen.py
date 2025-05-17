@@ -84,9 +84,7 @@ def erwerbseinkommen_m(
         1 - grunds_im_alter_params["anrechnungsfreier_anteil_erwerbseinkünfte"]
     ) * earnings
 
-    out = max(earnings, earnings_after_max_deduction)
-
-    return out
+    return max(earnings, earnings_after_max_deduction)
 
 
 @policy_function()
@@ -106,9 +104,7 @@ def kapitaleinkommen_brutto_m(
     )
 
     # Calculate and return monthly capital income (after deduction)
-    out = max(0.0, capital_income_y / 12)
-
-    return out
+    return max(0.0, capital_income_y / 12)
 
 
 @policy_function(start_date="2011-01-01")
@@ -135,11 +131,9 @@ def private_rente_betrag_m(
         / 2
     )
 
-    out = sozialversicherung__rente__private_rente_betrag_m - min(
+    return sozialversicherung__rente__private_rente_betrag_m - min(
         sozialversicherung__rente__private_rente_betrag_m_amount_exempt, upper
     )
-
-    return out
 
 
 @policy_function(end_date="2020-12-31", leaf_name="gesetzliche_rente_m")

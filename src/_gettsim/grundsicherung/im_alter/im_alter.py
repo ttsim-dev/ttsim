@@ -103,10 +103,9 @@ def vermögensfreibetrag_eg(
     grunds_im_alter_params: dict,
 ) -> float:
     """Calculate wealth not considered for Grundsicherung im Alter on household level."""
-    out = (
+    return (
         grunds_im_alter_params["parameter_vermögensfreibetrag"]["adult"]
         * arbeitslosengeld_2__anzahl_erwachsene_fg
         + grunds_im_alter_params["parameter_vermögensfreibetrag"]["child"]
         * arbeitslosengeld_2__anzahl_kinder_fg
     )
-    return out
