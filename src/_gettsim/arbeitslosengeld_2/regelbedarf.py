@@ -188,7 +188,7 @@ def mehrbedarf_alleinerziehend_m(
     anzahl_kinder_fg: int,
     anzahl_kinder_bis_6_fg: int,
     anzahl_kinder_bis_15_fg: int,
-    anteil_mehrbedarf_alleinerziehend: dict[str, float],
+    parameter_mehrbedarf_alleinerziehend: dict[str, float],
 ) -> float:
     """Compute additional SGB II need for single parents.
 
@@ -205,16 +205,18 @@ def mehrbedarf_alleinerziehend_m(
         out = min(
             max(
                 # Minimal Mehrbedarf share. Minimal rate times number of children
-                anteil_mehrbedarf_alleinerziehend["min_1_kind"] * anzahl_kinder_fg,
+                parameter_mehrbedarf_alleinerziehend["min_1_kind"] * anzahl_kinder_fg,
                 # Increased rated if children up to 6 and/or 2-3 up to 15 are present.
                 (
-                    anteil_mehrbedarf_alleinerziehend["kind_bis_6_oder_mehrere_bis_15"]
+                    parameter_mehrbedarf_alleinerziehend[
+                        "kind_bis_6_oder_mehrere_bis_15"
+                    ]
                     if (anzahl_kinder_bis_6_fg >= 1)
                     or (2 <= anzahl_kinder_bis_15_fg <= 3)
                     else 0.0
                 ),
             ),
-            anteil_mehrbedarf_alleinerziehend["max"],
+            parameter_mehrbedarf_alleinerziehend["max"],
         )
     else:
         out = 0.0

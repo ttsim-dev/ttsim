@@ -308,11 +308,9 @@ def grundsätzlich_anspruchsberechtigt(
     eligibility of parental leave benefit (Erziehungsgeld) as a bool
 
     """
-    out = kind_grundsätzlich_anspruchsberechtigt_fg and (
+    return kind_grundsätzlich_anspruchsberechtigt_fg and (
         arbeitsstunden_w <= erziehungsgeld_params["maximale_wochenarbeitszeit"]
     )
-
-    return out
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
@@ -433,9 +431,7 @@ def einkommensgrenze_ohne_geschwisterbonus(
     else:
         satz = "regelsatz"
 
-    out = erziehungsgeld_params["einkommensgrenze"][limit][status_eltern][satz]
-
-    return out
+    return erziehungsgeld_params["einkommensgrenze"][limit][status_eltern][satz]
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

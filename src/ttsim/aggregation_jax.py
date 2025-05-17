@@ -19,8 +19,7 @@ def grouped_count(group_id: jnp.ndarray, num_segments: int) -> jnp.ndarray:
     out_on_hh = segment_sum(
         data=jnp.ones(len(group_id)), segment_ids=group_id, num_segments=num_segments
     )
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_sum(

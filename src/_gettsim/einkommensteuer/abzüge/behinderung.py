@@ -20,6 +20,4 @@ def pauschbetrag_behinderung_y(
     selected_bin = bins[selected_bin_index]
 
     # Select appropriate pauschbetrag.
-    out = parameter_behindertenpauschbetrag[selected_bin]
-
-    return out
+    return parameter_behindertenpauschbetrag[selected_bin]

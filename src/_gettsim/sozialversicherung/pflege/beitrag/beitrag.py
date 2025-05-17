@@ -484,12 +484,10 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
 
     """
 
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         * ges_pflegev_params["parameter_beitragssatz"]
     )
-
-    return out
 
 
 @policy_function(
@@ -518,11 +516,10 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_ab_2005(
     Employer's long-term care insurance contributions.
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         * ges_pflegev_params["parameter_beitragssatz"]["standard"]
     )
-    return out
 
 
 @policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_midijob_m")
@@ -545,8 +542,7 @@ def betrag_arbeitgeber_midijob_m_als_differenz_von_gesamt_und_versichertenbeitra
     Employer's long-term care insurance contributions.
 
     """
-    out = betrag_gesamt_m - betrag_versicherter_m
-    return out
+    return betrag_gesamt_m - betrag_versicherter_m
 
 
 @policy_function(
@@ -573,9 +569,7 @@ def betrag_versicherter_midijob_m_als_differenz_von_gesamt_und_arbeitgeberbeitra
     Employee's long-term care insurance contributions.
 
     """
-    out = betrag_gesamt_m - betrag_arbeitgeber_midijob_m
-
-    return out
+    return betrag_gesamt_m - betrag_arbeitgeber_midijob_m
 
 
 @policy_function(

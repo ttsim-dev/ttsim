@@ -180,7 +180,7 @@ def bruttoeinkommen_m(
     Income by unemployment insurance before tax.
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
@@ -191,8 +191,6 @@ def bruttoeinkommen_m(
         + sozialversicherung__arbeitslosen__betrag_m
         + elterngeld__betrag_m
     )
-
-    return out
 
 
 @policy_function(start_date="2005-01-01", end_date="2005-09-30")
@@ -237,12 +235,11 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: PiecewisePolynomialParameters,
 ) -> float:
     """Share of income which remains to the individual."""
-    out = piecewise_polynomial(
+    return piecewise_polynomial(
         x=einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
         parameters=parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
         rates_multiplier=nettoquote,
     )
-    return out
 
 
 @policy_function(start_date="2005-10-01")

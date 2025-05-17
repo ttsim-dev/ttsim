@@ -83,14 +83,12 @@ def grundsätzlich_anspruchsberechtigt(
         sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     )
 
-    out = (
+    return (
         arbeitssuchend
         and (monate_verbleibender_anspruchsdauer > 0)
         and (alter < regelaltersgrenze)
         and (arbeitsstunden_w < stundengrenze)
     )
-
-    return out
 
 
 @policy_function(vectorization_strategy="loop")
@@ -127,5 +125,4 @@ def einkommen_vorjahr_proxy_m(
         parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
-    out = max(out, 0.0)
-    return out
+    return max(out, 0.0)

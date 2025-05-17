@@ -65,12 +65,10 @@ def freibetrag_vermögen_in_karenzzeit_bg(
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
-    out = (
+    return (
         schonvermögen_bürgergeld["während_karenzzeit"]
         + (anzahl_personen_bg - 1) * schonvermögen_bürgergeld["normaler_satz"]
     )
-
-    return out
 
 
 @policy_function(end_date="2022-12-31", leaf_name="freibetrag_vermögen_bg")

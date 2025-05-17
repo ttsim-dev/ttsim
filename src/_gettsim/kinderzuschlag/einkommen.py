@@ -198,9 +198,7 @@ def kosten_der_unterkunft_m_bg(
         arbeitslosengeld_2__bruttokaltmiete_m_bg + arbeitslosengeld_2__heizkosten_m_bg
     )
 
-    out = wohnbedarf_anteil_eltern_bg * warmmiete_m_bg
-
-    return out
+    return wohnbedarf_anteil_eltern_bg * warmmiete_m_bg
 
 
 @policy_function(vectorization_strategy="loop")
@@ -223,7 +221,7 @@ def wohnbedarf_anteil_eltern_bg(
         "single" if arbeitslosengeld_2__anzahl_erwachsene_bg == 1 else "paare"
     )
 
-    out = (
+    return (
         ex_min["kosten_der_unterkunft"][single_oder_paar]
         + ex_min["heizkosten"][single_oder_paar]
     ) / (
@@ -237,8 +235,6 @@ def wohnbedarf_anteil_eltern_bg(
             )
         )
     )
-
-    return out
 
 
 @policy_function()

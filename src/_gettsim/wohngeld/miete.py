@@ -73,10 +73,9 @@ def min_miete_m_hh(anzahl_personen_hh: int, wohngeld_params: dict) -> float:
     -------
 
     """
-    out = wohngeld_params["min_miete"][
+    return wohngeld_params["min_miete"][
         min(anzahl_personen_hh, max(wohngeld_params["min_miete"]))
     ]
-    return out
 
 
 @policy_function(
@@ -140,9 +139,7 @@ def miete_m_hh_bis_2008(
         )
 
     out = min(wohnen__bruttokaltmiete_m_hh, max_miete_m)
-    out = max(out, min_miete_m_hh)
-
-    return out
+    return max(out, min_miete_m_hh)
 
 
 @policy_function(

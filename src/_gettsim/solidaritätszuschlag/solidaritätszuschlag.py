@@ -25,13 +25,11 @@ def betrag_y_sn_ohne_abgelt_st(
     SolzG 1995.
 
     """
-    out = einkommensteuer__anzahl_personen_sn * solidaritätszuschlagstarif(
+    return einkommensteuer__anzahl_personen_sn * solidaritätszuschlagstarif(
         steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
         / einkommensteuer__anzahl_personen_sn,
         parameter_solidaritätszuschlag=parameter_solidaritätszuschlag,
     )
-
-    return out
 
 
 @policy_function(
@@ -57,7 +55,7 @@ def betrag_y_sn_mit_abgelt_st(
     SolzG 1995.
 
     """
-    out = (
+    return (
         einkommensteuer__anzahl_personen_sn
         * solidaritätszuschlagstarif(
             steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
@@ -67,8 +65,6 @@ def betrag_y_sn_mit_abgelt_st(
         + parameter_solidaritätszuschlag.rates[0, -1]
         * einkommensteuer__abgeltungssteuer__betrag_y_sn
     )
-
-    return out
 
 
 def solidaritätszuschlagstarif(
