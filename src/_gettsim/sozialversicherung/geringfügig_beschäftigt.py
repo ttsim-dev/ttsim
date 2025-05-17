@@ -1,44 +1,6 @@
 """Marginally employed."""
 
-from dataclasses import dataclass
-
 from ttsim import RoundingSpec, params_function, policy_function
-
-
-@dataclass(frozen=True)
-class MinijobGrenzeUnterschiedOstWest:
-    west: float
-    ost: float
-
-
-@params_function(end_date="1989-12-31", leaf_name="minijobgrenze")
-def minijobgrenze_einheitlich_vor_wiedervereinigung(
-    parameter_minijobgrenze_einheitlich: float,
-) -> float:
-    """Minijob income threshold"""
-    return parameter_minijobgrenze_einheitlich
-
-
-@params_function(
-    start_date="1990-01-01",
-    end_date="1999-12-31",
-    leaf_name="minijobgrenze_nach_wohnort",
-)
-def minijobgrenze_ost_west_unterschied(
-    parameter_minijobgrenze_ost_west_unterschied: dict[str, float],
-) -> dict[str, float]:
-    """Minijob income threshold"""
-    return parameter_minijobgrenze_ost_west_unterschied
-
-
-@params_function(
-    start_date="2000-01-01", end_date="2022-09-30", leaf_name="minijobgrenze"
-)
-def minijobgrenze_einheitlich_ab_2000(
-    parameter_minijobgrenze_einheitlich: float,
-) -> float:
-    """Minijob income threshold"""
-    return parameter_minijobgrenze_einheitlich
 
 
 @policy_function()
@@ -58,6 +20,14 @@ def geringfügig_beschäftigt(
     )
 
 
+@params_function(end_date="1989-12-31", leaf_name="minijobgrenze")
+def minijobgrenze_einheitlich_vor_wiedervereinigung(
+    parameter_minijobgrenze_einheitlich: float,
+) -> float:
+    """Minijob income threshold"""
+    return parameter_minijobgrenze_einheitlich
+
+
 @policy_function(
     start_date="1990-01-01",
     end_date="1999-12-31",
@@ -67,17 +37,27 @@ def geringfügig_beschäftigt(
     ),
 )
 def minijobgrenze_unterscheidung_ost_west(
-    wohnort_ost: bool, minijobgrenze_nach_wohnort: dict[str, float]
+    wohnort_ost: bool, parameter_minijobgrenze_ost_west_unterschied: dict[str, float]
 ) -> float:
     """Minijob income threshold depending on place of living (East or West Germany).
 
     Until 1999, the threshold is different for East and West Germany.
     """
     return (
-        minijobgrenze_nach_wohnort["ost"]
+        parameter_minijobgrenze_ost_west_unterschied["ost"]
         if wohnort_ost
-        else minijobgrenze_nach_wohnort["west"]
+        else parameter_minijobgrenze_ost_west_unterschied["west"]
     )
+
+
+@params_function(
+    start_date="2000-01-01", end_date="2022-09-30", leaf_name="minijobgrenze"
+)
+def minijobgrenze_einheitlich_ab_2000(
+    parameter_minijobgrenze_einheitlich: float,
+) -> float:
+    """Minijob income threshold"""
+    return parameter_minijobgrenze_einheitlich
 
 
 @policy_function(

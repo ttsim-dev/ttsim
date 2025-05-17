@@ -3,34 +3,6 @@
 from ttsim import RoundingSpec, params_function, policy_function
 
 
-@params_function(start_date="2005-01-01")
-def beitragspflichtiges_durchschnittsentgelt_y(
-    parameter_beitragspflichtiges_durchschnittsentgelt: float,
-) -> float:
-    """Beitragspflichtiges Durchschnittsentgelt."""
-    return parameter_beitragspflichtiges_durchschnittsentgelt
-
-
-@params_function(
-    start_date="1992-01-01",
-    end_date="2023-06-30",
-    leaf_name="parameter_rentenwert",
-)
-def parameter_rentenwert_mit_ost_west_unterschied(
-    raw_parameter_rentenwert_mit_ost_west_unterschied: dict[str, float],
-) -> dict[str, float]:
-    """Parameter Rentenwert mit Ost-West-Unterschied."""
-    return raw_parameter_rentenwert_mit_ost_west_unterschied
-
-
-@params_function(start_date="2023-07-01", leaf_name="rentenwert")
-def parameter_rentenwert_einheitlich(
-    raw_parameter_rentenwert_einheitlich: float,
-) -> float:
-    """Parameter Rentenwert einheitlich."""
-    return raw_parameter_rentenwert_einheitlich
-
-
 @policy_function(
     end_date="2020-12-31",
     rounding_spec=RoundingSpec(
@@ -137,10 +109,22 @@ def bruttorente_basisbetrag_m(
 @policy_function(start_date="1992-01-01", end_date="2023-06-30", leaf_name="rentenwert")
 def rentenwert_mit_ost_west_unterschied(
     wohnort_ost: bool,
-    parameter_rentenwert: dict[str, float],
+    parameter_rentenwert_mit_ost_west_unterschied: dict[str, float],
 ) -> float:
     """Rentenwert."""
-    return parameter_rentenwert["ost"] if wohnort_ost else parameter_rentenwert["west"]
+    return (
+        parameter_rentenwert_mit_ost_west_unterschied["ost"]
+        if wohnort_ost
+        else parameter_rentenwert_mit_ost_west_unterschied["west"]
+    )
+
+
+@params_function(start_date="2023-07-01", leaf_name="rentenwert")
+def _parameter_rentenwert_einheitlich(
+    parameter_rentenwert_einheitlich: float,
+) -> float:
+    """Parameter Rentenwert einheitlich."""
+    return parameter_rentenwert_einheitlich
 
 
 @policy_function()

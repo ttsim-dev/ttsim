@@ -1,5 +1,5 @@
 ---
-raw_parameter_beitragssatz_einheitlich:
+parameter_beitragssatz_einheitlich:
   name:
     de: Einheitlicher Beitragssatz zur gesetzlichen Krankenversicherung
     en: Uniform contribution rate to statutory health insurance
@@ -54,7 +54,7 @@ raw_parameter_beitragssatz_einheitlich:
     note: >-
       Einführung von Sonder- und Zusatzbeiträgen. See
       ``parameter_beitragssatz_mit_zusatzbeitrag``.
-raw_parameter_beitragssatz_mit_zusatzbeitrag:
+parameter_beitragssatz_mit_zusatzbeitrag:
   name:
     de: Beitragssatz zur gesetzlichen Krankenversicherung mit Zusatzbeitrag
     en: Contribution rate to statutory health insurance with top-up contribution

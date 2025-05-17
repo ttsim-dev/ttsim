@@ -5,40 +5,6 @@ from __future__ import annotations
 from ttsim import params_function, policy_function
 
 
-@params_function(end_date="2005-06-30", leaf_name="parameter_beitragssatz")
-def parameter_beitragssatz_einheitlich(
-    raw_parameter_beitragssatz_einheitlich: float,
-) -> float:
-    """Parameter for health insurance contribution rate."""
-    return raw_parameter_beitragssatz_einheitlich
-
-
-@params_function(start_date="2005-07-01", leaf_name="parameter_beitragssatz")
-def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag(
-    raw_parameter_beitragssatz_mit_zusatzbeitrag: dict[str, float],
-) -> dict[str, float]:
-    """Parameter for health insurance contribution rate."""
-    return raw_parameter_beitragssatz_mit_zusatzbeitrag
-
-
-@params_function(end_date="2005-06-30", leaf_name="parameter_beitragssatz_jahresanfang")
-def parameter_beitragssatz_einheitlich_jahresanfang(
-    raw_parameter_beitragssatz_einheitlich_jahresanfang: float,
-) -> float:
-    """Parameter for health insurance contribution rate."""
-    return raw_parameter_beitragssatz_einheitlich_jahresanfang
-
-
-@params_function(
-    start_date="2005-07-01", leaf_name="parameter_beitragssatz_jahresanfang"
-)
-def parameter_beitragssatz_mit_zusatz_und_sonderbeitrag_jahresanfang(
-    raw_parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang: dict[str, float],
-) -> dict[str, float]:
-    """Parameter for health insurance contribution rate."""
-    return raw_parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang
-
-
 @policy_function(
     end_date="2005-06-30",
 )
@@ -297,3 +263,37 @@ def zusatzbeitragssatz_von_mean_zusatzbeitrag(
     """Health insurance top-up rate (Zusatzbeitrag) since January 2015."""
 
     return parameter_beitragssatz["mean_zusatzbeitrag"]
+
+
+@params_function(end_date="2005-06-30", leaf_name="parameter_beitragssatz")
+def _parameter_beitragssatz_einheitlich(
+    parameter_beitragssatz_einheitlich: float,
+) -> float:
+    """Parameter for health insurance contribution rate."""
+    return parameter_beitragssatz_einheitlich
+
+
+@params_function(start_date="2005-07-01", leaf_name="parameter_beitragssatz")
+def _parameter_beitragssatz_mit_zusatz_und_sonderbeitrag(
+    parameter_beitragssatz_mit_zusatzbeitrag: dict[str, float],
+) -> dict[str, float]:
+    """Parameter for health insurance contribution rate."""
+    return parameter_beitragssatz_mit_zusatzbeitrag
+
+
+@params_function(end_date="2005-06-30", leaf_name="parameter_beitragssatz_jahresanfang")
+def _parameter_beitragssatz_einheitlich_jahresanfang(
+    parameter_beitragssatz_einheitlich_jahresanfang: float,
+) -> float:
+    """Parameter for health insurance contribution rate."""
+    return parameter_beitragssatz_einheitlich_jahresanfang
+
+
+@params_function(
+    start_date="2005-07-01", leaf_name="parameter_beitragssatz_jahresanfang"
+)
+def _parameter_beitragssatz_mit_zusatz_und_sonderbeitrag_jahresanfang(
+    parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang: dict[str, float],
+) -> dict[str, float]:
+    """Parameter for health insurance contribution rate."""
+    return parameter_beitragssatz_mit_zusatzbeitrag_jahresanfang

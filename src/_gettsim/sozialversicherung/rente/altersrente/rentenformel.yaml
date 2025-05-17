@@ -257,7 +257,7 @@ umrechnung_entgeltpunkte_beitrittsgebiet:
   2025-01-01:
     value: 1.0000
     note: Umrechnung entfällt.
-raw_parameter_rentenwert_mit_ost_west_unterschied:
+parameter_rentenwert_mit_ost_west_unterschied:
   name:
     de: Rentenwerte alte und neue Bundesländer
     en: Pension value old and new federal states
@@ -370,8 +370,8 @@ raw_parameter_rentenwert_mit_ost_west_unterschied:
     west: 36.02
     ost: 35.52
   2023-07-01:
-    note: Rentenwert einheitlich. Siehe ``raw_parameter_rentenwert_einheitlich``.
-raw_parameter_rentenwert_einheitlich:
+    note: Rentenwert einheitlich. Siehe ``parameter_rentenwert_einheitlich``.
+parameter_rentenwert_einheitlich:
   name:
     de: Rentenwert (Wert eines Entgeltpunktes).
     en: Value of one Entgeltpunkt.

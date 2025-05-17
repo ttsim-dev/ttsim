@@ -1,5 +1,5 @@
 ---
-raw_parameter_beitragsbemessungsgrenze_einheitlich:
+parameter_beitragsbemessungsgrenze_einheitlich:
   name:
     de: Beitragsbemessungsgrenzen der gesetzlichen Rentenversicherung
     en: Maximum income subject to pension insurance contributions
@@ -24,11 +24,11 @@ raw_parameter_beitragsbemessungsgrenze_einheitlich:
   1990-01-01:
     note: >-
       Die Beitragsbemessungsgrenze unterscheidet sich zwischen West und Ost. Siehe
-      ``raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied``.
+      ``parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied``.
   2025-01-01:
     value: 8050
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
-raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied:
+parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied:
   name:
     de: Beitragsbemessungsgrenze der gesetzlichen Rentenversicherung
     en: Maximum income subject to pension insurance contributions
@@ -159,4 +159,4 @@ raw_parameter_beitragsbemessungsgrenze_mit_ost_west_unterschied:
   2025-01-01:
     note: >-
       Beitragsbemessungsgrenze ist einheitlich zwischen West und Ost. Siehe
-      ``raw_parameter_beitragsbemessungsgrenze_einheitlich``.
+      ``parameter_beitragsbemessungsgrenze_einheitlich``.
