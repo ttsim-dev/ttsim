@@ -1,0 +1,62 @@
+---
+altersgrenze_besonders_langjährig_versicherte:
+  name:
+    de: >-
+      Eintrittsalter für besonders langjährig Versicherte - abschlagsfrei (Rente mit 63)
+    en: Entry age for very long term insured (45 insurance years) without deductions
+  description:
+    de: >-
+      § 38 SGB VI
+      https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/249-altersrente-fuer-besonders-langjaehrig-versicherte.html
+      Stückweise lineare Funktion, die die Regelaltersgrenze angibt, bei der das
+      Individuum mit seinem vollen Rentenanspruch in Rente gehen kann. Geht die Person
+      früher oder später in Rente, ist der Zugangsfaktor und damit der Rentenanspruch
+      höher oder niedriger, wenn keine Ausnahmeregelungen erfüllt sind.
+      Ab dem 1.7.2014 wurde die Altersgrenze für Kohorten bis 1952 auf 63 Jahre
+      gesenkt (für nachfolgende Kohorten steigt sie um 2 Monate pro Kohorte bis
+      65). Personen, die vor dem 1.7.1951 (codiert als 1951.5) geboren wurden,
+      waren zu diesem Zeitpunkt aber schon älter als 63 und hatten ensprechend ein
+      höheres verfügbares Renteneintrittsalter. Nur Personen, die ab dem 1.7.1949
+      geboren wurden konnten überhaupt profitieren, da alle anderen schon über 65
+      waren. Für die Zugangsfaktor berechnung werden die tatsächlich verfügbaren
+      Renteneintrittsalter benötigt. Daher brauchen wir für die inputs eine
+      monatliche Präzision bis Kohorte 1952.
+    en: >-
+      § 38 SGB VI
+      https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/249-altersrente-fuer-besonders-langjaehrig-versicherte.html
+      Stückweise lineare Funktion, die die Regelaltersgrenze angibt, bei der das
+      Piecewise linear function returning the regelaltersgrenze at which the agent
+      is allowed to get pensions with his full claim. If the agent retires earlier or
+      later, the Zugangsfaktor and therefore the pension claim is higher or lower,
+      unless special conditions apply.
+      From 1.7.2014 the retirement thresholds for cohorts born before 1953 was
+      lowered to 63 years (for subsequent cohort it raises by 2 months per cohort
+      up to 65  again). But people born before 1.7.1951 were already older than
+      63 at that date. Only cohorts born after 1.7.1949 could benefit since the
+      others were above 65  already. As the zugangsfaktor function runs on retirement
+      age, we need the actually  feasible retirement ages as inputs. The inputs
+      therefore require monthly precision  up to cohort 1952. From then we need
+      annual precision.
+  unit: Years
+  reference_period: null
+  type: require_converter
+  2007-04-30:
+    reference: RV-Altersgrenzenanpassungsgesetz 2007. BGBl. I S. 554 2007
+    value: 65.0
+  2014-06-23:
+    reference: RV-Leistungsverbesserungsgesetz 2014. BGBl. I S. 787 2014
+    entry_age_old_regime: 63.0
+    entry_age_new_regime: 65.0
+    max_birthyear_old_regime: 1952
+    min_birthyear_new_regime: 1964
+    1953: 63.166667
+    1954: 63.333333
+    1955: 63.5
+    1956: 63.666667
+    1957: 63.833333
+    1958: 64.0
+    1959: 64.166667
+    1960: 64.333333
+    1961: 64.5
+    1962: 64.666667
+    1963: 64.833333

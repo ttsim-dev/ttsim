@@ -8,31 +8,12 @@ def mindestwartezeit_erfüllt(
     pflichtbeitragsmonate: float,
     freiwillige_beitragsmonate: float,
     ersatzzeiten_monate: float,
-    ges_rente_params: dict,
+    wartezeitgrenzen: dict[str, float],
 ) -> bool:
-    """Whether Allgemeine Wartezeit has been completed. Aggregates time
-    periods that are relevant for the general eligibility of the
-    regular pension (regelaltersrente). "Allgemeine Wartezeit".
-
-    Parameters
-    ----------
-    pflichtbeitragsmonate
-        See :func:`pflichtbeitragsmonate`.
-    freiwillige_beitragsmonate
-        See :func:`freiwillige_beitragsmonate`.
-    ersatzzeiten_monate
-        See :func:`ersatzzeiten_monate`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Fulfilled Wartezeit von 5 Jahren.
-
-    """
+    """Minimal Wartezeit has been completed."""
     return (
         pflichtbeitragsmonate + freiwillige_beitragsmonate + ersatzzeiten_monate
-    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_5"]
+    ) / 12 >= wartezeitgrenzen["wartezeit_5"]
 
 
 @policy_function()
@@ -40,31 +21,12 @@ def wartezeit_15_jahre_erfüllt(
     pflichtbeitragsmonate: float,
     freiwillige_beitragsmonate: float,
     ersatzzeiten_monate: float,
-    ges_rente_params: dict,
+    wartezeitgrenzen: dict[str, float],
 ) -> bool:
-    """Whether Wartezeit von 15 Jahren Wartezeit has been completed.
-    Aggregates time periods that are relevant for the Altersrente für Frauen
-    and Leistungen zur Teilhabe. Wartezeit von 15 Jahren.
-
-    Parameters
-    ----------
-    pflichtbeitragsmonate
-        See :func:`pflichtbeitragsmonate`.
-    freiwillige_beitragsmonate
-        See :func:`freiwillige_beitragsmonate`.
-    ersatzzeiten_monate
-        See :func:`ersatzzeiten_monate`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Fulfilled Wartezeit von 15 Jahren
-
-    """
+    """Wartezeit of 15 years completed."""
     return (
         pflichtbeitragsmonate + freiwillige_beitragsmonate + ersatzzeiten_monate
-    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_15"]
+    ) / 12 >= wartezeitgrenzen["wartezeit_15"]
 
 
 @policy_function()
@@ -75,34 +37,11 @@ def wartezeit_35_jahre_erfüllt(
     ersatzzeiten_monate: float,
     kinderberücksichtigungszeiten_monate: float,
     pflegeberücksichtigungszeiten_monate: float,
-    ges_rente_params: dict,
+    wartezeitgrenzen: dict[str, float],
 ) -> bool:
-    """Whether Wartezeit von 35 Jahren Wartezeit has been completed.
-    Aggregates time periods that are relevant for the eligibility of Altersrente für
-    langjährig Versicherte (pension for long-term insured). Wartezeit von 35 Jahren. All
-    "rentenrechtliche Zeiten" are considered.
+    """Wartezeit of 35 years completed.
 
-    Parameters
-    ----------
-    pflichtbeitragsmonate
-        See :func:`pflichtbeitragsmonate`.
-    freiwillige_beitragsmonate
-        See :func:`freiwillige_beitragsmonate`.
-    ersatzzeiten_monate
-        See :func:`ersatzzeiten_monate`.
-    anrechnungsmonate_35_jahre_wartezeit
-        See :func:`anrechnungsmonate_35_jahre_wartezeit`.
-    kinderberücksichtigungszeiten_monate
-        See :func:`kinderberücksichtigungszeiten_monate`.
-    pflegeberücksichtigungszeiten_monate
-        See :func:`pflegeberücksichtigungszeiten_monate`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Fulfilled Wartezeit von 35 Jahren
-
+    All "rentenrechtliche Zeiten" are considered.
     """
     return (
         pflichtbeitragsmonate
@@ -111,7 +50,7 @@ def wartezeit_35_jahre_erfüllt(
         + ersatzzeiten_monate
         + kinderberücksichtigungszeiten_monate
         + pflegeberücksichtigungszeiten_monate
-    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_35"]
+    ) / 12 >= wartezeitgrenzen["wartezeit_35"]
 
 
 @policy_function(start_date="2012-01-01")
@@ -122,43 +61,19 @@ def wartezeit_45_jahre_erfüllt(
     ersatzzeiten_monate: float,
     kinderberücksichtigungszeiten_monate: float,
     pflegeberücksichtigungszeiten_monate: float,
-    ges_rente_params: dict,
+    wartezeitgrenzen: dict[str, float],
+    mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge: float,
 ) -> bool:
-    """Whether Wartezeit von 45 Jahren Wartezeit has been completed.
-    Aggregates time periods that are relevant for the eligibility of Altersrente für
-    besonders langjährig Versicherte (pension for very long-term insured). Wartezeit von
-    45 Jahren. Not all "rentenrechtliche Zeiten" are considered. Years with voluntary
-    contributions are only considered if at least 18 years of mandatory contributions
-    (pflichtbeitragsmonate). Not all anrechnungszeiten are considered, but only
-    specific ones (e.g. ALG I, Kurzarbeit but not ALG II).
+    """Wartezeit of 45 years completed.
 
-    Parameters
-    ----------
-    pflichtbeitragsmonate
-        See basic input variable :ref:`pflichtbeitragsmonate <pflichtbeitragsmonate>`.
-    freiwillige_beitragsmonate
-        See basic input variable :ref:`freiwillige_beitragsmonate <freiwillige_beitragsmonate>`.
-    anrechnungsmonate_45_jahre_wartezeit
-        See :func:`anrechnungsmonate_45_jahre_wartezeit`.
-    ersatzzeiten_monate
-        See basic input variable :ref:`ersatzzeiten_monate <ersatzzeiten_monate>`.
-    kinderberücksichtigungszeiten_monate
-        See basic input variable :ref:`kinderberücksichtigungszeiten_monate <kinderberücksichtigungszeiten_monate>`.
-    pflegeberücksichtigungszeiten_monate
-        See basic input variable :ref:`pflegeberücksichtigungszeiten_monate <pflegeberücksichtigungszeiten_monate>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Fulfilled Wartezeit von 45 Jahren
-
+    Not all "rentenrechtliche Zeiten" are considered. Years with voluntary contributions
+    are only considered if at least 18 years of mandatory contributions
+    (pflichtbeitragsmonate). Not all anrechnungszeiten are considered, but only specific
+    ones (e.g. ALG I, Kurzarbeit but not ALG II).
     """
     if (
         pflichtbeitragsmonate / 12
-        >= ges_rente_params[
-            "mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge"
-        ]
+        >= mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge
     ):
         freiwillige_beitragszeiten = freiwillige_beitragsmonate
     else:
@@ -171,7 +86,7 @@ def wartezeit_45_jahre_erfüllt(
         + ersatzzeiten_monate
         + pflegeberücksichtigungszeiten_monate
         + kinderberücksichtigungszeiten_monate
-    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_45"]
+    ) / 12 >= wartezeitgrenzen["wartezeit_45"]
 
 
 @policy_function()
@@ -183,31 +98,10 @@ def anrechnungsmonate_35_jahre_wartezeit(
     monate_in_ausbildungssuche: float,
     monate_in_schulausbildung: float,
 ) -> float:
-    """Adds up all times that are accounted for in "Anrechnungszeiten"
-    relevant for "Wartezeit von 35 Jahren" i.e. for Altersrente für
-    langjährig Versicherte (pension for long term insured).
-    (Ref: Studientext der Deutschen Rentenversicherung, Nr. 19,
-    Wartezeiten, Ausgabe 2021, S. 24.)
+    """Anrechnungszeit for 35 years of Wartezeit.
 
-
-    Parameters
-    ----------
-    monate_in_arbeitsunfähigkeit
-        See :func:`monate_in_arbeitsunfähigkeit`.
-    krankheitszeiten_ab_16_bis_24_monate
-        See :func:`krankheitszeiten_ab_16_bis_24_monate`.
-    monate_in_mutterschutz
-        See :func:`monate_in_mutterschutz`.
-    monate_in_arbeitslosigkeit
-        See :func:`monate_in_arbeitslosigkeit`.
-    monate_in_ausbildungssuche
-        See :func:`monate_in_ausbildungssuche`.
-    monate_in_schulausbildung
-        See :func:`monate_in_schulausbildung`.
-
-    Returns
-    -------
-    Anrechnungszeit in months
+    Reference: Studientext der Deutschen Rentenversicherung, Nr. 19,
+    Wartezeiten, Ausgabe 2021, S. 24.
     """
     return (
         monate_in_arbeitsunfähigkeit
@@ -225,26 +119,12 @@ def anrechnungsmonate_45_jahre_wartezeit(
     monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit: float,
     monate_geringfügiger_beschäftigung: float,
 ) -> float:
-    """Adds up all times NOT included in Beitragszeiten, Berücksichtigungszeiten,
-    Ersatzzeiten (a variant of Anrechnungszeiten) that are accounted for in "Wartezeit
-    von 45 Jahren" i.e. for Altersrente für besonders langjährig Versicherte (pension
-    for very long term insured). "nur Anrechnungszeiten mit Bezug von
-    Entgeltersatzleistungen der Arbeitsförderung, Leistungen bei Krankheit und
-    Übergangsgeld". (Ref: Studientext der Deutschen Rentenversicherung, Nr. 19,
-    Wartezeiten, Ausgabe 2021, S. 24)
+    """Anrechnungszeit relevant for 45 years of Wartezeit.
 
-    Parameters
-    ----------
-    monate_in_arbeitsunfähigkeit
-        See :func:`monate_in_arbeitsunfähigkeit`.
-    monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit
-        See :func:`monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit`.
-    monate_geringfügiger_beschäftigung
-        See :func:`monate_geringfügiger_beschäftigung`.
-    Returns
-    -------
-    Anrechnungszeit in months.
-
+    Reference: Studientext der Deutschen Rentenversicherung, Nr. 19, Wartezeiten,
+    Ausgabe 2021, S. 24.
+    > "nur Anrechnungszeiten mit Bezug von Entgeltersatzleistungen der Arbeitsförderung,
+    > Leistungen bei Krankheit und Übergangsgeld".
     """
     return (
         monate_in_arbeitsunfähigkeit
