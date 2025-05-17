@@ -30,7 +30,7 @@ def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
     )
 
 
-@params_function(start_date="2005-01-01")
+@params_function(start_date="2005-10-01")
 def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
     raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg: RawParamsRequiringConversion,
     raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParamsRequiringConversion,
