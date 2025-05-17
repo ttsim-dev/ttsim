@@ -6,6 +6,7 @@ GETTSIM_ROOT = Path(__file__).parent.resolve()
 INTERNAL_PARAMS_GROUPS = [
     "geringfügige_einkommen",
     "unterhalt",
+    "ges_rente",
     "unterhaltsvors",
     "wohngeld",
     "kinderzuschl",

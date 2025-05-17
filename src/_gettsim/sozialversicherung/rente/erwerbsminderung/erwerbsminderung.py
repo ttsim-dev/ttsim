@@ -286,7 +286,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     sozialversicherung__rente__ersatzzeiten_monate: float,
     sozialversicherung__rente__kinderberücksichtigungszeiten_monate: float,
     sozialversicherung__rente__pflegeberücksichtigungszeiten_monate: float,
-    sozialversicherung__rente__altersrente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge: float,
+    sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge: float,
     erwerbsm_rente_params: dict,
 ) -> bool:
     """Wartezeit for Rente für langjährige Versicherte (Erwerbsminderung) is fulfilled.
@@ -300,7 +300,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     """
     if (
         sozialversicherung__rente__pflichtbeitragsmonate / 12
-        >= sozialversicherung__rente__altersrente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge
+        >= sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge
     ):
         freiwillige_beitragszeiten = (
             sozialversicherung__rente__freiwillige_beitragsmonate
