@@ -12,5 +12,5 @@ inputs:
     sozialversicherung__pflege__beitrag__hat_kinder:
       - false
 outputs:
-  sozialversicherung__minijob_grenze:
+  sozialversicherung__minijobgrenze:
     - 450.0

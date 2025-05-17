@@ -44,7 +44,7 @@ def parameter_bezugsgröße_selbstständige_vor_wiedervereinigung(
 @params_function(
     start_date="1990-01-01", leaf_name="parameter_bezugsgröße_selbstständige"
 )
-def parameter_bezugsgröße_selbstständige_mit_unterschied_ost_west(
+def parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied(
     raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied: dict[str, float],
 ) -> dict[str, float]:
     return raw_parameter_bezugsgröße_selbstständige_mit_ost_west_unterschied
@@ -161,7 +161,7 @@ def bezugsgröße_selbstständige_m_vor_wiedervereinigung(
 
 
 @policy_function(start_date="1990-01-01", leaf_name="bezugsgröße_selbstständige_m")
-def bezugsgröße_selbstständige_m_mit_unterschied_ost_west(
+def bezugsgröße_selbstständige_m_mit_ost_west_unterschied(
     wohnort_ost: bool,
     parameter_bezugsgröße_selbstständige: dict[str, float],
 ) -> float:
