@@ -1,5 +1,5 @@
 ---
-parameter_beitragsbemessungsgrenze_einheitlich:
+beitragsbemessungsgrenze_m:
   name:
     de: Beitragsbemessungsgrenzen der gesetzlichen Rentenversicherung
     en: Maximum income subject to pension insurance contributions
@@ -159,4 +159,4 @@ parameter_beitragsbemessungsgrenze_nach_wohnort:
   2025-01-01:
     note: >-
       Beitragsbemessungsgrenze ist einheitlich zwischen West und Ost. Siehe
-      ``parameter_beitragsbemessungsgrenze_einheitlich``.
+      ``beitragsbemessungsgrenze_m``.

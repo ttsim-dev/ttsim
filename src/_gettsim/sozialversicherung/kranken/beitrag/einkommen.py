@@ -70,14 +70,6 @@ def bemessungsgrundlage_selbstständig_m(
     return out
 
 
-@params_function(end_date="1989-12-31", leaf_name="beitragsbemessungsgrenze_m")
-def beitragsbemessungsgrenze_einheitlich_vor_wiedervereinigung(
-    parameter_beitragsbemessungsgrenze_einheitlich: float,
-) -> float:
-    """Parameter for maximum income subject to health insurance contributions."""
-    return parameter_beitragsbemessungsgrenze_einheitlich
-
-
 @policy_function(
     start_date="1990-01-01",
     end_date="2000-12-31",
@@ -93,14 +85,6 @@ def beitragsbemessungsgrenze_m_nach_wohnort(
         if wohnort_ost
         else parameter_beitragsbemessungsgrenze_nach_wohnort["west"]
     )
-
-
-@params_function(start_date="2001-01-01", leaf_name="beitragsbemessungsgrenze_m")
-def beitragsbemessungsgrenze_m_einheitlich_ab_2001(
-    parameter_beitragsbemessungsgrenze_einheitlich: float,
-) -> float:
-    """Parameter for maximum income subject to health insurance contributions."""
-    return parameter_beitragsbemessungsgrenze_einheitlich
 
 
 @params_function(end_date="1989-12-31", leaf_name="bezugsgröße_selbstständige_m")

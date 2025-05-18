@@ -1,5 +1,5 @@
 ---
-parameter_beitragsbemessungsgrenze_einheitlich:
+beitragsbemessungsgrenze_m:
   name:
     de: Beitragsbemessungsgrenze der gesetzlichen Krankenversicherung
     en: Maximum income subject to health insurance contributions
@@ -137,4 +137,4 @@ parameter_beitragsbemessungsgrenze_nach_wohnort:
   2001-01-01:
     note: >-
       The Bemessungsgrenze does not differ between West and East Germany. See
-      ``parameter_beitragsbemessungsgrenze_einheitlich``.
+      ``beitragsbemessungsgrenze_m``.

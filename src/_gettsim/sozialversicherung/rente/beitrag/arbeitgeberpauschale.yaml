@@ -17,8 +17,6 @@ arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
   reference_period: null
   type: scalar
   access_different_date: jahresanfang
-  1984-01-01:
-    value: 0
   1999-01-01:
     value: 0.12
   2003-04-01:

@@ -1,4 +1,4 @@
-from ttsim import params_function, policy_function
+from ttsim import policy_function
 
 
 @policy_function()
@@ -93,11 +93,3 @@ def anteil_entgeltpunkte_ost(
         )
 
     return out
-
-
-@params_function(start_date="2005-01-01")
-def beitragspflichtiges_durchschnittsentgelt_y(
-    parameter_beitragspflichtiges_durchschnittsentgelt: float,
-) -> float:
-    """Beitragspflichtiges Durchschnittsentgelt."""
-    return parameter_beitragspflichtiges_durchschnittsentgelt
