@@ -1,6 +1,6 @@
 """Marginally employed."""
 
-from ttsim import RoundingSpec, params_function, policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function()
@@ -18,14 +18,6 @@ def geringfügig_beschäftigt(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         <= minijobgrenze
     )
-
-
-@params_function(end_date="1989-12-31", leaf_name="minijobgrenze")
-def minijobgrenze_einheitlich_vor_wiedervereinigung(
-    parameter_minijobgrenze_einheitlich: float,
-) -> float:
-    """Minijob income threshold"""
-    return parameter_minijobgrenze_einheitlich
 
 
 @policy_function(
@@ -48,16 +40,6 @@ def minijobgrenze_unterscheidung_ost_west(
         if wohnort_ost
         else parameter_minijobgrenze_ost_west_unterschied["west"]
     )
-
-
-@params_function(
-    start_date="2000-01-01", end_date="2022-09-30", leaf_name="minijobgrenze"
-)
-def minijobgrenze_einheitlich_ab_2000(
-    parameter_minijobgrenze_einheitlich: float,
-) -> float:
-    """Minijob income threshold"""
-    return parameter_minijobgrenze_einheitlich
 
 
 @policy_function(

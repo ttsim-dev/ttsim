@@ -1,5 +1,5 @@
 ---
-parameter_minijobgrenze_einheitlich:
+minijobgrenze:
   name:
     de: >-
       Minijob Grenze und Gleitzone / Midijob Grenze
@@ -81,7 +81,7 @@ parameter_minijobgrenze_ost_west_unterschied:
   2000-01-01:
     note: >-
       Minijob thresholds do not differ between West and East Germany. See
-      ``parameter_minijobgrenze_einheitlich``.
+      ``minijobgrenze_m``.
 midijobgrenze:
   name:
     de: Midijob Grenze

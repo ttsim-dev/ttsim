@@ -1,6 +1,6 @@
 ---
 info:
-  note: ''
+  note: Cannot test for targets that are purely parameters.
   precision_atol: 0.01
   source: ''
 inputs:
