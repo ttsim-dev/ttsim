@@ -33,7 +33,8 @@ sources of these parameters requires particular care.
 ## Usage and Impact
 
 GETTSIM developers should closely look at the Section {ref}`gep-3-structure-yaml-files`
-before adding new parameters.
+before adding new parameters. Some validation happens via the pre-commit hooks, but that
+cannot catch all inconsistencies.
 
 (gep-3-structure-yaml-files)=
 
@@ -234,7 +235,7 @@ allow for such cases via `updates_previous` key.
 This must not be used with a scalar parameter type. Furthermore, it cannot be used in
 the first period a parameter is defined.
 
-Example from `sozialversicherung` / `geringfügige_einkommen.yaml`:
+Example from `sozialversicherung` / `minijob.yaml`:
 
 ```yaml
 minijobgrenze_ost_west_unterschied
@@ -262,39 +263,105 @@ The following walks through several cases.
 - The simplest case is a single parameter, which should be specified as:
 
   ```yaml
-  kindergeld_stundengrenze:
+  minijobgrenze:
     name:
-      de: Wochenstundengrenze für Kindergeldanspruch
-    2012-01-01:
-      scalar: 20
+      de: Minijobgrenze
+      en: Thresholds for marginal employment (minijobs)
+    description:
+      de: Minijob § 8 (1) Nr. 1 SGB IV
+      en: Minijob § 8 (1) Nr. 1 SGB IV
+    unit: Euros
+    reference_period: Month
+    type: scalar
+    1984-01-01:
+      value: 199
+    1985-01-01:
+      value: 205
+    1986-01-01:
+      value: 210
+    1987-01-01:
+      value: 220
+    1988-01-01:
+      value: 225
+    1989-01-01:
+      value: 230
+    1990-01-01:
+      note: >-
+        Minijobgrenze differs between West and East Germany. See
+        ``parameter_minijobgrenze_ost_west_unterschied``.
+    2000-01-01:
+      value: 322
+    2002-01-01:
+      value: 325
+    2003-04-01:
+      value: 400
+    2013-01-01:
+      value: 450
+    2022-10-01:
+      note: Minijob thresholds now calculated based on statutory minimum wage
+      reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
   ```
 
-- There could be a dictionary, potentially nested:
+  Note that there are different "active periods" for this parameter. The first one lasts
+  from 1984-01-01 to 1989-12-31, after which there were different values in East and
+  West Germany. from 2000-01-01 until 2022-10-01, the parameter is active again. After
+  that, it is superseded by a formula based on the statutory minimum wage.
+
+- There could be a dictionary, which has to be homogenous in the keys (integers or
+  strings) and values (scalar floating point numbers, integers, or Booleans):
 
   ```yaml
-  exmin:
+  minijobgrenze_ost_west_unterschied:
     name:
-      de: Höhen des Existenzminimums, festgelegt im Existenzminimumsbericht der Bundesregierung.
-    2005-01-01:
-      regelsatz:
-        single: 4164
-        paare: 7488
-        kinder: 2688
-      kosten_der_unterkunft:
-        single: 2592
-        paare: 3984
-        kinder: 804
-      heizkosten:
-        single: 600
-        paare: 768
-        kinder: 156
+      de: Minijobgrenze, unterschiedlich in Ost und West
+      en: Thresholds for marginal employment (minijobs), different in East and West
+    description:
+      de: Minijob § 8 (1) Nr. 1 SGB IV
+      en: Minijob § 8 (1) Nr. 1 SGB IV
+    unit: Euros
+    reference_period: Month
+    type: dict
+    1990-01-01:
+      west: 240
+      ost: 102
+    1991-01-01:
+      west: 245
+      ost: 120
+    1992-01-01:
+      west: 256
+      ost: 153
+    1993-01-01:
+      west: 271
+      ost: 199
+    1994-01-01:
+      west: 286
+      ost: 225
+    1995-01-01:
+      west: 297
+      ost: 240
+    1996-01-01:
+      west: 302
+      ost: 256
+    1997-01-01:
+      west: 312
+      ost: 266
+    1998-01-01:
+      updates_previous: true
+      west: 317
+    1999-01-01:
+      west: 322
+      ost: 271
+    2000-01-01:
+      note: >-
+        Minijob thresholds do not differ between West and East Germany. See
+        `minijobgrenze_m`.
   ```
 
 - In some cases, a dictionary with numbered keys makes sense. It is important to use
   these, not lists!
 
   ```yaml
-  kindergeld:
+  kindergeld_gestaffelt:
     name:
       de: Kindergeld, Betrag je nach Reihenfolge der Kinder.
     1975-01-01:
@@ -306,19 +373,31 @@ The following walks through several cases.
 
 - Another example would be referring to the parameters of a piecewise linear function:
 
-  > ```yaml
-  > eink_anr_frei:
-  >   name:
-  >     de: Anrechnungsfreie Einkommensanteile
-  >     en: Income shares not subject to transfer withdrawal
-  >   type: piecewise_linear
-  >   2005-01-01:
-  >     0:
-  >       lower_threshold: -inf
-  >       upper_threshold: 0
-  >       rate: 0
-  >       intercept_at_lower_threshold: 0
-  > ```
+  ```yaml
+  parameter_solidaritätszuschlag:
+    name:
+      de: Solidaritätszuschlag
+      en: null
+    description:
+      de: >-
+        Ab 1995, der upper threshold im Intervall 1 ist nach der Formel
+        transition_threshold in soli_st.py berechnet.
+      en: null
+    unit: Euros
+    reference_period: Year
+    type: piecewise_linear
+    1991-01-01:
+      reference: Artikel 1 G. v. 24.06.1991 BGBl. I S. 1318.
+      0:
+        lower_threshold: -inf
+        rate_linear: 0
+        intercept_at_lower_threshold: 0
+        upper_threshold: 0
+      1:
+        lower_threshold: 0
+        rate_linear: 0.0375
+        upper_threshold: inf
+  ```
 
 - In general, a parameter should appear for the first time that it is mentioned in a
   law, becomes relevant, etc..

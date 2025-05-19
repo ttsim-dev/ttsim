@@ -1,12 +1,11 @@
 ---
 minijobgrenze:
   name:
-    de: >-
-      Minijob Grenze und Gleitzone / Midijob Grenze
-    en: Thresholds for marginal employment ('mini' and 'midi' jobs)
+    de: Minijobgrenze
+    en: Thresholds for marginal employment (minijobs)
   description:
-    de: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
-    en: Minijob § 8 (1) Nr. 1 SGB IV, Midijob § 20 (2) SGB IV
+    de: Minijob § 8 (1) Nr. 1 SGB IV
+    en: Minijob § 8 (1) Nr. 1 SGB IV
   unit: Euros
   reference_period: Month
   type: scalar
@@ -80,7 +79,7 @@ parameter_minijobgrenze_ost_west_unterschied:
   2000-01-01:
     note: >-
       Minijob thresholds do not differ between West and East Germany. See
-      ``minijobgrenze_m``.
+      `minijobgrenze_m`.
 faktoren_minijobformel:
   name:
     de: Zähler und Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.

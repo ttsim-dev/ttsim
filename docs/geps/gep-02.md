@@ -11,6 +11,8 @@
   * Standards Track
 - * Created
   * 2022-03-28
+- * Updated
+  * 2025-06-xx
 - * Resolution
   * [Accepted](https://gettsim.zulipchat.com/#narrow/stream/309998-GEPs/topic/GEP.2002)
 ```
@@ -145,6 +147,10 @@ Adhering to normal forms (e.g., reducing the length of arrays to the number of
 households like
 \[here\](<https://www.tensorflow.org/api_docs/python/tf/math/segment_sum>) would have
 led to many merge-like operations in user functions.
+
+Versions 0.5 -- 0.7 of GETTSIM used flat collections of pandas Series. As the scope and
+detail of GETTSIM grew, maintaining uniqueness of column names across different areas of
+taxes and transfers became too difficult.
 
 ## Discussion
 
