@@ -1,6 +1,5 @@
 ---
 info:
-  note: Skipping because parameter starts only in 1999. Check for correctness.
   precision_atol: 1
   source: Regression test. Unclear whether numbers are correct by external standards.
 inputs:
