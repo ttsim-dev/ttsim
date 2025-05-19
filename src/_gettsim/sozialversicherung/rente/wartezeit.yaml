@@ -16,11 +16,9 @@ wartezeitgrenzen:
     wartezeit_15: 15
     wartezeit_35: 35
   2012-01-01:
-    wartezeit_5: 5
-    wartezeit_15: 15
-    wartezeit_35: 35
+    updates_previous: true
     wartezeit_45: 45
-mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge:
+mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten:
   name:
     de: >-
       Anzahl der Mindestpflichtbeitragsjahre, von der an freiwillige Beiträge
