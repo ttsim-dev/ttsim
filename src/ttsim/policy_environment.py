@@ -271,8 +271,8 @@ def fail_because_active_periods_overlap(
 ) -> None:
     """Fail because active periods of TTSIM objects / parameters overlap.
 
-    Checks that objects or parameters with the same path are not active at the same
-    time.
+    Checks that objects or parameters with the same tree path / qualified name are not
+    active at the same time.
 
     Raises
     ------
