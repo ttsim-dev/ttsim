@@ -27,12 +27,12 @@ if TYPE_CHECKING:
     FlatTTSIMObjectDict = Mapping[tuple[str, ...], TTSIMObject]
     QualNameTTSIMObjectDict = Mapping[str, TTSIMObject]
 
-    # Specialise from dags' GenericCallable types to GETTSIM's functions.
+    # Specialise from dags' GenericCallable types to TTSIM's functions.
     NestedTTSIMFunctionDict = Mapping[str, TTSIMFunction | "NestedTTSIMFunctionDict"]
     QualNameTTSIMFunctionDict = Mapping[str, TTSIMFunction]
     QualNamePolicyInputDict = Mapping[str, PolicyInput]
 
-    # Specialise from dags' NestedInputDict to GETTSIM's types.
+    # Specialise from dags' NestedInputDict to TTSIM's types.
     NestedInputsPathsToDfColumns = Mapping[str, Any | "NestedInputsPathsToDfColumns"]
     NestedDataDict = Mapping[str, TTSIMArray | "NestedDataDict"]
     QualNameDataDict = Mapping[str, TTSIMArray]

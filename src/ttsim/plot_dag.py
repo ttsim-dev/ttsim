@@ -336,10 +336,7 @@ def _add_url_to_dag(dag):
 
 
 def _create_url(func_name):
-    return (
-        f"https://gettsim.readthedocs.io/en/latest/gettsim_objects"
-        f"/functions.html#gettsim.functions.{func_name}"
-    )
+    raise NotImplementedError("Not implemented yet.")
 
 
 def _replace_functions_with_source_code(dag):

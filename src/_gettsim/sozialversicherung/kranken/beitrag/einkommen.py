@@ -7,7 +7,7 @@ from ttsim import params_function, policy_function
 
 @policy_function()
 def einkommen_m(
-    einkommen_regulär_beschäftigt_m: float,
+    einkommen_bis_beitragsbemessungsgrenze_m: float,
     sozialversicherung__regulär_beschäftigt: bool,
 ) -> float:
     """Wage subject to public health insurance contributions.
@@ -16,18 +16,18 @@ def einkommen_m(
     ceiling.
     """
     if sozialversicherung__regulär_beschäftigt:
-        out = einkommen_regulär_beschäftigt_m
+        out = einkommen_bis_beitragsbemessungsgrenze_m
     else:
         out = 0.0
     return out
 
 
 @policy_function()
-def einkommen_regulär_beschäftigt_m(
+def einkommen_bis_beitragsbemessungsgrenze_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     beitragsbemessungsgrenze_m: float,
 ) -> float:
-    """Income subject to public health insurance contributions.
+    """Income from dependent employment, capped at the contribution ceiling.
 
     This does not consider reduced contributions for Mini- and Midijobs. Relevant for
     the computation of payroll taxes.

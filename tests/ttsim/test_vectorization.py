@@ -367,7 +367,7 @@ def test_disallowed_operation_wrapper(func):
 
 
 # ======================================================================================
-# Test that functions defined in gettsim can be made vectorizable
+# Test that functions defined in METTSIM can be made vectorizable
 # ======================================================================================
 
 
@@ -399,7 +399,7 @@ for year in range(1990, 2023):
 
 
 # ======================================================================================
-# Test that vectorized functions defined in gettsim can be called with array input
+# Test that vectorized functions defined in METTSIM can be called with array input
 # ======================================================================================
 
 
@@ -422,7 +422,7 @@ def mock__elterngeld__geschwisterbonus_m(
 def test_geschwisterbonus_m(backend):
     full = modules[backend].full
 
-    # Test original gettsim function on scalar input
+    # Test original METTSIM function on scalar input
     # ==================================================================================
     basisbetrag_m = 3.0
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = True
@@ -438,7 +438,7 @@ def test_geschwisterbonus_m(backend):
     )
     assert exp == 3.0
 
-    # Create array inputs and assert that gettsim functions raises error
+    # Create array inputs and assert that METTSIM functions raises error
     # ==================================================================================
     shape = (10, 2)
     basisbetrag_m = full(shape, basisbetrag_m)
@@ -487,7 +487,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
 def test_grundsätzlich_anspruchsberechtigt(backend):
     full = modules[backend].full
 
-    # Test original gettsim function on scalar input
+    # Test original METTSIM function on scalar input
     # ==================================================================================
     claimed = True
     arbeitsstunden_w = 20.0
@@ -509,7 +509,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
 
     assert exp is True
 
-    # Create array inputs and assert that gettsim functions raises error
+    # Create array inputs and assert that METTSIM functions raises error
     # ==================================================================================
     shape = (10, 1)
     arbeitsstunden_w = full(shape, arbeitsstunden_w)

@@ -127,7 +127,7 @@ class PolicyEnvironment:
     def upsert_objects(
         self, tree_to_upsert: NestedTTSIMObjectDict
     ) -> PolicyEnvironment:
-        """Upsert GETTSIM's function tree with (parts of) a new TTSIM objects tree.
+        """Update and insert *tree_to_upsert* into the existing objects tree.
 
         Adds to or overwrites TTSIM objects of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
