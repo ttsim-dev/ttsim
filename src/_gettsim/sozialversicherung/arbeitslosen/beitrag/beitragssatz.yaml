@@ -1,5 +1,5 @@
 ---
-parameter_beitragssatz:
+beitragssatz:
   name:
     de: Parameter des Beitragssatzes zur Arbeitslosenversicherung
     en: Parameter of the contribution rate to unemployment insurance.

@@ -36,7 +36,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     sozialversicherung__rente__beitrag__beitragssatz_jahresanfang: float,
-    sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
     sozialversicherung__pflege__beitrag__beitragssatz_einheitlich: float,
     minijob_arbeitgeberpauschale_lohnsteuer: float,
     sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale: float,
@@ -50,7 +50,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
         sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
-        + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang
         + sozialversicherung__pflege__beitrag__beitragssatz_einheitlich
     )
 
@@ -85,7 +85,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     sozialversicherung__rente__beitrag__beitragssatz_jahresanfang: float,
-    sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
     sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict[
         str, float
     ],
@@ -102,7 +102,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
         sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
-        + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang
         + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
             "standard"
         ]
@@ -141,7 +141,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict[
         str, float
     ],
-    sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
     sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale: float,
     sozialversicherung__rente__beitrag__minijob_arbeitgeberpauschale: float,
 ) -> float:
@@ -159,7 +159,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
         + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
             "standard"
         ]
-        + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang
     )
 
     # Then calculate specific shares
