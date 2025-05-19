@@ -125,12 +125,12 @@ def betrag_versicherter_regulär_beschäftigt_m(
 )
 def betrag_selbstständig_m_mit_einheitlichen_beitragssatz(
     bemessungsgrundlage_selbstständig_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
 ) -> float:
     """Health insurance contributions for self-employed's income. The self-employed
     pay the full reduced contribution.
     """
-    return parameter_beitragssatz * bemessungsgrundlage_selbstständig_m
+    return beitragssatz * bemessungsgrundlage_selbstständig_m
 
 
 @policy_function(
