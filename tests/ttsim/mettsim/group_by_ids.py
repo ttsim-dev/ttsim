@@ -61,6 +61,7 @@ def fam_id(
 
     return reorder_ids(fam_id)
 
+
 def reorder_ids(ids: np.ndarray) -> np.ndarray:
     """Make ID's consecutively numbered."""
     sorting = np.argsort(ids)
