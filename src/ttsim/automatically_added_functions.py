@@ -483,9 +483,7 @@ def create_time_conversion_functions(
         variations = _create_one_set_of_time_conversion_functions(**inputs)
         for der_name in variations:
             if der_name in converted_ttsim_objects or der_name in data:
-                raise ValueError(
-                    "Fixme, should never end up here -- left for debugging"
-                )
+                raise ValueError("TODO, should never end up here -- left for debugging")
         converted_ttsim_objects = {**converted_ttsim_objects, **variations}
 
     return converted_ttsim_objects

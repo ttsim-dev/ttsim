@@ -63,7 +63,7 @@ def plot_dag(
         a hover information. Sometimes, the tooltip is not properly displayed.
 
     """
-    targets = build_targets_tree(fixme if targets is None else targets)  # noqa: F821
+    targets = build_targets_tree(TODO if targets is None else targets)  # noqa: F821
 
     if isinstance(columns_overriding_functions, dict):
         names_of_columns_overriding_functions = dt.flatten_to_qual_names(

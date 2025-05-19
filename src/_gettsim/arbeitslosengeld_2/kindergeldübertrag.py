@@ -22,16 +22,6 @@ def _mean_kindergeld_per_child_gestaffelt_m(
     Returns the average Kindergeld per child. If there are no children, the function
     returns 0. Helper function for `kindergeld_zur_bedarfsdeckung_m`.
 
-    Parameters
-    ----------
-    kindergeld__betrag_m
-        See :func:`kindergeld__betrag_m`.
-    kindergeld__anzahl_ansprüche
-        See :func:`kindergeld__anzahl_ansprüche`.
-
-    Returns
-    -------
-
     """
     if kindergeld__anzahl_ansprüche > 0:
         out = kindergeld__betrag_m / kindergeld__anzahl_ansprüche
@@ -45,28 +35,16 @@ def _mean_kindergeld_per_child_gestaffelt_m(
     leaf_name="kindergeld_pro_kind_m",
 )
 def _mean_kindergeld_per_child_ohne_staffelung_m(
-    kindergeld_params: dict,
     kindergeld__anzahl_ansprüche: int,
+    kindergeld__satz_einheitlich: float,
 ) -> float:
     """Kindergeld per child.
 
     Returns the (average) Kindergeld per child. Helper function for
     `kindergeld_zur_bedarfsdeckung_m`.
 
-    Parameters
-    ----------
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-    alter
-        See basic input variable :ref:`alter`.
-
-    Returns
-    -------
-
     """
-    return (
-        kindergeld_params["kindergeldsatz"] if kindergeld__anzahl_ansprüche > 0 else 0.0
-    )
+    return kindergeld__satz_einheitlich if kindergeld__anzahl_ansprüche > 0 else 0.0
 
 
 @policy_function(vectorization_strategy="not_required")
@@ -83,18 +61,6 @@ def kindergeld_zur_bedarfsdeckung_m(
     Kindergeld for which the child is entitled to is the sum of the Kindergeld for all
     children divided by the amount of children. Hence, the age of the child (in
     comparison to siblings) does not matter.
-
-    Parameters
-    ----------
-    kindergeld__betrag_m
-        See :func:`kindergeld__betrag_m`.
-    kindergeld__p_id_empfänger
-        See :func:`kindergeld__p_id_empfänger`.
-    p_id
-        See :func:`p_id`.
-
-    Returns
-    -------
 
     """
     return join(

@@ -60,19 +60,7 @@ def betrag_m(
     grundsätzlich_anspruchsberechtigt: bool,
     anspruchshöhe_m: float,
 ) -> float:
-    """Parental leave benefit (Elterngeld) received by the parent.
-
-    Parameters
-    ----------
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt`.
-    anspruchshöhe_m
-        See :func:`anspruchshöhe_m`.
-
-    Returns
-    -------
-
-    """
+    """Parental leave benefit (Elterngeld) received by the parent."""
     if grundsätzlich_anspruchsberechtigt:
         out = anspruchshöhe_m
     else:
@@ -90,21 +78,6 @@ def basisbetrag_m(
     """Base parental leave benefit without accounting for floor and ceiling.
 
     Basisbetrag is calculated on the parental level.
-
-    Parameters
-    ----------
-    nettoeinkommen_vorjahr_m
-        See basic input variable :ref:`nettoeinkommen_vorjahr_m
-        <nettoeinkommen_vorjahr_m>`.
-    lohnersatzanteil
-        See :func:`lohnersatzanteil`.
-    anzurechnendes_nettoeinkommen_m
-        See :func:`anzurechnendes_nettoeinkommen_m`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-
-    Returns
-    -------
 
     """
     berücksichtigtes_einkommen = min(
@@ -137,20 +110,6 @@ def anspruchshöhe_m(
 
     Anspruchshöhe is calculated on the parental level.
 
-    Parameters
-    ----------
-    basisbetrag_m
-        See :func:`basisbetrag_m`.
-    geschwisterbonus_m
-        See :func:`geschwisterbonus_m`.
-    mehrlingsbonus_m
-        See :func:`mehrlingsbonus_m`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-
-    Returns
-    -------
-
     """
     return (
         min(
@@ -174,27 +133,7 @@ def grundsätzlich_anspruchsberechtigt(
     bezugsmonate_unter_grenze_fg: bool,
     elterngeld_params: dict,
 ) -> bool:
-    """Parent is eligible to receive Elterngeld.
-
-    Parameters
-    ----------
-    claimed
-        See basic input variable :ref:`claimed <claimed>`.
-    arbeitsstunden_w
-        See basic input variable :ref:`arbeitsstunden_w <arbeitsstunden_w>`.
-    kind_grundsätzlich_anspruchsberechtigt_fg
-        See :func:`kind_grundsätzlich_anspruchsberechtigt_fg`.
-    einkommen_vorjahr_unter_bezugsgrenze
-        See :func:`einkommen_vorjahr_unter_bezugsgrenze`.
-    bezugsmonate_unter_grenze_fg
-        See :func:`bezugsmonate_unter_grenze_fg`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-
-    Returns
-    -------
-
-    """
+    """Parent is eligible to receive Elterngeld."""
     return (
         claimed
         and arbeitsstunden_w <= elterngeld_params["max_arbeitsstunden_w"]
@@ -214,22 +153,6 @@ def bezugsmonate_unter_grenze_fg(
 ) -> bool:
     """Elterngeld claimed for less than the maximum number of months in the past by the
     parent.
-
-    Parameters
-    ----------
-    bisherige_bezugsmonate_fg
-        See :func:`bisherige_bezugsmonate_fg`.
-    bezugsmonate_partner
-        See function :func:`bezugsmonate_partner`.
-    familie__alleinerziehend
-        See basic input variable :ref:`familie__alleinerziehend<familie__alleinerziehend>`.
-    anzahl_anträge_fg
-        See :func:`anzahl_anträge_fg`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-
-    Returns
-    -------
 
     """
     if familie__alleinerziehend or bezugsmonate_partner >= 2:
@@ -257,19 +180,7 @@ def kind_grundsätzlich_anspruchsberechtigt(
     alter: int,
     elterngeld_params: dict,
 ) -> bool:
-    """Child is young enough to give rise to Elterngeld claim.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-
-    Returns
-    -------
-
-    """
+    """Child is young enough to give rise to Elterngeld claim."""
     return (
         alter
         <= elterngeld_params["max_bezugsmonate"]["basismonate"]
@@ -288,20 +199,6 @@ def lohnersatzanteil(
 
     According to § 2 (2) BEEG the percentage increases below the first step and
     decreases above the second step until prozent_minimum.
-
-    Parameters
-    ----------
-    nettoeinkommen_vorjahr_m
-        See basic input variable
-        :ref:`nettoeinkommen_vorjahr_m<nettoeinkommen_vorjahr_m>`.
-    lohnersatzanteil_einkommen_untere_grenze
-        See :func:`lohnersatzanteil_einkommen_untere_grenze`.
-    lohnersatzanteil_einkommen_obere_grenze
-        See :func:`lohnersatzanteil_einkommen_obere_grenze`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-    Returns
-    -------
 
     """
 
@@ -352,17 +249,6 @@ def anrechenbarer_betrag_m(
     worked right before they had children. See:
     https://www.kindergeld.org/elterngeld-einkommen/
 
-    Parameters
-    ----------
-    betrag_m
-        See :func:`betrag_m`.
-    elterngeld_params
-        See params documentation :ref:`elterngeld_params <elterngeld_params>`.
-    anzahl_mehrlinge_fg
-        See :func:`anzahl_mehrlinge_fg`.
-
-    Returns
-    -------
 
     """
     out = max(
@@ -385,18 +271,5 @@ def jüngstes_kind_oder_mehrling(
     # ToDo: Check definition as relevant for Elterngeld. Currently, it is calculated as
     # ToDo: age not being larger than 0.1 of a month
 
-    Parameters
-    ----------
-    alter_monate
-        See :func:`alter_monate`.
-    alter_monate_jüngstes_mitglied_fg
-        See :func:`alter_monate_jüngstes_mitglied_fg`.
-    familie__kind
-        See basic input variable :ref:`familie__kind <familie__kind>`.
-
-    Returns
-    -------
-
     """
-    out = ((alter_monate - alter_monate_jüngstes_mitglied_fg) < 0.1) and familie__kind
-    return out
+    return ((alter_monate - alter_monate_jüngstes_mitglied_fg) < 0.1) and familie__kind

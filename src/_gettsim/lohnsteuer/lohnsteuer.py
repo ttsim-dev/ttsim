@@ -4,32 +4,26 @@ from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from _gettsim.solidaritätszuschlag.solidaritätszuschlag import (
     solidaritätszuschlagstarif,
 )
-from ttsim import policy_function
+from ttsim import PiecewisePolynomialParameters, policy_function
 
 
 @policy_function(vectorization_strategy="loop")
 def betrag_m(
     einkommen_y: float,
-    eink_st_params: dict,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
     steuerklasse: int,
     lohnst_params: dict,
 ) -> float:
     """
     Withholding tax on earnings (Lohnsteuer).
 
-    Parameters
-    ----------
-    einkommen_y
-        See :func:`einkommen_y`.
-    steuerklasse
-        See :func:`steuerklasse`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params`.
-    lohnst_params
-        See params documentation :ref:`lohnst_params`.
-
     """
-    return lohnsteuerformel(einkommen_y, eink_st_params, lohnst_params, steuerklasse)
+    return lohnsteuerformel(
+        einkommen_y,
+        einkommensteuer__parameter_einkommensteuertarif,
+        lohnst_params,
+        steuerklasse,
+    )
 
 
 @policy_function(vectorization_strategy="loop")
@@ -37,7 +31,7 @@ def betrag_mit_kinderfreibetrag_m(
     einkommen_y: float,
     kinderfreibetrag_soli_y: float,
     steuerklasse: int,
-    eink_st_params: dict,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
     lohnst_params: dict,
 ) -> float:
     """Withholding tax taking child allowances into account.
@@ -45,85 +39,47 @@ def betrag_mit_kinderfreibetrag_m(
     Same as betrag_m, but with an alternative income definition that
     takes child allowance into account. Important only for calculation
     of soli on Lohnsteuer!
-
-    Parameters
-    ----------
-    einkommen_y
-        See :func:`einkommen_y`.
-    kinderfreibetrag_soli_y
-        See :func:`kinderfreibetrag_soli_y`.
-    steuerklasse
-        See :func:`steuerklasse`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params`.
-    lohnst_params
-        See params documentation :ref:`lohnst_params`.
     """
 
     eink = max(einkommen_y - kinderfreibetrag_soli_y, 0)
 
-    return lohnsteuerformel(eink, eink_st_params, lohnst_params, steuerklasse)
+    return lohnsteuerformel(
+        eink,
+        einkommensteuer__parameter_einkommensteuertarif,
+        lohnst_params,
+        steuerklasse,
+    )
 
 
 @policy_function(vectorization_strategy="loop")
-def betrag_soli_y(betrag_mit_kinderfreibetrag_y: float, soli_st_params: dict) -> float:
-    """Solidarity surcharge on Lohnsteuer (withholding tax on earnings).
+def betrag_soli_y(
+    betrag_mit_kinderfreibetrag_y: float,
+    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+) -> float:
+    """Solidarity surcharge on Lohnsteuer (withholding tax on earnings)."""
 
-    Parameters
-    ----------
-    betrag_mit_kinderfreibetrag_y
-        See :func:`betrag_mit_kinderfreibetrag_y`.
-    soli_st_params
-        See params documentation :ref:`soli_st_params <soli_st_params>`.
-
-    Returns
-        Solidarity Surcharge on Lohnsteuer
-    -------
-
-    """
-
-    return solidaritätszuschlagstarif(betrag_mit_kinderfreibetrag_y, soli_st_params)
+    return solidaritätszuschlagstarif(
+        x=betrag_mit_kinderfreibetrag_y,
+        parameter_solidaritätszuschlag=solidaritätszuschlag__parameter_solidaritätszuschlag,
+    )
 
 
 @policy_function(vectorization_strategy="loop")
 def kinderfreibetrag_soli_y(
     steuerklasse: int,
-    einkommensteuer__anzahl_kinderfreibeträge: int,
-    eink_st_abzuege_params: dict,
+    einkommensteuer__kinderfreibetrag_y: int,
 ) -> float:
     """Child Allowance (Kinderfreibetrag) for Lohnsteuer-Soli.
 
-    For the purpose of Soli on Lohnsteuer, the child allowance not only depends on the
-    number of children, but also on the steuerklasse
-
-    Parameters
-    ----------
-    steuerklasse
-        See :func:`steuerklasse`.
-    einkommensteuer__anzahl_kinderfreibeträge
-        See :func:`einkommensteuer__anzahl_kinderfreibeträge`.
-    eink_st_abzuege_params
-        See params documenation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-    Kinderfreibetrag for Lohnsteuer-Soli.
+    For the purpose of Soli on Lohnsteuer, Steuerklasse 1/2/3 gets twice the child
+    benefit, Steuerklasse 4 gets the child benefit once, and Steuerklasse 5/6 gets
+    nothing.
     """
 
-    kinderfreibetrag_basis = (
-        eink_st_abzuege_params["parameter_kinderfreibetrag"][
-            "sächliches_existenzminimum"
-        ]
-        + eink_st_abzuege_params["parameter_kinderfreibetrag"][
-            "betreuung_erziehung_ausbildung"
-        ]
-    )
-
-    # For certain tax brackets, twice the child allowance can be deducted
     if steuerklasse in {1, 2, 3}:
-        out = kinderfreibetrag_basis * 2 * einkommensteuer__anzahl_kinderfreibeträge
+        out = 2 * einkommensteuer__kinderfreibetrag_y
     elif steuerklasse == 4:
-        out = kinderfreibetrag_basis * einkommensteuer__anzahl_kinderfreibeträge
+        out = einkommensteuer__kinderfreibetrag_y
     else:
         out = 0
     return out
@@ -131,7 +87,7 @@ def kinderfreibetrag_soli_y(
 
 def lohnsteuerformel(
     einkommen_y: float,
-    eink_st_params: dict,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
     lohnst_params: dict,
     steuerklasse: int,
 ) -> float:
@@ -146,46 +102,35 @@ def lohnsteuerformel(
     twice the difference between applying the tariff on 5/4 and 3/4 of taxable income.
     Tax rate may not be lower than the starting statutory one.
 
-    Parameters
-    ----------
-    einkommen_y
-        See :func:`einkommen_y`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params <eink_st_params>`
-    lohnst_params
-        See params documentation :ref:`lohnst_params <lohnst_params>`
-    steuerklasse:
-        See basic input variable :ref:`steuerklasse <steuerklasse>`.
-
-
-    Returns
-    -------
-    Individual withholding tax on monthly basis
-
     """
 
-    lohnsteuer_basistarif = einkommensteuertarif(einkommen_y, eink_st_params)
+    lohnsteuer_basistarif = einkommensteuertarif(
+        einkommen_y, einkommensteuer__parameter_einkommensteuertarif
+    )
     lohnsteuer_splittingtarif = 2 * einkommensteuertarif(
-        einkommen_y / 2, eink_st_params
+        einkommen_y / 2, einkommensteuer__parameter_einkommensteuertarif
     )
     lohnsteuer_5_6_basis = basis_für_klassen_5_6(
-        einkommen_y=einkommen_y, eink_st_params=eink_st_params
+        einkommen_y=einkommen_y,
+        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
     )
 
     lohnsteuer_grenze_1 = basis_für_klassen_5_6(
-        einkommen_y=lohnst_params["einkommensgrenzen"][1], eink_st_params=eink_st_params
+        einkommen_y=lohnst_params["einkommensgrenzen"][1],
+        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
     )
     max_lohnsteuer = (
         lohnsteuer_grenze_1
         + (einkommen_y - lohnst_params["einkommensgrenzen"][1])
-        * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
+        * einkommensteuer__parameter_einkommensteuertarif.rates[0, 3]
     )
     lohnsteuer_grenze_2 = basis_für_klassen_5_6(
-        einkommen_y=lohnst_params["einkommensgrenzen"][2], eink_st_params=eink_st_params
+        einkommen_y=lohnst_params["einkommensgrenzen"][2],
+        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
     )
     lohnsteuer_zw_grenze_2_3 = (
         lohnst_params["einkommensgrenzen"][3] - lohnst_params["einkommensgrenzen"][2]
-    ) * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
+    ) * einkommensteuer__parameter_einkommensteuertarif.rates[0, 3]
     lohnsteuer_klasse5_6_tmp = lohnsteuer_grenze_2 + lohnsteuer_zw_grenze_2_3
 
     if einkommen_y < lohnst_params["einkommensgrenzen"][1]:
@@ -198,7 +143,8 @@ def lohnsteuerformel(
         lohnsteuer_klasse5_6 = min(
             max_lohnsteuer,
             basis_für_klassen_5_6(
-                einkommen_y=einkommen_y, eink_st_params=eink_st_params
+                einkommen_y=einkommen_y,
+                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
             ),
         )
     elif (
@@ -209,13 +155,13 @@ def lohnsteuerformel(
         lohnsteuer_klasse5_6 = (
             lohnsteuer_grenze_2
             + (einkommen_y - lohnst_params["einkommensgrenzen"][2])
-            * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
+            * einkommensteuer__parameter_einkommensteuertarif.rates[0, 3]
         )
     else:
         lohnsteuer_klasse5_6 = (
             lohnsteuer_klasse5_6_tmp
             + (einkommen_y - lohnst_params["einkommensgrenzen"][3])
-            * eink_st_params["parameter_einkommensteuertarif"].rates[0, 4]
+            * einkommensteuer__parameter_einkommensteuertarif.rates[0, 4]
         )
 
     if steuerklasse in {1, 2, 4}:
@@ -230,7 +176,9 @@ def lohnsteuerformel(
     return max(out, 0.0)
 
 
-def basis_für_klassen_5_6(einkommen_y: float, eink_st_params: dict) -> float:
+def basis_für_klassen_5_6(
+    einkommen_y: float, parameter_einkommensteuertarif: PiecewisePolynomialParameters
+) -> float:
     """Calculate base for Lohnsteuer for steuerklasse 5 and 6, by applying
     obtaining twice the difference between applying the factors 1.25 and 0.75
     to the lohnsteuer payment. There is a also a minimum amount, which is checked
@@ -244,27 +192,15 @@ def basis_für_klassen_5_6(einkommen_y: float, eink_st_params: dict) -> float:
         die Jahreslohnsteuer beträgt jedoch mindestens 14 Prozent des zu versteuernden
         Jahresbetrags.
 
-    Parameters
-    ----------
-
-    einkommen_y:
-        Taxable Income.
-    eink_st_params
-        See params documentation :ref:`eink_st_params <eink_st_params>`
-
-    Returns
-    -------
-    Base for Lohnsteuer for steuerklasse 5 and 6
-
     """
 
     out = max(
         2
         * (
-            einkommensteuertarif(einkommen_y * 1.25, eink_st_params)
-            - einkommensteuertarif(einkommen_y * 0.75, eink_st_params)
+            einkommensteuertarif(einkommen_y * 1.25, parameter_einkommensteuertarif)
+            - einkommensteuertarif(einkommen_y * 0.75, parameter_einkommensteuertarif)
         ),
-        einkommen_y * eink_st_params["parameter_einkommensteuertarif"].rates[0, 1],
+        einkommen_y * parameter_einkommensteuertarif.rates[0, 1],
     )
 
     return out

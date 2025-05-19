@@ -14,11 +14,7 @@ from ttsim.loader import (
     orig_params_tree,
     orig_ttsim_objects_tree,
 )
-from ttsim.piecewise_polynomial import (
-    check_and_get_thresholds,
-    get_piecewise_parameters,
-    piecewise_polynomial,
-)
+from ttsim.piecewise_polynomial import get_piecewise_parameters
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
     merge_trees,
@@ -83,7 +79,7 @@ class PolicyEnvironment:
         )
         _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
 
-        # FixMe: Delete
+        # TODO: Delete
         params_tree = params_tree if params_tree is not None else {}
         self._params = params if params is not None else {}
 
@@ -238,16 +234,27 @@ def set_up_policy_environment(
             # Align parameters for piecewise polynomial functions
             params[group] = _parse_piecewise_parameters(params_one_group)
         params = _parse_kinderzuschl_max(date, params)
-        params = _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
-            date, params
+        params_tree = active_ttsim_params_tree(
+            orig_params_tree=_orig_params_tree, date=date
         )
-        params = _parse_vorsorgepauschale_rentenv_anteil(date, params)
-        params_tree = {}
     else:
         params = {}
         params_tree = active_ttsim_params_tree(
             orig_params_tree=_orig_params_tree, date=date
         )
+    assert "evaluationsjahr" not in params_tree, "evaluationsjahr must not be specified"
+    params_tree["evaluationsjahr"] = ScalarTTSIMParam(
+        leaf_name="evaluationsjahr",
+        start_date=date,
+        end_date=date,
+        value=date.year,
+        name={"de": "Evaluationsjahr. Implementation wird noch verbessert."},
+        description={"de": "Der Zeitpunkt, für den die Berechnung durchgeführt wird."},
+        unit="Year",
+        reference_period=None,
+        note=None,
+        reference=None,
+    )
     return PolicyEnvironment(
         raw_objects_tree=active_ttsim_objects_tree(
             orig_ttsim_objects_tree=_orig_ttsim_objects_tree, date=date
@@ -533,6 +540,10 @@ def prep_one_params_spec(
     current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
+    # TODO: Remove this again once we have transferred all files.
+    assert "deviation_from" not in current_spec, (
+        f"'updates_previous' replaces 'deviation_from', {leaf_name}"
+    )
     if len(current_spec) == 0:
         return None
     elif len(current_spec) == 1 and "updates_previous" in current_spec:
@@ -547,6 +558,9 @@ def prep_one_params_spec(
         out["value"] = current_spec["value"]
     else:
         out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
+        # TODO: Remove this again once we have transferred all files.
+        assert "reference" not in out["value"], leaf_name
+        assert "note" not in out["value"], leaf_name
     return out
 
 
@@ -558,17 +572,21 @@ def _get_params_contents(
     Implementation is a recursion in order to handle the 'updates_previous' machinery.
 
     """
-    updates_previous = relevant_specs[-1].pop("updates_previous", False)
+    current_spec = relevant_specs[-1].copy()
+    updates_previous = current_spec.pop("updates_previous", False)
+    current_spec.pop("note", None)
+    current_spec.pop("reference", None)
     if updates_previous:
         assert len(relevant_specs) > 1, (
             "'updates_previous' cannot be missing in the initial spec, found "
             f"{relevant_specs}"
         )
         return upsert_tree(
-            base=_get_params_contents(relevant_specs[:-1]), to_upsert=relevant_specs[-1]
+            base=_get_params_contents(relevant_specs=relevant_specs[:-1]),
+            to_upsert=current_spec,
         )
     else:
-        return relevant_specs[-1]
+        return current_spec
 
 
 def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
@@ -589,11 +607,6 @@ def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
         if isinstance(tax_data[param], dict):
             if "type" in tax_data[param]:
                 if tax_data[param]["type"].startswith("piecewise"):
-                    if "progressionsfaktor" in tax_data[param]:
-                        if tax_data[param]["progressionsfaktor"]:
-                            tax_data[param] = add_progressionsfaktor(
-                                tax_data[param], param
-                            )
                     tax_data[param] = get_piecewise_parameters(
                         leaf_name=param,
                         func_type=tax_data[param]["type"],
@@ -636,73 +649,6 @@ def _parse_kinderzuschl_max(
             ]
             + params["kinderzuschl"]["existenzminimum"]["heizkosten"]["kinder"]
         ) / 12 - params["kindergeld"]["kindergeldsatz"][1]
-
-    return params
-
-
-def _parse_einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005(
-    date: datetime.date, params: dict[str, Any]
-) -> dict[str, Any]:
-    """Calculate introductory factor for pension expense deductions which depends on the
-    current year as follows:
-
-    In the years 2005-2025 the share of deductible contributions increases by
-    2 percentage points each year from 60% in 2005 to 100% in 2025.
-
-    Reference: § 10 Abs. 1 Nr. 2 Buchst. a und b EStG
-
-    Parameters
-    ----------
-    date
-        The date for which the policy parameters are set up.
-    params
-        A dictionary with parameters from the policy environment.
-
-    Returns
-    -------
-    Updated dictionary.
-
-    """
-    jahr = date.year
-    if jahr >= 2005:
-        out = piecewise_polynomial(
-            x=jahr,
-            parameters=params["eink_st_abzuege"]["einführungsfaktor"],
-        )
-        params["eink_st_abzuege"][
-            "einführungsfaktor_vorsorgeaufwendungen_alter_ab_2005"
-        ] = out
-    return params
-
-
-def _parse_vorsorgepauschale_rentenv_anteil(
-    date: datetime.date, params: dict[str, Any]
-) -> dict[str, Any]:
-    """Calculate the share of pension contributions to be deducted for Lohnsteuer
-    increases by year.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy parameters are set up.
-    params
-        A dictionary with parameters from the policy environment.
-
-    Returns
-    -------
-    out
-
-    """
-
-    jahr = date.year
-    if jahr >= 2005:
-        out = piecewise_polynomial(
-            x=jahr,
-            parameters=params["eink_st_abzuege"][
-                "anteil_absetzbare_rentenversicherungskosten"
-            ],
-        )
-        params["eink_st_abzuege"]["anteil_absetzbare_rentenversicherungskosten"] = out
 
     return params
 
@@ -906,37 +852,3 @@ def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
                 is not compatible with the PolicyFunction {function.leaf_name}.
                 """
             )
-
-
-def add_progressionsfaktor(
-    params_dict: dict[str | int, Any], parameter: str
-) -> dict[str | int, Any]:
-    """Quadratic factor of tax tariff function.
-
-    The German tax tariff is defined on several income intervals with distinct
-    marginal tax rates at the thresholds. To ensure an almost linear increase of
-    the average tax rate, the German tax tariff is defined as a quadratic function,
-    where the quadratic rate is the so called linear Progressionsfaktor. For its
-    calculation one needs the lower (low_thres) and upper (upper_thres) thresholds of
-    the interval as well as the marginal tax rate of the interval (rate_iv) and of the
-    following interval (rate_fiv). The formula is then given by:
-
-    (rate_fiv - rate_iv) / (2 * (upper_thres - low_thres))
-
-    """
-    out: dict[str | int, Any] = copy.deepcopy(
-        {k: v for k, v in params_dict.items() if isinstance(k, int)}
-    )
-
-    # Check and extract lower thresholds.
-    lower_thresholds, upper_thresholds = check_and_get_thresholds(
-        leaf_name=parameter, parameter_dict=out
-    )[:2]
-    for key in sorted(out.keys()):
-        if "rate_quadratic" not in out[key]:
-            out[key]["rate_quadratic"] = (
-                out[key + 1]["rate_linear"] - out[key]["rate_linear"]  # type: ignore[operator]
-            ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
-    # FixMe: Add type back in. This whole function needs to be refactored
-    out["type"] = params_dict["type"]
-    return out

@@ -1,5 +1,5 @@
 ---
-parameter_einkommensteuertarif:
+raw_parameter_einkommensteuertarif:
   name:
     de: Parameter des Einkommensteuertarifs
     en: Parameters of the income tax schedule
@@ -15,7 +15,7 @@ parameter_einkommensteuertarif:
       Progressionsfaktor. For details see the docstring of add_progressionsfaktor.
   unit: Euros
   reference_period: Year
-  type: piecewise_quadratic
+  type: require_converter
   2002-01-01:
     0:
       lower_threshold: -inf
@@ -33,7 +33,6 @@ parameter_einkommensteuertarif:
       upper_threshold: inf
       rate_linear: 0.485
       rate_quadratic: 0
-    progressionsfaktor: true
   2004-01-01:
     0:
       lower_threshold: -inf
@@ -50,7 +49,6 @@ parameter_einkommensteuertarif:
       upper_threshold: inf
       rate_linear: 0.45
       rate_quadratic: 0
-    progressionsfaktor: true
   2005-01-01:
     0:
       lower_threshold: -inf
@@ -68,7 +66,6 @@ parameter_einkommensteuertarif:
       upper_threshold: inf
       rate_linear: 0.42
       rate_quadratic: 0
-    progressionsfaktor: true
   2007-01-01:
     0:
       lower_threshold: -inf
@@ -90,9 +87,8 @@ parameter_einkommensteuertarif:
       upper_threshold: inf
       rate_linear: 0.45
       rate_quadratic: 0
-    progressionsfaktor: true
   2009-01-01:
-    deviation_from: previous
+    updates_previous: true
     0:
       upper_threshold: 7834
     1:
@@ -102,9 +98,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 52551
     3:
       upper_threshold: 250400
-    progressionsfaktor: true
   2010-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Artikel 1 G. v. 02.03.2009 BGBl. I S. 416
     0:
       upper_threshold: 8004
@@ -114,27 +109,24 @@ parameter_einkommensteuertarif:
       upper_threshold: 52881
     3:
       upper_threshold: 250730
-    progressionsfaktor: true
   2013-01-01:
-    deviation_from: previous
+    updates_previous: true
     0:
       upper_threshold: 8130
-    progressionsfaktor: true
   2014-01-01:
-    deviation_from: previous
+    updates_previous: true
     note: Gesetz zum Abbau der kalten Progression
     reference: G. v. 20.2.2013, BGBl I S.283
     0:
       upper_threshold: 8354
   2015-07-01:
-    deviation_from: previous
+    updates_previous: true
     note: Gesetz z. Anhebung des Gfb, des Kfb, des Kindergeldes und des Kiz
     reference: G. v. 15.07.2015, BGBl. Nr. 30 2015
     0:
       upper_threshold: 8472
-    progressionsfaktor: true
   2016-01-01:
-    deviation_from: previous
+    updates_previous: true
     note: Gesetz z. Anhebung des Gfb, des Kfb, des Kindergeldes und des Kiz
     reference: G. v. 15.07.2015, BGBl. Nr. 30 2015
     0:
@@ -145,9 +137,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 53665
     3:
       upper_threshold: 254446
-    progressionsfaktor: true
   2017-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Artikel 8 G. v. 20.12.2016, BGBl I S. 3000
     0:
       upper_threshold: 8820
@@ -157,9 +148,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 54057
     3:
       upper_threshold: 256303
-    progressionsfaktor: true
   2018-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Artikel 9 G. v 23.12.2016, BGBL I, S. 3000
     0:
       upper_threshold: 9000
@@ -169,9 +159,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 54949
     3:
       upper_threshold: 260532
-    progressionsfaktor: true
   2019-01-01:
-    deviation_from: previous
+    updates_previous: true
     0:
       upper_threshold: 9168
     1:
@@ -180,9 +169,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 55960
     3:
       upper_threshold: 265326
-    progressionsfaktor: true
   2020-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 3 G. v. 29.11.2018 BGBl. I S. 2210
     0:
       upper_threshold: 9408
@@ -192,9 +180,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 57051
     3:
       upper_threshold: 270500
-    progressionsfaktor: true
   2021-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 1 G. v. 01.12.2020 BGBl. I S. 2616
     0:
       upper_threshold: 9744
@@ -204,9 +191,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 57918
     3:
       upper_threshold: 274612
-    progressionsfaktor: true
   2022-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 1 G. v. 23.05.2022 BGBl. I S. 749
     note: >-
       First specified in Art. 2. G. v. 01.12.2020 BGBl. I S. 2616, new defined resp.
@@ -219,9 +205,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 58596
     3:
       upper_threshold: 277826
-    progressionsfaktor: true
   2023-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 2 G. v. 08.12.2022 BGBl. I S. 2230.
     0:
       upper_threshold: 10908
@@ -231,9 +216,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 62809
     3:
       upper_threshold: 277825
-    progressionsfaktor: true
   2024-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 1 G. v. 05.12.2024 BGBl. 2024 I Nr. 386.
     0:
       upper_threshold: 11784
@@ -243,9 +227,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 66760
     3:
       upper_threshold: 277825
-    progressionsfaktor: true
   2025-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 1 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
     0:
       upper_threshold: 12096
@@ -255,9 +238,8 @@ parameter_einkommensteuertarif:
       upper_threshold: 68480
     3:
       upper_threshold: 277825
-    progressionsfaktor: true
   2026-01-01:
-    deviation_from: previous
+    updates_previous: true
     reference: Art. 2 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
     0:
       upper_threshold: 12348
@@ -265,42 +247,3 @@ parameter_einkommensteuertarif:
       upper_threshold: 17799
     2:
       upper_threshold: 69878
-parameter_ertragsanteil_an_rente:
-  name:
-    de: >-
-      Ertragsanteil-Funktion für den Anteil an sozialversicherungspflichtigen
-      Renteneinkommen, der versteuert werden muss (piecewise linear)
-    en: >-
-      Piecewise linear function for calculating the share of pensions subject to income
-      taxation.
-  description:
-    de: >-
-      § 22 EStG
-      Diese Funktion ist hier ab 2002 angegeben. Vor 2002 das Steuersystem ist nicht
-      implementiert.
-    en: null
-  unit: null
-  reference_period: null
-  type: piecewise_linear
-  #   type: require_converter
-  2002-01-01:
-    0:
-      lower_threshold: -inf
-      upper_threshold: 2005
-      rate_linear: 0
-      intercept_at_lower_threshold: 0.27
-    1:
-      lower_threshold: 2005
-      upper_threshold: 2021
-      rate_linear: 0.02
-      intercept_at_lower_threshold: 0.5
-    2:
-      lower_threshold: 2021
-      upper_threshold: 2041
-      rate_linear: 0.01
-      intercept_at_lower_threshold: 0.8
-    3:
-      lower_threshold: 2041
-      upper_threshold: inf
-      rate_linear: 0.0
-      intercept_at_lower_threshold: 1
