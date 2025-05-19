@@ -73,10 +73,10 @@ inputs:
   provided: {}
 outputs:
   bg_id:
-    - 1
-    - 1
-    - 1
-    - 1
+    - 0
+    - 0
+    - 0
+    - 0
   arbeitslosengeld_2__bruttokaltmiete_m_bg:
     - 1000.0
     - 1000.0

@@ -376,13 +376,13 @@ inputs:
       - 5
 outputs:
   bg_id:
+    - 0
+    - 0
     - 1
-    - 1
-    - 16
-    - 25
-    - 25
-    - 41
-    - 41
+    - 2
+    - 2
+    - 3
+    - 3
   arbeitslosengeld_2__bruttokaltmiete_m_wthh:
     - 514.29
     - 514.29
