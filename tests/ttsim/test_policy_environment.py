@@ -586,8 +586,14 @@ def test_fail_because_of_conflicting_names(
                     datetime.date(1995, 1, 1): {"value": 5},
                     datetime.date(2012, 1, 1): {"note": "more complex, see function"},
                     datetime.date(2016, 1, 1): {"value": 10},
-                    datetime.date(2023, 2, 1): {"note": "more complex, see function"},
-                    datetime.date(2023, 3, 1): {"value": 13},
+                    datetime.date(2023, 2, 1): {
+                        "note": "more complex, see function",
+                        "reference": "https://example.com/foo",
+                    },
+                    datetime.date(2023, 3, 1): {
+                        "value": 13,
+                        "note": "Complex didn't last long.",
+                    },
                 }
             },
         ),
