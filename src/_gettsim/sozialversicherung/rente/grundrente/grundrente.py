@@ -92,12 +92,9 @@ def anzurechnendes_einkommen_m(
     else:
         params = anzurechnendes_einkommen_ohne_partner
 
-    return (
-        piecewise_polynomial(
-            x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
-            parameters=params,
-        )
-        * sozialversicherung__rente__altersrente__rentenwert
+    return sozialversicherung__rente__altersrente__rentenwert * piecewise_polynomial(
+        x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
+        parameters=params,
     )
 
 
