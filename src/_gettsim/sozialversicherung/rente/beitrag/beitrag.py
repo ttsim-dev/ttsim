@@ -52,7 +52,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommen_m: float,
     parameter_beitragssatz: float,
-    arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    minijob_arbeitgeberpauschale: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
 ) -> float:
     """Employer's public pension insurance contribution.
@@ -64,7 +64,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * arbeitgeberpauschale_bei_geringfügiger_beschäftigung
+            * minijob_arbeitgeberpauschale
         )
     else:
         out = ges_rentenv_beitr_regular_job_m
@@ -80,7 +80,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     parameter_beitragssatz: float,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    minijob_arbeitgeberpauschale: float,
 ) -> float:
     """Employer's public pension insurance contribution.
 
@@ -91,7 +91,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * arbeitgeberpauschale_bei_geringfügiger_beschäftigung
+            * minijob_arbeitgeberpauschale
         )
     elif sozialversicherung__in_gleitzone:
         out = betrag_midijob_arbeitgeber_m

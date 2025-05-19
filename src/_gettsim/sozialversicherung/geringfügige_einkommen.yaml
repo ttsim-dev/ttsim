@@ -121,7 +121,7 @@ faktoren_minijobformel:
     zähler: 130
     nenner: 3
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
-arbeitgeberpauschale_lohnsteuer:
+minijob_arbeitgeberpauschale_lohnsteuer:
   name:
     de: Pauschalierte Lohnsteuer bei geringfügiger Beschäftigung
     en: Fixed income tax rate for marginal employment
