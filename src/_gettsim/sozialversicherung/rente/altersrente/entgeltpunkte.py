@@ -44,7 +44,7 @@ def neue_entgeltpunkte(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     wohnort_ost: bool,
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
-    beitragspflichtiges_durchschnittsentgelt_m: float,
+    beitragspflichtiges_durchschnittsentgelt_y: float,
     umrechnung_entgeltpunkte_beitrittsgebiet: float,
 ) -> float:
     """Return earning points for the wages earned in the last year."""
@@ -71,7 +71,7 @@ def neue_entgeltpunkte(
     else:
         bruttolohn_scaled_rentenv = bruttolohn_scaled_east
 
-    return bruttolohn_scaled_rentenv / beitragspflichtiges_durchschnittsentgelt_m
+    return bruttolohn_scaled_rentenv / beitragspflichtiges_durchschnittsentgelt_y / 12
 
 
 @policy_function()
