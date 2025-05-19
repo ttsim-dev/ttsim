@@ -47,19 +47,46 @@ def betrag_versicherter_m_mit_midijob(
     return out
 
 
-@policy_function(end_date="2003-03-31", leaf_name="betrag_arbeitgeber_m")
-def betrag_arbeitgeber_m_ohne_midijob(
+@policy_function(
+    end_date="1998-12-31",
+    leaf_name="betrag_arbeitgeber_m",
+)
+def betrag_arbeitgeber_m_ohne_arbeitgeberpauschale(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommen_m: float,
     parameter_beitragssatz: float,
-    arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
 ) -> float:
     """Employer's public pension insurance contribution.
 
     Before Midijob introduction in April 2003.
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * parameter_beitragssatz
+    betrag_regulär_beschäftigt_m = einkommen_m * parameter_beitragssatz
+
+    if sozialversicherung__geringfügig_beschäftigt:
+        out = 0.0
+    else:
+        out = betrag_regulär_beschäftigt_m
+
+    return out
+
+
+@policy_function(
+    start_date="1999-01-01",
+    end_date="2003-03-31",
+    leaf_name="betrag_arbeitgeber_m",
+)
+def betrag_arbeitgeber_m_mit_arbeitgeberpauschale(
+    sozialversicherung__geringfügig_beschäftigt: bool,
+    einkommen_m: float,
+    parameter_beitragssatz: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
+    arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+) -> float:
+    """Employer's public pension insurance contribution.
+
+    Before Midijob introduction in April 2003.
+    """
+    betrag_regulär_beschäftigt_m = einkommen_m * parameter_beitragssatz
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -67,7 +94,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
             * arbeitgeberpauschale_bei_geringfügiger_beschäftigung
         )
     else:
-        out = ges_rentenv_beitr_regular_job_m
+        out = betrag_regulär_beschäftigt_m
 
     return out
 
