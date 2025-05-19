@@ -504,7 +504,7 @@ def test_fail_because_of_conflicting_active_periods(
 @pytest.mark.parametrize(
     "orig_ttsim_objects_tree, orig_params_tree",
     [
-        # Same global module, no overlapping periods, name clashes leaf name / yaml.
+        # Same global module, no overlap in functions, name clashes leaf name / yaml.
         (
             {
                 ("c", "a"): policy_function(
@@ -520,7 +520,7 @@ def test_fail_because_of_conflicting_active_periods(
             },
             {("c", "f"): {datetime.date(2023, 1, 1): {"value": 1}}},
         ),
-        # Same paths, no overlapping periods, name clashes leaf name / yaml.
+        # Same paths, no overlap in functions, name clashes leaf name / yaml.
         (
             {
                 ("x", "a", "b"): policy_function(
@@ -555,6 +555,52 @@ def test_fail_because_of_conflicting_names(
             orig_ttsim_objects_tree=orig_ttsim_objects_tree,
             orig_params_tree=orig_params_tree,
         )
+
+
+@pytest.mark.parametrize(
+    "orig_ttsim_objects_tree, orig_params_tree",
+    [
+        # Same leaf names across functions / parameters, but no overlapping periods.
+        (
+            {
+                ("c", "a"): policy_function(
+                    start_date="2012-01-01",
+                    end_date="2015-12-31",
+                    leaf_name="f",
+                )(identity),
+                ("c", "b"): policy_function(
+                    start_date="2023-02-01",
+                    end_date="2023-02-28",
+                    leaf_name="f",
+                )(identity),
+            },
+            {
+                ("c", "f"): {
+                    "name": {"de": "foo", "en": "foo"},
+                    "description": {"de": "foo", "en": "foo"},
+                    "unit": None,
+                    "reference_period": None,
+                    "type": "scalar",
+                    datetime.date(1984, 1, 1): {"value": 1},
+                    datetime.date(1985, 1, 1): {"value": 3},
+                    datetime.date(1995, 1, 1): {"value": 5},
+                    datetime.date(2012, 1, 1): {"note": "more complex, see function"},
+                    datetime.date(2016, 1, 1): {"value": 10},
+                    datetime.date(2023, 2, 1): {"note": "more complex, see function"},
+                    datetime.date(2023, 3, 1): {"value": 13},
+                }
+            },
+        ),
+    ],
+)
+def test_pass_because_no_overlap_functions_params(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+    orig_params_tree: FlatOrigParamSpecDict,
+):
+    fail_because_of_clashes(
+        orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+        orig_params_tree=orig_params_tree,
+    )
 
 
 @pytest.mark.parametrize(
