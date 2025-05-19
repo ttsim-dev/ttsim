@@ -17,7 +17,7 @@
 
 ## Abstract
 
-This GEP lays out how GETTSIM stores the user-provided data (be it from the SOEP, EVS,
+This GEP lays out how GETTSIM stores user-provided data (be it from the SOEP, EVS,
 example individuals, ...) and passes it around to the functions calculating taxes and
 transfers.
 
@@ -26,20 +26,23 @@ in the data provided by the user (if it comes in the form of a DataFrame) or cal
 by GETTSIM. All these arrays have the same length. This length corresponds to the number
 of individuals. Functions operate on a single row of data.
 
-If a column name is `[x]_id` with `x` {math}`\in \{` `_hh`, `_bg`, `_fg`, `_ehe`, `_eg`,
+Arrays are stored in a nested dictionary (a pytree). One level of the dictionary is
+called a *namespace*, the data columns are called *leaves*. The outermost level is
+called the *leaf name*.
+
+If a leaf name is `[x]_id` with `x` {math}`\in \{` `_hh`, `_bg`, `_fg`, `_ehe`, `_eg`,
 `_sn` {math}`\}`, it will be the same for all households, Bedarfsgemeinschaften, or any
 other grouping of individuals specified in {ref}`GEP 1 <gep-1-column-names>`.
 
-Any column name `[namespace]__p_id_[y]` indicates a link to a different individual
-(e.g., child-parent are specified via `familie__p_id_elternteil_1`,
-`familie__p_id_elternteil_2`; the recipient of child benefits would be
-`kindergeld__p_id_empfänger`).
+Any leaf name `p_id_[y]` indicates a link to a different individual (e.g., child-parent
+are specified via `(familie, p_id_elternteil_1)`, `(familie, p_id_elternteil_2)`; the
+recipient of child benefits would be `(kindergeld, p_id_empfänger)`).
 
 ## Motivation and Scope
 
 Taxes and transfers are calculated at different levels of aggregation: Individuals,
 couples, families, households. Sometimes, relations between individuals are important:
-parents and children, payors/receivers of alimony payments, which parent receives
+parents and children, payors/recipients of alimony payments, which parent receives
 Kindergeld payments, etc..
 
 Potentially, there are many ways of storing these data: Long form, wide form,
@@ -68,12 +71,11 @@ This is primarily internal, i.e., only relevant for developers as the highest-le
 interface can be easily adjusted. The default way to receive data will be one Pandas
 DataFrame.
 
-Users are affected only via the interface of lower-level functions. Under the proposed
-implementation, they will always work on single rows of data. Many alternatives would
-require users to write vectorised code, making filtering operations more cumbersome. For
-aggregation or referencing other individuals' data, GETTSIM will provide functions that
-allow abstracting from implementation details, see
-{ref}`below <gep-2-aggregation-functions>`.
+Users are affected only via the interface of lower-level functions. Functions will
+always work on single rows of data. Many alternatives would require users to write
+vectorised code, making filtering operations more cumbersome. For aggregation or
+referencing other individuals' data, GETTSIM will provide functions that allow
+abstracting from implementation details, see {ref}`below <gep-2-aggregation-functions>`.
 
 ## Detailed description
 
@@ -82,7 +84,7 @@ be possible to pass data directly in the form that GETTSIM requires it internall
 that case, only the relevant steps apply.
 
 - GETTSIM may make a check that all identifiers pointing to other individuals (e.g.,
-  `kindergeld__p_id_empfänger`) are valid.
+  `(kindergeld, p_id_empfänger)`) are valid.
 
 - GETTSIM may make a check that there is no variation within a group of individuals if
   the column name indicates that there must not be (e.g., all members sharing the same
@@ -91,16 +93,14 @@ that case, only the relevant steps apply.
 
 - Because groups of individuals are not necessarily nested (e.g., joint taxation during
   separation phase but living in different households), they cannot be sorted in
-  general. In case users know their data allows sorting on all groups (i.e., all groups
-  have a nesting structure), they will be able to provide a `data_is_sorted` flag, which
-  defaults to `False`.
+  general.
 
 - The core of GETTSIM works with a collection of 1-d arrays, all of which have the same
   length as the number of individuals.
 
   These arrays form the nodes of its DAG computation engine (see {ref}`GEP 4 <gep-4>`).
 
-- GETTSIM returns an object of the same type and with the same identifiers that was
+- GETTSIM returns an object of the same type and with the same row identifiers that was
   passed by the user.
 
 (gep-2-aggregation-functions)=
@@ -125,11 +125,11 @@ Aggregation functions will be provided by GETTSIM.
 - As outlined in {ref}`GEP 4 <gep-4-aggregation-by-group-functions>` users will need to
   specify:
 
-  - The stringified name of the aggregated variable. This **must** end with a feasible
-    unit of aggregation, e.g., `_hh` or `_ehe`.
+  - The name of the aggregated variable. This **must** end with a feasible unit of
+    aggregation, e.g., `_hh` or `_ehe`.
   - The type of aggregation {math}`\in \{` `count`, `sum`, `mean`, `max`, `min`, `any`,
     `all`, {math}`\}`
-  - The stringified name of the original variable (not relevant for `count`)
+  - The name of the original variable (not relevant for `count`)
 
   Note that as per {ref}`GEP 4 <gep-4-aggregation-by-group-functions>`, sums will be
   calculated implicitly if the graph contains a column `my_col` and an aggregate such as
