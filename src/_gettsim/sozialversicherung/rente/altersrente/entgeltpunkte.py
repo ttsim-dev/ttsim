@@ -71,7 +71,7 @@ def neue_entgeltpunkte(
     else:
         bruttolohn_scaled_rentenv = bruttolohn_scaled_east
 
-    return bruttolohn_scaled_rentenv / beitragspflichtiges_durchschnittsentgelt_y / 12
+    return bruttolohn_scaled_rentenv / (beitragspflichtiges_durchschnittsentgelt_y / 12)
 
 
 @policy_function()
