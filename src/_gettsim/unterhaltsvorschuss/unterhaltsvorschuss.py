@@ -113,11 +113,12 @@ def not_implemented_m() -> float:
     )
 
 
-@policy_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
-def kindergeld_erstes_kind_ohne_staffelung_m(
-    kindergeld_params: dict,
-    alter: int,  # noqa: ARG001
-) -> float:
+@policy_function(
+    start_date="2023-01-01",
+    leaf_name="kindergeld_erstes_kind_m",
+    vectorization_strategy="not_required",
+)
+def kindergeld_erstes_kind_ohne_staffelung_m(kindergeld_params: dict) -> float:
     """Kindergeld for first child when Kindergeld does not depend on number of children.
 
     Parameters
@@ -130,16 +131,15 @@ def kindergeld_erstes_kind_ohne_staffelung_m(
     -------
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (alter).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-    return kindergeld_params["kindergeld"]
+    return kindergeld_params["kindergeldsatz"]
 
 
-@policy_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
-def kindergeld_erstes_kind_gestaffelt_m(
-    kindergeld_params: dict,
-    alter: int,  # noqa: ARG001
-) -> float:
+@policy_function(
+    end_date="2022-12-31",
+    leaf_name="kindergeld_erstes_kind_m",
+    vectorization_strategy="not_required",
+)
+def kindergeld_erstes_kind_gestaffelt_m(kindergeld_params: dict) -> float:
     """Kindergeld for first child when Kindergeld does depend on number of children.
 
     Parameters
@@ -152,15 +152,14 @@ def kindergeld_erstes_kind_gestaffelt_m(
     -------
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (alter).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-    return kindergeld_params["kindergeld"][1]
+    return kindergeld_params["kindergeldsatz"][1]
 
 
 @policy_function(
     start_date="2009-01-01",
     end_date="2014-12-31",
     leaf_name="anspruchshöhe_m",
+    vectorization_strategy="loop",
 )
 def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     alter: int,
@@ -197,9 +196,9 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/575
     altersgrenzen = unterhaltsvors_params["altersgrenzen_bezug"]
 
-    kinderfreibetrag_sächl_existenzmin = eink_st_abzuege_params["kinderfreib"][
-        "sächl_existenzmin"
-    ]
+    kinderfreibetrag_sächl_existenzmin = eink_st_abzuege_params[
+        "parameter_kinderfreibetrag"
+    ]["sächliches_existenzminimum"]
 
     if altersgrenzen[1]["min_alter"] <= alter <= altersgrenzen[1]["max_alter"]:
         out = (
@@ -219,6 +218,7 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     start_date="2015-01-01",
     end_date="2015-12-31",
     leaf_name="anspruchshöhe_m",
+    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_anwendungsvors(
     alter: int,
@@ -259,6 +259,7 @@ def anspruchshöhe_m_anwendungsvors(
     start_date="2016-01-01",
     end_date="2017-06-30",
     leaf_name="anspruchshöhe_m",
+    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_2016_bis_2017_06(
     alter: int,
@@ -298,8 +299,10 @@ def anspruchshöhe_m_2016_bis_2017_06(
     return out
 
 
-@policy_function(start_date="2017-07-01", leaf_name="anspruchshöhe_m")
-def anspruchshöhe_m_ab_201707(
+@policy_function(
+    start_date="2017-07-01", leaf_name="anspruchshöhe_m", vectorization_strategy="loop"
+)
+def anspruchshöhe_m_ab_2017_07(
     alter: int,
     elternteil_mindesteinkommen_erreicht: bool,
     kindergeld_erstes_kind_m: float,

@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import optree
 import pandas as pd
 import yaml
-from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
+from mettsim.config import METTSIM_ROOT
 
 from ttsim import compute_taxes_and_transfers, merge_trees, set_up_policy_environment
+from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
 from ttsim.shared import to_datetime
+from ttsim.ttsim_objects import GroupCreationFunction
 
 TEST_DIR = Path(__file__).parent
 # Set display options to show all columns without truncation
@@ -34,7 +39,7 @@ class PolicyTest:
         date: datetime.date,
     ) -> None:
         self.info = info
-        self.input_tree = input_tree
+        self.input_tree = optree.tree_map(np.array, input_tree)
         self.expected_output_tree = expected_output_tree
         self.path = path
         self.date = date
@@ -51,26 +56,58 @@ class PolicyTest:
         return self.path.relative_to(TEST_DIR / "test_data").as_posix()
 
 
-def execute_test(test: PolicyTest):
-    environment = set_up_policy_environment(date=test.date, resource_dir=RESOURCE_DIR)
+def execute_test(test: PolicyTest, jit: bool = False) -> None:
+    environment = set_up_policy_environment(date=test.date, root=METTSIM_ROOT)
 
-    result = compute_taxes_and_transfers(
-        data_tree=test.input_tree,
-        environment=environment,
-        targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
-    )
+    if IS_JAX_INSTALLED:
+        ids = dict.fromkeys(
+            {f"{g}_id" for g in environment.grouping_levels}.intersection(
+                {
+                    g
+                    for g, t in environment.raw_objects_tree.items()
+                    if isinstance(t, GroupCreationFunction)
+                }
+            )
+        )
+        result_ids = compute_taxes_and_transfers(
+            data_tree=test.input_tree,
+            environment=environment,
+            targets_tree=ids,
+            jit=False,
+        )
+        data_tree = merge_trees(test.input_tree, result_ids)
+        targets_tree = copy.deepcopy(test.target_structure)
+        for i in [i for i in ids if i in targets_tree]:
+            del targets_tree[i]
+    else:
+        data_tree = test.input_tree
+        targets_tree = test.target_structure
+
+    if targets_tree:
+        result = compute_taxes_and_transfers(
+            data_tree=data_tree,
+            environment=environment,
+            targets_tree=targets_tree,
+            jit=jit,
+        )
+    else:
+        result = {}
 
     flat_result = dt.flatten_to_qual_names(result)
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
 
     if flat_expected_output_tree:
-        result_df = pd.DataFrame(flat_result)
         expected_df = pd.DataFrame(flat_expected_output_tree)
+        result_df = pd.DataFrame(flat_result)
+        if IS_JAX_INSTALLED:
+            for i in [i for i in ids if i in expected_df]:
+                result_df = pd.concat(
+                    [result_df, pd.Series(result_ids[i], name=i)], axis=1
+                )
         try:
             pd.testing.assert_frame_equal(
-                result_df,
-                expected_df,
+                result_df.sort_index(axis="columns"),
+                expected_df.sort_index(axis="columns"),
                 atol=test.info["precision_atol"],
                 check_dtype=False,
             )
@@ -124,32 +161,6 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
         )
 
     return out
-
-
-def get_test_data_as_tree(test_data: NestedDataDict) -> NestedDataDict:
-    provided_inputs = test_data["inputs"].get("provided", {})
-    assumed_inputs = test_data["inputs"].get("assumed", {})
-
-    unflattened_dict = {}
-    unflattened_dict["inputs"] = {}
-    unflattened_dict["outputs"] = {}
-
-    if provided_inputs:
-        unflattened_dict["inputs"]["provided"] = dt.unflatten_from_qual_names(
-            provided_inputs
-        )
-    else:
-        unflattened_dict["inputs"]["provided"] = {}
-    if assumed_inputs:
-        unflattened_dict["inputs"]["assumed"] = dt.unflatten_from_qual_names(
-            assumed_inputs
-        )
-    else:
-        unflattened_dict["inputs"]["assumed"] = {}
-
-    unflattened_dict["outputs"] = dt.unflatten_from_qual_names(test_data["outputs"])
-
-    return unflattened_dict["inputs"], unflattened_dict["outputs"]
 
 
 def _is_skipped(test_file: Path) -> bool:

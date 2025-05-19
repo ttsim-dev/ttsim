@@ -46,8 +46,6 @@ inputs:
       - 1
     hh_id:
       - 15
-    jahr:
-      - 2021
     kindergeld__betrag_m_eg:
       - 0.0
     kindergeld__p_id_empfänger:

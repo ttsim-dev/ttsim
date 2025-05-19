@@ -113,6 +113,6 @@ def minijob_grenze_abgeleitet_von_mindestlohn(
     """
     return (
         geringfügige_einkommen_params["mindestlohn"]
-        * geringfügige_einkommen_params["faktor_zähler"]
-        / geringfügige_einkommen_params["faktor_nenner"]
+        * geringfügige_einkommen_params["faktor_minijobformel_zähler"]
+        / geringfügige_einkommen_params["faktor_minijobformel_nenner"]
     )

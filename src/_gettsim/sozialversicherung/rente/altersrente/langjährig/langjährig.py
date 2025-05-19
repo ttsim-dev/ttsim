@@ -3,11 +3,12 @@
 from ttsim import policy_function
 
 
-@policy_function(end_date="1989-12-17", leaf_name="altersgrenze")
-def altersgrenze_ohne_staffelung(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+@policy_function(
+    end_date="1989-12-17",
+    leaf_name="altersgrenze",
+    vectorization_strategy="not_required",
+)
+def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """
     Full retirement age (FRA) for long term insured.
 
@@ -32,16 +33,14 @@ def altersgrenze_ohne_staffelung(
     Full retirement age for long term insured.
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-
-    return ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"]
+    return ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"]
 
 
 @policy_function(
     start_date="1989-12-18",
     end_date="2007-04-19",
     leaf_name="altersgrenze",
+    vectorization_strategy="loop",
 )
 def altersgrenze_mit_staffelung_nach_geburtsmonat(
     geburtsjahr: int,
@@ -75,31 +74,33 @@ def altersgrenze_mit_staffelung_nach_geburtsmonat(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        <= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_old_regime"
         ]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        >= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "min_birthyear_new_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             geburtsjahr
         ][geburtsmonat]
 
     return out
 
 
-@policy_function(start_date="2007-04-20", leaf_name="altersgrenze")
+@policy_function(
+    start_date="2007-04-20", leaf_name="altersgrenze", vectorization_strategy="loop"
+)
 def altersgrenze_mit_staffelung_nach_geburtsjahr(
     geburtsjahr: int,
     geburtsmonat: int,
@@ -132,35 +133,36 @@ def altersgrenze_mit_staffelung_nach_geburtsjahr(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        <= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_old_regime"
         ]
     elif (
         geburtsjahr
-        >= ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        >= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "min_birthyear_new_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             "entry_age_new_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_abschlagsfrei"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
             geburtsjahr
         ][geburtsmonat]
 
     return out
 
 
-@policy_function(end_date="1989-12-17", leaf_name="altersgrenze_vorzeitig")
-def altersgrenze_vorzeitig_ohne_staffelung(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+@policy_function(
+    end_date="1989-12-17",
+    leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="not_required",
+)
+def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
     """Early retirement age (ERA) for Rente für langjährig Versicherte.
 
     ERA does not depend on birth year and month.
@@ -180,16 +182,14 @@ def altersgrenze_vorzeitig_ohne_staffelung(
 
     """
 
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-
-    return ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"]
+    return ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"]
 
 
 @policy_function(
     start_date="1989-12-18",
     end_date="1996-09-26",
     leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="loop",
 )
 def altersgrenze_vorzeitig_mit_staffelung(
     geburtsjahr: int,
@@ -215,26 +215,27 @@ def altersgrenze_vorzeitig_mit_staffelung(
     """
     if (
         geburtsjahr
-        <= ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"][
+        <= ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
             "max_birthyear_old_regime"
         ]
     ):
-        out = ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
             "entry_age_old_regime"
         ]
     else:
-        out = ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"][
+        out = ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
             "entry_age_new_regime"
         ]
 
     return out
 
 
-@policy_function(start_date="1996-09-27", leaf_name="altersgrenze_vorzeitig")
-def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+@policy_function(
+    start_date="1996-09-27",
+    leaf_name="altersgrenze_vorzeitig",
+    vectorization_strategy="not_required",
+)
+def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(ges_rente_params: dict) -> float:
     """Early retirement age (ERA) for Rente für langjährig Versicherte.
 
     ERA does not depend on birth year and month.
@@ -252,11 +253,7 @@ def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(
     -------
     Early retirement age
     """
-
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-
-    return ges_rente_params["altersgrenze_langj_versicherte_vorzeitig"]
+    return ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"]
 
 
 @policy_function()
@@ -277,5 +274,4 @@ def grundsätzlich_anspruchsberechtigt(
     Eligibility as bool.
 
     """
-
     return sozialversicherung__rente__wartezeit_35_jahre_erfüllt

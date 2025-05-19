@@ -5,7 +5,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
 
 import dags
 import dags.tree as dt
@@ -37,20 +37,20 @@ from ttsim.aggregation import (
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import to_datetime, validate_date_range
-from ttsim.vectorization import make_vectorizable
+from ttsim.vectorization import vectorize_function
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     import pandas as pd
 
     from ttsim.config import numpy_or_jax as np
-    from ttsim.typing import DashedISOString
+    from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
+    from ttsim.typing import DashedISOString, GenericCallable
 
-T = TypeVar("T")
+FunArgTypes = ParamSpec("FunArgTypes")
+ReturnType = TypeVar("ReturnType")
 
 DEFAULT_START_DATE = datetime.date(1900, 1, 1)
-DEFAULT_END_DATE = datetime.date(2100, 12, 31)
+DEFAULT_END_DATE = datetime.date(2099, 12, 31)
 
 
 class FKType(StrEnum):
@@ -65,9 +65,7 @@ class FKType(StrEnum):
 
 @dataclass(frozen=True)
 class TTSIMObject:
-    """
-    Abstract base class for all TTSIM Functions and Inputs.
-    """
+    """Abstract base class for all TTSIM Functions and Data Inputs."""
 
     leaf_name: str
     start_date: datetime.date
@@ -119,7 +117,7 @@ def policy_input(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> PolicyInput:
+) -> GenericCallable[[GenericCallable], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
 
@@ -140,11 +138,11 @@ def policy_input(
 
     Returns
     -------
-    A PolicyInput object.
+    A decorator that returns a PolicyInput object.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: Callable) -> PolicyInput:
+    def inner(func: GenericCallable) -> PolicyInput:
         data_type = func.__annotations__["return"]
         return PolicyInput(
             leaf_name=func.__name__,
@@ -157,7 +155,7 @@ def policy_input(
     return inner
 
 
-def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> None:
     """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
@@ -189,16 +187,16 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable) -> None:
 
 
 @dataclass(frozen=True)
-class TTSIMFunction(TTSIMObject):
+class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
     """
     Base class for all TTSIM functions.
     """
 
-    function: Callable
+    function: GenericCallable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
@@ -222,7 +220,9 @@ class TTSIMFunction(TTSIMObject):
             f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
         )
 
-    def __call__(self, *args, **kwargs):
+    def __call__(
+        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+    ) -> ReturnType:
         return self.function(*args, **kwargs)
 
     @property
@@ -241,18 +241,16 @@ class TTSIMFunction(TTSIMObject):
 
 
 @dataclass(frozen=True)
-class PolicyFunction(TTSIMFunction):
+class PolicyFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
-    A function that computes an output vector based on some input vectors and/or
-    parameters.
+    Computes a column based on at least one input column and/or parameters.
 
     Parameters
     ----------
     leaf_name:
         The leaf name of the function in the functions tree.
     function:
-        The function to wrap. Argument values of the `@policy_function` are reused
-        unless explicitly overwritten.
+        The function that is called when the PolicyFunction is evaluated.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
@@ -287,25 +285,17 @@ def policy_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     rounding_spec: RoundingSpec | None = None,
-    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "loop",
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize",
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> PolicyFunction:
+) -> GenericCallable[[GenericCallable], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
 
-    **Dates active (start_date, end_date, leaf_name):**
-
-    Specifies that a PolicyFunction is only active between two dates, `start` and `end`.
-    By using the `leaf_name` argument, you can specify a different name for the
-    PolicyFunction in the functions tree.
-
-    Note that even if you use this decorator with the `leaf_name` argument, you must
-    ensure that the function name is unique in the file where it is defined. Otherwise,
-    the function would be overwritten by the last function with the same name.
-
-    **Rounding specification (rounding_spec):**
-
-    Adds the way rounding is to be done to a PolicyFunction.
+    PolicyFunctions are typically defined on scalars, but work on data columns (i.e.,
+    arrays of the same length as `p_id`). TTSIM will handle this (see
+    `vectorization_strategy` below). Use `params_function` / `ParamsFunction` for
+    functions that convert the parameters of the taxes and transfers system, which do
+    not require any columns from the data.
 
     Parameters
     ----------
@@ -319,22 +309,26 @@ def policy_function(
     rounding_spec
         The specification to be used for rounding.
     vectorization_strategy:
-        Whether and how the function should be vectorized.
+        Whether and how the function should be vectorized. Typically, functions will be
+        defined on scalars and will be vectorized by TTSIM. Stick to the default of
+        'vectorize'. Exceptions: 'loop' for constructs that cannot be vectorized by
+        numpy or jax; 'not_required' if the function works natively with arrays (e.g.,
+        joining two columns).
     foreign_key_type:
         Whether this is a foreign key and, if so, whether it may point to itself.
 
     Returns
     -------
-    A PolicyFunction object.
+    A decorator that returns a PolicyFunction object.
     """
 
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: Callable) -> PolicyFunction:
+    def inner(func: GenericCallable) -> PolicyFunction:
         func = (
             func
             if vectorization_strategy == "not_required"
-            else _vectorize_func(func, vectorization_strategy=vectorization_strategy)
+            else vectorize_function(func, vectorization_strategy=vectorization_strategy)
         )
         return PolicyFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -348,27 +342,8 @@ def policy_function(
     return inner
 
 
-def _vectorize_func(
-    func: Callable, vectorization_strategy: Literal["loop", "vectorize"]
-) -> Callable:
-    if vectorization_strategy == "loop":
-        vectorized = functools.wraps(func)(numpy.vectorize(func))
-        vectorized.__signature__ = inspect.signature(func)
-        vectorized.__globals__ = func.__globals__
-        vectorized.__closure__ = func.__closure__
-    elif vectorization_strategy == "vectorize":
-        backend = "jax" if IS_JAX_INSTALLED else "numpy"
-        vectorized = make_vectorizable(func, backend=backend)
-    else:
-        raise ValueError(
-            f"Vectorization strategy {vectorization_strategy} is not supported. "
-            "Use 'loop' or 'vectorize'."
-        )
-    return vectorized
-
-
 @dataclass(frozen=True)
-class GroupCreationFunction(TTSIMFunction):
+class GroupCreationFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that computes endogenous group_by IDs.
 
@@ -409,13 +384,13 @@ def group_creation_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> GroupCreationFunction:
+) -> GenericCallable[[GenericCallable], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def decorator(func: Callable) -> GroupCreationFunction:
+    def decorator(func: GenericCallable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
         return GroupCreationFunction(
             leaf_name=_leaf_name,
@@ -428,7 +403,7 @@ def group_creation_function(
 
 
 @dataclass(frozen=True)
-class AggByGroupFunction(TTSIMFunction):
+class AggByGroupFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -480,7 +455,7 @@ def agg_by_group_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> AggByGroupFunction:
+) -> GenericCallable[[GenericCallable], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -493,25 +468,25 @@ def agg_by_group_function(
         AggType.COUNT: grouped_count,
     }
 
-    def inner(func: Callable) -> AggByGroupFunction:
+    def inner(func: GenericCallable) -> AggByGroupFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
-        other_args = args - group_ids
         _fail_if_group_id_is_invalid(group_ids, orig_location)
+        group_id = group_ids.pop()
+        other_args = args - {group_id}
         if agg_type == AggType.COUNT:
             _fail_if_other_arg_is_present(other_args, orig_location)
-            mapper = {"group_id": group_ids.pop()}
+            mapper = {"group_id": group_id}
         else:
             _fail_if_other_arg_is_invalid(other_args, orig_location)
-            mapper = {"group_id": group_ids.pop(), "column": other_args.pop()}
+            mapper = {"group_id": group_id, "column": other_args.pop()}
+        if IS_JAX_INSTALLED:
+            mapper["num_segments"] = f"{group_id}_num_segments"
         agg_func = dags.rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
-
-        functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
 
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -525,7 +500,7 @@ def agg_by_group_function(
     return inner
 
 
-def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
+def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str) -> None:
     if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
@@ -534,7 +509,7 @@ def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
+def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str) -> None:
     if other_args:
         raise ValueError(
             "There must be no argument besides identifiers for counting. Got: "
@@ -542,7 +517,7 @@ def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str):
+def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str) -> None:
     if len(other_args) != 1:
         raise ValueError(
             "There must be exactly one argument besides identifiers for aggregations. "
@@ -552,7 +527,7 @@ def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str):
 
 
 @dataclass(frozen=True)
-class AggByPIDFunction(TTSIMFunction):
+class AggByPIDFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -604,7 +579,7 @@ def agg_by_p_id_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> AggByPIDFunction:
+) -> GenericCallable[[GenericCallable], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -617,7 +592,7 @@ def agg_by_p_id_function(
         AggType.COUNT: count_by_p_id,
     }
 
-    def inner(func: Callable) -> AggByPIDFunction:
+    def inner(func: GenericCallable) -> AggByPIDFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         other_p_ids = {
@@ -647,7 +622,7 @@ def agg_by_p_id_function(
         )
 
         functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
+        agg_func.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
 
         return AggByPIDFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -661,7 +636,7 @@ def agg_by_p_id_function(
     return inner
 
 
-def _fail_if_p_id_is_not_present(args: set[str], orig_location: str):
+def _fail_if_p_id_is_not_present(args: set[str], orig_location: str) -> None:
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
@@ -669,7 +644,7 @@ def _fail_if_p_id_is_not_present(args: set[str], orig_location: str):
         )
 
 
-def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
+def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) -> None:
     if len(other_p_ids) != 1:
         raise ValueError(
             "Require exactly one identifier starting with 'p_id_' for "
@@ -679,7 +654,7 @@ def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str):
 
 
 @dataclass(frozen=True)
-class TimeConversionFunction(TTSIMFunction):
+class TimeConversionFunction(TTSIMFunction):  # type: ignore[type-arg]
     """
     A function that is a time conversion of another function.
 
@@ -699,7 +674,7 @@ class TimeConversionFunction(TTSIMFunction):
 
     source: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.source is None:
             raise ValueError("The source must be specified.")
         super().__post_init__()
@@ -777,3 +752,186 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
         out = False
 
     return out
+
+
+@dataclass(frozen=True)
+class TTSIMParam:
+    """
+    Abstract base class for all TTSIM Parameters.
+    """
+
+    leaf_name: str
+    start_date: datetime.date
+    end_date: datetime.date
+    unit: (
+        None
+        | Literal[
+            "Euros",
+            "DM",
+            "Share",
+            "Percent",
+            "Years",
+            "Months",
+            "Hours",
+            "Square Meters",
+            "Euros / Square Meter",
+        ]
+    )
+    reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
+    name: dict[Literal["de", "en"], str]
+    description: dict[Literal["de", "en"], str]
+    note: str | None
+    reference: str | None
+
+
+@dataclass(frozen=True)
+class ScalarTTSIMParam(TTSIMParam):
+    """
+    A scalar TTSIM parameter directly read from a YAML file.
+    """
+
+    value: bool | int | float
+
+
+@dataclass(frozen=True)
+class DictTTSIMParam(TTSIMParam):
+    """
+    A TTSIM parameter directly read from a YAML file that is a flat dictionary.
+    """
+
+    value: (
+        dict[str, int]
+        | dict[str, float]
+        | dict[str, bool]
+        | dict[int, int]
+        | dict[int, float]
+        | dict[int, bool]
+    )
+
+
+@dataclass(frozen=True)
+class PiecewisePolynomialTTSIMParam(TTSIMParam):
+    """A TTSIM parameter with its contents read and converted from a YAML file.
+
+    Its value is a PiecewisePolynomialParameters object, i.e., it contains the
+    parameters for calling `piecewise_polynomial`.
+    """
+
+    value: PiecewisePolynomialParameters
+
+
+@dataclass(frozen=True)
+class RawTTSIMParam(TTSIMParam):
+    """
+    A TTSIM parameter directly read from a YAML file that is an arbitrarily nested
+    dictionary.
+    """
+
+    value: dict[str | int, Any]
+
+
+@dataclass(frozen=True)
+class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
+    """
+    Compute a scalar or custom object from parameters of the taxes and transfers system.
+
+    Parameters
+    ----------
+    leaf_name:
+        The leaf name of the function in the objects tree.
+    function:
+        The function that is called when the ParamsFunction is evaluated.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    """
+
+    function: GenericCallable[FunArgTypes, ReturnType]
+
+    def __post_init__(self) -> None:
+        # Expose the signature of the wrapped function for dependency resolution
+        _frozen_safe_update_wrapper(self, self.function)
+
+    def __call__(
+        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+    ) -> ReturnType:
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
+
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
+
+    def is_active(self, date: datetime.date) -> bool:
+        """Check if the function is active at a given date."""
+        return self.start_date <= date <= self.end_date
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: set[str],
+    ) -> ParamsFunction:  # type: ignore[type-arg]
+        """Remove tree logic from the function and update the function signature."""
+        return ParamsFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            start_date=self.start_date,
+            end_date=self.end_date,
+        )
+
+
+# Never returns a column, require precise annotation
+def params_function(
+    *,
+    leaf_name: str | None = None,
+    start_date: str | datetime.date = DEFAULT_START_DATE,
+    end_date: str | datetime.date = DEFAULT_END_DATE,
+) -> GenericCallable[[GenericCallable], ParamsFunction]:
+    """
+    Decorator that makes a `ParamsFunction` from a function.
+
+    ParamsFunctions convert complex parameters (i.e., anything that is not a scalar, a
+    flat homogenous dictionary, or a set of parameters of a piecewise polynomial
+    function) to custom representations. They must not use any data columns (i.e.,
+    arrays of the same length as `p_id`). Use `policy_function` / `PolicyFunction` for
+    functions that operate on data columns.
+
+    As a consequence, the arguments of the decorated function must be found in the
+    params tree. They are typically defined as outermost keys in the yaml files with
+    parameters of the taxes and transfers system.
+
+    Parameters
+    ----------
+    leaf_name
+        The name that should be used as the ParamsFunction's leaf name in the DAG. If
+        omitted, we use the name of the function as defined.
+    start_date
+        The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+    end_date
+        The end date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
+
+    Returns
+    -------
+    A decorator that returns a ParamsFunction object.
+    """
+    start_date, end_date = _convert_and_validate_dates(start_date, end_date)
+
+    def inner(func: GenericCallable) -> ParamsFunction:  # type: ignore[type-arg]
+        return ParamsFunction(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    return inner

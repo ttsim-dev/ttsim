@@ -1,0 +1,28 @@
+---
+info:
+  note: ''
+  precision_atol: 0.01
+  source: ''
+inputs:
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+    parent_is_noble:
+      - false
+      - false
+      - true
+    orc_hunting_bounty__small_orcs_hunted:
+      - 2
+      - 0
+      - 0
+    orc_hunting_bounty__large_orcs_hunted:
+      - 0
+      - 2
+      - 1
+outputs:
+  orc_hunting_bounty__amount:
+    - 200.0
+    - 400.0
+    - 100.0

@@ -86,10 +86,6 @@ inputs:
       - 6
       - 6
       - 6
-    jahr:
-      - '2019'
-      - '2019'
-      - '2019'
     kindergeld__betrag_m_bg:
       - 388.0
       - 388.0

@@ -18,8 +18,6 @@ inputs:
       - 12
     hh_id:
       - 25
-    jahr:
-      - 2014
     p_id:
       - 25
     sozialversicherung__rente__altersrente__besonders_langjährig__grundsätzlich_anspruchsberechtigt:

@@ -48,9 +48,6 @@ inputs:
     hh_id:
       - 8
       - 8
-    jahr:
-      - 2020
-      - 2020
     kindergeld__betrag_m_hh:
       - 204.0
       - 204.0

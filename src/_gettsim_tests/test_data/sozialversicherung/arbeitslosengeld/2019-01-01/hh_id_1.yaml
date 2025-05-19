@@ -31,8 +31,6 @@ inputs:
       - 1989
     hh_id:
       - 1
-    jahr:
-      - 2019
     p_id:
       - 1
     wohnort_ost:

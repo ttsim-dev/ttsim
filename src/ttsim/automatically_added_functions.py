@@ -8,6 +8,7 @@ import dags.tree as dt
 from dags import rename_arguments
 
 from ttsim.aggregation import grouped_sum
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.shared import (
     fail_if_multiple_time_units_for_same_base_name_and_group,
     get_base_name_and_grouping_suffix,
@@ -466,7 +467,7 @@ def create_time_conversion_functions(
 
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    converted_ttsim_objects = {}
+    converted_ttsim_objects: dict[str, TTSIMObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for qual_name_data in data:
             # If base_name is in provided data, base time conversions on that.
@@ -578,9 +579,12 @@ def create_agg_by_group_functions(
         base_name_with_time_unit = match.group("base_name_with_time_unit")
         if base_name_with_time_unit in potential_agg_by_group_sources:
             group_id = f"{match.group('group')}_id"
+            mapper = {"group_id": group_id, "column": base_name_with_time_unit}
+            if IS_JAX_INSTALLED:
+                mapper["num_segments"] = f"{group_id}_num_segments"
             agg_func = dags.rename_arguments(
                 func=grouped_sum,
-                mapper={"group_id": group_id, "column": base_name_with_time_unit},
+                mapper=mapper,
             )
             out[abgfn] = AggByGroupFunction(
                 leaf_name=dt.tree_path_from_qual_name(abgfn)[-1],
@@ -593,7 +597,7 @@ def create_agg_by_group_functions(
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(
     functions: QualNameTTSIMFunctionDict,
-    group_pattern: re.Pattern,
+    group_pattern: re.Pattern[str],
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.
 

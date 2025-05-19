@@ -100,7 +100,7 @@ def _fail_if_mapper_has_incorrect_format(
 
     non_string_paths = [
         str(path)
-        for path in optree.tree_paths(inputs_tree_to_df_columns, none_is_leaf=True)
+        for path in optree.tree_paths(inputs_tree_to_df_columns, none_is_leaf=True)  # type: ignore[arg-type]
         if not all(isinstance(part, str) for part in path)
     ]
     if non_string_paths:

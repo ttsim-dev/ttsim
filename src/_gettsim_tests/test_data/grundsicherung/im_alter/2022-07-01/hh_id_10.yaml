@@ -48,8 +48,6 @@ inputs:
       - 1
     hh_id:
       - 10
-    jahr:
-      - 2022
     kindergeld__betrag_m_eg:
       - 0.0
     kindergeld__p_id_empfänger:

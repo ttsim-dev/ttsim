@@ -9,6 +9,13 @@ from ttsim import (
     policy_function,
     policy_input,
 )
+from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
+
+if IS_JAX_INSTALLED:
+    DTYPE = "float32"
+else:
+    DTYPE = "float64"
 
 
 @policy_input()
@@ -24,48 +31,48 @@ def p_id() -> int:
 rounding_specs_and_exp_results = [
     (
         RoundingSpec(base=1, direction="up"),
-        [100.24, 100.78],
-        [101.0, 101.0],
+        np.array([100.24, 100.78]),
+        np.array([101.0, 101.0]),
     ),
     (
         RoundingSpec(base=1, direction="down"),
-        [100.24, 100.78],
-        [100.0, 100.0],
+        np.array([100.24, 100.78]),
+        np.array([100.0, 100.0]),
     ),
     (
         RoundingSpec(base=1, direction="nearest"),
-        [100.24, 100.78],
-        [100.0, 101.0],
+        np.array([100.24, 100.78]),
+        np.array([100.0, 101.0]),
     ),
     (
         RoundingSpec(base=5, direction="up"),
-        [100.24, 100.78],
-        [105.0, 105.0],
+        np.array([100.24, 100.78]),
+        np.array([105.0, 105.0]),
     ),
     (
         RoundingSpec(base=0.1, direction="down"),
-        [100.24, 100.78],
-        [100.2, 100.7],
+        np.array([100.24, 100.78]),
+        np.array([100.2, 100.7]),
     ),
     (
         RoundingSpec(base=0.001, direction="nearest"),
-        [100.24, 100.78],
-        [100.24, 100.78],
+        np.array([100.24, 100.78]),
+        np.array([100.24, 100.78]),
     ),
     (
         RoundingSpec(base=1, direction="up", to_add_after_rounding=10),
-        [100.24, 100.78],
-        [111.0, 111.0],
+        np.array([100.24, 100.78]),
+        np.array([111.0, 111.0]),
     ),
     (
         RoundingSpec(base=1, direction="down", to_add_after_rounding=10),
-        [100.24, 100.78],
-        [110.0, 110.0],
+        np.array([100.24, 100.78]),
+        np.array([110.0, 110.0]),
     ),
     (
         RoundingSpec(base=1, direction="nearest", to_add_after_rounding=10),
-        [100.24, 100.78],
-        [110.0, 111.0],
+        np.array([100.24, 100.78]),
+        np.array([110.0, 111.0]),
     ),
 ]
 
@@ -102,9 +109,9 @@ def test_rounding(rounding_spec, input_values, exp_output):
     def test_func(x):
         return x
 
-    data = {
-        "p_id": pd.Series([1, 2]),
-        "namespace": {"x": pd.Series(input_values)},
+    data_tree = {
+        "p_id": np.array([1, 2]),
+        "namespace": {"x": np.array(input_values)},
     }
 
     environment = PolicyEnvironment(
@@ -112,14 +119,13 @@ def test_rounding(rounding_spec, input_values, exp_output):
     )
 
     calc_result = compute_taxes_and_transfers(
-        data_tree=data,
+        data_tree=data_tree,
         environment=environment,
         targets_tree={"namespace": {"test_func": None}},
-        groupings=(),
     )
     assert_series_equal(
         pd.Series(calc_result["namespace"]["test_func"]),
-        pd.Series(exp_output),
+        pd.Series(exp_output, dtype=DTYPE),
         check_names=False,
     )
 
@@ -133,8 +139,8 @@ def test_rounding_with_time_conversion():
         return x
 
     data = {
-        "p_id": pd.Series([1, 2]),
-        "x": pd.Series([1.2, 1.5]),
+        "p_id": np.array([1, 2]),
+        "x": np.array([1.2, 1.5]),
     }
 
     environment = PolicyEnvironment(
@@ -149,11 +155,10 @@ def test_rounding_with_time_conversion():
         data_tree=data,
         environment=environment,
         targets_tree={"test_func_y": None},
-        groupings=(),
     )
     assert_series_equal(
         pd.Series(calc_result["test_func_y"]),
-        pd.Series([12.0, 12.0]),
+        pd.Series([12.0, 12.0], dtype=DTYPE),
         check_names=False,
     )
 
@@ -172,8 +177,8 @@ def test_no_rounding(
     def test_func(x):
         return x
 
-    data = {"p_id": pd.Series([1, 2])}
-    data["x"] = pd.Series(input_values_exp_output)
+    data = {"p_id": np.array([1, 2])}
+    data["x"] = np.array(input_values_exp_output)
     environment = PolicyEnvironment(
         {
             "test_func": test_func,
@@ -186,12 +191,11 @@ def test_no_rounding(
         data_tree=data,
         environment=environment,
         targets_tree={"test_func": None},
-        groupings=(),
         rounding=False,
     )
     assert_series_equal(
         pd.Series(calc_result["test_func"]),
-        pd.Series(input_values_exp_output),
+        pd.Series(input_values_exp_output, dtype=DTYPE),
         check_names=False,
     )
 
@@ -209,7 +213,7 @@ def test_rounding_callable(rounding_spec, input_values, exp_output):
     func_with_rounding = rounding_spec.apply_rounding(test_func)
 
     assert_series_equal(
-        func_with_rounding(pd.Series(input_values)),
+        pd.Series(func_with_rounding(input_values)),
         pd.Series(exp_output),
         check_names=False,
     )
@@ -226,7 +230,7 @@ def test_rounding_spec(rounding_spec, input_values, exp_output):
         return income
 
     rounded_func = rounding_spec.apply_rounding(test_func)
-    result = rounded_func(pd.Series(input_values))
+    result = rounded_func(input_values)
 
     assert_series_equal(
         pd.Series(result),

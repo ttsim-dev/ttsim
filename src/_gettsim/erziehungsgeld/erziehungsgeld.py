@@ -15,11 +15,13 @@ def anspruchshöhe_m(
     pass
 
 
-@policy_function(start_date="2004-01-01", end_date="2008-12-31")
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
 def betrag_m(
     anspruchshöhe_m: int,
     grundsätzlich_anspruchsberechtigt: bool,
-) -> bool:
+) -> float:
     """Total parental leave benefits (Erziehungsgeld) received by the parent.
 
     Legal reference: BErzGG (BGBl. I 1985 S. 2154; BGBl. I 2004 S. 206)
@@ -37,7 +39,7 @@ def betrag_m(
 
     """
     if grundsätzlich_anspruchsberechtigt:
-        out = anspruchshöhe_m
+        out: float = anspruchshöhe_m
     else:
         out = 0.0
 
@@ -137,9 +139,9 @@ def basisbetrag_m(
     ):
         out = 0.0
     elif budgetsatz:
-        out = erziehungsgeld_params["erziehungsgeld_satz"]["budgetsatz"]
+        out = erziehungsgeld_params["satz"]["budgetsatz"]
     else:
-        out = erziehungsgeld_params["erziehungsgeld_satz"]["regelsatz"]
+        out = erziehungsgeld_params["satz"]["regelsatz"]
 
     return out
 
@@ -175,7 +177,7 @@ def abzug_durch_einkommen_m(
         and alter_monate
         >= erziehungsgeld_params["einkommensgrenze"]["start_age_m_reduced_income_limit"]
     ):
-        out = anzurechnendes_einkommen_m * erziehungsgeld_params["abschlag_faktor"]
+        out = anzurechnendes_einkommen_m * erziehungsgeld_params["abschlagsfaktor"]
     else:
         out = 0.0
     return out
@@ -216,13 +218,13 @@ def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
     if budgetsatz:
         out = (
             familie__kind
-            and alter_monate <= erziehungsgeld_params["end_age_m_budgetsatz"]
+            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_budgetsatz"]
         )
 
     else:
         out = (
             familie__kind
-            and alter_monate <= erziehungsgeld_params["end_age_m_regelsatz"]
+            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_regelsatz"]
         )
 
     return out
@@ -267,13 +269,13 @@ def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
     if budgetsatz and geburtsjahr <= erziehungsgeld_params["abolishment_cohort"]:
         out = (
             familie__kind
-            and alter_monate <= erziehungsgeld_params["end_age_m_budgetsatz"]
+            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_budgetsatz"]
         )
 
     elif geburtsjahr <= erziehungsgeld_params["abolishment_cohort"]:
         out = (
             familie__kind
-            and alter_monate <= erziehungsgeld_params["end_age_m_regelsatz"]
+            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_regelsatz"]
         )
 
     else:
@@ -307,7 +309,7 @@ def grundsätzlich_anspruchsberechtigt(
 
     """
     out = kind_grundsätzlich_anspruchsberechtigt_fg and (
-        arbeitsstunden_w <= erziehungsgeld_params["arbeitsstunden_w_grenze"]
+        arbeitsstunden_w <= erziehungsgeld_params["maximale_wochenarbeitszeit"]
     )
 
     return out
@@ -351,13 +353,15 @@ def anzurechnendes_einkommen_y(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
             - eink_st_abzuege_params["werbungskostenpauschale"]
             * arbeitslosengeld_2__anzahl_erwachsene_fg
-        ) * erziehungsgeld_params["pauschal_abzug_auf_einkommen"]
+        ) * erziehungsgeld_params["pauschaler_abzug_vom_einkommen"]
     else:
         out = 0.0
     return out
 
 
-@policy_function(start_date="2004-01-01", end_date="2008-12-31")
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
 def einkommensgrenze_y(
     einkommensgrenze_ohne_geschwisterbonus: float,
     arbeitslosengeld_2__anzahl_kinder_fg: float,
@@ -394,7 +398,9 @@ def einkommensgrenze_y(
     return out
 
 
-@policy_function(start_date="2004-01-01", end_date="2008-12-31")
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
 def einkommensgrenze_ohne_geschwisterbonus(
     familie__alleinerziehend_fg: bool,
     alter_monate: float,

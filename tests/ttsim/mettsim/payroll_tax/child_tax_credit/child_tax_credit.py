@@ -15,41 +15,38 @@ def amount_y(
     """The amount of child tax credit at the recipient level."""
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def claim_of_child_y(
     child_eligible: bool,
-    payroll_tax_params: dict,
+    schedule: dict[str, float],
 ) -> float:
     if child_eligible:
-        return payroll_tax_params["child_tax_credit"]["child_amount_y"]
+        return schedule["child_amount_y"]
     else:
         return 0
 
 
-@policy_function()
+@policy_function(vectorization_strategy="vectorize")
 def child_eligible(
     age: int,
-    payroll_tax_params: dict,
-    in_same_household_as_recipient: float,
+    schedule: dict[str, float],
+    in_same_household_as_recipient: bool,
 ) -> bool:
-    return (
-        age <= payroll_tax_params["child_tax_credit"]["max_age"]
-        and in_same_household_as_recipient
-    )
+    return age <= schedule["max_age"] and in_same_household_as_recipient
 
 
 @policy_function(vectorization_strategy="not_required")
 def in_same_household_as_recipient(
     p_id: int,
-    hh_id: int,
+    kin_id: int,
     p_id_recipient: int,
 ) -> bool:
     return (
         join(
             foreign_key=p_id_recipient,
             primary_key=p_id,
-            target=hh_id,
+            target=kin_id,
             value_if_foreign_key_is_missing=-1,
         )
-        == hh_id
+        == kin_id
     )

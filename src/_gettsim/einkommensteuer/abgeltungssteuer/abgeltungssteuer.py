@@ -32,8 +32,8 @@ def zu_versteuerndes_einkommen_y_sn(
 ) -> float:
     """Taxable capital income for Abgeltungssteuer.
 
-    TODO(@MImmesberger): Find out whether Sparerpauschbetrag and
-    Sparer-Werbungskostenpauschbetrag are transferable to partner with same sn_id.
+    TODO(@MImmesberger): Find out whether Sparerpauschbetrag is
+    transferable to partner with same sn_id.
     https://github.com/iza-institute-of-labor-economics/gettsim/issues/843
 
     Parameters
@@ -52,9 +52,6 @@ def zu_versteuerndes_einkommen_y_sn(
     out = (
         einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y_sn
         - einkommensteuer__anzahl_personen_sn
-        * (
-            eink_st_abzuege_params["sparerpauschbetrag"]
-            + eink_st_abzuege_params["sparer_werbungskosten_pauschbetrag"]
-        )
+        * eink_st_abzuege_params["sparerpauschbetrag"]
     )
     return max(out, 0.0)

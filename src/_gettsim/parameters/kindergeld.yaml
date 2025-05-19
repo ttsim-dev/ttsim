@@ -5,24 +5,26 @@ altersgrenze:
     en: Age at which child benefit is no longer paid.
   description:
     de: >-
+      § 32 Art. 2-4 EStG.
       Für minderjährige Kinder besteht ohne Bedingungen ein Anspruch auf Kindergeld.
       Auch für erwachsene Kinder kann bis zu einer Altersgrenze unter bestimmten
       Bedingungen ein Anspruch auf Kindergeld bestehen.
     en: >-
+      § 32 Art. 2-4 EStG.
       Underage children are entitled to child benefit without any conditions. Also adult
       children up to a specified age are entitled to child benefit under certain
       conditions.
-  unit: Year
-  reference: § 32 Art. 2-4 EStG.
+  unit: Years
+  reference_period: null
+  type: dict
   1984-01-01:
     mit_bedingungen: 27
     ohne_bedingungen: 18
-    reference: null
   2007-01-01:
     mit_bedingungen: 25
     ohne_bedingungen: 18
     reference: Art. 1 G. v. 19.07.2006 BGBl I S. 1652
-kindergeld:
+kindergeldsatz:
   name:
     de: Kindergeld, Betrag je nach Reihenfolge der Kinder.
     en: Child benefit amount, depending on succession of children.
@@ -32,82 +34,70 @@ kindergeld:
       Steuerpflichtige relevant (d.h. Ausländer mit Erwerbstätigkeit in Deutschland).
       Für Werte vor 2002, siehe 'BMF - Datensammlung zur Steuerpolitik'
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Month
+  type: require_converter
   1975-01-01:
-    reference: null
     1: 26
     2: 36
     3: 61
     4: 61
   1978-01-01:
-    reference: null
     1: 26
     2: 41
     3: 77
     4: 77
   1979-01-01:
-    reference: null
     1: 26
     2: 51
     3: 102
     4: 102
   1979-07-01:
-    reference: null
     1: 26
     2: 61
     3: 102
     4: 102
   1981-02-01:
-    reference: null
     1: 26
     2: 61
     3: 123
     4: 123
   1982-01-01:
-    reference: null
     1: 26
     2: 51
     3: 112
     4: 123
   1990-07-01:
-    reference: null
     1: 26
     2: 66
     3: 112
     4: 123
   1992-01-01:
-    reference: null
     1: 36
     2: 66
     3: 112
     4: 123
   1996-01-01:
-    reference: null
     1: 102
     2: 102
     3: 153
     4: 179
   1997-01-01:
-    reference: null
     1: 112
     2: 112
     3: 153
     4: 179
   1999-01-01:
-    reference: null
     1: 128
     2: 128
     3: 153
     4: 179
   2000-01-01:
-    reference: null
     1: 138
     2: 138
     3: 153
     4: 179
   2002-01-01:
-    reference: null
     1: 154
     2: 154
     3: 154
@@ -170,53 +160,51 @@ kindergeld:
   2023-01-01:
     reference: Art. 6 G. v. 08.12.2022 BGBl. I S. 2230.
     note: Inflationsausgleichsgesetz
-    scalar: 250
+    value: 250
   2025-01-01:
-    scalar: 255
+    value: 255
     note: Steuerfortentwicklungsgesetz (SteFeG)
     reference: Art. 5 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
   2026-01-01:
-    scalar: 259
+    value: 259
     note: Steuerfortentwicklungsgesetz (SteFeG) 2024
     reference: Art. 6 G. v. 30.12.2024 BGBl. 2024 Nr. 449.
-einkommensgrenze:
+maximales_einkommen_des_kindes:
   name:
-    de: Einkommensgrenze der Kinder für Kindergeldanspruch
-    en: Income Ceiling for children in order to get child benefit.
+    de: Einkommensgrenze der Kinder, ab welcher kein Kindergeldanspruch besteht
+    en: Income ceiling for children in order to get child benefit.
   description:
     de: >-
       § 32 (4) EStG. Wurde 2012 durch eine Höchstgrenze der gearbeiteten Stunden
       ersetzt.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Year
+  type: scalar
   1984-01-01:
-    scalar: 0
-    reference: null
+    value: 0
   1996-01-01:
-    scalar: 6136
+    value: 6136
     reference: Art. 1 G. v. 11.10.1995 BGBl. I S. 1250
     note: Originalwert 12000 DM.
   1999-01-01:
-    scalar: 6657
-    referemce: null
+    value: 6657
   2000-01-01:
-    scalar: 6902
-    reference: .
+    value: 6902
   2001-01-01:
-    scalar: 7179
-    reference: .
+    value: 7179
   2002-01-01:
-    scalar: 7188
+    value: 7188
     reference: Art. 1 G. v. 16.08.2001 BGBl. I S. 2074
   2004-01-01:
-    scalar: 7680
-    reference: null
+    value: 7680
   2009-01-01:
-    scalar: 8004
+    value: 8004
     reference: Art. 1 G. v. 16.07.2009 BGBl. I S. 1959
-    note: Zurückdatiert auf das volle Kalenderjahr 2009.
-stundengrenze:
+    note: Zurückdatiert auf das volle Kalenderjahr 2009
+  2012-01-01:
+    note: Revoked in favour of maximale_arbeitsstunden_des_kindes
+maximale_arbeitsstunden_des_kindes:
   name:
     de: Wochenstundengrenze für Kindergeldanspruch
     en: Working hours threshold for child benefit eligibility
@@ -225,14 +213,15 @@ stundengrenze:
       §32 (4) S. 3 EStG. Maximale Anzahl von erlaubten Wochenstunden des Kindes für den
       Bezug von Kindergeld
     en: null
-  unit: Hour
+  unit: Hours
   reference_period: Week
+  type: scalar
   2012-01-01:
-    scalar: 20
+    value: 20
     reference: Art. 1 G. v. 01.11.2011 BGBl. I S. 2131
-kinderbonus:
+kinderbonus_pro_kind:
   name:
-    de: Kinderbonus (Einmalzahlung)
+    de: Kinderbonus pro Kind
     en: Child bonus (one-time payment)
   description:
     de: >-
@@ -240,16 +229,14 @@ kinderbonus:
       2020 bzw. Mai 2021 ausgezahlt, aber ist hier auf das volle Kalenderjahr
       angerechnet.
     en: null
-  unit: Euro
+  unit: Euros
   reference_period: Year
-  1984-01-01:
-    scalar: 0
+  type: scalar
   2020-01-01:
     reference: Art. 1 Zweites Corona-Steuerhilfegesetz v. 29.06.2020 BGBl. I S. 1512
-    scalar: 300
+    value: 300
   2021-01-01:
     reference: Art. 1 Drittes Corona-Steuerhilfegesetz v. 10.03.2021 BGBl. I S. 330
-    scalar: 150
+    value: 150
   2022-01-01:
     note: only one-time payment
-    scalar: 0

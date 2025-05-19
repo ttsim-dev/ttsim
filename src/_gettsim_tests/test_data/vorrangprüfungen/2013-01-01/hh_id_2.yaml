@@ -42,9 +42,6 @@ inputs:
     hh_id:
       - 2
       - 2
-    jahr:
-      - 2013
-      - 2013
     kinderzuschlag__basisbetrag_m_bg:
       - 0.0
       - 0.0

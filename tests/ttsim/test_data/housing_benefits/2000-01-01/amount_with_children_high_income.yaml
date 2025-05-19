@@ -9,7 +9,7 @@ inputs:
       - 0
       - 1
       - 2
-    hh_id:
+    kin_id:
       - 0
       - 0
       - 0
@@ -51,7 +51,7 @@ outputs:
     - 0.0
     - 0.0
   housing_benefits__income__amount_m:
-    - 1055
+    - 1056.0
     - 0.0
     - 0.0
   housing_benefits__eligibility__requirement_fulfilled_fam:

@@ -51,7 +51,7 @@ def mehrlingsbonus_m(anzahl_mehrlinge_fg: int, elterngeld_params: dict) -> float
     -------
 
     """
-    return anzahl_mehrlinge_fg * elterngeld_params["mehrlingbonus"]
+    return anzahl_mehrlinge_fg * elterngeld_params["mehrlingsbonus"]
 
 
 @policy_function(start_date="2007-01-01")

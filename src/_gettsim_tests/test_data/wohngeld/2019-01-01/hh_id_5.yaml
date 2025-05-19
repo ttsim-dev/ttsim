@@ -52,8 +52,6 @@ inputs:
       - 1
     hh_id:
       - 5
-    jahr:
-      - 2019
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
     kindergeld__p_id_empfänger:

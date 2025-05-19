@@ -3,7 +3,9 @@
 from ttsim import piecewise_polynomial, policy_function
 
 
-@policy_function(end_date="2008-12-31", leaf_name="betrag_y_sn")
+@policy_function(
+    end_date="2008-12-31", leaf_name="betrag_y_sn", vectorization_strategy="loop"
+)
 def betrag_y_sn_ohne_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
@@ -46,7 +48,9 @@ def betrag_y_sn_ohne_abgelt_st(
     return out
 
 
-@policy_function(start_date="2009-01-01", leaf_name="betrag_y_sn")
+@policy_function(
+    start_date="2009-01-01", leaf_name="betrag_y_sn", vectorization_strategy="loop"
+)
 def betrag_y_sn_mit_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
@@ -88,7 +92,7 @@ def betrag_y_sn_mit_abgelt_st(
     out = (
         einkommensteuer__anzahl_personen_sn
         * solidaritätszuschlagstarif(eink_st_per_individual, soli_st_params)
-        + soli_st_params["soli_st"]["rates"][0, -1]
+        + soli_st_params["parameter_solidaritätszuschlag"].rates[0, -1]
         * einkommensteuer__abgeltungssteuer__betrag_y_sn
     )
 
@@ -112,11 +116,7 @@ def solidaritätszuschlagstarif(st_per_individual: float, soli_st_params: dict) 
 
     out = piecewise_polynomial(
         st_per_individual,
-        thresholds=soli_st_params["soli_st"]["thresholds"],
-        rates=soli_st_params["soli_st"]["rates"],
-        intercepts_at_lower_thresholds=soli_st_params["soli_st"][
-            "intercepts_at_lower_thresholds"
-        ],
+        parameters=soli_st_params["parameter_solidaritätszuschlag"],
     )
 
     return out

@@ -48,9 +48,6 @@ inputs:
     hh_id:
       - 6
       - 6
-    jahr:
-      - 2019
-      - 2019
     kindergeld__betrag_m_hh:
       - 194.0
       - 194.0

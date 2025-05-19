@@ -1,24 +1,21 @@
 ---
-beitr_satz:
+parameter_beitragssatz:
   name:
     de: Beitragssätze zur gesetzlichen Pflegeversicherung
     en: Contribution rate to statutory care insurance
   description:
     de: >-
-      Beitragssätze für gesetzliche Pflegeversicherung (seit 1995). standard -
-      Beitragssatz für Arbeitnehmer zusatz_kinderlos - Beitragszuschlag für kinderlose
-      Versicherte, die das 23. Lebensjahr vollendet haben. Wird vom Arbeitnehmer
-      alleine getragen. Eingeführt 2005.
+      Beitragssätze für gesetzliche Pflegeversicherung.
     en: >-
-      Statury Contribution Rates for mandatory care insurance (since 1995). standard -
-      employees contribution rate zusatz_kinderlos - contribution rate for insured
-      people without children and at least 23 years old. paid by employees. est. 2005
+      Statutory Contribution Rates for mandatory long-term care insurance.
   unit: Share
+  reference_period: null
+  type: dict
   access_different_date: jahresanfang
   1995-01-01:
-    scalar: 0.005
+    value: 0.005
   1997-01-01:
-    scalar: 0.0085
+    value: 0.0085
   2005-01-01:
     standard: 0.0085
     zusatz_kinderlos: 0.0025
@@ -47,140 +44,29 @@ beitr_satz:
     abschlag_kinder: 0.0025
     note: >-
       Pflegeunterstützungs- und -entlastungsgesetz - PUEG
-      Increase of contribution rates for ges_pflegev and introduction of reduction of
-      contribution rates for people with children.
+      Increase of contribution rates and introduction of reduction of contribution rates
+      for people with children.
   2025-01-01:
     deviation_from: previous
     standard: 0.018
     reference: >-
       Pflege-Beitragssatz-Anpassungsverordnung 2025, Bundestag-Drucksache 20/1371
-beitr_bemess_grenze_m:
-  name:
-    de: Beitragsbemessungsgrenzen für die Pflegeversicherung
-    en: Income Threshold for care insurance
-  description:
-    de: Die Beitragsbemessungsgrenze für Kranken- und Pflegeversicherung ist identisch.
-    en: The income threshold is the same for health and long-term care insurance.
-  unit: Euro
-  reference_period: Month
-  1995-01-01:
-    west: 2991
-    ost: 2454
-  1996-01-01:
-    west: 3068
-    ost: 2608
-  1997-01-01:
-    west: 3144
-    ost: 2723
-  1998-01-01:
-    west: 3221
-    ost: 2684
-  1999-01-01:
-    west: 3259
-    ost: 2761
-  2000-01-01:
-    west: 3298
-    ost: 2723
-  2001-01-01:
-    west: 3336
-    ost: 3336
-  2002-01-01:
-    west: 3375
-    ost: 3375
-  2003-01-01:
-    west: 3450
-    ost: 3375
-  2004-01-01:
-    west: 3488
-    ost: 3488
-  2005-01-01:
-    west: 3525
-    ost: 3525
-  2006-01-01:
-    west: 3562.5
-    ost: 3562.5
-  2008-01-01:
-    west: 3600
-    ost: 3600
-  2009-01-01:
-    west: 3675
-    ost: 3675
-  2010-01-01:
-    west: 3750
-    ost: 3750
-  2011-01-01:
-    deviation_from: previous
-    west: 3712.5
-    ost: 3712.5
-  2012-01-01:
-    deviation_from: previous
-    west: 3825
-    ost: 3825
-  2013-01-01:
-    west: 3937.5
-    ost: 3937.5
-  2014-01-01:
-    west: 4050
-    ost: 4050
-    note: >-
-      http://www.bundesregierung.de/ContentArchiv/DE/Archiv17/Artikel/2013/10/2013-10-16-rechengroessen-sozialversicherung.html
-  2015-01-01:
-    west: 4125
-    ost: 4125
-  2016-01-01:
-    west: 4237.5
-    ost: 4237.5
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2015/10/2015-10-14-sozialversicherung.html
-  2017-01-01:
-    west: 4350
-    ost: 4350
-    note: >-
-      https://www.bundesregierung.de/Content/DE/Artikel/2016/10/2016-10-12-bemessunggrenzen-sozialversicherung.html
-  2018-01-01:
-    west: 4425
-    ost: 4425
-  2019-01-01:
-    west: 4537.5
-    ost: 4537.5
-  2020-01-01:
-    west: 4687.5
-    ost: 4687.5
-    reference: V. v. 17.12.2019 BGBl. I S. 2848
-  2021-01-01:
-    west: 4837.5
-    ost: 4837.5
-    reference: §3, §4 V. v. 30.11.2020, BGBl. I S. 2612.
-  2022-01-01:
-    deviation_from: previous
-    west: 4837.5
-    ost: 4837.5
-    reference: §3 V. v. 30.11.2021, BGBl. I S. 5044.
-  2023-01-01:
-    west: 4987.5
-    ost: 4987.5
-    reference: V. v. 28.11.2022 BGBl. I. S. 2128.
-  2024-01-01:
-    west: 5175
-    ost: 5175
-    reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 322
-  2025-01-01:
-    west: 5512.5
-    ost: 5512.5
-    reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
 zusatz_kinderlos_mindestalter:
   name:
     de: Mindestalter Beitragszuschlag für Kinderlose
     en: Minimum age for additional contribution for childless
   description:
     de: >-
+      § 55 Abs. 3 SGB XI, KiBG Art. 1
       Kinderlose Mitglieder der sozialen Pflegeversicherung, die das 23. Lebensjahr
       vollendet haben, müssen seit dem 1. Januar 2005 einen erhöhten Beitragssatz
       entrichten.
     en: >-
+      § 55 Abs. 3 SGB XI, KiBG Art. 1
       Childless members of the social care insurance, who have reached the age of 23,
       have to pay a higher contribution rate since January 1, 2005.
-  unit: Year
-  reference: § 55 Abs. 3 SGB XI, KiBG Art. 1
+  unit: Years
+  reference_period: null
+  type: scalar
   2005-01-01:
-    scalar: 23
+    value: 23

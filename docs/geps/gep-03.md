@@ -12,7 +12,7 @@
 - * Created
   * 2022-03-28
 - * Updated
-  * 2024-11-21
+  * 2025-06-xx
 - * Resolution
   * [Accepted](https://gettsim.zulipchat.com/#narrow/stream/309998-GEPs/topic/GEP.2003)
 ```
@@ -52,13 +52,13 @@ added.
    - not sentences;
    - correctly capitalised.
 
-   Example (from `arbeitslosengeld_2`):
+   Example (from `kindergeld`):
 
    ```yaml
-   eink_anr_frei:
+   altersgrenze:
      name:
-       de: Anrechnungsfreies Einkommen
-       en: Income shares not subject to transfer withdrawal
+       de: Alter, ab dem Kindergeld nicht mehr gezahlt wird.
+       en: Age at which child benefit is no longer paid.
    ```
 
 1. The `description` key has two sub-keys `de` and `en`, which
@@ -74,17 +74,23 @@ added.
      Example:
 
      ```yaml
-     eink_anr_frei:
-
+     altersgrenze:
        description:
          de: >-
-           Einkommensanteile, die anrechnungsfrei bleiben. § 30 SGB II. Seit 01.10.2005 zudem
-           definiert durch Freibetrag in § 11 SGB II, siehe auch § 67 SGB II. Seit 01.04.2011
-           § 11b (2) SGB II (neugefasst durch B. v. 13.05.2011 BGBl. I S. 850. Artikel 2
-           G. v. 24.03.2011 BGBl. I S. 453).
+           § 32 Art. 2-4 EStG.
+           Für minderjährige Kinder besteht ohne Bedingungen ein Anspruch auf Kindergeld.
+           Auch für erwachsene Kinder kann bis zu einer Altersgrenze unter bestimmten
+           Bedingungen ein Anspruch auf Kindergeld bestehen.
          en: >-
-           Income shares which do not lead to tapering of benefits.
+           § 32 Art. 2-4 EStG.
+           Underage children are entitled to child benefit without any conditions. Also adult
+           children up to a specified age are entitled to child benefit under certain
+           conditions.
      ```
+
+   ```
+
+   ```
 
 1. The `unit` key informs on the unit of the values (Euro or DM if monetary, share of
    some other value, ...).
@@ -92,11 +98,8 @@ added.
    - In some cases (e.g., factor for the calculation of the marginal employment
      threshold), there is no unit.
    - It should be capitalised.
-   - Some values used at this point: `Euro`, `DM`, `Share`, `Percent`, `Factor`, `Year`,
+   - Allowed values at this point: `Euro`, `DM`, `Share`, `Percent`, `Factor`, `Year`,
      `Month`, `Hour`, `Square Meter`, `Euro / Square Meter`.
-   - The `unit` key may be overridden at lower levels. For example, the unit will
-     typically be `Euro` for monetary quantities. For the years prior to its
-     introduction, it may be specified as `DM`.
 
    Example:
 

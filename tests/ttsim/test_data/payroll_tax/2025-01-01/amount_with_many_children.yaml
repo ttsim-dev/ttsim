@@ -11,7 +11,7 @@ inputs:
       - 2
       - 3
       - 4
-    hh_id:
+    kin_id:
       - 0
       - 0
       - 0
@@ -79,7 +79,7 @@ outputs:
     - 0.0
     - 0.0
   payroll_tax__amount_y:
-    - 2880.0
+    - 2860.0
     - 0.0
     - 0.0
     - 0.0

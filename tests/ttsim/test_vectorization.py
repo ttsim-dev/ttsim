@@ -2,7 +2,7 @@ import datetime
 import functools
 import inspect
 import string
-from pathlib import Path
+from collections.abc import Callable
 
 import dags.tree as dt
 import numpy
@@ -10,18 +10,22 @@ import pytest
 from dags import concatenate_functions
 
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.ttsim_objects import AggByGroupFunction, AggByPIDFunction
 
 if IS_JAX_INSTALLED:
     import jax.numpy
+from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
 from ttsim import GroupCreationFunction, PolicyInput, policy_function
-from ttsim.loader import load_objects_tree_for_date
+from ttsim.loader import orig_ttsim_objects_tree
+from ttsim.policy_environment import active_ttsim_objects_tree
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
-    make_vectorizable,
+    _make_vectorizable,
     make_vectorizable_source,
+    vectorize_function,
 )
 
 # ======================================================================================
@@ -37,6 +41,8 @@ if IS_JAX_INSTALLED:
 # ======================================================================================
 # String comparison
 # ======================================================================================
+
+ORIG_METTSIM_OBJECTS_TREE = orig_ttsim_objects_tree(root=METTSIM_ROOT / "mettsim")
 
 
 def string_equal(s1, s2):
@@ -232,13 +238,11 @@ def f15_exp(x):
 
 
 def f16(x):
-    n = int(sum(x))
-    return max(n)
+    return float(sum(x))
 
 
 def f16_exp(x):
-    n = int(numpy.sum(x))
-    return numpy.max(n)
+    return float(numpy.sum(x))
 
 
 def f17(x):
@@ -254,13 +258,11 @@ def f17_exp(x):
 
 
 def f18(x):
-    n = int(any(x)) + 1
-    return sum(n)
+    return int(any(x)) + 1
 
 
 def f18_exp(x):
-    n = int(numpy.any(x)) + 1
-    return numpy.sum(n)
+    return int(numpy.any(x)) + 1
 
 
 x = numpy.arange(-10, 10)
@@ -306,7 +308,7 @@ def test_change_if_to_where_source(func, expected, args):  # noqa: ARG001
 
 @pytest.mark.parametrize("func, expected, args", TEST_CASES)
 def test_change_if_to_where_wrapper(func, expected, args):
-    got_func = make_vectorizable(func, backend="numpy")
+    got_func = _make_vectorizable(func, backend="numpy")
     got = got_func(*args)
     exp = expected(*args)
     assert_array_equal(got, exp)
@@ -349,7 +351,7 @@ def g4(x):
 
 def test_notimplemented_error():
     with pytest.raises(NotImplementedError):
-        make_vectorizable(f1, backend="dask")
+        _make_vectorizable(f1, backend="dask")
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
@@ -361,7 +363,7 @@ def test_disallowed_operation_source(func):
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
 def test_disallowed_operation_wrapper(func):
     with pytest.raises(TranslateToVectorizableError):
-        make_vectorizable(func, backend="numpy")
+        _make_vectorizable(func, backend="numpy")
 
 
 # ======================================================================================
@@ -369,26 +371,31 @@ def test_disallowed_operation_wrapper(func):
 # ======================================================================================
 
 
-# TODO(@MImmesberger): Remove isinstance once GroupCreationFunctions are JAX-compatible.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/515
 for year in range(1990, 2023):
 
     @pytest.mark.parametrize(
-        "func",
+        "funcname, func",
         [
-            pf.function
-            for pf in dt.flatten_to_tree_paths(
-                load_objects_tree_for_date(
-                    resource_dir=Path(__file__).parent / "mettsim",
+            (funcname, pf.function)
+            for funcname, pf in dt.flatten_to_tree_paths(
+                active_ttsim_objects_tree(
+                    orig_ttsim_objects_tree=ORIG_METTSIM_OBJECTS_TREE,
                     date=datetime.date(year=year, month=1, day=1),
                 )
-            ).values()
-            if not isinstance(pf, GroupCreationFunction | PolicyInput)
+            ).items()
+            if not isinstance(
+                pf,
+                GroupCreationFunction
+                | AggByGroupFunction
+                | AggByPIDFunction
+                | PolicyInput,
+            )
         ],
     )
     @pytest.mark.parametrize("backend", backends)
-    def test_convertible(func, backend):
-        make_vectorizable(func, backend=backend)
+    def test_convertible(funcname, func, backend):  # noqa: ARG001
+        # Leave funcname for debugging purposes.
+        _make_vectorizable(func, backend=backend)
 
 
 # ======================================================================================
@@ -399,7 +406,7 @@ for year in range(1990, 2023):
 def mock__elterngeld__geschwisterbonus_m(
     basisbetrag_m: float,
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg: bool,
-    elterngeld_params: dict,
+    elterngeld_params: dict[str, float],
 ) -> float:
     if geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg:
         out = max(
@@ -413,7 +420,7 @@ def mock__elterngeld__geschwisterbonus_m(
 
 @pytest.mark.parametrize("backend", backends)
 def test_geschwisterbonus_m(backend):
-    full = modules.get(backend).full
+    full = modules[backend].full
 
     # Test original gettsim function on scalar input
     # ==================================================================================
@@ -448,7 +455,9 @@ def test_geschwisterbonus_m(backend):
 
     # Call converted function on array input and test result
     # ==================================================================================
-    converted = make_vectorizable(mock__elterngeld__geschwisterbonus_m, backend=backend)
+    converted = _make_vectorizable(
+        mock__elterngeld__geschwisterbonus_m, backend=backend
+    )
     got = converted(
         basisbetrag_m=basisbetrag_m,
         geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
@@ -463,7 +472,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
-    elterngeld_params: dict,
+    elterngeld_params: dict[str, float],
 ) -> bool:
     return (
         claimed
@@ -476,7 +485,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
 
 @pytest.mark.parametrize("backend", backends)
 def test_grundsätzlich_anspruchsberechtigt(backend):
-    full = modules.get(backend).full
+    full = modules[backend].full
 
     # Test original gettsim function on scalar input
     # ==================================================================================
@@ -517,7 +526,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
 
     # Call converted function on array input and test result
     # ==================================================================================
-    converted = make_vectorizable(
+    converted = _make_vectorizable(
         mock__elterngeld__grundsätzlich_anspruchsberechtigt, backend=backend
     )
     got = converted(
@@ -568,7 +577,7 @@ def test_is_lambda_function_non_function_input():
 
 def test_lambda_functions_disallowed_make_vectorizable():
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
-        make_vectorizable(lambda x: x, backend="numpy")
+        _make_vectorizable(lambda x: x, backend="numpy")
 
 
 def test_lambda_functions_disallowed_make_vectorizable_source():
@@ -586,7 +595,7 @@ def test_make_vectorizable_policy_func():
     def alter_bis_24(alter: int) -> bool:
         return alter <= 24
 
-    vectorized = make_vectorizable(alter_bis_24, backend="numpy")
+    vectorized = _make_vectorizable(alter_bis_24, backend="numpy")
 
     got = vectorized(numpy.array([20, 25, 30]))
     exp = numpy.array([True, False, False])
@@ -608,7 +617,7 @@ def test_make_vectorizable_concatened_func():
     def f_manual(x: int) -> int:
         return f_b(f_a(x))
 
-    vectorized = make_vectorizable(f_manual, backend="numpy")
+    vectorized = _make_vectorizable(f_manual, backend="numpy")
     got = vectorized(numpy.array([1, 2, 3]))
     exp = numpy.array([3, 4, 5])
     assert_array_equal(got, exp)
@@ -627,10 +636,35 @@ def test_make_vectorizable_dags_concatened_func():
             "a": f_a,
             "b": f_b,
         },
-        targets={"b"},
+        targets=["b"],
     )
 
-    vectorized = make_vectorizable(f_dags, backend="numpy")
+    vectorized = _make_vectorizable(f_dags, backend="numpy")
     got = vectorized(numpy.array([1, 2, 3]))
     exp = numpy.array([3, 4, 5])
     assert_array_equal(got, exp)
+
+
+def scalar_func(x: int) -> int:
+    if x < 0:
+        return 0
+    else:
+        return x * 2
+
+
+@policy_function(vectorization_strategy="not_required")
+def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:  # type: ignore[type-arg]
+    return numpy.where(x < 0, 0, x * 2)
+
+
+@pytest.mark.parametrize(
+    "vectorized_function",
+    [
+        vectorize_function(scalar_func, vectorization_strategy="loop"),
+        already_vectorized_func,
+    ],
+)
+def test_vectorize_func(vectorized_function: Callable):  # type: ignore[type-arg]
+    assert numpy.array_equal(
+        vectorized_function(numpy.array([-1, 0, 2, 3])), numpy.array([0, 0, 4, 6])
+    )

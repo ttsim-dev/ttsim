@@ -41,7 +41,6 @@ def anzahl_kindergeld_ansprüche_2(
 @policy_function(
     end_date="1996-12-31",
     leaf_name="betrag_y_sn",
-    vectorization_strategy="vectorize",
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S. 6 EStG"
     ),
@@ -67,7 +66,6 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
 @policy_function(
     start_date="1997-01-01",
     leaf_name="betrag_y_sn",
-    vectorization_strategy="vectorize",
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
@@ -103,7 +101,7 @@ def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
     return out
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def kinderfreibetrag_günstiger_sn(
     betrag_ohne_kinderfreibetrag_y_sn: float,
     betrag_mit_kinderfreibetrag_y_sn: float,
@@ -148,6 +146,7 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
+    vectorization_strategy="loop",
 )
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
@@ -183,7 +182,8 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
 @policy_function(
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
-    )
+    ),
+    vectorization_strategy="loop",
 )
 def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
@@ -214,7 +214,11 @@ def betrag_ohne_kinderfreibetrag_y_sn(
     return out
 
 
-@policy_function(end_date="2022-12-31", leaf_name="relevantes_kindergeld_m")
+@policy_function(
+    end_date="2022-12-31",
+    leaf_name="relevantes_kindergeld_m",
+    vectorization_strategy="loop",
+)
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
@@ -243,8 +247,8 @@ def relevantes_kindergeld_mit_staffelung_m(
         relevantes_kindergeld = 0.0
     else:
         relevantes_kindergeld = sum(
-            kindergeld_params["kindergeld"][
-                (min(i, max(kindergeld_params["kindergeld"])))
+            kindergeld_params["kindergeldsatz"][
+                (min(i, max(kindergeld_params["kindergeldsatz"])))
             ]
             for i in range(1, kindergeld_ansprüche + 1)
         )
@@ -255,7 +259,6 @@ def relevantes_kindergeld_mit_staffelung_m(
 @policy_function(
     start_date="2023-01-01",
     leaf_name="relevantes_kindergeld_m",
-    vectorization_strategy="vectorize",
 )
 def relevantes_kindergeld_ohne_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
@@ -281,7 +284,7 @@ def relevantes_kindergeld_ohne_staffelung_m(
 
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
-    return kindergeld_params["kindergeld"] * kindergeld_ansprüche / 2
+    return kindergeld_params["kindergeldsatz"] * kindergeld_ansprüche / 2
 
 
 def einkommensteuertarif(x: float, params: dict) -> float:
@@ -300,10 +303,6 @@ def einkommensteuertarif(x: float, params: dict) -> float:
     """
     out = piecewise_polynomial(
         x=x,
-        thresholds=params["eink_st_tarif"]["thresholds"],
-        rates=params["eink_st_tarif"]["rates"],
-        intercepts_at_lower_thresholds=params["eink_st_tarif"][
-            "intercepts_at_lower_thresholds"
-        ],
+        parameters=params["parameter_einkommensteuertarif"],
     )
     return out

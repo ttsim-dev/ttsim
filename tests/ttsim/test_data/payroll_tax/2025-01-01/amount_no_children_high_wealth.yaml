@@ -8,7 +8,7 @@ inputs:
     p_id:
       - 0
       - 1
-    hh_id:
+    kin_id:
       - 0
       - 0
     p_id_parent_1:
@@ -49,7 +49,7 @@ outputs:
     - 9900
     - 9900
   payroll_tax__amount_y:
-    - 1485.0
+    - 1480.0
     - 0.0
   payroll_tax__child_tax_credit__claim_of_child_y:
     - 0.0

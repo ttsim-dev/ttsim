@@ -7,7 +7,7 @@ from _gettsim.solidaritätszuschlag.solidaritätszuschlag import (
 from ttsim import policy_function
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_m(
     einkommen_y: float,
     eink_st_params: dict,
@@ -32,7 +32,7 @@ def betrag_m(
     return lohnsteuerformel(einkommen_y, eink_st_params, lohnst_params, steuerklasse)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_mit_kinderfreibetrag_m(
     einkommen_y: float,
     kinderfreibetrag_soli_y: float,
@@ -65,7 +65,7 @@ def betrag_mit_kinderfreibetrag_m(
     return lohnsteuerformel(eink, eink_st_params, lohnst_params, steuerklasse)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_soli_y(betrag_mit_kinderfreibetrag_y: float, soli_st_params: dict) -> float:
     """Solidarity surcharge on Lohnsteuer (withholding tax on earnings).
 
@@ -85,7 +85,7 @@ def betrag_soli_y(betrag_mit_kinderfreibetrag_y: float, soli_st_params: dict) ->
     return solidaritätszuschlagstarif(betrag_mit_kinderfreibetrag_y, soli_st_params)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def kinderfreibetrag_soli_y(
     steuerklasse: int,
     einkommensteuer__anzahl_kinderfreibeträge: int,
@@ -111,8 +111,12 @@ def kinderfreibetrag_soli_y(
     """
 
     kinderfreibetrag_basis = (
-        eink_st_abzuege_params["kinderfreib"]["sächl_existenzmin"]
-        + eink_st_abzuege_params["kinderfreib"]["beitr_erz_ausb"]
+        eink_st_abzuege_params["parameter_kinderfreibetrag"][
+            "sächliches_existenzminimum"
+        ]
+        + eink_st_abzuege_params["parameter_kinderfreibetrag"][
+            "betreuung_erziehung_ausbildung"
+        ]
     )
 
     # For certain tax brackets, twice the child allowance can be deducted
@@ -168,43 +172,50 @@ def lohnsteuerformel(
         einkommen_y=einkommen_y, eink_st_params=eink_st_params
     )
 
-    grenze_1 = lohnst_params["lohnst_einkommensgrenzen"][0]
-    grenze_2 = lohnst_params["lohnst_einkommensgrenzen"][1]
-    grenze_3 = lohnst_params["lohnst_einkommensgrenzen"][2]
-
     lohnsteuer_grenze_1 = basis_für_klassen_5_6(
-        einkommen_y=grenze_1, eink_st_params=eink_st_params
+        einkommen_y=lohnst_params["einkommensgrenzen"][1], eink_st_params=eink_st_params
     )
     max_lohnsteuer = (
         lohnsteuer_grenze_1
-        + (einkommen_y - grenze_1) * eink_st_params["eink_st_tarif"]["rates"][0][3]
+        + (einkommen_y - lohnst_params["einkommensgrenzen"][1])
+        * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
     )
     lohnsteuer_grenze_2 = basis_für_klassen_5_6(
-        einkommen_y=grenze_2, eink_st_params=eink_st_params
+        einkommen_y=lohnst_params["einkommensgrenzen"][2], eink_st_params=eink_st_params
     )
-    lohnsteuer_zw_grenze_2_3 = (grenze_3 - grenze_2) * eink_st_params["eink_st_tarif"][
-        "rates"
-    ][0][3]
+    lohnsteuer_zw_grenze_2_3 = (
+        lohnst_params["einkommensgrenzen"][3] - lohnst_params["einkommensgrenzen"][2]
+    ) * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
     lohnsteuer_klasse5_6_tmp = lohnsteuer_grenze_2 + lohnsteuer_zw_grenze_2_3
 
-    if einkommen_y < grenze_1:
+    if einkommen_y < lohnst_params["einkommensgrenzen"][1]:
         lohnsteuer_klasse5_6 = lohnsteuer_5_6_basis
-    elif grenze_1 <= einkommen_y < grenze_2:
+    elif (
+        lohnst_params["einkommensgrenzen"][1]
+        <= einkommen_y
+        < lohnst_params["einkommensgrenzen"][2]
+    ):
         lohnsteuer_klasse5_6 = min(
             max_lohnsteuer,
             basis_für_klassen_5_6(
                 einkommen_y=einkommen_y, eink_st_params=eink_st_params
             ),
         )
-    elif grenze_2 <= einkommen_y < grenze_3:
+    elif (
+        lohnst_params["einkommensgrenzen"][2]
+        <= einkommen_y
+        < lohnst_params["einkommensgrenzen"][3]
+    ):
         lohnsteuer_klasse5_6 = (
             lohnsteuer_grenze_2
-            + (einkommen_y - grenze_2) * eink_st_params["eink_st_tarif"]["rates"][0][3]
+            + (einkommen_y - lohnst_params["einkommensgrenzen"][2])
+            * eink_st_params["parameter_einkommensteuertarif"].rates[0, 3]
         )
     else:
         lohnsteuer_klasse5_6 = (
             lohnsteuer_klasse5_6_tmp
-            + (einkommen_y - grenze_3) * eink_st_params["eink_st_tarif"]["rates"][0][4]
+            + (einkommen_y - lohnst_params["einkommensgrenzen"][3])
+            * eink_st_params["parameter_einkommensteuertarif"].rates[0, 4]
         )
 
     if steuerklasse in {1, 2, 4}:
@@ -253,7 +264,7 @@ def basis_für_klassen_5_6(einkommen_y: float, eink_st_params: dict) -> float:
             einkommensteuertarif(einkommen_y * 1.25, eink_st_params)
             - einkommensteuertarif(einkommen_y * 0.75, eink_st_params)
         ),
-        einkommen_y * eink_st_params["eink_st_tarif"]["rates"][0][1],
+        einkommen_y * eink_st_params["parameter_einkommensteuertarif"].rates[0, 1],
     )
 
     return out

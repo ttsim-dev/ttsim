@@ -48,7 +48,7 @@ inputs:
       - 408
     sozialversicherung__rente__grundrente__mean_entgeltpunkte:
       - 18.7
-    sozialversicherung__rente__grundrente__proxy_rente_vorjahr_m:
+    einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m:
       - 0.0
     wohnort_ost:
       - true

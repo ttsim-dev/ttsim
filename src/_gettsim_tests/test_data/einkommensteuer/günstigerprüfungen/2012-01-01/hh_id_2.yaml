@@ -26,8 +26,6 @@ inputs:
       - -1
     hh_id:
       - 2
-    jahr:
-      - 2012
     p_id:
       - 4
 outputs:

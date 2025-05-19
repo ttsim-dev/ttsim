@@ -1,15 +1,14 @@
 import dags.tree as dt
-import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from _gettsim.config import SUPPORTED_GROUPINGS
 from _gettsim_tests.utils import (
     PolicyTest,
     cached_set_up_policy_environment,
     load_policy_test_data,
 )
 from ttsim import compute_taxes_and_transfers
+from ttsim.config import numpy_or_jax as np
 
 test_data = load_policy_test_data("groupings")
 
@@ -22,7 +21,6 @@ def test_groupings(test: PolicyTest):
         data_tree=test.input_tree,
         environment=environment,
         targets_tree=test.target_structure,
-        groupings=SUPPORTED_GROUPINGS,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
@@ -55,5 +53,4 @@ def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
             data_tree=data,
             environment=environment,
             targets_tree={"sn_id": None},
-            groupings=SUPPORTED_GROUPINGS,
         )

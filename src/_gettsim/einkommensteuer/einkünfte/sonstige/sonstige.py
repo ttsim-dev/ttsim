@@ -32,9 +32,5 @@ def rente_ertragsanteil(
     """Share of pensions subject to income taxation."""
     return piecewise_polynomial(
         x=sozialversicherung__rente__jahr_renteneintritt,
-        thresholds=eink_st_params["rente_ertragsanteil"]["thresholds"],
-        rates=eink_st_params["rente_ertragsanteil"]["rates"],
-        intercepts_at_lower_thresholds=eink_st_params["rente_ertragsanteil"][
-            "intercepts_at_lower_thresholds"
-        ],
+        parameters=eink_st_params["parameter_ertragsanteil_an_rente"],
     )

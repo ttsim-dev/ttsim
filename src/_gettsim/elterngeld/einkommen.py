@@ -56,7 +56,7 @@ def lohnersatzanteil_einkommen_untere_grenze(
 
     """
     return (
-        elterngeld_params["nettoeinkommen_stufen"]["lower_threshold"]
+        elterngeld_params["nettoeinkommensstufen"]["lower_threshold"]
         - nettoeinkommen_vorjahr_m
     )
 
@@ -85,7 +85,7 @@ def lohnersatzanteil_einkommen_obere_grenze(
     """
     return (
         nettoeinkommen_vorjahr_m
-        - elterngeld_params["nettoeinkommen_stufen"]["upper_threshold"]
+        - elterngeld_params["nettoeinkommensstufen"]["upper_threshold"]
     )
 
 
@@ -117,12 +117,16 @@ def einkommen_vorjahr_unter_bezugsgrenze_mit_unterscheidung_single_paar(
     if familie__alleinerziehend:
         out = (
             zu_versteuerndes_einkommen_vorjahr_y_sn
-            <= elterngeld_params["max_eink_vorj"]["single"]
+            <= elterngeld_params[
+                "max_zu_versteuerndes_einkommen_vorjahr_nach_alleinerziehendenstatus"
+            ]["alleinerziehend"]
         )
     else:
         out = (
             zu_versteuerndes_einkommen_vorjahr_y_sn
-            <= elterngeld_params["max_eink_vorj"]["paar"]
+            <= elterngeld_params[
+                "max_zu_versteuerndes_einkommen_vorjahr_nach_alleinerziehendenstatus"
+            ]["paar"]
         )
     return out
 
@@ -147,7 +151,10 @@ def einkommen_vorjahr_unter_bezugsgrenze_ohne_unterscheidung_single_paar(
     -------
 
     """
-    return zu_versteuerndes_einkommen_vorjahr_y_sn <= elterngeld_params["max_eink_vorj"]
+    return (
+        zu_versteuerndes_einkommen_vorjahr_y_sn
+        <= elterngeld_params["max_zu_versteuerndes_einkommen_vorjahr_pauschal"]
+    )
 
 
 @policy_function(
@@ -180,7 +187,7 @@ def nettoeinkommen_approximation_m(
         See params documentation :ref:`elterngeld_params <elterngeld_params>`.
     """
     prox_ssc = (
-        elterngeld_params["sozialv_pausch"]
+        elterngeld_params["sozialversicherungspauschale"]
         * einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
     )
     return (

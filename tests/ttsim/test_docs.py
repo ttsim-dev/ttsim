@@ -5,14 +5,11 @@ import inspect
 
 import pytest
 
-from _gettsim.config import (
-    RESOURCE_DIR,
-)
+from _gettsim.config import GETTSIM_ROOT
 from ttsim import PolicyInput
-from ttsim.loader import load_objects_tree_for_date
+from ttsim.loader import orig_ttsim_objects_tree
+from ttsim.policy_environment import active_ttsim_objects_tree
 from ttsim.shared import remove_group_suffix
-
-SUPPORTED_GROUPINGS = ("hh", "sp", "fam")
 
 
 def _nice_output_list_of_strings(list_of_strings):
@@ -34,9 +31,10 @@ def all_function_names():
 @pytest.fixture(scope="module")
 def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
+    _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root=GETTSIM_ROOT)
     for year in range(1990, 2023):
-        year_functions = load_objects_tree_for_date(
-            resource_dir=RESOURCE_DIR,
+        year_functions = active_ttsim_objects_tree(
+            orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
             date=datetime.date(year=year, month=1, day=1),
         )
         new_dict = {func.function.__name__: func.leaf_name for func in year_functions}
@@ -83,7 +81,7 @@ def test_all_input_vars_documented(
         for c in arguments
         if (c not in defined_functions)
         and (
-            remove_group_suffix(c, groupings=SUPPORTED_GROUPINGS)
+            remove_group_suffix(c, groupings=environment.grouping_levels)
             not in defined_functions
         )
         and (not c.endswith("_params"))
@@ -97,19 +95,19 @@ def test_funcs_in_doc_module_and_func_from_internal_files_are_the_same():
     documented_functions = {
         f.leaf_name
         for f in _load_functions(
-            RESOURCE_DIR / "functions" / "all_functions_for_docs.py",
-            package_root=RESOURCE_DIR,
+            GETTSIM_ROOT / "functions" / "all_functions_for_docs.py",
+            package_root=GETTSIM_ROOT,
             include_imported_functions=True,
         )
     }
 
-    internal_function_files = [RESOURCE_DIR.joinpath(p) for p in RESOURCE_DIR]
+    internal_function_files = [GETTSIM_ROOT.joinpath(p) for p in GETTSIM_ROOT]
 
     internal_functions = {
         f.leaf_name
         for f in _load_functions(
             internal_function_files,
-            package_root=RESOURCE_DIR,
+            package_root=GETTSIM_ROOT,
             include_imported_functions=True,
         )
         if not f.original_function_name.startswith("_")

@@ -2,35 +2,32 @@
 
 from collections import Counter
 
-import numpy
-
 from ttsim import group_creation_function, policy_input
-
-
-@policy_input()
-def hh_id() -> int:
-    pass
+from ttsim.config import numpy_or_jax as np
 
 
 @policy_input()
 def p_id() -> int:
-    pass
+    """Unique identifier for each person. Always required, must be unique."""
+
+
+@policy_input()
+def hh_id() -> int:
+    """Individuals living together in a household in the Wohngeld sense (§5 WoGG)."""
 
 
 @group_creation_function()
 def ehe_id(
-    p_id: numpy.ndarray[int],
-    familie__p_id_ehepartner: numpy.ndarray[int],
-) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Ehe for each person.
-    """
-    p_id_to_ehe_id = {}
+    p_id: np.ndarray,
+    familie__p_id_ehepartner: np.ndarray,
+) -> np.ndarray:
+    """Couples that are either married or in a civil union."""
+    p_id_to_ehe_id: dict[int, int] = {}
     next_ehe_id = 0
-    result = []
+    result: list[int] = []
 
-    for index, current_p_id in enumerate(p_id):
-        current_p_id_ehepartner = familie__p_id_ehepartner[index]
+    for index, current_p_id in enumerate(map(int, p_id)):
+        current_p_id_ehepartner = int(familie__p_id_ehepartner[index])
 
         if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_ehe_id:
             result.append(p_id_to_ehe_id[current_p_id_ehepartner])
@@ -41,32 +38,34 @@ def ehe_id(
         p_id_to_ehe_id[current_p_id] = next_ehe_id
         next_ehe_id += 1
 
-    return numpy.asarray(result)
+    return np.array(result)
 
 
 @group_creation_function()
 def fg_id(  # noqa: PLR0912
-    arbeitslosengeld_2__p_id_einstandspartner: numpy.ndarray[int],
-    p_id: numpy.ndarray[int],
-    hh_id: numpy.ndarray[int],
-    alter: numpy.ndarray[int],
-    familie__p_id_elternteil_1: numpy.ndarray[int],
-    familie__p_id_elternteil_2: numpy.ndarray[int],
-) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Familiengemeinschaft for each person.
+    arbeitslosengeld_2__p_id_einstandspartner: np.ndarray,
+    p_id: np.ndarray,
+    hh_id: np.ndarray,
+    alter: np.ndarray,
+    familie__p_id_elternteil_1: np.ndarray,
+    familie__p_id_elternteil_2: np.ndarray,
+) -> np.ndarray:
+    """Familiengemeinschaft. Base unit for some transfers.
+
+    Maximum of two generations, the relevant base unit for Bürgergeld / Arbeitslosengeld
+    2, before excluding children who have enough income fend for themselves.
     """
     # Build indexes
-    p_id_to_index = {}
-    p_id_to_p_ids_children = {}
+    p_id_to_index: dict[int, int] = {}
+    p_id_to_p_ids_children: dict[int, list[int]] = {}
 
-    for index, current_p_id in enumerate(p_id):
+    for index, current_p_id in enumerate(map(int, p_id)):
         # Fast access from p_id to index
         p_id_to_index[current_p_id] = index
 
         # Fast access from p_id to p_ids of children
-        current_familie__p_id_elternteil_1 = familie__p_id_elternteil_1[index]
-        current_familie__p_id_elternteil_2 = familie__p_id_elternteil_2[index]
+        current_familie__p_id_elternteil_1 = int(familie__p_id_elternteil_1[index])
+        current_familie__p_id_elternteil_2 = int(familie__p_id_elternteil_2[index])
 
         if current_familie__p_id_elternteil_1 >= 0:
             if current_familie__p_id_elternteil_1 not in p_id_to_p_ids_children:
@@ -85,7 +84,7 @@ def fg_id(  # noqa: PLR0912
     p_id_to_fg_id = {}
     next_fg_id = 0
 
-    for index, current_p_id in enumerate(p_id):
+    for index, current_p_id in enumerate(map(int, p_id)):
         # Already assigned a fg_id to this p_id via einstandspartner /
         # parent
         if current_p_id in p_id_to_fg_id:
@@ -93,15 +92,17 @@ def fg_id(  # noqa: PLR0912
 
         p_id_to_fg_id[current_p_id] = next_fg_id
 
-        current_hh_id = hh_id[index]
-        current_p_id_einstandspartner = arbeitslosengeld_2__p_id_einstandspartner[index]
+        current_hh_id = int(hh_id[index])
+        current_p_id_einstandspartner = int(
+            arbeitslosengeld_2__p_id_einstandspartner[index]
+        )
         current_p_id_children = p_id_to_p_ids_children.get(current_p_id, [])
 
         # Assign fg to children
         for current_p_id_child in current_p_id_children:
             child_index = p_id_to_index[current_p_id_child]
-            child_hh_id = hh_id[child_index]
-            child_alter = alter[child_index]
+            child_hh_id = int(hh_id[child_index])
+            child_alter = int(alter[child_index])
             child_p_id_children = p_id_to_p_ids_children.get(current_p_id_child, [])
 
             if (
@@ -126,8 +127,8 @@ def fg_id(  # noqa: PLR0912
                 if current_p_id_child in p_id_to_fg_id:
                     continue
                 child_index = p_id_to_index[current_p_id_child]
-                child_hh_id = hh_id[child_index]
-                child_alter = alter[child_index]
+                child_hh_id = int(hh_id[child_index])
+                child_alter = int(alter[child_index])
                 child_p_id_children = p_id_to_p_ids_children.get(current_p_id_child, [])
 
                 if (
@@ -144,28 +145,32 @@ def fg_id(  # noqa: PLR0912
         next_fg_id += 1
 
     # Compute result vector
-    result = [p_id_to_fg_id[current_p_id] for current_p_id in p_id]
-    return numpy.asarray(result)
+    result = [p_id_to_fg_id[current_p_id] for current_p_id in map(int, p_id)]
+    return np.array(result)
 
 
 @group_creation_function()
 def bg_id(
-    fg_id: numpy.ndarray[int],
-    arbeitslosengeld_2__eigenbedarf_gedeckt: numpy.ndarray[bool],
-    alter: numpy.ndarray[int],
-) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Bedarfsgemeinschaft for each person.
+    fg_id: np.ndarray,
+    arbeitslosengeld_2__eigenbedarf_gedeckt: np.ndarray,
+    alter: np.ndarray,
+) -> np.ndarray:
+    """Bedarfsgemeinschaft
+
+    Familiengemeinschaft except for children who have enough income to fend for
+    themselves. Relevant unit for Bürgergeld / Arbeitslosengeld 2
     """
     # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
     # once Bedarfsgemeinschaften are fully endogenous
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
-    counter = Counter()
-    result = []
+    counter: Counter[int] = Counter()
+    result: list[int] = []
 
-    for index, current_fg_id in enumerate(fg_id):
-        current_alter = alter[index]
-        current_eigenbedarf_gedeckt = arbeitslosengeld_2__eigenbedarf_gedeckt[index]
+    for index, current_fg_id in enumerate(map(int, fg_id)):
+        current_alter = int(alter[index])
+        current_eigenbedarf_gedeckt = bool(
+            arbeitslosengeld_2__eigenbedarf_gedeckt[index]
+        )
         # TODO(@MImmesberger): Remove hard-coded number
         # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
         if current_alter < 25 and current_eigenbedarf_gedeckt:
@@ -174,23 +179,26 @@ def bg_id(
         else:
             result.append(current_fg_id * 100)
 
-    return numpy.asarray(result)
+    return np.array(result)
 
 
 @group_creation_function()
 def eg_id(
-    arbeitslosengeld_2__p_id_einstandspartner: numpy.ndarray[int],
-    p_id: numpy.ndarray[int],
-) -> numpy.ndarray[int]:
-    """
-    Compute the ID of the Einstandsgemeinschaft for each person.
-    """
-    p_id_to_eg_id = {}
-    next_eg_id = 0
-    result = []
+    arbeitslosengeld_2__p_id_einstandspartner: np.ndarray,
+    p_id: np.ndarray,
+) -> np.ndarray:
+    """Einstandsgemeinschaft / Einstandspartner according to SGB II.
 
-    for index, current_p_id in enumerate(p_id):
-        current_p_id_einstandspartner = arbeitslosengeld_2__p_id_einstandspartner[index]
+    A couple whose members are deemed to be responsible for each other.
+    """
+    p_id_to_eg_id: dict[int, int] = {}
+    next_eg_id = 0
+    result: list[int] = []
+
+    for index, current_p_id in enumerate(map(int, p_id)):
+        current_p_id_einstandspartner = int(
+            arbeitslosengeld_2__p_id_einstandspartner[index]
+        )
 
         if (
             current_p_id_einstandspartner >= 0
@@ -204,25 +212,26 @@ def eg_id(
         p_id_to_eg_id[current_p_id] = next_eg_id
         next_eg_id += 1
 
-    return numpy.asarray(result)
+    return np.array(result)
 
 
 @group_creation_function()
 def wthh_id(
-    hh_id: numpy.ndarray[int],
-    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: numpy.ndarray[bool],
-    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: numpy.ndarray[
-        bool
-    ],
-) -> numpy.ndarray[int]:
+    hh_id: np.ndarray,
+    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: np.ndarray,
+    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: np.ndarray,
+) -> np.ndarray:
+    """Wohngeldrechtlicher Teilhaushalt.
+
+    The relevant unit for Wohngeld. Members of a household for whom the Wohngeld
+    priority check compared to Bürgergeld yields the same result ∈ {True, False}.
     """
-    Compute the ID of the wohngeldrechtlicher Teilhaushalt.
-    """
-    result = []
-    for index, current_hh_id in enumerate(hh_id):
-        if (
+    result: list[int] = []
+    for index, current_hh_id in enumerate(map(int, hh_id)):
+        if bool(
             vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg[index]
-            or vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg[
+        ) or bool(
+            vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg[
                 index
             ]
         ):
@@ -230,26 +239,27 @@ def wthh_id(
         else:
             result.append(current_hh_id * 100)
 
-    return numpy.asarray(result)
+    return np.array(result)
 
 
 @group_creation_function()
 def sn_id(
-    p_id: numpy.ndarray[int],
-    familie__p_id_ehepartner: numpy.ndarray[int],
-    einkommensteuer__gemeinsam_veranlagt: numpy.ndarray[bool],
-) -> numpy.ndarray[int]:
-    """
-    Compute a Steuernummer (ID) for each person / couple.
-    """
-    p_id_to_sn_id = {}
-    p_id_to_gemeinsam_veranlagt = {}
-    next_sn_id = 0
-    result = []
+    p_id: np.ndarray,
+    familie__p_id_ehepartner: np.ndarray,
+    einkommensteuer__gemeinsam_veranlagt: np.ndarray,
+) -> np.ndarray:
+    """Steuernummer.
 
-    for index, current_p_id in enumerate(p_id):
-        current_p_id_ehepartner = familie__p_id_ehepartner[index]
-        current_gemeinsam_veranlagt = einkommensteuer__gemeinsam_veranlagt[index]
+    Spouses filing taxes jointly or individuals.
+    """
+    p_id_to_sn_id: dict[int, int] = {}
+    p_id_to_gemeinsam_veranlagt: dict[int, bool] = {}
+    next_sn_id = 0
+    result: list[int] = []
+
+    for index, current_p_id in enumerate(map(int, p_id)):
+        current_p_id_ehepartner = int(familie__p_id_ehepartner[index])
+        current_gemeinsam_veranlagt = bool(einkommensteuer__gemeinsam_veranlagt[index])
 
         if current_p_id_ehepartner >= 0 and current_p_id_ehepartner in p_id_to_sn_id:
             gemeinsam_veranlagt_ehepartner = p_id_to_gemeinsam_veranlagt[
@@ -274,4 +284,4 @@ def sn_id(
         p_id_to_gemeinsam_veranlagt[current_p_id] = current_gemeinsam_veranlagt
         next_sn_id += 1
 
-    return numpy.asarray(result)
+    return np.array(result)

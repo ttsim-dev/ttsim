@@ -75,9 +75,6 @@ inputs:
     hh_id:
       - 9
       - 9
-    jahr:
-      - 2013
-      - 2013
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
       - false

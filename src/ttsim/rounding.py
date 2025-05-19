@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import functools
 from dataclasses import dataclass
-from typing import Literal, get_args
+from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
-import numpy as np
+from ttsim.config import numpy_or_jax as np
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+P = ParamSpec("P")
 
 
 @dataclass
@@ -16,7 +21,7 @@ class RoundingSpec:
     to_add_after_rounding: int | float = 0
     reference: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate the types of base and to_add_after_rounding."""
         if type(self.base) not in [int, float]:
             raise ValueError(f"base needs to be a number, got {self.base!r}")
@@ -30,15 +35,13 @@ class RoundingSpec:
                 f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             )
 
-    def apply_rounding(self, func: callable) -> callable:
+    def apply_rounding(self, func: Callable[P, np.ndarray]) -> Callable[P, np.ndarray]:
         """Decorator to round the output of a function.
 
         Parameters
         ----------
         func
             Function to be rounded.
-        name
-            Name of the function to be rounded.
 
         Returns
         -------
@@ -47,7 +50,7 @@ class RoundingSpec:
 
         # Make sure that signature is preserved.
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> np.ndarray:
             out = func(*args, **kwargs)
 
             if self.direction == "up":
@@ -55,7 +58,7 @@ class RoundingSpec:
             elif self.direction == "down":
                 rounded_out = self.base * np.floor(out / self.base)
             elif self.direction == "nearest":
-                rounded_out = self.base * (out / self.base).round()
+                rounded_out = self.base * (np.asarray(out) / self.base).round()
 
             rounded_out += self.to_add_after_rounding
             return rounded_out

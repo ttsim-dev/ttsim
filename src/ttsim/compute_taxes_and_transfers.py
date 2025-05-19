@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import inspect
-import re
 import warnings
 from typing import TYPE_CHECKING, Any
 
@@ -11,10 +10,12 @@ import dags.tree as dt
 import networkx as nx
 import pandas as pd
 
-from ttsim.automatically_added_functions import TIME_UNIT_LABELS
-from ttsim.combine_functions import (
-    combine_policy_functions_and_derived_functions,
+from ttsim.automatically_added_functions import (
+    TIME_UNIT_LABELS,
+    create_agg_by_group_functions,
+    create_time_conversion_functions,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
@@ -32,7 +33,9 @@ from ttsim.shared import (
 )
 from ttsim.ttsim_objects import (
     FKType,
-    GroupCreationFunction,
+    ParamsFunction,
+    PolicyInput,
+    RawTTSIMParam,
     TTSIMFunction,
 )
 
@@ -41,7 +44,9 @@ if TYPE_CHECKING:
         NestedDataDict,
         NestedTargetDict,
         NestedTTSIMObjectDict,
+        NestedTTSIMParamDict,
         QualNameDataDict,
+        QualNameProcessedParamDict,
         QualNameTargetList,
         QualNameTTSIMFunctionDict,
         QualNameTTSIMObjectDict,
@@ -52,7 +57,6 @@ def compute_taxes_and_transfers(
     data_tree: NestedDataDict,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
-    groupings: tuple[str, ...],
     rounding: bool = True,
     debug: bool = False,
     jit: bool = False,
@@ -87,15 +91,17 @@ def compute_taxes_and_transfers(
     _fail_if_targets_tree_not_valid(targets_tree)
     _fail_if_data_tree_not_valid(data_tree)
     _fail_if_environment_not_valid(environment)
-    _fail_if_group_ids_are_outside_top_level_namespace(
-        environment=environment,
-        groupings=groupings,
-    )
-    # Transform functions tree to qualified names dict with qualified arguments
+
     top_level_namespace = _get_top_level_namespace(
         environment=environment,
         time_units=tuple(TIME_UNIT_LABELS.keys()),
-        groupings=groupings,
+    )
+    # Check that all paths in the params tree are valid
+    dt.fail_if_paths_are_invalid(
+        functions=environment.combined_tree,
+        data_tree=data_tree,
+        targets=targets_tree,
+        top_level_namespace=top_level_namespace,
     )
     # Flatten nested objects to qualified names
     targets = dt.qual_names(targets_tree)
@@ -104,19 +110,26 @@ def compute_taxes_and_transfers(
         raw_objects_tree=environment.raw_objects_tree,
         top_level_namespace=top_level_namespace,
     )
+    # Process parameters
+    processed_params_tree = _process_params_tree(
+        params_tree=environment.params_tree,
+        params_functions={
+            k: v for k, v in ttsim_objects.items() if isinstance(v, ParamsFunction)
+        },
+    )
+
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
         ttsim_objects=ttsim_objects,
         targets=targets,
         data=data,
-        groupings=groupings,
+        groupings=environment.grouping_levels,
     )
 
     functions_overridden, functions_to_be_used = partition_by_reference_dict(
         to_partition=functions,
         reference_dict=data,
     )
-
     _warn_if_functions_overridden_by_data(functions_overridden)
 
     functions_with_rounding_specs = (
@@ -128,7 +141,10 @@ def compute_taxes_and_transfers(
         functions=functions_with_rounding_specs,
         params=environment.params,
     )
-
+    functions_with_partialled_parameters = _partial_params_to_functions(
+        functions=functions_with_partialled_parameters,
+        params=processed_params_tree,
+    )
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
         data=data,
@@ -138,8 +154,7 @@ def compute_taxes_and_transfers(
 
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
-        functions=functions,
-        groupings=groupings,
+        groupings=environment.grouping_levels,
     )
     _input_data_with_p_id = {
         "p_id": data["p_id"],
@@ -151,6 +166,7 @@ def compute_taxes_and_transfers(
     )
     if debug:
         targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
+
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,
@@ -160,14 +176,19 @@ def compute_taxes_and_transfers(
     )
 
     if jit:
-        try:
-            import jax
-        except ImportError as e:
+        if not IS_JAX_INSTALLED:
             raise ImportError(
                 "JAX is not installed. Please install JAX to use JIT compilation."
-            ) from e
-        tax_transfer_function = jax.jit(tax_transfer_function)
+            )
+        import jax
 
+        static_args = {
+            argname: data[argname.removesuffix("_num_segments")].max() + 1
+            for argname in inspect.signature(tax_transfer_function).parameters
+            if argname.endswith("_num_segments")
+        }
+        tax_transfer_function = functools.partial(tax_transfer_function, **static_args)
+        tax_transfer_function = jax.jit(tax_transfer_function)
     results = tax_transfer_function(**input_data)
 
     result_tree = dt.unflatten_from_qual_names(results)
@@ -181,29 +202,9 @@ def compute_taxes_and_transfers(
     return result_tree
 
 
-def _fail_if_group_ids_are_outside_top_level_namespace(
-    environment: PolicyEnvironment,
-    groupings: tuple[str, ...],
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_id_pattern = re.compile(f"(?P<group>{'|'.join(groupings)})_id$")
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(environment.raw_objects_tree)
-        if len(tree_path) > 1 and group_id_pattern.match(tree_path[-1])
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
-
-
 def _get_top_level_namespace(
     environment: PolicyEnvironment,
     time_units: tuple[str, ...],
-    groupings: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
 
@@ -217,16 +218,21 @@ def _get_top_level_namespace(
     top_level_namespace:
         The top level namespace.
     """
-    direct_top_level_names = set(environment.raw_objects_tree.keys())
+
+    direct_top_level_names = set(environment.combined_tree.keys())
+
+    # Do not create variations for lower-level namespaces.
+    top_level_objects_for_variations = direct_top_level_names - {
+        k for k, v in environment.combined_tree.items() if isinstance(v, dict)
+    }
 
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        groupings=groupings,
+        groupings=environment.grouping_levels,
         time_units=time_units,
     )
-
-    all_top_level_names = direct_top_level_names.copy()
     bngs_to_variations = {}
-    for name in direct_top_level_names:
+    all_top_level_names = direct_top_level_names.copy()
+    for name in top_level_objects_for_variations:
         match = pattern_all.fullmatch(name)
         # We must not find multiple time units for the same base name and group.
         bngs = get_base_name_and_grouping_suffix(match)
@@ -239,13 +245,16 @@ def _get_top_level_namespace(
                 all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    gp = group_pattern(groupings)
+    gp = group_pattern(environment.grouping_levels)
     potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
 
     for name in potential_base_names:
-        for g in groupings:
+        for g in environment.grouping_levels:
             all_top_level_names.add(f"{name}_{g}")
 
+    # Add num_segments to grouping variables
+    for g in environment.grouping_levels:
+        all_top_level_names.add(f"{g}_id_num_segments")
     return all_top_level_names
 
 
@@ -261,6 +270,91 @@ def remove_tree_logic_from_ttsim_objects_tree(
         )
         for name, f_or_i in dt.flatten_to_qual_names(raw_objects_tree).items()
     }
+
+
+def combine_policy_functions_and_derived_functions(
+    ttsim_objects: QualNameTTSIMObjectDict,
+    targets: QualNameTargetList,
+    data: QualNameDataDict,
+    groupings: tuple[str, ...],
+) -> QualNameTTSIMFunctionDict:
+    """Add derived functions to the qualified functions dict.
+
+    Derived functions are time converted functions and aggregation functions (aggregate
+    by p_id or by group).
+
+    Checks that all targets have a corresponding function in the functions tree or can
+    be taken from the data.
+
+    Parameters
+    ----------
+    functions
+        Dict with qualified function names as keys and functions with qualified
+        arguments as values.
+    targets
+        The list of targets with qualified names.
+    data
+        Dict with qualified data names as keys and pandas Series as values.
+    top_level_namespace
+        Set of top-level namespaces.
+
+    Returns
+    -------
+    The qualified functions dict with derived functions.
+
+    """
+    # Create functions for different time units
+    time_conversion_functions = create_time_conversion_functions(
+        ttsim_objects=ttsim_objects,
+        data=data,
+        groupings=groupings,
+    )
+    out = {
+        **{qn: f for qn, f in ttsim_objects.items() if isinstance(f, TTSIMFunction)},
+        **time_conversion_functions,
+    }
+    # Create aggregation functions by group.
+    aggregate_by_group_functions = create_agg_by_group_functions(
+        ttsim_functions_with_time_conversions=out,
+        data=data,
+        targets=targets,
+        groupings=groupings,
+    )
+    out = {**aggregate_by_group_functions, **out}
+
+    _fail_if_targets_not_in_functions(functions=out, targets=targets)
+
+    return out
+
+
+def _fail_if_targets_not_in_functions(
+    functions: QualNameTTSIMFunctionDict, targets: QualNameTargetList
+) -> None:
+    """Fail if some target is not among functions.
+
+    Parameters
+    ----------
+    functions
+        Dictionary containing functions to build the DAG.
+    targets
+        The targets which should be computed. They limit the DAG in the way that only
+        ancestors of these nodes need to be considered.
+
+    Raises
+    ------
+    ValueError
+        Raised if any member of `targets` is not among functions.
+
+    """
+    targets_not_in_functions_tree = [
+        str(dt.tree_path_from_qual_name(n)) for n in targets if n not in functions
+    ]
+    if targets_not_in_functions_tree:
+        formatted = format_list_linewise(targets_not_in_functions_tree)
+        msg = format_errors_and_warnings(
+            f"The following targets have no corresponding function:\n\n{formatted}"
+        )
+        raise ValueError(msg)
 
 
 def _create_input_data_for_concatenated_function(
@@ -307,9 +401,47 @@ def _create_input_data_for_concatenated_function(
     return {k: np.array(v) for k, v in data.items() if k in root_nodes}
 
 
+def _process_params_tree(
+    params_tree: NestedTTSIMParamDict,
+    params_functions: QualNameTTSIMFunctionDict,
+) -> QualNameProcessedParamDict:
+    """Return a mapping of qualified names to processed parameter values.
+
+    Notes:
+
+    - This gets rid of the TTSIMParam objects and all meta-information like
+      extended names, descriptions, units, etc.
+    - RawParamsRequiringConversion are filtered out, converted values are left.
+
+    """
+
+    qual_name_params = dt.flatten_to_qual_names(params_tree)
+
+    # Construct a function for the processing of all params.
+    process = dags.concatenate_functions(
+        functions=params_functions,
+        targets=None,
+        return_type="dict",
+        aggregator=None,
+        enforce_signature=False,
+    )
+    # Call the processing function.
+    processed = process(**{k: v.value for k, v in qual_name_params.items()})
+
+    # Return the processed parameters
+    return {
+        **{
+            k: v.value
+            for k, v in qual_name_params.items()
+            if not isinstance(v, RawTTSIMParam)
+        },
+        **processed,
+    }
+
+
 def _partial_parameters_to_functions(
     functions: QualNameTTSIMFunctionDict,
-    params: dict[str, Any],
+    params: QualNameProcessedParamDict,
 ) -> QualNameTTSIMFunctionDict:
     """Round and partial parameters into functions.
 
@@ -342,6 +474,41 @@ def _partial_parameters_to_functions(
             processed_functions[name] = functools.partial(function, **partial_params)
         else:
             processed_functions[name] = function
+
+    return processed_functions
+
+
+def _partial_params_to_functions(
+    functions: QualNameTTSIMFunctionDict,
+    params: QualNameProcessedParamDict,
+) -> QualNameTTSIMFunctionDict:
+    """Round and partial parameters into functions.
+
+    Parameters
+    ----------
+    functions
+        The functions dict with qualified function names as keys and functions as
+        values.
+    params
+        Dictionary of parameters.
+
+    Returns
+    -------
+    Functions tree with parameters partialled.
+
+    """
+    # Partial parameters to functions such that they disappear in the DAG.
+    # Note: Needs to be done after rounding such that dags recognizes partialled
+    # parameters.
+    processed_functions = {}
+    for name, func in functions.items():
+        partial_params = {}
+        for arg in [a for a in get_names_of_required_arguments(func) if a in params]:
+            partial_params[arg] = params[arg]
+        if partial_params:
+            processed_functions[name] = functools.partial(func, **partial_params)
+        else:
+            processed_functions[name] = func
 
     return processed_functions
 
@@ -397,7 +564,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=data_tree,
-        leaf_checker=lambda leaf: isinstance(leaf, pd.Series | np.ndarray),
+        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
         tree_name="data_tree",
     )
     _fail_if_p_id_is_non_unique(data_tree)
@@ -405,32 +572,23 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 
 def _fail_if_group_variables_not_constant_within_groups(
     data: QualNameDataDict,
-    functions: QualNameTTSIMFunctionDict,
     groupings: tuple[str, ...],
 ) -> None:
     """
     Check that group variables are constant within each group.
 
-    If the user provides a supported grouping ID (see SUPPORTED_GROUPINGS in config.py),
-    the function checks that the corresponding data is constant within each group.
-
     Parameters
     ----------
     data
         Dictionary of data.
-    functions
-        Dictionary of functions.
+    groupings
+        The groupings available in the policy environment.
     """
-    group_by_functions = {
-        k: v for k, v in functions.items() if isinstance(v, GroupCreationFunction)
-    }
-
     faulty_data_columns = []
 
     for name, data_column in data.items():
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            group_by_functions=group_by_functions,
             groupings=groupings,
         )
         if group_by_id in data:
@@ -463,8 +621,9 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
         raise ValueError("The input data must contain the p_id.")
 
     # Check for non-unique p_ids
-    p_id_counts = {}
-    for i in p_id:
+    p_id_counts: dict[int, int] = {}
+    # Need the map because Jax loop items are 1-element arrays.
+    for i in map(int, p_id):
         if i in p_id_counts:
             p_id_counts[i] += 1
         else:
@@ -491,8 +650,13 @@ def _fail_if_foreign_keys_are_invalid_in_data(
     """
 
     valid_ids = set(data["p_id"].tolist()) | {-1}
+    relevant_objects = {
+        k: v
+        for k, v in ttsim_objects.items()
+        if isinstance(v, PolicyInput | TTSIMFunction)
+    }
 
-    for fk_name, fk in ttsim_objects.items():
+    for fk_name, fk in relevant_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
         elif fk_name in data:
@@ -621,11 +785,11 @@ def _fail_if_root_nodes_are_missing(
                 # Function depends on parameters only, so it does not have to be present
                 # in the data tree.
                 continue
-        elif node in data:
+        elif node in data or node.endswith("_num_segments"):
             # Root node is present in the data tree.
             continue
         else:
-            missing_nodes.append(str(node))
+            missing_nodes.append(node)
 
     if missing_nodes:
         formatted = format_list_linewise(
@@ -634,9 +798,7 @@ def _fail_if_root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-def _func_depends_on_parameters_only(
-    func: TTSIMFunction,
-) -> bool:
+def _func_depends_on_parameters_only(func: TTSIMFunction) -> bool:
     """Check if a function depends on parameters only."""
     return (
         len(

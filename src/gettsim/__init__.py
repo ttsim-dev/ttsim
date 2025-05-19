@@ -13,10 +13,10 @@ except ImportError:
 
 import itertools
 import warnings
+from typing import Any
 
 import pytest
 
-from _gettsim.synthetic import create_synthetic_data
 from _gettsim_tests import TEST_DIR
 from ttsim import (
     FunctionsAndColumnsOverlapWarning,
@@ -33,7 +33,7 @@ from ttsim import (
 COUNTER_TEST_EXECUTIONS = itertools.count()
 
 
-def test(*args):
+def test(*args: Any) -> None:
     n_test_executions = next(COUNTER_TEST_EXECUTIONS)
 
     if n_test_executions == 0:
@@ -54,7 +54,6 @@ __all__ = [
     "PolicyFunction",
     "__version__",
     "compute_taxes_and_transfers",
-    "create_synthetic_data",
     "group_creation_function",
     "plot_dag",
     "policy_function",

@@ -6,7 +6,6 @@ from ttsim import (
     piecewise_polynomial,
     policy_function,
 )
-from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -18,7 +17,7 @@ def alleinerziehendenbonus(
     pass
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def einkommen_m_wthh(
     anzahl_personen_wthh: int,
     freibetrag_m_wthh: float,
@@ -55,7 +54,7 @@ def einkommen_m_wthh(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def einkommen_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     freibetrag_m_bg: float,
@@ -92,7 +91,7 @@ def einkommen_m_bg(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     einkommensteuer__betrag_y_sn: float,
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
@@ -125,7 +124,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     -------
 
     """
-    abzug_stufen = (
+    stufe = (
         (einkommensteuer__betrag_y_sn > 0)
         + (sozialversicherung__rente__beitrag__betrag_versicherter_y > 0)
         + (sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0)
@@ -133,7 +132,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     if familie__kind:
         out = 0.0
     else:
-        out = wohngeld_params["abzug_stufen"][abzug_stufen]
+        out = wohngeld_params["abzugsbeträge_steuern_sozialversicherung"][stufe]
     return out
 
 
@@ -274,7 +273,9 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     return out
 
 
-@policy_function(end_date="2015-12-31", leaf_name="freibetrag_m")
+@policy_function(
+    end_date="2015-12-31", leaf_name="freibetrag_m", vectorization_strategy="loop"
+)
 def freibetrag_m_bis_2015(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     ist_kind_mit_erwerbseinkommen: bool,
@@ -307,14 +308,13 @@ def freibetrag_m_bis_2015(
     -------
 
     """
-    freibetrag_behinderung_m = piecewise_polynomial(
-        behinderungsgrad,
-        thresholds=[*list(wohngeld_params["freibetrag_behinderung"]), np.inf],
-        rates=np.array([[0] * len(wohngeld_params["freibetrag_behinderung"])]),
-        intercepts_at_lower_thresholds=[
-            yearly_v / 12
-            for yearly_v in wohngeld_params["freibetrag_behinderung"].values()
-        ],
+
+    freibetrag_bei_behinderung_m = (
+        piecewise_polynomial(
+            behinderungsgrad,
+            parameters=wohngeld_params["freibetrag_bei_behinderung_gestaffelt_y"],
+        )
+        / 12
     )
 
     # Subtraction for single parents and working children
@@ -331,7 +331,7 @@ def freibetrag_m_bis_2015(
         )
     else:
         freibetrag_kinder_m = 0.0
-    return freibetrag_behinderung_m + freibetrag_kinder_m
+    return freibetrag_bei_behinderung_m + freibetrag_kinder_m
 
 
 @policy_function(start_date="2016-01-01", leaf_name="freibetrag_m")
@@ -362,8 +362,10 @@ def freibetrag_m_ab_2016(
     -------
 
     """
-    freibetrag_behinderung_m = (
-        wohngeld_params["freibetrag_behinderung"] / 12 if behinderungsgrad > 0 else 0
+    freibetrag_bei_behinderung_m = (
+        wohngeld_params["freibetrag_bei_behinderung_pauschal_y"] / 12
+        if behinderungsgrad > 0
+        else 0
     )
 
     if ist_kind_mit_erwerbseinkommen:
@@ -376,7 +378,7 @@ def freibetrag_m_ab_2016(
     else:
         freibetrag_kinder_m = 0.0
 
-    return freibetrag_behinderung_m + freibetrag_kinder_m
+    return freibetrag_bei_behinderung_m + freibetrag_kinder_m
 
 
 def einkommen(
@@ -405,7 +407,9 @@ def einkommen(
 
     """
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommen_freibetrag
-    unteres_eink = params["min_eink"][min(anzahl_personen, max(params["min_eink"]))]
+    unteres_eink = params["min_einkommen"][
+        min(anzahl_personen, max(params["min_einkommen"]))
+    ]
 
     out = max(eink_nach_abzug_m_hh, unteres_eink)
     return out

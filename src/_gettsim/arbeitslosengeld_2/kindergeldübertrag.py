@@ -43,7 +43,6 @@ def _mean_kindergeld_per_child_gestaffelt_m(
 @policy_function(
     start_date="2023-01-01",
     leaf_name="kindergeld_pro_kind_m",
-    vectorization_strategy="vectorize",
 )
 def _mean_kindergeld_per_child_ohne_staffelung_m(
     kindergeld_params: dict,
@@ -65,7 +64,9 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     -------
 
     """
-    return kindergeld_params["kindergeld"] if kindergeld__anzahl_ansprüche > 0 else 0.0
+    return (
+        kindergeld_params["kindergeldsatz"] if kindergeld__anzahl_ansprüche > 0 else 0.0
+    )
 
 
 @policy_function(vectorization_strategy="not_required")

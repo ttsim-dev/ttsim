@@ -43,12 +43,12 @@ def altersfreibetrag_y_bis_2004(
     )
     if alter > altersgrenze:
         out = min(
-            eink_st_abzuege_params["altersentlastung_quote"]
+            eink_st_abzuege_params["altersentlastungsquote"]
             * (
                 einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
                 + weiteres_einkommen
             ),
-            eink_st_abzuege_params["altersentlastungsbetrag_max"],
+            eink_st_abzuege_params["maximaler_altersentlastungsbetrag"],
         )
     else:
         out = 0.0
@@ -56,7 +56,11 @@ def altersfreibetrag_y_bis_2004(
     return out
 
 
-@policy_function(start_date="2005-01-01", leaf_name="altersfreibetrag_y")
+@policy_function(
+    start_date="2005-01-01",
+    leaf_name="altersfreibetrag_y",
+    vectorization_strategy="loop",
+)
 def altersfreibetrag_y_ab_2005(
     alter: int,
     geburtsjahr: int,
@@ -93,7 +97,7 @@ def altersfreibetrag_y_ab_2005(
 
     """
     # Maximum tax credit by birth year.
-    bins = sorted(eink_st_abzuege_params["altersentlastungsbetrag_max"])
+    bins = sorted(eink_st_abzuege_params["maximaler_altersentlastungsbetrag"])
     if geburtsjahr <= 1939:
         selected_bin = 1940
     else:
@@ -103,7 +107,7 @@ def altersfreibetrag_y_ab_2005(
         ]
 
     # Select appropriate tax credit threshold and quota.
-    out_max = eink_st_abzuege_params["altersentlastungsbetrag_max"][selected_bin]
+    out_max = eink_st_abzuege_params["maximaler_altersentlastungsbetrag"][selected_bin]
 
     einkommen_lohn = (
         0
@@ -116,7 +120,7 @@ def altersfreibetrag_y_ab_2005(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y,
         0.0,
     )
-    out_quote = eink_st_abzuege_params["altersentlastung_quote"][selected_bin] * (
+    out_quote = eink_st_abzuege_params["altersentlastungsquote"][selected_bin] * (
         einkommen_lohn + weiteres_einkommen
     )
 

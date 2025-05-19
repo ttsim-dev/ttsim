@@ -59,7 +59,7 @@ def miete_m_bg(
     return miete_m_hh * (arbeitslosengeld_2__anzahl_personen_bg / anzahl_personen_hh)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def min_miete_m_hh(anzahl_personen_hh: int, wohngeld_params: dict) -> float:
     """Minimum rent considered in Wohngeld calculation.
 
@@ -79,7 +79,9 @@ def min_miete_m_hh(anzahl_personen_hh: int, wohngeld_params: dict) -> float:
     return out
 
 
-@policy_function(end_date="2008-12-31", leaf_name="miete_m_hh")
+@policy_function(
+    end_date="2008-12-31", leaf_name="miete_m_hh", vectorization_strategy="loop"
+)
 def miete_m_hh_bis_2008(
     mietstufe: int,
     wohnen__baujahr_immobilie_hh: int,
@@ -143,7 +145,9 @@ def miete_m_hh_bis_2008(
     return out
 
 
-@policy_function(start_date="2009-01-01", leaf_name="miete_m_hh")
+@policy_function(
+    start_date="2009-01-01", leaf_name="miete_m_hh", vectorization_strategy="loop"
+)
 def miete_m_hh_ab_2009(  # noqa: PLR0912 (see #516)
     mietstufe: int,
     anzahl_personen_hh: int,
@@ -191,7 +195,7 @@ def miete_m_hh_ab_2009(  # noqa: PLR0912 (see #516)
     # Calc heating allowance. Until 2020, heating allowance was not
     # introduced yet. For this time frame, the respective parameter is
     # not part of wohngeld_params and heating allowance is set to 0.
-    # TODO(@MImmesberger): Apply policy_function decorator.
+    # TODO(@MImmesberger): Solve via policy_function decorator.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/711
     if "heizkostenentlastung_m" in wohngeld_params:
         max_def_hh_größe_heating = max(

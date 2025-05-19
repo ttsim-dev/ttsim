@@ -68,9 +68,6 @@ inputs:
     hh_id:
       - 25
       - 25
-    jahr:
-      - 2022
-      - 2022
     kindergeld__betrag_m_eg:
       - 0.0
       - 0.0

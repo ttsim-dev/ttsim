@@ -1,36 +1,58 @@
+from __future__ import annotations
+
 import copy
 import re
 import warnings
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import RESOURCE_DIR, SUPPORTED_GROUPINGS
+from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
     AggType,
+    DictTTSIMParam,
     FunctionsAndColumnsOverlapWarning,
+    PiecewisePolynomialParameters,
+    PiecewisePolynomialTTSIMParam,
     PolicyEnvironment,
+    RawTTSIMParam,
+    ScalarTTSIMParam,
     agg_by_group_function,
     agg_by_p_id_function,
     compute_taxes_and_transfers,
-    group_creation_function,
     merge_trees,
+    params_function,
     policy_function,
     policy_input,
     set_up_policy_environment,
 )
 from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
-    _fail_if_group_ids_are_outside_top_level_namespace,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
+    _fail_if_targets_not_in_functions,
     _get_top_level_namespace,
-    _partial_parameters_to_functions,
+    _partial_params_to_functions,
+    _process_params_tree,
+    create_agg_by_group_functions,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.shared import assert_valid_ttsim_pytree
+from ttsim.typing import TTSIMArray
+
+if TYPE_CHECKING:
+    from ttsim.typing import RawParamsRequiringConversion
+
+
+if IS_JAX_INSTALLED:
+    jit = True
+else:
+    jit = False
 
 
 @policy_input()
@@ -51,6 +73,105 @@ def fam_id() -> int:
 @policy_input()
 def betrag_m() -> float:
     pass
+
+
+@policy_function()
+def identity(x: int) -> int:
+    return x
+
+
+@policy_function()
+def some_func(p_id: int) -> int:
+    return p_id
+
+
+@policy_function()
+def another_func(some_func: int) -> int:
+    return some_func
+
+
+@params_function()
+def some_scalar_params_func(some_int_param: int) -> int:
+    return some_int_param
+
+
+@dataclass(frozen=True)
+class ConvertedParam:
+    some_float_param: float
+    some_bool_param: bool
+
+
+@params_function()
+def some_converting_params_func(
+    raw_param_spec: RawParamsRequiringConversion,
+) -> ConvertedParam:
+    return ConvertedParam(
+        some_float_param=raw_param_spec["some_float_param"],
+        some_bool_param=raw_param_spec["some_bool_param"],
+    )
+
+
+SOME_RAW_TTSIM_PARAM = RawTTSIMParam(
+    value={
+        "some_float_param": 1,
+        "some_bool_param": False,
+    },
+    leaf_name="raw_param_spec",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="raw_param_spec",
+    description="Some raw param spec",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
+
+
+SOME_INT_PARAM = ScalarTTSIMParam(
+    value=1,
+    leaf_name="some_int_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="some_int_param",
+    description="Some int param",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
+
+
+SOME_DICT_PARAM = DictTTSIMParam(
+    value={"a": 1, "b": False},
+    leaf_name="some_dict_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="some_dict_param",
+    description="Some dict param",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
+
+
+SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialTTSIMParam(
+    value=PiecewisePolynomialParameters(
+        thresholds=[1, 2, 3],
+        intercepts=[1, 2, 3],
+        rates=[1, 2, 3],
+    ),
+    leaf_name="some_piecewise_polynomial_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    name="some_piecewise_polynomial_param",
+    description="Some piecewise polynomial param",
+    unit=None,
+    reference_period=None,
+    note=None,
+    reference=None,
+)
 
 
 @pytest.fixture(scope="module")
@@ -82,68 +203,313 @@ def foo_fam(foo: int, fam_id: int) -> int:
 @pytest.fixture(scope="module")
 def mettsim_environment():
     return set_up_policy_environment(
-        resource_dir=RESOURCE_DIR,
+        root=METTSIM_ROOT,
         date="2025-01-01",
     )
 
 
 # Create a function which is used by some tests below
 @policy_function()
-def func_before_partial(arg_1, payroll_tax_params):
-    return arg_1 + payroll_tax_params["test_param_1"]
+def func_before_partial(arg_1, some_param):
+    return arg_1 + some_param
 
 
-func_after_partial = _partial_parameters_to_functions(
-    {"test_func": func_before_partial},
-    {"payroll_tax": {"test_param_1": 1}},
-)["test_func"]
+func_after_partial = _partial_params_to_functions(
+    {"some_func": func_before_partial},
+    {"some_param": SOME_INT_PARAM.value},
+)["some_func"]
+
+
+@pytest.fixture
+@policy_function(leaf_name="foo")
+def function_with_bool_return(x: bool) -> bool:
+    return x
+
+
+@policy_input()
+def x() -> int:
+    pass
+
+
+@policy_input()
+def x_f() -> float:
+    pass
+
+
+@policy_input()
+def x_b() -> bool:
+    pass
+
+
+@policy_input()
+def kin_id() -> int:
+    pass
+
+
+@agg_by_group_function(leaf_name="y_kin", agg_type=AggType.SUM)
+def y_kin(kin_id: int, x: int) -> int:
+    pass
+
+
+@agg_by_group_function(leaf_name="y_kin", agg_type=AggType.SUM)
+def y_kin_namespaced_input(kin_id: int, inputs__x: int) -> int:
+    pass
+
+
+@pytest.fixture
+@policy_function(leaf_name="bar")
+def function_with_int_return(x: int) -> int:
+    return x
+
+
+@pytest.fixture
+@policy_function(leaf_name="baz")
+def function_with_float_return(x: int) -> float:
+    return x
+
+
+def some_x(x):
+    return x
+
+
+def return_x_kin(x_kin: int) -> int:
+    return x_kin
+
+
+def return_y_kin(y_kin: int) -> int:
+    return y_kin
+
+
+def return_n1__x_kin(n1__x_kin: int) -> int:
+    return n1__x_kin
+
+
+@pytest.mark.parametrize(
+    (
+        "objects_tree",
+        "targets_tree",
+        "data_tree",
+    ),
+    [
+        (
+            # Aggregations derived from simple function arguments
+            {
+                "kin_id": kin_id,
+                "p_id": p_id,
+                "n1": {
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_n1__x_kin),
+                    "x": x,
+                },
+            },
+            {"n1": {"f": None}},
+            {
+                "n1": {"x": pd.Series([1, 1, 1])},
+                "kin_id": pd.Series([0, 0, 0]),
+                "p_id": pd.Series([0, 1, 2]),
+            },
+        ),
+        (
+            # Aggregations derived from namespaced function arguments
+            {
+                "kin_id": kin_id,
+                "p_id": p_id,
+                "n1": {
+                    "f": policy_function(leaf_name="f")(return_x_kin),
+                    "x": x,
+                },
+            },
+            {"n1": {"f": None}},
+            {
+                "n1": {"x": pd.Series([1, 1, 1])},
+                "kin_id": pd.Series([0, 0, 0]),
+                "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
+            },
+        ),
+        (
+            # Aggregations derived from target
+            {
+                "kin_id": kin_id,
+                "p_id": p_id,
+                "n1": {
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(some_x),
+                    "x": x,
+                },
+            },
+            {"n1": {"f_kin": None}},
+            {
+                "n1": {"x": pd.Series([1, 1, 1])},
+                "kin_id": pd.Series([0, 0, 0]),
+                "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
+            },
+        ),
+        (
+            # Explicit aggregation via objects tree with leaf name input
+            {
+                "kin_id": kin_id,
+                "p_id": p_id,
+                "n1": {
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(some_x),
+                    "x": x,
+                },
+                "y_kin": y_kin,
+            },
+            {"n1": {"f": None}},
+            {
+                "n1": {"x": pd.Series([1, 1, 1])},
+                "kin_id": pd.Series([0, 0, 0]),
+                "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
+            },
+        ),
+        (
+            # Explicit aggregation via objects tree with namespaced input
+            {
+                "kin_id": kin_id,
+                "p_id": p_id,
+                "n1": {
+                    "f": policy_function(
+                        leaf_name="f", vectorization_strategy="vectorize"
+                    )(return_y_kin),
+                    "y_kin": y_kin_namespaced_input,
+                },
+                "inputs": {"x": x},
+            },
+            {"n1": {"f": None}},
+            {
+                "inputs": {"x": pd.Series([1, 1, 1])},
+                "kin_id": pd.Series([0, 0, 0]),
+                "p_id": pd.Series([0, 1, 2]),
+                "num_segments": 1,
+            },
+        ),
+    ],
+)
+def test_create_agg_by_group_functions(
+    objects_tree,
+    targets_tree,
+    data_tree,
+):
+    environment = PolicyEnvironment(raw_objects_tree=objects_tree)
+    compute_taxes_and_transfers(
+        environment=environment,
+        data_tree=data_tree,
+        targets_tree=targets_tree,
+        jit=jit,
+    )
+
+
+@pytest.mark.parametrize(
+    "functions, targets, expected_error_match",
+    [
+        ({"foo": some_x}, {"bar": None}, "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, "('foo', 'bar')"),
+    ],
+)
+def test_fail_if_targets_are_not_among_functions(
+    functions, targets, expected_error_match
+):
+    with pytest.raises(ValueError) as e:
+        _fail_if_targets_not_in_functions(functions, targets)
+    assert expected_error_match in str(e.value)
+
+
+@pytest.mark.parametrize(
+    (
+        "functions",
+        "targets",
+        "data",
+        "expected",
+    ),
+    [
+        (
+            {"foo": policy_function(leaf_name="foo")(return_x_kin)},
+            {},
+            {"x": pd.Series([1])},
+            ("x_kin"),
+        ),
+        (
+            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
+            {},
+            {"n1__x": pd.Series([1])},
+            ("n1__x_kin"),
+        ),
+        (
+            {},
+            {"x_kin": None},
+            {"x": pd.Series([1])},
+            ("x_kin"),
+        ),
+    ],
+)
+def test_derived_aggregation_functions_are_in_correct_namespace(
+    functions,
+    targets,
+    data,
+    expected,
+):
+    """Test that the derived aggregation functions are in the correct namespace.
+
+    The namespace of the derived aggregation functions should be the same as the
+    namespace of the function that is being aggregated.
+    """
+    result = create_agg_by_group_functions(
+        ttsim_functions_with_time_conversions=functions,
+        data=data,
+        targets=targets,
+        groupings=("kin",),
+    )
+    assert expected in result
 
 
 def test_output_as_tree(minimal_input_data):
     environment = PolicyEnvironment(
         {
             "p_id": p_id,
-            "module": {
-                "test_func": policy_function(leaf_name="test_func")(lambda p_id: p_id)
-            },
+            "module": {"some_func": some_func},
         }
     )
 
     out = compute_taxes_and_transfers(
         data_tree=minimal_input_data,
         environment=environment,
-        targets_tree={"module": {"test_func": None}},
-        groupings=("fam",),
+        targets_tree={"module": {"some_func": None}},
+        jit=jit,
     )
 
     assert isinstance(out, dict)
-    assert "test_func" in out["module"]
-    assert isinstance(out["module"]["test_func"], np.ndarray)
+    assert "some_func" in out["module"]
+    assert isinstance(out["module"]["some_func"], TTSIMArray)
 
 
 def test_warn_if_functions_and_columns_overlap():
     environment = PolicyEnvironment(
         {
-            "dupl": policy_function(leaf_name="dupl")(lambda x: x),
-            "some_target": policy_function(leaf_name="some_target")(lambda dupl: dupl),
+            "some_func": some_func,
+            "some_target": another_func,
         }
     )
     with pytest.warns(FunctionsAndColumnsOverlapWarning):
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
-                "dupl": pd.Series([1]),
+                "some_func": pd.Series([1]),
             },
             environment=environment,
             targets_tree={"some_target": None},
-            groupings=("fam",),
+            jit=jit,
         )
 
 
 def test_dont_warn_if_functions_and_columns_dont_overlap():
-    environment = PolicyEnvironment(
-        {"some_func": policy_function(leaf_name="some_func")(lambda x: x)}
-    )
+    environment = PolicyEnvironment({"some_func": some_func})
     with warnings.catch_warnings():
         warnings.filterwarnings("error", category=FunctionsAndColumnsOverlapWarning)
         compute_taxes_and_transfers(
@@ -153,15 +519,15 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
             },
             environment=environment,
             targets_tree={"some_func": None},
-            groupings=("fam",),
+            jit=jit,
         )
 
 
 def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
     environment = PolicyEnvironment(
         {
-            "dupl": policy_function(leaf_name="dupl")(lambda x: x),
-            "unique": policy_function(leaf_name="unique")(lambda x: x**2),
+            "some_func": some_func,
+            "unique": another_func,
         }
     )
     with warnings.catch_warnings(
@@ -171,12 +537,12 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
-                "dupl": pd.Series([1]),
+                "some_func": pd.Series([1]),
                 "x": pd.Series([1]),
             },
             environment=environment,
             targets_tree={"unique": None},
-            groupings=("fam",),
+            jit=jit,
         )
 
     assert len(warning_list) == 0
@@ -245,34 +611,15 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
     )
 
 
-@pytest.mark.parametrize(
-    "data, functions",
-    [
-        # Remove this one once we got rid of the hh_id hack
-        (
-            {
-                "foo_hh": pd.Series([1, 2, 2], name="foo_hh"),
-                "hh_id": pd.Series([1, 1, 2], name="hh_id"),
-            },
-            {},
-        ),
-        (
-            {
-                "foo_fam": pd.Series([1, 2, 2], name="foo_fam"),
-                "fam_id": pd.Series([1, 1, 2], name="fam_id"),
-            },
-            {
-                "fam_id": group_creation_function()(lambda x: x),
-            },
-        ),
-    ],
-)
-def test_fail_if_group_variables_not_constant_within_groups(data, functions):
+def test_fail_if_group_variables_not_constant_within_groups():
+    data = {
+        "foo_kin": pd.Series([1, 2, 2], name="foo_kin"),
+        "kin_id": pd.Series([1, 1, 2], name="kin_id"),
+    }
     with pytest.raises(ValueError):
         _fail_if_group_variables_not_constant_within_groups(
             data=data,
-            functions=functions,
-            groupings=SUPPORTED_GROUPINGS,
+            groupings=("kin",),
         )
 
 
@@ -298,14 +645,14 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"c": None},
-            groupings=("fam",),
+            jit=jit,
         )
 
 
 def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input_data):
-    @policy_function(leaf_name="a")
-    def a():
-        return pd.Series(range(minimal_input_data["p_id"].size))
+    @policy_function(leaf_name="a", vectorization_strategy="not_required")
+    def a() -> np.ndarray:
+        return np.array(range(minimal_input_data["p_id"].size))
 
     @policy_function(leaf_name="b")
     def b(a):
@@ -316,7 +663,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         data_tree=minimal_input_data,
         environment=environment,
         targets_tree={"b": None},
-        groupings=("fam",),
+        jit=jit,
     )
 
 
@@ -333,7 +680,7 @@ def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions
             data_tree=minimal_input_data,
             environment=environment,
             targets_tree={"unknown_target": None},
-            groupings=("fam",),
+            jit=jit,
         )
 
 
@@ -347,7 +694,7 @@ def test_fail_if_missing_p_id():
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            groupings=("fam",),
+            jit=jit,
         )
 
 
@@ -363,42 +710,38 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
             data_tree=data,
             environment=PolicyEnvironment({}),
             targets_tree={},
-            groupings=("fam",),
+            jit=jit,
         )
 
 
-def test_partial_parameters_to_functions():
+def test_partial_params_to_functions():
     # Partial function produces correct result
     assert func_after_partial(2) == 3
 
 
-def test_partial_parameters_to_functions_removes_argument():
+def test_partial_params_to_functions_removes_argument():
     # Fails if params is added to partial function
     with pytest.raises(
         TypeError,
         match=("got multiple values for argument "),
     ):
-        func_after_partial(2, {"test_param_1": 1})
+        func_after_partial(2, 1)
 
     # No error for original function
-    func_before_partial(2, {"test_param_1": 1})
+    func_before_partial(2, 1)
 
 
 def test_user_provided_aggregate_by_group_specs():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
-        "module_name": {
-            "betrag_m": pd.Series([100, 100, 100], name="betrag_m"),
-        },
+        "module_name": {"betrag_m": pd.Series([100, 100, 100], name="betrag_m")},
     }
 
     inputs = {
         "p_id": p_id,
         "fam_id": fam_id,
-        "module_name": {
-            "betrag_m": betrag_m,
-        },
+        "module_name": {"betrag_m": betrag_m},
     }
 
     expected_res = pd.Series([200, 200, 100])
@@ -407,7 +750,7 @@ def test_user_provided_aggregate_by_group_specs():
         data_tree=data,
         environment=PolicyEnvironment(raw_objects_tree=inputs),
         targets_tree={"module_name": {"betrag_m_fam": None}},
-        groupings=("fam",),
+        jit=jit,
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -419,14 +762,13 @@ def test_user_provided_aggregation():
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
-        "module_name": {
-            "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
-        },
+        "module_name": {"betrag_m": pd.Series([200, 100, 100], name="betrag_m")},
     }
+    data["num_segments"] = len(data["fam_id"].unique())
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200])
 
-    @policy_function()
+    @policy_function(vectorization_strategy="vectorize")
     def betrag_m_double(betrag_m):
         return 2 * betrag_m
 
@@ -449,8 +791,8 @@ def test_user_provided_aggregation():
         data_tree=data,
         environment=environment,
         targets_tree={"module_name": {"betrag_m_double_fam": None}},
-        groupings=("fam",),
-        debug=True,
+        debug=False,
+        jit=jit,
     )
 
     numpy.testing.assert_array_almost_equal(
@@ -466,10 +808,11 @@ def test_user_provided_aggregation_with_time_conversion():
             "betrag_m": pd.Series([200, 100, 100], name="betrag_m"),
         },
     }
-    # Double up, convert to quarter, then take max fam_id
-    expected = pd.Series([400 * 3, 400 * 3, 200 * 3])
 
-    @policy_function()
+    # Double up, convert to quarter, then take max fam_id
+    expected = pd.Series([400 * 12, 400 * 12, 200 * 12])
+
+    @policy_function(vectorization_strategy="vectorize")
     def betrag_double_m(betrag_m):
         return 2 * betrag_m
 
@@ -491,13 +834,13 @@ def test_user_provided_aggregation_with_time_conversion():
     actual = compute_taxes_and_transfers(
         data_tree=data,
         environment=environment,
-        targets_tree={"module_name": {"betrag_double_q_fam": None}},
-        groupings=("fam",),
-        debug=True,
+        targets_tree={"module_name": {"max_betrag_double_y_fam": None}},
+        debug=False,
+        jit=jit,
     )
 
     numpy.testing.assert_array_almost_equal(
-        actual["module_name"]["max_betrag_double_q_fam"], expected
+        actual["module_name"]["max_betrag_double_y_fam"], expected
     )
 
 
@@ -547,10 +890,8 @@ def test_user_provided_aggregate_by_p_id_specs(
     expected,
     minimal_input_data_shared_fam,
 ):
-    # TODO(@MImmesberger): Remove fake dependency.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
     @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
-    def source(p_id: int) -> int:  # noqa: ARG001
+    def source() -> int:
         return np.array([100, 200, 300])
 
     raw_objects_tree = merge_trees(
@@ -567,7 +908,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         minimal_input_data_shared_fam,
         environment,
         targets_tree=target_tree,
-        groupings=("fam",),
+        jit=jit,
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
@@ -607,44 +948,62 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     (
         "environment",
         "time_units",
-        "groupings",
         "expected",
     ),
     [
         (
             PolicyEnvironment(
                 raw_objects_tree={
-                    "foo_m": policy_function(leaf_name="foo_m")(lambda x: x)
+                    "foo_m": policy_function(leaf_name="foo_m")(identity),
+                    "fam_id": fam_id,
                 }
             ),
             ["m", "y"],
-            ("fam",),
             {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
         ),
         (
             PolicyEnvironment(
-                raw_objects_tree={"foo": policy_function(leaf_name="foo")(lambda x: x)}
+                raw_objects_tree={
+                    "foo": policy_function(leaf_name="foo")(identity),
+                    "fam_id": fam_id,
+                }
             ),
             ["m", "y"],
-            ("fam",),
             {"foo", "foo_fam"},
         ),
     ],
 )
-def test_get_top_level_namespace(environment, time_units, groupings, expected):
+def test_get_top_level_namespace(environment, time_units, expected):
     result = _get_top_level_namespace(
         environment=environment,
         time_units=time_units,
-        groupings=groupings,
     )
-    assert result == expected
+    assert all(name in result for name in expected)
 
 
-def test_fail_if_group_ids_are_outside_top_level_namespace():
-    with pytest.raises(
-        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
-    ):
-        _fail_if_group_ids_are_outside_top_level_namespace(
-            environment=PolicyEnvironment(raw_objects_tree={"n1": {"fam_id": fam_id}}),
-            groupings=("fam",),
-        )
+def test_params_tree_is_processed():
+    params_tree = {
+        "raw_param_spec": SOME_RAW_TTSIM_PARAM,
+        "some_int_param": SOME_INT_PARAM,
+        "some_dict_param": SOME_DICT_PARAM,
+        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
+    }
+    params_functions = {
+        "some_scalar_params_func": some_scalar_params_func,
+        "some_converting_params_func": some_converting_params_func,
+    }
+    processed_params_tree = _process_params_tree(
+        params_tree=params_tree,
+        params_functions=params_functions,
+    )
+    expected = {
+        "some_converting_params_func": ConvertedParam(
+            some_float_param=1,
+            some_bool_param=False,
+        ),
+        "some_scalar_params_func": 1,
+        "some_int_param": SOME_INT_PARAM.value,
+        "some_dict_param": SOME_DICT_PARAM.value,
+        "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM.value,
+    }
+    assert processed_params_tree == expected

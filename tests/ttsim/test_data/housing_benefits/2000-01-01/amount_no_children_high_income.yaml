@@ -8,7 +8,7 @@ inputs:
     p_id:
       - 0
       - 1
-    hh_id:
+    kin_id:
       - 0
       - 0
     p_id_parent_1:
@@ -40,7 +40,7 @@ outputs:
     - 0.0
     - 0.0
   housing_benefits__income__amount_m:
-    - 1052.0
+    - 1054.00
     - 0.0
   housing_benefits__eligibility__requirement_fulfilled_fam:
     - false

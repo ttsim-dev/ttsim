@@ -25,6 +25,7 @@ def anzahl_kinder_bis_24_elternteil_2(
     start_date="1995-01-01",
     end_date="2004-12-31",
     leaf_name="beitragssatz",
+    vectorization_strategy="loop",
 )
 def beitragssatz_ohne_zusatz_für_kinderlose(
     ges_pflegev_params: dict,
@@ -43,13 +44,14 @@ def beitragssatz_ohne_zusatz_für_kinderlose(
 
     """
 
-    return ges_pflegev_params["beitr_satz"]
+    return ges_pflegev_params["parameter_beitragssatz"]
 
 
 @policy_function(
     start_date="2005-01-01",
     end_date="2023-06-30",
     leaf_name="beitragssatz",
+    vectorization_strategy="loop",
 )
 def beitragssatz_zusatz_kinderlos_dummy(
     zusatzbetrag_kinderlos: bool,
@@ -70,16 +72,18 @@ def beitragssatz_zusatz_kinderlos_dummy(
     -------
 
     """
-    out = ges_pflegev_params["beitr_satz"]["standard"]
+    out = ges_pflegev_params["parameter_beitragssatz"]["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
+        out += ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
 
     return out
 
 
-@policy_function(start_date="2023-07-01", leaf_name="beitragssatz")
+@policy_function(
+    start_date="2023-07-01", leaf_name="beitragssatz", vectorization_strategy="loop"
+)
 def beitragssatz_mit_kinder_abschlag(
     anzahl_kinder_bis_24: int,
     zusatzbetrag_kinderlos: bool,
@@ -103,22 +107,22 @@ def beitragssatz_mit_kinder_abschlag(
     -------
 
     """
-    out = ges_pflegev_params["beitr_satz"]["standard"]
+    out = ges_pflegev_params["parameter_beitragssatz"]["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
+        out += ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        out -= ges_pflegev_params["beitr_satz"]["abschlag_kinder"] * min(
+        out -= ges_pflegev_params["parameter_beitragssatz"]["abschlag_kinder"] * min(
             anzahl_kinder_bis_24 - 1, 4
         )
 
     return out
 
 
-@policy_function(start_date="2005-01-01")
+@policy_function(start_date="2005-01-01", vectorization_strategy="loop")
 def zusatzbetrag_kinderlos(
     hat_kinder: bool,
     alter: int,

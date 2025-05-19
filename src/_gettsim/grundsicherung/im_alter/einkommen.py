@@ -71,7 +71,7 @@ def einkommen_m(
     return max(out, 0.0)
 
 
-@policy_function()
+@policy_function(start_date="2011-01-01")
 def erwerbseinkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
@@ -83,23 +83,14 @@ def erwerbseinkommen_m(
 
     Legal reference: § 82 SGB XII Abs. 3
 
-    Note: Freibeträge for income are currently not considered
-    Note: the cap at 1/2 of Regelbedarf was only introduced in 2006 (which is currently
-    not implemented): https://www.buzer.de/gesetz/3415/al3764-0.htm
+    Notes:
 
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m <einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m>`.
-    arbeitsl_geld_2_params
-        See params documentation :ref:`arbeitsl_geld_2_params <arbeitsl_geld_2_params>`.
-    grunds_im_alter_params
-        See params documentation :ref:`grunds_im_alter_params <grunds_im_alter_params>`.
+    - Freibeträge for income are currently not considered
+    - Start date is 2011 because of the reference to regelsatz_nach_regelbedarfsstufen,
+      which was introduced in 2011.
+    - The cap at 1/2 of Regelbedarf was only introduced in 2006 (which is currently
+      not implemented): https://www.buzer.de/gesetz/3415/al3764-0.htm
 
-    Returns
-    -------
 
     """
     earnings = (
@@ -108,8 +99,12 @@ def erwerbseinkommen_m(
     )
 
     # Can deduct 30% of earnings (but no more than 1/2 of regelbedarf)
-    earnings_after_max_deduction = earnings - arbeitsl_geld_2_params["regelsatz"][1] / 2
-    earnings = (1 - grunds_im_alter_params["erwerbseink_anr_frei"]) * earnings
+    earnings_after_max_deduction = (
+        earnings - arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
+    )
+    earnings = (
+        1 - grunds_im_alter_params["anrechnungsfreier_anteil_erwerbseinkünfte"]
+    ) * earnings
 
     out = max(earnings, earnings_after_max_deduction)
 
@@ -142,7 +137,7 @@ def kapitaleinkommen_brutto_m(
     # Can deduct allowance from yearly capital income
     capital_income_y = (
         einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y
-        - grunds_im_alter_params["kapitaleink_anr_frei"]
+        - grunds_im_alter_params["anrechnungsfreie_kapitaleinkünfte"]
     )
 
     # Calculate and return monthly capital income (after deduction)
@@ -179,14 +174,12 @@ def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m_amount_exempt = (
         piecewise_polynomial(
             x=sozialversicherung__rente__private_rente_betrag_m,
-            thresholds=grunds_im_alter_params["priv_rente_anr_frei"]["thresholds"],
-            rates=grunds_im_alter_params["priv_rente_anr_frei"]["rates"],
-            intercepts_at_lower_thresholds=grunds_im_alter_params[
-                "priv_rente_anr_frei"
-            ]["intercepts_at_lower_thresholds"],
+            parameters=grunds_im_alter_params[
+                "anrechnungsfreier_anteil_private_renteneinkünfte"
+            ],
         )
     )
-    upper = arbeitsl_geld_2_params["regelsatz"][1] / 2
+    upper = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
 
     out = sozialversicherung__rente__private_rente_betrag_m - min(
         sozialversicherung__rente__private_rente_betrag_m_amount_exempt, upper
@@ -248,14 +241,10 @@ def gesetzliche_rente_m_ab_2021(
 
     angerechnete_rente = piecewise_polynomial(
         x=sozialversicherung__rente__altersrente__betrag_m,
-        thresholds=grunds_im_alter_params["ges_rente_anr_frei"]["thresholds"],
-        rates=grunds_im_alter_params["ges_rente_anr_frei"]["rates"],
-        intercepts_at_lower_thresholds=grunds_im_alter_params["ges_rente_anr_frei"][
-            "intercepts_at_lower_thresholds"
-        ],
+        parameters=grunds_im_alter_params["anrechnungsfreier_anteil_gesetzliche_rente"],
     )
 
-    upper = arbeitsl_geld_2_params["regelsatz"][1] / 2
+    upper = arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1] / 2
     if sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt:
         angerechnete_rente = min(angerechnete_rente, upper)
     else:

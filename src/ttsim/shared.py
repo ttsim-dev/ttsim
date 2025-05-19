@@ -4,7 +4,7 @@ import datetime
 import inspect
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import optree
@@ -18,14 +18,13 @@ if TYPE_CHECKING:
         GenericCallable,
         NestedDataDict,
         NestedTTSIMObjectDict,
-        QualNameTTSIMFunctionDict,
     )
 
 
 _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
-def to_datetime(date: datetime.date | DashedISOString):
+def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
     if isinstance(date, datetime.date):
         return date
     if isinstance(date, str) and _DASHED_ISO_DATE_REGEX.fullmatch(date):
@@ -36,14 +35,14 @@ def to_datetime(date: datetime.date | DashedISOString):
         )
 
 
-def validate_date_range(start: datetime.date, end: datetime.date):
+def validate_date_range(start: datetime.date, end: datetime.date) -> None:
     if start > end:
         raise ValueError(f"The start date {start} must be before the end date {end}.")
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
     groupings: tuple[str, ...], time_units: tuple[str, ...]
-) -> re.Pattern:
+) -> re.Pattern[str]:
     """Get a regex pattern for time units and groupings.
 
     The pattern matches strings in any of these formats:
@@ -74,7 +73,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
     )
 
 
-def group_pattern(groupings: tuple[str, ...]) -> re.Pattern:
+def group_pattern(groupings: tuple[str, ...]) -> re.Pattern[str]:
     return re.compile(
         f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
     )
@@ -84,7 +83,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     base_name: str,
     all_time_units: tuple[str, ...],
     groupings: tuple[str, ...],
-) -> re.Pattern:
+) -> re.Pattern[str]:
     """Get a regex for a specific base name with optional time unit and aggregation.
 
     The pattern matches strings in any of these formats:
@@ -117,7 +116,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
     )
 
 
-def get_base_name_and_grouping_suffix(match: re.Match) -> tuple[str, str]:
+def get_base_name_and_grouping_suffix(match: re.Match[str]) -> tuple[str, str]:
     return (
         match.group("base_name"),
         f"_{match.group('grouping')}" if match.group("grouping") else "",
@@ -139,12 +138,12 @@ class KeyErrorMessage(str):
 
     __slots__ = ()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
-def format_list_linewise(list_):
-    formatted_list = '",\n    "'.join(list_)
+def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
+    formatted_list = '",\n    "'.join(some_list)
     return textwrap.dedent(
         """
         [
@@ -187,7 +186,9 @@ def create_tree_from_path_and_value(
     return nested_dict
 
 
-def merge_trees(left: dict, right: dict) -> dict:
+def merge_trees(
+    left: NestedTTSIMObjectDict, right: NestedTTSIMObjectDict
+) -> NestedTTSIMObjectDict:
     """
     Merge two pytrees, raising an error if a path is present in both trees.
 
@@ -209,7 +210,9 @@ def merge_trees(left: dict, right: dict) -> dict:
     return upsert_tree(base=left, to_upsert=right)
 
 
-def upsert_tree(base: dict, to_upsert: dict) -> dict:
+def upsert_tree(
+    base: NestedTTSIMObjectDict, to_upsert: NestedTTSIMObjectDict
+) -> NestedTTSIMObjectDict:
     """
     Upsert a tree into another tree for trees defined by dictionaries only.
 
@@ -388,7 +391,7 @@ def get_names_of_required_arguments(function: PolicyFunction) -> list[str]:
     return [p for p in parameters if parameters[p].default == parameters[p].empty]
 
 
-def remove_group_suffix(col, groupings):
+def remove_group_suffix(col: str, groupings: tuple[str, ...]) -> str:
     out = col
     for g in groupings:
         out = out.removesuffix(f"_{g}")
@@ -396,15 +399,11 @@ def remove_group_suffix(col, groupings):
     return out
 
 
-Key: TypeVar = TypeVar("Key")
-Out: TypeVar = TypeVar("Out")
-
-
 def join(
     foreign_key: np.ndarray,
     primary_key: np.ndarray,
     target: np.ndarray,
-    value_if_foreign_key_is_missing: Out,
+    value_if_foreign_key_is_missing: float | bool,
 ) -> np.ndarray:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
@@ -504,118 +503,25 @@ def assert_valid_ttsim_pytree(
 
 def get_name_of_group_by_id(
     target_name: str,
-    group_by_functions: QualNameTTSIMFunctionDict,
     groupings: tuple[str, ...],
-) -> str:
+) -> str | None:
     """Get the group-by-identifier name for some target.
 
     The group-by-identifier is the name of the group identifier that is embedded in the
-    name of the target. E.g., "einkommen_hh" has "hh_id" as its group-by-identifier. In
-    this sense, the group-by-identifiers live in a global namespace. We generally expect
-    them to be unique.
-
-    There is an exception, though: It is enough for them to be unique within the
-    uppermost namespace. In that case, however, they cannot be used outside of that
-    namespace.
+    name of the target. E.g., "income_kin" has "kin_id" as its group-by-identifier.
 
     Parameters
     ----------
     target_name
         The name of the target.
-    group_by_functions
-        The group-by functions.
+    groupings
+        The supported groupings.
 
     Returns
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
     for g in groupings:
-        if target_name.endswith(f"_{g}") and g == "hh":
-            # Hardcode because hh_id is not part of the functions tree
-            return "hh_id"
-        elif target_name.endswith(f"_{g}"):
-            return _select_group_by_id_from_candidates(
-                candidate_names=[
-                    p for p in group_by_functions if p.endswith(f"{g}_id")
-                ],
-                target_name=target_name,
-            )
+        if target_name.endswith(f"_{g}"):
+            return f"{g}_id"
     return None
-
-
-def _select_group_by_id_from_candidates(
-    candidate_names: list[str],
-    target_name: str,
-) -> str:
-    """Select the group-by-identifier name from the candidates.
-
-    If there are multiple candidates, the function takes the one that shares the
-    first part of the path (uppermost level of namespace) with the aggregation target.
-
-    Raises
-    ------
-    ValueError
-        Raised if the group-by-identifier is ambiguous.
-
-    Parameters
-    ----------
-    candidates
-        The candidates.
-    target_path
-        The target path.
-    nice_target_name
-        The nice target name.
-
-    Returns
-    -------
-    The group-by-identifier.
-    """
-    if len(candidate_names) > 1:
-        candidate_names_in_matching_namespace = [
-            p
-            for p in candidate_names
-            if dt.tree_path_from_qual_name(p)[0]
-            == dt.tree_path_from_qual_name(target_name)[0]
-        ]
-        if len(candidate_names_in_matching_namespace) == 1:
-            return candidate_names_in_matching_namespace[0]
-        else:
-            _fail_because_of_ambiguous_group_by_identifier(
-                candidate_names_in_matching_namespace=candidate_names_in_matching_namespace,
-                all_candidate_names=candidate_names,
-                target_name=target_name,
-            )
-    else:
-        return candidate_names[0]
-
-
-def _fail_because_of_ambiguous_group_by_identifier(
-    candidate_names_in_matching_namespace: list[str],
-    all_candidate_names: list[str],
-    target_name: str,
-):
-    if len(candidate_names_in_matching_namespace) == 0:
-        paths = "\n    ".join(
-            [str(dt.tree_path_from_qual_name(p)) for p in all_candidate_names]
-        )
-    else:
-        paths = "\n    ".join(
-            [
-                str(dt.tree_path_from_qual_name(p))
-                for p in candidate_names_in_matching_namespace
-            ]
-        )
-
-    target_path = dt.tree_path_from_qual_name(target_name)
-    msg = format_errors_and_warnings(
-        f"""
-        Group-by-identifier for target:\n\n    {target_path}\n
-        is ambiguous. Group-by-identifiers must be
-
-        1. unique at the uppermost level of the functions tree.
-        2. inside the uppermost namespace if there are namespaced identifiers
-
-        Found candidates:\n\n    {paths}
-        """
-    )
-    raise ValueError(msg)

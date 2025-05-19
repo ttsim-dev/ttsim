@@ -32,7 +32,7 @@ def mindestwartezeit_erfüllt(
     """
     return (
         pflichtbeitragsmonate + freiwillige_beitragsmonate + ersatzzeiten_monate
-    ) / 12 >= ges_rente_params["thresholds_wartezeiten"]["wartezeit_5"]
+    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_5"]
 
 
 @policy_function()
@@ -64,7 +64,7 @@ def wartezeit_15_jahre_erfüllt(
     """
     return (
         pflichtbeitragsmonate + freiwillige_beitragsmonate + ersatzzeiten_monate
-    ) / 12 >= ges_rente_params["thresholds_wartezeiten"]["wartezeit_15"]
+    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_15"]
 
 
 @policy_function()
@@ -111,7 +111,7 @@ def wartezeit_35_jahre_erfüllt(
         + ersatzzeiten_monate
         + kinderberücksichtigungszeiten_monate
         + pflegeberücksichtigungszeiten_monate
-    ) / 12 >= ges_rente_params["thresholds_wartezeiten"]["wartezeit_35"]
+    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_35"]
 
 
 @policy_function(start_date="2012-01-01")
@@ -157,7 +157,7 @@ def wartezeit_45_jahre_erfüllt(
     if (
         pflichtbeitragsmonate / 12
         >= ges_rente_params[
-            "mindestpflichtbeitragsjahre_für_anrechnbarkeit_freiwilliger_beiträge"
+            "mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge"
         ]
     ):
         freiwillige_beitragszeiten = freiwillige_beitragsmonate
@@ -171,7 +171,7 @@ def wartezeit_45_jahre_erfüllt(
         + ersatzzeiten_monate
         + pflegeberücksichtigungszeiten_monate
         + kinderberücksichtigungszeiten_monate
-    ) / 12 >= ges_rente_params["thresholds_wartezeiten"]["wartezeit_45"]
+    ) / 12 >= ges_rente_params["wartezeitgrenzen"]["wartezeit_45"]
 
 
 @policy_function()

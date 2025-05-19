@@ -2,10 +2,9 @@
 
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from ttsim import piecewise_polynomial, policy_function
-from ttsim.config import numpy_or_jax as np
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def betrag_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     grundsätzlich_anspruchsberechtigt: bool,
@@ -32,9 +31,9 @@ def betrag_m(
     """
 
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
-        arbeitsl_geld_satz = arbeitsl_geld_params["satz_ohne_kinder"]
+        arbeitsl_geld_satz = arbeitsl_geld_params["satz"]["allgemein"]
     elif einkommensteuer__anzahl_kinderfreibeträge > 0:
-        arbeitsl_geld_satz = arbeitsl_geld_params["satz_mit_kindern"]
+        arbeitsl_geld_satz = arbeitsl_geld_params["satz"]["erhöht"]
 
     if grundsätzlich_anspruchsberechtigt:
         out = einkommen_vorjahr_proxy_m * arbeitsl_geld_satz
@@ -44,7 +43,7 @@ def betrag_m(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def monate_verbleibender_anspruchsdauer(
     alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
@@ -53,63 +52,18 @@ def monate_verbleibender_anspruchsdauer(
     arbeitsl_geld_params: dict,
 ) -> int:
     """Calculate the remaining amount of months a person can receive unemployment
-    benefit this year.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
-        See basic input variable :ref:`monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren <monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren>`.
-    anwartschaftszeit
-        See basic input variable :ref:`anwartschaftszeit <anwartschaftszeit>`.
-    monate_durchgängigen_bezugs_von_arbeitslosengeld
-        See basic input variable :ref:`monate_durchgängigen_bezugs_von_arbeitslosengeld <monate_durchgängigen_bezugs_von_arbeitslosengeld>`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-
-    Returns
-    -------
+    benefits.
 
     """
     nach_alter = piecewise_polynomial(
         alter,
-        thresholds=[
-            *list(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"]),
-            np.inf,
-        ],
-        rates=np.array(
-            [[0] * len(arbeitsl_geld_params["anspruchsdauer"]["nach_alter"])]
-        ),
-        intercepts_at_lower_thresholds=list(
-            arbeitsl_geld_params["anspruchsdauer"]["nach_alter"].values()
-        ),
+        parameters=arbeitsl_geld_params["anspruchsdauer_nach_alter"],
     )
     nach_versich_pfl = piecewise_polynomial(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        thresholds=[
-            *list(
-                arbeitsl_geld_params["anspruchsdauer"][
-                    "nach_versicherungspflichtige_monate"
-                ]
-            ),
-            np.inf,
+        parameters=arbeitsl_geld_params[
+            "anspruchsdauer_nach_versicherungspflichtigen_monaten"
         ],
-        rates=np.array(
-            [
-                [0]
-                * len(
-                    arbeitsl_geld_params["anspruchsdauer"][
-                        "nach_versicherungspflichtige_monate"
-                    ]
-                )
-            ]
-        ),
-        intercepts_at_lower_thresholds=list(
-            arbeitsl_geld_params["anspruchsdauer"][
-                "nach_versicherungspflichtige_monate"
-            ].values()
-        ),
     )
     if anwartschaftszeit:
         anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
@@ -169,7 +123,7 @@ def grundsätzlich_anspruchsberechtigt(
     return out
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
@@ -207,7 +161,7 @@ def einkommen_vorjahr_proxy_m(
     )
 
     # We need to deduct lump-sum amounts for contributions, taxes and soli
-    prox_ssc = arbeitsl_geld_params["sozialv_pausch"] * max_wage
+    prox_ssc = arbeitsl_geld_params["sozialversicherungspauschale"] * max_wage
 
     # Fictive taxes (Lohnsteuer) are approximated by applying the wage to the tax tariff
     # Caution: currently wrong calculation due to
@@ -219,12 +173,7 @@ def einkommen_vorjahr_proxy_m(
         eink_st_params,
     )
     prox_soli = piecewise_polynomial(
-        prox_tax,
-        thresholds=soli_st_params["soli_st"]["thresholds"],
-        rates=soli_st_params["soli_st"]["rates"],
-        intercepts_at_lower_thresholds=soli_st_params["soli_st"][
-            "intercepts_at_lower_thresholds"
-        ],
+        x=prox_tax, parameters=soli_st_params["parameter_solidaritätszuschlag"]
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     out = max(out, 0.0)

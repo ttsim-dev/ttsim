@@ -6,6 +6,4 @@ approach based on the Gondorian tax code.
 
 from pathlib import Path
 
-RESOURCE_DIR = Path(__file__).parent
-
-SUPPORTED_GROUPINGS = ("fam", "sp", "hh")
+METTSIM_ROOT = Path(__file__).parent

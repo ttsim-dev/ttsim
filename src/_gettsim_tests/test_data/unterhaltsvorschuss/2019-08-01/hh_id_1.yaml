@@ -39,9 +39,6 @@ inputs:
     hh_id:
       - 1
       - 1
-    jahr:
-      - 2019
-      - 2019
     kindergeld__p_id_empfänger:
       - -1
       - 23

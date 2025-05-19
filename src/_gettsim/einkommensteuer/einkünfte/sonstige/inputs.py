@@ -10,3 +10,12 @@ def ohne_renten_m() -> float:
 
     Excludes income from public and private pensions.
     """
+
+
+@policy_input()
+def renteneinkünfte_vorjahr_m() -> float:
+    """Income from private and public pensions in the previous year.
+
+    GETTSIM can calculate this input based on the data of the previous year using the
+    target `("einkommensteuer", "einkünfte", "sonstige", "renteneinkünfte_m")`.
+    """

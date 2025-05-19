@@ -51,7 +51,7 @@ def grundsätzlich_anspruchsberechtigt_bg(
     return mindesteinkommen_erreicht_bg and vermögensgrenze_unterschritten_bg
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def vermögensgrenze_unterschritten_wthh(
     vermögen_wthh: float,
     anzahl_personen_wthh: int,
@@ -80,7 +80,7 @@ def vermögensgrenze_unterschritten_wthh(
     )
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def vermögensgrenze_unterschritten_bg(
     vermögen_bg: float,
     arbeitslosengeld_2__anzahl_personen_bg: int,
@@ -217,35 +217,22 @@ def vermögensprüfung(
     vermögen: float,
     anzahl_personen: int,
     params: dict,
-) -> float:
+) -> bool:
     """Wealth check for housing benefit calculation.
 
     The payment depends on the wealth of the household and the number of household
     members.
 
     Note: This function is not a direct target in the DAG, but a helper function to
-    store the code for Wohngeld calculation.
-
-    Parameters
-    ----------
-    vermögen
-        Relevant wealth of the Wohngeld recipients.
-    anzahl_personen
-        Number of people Wohngeld is being calculated for.
-    params
-        See params documentation :ref:`params <params>`.
-
-    Returns
-    -------
+    re-use code in various places
 
     """
 
-    if anzahl_personen == 1:
-        vermögensfreibetrag = params["vermögensgrundfreibetrag"]
-    else:
-        vermögensfreibetrag = params["vermögensgrundfreibetrag"] + params[
-            "vermögensfreibetrag_pers"
-        ] * (anzahl_personen - 1)
+    vermögensfreibetrag = params["parameter_vermögensfreibetrag"][
+        "grundfreibetrag"
+    ] + params["parameter_vermögensfreibetrag"]["je_weitere_person"] * (
+        anzahl_personen - 1
+    )
 
     if vermögen <= vermögensfreibetrag:
         out = True

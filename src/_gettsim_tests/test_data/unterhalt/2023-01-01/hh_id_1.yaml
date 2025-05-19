@@ -10,8 +10,6 @@ inputs:
       - true
     hh_id:
       - 1
-    jahr:
-      - 2023
     kindergeld__betrag_m:
       - 250.0
     p_id:

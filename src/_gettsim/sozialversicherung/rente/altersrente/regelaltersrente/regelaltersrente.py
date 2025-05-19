@@ -3,11 +3,12 @@
 from ttsim import policy_function
 
 
-@policy_function(end_date="2007-04-19", leaf_name="altersgrenze")
-def altersgrenze_ohne_staffelung(
-    geburtsjahr: int,  # noqa: ARG001
-    ges_rente_params: dict,
-) -> float:
+@policy_function(
+    end_date="2007-04-19",
+    leaf_name="altersgrenze",
+    vectorization_strategy="not_required",
+)
+def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     """Normal retirement age (NRA).
 
     NRA is the same for every birth cohort.
@@ -33,13 +34,12 @@ def altersgrenze_ohne_staffelung(
     Normal retirement age (NRA).
 
     """
-    # TODO(@MImmesberger): Remove fake dependency (geburtsjahr).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/666
-
     return ges_rente_params["regelaltersgrenze"]
 
 
-@policy_function(start_date="2007-04-20", leaf_name="altersgrenze")
+@policy_function(
+    start_date="2007-04-20", leaf_name="altersgrenze", vectorization_strategy="loop"
+)
 def altersgrenze_mit_staffelung(geburtsjahr: int, ges_rente_params: dict) -> float:
     """Normal retirement age (NRA).
 
