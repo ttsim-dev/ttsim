@@ -3,6 +3,26 @@
 from ttsim import RoundingSpec, policy_function
 
 
+@policy_function(start_date="2003-04-01")
+def in_gleitzone(
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
+    geringfügig_beschäftigt: bool,
+    midijobgrenze: float,
+) -> bool:
+    """Individual's income is in Midijob range.
+
+    Employed people with their wage in the range of Gleitzone pay reduced social
+    insurance contributions.
+
+    Legal reference: § 20 Abs. 2 SGB IV
+
+    """
+    return (
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        <= midijobgrenze
+    ) and (not geringfügig_beschäftigt)
+
+
 @policy_function()
 def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
@@ -247,23 +267,3 @@ def midijob_bemessungsentgelt_m_ab_10_2022(
     faktor2 = (quotient1 - quotient2 * midijob_faktor_f) * einkommen_diff
 
     return faktor1 + faktor2
-
-
-@policy_function(start_date="2003-04-01")
-def in_gleitzone(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    geringfügig_beschäftigt: bool,
-    midijobgrenze: float,
-) -> bool:
-    """Individual's income is in midi-job range.
-
-    Employed people with their wage in the range of gleitzone pay reduced social
-    insurance contributions.
-
-    Legal reference: § 20 Abs. 2 SGB IV
-
-    """
-    return (
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        <= midijobgrenze
-    ) and (not geringfügig_beschäftigt)
