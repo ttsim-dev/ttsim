@@ -1,0 +1,50 @@
+---
+regelaltersgrenze:
+  name:
+    de: Eintrittsalter für Regelaltersrente
+    en: Entry age for receiving regelaltersrente - normal retirement age (NRA)
+  description:
+    de: >-
+      § 35 Satz 2 SGB VI
+      Regelaltersgrenze ab der Renteneintritt möglich ist. Wenn früher oder später in
+      Rente gegangen wird, wird der Zugangsfaktor und damit der Rentenanspruch höher
+      oder niedriger, sofern keine Sonderregelungen gelten.
+    en: >-
+      § 35 Satz 2 SGB VI
+      Normal retirement age from which pension can be received. If retirement benefits
+      are claimed earlier or later, the Zugangsfaktor and thus the pension entitlement
+      is higher or lower unless special regulations apply.
+  unit: Years
+  reference_period: null
+  type: require_converter
+  1957-02-26:
+    reference: Rentenreformgesetz 1957 BGBl. I S. 88
+    value: 65.0
+  2007-04-20:
+    reference: RV-Altersgrenzenanpassungsgesetz 20.04.2007. BGBl. I S. 554
+    note: >-
+      Increase of the early retirement age from 65 to 67 for birth cohort 1947-1964.
+      Vertrauensschutz (Art. 56) applies for birth cohorts before 1955 who were in
+      Altersteilzeit before January 1st, 2007 or received "Anpassungsgeld für
+      entlassense Arbeitnehmer des Bergbaus".
+    entry_age_old_regime: 65.0
+    entry_age_new_regime: 67.0
+    max_birthyear_old_regime: 1946
+    min_birthyear_new_regime: 1964
+    1947: 65.083333
+    1948: 65.166667
+    1949: 65.25
+    1950: 65.333333
+    1951: 65.416667
+    1952: 65.5
+    1953: 65.583333
+    1954: 65.666667
+    1955: 65.75
+    1956: 65.833333
+    1957: 65.916667
+    1958: 66.0
+    1959: 66.166667
+    1960: 66.333333
+    1961: 66.5
+    1962: 66.666667
+    1963: 66.833333

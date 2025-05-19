@@ -8,8 +8,7 @@ def grouped_count(group_id: numpy.ndarray) -> numpy.ndarray:
         group_id, numpy.ones(len(group_id)), func="sum", fill_value=0
     )
 
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_sum(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
@@ -20,8 +19,7 @@ def grouped_sum(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray
     out_on_hh = npg.aggregate(group_id, column, func="sum", fill_value=0)
 
     # Expand to individual level
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_mean(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
@@ -31,8 +29,7 @@ def grouped_mean(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarra
     out_on_hh = npg.aggregate(group_id, column, func="mean", fill_value=0)
 
     # Expand to individual level
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_max(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
@@ -95,8 +92,7 @@ def grouped_any(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray
     out_on_hh = npg.aggregate(group_id, column, func="any", fill_value=0)
 
     # Expand to individual level
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def grouped_all(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
@@ -106,8 +102,7 @@ def grouped_all(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray
     out_on_hh = npg.aggregate(group_id, column, func="all", fill_value=0)
 
     # Expand to individual level
-    out = out_on_hh[group_id]
-    return out
+    return out_on_hh[group_id]
 
 
 def count_by_p_id(

@@ -28,23 +28,14 @@ def anzahl_kinder_bis_24_elternteil_2(
     vectorization_strategy="loop",
 )
 def beitragssatz_ohne_zusatz_für_kinderlose(
-    ges_pflegev_params: dict,
+    beitragssatz_einheitlich: float,
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
     Before 2005, the contribution rate was independent of the number of children.
-
-    Parameters
-    ----------
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
 
-    return ges_pflegev_params["parameter_beitragssatz"]
+    return beitragssatz_einheitlich
 
 
 @policy_function(
@@ -55,28 +46,17 @@ def beitragssatz_ohne_zusatz_für_kinderlose(
 )
 def beitragssatz_zusatz_kinderlos_dummy(
     zusatzbetrag_kinderlos: bool,
-    ges_pflegev_params: dict,
+    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
     Since 2005, the contribution rate is increased for childless individuals.
-
-    Parameters
-    ----------
-    zusatzbetrag_kinderlos
-        See :func:`zusatzbetrag_kinderlos`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
-    out = ges_pflegev_params["parameter_beitragssatz"]["standard"]
+    out = beitragssatz_abhängig_von_anzahl_kinder["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
+        out += beitragssatz_abhängig_von_anzahl_kinder["zusatz_kinderlos"]
 
     return out
 
@@ -87,35 +67,22 @@ def beitragssatz_zusatz_kinderlos_dummy(
 def beitragssatz_mit_kinder_abschlag(
     anzahl_kinder_bis_24: int,
     zusatzbetrag_kinderlos: bool,
-    ges_pflegev_params: dict,
+    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
     Since July 2023, the contribution rate is reduced for individuals with children
     younger than 25.
-
-    Parameters
-    ----------
-    anzahl_kinder_bis_24: int,
-        See :func:`anzahl_kinder_bis_24`.
-    zusatzbetrag_kinderlos
-        See :func:`zusatzbetrag_kinderlos`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
-    out = ges_pflegev_params["parameter_beitragssatz"]["standard"]
+    out = beitragssatz_abhängig_von_anzahl_kinder["standard"]
 
     # Add additional contribution for childless individuals
     if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["parameter_beitragssatz"]["zusatz_kinderlos"]
+        out += beitragssatz_abhängig_von_anzahl_kinder["zusatz_kinderlos"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        out -= ges_pflegev_params["parameter_beitragssatz"]["abschlag_kinder"] * min(
+        out -= beitragssatz_abhängig_von_anzahl_kinder["abschlag_kinder"] * min(
             anzahl_kinder_bis_24 - 1, 4
         )
 
@@ -126,28 +93,14 @@ def beitragssatz_mit_kinder_abschlag(
 def zusatzbetrag_kinderlos(
     hat_kinder: bool,
     alter: int,
-    ges_pflegev_params: dict,
+    zusatz_kinderlos_mindestalter: int,
 ) -> bool:
     """Whether additional care insurance contribution for childless individuals applies.
 
     Not relevant before 2005 because the contribution rate was independent of the number
     of children.
-
-    Parameters
-    ----------
-    hat_kinder
-        See basic input variable :ref:`hat_kinder <hat_kinder>`.
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    ges_pflegev_params: dict,
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
-    mindestalter = ges_pflegev_params["zusatz_kinderlos_mindestalter"]
-    return (not hat_kinder) and alter >= mindestalter
+    return (not hat_kinder) and alter >= zusatz_kinderlos_mindestalter
 
 
 @policy_function()
@@ -155,15 +108,5 @@ def anzahl_kinder_bis_24(
     anzahl_kinder_bis_24_elternteil_1: int,
     anzahl_kinder_bis_24_elternteil_2: int,
 ) -> int:
-    """Number of children under 25 years of age.
-    Parameters
-    ----------
-    anzahl_kinder_bis_24_elternteil_1
-        See :func:`anzahl_kinder_bis_24_elternteil_1`.
-    anzahl_kinder_bis_24_elternteil_2
-        See :func:`anzahl_kinder_bis_24_elternteil_2`.
-
-    Returns
-    -------
-    """
+    """Number of children under 25 years of age."""
     return anzahl_kinder_bis_24_elternteil_1 + anzahl_kinder_bis_24_elternteil_2

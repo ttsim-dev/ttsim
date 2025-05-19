@@ -1,82 +1,47 @@
 ---
-parameter_beitragssatz:
+beitragsbemessungsgrenze_m:
   name:
-    de: Beitragssätze zur gesetzlichen Rentenversicherung
-    en: Contribution rate to statutory pension insurance
-  description:
-    de: >-
-      Beitragssätze zur allgemeinen Rentenversicherung für Arbeitnehmer/Arbeitgeber.
-    en: >-
-      Employees'/Employers' contribution rate for pension insurance.
-  unit: Share
-  reference_period: null
-  type: scalar
-  access_different_date: jahresanfang
-  1984-01-01:
-    value: 0.0925
-  1985-01-01:
-    value: 0.0935
-  1986-01-01:
-    value: 0.096
-  1987-01-01:
-    value: 0.0935
-  1992-01-01:
-    value: 0.0885
-  1993-01-01:
-    value: 0.0875
-  1994-01-01:
-    value: 0.096
-  1995-01-01:
-    value: 0.093
-  1996-01-01:
-    value: 0.096
-  1997-01-01:
-    value: 0.1015
-  2000-01-01:
-    value: 0.0965
-  2001-01-01:
-    value: 0.0955
-  2003-01-01:
-    value: 0.0975
-  2005-01-01:
-    value: 0.0975
-  2007-01-01:
-    value: 0.0995
-  2008-01-01:
-    value: 0.0995
-  2012-01-01:
-    value: 0.098
-    note: http://www.bmas.de/DE/Service/Presse/Pressemitteilungen/rentenbericht-16-11-2011.html
-  2013-01-01:
-    value: 0.0945
-  2015-01-01:
-    value: 0.0935
-  2018-01-01:
-    value: 0.093
-  2019-01-01:
-    value: 0.093
-parameter_beitragsbemessungsgrenze:
-  name:
-    de: Beitragsbemessungsgrenzen für die Rentenversicherung
-    en: Income Threshold for pension insurance
+    de: Beitragsbemessungsgrenzen der gesetzlichen Rentenversicherung
+    en: Maximum income subject to pension insurance contributions
   description:
     de: Beitragsbemessungsgrenze für die gesetzliche Rentenversicherung.
     en: Income threshold for statutory pension insurance.
   unit: Euros
   reference_period: Month
-  type: dict
+  type: scalar
   1984-01-01:
-    west: 2659
+    value: 2659
   1985-01-01:
-    west: 2761
+    value: 2761
   1986-01-01:
-    west: 2863
+    value: 2863
   1987-01-01:
-    west: 2914
+    value: 2914
   1988-01-01:
-    west: 3068
+    value: 3068
   1989-01-01:
-    west: 3119
+    value: 3119
+  1990-01-01:
+    note: >-
+      Die Beitragsbemessungsgrenze unterscheidet sich zwischen West und Ost. Siehe
+      ``parameter_beitragsbemessungsgrenze_nach_wohnort``.
+  2025-01-01:
+    value: 8050
+    reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
+parameter_beitragsbemessungsgrenze_nach_wohnort:
+  name:
+    de: Beitragsbemessungsgrenze der gesetzlichen Rentenversicherung
+    en: Maximum income subject to pension insurance contributions
+  description:
+    de: >-
+      Beitragsbemessungsgrenze für die gesetzliche Rentenversicherung mit Unterschied
+      zwischen West und Ost
+    en: >-
+      Maximum income subject to statutory pension insurance contributions with
+      different values for West and East
+  unit: Euros
+  reference_period: Month
+  type: dict
   1990-01-01:
     west: 3221
     ost: 1380
@@ -179,7 +144,7 @@ parameter_beitragsbemessungsgrenze:
     ost: 6700
     reference: §3, §4 V. v. 30.11.2020, BGBl. I S. 2612.
   2022-01-01:
-    deviation_from: previous
+    updates_previous: true
     west: 7050
     ost: 6750
     reference: §3 V. v. 30.11.2021, BGBl. I S. 5044.
@@ -192,32 +157,6 @@ parameter_beitragsbemessungsgrenze:
     ost: 7450
     reference: V. v. 24.11.2023 BGBl. 2023 I Nr. 322
   2025-01-01:
-    west: 8050
-    ost: 8050
-    reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365
-arbeitgeberpauschale_bei_geringfügiger_beschäftigung:
-  name:
-    de: >-
-      Pauschalbeitrag des Arbeitgebers zur Rentenversicherung bei geringfügiger
-      Beschäftigung
-    en: >-
-      Fixed employer pension insurance contribution for marginal employment
-  description:
-    de: >-
-      Pauschalbetrag zur Rentenversicherung (§ 168 I Nr. 1b SGB VI) bei geringfügiger
-      Beschäftigung
-    en: >-
-      Fixed pension insurance contributions for marginal employment
-      (§ 168 I Nr. 1b SGB VI)
-  unit: Share
-  reference_period: null
-  type: scalar
-  access_different_date: jahresanfang
-  1984-01-01:
-    value: 0
-  1999-01-01:
-    value: 0.12
-  2003-04-01:
-    value: 0.12
-  2007-01-01:
-    value: 0.15
+    note: >-
+      Beitragsbemessungsgrenze ist einheitlich zwischen West und Ost. Siehe
+      ``beitragsbemessungsgrenze_m``.

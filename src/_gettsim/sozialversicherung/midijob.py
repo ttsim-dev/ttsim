@@ -6,8 +6,8 @@ from ttsim import RoundingSpec, policy_function
 @policy_function()
 def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    minijob_grenze: float,
-    geringfügige_einkommen_params: dict,
+    minijobgrenze: float,
+    midijobgrenze: float,
 ) -> float:
     """Income subject to employee social insurance contributions for midijob since
     October 2022.
@@ -17,17 +17,13 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
 
     Legal reference: Changes in § 20 SGB IV from 01.10.2022
     """
-    midijob_grenze = geringfügige_einkommen_params["grenzen_m"]["midijob"]
-
-    quotient = midijob_grenze / (midijob_grenze - minijob_grenze)
+    quotient = midijobgrenze / (midijobgrenze - minijobgrenze)
     einkommen_diff = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        - minijob_grenze
+        - minijobgrenze
     )
 
-    out = quotient * einkommen_diff
-
-    return out
+    return quotient * einkommen_diff
 
 
 @policy_function(
@@ -39,11 +35,12 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
 def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
-    ges_rentenv_params: dict,
-    arbeitslosenversicherung_params: dict,
-    ges_krankenv_params: dict,
-    ges_pflegev_params: dict,
-    geringfügige_einkommen_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__pflege__beitrag__beitragssatz_einheitlich: float,
+    arbeitgeberpauschale_lohnsteuer: float,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F until December 2004.
 
@@ -52,9 +49,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
-        + arbeitslosenversicherung_params["parameter_beitragssatz_jahresanfang"]
-        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]
+        sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__pflege__beitrag__beitragssatz_einheitlich
     )
 
     # Then calculate specific shares
@@ -69,15 +66,13 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
 
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
-        ges_krankenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
-        + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
-        + geringfügige_einkommen_params["arbeitgeberpauschale_lohnsteuer"]
+        sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
+        + sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
+        + arbeitgeberpauschale_lohnsteuer
     )
 
     # Now calculate final factor
-    out = pausch_mini / (an_anteil + ag_anteil)
-
-    return out
+    return pausch_mini / (an_anteil + ag_anteil)
 
 
 @policy_function(
@@ -89,11 +84,14 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
 def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
-    ges_rentenv_params: dict,
-    arbeitslosenversicherung_params: dict,
-    ges_krankenv_params: dict,
-    ges_pflegev_params: dict,
-    geringfügige_einkommen_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict[
+        str, float
+    ],
+    arbeitgeberpauschale_lohnsteuer: float,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F between 2005 and September 2025.
 
@@ -103,9 +101,11 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
-        + arbeitslosenversicherung_params["parameter_beitragssatz_jahresanfang"]
-        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]["standard"]
+        sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
+            "standard"
+        ]
     )
 
     an_anteil = (
@@ -119,15 +119,13 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
 
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
-        ges_krankenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
-        + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
-        + geringfügige_einkommen_params["arbeitgeberpauschale_lohnsteuer"]
+        sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
+        + sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
+        + arbeitgeberpauschale_lohnsteuer
     )
 
     # Now calculate final factor
-    out = pausch_mini / (an_anteil + ag_anteil)
-
-    return out
+    return pausch_mini / (an_anteil + ag_anteil)
 
 
 @policy_function(
@@ -139,16 +137,17 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
 def midijob_faktor_f_ohne_minijob_steuerpauschale(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
-    ges_rentenv_params: dict,
-    ges_pflegev_params: dict,
-    arbeitslosenversicherung_params: dict,
-    ges_krankenv_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang: dict[
+        str, float
+    ],
+    sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang: float,
+    sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
+    sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung: float,
 ) -> float:
     """Midijob Faktor F since October 2022.
 
     Legal reference: § 163 Abs. 10 SGB VI
-
-
     """
     # Calculate the Gesamtsozialversicherungsbeitragssatz by summing social
     # insurance contributions for employer and employee and
@@ -156,9 +155,11 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        ges_rentenv_params["parameter_beitragssatz_jahresanfang"]
-        + ges_pflegev_params["parameter_beitragssatz_jahresanfang"]["standard"]
-        + arbeitslosenversicherung_params["parameter_beitragssatz_jahresanfang"]
+        sozialversicherung__rente__beitrag__parameter_beitragssatz_jahresanfang
+        + sozialversicherung__pflege__beitrag__beitragssatz_abhängig_von_anzahl_kinder_jahresanfang[
+            "standard"
+        ]
+        + sozialversicherung__arbeitslosen__beitrag__parameter_beitragssatz_jahresanfang
     )
 
     # Then calculate specific shares
@@ -175,14 +176,12 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # New formula only inludes the lump-sum contributions to health care
     # and pension insurance
     pausch_mini = (
-        ges_krankenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
-        + ges_rentenv_params["arbeitgeberpauschale_bei_geringfügiger_beschäftigung"]
+        sozialversicherung__kranken__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
+        + sozialversicherung__rente__beitrag__arbeitgeberpauschale_bei_geringfügiger_beschäftigung
     )
 
     # Now calculate final factor f
-    out = pausch_mini / (an_anteil + ag_anteil)
-
-    return out
+    return pausch_mini / (an_anteil + ag_anteil)
 
 
 @policy_function(
@@ -193,8 +192,8 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
 def midijob_bemessungsentgelt_m_bis_09_2022(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     midijob_faktor_f: float,
-    minijob_grenze: float,
-    geringfügige_einkommen_params: dict,
+    minijobgrenze: float,
+    midijobgrenze: float,
 ) -> float:
     """Income subject to social insurance contributions for midijob until September
     2022.
@@ -206,18 +205,13 @@ def midijob_bemessungsentgelt_m_bis_09_2022(
 
     """
     # Now use the factor to calculate the overall bemessungsentgelt
-    minijob_anteil = midijob_faktor_f * minijob_grenze
+    minijob_anteil = midijob_faktor_f * minijobgrenze
     lohn_über_mini = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        - minijob_grenze
+        - minijobgrenze
     )
-    gewichtete_midijob_rate = (
-        geringfügige_einkommen_params["grenzen_m"]["midijob"]
-        / (geringfügige_einkommen_params["grenzen_m"]["midijob"] - minijob_grenze)
-    ) - (
-        minijob_grenze
-        / (geringfügige_einkommen_params["grenzen_m"]["midijob"] - minijob_grenze)
-        * midijob_faktor_f
+    gewichtete_midijob_rate = (midijobgrenze / (midijobgrenze - minijobgrenze)) - (
+        minijobgrenze / (midijobgrenze - minijobgrenze) * midijob_faktor_f
     )
 
     return minijob_anteil + lohn_über_mini * gewichtete_midijob_rate
@@ -227,8 +221,8 @@ def midijob_bemessungsentgelt_m_bis_09_2022(
 def midijob_bemessungsentgelt_m_ab_10_2022(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     midijob_faktor_f: float,
-    minijob_grenze: float,
-    geringfügige_einkommen_params: dict,
+    minijobgrenze: float,
+    midijobgrenze: float,
 ) -> float:
     """Total income subject to social insurance contributions for midijobs since October
     2022.
@@ -241,27 +235,25 @@ def midijob_bemessungsentgelt_m_ab_10_2022(
     Legal reference: Changes in § 20 SGB IV from 01.10.2022
 
     """
-    midijob_grenze = geringfügige_einkommen_params["grenzen_m"]["midijob"]
 
-    quotient1 = (midijob_grenze) / (midijob_grenze - minijob_grenze)
-    quotient2 = (minijob_grenze) / (midijob_grenze - minijob_grenze)
+    quotient1 = (midijobgrenze) / (midijobgrenze - minijobgrenze)
+    quotient2 = (minijobgrenze) / (midijobgrenze - minijobgrenze)
     einkommen_diff = (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        - minijob_grenze
+        - minijobgrenze
     )
 
-    faktor1 = midijob_faktor_f * minijob_grenze
+    faktor1 = midijob_faktor_f * minijobgrenze
     faktor2 = (quotient1 - quotient2 * midijob_faktor_f) * einkommen_diff
-    out = faktor1 + faktor2
 
-    return out
+    return faktor1 + faktor2
 
 
 @policy_function(start_date="2003-04-01")
 def in_gleitzone(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     geringfügig_beschäftigt: bool,
-    geringfügige_einkommen_params: dict,
+    midijobgrenze: float,
 ) -> bool:
     """Individual's income is in midi-job range.
 
@@ -271,8 +263,7 @@ def in_gleitzone(
     Legal reference: § 20 Abs. 2 SGB IV
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        <= geringfügige_einkommen_params["grenzen_m"]["midijob"]
+        <= midijobgrenze
     ) and (not geringfügig_beschäftigt)
-    return out

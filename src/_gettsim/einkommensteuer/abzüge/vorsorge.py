@@ -119,9 +119,7 @@ def vorsorgeaufwendungen_regime_bis_2004_y_sn(
     else:
         item_3 = 0.5 * (item_1 - item_2)
 
-    out = vorwegabzug_lohnsteuer_y_sn + item_2 + item_3
-
-    return out
+    return vorwegabzug_lohnsteuer_y_sn + item_2 + item_3
 
 
 @policy_function(
@@ -152,9 +150,7 @@ def vorsorgeaufwendungen_globale_kappung_y_sn(
     )
 
     sum_vorsorge = min(sum_vorsorge, max_value)
-    out = sum_vorsorge + altersvorsorge_y_sn
-
-    return out
+    return sum_vorsorge + altersvorsorge_y_sn
 
 
 @policy_function(
@@ -196,8 +192,7 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     # Basiskrankenversicherung can always be deducted even if above sonst_vors_max
     sonst_vors = max(basiskrankenversicherung, sonst_vors_before_basiskrankenv)
 
-    out = sonst_vors + altersvorsorge_y_sn
-    return out
+    return sonst_vors + altersvorsorge_y_sn
 
 
 @params_function(start_date="2005-01-01", end_date="2022-12-31")

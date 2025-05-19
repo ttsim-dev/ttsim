@@ -1,0 +1,57 @@
+---
+parameter_beitragssatz:
+  name:
+    de: Beitragssätze zur gesetzlichen Rentenversicherung
+    en: Contribution rate to statutory pension insurance
+  description:
+    de: >-
+      Beitragssätze zur allgemeinen Rentenversicherung für Arbeitnehmer/Arbeitgeber.
+    en: >-
+      Employees'/Employers' contribution rate for pension insurance.
+  unit: Share
+  reference_period: null
+  type: scalar
+  add_jahresanfang: true
+  1984-01-01:
+    value: 0.0925
+  1985-01-01:
+    value: 0.0935
+  1986-01-01:
+    value: 0.096
+  1987-01-01:
+    value: 0.0935
+  1992-01-01:
+    value: 0.0885
+  1993-01-01:
+    value: 0.0875
+  1994-01-01:
+    value: 0.096
+  1995-01-01:
+    value: 0.093
+  1996-01-01:
+    value: 0.096
+  1997-01-01:
+    value: 0.1015
+  2000-01-01:
+    value: 0.0965
+  2001-01-01:
+    value: 0.0955
+  2003-01-01:
+    value: 0.0975
+  2005-01-01:
+    value: 0.0975
+  2007-01-01:
+    value: 0.0995
+  2008-01-01:
+    value: 0.0995
+  2012-01-01:
+    value: 0.098
+    note: http://www.bmas.de/DE/Service/Presse/Pressemitteilungen/rentenbericht-16-11-2011.html
+  2013-01-01:
+    value: 0.0945
+  2015-01-01:
+    value: 0.0935
+  2018-01-01:
+    value: 0.093
+  2019-01-01:
+    value: 0.093

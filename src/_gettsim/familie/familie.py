@@ -27,8 +27,7 @@ def kind_bis_2(alter: int, kind: bool) -> bool:
     -------
 
     """
-    out = kind and (alter <= 2)
-    return out
+    return kind and (alter <= 2)
 
 
 @policy_function()
@@ -46,8 +45,7 @@ def kind_bis_5(alter: int, kind: bool) -> bool:
     -------
 
     """
-    out = kind and (alter <= 5)
-    return out
+    return kind and (alter <= 5)
 
 
 @policy_function()
@@ -65,8 +63,7 @@ def kind_bis_6(alter: int, kind: bool) -> bool:
     -------
 
     """
-    out = kind and (alter <= 6)
-    return out
+    return kind and (alter <= 6)
 
 
 @policy_function()
@@ -84,8 +81,7 @@ def kind_bis_15(alter: int, kind: bool) -> bool:
     -------
 
     """
-    out = kind and (alter <= 15)
-    return out
+    return kind and (alter <= 15)
 
 
 @policy_function()
@@ -103,8 +99,7 @@ def kind_bis_17(alter: int, kind: bool) -> bool:
     -------
 
     """
-    out = kind and (alter <= 17)
-    return out
+    return kind and (alter <= 17)
 
 
 @policy_function()
@@ -122,5 +117,4 @@ def erwachsen(kind: bool) -> bool:
     -------
 
     """
-    out = not kind
-    return out
+    return not kind

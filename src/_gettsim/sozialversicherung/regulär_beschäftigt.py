@@ -6,7 +6,7 @@ from ttsim import policy_function
 @policy_function(end_date="2003-03-31", leaf_name="regulär_beschäftigt")
 def regulär_beschäftigt_vor_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    minijob_grenze: float,
+    minijobgrenze: float,
 ) -> bool:
     """Regular employment check until March 2003.
 
@@ -15,17 +15,16 @@ def regulär_beschäftigt_vor_midijob(
     regular employed.
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        >= minijob_grenze
+        >= minijobgrenze
     )
-    return out
 
 
 @policy_function(start_date="2003-04-01", leaf_name="regulär_beschäftigt")
 def regulär_beschäftigt_mit_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    geringfügige_einkommen_params: dict,
+    midijobgrenze: float,
 ) -> bool:
     """Regular employment check since April 2003.
 
@@ -34,8 +33,7 @@ def regulär_beschäftigt_mit_midijob(
     regular employed.
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        >= geringfügige_einkommen_params["grenzen_m"]["midijob"]
+        >= midijobgrenze
     )
-    return out

@@ -55,11 +55,10 @@ def gedeckelte_kinderbetreuungskosten_y(
     parameter_absetzbare_kinderbetreuungskosten: dict[str, float],
 ) -> float:
     """Individual deductible childcare cost for each individual child under 14."""
-    out = min(
+    return min(
         kinderbetreuungskosten_elternteil_y,
         parameter_absetzbare_kinderbetreuungskosten["maximum"],
     )
-    return out
 
 
 @policy_function(rounding_spec=RoundingSpec(base=1, direction="up"))
@@ -76,9 +75,7 @@ def absetzbare_kinderbetreuungskosten_y_sn(
 
     """
 
-    out = (
+    return (
         gedeckelte_kinderbetreuungskosten_y_sn
         * parameter_absetzbare_kinderbetreuungskosten["anteil"]
     )
-
-    return out

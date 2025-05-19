@@ -33,7 +33,7 @@ def einkommen_y(
     else:
         alleinerziehendenfreibetrag = 0.0
 
-    out = max(
+    return max(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         - werbungskosten
         - sonderausgaben
@@ -41,8 +41,6 @@ def einkommen_y(
         - vorsorgepauschale_y,
         0.0,
     )
-
-    return out
 
 
 @policy_function(start_date="2010-01-01")
@@ -73,12 +71,10 @@ def vorsorge_krankenversicherungsbeiträge_option_a(
             maximal_absetzbare_krankenversicherungskosten["steuerklasse_nicht_3"]
         )
 
-    out = min(
+    return min(
         vorsorge_krankenversicherungsbeiträge_option_a_max,
         vorsorge_krankenversicherungsbeiträge_option_a_basis,
     )
-
-    return out
 
 
 @policy_function(
@@ -90,7 +86,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    ges_krankenv_params: dict,
+    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Option b for calculating deductible health insurance cont.
 
@@ -98,13 +94,11 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     a" and "Option b". This function calculates option b where the actual contributions
     are used.
     """
-    out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["parameter_beitragssatz"]["ermäßigt"] / 2
+    return sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
+        sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
-
-    return out
 
 
 @policy_function(
@@ -115,7 +109,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
-    ges_krankenv_params: dict,
+    sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Option b for calculating deductible health insurance cont.
 
@@ -124,13 +118,11 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     are used.
     """
 
-    out = sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        ges_krankenv_params["parameter_beitragssatz"]["ermäßigt"] / 2
+    return sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
+        sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
         + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
         + sozialversicherung__pflege__beitrag__beitragssatz
     )
-
-    return out
 
 
 @params_function(start_date="2005-01-01", end_date="2022-12-31")
@@ -162,7 +154,7 @@ def einführungsfaktor_rentenversicherungsaufwendungen(
 )
 def vorsorgepauschale_y_ab_2010_bis_2022(
     sozialversicherung__rente__beitrag__einkommen_y: float,
-    ges_rentenv_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz: float,
     vorsorge_krankenversicherungsbeiträge_option_a: float,
     vorsorge_krankenversicherungsbeiträge_option_b: float,
     einführungsfaktor_rentenversicherungsaufwendungen: float,
@@ -175,7 +167,7 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
 
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
-        * ges_rentenv_params["parameter_beitragssatz"]
+        * sozialversicherung__rente__beitrag__parameter_beitragssatz
         * einführungsfaktor_rentenversicherungsaufwendungen
     )
     kranken = max(
@@ -193,7 +185,7 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
 )
 def vorsorgepauschale_y_ab_2023(
     sozialversicherung__rente__beitrag__einkommen_y: float,
-    ges_rentenv_params: dict,
+    sozialversicherung__rente__beitrag__parameter_beitragssatz: float,
     vorsorge_krankenversicherungsbeiträge_option_a: float,
     vorsorge_krankenversicherungsbeiträge_option_b: float,
 ) -> float:
@@ -205,7 +197,7 @@ def vorsorgepauschale_y_ab_2023(
 
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
-        * ges_rentenv_params["parameter_beitragssatz"]
+        * sozialversicherung__rente__beitrag__parameter_beitragssatz
     )
     kranken = max(
         vorsorge_krankenversicherungsbeiträge_option_a,

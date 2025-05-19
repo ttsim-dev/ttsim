@@ -59,7 +59,7 @@ def betrag_soli_y(
     """Solidarity surcharge on Lohnsteuer (withholding tax on earnings)."""
 
     return solidaritätszuschlagstarif(
-        x=betrag_mit_kinderfreibetrag_y,
+        steuer_pro_person=betrag_mit_kinderfreibetrag_y,
         parameter_solidaritätszuschlag=solidaritätszuschlag__parameter_solidaritätszuschlag,
     )
 
@@ -194,7 +194,7 @@ def basis_für_klassen_5_6(
 
     """
 
-    out = max(
+    return max(
         2
         * (
             einkommensteuertarif(einkommen_y * 1.25, parameter_einkommensteuertarif)
@@ -202,5 +202,3 @@ def basis_für_klassen_5_6(
         ),
         einkommen_y * parameter_einkommensteuertarif.rates[0, 1],
     )
-
-    return out

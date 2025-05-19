@@ -1,0 +1,377 @@
+---
+altersgrenze_langjährig_versicherte_vorzeitig:
+  name:
+    de: Altersgrenze für vorzeitigen Bezug der Altersrente für langjährig Versicherte
+    en: Early retirement age for long term insured
+  description:
+    de: >-
+      Frühestmögliches Alter ab dem die Altersrente für langjährig Versicherte
+      bezogen werden kann (mit Abschlägen).
+      § 236 SGB VI
+      https://www.sozialgesetzbuch-sgb.de/sgbvi/236.html
+    en: >-
+      Earliest possible age to receive pension for long term insured (with deductions).
+      § 236 SGB VI
+      https://www.sozialgesetzbuch-sgb.de/sgbvi/236.html
+  unit: Years
+  reference_period: null
+  type: require_converter
+  1980-01-01:
+    value: 63.0
+  1989-12-18:
+    reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
+    note: Early retirement age decreased from 63 to 62 starting from birth cohort 1944.
+    entry_age_old_regime: 63.0
+    entry_age_new_regime: 62.0
+    max_birthyear_old_regime: 1943
+    min_birthyear_new_regime: 1944
+  1996-09-27:
+    reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
+    note: ERA back to 63.
+    value: 63.0
+  1997-12-16:
+    reference: Rentenreformgesetz 1999. BGBl. I S. 2998 1997
+    note: ERA back to 62.
+    value: 62.0
+  2007-04-20:
+    reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
+    note: ERA back to 63.
+    value: 63.0
+altersgrenze_langjährig_versicherte_abschlagsfrei:
+  name:
+    de: Eintrittsalter für langjährig Versicherte - abschlagsfrei
+    en: Entry age for long term insured (35 insurance years) without deductions (FRA)
+  description:
+    de: >-
+      Eintrittsalter für langjährig Versicherte - abschlagsfrei
+      § 236 SGB VI
+      https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/242-altersrente-fuer-langjaehrig-versicherte-altersgrenzen.html
+    en: >-
+      Entry age for long term insured (35 insurance years) without deductions (FRA)
+      § 236 SGB VI
+      https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/242-altersrente-fuer-langjaehrig-versicherte-altersgrenzen.html
+  unit: Years
+  reference_period: null
+  type: require_converter
+  1980-01-01:
+    value: 63.0
+  1989-12-18:
+    reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
+    note: Increase of full retirement age from 63 to 65 for birth cohort 1938-1943.
+    entry_age_old_regime: 63.0
+    entry_age_new_regime: 65.0
+    max_birthyear_old_regime: 1937
+    min_birthyear_new_regime: 1944
+    1938:
+      1: 63.083333
+      2: 63.083333
+      3: 63.083333
+      4: 63.083333
+      5: 63.166667
+      6: 63.166667
+      7: 63.166667
+      8: 63.166667
+      9: 63.25
+      10: 63.25
+      11: 63.25
+      12: 63.25
+    1939:
+      1: 63.333333
+      2: 63.333333
+      3: 63.333333
+      4: 63.333333
+      5: 63.416667
+      6: 63.416667
+      7: 63.416667
+      8: 63.416667
+      9: 63.5
+      10: 63.5
+      11: 63.5
+      12: 63.5
+    1940:
+      1: 63.583333
+      2: 63.583333
+      3: 63.583333
+      4: 63.583333
+      5: 63.666667
+      6: 63.666667
+      7: 63.666667
+      8: 63.666667
+      9: 63.75
+      10: 63.75
+      11: 63.75
+      12: 63.75
+    1941:
+      1: 63.833333
+      2: 63.833333
+      3: 63.833333
+      4: 63.833333
+      5: 63.916667
+      6: 63.916667
+      7: 63.916667
+      8: 63.916667
+      9: 64.0
+      10: 64.0
+      11: 64.0
+      12: 64.0
+    1942:
+      1: 64.083333
+      2: 64.083333
+      3: 64.166667
+      4: 64.166667
+      5: 64.25
+      6: 64.25
+      7: 64.333333
+      8: 64.333333
+      9: 64.416667
+      10: 64.416667
+      11: 64.5
+      12: 64.5
+    1943:
+      1: 64.583333
+      2: 64.583333
+      3: 64.666667
+      4: 64.666667
+      5: 64.75
+      6: 64.75
+      7: 64.833333
+      8: 64.833333
+      9: 64.916667
+      10: 64.916667
+      12: 65.0
+      11: 65.0
+  1996-09-27:
+    reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
+    note: FRA increase accelerated.
+    entry_age_old_regime: 63.0
+    entry_age_new_regime: 65.0
+    max_birthyear_old_regime: 1936
+    min_birthyear_new_regime: 1939
+    1937:
+      1: 63.083333
+      2: 63.166667
+      3: 63.25
+      4: 63.333333
+      5: 63.416667
+      6: 63.5
+      7: 63.583333
+      8: 63.666667
+      9: 63.75
+      10: 63.833333
+      11: 63.916667
+      12: 64.0
+    1938:
+      1: 64.083333
+      2: 64.166667
+      3: 64.25
+      4: 64.333333
+      5: 64.416667
+      6: 64.5
+      7: 64.583333
+      8: 64.666667
+      9: 64.75
+      10: 64.833333
+      11: 64.916667
+      12: 65.0
+  2007-04-20:
+    reference: RV-Altersgrenzenanpassungsgesetz 2007. BGBl. I S. 554 2007
+    note: Increase of FRA from 65 to 67 for birth cohort 1949-1963.
+    entry_age_old_regime: 65.0
+    entry_age_new_regime: 67.0
+    max_birthyear_old_regime: 1948
+    min_birthyear_new_regime: 1964
+    1949:
+      1: 65.083333
+      2: 65.166667
+      3: 65.25
+      4: 65.25
+      5: 65.25
+      6: 65.25
+      7: 65.25
+      8: 65.25
+      9: 65.25
+      10: 65.25
+      11: 65.25
+      12: 65.25
+    1950:
+      1: 65.333333
+      2: 65.333333
+      3: 65.333333
+      4: 65.333333
+      5: 65.333333
+      6: 65.333333
+      7: 65.333333
+      8: 65.333333
+      9: 65.333333
+      10: 65.333333
+      11: 65.333333
+      12: 65.333333
+    1951:
+      1: 65.416667
+      2: 65.416667
+      3: 65.416667
+      4: 65.416667
+      5: 65.416667
+      6: 65.416667
+      7: 65.416667
+      8: 65.416667
+      9: 65.416667
+      10: 65.416667
+      11: 65.416667
+      12: 65.416667
+    1952:
+      1: 65.5
+      2: 65.5
+      3: 65.5
+      4: 65.5
+      5: 65.5
+      6: 65.5
+      7: 65.5
+      8: 65.5
+      9: 65.5
+      10: 65.5
+      11: 65.5
+      12: 65.5
+    1953:
+      1: 65.583333
+      2: 65.583333
+      3: 65.583333
+      4: 65.583333
+      5: 65.583333
+      6: 65.583333
+      7: 65.583333
+      8: 65.583333
+      9: 65.583333
+      10: 65.583333
+      11: 65.583333
+      12: 65.583333
+    1954:
+      1: 65.666667
+      2: 65.666667
+      3: 65.666667
+      4: 65.666667
+      5: 65.666667
+      6: 65.666667
+      7: 65.666667
+      8: 65.666667
+      9: 65.666667
+      10: 65.666667
+      11: 65.666667
+      12: 65.666667
+    1955:
+      1: 65.75
+      2: 65.75
+      3: 65.75
+      4: 65.75
+      5: 65.75
+      6: 65.75
+      7: 65.75
+      8: 65.75
+      9: 65.75
+      10: 65.75
+      11: 65.75
+      12: 65.75
+    1956:
+      1: 65.833333
+      2: 65.833333
+      3: 65.833333
+      4: 65.833333
+      5: 65.833333
+      6: 65.833333
+      7: 65.833333
+      8: 65.833333
+      9: 65.833333
+      10: 65.833333
+      11: 65.833333
+      12: 65.833333
+    1957:
+      1: 65.916667
+      2: 65.916667
+      3: 65.916667
+      4: 65.916667
+      5: 65.916667
+      6: 65.916667
+      7: 65.916667
+      8: 65.916667
+      9: 65.916667
+      10: 65.916667
+      11: 65.916667
+      12: 65.916667
+    1958:
+      1: 66.0
+      2: 66.0
+      3: 66.0
+      4: 66.0
+      5: 66.0
+      6: 66.0
+      7: 66.0
+      8: 66.0
+      9: 66.0
+      10: 66.0
+      11: 66.0
+      12: 66.0
+    1959:
+      1: 66.166667
+      2: 66.166667
+      3: 66.166667
+      4: 66.166667
+      5: 66.166667
+      6: 66.166667
+      7: 66.166667
+      8: 66.166667
+      9: 66.166667
+      10: 66.166667
+      11: 66.166667
+      12: 66.166667
+    1960:
+      1: 66.333333
+      2: 66.333333
+      3: 66.333333
+      4: 66.333333
+      5: 66.333333
+      6: 66.333333
+      7: 66.333333
+      8: 66.333333
+      9: 66.333333
+      10: 66.333333
+      11: 66.333333
+      12: 66.333333
+    1961:
+      1: 66.5
+      2: 66.5
+      3: 66.5
+      4: 66.5
+      5: 66.5
+      6: 66.5
+      7: 66.5
+      8: 66.5
+      9: 66.5
+      10: 66.5
+      11: 66.5
+      12: 66.5
+    1962:
+      1: 66.666667
+      2: 66.666667
+      3: 66.666667
+      4: 66.666667
+      5: 66.666667
+      6: 66.666667
+      7: 66.666667
+      8: 66.666667
+      9: 66.666667
+      10: 66.666667
+      11: 66.666667
+      12: 66.666667
+    1963:
+      1: 66.833333
+      2: 66.833333
+      3: 66.833333
+      4: 66.833333
+      5: 66.833333
+      6: 66.833333
+      7: 66.833333
+      8: 66.833333
+      9: 66.833333
+      10: 66.833333
+      11: 66.833333
+      12: 66.833333

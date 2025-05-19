@@ -3,47 +3,61 @@
 from ttsim import policy_function
 
 
-@policy_function(start_date="2001-01-01")
-def betrag_m(
+@policy_function(start_date="2001-01-01", end_date="2023-06-30", leaf_name="betrag_m")
+def betrag_m_nach_wohnort(
     zugangsfaktor: float,
     entgeltpunkte_west: float,
     entgeltpunkte_ost: float,
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
-    ges_rente_params: dict,
+    sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort: dict[
+        str, float
+    ],
 ) -> float:
     """Erwerbsminderungsrente (amount paid by public disability insurance if claimed)
 
     Legal reference: SGB VI § 64: Rentenformel für Monatsbetrag der Rente
-
-
-    Parameters
-    ----------
-    zugangsfaktor
-        See :func:`zugangsfaktor`.
-    entgeltpunkte_west
-        See :func:`entgeltpunkte_west`.
-    entgeltpunkte_ost
-        See :func:`entgeltpunkte_ost`.
-    rentenwert
-        See :func:`rentenwert`.
-    rentenartfaktor
-        See :func:`rentenartfaktor`.
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt`.
-    Returns
-    -------
-    Erwerbsminderungsrente (amount paid by public disability insurance if claimed)
-
     """
 
     if grundsätzlich_anspruchsberechtigt:
         out = (
             (
-                entgeltpunkte_west * ges_rente_params["parameter_rentenwert"]["west"]
-                + entgeltpunkte_ost * ges_rente_params["parameter_rentenwert"]["ost"]
+                entgeltpunkte_west
+                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
+                    "west"
+                ]
+                + entgeltpunkte_ost
+                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
+                    "ost"
+                ]
             )
             * zugangsfaktor
+            * rentenartfaktor
+        )
+    else:
+        out = 0.0
+    return out
+
+
+@policy_function(start_date="2023-07-01", leaf_name="betrag_m")
+def betrag_m_einheitlich(
+    zugangsfaktor: float,
+    entgeltpunkte_west: float,
+    entgeltpunkte_ost: float,
+    rentenartfaktor: float,
+    grundsätzlich_anspruchsberechtigt: bool,
+    sozialversicherung__rente__altersrente__rentenwert: float,
+) -> float:
+    """Erwerbsminderungsrente (amount paid by public disability insurance if claimed)
+
+    Legal reference: SGB VI § 64: Rentenformel für Monatsbetrag der Rente
+    """
+
+    if grundsätzlich_anspruchsberechtigt:
+        out = (
+            (entgeltpunkte_ost + entgeltpunkte_west)
+            * zugangsfaktor
+            * sozialversicherung__rente__altersrente__rentenwert
             * rentenartfaktor
         )
     else:
@@ -115,12 +129,10 @@ def entgeltpunkte_west(
 
     """
 
-    out = sozialversicherung__rente__entgeltpunkte_west + (
+    return sozialversicherung__rente__entgeltpunkte_west + (
         zurechnungszeit
         * (1 - sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost)
     )
-
-    return out
 
 
 @policy_function(start_date="2001-01-01")
@@ -151,12 +163,10 @@ def entgeltpunkte_ost(
 
     """
 
-    out = sozialversicherung__rente__entgeltpunkte_ost + (
+    return sozialversicherung__rente__entgeltpunkte_ost + (
         zurechnungszeit
         * sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost
     )
-
-    return out
 
 
 @policy_function(start_date="2001-01-01")
@@ -189,11 +199,9 @@ def zurechnungszeit(
     """
     zurechnungszeitgrenze = erwerbsm_rente_params["zurechnungszeitgrenze"]
 
-    out = (
+    return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
     ) * durchschnittliche_entgeltpunkte
-
-    return out
 
 
 @policy_function(start_date="2001-01-01")
@@ -232,8 +240,10 @@ def rentenartfaktor(
 def zugangsfaktor(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     wartezeit_langjährig_versichert_erfüllt: bool,
-    ges_rente_params: dict,
     erwerbsm_rente_params: dict,
+    sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
+        str, float
+    ],
 ) -> float:
     """Zugangsfaktor for Erwerbsminderungsrente (public disability insurance)
 
@@ -246,23 +256,6 @@ def zugangsfaktor(
     Paragraph 4 regulates an exceptional case in which pensioners can already retire at
     63 without deductions if they can prove 40 years of (Pflichtbeiträge,
     Berücksichtigungszeiten and certain Anrechnungszeiten or Ersatzzeiten).
-
-    Parameters
-    ----------
-    sozialversicherung__rente__alter_bei_renteneintritt
-        See :func:`sozialversicherung__rente__alter_bei_renteneintritt`.
-    wartezeit_langjährig_versichert_erfüllt
-        See :func:`wartezeit_langjährig_versichert_erfüllt`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>.
-    erwerbsm_rente_params
-        See params documentation :ref:`erwerbsm_rente_params <erwerbsm_rente_params>.
-
-
-    Returns
-    -------
-    Zugangsfaktor for Erwerbsminderungsrente (public disability insurance)
-
     """
 
     if wartezeit_langjährig_versichert_erfüllt:
@@ -281,14 +274,12 @@ def zugangsfaktor(
             - altersgrenze_abschlagsfrei
         )
         * (
-            ges_rente_params["zugangsfaktor_veränderung_pro_jahr"][
+            sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr[
                 "vorzeitiger_renteneintritt"
             ]
         )
     )
-    out = max(zugangsfaktor, erwerbsm_rente_params["min_zugangsfaktor"])
-
-    return out
+    return max(zugangsfaktor, erwerbsm_rente_params["min_zugangsfaktor"])
 
 
 # TODO(@MImmesberger): Reuse Altersrente Wartezeiten for Erwerbsminderungsrente
@@ -301,7 +292,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     sozialversicherung__rente__ersatzzeiten_monate: float,
     sozialversicherung__rente__kinderberücksichtigungszeiten_monate: float,
     sozialversicherung__rente__pflegeberücksichtigungszeiten_monate: float,
-    ges_rente_params: dict,
+    sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge: float,
     erwerbsm_rente_params: dict,
 ) -> bool:
     """Wartezeit for Rente für langjährige Versicherte (Erwerbsminderung) is fulfilled.
@@ -312,40 +303,10 @@ def wartezeit_langjährig_versichert_erfüllt(
 
     This pathway makes it possible to claim pension benefits without deductions at the
     age of 63.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__pflichtbeitragsmonate
-        See basic input variable
-        :ref:<sozialversicherung__rente__pflichtbeitragsmonate>`.
-    sozialversicherung__rente__freiwillige_beitragsmonate
-        See basic input variable
-        :ref:<sozialversicherung__rente__freiwillige_beitragsmonate>`.
-    sozialversicherung__rente__anrechnungsmonate_45_jahre_wartezeit
-        See :func:`sozialversicherung__rente__anrechnungsmonate_45_jahre_wartezeit`.
-    sozialversicherung__rente__ersatzzeiten_monate
-        See basic input variable :ref:<sozialversicherung__rente__ersatzzeiten_monate>`.
-    sozialversicherung__rente__kinderberücksichtigungszeiten_monate
-        See basic input variable
-        :ref:<sozialversicherung__rente__kinderberücksichtigungszeiten_monate>`.
-    sozialversicherung__rente__pflegeberücksichtigungszeiten_monate
-        See basic input variable
-        :ref:<sozialversicherung__rente__pflegeberücksichtigungszeiten_monate>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-    erwerbsm_rente_params
-        See params documentation :ref:`erwerbsm_rente_params <erwerbsm_rente_params>`.
-
-    Returns
-    -------
-    Wartezeit for Rente für langjährige Versicherte (Erwerbsminderung) is fulfilled
-
     """
     if (
         sozialversicherung__rente__pflichtbeitragsmonate / 12
-        >= ges_rente_params[
-            "mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge"
-        ]
+        >= sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge
     ):
         freiwillige_beitragszeiten = (
             sozialversicherung__rente__freiwillige_beitragsmonate

@@ -18,21 +18,6 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     for calculating gains in the Zugangsfakor in case of later retirement.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-
-    Returns
-    -------
-    Normal retirement age (NRA).
-
     """
     return ges_rente_params["regelaltersgrenze"]
 
@@ -50,19 +35,6 @@ def altersgrenze_mit_staffelung(geburtsjahr: int, ges_rente_params: dict) -> flo
     for calculating gains in the Zugangsfakor in case of later retirement.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-
-    Returns
-    -------
-    Normal retirement age (NRA).
-
     """
     if geburtsjahr <= ges_rente_params["regelaltersgrenze"]["max_birthyear_old_regime"]:
         out = ges_rente_params["regelaltersgrenze"]["entry_age_old_regime"]
@@ -80,17 +52,6 @@ def altersgrenze_mit_staffelung(geburtsjahr: int, ges_rente_params: dict) -> flo
 def grundsätzlich_anspruchsberechtigt(
     sozialversicherung__rente__mindestwartezeit_erfüllt: bool,
 ) -> bool:
-    """Determining the eligibility for the Regelaltersrente.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__mindestwartezeit_erfüllt
-        See :func:`sozialversicherung__rente__mindestwartezeit_erfüllt`.
-
-    Returns
-    -------
-    Eligibility as bool.
-
-    """
+    """Determining the eligibility for the Regelaltersrente."""
 
     return sozialversicherung__rente__mindestwartezeit_erfüllt

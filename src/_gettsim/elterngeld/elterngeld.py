@@ -251,11 +251,10 @@ def anrechenbarer_betrag_m(
 
 
     """
-    out = max(
+    return max(
         betrag_m - ((1 + anzahl_mehrlinge_fg) * elterngeld_params["mindestbetrag"]),
         0,
     )
-    return out
 
 
 @policy_function()

@@ -18,17 +18,6 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     full retirement age was the same for every birth cohort.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    ges_rente_params
-        See params documentation
-        :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    lowest full retirement age for unemployed.
-
     """
 
     return ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"]
@@ -46,16 +35,6 @@ def altersgrenze_ohne_vertrauensschutzprüfung_bis_1996(
     """Full retirement age for unemployed without Vertrauensschutz.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    altersgrenze_ohne_vertrauensschutzprüfung
-        See :func:`altersgrenze_ohne_vertrauensschutzprüfung`.
-
-    Returns
-    -------
-    Full retirement age for unemployed.
-
     """
     return altersgrenze_ohne_vertrauensschutzprüfung
 
@@ -79,24 +58,6 @@ def altersgrenze_mit_vertrauensschutzprüfung(
     because then all potential beneficiaries have reached the normal retirement age.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    vertrauensschutz_1997
-        See basic input variable :ref:`vertrauensschutz_1997 <vertrauensschutz_1997>`.
-    altersgrenze_ohne_vertrauensschutzprüfung
-        See :func:`altersgrenze_ohne_vertrauensschutzprüfung`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age for unemployed.
-
     """
     if (
         vertrauensschutz_1997
@@ -134,16 +95,6 @@ def altersgrenze_ohne_vertrauensschutzprüfung_ab_2010(
     because then all potential beneficiaries have reached the normal retirement age.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    altersgrenze_ohne_vertrauensschutzprüfung
-        See :func:`altersgrenze_ohne_vertrauensschutzprüfung`.
-
-    Returns
-    -------
-    Full retirement age for unemployed.
-
     """
     return altersgrenze_ohne_vertrauensschutzprüfung
 
@@ -159,17 +110,6 @@ def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
     Early retirement age does not depend on birth year and month.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    ges_rente_params
-        See params documentation
-        :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age for unemployed.
-
     """
 
     return ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"]
@@ -186,15 +126,6 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_bis_1996_07(
     """Early retirement age of pension for unemployed.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung
-        See :func:`altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung`.
-
-    Returns
-    -------
-    Early retirement age for unemployed.
     """
 
     return altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung
@@ -215,20 +146,6 @@ def altersgrenze_vorzeitig_mit_vertrauensschutz_ab_1996_07_bis_1996_09(
     Includes Vertrauensschutz rules implemented from July to September 1996.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-
-    vertrauensschutz_2004
-        See basic input variable :ref:`vertrauensschutz_2004 <vertrauensschutz_2004>`.
-    altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung
-        See :func:`altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age for unemployed.
     """
 
     if vertrauensschutz_1997:
@@ -253,17 +170,6 @@ def altersgrenze_vorzeitig_ohne_staffelung_ab_1996_09(ges_rente_params: dict) ->
     Early retirement age does not depend on birth year and month.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    ges_rente_params
-        See params documentation
-        :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age for unemployed.
-
     """
 
     return ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig"]
@@ -286,19 +192,6 @@ def ges_rente_arbeitsl_vorzeitig_mit_vertrauenss_ab_2004_07(
     age.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    vertrauensschutz_2004
-        See basic input variable :ref:`vertrauensschutz_2004 <vertrauensschutz_2004>`.
-    altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung
-        See :func:`altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age for unemployed.
     """
 
     if vertrauensschutz_2004:
@@ -322,21 +215,6 @@ def altersgrenze_ohne_vertrauensschutzprüfung(
     Full retirement age depends on birth year and month.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    ges_rente_params
-        See params documentation
-        :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age for unemployed.
-
     """
     if (
         geburtsjahr
@@ -375,19 +253,6 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung(
     Relevant if the early retirement age depends on birth year and month.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age for unemployed.
     """
 
     if (
@@ -429,30 +294,13 @@ def grundsätzlich_anspruchsberechtigt_bis_2007(
     unemployed at the time of claiming the pension. As there are no restrictions
     regarding voluntary unemployment this requirement may be viewed as always satisfied
     and is therefore not included when checking for eligibility.
-
-    Parameters
-    ----------
-    arbeitslos_für_1_jahr_nach_alter_58_ein_halb
-        See basic input variable
-        :ref:`arbeitslos_für_1_jahr_nach_alter_58_ein_halb <arbeitslos_für_1_jahr_nach_alter_58_ein_halb>`.
-    sozialversicherung__rente__wartezeit_15_jahre_erfüllt
-        See :func:`sozialversicherung__rente__wartezeit_15_jahre_erfüllt`
-    pflichtbeitragsjahre_8_von_10
-        See basic input variable :ref:`pflichtbeitragsjahre_8_von_10 <pflichtbeitragsjahre_8_von_10>`.
-
-    Returns
-    -------
-    Eligibility as bool.
-
     """
 
-    out = (
+    return (
         arbeitslos_für_1_jahr_nach_alter_58_ein_halb
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtbeitragsjahre_8_von_10
     )
-
-    return out
 
 
 @policy_function(
@@ -465,7 +313,7 @@ def grundsätzlich_anspruchsberechtigt_ab_2007(
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtbeitragsjahre_8_von_10: bool,
     geburtsjahr: int,
-    ges_rente_params: dict,
+    kohorte_abschaffung: int,
 ) -> bool:
     """Eligibility for Altersrente für Arbeitslose (pension for unemployed).
 
@@ -476,32 +324,11 @@ def grundsätzlich_anspruchsberechtigt_ab_2007(
     always satisfied and is therefore not included when checking for eligibility. Policy
     becomes inactive in 2018 because then all potential beneficiaries have reached the
     normal retirement age.
-
-    Parameters
-    ----------
-    arbeitslos_für_1_jahr_nach_alter_58_ein_halb
-        See basic input variable :ref:`arbeitslos_für_1_jahr_nach_alter_58_ein_halb <arbeitslos_für_1_jahr_nach_alter_58_ein_halb>`.
-    sozialversicherung__rente__wartezeit_15_jahre_erfüllt
-        See :func:`sozialversicherung__rente__wartezeit_15_jahre_erfüllt`
-    pflichtbeitragsjahre_8_von_10
-        See basic input variable :ref:`pflichtbeitragsjahre_8_von_10 <pflichtbeitragsjahre_8_von_10>`.
-    geburtsjahr
-        See :func:`geburtsjahr`
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Eligibility as bool.
-
     """
 
-    out = (
+    return (
         arbeitslos_für_1_jahr_nach_alter_58_ein_halb
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
         and pflichtbeitragsjahre_8_von_10
-        and geburtsjahr
-        < ges_rente_params["first_birthyear_without_rente_wegen_arbeitslosigkeit"]
+        and geburtsjahr < kohorte_abschaffung
     )
-
-    return out
