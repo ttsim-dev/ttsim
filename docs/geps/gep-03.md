@@ -88,78 +88,99 @@ added.
            conditions.
      ```
 
-   ```
-
-   ```
-
 1. The `unit` key informs on the unit of the values (Euro or DM if monetary, share of
    some other value, ...).
 
    - In some cases (e.g., factor for the calculation of the marginal employment
      threshold), there is no unit.
+
    - It should be capitalised.
-   - Allowed values at this point: `Euro`, `DM`, `Share`, `Percent`, `Factor`, `Year`,
-     `Month`, `Hour`, `Square Meter`, `Euro / Square Meter`.
+
+   - Possible values:
+
+     - `Euros`,
+     - `DM`,
+     - `Share`,
+     - `Percent`,
+     - `Years`,
+     - `Months`,
+     - `Hours`,
+     - `Square Meters`,
+     - `Euros / Square Meter`,
+     - *None*.
 
    Example:
 
    ```yaml
-   kindergeld:
+   altersgrenze:
      name:
-       de: Kindergeld, Betrag je nach Reihenfolge der Kinder.
+       de: Alter, ab dem Kindergeld nicht mehr gezahlt wird.
      unit: Euro
    ```
 
-1. The (optional) `type` key may contain a reference to a particular function that is
-   implemented. Examples are `piecewise_linear` or `piecewise_quadratic`
+1. The `type` key signals to GETTSIM how the parameter is to be interpreted. It must be
+   specified as one of:
 
-1. The (optional) `reference_period` key informs on the reference period of the values,
-   if applicable
+   - `scalar`,
+   - `dict`,
+   - `piecewise_constant`,
+   - `piecewise_linear`,
+   - `piecewise_quadratic`,
+   - `piecewise_cubic`,
+   - `require_converter`
 
-   Possible values: - `Year` - `Quarter` - `Month` - `Week` - `Day`
+   `scalar` is self-explanatory; `dict` must be a homogeneous dictionary with string or
+   integer keys and scalar values (int, float, bool).
 
-   Example:
+   `piecewise_constant`, `piecewise_linear`, `piecewise_quadratic`, `piecewise_cubic`
+   will be converted automatically to be used with the `piecewise_polynomial` function.
 
-   ```yaml
-   kindergeld_stundengrenze:
-     name:
-       de: Wochenstundengrenze für Kindergeldanspruch
-       [...]
-     reference_period: Week
+   `require_converter` can be anything. However there must be a converter function in
+   the codebase.
+
+1. The `reference_period` key informs on the reference period of the values, if
+   applicable. Possible values:
+
+   - `Year`,
+   - `Quarter`,
+   - `Month`,
+   - `Week`,
+   - `Day`,
+   - `Hour`,
+   - *None*
+
+1. The optional `add_jahresanfang` can be used to make the parameter that is relevant at
+   the start of the year (relative to the date for which the policy environment is set
+   up) available to GETTSIM functions.
+
+   If specified, two parameters will be available:
+
+   ```
+   ("path", "to", "parameter")
+   ("path", "to", "parameter_jahresanfang")
    ```
 
-(gep-3-access_different_date)=
-
-1. The (optional) `access_different_date` can be used to make the parameter of a
-   previous point in time (relative to the date specified in
-   {func}`set_up_policy_environment <ttsim.policy_environment.set_up_policy_environment>`)
-   available within GETTSIM functions.
-
-   Possible values: `vorjahr` or `jahresanfang`.
-
-   Example:
+   Example from `arbeitslosengeld` / :
 
    ```yaml
-   rentenwert:
+   beitragssatz:
      name:
-       de: Rentenwerte alte und neue Bundesländer.
-         [...]
-      access_different_date: vorjahr
+       de: Beitragssatz zur Arbeitslosenversicherung
+     unit: Share
+     reference_period: null
+     type: scalar
+     add_jahresanfang: true
    ```
 
 1. The YYYY-MM-DD key(s)
 
-   - hold all historical values for a specific parameter or set of parameters in the
-     `value` subkey;
-   - is present with `value: null` if a parameter ceases to exist starting on a
-     particular date;
+   - hold all historical values for a specific parameter or set of parameters in
+     dictionaries
    - contain a precise reference to the law in the `reference` subkey;
    - may add additional descriptions in the `note` key;
-   - may give hints towards the type of function they refer to via the `type` subkey;
-   - may include formulas if the law does;
-   - may reference other parameters as described below.
-   - may contain a `unit` subkey, which overrides the `unit` key mentioned in 3. (mostly
-     relevant for DM / Euro)
+   - is present with a note or reference only if a parameter ceases to exist starting on
+     a particular date;
+   - in case of a `scalar` type, the key of the scalar is `value`.
 
    The remainder of this section explains this element in much more detail.
 
@@ -180,11 +201,12 @@ added.
 Example:
 
 ```yaml
-eink_anr_frei:
+beitragssatz:
   name:
-    de: Anrechnungsfreie Einkommensanteile
-  2005-01-01:
-    reference: Artikel 1. G. v. 24.12.2003 BGBl. I S. 2954.
+    de: Beitragssatz zur Arbeitslosenversicherung
+  2019-01-01:
+    value: 0.0125
+    reference: V. v. 21.12.2018 BGBl. I S. 2663
 ```
 
 ### The `note` key of [YYYY-MM-DD]
@@ -192,37 +214,41 @@ eink_anr_frei:
 This optional key may contain a free-form note holding any information that may be
 relevant for the interpretation of the parameter, the implementer, user, ...
 
-(gep-3-deviation_from)=
-
-### The `deviation_from` key of [YYYY-MM-DD]
-
-Often laws change only part of a parameter. To avoid error-prone code duplication, we
-allow for such cases via the `deviation_from` key. This is the reason why lists are to
-be avoided in the value key (see the `piecewise_linear` function above).
-
-The key could either reference another value explicitly:
-
 ```yaml
-eink_anr_frei_kinder:
+beitragssatz:
   name:
-    de: Abweichende anrechnungsfreie Einkommensanteile falls Kinder im Haushalt
-  2005-10-01:
-    deviation_from: arbeitslosengeld_2.eink_anr_frei
-    3:
-      upper_threshold: 1500
+    de: Beitragssatz zur Arbeitslosenversicherung
+  2019-01-01:
+    value: 0.0125
+    reference: V. v. 21.12.2018 BGBl. I S. 2663
+    note: >-
+      Set to 0.013 in Art. 2 Nr. 15 G. v. 18.12.2018 BGBl. I S. 2651. Temporarily
+      reduced to 0.0125 in BeiSaV 2019.
 ```
 
-A special keyword is `previous`, which just refers to the set of values in the previous
-law change.
+### The `updates_previous` key of [YYYY-MM-DD]
+
+Often laws change only part of a parameter. To avoid error-prone code duplication, we
+allow for such cases via `updates_previous` key.
+
+This must not be used with a scalar parameter type. Furthermore, it cannot be used in
+the first period a parameter is defined.
+
+Example from `sozialversicherung` / `geringfügige_einkommen.yaml`:
 
 ```yaml
-eink_anr_frei:
+minijobgrenze_ost_west_unterschied
   name:
-    de: Anrechnungsfreie Einkommensanteile
-  2011-04-01:
-    deviation_from: previous
-    2:
-      upper_threshold: 1000
+    de: Minijobgrenze
+  unit: Euros
+  reference_period: Month
+  type: dict
+  1997-01-01:
+    west: 312
+    ost: 266
+  1998-01-01:
+    updates_previous: true
+    west: 317
 ```
 
 ### The values of [YYYY-MM-DD]
