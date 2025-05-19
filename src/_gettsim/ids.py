@@ -21,15 +21,15 @@ def ehe_id(
 ) -> np.ndarray:
     """Couples that are either married or in a civil union."""
     n = np.max(p_id) + 1
-    familie__p_id_ehepartner = np.where(
+    p_id_ehepartner_or_own_p_id = np.where(
         familie__p_id_ehepartner < 0, p_id, familie__p_id_ehepartner
     )
     result = (
-        np.maximum(p_id, familie__p_id_ehepartner)
-        + np.minimum(p_id, familie__p_id_ehepartner) * n
+        np.maximum(p_id, p_id_ehepartner_or_own_p_id)
+        + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return result
+    return reorder_ids(result)
 
 
 @group_creation_function()
@@ -86,7 +86,7 @@ def fg_id(
         fg_id,
     )
 
-    return fg_id
+    return reorder_ids(fg_id)
 
 
 @group_creation_function()
@@ -107,13 +107,14 @@ def bg_id(
 
     # TODO(@MImmesberger): Remove hard-coded number
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
-    n = np.max(p_id) + 1
-    hh_id = np.where(
+    offset = np.max(fg_id) + 1
+    bg_id = np.where(
         np.logical_and(arbeitslosengeld_2__eigenbedarf_gedeckt, alter < 25),
-        p_id + p_id * n,
+        offset + p_id,
         fg_id,
     )
-    return hh_id
+
+    return reorder_ids(bg_id)
 
 
 @group_creation_function()
@@ -136,7 +137,7 @@ def eg_id(
         + np.minimum(p_id, arbeitslosengeld_2__p_id_einstandspartner) * n
     )
 
-    return np.array(result)
+    return reorder_ids(result)
 
 
 @group_creation_function()
@@ -151,13 +152,13 @@ def wthh_id(
     priority check compared to Bürgergeld yields the same result ∈ {True, False}.
     """
     offset = np.max(hh_id) + 1
-    hh_id = np.where(
+    wthh_id = np.where(
         vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg
         | vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg,
         hh_id + offset,
         hh_id,
     )
-    return hh_id
+    return reorder_ids(wthh_id)
 
 
 @group_creation_function()
@@ -172,7 +173,7 @@ def sn_id(
     """
 
     n = np.max(p_id) + 1
-    familie__p_id_ehepartner = np.where(
+    p_id_ehepartner_or_own_p_id = np.where(
         np.logical_and(
             familie__p_id_ehepartner >= 0, einkommensteuer__gemeinsam_veranlagt
         ),
@@ -180,8 +181,18 @@ def sn_id(
         p_id,
     )
     result = (
-        np.maximum(p_id, familie__p_id_ehepartner)
-        + np.minimum(p_id, familie__p_id_ehepartner) * n
+        np.maximum(p_id, p_id_ehepartner_or_own_p_id)
+        + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return result
+    return reorder_ids(result)
+
+
+def reorder_ids(ids: np.ndarray) -> np.ndarray:
+    """Make ID's consecutively numbered."""
+    sorting = np.argsort(ids)
+    ids_sorted = ids[sorting]
+    index_after_sort = np.arange(ids.shape[0])[sorting]
+    diff_to_prev = np.where(np.diff(ids_sorted) >= 1, 1, 0)
+    cons_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
+    return cons_ids[np.argsort(index_after_sort)]

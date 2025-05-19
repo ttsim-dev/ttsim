@@ -10,11 +10,11 @@ def sp_id(
     """
     Compute the spouse (sp) group ID for each person.
     """
-    n = 1000000
+    n = np.max(p_id)
     p_id_spouse = np.where(p_id_spouse < 0, p_id, p_id_spouse)
     sp_id = np.maximum(p_id, p_id_spouse) + np.minimum(p_id, p_id_spouse) * n
 
-    return sp_id
+    return reorder_ids(sp_id)
 
 
 @group_creation_function()
@@ -28,7 +28,7 @@ def fam_id(
     """
     Compute the family ID for each person.
     """
-    n = 1000000
+    n = np.max(p_id)
 
     p_id_parent_1_loc = p_id_parent_1
     p_id_parent_2_loc = p_id_parent_2
@@ -59,4 +59,13 @@ def fam_id(
         fam_id,
     )
 
-    return fam_id
+    return reorder_ids(fam_id)
+
+def reorder_ids(ids: np.ndarray) -> np.ndarray:
+    """Make ID's consecutively numbered."""
+    sorting = np.argsort(ids)
+    ids_sorted = ids[sorting]
+    index_after_sort = np.arange(ids.shape[0])[sorting]
+    diff_to_prev = np.where(np.diff(ids_sorted) >= 1, 1, 0)
+    cons_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
+    return cons_ids[np.argsort(index_after_sort)]
