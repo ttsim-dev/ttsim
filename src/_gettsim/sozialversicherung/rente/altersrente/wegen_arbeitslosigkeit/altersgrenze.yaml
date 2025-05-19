@@ -1,5 +1,5 @@
 ---
-altersgrenze_abschlagsfrei:
+delete_this_prefix_later_altersgrenze:
   name:
     de: Einheitliche Altersgrenze für Altersrente wegen Arbeitslosigkeit (abschlagsfrei)
     en: Uniform age threshold for pension for unemployed (without deductions)
@@ -21,8 +21,8 @@ altersgrenze_abschlagsfrei:
   1989-12-18:
     note: >-
       Increase of age threshold from 60 to 65 for birth cohort 1941-1952. See
-      `altersgrenze_abschlagsfrei_gestaffelt`.
-altersgrenze_abschlagsfrei_gestaffelt:
+      `altersgrenze_gestaffelt`.
+delete_this_prefix_later_altersgrenze_gestaffelt:
   name:
     de: Gestaffelte Altersgrenze für Altersrente wegen Arbeitslosigkeit (abschlagsfrei)
     en: Staggered age threshold for pension for unemployed (without deductions)
@@ -1281,7 +1281,7 @@ altersgrenze_abschlagsfrei_gestaffelt:
       12:
         base_age: 65
         months_to_add: 0
-altersgrenze_abschlagsfrei_vertrauensschutz:
+delete_this_prefix_later_altersgrenze_vertrauensschutz:
   name:
     de: >-
       Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
@@ -1302,7 +1302,7 @@ altersgrenze_abschlagsfrei_vertrauensschutz:
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     value: 60.0
-altersgrenze_abschlagsfrei_gestaffelt_vertrauensschutz:
+delete_this_prefix_later_altersgrenze_gestaffelt_vertrauensschutz:
   name:
     de: >-
       § 237 SGB VI Abs. 4
@@ -1449,7 +1449,7 @@ altersgrenze_abschlagsfrei_gestaffelt_vertrauensschutz:
       2:
         base_age: 60
         months_to_add: 10
-altersgrenze_vorzeitig:
+delete_this_prefix_later_altersgrenze_vorzeitig:
   name:
     de: >-
       Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
@@ -1481,7 +1481,7 @@ altersgrenze_vorzeitig:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of ERA was revoked.
     value: 60.0
-altersgrenze_vorzeitig_gestaffelt:
+delete_this_prefix_later_altersgrenze_vorzeitig_gestaffelt:
   name:
     de: >-
       Gestaffelte Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
@@ -1934,7 +1934,7 @@ altersgrenze_vorzeitig_gestaffelt:
       12:
         base_age: 63
         months_to_add: 0
-altersgrenze_vorzeitig_vertrauensschutz:
+delete_this_prefix_later_altersgrenze_vorzeitig_vertrauensschutz:
   name:
     de: >-
       Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen

@@ -54,53 +54,53 @@ regelaltersgrenze_gestaffelt:
     max_birthyear_old_regime: 1946
     min_birthyear_new_regime: 1964
     1947:
-      year: 65
-      month: 1
+      base_age: 65
+      months_to_add: 1
     1948:
-      year: 65
-      month: 2
+      base_age: 65
+      months_to_add: 2
     1949:
-      year: 65
-      month: 3
+      base_age: 65
+      months_to_add: 3
     1950:
-      year: 65
-      month: 4
+      base_age: 65
+      months_to_add: 4
     1951:
-      year: 65
-      month: 5
+      base_age: 65
+      months_to_add: 5
     1952:
-      year: 65
-      month: 6
+      base_age: 65
+      months_to_add: 6
     1953:
-      year: 65
-      month: 7
+      base_age: 65
+      months_to_add: 7
     1954:
-      year: 65
-      month: 8
+      base_age: 65
+      months_to_add: 8
     1955:
-      year: 65
-      month: 9
+      base_age: 65
+      months_to_add: 9
     1956:
-      year: 65
-      month: 10
+      base_age: 65
+      months_to_add: 10
     1957:
-      year: 65
-      month: 11
+      base_age: 65
+      months_to_add: 11
     1958:
-      year: 66
-      month: 0
+      base_age: 66
+      months_to_add: 0
     1959:
-      year: 66
-      month: 2
+      base_age: 66
+      months_to_add: 2
     1960:
-      year: 66
-      month: 4
+      base_age: 66
+      months_to_add: 4
     1961:
-      year: 66
-      month: 6
+      base_age: 66
+      months_to_add: 6
     1962:
-      year: 66
-      month: 8
+      base_age: 66
+      months_to_add: 8
     1963:
-      year: 66
-      month: 10
+      base_age: 66
+      months_to_add: 10

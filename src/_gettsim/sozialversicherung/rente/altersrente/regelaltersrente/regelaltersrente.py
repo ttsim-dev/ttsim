@@ -90,7 +90,7 @@ def piecewise_params_regelaltersgrenze(
     last_birthyear = max_birthyear_old_regime
 
     for idx, (birthyear, spec) in enumerate(sorted(full_spec.items()), start=1):
-        current_retirement_age = spec["year"] + spec["month"] / 12
+        current_retirement_age = spec["base_age"] + spec["months_to_add"] / 12
 
         # Piecewise spec for one birth year between old and new regime
         parameter_dict[idx] = {
