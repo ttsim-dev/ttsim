@@ -326,8 +326,9 @@ class TestCreateFunctionForTimeUnit:
         assert function(1) == 7
 
 
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
 def test_should_not_create_cycle():
+    # Check for:
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
     def x(test_m: int) -> int:
         return test_m
 
