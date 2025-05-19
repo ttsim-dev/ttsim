@@ -23,20 +23,23 @@ from ttsim import (
 from ttsim.loader import orig_params_tree, orig_ttsim_objects_tree
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
-    ConflictingNamesError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _get_params_contents,
     _parse_raw_parameter_group,
+    _ttsim_param_with_active_periods,
+    _TTSIMParamWithActivePeriod,
     active_ttsim_objects_tree,
     active_ttsim_params_tree,
-    fail_because_of_clashes,
+    fail_because_active_periods_overlap,
 )
+from ttsim.ttsim_objects import DEFAULT_END_DATE
 
 if TYPE_CHECKING:
     from ttsim.typing import (
         FlatOrigParamSpecDict,
         FlatTTSIMObjectDict,
         NestedTTSIMObjectDict,
+        OrigParamSpec,
     )
 
 
@@ -417,7 +420,7 @@ def test_fail_because_of_clashes_no_conflicts(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
     orig_params_tree: FlatOrigParamSpecDict,
 ):
-    fail_because_of_clashes(
+    fail_because_active_periods_overlap(
         orig_ttsim_objects_tree=orig_ttsim_objects_tree,
         orig_params_tree=orig_params_tree,
     )
@@ -495,7 +498,7 @@ def test_fail_because_of_conflicting_active_periods(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
 ):
     with pytest.raises(ConflictingActivePeriodsError):
-        fail_because_of_clashes(
+        fail_because_active_periods_overlap(
             orig_ttsim_objects_tree=orig_ttsim_objects_tree,
             orig_params_tree={},
         )
@@ -504,7 +507,7 @@ def test_fail_because_of_conflicting_active_periods(
 @pytest.mark.parametrize(
     "orig_ttsim_objects_tree, orig_params_tree",
     [
-        # Same global module, no overlapping periods, name clashes leaf name / yaml.
+        # Same global module, no overlap in functions, name clashes leaf name / yaml.
         (
             {
                 ("c", "a"): policy_function(
@@ -520,7 +523,7 @@ def test_fail_because_of_conflicting_active_periods(
             },
             {("c", "f"): {datetime.date(2023, 1, 1): {"value": 1}}},
         ),
-        # Same paths, no overlapping periods, name clashes leaf name / yaml.
+        # Same paths, no overlap in functions, name clashes leaf name / yaml.
         (
             {
                 ("x", "a", "b"): policy_function(
@@ -550,11 +553,207 @@ def test_fail_because_of_conflicting_names(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
     orig_params_tree: FlatOrigParamSpecDict,
 ):
-    with pytest.raises(ConflictingNamesError):
-        fail_because_of_clashes(
+    with pytest.raises(ConflictingActivePeriodsError):
+        fail_because_active_periods_overlap(
             orig_ttsim_objects_tree=orig_ttsim_objects_tree,
             orig_params_tree=orig_params_tree,
         )
+
+
+@pytest.mark.parametrize(
+    "orig_ttsim_objects_tree, orig_params_tree",
+    [
+        # Same leaf names across functions / parameters, but no overlapping periods.
+        (
+            {
+                ("c", "a"): policy_function(
+                    start_date="2012-01-01",
+                    end_date="2015-12-31",
+                    leaf_name="f",
+                )(identity),
+                ("c", "b"): policy_function(
+                    start_date="2023-02-01",
+                    end_date="2023-02-28",
+                    leaf_name="f",
+                )(identity),
+            },
+            {
+                ("c", "f"): {
+                    "name": {"de": "foo", "en": "foo"},
+                    "description": {"de": "foo", "en": "foo"},
+                    "unit": None,
+                    "reference_period": None,
+                    "type": "scalar",
+                    datetime.date(1984, 1, 1): {"value": 1},
+                    datetime.date(1985, 1, 1): {"value": 3},
+                    datetime.date(1995, 1, 1): {"value": 5},
+                    datetime.date(2012, 1, 1): {"note": "more complex, see function"},
+                    datetime.date(2016, 1, 1): {"value": 10},
+                    datetime.date(2023, 2, 1): {
+                        "note": "more complex, see function",
+                        "reference": "https://example.com/foo",
+                    },
+                    datetime.date(2023, 3, 1): {
+                        "value": 13,
+                        "note": "Complex didn't last long.",
+                    },
+                }
+            },
+        ),
+        # Different periods specified in different files.
+        (
+            {},
+            {
+                ("c", "f"): {
+                    "name": {"de": "foo", "en": "foo"},
+                    "description": {"de": "foo", "en": "foo"},
+                    "unit": None,
+                    "reference_period": None,
+                    "type": "scalar",
+                    datetime.date(1984, 1, 1): {"value": 1},
+                    datetime.date(1985, 1, 1): {"value": 3},
+                    datetime.date(1995, 1, 1): {"value": 5},
+                    datetime.date(2012, 1, 1): {"note": "more complex, see function"},
+                },
+                ("d", "f"): {
+                    "name": {"de": "foo", "en": "foo"},
+                    "description": {"de": "foo", "en": "foo"},
+                    "unit": None,
+                    "reference_period": None,
+                    "type": "scalar",
+                    datetime.date(2016, 1, 1): {"value": 10},
+                    datetime.date(2023, 2, 1): {
+                        "note": "more complex, see function",
+                        "reference": "https://example.com/foo",
+                    },
+                    datetime.date(2023, 3, 1): {
+                        "value": 13,
+                        "note": "Complex didn't last long.",
+                    },
+                },
+            },
+        ),
+    ],
+)
+def test_pass_because_no_overlap_functions_params(
+    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+    orig_params_tree: FlatOrigParamSpecDict,
+):
+    fail_because_active_periods_overlap(
+        orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+        orig_params_tree=orig_params_tree,
+    )
+
+
+@pytest.mark.parametrize(
+    "param_spec, leaf_name, expected",
+    (
+        (
+            {
+                "name": {"de": "spam", "en": "spam"},
+                "description": {"de": "spam", "en": "spam"},
+                "unit": None,
+                "reference_period": None,
+                "type": "scalar",
+                datetime.date(1984, 1, 1): {"note": "completely empty"},
+            },
+            "spam",
+            [],
+        ),
+        (
+            {
+                "name": {"de": "foo", "en": "foo"},
+                "description": {"de": "foo", "en": "foo"},
+                "unit": None,
+                "reference_period": None,
+                "type": "scalar",
+                datetime.date(1984, 1, 1): {"value": 1},
+            },
+            "foo",
+            [
+                _TTSIMParamWithActivePeriod(
+                    leaf_name="foo",
+                    original_function_name="foo",
+                    start_date=datetime.date(1984, 1, 1),
+                    end_date=DEFAULT_END_DATE,
+                )
+            ],
+        ),
+        (
+            {
+                "name": {"de": "foo", "en": "foo"},
+                "description": {"de": "foo", "en": "foo"},
+                "unit": None,
+                "reference_period": None,
+                "type": "scalar",
+                datetime.date(1984, 1, 1): {"value": 1},
+                datetime.date(1985, 1, 1): {"note": "stop"},
+            },
+            "foo",
+            [
+                _TTSIMParamWithActivePeriod(
+                    leaf_name="foo",
+                    original_function_name="foo",
+                    start_date=datetime.date(1984, 1, 1),
+                    end_date=datetime.date(1984, 12, 31),
+                )
+            ],
+        ),
+        (
+            {
+                "name": {"de": "bar", "en": "bar"},
+                "description": {"de": "bar", "en": "bar"},
+                "unit": None,
+                "reference_period": None,
+                "type": "scalar",
+                datetime.date(1984, 1, 1): {"value": 1},
+                datetime.date(1985, 1, 1): {"value": 3},
+                datetime.date(1995, 1, 1): {"value": 5},
+                datetime.date(2012, 1, 1): {"note": "more complex, see function"},
+                datetime.date(2016, 1, 1): {"value": 10},
+                datetime.date(2023, 2, 1): {
+                    "note": "more complex, see function",
+                    "reference": "https://example.com/bar",
+                },
+                datetime.date(2023, 3, 1): {
+                    "value": 13,
+                    "note": "Complex didn't last long.",
+                },
+            },
+            "bar",
+            [
+                _TTSIMParamWithActivePeriod(
+                    leaf_name="bar",
+                    original_function_name="bar",
+                    start_date=datetime.date(2023, 3, 1),
+                    end_date=DEFAULT_END_DATE,
+                ),
+                _TTSIMParamWithActivePeriod(
+                    leaf_name="bar",
+                    original_function_name="bar",
+                    start_date=datetime.date(2016, 1, 1),
+                    end_date=datetime.date(2023, 1, 31),
+                ),
+                _TTSIMParamWithActivePeriod(
+                    leaf_name="bar",
+                    original_function_name="bar",
+                    start_date=datetime.date(1984, 1, 1),
+                    end_date=datetime.date(2011, 12, 31),
+                ),
+            ],
+        ),
+    ),
+)
+def test_ttsim_param_with_active_periods(
+    param_spec: OrigParamSpec,
+    leaf_name: str,
+    expected: list[_TTSIMParamWithActivePeriod],
+):
+    actual = _ttsim_param_with_active_periods(
+        param_spec=param_spec,
+        leaf_name=leaf_name,
+    )
+    assert actual == expected
 
 
 @pytest.mark.parametrize(

@@ -45,7 +45,7 @@ def einkommen_y(
 
 @policy_function(start_date="2010-01-01")
 def vorsorge_krankenversicherungsbeiträge_option_a(
-    sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
+    sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y: float,
     steuerklasse: int,
     vorsorgepauschale_mindestanteil: float,
     maximal_absetzbare_krankenversicherungskosten: dict[str, float],
@@ -59,7 +59,7 @@ def vorsorge_krankenversicherungsbeiträge_option_a(
 
     vorsorge_krankenversicherungsbeiträge_option_a_basis = (
         vorsorgepauschale_mindestanteil
-        * sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y
+        * sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y
     )
 
     if steuerklasse == 3:
@@ -83,7 +83,7 @@ def vorsorge_krankenversicherungsbeiträge_option_a(
     leaf_name="vorsorge_krankenversicherungsbeiträge_option_b",
 )
 def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
-    sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
+    sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
     sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict[str, float],
@@ -94,10 +94,13 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     a" and "Option b". This function calculates option b where the actual contributions
     are used.
     """
-    return sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
-        + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
-        + sozialversicherung__pflege__beitrag__beitragssatz
+    return (
+        sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y
+        * (
+            sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
+            + sozialversicherung__kranken__beitrag__zusatzbeitragssatz
+            + sozialversicherung__pflege__beitrag__beitragssatz
+        )
     )
 
 
@@ -106,7 +109,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2015_bis_2018(
     leaf_name="vorsorge_krankenversicherungsbeiträge_option_b",
 )
 def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
-    sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y: float,
+    sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y: float,
     sozialversicherung__kranken__beitrag__zusatzbeitragssatz: float,
     sozialversicherung__pflege__beitrag__beitragssatz: float,
     sozialversicherung__kranken__beitrag__parameter_beitragssatz: dict[str, float],
@@ -118,10 +121,13 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     are used.
     """
 
-    return sozialversicherung__kranken__beitrag__einkommen_regulär_beschäftigt_y * (
-        sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
-        + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
-        + sozialversicherung__pflege__beitrag__beitragssatz
+    return (
+        sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y
+        * (
+            sozialversicherung__kranken__beitrag__parameter_beitragssatz["ermäßigt"] / 2
+            + sozialversicherung__kranken__beitrag__zusatzbeitragssatz / 2
+            + sozialversicherung__pflege__beitrag__beitragssatz
+        )
     )
 
 

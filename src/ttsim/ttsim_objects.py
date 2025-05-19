@@ -729,12 +729,14 @@ def _convert_and_validate_dates(
 def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:
     """Checks whether used series has already expected internal type.
 
+    Currently not used, but might become useful again.
+
     Parameters
     ----------
     series : pandas.Series or pandas.DataFrame or dict of pandas.Series
         Data provided by the user.
     internal_type : TypeVar
-        One of the internal gettsim types.
+        One of the internal TTSIM types.
 
     Returns
     -------

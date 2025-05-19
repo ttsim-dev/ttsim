@@ -1,5 +1,5 @@
 ---
-parameter_minijobgrenze_einheitlich:
+minijobgrenze:
   name:
     de: >-
       Minijob Grenze und Gleitzone / Midijob Grenze
@@ -80,7 +80,46 @@ parameter_minijobgrenze_ost_west_unterschied:
   2000-01-01:
     note: >-
       Minijob thresholds do not differ between West and East Germany. See
-      ``parameter_minijobgrenze_einheitlich``.
+      ``minijobgrenze_m``.
+faktoren_minijobformel:
+  name:
+    de: Zähler und Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.
+    en: >-
+      Numerator and denominator in the factor for the calculation of the marginal
+      employment threshold.
+  description:
+    de: §8 (1a) SGB IV
+    en: §8 (1a) SGB IV
+  unit: null
+  reference_period: null
+  type: dict
+  2022-10-01:
+    zähler: 130
+    nenner: 3
+    reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
+minijob_arbeitgeberpauschale_lohnsteuer:
+  name:
+    de: Pauschalierte Lohnsteuer bei geringfügiger Beschäftigung
+    en: Fixed income tax rate for marginal employment
+  description:
+    de: >-
+      Pauschalierte Lohnsteuer des Arbeitgebers bei geringfügiger Beschäftigung
+      (§40a II EStG)
+    en: Fixed income tax rate for marginal employment (§40a II EStG)
+  unit: Share
+  reference_period: null
+  type: scalar
+  add_jahresanfang: true
+  1984-01-01:
+    value: 0
+  1999-01-01:
+    value: 0
+  2003-04-01:
+    value: 0.02
+  2007-01-01:
+    value: 0.02
+  2022-10-01:
+    note: Ceased to exist
 midijobgrenze:
   name:
     de: Midijob Grenze
@@ -104,42 +143,3 @@ midijobgrenze:
   2023-01-01:
     value: 2000
     reference: Art. 3 G. v. 11.11.2022 BGBl. I S. 1985
-faktoren_minijobformel:
-  name:
-    de: Zähler und Nenner im Faktor für die Berechnung der Geringfügigkeitsgrenze.
-    en: >-
-      Numerator and denominator in the factor for the calculation of the marginal
-      employment threshold.
-  description:
-    de: §8 (1a) SGB IV
-    en: §8 (1a) SGB IV
-  unit: null
-  reference_period: null
-  type: dict
-  2022-10-01:
-    zähler: 130
-    nenner: 3
-    reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
-arbeitgeberpauschale_lohnsteuer:
-  name:
-    de: Pauschalierte Lohnsteuer bei geringfügiger Beschäftigung
-    en: Fixed income tax rate for marginal employment
-  description:
-    de: >-
-      Pauschalierte Lohnsteuer des Arbeitgebers bei geringfügiger Beschäftigung
-      (§40a II EStG)
-    en: Fixed income tax rate for marginal employment (§40a II EStG)
-  unit: Share
-  reference_period: null
-  type: scalar
-  access_different_date: jahresanfang
-  1984-01-01:
-    value: 0
-  1999-01-01:
-    value: 0
-  2003-04-01:
-    value: 0.02
-  2007-01-01:
-    value: 0.02
-  2022-10-01:
-    note: Ceased to exist

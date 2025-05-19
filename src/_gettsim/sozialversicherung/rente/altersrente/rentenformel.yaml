@@ -18,7 +18,7 @@ zugangsfaktor_veränderung_pro_jahr:
   2001-01-01:
     vorzeitiger_renteneintritt: 0.036
     späterer_renteneintritt: 0.06
-parameter_beitragspflichtiges_durchschnittsentgelt:
+beitragspflichtiges_durchschnittsentgelt_y:
   name:
     de: Beitragspflichtiges Durchschnittsentgelt aller Versicherten
     en: Mean relevant wage of all insured individuals

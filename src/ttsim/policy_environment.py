@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import datetime
 import itertools
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -126,7 +127,7 @@ class PolicyEnvironment:
     def upsert_objects(
         self, tree_to_upsert: NestedTTSIMObjectDict
     ) -> PolicyEnvironment:
-        """Upsert GETTSIM's function tree with (parts of) a new TTSIM objects tree.
+        """Update and insert *tree_to_upsert* into the existing objects tree.
 
         Adds to or overwrites TTSIM objects of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
@@ -208,7 +209,7 @@ def set_up_policy_environment(
     _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
     _orig_params_tree = orig_params_tree(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
-    fail_because_of_clashes(
+    fail_because_active_periods_overlap(
         orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
         orig_params_tree=_orig_params_tree,
     )
@@ -264,26 +265,21 @@ def set_up_policy_environment(
     )
 
 
-def fail_because_of_clashes(
+def fail_because_active_periods_overlap(
     orig_ttsim_objects_tree: FlatTTSIMObjectDict,
     orig_params_tree: FlatOrigParamSpecDict,
 ) -> None:
-    """Fail because of clashes of names.
+    """Fail because active periods of TTSIM objects / parameters overlap.
 
-    Two scenarios are checked:
-    - Within TTSIMObjects, active periods of a path + leaf name could overlap
-    - There may be name clashes involving parameters (parameters from multiple files
-      that end up having the same path or parameters named in the same way as a path +
-      leaf name).
+    Checks that objects or parameters with the same tree path / qualified name are not
+    active at the same time.
 
     Raises
     ------
     ConflictingActivePeriodsError
-        If multiple objects with the same leaf name are active at the same time.
-    ConflictingNamesError
-        If there are name clashes involving parameters.
+        If multiple objects and/or parameters with the same leaf name are active at the
+        same time.
     """
-
     # Create mapping from leaf names to TTSIM objects.
     overlap_checker: dict[tuple[str, ...], list[TTSIMObject]] = {}
     for orig_path, obj in orig_ttsim_objects_tree.items():
@@ -292,6 +288,19 @@ def fail_because_of_clashes(
             overlap_checker[path].append(obj)
         else:
             overlap_checker[path] = [obj]
+
+    for orig_path, obj in orig_params_tree.items():
+        path = (*orig_path[:-2], orig_path[-1])
+        if path in overlap_checker:
+            overlap_checker[path].extend(
+                _ttsim_param_with_active_periods(
+                    param_spec=obj, leaf_name=orig_path[-1]
+                )
+            )
+        else:
+            overlap_checker[path] = _ttsim_param_with_active_periods(
+                param_spec=obj, leaf_name=orig_path[-1]
+            )
 
     # Check for overlapping start and end dates for time-dependent functions.
     for path, objects in overlap_checker.items():
@@ -305,24 +314,65 @@ def fail_because_of_clashes(
                     overlap_end=min(end1, end2),
                 )
 
-    # Start with a single element each.
-    name_checker: dict[tuple[str, ...], list[TTSIMObject | OrigParamSpec]] = {}
-    for path, objects in overlap_checker.items():
-        name_checker[path] = [objects[0]]
-    # Now add the yaml objects.
-    for orig_path, obj in orig_params_tree.items():
-        path = (*orig_path[:-2], orig_path[-1])
-        if path in name_checker:
-            name_checker[path].append(obj)
-        else:
-            name_checker[path] = [obj]
 
-    for path, objects in name_checker.items():
-        if len(objects) > 1:
-            raise ConflictingNamesError(
-                affected_objects=objects,
-                path=path,
+@dataclass(frozen=True)
+class _TTSIMParamWithActivePeriod(TTSIMObject):
+    """A TTSIMParam object which mimics a TTSIMObject regarding active periods.
+
+    Only used here for checking overlap.
+    """
+
+    original_function_name: str
+
+
+def _ttsim_param_with_active_periods(
+    param_spec: OrigParamSpec,
+    leaf_name: str,
+) -> list[_TTSIMParamWithActivePeriod]:
+    """Return parameter with active periods."""
+
+    def _remove_note_and_reference(entry: dict[str | int, Any]) -> dict[str | int, Any]:
+        """Remove note and reference from a parameter specification."""
+        entry.pop("note", None)
+        entry.pop("reference", None)
+        return entry
+
+    relevant = sorted(
+        [key for key in param_spec if isinstance(key, datetime.date)],
+        reverse=True,
+    )
+    if not relevant:
+        raise ValueError(f"No relevant dates found for {param_spec}")
+
+    out = []
+    start_date: datetime.date | None = None
+    end_date = DEFAULT_END_DATE
+    for date in relevant:
+        if _remove_note_and_reference(param_spec[date]):
+            start_date = date
+        else:
+            if start_date:
+                out.append(
+                    _TTSIMParamWithActivePeriod(
+                        leaf_name=leaf_name,
+                        original_function_name=leaf_name,
+                        start_date=start_date,
+                        end_date=end_date,
+                    )
+                )
+            start_date = None
+            end_date = date - datetime.timedelta(days=1)
+    if start_date:
+        out.append(
+            _TTSIMParamWithActivePeriod(
+                leaf_name=leaf_name,
+                original_function_name=leaf_name,
+                start_date=start_date,
+                end_date=end_date,
             )
+        )
+
+    return out
 
 
 class ConflictingActivePeriodsError(Exception):
@@ -357,37 +407,6 @@ class ConflictingActivePeriodsError(Exception):
         }
 
         Overlap from {self.overlap_start} to {self.overlap_end}."""
-
-
-class ConflictingNamesError(Exception):
-    def __init__(
-        self,
-        affected_objects: list[TTSIMObject | OrigParamSpec],
-        path: tuple[str, ...],
-    ) -> None:
-        self.affected_objects = affected_objects
-        self.path = path
-
-    def __str__(self) -> str:
-        objects = []
-        for obj in self.affected_objects:
-            if isinstance(obj, TTSIMObject):
-                objects.append(obj.__getattribute__("original_function_name"))
-            else:
-                objects.append(str(obj))
-        return f"""
-        Objects with path
-
-          {self.path}
-
-        clash. The following objects are affected:
-
-          {
-            '''
-          '''.join(objects)
-        }
-
-        """
 
 
 def active_ttsim_objects_tree(

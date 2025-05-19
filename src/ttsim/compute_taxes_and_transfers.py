@@ -716,9 +716,9 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
                 """
                 This is already present among the hard-coded functions of the taxes and
                 transfers system. If you want this data column to be used instead of
-                calculating it within GETTSIM you need not do anything. If you want this
+                calculating it within TTSIM you need not do anything. If you want this
                 data column to be calculated by hard-coded functions, remove it from the
-                *data* you pass to GETTSIM. You need to pick one option for each column
+                *data* you pass to TTSIM. You need to pick one option for each column
                 that appears in the list above.
                 """
             )
@@ -728,9 +728,9 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
                 """
                 These are already present among the hard-coded functions of the taxes
                 and transfers system. If you want a data column to be used instead of
-                calculating it within GETTSIM you do not need to do anything. If you
+                calculating it within TTSIM you do not need to do anything. If you
                 want data columns to be calculated by hard-coded functions, remove them
-                from the *data* you pass to GETTSIM. You need to pick one option for
+                from the *data* you pass to TTSIM. You need to pick one option for
                 each column that appears in the list above.
                 """
             )
@@ -738,10 +738,10 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
         how_to_ignore = format_errors_and_warnings(
             """
             If you want to ignore this warning, add the following code to your script
-            before calling GETTSIM:
+            before calling TTSIM:
 
                 import warnings
-                from gettsim import FunctionsAndColumnsOverlapWarning
+                from ttsim import FunctionsAndColumnsOverlapWarning
 
                 warnings.filterwarnings(
                     "ignore",
