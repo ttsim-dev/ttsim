@@ -1089,139 +1089,6 @@ altersgrenze_abschlagsfrei_gestaffelt:
       12:
         base_age: 65
         months_to_add: 0
-    vertrauensschutz:
-      name:
-        de: >-
-          § 237 SGB VI Abs. 4
-          Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
-          (abschlagsfrei).
-        en: >-
-          § 237 SGB VI Abs. 4
-          Age threshold for pension for unemployed (without deductions) with
-          Vertrauensschutz
-      description: >-
-        Increase of full retirement age according to old law (RRG 1992) for individuals
-        covered under Vertrauensschutz.
-      max_birthyear_old_regime: 1940
-      entry_age_old_regime: 60.0
-      1941:
-        1:
-          base_age: 60
-          months_to_add: 1
-        2:
-          base_age: 60
-          months_to_add: 1
-        3:
-          base_age: 60
-          months_to_add: 1
-        4:
-          base_age: 60
-          months_to_add: 1
-        5:
-          base_age: 60
-          months_to_add: 2
-        6:
-          base_age: 60
-          months_to_add: 2
-        7:
-          base_age: 60
-          months_to_add: 2
-        8:
-          base_age: 60
-          months_to_add: 2
-        9:
-          base_age: 60
-          months_to_add: 3
-        10:
-          base_age: 60
-          months_to_add: 3
-        11:
-          base_age: 60
-          months_to_add: 3
-        12:
-          base_age: 60
-          months_to_add: 3
-      1942:
-        1:
-          base_age: 60
-          months_to_add: 4
-        2:
-          base_age: 60
-          months_to_add: 4
-        3:
-          base_age: 60
-          months_to_add: 4
-        4:
-          base_age: 60
-          months_to_add: 4
-        5:
-          base_age: 60
-          months_to_add: 5
-        6:
-          base_age: 60
-          months_to_add: 5
-        7:
-          base_age: 60
-          months_to_add: 5
-        8:
-          base_age: 60
-          months_to_add: 5
-        9:
-          base_age: 60
-          months_to_add: 6
-        10:
-          base_age: 60
-          months_to_add: 6
-        11:
-          base_age: 60
-          months_to_add: 6
-        12:
-          base_age: 60
-          months_to_add: 6
-      1943:
-        1:
-          base_age: 60
-          months_to_add: 7
-        2:
-          base_age: 60
-          months_to_add: 7
-        3:
-          base_age: 60
-          months_to_add: 7
-        4:
-          base_age: 60
-          months_to_add: 7
-        5:
-          base_age: 60
-          months_to_add: 8
-        6:
-          base_age: 60
-          months_to_add: 8
-        7:
-          base_age: 60
-          months_to_add: 8
-        8:
-          base_age: 60
-          months_to_add: 8
-        9:
-          base_age: 60
-          months_to_add: 9
-        10:
-          base_age: 60
-          months_to_add: 9
-        11:
-          base_age: 60
-          months_to_add: 9
-        12:
-          base_age: 60
-          months_to_add: 9
-      1944:
-        1:
-          base_age: 60
-          months_to_add: 10
-        2:
-          base_age: 60
-          months_to_add: 10
   1996-09-27:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of full retirement age from 60 to 65 for birth cohort 1937-1941.
@@ -1414,147 +1281,216 @@ altersgrenze_abschlagsfrei_gestaffelt:
       12:
         base_age: 65
         months_to_add: 0
-    vertrauensschutz:
-      name:
-        de: >-
-          § 237 SGB VI Abs. 4
-          Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
-          (abschlagsfrei).
-        en: >-
-          § 237 SGB VI Abs. 4
-          Age threshold for pension for unemployed (without deductions)
-          with Vertrauensschutz
-      description: >-
-        Increase of full retirement age according to old law (RRG 1992) for individuals
-        covered under Vertrauensschutz.
-      entry_age_old_regime: 60.0
-      max_birthyear_old_regime: 1940
-      1941:
-        1:
-          base_age: 60
-          months_to_add: 1
-        2:
-          base_age: 60
-          months_to_add: 1
-        3:
-          base_age: 60
-          months_to_add: 1
-        4:
-          base_age: 60
-          months_to_add: 1
-        5:
-          base_age: 60
-          months_to_add: 2
-        6:
-          base_age: 60
-          months_to_add: 2
-        7:
-          base_age: 60
-          months_to_add: 2
-        8:
-          base_age: 60
-          months_to_add: 2
-        9:
-          base_age: 60
-          months_to_add: 3
-        10:
-          base_age: 60
-          months_to_add: 3
-        11:
-          base_age: 60
-          months_to_add: 3
-        12:
-          base_age: 60
-          months_to_add: 3
-      1942:
-        1:
-          base_age: 60
-          months_to_add: 4
-        2:
-          base_age: 60
-          months_to_add: 4
-        3:
-          base_age: 60
-          months_to_add: 4
-        4:
-          base_age: 60
-          months_to_add: 4
-        5:
-          base_age: 60
-          months_to_add: 5
-        6:
-          base_age: 60
-          months_to_add: 5
-        7:
-          base_age: 60
-          months_to_add: 5
-        8:
-          base_age: 60
-          months_to_add: 5
-        9:
-          base_age: 60
-          months_to_add: 6
-        10:
-          base_age: 60
-          months_to_add: 6
-        11:
-          base_age: 60
-          months_to_add: 6
-        12:
-          base_age: 60
-          months_to_add: 6
-      1943:
-        1:
-          base_age: 60
-          months_to_add: 7
-        2:
-          base_age: 60
-          months_to_add: 7
-        3:
-          base_age: 60
-          months_to_add: 7
-        4:
-          base_age: 60
-          months_to_add: 7
-        5:
-          base_age: 60
-          months_to_add: 8
-        6:
-          base_age: 60
-          months_to_add: 8
-        7:
-          base_age: 60
-          months_to_add: 8
-        8:
-          base_age: 60
-          months_to_add: 8
-        9:
-          base_age: 60
-          months_to_add: 9
-        10:
-          base_age: 60
-          months_to_add: 9
-        11:
-          base_age: 60
-          months_to_add: 9
-        12:
-          base_age: 60
-          months_to_add: 9
-      1944:
-        1:
-          base_age: 60
-          months_to_add: 10
-        2:
-          base_age: 60
-          months_to_add: 10
-altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig:
+altersgrenze_abschlagsfrei_vertrauensschutz:
   name:
-    de: Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen Arbeitslosigkeit
-    en: Age threshold early takeup of pension for unemployed
+    de: >-
+      Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
+      (abschlagsfrei).
+    en: >-
+      Age threshold for pension for unemployed (without deductions) with
+      Vertrauensschutz
+  description:
+    de: >-
+      Vertrauensschutzregelungen schützen bestimmte Personengruppen vor der Erhöhung der
+      Altersgrenze.
+    en: >-
+      Trust protection rules protect certain groups of people from the increase of
+      the age threshold.
+  unit: null
+  reference_period: null
+  type: scalar
+  1996-07-29:
+    reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
+    value: 60.0
+altersgrenze_abschlagsfrei_gestaffelt_vertrauensschutz:
+  name:
+    de: >-
+      § 237 SGB VI Abs. 4
+      Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
+      (abschlagsfrei).
+    en: >-
+      § 237 SGB VI Abs. 4
+      Age threshold for pension for unemployed (without deductions) with
+      Vertrauensschutz
+  description:
+    de: >-
+      Vertrauensschutzregelungen schützen bestimmte Personengruppen vor der Erhöhung der
+      Altersgrenze.
+    en: >-
+      Trust protection rules protect certain groups of people from the increase of
+      the age threshold.
+  unit: null
+  reference_period: null
+  type: require_converter
+  1996-07-29:
+    reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
+    note: >-
+      Increase of full retirement age according to old law (RRG 1992) for individuals
+      covered under Vertrauensschutz. The Vertrauensschutzregel was not revoked under
+      the subsequent Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461
+      1996.
+    max_birthyear_old_regime: 1940
+    entry_age_old_regime: 60.0
+    1941:
+      1:
+        base_age: 60
+        months_to_add: 1
+      2:
+        base_age: 60
+        months_to_add: 1
+      3:
+        base_age: 60
+        months_to_add: 1
+      4:
+        base_age: 60
+        months_to_add: 1
+      5:
+        base_age: 60
+        months_to_add: 2
+      6:
+        base_age: 60
+        months_to_add: 2
+      7:
+        base_age: 60
+        months_to_add: 2
+      8:
+        base_age: 60
+        months_to_add: 2
+      9:
+        base_age: 60
+        months_to_add: 3
+      10:
+        base_age: 60
+        months_to_add: 3
+      11:
+        base_age: 60
+        months_to_add: 3
+      12:
+        base_age: 60
+        months_to_add: 3
+    1942:
+      1:
+        base_age: 60
+        months_to_add: 4
+      2:
+        base_age: 60
+        months_to_add: 4
+      3:
+        base_age: 60
+        months_to_add: 4
+      4:
+        base_age: 60
+        months_to_add: 4
+      5:
+        base_age: 60
+        months_to_add: 5
+      6:
+        base_age: 60
+        months_to_add: 5
+      7:
+        base_age: 60
+        months_to_add: 5
+      8:
+        base_age: 60
+        months_to_add: 5
+      9:
+        base_age: 60
+        months_to_add: 6
+      10:
+        base_age: 60
+        months_to_add: 6
+      11:
+        base_age: 60
+        months_to_add: 6
+      12:
+        base_age: 60
+        months_to_add: 6
+    1943:
+      1:
+        base_age: 60
+        months_to_add: 7
+      2:
+        base_age: 60
+        months_to_add: 7
+      3:
+        base_age: 60
+        months_to_add: 7
+      4:
+        base_age: 60
+        months_to_add: 7
+      5:
+        base_age: 60
+        months_to_add: 8
+      6:
+        base_age: 60
+        months_to_add: 8
+      7:
+        base_age: 60
+        months_to_add: 8
+      8:
+        base_age: 60
+        months_to_add: 8
+      9:
+        base_age: 60
+        months_to_add: 9
+      10:
+        base_age: 60
+        months_to_add: 9
+      11:
+        base_age: 60
+        months_to_add: 9
+      12:
+        base_age: 60
+        months_to_add: 9
+    1944:
+      1:
+        base_age: 60
+        months_to_add: 10
+      2:
+        base_age: 60
+        months_to_add: 10
+altersgrenze_vorzeitig:
+  name:
+    de: >-
+      Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
+      Arbeitslosigkeit
+    en: Uniform age threshold early takeup of pension for unemployed
   description:
     de: >-
       Frühestmögliches Alter ab dem die Altersrente für Arbeitslose
-      bezogen werden kann (mit Abschlägen), einschließlich Vertrauensschutz.
+      bezogen werden kann (mit Abschlägen).
+      § 237 SGB VI
+      https://www.gesetze-im-internet.de/sgb_6/__237.html
+      https://www.buzer.de/Anlage_19_SGB_VI.htm
+    en: >-
+      Earliest possible age to receive pension for unemployed (with deductions),
+      including legitimate expectations.
+      § 237 SGB VI
+      https://www.gesetze-im-internet.de/sgb_6/__237.html
+      https://www.buzer.de/Anlage_19_SGB_VI.htm
+  unit: Years
+  reference_period: null
+  type: scalar
+  1980-01-01:
+    value: 60.0
+  1989-12-18:
+    note: >-
+      Increase of early retirement age from 60 to 62 for birth cohort 1949-1952. See
+      `altersgrenze_vorzeitig`.
+  1996-09-27:
+    reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
+    note: Increase of ERA was revoked.
+    value: 60.0
+altersgrenze_vorzeitig_gestaffelt:
+  name:
+    de: >-
+      Gestaffelte Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
+      Arbeitslosigkeit
+    en: Staggered age threshold early takeup of pension for unemployed
+  description:
+    de: >-
+      Frühestmögliches Alter ab dem die Altersrente für Arbeitslose
+      bezogen werden kann (mit Abschlägen).
       § 237 SGB VI
       https://www.gesetze-im-internet.de/sgb_6/__237.html
       https://www.buzer.de/Anlage_19_SGB_VI.htm
@@ -1567,8 +1503,6 @@ altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig:
   unit: Years
   reference_period: null
   type: require_converter
-  1980-01-01:
-    value: 60.0
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
     note: Increase of early retirement age from 60 to 62 for birth cohort 1949-1952.
@@ -1726,9 +1660,7 @@ altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig:
         months_to_add: 0
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
-    note: >-
-      Increase of early retirement age as before, with Vertrauensschutz
-      (§ 237 SGB VI  Abs.5).
+    note: Increase of early retirement age as before. (§ 237 SGB VI  Abs.5).
     entry_age_old_regime: 60.0
     entry_age_new_regime: 62.0
     max_birthyear_old_regime: 1948
@@ -1881,11 +1813,9 @@ altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig:
       12:
         base_age: 62
         months_to_add: 0
-    vertrauensschutz: 60.0
   1996-09-27:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of ERA was revoked.
-    value: 60.0
   2004-07-26:
     reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
     note: Increase of the early retirement age from 60 to 63 for birth cohort 1946-1948.
@@ -2004,4 +1934,30 @@ altersgrenze_rente_wegen_arbeitslosigkeit_vorzeitig:
       12:
         base_age: 63
         months_to_add: 0
-    vertrauensschutz: 60.0
+altersgrenze_vorzeitig_vertrauensschutz:
+  name:
+    de: >-
+      Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
+      Arbeitslosigkeit mit Vertrauensschutz
+    en: >-
+      Uniform age threshold early takeup of pension for unemployed with
+      Vertrauensschutz
+  description:
+    de: >-
+      Vertrauensschutzregelungen schützen bestimmte Personengruppen vor der Erhöhung der
+      Altersgrenze.
+    en: >-
+      Trust protection rules protect certain groups of people from the increase of
+      the age threshold.
+  unit: null
+  reference_period: null
+  type: scalar
+  1996-07-29:
+    reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
+    value: 60.0
+  1996-09-27:
+    reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
+    note: Increase of ERA was revoked.
+  2004-07-26:
+    reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
+    value: 60.0

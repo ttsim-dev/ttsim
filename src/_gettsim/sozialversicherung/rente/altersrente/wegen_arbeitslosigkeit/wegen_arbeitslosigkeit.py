@@ -11,7 +11,7 @@ from ttsim import policy_function
     leaf_name="altersgrenze",
     vectorization_strategy="not_required",
 )
-def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
+def altersgrenze_ohne_staffelung(altersgrenze_abschlagsfrei: float) -> float:
     """Full retirement age for unemployed.
 
     Before the WFG (Gesetz für Wachstum und Beschäftigung) was implemented in 1997 the
@@ -20,7 +20,7 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
     Does not check for eligibility for this pathway into retirement.
     """
 
-    return ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"]
+    return altersgrenze_abschlagsfrei
 
 
 @policy_function(
