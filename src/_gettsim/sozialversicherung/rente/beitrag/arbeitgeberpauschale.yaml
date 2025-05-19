@@ -16,7 +16,7 @@ minijob_arbeitgeberpauschale:
   unit: Share
   reference_period: null
   type: scalar
-  access_different_date: jahresanfang
+  add_jahresanfang: true
   1999-01-01:
     value: 0.12
   2003-04-01:

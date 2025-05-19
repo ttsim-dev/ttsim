@@ -133,7 +133,7 @@ minijob_arbeitgeberpauschale_lohnsteuer:
   unit: Share
   reference_period: null
   type: scalar
-  access_different_date: jahresanfang
+  add_jahresanfang: true
   1984-01-01:
     value: 0
   1999-01-01:
