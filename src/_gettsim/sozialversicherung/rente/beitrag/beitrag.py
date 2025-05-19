@@ -7,13 +7,13 @@ from ttsim import policy_function
 def betrag_versicherter_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommen_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
 ) -> float:
     """Public pension insurance contributions paid by the insured person.
 
     Before Midijob introduction in April 2003.
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * parameter_beitragssatz
+    ges_rentenv_beitr_regular_job_m = einkommen_m * beitragssatz
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -28,14 +28,14 @@ def betrag_versicherter_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_midijob_arbeitnehmer_m: float,
     einkommen_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
     sozialversicherung__in_gleitzone: bool,
 ) -> float:
     """Public pension insurance contributions paid by the insured person.
 
     After Midijob introduction in April 2003.
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * parameter_beitragssatz
+    ges_rentenv_beitr_regular_job_m = einkommen_m * beitragssatz
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -54,13 +54,13 @@ def betrag_versicherter_m_mit_midijob(
 def betrag_arbeitgeber_m_ohne_arbeitgeberpauschale(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommen_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
 ) -> float:
     """Employer's public pension insurance contribution.
 
     Before Midijob introduction in April 2003.
     """
-    betrag_regulär_beschäftigt_m = einkommen_m * parameter_beitragssatz
+    betrag_regulär_beschäftigt_m = einkommen_m * beitragssatz
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -78,7 +78,7 @@ def betrag_arbeitgeber_m_ohne_arbeitgeberpauschale(
 def betrag_arbeitgeber_m_mit_arbeitgeberpauschale(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommen_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     minijob_arbeitgeberpauschale: float,
 ) -> float:
@@ -86,7 +86,7 @@ def betrag_arbeitgeber_m_mit_arbeitgeberpauschale(
 
     Before Midijob introduction in April 2003.
     """
-    betrag_regulär_beschäftigt_m = einkommen_m * parameter_beitragssatz
+    betrag_regulär_beschäftigt_m = einkommen_m * beitragssatz
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -104,7 +104,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_midijob_arbeitgeber_m: float,
     einkommen_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     minijob_arbeitgeberpauschale: float,
@@ -113,7 +113,7 @@ def betrag_arbeitgeber_m_mit_midijob(
 
     After Midijob introduction in April 2003.
     """
-    ges_rentenv_beitr_regular_job_m = einkommen_m * parameter_beitragssatz
+    ges_rentenv_beitr_regular_job_m = einkommen_m * beitragssatz
 
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -160,12 +160,12 @@ def beitragsbemessungsgrenze_m_nach_wohnort(
 @policy_function(start_date="2003-04-01")
 def betrag_midijob_gesamt_m(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
 ) -> float:
     """Sum of employer and employee pension insurance contribution for midijobs.
     Midijobs were introduced in April 2003.
     """
-    return sozialversicherung__midijob_bemessungsentgelt_m * 2 * parameter_beitragssatz
+    return sozialversicherung__midijob_bemessungsentgelt_m * 2 * beitragssatz
 
 
 @policy_function(
@@ -174,12 +174,12 @@ def betrag_midijob_gesamt_m(
 )
 def betrag_midijob_arbeitgeber_m_mit_festem_beitragssatz(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
 ) -> float:
     """Employer's unemployment insurance contribution until September 2022."""
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * parameter_beitragssatz
+        * beitragssatz
     )
 
 
@@ -207,10 +207,10 @@ def betrag_midijob_arbeitnehmer_m_als_differenz_von_gesamt_und_arbeitgeberbeitra
 @policy_function(start_date="2022-10-01", leaf_name="betrag_midijob_arbeitnehmer_m")
 def betrag_midijob_arbeitnehmer_m_mit_festem_beitragssatz(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
 ) -> float:
     """Employee's unemployment insurance contribution for midijobs since October 2022."""
     return (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        * parameter_beitragssatz
+        * beitragssatz
     )
