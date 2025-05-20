@@ -161,7 +161,7 @@ added.
    ("path", "to", "parameter_jahresanfang")
    ```
 
-   Example from `arbeitslosengeld` / :
+   Example from `sozialversicherung` / `arbeitslosen` / `beitragssatz.yaml`:
 
    ```yaml
    beitragssatz:
@@ -358,17 +358,34 @@ The following walks through several cases.
   ```
 
 - In some cases, a dictionary with numbered keys makes sense. It is important to use
-  these, not lists!
+  these, not lists! The reason is that we always allow for the `note` and `reference`
+  keys to be present.
 
   ```yaml
-  kindergeld_gestaffelt:
+  satz_gestaffelt:
     name:
-      de: Kindergeld, Betrag je nach Reihenfolge der Kinder.
-    1975-01-01:
-      1: 26
-      2: 36
-      3: 61
-      4: 61
+      de: Kindergeld pro Kind, Betrag je nach Reihenfolge der Kinder.
+      en: Child benefit amount, depending on succession of children.
+    description:
+      de: >-
+        § 66 (1) EStG. Identische Werte in §6 (1) BKGG, diese sind aber nur für beschränkt
+        Steuerpflichtige relevant (d.h. Ausländer mit Erwerbstätigkeit in Deutschland).
+        Für Werte vor 2002, siehe 'BMF - Datensammlung zur Steuerpolitik'
+      en: null
+    unit: Euros
+    reference_period: Month
+    type: dict
+    2002-01-01:
+      1: 154
+      2: 154
+      3: 154
+      4: 179
+    2009-01-01:
+      reference: Art. 1 G. v. 22.12.2008 BGBl. I S. 2955
+      1: 164
+      2: 164
+      3: 170
+      4: 195
   ```
 
 - Another example would be referring to the parameters of a piecewise linear function:
@@ -399,57 +416,95 @@ The following walks through several cases.
         upper_threshold: inf
   ```
 
+- Finally, there are parameters that have a more complex structure, which is not as
+  common as `piecewise_linear` etc. These need to be specified as `require_converter`.
+
+  Example from `arbeitslosengeld_2` / `bedarfe.yaml`:
+
+  ```yaml
+  parameter_regelsatz_nach_regelbedarfsstufen:
+    name:
+      de: Regelsatz mit direkter Angabe für Regelbedarfsstufen
+      en: Standard rate with direct specification of "Regelbedarfsstufen"
+    description:
+      de: >-
+        § 20 V SGB II.  Neufassung SGB II § 20 (1a) und (2) durch
+        Artikel 6 G. v. 22.12.2016 BGBl. I S. 3159.
+        Regelbedafstufen:
+        1: Alleinstehender Erwachsener
+        2: Erwachsene in Partnerschaft
+        3: Erwachsene unter 25 im Haushalt der Eltern
+        4: Jugendliche
+        5: Ältere Kinder
+        6: Jüngste Kinder
+      en: >-
+        Regelbedarfsstufen:
+        1: Single Adult
+        2: Adults in a partner relationship
+        3: Adults under 25 in the household of their parents
+        4: Adolescents
+        5: Older children
+        6: Youngest children
+    unit: Euros
+    reference_period: Month
+    type: require_converter
+    2011-01-01:
+      1: 364
+      2: 328
+      3: 291
+      4:
+        min_alter: 14
+        max_alter: 17
+        betrag: 287
+      5:
+        min_alter: 6
+        max_alter: 13
+        betrag: 251
+      6:
+        min_alter: 0
+        max_alter: 5
+        betrag: 215
+      reference: Artikel 1 G. v. 24.03.2011 BGBl. I S. 453.
+  ```
+
 - In general, a parameter should appear for the first time that it is mentioned in a
   law, becomes relevant, etc..
 
-  Only in exceptional cases it might be useful to set a parameter to some value
-  (typically zero) even if it does not exist yet.
+  Do not set parameters to some value if they are not relevant yet.
 
 - If a parameter ceases to be relevant, is superseded by something else, etc., there
-  must be a `YYYY-MM-DD` key with a note on this.
+  must be a `YYYY-MM-DD` key with a `note` and/or `reference` key. There must not be
+  other entries except for these two.
 
-  Generally, this `YYYY-MM-DD` key will have an entry `scalar: null` regardless of the
-  previous structure. Ideally, there would be a `reference` and potentially a `note`
-  key. Example:
+  Example:
 
   ```yaml
-  value: null
-  note: arbeitslosenhilfe is superseded by arbeitslosengeld_2
+  parameter_regelsatz_anteilsbasiert:
+    name:
+      de: Berechnungsgrundlagen für den Regelsatz
+    2011-01-01:
+      note: Calculation method changed, see regelsatz_nach_regelbedarfsstufen.
   ```
-
-  Only in exceptional cases it might be useful to set a parameter to some value
-  (typically zero) even if it is not relevant any more.
-
-  In any case, it **must** be the case that it is obvious from the `YYYY-MM-DD` entry
-  that the (set of) parameter(s) is not relevant any more, else the previous ones will
-  linger on.
 
 (gep-3-handling-of-parameters-in-the-codebase)=
 
 ## Handling of parameters in the codebase
 
-The contents of the YAML files become part of the `policy_params` dictionary. Its keys
-correspond to the names of the YAML files. Each value will be a dictionary that follows
-the structure of the YAML file. These values can be used in policy functions as
-`[key]_params`.
+The contents of the YAML files are processed and are a pytree-like structure, similar to
+the functions. That is, they can be used directly in their namespace (=path to the yaml
+file excluding the file name) and accessed by absolute paths otherwise.
 
-The contents mostly follow the content of the YAML files. The main difference is that
-all parameters are present in their required format; no further parsing shall be
-necessary inside the functions. The important changes include:
+In this tree, they are specialised to the relevant policy date. Depending on the type of
+the parameter (see the previous section), the following types are possible:
 
-- In the YAML files, parameters may be specified as deviations from other values,
-  {ref}`see above <gep-3-deviation_from>`. All these are converted so that the relevant
-  values are part of the dictionary.
-- Similarly, values from the beginning of the year (via `access_different_date`,
-  {ref}`see above <gep-3-access_different_date>`) of `[param]` will be available as:
-  `[param]_[access_different_date]`.
-- Parameters for piecewise polynomials are parsed.
-- Parameters that are derived from other parameters are calculated (examples include
-  `kinderzuschlag_max` starting in 2021 or calculating the phasing in of
-  `vorsorgeaufwendungen_alter` over the 2005-2025 period).
-
-These functions will be avaiable to users en bloque or one-by-one so they can specify
-parameters as in the YAML file for their own policy parameters.
+- `scalar` parameters are just floats / ints / Booleans; i.e., simply the `value` key of
+  the yaml file.
+- `dict` parameters are homogenous dictionaries with all contents of the `YYYY-MM-DD`
+  entries except for the `note` and `reference` keys.
+- `piecewise_constant` / `piecewise_linear` / `piecewise_quadratic` / `piecewise_cubic`
+  parameters are converted to `PiecewisePolynomialParameter` objects.
+- `require_converter` must have a `params_function` that converts the `YYYY-MM-DD`
+  entries to a clear type.
 
 ## Discussion
 
