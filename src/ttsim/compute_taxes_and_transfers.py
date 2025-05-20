@@ -139,7 +139,7 @@ def compute_taxes_and_transfers(
     )
     functions_with_partialled_parameters = _partial_parameters_to_functions(
         functions=functions_with_rounding_specs,
-        params=environment.params,
+        processed_params=environment.params,
     )
     functions_with_partialled_parameters = _partial_params_to_functions(
         functions=functions_with_partialled_parameters,
@@ -288,7 +288,7 @@ def combine_policy_functions_and_derived_functions(
 
     Parameters
     ----------
-    functions
+    ttsim_objects
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
     targets
@@ -322,13 +322,17 @@ def combine_policy_functions_and_derived_functions(
     )
     out = {**aggregate_by_group_functions, **out}
 
-    _fail_if_targets_not_in_functions(functions=out, targets=targets)
+    _fail_if_targets_not_in_functions(
+        functions=out,
+        targets=targets,
+    )
 
     return out
 
 
 def _fail_if_targets_not_in_functions(
-    functions: QualNameTTSIMFunctionDict, targets: QualNameTargetList
+    functions: QualNameTTSIMFunctionDict,
+    targets: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -441,7 +445,7 @@ def _process_params_tree(
 
 def _partial_parameters_to_functions(
     functions: QualNameTTSIMFunctionDict,
-    params: QualNameProcessedParamDict,
+    processed_params: QualNameProcessedParamDict,
 ) -> QualNameTTSIMFunctionDict:
     """Round and partial parameters into functions.
 
@@ -465,9 +469,9 @@ def _partial_parameters_to_functions(
     for name, function in functions.items():
         arguments = get_names_of_required_arguments(function)
         partial_params = {
-            arg: params[key]
+            arg: processed_params[key]
             for arg in arguments
-            for key in params
+            for key in processed_params
             if arg.endswith(f"{key}_params")
         }
         if partial_params:
