@@ -164,7 +164,7 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     end_date="2017-12-31",
     leaf_name="grundsätzlich_anspruchsberechtigt",
 )
-def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
+def grundsätzlich_anspruchsberechtigt_mit_prüfung_geburtsjahr(
     weiblich: bool,
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtsbeitragsjahre_ab_alter_40: float,

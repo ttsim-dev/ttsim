@@ -265,7 +265,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung(
 
 
 @policy_function(end_date="2007-04-29", leaf_name="grundsätzlich_anspruchsberechtigt")
-def grundsätzlich_anspruchsberechtigt_bis_2007(
+def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     arbeitslos_für_1_jahr_nach_alter_58_ein_halb: bool,
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtbeitragsjahre_8_von_10: bool,
@@ -291,7 +291,7 @@ def grundsätzlich_anspruchsberechtigt_bis_2007(
     end_date="2017-12-31",
     leaf_name="grundsätzlich_anspruchsberechtigt",
 )
-def grundsätzlich_anspruchsberechtigt_ab_2007(
+def grundsätzlich_anspruchsberechtigt_mit_prüfung_geburtsjahr(
     arbeitslos_für_1_jahr_nach_alter_58_ein_halb: bool,
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtbeitragsjahre_8_von_10: bool,
