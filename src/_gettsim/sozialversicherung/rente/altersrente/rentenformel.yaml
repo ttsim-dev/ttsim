@@ -1,17 +1,19 @@
 ---
 zugangsfaktor_veränderung_pro_jahr:
   name:
-    de: Veränderung des Zugangsfaktors pro Jahr
-    en: Change in Zugangsfaktor per year
+    de: Veränderung des Zugangsfaktors pro Jahr relativ zur Regelaltersgrenze
+    en: Change in Zugangsfaktor per year relative to the normal retirement age
   description:
     de: >-
       §77 Abs. 2 Nr. 2 SGB VI
       Faktor um den sich der Zugangsfaktor für die staatliche Rente erhöht/senkt für
       jedes Jahr, das länger/kürzer gearbeitet wird
+      Achtung: Es gibt viele Ausnahmen von dieser Regel!
     en: >-
       §77 Abs. 2 Nr. 2 SGB VI
       Factor with which the Zugangsfaktor / "access factor" for receiving the statutory
-      pension is increased/decreased for each month of less/more work
+      pension is increased/decreased for each year of less/more work.
+      Careful: There are many exceptions to this rule!
   unit: null
   reference_period: Year
   type: dict
