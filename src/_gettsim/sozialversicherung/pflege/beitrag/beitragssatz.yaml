@@ -1,5 +1,5 @@
 ---
-beitragssatz_einheitlich:
+beitragssatz:
   name:
     de: Beitragssatz zur gesetzlichen Pflegeversicherung
     en: Contribution rate to statutory care insurance
@@ -19,8 +19,8 @@ beitragssatz_einheitlich:
   2005-01-01:
     note: >-
       Special contribution rate for childless individuals. See
-      beitragssatz_abhängig_von_anzahl_kinder.
-beitragssatz_abhängig_von_anzahl_kinder:
+      beitragssatz_nach_kinderzahl.
+beitragssatz_nach_kinderzahl:
   name:
     de: Beitragssätze zur gesetzlichen Pflegeversicherung
     en: Contribution rate to statutory care insurance
