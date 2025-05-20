@@ -32,9 +32,9 @@ from ttsim import (
 )
 from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
+    _fail_if_function_targets_not_in_functions,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
-    _fail_if_targets_not_in_functions,
     _get_top_level_namespace,
     _partial_params_to_functions,
     _process_params_tree,
@@ -413,9 +413,11 @@ def test_create_agg_by_group_functions(
         ({"foo__baz": some_x}, {"foo__bar": None}, "('foo', 'bar')"),
     ],
 )
-def test__fail_if_targets_not_in_functions(functions, targets, expected_error_match):
+def test__fail_if_function_targets_not_in_functions(
+    functions, targets, expected_error_match
+):
     with pytest.raises(ValueError) as e:
-        _fail_if_targets_not_in_functions(
+        _fail_if_function_targets_not_in_functions(
             functions=functions,
             targets=targets,
         )

@@ -333,7 +333,7 @@ def combine_policy_functions_and_derived_functions(
     )
     out = {**aggregate_by_group_functions, **out}
 
-    _fail_if_targets_not_in_functions(
+    _fail_if_function_targets_not_in_functions(
         functions=out,
         targets=targets,
     )
@@ -341,7 +341,7 @@ def combine_policy_functions_and_derived_functions(
     return out
 
 
-def _fail_if_targets_not_in_functions(
+def _fail_if_function_targets_not_in_functions(
     functions: QualNameTTSIMFunctionDict,
     targets: QualNameTargetList,
 ) -> None:
