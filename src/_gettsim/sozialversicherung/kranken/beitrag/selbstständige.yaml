@@ -1,5 +1,5 @@
 ---
-parameter_bezugsgröße_selbstständige_einheitlich:
+bezugsgröße_selbstständige:
   name:
     de: Einheitliche monatliche Bezugsgröße für Selbstständige
     en: Uniform monthly reference size for self employed
@@ -26,7 +26,10 @@ parameter_bezugsgröße_selbstständige_einheitlich:
     note: >-
       Die Bezugsgröße unterscheidet sich zwischen West und Ost. Siehe
       ``parameter_bezugsgröße_selbstständige_nach_wohnort``.
-parameter_bezugsgröße_selbstständige_nach_wohnort:
+  2025-01-01:
+    value: 3745
+    reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365.
+bezugsgröße_selbstständige_nach_wohnort:
   name:
     de: Monatliche Bezugsgröße für Selbstständige mit Unterschied zwischen West und Ost
     en: Monthly reference size for self employed with different values for West and East
@@ -149,8 +152,7 @@ parameter_bezugsgröße_selbstständige_nach_wohnort:
     ost: 3465
     reference: V. v. 29.11.2023 BGBl. 2023 I Nr. 322.
   2025-01-01:
-    west: 3745
-    ost: 3745
+    note: Einheitliche Bezugsgröße für West und Ost
     reference: V. v. 25.11.2024 BGBl. 2024 I Nr. 365.
 mindestanteil_bezugsgröße_selbstständige:
   name:

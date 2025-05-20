@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import params_function, policy_function
+from ttsim import policy_function
 
 
 @policy_function()
@@ -87,22 +87,10 @@ def beitragsbemessungsgrenze_m_nach_wohnort(
     )
 
 
-@params_function(end_date="1989-12-31", leaf_name="bezugsgröße_selbstständige_m")
-def bezugsgröße_selbstständige_m_vor_wiedervereinigung(
-    parameter_bezugsgröße_selbstständige_einheitlich: float,
-) -> float:
-    """Threshold for self employment income subject to health insurance.
-
-    Selecting by place of living the income threshold for self employed up to which the
-    rate of health insurance contributions apply.
-    """
-    return parameter_bezugsgröße_selbstständige_einheitlich
-
-
-@policy_function(start_date="1990-01-01", leaf_name="bezugsgröße_selbstständige_m")
-def bezugsgröße_selbstständige_m_nach_wohnort(
+@policy_function(start_date="1990-01-01", end_date="2024-12-31")
+def bezugsgröße_selbstständige_m(
     wohnort_ost: bool,
-    parameter_bezugsgröße_selbstständige_nach_wohnort: dict[str, float],
+    bezugsgröße_selbstständige_nach_wohnort: dict[str, float],
 ) -> float:
     """Threshold for self employment income subject to health insurance.
 
@@ -110,9 +98,9 @@ def bezugsgröße_selbstständige_m_nach_wohnort(
     rate of health insurance contributions apply.
     """
     return (
-        parameter_bezugsgröße_selbstständige_nach_wohnort["ost"]
+        bezugsgröße_selbstständige_nach_wohnort["ost"]
         if wohnort_ost
-        else parameter_bezugsgröße_selbstständige_nach_wohnort["west"]
+        else bezugsgröße_selbstständige_nach_wohnort["west"]
     )
 
 
