@@ -39,7 +39,7 @@ experienced users \[[1]\]:
    is challenging due to the fine-grained nature of the graph.
 
 1. **Limited Flexibility**: The current interface makes it difficult to work with
-   different datasets.
+   different datasets / areas of the
 
 This GEP aims to address these issues by introducing a more intuitive and flexible
 interface while maintaining GETTSIM's computational robustness.
@@ -50,50 +50,141 @@ interface while maintaining GETTSIM's computational robustness.
 
 1. **Template-Based Data Input**
 
-```python
-# Generate an empty template for data mapping
-template = gettsim.get_input_template(
-    target_variables=["kindergeld", "einkommensteuer"], persona="family_with_children"
-)
+   ```python
+   from gettsim import get_input_template, set_up_policy_environment
 
-# User fills in their dataset column mappings
-mappings = {
-    "person.id": "pid",
-    "person.age": "alter",
-    "household.id": "hh_nr",
-    "income.employment.monthly": "erwerbseink",
-    # ... other mappings
-}
 
-# Create GETTSIM input from user data
-input_data = gettsim.prepare_input(
-    data=user_dataset, mappings=mappings, template=template
-)
-```
+   get_input_template(
+       target_variables=["kindergeld", "einkommensteuer"],
+       policy_environment=set_up_policy_environment("2025-01-01"),
+   )
+   ```
 
-2. **Persona-Based Default Values**
+   A yaml-representation of the template is:
 
-```python
-# Load pre-defined persona for testing
-test_data = gettsim.load_persona(
-    "family_with_children", variations={"n_children": 2, "income_level": "middle"}
-)
-```
+   ```yaml
+   p_id: int
+   p_id_kindergeldempfänger: bool
+   p_id_ehepartner: bool
+   einkommensteuer:
+   gemeinsam_veranlagt: bool
+   einkommen:
+     aus_abhängiger_beschäftigung:
+       bruttolohn_y: float
+   ```
 
-3. **Interactive Graph Interface**
+   Users may then replace the type hints in the template by the column name in a dataset
+   they will provide.
 
-```python
-# Create interactive graph visualization
-graph = gettsim.visualize_graph(target_variables=["kindergeld"], interactive=True)
+   ```yaml
+   p_id: p_id
+   p_id_kindergeldempfänger: mother_id
+   p_id_ehepartner: married_spouse_id
+   einkommensteuer:
+   gemeinsam_veranlagt: files_jointly
+   einkommen:
+      aus_abhängiger_beschäftigung:
+         bruttolohn_y: earnings
+   ```
 
-# Export selected variables as template
-template = graph.export_template()
-```
+1. **One-stop-shop**
+
+   Setting up a policy environment and computing the results used to require two steps.
+   For many applications, this is all a user needs to do; it should be doable in a
+   simpler way. The one-stop-shop (`oss`) will achieve this:
+
+   ```python
+   def oss(
+       date: str,
+       df: pd.DataFrame,
+       inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
+       targets_tree: NestedTargetDict,
+   ) -> NestedDataDict:
+       """One-stop-shop for computing taxes and transfers.
+
+       Args:
+           date:
+               The date to compute taxes and transfers for. The date determines the policy
+               environment for which the taxes and transfers are computed.
+           df:
+               The DataFrame containing the data.
+           inputs_tree_to_df_columns:
+               A nested dictionary that maps GETTSIM's expected input structure to the data
+               provided by the user. Keys are strings that provide a path to an input.
+
+               Values can be:
+               - Strings that reference column names in the DataFrame.
+               - Numeric or boolean values (which will be broadcasted to match the length
+                 of the DataFrame).
+           targets_tree:
+               The targets tree.
+   ```
+
+   Example:
+
+   ```pycon
+   >>> inputs_tree_to_df_columns = {
+   ...     "einkommensteuer": {
+   ...         "gemeinsam_veranlagt": "joint_taxation",
+   ...         "einkünfte": {
+   ...             "aus_nichtselbstständiger_arbeit": {
+   ...                 "bruttolohn_m": "gross_wage_m",
+   ...             },
+   ...         },
+   ...     },
+   ...     "alter": 30,
+   ...     "p_id": "p_id",
+   ... }
+   >>> df = pd.DataFrame(
+   ...     {
+   ...         "gross_wage_m": [1000, 2000, 3000],
+   ...         "joint_taxation": [True, True, False],
+   ...         "p_id": [0, 1, 2],
+   ...     }
+   ... )
+   >>> oss(
+   ...     date="2024-01-01",
+   ...     inputs_tree_to_df_columns=inputs_tree_to_df_columns,
+   ...     targets_tree=targets_tree,
+   ...     df=df,
+   ... )
+   ```
+
+1. **DAG-based granular interface**
+
+   On the other end of the spectrum, the interface so far was not flexible enough for
+   advanced use cases. In particular, many checks were run time and again, slowing down
+   the computation. The new interface will allow users to customize the graph to their
+   needs.
+
+   ```python
+
+   ```
+
+1. **Ecosystem**
+
+   More functionality will be added in external packages. Check out:
+
+   - [gettsim-personas](https://github.com/ttsim-dev/gettsim-personas): Pre-defined
+     example personas ("Musterhaushalte")
+   - [soep-preparation](https://github.com/ttsim-dev/soep-preparation): A pipeline
+     preparing the SOEP data for use with GETTSIM
+
+1. **Interactive Graph Interface**
+
+   ```python
+   # Create interactive graph visualization
+   graph = gettsim.visualize_graph(target_variables=["kindergeld"], interactive=True)
+
+   # Export selected variables as template
+   template = graph.export_template()
+   ```
 
 ### Benefits
 
 1. **Simplified Onboarding**: New users can start with pre-defined personas and
-   gradually customize their inputs.
+   gradually customize their inputs. They may use the SOEP preparation pipeline directly
+   or compare their own version of the SOEP with the outputs generated by that.
 1. **Flexible Data Mapping**: Users can map their existing datasets to GETTSIM's
    structure without modifying their data.
 1. **Interactive Exploration**: Visual interface allows users to explore dependencies
@@ -101,105 +192,16 @@ template = graph.export_template()
 
 ## Backward Compatibility
 
-This interface represents a significant change but maintains backward compatibility
-through:
-
-1. **Legacy Interface Support**: The current interface will be maintained as a "legacy"
-   option for existing users.
-1. **Migration Tools**: Utilities will be provided to help users migrate from the old to
-   the new interface.
-1. **Gradual Transition**: Both interfaces will be supported for at least two major
-   versions.
+This interface represents a significant change. Backward compatibility can be achieved,
+however, by specifying the currently used columns as the `inputs_tree_to_df_columns`
+argument in the `oss` function.
 
 ## Detailed Description
 
-### Core Components
+Most of the elements are self-explanatory based on the examples above or do not quite
+belong here, like the components of the ecosystem.
 
-1. **Input Template System**
-
-- Templates are generated based on requested target variables
-- Supports both YAML and dictionary formats
-- Includes validation rules and data type specifications
-- Handles time period conversions automatically
-
-2. **Persona Framework**
-
-```yaml
-personas:
-  family_with_children:
-    base:
-      household_size: 3
-      n_children: 1
-      income_level: "middle"
-    variations:
-      income_levels: ["low", "middle", "high"]
-      n_children: 2, 3]
-```
-
-3. **Interactive Graph Interface**
-
-- Built on NetworkX for graph visualization
-- Supports node/edge filtering
-- Allows direct manipulation of graph structure
-- Exports selected subgraphs as templates
-
-4. **Data Mapping Engine**
-
-- Handles column name mapping
-- Performs automatic type conversion
-- Validates data consistency
-- Supports aggregation specifications
-
-### Implementation Details
-
-1. **Template Generation**
-
-```python
-class InputTemplate:
-    def __init__(
-        self,
-        target_variables: List[str],
-        persona: Optional[str] = None,
-        date: Optional[str] = None,
-    ):
-        self.required_inputs = self._analyze_dependencies(target_variables)
-        self.validation_rules = self._get_validation_rules()
-
-    def export_yaml(self) -> str:
-        """Export template as YAML format"""
-
-    def validate_mapping(self, mapping: Dict[str, str]) -> bool:
-        """Validate user-provided mapping"""
-```
-
-2. **Data Preparation Pipeline**
-
-```python
-def prepare_input(
-    data: pd.DataFrame,
-    mappings: Dict[str, str],
-    template: InputTemplate,
-    validate: bool = True,
-) -> GettSimInput:
-    """Prepare user data for GETTSIM computation"""
-    if validate:
-        template.validate_mapping(mappings)
-
-    transformed_data = _transform_data(data, mappings)
-    return GettSimInput(transformed_data)
-```
-
-## Related Work
-
-1. **OpenFisca**: Similar template-based approach for data input
-1. **Tax-Calculator**: Interactive interface for policy simulation
-1. **EUROMOD**: Persona-based testing system
-
-## Alternatives
-
-1. **API-First Approach**: Considered but rejected due to increased complexity
-1. **Configuration File System**: Less flexible than template-based approach
-1. **Direct Graph Manipulation**: Too complex for most users
+### DAG-based granular interface
 
 ## Discussion
 
@@ -211,18 +213,8 @@ def prepare_input(
 
 This document has been placed in the public domain.
 
-This GEP follows the required format and addresses the interface challenges while
-maintaining consistency with existing GEPs. It provides concrete implementation details
-and examples while considering backward compatibility and user experience.
-
 ### References
 
 1. **ENH: Interface, 2024 edition · Issue #781 ·
    iza-institute-of-labor-economics/gettsim - Part 1**.
-   [https://github.com](https://github.com/iza-institute-of-labor-economics/gettsim/issues/781#:~:text=Is%20your%20feature%20request,the%20list%20of%20data)
-1. **citation - iza-institute-of-labor-economics/gettsim**.
-   [https://github.com](https://github.com/iza-institute-of-labor-economics/gettsim/blob/main/CITATION#:~:text=The%20GErman%20Taxes%20and,creating%20an%20account%20on)
-1. **iza-institute-of-labor-economics/gettsim**.
-   [https://github.com](https://github.com/iza-institute-of-labor-economics/gettsim#:~:text=GETTSIM%20is%20implemented%20in,documentation%20is%20available%20at)
-1. **Welcome to GETTSIM's documentation!**.
-   [https://gettsim.readthedocs.io](https://gettsim.readthedocs.io/en/v0.2.1/#:~:text=GETTSIM%20is%20implemented%20in,The%20current%20version%20is)
+   [https://github.com](https://github.com/iza-institute-of-labor-economics/gettsim/issues/781)
