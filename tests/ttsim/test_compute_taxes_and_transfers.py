@@ -32,9 +32,9 @@ from ttsim import (
 )
 from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
+    _fail_if_function_targets_not_in_functions,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
-    _fail_if_targets_not_in_functions,
     _get_top_level_namespace,
     _partial_params_to_functions,
     _process_params_tree,
@@ -413,11 +413,14 @@ def test_create_agg_by_group_functions(
         ({"foo__baz": some_x}, {"foo__bar": None}, "('foo', 'bar')"),
     ],
 )
-def test_fail_if_targets_are_not_among_functions(
+def test__fail_if_function_targets_not_in_functions(
     functions, targets, expected_error_match
 ):
     with pytest.raises(ValueError) as e:
-        _fail_if_targets_not_in_functions(functions, targets)
+        _fail_if_function_targets_not_in_functions(
+            functions=functions,
+            targets=targets,
+        )
     assert expected_error_match in str(e.value)
 
 
@@ -469,7 +472,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     assert expected in result
 
 
-def test_output_as_tree(minimal_input_data):
+def test_output_is_tree(minimal_input_data):
     environment = PolicyEnvironment(
         {
             "p_id": p_id,
@@ -487,6 +490,40 @@ def test_output_as_tree(minimal_input_data):
     assert isinstance(out, dict)
     assert "some_func" in out["module"]
     assert isinstance(out["module"]["some_func"], TTSIMArray)
+
+
+def test_params_target_is_allowed(minimal_input_data):
+    environment = PolicyEnvironment(
+        raw_objects_tree={
+            "p_id": p_id,
+            "module": {"some_func": some_func},
+        },
+        params_tree={
+            "some_param": ScalarTTSIMParam(
+                value=1,
+                leaf_name="some_param",
+                start_date="2025-01-01",
+                end_date="2025-12-31",
+                unit="Euros",
+                reference_period="Year",
+                name={"de": "Ein Parameter", "en": "Some parameter"},
+                description={"de": "Ein Parameter", "en": "Some parameter"},
+                note=None,
+                reference=None,
+            ),
+        },
+    )
+
+    out = compute_taxes_and_transfers(
+        data_tree=minimal_input_data,
+        environment=environment,
+        targets_tree={"some_param": None, "module": {"some_func": None}},
+        jit=jit,
+    )
+
+    assert isinstance(out, dict)
+    assert "some_param" in out
+    assert out["some_param"] == 1
 
 
 def test_warn_if_functions_and_columns_overlap():

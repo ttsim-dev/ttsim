@@ -103,8 +103,6 @@ def compute_taxes_and_transfers(
         targets=targets_tree,
         top_level_namespace=top_level_namespace,
     )
-    # Flatten nested objects to qualified names
-    targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
     ttsim_objects = remove_tree_logic_from_ttsim_objects_tree(
         raw_objects_tree=environment.raw_objects_tree,
@@ -118,10 +116,15 @@ def compute_taxes_and_transfers(
         },
     )
 
+    # Flatten nested objects to qualified names
+    all_targets = set(dt.qual_names(targets_tree))
+    params_targets = {t for t in all_targets if t in processed_params_tree}
+    function_targets = all_targets - params_targets
+
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
         ttsim_objects=ttsim_objects,
-        targets=targets,
+        targets=function_targets,
         data=data,
         groupings=environment.grouping_levels,
     )
@@ -139,7 +142,7 @@ def compute_taxes_and_transfers(
     )
     functions_with_partialled_parameters = _partial_parameters_to_functions(
         functions=functions_with_rounding_specs,
-        params=environment.params,
+        processed_params=environment.params,
     )
     functions_with_partialled_parameters = _partial_params_to_functions(
         functions=functions_with_partialled_parameters,
@@ -149,7 +152,7 @@ def compute_taxes_and_transfers(
     input_data = _create_input_data_for_concatenated_function(
         data=data,
         functions=functions_with_partialled_parameters,
-        targets=targets,
+        targets=function_targets,
     )
 
     _fail_if_group_variables_not_constant_within_groups(
@@ -165,11 +168,14 @@ def compute_taxes_and_transfers(
         ttsim_objects=ttsim_objects,
     )
     if debug:
-        targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
+        function_targets = {
+            *function_targets,
+            *functions_with_partialled_parameters.keys(),
+        }
 
     tax_transfer_function = dags.concatenate_functions(
         functions=functions_with_partialled_parameters,
-        targets=targets,
+        targets=list(function_targets),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
@@ -191,15 +197,20 @@ def compute_taxes_and_transfers(
         tax_transfer_function = jax.jit(tax_transfer_function)
     results = tax_transfer_function(**input_data)
 
-    result_tree = dt.unflatten_from_qual_names(results)
+    results_tree = dt.unflatten_from_qual_names(
+        {
+            **results,
+            **{pt: processed_params_tree[pt] for pt in params_targets},
+        }
+    )
 
     if debug:
-        result_tree = merge_trees(
-            left=result_tree,
+        results_tree = merge_trees(
+            left=results_tree,
             right=dt.unflatten_from_qual_names(input_data),
         )
 
-    return result_tree
+    return results_tree
 
 
 def _get_top_level_namespace(
@@ -288,7 +299,7 @@ def combine_policy_functions_and_derived_functions(
 
     Parameters
     ----------
-    functions
+    ttsim_objects
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
     targets
@@ -322,13 +333,17 @@ def combine_policy_functions_and_derived_functions(
     )
     out = {**aggregate_by_group_functions, **out}
 
-    _fail_if_targets_not_in_functions(functions=out, targets=targets)
+    _fail_if_function_targets_not_in_functions(
+        functions=out,
+        targets=targets,
+    )
 
     return out
 
 
-def _fail_if_targets_not_in_functions(
-    functions: QualNameTTSIMFunctionDict, targets: QualNameTargetList
+def _fail_if_function_targets_not_in_functions(
+    functions: QualNameTTSIMFunctionDict,
+    targets: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -441,7 +456,7 @@ def _process_params_tree(
 
 def _partial_parameters_to_functions(
     functions: QualNameTTSIMFunctionDict,
-    params: QualNameProcessedParamDict,
+    processed_params: QualNameProcessedParamDict,
 ) -> QualNameTTSIMFunctionDict:
     """Round and partial parameters into functions.
 
@@ -465,9 +480,9 @@ def _partial_parameters_to_functions(
     for name, function in functions.items():
         arguments = get_names_of_required_arguments(function)
         partial_params = {
-            arg: params[key]
+            arg: processed_params[key]
             for arg in arguments
-            for key in params
+            for key in processed_params
             if arg.endswith(f"{key}_params")
         }
         if partial_params:
