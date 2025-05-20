@@ -115,6 +115,7 @@ def compute_taxes_and_transfers(
             k: v for k, v in ttsim_objects.items() if isinstance(v, ParamsFunction)
         },
     )
+
     # Flatten nested objects to qualified names
     all_targets = set(dt.qual_names(targets_tree))
     params_targets = {t for t in all_targets if t in processed_params_tree}

@@ -26,10 +26,8 @@ def test_groupings(test: PolicyTest):
     flat_result = dt.flatten_to_qual_names(result)
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
 
-    for result, expected in zip(
-        flat_result.values(), flat_expected_output_tree.values()
-    ):
-        assert_array_almost_equal(result, expected, decimal=2)
+    for col, actual in flat_result.items():
+        assert_array_almost_equal(actual, flat_expected_output_tree[col], decimal=2)
 
 
 def test_fail_to_compute_sn_id_if_married_but_gemeinsam_veranlagt_differs():
