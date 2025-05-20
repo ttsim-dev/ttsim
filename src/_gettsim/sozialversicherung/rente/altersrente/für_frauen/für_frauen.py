@@ -23,7 +23,10 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
 
 
 @policy_function(
-    start_date="1989-12-18", leaf_name="altersgrenze", vectorization_strategy="loop"
+    start_date="1989-12-18",
+    end_date="2017-12-31",
+    leaf_name="altersgrenze",
+    vectorization_strategy="loop",
 )
 def altersgrenze_mit_staffelung(
     geburtsjahr: int,
@@ -123,6 +126,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
 
 @policy_function(
     start_date="1996-09-27",
+    end_date="2017-12-31",
     leaf_name="altersgrenze_vorzeitig",
     vectorization_strategy="not_required",
 )
