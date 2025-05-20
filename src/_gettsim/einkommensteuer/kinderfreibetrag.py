@@ -1,6 +1,7 @@
 """Tax allowances for individuals or couples with children."""
 
 from ttsim import AggType, agg_by_p_id_function, policy_function
+from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -39,8 +40,8 @@ def kinderfreibetrag_y(
     -------
 
     """
-    parameter_kinderfreibetrag = list(
-        eink_st_abzuege_params["parameter_kinderfreibetrag"].values()
+    parameter_kinderfreibetrag = np.asarray(
+        list(eink_st_abzuege_params["parameter_kinderfreibetrag"].values())
     )
     return sum(parameter_kinderfreibetrag) * anzahl_kinderfreibeträge
 
