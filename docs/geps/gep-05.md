@@ -61,7 +61,8 @@ from ttsim import policy_function, RoundingSpec, RoundingDirection
 )
 def höchstbetrag_m(
     grundrentenzeiten_monate: int,
-    ges_rente_params: dict,
+    berücksichtigte_wartezeit_monate: dict[str, int],
+    höchstwert_der_entgeltpunkte: dict[str, float],
 ) -> float: ...
 ```
 
@@ -86,7 +87,7 @@ This implementation was chosen over alternatives (e.g., specifying rounding rule
 parameter files) for the following reason:
 
 - Rounding rules are not a parameter, but a function property that we want to turn off
-  an one. Hence, it makes sense to define it at the function level.
+  an on. Hence, it makes sense to define it at the function level.
 - Rounding parameters might change over time. In this case, the rounding parameters for
   each period can be specified using the `start_date`, `end_date` keywords in the
   `policy_function` decorator.
