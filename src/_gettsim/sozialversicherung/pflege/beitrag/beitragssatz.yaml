@@ -58,7 +58,7 @@ beitragssatz_nach_kinderzahl:
   2023-07-01:
     standard: 0.017
     zusatz_kinderlos: 0.006
-    abschlag_kinder: 0.0025
+    abschlag_für_kinder_bis_24: 0.0025
     note: >-
       Pflegeunterstützungs- und -entlastungsgesetz - PUEG
       Increase of contribution rates and introduction of reduction of contribution rates

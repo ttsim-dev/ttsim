@@ -410,9 +410,9 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        ges_pflegev_rate -= beitragssatz_nach_kinderzahl["abschlag_kinder"] * min(
-            anzahl_kinder_bis_24 - 1, 4
-        )
+        ges_pflegev_rate -= beitragssatz_nach_kinderzahl[
+            "abschlag_für_kinder_bis_24"
+        ] * min(anzahl_kinder_bis_24 - 1, 4)
 
     # Calculate the employee care insurance contribution
     an_beitr_midijob_m = (

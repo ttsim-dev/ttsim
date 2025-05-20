@@ -68,7 +68,7 @@ def beitragssatz_mit_kinder_abschlag(
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        out -= beitragssatz_nach_kinderzahl["abschlag_kinder"] * min(
+        out -= beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"] * min(
             anzahl_kinder_bis_24 - 1, 4
         )
 
