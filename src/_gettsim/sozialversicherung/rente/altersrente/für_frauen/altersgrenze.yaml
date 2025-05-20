@@ -260,6 +260,8 @@ altersgrenze_für_frauen_abschlagsfrei:
       10: 64.833333
       11: 64.916667
       12: 65.0
+  2018-01-01:
+    note: Irrelevant because last cohort has passed the normal retirement age.
 altersgrenze_für_frauen_vorzeitig:
   name:
     de: Altersgrenze für vorzeitigen Bezug der Altersrente für Frauen.
@@ -342,3 +344,5 @@ altersgrenze_für_frauen_vorzeitig:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461
     note: Increase of ERA was revoked.
     value: 60.0
+  2018-01-01:
+    note: Irrelevant because last cohort has passed the normal retirement age.

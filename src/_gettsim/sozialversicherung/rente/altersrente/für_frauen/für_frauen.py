@@ -23,7 +23,10 @@ def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
 
 
 @policy_function(
-    start_date="1989-12-18", leaf_name="altersgrenze", vectorization_strategy="loop"
+    start_date="1989-12-18",
+    end_date="2017-12-31",
+    leaf_name="altersgrenze",
+    vectorization_strategy="loop",
 )
 def altersgrenze_mit_staffelung(
     geburtsjahr: int,
@@ -123,6 +126,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
 
 @policy_function(
     start_date="1996-09-27",
+    end_date="2017-12-31",
     leaf_name="altersgrenze_vorzeitig",
     vectorization_strategy="not_required",
 )
@@ -164,7 +168,7 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     end_date="2017-12-31",
     leaf_name="grundsätzlich_anspruchsberechtigt",
 )
-def grundsätzlich_anspruchsberechtigt_mit_geburtsjahr_prüfung(
+def grundsätzlich_anspruchsberechtigt_mit_prüfung_geburtsjahr(
     weiblich: bool,
     sozialversicherung__rente__wartezeit_15_jahre_erfüllt: bool,
     pflichtsbeitragsjahre_ab_alter_40: float,

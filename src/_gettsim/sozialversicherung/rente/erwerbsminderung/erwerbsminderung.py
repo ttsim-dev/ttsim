@@ -171,7 +171,7 @@ def entgeltpunkte_ost(
 
 @policy_function(start_date="2001-01-01")
 def zurechnungszeit(
-    durchschnittliche_entgeltpunkte: float,
+    mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     erwerbsm_rente_params: dict,
 ) -> float:
@@ -184,8 +184,8 @@ def zurechnungszeit(
 
     Parameters
     ----------
-    durchschnittliche_entgeltpunkte
-        See :func:`durchschnittliche_entgeltpunkte`.
+    mean_entgeltpunkte_pro_bewertungsmonat
+        See :func:`mean_entgeltpunkte_pro_bewertungsmonat`.
     sozialversicherung__rente__alter_bei_renteneintritt
         See :func:`sozialversicherung__rente__alter_bei_renteneintritt`.
     erwerbsm_rente_params
@@ -201,7 +201,7 @@ def zurechnungszeit(
 
     return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
-    ) * durchschnittliche_entgeltpunkte
+    ) * mean_entgeltpunkte_pro_bewertungsmonat
 
 
 @policy_function(start_date="2001-01-01")
@@ -292,7 +292,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     sozialversicherung__rente__ersatzzeiten_monate: float,
     sozialversicherung__rente__kinderberücksichtigungszeiten_monate: float,
     sozialversicherung__rente__pflegeberücksichtigungszeiten_monate: float,
-    sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge: float,
+    sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten: float,
     erwerbsm_rente_params: dict,
 ) -> bool:
     """Wartezeit for Rente für langjährige Versicherte (Erwerbsminderung) is fulfilled.
@@ -306,7 +306,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     """
     if (
         sozialversicherung__rente__pflichtbeitragsmonate / 12
-        >= sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge
+        >= sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten
     ):
         freiwillige_beitragszeiten = (
             sozialversicherung__rente__freiwillige_beitragsmonate
@@ -327,7 +327,7 @@ def wartezeit_langjährig_versichert_erfüllt(
 
 
 @policy_function()
-def durchschnittliche_entgeltpunkte(
+def mean_entgeltpunkte_pro_bewertungsmonat(
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
@@ -360,9 +360,9 @@ def durchschnittliche_entgeltpunkte(
         - erwerbsm_rente_params["altersgrenze_grundbewertung"]
     )
 
-    durchschnittliche_entgeltpunkte = (
+    mean_entgeltpunkte_pro_bewertungsmonat = (
         sozialversicherung__rente__entgeltpunkte_west
         + sozialversicherung__rente__entgeltpunkte_ost
     ) / belegungsfähiger_gesamtzeitraum
 
-    return durchschnittliche_entgeltpunkte
+    return mean_entgeltpunkte_pro_bewertungsmonat

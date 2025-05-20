@@ -77,7 +77,7 @@ def betrag_versicherter_regulär_beschäftigt_m(
 def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__kranken__beitrag__einkommen_m: float,
-    beitragssatz_einheitlich: float,
+    beitragssatz: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
     """Employer's long-term care insurance contribution.
@@ -86,7 +86,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     """
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
-        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz_einheitlich
+        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz
     )
 
     if (
@@ -110,7 +110,7 @@ def betrag_arbeitgeber_m_mit_midijob_einheitlicher_beitragssatz(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_arbeitgeber_midijob_m: float,
     sozialversicherung__kranken__beitrag__einkommen_m: float,
-    beitragssatz_einheitlich: float,
+    beitragssatz: float,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
@@ -120,7 +120,7 @@ def betrag_arbeitgeber_m_mit_midijob_einheitlicher_beitragssatz(
     """
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
-        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz_einheitlich
+        sozialversicherung__kranken__beitrag__einkommen_m * beitragssatz
     )
 
     if (
@@ -141,11 +141,11 @@ def betrag_arbeitgeber_m_mit_midijob_einheitlicher_beitragssatz(
     leaf_name="betrag_arbeitgeber_m",
     vectorization_strategy="loop",
 )
-def betrag_arbeitgeber_m_mit_midijob_beitragssatz_abhängig_von_anzahl_kinder(
+def betrag_arbeitgeber_m_mit_midijob_beitragssatz_nach_kinderzahl(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_arbeitgeber_midijob_m: float,
     sozialversicherung__kranken__beitrag__einkommen_m: float,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    beitragssatz_nach_kinderzahl: dict[str, float],
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
@@ -156,7 +156,7 @@ def betrag_arbeitgeber_m_mit_midijob_beitragssatz_abhängig_von_anzahl_kinder(
     # Calculate care insurance contributions for regular jobs.
     beitr_regulär_beschäftigt_m = (
         sozialversicherung__kranken__beitrag__einkommen_m
-        * beitragssatz_abhängig_von_anzahl_kinder["standard"]
+        * beitragssatz_nach_kinderzahl["standard"]
     )
 
     if (
@@ -200,7 +200,7 @@ def betrag_selbstständig_m_ohne_zusatz_für_kinderlose(
 def betrag_selbstständig_m_mit_zusatz_für_kinderlose(
     sozialversicherung__kranken__beitrag__bemessungsgrundlage_selbstständig_m: float,
     beitragssatz: float,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Self-employed individuals' long-term care insurance contribution since 2005.
 
@@ -208,7 +208,7 @@ def betrag_selbstständig_m_mit_zusatz_für_kinderlose(
     assessed on their self-employement income or 3/4 of the 'Bezugsgröße'
     """
     return sozialversicherung__kranken__beitrag__bemessungsgrundlage_selbstständig_m * (
-        beitragssatz + beitragssatz_abhängig_von_anzahl_kinder["standard"]
+        beitragssatz + beitragssatz_nach_kinderzahl["standard"]
     )
 
 
@@ -257,7 +257,7 @@ def betrag_rentner_m_ohne_zusatz_für_kinderlose(
 def betrag_rentner_m_mit_zusatz_für_kinderlose(
     sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m: float,
     beitragssatz: float,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Health insurance contribution from pension income since 2005.
 
@@ -265,7 +265,7 @@ def betrag_rentner_m_mit_zusatz_für_kinderlose(
     charge for childless individuals.
     """
     return sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m * (
-        beitragssatz + beitragssatz_abhängig_von_anzahl_kinder["standard"]
+        beitragssatz + beitragssatz_nach_kinderzahl["standard"]
     )
 
 
@@ -278,13 +278,10 @@ def betrag_rentner_m_mit_zusatz_für_kinderlose(
 def betrag_gesamt_m_bis_2004(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz: float,
-    beitragssatz_einheitlich: float,
 ) -> float:
     """Sum of employee and employer long-term care insurance contributions until 2004."""
 
-    return sozialversicherung__midijob_bemessungsentgelt_m * (
-        beitragssatz + beitragssatz_einheitlich
-    )
+    return sozialversicherung__midijob_bemessungsentgelt_m * 2 * beitragssatz
 
 
 @policy_function(
@@ -295,12 +292,12 @@ def betrag_gesamt_m_bis_2004(
 def betrag_gesamt_m_ab_2005(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz: float,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Sum of employee and employer long-term care insurance contributions since 2005."""
 
     return sozialversicherung__midijob_bemessungsentgelt_m * (
-        beitragssatz + beitragssatz_abhängig_von_anzahl_kinder["standard"]
+        beitragssatz + beitragssatz_nach_kinderzahl["standard"]
     )
 
 
@@ -311,13 +308,13 @@ def betrag_gesamt_m_ab_2005(
 )
 def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    beitragssatz_einheitlich: float,
+    beitragssatz: float,
 ) -> float:
     """Employer's long-term care insurance contribution until December 2004."""
 
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * beitragssatz_einheitlich
+        * beitragssatz
     )
 
 
@@ -329,14 +326,14 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_bis_2004(
 )
 def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz_ab_2005(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Employers' contribution to long-term care insurance between 2005 and September
     2022.
     """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * beitragssatz_abhängig_von_anzahl_kinder["standard"]
+        * beitragssatz_nach_kinderzahl["standard"]
     )
 
 
@@ -371,10 +368,10 @@ def betrag_versicherter_midijob_m_als_differenz_von_gesamt_und_arbeitgeberbeitra
     vectorization_strategy="loop",
 )
 def betrag_versicherter_midijob_m_mit_zusatzbeitrag_für_kinderlos(
-    zusatzbetrag_kinderlos: bool,
+    zahlt_zusatzbetrag_kinderlos: bool,
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     sozialversicherung__midijob_bemessungsentgelt_m: float,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution between October 2022 and
     June 2023.
@@ -382,14 +379,14 @@ def betrag_versicherter_midijob_m_mit_zusatzbeitrag_für_kinderlos(
     # Calculate the employee care insurance contribution
     an_beitr_midijob_m = (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        * beitragssatz_abhängig_von_anzahl_kinder["standard"]
+        * beitragssatz_nach_kinderzahl["standard"]
     )
 
     # Add additional contribution for childless individuals
-    if zusatzbetrag_kinderlos:
+    if zahlt_zusatzbetrag_kinderlos:
         an_beitr_midijob_m += (
             sozialversicherung__midijob_bemessungsentgelt_m
-            * beitragssatz_abhängig_von_anzahl_kinder["zusatz_kinderlos"]
+            * beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
         )
 
     return an_beitr_midijob_m
@@ -402,19 +399,19 @@ def betrag_versicherter_midijob_m_mit_zusatzbeitrag_für_kinderlos(
 )
 def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehreren_kindern(
     anzahl_kinder_bis_24: int,
-    zusatzbetrag_kinderlos: bool,
+    zahlt_zusatzbetrag_kinderlos: bool,
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     sozialversicherung__midijob_bemessungsentgelt_m: float,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution since July 2023."""
     # Calculate the employee care insurance rate
-    ges_pflegev_rate = beitragssatz_abhängig_von_anzahl_kinder["standard"]
+    ges_pflegev_rate = beitragssatz_nach_kinderzahl["standard"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        ges_pflegev_rate -= beitragssatz_abhängig_von_anzahl_kinder[
-            "abschlag_kinder"
+        ges_pflegev_rate -= beitragssatz_nach_kinderzahl[
+            "abschlag_für_kinder_bis_24"
         ] * min(anzahl_kinder_bis_24 - 1, 4)
 
     # Calculate the employee care insurance contribution
@@ -424,10 +421,10 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
     )
 
     # Add additional contribution for childless individuals
-    if zusatzbetrag_kinderlos:
+    if zahlt_zusatzbetrag_kinderlos:
         an_beitr_midijob_m += (
             sozialversicherung__midijob_bemessungsentgelt_m
-            * beitragssatz_abhängig_von_anzahl_kinder["zusatz_kinderlos"]
+            * beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
         )
 
     return an_beitr_midijob_m

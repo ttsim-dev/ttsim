@@ -62,7 +62,7 @@ def wartezeit_45_jahre_erfüllt(
     kinderberücksichtigungszeiten_monate: float,
     pflegeberücksichtigungszeiten_monate: float,
     wartezeitgrenzen: dict[str, float],
-    mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge: float,
+    mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten: float,
 ) -> bool:
     """Wartezeit of 45 years completed.
 
@@ -73,7 +73,7 @@ def wartezeit_45_jahre_erfüllt(
     """
     if (
         pflichtbeitragsmonate / 12
-        >= mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge
+        >= mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten
     ):
         freiwillige_beitragszeiten = freiwillige_beitragsmonate
     else:

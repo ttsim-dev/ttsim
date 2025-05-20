@@ -59,7 +59,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale: float,
+    minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
@@ -71,7 +71,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale
+            * minijob_arbeitgeberpauschale
         )
     else:
         out = einkommen_m * beitragssatz_arbeitgeber
@@ -87,7 +87,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     betrag_arbeitgeber_midijob_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale: float,
+    minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
@@ -99,7 +99,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale
+            * minijob_arbeitgeberpauschale
         )
     elif sozialversicherung__in_gleitzone:
         out = betrag_arbeitgeber_midijob_m
@@ -125,12 +125,12 @@ def betrag_versicherter_regulär_beschäftigt_m(
 )
 def betrag_selbstständig_m_mit_einheitlichen_beitragssatz(
     bemessungsgrundlage_selbstständig_m: float,
-    parameter_beitragssatz: float,
+    beitragssatz: float,
 ) -> float:
     """Health insurance contributions for self-employed's income. The self-employed
     pay the full reduced contribution.
     """
-    return parameter_beitragssatz * bemessungsgrundlage_selbstständig_m
+    return beitragssatz * bemessungsgrundlage_selbstständig_m
 
 
 @policy_function(

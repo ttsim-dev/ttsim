@@ -92,12 +92,9 @@ def anzurechnendes_einkommen_m(
     else:
         params = anzurechnendes_einkommen_ohne_partner
 
-    return (
-        piecewise_polynomial(
-            x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
-            parameters=params,
-        )
-        * sozialversicherung__rente__altersrente__rentenwert
+    return sozialversicherung__rente__altersrente__rentenwert * piecewise_polynomial(
+        x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
+        parameters=params,
     )
 
 
@@ -113,7 +110,7 @@ def basisbetrag_m(
     sozialversicherung__rente__altersrente__rentenwert: float,
     sozialversicherung__rente__altersrente__zugangsfaktor: float,
     maximaler_zugangsfaktor: float,
-    berücksichtigte_wartezeit: dict[str, int],
+    berücksichtigte_wartezeit_monate: dict[str, int],
 ) -> float:
     """Grundrente without taking into account income crediting rules.
 
@@ -121,26 +118,25 @@ def basisbetrag_m(
     35 years (420 months).
     """
 
-    # Winsorize Bewertungszeiten and Zugangsfaktor at maximum values
-    bewertungszeiten_monate_wins = min(
+    bewertungszeiten = min(
         bewertungszeiten_monate,
-        berücksichtigte_wartezeit["max"],
+        berücksichtigte_wartezeit_monate["max"],
     )
-    ges_rente_zugangsfaktor_wins = min(
+    zugangsfaktor = min(
         sozialversicherung__rente__altersrente__zugangsfaktor,
         maximaler_zugangsfaktor,
     )
 
     return (
         mean_entgeltpunkte_zuschlag
-        * bewertungszeiten_monate_wins
+        * bewertungszeiten
         * sozialversicherung__rente__altersrente__rentenwert
-        * ges_rente_zugangsfaktor_wins
+        * zugangsfaktor
     )
 
 
 @policy_function(start_date="2021-01-01")
-def durchschnittliche_entgeltpunkte(
+def mean_entgeltpunkte_pro_bewertungsmonat(
     mean_entgeltpunkte: float, bewertungszeiten_monate: int
 ) -> float:
     """Average number of Entgeltpunkte earned per month of Grundrentenbewertungszeiten."""
@@ -164,16 +160,16 @@ def durchschnittliche_entgeltpunkte(
 )
 def höchstbetrag_m(
     grundrentenzeiten_monate: int,
-    berücksichtigte_wartezeit: dict[str, int],
+    berücksichtigte_wartezeit_monate: dict[str, int],
     höchstwert_der_entgeltpunkte: dict[str, float],
 ) -> float:
     """Maximum allowed number of average Entgeltpunkte."""
     months_above_thresh = (
         min(
             grundrentenzeiten_monate,
-            berücksichtigte_wartezeit["max"],
+            berücksichtigte_wartezeit_monate["max"],
         )
-        - berücksichtigte_wartezeit["min"]
+        - berücksichtigte_wartezeit_monate["min"]
     )
 
     return (
@@ -192,10 +188,10 @@ def höchstbetrag_m(
     vectorization_strategy="loop",
 )
 def mean_entgeltpunkte_zuschlag(
-    durchschnittliche_entgeltpunkte: float,
+    mean_entgeltpunkte_pro_bewertungsmonat: float,
     höchstbetrag_m: float,
     grundrentenzeiten_monate: int,
-    berücksichtigte_wartezeit: dict[str, int],
+    berücksichtigte_wartezeit_monate: dict[str, int],
     bonusfaktor: float,
 ) -> float:
     """Additional Entgeltpunkte.
@@ -208,19 +204,19 @@ def mean_entgeltpunkte_zuschlag(
     """
 
     # Return 0 if Grundrentenzeiten below minimum
-    if grundrentenzeiten_monate < berücksichtigte_wartezeit["min"]:
+    if grundrentenzeiten_monate < berücksichtigte_wartezeit_monate["min"]:
         out = 0.0
     else:
         # Case 1: Entgeltpunkte less than half of Höchstwert
-        if durchschnittliche_entgeltpunkte <= (0.5 * höchstbetrag_m):
-            out = durchschnittliche_entgeltpunkte
+        if mean_entgeltpunkte_pro_bewertungsmonat <= (0.5 * höchstbetrag_m):
+            out = mean_entgeltpunkte_pro_bewertungsmonat
 
         # Case 2: Entgeltpunkte more than half of Höchstwert, but below Höchstwert
-        elif durchschnittliche_entgeltpunkte < höchstbetrag_m:
-            out = höchstbetrag_m - durchschnittliche_entgeltpunkte
+        elif mean_entgeltpunkte_pro_bewertungsmonat < höchstbetrag_m:
+            out = höchstbetrag_m - mean_entgeltpunkte_pro_bewertungsmonat
 
         # Case 3: Entgeltpunkte above Höchstwert
-        elif durchschnittliche_entgeltpunkte > höchstbetrag_m:
+        elif mean_entgeltpunkte_pro_bewertungsmonat > höchstbetrag_m:
             out = 0.0
 
     # Multiply additional Engeltpunkte by factor
@@ -230,7 +226,7 @@ def mean_entgeltpunkte_zuschlag(
 @policy_function(start_date="2021-01-01")
 def grundsätzlich_anspruchsberechtigt(
     grundrentenzeiten_monate: int,
-    berücksichtigte_wartezeit: dict[str, int],
+    berücksichtigte_wartezeit_monate: dict[str, int],
 ) -> bool:
     """Has accumulated enough insured years to be eligible."""
-    return grundrentenzeiten_monate >= berücksichtigte_wartezeit["min"]
+    return grundrentenzeiten_monate >= berücksichtigte_wartezeit_monate["min"]

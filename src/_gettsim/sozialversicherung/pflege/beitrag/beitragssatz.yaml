@@ -1,5 +1,5 @@
 ---
-beitragssatz_einheitlich:
+beitragssatz:
   name:
     de: Beitragssatz zur gesetzlichen Pflegeversicherung
     en: Contribution rate to statutory care insurance
@@ -19,8 +19,8 @@ beitragssatz_einheitlich:
   2005-01-01:
     note: >-
       Special contribution rate for childless individuals. See
-      beitragssatz_abhängig_von_anzahl_kinder.
-beitragssatz_abhängig_von_anzahl_kinder:
+      beitragssatz_nach_kinderzahl.
+beitragssatz_nach_kinderzahl:
   name:
     de: Beitragssätze zur gesetzlichen Pflegeversicherung
     en: Contribution rate to statutory care insurance
@@ -58,7 +58,7 @@ beitragssatz_abhängig_von_anzahl_kinder:
   2023-07-01:
     standard: 0.017
     zusatz_kinderlos: 0.006
-    abschlag_kinder: 0.0025
+    abschlag_für_kinder_bis_24: 0.0025
     note: >-
       Pflegeunterstützungs- und -entlastungsgesetz - PUEG
       Increase of contribution rates and introduction of reduction of contribution rates

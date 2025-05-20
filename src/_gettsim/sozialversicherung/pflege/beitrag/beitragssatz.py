@@ -22,41 +22,27 @@ def anzahl_kinder_bis_24_elternteil_2(
 
 
 @policy_function(
-    start_date="1995-01-01",
-    end_date="2004-12-31",
-    leaf_name="beitragssatz",
-    vectorization_strategy="loop",
-)
-def beitragssatz_ohne_zusatz_für_kinderlose(
-    beitragssatz_einheitlich: float,
-) -> float:
-    """Employee's long-term care insurance contribution rate.
-
-    Before 2005, the contribution rate was independent of the number of children.
-    """
-
-    return beitragssatz_einheitlich
-
-
-@policy_function(
     start_date="2005-01-01",
     end_date="2023-06-30",
     leaf_name="beitragssatz",
-    vectorization_strategy="loop",
 )
 def beitragssatz_zusatz_kinderlos_dummy(
-    zusatzbetrag_kinderlos: bool,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    zahlt_zusatzbetrag_kinderlos: bool,
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
     Since 2005, the contribution rate is increased for childless individuals.
     """
-    out = beitragssatz_abhängig_von_anzahl_kinder["standard"]
 
     # Add additional contribution for childless individuals
-    if zusatzbetrag_kinderlos:
-        out += beitragssatz_abhängig_von_anzahl_kinder["zusatz_kinderlos"]
+    if zahlt_zusatzbetrag_kinderlos:
+        out = (
+            beitragssatz_nach_kinderzahl["standard"]
+            + beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
+        )
+    else:
+        out = beitragssatz_nach_kinderzahl["standard"]
 
     return out
 
@@ -66,23 +52,23 @@ def beitragssatz_zusatz_kinderlos_dummy(
 )
 def beitragssatz_mit_kinder_abschlag(
     anzahl_kinder_bis_24: int,
-    zusatzbetrag_kinderlos: bool,
-    beitragssatz_abhängig_von_anzahl_kinder: dict[str, float],
+    zahlt_zusatzbetrag_kinderlos: bool,
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Employee's long-term care insurance contribution rate.
 
     Since July 2023, the contribution rate is reduced for individuals with children
     younger than 25.
     """
-    out = beitragssatz_abhängig_von_anzahl_kinder["standard"]
+    out = beitragssatz_nach_kinderzahl["standard"]
 
     # Add additional contribution for childless individuals
-    if zusatzbetrag_kinderlos:
-        out += beitragssatz_abhängig_von_anzahl_kinder["zusatz_kinderlos"]
+    if zahlt_zusatzbetrag_kinderlos:
+        out += beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
 
     # Reduced contribution for individuals with two or more children under 25
     if anzahl_kinder_bis_24 >= 2:
-        out -= beitragssatz_abhängig_von_anzahl_kinder["abschlag_kinder"] * min(
+        out -= beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"] * min(
             anzahl_kinder_bis_24 - 1, 4
         )
 
@@ -90,7 +76,7 @@ def beitragssatz_mit_kinder_abschlag(
 
 
 @policy_function(start_date="2005-01-01", vectorization_strategy="loop")
-def zusatzbetrag_kinderlos(
+def zahlt_zusatzbetrag_kinderlos(
     hat_kinder: bool,
     alter: int,
     zusatz_kinderlos_mindestalter: int,
