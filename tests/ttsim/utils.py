@@ -24,7 +24,7 @@ pd.set_option("display.width", None)
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim.typing import NestedDataDict, NestedInputStructureDict
+    from ttsim.typing import NestedData, NestedInputStructureDict
 
 
 class PolicyTest:
@@ -32,9 +32,9 @@ class PolicyTest:
 
     def __init__(
         self,
-        info: NestedDataDict,
-        input_tree: NestedDataDict,
-        expected_output_tree: NestedDataDict,
+        info: NestedData,
+        input_tree: NestedData,
+        expected_output_tree: NestedData,
         path: Path,
         date: datetime.date,
     ) -> None:
@@ -151,7 +151,7 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
             continue
 
         with path_to_yaml.open("r", encoding="utf-8") as file:
-            raw_test_data: NestedDataDict = yaml.safe_load(file)
+            raw_test_data: NestedData = yaml.safe_load(file)
 
         out.extend(
             _get_policy_tests_from_raw_test_data(
@@ -168,7 +168,7 @@ def _is_skipped(test_file: Path) -> bool:
 
 
 def _get_policy_tests_from_raw_test_data(
-    raw_test_data: NestedDataDict, path_to_yaml: Path
+    raw_test_data: NestedData, path_to_yaml: Path
 ) -> list[PolicyTest]:
     """Get a list of PolicyTest objects from raw test data.
 
@@ -179,9 +179,9 @@ def _get_policy_tests_from_raw_test_data(
     Returns:
         A list of PolicyTest objects.
     """
-    test_info: NestedDataDict = raw_test_data.get("info", {})
-    inputs: NestedDataDict = raw_test_data.get("inputs", {})
-    input_tree: NestedDataDict = dt.unflatten_from_tree_paths(
+    test_info: NestedData = raw_test_data.get("info", {})
+    inputs: NestedData = raw_test_data.get("inputs", {})
+    input_tree: NestedData = dt.unflatten_from_tree_paths(
         {
             k: pd.Series(v)
             for k, v in dt.flatten_to_tree_paths(
@@ -190,7 +190,7 @@ def _get_policy_tests_from_raw_test_data(
         }
     )
 
-    expected_output_tree: NestedDataDict = dt.unflatten_from_tree_paths(
+    expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
             k: pd.Series(v)
             for k, v in dt.flatten_to_tree_paths(

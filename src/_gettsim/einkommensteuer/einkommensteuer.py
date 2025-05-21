@@ -12,7 +12,7 @@ from ttsim import (
     RoundingSpec,
     agg_by_group_function,
     agg_by_p_id_function,
-    params_function,
+    param_function,
     piecewise_polynomial,
     policy_function,
 )
@@ -22,7 +22,7 @@ from ttsim.piecewise_polynomial import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParamsRequiringConversion
+    from ttsim.typing import RawParam
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
@@ -273,9 +273,9 @@ def einkommensteuertarif(x: float, params: dict) -> float:
     )
 
 
-@params_function(start_date="2002-01-01")
+@param_function(start_date="2002-01-01")
 def parameter_einkommensteuertarif(
-    raw_parameter_einkommensteuertarif: RawParamsRequiringConversion,
+    raw_parameter_einkommensteuertarif: RawParam,
 ) -> PiecewisePolynomialParameters:
     """Add the quadratic terms to tax tariff function.
 

@@ -1,6 +1,6 @@
 """Public pension benefits for retirement due to age."""
 
-from ttsim import RoundingSpec, params_function, policy_function
+from ttsim import RoundingSpec, param_function, policy_function
 
 
 @policy_function(
@@ -121,7 +121,7 @@ def rentenwert_nach_wohnort(
     )
 
 
-@params_function(start_date="2023-07-01", leaf_name="rentenwert")
+@param_function(start_date="2023-07-01", leaf_name="rentenwert")
 def _parameter_rentenwert_einheitlich(
     parameter_rentenwert_einheitlich: float,
 ) -> float:

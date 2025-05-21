@@ -303,6 +303,14 @@ disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
 ]
 
+[[tool.mypy.overrides]]
+module = [
+    "tests.ttsim.test_policy_environment",
+]
+disable_error_code = [
+    "misc",  # Happens when constructing param dictionaries on the fly.
+]
+
 
 [[tool.mypy.overrides]]
 module = [

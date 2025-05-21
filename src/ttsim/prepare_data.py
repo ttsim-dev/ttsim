@@ -9,13 +9,13 @@ import pandas as pd
 from ttsim.shared import format_errors_and_warnings, format_list_linewise
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedDataDict, NestedInputsPathsToDfColumns
+    from ttsim.typing import NestedData, NestedInputsPathsToDfColumns
 
 
 def create_data_tree_from_df(
     inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
     df: pd.DataFrame,
-) -> NestedDataDict:
+) -> NestedData:
     """Transform a pandas DataFrame to a nested dictionary expected by TTSIM.
     `
         Args

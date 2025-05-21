@@ -21,9 +21,9 @@ from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     AggByGroupFunction,
+    ColumnFunction,
+    ColumnObject,
     TimeConversionFunction,
-    TTSIMFunction,
-    TTSIMObject,
 )
 
 if TYPE_CHECKING:
@@ -31,10 +31,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ttsim.typing import (
-        QualNameDataDict,
+        QualNameColumnFunctions,
+        QualNameColumnObjects,
+        QualNameData,
         QualNameTargetList,
-        QualNameTTSIMFunctionDict,
-        QualNameTTSIMObjectDict,
     )
 
 
@@ -397,10 +397,10 @@ _time_conversion_functions = {
 
 
 def create_time_conversion_functions(
-    ttsim_objects: QualNameTTSIMObjectDict,
-    data: QualNameDataDict,
+    column_objects: QualNameColumnObjects,
+    data: QualNameData,
     groupings: tuple[str, ...],
-) -> QualNameTTSIMFunctionDict:
+) -> QualNameColumnFunctions:
     """
      Create functions that convert variables to different time units.
 
@@ -447,7 +447,7 @@ def create_time_conversion_functions(
 
     bngs_to_time_conversion_inputs = {}
     bngs_to_variations = {}
-    for qual_name, ttsim_object in ttsim_objects.items():
+    for qual_name, column_object in column_objects.items():
         match = pattern_all.fullmatch(qual_name)
         # We must not find multiple time units for the same base name and group.
         bngs = get_base_name_and_grouping_suffix(match)
@@ -459,7 +459,7 @@ def create_time_conversion_functions(
             bngs_to_time_conversion_inputs[bngs] = {
                 "base_name": bngs[0],
                 "qual_name_source": qual_name,
-                "ttsim_object": ttsim_object,
+                "column_object": column_object,
                 "time_unit": match.group("time_unit"),
                 "grouping_suffix": bngs[1],
                 "all_time_units": all_time_units,
@@ -467,7 +467,7 @@ def create_time_conversion_functions(
 
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    converted_ttsim_objects: dict[str, TTSIMObject] = {}
+    converted_column_objects: dict[str, ColumnObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for qual_name_data in data:
             # If base_name is in provided data, base time conversions on that.
@@ -482,25 +482,25 @@ def create_time_conversion_functions(
 
         variations = _create_one_set_of_time_conversion_functions(**inputs)
         for der_name in variations:
-            if der_name in converted_ttsim_objects or der_name in data:
+            if der_name in converted_column_objects or der_name in data:
                 raise ValueError("TODO, should never end up here -- left for debugging")
-        converted_ttsim_objects = {**converted_ttsim_objects, **variations}
+        converted_column_objects = {**converted_column_objects, **variations}
 
-    return converted_ttsim_objects
+    return converted_column_objects
 
 
 def _create_one_set_of_time_conversion_functions(
     base_name: str,
     qual_name_source: str,
-    ttsim_object: TTSIMObject,
+    column_object: ColumnObject,
     time_unit: str,
     grouping_suffix: str,
     all_time_units: tuple[str, ...],
 ) -> dict[str, TimeConversionFunction]:
     result: dict[str, TimeConversionFunction] = {}
     dependencies = (
-        set(inspect.signature(ttsim_object).parameters)
-        if isinstance(ttsim_object, TTSIMFunction)
+        set(inspect.signature(column_object).parameters)
+        if isinstance(column_object, ColumnFunction)
         else set()
     )
 
@@ -528,8 +528,8 @@ def _create_one_set_of_time_conversion_functions(
                 ],
             ),
             source=qual_name_source,
-            start_date=ttsim_object.start_date,
-            end_date=ttsim_object.end_date,
+            start_date=column_object.start_date,
+            end_date=column_object.end_date,
         )
 
     return result
@@ -546,11 +546,11 @@ def _create_function_for_time_unit(
 
 
 def create_agg_by_group_functions(
-    ttsim_functions_with_time_conversions: QualNameTTSIMObjectDict,
-    data: QualNameDataDict,
+    ttsim_functions_with_time_conversions: QualNameColumnObjects,
+    data: QualNameData,
     targets: QualNameTargetList,
     groupings: tuple[str, ...],
-) -> QualNameTTSIMFunctionDict:
+) -> QualNameColumnFunctions:
     gp = group_pattern(groupings)
     all_functions_and_data = {**ttsim_functions_with_time_conversions, **data}
     potential_agg_by_group_function_names = {
@@ -594,7 +594,7 @@ def create_agg_by_group_functions(
 
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(
-    functions: QualNameTTSIMFunctionDict,
+    functions: QualNameColumnFunctions,
     group_pattern: re.Pattern[str],
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.

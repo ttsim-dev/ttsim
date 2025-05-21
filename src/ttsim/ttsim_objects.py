@@ -64,8 +64,20 @@ class FKType(StrEnum):
 
 
 @dataclass(frozen=True)
-class TTSIMObject:
-    """Abstract base class for all TTSIM Functions and Data Inputs."""
+class ColumnObject:
+    """Base class for all objects operating on columns of data.
+
+    Examples:
+    - PolicyInputs
+    - PolicyFunctions
+    - GroupCreationFunctions
+    - AggByGroupFunctions
+    - AggByPIDFunctions
+    - TimeConversionFunctions
+
+    Parameters are not ColumnObjectParamFunctions.
+
+    """
 
     leaf_name: str
     start_date: datetime.date
@@ -79,13 +91,13 @@ class TTSIMObject:
         self,
         tree_path: tuple[str, ...],
         top_level_namespace: set[str],
-    ) -> TTSIMObject:
+    ) -> ColumnObject:
         """Remove tree logic from the function and update the function signature."""
         raise NotImplementedError("Subclasses must implement this method.")
 
 
 @dataclass(frozen=True)
-class PolicyInput(TTSIMObject):
+class PolicyInput(ColumnObject):
     """
     A dummy function representing an input variable.
 
@@ -187,9 +199,9 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> No
 
 
 @dataclass(frozen=True)
-class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
+class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     """
-    Base class for all TTSIM functions.
+    Base class for all functions operating on columns of data.
     """
 
     function: GenericCallable[FunArgTypes, ReturnType]
@@ -241,7 +253,7 @@ class TTSIMFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
 
 
 @dataclass(frozen=True)
-class PolicyFunction(TTSIMFunction):  # type: ignore[type-arg]
+class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     Computes a column based on at least one input column and/or parameters.
 
@@ -293,7 +305,7 @@ def policy_function(
 
     PolicyFunctions are typically defined on scalars, but work on data columns (i.e.,
     arrays of the same length as `p_id`). TTSIM will handle this (see
-    `vectorization_strategy` below). Use `params_function` / `ParamsFunction` for
+    `vectorization_strategy` below). Use `param_function` / `ParamFunction` for
     functions that convert the parameters of the taxes and transfers system, which do
     not require any columns from the data.
 
@@ -343,7 +355,7 @@ def policy_function(
 
 
 @dataclass(frozen=True)
-class GroupCreationFunction(TTSIMFunction):  # type: ignore[type-arg]
+class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that computes endogenous group_by IDs.
 
@@ -403,7 +415,7 @@ def group_creation_function(
 
 
 @dataclass(frozen=True)
-class AggByGroupFunction(TTSIMFunction):  # type: ignore[type-arg]
+class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -527,7 +539,7 @@ def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str) -> N
 
 
 @dataclass(frozen=True)
-class AggByPIDFunction(TTSIMFunction):  # type: ignore[type-arg]
+class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -654,7 +666,7 @@ def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) ->
 
 
 @dataclass(frozen=True)
-class TimeConversionFunction(TTSIMFunction):  # type: ignore[type-arg]
+class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that is a time conversion of another function.
 
@@ -733,10 +745,10 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
 
     Parameters
     ----------
-    series : pandas.Series or pandas.DataFrame or dict of pandas.Series
+    series: pandas.Series or pandas.DataFrame or dict of pandas.Series
         Data provided by the user.
-    internal_type : TypeVar
-        One of the internal TTSIM types.
+    internal_type: TypeVar
+        One of the types used by TTSIM.
 
     Returns
     -------
@@ -757,9 +769,9 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
 
 
 @dataclass(frozen=True)
-class TTSIMParam:
+class ParamObject:
     """
-    Abstract base class for all TTSIM Parameters.
+    Abstract base class for all types of parameters.
     """
 
     leaf_name: str
@@ -782,23 +794,23 @@ class TTSIMParam:
     reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
     name: dict[Literal["de", "en"], str]
     description: dict[Literal["de", "en"], str]
-    note: str | None
-    reference: str | None
 
 
 @dataclass(frozen=True)
-class ScalarTTSIMParam(TTSIMParam):
+class ScalarParam(ParamObject):
     """
-    A scalar TTSIM parameter directly read from a YAML file.
+    A scalar parameter directly read from a YAML file.
     """
 
     value: bool | int | float
+    note: str | None = None
+    reference: str | None = None
 
 
 @dataclass(frozen=True)
-class DictTTSIMParam(TTSIMParam):
+class DictParam(ParamObject):
     """
-    A TTSIM parameter directly read from a YAML file that is a flat dictionary.
+    A parameter directly read from a YAML file that is a flat dictionary.
     """
 
     value: (
@@ -809,31 +821,43 @@ class DictTTSIMParam(TTSIMParam):
         | dict[int, float]
         | dict[int, bool]
     )
+    note: str | None = None
+    reference: str | None = None
+
+    def __post_init__(self) -> None:
+        assert all(x not in self.value for x in ["note", "reference"])
 
 
 @dataclass(frozen=True)
-class PiecewisePolynomialTTSIMParam(TTSIMParam):
-    """A TTSIM parameter with its contents read and converted from a YAML file.
+class PiecewisePolynomialParam(ParamObject):
+    """A parameter with its contents read and converted from a YAML file.
 
     Its value is a PiecewisePolynomialParameters object, i.e., it contains the
     parameters for calling `piecewise_polynomial`.
     """
 
     value: PiecewisePolynomialParameters
+    note: str | None = None
+    reference: str | None = None
 
 
 @dataclass(frozen=True)
-class RawTTSIMParam(TTSIMParam):
+class RawParam(ParamObject):
     """
-    A TTSIM parameter directly read from a YAML file that is an arbitrarily nested
+    A parameter directly read from a YAML file that is an arbitrarily nested
     dictionary.
     """
 
     value: dict[str | int, Any]
+    note: str | None = None
+    reference: str | None = None
+
+    def __post_init__(self) -> None:
+        assert all(x not in self.value for x in ["note", "reference"])
 
 
 @dataclass(frozen=True)
-class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
+class ParamFunction(Generic[FunArgTypes, ReturnType]):
     """
     Compute a scalar or custom object from parameters of the taxes and transfers system.
 
@@ -841,14 +865,17 @@ class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
     ----------
     leaf_name:
         The leaf name of the function in the objects tree.
-    function:
-        The function that is called when the ParamsFunction is evaluated.
     start_date:
         The date from which the function is active (inclusive).
     end_date:
         The date until which the function is active (inclusive).
+    function:
+        The function that is called when the ParamFunction is evaluated.
     """
 
+    leaf_name: str
+    start_date: datetime.date
+    end_date: datetime.date
     function: GenericCallable[FunArgTypes, ReturnType]
 
     def __post_init__(self) -> None:
@@ -878,9 +905,9 @@ class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
         self,
         tree_path: tuple[str, ...],
         top_level_namespace: set[str],
-    ) -> ParamsFunction:  # type: ignore[type-arg]
+    ) -> ParamFunction:  # type: ignore[type-arg]
         """Remove tree logic from the function and update the function signature."""
-        return ParamsFunction(
+        return ParamFunction(
             leaf_name=self.leaf_name,
             function=dt.one_function_without_tree_logic(
                 function=self.function,
@@ -893,16 +920,16 @@ class ParamsFunction(TTSIMObject, Generic[FunArgTypes, ReturnType]):
 
 
 # Never returns a column, require precise annotation
-def params_function(
+def param_function(
     *,
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> GenericCallable[[GenericCallable], ParamsFunction]:
+) -> GenericCallable[[GenericCallable], ParamFunction]:
     """
-    Decorator that makes a `ParamsFunction` from a function.
+    Decorator that makes a `ParamFunction` from a function.
 
-    ParamsFunctions convert complex parameters (i.e., anything that is not a scalar, a
+    ParamFunctions convert complex parameters (i.e., anything that is not a scalar, a
     flat homogenous dictionary, or a set of parameters of a piecewise polynomial
     function) to custom representations. They must not use any data columns (i.e.,
     arrays of the same length as `p_id`). Use `policy_function` / `PolicyFunction` for
@@ -915,7 +942,7 @@ def params_function(
     Parameters
     ----------
     leaf_name
-        The name that should be used as the ParamsFunction's leaf name in the DAG. If
+        The name that should be used as the ParamFunction's leaf name in the DAG. If
         omitted, we use the name of the function as defined.
     start_date
         The start date (inclusive) in the format YYYY-MM-DD (part of ISO 8601).
@@ -924,12 +951,12 @@ def params_function(
 
     Returns
     -------
-    A decorator that returns a ParamsFunction object.
+    A decorator that returns a ParamFunction object.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: GenericCallable) -> ParamsFunction:  # type: ignore[type-arg]
-        return ParamsFunction(
+    def inner(func: GenericCallable) -> ParamFunction:  # type: ignore[type-arg]
+        return ParamFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
             start_date=start_date,

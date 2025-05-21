@@ -7,7 +7,7 @@ from ttsim import (
     RoundingSpec,
     agg_by_p_id_function,
     join,
-    params_function,
+    param_function,
     policy_function,
 )
 
@@ -114,7 +114,7 @@ def not_implemented_m() -> float:
     )
 
 
-@params_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
+@param_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_ohne_staffelung_m(
     kindergeld__satz_einheitlich: float,
 ) -> float:
@@ -122,7 +122,7 @@ def kindergeld_erstes_kind_ohne_staffelung_m(
     return kindergeld__satz_einheitlich
 
 
-@params_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
+@param_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_gestaffelt_m(
     kindergeld__satz_gestaffelt: dict[int, float],
 ) -> float:

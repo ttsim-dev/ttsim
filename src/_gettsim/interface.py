@@ -11,17 +11,16 @@ from ttsim import (
 
 if TYPE_CHECKING:
     import pandas as pd
-    from dags.tree.typing import NestedTargetDict
 
-    from ttsim.typing import NestedDataDict, NestedInputsPathsToDfColumns
+    from ttsim.typing import NestedInputs, NestedStrings
 
 
 def oss(
     date: str,
     df: pd.DataFrame,
-    inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
-    targets_tree: NestedTargetDict,
-) -> NestedDataDict:
+    inputs_tree_to_df_columns: NestedInputs,
+    targets_tree_to_df_columns: NestedStrings,
+) -> pd.DataFrame:
     """One-stop-shop for computing taxes and transfers.
 
     Args:
@@ -31,15 +30,12 @@ def oss(
         df:
             The DataFrame containing the data.
         inputs_tree_to_df_columns:
-            A nested dictionary that maps GETTSIM's expected input structure to the data
-            provided by the user. Keys are strings that provide a path to an input.
-
-            Values can be:
-            - Strings that reference column names in the DataFrame.
-            - Numeric or boolean values (which will be broadcasted to match the length
-              of the DataFrame).
-        targets_tree:
-            The targets tree.
+            A tree that has the inputs required by GETTSIM as the path (sequence of
+            keys) and maps them to the data provided by the user. The leaves of the tree
+            are strings that reference column names in *df* or constants.
+        targets_tree_to_df_columns:
+            A tree that has the desired targets as the path (sequence of keys) and maps
+            them to the data columns the user would like to have.
 
 
     Examples:
@@ -81,7 +77,7 @@ def oss(
     return compute_taxes_and_transfers(
         data_tree=data_tree,
         environment=policy_environment,
-        targets_tree=targets_tree,
+        targets_tree=targets_tree_to_df_columns,
         rounding=True,
         debug=False,
         jit=False,

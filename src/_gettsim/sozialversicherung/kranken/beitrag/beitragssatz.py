@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from ttsim import params_function, policy_function
+from ttsim import param_function, policy_function
 
 
-@params_function(end_date="2005-06-30")
+@param_function(end_date="2005-06-30")
 def beitragssatz_arbeitnehmer(beitragssatz: float) -> float:
     """Employee's health insurance contribution rate until June 2005.
 
@@ -15,7 +15,7 @@ def beitragssatz_arbeitnehmer(beitragssatz: float) -> float:
     return beitragssatz / 2
 
 
-@params_function(end_date="2005-06-30")
+@param_function(end_date="2005-06-30")
 def beitragssatz_arbeitnehmer_jahresanfang(beitragssatz_jahresanfang: float) -> float:
     """Employee's health insurance contribution rate for the beginning of the year until
     June 2005.
@@ -25,7 +25,7 @@ def beitragssatz_arbeitnehmer_jahresanfang(beitragssatz_jahresanfang: float) -> 
     return beitragssatz_jahresanfang / 2
 
 
-@params_function(
+@param_function(
     start_date="2005-07-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitnehmer",
@@ -45,7 +45,7 @@ def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
     )
 
 
-@params_function(
+@param_function(
     start_date="2005-07-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
@@ -65,7 +65,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbe
     )
 
 
-@params_function(
+@param_function(
     start_date="2009-01-01",
     end_date="2014-12-31",
     leaf_name="beitragssatz_arbeitnehmer",
@@ -85,7 +85,7 @@ def beitragssatz_arbeitnehmer_einheitlicher_beitrag_und_sonderbeitrag(
     )
 
 
-@params_function(
+@param_function(
     start_date="2009-01-01",
     end_date="2014-12-31",
     leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
@@ -105,7 +105,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_beitrag_und_sonderbeitr
     )
 
 
-@params_function(
+@param_function(
     start_date="2015-01-01",
     end_date="2018-12-31",
     leaf_name="beitragssatz_arbeitnehmer",
@@ -125,7 +125,7 @@ def beitragssatz_arbeitnehmer_einheitlicher_beitrag_und_mittlerer_zusatzbeitrag(
     )
 
 
-@params_function(
+@param_function(
     start_date="2015-01-01",
     end_date="2018-12-31",
     leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
@@ -145,7 +145,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_einheitlicher_beitrag_und_mittlerer_z
     )
 
 
-@params_function(
+@param_function(
     start_date="2019-01-01",
     leaf_name="beitragssatz_arbeitnehmer",
 )
@@ -171,7 +171,7 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     ) / 2
 
 
-@params_function(
+@param_function(
     start_date="2019-01-01",
     leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
 )
@@ -188,7 +188,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     ) / 2
 
 
-@params_function(
+@param_function(
     end_date="2005-06-30",
     leaf_name="beitragssatz_arbeitgeber",
 )
@@ -201,7 +201,7 @@ def beitragssatz_arbeitgeber_bis_06_2005(beitragssatz: float) -> float:
     return beitragssatz / 2
 
 
-@params_function(
+@param_function(
     end_date="2005-06-30",
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
 )
@@ -216,7 +216,7 @@ def beitragssatz_arbeitgeber_jahresanfang_bis_06_2005(
     return beitragssatz_jahresanfang / 2
 
 
-@params_function(
+@param_function(
     start_date="2005-07-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitgeber",
@@ -232,7 +232,7 @@ def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
     return parameter_beitragssatz["mean_allgemein"] / 2
 
 
-@params_function(
+@param_function(
     start_date="2005-07-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
@@ -248,7 +248,7 @@ def beitragssatz_arbeitgeber_jahresanfang_mittlerer_kassenspezifischer(
     return parameter_beitragssatz_jahresanfang["mean_allgemein"] / 2
 
 
-@params_function(
+@param_function(
     start_date="2009-01-01",
     end_date="2018-12-31",
     leaf_name="beitragssatz_arbeitgeber",
@@ -265,7 +265,7 @@ def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
     return parameter_beitragssatz["allgemein"] / 2
 
 
-@params_function(
+@param_function(
     start_date="2009-01-01",
     end_date="2018-12-31",
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
@@ -282,7 +282,7 @@ def beitragssatz_arbeitgeber_jahresanfang_einheitlicher_zusatzbeitrag(
     return parameter_beitragssatz_jahresanfang["allgemein"] / 2
 
 
-@params_function(
+@param_function(
     start_date="2019-01-01",
     leaf_name="beitragssatz_arbeitgeber",
 )
@@ -297,7 +297,7 @@ def beitragssatz_arbeitgeber_paritätischer_zusatzbeitrag(
     return beitragssatz_arbeitnehmer
 
 
-@params_function(
+@param_function(
     start_date="2019-01-01",
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
 )
