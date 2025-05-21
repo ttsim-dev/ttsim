@@ -20,6 +20,7 @@ from ttsim import (
     policy_function,
     set_up_policy_environment,
 )
+from ttsim.column_objects_param_function import DEFAULT_END_DATE
 from ttsim.loader import orig_params_tree, orig_tree_with_column_objects_param_functions
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
@@ -32,7 +33,6 @@ from ttsim.policy_environment import (
     active_tree_with_column_objects_param_functions,
     fail_because_active_periods_overlap,
 )
-from ttsim.ttsim_objects import DEFAULT_END_DATE
 
 if TYPE_CHECKING:
     from ttsim.typing import (

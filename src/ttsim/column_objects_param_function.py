@@ -5,7 +5,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
 
 import dags
 import dags.tree as dt
@@ -43,7 +43,6 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from ttsim.config import numpy_or_jax as np
-    from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
     from ttsim.typing import DashedISOString, GenericCallable
 
 FunArgTypes = ParamSpec("FunArgTypes")
@@ -766,94 +765,6 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
         out = False
 
     return out
-
-
-@dataclass(frozen=True)
-class ParamObject:
-    """
-    Abstract base class for all types of parameters.
-    """
-
-    leaf_name: str
-    start_date: datetime.date
-    end_date: datetime.date
-    unit: (
-        None
-        | Literal[
-            "Euros",
-            "DM",
-            "Share",
-            "Percent",
-            "Years",
-            "Months",
-            "Hours",
-            "Square Meters",
-            "Euros / Square Meter",
-        ]
-    )
-    reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
-    name: dict[Literal["de", "en"], str]
-    description: dict[Literal["de", "en"], str]
-
-
-@dataclass(frozen=True)
-class ScalarParam(ParamObject):
-    """
-    A scalar parameter directly read from a YAML file.
-    """
-
-    value: bool | int | float
-    note: str | None = None
-    reference: str | None = None
-
-
-@dataclass(frozen=True)
-class DictParam(ParamObject):
-    """
-    A parameter directly read from a YAML file that is a flat dictionary.
-    """
-
-    value: (
-        dict[str, int]
-        | dict[str, float]
-        | dict[str, bool]
-        | dict[int, int]
-        | dict[int, float]
-        | dict[int, bool]
-    )
-    note: str | None = None
-    reference: str | None = None
-
-    def __post_init__(self) -> None:
-        assert all(x not in self.value for x in ["note", "reference"])
-
-
-@dataclass(frozen=True)
-class PiecewisePolynomialParam(ParamObject):
-    """A parameter with its contents read and converted from a YAML file.
-
-    Its value is a PiecewisePolynomialParameters object, i.e., it contains the
-    parameters for calling `piecewise_polynomial`.
-    """
-
-    value: PiecewisePolynomialParameters
-    note: str | None = None
-    reference: str | None = None
-
-
-@dataclass(frozen=True)
-class RawParam(ParamObject):
-    """
-    A parameter directly read from a YAML file that is an arbitrarily nested
-    dictionary.
-    """
-
-    value: dict[str | int, Any]
-    note: str | None = None
-    reference: str | None = None
-
-    def __post_init__(self) -> None:
-        assert all(x not in self.value for x in ["note", "reference"])
 
 
 @dataclass(frozen=True)

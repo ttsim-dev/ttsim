@@ -15,8 +15,15 @@ from ttsim.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
+from ttsim.column_objects_param_function import (
+    ColumnFunction,
+    FKType,
+    ParamFunction,
+    PolicyInput,
+)
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
+from ttsim.param_objects import RawParam
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
@@ -30,13 +37,6 @@ from ttsim.shared import (
     group_pattern,
     merge_trees,
     partition_by_reference_dict,
-)
-from ttsim.ttsim_objects import (
-    ColumnFunction,
-    FKType,
-    ParamFunction,
-    PolicyInput,
-    RawParam,
 )
 
 if TYPE_CHECKING:
@@ -441,7 +441,7 @@ def _process_params_tree(
 
     - This gets rid of the ParamObject objects and all meta-information like
       extended names, descriptions, units, etc.
-    - RawParam are filtered out, converted values are left.
+    - RawParams are filtered out, converted values are left.
 
     """
 

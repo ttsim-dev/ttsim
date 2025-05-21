@@ -11,7 +11,7 @@ from ttsim import (
     policy_function,
     policy_input,
 )
-from ttsim.ttsim_objects import ParamFunction, param_function
+from ttsim.column_objects_param_function import ParamFunction, param_function
 
 # ======================================================================================
 # PolicyFunction and policy_function

@@ -16,7 +16,7 @@ from ttsim import (
     DictParam,
     FunctionsAndColumnsOverlapWarning,
     PiecewisePolynomialParam,
-    PiecewisePolynomialParameters,
+    PiecewisePolynomialParamValue,
     PolicyEnvironment,
     RawParam,
     ScalarParam,
@@ -152,7 +152,7 @@ SOME_DICT_PARAM = DictParam(
 
 
 SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
-    value=PiecewisePolynomialParameters(
+    value=PiecewisePolynomialParamValue(
         thresholds=[1, 2, 3],
         intercepts=[1, 2, 3],
         rates=[1, 2, 3],

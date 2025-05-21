@@ -4,16 +4,30 @@ import copy
 import datetime
 import itertools
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
 import numpy
 import optree
 import yaml
 
+from ttsim.column_objects_param_function import (
+    DEFAULT_END_DATE,
+    ColumnObject,
+    ParamFunction,
+    policy_function,
+)
 from ttsim.loader import (
     orig_params_tree,
     orig_tree_with_column_objects_param_functions,
+)
+from ttsim.param_objects import (
+    BirthYearBasedPhaseInParam,
+    DictParam,
+    ParamObject,
+    PiecewisePolynomialParam,
+    RawParam,
+    ScalarParam,
 )
 from ttsim.piecewise_polynomial import get_piecewise_parameters
 from ttsim.shared import (
@@ -22,17 +36,6 @@ from ttsim.shared import (
     to_datetime,
     upsert_path_and_value,
     upsert_tree,
-)
-from ttsim.ttsim_objects import (
-    DEFAULT_END_DATE,
-    ColumnObject,
-    DictParam,
-    ParamFunction,
-    ParamObject,
-    PiecewisePolynomialParam,
-    RawParam,
-    ScalarParam,
-    policy_function,
 )
 
 if TYPE_CHECKING:
@@ -539,6 +542,11 @@ def get_one_param(
             parameter_dict=cleaned_spec["value"],
         )
         return PiecewisePolynomialParam(**cleaned_spec)
+    elif spec["type"] == "birth_year_based_phase_in":
+        cleaned_spec["value"] = get_birth_year_based_phase_in_param_value(
+            cleaned_spec["value"]
+        )
+        return BirthYearBasedPhaseInParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
     else:
@@ -616,6 +624,33 @@ def _get_params_contents(
         )
     else:
         return current_spec
+
+
+def get_birth_year_based_phase_in_param_value(
+    raw: dict[str | int, Any],
+) -> dict[int, float]:
+    """Get the parameters for birth year-based phase-in."""
+
+    def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
+        return r["years"] + r["months"] / 12
+
+    first_birthyear_to_consider = raw.pop("first_birthyear_to_consider")
+    last_birthyear_to_consider = raw.pop("last_birthyear_to_consider")
+    assert all(isinstance(k, int) for k in raw)
+    first_birthyear_phase_in: int = min(raw.keys())  # type: ignore[assignment]
+    last_birthyear_phase_in: int = max(raw.keys())  # type: ignore[assignment]
+    assert first_birthyear_to_consider <= first_birthyear_phase_in
+    assert last_birthyear_to_consider >= last_birthyear_phase_in
+    before_phase_in: dict[int, float] = {
+        b_y: _year_fraction(raw[first_birthyear_phase_in])
+        for b_y in range(first_birthyear_to_consider, first_birthyear_phase_in)
+    }
+    during_phase_in: dict[int, float] = {b_y: _year_fraction(raw[b_y]) for b_y in raw}  # type: ignore[misc]
+    after_phase_in: dict[int, float] = {
+        b_y: _year_fraction(raw[last_birthyear_phase_in])
+        for b_y in range(last_birthyear_phase_in + 1, last_birthyear_to_consider + 1)
+    }
+    return {**before_phase_in, **during_phase_in, **after_phase_in}
 
 
 def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:

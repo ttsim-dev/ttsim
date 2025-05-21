@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Literal
 
 import yaml
 
-from ttsim.ttsim_objects import ColumnObject, ParamFunction
+from ttsim.column_objects_param_function import ColumnObject, ParamFunction
 
 if TYPE_CHECKING:
     from pathlib import Path

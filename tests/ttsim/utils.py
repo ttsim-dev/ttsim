@@ -11,10 +11,10 @@ import yaml
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import compute_taxes_and_transfers, merge_trees, set_up_policy_environment
+from ttsim.column_objects_param_function import GroupCreationFunction
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.shared import to_datetime
-from ttsim.ttsim_objects import GroupCreationFunction
 
 TEST_DIR = Path(__file__).parent
 # Set display options to show all columns without truncation

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
-from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
+from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
 
 
 @policy_function(end_date="1998-07-31", leaf_name="betrag_m")
@@ -40,8 +40,8 @@ def monate_verbleibender_anspruchsdauer(
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
     anwartschaftszeit: bool,
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
-    anspruchsdauer_nach_alter: PiecewisePolynomialParameters,
-    anspruchsdauer_nach_versicherungspflichtigen_monaten: PiecewisePolynomialParameters,
+    anspruchsdauer_nach_alter: PiecewisePolynomialParamValue,
+    anspruchsdauer_nach_versicherungspflichtigen_monaten: PiecewisePolynomialParamValue,
 ) -> int:
     """Calculate the remaining amount of months a person can receive unemployment
     benefits.
@@ -96,9 +96,9 @@ def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
     sozialversicherungspauschale: float,
-    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
-    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
 ) -> float:
     """Approximate last years income for unemployment benefit."""
     # Relevant wage is capped at the contribution thresholds

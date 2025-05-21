@@ -12,7 +12,7 @@ import optree
 from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
-    from ttsim.ttsim_objects import PolicyFunction
+    from ttsim.column_objects_param_function import PolicyFunction
     from ttsim.typing import (
         DashedISOString,
         GenericCallable,

@@ -1,5 +1,5 @@
 ---
-regelaltersgrenze:
+altersgrenze:
   name:
     de: Einheitliches Eintrittsalter für Regelaltersrente
     en: Uniform entry age for receiving regelaltersrente - normal retirement age (NRA)
@@ -23,8 +23,11 @@ regelaltersgrenze:
   2007-04-19:
     note: >-
       Increase of the early retirement age from 65 to 67 for birth cohort 1947-1964. See
-      `regelaltersgrenze_gestaffelt`.
-regelaltersgrenze_gestaffelt:
+      `altersgrenze_gestaffelt`.
+  2031-01-01:
+    value: 67.0
+    note: Phase-in period is over
+altersgrenze_gestaffelt:
   name:
     de: Gestaffeltes Eintrittsalter für Regelaltersrente nach Geburtsjahr
     en: Staggered normal retirement age (NRA) for Regelaltersrente by birth year
@@ -41,66 +44,72 @@ regelaltersgrenze_gestaffelt:
       is higher or lower unless special regulations apply.
   unit: Years
   reference_period: null
-  type: require_converter
+  type: birth_year_based_phase_in
   2007-04-20:
     reference: RV-Altersgrenzenanpassungsgesetz 20.04.2007. BGBl. I S. 554
     note: >-
       Increase of the early retirement age from 65 to 67 for birth cohort 1947-1964.
       Vertrauensschutz (Art. 56) applies for birth cohorts before 1955 who were in
       Altersteilzeit before January 1st, 2007 or received "Anpassungsgeld für
-      entlassense Arbeitnehmer des Bergbaus".
-    entry_age_old_regime: 65.0
-    entry_age_new_regime: 67.0
-    max_birthyear_old_regime: 1946
-    min_birthyear_new_regime: 1964
+      entlassene Arbeitnehmer des Bergbaus".
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2031
+    1946:
+      years: 65
+      months: 0
     1947:
-      base_age: 65
-      months_to_add: 1
+      years: 65
+      months: 1
     1948:
-      base_age: 65
-      months_to_add: 2
+      years: 65
+      months: 2
     1949:
-      base_age: 65
-      months_to_add: 3
+      years: 65
+      months: 3
     1950:
-      base_age: 65
-      months_to_add: 4
+      years: 65
+      months: 4
     1951:
-      base_age: 65
-      months_to_add: 5
+      years: 65
+      months: 5
     1952:
-      base_age: 65
-      months_to_add: 6
+      years: 65
+      months: 6
     1953:
-      base_age: 65
-      months_to_add: 7
+      years: 65
+      months: 7
     1954:
-      base_age: 65
-      months_to_add: 8
+      years: 65
+      months: 8
     1955:
-      base_age: 65
-      months_to_add: 9
+      years: 65
+      months: 9
     1956:
-      base_age: 65
-      months_to_add: 10
+      years: 65
+      months: 10
     1957:
-      base_age: 65
-      months_to_add: 11
+      years: 65
+      months: 11
     1958:
-      base_age: 66
-      months_to_add: 0
+      years: 66
+      months: 0
     1959:
-      base_age: 66
-      months_to_add: 2
+      years: 66
+      months: 2
     1960:
-      base_age: 66
-      months_to_add: 4
+      years: 66
+      months: 4
     1961:
-      base_age: 66
-      months_to_add: 6
+      years: 66
+      months: 6
     1962:
-      base_age: 66
-      months_to_add: 8
+      years: 66
+      months: 8
     1963:
-      base_age: 66
-      months_to_add: 10
+      years: 66
+      months: 10
+    1964:
+      years: 67
+      months: 0
+  2031-01-01:
+    note: last cohort with entry age < 67 will have passed that age

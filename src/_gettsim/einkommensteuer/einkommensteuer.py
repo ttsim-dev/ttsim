@@ -8,7 +8,7 @@ import optree
 
 from ttsim import (
     AggType,
-    PiecewisePolynomialParameters,
+    PiecewisePolynomialParamValue,
     RoundingSpec,
     agg_by_group_function,
     agg_by_p_id_function,
@@ -165,7 +165,7 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
     anzahl_personen_sn: int,
-    parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
 ) -> float:
     """Taxes with child allowance on Steuernummer level.
 
@@ -189,7 +189,7 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
 def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
     anzahl_personen_sn: int,
-    parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
 ) -> float:
     """Taxes without child allowance on Steuernummer level. Also referred to as
     "tarifliche ESt II".
@@ -276,7 +276,7 @@ def einkommensteuertarif(x: float, params: dict) -> float:
 @param_function(start_date="2002-01-01")
 def parameter_einkommensteuertarif(
     raw_parameter_einkommensteuertarif: RawParam,
-) -> PiecewisePolynomialParameters:
+) -> PiecewisePolynomialParamValue:
     """Add the quadratic terms to tax tariff function.
 
     The German tax tariff is defined on several income intervals with distinct

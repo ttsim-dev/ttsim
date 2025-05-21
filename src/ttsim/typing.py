@@ -21,7 +21,7 @@ if TYPE_CHECKING:
         QualNameTargetList,
     )
 
-    from ttsim.ttsim_objects import (
+    from ttsim.column_objects_param_function import (
         ColumnFunction,
         ColumnObject,
         ParamFunction,

@@ -8,6 +8,14 @@ import dags.tree as dt
 from dags import rename_arguments
 
 from ttsim.aggregation import grouped_sum
+from ttsim.column_objects_param_function import (
+    DEFAULT_END_DATE,
+    DEFAULT_START_DATE,
+    AggByGroupFunction,
+    ColumnFunction,
+    ColumnObject,
+    TimeConversionFunction,
+)
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.shared import (
     fail_if_multiple_time_units_for_same_base_name_and_group,
@@ -16,14 +24,6 @@ from ttsim.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
     group_pattern,
-)
-from ttsim.ttsim_objects import (
-    DEFAULT_END_DATE,
-    DEFAULT_START_DATE,
-    AggByGroupFunction,
-    ColumnFunction,
-    ColumnObject,
-    TimeConversionFunction,
 )
 
 if TYPE_CHECKING:

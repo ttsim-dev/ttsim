@@ -9,8 +9,8 @@ import numpy
 import pytest
 from dags import concatenate_functions
 
+from ttsim.column_objects_param_function import AggByGroupFunction, AggByPIDFunction
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.ttsim_objects import AggByGroupFunction, AggByPIDFunction
 
 if IS_JAX_INSTALLED:
     import jax.numpy
