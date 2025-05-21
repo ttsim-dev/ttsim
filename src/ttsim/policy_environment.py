@@ -13,7 +13,7 @@ import yaml
 
 from ttsim.loader import (
     orig_params_tree,
-    orig_ttsim_objects_tree,
+    orig_tree_with_column_objects_param_functions,
 )
 from ttsim.piecewise_polynomial import get_piecewise_parameters
 from ttsim.shared import (
@@ -25,12 +25,13 @@ from ttsim.shared import (
 )
 from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
-    DictTTSIMParam,
-    PiecewisePolynomialTTSIMParam,
-    RawTTSIMParam,
-    ScalarTTSIMParam,
-    TTSIMObject,
-    TTSIMParam,
+    ColumnObject,
+    DictParam,
+    ParamFunction,
+    ParamObject,
+    PiecewisePolynomialParam,
+    RawParam,
+    ScalarParam,
     policy_function,
 )
 
@@ -39,11 +40,11 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         DashedISOString,
-        FlatOrigParamSpecDict,
-        FlatTTSIMObjectDict,
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
         GenericCallable,
-        NestedTTSIMObjectDict,
-        NestedTTSIMParamDict,
+        NestedColumnObjectsParamFunctions,
+        NestedParams,
         OrigParamSpec,
     )
 
@@ -64,14 +65,14 @@ class PolicyEnvironment:
 
     def __init__(
         self,
-        raw_objects_tree: NestedTTSIMObjectDict,
+        raw_objects_tree: NestedColumnObjectsParamFunctions,
         params: dict[str, Any] | None = None,
-        params_tree: NestedTTSIMParamDict | None = None,
+        params_tree: NestedParams | None = None,
     ):
         # Check tree with TTSIM objects (policy inputs / functions, params functions)
         assert_valid_ttsim_pytree(
             tree=raw_objects_tree,
-            leaf_checker=lambda leaf: isinstance(leaf, TTSIMObject),
+            leaf_checker=lambda leaf: isinstance(leaf, ColumnObject | ParamFunction),
             tree_name="raw_objects_tree",
         )
         self._raw_objects_tree = optree.tree_map(
@@ -87,13 +88,13 @@ class PolicyEnvironment:
         # Check tree with params
         assert_valid_ttsim_pytree(
             tree=params_tree,
-            leaf_checker=lambda leaf: isinstance(leaf, TTSIMParam),
+            leaf_checker=lambda leaf: isinstance(leaf, ParamObject),
             tree_name="raw_objects_tree",
         )
         self._params_tree = params_tree
 
     @property
-    def raw_objects_tree(self) -> NestedTTSIMObjectDict:
+    def raw_objects_tree(self) -> NestedColumnObjectsParamFunctions:
         """The raw TTSIM objects including policy_inputs.
 
         Does not include aggregations or time conversions.
@@ -106,12 +107,12 @@ class PolicyEnvironment:
         return self._params
 
     @property
-    def params_tree(self) -> NestedTTSIMObjectDict:
+    def params_tree(self) -> NestedColumnObjectsParamFunctions:
         """The parameters of the policy environment."""
         return self._params_tree
 
     @property
-    def combined_tree(self) -> NestedTTSIMObjectDict:
+    def combined_tree(self) -> NestedColumnObjectsParamFunctions:
         """The combined tree of raw objects and params."""
         return merge_trees(self._raw_objects_tree, self._params_tree)
 
@@ -125,7 +126,7 @@ class PolicyEnvironment:
         )
 
     def upsert_objects(
-        self, tree_to_upsert: NestedTTSIMObjectDict
+        self, tree_to_upsert: NestedColumnObjectsParamFunctions
     ) -> PolicyEnvironment:
         """Update and insert *tree_to_upsert* into the existing objects tree.
 
@@ -206,11 +207,13 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
-    _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root)
+    _orig_tree_with_column_objects_param_functions = (
+        orig_tree_with_column_objects_param_functions(root)
+    )
     _orig_params_tree = orig_params_tree(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_active_periods_overlap(
-        orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
+        orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
         orig_params_tree=_orig_params_tree,
     )
 
@@ -235,16 +238,12 @@ def set_up_policy_environment(
             # Align parameters for piecewise polynomial functions
             params[group] = _parse_piecewise_parameters(params_one_group)
         params = _parse_kinderzuschl_max(date, params)
-        params_tree = active_ttsim_params_tree(
-            orig_params_tree=_orig_params_tree, date=date
-        )
+        params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
     else:
         params = {}
-        params_tree = active_ttsim_params_tree(
-            orig_params_tree=_orig_params_tree, date=date
-        )
+        params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
     assert "evaluationsjahr" not in params_tree, "evaluationsjahr must not be specified"
-    params_tree["evaluationsjahr"] = ScalarTTSIMParam(
+    params_tree["evaluationsjahr"] = ScalarParam(
         leaf_name="evaluationsjahr",
         start_date=date,
         end_date=date,
@@ -257,8 +256,9 @@ def set_up_policy_environment(
         reference=None,
     )
     return PolicyEnvironment(
-        raw_objects_tree=active_ttsim_objects_tree(
-            orig_ttsim_objects_tree=_orig_ttsim_objects_tree, date=date
+        raw_objects_tree=active_tree_with_column_objects_param_functions(
+            orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
+            date=date,
         ),
         params=params,
         params_tree=params_tree,
@@ -266,8 +266,8 @@ def set_up_policy_environment(
 
 
 def fail_because_active_periods_overlap(
-    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
-    orig_params_tree: FlatOrigParamSpecDict,
+    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
+    orig_params_tree: FlatOrigParamSpecs,
 ) -> None:
     """Fail because active periods of TTSIM objects / parameters overlap.
 
@@ -281,8 +281,8 @@ def fail_because_active_periods_overlap(
         same time.
     """
     # Create mapping from leaf names to TTSIM objects.
-    overlap_checker: dict[tuple[str, ...], list[TTSIMObject]] = {}
-    for orig_path, obj in orig_ttsim_objects_tree.items():
+    overlap_checker: dict[tuple[str, ...], list[ColumnObject]] = {}
+    for orig_path, obj in orig_tree_with_column_objects_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:
             overlap_checker[path].append(obj)
@@ -293,12 +293,10 @@ def fail_because_active_periods_overlap(
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
-                _ttsim_param_with_active_periods(
-                    param_spec=obj, leaf_name=orig_path[-1]
-                )
+                _param_with_active_periods(param_spec=obj, leaf_name=orig_path[-1])
             )
         else:
-            overlap_checker[path] = _ttsim_param_with_active_periods(
+            overlap_checker[path] = _param_with_active_periods(
                 param_spec=obj, leaf_name=orig_path[-1]
             )
 
@@ -308,7 +306,7 @@ def fail_because_active_periods_overlap(
         for (start1, end1), (start2, end2) in itertools.combinations(active_period, 2):
             if start1 <= end2 and start2 <= end1:
                 raise ConflictingActivePeriodsError(
-                    affected_ttsim_objects=objects,
+                    affected_column_objects=objects,
                     path=path,
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
@@ -316,8 +314,8 @@ def fail_because_active_periods_overlap(
 
 
 @dataclass(frozen=True)
-class _TTSIMParamWithActivePeriod(TTSIMObject):
-    """A TTSIMParam object which mimics a TTSIMObject regarding active periods.
+class _ParamWithActivePeriod(ParamObject):
+    """A ParamObject object which mimics a ColumnObject regarding active periods.
 
     Only used here for checking overlap.
     """
@@ -325,10 +323,10 @@ class _TTSIMParamWithActivePeriod(TTSIMObject):
     original_function_name: str
 
 
-def _ttsim_param_with_active_periods(
+def _param_with_active_periods(
     param_spec: OrigParamSpec,
     leaf_name: str,
-) -> list[_TTSIMParamWithActivePeriod]:
+) -> list[_ParamWithActivePeriod]:
     """Return parameter with active periods."""
 
     def _remove_note_and_reference(entry: dict[str | int, Any]) -> dict[str | int, Any]:
@@ -344,6 +342,12 @@ def _ttsim_param_with_active_periods(
     if not relevant:
         raise ValueError(f"No relevant dates found for {param_spec}")
 
+    params_header = {
+        "name": param_spec["name"],
+        "description": param_spec["description"],
+        "unit": param_spec["unit"],
+        "reference_period": param_spec["reference_period"],
+    }
     out = []
     start_date: datetime.date | None = None
     end_date = DEFAULT_END_DATE
@@ -353,22 +357,24 @@ def _ttsim_param_with_active_periods(
         else:
             if start_date:
                 out.append(
-                    _TTSIMParamWithActivePeriod(
+                    _ParamWithActivePeriod(
                         leaf_name=leaf_name,
-                        original_function_name=leaf_name,
                         start_date=start_date,
                         end_date=end_date,
+                        original_function_name=leaf_name,
+                        **params_header,
                     )
                 )
             start_date = None
             end_date = date - datetime.timedelta(days=1)
     if start_date:
         out.append(
-            _TTSIMParamWithActivePeriod(
+            _ParamWithActivePeriod(
                 leaf_name=leaf_name,
                 original_function_name=leaf_name,
                 start_date=start_date,
                 end_date=end_date,
+                **params_header,
             )
         )
 
@@ -378,12 +384,12 @@ def _ttsim_param_with_active_periods(
 class ConflictingActivePeriodsError(Exception):
     def __init__(
         self,
-        affected_ttsim_objects: list[TTSIMObject],
+        affected_column_objects: list[ColumnObject],
         path: tuple[str, ...],
         overlap_start: datetime.date,
         overlap_end: datetime.date,
     ) -> None:
-        self.affected_ttsim_objects = affected_ttsim_objects
+        self.affected_column_objects = affected_column_objects
         self.path = path
         self.overlap_start = overlap_start
         self.overlap_end = overlap_end
@@ -391,7 +397,7 @@ class ConflictingActivePeriodsError(Exception):
     def __str__(self) -> str:
         overlapping_objects = [
             obj.__getattribute__("original_function_name")
-            for obj in self.affected_ttsim_objects
+            for obj in self.affected_column_objects
             if obj
         ]
         return f"""
@@ -409,11 +415,12 @@ class ConflictingActivePeriodsError(Exception):
         Overlap from {self.overlap_start} to {self.overlap_end}."""
 
 
-def active_ttsim_objects_tree(
-    orig_ttsim_objects_tree: FlatTTSIMObjectDict, date: datetime.date
-) -> NestedTTSIMObjectDict:
+def active_tree_with_column_objects_param_functions(
+    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
+    date: datetime.date,
+) -> NestedColumnObjectsParamFunctions:
     """
-    Traverse `root` and return all TTSIMObjects for a given date.
+    Traverse `root` and return all ColumnObjectParamFunctions for a given date.
 
     Parameters
     ----------
@@ -424,12 +431,12 @@ def active_ttsim_objects_tree(
 
     Returns
     -------
-    A tree of active TTSIMObjects.
+    A tree of active ColumnObjectParamFunctions.
     """
 
     flat_objects_tree = {
         (*orig_path[:-2], obj.leaf_name): obj
-        for orig_path, obj in orig_ttsim_objects_tree.items()
+        for orig_path, obj in orig_tree_with_column_objects_param_functions.items()
         if obj.is_active(date)
     }
 
@@ -437,9 +444,9 @@ def active_ttsim_objects_tree(
 
 
 def _convert_to_policy_function_if_not_ttsim_object(
-    input_object: GenericCallable | TTSIMObject,
-) -> TTSIMObject:
-    """Convert an object to a PolicyFunction if it is not already a TTSIMObject.
+    input_object: GenericCallable | ColumnObject | ParamFunction,
+) -> ColumnObject:
+    """Convert an object to a PolicyFunction if it is not already a ColumnObject.
 
     Parameters
     ----------
@@ -452,7 +459,7 @@ def _convert_to_policy_function_if_not_ttsim_object(
         The converted object.
 
     """
-    if isinstance(input_object, TTSIMObject):
+    if isinstance(input_object, ColumnObject | ParamFunction):
         converted_object = input_object
     else:
         converted_object = policy_function(leaf_name=input_object.__name__)(
@@ -463,7 +470,7 @@ def _convert_to_policy_function_if_not_ttsim_object(
 
 
 def _fail_if_group_ids_are_outside_top_level_namespace(
-    raw_objects_tree: NestedTTSIMObjectDict,
+    raw_objects_tree: NestedColumnObjectsParamFunctions,
 ) -> None:
     """Fail if group ids are outside the top level namespace."""
     group_ids_outside_top_level_namespace = {
@@ -479,16 +486,16 @@ def _fail_if_group_ids_are_outside_top_level_namespace(
         )
 
 
-def active_ttsim_params_tree(
-    orig_params_tree: FlatOrigParamSpecDict,
+def active_params_tree(
+    orig_params_tree: FlatOrigParamSpecs,
     date: datetime.date,
-) -> NestedTTSIMParamDict:
+) -> NestedParams:
     """Parse the original yaml tree."""
     flat_params_tree = {}
     for orig_path, orig_params_spec in orig_params_tree.items():
         path_to_keep = orig_path[:-2]
         leaf_name = orig_path[-1]
-        param = get_one_ttsim_param(
+        param = get_one_param(
             leaf_name=leaf_name,
             spec=orig_params_spec,
             date=date,
@@ -498,7 +505,7 @@ def active_ttsim_params_tree(
         if orig_params_spec.get("add_jahresanfang", False):
             date_jan1 = date.replace(month=1, day=1)
             leaf_name_jan1 = f"{leaf_name}_jahresanfang"
-            param = get_one_ttsim_param(
+            param = get_one_param(
                 leaf_name=leaf_name_jan1,
                 spec=orig_params_spec,
                 date=date_jan1,
@@ -508,29 +515,29 @@ def active_ttsim_params_tree(
     return dt.unflatten_from_tree_paths(flat_params_tree)
 
 
-def get_one_ttsim_param(
+def get_one_param(
     leaf_name: str,
     spec: OrigParamSpec,
     date: datetime.date,
-) -> TTSIMParam:
+) -> ParamObject:
     """Parse the original specification found in the yaml tree."""
     cleaned_spec = prep_one_params_spec(leaf_name=leaf_name, spec=spec, date=date)
 
     if cleaned_spec is None:
         return None
     elif spec["type"] == "scalar":
-        return ScalarTTSIMParam(**cleaned_spec)
+        return ScalarParam(**cleaned_spec)
     elif spec["type"] == "dict":
-        return DictTTSIMParam(**cleaned_spec)
+        return DictParam(**cleaned_spec)
     elif spec["type"].startswith("piecewise_"):
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
             func_type=spec["type"],
             parameter_dict=cleaned_spec["value"],
         )
-        return PiecewisePolynomialTTSIMParam(**cleaned_spec)
+        return PiecewisePolynomialParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
-        return RawTTSIMParam(**cleaned_spec)
+        return RawParam(**cleaned_spec)
     else:
         raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
@@ -538,7 +545,7 @@ def get_one_ttsim_param(
 def prep_one_params_spec(
     leaf_name: str, spec: OrigParamSpec, date: datetime.date
 ) -> dict[str, Any] | None:
-    """Prepare the specification of one parameter for creating a TTSIMParam."""
+    """Prepare the specification of one parameter for creating a ParamObject."""
     policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
     idx = numpy.searchsorted(policy_dates, date, side="right")  # type: ignore[call-overload]
     if idx == 0:
@@ -856,7 +863,7 @@ def transfer_dictionary(
 
 
 def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedTTSIMObjectDict,
+    functions_tree: NestedColumnObjectsParamFunctions,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last
     branch element of the tree path.

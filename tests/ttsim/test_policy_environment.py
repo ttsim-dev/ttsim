@@ -15,32 +15,39 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     GroupCreationFunction,
     PolicyEnvironment,
-    ScalarTTSIMParam,
+    ScalarParam,
     group_creation_function,
     policy_function,
     set_up_policy_environment,
 )
-from ttsim.loader import orig_params_tree, orig_ttsim_objects_tree
+from ttsim.loader import orig_params_tree, orig_tree_with_column_objects_param_functions
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
     _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     _get_params_contents,
+    _param_with_active_periods,
+    _ParamWithActivePeriod,
     _parse_raw_parameter_group,
-    _ttsim_param_with_active_periods,
-    _TTSIMParamWithActivePeriod,
-    active_ttsim_objects_tree,
-    active_ttsim_params_tree,
+    active_params_tree,
+    active_tree_with_column_objects_param_functions,
     fail_because_active_periods_overlap,
 )
 from ttsim.ttsim_objects import DEFAULT_END_DATE
 
 if TYPE_CHECKING:
     from ttsim.typing import (
-        FlatOrigParamSpecDict,
-        FlatTTSIMObjectDict,
-        NestedTTSIMObjectDict,
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
+        NestedColumnObjectsParamFunctions,
         OrigParamSpec,
     )
+
+GENERIC_PARAM_HEADER = {
+    "name": {"de": "foo", "en": "foo"},
+    "description": {"de": "foo", "en": "foo"},
+    "unit": None,
+    "reference_period": None,
+}
 
 
 def return_one():
@@ -76,7 +83,7 @@ def some_params_spec_with_updates_previous():
 
 @pytest.fixture(scope="module")
 def some_int_param():
-    return ScalarTTSIMParam(
+    return ScalarParam(
         value=1,
         leaf_name="some_int_param",
         start_date="2025-01-01",
@@ -147,7 +154,7 @@ def test_fail_if_invalid_date():
 def test_add_jahresanfang():
     _orig_params_tree = orig_params_tree(root=Path(__file__).parent / "test_parameters")
     k = ("test_add_jahresanfang.yaml", "foo")
-    _active_ttsim_params_tree = active_ttsim_params_tree(
+    _active_ttsim_params_tree = active_params_tree(
         orig_params_tree={k: _orig_params_tree[k]},
         date=pd.to_datetime("2020-07-01").date(),
     )
@@ -215,7 +222,7 @@ def test_access_different_date_jahresanfang_old():
     ],
 )
 def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedTTSIMObjectDict,
+    functions_tree: NestedColumnObjectsParamFunctions,
 ):
     with pytest.raises(KeyError):
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
@@ -342,7 +349,7 @@ def identity(x):
 
 
 @pytest.mark.parametrize(
-    "orig_ttsim_objects_tree, orig_params_tree",
+    "orig_tree_with_column_objects_param_functions, orig_params_tree",
     [
         # Same global module, no overlapping periods, no name clashes.
         (
@@ -358,7 +365,12 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            {("c", "g"): {datetime.date(2023, 1, 1): {"value": 1}}},
+            {
+                ("c", "g"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 1},
+                }
+            },
         ),
         # Same submodule, overlapping periods, different leaf names so no name clashes.
         (
@@ -374,7 +386,12 @@ def identity(x):
                     leaf_name="g",
                 )(identity),
             },
-            {("x", "c", "h"): {datetime.date(2023, 1, 1): {"value": 2}}},
+            {
+                ("x", "c", "h"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 2},
+                }
+            },
         ),
         # Different submodules, no overlapping periods, no name clashes.
         (
@@ -388,7 +405,12 @@ def identity(x):
                     end_date="2023-02-28",
                 )(identity),
             },
-            {("x", "c", "g"): {datetime.date(2023, 1, 1): {"value": 3}}},
+            {
+                ("x", "c", "g"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 3},
+                }
+            },
         ),
         # Different paths, overlapping periods, same names but no clashes.
         (
@@ -404,30 +426,41 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            {("z", "a", "f"): {datetime.date(2023, 1, 1): {"value": 4}}},
+            {
+                ("z", "a", "f"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 4},
+                }
+            },
         ),
         # Different yaml files, no name clashes because of different names.
         (
             {},
             {
-                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"value": 5}},
-                ("x", "b", "g"): {datetime.date(2023, 1, 1): {"value": 6}},
+                ("x", "a", "f"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 5},
+                },
+                ("x", "b", "g"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 6},
+                },
             },
         ),
     ],
 )
-def test_fail_because_of_clashes_no_conflicts(
-    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
-    orig_params_tree: FlatOrigParamSpecDict,
+def test_fail_because_active_periods_overlap_passes(
+    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
+    orig_params_tree: FlatOrigParamSpecs,
 ):
     fail_because_active_periods_overlap(
-        orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+        orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
         orig_params_tree=orig_params_tree,
     )
 
 
 @pytest.mark.parametrize(
-    "orig_ttsim_objects_tree",
+    "orig_tree_with_column_objects_param_functions",
     [
         # Exact overlap.
         {
@@ -495,17 +528,17 @@ def test_fail_because_of_clashes_no_conflicts(
     ],
 )
 def test_fail_because_of_conflicting_active_periods(
-    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
+    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
 ):
     with pytest.raises(ConflictingActivePeriodsError):
         fail_because_active_periods_overlap(
-            orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+            orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
             orig_params_tree={},
         )
 
 
 @pytest.mark.parametrize(
-    "orig_ttsim_objects_tree, orig_params_tree",
+    "orig_tree_with_column_objects_param_functions, orig_params_tree",
     [
         # Same global module, no overlap in functions, name clashes leaf name / yaml.
         (
@@ -521,7 +554,12 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            {("c", "f"): {datetime.date(2023, 1, 1): {"value": 1}}},
+            {
+                ("c", "f"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 1},
+                }
+            },
         ),
         # Same paths, no overlap in functions, name clashes leaf name / yaml.
         (
@@ -537,31 +575,42 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            {("x", "a", "f"): {datetime.date(2023, 1, 1): {"value": 2}}},
+            {
+                ("x", "a", "f"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 2},
+                }
+            },
         ),
         # Same paths, name clashes within params from different yaml files.
         (
             {},
             {
-                ("x", "a", "f"): {datetime.date(2023, 1, 1): {"value": 3}},
-                ("x", "b", "f"): {datetime.date(2023, 1, 1): {"value": 4}},
+                ("x", "a", "f"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 3},
+                },
+                ("x", "b", "f"): {
+                    **GENERIC_PARAM_HEADER,
+                    datetime.date(2023, 1, 1): {"value": 4},
+                },
             },
         ),
     ],
 )
 def test_fail_because_of_conflicting_names(
-    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
-    orig_params_tree: FlatOrigParamSpecDict,
+    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
+    orig_params_tree: FlatOrigParamSpecs,
 ):
     with pytest.raises(ConflictingActivePeriodsError):
         fail_because_active_periods_overlap(
-            orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+            orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
             orig_params_tree=orig_params_tree,
         )
 
 
 @pytest.mark.parametrize(
-    "orig_ttsim_objects_tree, orig_params_tree",
+    "orig_tree_with_column_objects_param_functions, orig_params_tree",
     [
         # Same leaf names across functions / parameters, but no overlapping periods.
         (
@@ -636,11 +685,11 @@ def test_fail_because_of_conflicting_names(
     ],
 )
 def test_pass_because_no_overlap_functions_params(
-    orig_ttsim_objects_tree: FlatTTSIMObjectDict,
-    orig_params_tree: FlatOrigParamSpecDict,
+    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
+    orig_params_tree: FlatOrigParamSpecs,
 ):
     fail_because_active_periods_overlap(
-        orig_ttsim_objects_tree=orig_ttsim_objects_tree,
+        orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
         orig_params_tree=orig_params_tree,
     )
 
@@ -671,11 +720,12 @@ def test_pass_because_no_overlap_functions_params(
             },
             "foo",
             [
-                _TTSIMParamWithActivePeriod(
+                _ParamWithActivePeriod(
                     leaf_name="foo",
                     original_function_name="foo",
                     start_date=datetime.date(1984, 1, 1),
                     end_date=DEFAULT_END_DATE,
+                    **GENERIC_PARAM_HEADER,
                 )
             ],
         ),
@@ -691,11 +741,12 @@ def test_pass_because_no_overlap_functions_params(
             },
             "foo",
             [
-                _TTSIMParamWithActivePeriod(
+                _ParamWithActivePeriod(
                     leaf_name="foo",
                     original_function_name="foo",
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(1984, 12, 31),
+                    **GENERIC_PARAM_HEADER,
                 )
             ],
         ),
@@ -722,23 +773,35 @@ def test_pass_because_no_overlap_functions_params(
             },
             "bar",
             [
-                _TTSIMParamWithActivePeriod(
+                _ParamWithActivePeriod(
                     leaf_name="bar",
                     original_function_name="bar",
                     start_date=datetime.date(2023, 3, 1),
                     end_date=DEFAULT_END_DATE,
+                    name={"de": "bar", "en": "bar"},
+                    description={"de": "bar", "en": "bar"},
+                    unit=None,
+                    reference_period=None,
                 ),
-                _TTSIMParamWithActivePeriod(
+                _ParamWithActivePeriod(
                     leaf_name="bar",
                     original_function_name="bar",
                     start_date=datetime.date(2016, 1, 1),
                     end_date=datetime.date(2023, 1, 31),
+                    name={"de": "bar", "en": "bar"},
+                    description={"de": "bar", "en": "bar"},
+                    unit=None,
+                    reference_period=None,
                 ),
-                _TTSIMParamWithActivePeriod(
+                _ParamWithActivePeriod(
                     leaf_name="bar",
                     original_function_name="bar",
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(2011, 12, 31),
+                    name={"de": "bar", "en": "bar"},
+                    description={"de": "bar", "en": "bar"},
+                    unit=None,
+                    reference_period=None,
                 ),
             ],
         ),
@@ -747,9 +810,9 @@ def test_pass_because_no_overlap_functions_params(
 def test_ttsim_param_with_active_periods(
     param_spec: OrigParamSpec,
     leaf_name: str,
-    expected: list[_TTSIMParamWithActivePeriod],
+    expected: list[_ParamWithActivePeriod],
 ):
-    actual = _ttsim_param_with_active_periods(
+    actual = _param_with_active_periods(
         param_spec=param_spec,
         leaf_name=leaf_name,
     )
@@ -767,18 +830,21 @@ def test_ttsim_param_with_active_periods(
         ),
     ],
 )
-def test_active_ttsim_objects_tree(
-    tree: NestedTTSIMObjectDict,
+def test_active_tree_with_column_objects_param_functions(
+    tree: NestedColumnObjectsParamFunctions,
     last_day: datetime.date,
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    _orig_ttsim_objects_tree = orig_ttsim_objects_tree(root=METTSIM_ROOT)
-    functions_last_day = active_ttsim_objects_tree(
-        orig_ttsim_objects_tree=_orig_ttsim_objects_tree, date=last_day
+    _orig_tree_with_column_objects_param_functions = (
+        orig_tree_with_column_objects_param_functions(root=METTSIM_ROOT)
     )
-    functions_next_day = active_ttsim_objects_tree(
-        orig_ttsim_objects_tree=_orig_ttsim_objects_tree,
+    functions_last_day = active_tree_with_column_objects_param_functions(
+        orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
+        date=last_day,
+    )
+    functions_next_day = active_tree_with_column_objects_param_functions(
+        orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
         date=last_day + datetime.timedelta(days=1),
     )
 
@@ -806,7 +872,7 @@ def test_combining_trees_works_with_overlapping_keys(some_int_param):
         },
         params_tree={"a": {"c": some_int_param}},
     )
-    expected: NestedTTSIMObjectDict = {
+    expected: NestedColumnObjectsParamFunctions = {
         "a": {"b": policy_function(leaf_name="a")(return_one), "c": some_int_param},
     }
     assert optree.tree_paths(policy_environment.combined_tree) == optree.tree_paths(

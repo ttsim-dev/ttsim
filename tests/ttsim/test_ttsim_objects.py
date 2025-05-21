@@ -11,7 +11,7 @@ from ttsim import (
     policy_function,
     policy_input,
 )
-from ttsim.ttsim_objects import ParamsFunction, params_function
+from ttsim.ttsim_objects import ParamFunction, param_function
 
 # ======================================================================================
 # PolicyFunction and policy_function
@@ -61,50 +61,50 @@ def test_policy_function_with_dates():
 
 
 # ======================================================================================
-# ParamsFunction and params_function
+# ParamFunction and param_function
 # ======================================================================================
 
 
-@params_function()
-def simple_params_function(x):
+@param_function()
+def simple_param_function(x):
     return x
 
 
-@params_function(leaf_name="simple_params_function")
-def params_function_with_different_leaf_name(x):
+@param_function(leaf_name="simple_param_function")
+def param_function_with_different_leaf_name(x):
     return x
 
 
-@params_function(start_date="2007-01-01", end_date="2011-12-31")
-def params_function_with_dates(x):
+@param_function(start_date="2007-01-01", end_date="2011-12-31")
+def param_function_with_dates(x):
     return x
 
 
 @pytest.mark.parametrize(
     "function",
     [
-        simple_params_function,
-        params_function_with_different_leaf_name,
+        simple_param_function,
+        param_function_with_different_leaf_name,
     ],
 )
-def test_params_function_type(function):
-    assert isinstance(function, ParamsFunction)
+def test_param_function_type(function):
+    assert isinstance(function, ParamFunction)
 
 
 @pytest.mark.parametrize(
     "function",
     [
-        simple_params_function,
-        params_function_with_different_leaf_name,
+        simple_param_function,
+        param_function_with_different_leaf_name,
     ],
 )
-def test_params_function_name(function):
-    assert function.leaf_name == "simple_params_function"
+def test_param_function_name(function):
+    assert function.leaf_name == "simple_param_function"
 
 
-def test_params_function_with_dates():
-    assert str(params_function_with_dates.start_date) == "2007-01-01"
-    assert str(params_function_with_dates.end_date) == "2011-12-31"
+def test_param_function_with_dates():
+    assert str(param_function_with_dates.start_date) == "2007-01-01"
+    assert str(param_function_with_dates.end_date) == "2011-12-31"
 
 
 # ======================================================================================

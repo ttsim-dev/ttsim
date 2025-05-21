@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import params_function, policy_function
+from ttsim import param_function, policy_function
 from ttsim.config import numpy_or_jax as np
 from ttsim.piecewise_polynomial import get_piecewise_parameters, piecewise_polynomial
 
 if TYPE_CHECKING:
-    from ttsim import PiecewisePolynomialTTSIMParam, RawTTSIMParam
+    from ttsim import PiecewisePolynomialParam, RawParam
 
 
 @policy_function(
@@ -35,7 +35,7 @@ def altersgrenze_ohne_staffelung(regelaltersgrenze: float) -> float:
     start_date="2007-04-20", leaf_name="altersgrenze", vectorization_strategy="loop"
 )
 def altersgrenze_mit_staffelung(
-    geburtsjahr: int, piecewise_params_regelaltersgrenze: PiecewisePolynomialTTSIMParam
+    geburtsjahr: int, piecewise_params_regelaltersgrenze: PiecewisePolynomialParam
 ) -> float:
     """Normal retirement age (NRA).
 
@@ -62,10 +62,10 @@ def grundsätzlich_anspruchsberechtigt(
     return sozialversicherung__rente__mindestwartezeit_erfüllt
 
 
-@params_function(start_date="2007-04-20")
+@param_function(start_date="2007-04-20")
 def piecewise_params_regelaltersgrenze(
-    regelaltersgrenze_gestaffelt: RawTTSIMParam,
-) -> PiecewisePolynomialTTSIMParam:
+    regelaltersgrenze_gestaffelt: RawParam,
+) -> PiecewisePolynomialParam:
     """Parameters for the piecewise polynomial Regelaltersgrenze (staggered by birth
     cohort)."""
 

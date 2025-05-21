@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         DashedISOString,
         GenericCallable,
-        NestedDataDict,
-        NestedTTSIMObjectDict,
+        NestedColumnObjectsParamFunctions,
+        NestedData,
     )
 
 
@@ -186,9 +186,7 @@ def create_tree_from_path_and_value(
     return nested_dict
 
 
-def merge_trees(
-    left: NestedTTSIMObjectDict, right: NestedTTSIMObjectDict
-) -> NestedTTSIMObjectDict:
+def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     """
     Merge two pytrees, raising an error if a path is present in both trees.
 
@@ -204,15 +202,13 @@ def merge_trees(
     The merged pytree.
     """
 
-    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):
+    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # type: ignore[arg-type]
         raise ValueError("Conflicting paths in trees to merge.")
 
     return upsert_tree(base=left, to_upsert=right)
 
 
-def upsert_tree(
-    base: NestedTTSIMObjectDict, to_upsert: NestedTTSIMObjectDict
-) -> NestedTTSIMObjectDict:
+def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, Any]:
     """
     Upsert a tree into another tree for trees defined by dictionaries only.
 
@@ -278,11 +274,11 @@ def insert_path_and_value(
 
 
 def partition_tree_by_reference_tree(
-    tree_to_partition: NestedTTSIMObjectDict | NestedDataDict,
-    reference_tree: NestedTTSIMObjectDict | NestedDataDict,
+    tree_to_partition: NestedColumnObjectsParamFunctions | NestedData,
+    reference_tree: NestedColumnObjectsParamFunctions | NestedData,
 ) -> tuple[
-    NestedTTSIMObjectDict | NestedDataDict,
-    NestedTTSIMObjectDict | NestedDataDict,
+    NestedColumnObjectsParamFunctions | NestedData,
+    NestedColumnObjectsParamFunctions | NestedData,
 ]:
     """
     Partition a tree into two based on the presence of its paths in a reference tree.

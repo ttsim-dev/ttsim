@@ -5,10 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import params_function, policy_function
+from ttsim import param_function, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParamsRequiringConversion
+    from ttsim.typing import RawParam
 
 
 @policy_function(start_date="2005-01-01")
@@ -402,9 +402,9 @@ class RegelsatzAnteilsbasiert:
     kind: RegelsatzAnteilKindNachAlter
 
 
-@params_function(start_date="2005-01-01", end_date="2010-12-31")
+@param_function(start_date="2005-01-01", end_date="2010-12-31")
 def regelsatz_anteilsbasiert(
-    parameter_regelsatz_anteilsbasiert: RawParamsRequiringConversion,
+    parameter_regelsatz_anteilsbasiert: RawParam,
 ) -> RegelsatzAnteilsbasiert:
     """Regelsatz as a fraction of the Basissatz."""
     anteilssätze_kinder = parameter_regelsatz_anteilsbasiert[
@@ -468,9 +468,9 @@ class RegelsatzNachRegelbedarfsstufen:
     rbs_6: RegelbedarfsstufeKind
 
 
-@params_function(start_date="2011-01-01")
+@param_function(start_date="2011-01-01")
 def regelsatz_nach_regelbedarfsstufen(
-    parameter_regelsatz_nach_regelbedarfsstufen: RawParamsRequiringConversion,
+    parameter_regelsatz_nach_regelbedarfsstufen: RawParam,
 ) -> RegelsatzNachRegelbedarfsstufen:
     """Regelsatz nach Regelbedarfsstufen."""
     rbs_4 = RegelbedarfsstufeKind(
@@ -511,9 +511,9 @@ class BerechtigteWohnflächeEigentum:
     max_anzahl_direkt: int
 
 
-@params_function(start_date="2005-01-01")
+@param_function(start_date="2005-01-01")
 def berechtigte_wohnfläche_eigentum(
-    parameter_berechtigte_wohnfläche_eigentum: RawParamsRequiringConversion,
+    parameter_berechtigte_wohnfläche_eigentum: RawParam,
 ) -> BerechtigteWohnflächeEigentum:
     """Berechtigte Wohnfläche für Eigenheim."""
     return BerechtigteWohnflächeEigentum(

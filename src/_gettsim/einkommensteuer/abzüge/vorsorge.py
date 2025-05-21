@@ -4,7 +4,7 @@ from ttsim import RoundingSpec, piecewise_polynomial, policy_function
 from ttsim.piecewise_polynomial import (
     PiecewisePolynomialParameters,
 )
-from ttsim.ttsim_objects import params_function
+from ttsim.ttsim_objects import param_function
 
 
 @policy_function(
@@ -195,7 +195,7 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
     return sonst_vors + altersvorsorge_y_sn
 
 
-@params_function(start_date="2005-01-01", end_date="2022-12-31")
+@param_function(start_date="2005-01-01", end_date="2022-12-31")
 def rate_abzugsfähige_altersvorsorgeaufwendungen(
     evaluationsjahr: int,
     parameter_einführungsfaktor_altersvorsorgeaufwendungen: PiecewisePolynomialParameters,
