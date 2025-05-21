@@ -43,6 +43,7 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,
+        NestedAnyTTSIMObject,
         NestedColumnObjectsParamFunctions,
         NestedParams,
         OrigParamSpec,
@@ -107,12 +108,12 @@ class PolicyEnvironment:
         return self._params
 
     @property
-    def params_tree(self) -> NestedColumnObjectsParamFunctions:
+    def params_tree(self) -> NestedParams:
         """The parameters of the policy environment."""
         return self._params_tree
 
     @property
-    def combined_tree(self) -> NestedColumnObjectsParamFunctions:
+    def combined_tree(self) -> NestedAnyTTSIMObject:
         """The combined tree of raw objects and params."""
         return merge_trees(self._raw_objects_tree, self._params_tree)
 

@@ -26,7 +26,6 @@ if TYPE_CHECKING:
         ColumnObject,
         ParamFunction,
         ParamObject,
-        PolicyInput,
     )
 
     NestedInputs = Mapping[str, str | bool | int | float | "NestedInputs"]
@@ -37,6 +36,10 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to data (1-d arrays)."""
     QualNameData = Mapping[str, TTSIMArray]
     """Mapping of qualified name paths to data (1-d arrays)."""
+    NestedAnyTTSIMObject = Mapping[
+        str, ColumnObject | ParamFunction | ParamObject | "NestedAnyTTSIMObject"
+    ]
+    """Tree mapping TTSIM paths to any type of TTSIM object."""
     NestedColumnObjectsParamFunctions = Mapping[
         str, ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions"
     ]
@@ -57,8 +60,6 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to functions operating on columns of data."""
     QualNameColumnFunctions = Mapping[str, ColumnFunction]
     """Mapping of qualified name paths to functions operating on columns of data."""
-    QualNamePolicyInputDict = Mapping[str, PolicyInput]
-    """Mapping of qualified name paths to policy inputs (info about expected data)."""
     OrigParamSpec = (
         dict[str, str | None | dict[Literal["de", "en"], str | None]]  # Header
         | dict[
@@ -72,8 +73,6 @@ if TYPE_CHECKING:
     """The original contents of YYYY-MM-DD key, after minimal processing."""
     NestedParams = Mapping[str, ParamObject | "NestedParams"]
     """Tree mapping TTSIM paths to parameters."""
-    QualNameParams = Mapping[str, ParamObject]
-    """Mapping of qualified name paths to parameters."""
     QualNameProcessedParams = Mapping[str, Any]
     """A mapping of qualified names to fully processed parameters."""
     DashedISOString = NewType("DashedISOString", str)

@@ -38,7 +38,9 @@ def orig_tree_with_column_objects_param_functions(
     return {
         k: v
         for path in _find_files_recursively(root=root, suffix=".py")
-        for k, v in _tree_path_to_orig_column_objects(path=path, root=root).items()
+        for k, v in _tree_path_to_orig_column_objects_params_functions(
+            path=path, root=root
+        ).items()
     }
 
 
@@ -63,7 +65,7 @@ def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list
     ]
 
 
-def _tree_path_to_orig_column_objects(
+def _tree_path_to_orig_column_objects_params_functions(
     path: Path, root: Path
 ) -> FlatColumnObjectsParamFunctions:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
