@@ -13,13 +13,13 @@ if TYPE_CHECKING:
     import pandas as pd
     from dags.tree.typing import NestedTargetDict
 
-    from ttsim.typing import NestedDataDict, NestedInputsPathsToDfColumns
+    from ttsim.typing import NestedDataDict, NestedStringDict
 
 
 def oss(
     date: str,
     df: pd.DataFrame,
-    inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
+    inputs_tree_to_df_columns: NestedStringDict,
     targets_tree: NestedTargetDict,
 ) -> NestedDataDict:
     """One-stop-shop for computing taxes and transfers.
