@@ -65,7 +65,7 @@ class FKType(StrEnum):
 
 @dataclass(frozen=True)
 class ColumnObject:
-    """Base class for all TTSIM objects operating on columns of data.
+    """Base class for all objects operating on columns of data.
 
     Examples:
     - PolicyInputs
@@ -199,9 +199,9 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> No
 
 
 @dataclass(frozen=True)
-class TTSIMFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
+class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     """
-    Base class for all TTSIM functions.
+    Base class for all functions operating on columns of data.
     """
 
     function: GenericCallable[FunArgTypes, ReturnType]
@@ -253,7 +253,7 @@ class TTSIMFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
 
 
 @dataclass(frozen=True)
-class PolicyFunction(TTSIMFunction):  # type: ignore[type-arg]
+class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     Computes a column based on at least one input column and/or parameters.
 
@@ -355,7 +355,7 @@ def policy_function(
 
 
 @dataclass(frozen=True)
-class GroupCreationFunction(TTSIMFunction):  # type: ignore[type-arg]
+class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that computes endogenous group_by IDs.
 
@@ -415,7 +415,7 @@ def group_creation_function(
 
 
 @dataclass(frozen=True)
-class AggByGroupFunction(TTSIMFunction):  # type: ignore[type-arg]
+class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -539,7 +539,7 @@ def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str) -> N
 
 
 @dataclass(frozen=True)
-class AggByPIDFunction(TTSIMFunction):  # type: ignore[type-arg]
+class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that is an aggregation of another column by some group id.
 
@@ -666,7 +666,7 @@ def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) ->
 
 
 @dataclass(frozen=True)
-class TimeConversionFunction(TTSIMFunction):  # type: ignore[type-arg]
+class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
     """
     A function that is a time conversion of another function.
 
@@ -745,10 +745,10 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
 
     Parameters
     ----------
-    series : pandas.Series or pandas.DataFrame or dict of pandas.Series
+    series: pandas.Series or pandas.DataFrame or dict of pandas.Series
         Data provided by the user.
-    internal_type : TypeVar
-        One of the internal TTSIM types.
+    internal_type: TypeVar
+        One of the types used by TTSIM.
 
     Returns
     -------
@@ -771,7 +771,7 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
 @dataclass(frozen=True)
 class ParamObject:
     """
-    Abstract base class for all TTSIM Parameters.
+    Abstract base class for all types of parameters.
     """
 
     leaf_name: str
@@ -799,7 +799,7 @@ class ParamObject:
 @dataclass(frozen=True)
 class ScalarParam(ParamObject):
     """
-    A scalar TTSIM parameter directly read from a YAML file.
+    A scalar parameter directly read from a YAML file.
     """
 
     value: bool | int | float
@@ -810,7 +810,7 @@ class ScalarParam(ParamObject):
 @dataclass(frozen=True)
 class DictParam(ParamObject):
     """
-    A TTSIM parameter directly read from a YAML file that is a flat dictionary.
+    A parameter directly read from a YAML file that is a flat dictionary.
     """
 
     value: (
@@ -830,7 +830,7 @@ class DictParam(ParamObject):
 
 @dataclass(frozen=True)
 class PiecewisePolynomialParam(ParamObject):
-    """A TTSIM parameter with its contents read and converted from a YAML file.
+    """A parameter with its contents read and converted from a YAML file.
 
     Its value is a PiecewisePolynomialParameters object, i.e., it contains the
     parameters for calling `piecewise_polynomial`.
@@ -844,7 +844,7 @@ class PiecewisePolynomialParam(ParamObject):
 @dataclass(frozen=True)
 class RawParam(ParamObject):
     """
-    A TTSIM parameter directly read from a YAML file that is an arbitrarily nested
+    A parameter directly read from a YAML file that is an arbitrarily nested
     dictionary.
     """
 

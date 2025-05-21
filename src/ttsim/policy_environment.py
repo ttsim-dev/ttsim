@@ -58,9 +58,9 @@ class PolicyEnvironment:
     Parameters
     ----------
     raw_objects_tree
-        The pytree of TTSIM objects (policy inputs, policy functions, agg functions).
-    params
-        A dictionary with policy parameters.
+        The pytree of policy inputs, policy functions, agg functions, param functions.
+    params_tree
+        The pytree of policy parameters.
     """
 
     def __init__(
@@ -69,7 +69,7 @@ class PolicyEnvironment:
         params: dict[str, Any] | None = None,
         params_tree: NestedParams | None = None,
     ):
-        # Check tree with TTSIM objects (policy inputs / functions, params functions)
+        # Check tree with policy inputs / functions, params functions.
         assert_valid_ttsim_pytree(
             tree=raw_objects_tree,
             leaf_checker=lambda leaf: isinstance(leaf, ColumnObject | ParamFunction),
@@ -95,9 +95,9 @@ class PolicyEnvironment:
 
     @property
     def raw_objects_tree(self) -> NestedColumnObjectsParamFunctions:
-        """The raw TTSIM objects including policy_inputs.
+        """The raw column objects and params functions including policy_inputs.
 
-        Does not include aggregations or time conversions.
+        Does not include automatically added aggregations / time conversions.
         """
         return self._raw_objects_tree
 
@@ -130,7 +130,7 @@ class PolicyEnvironment:
     ) -> PolicyEnvironment:
         """Update and insert *tree_to_upsert* into the existing objects tree.
 
-        Adds to or overwrites TTSIM objects of the policy environment. Note that this
+        Adds to or overwrites elements of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
 
         Parameters
@@ -269,7 +269,7 @@ def fail_because_active_periods_overlap(
     orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
     orig_params_tree: FlatOrigParamSpecs,
 ) -> None:
-    """Fail because active periods of TTSIM objects / parameters overlap.
+    """Fail because active periods of objects / parameters overlap.
 
     Checks that objects or parameters with the same tree path / qualified name are not
     active at the same time.
@@ -280,8 +280,10 @@ def fail_because_active_periods_overlap(
         If multiple objects and/or parameters with the same leaf name are active at the
         same time.
     """
-    # Create mapping from leaf names to TTSIM objects.
-    overlap_checker: dict[tuple[str, ...], list[ColumnObject]] = {}
+    # Create mapping from leaf names to objects.
+    overlap_checker: dict[
+        tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
+    ] = {}
     for orig_path, obj in orig_tree_with_column_objects_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:

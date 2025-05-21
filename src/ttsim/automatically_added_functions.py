@@ -21,9 +21,9 @@ from ttsim.ttsim_objects import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     AggByGroupFunction,
+    ColumnFunction,
     ColumnObject,
     TimeConversionFunction,
-    TTSIMFunction,
 )
 
 if TYPE_CHECKING:
@@ -31,10 +31,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ttsim.typing import (
+        QualNameColumnFunctions,
         QualNameColumnObjects,
         QualNameData,
         QualNameTargetList,
-        QualNameTTSIMFunctions,
     )
 
 
@@ -400,7 +400,7 @@ def create_time_conversion_functions(
     column_objects: QualNameColumnObjects,
     data: QualNameData,
     groupings: tuple[str, ...],
-) -> QualNameTTSIMFunctions:
+) -> QualNameColumnFunctions:
     """
      Create functions that convert variables to different time units.
 
@@ -500,7 +500,7 @@ def _create_one_set_of_time_conversion_functions(
     result: dict[str, TimeConversionFunction] = {}
     dependencies = (
         set(inspect.signature(column_object).parameters)
-        if isinstance(column_object, TTSIMFunction)
+        if isinstance(column_object, ColumnFunction)
         else set()
     )
 
@@ -550,7 +550,7 @@ def create_agg_by_group_functions(
     data: QualNameData,
     targets: QualNameTargetList,
     groupings: tuple[str, ...],
-) -> QualNameTTSIMFunctions:
+) -> QualNameColumnFunctions:
     gp = group_pattern(groupings)
     all_functions_and_data = {**ttsim_functions_with_time_conversions, **data}
     potential_agg_by_group_function_names = {
@@ -594,7 +594,7 @@ def create_agg_by_group_functions(
 
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(
-    functions: QualNameTTSIMFunctions,
+    functions: QualNameColumnFunctions,
     group_pattern: re.Pattern[str],
 ) -> set[str]:
     """Get potential aggregation function names from function arguments.

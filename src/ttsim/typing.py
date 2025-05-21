@@ -22,11 +22,11 @@ if TYPE_CHECKING:
     )
 
     from ttsim.ttsim_objects import (
+        ColumnFunction,
         ColumnObject,
         ParamFunction,
         ParamObject,
         PolicyInput,
-        TTSIMFunction,
     )
 
     NestedInputs = Mapping[str, str | bool | int | float | "NestedInputs"]
@@ -53,10 +53,10 @@ if TYPE_CHECKING:
     """Mapping of flat paths to column objects."""
     QualNameColumnObjects = Mapping[str, ColumnObject]
     """Mapping of qualified name paths to column objects."""
-    NestedTTSIMFunctions = Mapping[str, TTSIMFunction | "NestedTTSIMFunctions"]
-    """Tree mapping TTSIM paths to TTSIM functions."""
-    QualNameTTSIMFunctions = Mapping[str, TTSIMFunction]
-    """Mapping of qualified name paths to TTSIM functions."""
+    NestedColumnFunctions = Mapping[str, ColumnFunction | "NestedColumnFunctions"]
+    """Tree mapping TTSIM paths to functions operating on columns of data."""
+    QualNameColumnFunctions = Mapping[str, ColumnFunction]
+    """Mapping of qualified name paths to functions operating on columns of data."""
     QualNamePolicyInputDict = Mapping[str, PolicyInput]
     """Mapping of qualified name paths to policy inputs (info about expected data)."""
     OrigParamSpec = (
@@ -71,10 +71,10 @@ if TYPE_CHECKING:
     OrigParam = dict[str | int, Any]
     """The original contents of YYYY-MM-DD key, after minimal processing."""
     NestedParams = Mapping[str, ParamObject | "NestedParams"]
-    """Tree mapping TTSIM paths to TTSIM parameter objects."""
+    """Tree mapping TTSIM paths to parameters."""
     QualNameParams = Mapping[str, ParamObject]
-    """Mapping of qualified name paths to TTSIM parameters."""
+    """Mapping of qualified name paths to parameters."""
     QualNameProcessedParams = Mapping[str, Any]
-    """A mapping of qualified names to fully processed TTSIM parameters."""
+    """A mapping of qualified names to fully processed parameters."""
     DashedISOString = NewType("DashedISOString", str)
     """A string representing a date in the format 'YYYY-MM-DD'."""

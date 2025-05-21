@@ -32,11 +32,11 @@ from ttsim.shared import (
     partition_by_reference_dict,
 )
 from ttsim.ttsim_objects import (
+    ColumnFunction,
     FKType,
     ParamFunction,
     PolicyInput,
     RawParam,
-    TTSIMFunction,
 )
 
 if TYPE_CHECKING:
@@ -45,11 +45,11 @@ if TYPE_CHECKING:
         NestedData,
         NestedParams,
         NestedTargetDict,
+        QualNameColumnFunctions,
         QualNameColumnObjectsParamFunctions,
         QualNameData,
         QualNameProcessedParams,
         QualNameTargetList,
-        QualNameTTSIMFunctions,
     )
 
 
@@ -277,7 +277,7 @@ def remove_tree_logic_from_tree_with_column_objects_param_functions(
     raw_objects_tree: NestedColumnObjectsParamFunctions,
     top_level_namespace: set[str],
 ) -> QualNameColumnObjectsParamFunctions:
-    """Map qualified names to TTSIM objects without tree logic."""
+    """Map qualified names to column objects / param functions without tree logic."""
     return {
         name: f_or_i.remove_tree_logic(
             tree_path=dt.tree_path_from_qual_name(name),
@@ -292,10 +292,10 @@ def combine_policy_functions_and_derived_functions(
     targets: QualNameTargetList,
     data: QualNameData,
     groupings: tuple[str, ...],
-) -> QualNameTTSIMFunctions:
+) -> QualNameColumnFunctions:
     """Return a mapping of qualified names to functions operating on columns.
 
-    Anything that is not a TTSIMFunction is filtered out (e.g., ParamFunctions,
+    Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
     PolicyInputs).
 
     Derived functions are time converted functions and aggregation functions (aggregate
@@ -335,7 +335,7 @@ def combine_policy_functions_and_derived_functions(
         **{
             qn: f
             for qn, f in column_objects_param_functions.items()
-            if isinstance(f, TTSIMFunction)
+            if isinstance(f, ColumnFunction)
         },
         **time_conversion_functions,
     }
@@ -357,7 +357,7 @@ def combine_policy_functions_and_derived_functions(
 
 
 def _fail_if_function_targets_not_in_functions(
-    functions: QualNameTTSIMFunctions,
+    functions: QualNameColumnFunctions,
     targets: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
@@ -389,7 +389,7 @@ def _fail_if_function_targets_not_in_functions(
 
 def _create_input_data_for_concatenated_function(
     data: QualNameData,
-    functions: QualNameTTSIMFunctions,
+    functions: QualNameColumnFunctions,
     targets: QualNameTargetList,
 ) -> QualNameData:
     """Create input data for the concatenated function.
@@ -433,7 +433,7 @@ def _create_input_data_for_concatenated_function(
 
 def _process_params_tree(
     params_tree: NestedParams,
-    param_functions: QualNameTTSIMFunctions,
+    param_functions: QualNameColumnFunctions,
 ) -> QualNameProcessedParams:
     """Return a mapping of qualified names to processed parameter values.
 
@@ -470,9 +470,9 @@ def _process_params_tree(
 
 
 def _partial_parameters_to_functions(
-    functions: QualNameTTSIMFunctions,
+    functions: QualNameColumnFunctions,
     processed_params: QualNameProcessedParams,
-) -> QualNameTTSIMFunctions:
+) -> QualNameColumnFunctions:
     """Round and partial parameters into functions.
 
     Parameters
@@ -509,9 +509,9 @@ def _partial_parameters_to_functions(
 
 
 def _partial_params_to_functions(
-    functions: QualNameTTSIMFunctions,
+    functions: QualNameColumnFunctions,
     params: QualNameProcessedParams,
-) -> QualNameTTSIMFunctions:
+) -> QualNameColumnFunctions:
     """Partial parameters to functions such that they disappear from the DAG.
 
     Note: Needs to be done after rounding such that dags recognizes partialled
@@ -544,8 +544,8 @@ def _partial_params_to_functions(
 
 
 def _add_rounding_to_functions(
-    functions: QualNameTTSIMFunctions,
-) -> QualNameTTSIMFunctions:
+    functions: QualNameColumnFunctions,
+) -> QualNameColumnFunctions:
     """Add appropriate rounding of outputs to function.
 
     Parameters
@@ -683,7 +683,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
     relevant_objects = {
         k: v
         for k, v in column_objects_param_functions.items()
-        if isinstance(v, PolicyInput | TTSIMFunction)
+        if isinstance(v, PolicyInput | ColumnFunction)
     }
 
     for fk_name, fk in relevant_objects.items():
@@ -718,7 +718,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
 
 
 def _warn_if_functions_overridden_by_data(
-    functions_overridden: QualNameTTSIMFunctions,
+    functions_overridden: QualNameColumnFunctions,
 ) -> None:
     """Warn if functions are overridden by data."""
     if len(functions_overridden) > 0:
@@ -783,7 +783,7 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
 
 
 def _fail_if_root_nodes_are_missing(
-    functions: QualNameTTSIMFunctions,
+    functions: QualNameColumnFunctions,
     data: QualNameData,
     root_nodes: list[str],
 ) -> None:
@@ -828,7 +828,7 @@ def _fail_if_root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-def _func_depends_on_parameters_only(func: TTSIMFunction) -> bool:
+def _func_depends_on_parameters_only(func: ColumnFunction) -> bool:
     """Check if a function depends on parameters only."""
     return (
         len(
