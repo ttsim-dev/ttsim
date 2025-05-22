@@ -50,7 +50,7 @@ if TYPE_CHECKING:
         GenericCallable,
         NestedAnyTTSIMObject,
         NestedColumnObjectsParamFunctions,
-        NestedParams,
+        NestedParamObjects,
         OrigParamSpec,
     )
 
@@ -73,7 +73,7 @@ class PolicyEnvironment:
         self,
         raw_objects_tree: NestedColumnObjectsParamFunctions,
         params: dict[str, Any] | None = None,
-        params_tree: NestedParams | None = None,
+        params_tree: NestedParamObjects | None = None,
     ):
         # Check tree with policy inputs / functions, params functions.
         assert_valid_ttsim_pytree(
@@ -113,7 +113,7 @@ class PolicyEnvironment:
         return self._params
 
     @property
-    def params_tree(self) -> NestedParams:
+    def params_tree(self) -> NestedParamObjects:
         """The parameters of the policy environment."""
         return self._params_tree
 
@@ -497,7 +497,7 @@ def _fail_if_group_ids_are_outside_top_level_namespace(
 def active_params_tree(
     orig_params_tree: FlatOrigParamSpecs,
     date: datetime.date,
-) -> NestedParams:
+) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_params_tree = {}
     for orig_path, orig_params_spec in orig_params_tree.items():

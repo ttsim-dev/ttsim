@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         NestedColumnObjectsParamFunctions,
         NestedData,
-        NestedParams,
+        NestedParamObjects,
         NestedTargetDict,
         QualNameColumnFunctions,
         QualNameColumnObjectsParamFunctions,
@@ -432,7 +432,7 @@ def _create_input_data_for_concatenated_function(
 
 
 def _process_params_tree(
-    params_tree: NestedParams,
+    params_tree: NestedParamObjects,
     param_functions: QualNameColumnFunctions,
 ) -> QualNameProcessedParams:
     """Return a mapping of qualified names to processed parameter values.
