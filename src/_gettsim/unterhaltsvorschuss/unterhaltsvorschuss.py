@@ -1,6 +1,8 @@
 """Advance alimony payments (Unterhaltsvorschuss)."""
 
-import numpy
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ttsim import (
     AggType,
@@ -10,6 +12,9 @@ from ttsim import (
     params_function,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    import numpy
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

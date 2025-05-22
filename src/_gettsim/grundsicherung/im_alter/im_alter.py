@@ -1,4 +1,4 @@
-"""Subsistence transfer for the elderly (Grundsicherung im Alter)."""
+"""Grundsicherung im Alter."""
 
 from __future__ import annotations
 

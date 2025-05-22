@@ -41,7 +41,7 @@ classifiers = [
 # Dependencies and requirements
 requires-python = ">=3.11"
 dependencies = [
-    "dags>=0.3.0",
+    # "dags>=0.3.1",
     "ipywidgets",
     "networkx",
     "numpy",
@@ -129,6 +129,7 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
 pdbp = "*"
 
 [tool.pixi.target.unix.pypi-dependencies]

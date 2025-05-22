@@ -4,6 +4,8 @@ These information are used throughout modules of gettsim.
 
 """
 
+from __future__ import annotations
+
 from ttsim import AggType, agg_by_group_function, policy_function
 
 

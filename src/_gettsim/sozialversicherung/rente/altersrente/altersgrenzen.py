@@ -1,5 +1,7 @@
 """Age thresholds for public pension eligibility."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

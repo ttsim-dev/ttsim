@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim import RoundingSpec, piecewise_polynomial, policy_function
 
 

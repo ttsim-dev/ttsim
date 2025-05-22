@@ -1,9 +1,13 @@
 """Income relevant for withholding tax on earnings (Lohnsteuer)."""
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from ttsim import RoundingSpec, params_function, piecewise_polynomial, policy_function
-from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
+
+if TYPE_CHECKING:
+    from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
 
 
 @policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))

@@ -3,6 +3,8 @@
 Revoked for birth cohorts after 1951.
 """
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

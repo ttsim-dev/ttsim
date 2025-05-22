@@ -1,4 +1,4 @@
-"""Basic needs following SGB II."""
+"""Regelbedarf for Arbeitslosengeld II."""
 
 from __future__ import annotations
 

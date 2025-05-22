@@ -3,16 +3,14 @@ from __future__ import annotations
 import inspect
 from typing import TYPE_CHECKING
 
-import dags
 import dags.tree as dt
-from dags import rename_arguments
+from dags import get_free_arguments, rename_arguments
 
 from ttsim.aggregation import grouped_sum
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.shared import (
     fail_if_multiple_time_units_for_same_base_name_and_group,
     get_base_name_and_grouping_suffix,
-    get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
     group_pattern,
@@ -580,7 +578,7 @@ def create_agg_by_group_functions(
             mapper = {"group_id": group_id, "column": base_name_with_time_unit}
             if IS_JAX_INSTALLED:
                 mapper["num_segments"] = f"{group_id}_num_segments"
-            agg_func = dags.rename_arguments(
+            agg_func = rename_arguments(
                 func=grouped_sum,
                 mapper=mapper,
             )
@@ -609,8 +607,6 @@ def _get_potential_agg_by_group_function_names_from_function_arguments(
     Set of potential aggregation targets.
     """
     all_names = {
-        name
-        for func in functions.values()
-        for name in get_names_of_required_arguments(func)
+        name for func in functions.values() for name in get_free_arguments(func)
     }
     return {n for n in all_names if group_pattern.match(n)}

@@ -1,10 +1,12 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from ttsim import RoundingSpec, piecewise_polynomial, policy_function
-from ttsim.piecewise_polynomial import (
-    PiecewisePolynomialParameters,
-)
 from ttsim.ttsim_objects import params_function
+
+if TYPE_CHECKING:
+    from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
 
 
 @policy_function(
