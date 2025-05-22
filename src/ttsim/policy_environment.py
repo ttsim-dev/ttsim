@@ -549,6 +549,11 @@ def get_one_param(  # noqa: PLR0911
             cleaned_spec["value"]
         )
         return ConsecutiveIntLookUpTableParam(**cleaned_spec)
+    elif spec["type"] == "birth_month_based_phase_in":
+        cleaned_spec["value"] = get_birth_month_based_phase_in_param_value(
+            cleaned_spec["value"]
+        )
+        return ConsecutiveIntLookUpTableParam(**cleaned_spec)
     elif spec["type"] == "birth_year_based_phase_in":
         cleaned_spec["value"] = get_birth_year_based_phase_in_param_value(
             cleaned_spec["value"]
@@ -648,13 +653,75 @@ def get_consecutive_int_look_up_table_param_value(
     )
 
 
+def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
+    return r["years"] + r["months"] / 12
+
+
+def get_birth_month_based_phase_in_param_value(
+    raw: dict[str | int, Any],
+) -> dict[int, float]:
+    """Get the parameters for birth month-based phase-in.
+
+    Fills up months for which no parameters are given with the last given value.
+    """
+
+    def _m_since_ad(y: int, m: int) -> int:
+        return y * 12 + (m - 1)
+
+    def _fill_phase_in(
+        raw: dict[int, dict[int, dict[Literal["years", "months"], int]]],
+        first_m_since_ad_phase_in: int,
+        last_m_since_ad_phase_in: int,
+    ) -> dict[int, float]:
+        out = {}
+        for y, m_dict in raw.items():
+            for m, v in m_dict.items():
+                out[_m_since_ad(y=y, m=m)] = _year_fraction(v)
+        breakpoint()
+        return out
+
+    first_m_since_ad_to_consider = _m_since_ad(
+        y=raw.pop("first_birthyear_to_consider"), m=1
+    )
+    last_m_since_ad_to_consider = _m_since_ad(
+        y=raw.pop("last_birthyear_to_consider"), m=12
+    )
+    assert all(isinstance(k, int) for k in raw)
+    first_birthyear_phase_in: int = min(raw.keys())  # type: ignore[assignment]
+    first_birthmonth_phase_in: int = min(raw[first_birthyear_phase_in].keys())  # type: ignore[assignment]
+    first_m_since_ad_phase_in = _m_since_ad(
+        y=first_birthyear_phase_in, m=first_birthmonth_phase_in
+    )
+    last_birthyear_phase_in: int = max(raw.keys())  # type: ignore[assignment]
+    last_birthmonth_phase_in: int = max(raw[last_birthyear_phase_in].keys())  # type: ignore[assignment]
+    last_m_since_ad_phase_in = _m_since_ad(
+        y=last_birthyear_phase_in, m=last_birthmonth_phase_in
+    )
+    assert first_m_since_ad_to_consider <= first_m_since_ad_phase_in
+    assert last_m_since_ad_to_consider >= last_m_since_ad_phase_in
+    before_phase_in: dict[int, float] = {
+        b_m: _year_fraction(raw[first_birthyear_phase_in][first_birthmonth_phase_in])
+        for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_in)
+    }
+    during_phase_in: dict[int, float] = _fill_phase_in(
+        raw=raw,
+    )
+    after_phase_in: dict[int, float] = {
+        b_m: _year_fraction(raw[last_birthyear_phase_in][last_birthmonth_phase_in])
+        for b_m in range(last_m_since_ad_phase_in + 1, last_m_since_ad_to_consider + 1)
+    }
+    return get_consecutive_int_look_up_table_param_value(
+        {**before_phase_in, **during_phase_in, **after_phase_in}
+    )
+
+
 def get_birth_year_based_phase_in_param_value(
     raw: dict[str | int, Any],
 ) -> dict[int, float]:
-    """Get the parameters for birth year-based phase-in."""
+    """Get the parameters for birth year-based phase-in.
 
-    def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
-        return r["years"] + r["months"] / 12
+    Requires all birth years to be given.
+    """
 
     first_birthyear_to_consider = raw.pop("first_birthyear_to_consider")
     last_birthyear_to_consider = raw.pop("last_birthyear_to_consider")

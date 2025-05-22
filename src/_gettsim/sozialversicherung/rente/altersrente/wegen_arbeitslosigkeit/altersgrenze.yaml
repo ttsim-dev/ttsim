@@ -1,7 +1,7 @@
 ---
-altersgrenze:
+altersgrenze_abschlagsfrei:
   name:
-    de: Einheitliche Altersgrenze für Altersrente wegen Arbeitslosigkeit (abschlagsfrei)
+    de: Einheitliche Altersgrenze für abschlagsfreie Altersrente wegen Arbeitslosigkeit
     en: Uniform age threshold for pension for unemployed (without deductions)
   description:
     de: >-
@@ -22,7 +22,7 @@ altersgrenze:
     note: >-
       Increase of age threshold from 60 to 65 for birth cohort 1941-1952. See
       `altersgrenze_gestaffelt`.
-delete_this_prefix_later_altersgrenze_gestaffelt:
+altersgrenze_abschlagsfrei_gestaffelt:
   name:
     de: Gestaffelte Altersgrenze für Altersrente wegen Arbeitslosigkeit (abschlagsfrei)
     en: Staggered age threshold for pension for unemployed (without deductions)
@@ -38,1057 +38,411 @@ delete_this_prefix_later_altersgrenze_gestaffelt:
       https://www.gesetze-im-internet.de/sgb_6/__237.html
   unit: Years
   reference_period: null
-  type: require_converter
+  type: birth_month_based_phase_in
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
     note: Increase of full retirement age from 60 to 65 for birth cohort 1941-1952.
-    entry_age_old_regime: 60.0
-    entry_age_new_regime: 65.0
-    max_birthyear_old_regime: 1940
-    min_birthyear_new_regime: 1953
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2029
+    1940:
+      12:
+        years: 60
+        months: 0
     1941:
       1:
-        base_age: 60
-        months_to_add: 1
-      2:
-        base_age: 60
-        months_to_add: 1
-      3:
-        base_age: 60
-        months_to_add: 1
-      4:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       5:
-        base_age: 60
-        months_to_add: 2
-      6:
-        base_age: 60
-        months_to_add: 2
-      7:
-        base_age: 60
-        months_to_add: 2
-      8:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       9:
-        base_age: 60
-        months_to_add: 3
-      10:
-        base_age: 60
-        months_to_add: 3
-      11:
-        base_age: 60
-        months_to_add: 3
-      12:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
     1942:
       1:
-        base_age: 60
-        months_to_add: 4
-      2:
-        base_age: 60
-        months_to_add: 4
-      3:
-        base_age: 60
-        months_to_add: 4
-      4:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       5:
-        base_age: 60
-        months_to_add: 5
-      6:
-        base_age: 60
-        months_to_add: 5
-      7:
-        base_age: 60
-        months_to_add: 5
-      8:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       9:
-        base_age: 60
-        months_to_add: 6
-      10:
-        base_age: 60
-        months_to_add: 6
-      11:
-        base_age: 60
-        months_to_add: 6
-      12:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
     1943:
       1:
-        base_age: 60
-        months_to_add: 7
-      2:
-        base_age: 60
-        months_to_add: 7
-      3:
-        base_age: 60
-        months_to_add: 7
-      4:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       5:
-        base_age: 60
-        months_to_add: 8
-      6:
-        base_age: 60
-        months_to_add: 8
-      7:
-        base_age: 60
-        months_to_add: 8
-      8:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       9:
-        base_age: 60
-        months_to_add: 9
-      10:
-        base_age: 60
-        months_to_add: 9
-      11:
-        base_age: 60
-        months_to_add: 9
-      12:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
     1944:
       1:
-        base_age: 60
-        months_to_add: 10
-      2:
-        base_age: 60
-        months_to_add: 10
-      3:
-        base_age: 60
-        months_to_add: 10
-      4:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       5:
-        base_age: 60
-        months_to_add: 11
-      6:
-        base_age: 60
-        months_to_add: 11
-      7:
-        base_age: 60
-        months_to_add: 11
-      8:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       9:
-        base_age: 61
-        months_to_add: 0
-      10:
-        base_age: 61
-        months_to_add: 0
-      11:
-        base_age: 61
-        months_to_add: 0
-      12:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
     1945:
       1:
-        base_age: 61
-        months_to_add: 1
-      2:
-        base_age: 61
-        months_to_add: 1
-      3:
-        base_age: 61
-        months_to_add: 2
-      4:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 1
       5:
-        base_age: 61
-        months_to_add: 3
-      6:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       7:
-        base_age: 61
-        months_to_add: 4
-      8:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       9:
-        base_age: 61
-        months_to_add: 5
-      10:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       11:
-        base_age: 61
-        months_to_add: 6
-      12:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
     1946:
       1:
-        base_age: 61
-        months_to_add: 7
-      2:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       3:
-        base_age: 61
-        months_to_add: 8
-      4:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       5:
-        base_age: 61
-        months_to_add: 9
-      6:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       7:
-        base_age: 61
-        months_to_add: 10
-      8:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       9:
-        base_age: 60
-        months_to_add: 11
-      10:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       11:
-        base_age: 62
-        months_to_add: 0
-      12:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
     1947:
       1:
-        base_age: 62
-        months_to_add: 1
-      2:
-        base_age: 62
-        months_to_add: 1
+        years: 62
+        months: 1
       3:
-        base_age: 62
-        months_to_add: 2
-      4:
-        base_age: 62
-        months_to_add: 2
+        years: 62
+        months: 2
       5:
-        base_age: 62
-        months_to_add: 3
-      6:
-        base_age: 62
-        months_to_add: 3
+        years: 62
+        months: 3
       7:
-        base_age: 62
-        months_to_add: 4
-      8:
-        base_age: 62
-        months_to_add: 4
+        years: 62
+        months: 4
       9:
-        base_age: 62
-        months_to_add: 5
-      10:
-        base_age: 62
-        months_to_add: 5
+        years: 62
+        months: 5
       11:
-        base_age: 62
-        months_to_add: 6
-      12:
-        base_age: 62
-        months_to_add: 6
+        years: 62
+        months: 6
     1948:
       1:
-        base_age: 62
-        months_to_add: 7
-      2:
-        base_age: 62
-        months_to_add: 7
+        years: 62
+        months: 7
       3:
-        base_age: 62
-        months_to_add: 8
-      4:
-        base_age: 62
-        months_to_add: 8
+        years: 62
+        months: 8
       5:
-        base_age: 62
-        months_to_add: 9
-      6:
-        base_age: 62
-        months_to_add: 9
+        years: 62
+        months: 9
       7:
-        base_age: 62
-        months_to_add: 10
-      8:
-        base_age: 62
-        months_to_add: 10
+        years: 62
+        months: 10
       9:
-        base_age: 62
-        months_to_add: 11
-      10:
-        base_age: 62
-        months_to_add: 11
+        years: 62
+        months: 11
       11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
+        years: 63
+        months: 0
     1949:
       1:
-        base_age: 63
-        months_to_add: 1
-      2:
-        base_age: 63
-        months_to_add: 1
+        years: 63
+        months: 1
       3:
-        base_age: 63
-        months_to_add: 2
-      4:
-        base_age: 63
-        months_to_add: 2
+        years: 63
+        months: 2
       5:
-        base_age: 63
-        months_to_add: 3
-      6:
-        base_age: 63
-        months_to_add: 3
+        years: 63
+        months: 3
       7:
-        base_age: 63
-        months_to_add: 4
-      8:
-        base_age: 63
-        months_to_add: 4
+        years: 63
+        months: 4
       9:
-        base_age: 63
-        months_to_add: 5
-      10:
-        base_age: 63
-        months_to_add: 5
+        years: 63
+        months: 5
       11:
-        base_age: 63
-        months_to_add: 6
-      12:
-        base_age: 63
-        months_to_add: 6
+        years: 63
+        months: 6
     1950:
       1:
-        base_age: 63
-        months_to_add: 7
-      2:
-        base_age: 63
-        months_to_add: 7
+        years: 63
+        months: 7
       3:
-        base_age: 63
-        months_to_add: 8
-      4:
-        base_age: 63
-        months_to_add: 8
+        years: 63
+        months: 8
       5:
-        base_age: 63
-        months_to_add: 9
-      6:
-        base_age: 63
-        months_to_add: 9
+        years: 63
+        months: 9
       7:
-        base_age: 63
-        months_to_add: 10
-      8:
-        base_age: 63
-        months_to_add: 10
+        years: 63
+        months: 10
       9:
-        base_age: 63
-        months_to_add: 11
-      10:
-        base_age: 63
-        months_to_add: 11
+        years: 63
+        months: 11
       11:
-        base_age: 64
-        months_to_add: 0
-      12:
-        base_age: 64
-        months_to_add: 0
+        years: 64
+        months: 0
     1951:
       1:
-        base_age: 64
-        months_to_add: 1
-      2:
-        base_age: 64
-        months_to_add: 1
+        years: 64
+        months: 1
       3:
-        base_age: 64
-        months_to_add: 2
-      4:
-        base_age: 64
-        months_to_add: 2
+        years: 64
+        months: 2
       5:
-        base_age: 64
-        months_to_add: 3
-      6:
-        base_age: 64
-        months_to_add: 3
+        years: 64
+        months: 3
       7:
-        base_age: 64
-        months_to_add: 4
-      8:
-        base_age: 64
-        months_to_add: 4
+        years: 64
+        months: 4
       9:
-        base_age: 64
-        months_to_add: 5
-      10:
-        base_age: 64
-        months_to_add: 5
+        years: 64
+        months: 5
       11:
-        base_age: 64
-        months_to_add: 6
-      12:
-        base_age: 64
-        months_to_add: 6
+        years: 64
+        months: 6
     1952:
       1:
-        base_age: 64
-        months_to_add: 7
-      2:
-        base_age: 64
-        months_to_add: 7
+        years: 64
+        months: 7
       3:
-        base_age: 64
-        months_to_add: 8
-      4:
-        base_age: 64
-        months_to_add: 8
+        years: 64
+        months: 8
       5:
-        base_age: 64
-        months_to_add: 9
-      6:
-        base_age: 64
-        months_to_add: 9
+        years: 64
+        months: 9
       7:
-        base_age: 64
-        months_to_add: 10
-      8:
-        base_age: 64
-        months_to_add: 10
+        years: 64
+        months: 10
       9:
-        base_age: 64
-        months_to_add: 11
-      10:
-        base_age: 64
-        months_to_add: 11
+        years: 64
+        months: 11
       11:
-        base_age: 65
-        months_to_add: 0
-      12:
-        base_age: 65
-        months_to_add: 0
+        years: 65
+        months: 0
+    1953:
+      1:
+        years: 65
+        months: 0
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     note: Increase of full retirement age from 60 to 65 for birth cohort 1937-1952.
-    entry_age_old_regime: 60.0
-    entry_age_new_regime: 65.0
-    max_birthyear_old_regime: 1936
-    min_birthyear_new_regime: 1953
+    1936:
+      12:
+        years: 60
+        months: 0
     1937:
       1:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       2:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       3:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       4:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       5:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       6:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       7:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       8:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       9:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       10:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       11:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       12:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
     1938:
       1:
-        base_age: 61
-        months_to_add: 1
+        years: 61
+        months: 1
       2:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 2
       3:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       4:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       5:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       6:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
       7:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       8:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       9:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       10:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       11:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       12:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
     1939:
       1:
-        base_age: 62
-        months_to_add: 1
+        years: 62
+        months: 1
       2:
-        base_age: 62
-        months_to_add: 2
+        years: 62
+        months: 2
       3:
-        base_age: 62
-        months_to_add: 3
+        years: 62
+        months: 3
       4:
-        base_age: 62
-        months_to_add: 4
+        years: 62
+        months: 4
       5:
-        base_age: 62
-        months_to_add: 5
+        years: 62
+        months: 5
       6:
-        base_age: 62
-        months_to_add: 6
+        years: 62
+        months: 6
       7:
-        base_age: 62
-        months_to_add: 7
+        years: 62
+        months: 7
       8:
-        base_age: 62
-        months_to_add: 8
+        years: 62
+        months: 8
       9:
-        base_age: 62
-        months_to_add: 9
+        years: 62
+        months: 9
       10:
-        base_age: 62
-        months_to_add: 10
+        years: 62
+        months: 10
       11:
-        base_age: 62
-        months_to_add: 11
+        years: 62
+        months: 11
       12:
-        base_age: 63
-        months_to_add: 0
+        years: 63
+        months: 0
     1940:
       1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1941:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1942:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1943:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1944:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1945:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1946:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1947:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
-    1948:
-      1:
-        base_age: 63
-        months_to_add: 0
-      2:
-        base_age: 63
-        months_to_add: 0
-      3:
-        base_age: 63
-        months_to_add: 0
-      4:
-        base_age: 63
-        months_to_add: 0
-      5:
-        base_age: 63
-        months_to_add: 0
-      6:
-        base_age: 63
-        months_to_add: 0
-      7:
-        base_age: 63
-        months_to_add: 0
-      8:
-        base_age: 63
-        months_to_add: 0
-      9:
-        base_age: 63
-        months_to_add: 0
-      10:
-        base_age: 63
-        months_to_add: 0
-      11:
-        base_age: 63
-        months_to_add: 0
-      12:
-        base_age: 63
-        months_to_add: 0
+        years: 63
+        months: 0
     1949:
       1:
-        base_age: 63
-        months_to_add: 1
-      2:
-        base_age: 63
-        months_to_add: 1
+        years: 63
+        months: 1
       3:
-        base_age: 63
-        months_to_add: 2
-      4:
-        base_age: 63
-        months_to_add: 2
+        years: 63
+        months: 2
       5:
-        base_age: 63
-        months_to_add: 3
-      6:
-        base_age: 63
-        months_to_add: 3
+        years: 63
+        months: 3
       7:
-        base_age: 63
-        months_to_add: 4
-      8:
-        base_age: 63
-        months_to_add: 4
+        years: 63
+        months: 4
       9:
-        base_age: 63
-        months_to_add: 5
-      10:
-        base_age: 63
-        months_to_add: 5
+        years: 63
+        months: 5
       11:
-        base_age: 63
-        months_to_add: 6
-      12:
-        base_age: 63
-        months_to_add: 6
+        years: 63
+        months: 6
     1950:
       1:
-        base_age: 63
-        months_to_add: 7
-      2:
-        base_age: 63
-        months_to_add: 7
+        years: 63
+        months: 7
       3:
-        base_age: 63
-        months_to_add: 8
-      4:
-        base_age: 63
-        months_to_add: 8
+        years: 63
+        months: 8
       5:
-        base_age: 63
-        months_to_add: 9
-      6:
-        base_age: 63
-        months_to_add: 9
+        years: 63
+        months: 9
       7:
-        base_age: 63
-        months_to_add: 10
-      8:
-        base_age: 63
-        months_to_add: 10
+        years: 63
+        months: 10
       9:
-        base_age: 63
-        months_to_add: 11
-      10:
-        base_age: 63
-        months_to_add: 11
+        years: 63
+        months: 11
       11:
-        base_age: 64
-        months_to_add: 0
-      12:
-        base_age: 64
-        months_to_add: 0
+        years: 64
+        months: 0
     1951:
       1:
-        base_age: 64
-        months_to_add: 1
-      2:
-        base_age: 64
-        months_to_add: 1
+        years: 64
+        months: 1
       3:
-        base_age: 64
-        months_to_add: 2
-      4:
-        base_age: 64
-        months_to_add: 2
+        years: 64
+        months: 2
       5:
-        base_age: 64
-        months_to_add: 3
-      6:
-        base_age: 64
-        months_to_add: 3
+        years: 64
+        months: 3
       7:
-        base_age: 64
-        months_to_add: 4
-      8:
-        base_age: 64
-        months_to_add: 4
+        years: 64
+        months: 4
       9:
-        base_age: 64
-        months_to_add: 5
-      10:
-        base_age: 64
-        months_to_add: 5
+        years: 64
+        months: 5
       11:
-        base_age: 64
-        months_to_add: 6
-      12:
-        base_age: 64
-        months_to_add: 6
+        years: 64
+        months: 6
     1952:
       1:
-        base_age: 64
-        months_to_add: 7
-      2:
-        base_age: 64
-        months_to_add: 7
+        years: 64
+        months: 7
       3:
-        base_age: 64
-        months_to_add: 8
-      4:
-        base_age: 64
-        months_to_add: 8
+        years: 64
+        months: 8
       5:
-        base_age: 64
-        months_to_add: 9
-      6:
-        base_age: 64
-        months_to_add: 9
+        years: 64
+        months: 9
       7:
-        base_age: 64
-        months_to_add: 10
-      8:
-        base_age: 64
-        months_to_add: 10
+        years: 64
+        months: 10
       9:
-        base_age: 64
-        months_to_add: 11
-      10:
-        base_age: 64
-        months_to_add: 11
+        years: 64
+        months: 11
       11:
-        base_age: 65
-        months_to_add: 0
-      12:
-        base_age: 65
-        months_to_add: 0
+        years: 65
+        months: 0
+    1953:
+      1:
+        years: 65
+        months: 0
   1996-09-27:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of full retirement age from 60 to 65 for birth cohort 1937-1941.
@@ -1098,194 +452,194 @@ delete_this_prefix_later_altersgrenze_gestaffelt:
     min_birthyear_new_regime: 1942
     1937:
       1:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       2:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       3:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       4:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       5:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       6:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       7:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       8:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       9:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       10:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       11:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       12:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
     1938:
       1:
-        base_age: 61
-        months_to_add: 1
+        years: 61
+        months: 1
       2:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 2
       3:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       4:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       5:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       6:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
       7:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       8:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       9:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       10:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       11:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       12:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
     1939:
       1:
-        base_age: 62
-        months_to_add: 1
+        years: 62
+        months: 1
       2:
-        base_age: 62
-        months_to_add: 2
+        years: 62
+        months: 2
       3:
-        base_age: 62
-        months_to_add: 3
+        years: 62
+        months: 3
       4:
-        base_age: 62
-        months_to_add: 4
+        years: 62
+        months: 4
       5:
-        base_age: 62
-        months_to_add: 5
+        years: 62
+        months: 5
       6:
-        base_age: 62
-        months_to_add: 6
+        years: 62
+        months: 6
       7:
-        base_age: 62
-        months_to_add: 7
+        years: 62
+        months: 7
       8:
-        base_age: 62
-        months_to_add: 8
+        years: 62
+        months: 8
       9:
-        base_age: 62
-        months_to_add: 9
+        years: 62
+        months: 9
       10:
-        base_age: 62
-        months_to_add: 10
+        years: 62
+        months: 10
       11:
-        base_age: 62
-        months_to_add: 11
+        years: 62
+        months: 11
       12:
-        base_age: 63
-        months_to_add: 0
+        years: 63
+        months: 0
     1940:
       1:
-        base_age: 63
-        months_to_add: 1
+        years: 63
+        months: 1
       2:
-        base_age: 63
-        months_to_add: 2
+        years: 63
+        months: 2
       3:
-        base_age: 63
-        months_to_add: 3
+        years: 63
+        months: 3
       4:
-        base_age: 63
-        months_to_add: 4
+        years: 63
+        months: 4
       5:
-        base_age: 63
-        months_to_add: 5
+        years: 63
+        months: 5
       6:
-        base_age: 63
-        months_to_add: 6
+        years: 63
+        months: 6
       7:
-        base_age: 63
-        months_to_add: 7
+        years: 63
+        months: 7
       8:
-        base_age: 63
-        months_to_add: 8
+        years: 63
+        months: 8
       9:
-        base_age: 63
-        months_to_add: 9
+        years: 63
+        months: 9
       10:
-        base_age: 63
-        months_to_add: 10
+        years: 63
+        months: 10
       11:
-        base_age: 63
-        months_to_add: 11
+        years: 63
+        months: 11
       12:
-        base_age: 64
-        months_to_add: 0
+        years: 64
+        months: 0
     1941:
       1:
-        base_age: 64
-        months_to_add: 1
+        years: 64
+        months: 1
       2:
-        base_age: 64
-        months_to_add: 2
+        years: 64
+        months: 2
       3:
-        base_age: 64
-        months_to_add: 3
+        years: 64
+        months: 3
       4:
-        base_age: 64
-        months_to_add: 4
+        years: 64
+        months: 4
       5:
-        base_age: 64
-        months_to_add: 5
+        years: 64
+        months: 5
       6:
-        base_age: 64
-        months_to_add: 6
+        years: 64
+        months: 6
       7:
-        base_age: 64
-        months_to_add: 7
+        years: 64
+        months: 7
       8:
-        base_age: 64
-        months_to_add: 8
+        years: 64
+        months: 8
       9:
-        base_age: 64
-        months_to_add: 9
+        years: 64
+        months: 9
       10:
-        base_age: 64
-        months_to_add: 10
+        years: 64
+        months: 10
       11:
-        base_age: 64
-        months_to_add: 11
+        years: 64
+        months: 11
       12:
-        base_age: 65
-        months_to_add: 0
-delete_this_prefix_later_altersgrenze_vertrauensschutz:
+        years: 65
+        months: 0
+altersgrenze_abschlagsfrei_vertrauensschutz:
   name:
     de: >-
-      Altersgrenze für Altersrente wegen Arbeitslosigkeit mit Vertrauensschutz
-      (abschlagsfrei).
+      Altersgrenze für abschlagsfreie Altersrente wegen Arbeitslosigkeit mit
+      Vertrauensschutz
     en: >-
       Age threshold for pension for unemployed (without deductions) with
       Vertrauensschutz
@@ -1302,7 +656,7 @@ delete_this_prefix_later_altersgrenze_vertrauensschutz:
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     value: 60.0
-delete_this_prefix_later_altersgrenze_gestaffelt_vertrauensschutz:
+altersgrenze_abschlagsfrei_gestaffelt_vertrauensschutz:
   name:
     de: >-
       § 237 SGB VI Abs. 4
@@ -1333,123 +687,123 @@ delete_this_prefix_later_altersgrenze_gestaffelt_vertrauensschutz:
     entry_age_old_regime: 60.0
     1941:
       1:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       2:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       3:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       4:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       5:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       6:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       7:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       8:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       9:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       10:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       11:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       12:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
     1942:
       1:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       2:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       3:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       4:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       5:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       6:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       7:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       8:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       9:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       10:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       11:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       12:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
     1943:
       1:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       2:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       3:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       4:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       5:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       6:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       7:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       8:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       9:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       10:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       11:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       12:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
     1944:
       1:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       2:
-        base_age: 60
-        months_to_add: 10
-delete_this_prefix_later_altersgrenze_vorzeitig:
+        years: 60
+        months: 10
+altersgrenze_vorzeitig:
   name:
     de: >-
       Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
@@ -1481,7 +835,7 @@ delete_this_prefix_later_altersgrenze_vorzeitig:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of ERA was revoked.
     value: 60.0
-delete_this_prefix_later_altersgrenze_vorzeitig_gestaffelt:
+altersgrenze_vorzeitig_gestaffelt:
   name:
     de: >-
       Gestaffelte Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
@@ -1512,152 +866,152 @@ delete_this_prefix_later_altersgrenze_vorzeitig_gestaffelt:
     min_birthyear_new_regime: 1953
     1949:
       1:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       2:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       3:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       4:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       5:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       6:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       7:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       8:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       9:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       10:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       11:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       12:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
     1950:
       1:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       2:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       3:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       4:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       5:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       6:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       7:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       8:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       9:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       10:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       11:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
       12:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
     1951:
       1:
-        base_age: 61
-        months_to_add: 1
+        years: 61
+        months: 1
       2:
-        base_age: 61
-        months_to_add: 1
+        years: 61
+        months: 1
       3:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 2
       4:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 2
       5:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       6:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       7:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       8:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       9:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       10:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       11:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
       12:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
     1952:
       1:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       2:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       3:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       4:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       5:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       6:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       7:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       8:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       9:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       10:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       11:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
       12:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     note: Increase of early retirement age as before. (§ 237 SGB VI  Abs.5).
@@ -1667,152 +1021,152 @@ delete_this_prefix_later_altersgrenze_vorzeitig_gestaffelt:
     min_birthyear_new_regime: 1953
     1949:
       1:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       2:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       3:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       4:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       5:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       6:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       7:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       8:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       9:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       10:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       11:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       12:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
     1950:
       1:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       2:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       3:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       4:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       5:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       6:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       7:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       8:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       9:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       10:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       11:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
       12:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
     1951:
       1:
-        base_age: 61
-        months_to_add: 1
+        years: 61
+        months: 1
       2:
-        base_age: 61
-        months_to_add: 1
+        years: 61
+        months: 1
       3:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 2
       4:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 2
       5:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       6:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       7:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       8:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       9:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       10:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       11:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
       12:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
     1952:
       1:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       2:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       3:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       4:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       5:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       6:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       7:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       8:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       9:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       10:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       11:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
       12:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
   1996-09-27:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of ERA was revoked.
@@ -1825,116 +1179,116 @@ delete_this_prefix_later_altersgrenze_vorzeitig_gestaffelt:
     min_birthyear_new_regime: 1949
     1946:
       1:
-        base_age: 60
-        months_to_add: 1
+        years: 60
+        months: 1
       2:
-        base_age: 60
-        months_to_add: 2
+        years: 60
+        months: 2
       3:
-        base_age: 60
-        months_to_add: 3
+        years: 60
+        months: 3
       4:
-        base_age: 60
-        months_to_add: 4
+        years: 60
+        months: 4
       5:
-        base_age: 60
-        months_to_add: 5
+        years: 60
+        months: 5
       6:
-        base_age: 60
-        months_to_add: 6
+        years: 60
+        months: 6
       7:
-        base_age: 60
-        months_to_add: 7
+        years: 60
+        months: 7
       8:
-        base_age: 60
-        months_to_add: 8
+        years: 60
+        months: 8
       9:
-        base_age: 60
-        months_to_add: 9
+        years: 60
+        months: 9
       10:
-        base_age: 60
-        months_to_add: 10
+        years: 60
+        months: 10
       11:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       12:
-        base_age: 61
-        months_to_add: 0
+        years: 61
+        months: 0
     1947:
       1:
-        base_age: 61
-        months_to_add: 1
+        years: 61
+        months: 1
       2:
-        base_age: 61
-        months_to_add: 2
+        years: 61
+        months: 2
       3:
-        base_age: 61
-        months_to_add: 3
+        years: 61
+        months: 3
       4:
-        base_age: 61
-        months_to_add: 4
+        years: 61
+        months: 4
       5:
-        base_age: 61
-        months_to_add: 5
+        years: 61
+        months: 5
       6:
-        base_age: 61
-        months_to_add: 6
+        years: 61
+        months: 6
       7:
-        base_age: 61
-        months_to_add: 7
+        years: 61
+        months: 7
       8:
-        base_age: 61
-        months_to_add: 8
+        years: 61
+        months: 8
       9:
-        base_age: 61
-        months_to_add: 9
+        years: 61
+        months: 9
       10:
-        base_age: 61
-        months_to_add: 10
+        years: 61
+        months: 10
       11:
-        base_age: 60
-        months_to_add: 11
+        years: 60
+        months: 11
       12:
-        base_age: 62
-        months_to_add: 0
+        years: 62
+        months: 0
     1948:
       1:
-        base_age: 62
-        months_to_add: 1
+        years: 62
+        months: 1
       2:
-        base_age: 62
-        months_to_add: 2
+        years: 62
+        months: 2
       3:
-        base_age: 62
-        months_to_add: 3
+        years: 62
+        months: 3
       4:
-        base_age: 62
-        months_to_add: 4
+        years: 62
+        months: 4
       5:
-        base_age: 62
-        months_to_add: 5
+        years: 62
+        months: 5
       6:
-        base_age: 62
-        months_to_add: 6
+        years: 62
+        months: 6
       7:
-        base_age: 62
-        months_to_add: 7
+        years: 62
+        months: 7
       8:
-        base_age: 62
-        months_to_add: 8
+        years: 62
+        months: 8
       9:
-        base_age: 62
-        months_to_add: 9
+        years: 62
+        months: 9
       10:
-        base_age: 62
-        months_to_add: 10
+        years: 62
+        months: 10
       11:
-        base_age: 62
-        months_to_add: 11
+        years: 62
+        months: 11
       12:
-        base_age: 63
-        months_to_add: 0
-delete_this_prefix_later_altersgrenze_vorzeitig_vertrauensschutz:
+        years: 63
+        months: 0
+altersgrenze_vorzeitig_vertrauensschutz:
   name:
     de: >-
       Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen

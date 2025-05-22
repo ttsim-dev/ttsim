@@ -5,7 +5,7 @@ Revoked for birth cohorts after 1951.
 
 from __future__ import annotations
 
-from ttsim import policy_function
+from ttsim import ConsecutiveIntLookUpTableParamValue, policy_function
 
 
 @policy_function(
@@ -14,14 +14,14 @@ from ttsim import policy_function
     leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_ohne_vertrauensschutzprüfung_bis_1996(
-    altersgrenze_ohne_vertrauensschutzprüfung: float,
+def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung_bis_1996(
+    altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung: float,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
     Does not check for eligibility for this pathway into retirement.
     """
-    return altersgrenze_ohne_vertrauensschutzprüfung
+    return altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung
 
 
 @policy_function(
@@ -34,7 +34,7 @@ def altersgrenze_mit_vertrauensschutzprüfung(
     geburtsjahr: int,
     geburtsmonat: int,
     vertrauensschutz_1997: bool,
-    altersgrenze_ohne_vertrauensschutzprüfung: float,
+    altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung: float,
     ges_rente_params: dict,
 ) -> float:
     """Full retirement age for unemployed with Vertrauensschutz.
@@ -60,7 +60,7 @@ def altersgrenze_mit_vertrauensschutzprüfung(
             "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
         ]["vertrauensschutz"][geburtsjahr][geburtsmonat]
     else:
-        out = altersgrenze_ohne_vertrauensschutzprüfung
+        out = altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung
 
     return out
 
@@ -71,8 +71,8 @@ def altersgrenze_mit_vertrauensschutzprüfung(
     leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_ohne_vertrauensschutzprüfung_ab_2010(
-    altersgrenze_ohne_vertrauensschutzprüfung: float,
+def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung_ab_2010(
+    altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung: float,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
@@ -81,7 +81,7 @@ def altersgrenze_ohne_vertrauensschutzprüfung_ab_2010(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    return altersgrenze_ohne_vertrauensschutzprüfung
+    return altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung
 
 
 @policy_function(
@@ -189,11 +189,11 @@ def ges_rente_arbeitsl_vorzeitig_mit_vertrauenss_ab_2004_07(
     return arbeitsl_vorzeitig
 
 
-@policy_function(end_date="2017-12-31", vectorization_strategy="loop")
-def altersgrenze_ohne_vertrauensschutzprüfung(
+@policy_function(end_date="2017-12-31")
+def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung(
     geburtsjahr: int,
     geburtsmonat: int,
-    ges_rente_params: dict,
+    altersgrenze_abschlagsfrei_gestaffelt: ConsecutiveIntLookUpTableParamValue,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
@@ -201,30 +201,12 @@ def altersgrenze_ohne_vertrauensschutzprüfung(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    if (
-        geburtsjahr
-        <= ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"][
-            "max_birthyear_old_regime"
-        ]
-    ):
-        out = ges_rente_params[
-            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
-        ]["entry_age_old_regime"]
-    elif (
-        geburtsjahr
-        >= ges_rente_params["altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"][
-            "min_birthyear_new_regime"
-        ]
-    ):
-        out = ges_rente_params[
-            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
-        ]["entry_age_new_regime"]
-    else:
-        out = ges_rente_params[
-            "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
-        ][geburtsjahr][geburtsmonat]
+    birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return out
+    return altersgrenze_abschlagsfrei_gestaffelt.values_to_look_up[
+        birth_month_since_ad
+        - altersgrenze_abschlagsfrei_gestaffelt.base_value_to_subtract
+    ]
 
 
 @policy_function(end_date="2017-12-31", vectorization_strategy="loop")
