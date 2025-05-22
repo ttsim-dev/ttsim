@@ -23,9 +23,9 @@ from ttsim.loader import (
     orig_tree_with_column_objects_param_functions,
 )
 from ttsim.param_objects import (
+    ConsecutiveIntLookUpTableParam,
+    ConsecutiveIntLookUpTableParamValue,
     DictParam,
-    LookUpTableParam,
-    LookUpTableParamValue,
     ParamObject,
     PiecewisePolynomialParam,
     RawParam,
@@ -523,7 +523,7 @@ def active_params_tree(
     return dt.unflatten_from_tree_paths(flat_params_tree)
 
 
-def get_one_param(
+def get_one_param(  # noqa: PLR0911
     leaf_name: str,
     spec: OrigParamSpec,
     date: datetime.date,
@@ -544,14 +544,16 @@ def get_one_param(
             parameter_dict=cleaned_spec["value"],
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    elif spec["type"] == "look_up_table":
-        cleaned_spec["value"] = get_look_up_table_param_value(cleaned_spec["value"])
-        return LookUpTableParam(**cleaned_spec)
+    elif spec["type"] == "consecutive_int_look_up_table":
+        cleaned_spec["value"] = get_consecutive_int_look_up_table_param_value(
+            cleaned_spec["value"]
+        )
+        return ConsecutiveIntLookUpTableParam(**cleaned_spec)
     elif spec["type"] == "birth_year_based_phase_in":
         cleaned_spec["value"] = get_birth_year_based_phase_in_param_value(
             cleaned_spec["value"]
         )
-        return LookUpTableParam(**cleaned_spec)
+        return ConsecutiveIntLookUpTableParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
     else:
@@ -631,21 +633,18 @@ def _get_params_contents(
         return current_spec
 
 
-def get_look_up_table_param_value(
-    raw: dict[str | int, int | dict[int, float | int | bool]],
-) -> LookUpTableParamValue:
+def get_consecutive_int_look_up_table_param_value(
+    raw: dict[int, float | int | bool],
+) -> ConsecutiveIntLookUpTableParamValue:
     """Get the parameters for a look-up table."""
-    base_value_to_subtract = raw.pop("base_value_to_subtract")
-    assert all(isinstance(k, int) for k in raw["look_up_dict"])  # type: ignore[union-attr]
-    look_up_keys = numpy.asarray(sorted(raw["look_up_dict"]))  # type: ignore[arg-type]
-    assert look_up_keys - base_value_to_subtract == np.arange(len(look_up_keys)), (
-        "Dictionary keys must be consecutive integers starting at "
-        "`base_value_to_subtract`."
+    look_up_keys = numpy.asarray(sorted(raw))
+    assert (look_up_keys - min(look_up_keys) == np.arange(len(look_up_keys))).all(), (
+        "Dictionary keys must be consecutive integers."
     )
 
-    return LookUpTableParamValue(
-        base_value_to_subtract=base_value_to_subtract,
-        values_to_look_up=np.asarray([raw["look_up_dict"][k] for k in look_up_keys]),  # type: ignore[index]
+    return ConsecutiveIntLookUpTableParamValue(
+        base_value_to_subtract=min(look_up_keys),
+        values_to_look_up=np.asarray([raw[k] for k in look_up_keys]),
     )
 
 
@@ -673,11 +672,8 @@ def get_birth_year_based_phase_in_param_value(
         b_y: _year_fraction(raw[last_birthyear_phase_in])
         for b_y in range(last_birthyear_phase_in + 1, last_birthyear_to_consider + 1)
     }
-    return get_look_up_table_param_value(
-        {
-            "base_value_to_subtract": first_birthyear_to_consider,
-            "look_up_dict": {**before_phase_in, **during_phase_in, **after_phase_in},
-        }
+    return get_consecutive_int_look_up_table_param_value(
+        {**before_phase_in, **during_phase_in, **after_phase_in}
     )
 
 

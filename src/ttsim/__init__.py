@@ -22,8 +22,8 @@ from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
 from ttsim.param_objects import (
+    ConsecutiveIntLookUpTableParamValue,
     DictParam,
-    LookUpTableParamValue,
     ParamObject,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
@@ -51,11 +51,11 @@ __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
+    "ConsecutiveIntLookUpTableParamValue",
     "DictParam",
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
-    "LookUpTableParamValue",
     "ParamFunction",
     "ParamObject",
     "PiecewisePolynomialParam",
