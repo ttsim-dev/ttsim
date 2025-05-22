@@ -84,6 +84,39 @@ def fg_id(
     return __reorder_ids(fg_id)
 
 
+def __assign_parents_fg_id(
+    fg_id: np.ndarray,
+    p_id: np.ndarray,
+    p_id_elternteil_loc: np.ndarray,
+    hh_id: np.ndarray,
+    alter: np.ndarray,
+    children: np.ndarray,
+    n: np.ndarray,
+) -> np.ndarray:
+    """Get the fg_id of the childs parents.
+
+    If the child is not married, has no children, is under 25 and in the same household,
+    assign the fg_id of its parents."""
+
+    # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
+    # once Bedarfsgemeinschaften are fully endogenous
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
+    # TODO(@MImmesberger): Remove hard-coded number
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
+
+    new_ids = np.where(
+        (p_id_elternteil_loc >= 0)
+        * (fg_id == p_id + p_id * n)
+        * (hh_id == hh_id[p_id_elternteil_loc])
+        * (alter < 25)
+        * (1 - children),
+        fg_id[p_id_elternteil_loc],
+        fg_id,
+    )
+
+    return new_ids
+
+
 @group_creation_function()
 def bg_id(
     fg_id: np.ndarray,
@@ -194,36 +227,3 @@ def __reorder_ids(ids: np.ndarray) -> np.ndarray:
     # Sum up all differences to get new id
     cons_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
     return cons_ids[np.argsort(index_after_sort)]
-
-
-def __assign_parents_fg_id(
-    fg_id: np.ndarray,
-    p_id: np.ndarray,
-    p_id_elternteil_loc: np.ndarray,
-    hh_id: np.ndarray,
-    alter: np.ndarray,
-    children: np.ndarray,
-    n: np.ndarray,
-) -> np.ndarray:
-    """Get the fg_id of the childs parents.
-
-    If the child is not married, has no children, is under 25 and in the same household,
-    assign the fg_id of its parents."""
-
-    # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt
-    # once Bedarfsgemeinschaften are fully endogenous
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/763
-    # TODO(@MImmesberger): Remove hard-coded number
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
-
-    new_ids = np.where(
-        (p_id_elternteil_loc >= 0)
-        * (fg_id == p_id + p_id * n)
-        * (hh_id == hh_id[p_id_elternteil_loc])
-        * (alter < 25)
-        * (1 - children),
-        fg_id[p_id_elternteil_loc],
-        fg_id,
-    )
-
-    return new_ids
