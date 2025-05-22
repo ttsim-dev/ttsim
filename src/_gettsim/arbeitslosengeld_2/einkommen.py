@@ -1,4 +1,4 @@
-"""Income relevant for calculation of Arbeitslosengeld II / Bürgergeld."""
+"""Relevant income for Arbeitslosengeld II."""
 
 from __future__ import annotations
 

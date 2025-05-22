@@ -2,6 +2,8 @@
 Tests for `piecewise_polynomial`
 """
 
+from __future__ import annotations
+
 import numpy
 import pytest
 

@@ -1,5 +1,7 @@
 """Einkünfte aus nichtselbstständiger Arbeit."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

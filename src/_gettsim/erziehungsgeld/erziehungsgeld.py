@@ -1,5 +1,7 @@
 """Functions to compute parental leave benefits (Erziehungsgeld, -2007)."""
 
+from __future__ import annotations
+
 from ttsim import (
     AggType,
     RoundingSpec,

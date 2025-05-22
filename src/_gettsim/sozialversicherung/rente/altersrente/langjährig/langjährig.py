@@ -1,5 +1,7 @@
 """Pathway for the long-term insured."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

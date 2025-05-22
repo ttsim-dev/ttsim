@@ -1,5 +1,7 @@
 """Einkünfte according to §§ 13-24 EStG."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

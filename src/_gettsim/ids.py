@@ -1,5 +1,7 @@
 """Input columns."""
 
+from __future__ import annotations
+
 from collections import Counter
 
 from ttsim import group_creation_function, policy_input

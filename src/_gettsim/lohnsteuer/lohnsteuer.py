@@ -1,5 +1,7 @@
 """Withholding tax on earnings (Lohnsteuer)."""
 
+from __future__ import annotations
+
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from _gettsim.solidaritätszuschlag.solidaritätszuschlag import (
     solidaritätszuschlagstarif,

@@ -1,8 +1,13 @@
-"""Module for the calculation of the Kindergeldübertrag."""
+"""Kindergeldübertrag for Arbeitslosengeld II."""
 
-import numpy
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ttsim import AggType, agg_by_p_id_function, join, policy_function
+
+if TYPE_CHECKING:
+    from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(start_date="2005-01-01", agg_type=AggType.SUM)
@@ -52,9 +57,9 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
 @policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def kindergeld_zur_bedarfsdeckung_m(
     kindergeld_pro_kind_m: float,
-    kindergeld__p_id_empfänger: numpy.ndarray[int],
-    p_id: numpy.ndarray[int],
-) -> numpy.ndarray[float]:
+    kindergeld__p_id_empfänger: np.ndarray,  # int
+    p_id: np.ndarray,  # int
+) -> np.ndarray:  # float
     """Kindergeld that is used to cover the SGB II Regelbedarf of the child.
 
     Even though the Kindergeld is paid to the parent (see function
@@ -114,10 +119,10 @@ def differenz_kindergeld_kindbedarf_m(
 
 @policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def in_anderer_bg_als_kindergeldempfänger(
-    p_id: numpy.ndarray[int],
-    kindergeld__p_id_empfänger: numpy.ndarray[int],
-    bg_id: numpy.ndarray[int],
-) -> numpy.ndarray[bool]:
+    p_id: np.ndarray,  # int
+    kindergeld__p_id_empfänger: np.ndarray,  # int
+    bg_id: np.ndarray,  # int
+) -> np.ndarray:  # bool
     """True if the person is in a different Bedarfsgemeinschaft than the
     Kindergeldempfänger of that person.
     """
