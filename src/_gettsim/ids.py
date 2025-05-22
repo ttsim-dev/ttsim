@@ -104,7 +104,7 @@ def _assign_parents_fg_id(
     # TODO(@MImmesberger): Remove hard-coded number
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
 
-    new_ids = np.where(
+    return np.where(
         (p_id_elternteil_loc >= 0)
         * (fg_id == p_id + p_id * n)
         * (hh_id == hh_id[p_id_elternteil_loc])
@@ -113,8 +113,6 @@ def _assign_parents_fg_id(
         fg_id[p_id_elternteil_loc],
         fg_id,
     )
-
-    return new_ids
 
 
 @group_creation_function()
