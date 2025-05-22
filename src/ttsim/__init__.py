@@ -23,13 +23,14 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.param_objects import (
     DictParam,
+    LookUpTableParamValue,
     ParamObject,
     PiecewisePolynomialParam,
+    PiecewisePolynomialParamValue,
     RawParam,
     ScalarParam,
 )
 from ttsim.piecewise_polynomial import (
-    PiecewisePolynomialParamValue,
     get_piecewise_parameters,
     piecewise_polynomial,
 )
@@ -54,6 +55,7 @@ __all__ = [
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
+    "LookUpTableParamValue",
     "ParamFunction",
     "ParamObject",
     "PiecewisePolynomialParam",

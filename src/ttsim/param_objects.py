@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import datetime
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
 
 if TYPE_CHECKING:
+    import datetime
+
     from ttsim.config import numpy_or_jax as np
 
 FunArgTypes = ParamSpec("FunArgTypes")
@@ -85,14 +86,14 @@ class PiecewisePolynomialParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class BirthYearBasedPhaseInParam(ParamObject):
-    """A TTSIM parameter with its contents read and converted from a YAML file.
+class LookUpTableParam(ParamObject):
+    """A parameter with its contents read and converted from a YAML file.
 
-    Its value is a dictionary mapping all potentially relevant birth years to some
-    policy parameter (e.g., a retirement age).
+    Its value is a LookUpTableParamValue object, i.e., it contains the parameters
+    for calling `lookup_table`.
     """
 
-    value: dict[int, float]
+    value: LookUpTableParamValue
     note: str | None = None
     reference: str | None = None
 
@@ -119,3 +120,11 @@ class PiecewisePolynomialParamValue:
     thresholds: np.ndarray
     intercepts: np.ndarray
     rates: np.ndarray
+
+
+@dataclass(frozen=True)
+class LookUpTableParamValue:
+    """The parameters expected by lookup_table"""
+
+    base_value_to_subtract: int
+    values_to_look_up: np.ndarray
