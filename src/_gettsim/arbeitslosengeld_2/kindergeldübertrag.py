@@ -38,7 +38,7 @@ def _mean_kindergeld_per_child_gestaffelt_m(
 )
 def _mean_kindergeld_per_child_ohne_staffelung_m(
     kindergeld__anzahl_ansprüche: int,
-    kindergeld__satz_einheitlich: float,
+    kindergeld__satz: float,
 ) -> float:
     """Kindergeld per child.
 
@@ -46,7 +46,7 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     `kindergeld_zur_bedarfsdeckung_m`.
 
     """
-    return kindergeld__satz_einheitlich if kindergeld__anzahl_ansprüche > 0 else 0.0
+    return kindergeld__satz if kindergeld__anzahl_ansprüche > 0 else 0.0
 
 
 @policy_function(start_date="2005-01-01", vectorization_strategy="not_required")

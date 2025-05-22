@@ -240,7 +240,7 @@ def relevantes_kindergeld_mit_staffelung_m(
 def relevantes_kindergeld_ohne_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld__satz_einheitlich: float,
+    kindergeld__satz: float,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
@@ -250,7 +250,7 @@ def relevantes_kindergeld_ohne_staffelung_m(
 
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
-    return kindergeld__satz_einheitlich * kindergeld_ansprüche / 2
+    return kindergeld__satz * kindergeld_ansprüche / 2
 
 
 def einkommensteuertarif(x: float, params: dict) -> float:
