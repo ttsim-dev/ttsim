@@ -31,7 +31,7 @@ def ehe_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return reorder_ids(result)
+    return __reorder_ids(result)
 
 
 @group_creation_function()
@@ -74,14 +74,14 @@ def fg_id(
         + np.minimum(p_id, arbeitslosengeld_2__p_id_einstandspartner) * n,
     )
 
-    fg_id = assign_parents_fg_id(
+    fg_id = __assign_parents_fg_id(
         fg_id, p_id, p_id_elternteil_1_loc, hh_id, alter, children, n
     )
-    fg_id = assign_parents_fg_id(
+    fg_id = __assign_parents_fg_id(
         fg_id, p_id, p_id_elternteil_2_loc, hh_id, alter, children, n
     )
 
-    return reorder_ids(fg_id)
+    return __reorder_ids(fg_id)
 
 
 @group_creation_function()
@@ -110,7 +110,7 @@ def bg_id(
         fg_id,
     )
 
-    return reorder_ids(bg_id)
+    return __reorder_ids(bg_id)
 
 
 @group_creation_function()
@@ -133,7 +133,7 @@ def eg_id(
         + np.minimum(p_id, p_id_einstandspartner__or_own_p_id) * n
     )
 
-    return reorder_ids(result)
+    return __reorder_ids(result)
 
 
 @group_creation_function()
@@ -154,7 +154,7 @@ def wthh_id(
         hh_id + offset,
         hh_id,
     )
-    return reorder_ids(wthh_id)
+    return __reorder_ids(wthh_id)
 
 
 @group_creation_function()
@@ -181,10 +181,10 @@ def sn_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return reorder_ids(result)
+    return __reorder_ids(result)
 
 
-def reorder_ids(ids: np.ndarray) -> np.ndarray:
+def __reorder_ids(ids: np.ndarray) -> np.ndarray:
     """Make ID's consecutively numbered."""
     sorting = np.argsort(ids)
     ids_sorted = ids[sorting]
@@ -196,7 +196,7 @@ def reorder_ids(ids: np.ndarray) -> np.ndarray:
     return cons_ids[np.argsort(index_after_sort)]
 
 
-def assign_parents_fg_id(
+def __assign_parents_fg_id(
     fg_id: np.ndarray,
     p_id: np.ndarray,
     p_id_elternteil_loc: np.ndarray,
