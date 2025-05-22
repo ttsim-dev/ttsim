@@ -1,14 +1,20 @@
 """Advance alimony payments (Unterhaltsvorschuss)."""
 
-import numpy
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ttsim import (
     AggType,
     RoundingSpec,
     agg_by_p_id_function,
     join,
+    params_function,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    import numpy
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -113,46 +119,20 @@ def not_implemented_m() -> float:
     )
 
 
-@policy_function(
-    start_date="2023-01-01",
-    leaf_name="kindergeld_erstes_kind_m",
-    vectorization_strategy="not_required",
-)
-def kindergeld_erstes_kind_ohne_staffelung_m(kindergeld_params: dict) -> float:
-    """Kindergeld for first child when Kindergeld does not depend on number of children.
-
-    Parameters
-    ----------
-
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
-    """
-    return kindergeld_params["kindergeldsatz"]
+@params_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
+def kindergeld_erstes_kind_ohne_staffelung_m(
+    kindergeld__satz_einheitlich: float,
+) -> float:
+    """Kindergeld for first child when Kindergeld does not depend on number of children."""
+    return kindergeld__satz_einheitlich
 
 
-@policy_function(
-    end_date="2022-12-31",
-    leaf_name="kindergeld_erstes_kind_m",
-    vectorization_strategy="not_required",
-)
-def kindergeld_erstes_kind_gestaffelt_m(kindergeld_params: dict) -> float:
-    """Kindergeld for first child when Kindergeld does depend on number of children.
-
-    Parameters
-    ----------
-
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
-    """
-    return kindergeld_params["kindergeldsatz"][1]
+@params_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
+def kindergeld_erstes_kind_gestaffelt_m(
+    kindergeld__satz_gestaffelt: dict[int, float],
+) -> float:
+    """Kindergeld for first child when Kindergeld depends on number of children."""
+    return kindergeld__satz_gestaffelt[1]
 
 
 @policy_function(
@@ -165,7 +145,7 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     alter: int,
     kindergeld_erstes_kind_m: float,
     unterhaltsvors_params: dict,
-    eink_st_abzuege_params: dict,
+    einkommensteuer__parameter_kinderfreibetrag: dict[str, float],
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
 
@@ -177,28 +157,14 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     Rule was in priciple also active for 2015 but has been overwritten by an
     Anwendungsvorschrift as Kinderfreibetrag and Kindergeld changed on July 2015.
 
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    kindergeld_erstes_kind_m
-        See :func:`kindergeld_erstes_kind_m`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-    unterhaltsvors_params
-        See params documentation :ref:`unterhaltsvors_params <unterhaltsvors_params>`.
-
-    Returns
-    -------
-
     """
     # TODO(@MImmesberger): Remove explicit parameter conversion.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/575
     altersgrenzen = unterhaltsvors_params["altersgrenzen_bezug"]
 
-    kinderfreibetrag_sächl_existenzmin = eink_st_abzuege_params[
-        "parameter_kinderfreibetrag"
-    ]["sächliches_existenzminimum"]
+    kinderfreibetrag_sächl_existenzmin = einkommensteuer__parameter_kinderfreibetrag[
+        "sächliches_existenzminimum"
+    ]
 
     if altersgrenzen[1]["min_alter"] <= alter <= altersgrenzen[1]["max_alter"]:
         out = (
@@ -431,7 +397,7 @@ def einkommen_m(
     -------
 
     """
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
@@ -441,8 +407,6 @@ def einkommen_m(
         + sozialversicherung__rente__private_rente_betrag_m
         + sozialversicherung__arbeitslosen__betrag_m
     )
-
-    return out
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

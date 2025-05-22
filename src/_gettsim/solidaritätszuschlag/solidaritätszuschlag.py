@@ -1,6 +1,8 @@
 """Solidarity Surcharge (Solidaritätszuschlag)."""
 
-from ttsim import piecewise_polynomial, policy_function
+from __future__ import annotations
+
+from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
 
 
 @policy_function(
@@ -9,7 +11,7 @@ from ttsim import piecewise_polynomial, policy_function
 def betrag_y_sn_ohne_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    soli_st_params: dict,
+    parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
 ) -> float:
     """Calculate the Solidarity Surcharge on Steuernummer level.
 
@@ -24,28 +26,12 @@ def betrag_y_sn_ohne_abgelt_st(
     with Solidarity Surcharge tax rate and no tax exempt level. §3 (3) S.2
     SolzG 1995.
 
-    Parameters
-    ----------
-    einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
-        See :func:`einkommensteuer__betrag_mit_kinderfreibetrag_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    soli_st_params
-        See params documentation :ref:`soli_st_params <soli_st_params>`.
-
-    Returns
-    -------
-
     """
-    eink_st_per_individual = (
-        einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
-        / einkommensteuer__anzahl_personen_sn
+    return einkommensteuer__anzahl_personen_sn * solidaritätszuschlagstarif(
+        steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
+        / einkommensteuer__anzahl_personen_sn,
+        parameter_solidaritätszuschlag=parameter_solidaritätszuschlag,
     )
-    out = einkommensteuer__anzahl_personen_sn * solidaritätszuschlagstarif(
-        eink_st_per_individual, soli_st_params
-    )
-
-    return out
 
 
 @policy_function(
@@ -55,7 +41,7 @@ def betrag_y_sn_mit_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
     einkommensteuer__abgeltungssteuer__betrag_y_sn: float,
-    soli_st_params: dict,
+    parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
 ) -> float:
     """Calculate the Solidarity Surcharge on Steuernummer level.
 
@@ -70,53 +56,26 @@ def betrag_y_sn_mit_abgelt_st(
     with Solidarity Surcharge tax rate and no tax exempt level. §3 (3) S.2
     SolzG 1995.
 
-    Parameters
-    ----------
-    einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
-        See :func:`einkommensteuer__betrag_mit_kinderfreibetrag_y_sn`.
-    einkommensteuer__anzahl_personen_sn
-        See :func:`einkommensteuer__anzahl_personen_sn`.
-    einkommensteuer__abgeltungssteuer__betrag_y_sn
-        See :func:`einkommensteuer__abgeltungssteuer__betrag_y_sn`.
-    soli_st_params
-        See params documentation :ref:`soli_st_params <soli_st_params>`.
-
-    Returns
-    -------
-
     """
-    eink_st_per_individual = (
-        einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
-        / einkommensteuer__anzahl_personen_sn
-    )
-    out = (
+    return (
         einkommensteuer__anzahl_personen_sn
-        * solidaritätszuschlagstarif(eink_st_per_individual, soli_st_params)
-        + soli_st_params["parameter_solidaritätszuschlag"].rates[0, -1]
+        * solidaritätszuschlagstarif(
+            steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
+            / einkommensteuer__anzahl_personen_sn,
+            parameter_solidaritätszuschlag=parameter_solidaritätszuschlag,
+        )
+        + parameter_solidaritätszuschlag.rates[0, -1]
         * einkommensteuer__abgeltungssteuer__betrag_y_sn
     )
 
-    return out
 
+def solidaritätszuschlagstarif(
+    steuer_pro_person: float,
+    parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+) -> float:
+    """The isolated function for Solidaritätszuschlag."""
 
-def solidaritätszuschlagstarif(st_per_individual: float, soli_st_params: dict) -> float:
-    """The isolated function for Solidaritätszuschlag.
-
-    Parameters
-    ----------
-    st_per_individual:
-        the tax amount to be topped up
-    soli_st_params
-        See params documentation :ref:`soli_st_params <solo_st_params>`
-    Returns
-        solidarity surcharge
-    -------
-
-    """
-
-    out = piecewise_polynomial(
-        st_per_individual,
-        parameters=soli_st_params["parameter_solidaritätszuschlag"],
+    return piecewise_polynomial(
+        x=steuer_pro_person,
+        parameters=parameter_solidaritätszuschlag,
     )
-
-    return out

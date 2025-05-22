@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 
 import numpy
@@ -26,14 +28,13 @@ def geburtsdatum(
     -------
 
     """
-    out = numpy.datetime64(
+    return numpy.datetime64(
         datetime.datetime(
             geburtsjahr,
             geburtsmonat,
             geburtstag,
         )
     ).astype("datetime64[D]")
-    return out
 
 
 @policy_function(vectorization_strategy="loop")

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from _gettsim_tests.utils import (

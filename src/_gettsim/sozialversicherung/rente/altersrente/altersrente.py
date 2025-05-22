@@ -1,5 +1,7 @@
 """Public pension benefits for retirement due to age."""
 
+from __future__ import annotations
+
 from ttsim import RoundingSpec, policy_function
 
 
@@ -43,12 +45,11 @@ def betrag_m_mit_grundrente(
     -------
 
     """
-    out = (
+    return (
         bruttorente_m + sozialversicherung__rente__grundrente__betrag_m
         if sozialversicherung__rente__bezieht_rente
         else 0.0
     )
-    return out
 
 
 @policy_function(
@@ -365,9 +366,7 @@ def rentenwert(wohnort_ost: bool, ges_rente_params: dict) -> float:
     """
     params = ges_rente_params["parameter_rentenwert"]
 
-    out = params["ost"] if wohnort_ost else params["west"]
-
-    return out
+    return params["ost"] if wohnort_ost else params["west"]
 
 
 @policy_function()
@@ -484,9 +483,7 @@ def zugangsfaktor(
     else:
         out = 0.0
 
-    out = max(out, 0.0)
-
-    return out
+    return max(out, 0.0)
 
 
 @policy_function()
@@ -607,8 +604,7 @@ def neue_entgeltpunkte(
         "beitragspflichtiges_durchschnittsentgelt"
     ]
 
-    out = bruttolohn_scaled_rentenv / durchschnittslohn_m
-    return out
+    return bruttolohn_scaled_rentenv / durchschnittslohn_m
 
 
 @policy_function()

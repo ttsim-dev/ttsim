@@ -5,10 +5,10 @@ import inspect
 import warnings
 from typing import TYPE_CHECKING, Any
 
-import dags
 import dags.tree as dt
 import networkx as nx
 import pandas as pd
+from dags import concatenate_functions, create_dag, get_free_arguments
 
 from ttsim.automatically_added_functions import (
     TIME_UNIT_LABELS,
@@ -25,7 +25,6 @@ from ttsim.shared import (
     format_list_linewise,
     get_base_name_and_grouping_suffix,
     get_name_of_group_by_id,
-    get_names_of_required_arguments,
     get_re_pattern_for_all_time_units_and_groupings,
     group_pattern,
     merge_trees,
@@ -167,12 +166,13 @@ def compute_taxes_and_transfers(
     if debug:
         targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
 
-    tax_transfer_function = dags.concatenate_functions(
+    tax_transfer_function = concatenate_functions(
         functions=functions_with_partialled_parameters,
         targets=targets,
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
+        set_annotations=False,
     )
 
     if jit:
@@ -384,7 +384,7 @@ def _create_input_data_for_concatenated_function(
 
     """
     # Create dag using processed functions
-    dag = dags.create_dag(functions=functions, targets=targets)
+    dag = create_dag(functions=functions, targets=targets)
 
     # Create root nodes tree
     root_nodes = nx.subgraph_view(
@@ -418,25 +418,26 @@ def _process_params_tree(
     qual_name_params = dt.flatten_to_qual_names(params_tree)
 
     # Construct a function for the processing of all params.
-    process = dags.concatenate_functions(
+    process = concatenate_functions(
         functions=params_functions,
         targets=None,
         return_type="dict",
         aggregator=None,
         enforce_signature=False,
+        set_annotations=False,
     )
     # Call the processing function.
     processed = process(**{k: v.value for k, v in qual_name_params.items()})
 
     # Return the processed parameters
-    return {
-        **{
+    return merge_trees(
+        left={
             k: v.value
             for k, v in qual_name_params.items()
             if not isinstance(v, RawTTSIMParam)
         },
-        **processed,
-    }
+        right=processed,
+    )
 
 
 def _partial_parameters_to_functions(
@@ -463,7 +464,7 @@ def _partial_parameters_to_functions(
     # parameters.
     processed_functions = {}
     for name, function in functions.items():
-        arguments = get_names_of_required_arguments(function)
+        arguments = get_free_arguments(function)
         partial_params = {
             arg: params[key]
             for arg in arguments
@@ -482,7 +483,10 @@ def _partial_params_to_functions(
     functions: QualNameTTSIMFunctionDict,
     params: QualNameProcessedParamDict,
 ) -> QualNameTTSIMFunctionDict:
-    """Round and partial parameters into functions.
+    """Partial parameters to functions such that they disappear from the DAG.
+
+    Note: Needs to be done after rounding such that dags recognizes partialled
+    parameters.
 
     Parameters
     ----------
@@ -497,13 +501,10 @@ def _partial_params_to_functions(
     Functions tree with parameters partialled.
 
     """
-    # Partial parameters to functions such that they disappear in the DAG.
-    # Note: Needs to be done after rounding such that dags recognizes partialled
-    # parameters.
     processed_functions = {}
     for name, func in functions.items():
         partial_params = {}
-        for arg in [a for a in get_names_of_required_arguments(func) if a in params]:
+        for arg in [a for a in get_free_arguments(func) if a in params]:
             partial_params[arg] = params[arg]
         if partial_params:
             processed_functions[name] = functools.partial(func, **partial_params)

@@ -1,6 +1,6 @@
 ---
 info:
-  note: Result from source including Betreuungskosten
+  note: Result from source including kinderBetreuungskosten
   precision_atol: 0.01
   source: https://www.bmf-steuerrechner.de/bdj/eingabeformbdj.xhtml?jahr=l_k_bdj_2020
 inputs:
@@ -26,12 +26,12 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer__abzüge__betreuungskosten_m:
+    einkommensteuer__abzüge__kinderbetreuungskosten_m:
       - 0.0
       - 0.0
       - 62.5
       - 0.0
-    einkommensteuer__abzüge__p_id_betreuungskostenträger:
+    einkommensteuer__abzüge__p_id_kinderbetreuungskostenträger:
       - -1
       - -1
       - 31

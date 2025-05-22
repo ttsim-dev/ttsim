@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Literal, get_args
 
@@ -121,7 +123,7 @@ def get_piecewise_parameters(
 
     """
     # Get all interval keys.
-    # FixMe: Remove by only passing the time-dependent parameters.
+    # TODO: Remove by only passing the time-dependent parameters.
     keys = sorted(key for key in parameter_dict if isinstance(key, int))
     parameter_dict = {key: parameter_dict[key] for key in keys}
 

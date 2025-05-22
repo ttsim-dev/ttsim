@@ -1,5 +1,7 @@
 """Public pension benefits for retirement due to reduced earnings potential."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 
@@ -115,12 +117,10 @@ def entgeltpunkte_west(
 
     """
 
-    out = sozialversicherung__rente__entgeltpunkte_west + (
+    return sozialversicherung__rente__entgeltpunkte_west + (
         zurechnungszeit
         * (1 - sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost)
     )
-
-    return out
 
 
 @policy_function(start_date="2001-01-01")
@@ -151,12 +151,10 @@ def entgeltpunkte_ost(
 
     """
 
-    out = sozialversicherung__rente__entgeltpunkte_ost + (
+    return sozialversicherung__rente__entgeltpunkte_ost + (
         zurechnungszeit
         * sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost
     )
-
-    return out
 
 
 @policy_function(start_date="2001-01-01")
@@ -189,11 +187,9 @@ def zurechnungszeit(
     """
     zurechnungszeitgrenze = erwerbsm_rente_params["zurechnungszeitgrenze"]
 
-    out = (
+    return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
     ) * durchschnittliche_entgeltpunkte
-
-    return out
 
 
 @policy_function(start_date="2001-01-01")
@@ -286,9 +282,7 @@ def zugangsfaktor(
             ]
         )
     )
-    out = max(zugangsfaktor, erwerbsm_rente_params["min_zugangsfaktor"])
-
-    return out
+    return max(zugangsfaktor, erwerbsm_rente_params["min_zugangsfaktor"])
 
 
 # TODO(@MImmesberger): Reuse Altersrente Wartezeiten for Erwerbsminderungsrente

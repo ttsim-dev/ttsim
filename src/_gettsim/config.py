@@ -1,13 +1,11 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 # Obtain the root directory of the package.
 GETTSIM_ROOT = Path(__file__).parent.resolve()
 
 INTERNAL_PARAMS_GROUPS = [
-    "eink_st",
-    "eink_st_abzuege",
-    "soli_st",
-    "arbeitsl_geld",
     "arbeitslosenversicherung",
     "geringfügige_einkommen",
     "ges_krankenv",
@@ -15,14 +13,12 @@ INTERNAL_PARAMS_GROUPS = [
     "ges_rentenv",
     "unterhalt",
     "unterhaltsvors",
-    "abgelt_st",
     "wohngeld",
     "kinderzuschl",
-    "kindergeld",
+    "kindergeld",  # Leave because of _parse_kinderzuschlag_max
     "elterngeld",
     "ges_rente",
     "erwerbsm_rente",
-    "arbeitsl_geld_2",
     "grunds_im_alter",
     "lohnst",
     "erziehungsgeld",

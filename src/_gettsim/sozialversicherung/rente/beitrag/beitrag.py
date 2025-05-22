@@ -1,5 +1,7 @@
 """Public pension insurance contributions."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 
@@ -214,9 +216,7 @@ def beitragsbemessungsgrenze_m(wohnort_ost: bool, ges_rentenv_params: dict) -> f
 
     """
     params = ges_rentenv_params["parameter_beitragsbemessungsgrenze"]
-    out = params["ost"] if wohnort_ost else params["west"]
-
-    return out
+    return params["ost"] if wohnort_ost else params["west"]
 
 
 @policy_function(start_date="2003-04-01")

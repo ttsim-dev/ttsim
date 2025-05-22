@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import datetime
 import functools
 import inspect
 import string
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy
@@ -27,6 +29,10 @@ from ttsim.vectorization import (
     make_vectorizable_source,
     vectorize_function,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 # ======================================================================================
 # Backend

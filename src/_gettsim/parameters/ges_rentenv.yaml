@@ -5,9 +5,9 @@ parameter_beitragssatz:
     en: Contribution rate to statutory pension insurance
   description:
     de: >-
-      Beitragssätze zur allgemeinen Rentenversicherung für Arbeitnehmer.
+      Beitragssätze zur allgemeinen Rentenversicherung für Arbeitnehmer/Arbeitgeber.
     en: >-
-      Employees contribution rate for pension insurance.
+      Employees'/Employers' contribution rate for pension insurance.
   unit: Share
   reference_period: null
   type: scalar

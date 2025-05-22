@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim.aggregation import AggType
 from ttsim.automatically_added_functions import create_time_conversion_functions
 from ttsim.compute_taxes_and_transfers import (
@@ -7,6 +9,7 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.piecewise_polynomial import (
     PiecewisePolynomialParameters,
+    get_piecewise_parameters,
     piecewise_polynomial,
 )
 from ttsim.plot_dag import plot_dag
@@ -68,6 +71,7 @@ __all__ = [
     "compute_taxes_and_transfers",
     "create_data_tree_from_df",
     "create_time_conversion_functions",
+    "get_piecewise_parameters",
     "group_creation_function",
     "insert_path_and_value",
     "join",

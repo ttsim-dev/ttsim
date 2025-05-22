@@ -791,7 +791,7 @@ freibetrag_bei_behinderung_gestaffelt_y:
       lower_threshold: 80
       upper_threshold: inf
       intercept_at_lower_threshold: 1500
-  # FixMe: Comment in after moving to new infrastructure
+  # TODO: Comment in after moving to new infrastructure
   # 2016-01-01:
   #   note: Replaced by new rule, see 'freibetrag_bei_behinderung_pauschal_y'
 freibetrag_bei_behinderung_pauschal_y:

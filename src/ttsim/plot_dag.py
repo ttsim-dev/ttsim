@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 import functools
 import inspect
 import operator
 from functools import reduce
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import networkx as nx
 import numpy
 import pandas as pd
 import plotly.graph_objects as go
+from dags import get_free_arguments
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
@@ -15,12 +19,13 @@ from ttsim.compute_taxes_and_transfers import (
     _partial_parameters_to_functions,
     combine_policy_functions_and_derived_functions,
 )
-from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     format_list_linewise,
-    get_names_of_required_arguments,
     partition_tree_by_reference_tree,
 )
+
+if TYPE_CHECKING:
+    from ttsim.policy_environment import PolicyEnvironment
 
 
 def plot_dag(
@@ -63,7 +68,7 @@ def plot_dag(
         a hover information. Sometimes, the tooltip is not properly displayed.
 
     """
-    targets = build_targets_tree(fixme if targets is None else targets)  # noqa: F821
+    targets = build_targets_tree(TODO if targets is None else targets)  # noqa: F821
 
     if isinstance(columns_overriding_functions, dict):
         names_of_columns_overriding_functions = dt.flatten_to_qual_names(
@@ -88,7 +93,7 @@ def plot_dag(
     )[1]
 
     # Create parameter input structure.
-    input_structure = dt.create_input_structure_tree(
+    input_structure = dt.create_tree_with_input_types(
         functions=functions_not_overridden,
         targets=None,  # None because no functions should be filtered out
     )
@@ -108,7 +113,7 @@ def plot_dag(
         params=environment.params,
     )
 
-    input_structure = dt.create_input_structure_tree(
+    input_structure = dt.create_tree_with_input_types(
         functions=processed_functions,
         targets=None,
     )
@@ -286,13 +291,11 @@ def _mock_parameters_arguments(functions):
     mocked_functions = {}
     for name, function in functions.items():
         partial_params = {
-            i: {}
-            for i in get_names_of_required_arguments(function)
-            if i.endswith("_params")
+            i: {} for i in get_free_arguments(function) if i.endswith("_params")
         }
 
         # Fix old functions which requested the whole dictionary. Test if removable.
-        if "params" in get_names_of_required_arguments(function):
+        if "params" in get_free_arguments(function):
             partial_params["params"] = {}
 
         mocked_functions[name] = (

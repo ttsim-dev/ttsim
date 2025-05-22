@@ -1,5 +1,7 @@
 """Marginally employed."""
 
+from __future__ import annotations
+
 from ttsim import RoundingSpec, policy_function
 
 
@@ -59,8 +61,7 @@ def minijob_grenze_unterscheidung_ost_west(
     """
     west = geringfügige_einkommen_params["grenzen_m"]["minijob"]["west"]
     ost = geringfügige_einkommen_params["grenzen_m"]["minijob"]["ost"]
-    out = ost if wohnort_ost else west
-    return out
+    return ost if wohnort_ost else west
 
 
 @policy_function(

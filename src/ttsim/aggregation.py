@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import StrEnum
 
 from ttsim import aggregation_jax, aggregation_numpy

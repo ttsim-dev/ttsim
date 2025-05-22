@@ -90,7 +90,7 @@ inputs:
       - false
       - false
       - false
-    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__ertragsanteil_an_rente:
       - 0.0
       - 0.0
       - 0.0
