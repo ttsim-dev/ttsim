@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim import (
     AggType,
     agg_by_p_id_function,

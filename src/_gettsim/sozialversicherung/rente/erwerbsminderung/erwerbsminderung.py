@@ -1,5 +1,7 @@
 """Public pension benefits for retirement due to reduced earnings potential."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

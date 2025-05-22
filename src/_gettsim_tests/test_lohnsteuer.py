@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import set_up_policy_environment
 

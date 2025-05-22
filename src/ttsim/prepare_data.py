@@ -94,7 +94,7 @@ def _fail_if_mapper_has_incorrect_format(
     if not isinstance(inputs_tree_to_df_columns, dict):
         msg = format_errors_and_warnings(
             """The input tree to column mapping must be a (nested) dictionary. Call
-            `create_input_structure` to create a template."""
+            `dags.tree.create_tree_with_input_types` to create a template."""
         )
         raise TypeError(msg)
 
@@ -110,7 +110,7 @@ def _fail_if_mapper_has_incorrect_format(
 
             {format_list_linewise(non_string_paths)}
 
-            Call `create_input_structure` to create a template.
+            Call `dags.tree.create_tree_with_input_types` to create a template.
             """
         )
         raise TypeError(msg)

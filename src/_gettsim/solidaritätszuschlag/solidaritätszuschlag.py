@@ -1,5 +1,7 @@
 """Solidarity Surcharge (Solidaritätszuschlag)."""
 
+from __future__ import annotations
+
 from ttsim import piecewise_polynomial, policy_function
 
 

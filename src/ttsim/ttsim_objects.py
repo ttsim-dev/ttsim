@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
 
-import dags
 import dags.tree as dt
 import numpy
+from dags import rename_arguments
 from pandas.api.types import (
     is_bool_dtype,
     is_datetime64_any_dtype,
@@ -483,7 +483,7 @@ def agg_by_group_function(
             mapper = {"group_id": group_id, "column": other_args.pop()}
         if IS_JAX_INSTALLED:
             mapper["num_segments"] = f"{group_id}_num_segments"
-        agg_func = dags.rename_arguments(
+        agg_func = rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
@@ -616,7 +616,7 @@ def agg_by_p_id_function(
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
             }
-        agg_func = dags.rename_arguments(
+        agg_func = rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )

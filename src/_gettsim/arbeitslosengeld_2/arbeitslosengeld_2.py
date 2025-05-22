@@ -1,7 +1,6 @@
-"""Monthly SGB II subsitence payment (Arbeitslosengeld II).
+"""Arbeitslosengeld II (unemployment benefit II)."""
 
-Note: Since 2023, Arbeitslosengeld II is referred to as Bürgergeld.
-"""
+from __future__ import annotations
 
 from ttsim import policy_function
 

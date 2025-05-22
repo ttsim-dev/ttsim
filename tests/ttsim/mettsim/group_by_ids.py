@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim import group_creation_function
 from ttsim.config import numpy_or_jax as np
 

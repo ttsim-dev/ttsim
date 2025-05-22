@@ -1,5 +1,7 @@
 """Contribution rate to public long-term care insurance."""
 
+from __future__ import annotations
+
 from ttsim import AggType, agg_by_p_id_function, policy_function
 
 

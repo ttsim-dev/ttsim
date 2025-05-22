@@ -1,4 +1,6 @@
-"""Wealth checks for Arbeitslosengeld II/Bürgergeld."""
+"""Freibeträge für Vermögen in Arbeitslosengeld II."""
+
+from __future__ import annotations
 
 from ttsim import policy_function
 

@@ -1,4 +1,6 @@
-"""Parental leave bonus for siblings."""
+"""Geschwisterbonus for Elterngeld."""
+
+from __future__ import annotations
 
 from ttsim import policy_function
 

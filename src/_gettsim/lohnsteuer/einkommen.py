@@ -1,5 +1,7 @@
 """Income relevant for withholding tax on earnings (Lohnsteuer)."""
 
+from __future__ import annotations
+
 from ttsim import RoundingSpec, policy_function
 
 

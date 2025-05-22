@@ -1,5 +1,7 @@
 """Income relevant for calculation of Kinderzuschlag."""
 
+from __future__ import annotations
+
 from ttsim import (
     AggType,
     RoundingSpec,

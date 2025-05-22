@@ -1,5 +1,7 @@
 """Income taxes."""
 
+from __future__ import annotations
+
 from ttsim import (
     AggType,
     RoundingSpec,

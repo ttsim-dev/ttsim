@@ -1,5 +1,7 @@
 """Taxes on capital income (Abgeltungssteuer)."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

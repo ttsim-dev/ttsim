@@ -1,5 +1,7 @@
 """Public pension benefits for retirement due to age."""
 
+from __future__ import annotations
+
 from ttsim import RoundingSpec, policy_function
 
 

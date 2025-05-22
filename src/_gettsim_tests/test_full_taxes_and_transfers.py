@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dags.tree as dt
 import pytest
 

@@ -1,5 +1,7 @@
 """Eligibility checks for housing benefits (Wohngeld)."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 
