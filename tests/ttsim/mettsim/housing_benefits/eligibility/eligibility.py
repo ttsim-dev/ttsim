@@ -9,6 +9,8 @@ Policy regime starting in 2020:
     - Subsistence income is calculated per spouse and child
 """
 
+from __future__ import annotations
+
 from ttsim import (
     AggType,
     agg_by_group_function,

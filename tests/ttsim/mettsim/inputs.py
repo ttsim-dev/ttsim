@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim import AggType, FKType, agg_by_group_function, policy_input
 
 

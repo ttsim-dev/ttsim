@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dags.tree as dt
 import pytest
 
@@ -7,7 +9,10 @@ from _gettsim_tests.utils import (
     load_policy_test_data,
 )
 from ttsim import compute_taxes_and_transfers
-from ttsim.ttsim_objects import PolicyInput, check_series_has_expected_type
+from ttsim.column_objects_param_function import (
+    PolicyInput,
+    check_series_has_expected_type,
+)
 
 test_data = load_policy_test_data("full_taxes_and_transfers")
 

@@ -1,8 +1,13 @@
 """Basic child allowance (Kindergeld)."""
 
-import numpy
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ttsim import AggType, agg_by_p_id_function, join, policy_function
+
+if TYPE_CHECKING:
+    from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -15,7 +20,7 @@ def anzahl_ansprüche(
 @policy_function(start_date="2023-01-01", leaf_name="betrag_m")
 def betrag_ohne_staffelung_m(
     anzahl_ansprüche: int,
-    satz_einheitlich: float,
+    satz: float,
 ) -> float:
     """Sum of Kindergeld for eligible children.
 
@@ -24,7 +29,7 @@ def betrag_ohne_staffelung_m(
 
     """
 
-    return satz_einheitlich * anzahl_ansprüche
+    return satz * anzahl_ansprüche
 
 
 @policy_function(
@@ -128,10 +133,10 @@ def kind_bis_10_mit_kindergeld(
 
 @policy_function(vectorization_strategy="not_required")
 def gleiche_fg_wie_empfänger(
-    p_id: numpy.ndarray[int],
-    p_id_empfänger: numpy.ndarray[int],
-    fg_id: numpy.ndarray[int],
-) -> numpy.ndarray[bool]:
+    p_id: np.ndarray,  # int
+    p_id_empfänger: np.ndarray,  # int
+    fg_id: np.ndarray,  # int
+) -> np.ndarray:  # bool
     """The child's Kindergeldempfänger is in the same Familiengemeinschaft.
 
     Parameters

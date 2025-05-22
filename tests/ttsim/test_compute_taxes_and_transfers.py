@@ -4,7 +4,6 @@ import copy
 import re
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy
@@ -14,18 +13,18 @@ from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
     AggType,
-    DictTTSIMParam,
+    DictParam,
     FunctionsAndColumnsOverlapWarning,
-    PiecewisePolynomialParameters,
-    PiecewisePolynomialTTSIMParam,
+    PiecewisePolynomialParam,
+    PiecewisePolynomialParamValue,
     PolicyEnvironment,
-    RawTTSIMParam,
-    ScalarTTSIMParam,
+    RawParam,
+    ScalarParam,
     agg_by_group_function,
     agg_by_p_id_function,
     compute_taxes_and_transfers,
     merge_trees,
-    params_function,
+    param_function,
     policy_function,
     policy_input,
     set_up_policy_environment,
@@ -44,10 +43,6 @@ from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import TTSIMArray
-
-if TYPE_CHECKING:
-    from ttsim.typing import RawParamsRequiringConversion
-
 
 if IS_JAX_INSTALLED:
     jit = True
@@ -90,7 +85,7 @@ def another_func(some_func: int) -> int:
     return some_func
 
 
-@params_function()
+@param_function()
 def some_scalar_params_func(some_int_param: int) -> int:
     return some_int_param
 
@@ -101,9 +96,9 @@ class ConvertedParam:
     some_bool_param: bool
 
 
-@params_function()
+@param_function()
 def some_converting_params_func(
-    raw_param_spec: RawParamsRequiringConversion,
+    raw_param_spec: RawParam,
 ) -> ConvertedParam:
     return ConvertedParam(
         some_float_param=raw_param_spec["some_float_param"],
@@ -111,7 +106,7 @@ def some_converting_params_func(
     )
 
 
-SOME_RAW_TTSIM_PARAM = RawTTSIMParam(
+SOME_RAW_PARAM = RawParam(
     value={
         "some_float_param": 1,
         "some_bool_param": False,
@@ -128,7 +123,7 @@ SOME_RAW_TTSIM_PARAM = RawTTSIMParam(
 )
 
 
-SOME_INT_PARAM = ScalarTTSIMParam(
+SOME_INT_PARAM = ScalarParam(
     value=1,
     leaf_name="some_int_param",
     start_date="2025-01-01",
@@ -142,7 +137,7 @@ SOME_INT_PARAM = ScalarTTSIMParam(
 )
 
 
-SOME_DICT_PARAM = DictTTSIMParam(
+SOME_DICT_PARAM = DictParam(
     value={"a": 1, "b": False},
     leaf_name="some_dict_param",
     start_date="2025-01-01",
@@ -156,8 +151,8 @@ SOME_DICT_PARAM = DictTTSIMParam(
 )
 
 
-SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialTTSIMParam(
-    value=PiecewisePolynomialParameters(
+SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
+    value=PiecewisePolynomialParamValue(
         thresholds=[1, 2, 3],
         intercepts=[1, 2, 3],
         rates=[1, 2, 3],
@@ -499,7 +494,7 @@ def test_params_target_is_allowed(minimal_input_data):
             "module": {"some_func": some_func},
         },
         params_tree={
-            "some_param": ScalarTTSIMParam(
+            "some_param": ScalarParam(
                 value=1,
                 leaf_name="some_param",
                 start_date="2025-01-01",
@@ -608,7 +603,7 @@ def test_fail_if_foreign_key_points_to_non_existing_p_id(mettsim_environment):
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         _fail_if_foreign_keys_are_invalid_in_data(
-            data=data, ttsim_objects=flat_objects_tree
+            data=data, column_objects_param_functions=flat_objects_tree
         )
 
 
@@ -620,7 +615,7 @@ def test_allow_minus_one_as_foreign_key(mettsim_environment):
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, ttsim_objects=flat_objects_tree
+        data=data, column_objects_param_functions=flat_objects_tree
     )
 
 
@@ -632,7 +627,7 @@ def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(mettsim_environme
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, ttsim_objects=flat_objects_tree
+        data=data, column_objects_param_functions=flat_objects_tree
     )
 
 
@@ -644,7 +639,7 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, ttsim_objects=flat_objects_tree
+        data=data, column_objects_param_functions=flat_objects_tree
     )
 
 
@@ -1020,18 +1015,18 @@ def test_get_top_level_namespace(environment, time_units, expected):
 
 def test_params_tree_is_processed():
     params_tree = {
-        "raw_param_spec": SOME_RAW_TTSIM_PARAM,
+        "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
         "some_dict_param": SOME_DICT_PARAM,
         "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
     }
-    params_functions = {
+    param_functions = {
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
     }
     processed_params_tree = _process_params_tree(
         params_tree=params_tree,
-        params_functions=params_functions,
+        param_functions=param_functions,
     )
     expected = {
         "some_converting_params_func": ConvertedParam(

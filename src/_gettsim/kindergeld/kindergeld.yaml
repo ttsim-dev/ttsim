@@ -158,8 +158,8 @@ satz_gestaffelt:
     3: 225
     4: 250
   2023-01-01:
-    note: Superseded by satz_einheitlich
-satz_einheitlich:
+    note: Superseded by satz
+satz:
   name:
     de: Kindergeld pro Kind, identisch für alle Kinder.
     en: Child benefit amount, depending on succession of children.

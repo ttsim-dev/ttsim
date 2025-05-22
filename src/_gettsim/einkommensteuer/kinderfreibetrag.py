@@ -1,6 +1,8 @@
 """Tax allowances for individuals or couples with children."""
 
-from ttsim import AggType, agg_by_p_id_function, params_function, policy_function
+from __future__ import annotations
+
+from ttsim import AggType, agg_by_p_id_function, param_function, policy_function
 
 
 @policy_function()
@@ -12,7 +14,7 @@ def kinderfreibetrag_y(
     return kinderfreibetrag_pro_kind_y * anzahl_kinderfreibeträge
 
 
-@params_function()
+@param_function()
 def kinderfreibetrag_pro_kind_y(parameter_kinderfreibetrag: dict[str, float]) -> float:
     return sum(parameter_kinderfreibetrag.values())
 

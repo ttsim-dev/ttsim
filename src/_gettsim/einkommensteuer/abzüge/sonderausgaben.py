@@ -1,5 +1,7 @@
 """Tax allowances for special expenses."""
 
+from __future__ import annotations
+
 from ttsim import (
     AggType,
     RoundingSpec,

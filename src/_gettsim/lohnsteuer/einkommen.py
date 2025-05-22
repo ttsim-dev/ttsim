@@ -1,9 +1,16 @@
 """Income relevant for withholding tax on earnings (Lohnsteuer)."""
 
+from __future__ import annotations
+
 from typing import Any
 
-from ttsim import RoundingSpec, params_function, piecewise_polynomial, policy_function
-from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
+from ttsim import (
+    PiecewisePolynomialParamValue,
+    RoundingSpec,
+    param_function,
+    piecewise_polynomial,
+    policy_function,
+)
 
 
 @policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))
@@ -131,10 +138,10 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     )
 
 
-@params_function(start_date="2005-01-01", end_date="2022-12-31")
+@param_function(start_date="2005-01-01", end_date="2022-12-31")
 def einführungsfaktor_rentenversicherungsaufwendungen(
     evaluationsjahr: int,
-    parameter_einführungsfaktor_rentenversicherungsaufwendungen: PiecewisePolynomialParameters,
+    parameter_einführungsfaktor_rentenversicherungsaufwendungen: PiecewisePolynomialParamValue,
 ) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
     current year as follows:

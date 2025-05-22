@@ -21,53 +21,59 @@ if TYPE_CHECKING:
         QualNameTargetList,
     )
 
-    from ttsim.ttsim_objects import PolicyInput, TTSIMFunction, TTSIMObject, TTSIMParam
+    from ttsim.column_objects_param_function import (
+        ColumnFunction,
+        ColumnObject,
+        ParamFunction,
+        ParamObject,
+    )
 
-    NestedInputsDict = Mapping[str, str | bool | int | float | "NestedInputsDict"]
+    NestedInputs = Mapping[str, str | bool | int | float | "NestedInputs"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    NestedStringDict = Mapping[str, str | "NestedStringDict"]
+    NestedStrings = Mapping[str, str | "NestedStrings"]
     """Tree mapping TTSIM paths to df columns or type hints."""
-    NestedDataDict = Mapping[str, TTSIMArray | "NestedDataDict"]
+    NestedData = Mapping[str, TTSIMArray | "NestedData"]
     """Tree mapping TTSIM paths to data (1-d arrays)."""
-    QualNameDataDict = Mapping[str, TTSIMArray]
+    QualNameData = Mapping[str, TTSIMArray]
     """Mapping of qualified name paths to data (1-d arrays)."""
-    NestedTTSIMObjectDict = Mapping[str, TTSIMObject | "NestedTTSIMObjectDict"]
-    """Tree mapping TTSIM paths to TTSIM objects."""
-    FlatTTSIMObjectDict = Mapping[tuple[str, ...], TTSIMObject]
-    """Mapping of flat paths to TTSIM objects."""
-    QualNameTTSIMObjectDict = Mapping[str, TTSIMObject]
-    """Mapping of qualified name paths to TTSIM objects."""
-    NestedTTSIMFunctionDict = Mapping[str, TTSIMFunction | "NestedTTSIMFunctionDict"]
-    """Tree mapping TTSIM paths to TTSIM functions."""
-    QualNameTTSIMFunctionDict = Mapping[str, TTSIMFunction]
-    """Mapping of qualified name paths to TTSIM functions."""
-    QualNamePolicyInputDict = Mapping[str, PolicyInput]
-    """Mapping of qualified name paths to policy inputs (info about expected data)."""
+    NestedAnyTTSIMObject = Mapping[
+        str, ColumnObject | ParamFunction | ParamObject | "NestedAnyTTSIMObject"
+    ]
+    """Tree mapping TTSIM paths to any type of TTSIM object."""
+    NestedColumnObjectsParamFunctions = Mapping[
+        str, ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions"
+    ]
+    """Tree mapping TTSIM paths to column objects or param functions."""
+    FlatColumnObjectsParamFunctions = Mapping[
+        tuple[str, ...], ColumnObject | ParamFunction
+    ]
+    """Mapping of flat paths to column objects or param functions."""
+    QualNameColumnObjectsParamFunctions = Mapping[str, ColumnObject | ParamFunction]
+    """Mapping of qualified name paths to column objects or param functions."""
+    NestedColumnObjects = Mapping[str, ColumnObject | "NestedColumnObjects"]
+    """Tree mapping TTSIM paths to column objects."""
+    FlatColumnObjects = Mapping[tuple[str, ...], ColumnObject]
+    """Mapping of flat paths to column objects."""
+    QualNameColumnObjects = Mapping[str, ColumnObject]
+    """Mapping of qualified name paths to column objects."""
+    NestedColumnFunctions = Mapping[str, ColumnFunction | "NestedColumnFunctions"]
+    """Tree mapping TTSIM paths to functions operating on columns of data."""
+    QualNameColumnFunctions = Mapping[str, ColumnFunction]
+    """Mapping of qualified name paths to functions operating on columns of data."""
     OrigParamSpec = (
-        dict[str, str | None | dict[Literal["de", "en"], str | None]]
+        dict[str, str | None | dict[Literal["de", "en"], str | None]]  # Header
         | dict[
-            datetime.date,
-            dict[
-                str | int,
-                Any,
-            ],
-        ]
+            datetime.date, dict[Literal["note", "reference"] | str | int, Any]  # noqa: PYI051
+        ]  # Parameters at one point in time
     )
     """The contents of a yaml files with parameters, excluding the outermost key."""
-    FlatOrigParamSpecDict = dict[tuple[str, ...], OrigParamSpec]
-    """Flat tree of yaml contents; the outermost key in a file is the leaf name."""
-    NestedTTSIMParamDict = Mapping[str, TTSIMParam | "NestedTTSIMParamDict"]
-    """Tree mapping TTSIM paths to TTSIM parameters."""
-    QualNameTTSIMParamDict = Mapping[str, TTSIMParam]
-    """Mapping of qualified name paths to TTSIM parameters."""
-
-    # continue from here.
-    RawParamsRequiringConversion = Mapping[
-        str, float | int | bool | str | "RawParamsRequiringConversion"
-    ]
-
-    QualNameProcessedParamDict = Mapping[str, Any]
-    """A mapping of qualified names to processed TTSIM parameters."""
-
+    FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
+    """Flat tree of yaml contents; the last element of the key is the leaf name."""
+    OrigParam = dict[str | int, Any]
+    """The original contents of YYYY-MM-DD key, after minimal processing."""
+    NestedParams = Mapping[str, ParamObject | "NestedParams"]
+    """Tree mapping TTSIM paths to parameters."""
+    QualNameProcessedParams = Mapping[str, Any]
+    """A mapping of qualified names to fully processed parameters."""
     DashedISOString = NewType("DashedISOString", str)
     """A string representing a date in the format 'YYYY-MM-DD'."""

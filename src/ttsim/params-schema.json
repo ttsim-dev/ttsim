@@ -47,6 +47,8 @@
             "piecewise_linear",
             "piecewise_quadratic",
             "piecewise_cubic",
+            "consecutive_int_look_up_table",
+            "birth_year_based_phase_in",
             "require_converter"
           ]
         },

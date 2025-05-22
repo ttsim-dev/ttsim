@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import inspect
 import re
 import textwrap
 from typing import TYPE_CHECKING, Any
@@ -12,12 +11,11 @@ import optree
 from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
-    from ttsim.ttsim_objects import PolicyFunction
     from ttsim.typing import (
         DashedISOString,
         GenericCallable,
-        NestedDataDict,
-        NestedTTSIMObjectDict,
+        NestedColumnObjectsParamFunctions,
+        NestedData,
     )
 
 
@@ -186,9 +184,7 @@ def create_tree_from_path_and_value(
     return nested_dict
 
 
-def merge_trees(
-    left: NestedTTSIMObjectDict, right: NestedTTSIMObjectDict
-) -> NestedTTSIMObjectDict:
+def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     """
     Merge two pytrees, raising an error if a path is present in both trees.
 
@@ -204,15 +200,13 @@ def merge_trees(
     The merged pytree.
     """
 
-    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):
+    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # type: ignore[arg-type]
         raise ValueError("Conflicting paths in trees to merge.")
 
     return upsert_tree(base=left, to_upsert=right)
 
 
-def upsert_tree(
-    base: NestedTTSIMObjectDict, to_upsert: NestedTTSIMObjectDict
-) -> NestedTTSIMObjectDict:
+def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, Any]:
     """
     Upsert a tree into another tree for trees defined by dictionaries only.
 
@@ -278,11 +272,11 @@ def insert_path_and_value(
 
 
 def partition_tree_by_reference_tree(
-    tree_to_partition: NestedTTSIMObjectDict | NestedDataDict,
-    reference_tree: NestedTTSIMObjectDict | NestedDataDict,
+    tree_to_partition: NestedColumnObjectsParamFunctions | NestedData,
+    reference_tree: NestedColumnObjectsParamFunctions | NestedData,
 ) -> tuple[
-    NestedTTSIMObjectDict | NestedDataDict,
-    NestedTTSIMObjectDict | NestedDataDict,
+    NestedColumnObjectsParamFunctions | NestedData,
+    NestedColumnObjectsParamFunctions | NestedData,
 ]:
     """
     Partition a tree into two based on the presence of its paths in a reference tree.
@@ -365,30 +359,6 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
     formatted_text = "\n\n".join(wrapped_paragraphs)
 
     return formatted_text
-
-
-def get_names_of_required_arguments(function: PolicyFunction) -> list[str]:
-    """Get argument names without defaults.
-
-    The detection of argument names also works for partialed functions.
-
-    Examples
-    --------
-    >>> def func(a, b): pass
-    >>> get_names_of_required_arguments(func)
-    ['a', 'b']
-    >>> def g(c=0): pass
-    >>> get_names_of_required_arguments(g)
-    []
-    >>> import functools
-    >>> func_ = functools.partial(func, a=1)
-    >>> get_names_of_required_arguments(func_)
-    ['b']
-
-    """
-    parameters = inspect.signature(function).parameters
-
-    return [p for p in parameters if parameters[p].default == parameters[p].empty]
 
 
 def remove_group_suffix(col: str, groupings: tuple[str, ...]) -> str:

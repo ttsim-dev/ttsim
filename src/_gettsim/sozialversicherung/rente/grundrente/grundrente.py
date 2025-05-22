@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from ttsim import RoundingSpec, piecewise_polynomial, policy_function
-
-if TYPE_CHECKING:
-    from ttsim.piecewise_polynomial import PiecewisePolynomialParameters
+from ttsim import (
+    PiecewisePolynomialParamValue,
+    RoundingSpec,
+    piecewise_polynomial,
+    policy_function,
+)
 
 
 @policy_function(
@@ -70,8 +70,8 @@ def anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
     familie__anzahl_personen_ehe: int,
     sozialversicherung__rente__altersrente__rentenwert: float,
-    anzurechnendes_einkommen_ohne_partner: PiecewisePolynomialParameters,
-    anzurechnendes_einkommen_mit_partner: PiecewisePolynomialParameters,
+    anzurechnendes_einkommen_ohne_partner: PiecewisePolynomialParamValue,
+    anzurechnendes_einkommen_mit_partner: PiecewisePolynomialParamValue,
 ) -> float:
     """Income which is deducted from Grundrentenzuschlag.
 

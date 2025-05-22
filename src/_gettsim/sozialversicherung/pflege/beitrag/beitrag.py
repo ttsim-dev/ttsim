@@ -1,5 +1,7 @@
 """Contributions to public long-term care insurance."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 

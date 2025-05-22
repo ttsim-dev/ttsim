@@ -1,15 +1,20 @@
 """Advance alimony payments (Unterhaltsvorschuss)."""
 
-import numpy
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ttsim import (
     AggType,
     RoundingSpec,
     agg_by_p_id_function,
     join,
-    params_function,
+    param_function,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    import numpy
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -114,15 +119,15 @@ def not_implemented_m() -> float:
     )
 
 
-@params_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
+@param_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_ohne_staffelung_m(
-    kindergeld__satz_einheitlich: float,
+    kindergeld__satz: float,
 ) -> float:
     """Kindergeld for first child when Kindergeld does not depend on number of children."""
-    return kindergeld__satz_einheitlich
+    return kindergeld__satz
 
 
-@params_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
+@param_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_gestaffelt_m(
     kindergeld__satz_gestaffelt: dict[int, float],
 ) -> float:
