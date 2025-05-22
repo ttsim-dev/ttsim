@@ -193,7 +193,7 @@ def compute_taxes_and_transfers(
         import jax
 
         static_args = {
-            argname: data[argname.removesuffix("_num_segments")].max() + 1
+            argname: data["p_id"].max() + 1
             for argname in inspect.signature(tax_transfer_function).parameters
             if argname.endswith("_num_segments")
         }
