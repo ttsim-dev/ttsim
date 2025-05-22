@@ -31,7 +31,7 @@ def ehe_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return __reorder_ids(result)
+    return _reorder_ids(result)
 
 
 @group_creation_function()
@@ -61,7 +61,7 @@ def fg_id(
             familie__p_id_elternteil_2 == p_id[i], i, p_id_elternteil_2_loc
         )
 
-    children = np.isin(p_id, familie__p_id_elternteil_1) + np.isin(
+    children = np.isin(p_id, familie__p_id_elternteil_1) | np.isin(
         p_id, familie__p_id_elternteil_2
     )
 
@@ -74,17 +74,17 @@ def fg_id(
         + np.minimum(p_id, arbeitslosengeld_2__p_id_einstandspartner) * n,
     )
 
-    fg_id = __assign_parents_fg_id(
+    fg_id = _assign_parents_fg_id(
         fg_id, p_id, p_id_elternteil_1_loc, hh_id, alter, children, n
     )
-    fg_id = __assign_parents_fg_id(
+    fg_id = _assign_parents_fg_id(
         fg_id, p_id, p_id_elternteil_2_loc, hh_id, alter, children, n
     )
 
-    return __reorder_ids(fg_id)
+    return _reorder_ids(fg_id)
 
 
-def __assign_parents_fg_id(
+def _assign_parents_fg_id(
     fg_id: np.ndarray,
     p_id: np.ndarray,
     p_id_elternteil_loc: np.ndarray,
@@ -143,7 +143,7 @@ def bg_id(
         fg_id,
     )
 
-    return __reorder_ids(bg_id)
+    return _reorder_ids(bg_id)
 
 
 @group_creation_function()
@@ -166,7 +166,7 @@ def eg_id(
         + np.minimum(p_id, p_id_einstandspartner__or_own_p_id) * n
     )
 
-    return __reorder_ids(result)
+    return _reorder_ids(result)
 
 
 @group_creation_function()
@@ -187,7 +187,7 @@ def wthh_id(
         hh_id + offset,
         hh_id,
     )
-    return __reorder_ids(wthh_id)
+    return _reorder_ids(wthh_id)
 
 
 @group_creation_function()
@@ -214,10 +214,10 @@ def sn_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return __reorder_ids(result)
+    return _reorder_ids(result)
 
 
-def __reorder_ids(ids: np.ndarray) -> np.ndarray:
+def _reorder_ids(ids: np.ndarray) -> np.ndarray:
     """Make ID's consecutively numbered."""
     sorting = np.argsort(ids)
     ids_sorted = ids[sorting]
