@@ -93,7 +93,7 @@ def grundsätzlich_anspruchsberechtigt(
 def entgeltpunkte_west(
     sozialversicherung__rente__entgeltpunkte_west: float,
     zurechnungszeit: float,
-    sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost: float,
+    anteil_entgeltpunkte_ost: float,
 ) -> float:
     """Entgeltpunkte from West German Beitrags- and Zurechnungszeiten.
 
@@ -103,8 +103,7 @@ def entgeltpunkte_west(
     """
 
     return sozialversicherung__rente__entgeltpunkte_west + (
-        zurechnungszeit
-        * (1 - sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost)
+        zurechnungszeit * (1 - anteil_entgeltpunkte_ost)
     )
 
 
@@ -112,7 +111,7 @@ def entgeltpunkte_west(
 def entgeltpunkte_ost(
     sozialversicherung__rente__entgeltpunkte_ost: float,
     zurechnungszeit: float,
-    sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost: float,
+    anteil_entgeltpunkte_ost: float,
 ) -> float:
     """Entgeltpunkte from East German Beitrags- and Zurechnungszeiten.
 
@@ -124,8 +123,7 @@ def entgeltpunkte_ost(
     """
 
     return sozialversicherung__rente__entgeltpunkte_ost + (
-        zurechnungszeit
-        * sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost
+        zurechnungszeit * anteil_entgeltpunkte_ost
     )
 
 
