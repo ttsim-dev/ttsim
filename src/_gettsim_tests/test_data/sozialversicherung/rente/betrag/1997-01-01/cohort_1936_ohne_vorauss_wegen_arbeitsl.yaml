@@ -57,7 +57,7 @@ outputs:
     - false
   sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze:
     - 60.0
-  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_ohne_vertrauensschutzprüfung:
+  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_ohne_vertrauensschutz:
     - 60.0
   sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_vorzeitig:
     - 60.0
