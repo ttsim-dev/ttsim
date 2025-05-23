@@ -1,6 +1,6 @@
 ---
 info:
-  note: ''
+  note: Child in separate Familiengemeinschaft if he/she is married
   precision_atol: 0.01
   source: ''
 inputs:
@@ -8,9 +8,9 @@ inputs:
   provided:
     alter:
       - 49
-      - 52
-      - 23
-      - 20
+      - 50
+      - 19
+      - 22
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -34,28 +34,28 @@ inputs:
     familie__p_id_elternteil_1:
       - -1
       - -1
-      - 0
       - -1
+      - 0
     familie__p_id_elternteil_2:
       - -1
       - -1
-      - 1
       - -1
+      - 1
     geburtsjahr:
       - 1974
-      - 1971
-      - 2000
-      - 2003
+      - 1973
+      - 2004
+      - 2001
     geburtsmonat:
-      - 7
-      - 7
-      - 3
-      - 10
-    geburtstag:
-      - 14
-      - 14
+      - 2
       - 1
-      - 21
+      - 7
+      - 7
+    geburtstag:
+      - 13
+      - 2
+      - 14
+      - 14
     hh_id:
       - 0
       - 0
@@ -70,8 +70,8 @@ outputs:
   bg_id:
     - 0
     - 0
-    - 100
-    - 100
+    - 1
+    - 1
   eg_id:
     - 0
     - 0

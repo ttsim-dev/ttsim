@@ -1,18 +1,16 @@
 ---
 info:
-  note: >-
-    CZ: In case the other parent does not pay child support, the parent id==0, can
-    request full kinderfreibetrag (Add this as input?)
+  note: One child is in separate Familiengemeinschaft since over 24
   precision_atol: 0.01
   source: ''
 inputs:
   assumed: {}
   provided:
     alter:
-      - 39
-      - 42
-      - 13
+      - 49
       - 52
+      - 27
+      - 23
     arbeitslosengeld_2__eigenbedarf_gedeckt:
       - false
       - false
@@ -29,40 +27,40 @@ inputs:
       - false
       - false
     familie__p_id_ehepartner:
-      - -1
-      - -1
+      - 1
+      - 0
       - -1
       - -1
     familie__p_id_elternteil_1:
       - -1
       - -1
       - 0
-      - -1
+      - 0
     familie__p_id_elternteil_2:
       - -1
       - -1
-      - 3
-      - -1
+      - 1
+      - 1
     geburtsjahr:
-      - 1984
-      - 1981
-      - 2010
+      - 1974
       - 1971
+      - 1996
+      - 2000
     geburtsmonat:
       - 7
       - 7
       - 3
-      - 12
+      - 10
     geburtstag:
       - 14
       - 14
       - 1
-      - 24
+      - 21
     hh_id:
       - 0
       - 0
       - 0
-      - 1
+      - 0
     p_id:
       - 0
       - 1
@@ -72,8 +70,8 @@ outputs:
   bg_id:
     - 0
     - 0
+    - 1
     - 0
-    - 100
   eg_id:
     - 0
     - 0
@@ -82,15 +80,15 @@ outputs:
   fg_id:
     - 0
     - 0
-    - 0
     - 1
+    - 0
   sn_id:
     - 0
-    - 1
-    - 2
-    - 3
-  ehe_id:
     - 0
     - 1
     - 2
-    - 3
+  ehe_id:
+    - 0
+    - 0
+    - 1
+    - 2
