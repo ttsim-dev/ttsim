@@ -86,14 +86,14 @@ class PiecewisePolynomialParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class ConsecutiveIntLookUpTableParam(ParamObject):
+class ConsecutiveIntLookupTableParam(ParamObject):
     """A parameter with its contents read and converted from a YAML file.
 
-    Its value is a ConsecutiveIntLookUpTableParamValue object, i.e., it contains the
+    Its value is a ConsecutiveIntLookupTableParamValue object, i.e., it contains the
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveIntLookUpTableParamValue
+    value: ConsecutiveIntLookupTableParamValue
     note: str | None = None
     reference: str | None = None
 
@@ -123,7 +123,7 @@ class PiecewisePolynomialParamValue:
 
 
 @dataclass(frozen=True)
-class ConsecutiveIntLookUpTableParamValue:
+class ConsecutiveIntLookupTableParamValue:
     """The parameters expected by lookup_table"""
 
     base_value_to_subtract: int

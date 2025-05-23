@@ -5,7 +5,7 @@ Revoked for birth cohorts after 1951.
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveIntLookUpTableParamValue, policy_function
+from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
 
 
 @policy_function(
@@ -193,7 +193,7 @@ def ges_rente_arbeitsl_vorzeitig_mit_vertrauenss_ab_2004_07(
 def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_abschlagsfrei_gestaffelt: ConsecutiveIntLookUpTableParamValue,
+    altersgrenze_abschlagsfrei_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 

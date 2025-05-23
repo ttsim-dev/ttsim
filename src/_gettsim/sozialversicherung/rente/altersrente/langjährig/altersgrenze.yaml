@@ -1,5 +1,5 @@
 ---
-altersgrenze_vorzeitig:
+xxxaltersgrenze_vorzeitig:
   name:
     de: Altersgrenze für vorzeitigen Bezug der Altersrente für langjährig Versicherte
     en: Early retirement age for long term insured
@@ -37,7 +37,7 @@ altersgrenze_vorzeitig:
     reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
     note: ERA back to 63.
     value: 63.0
-altersgrenze_abschlagsfrei:
+xxxaltersgrenze_abschlagsfrei:
   name:
     de: Eintrittsalter für langjährig Versicherte - abschlagsfrei
     en: Entry age for long term insured (35 insurance years) without deductions (FRA)

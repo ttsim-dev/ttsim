@@ -23,8 +23,8 @@ from ttsim.loader import (
     orig_tree_with_column_objects_param_functions,
 )
 from ttsim.param_objects import (
-    ConsecutiveIntLookUpTableParam,
-    ConsecutiveIntLookUpTableParamValue,
+    ConsecutiveIntLookupTableParam,
+    ConsecutiveIntLookupTableParamValue,
     DictParam,
     ParamObject,
     PiecewisePolynomialParam,
@@ -544,21 +544,21 @@ def get_one_param(  # noqa: PLR0911
             parameter_dict=cleaned_spec["value"],
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    elif spec["type"] == "consecutive_int_look_up_table":
-        cleaned_spec["value"] = get_consecutive_int_look_up_table_param_value(
+    elif spec["type"] == "consecutive_int_lookup_table":
+        cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
             cleaned_spec["value"]
         )
-        return ConsecutiveIntLookUpTableParam(**cleaned_spec)
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
     elif spec["type"] == "birth_month_based_phase_in":
         cleaned_spec["value"] = get_birth_month_based_phase_in_param_value(
             cleaned_spec["value"]
         )
-        return ConsecutiveIntLookUpTableParam(**cleaned_spec)
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
     elif spec["type"] == "birth_year_based_phase_in":
         cleaned_spec["value"] = get_birth_year_based_phase_in_param_value(
             cleaned_spec["value"]
         )
-        return ConsecutiveIntLookUpTableParam(**cleaned_spec)
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
     else:
@@ -638,16 +638,16 @@ def _get_params_contents(
         return current_spec
 
 
-def get_consecutive_int_look_up_table_param_value(
+def get_consecutive_int_lookup_table_param_value(
     raw: dict[int, float | int | bool],
-) -> ConsecutiveIntLookUpTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Get the parameters for a look-up table."""
     look_up_keys = numpy.asarray(sorted(raw))
     assert (look_up_keys - min(look_up_keys) == np.arange(len(look_up_keys))).all(), (
         "Dictionary keys must be consecutive integers."
     )
 
-    return ConsecutiveIntLookUpTableParamValue(
+    return ConsecutiveIntLookupTableParamValue(
         base_value_to_subtract=min(look_up_keys),
         values_to_look_up=np.asarray([raw[k] for k in look_up_keys]),
     )
@@ -673,12 +673,14 @@ def get_birth_month_based_phase_in_param_value(
         first_m_since_ad_phase_in: int,
         last_m_since_ad_phase_in: int,
     ) -> dict[int, float]:
-        out = {}
+        lookup_table = {}
         for y, m_dict in raw.items():
             for m, v in m_dict.items():
-                out[_m_since_ad(y=y, m=m)] = _year_fraction(v)
-        breakpoint()
-        return out
+                lookup_table[_m_since_ad(y=y, m=m)] = _year_fraction(v)
+        for m in range(first_m_since_ad_phase_in, last_m_since_ad_phase_in):
+            if m not in lookup_table:
+                lookup_table[m] = lookup_table[m - 1]
+        return lookup_table
 
     first_m_since_ad_to_consider = _m_since_ad(
         y=raw.pop("first_birthyear_to_consider"), m=1
@@ -705,12 +707,14 @@ def get_birth_month_based_phase_in_param_value(
     }
     during_phase_in: dict[int, float] = _fill_phase_in(
         raw=raw,
+        first_m_since_ad_phase_in=first_m_since_ad_phase_in,
+        last_m_since_ad_phase_in=last_m_since_ad_phase_in,
     )
     after_phase_in: dict[int, float] = {
         b_m: _year_fraction(raw[last_birthyear_phase_in][last_birthmonth_phase_in])
         for b_m in range(last_m_since_ad_phase_in + 1, last_m_since_ad_to_consider + 1)
     }
-    return get_consecutive_int_look_up_table_param_value(
+    return get_consecutive_int_lookup_table_param_value(
         {**before_phase_in, **during_phase_in, **after_phase_in}
     )
 
@@ -739,7 +743,7 @@ def get_birth_year_based_phase_in_param_value(
         b_y: _year_fraction(raw[last_birthyear_phase_in])
         for b_y in range(last_birthyear_phase_in + 1, last_birthyear_to_consider + 1)
     }
-    return get_consecutive_int_look_up_table_param_value(
+    return get_consecutive_int_lookup_table_param_value(
         {**before_phase_in, **during_phase_in, **after_phase_in}
     )
 
