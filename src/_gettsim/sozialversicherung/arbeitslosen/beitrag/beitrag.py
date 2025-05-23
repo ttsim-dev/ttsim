@@ -13,7 +13,7 @@ def betrag_versicherter_m_ohne_midijob(
 ) -> float:
     """Unemployment insurance contributions paid by the insured person."""
     betrag_arbeitgeber_regulär_beschäftigt_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz
+        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
     )
 
     # Set to 0 for minijobs
@@ -35,7 +35,7 @@ def betrag_versicherter_m_mit_midijob(
 ) -> float:
     """Unemployment insurance contributions paid by the insured person."""
     betrag_arbeitgeber_regulär_beschäftigt_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz
+        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
     )
 
     # Set to 0 for minijobs
@@ -57,7 +57,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
 ) -> float:
     """Employer's unemployment insurance contribution until March 2003."""
     betrag_arbeitgeber_regulär_beschäftigt_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz
+        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
     )
 
     # Set to 0 for minijobs
@@ -79,7 +79,7 @@ def betrag_arbeitgeber_m_mit_midijob(
 ) -> float:
     """Employer's unemployment insurance contribution since April 2003."""
     betrag_arbeitgeber_regulär_beschäftigt_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz
+        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
     )
 
     # Set to 0 for minijobs
@@ -100,7 +100,7 @@ def betrag_gesamt_midijob_m(
 ) -> float:
     """Sum of employee's and employer's unemployment insurance contribution
     for midijobs."""
-    return sozialversicherung__midijob_bemessungsentgelt_m * 2 * beitragssatz
+    return sozialversicherung__midijob_bemessungsentgelt_m * beitragssatz
 
 
 @policy_function(
@@ -117,6 +117,7 @@ def betrag_arbeitgeber_midijob_m_anteil_bruttolohn(
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         * beitragssatz
+        / 2
     )
 
 
@@ -176,4 +177,5 @@ def betrag_versicherter_midijob_m_mit_festem_beitragssatz(
     return (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
         * beitragssatz
+        / 2
     )
