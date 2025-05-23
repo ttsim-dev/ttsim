@@ -182,6 +182,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
         + sozialversicherung__pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang[
             "standard"
         ]
+        / 2
         + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang / 2
     )
 

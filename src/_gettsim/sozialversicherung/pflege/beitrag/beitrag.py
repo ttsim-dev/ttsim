@@ -171,32 +171,6 @@ def betrag_gesamt_in_gleitzone_m(
 @policy_function(
     start_date="2003-04-01",
     end_date="2022-09-30",
-    leaf_name="betrag_arbeitgeber_in_gleitzone_m",
-)
-def betrag_arbeitgeber_in_gleitzone_m_mit_festem_beitragssatz(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    beitragssatz_arbeitgeber: float,
-) -> float:
-    """Employer's long-term care insurance contribution in Midijob range."""
-
-    return (
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        * beitragssatz_arbeitgeber
-    )
-
-
-@policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_in_gleitzone_m")
-def betrag_arbeitgeber_in_gleitzone_m_als_differenz_von_gesamt_und_versichertenbeitrag(
-    betrag_gesamt_in_gleitzone_m: float,
-    betrag_versicherter_m: float,
-) -> float:
-    """Employer's long-term care insurance contribution since October 2022."""
-    return betrag_gesamt_in_gleitzone_m - betrag_versicherter_m
-
-
-@policy_function(
-    start_date="2003-04-01",
-    end_date="2022-09-30",
     leaf_name="betrag_versicherter_in_gleitzone_m",
 )
 def betrag_versicherter_in_gleitzone_m_als_differenz_von_gesamt_und_arbeitgeberbeitrag(
@@ -224,6 +198,32 @@ def betrag_versicherter_in_gleitzone_m_direkt(
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
         * beitragssatz_arbeitnehmer
     )
+
+
+@policy_function(
+    start_date="2003-04-01",
+    end_date="2022-09-30",
+    leaf_name="betrag_arbeitgeber_in_gleitzone_m",
+)
+def betrag_arbeitgeber_in_gleitzone_m_mit_festem_beitragssatz(
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
+    beitragssatz_arbeitgeber: float,
+) -> float:
+    """Employer's long-term care insurance contribution in Midijob range."""
+
+    return (
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        * beitragssatz_arbeitgeber
+    )
+
+
+@policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_in_gleitzone_m")
+def betrag_arbeitgeber_in_gleitzone_m_als_differenz_von_gesamt_und_versichertenbeitrag(
+    betrag_gesamt_in_gleitzone_m: float,
+    betrag_versicherter_m: float,
+) -> float:
+    """Employer's long-term care insurance contribution since October 2022."""
+    return betrag_gesamt_in_gleitzone_m - betrag_versicherter_m
 
 
 @policy_function(
