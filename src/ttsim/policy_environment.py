@@ -690,12 +690,12 @@ def get_birth_month_based_phase_in_param_value(
     )
     assert all(isinstance(k, int) for k in raw)
     first_birthyear_phase_in: int = min(raw.keys())  # type: ignore[assignment]
-    first_birthmonth_phase_in: int = min(raw[first_birthyear_phase_in].keys())  # type: ignore[assignment]
+    first_birthmonth_phase_in: int = min(raw[first_birthyear_phase_in].keys())
     first_m_since_ad_phase_in = _m_since_ad(
         y=first_birthyear_phase_in, m=first_birthmonth_phase_in
     )
     last_birthyear_phase_in: int = max(raw.keys())  # type: ignore[assignment]
-    last_birthmonth_phase_in: int = max(raw[last_birthyear_phase_in].keys())  # type: ignore[assignment]
+    last_birthmonth_phase_in: int = max(raw[last_birthyear_phase_in].keys())
     last_m_since_ad_phase_in = _m_since_ad(
         y=last_birthyear_phase_in, m=last_birthmonth_phase_in
     )
@@ -706,7 +706,7 @@ def get_birth_month_based_phase_in_param_value(
         for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_in)
     }
     during_phase_in: dict[int, float] = _fill_phase_in(
-        raw=raw,
+        raw=raw,  # type: ignore[arg-type]
         first_m_since_ad_phase_in=first_m_since_ad_phase_in,
         last_m_since_ad_phase_in=last_m_since_ad_phase_in,
     )
