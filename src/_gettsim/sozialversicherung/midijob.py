@@ -71,7 +71,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
+        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang / 2
         + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang / 2
         + sozialversicherung__pflege__beitrag__beitragssatz_jahresanfang / 2
     )
@@ -123,7 +123,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
+        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang / 2
         + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang / 2
         + sozialversicherung__pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang[
             "standard"
@@ -178,7 +178,7 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
+        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang / 2
         + sozialversicherung__pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang[
             "standard"
         ]

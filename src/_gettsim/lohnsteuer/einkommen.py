@@ -181,6 +181,7 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
         * sozialversicherung__rente__beitrag__beitragssatz
+        / 2
         * einführungsfaktor_rentenversicherungsaufwendungen
     )
     kranken = max(
@@ -211,6 +212,7 @@ def vorsorgepauschale_y_ab_2023(
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
         * sozialversicherung__rente__beitrag__beitragssatz
+        / 2
     )
     kranken = max(
         vorsorge_krankenversicherungsbeiträge_option_a,
