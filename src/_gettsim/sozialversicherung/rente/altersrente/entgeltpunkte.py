@@ -1,5 +1,9 @@
 from ttsim import policy_function
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
+
 
 @policy_function()
 def entgeltpunkte_west_updated(

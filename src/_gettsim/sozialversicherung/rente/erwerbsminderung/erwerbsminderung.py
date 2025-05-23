@@ -41,6 +41,10 @@ def betrag_m_nach_wohnort(
     return out
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function(start_date="2023-07-01", leaf_name="betrag_m")
 def betrag_m_einheitlich(
     zugangsfaktor: float,
@@ -89,6 +93,10 @@ def grundsätzlich_anspruchsberechtigt(
     return anspruch_erwerbsm_rente
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function(start_date="2001-01-01")
 def entgeltpunkte_west(
     sozialversicherung__rente__entgeltpunkte_west: float,
@@ -107,6 +115,10 @@ def entgeltpunkte_west(
     )
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function(start_date="2001-01-01")
 def entgeltpunkte_ost(
     sozialversicherung__rente__entgeltpunkte_ost: float,
@@ -252,6 +264,10 @@ def wartezeit_langjährig_versichert_erfüllt(
     ]
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function()
 def anteil_entgeltpunkte_ost(
     sozialversicherung__rente__entgeltpunkte_west: float,
@@ -273,6 +289,10 @@ def anteil_entgeltpunkte_ost(
     return out
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function()
 def mean_entgeltpunkte_pro_bewertungsmonat(
     sozialversicherung__rente__entgeltpunkte_west: float,
