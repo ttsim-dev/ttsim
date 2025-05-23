@@ -7,10 +7,10 @@ from ttsim import policy_function
 
 @policy_function(
     end_date="2011-12-31",
-    leaf_name="altersgrenze_abschlagsfrei",
+    leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_abschlagsfrei_mit_arbeitsl_frauen_ohne_besond_langj(
+def altersgrenze_mit_arbeitsl_frauen_ohne_besond_langj(
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze: float,
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
@@ -50,10 +50,10 @@ def altersgrenze_abschlagsfrei_mit_arbeitsl_frauen_ohne_besond_langj(
 @policy_function(
     start_date="2012-01-01",
     end_date="2017-12-31",
-    leaf_name="altersgrenze_abschlagsfrei",
+    leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_abschlagsfrei_mit_frauen_arbeitsl_besond_langj(
+def altersgrenze_mit_frauen_arbeitsl_besond_langj(
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__für_frauen__altersgrenze: float,
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
@@ -106,10 +106,10 @@ def altersgrenze_abschlagsfrei_mit_frauen_arbeitsl_besond_langj(
 
 @policy_function(
     start_date="2018-01-01",
-    leaf_name="altersgrenze_abschlagsfrei",
+    leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_abschlagsfrei_mit_besond_langj_ohne_arbeitsl_frauen(
+def altersgrenze_mit_besond_langj_ohne_arbeitsl_frauen(
     sozialversicherung__rente__altersrente__besonders_langjährig__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__besonders_langjährig__altersgrenze: float,
     sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt: bool,

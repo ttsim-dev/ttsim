@@ -14,14 +14,14 @@ from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
     leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung_bis_1996(
-    altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung: float,
+def altersgrenze_ohne_vertrauensschutzprüfung_bis_1996(
+    altersgrenze_ohne_vertrauensschutzprüfung: float,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
     Does not check for eligibility for this pathway into retirement.
     """
-    return altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung
+    return altersgrenze_ohne_vertrauensschutzprüfung
 
 
 @policy_function(
@@ -34,7 +34,7 @@ def altersgrenze_mit_vertrauensschutzprüfung(
     geburtsjahr: int,
     geburtsmonat: int,
     vertrauensschutz_1997: bool,
-    altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung: float,
+    altersgrenze_ohne_vertrauensschutzprüfung: float,
     ges_rente_params: dict,
 ) -> float:
     """Full retirement age for unemployed with Vertrauensschutz.
@@ -60,7 +60,7 @@ def altersgrenze_mit_vertrauensschutzprüfung(
             "altersgrenze_rente_wegen_arbeitslosigkeit_abschlagsfrei"
         ]["vertrauensschutz"][geburtsjahr][geburtsmonat]
     else:
-        out = altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung
+        out = altersgrenze_ohne_vertrauensschutzprüfung
 
     return out
 
@@ -71,8 +71,8 @@ def altersgrenze_mit_vertrauensschutzprüfung(
     leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung_ab_2010(
-    altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung: float,
+def altersgrenze_ohne_vertrauensschutzprüfung_ab_2010(
+    altersgrenze_ohne_vertrauensschutzprüfung: float,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
@@ -81,7 +81,7 @@ def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung_ab_2010(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    return altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung
+    return altersgrenze_ohne_vertrauensschutzprüfung
 
 
 @policy_function(
@@ -190,10 +190,10 @@ def ges_rente_arbeitsl_vorzeitig_mit_vertrauenss_ab_2004_07(
 
 
 @policy_function(end_date="2017-12-31")
-def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung(
+def altersgrenze_ohne_vertrauensschutzprüfung(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_abschlagsfrei_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
@@ -203,9 +203,8 @@ def altersgrenze_abschlagsfrei_ohne_vertrauensschutzprüfung(
     """
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return altersgrenze_abschlagsfrei_gestaffelt.values_to_look_up[
-        birth_month_since_ad
-        - altersgrenze_abschlagsfrei_gestaffelt.base_value_to_subtract
+    return altersgrenze_gestaffelt.values_to_look_up[
+        birth_month_since_ad - altersgrenze_gestaffelt.base_value_to_subtract
     ]
 
 

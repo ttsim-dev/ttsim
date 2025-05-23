@@ -136,7 +136,7 @@ def zugangsfaktor(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     referenzalter_abschlag: float,
-    altersgrenze_abschlagsfrei: float,
+    altersgrenze: float,
     altersgrenze_vorzeitig: float,
     vorzeitig_grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt: bool,
@@ -170,8 +170,7 @@ def zugangsfaktor(
     if sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt:
         # Early retirement (before full retirement age): Zugangsfaktor < 1
         if (
-            sozialversicherung__rente__alter_bei_renteneintritt
-            < altersgrenze_abschlagsfrei
+            sozialversicherung__rente__alter_bei_renteneintritt < altersgrenze
         ):  # [ERA,FRA)
             if vorzeitig_grundsätzlich_anspruchsberechtigt and (
                 sozialversicherung__rente__alter_bei_renteneintritt

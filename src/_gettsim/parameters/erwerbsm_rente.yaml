@@ -1,5 +1,5 @@
 ---
-parameter_altersgrenze_abschlagsfrei:
+parameter_altersgrenze:
   name:
     de: Regelaltersgrenze
     en: Statutory retirement age

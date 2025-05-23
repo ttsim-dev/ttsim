@@ -35,7 +35,7 @@ inputs:
       - true
       - true
 outputs:
-  sozialversicherung__rente__altersrente__altersgrenze_abschlagsfrei:
+  sozialversicherung__rente__altersrente__altersgrenze:
     - 65.583333
     - 63.166667
     - 65.583333
