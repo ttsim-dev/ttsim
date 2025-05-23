@@ -1,5 +1,5 @@
 ---
-altersgrenze_abschlagsfrei:
+altersgrenze:
   name:
     de: Einheitliche Altersgrenze für abschlagsfreie Altersrente wegen Arbeitslosigkeit
     en: Uniform age threshold for pension for unemployed (without deductions)
@@ -22,7 +22,7 @@ altersgrenze_abschlagsfrei:
     note: >-
       Increase of age threshold from 60 to 65 for birth cohort 1941-1952. See
       `altersgrenze_gestaffelt`.
-altersgrenze_abschlagsfrei_gestaffelt:
+altersgrenze_gestaffelt:
   name:
     de: Gestaffelte Altersgrenze für Altersrente wegen Arbeitslosigkeit (abschlagsfrei)
     en: Staggered age threshold for pension for unemployed (without deductions)
@@ -639,7 +639,7 @@ altersgrenze_abschlagsfrei_gestaffelt:
       12:
         years: 65
         months: 0
-altersgrenze_abschlagsfrei_vertrauensschutz:
+altersgrenze_vertrauensschutz:
   name:
     de: >-
       Altersgrenze für abschlagsfreie Altersrente wegen Arbeitslosigkeit mit
@@ -660,7 +660,7 @@ altersgrenze_abschlagsfrei_vertrauensschutz:
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     value: 60.0
-altersgrenze_abschlagsfrei_gestaffelt_vertrauensschutz:
+altersgrenze_gestaffelt_vertrauensschutz:
   name:
     de: >-
       § 237 SGB VI Abs. 4

@@ -47,7 +47,7 @@ inputs:
     weiblich:
       - false
 outputs:
-  sozialversicherung__rente__altersrente__altersgrenze_abschlagsfrei:
+  sozialversicherung__rente__altersrente__altersgrenze:
     - 63.583333
   sozialversicherung__rente__altersrente__altersgrenze_vorzeitig:
     - 60.583333

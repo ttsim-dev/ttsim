@@ -192,20 +192,15 @@ def zugangsfaktor(
     """
 
     if wartezeit_langjährig_versichert_erfüllt:
-        altersgrenze_abschlagsfrei = erwerbsm_rente_params[
+        altersgrenze = erwerbsm_rente_params[
             "altersgrenze_langjährig_versicherte_abschlagsfrei"
         ]
     else:
-        altersgrenze_abschlagsfrei = erwerbsm_rente_params[
-            "parameter_altersgrenze_abschlagsfrei"
-        ]
+        altersgrenze = erwerbsm_rente_params["parameter_altersgrenze"]
 
     zugangsfaktor = (
         1
-        + (
-            sozialversicherung__rente__alter_bei_renteneintritt
-            - altersgrenze_abschlagsfrei
-        )
+        + (sozialversicherung__rente__alter_bei_renteneintritt - altersgrenze)
         * (
             sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr[
                 "vorzeitiger_renteneintritt"

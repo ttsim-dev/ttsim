@@ -65,7 +65,7 @@ inputs:
     wohnort_ost:
       - true
 outputs:
-  sozialversicherung__rente__altersrente__altersgrenze_abschlagsfrei:
+  sozialversicherung__rente__altersrente__altersgrenze:
     - 65.41666667
   sozialversicherung__rente__altersrente__entgeltpunkte_ost_updated:
     - 36.99837737
