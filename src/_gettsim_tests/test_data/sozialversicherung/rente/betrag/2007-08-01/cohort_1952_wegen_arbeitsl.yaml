@@ -55,13 +55,5 @@ outputs:
     - false
   sozialversicherung__rente__altersrente__vorzeitig_grundsätzlich_anspruchsberechtigt:
     - false
-  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze:
-    - 65.0
-  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_ohne_vertrauensschutzprüfung:
-    - 65.0
-  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_vorzeitig:
-    - 63.0
-  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_vorzeitig_ohne_vertrauensschutzprüfung:
-    - 63.0
   sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt:
     - false

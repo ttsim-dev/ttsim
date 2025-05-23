@@ -237,10 +237,6 @@ altersgrenze_gestaffelt:
       11:
         years: 65
         months: 0
-    1953:
-      1:
-        years: 65
-        months: 0
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     note: Increase of full retirement age from 60 to 65 for birth cohort 1937-1952.
@@ -441,10 +437,6 @@ altersgrenze_gestaffelt:
       11:
         years: 65
         months: 0
-    1953:
-      1:
-        years: 65
-        months: 0
   1996-09-27:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of full retirement age from 60 to 65 for birth cohort 1937-1941.
@@ -639,27 +631,6 @@ altersgrenze_gestaffelt:
       12:
         years: 65
         months: 0
-altersgrenze_vertrauensschutz:
-  name:
-    de: >-
-      Altersgrenze für abschlagsfreie Altersrente wegen Arbeitslosigkeit mit
-      Vertrauensschutz
-    en: >-
-      Age threshold for pension for unemployed (without deductions) with
-      Vertrauensschutz
-  description:
-    de: >-
-      Vertrauensschutzregelungen schützen bestimmte Personengruppen vor der Erhöhung der
-      Altersgrenze.
-    en: >-
-      Trust protection rules protect certain groups of people from the increase of
-      the age threshold.
-  unit: null
-  reference_period: null
-  type: scalar
-  1996-07-29:
-    reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
-    value: 60.0
 altersgrenze_gestaffelt_vertrauensschutz:
   name:
     de: >-
@@ -697,121 +668,41 @@ altersgrenze_gestaffelt_vertrauensschutz:
       1:
         years: 60
         months: 1
-      2:
-        years: 60
-        months: 1
-      3:
-        years: 60
-        months: 1
-      4:
-        years: 60
-        months: 1
       5:
         years: 60
         months: 2
-      6:
-        years: 60
-        months: 2
-      7:
-        years: 60
-        months: 2
-      8:
-        years: 60
-        months: 2
       9:
-        years: 60
-        months: 3
-      10:
-        years: 60
-        months: 3
-      11:
-        years: 60
-        months: 3
-      12:
         years: 60
         months: 3
     1942:
       1:
         years: 60
         months: 4
-      2:
-        years: 60
-        months: 4
-      3:
-        years: 60
-        months: 4
-      4:
-        years: 60
-        months: 4
       5:
         years: 60
         months: 5
-      6:
-        years: 60
-        months: 5
-      7:
-        years: 60
-        months: 5
-      8:
-        years: 60
-        months: 5
       9:
-        years: 60
-        months: 6
-      10:
-        years: 60
-        months: 6
-      11:
-        years: 60
-        months: 6
-      12:
         years: 60
         months: 6
     1943:
       1:
         years: 60
         months: 7
-      2:
-        years: 60
-        months: 7
-      3:
-        years: 60
-        months: 7
-      4:
-        years: 60
-        months: 7
       5:
         years: 60
         months: 8
-      6:
-        years: 60
-        months: 8
-      7:
-        years: 60
-        months: 8
-      8:
-        years: 60
-        months: 8
       9:
-        years: 60
-        months: 9
-      10:
-        years: 60
-        months: 9
-      11:
-        years: 60
-        months: 9
-      12:
         years: 60
         months: 9
     1944:
       1:
         years: 60
         months: 10
-      2:
-        years: 60
-        months: 10
-xxxaltersgrenze_vorzeitig:
+  2010-01-01:
+    note: >-
+      All potential beneficiaries of Vertrauensschutz have reached the
+      Regelaltersgrenze.
+altersgrenze_vorzeitig:
   name:
     de: >-
       Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
@@ -838,12 +729,15 @@ xxxaltersgrenze_vorzeitig:
   1989-12-18:
     note: >-
       Increase of early retirement age from 60 to 62 for birth cohort 1949-1952. See
-      `altersgrenze_vorzeitig`.
+      `altersgrenze_vorzeitig_gestaffelt`.
   1996-09-27:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of ERA was revoked.
     value: 60.0
-xxxaltersgrenze_vorzeitig_gestaffelt:
+  2004-07-26:
+    reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
+    note: Increase of the early retirement age from 60 to 63 for birth cohort 1946-1948.
+altersgrenze_vorzeitig_gestaffelt:
   name:
     de: >-
       Gestaffelte Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
@@ -864,315 +758,175 @@ xxxaltersgrenze_vorzeitig_gestaffelt:
       https://www.buzer.de/Anlage_19_SGB_VI.htm
   unit: Years
   reference_period: null
-  type: require_converter
+  type: birth_month_based_phase_in
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
     note: Increase of early retirement age from 60 to 62 for birth cohort 1949-1952.
-    entry_age_old_regime: 60.0
-    entry_age_new_regime: 62.0
-    max_birthyear_old_regime: 1948
-    min_birthyear_new_regime: 1953
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2029
+    1948:
+      12:
+        years: 60
+        months: 0
     1949:
       1:
-        years: 60
-        months: 1
-      2:
         years: 60
         months: 1
       3:
         years: 60
         months: 2
-      4:
-        years: 60
-        months: 2
       5:
-        years: 60
-        months: 3
-      6:
         years: 60
         months: 3
       7:
         years: 60
         months: 4
-      8:
-        years: 60
-        months: 4
       9:
         years: 60
         months: 5
-      10:
-        years: 60
-        months: 5
       11:
-        years: 60
-        months: 6
-      12:
         years: 60
         months: 6
     1950:
       1:
         years: 60
         months: 7
-      2:
-        years: 60
-        months: 7
       3:
-        years: 60
-        months: 8
-      4:
         years: 60
         months: 8
       5:
         years: 60
         months: 9
-      6:
-        years: 60
-        months: 9
       7:
-        years: 60
-        months: 10
-      8:
         years: 60
         months: 10
       9:
         years: 60
         months: 11
-      10:
-        years: 60
-        months: 11
       11:
-        years: 61
-        months: 0
-      12:
         years: 61
         months: 0
     1951:
       1:
         years: 61
         months: 1
-      2:
-        years: 61
-        months: 1
       3:
-        years: 61
-        months: 2
-      4:
         years: 61
         months: 2
       5:
         years: 61
         months: 3
-      6:
-        years: 61
-        months: 3
       7:
-        years: 61
-        months: 4
-      8:
         years: 61
         months: 4
       9:
         years: 61
         months: 5
-      10:
-        years: 61
-        months: 5
       11:
-        years: 61
-        months: 6
-      12:
         years: 61
         months: 6
     1952:
       1:
         years: 61
         months: 7
-      2:
-        years: 61
-        months: 7
       3:
-        years: 61
-        months: 8
-      4:
         years: 61
         months: 8
       5:
         years: 61
         months: 9
-      6:
-        years: 61
-        months: 9
       7:
-        years: 61
-        months: 10
-      8:
         years: 61
         months: 10
       9:
         years: 60
         months: 11
-      10:
-        years: 60
-        months: 11
       11:
-        years: 62
-        months: 0
-      12:
         years: 62
         months: 0
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     note: Increase of early retirement age as before. (§ 237 SGB VI  Abs.5).
-    entry_age_old_regime: 60.0
-    entry_age_new_regime: 62.0
-    max_birthyear_old_regime: 1948
-    min_birthyear_new_regime: 1953
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2029
+    1948:
+      12:
+        years: 60
+        months: 0
     1949:
       1:
-        years: 60
-        months: 1
-      2:
         years: 60
         months: 1
       3:
         years: 60
         months: 2
-      4:
-        years: 60
-        months: 2
       5:
-        years: 60
-        months: 3
-      6:
         years: 60
         months: 3
       7:
         years: 60
         months: 4
-      8:
-        years: 60
-        months: 4
       9:
         years: 60
         months: 5
-      10:
-        years: 60
-        months: 5
       11:
-        years: 60
-        months: 6
-      12:
         years: 60
         months: 6
     1950:
       1:
         years: 60
         months: 7
-      2:
-        years: 60
-        months: 7
       3:
-        years: 60
-        months: 8
-      4:
         years: 60
         months: 8
       5:
         years: 60
         months: 9
-      6:
-        years: 60
-        months: 9
       7:
-        years: 60
-        months: 10
-      8:
         years: 60
         months: 10
       9:
         years: 60
         months: 11
-      10:
-        years: 60
-        months: 11
       11:
-        years: 61
-        months: 0
-      12:
         years: 61
         months: 0
     1951:
       1:
         years: 61
         months: 1
-      2:
-        years: 61
-        months: 1
       3:
-        years: 61
-        months: 2
-      4:
         years: 61
         months: 2
       5:
         years: 61
         months: 3
-      6:
-        years: 61
-        months: 3
       7:
-        years: 61
-        months: 4
-      8:
         years: 61
         months: 4
       9:
         years: 61
         months: 5
-      10:
-        years: 61
-        months: 5
       11:
-        years: 61
-        months: 6
-      12:
         years: 61
         months: 6
     1952:
       1:
         years: 61
         months: 7
-      2:
-        years: 61
-        months: 7
       3:
-        years: 61
-        months: 8
-      4:
         years: 61
         months: 8
       5:
         years: 61
         months: 9
-      6:
-        years: 61
-        months: 9
       7:
-        years: 61
-        months: 10
-      8:
         years: 61
         months: 10
       9:
         years: 60
         months: 11
-      10:
-        years: 60
-        months: 11
       11:
-        years: 62
-        months: 0
-      12:
         years: 62
         months: 0
   1996-09-27:
@@ -1181,10 +935,12 @@ xxxaltersgrenze_vorzeitig_gestaffelt:
   2004-07-26:
     reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
     note: Increase of the early retirement age from 60 to 63 for birth cohort 1946-1948.
-    entry_age_old_regime: 60.0
-    entry_age_new_regime: 63.0
-    max_birthyear_old_regime: 1945
-    min_birthyear_new_regime: 1949
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 1951
+    1945:
+      12:
+        years: 60
+        months: 0
     1946:
       1:
         years: 60
@@ -1296,7 +1052,7 @@ xxxaltersgrenze_vorzeitig_gestaffelt:
       12:
         years: 63
         months: 0
-xxxaltersgrenze_vorzeitig_vertrauensschutz:
+altersgrenze_vorzeitig_mit_vertrauensschutz:
   name:
     de: >-
       Einheitliche Altersgrenze für vorzeitige Inanspruchnahme Altersrente wegen
