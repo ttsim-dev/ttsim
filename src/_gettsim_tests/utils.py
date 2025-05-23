@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
@@ -12,14 +11,12 @@ import yaml
 from _gettsim.config import GETTSIM_ROOT
 from _gettsim_tests import TEST_DIR
 from ttsim import (
-    GroupCreationFunction,
     PolicyEnvironment,
     compute_taxes_and_transfers,
     merge_trees,
     set_up_policy_environment,
     to_datetime,
 )
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 
 # Set display options to show all columns without truncation
@@ -76,29 +73,8 @@ class PolicyTest:
 def execute_test(test: PolicyTest, jit: bool = False) -> None:
     environment = cached_set_up_policy_environment(date=test.date)
 
-    if IS_JAX_INSTALLED:
-        ids = dict.fromkeys(
-            {f"{g}_id" for g in environment.grouping_levels}.intersection(
-                {
-                    g
-                    for g, t in environment.raw_objects_tree.items()
-                    if isinstance(t, GroupCreationFunction)
-                }
-            )
-        )
-        result_ids = compute_taxes_and_transfers(
-            data_tree=test.input_tree,
-            environment=environment,
-            targets_tree=ids,
-            jit=False,
-        )
-        data_tree = merge_trees(test.input_tree, result_ids)
-        targets_tree = copy.deepcopy(test.target_structure)
-        for i in [i for i in ids if i in targets_tree]:
-            del targets_tree[i]
-    else:
-        data_tree = test.input_tree
-        targets_tree = test.target_structure
+    data_tree = test.input_tree
+    targets_tree = test.target_structure
 
     if targets_tree:
         result = compute_taxes_and_transfers(
@@ -116,11 +92,7 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
     if flat_expected_output_tree:
         expected_df = pd.DataFrame(flat_expected_output_tree)
         result_df = pd.DataFrame(flat_result)
-        if IS_JAX_INSTALLED:
-            for i in [i for i in ids if i in expected_df]:
-                result_df = pd.concat(
-                    [result_df, pd.Series(result_ids[i], name=i)], axis=1
-                )
+
         try:
             pd.testing.assert_frame_equal(
                 result_df.sort_index(axis="columns"),

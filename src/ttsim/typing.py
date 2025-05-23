@@ -69,9 +69,7 @@ if TYPE_CHECKING:
     """The contents of a yaml files with parameters, excluding the outermost key."""
     FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
     """Flat tree of yaml contents; the last element of the key is the leaf name."""
-    OrigParam = dict[str | int, Any]
-    """The original contents of YYYY-MM-DD key, after minimal processing."""
-    NestedParams = Mapping[str, ParamObject | "NestedParams"]
+    NestedParamObjects = Mapping[str, ParamObject | "NestedParamObjects"]
     """Tree mapping TTSIM paths to parameters."""
     QualNameProcessedParams = Mapping[str, Any]
     """A mapping of qualified names to fully processed parameters."""
