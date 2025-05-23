@@ -29,7 +29,7 @@ def betrag_versicherter_m_ohne_midijob(
 def betrag_versicherter_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
-    betrag_versicherter_midijob_m: float,
+    betrag_versicherter_in_gleitzone_m: float,
     sozialversicherung__rente__beitrag__einkommen_m: float,
     beitragssatz: float,
 ) -> float:
@@ -42,7 +42,7 @@ def betrag_versicherter_m_mit_midijob(
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
-        out = betrag_versicherter_midijob_m
+        out = betrag_versicherter_in_gleitzone_m
     else:
         out = betrag_arbeitgeber_regulär_beschäftigt_m
 
@@ -73,7 +73,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
 def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
-    betrag_arbeitgeber_midijob_m: float,
+    betrag_arbeitgeber_in_gleitzone_m: float,
     sozialversicherung__rente__beitrag__einkommen_m: float,
     beitragssatz: float,
 ) -> float:
@@ -86,7 +86,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
-        out = betrag_arbeitgeber_midijob_m
+        out = betrag_arbeitgeber_in_gleitzone_m
     else:
         out = betrag_arbeitgeber_regulär_beschäftigt_m
 
@@ -94,7 +94,7 @@ def betrag_arbeitgeber_m_mit_midijob(
 
 
 @policy_function(start_date="2003-04-01")
-def betrag_gesamt_midijob_m(
+def betrag_gesamt_in_gleitzone_m(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz: float,
 ) -> float:
@@ -106,9 +106,9 @@ def betrag_gesamt_midijob_m(
 @policy_function(
     start_date="2003-04-01",
     end_date="2022-09-30",
-    leaf_name="betrag_arbeitgeber_midijob_m",
+    leaf_name="betrag_arbeitgeber_in_gleitzone_m",
 )
-def betrag_arbeitgeber_midijob_m_anteil_bruttolohn(
+def betrag_arbeitgeber_in_gleitzone_m_anteil_bruttolohn(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     beitragssatz: float,
 ) -> float:
@@ -121,55 +121,57 @@ def betrag_arbeitgeber_midijob_m_anteil_bruttolohn(
     )
 
 
-@policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_midijob_m")
-def betrag_arbeitgeber_midijob_m_als_differenz_von_gesamt_und_versichertenbeitrag(
-    betrag_gesamt_midijob_m: float,
-    betrag_versicherter_midijob_m: float,
+@policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_in_gleitzone_m")
+def betrag_arbeitgeber_in_gleitzone_m_als_differenz_von_gesamt_und_versichertenbeitrag(
+    betrag_gesamt_in_gleitzone_m: float,
+    betrag_versicherter_in_gleitzone_m: float,
 ) -> float:
     """Employer's unemployment insurance contribution since October 2022.
 
     Parameters
     ----------
-    betrag_gesamt_midijob_m
-        See :func:`betrag_gesamt_midijob_m`.
-    betrag_versicherter_midijob_m
-        See :func:`betrag_versicherter_midijob_m`.
+    betrag_gesamt_in_gleitzone_m
+        See :func:`betrag_gesamt_in_gleitzone_m`.
+    betrag_versicherter_in_gleitzone_m
+        See :func:`betrag_versicherter_in_gleitzone_m`.
 
     Returns
     -------
 
     """
-    return betrag_gesamt_midijob_m - betrag_versicherter_midijob_m
+    return betrag_gesamt_in_gleitzone_m - betrag_versicherter_in_gleitzone_m
 
 
 @policy_function(
     start_date="2003-04-01",
     end_date="2022-09-30",
-    leaf_name="betrag_versicherter_midijob_m",
+    leaf_name="betrag_versicherter_in_gleitzone_m",
 )
-def betrag_versicherter_midijob_m_als_differenz_von_gesamt_und_arbeitgeberbeitrag(
-    betrag_gesamt_midijob_m: float,
-    betrag_arbeitgeber_midijob_m: float,
+def betrag_versicherter_in_gleitzone_m_als_differenz_von_gesamt_und_arbeitgeberbeitrag(
+    betrag_gesamt_in_gleitzone_m: float,
+    betrag_arbeitgeber_in_gleitzone_m: float,
 ) -> float:
     """Employee's unemployment insurance contribution for Midijobs until September
     2022.
 
     Parameters
     ----------
-    betrag_gesamt_midijob_m
-        See :func:`betrag_gesamt_midijob_m`.
-    betrag_arbeitgeber_midijob_m
-        See :func:`betrag_arbeitgeber_midijob_m`.
+    betrag_gesamt_in_gleitzone_m
+        See :func:`betrag_gesamt_in_gleitzone_m`.
+    betrag_arbeitgeber_in_gleitzone_m
+        See :func:`betrag_arbeitgeber_in_gleitzone_m`.
 
     Returns
     -------
 
     """
-    return betrag_gesamt_midijob_m - betrag_arbeitgeber_midijob_m
+    return betrag_gesamt_in_gleitzone_m - betrag_arbeitgeber_in_gleitzone_m
 
 
-@policy_function(start_date="2022-10-01", leaf_name="betrag_versicherter_midijob_m")
-def betrag_versicherter_midijob_m_mit_festem_beitragssatz(
+@policy_function(
+    start_date="2022-10-01", leaf_name="betrag_versicherter_in_gleitzone_m"
+)
+def betrag_versicherter_in_gleitzone_m_mit_festem_beitragssatz(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     beitragssatz: float,
 ) -> float:
