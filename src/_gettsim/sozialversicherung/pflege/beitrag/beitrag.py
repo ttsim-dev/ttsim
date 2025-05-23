@@ -185,6 +185,7 @@ def betrag_versicherter_in_gleitzone_m_als_differenz_von_gesamt_und_arbeitgeberb
 
 @policy_function(
     start_date="2022-10-01",
+    end_date="2023-06-30",
     leaf_name="betrag_versicherter_in_gleitzone_m",
 )
 def betrag_versicherter_in_gleitzone_m_direkt(
@@ -198,6 +199,42 @@ def betrag_versicherter_in_gleitzone_m_direkt(
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
         * beitragssatz_arbeitnehmer
     )
+
+
+@policy_function(
+    start_date="2023-07-01",
+    leaf_name="betrag_versicherter_in_gleitzone_m",
+)
+def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehreren_kindern(
+    anzahl_kinder_bis_24: int,
+    zahlt_zusatzbetrag_kinderlos: bool,
+    sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
+    sozialversicherung__midijob_bemessungsentgelt_m: float,
+    beitragssatz_nach_kinderzahl: dict[str, float],
+) -> float:
+    """Employee's long-term care insurance contribution since July 2023."""
+
+    base = (
+        sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
+        * beitragssatz_nach_kinderzahl["standard"]
+        / 2
+    )
+
+    add = 0.0
+    if zahlt_zusatzbetrag_kinderlos:
+        add = (
+            add
+            + sozialversicherung__midijob_bemessungsentgelt_m
+            * beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
+        )
+    if anzahl_kinder_bis_24 >= 2:
+        add = add + (
+            sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
+            * beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"]
+            * min(anzahl_kinder_bis_24 - 1, 4)
+        )
+
+    return base + add
 
 
 @policy_function(
