@@ -10,8 +10,6 @@ INTERNAL_PARAMS_GROUPS = [
     "ges_rente",
     "unterhaltsvors",
     "wohngeld",
-    "kinderzuschl",
-    "kindergeld",  # Leave because of _parse_kinderzuschlag_max
     "elterngeld",
     "erwerbsm_rente",
     "grunds_im_alter",

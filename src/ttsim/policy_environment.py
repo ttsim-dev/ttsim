@@ -243,7 +243,6 @@ def set_up_policy_environment(
 
             # Align parameters for piecewise polynomial functions
             params[group] = _parse_piecewise_parameters(params_one_group)
-        params = _parse_kinderzuschl_max(date, params)
         params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
     else:
         params = {}
@@ -773,43 +772,6 @@ def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
                     )
 
     return tax_data
-
-
-def _parse_kinderzuschl_max(
-    date: datetime.date, params: dict[str, Any]
-) -> dict[str, Any]:
-    """Prior to 2021, the maximum amount of the Kinderzuschlag was specified directly in
-    the laws and directives.
-
-    In 2021, 2022, and from 2024 on, this measure has been derived from
-    subsistence levels. This function implements that calculation.
-
-    For 2023 the amount is once again explicitly specified as a parameter.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy parameters are set up.
-    params
-        A dictionary with parameters from the policy environment.
-
-    Returns
-    -------
-    updated dictionary
-
-    """
-
-    if 2023 > date.year >= 2021:
-        assert {"kinderzuschl", "kindergeld"} <= params.keys()
-        params["kinderzuschl"]["maximum"] = (
-            params["kinderzuschl"]["existenzminimum"]["regelsatz"]["kinder"]
-            + params["kinderzuschl"]["existenzminimum"]["kosten_der_unterkunft"][
-                "kinder"
-            ]
-            + params["kinderzuschl"]["existenzminimum"]["heizkosten"]["kinder"]
-        ) / 12 - params["kindergeld"]["kindergeldsatz"][1]
-
-    return params
 
 
 def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
