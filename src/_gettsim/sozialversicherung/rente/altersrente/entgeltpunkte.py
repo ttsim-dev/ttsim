@@ -1,5 +1,9 @@
 from ttsim import policy_function
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
+
 
 @policy_function()
 def entgeltpunkte_west_updated(
@@ -72,24 +76,3 @@ def neue_entgeltpunkte(
         bruttolohn_scaled_rentenv = bruttolohn_scaled_east
 
     return bruttolohn_scaled_rentenv / (beitragspflichtiges_durchschnittsentgelt_y / 12)
-
-
-@policy_function()
-def anteil_entgeltpunkte_ost(
-    sozialversicherung__rente__entgeltpunkte_west: float,
-    sozialversicherung__rente__entgeltpunkte_ost: float,
-) -> float:
-    """Proportion of Entgeltpunkte accumulated in East Germany"""
-    if (
-        sozialversicherung__rente__entgeltpunkte_west
-        == sozialversicherung__rente__entgeltpunkte_ost
-        == 0.0
-    ):
-        out = 0.0
-    else:
-        out = sozialversicherung__rente__entgeltpunkte_ost / (
-            sozialversicherung__rente__entgeltpunkte_west
-            + sozialversicherung__rente__entgeltpunkte_ost
-        )
-
-    return out

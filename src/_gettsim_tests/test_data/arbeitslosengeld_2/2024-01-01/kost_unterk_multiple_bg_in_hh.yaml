@@ -140,13 +140,13 @@ outputs:
   bg_id:
     - 0
     - 0
-    - 100
-    - 100
+    - 1
+    - 1
     - 0
     - 0
     - 0
-    - 200
-    - 200
+    - 2
+    - 2
   arbeitslosengeld_2__bruttokaltmiete_m_bg:
     - 555.56
     - 555.56

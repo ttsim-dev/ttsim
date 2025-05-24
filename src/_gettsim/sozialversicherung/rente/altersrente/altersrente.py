@@ -74,6 +74,9 @@ def bruttorente_basisbetrag_m_nach_wohnort(
     return out
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function(
     start_date="2023-07-01",
 )
@@ -136,7 +139,7 @@ def zugangsfaktor(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     referenzalter_abschlag: float,
-    altersgrenze_abschlagsfrei: float,
+    altersgrenze: float,
     altersgrenze_vorzeitig: float,
     vorzeitig_grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt: bool,
@@ -170,8 +173,7 @@ def zugangsfaktor(
     if sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt:
         # Early retirement (before full retirement age): Zugangsfaktor < 1
         if (
-            sozialversicherung__rente__alter_bei_renteneintritt
-            < altersgrenze_abschlagsfrei
+            sozialversicherung__rente__alter_bei_renteneintritt < altersgrenze
         ):  # [ERA,FRA)
             if vorzeitig_grundsätzlich_anspruchsberechtigt and (
                 sozialversicherung__rente__alter_bei_renteneintritt

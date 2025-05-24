@@ -63,7 +63,7 @@ inputs:
     wohnort_ost:
       - false
 outputs:
-  sozialversicherung__rente__altersrente__altersgrenze_abschlagsfrei:
+  sozialversicherung__rente__altersrente__altersgrenze:
     - 65.0
   sozialversicherung__rente__altersrente__altersgrenze_vorzeitig:
     - 60.0
