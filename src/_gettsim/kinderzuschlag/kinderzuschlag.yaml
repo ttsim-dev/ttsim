@@ -382,8 +382,10 @@ parameter_existenzminimum:
     reference: 15. Existenzminimumsbericht, Bundestag Drucksache 20/13550, Übersicht 4.
 wohnbedarf_anteil_berücksichtigte_kinder:
   name:
-    de: Bei der Berechnung der Wohnbedarfsanteile berücksichtigte Kinder
-    en: Number of children which is considered when calculating shares of housing costs
+    de: Bei der Berechnung der Wohnbedarfsanteile maximal berücksichtigte Kinder
+    en: >-
+      Maximum number of children which is considered when calculating shares of housing
+      costs
   description:
     de: § 6a Abs. 5 S. 3 BKGG
     en: § 6a Abs. 5 S. 3 BKGG
