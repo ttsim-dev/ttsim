@@ -301,9 +301,7 @@ def betrag_rentner_m_ohne_zusatz_für_kinderlose(
     )
 
 
-@policy_function(
-    start_date="2005-01-01", leaf_name="betrag_rentner_m", vectorization_strategy="loop"
-)
+@policy_function(start_date="2005-01-01", leaf_name="betrag_rentner_m")
 def betrag_rentner_m_mit_zusatz_für_kinderlose(
     sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m: float,
     beitragssatz_arbeitnehmer: float,
