@@ -40,7 +40,6 @@ def beitragssatz_arbeitnehmer_zusatz_kinderlos_dummy(
 @policy_function(
     start_date="2023-07-01",
     leaf_name="beitragssatz_arbeitnehmer",
-    vectorization_strategy="loop",
 )
 def beitragssatz_arbeitnehmer_mit_abschlag_nach_kinderzahl(
     anzahl_kinder_bis_24: int,
@@ -52,22 +51,20 @@ def beitragssatz_arbeitnehmer_mit_abschlag_nach_kinderzahl(
     Since July 2023, the contribution rate is reduced for individuals with children
     younger than 25.
     """
-    out = beitragssatz_nach_kinderzahl["standard"] / 2
+    base = beitragssatz_nach_kinderzahl["standard"] / 2
 
-    # Add additional contribution for childless individuals
+    add = 0.0
     if zahlt_zusatzbetrag_kinderlos:
-        out += beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
-
-    # Reduced contribution for individuals with two or more children under 25
+        add = add + beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
     if anzahl_kinder_bis_24 >= 2:
-        out -= beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"] * min(
+        add = add - beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"] * min(
             anzahl_kinder_bis_24 - 1, 4
         )
 
-    return out
+    return base + add
 
 
-@policy_function(start_date="2005-01-01", vectorization_strategy="loop")
+@policy_function(start_date="2005-01-01")
 def zahlt_zusatzbetrag_kinderlos(
     hat_kinder: bool,
     alter: int,
