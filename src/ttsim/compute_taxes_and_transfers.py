@@ -583,7 +583,7 @@ def _fail_if_targets_tree_not_valid(targets_tree: NestedTargetDict) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=targets_tree,
-        leaf_checker=lambda leaf: leaf is None,
+        leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
         tree_name="targets_tree",
     )
 
