@@ -31,13 +31,10 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
     minijobgrenze: float,
     midijobgrenze: float,
 ) -> float:
-    """Income subject to employee social insurance contributions for midijob since
-    October 2022.
+    """Income subject to employee social insurance contributions for Bruttolöhne in
+    Gleitzone.
 
-    Gesonderte Beitragspflichtige Einnahme is the reference income for midijobs subject
-    to employee social insurance contribution.
-
-    Legal reference: Changes in § 20 SGB IV from 01.10.2022
+    Legal reference: § 20 SGB IV ("Gesonderte beitragspflichtige Einnahmen")
     """
     quotient = midijobgrenze / (midijobgrenze - minijobgrenze)
     einkommen_diff = (

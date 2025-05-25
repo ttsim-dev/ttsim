@@ -2,7 +2,7 @@
 info:
   note: ''
   precision_atol: 0.01
-  source: https://apps.datev.de/help-center/documents/1038903
+  source: https://www.ihre-vorsorge.de/rechner/midijob-rechner
 inputs:
   assumed: {}
   provided:
@@ -50,44 +50,44 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    wohnort_ost:
+      - false
+      - false
+      - false
 outputs:
-  sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m:
-    - 563.61
-    - 563.61
-    - 563.61
   sozialversicherung__midijob_bemessungsentgelt_m:
-    - 828.13
-    - 828.13
-    - 828.13
+    - 815.89
+    - 815.89
+    - 815.89
   sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m:
-    - 7.33
-    - 7.33
-    - 7.33
+    - 7.09
+    - 7.09
+    - 7.09
   sozialversicherung__arbeitslosen__beitrag__betrag_arbeitgeber_m:
-    - 14.21
-    - 14.21
-    - 14.21
+    - 14.12
+    - 14.12
+    - 14.12
   sozialversicherung__kranken__beitrag__betrag_versicherter_m:
-    - 44.8
-    - 44.8
-    - 44.8
+    - 46.66
+    - 46.66
+    - 46.66
   sozialversicherung__kranken__beitrag__betrag_arbeitgeber_m:
-    - 86.86
-    - 86.86
-    - 86.86
+    - 92.86
+    - 92.86
+    - 92.86
   sozialversicherung__pflege__beitrag__betrag_versicherter_m:
-    - 14.55
-    - 9.58
-    - 8.17
+    - 13.1
+    - 9.82
+    - 8.46
   sozialversicherung__pflege__beitrag__betrag_arbeitgeber_m:
-    - 18.58
-    - 18.58
-    - 18.58
+    - 18.87
+    - 18.87
+    - 18.87
   sozialversicherung__rente__beitrag__betrag_versicherter_m:
-    - 52.42
-    - 52.42
-    - 52.42
+    - 50.75
+    - 50.75
+    - 50.75
   sozialversicherung__rente__beitrag__betrag_arbeitgeber_m:
-    - 101.62
-    - 101.62
-    - 101.62
+    - 101.01
+    - 101.01
+    - 101.01
