@@ -61,9 +61,6 @@
         "access_different_date": {
           "type": "string",
           "enum": ["vorjahr", "jahresanfang"]
-        },
-        "add_jahresanfang": {
-          "type": "boolean"
         }
       },
       "patternProperties": {

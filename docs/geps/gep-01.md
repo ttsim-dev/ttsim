@@ -14,7 +14,7 @@
 - * Created
   * 2019-11-04
 - * Updated
-  * 2022-03-28
+  * 2025-06-XX
 - * Resolution
   * [Accepted](https://gettsim.zulipchat.com/#narrow/stream/309998-GEPs/topic/GEP.2001)
 ```

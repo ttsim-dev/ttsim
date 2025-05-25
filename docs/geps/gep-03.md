@@ -41,10 +41,12 @@ cannot catch all inconsistencies.
 ## Structure of the YAML files
 
 Each YAML file contains a number of parameters at the outermost level of indentation.
-Each of these parameters in turn is a dictionary with at least three keys: `name`,
-`description`, and the `YYYY-MM-DD`-formatted date on which it first took effect. Values
-usually change over time; each time a value is changed, another `YYYY-MM-DD` entry is
-added.
+Each of these parameters is a dictionary with at least 6 keys: `name`, `description`,
+`unit`, `reference_period`, `type` and the `YYYY-MM-DD`-formatted date on which it first
+took effect.
+
+Values usually change over time; each time a value is changed, another `YYYY-MM-DD`
+entry is added.
 
 1. The `name` key has two sub-keys `de` and `en`, which are
 
@@ -128,13 +130,19 @@ added.
    - `piecewise_linear`,
    - `piecewise_quadratic`,
    - `piecewise_cubic`,
-   - `require_converter`
+   - `birth_month_based_phase_out`
+   - `birth_year_based_phase_in`,
+   - `require_converter`,
 
    `scalar` is self-explanatory; `dict` must be a homogeneous dictionary with string or
    integer keys and scalar values (int, float, bool).
 
    `piecewise_constant`, `piecewise_linear`, `piecewise_quadratic`, `piecewise_cubic`
    will be converted automatically to be used with the `piecewise_polynomial` function.
+
+   `birth_month_based_phase_out` and `birth_year_based_phase_in` are used to phase in or
+   out a parameter based on the birth year of the individual. They are automatically
+   converted to be used as `ConsecutiveIntLookupTableParamValue` objects.
 
    `require_converter` can be anything. However there must be a converter function in
    the codebase.
@@ -416,6 +424,143 @@ The following walks through several cases.
         upper_threshold: inf
   ```
 
+- Phase-in of age thresholds based on the birth year of the individual (e.g. increasing
+  statutory retirement age thresholds) should be specified as type
+  `birth_year_based_phase_in`. The parameter specification is converted to a lookup
+  table that maps a birth year to the age threshold. The conversion requires the
+  following stucture after the `YYYY-MM-DD` key:
+
+  - `first_birthyear_to_consider`: The birth year at which the lookup table starts (just
+    choose some birthyear that is far enough in the past).
+  - `last_birthyear_to_consider`: The birth year at which the lookup table ends (just
+    choose some birthyear that is far enough in the future).
+  - `YYYY` entries with the following structure:
+    - `years`: The age threshold in years.
+    - `months`: The age threshold in months.
+
+  Example from `sozialversicherung` / `rente` / `altersrente` / `regelaltersrente` /
+  `altersgrenze.yaml`:
+
+  ```yaml
+  altersgrenze_gestaffelt:
+  name:
+    de: Gestaffeltes Eintrittsalter für Regelaltersrente nach Geburtsjahr
+    en: Staggered normal retirement age (NRA) for Regelaltersrente by birth year
+  description:
+    de: >-
+      § 35 Satz 2 SGB VI
+      Regelaltersgrenze ab der Renteneintritt möglich ist. Wenn früher oder später in
+      Rente gegangen wird, wird der Zugangsfaktor und damit der Rentenanspruch höher
+      oder niedriger, sofern keine Sonderregelungen gelten.
+    en: >-
+      § 35 Satz 2 SGB VI
+      Normal retirement age from which pension can be received. If retirement benefits
+      are claimed earlier or later, the Zugangsfaktor and thus the pension entitlement
+      is higher or lower unless special regulations apply.
+  unit: Years
+  reference_period: null
+  type: birth_year_based_phase_in
+  2007-04-20:
+    reference: RV-Altersgrenzenanpassungsgesetz 20.04.2007. BGBl. I S. 554
+    note: >-
+      Increase of the early retirement age from 65 to 67 for birth cohort 1947-1964.
+      Vertrauensschutz (Art. 56) applies for birth cohorts before 1955 who were in
+      Altersteilzeit before January 1st, 2007 or received "Anpassungsgeld für
+      entlassene Arbeitnehmer des Bergbaus".
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2031
+    1946:
+      years: 65
+      months: 0
+    1947:
+      years: 65
+      months: 1
+    1948:
+      years: 65
+      months: 2
+    1949:
+      years: 65
+      months: 3
+    1950:
+      years: 65
+      months: 4
+    1951:
+      years: 65
+      months: 5
+    1952:
+      years: 65
+      months: 6
+    1953:
+      years: 65
+      months: 7
+    1954:
+      years: 65
+      months: 8
+    1955:
+      years: 65
+      months: 9
+    1956:
+      years: 65
+      months: 10
+    1957:
+      years: 65
+      months: 11
+    1958:
+      years: 66
+      months: 0
+    1959:
+      years: 66
+      months: 2
+    1960:
+      years: 66
+      months: 4
+    1961:
+      years: 66
+      months: 6
+    1962:
+      years: 66
+      months: 8
+    1963:
+      years: 66
+      months: 10
+    1964:
+      years: 67
+      months: 0
+  ```
+
+- Phase-in of age thresholds based on the birth month of the individual should be
+  specified as type `birth_month_based_phase_in`. The parameter specification is the
+  same as for `birth_year_based_phase_in`, except that the `YYYY` entries are followed
+  by `MM` keys. The `MM` keys a have the following structure:
+
+  - `first_birthmonth_to_consider`: The birth month at which the lookup table starts
+    (just choose some birthmonth that is far enough in the past).
+  - `last_birthmonth_to_consider`: The birth month at which the lookup table ends (just
+    choose some birthmonth that is far enough in the future).
+  - `years`: The age threshold in years.
+  - `months`: The age threshold in months.
+
+  Excerpt from `sozialversicherung` / `rente` / `altersrente` / `langjährig` /
+  `altersgrenze.yaml`:
+
+  ```yaml
+  ...
+    1989-12-18:
+    reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
+    note: Increase of full retirement age from 63 to 65 for birth cohort 1938-1943.
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2100
+    1937:
+      12:
+        years: 63
+        months: 0
+    1938:
+      1:
+        years: 63
+        months: 1
+    ...
+  ```
+
 - Finally, there are parameters that have a more complex structure, which is not as
   common as `piecewise_linear` etc. These need to be specified as `require_converter`.
 
@@ -503,6 +648,8 @@ the parameter (see the previous section), the following types are possible:
   entries except for the `note` and `reference` keys.
 - `piecewise_constant` / `piecewise_linear` / `piecewise_quadratic` / `piecewise_cubic`
   parameters are converted to `PiecewisePolynomialParameter` objects.
+- `birth_month_based_phase_out` and `birth_year_based_phase_in` are converted to
+  `ConsecutiveIntLookupTableParamValue` objects.
 - `require_converter` must have a `params_function` that converts the `YYYY-MM-DD`
   entries to a clear type.
 

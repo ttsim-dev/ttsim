@@ -104,24 +104,28 @@ interface while maintaining GETTSIM's computational robustness.
    def oss(
        date: str,
        inputs_df: pd.DataFrame,
-       inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
-       targets_tree: NestedTargetDict,
-   ) -> NestedDataDict:
+       inputs_tree_to_inputs_df_columns: NestedStrings,
+       targets_tree_to_outputs_df_columns: NestedStrings,
+   ) -> pd.DataFrame:
        """One-stop-shop for computing taxes and transfers.
 
        Args:
            date:
-               The date to compute taxes and transfers for. The date determines the policy
-               environment for which the taxes and transfers are computed.
+               The date to compute taxes and transfers for. The date determines the
+               policy environment for which the taxes and transfers are computed.
            inputs_df:
                The DataFrame containing the data.
            inputs_tree_to_inputs_df_columns:
                A tree that has the inputs required by GETTSIM as the path (sequence of
-               keys) and maps them to the data provided by the user. The leaves of the tree
-               are strings that reference column names in *inputs_df* or constants.
-           targets_tree_to_df_columns:
-               A tree that has the desired targets as the path (sequence of keys) and maps
-               them to the data columns the user would like to have.
+               keys) and maps them to the data provided by the user. The leaves of the
+               tree are strings that reference column names in *inputs_df* or constants.
+           targets_tree_to_outputs_df_columns:
+               A tree that has the desired targets as the path (sequence of keys) and
+               maps them to the data columns the user would like to have.
+
+       Returns:
+           A nested dictionary that maps the paths of the targets to the columns
+           computed by GETTSIM.
    ```
 
    These are the absolute minimal requirements a computation needs:
@@ -139,8 +143,8 @@ interface while maintaining GETTSIM's computational robustness.
    contributions for three people, one of whom has an underage child living in her
    household:
 
-   ```pycon
-   >> from gettsim import oss
+   ```python
+   >>> from gettsim import oss
    >>> inputs_df = pd.DataFrame(
    ...     {
    ...         "age": [25, 45, 3, 65],
