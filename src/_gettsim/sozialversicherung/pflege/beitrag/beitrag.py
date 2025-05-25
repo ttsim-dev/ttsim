@@ -254,10 +254,12 @@ def betrag_arbeitgeber_in_gleitzone_m_als_anteil_der_beitragspflichtigen_einnahm
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     beitragssatz_arbeitgeber: float,
+    beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
     """Employer's long-term care insurance contribution for Midijobs."""
     return (
-        sozialversicherung__midijob_bemessungsentgelt_m * beitragssatz_arbeitgeber * 2
+        sozialversicherung__midijob_bemessungsentgelt_m
+        * beitragssatz_nach_kinderzahl["standard"]
         - sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
         * beitragssatz_arbeitgeber
     )
