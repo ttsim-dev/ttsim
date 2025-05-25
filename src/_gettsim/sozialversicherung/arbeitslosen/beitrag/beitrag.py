@@ -99,7 +99,7 @@ def betrag_gesamt_in_gleitzone_m(
     beitragssatz: float,
 ) -> float:
     """Sum of employee's and employer's unemployment insurance contribution
-    for midijobs."""
+    for Midijobs."""
     return sozialversicherung__midijob_bemessungsentgelt_m * beitragssatz
 
 
@@ -126,19 +126,7 @@ def betrag_arbeitgeber_in_gleitzone_m_als_differenz_von_gesamt_und_versichertenb
     betrag_gesamt_in_gleitzone_m: float,
     betrag_versicherter_in_gleitzone_m: float,
 ) -> float:
-    """Employer's unemployment insurance contribution since October 2022.
-
-    Parameters
-    ----------
-    betrag_gesamt_in_gleitzone_m
-        See :func:`betrag_gesamt_in_gleitzone_m`.
-    betrag_versicherter_in_gleitzone_m
-        See :func:`betrag_versicherter_in_gleitzone_m`.
-
-    Returns
-    -------
-
-    """
+    """Employer's unemployment insurance contribution since October 2022."""
     return betrag_gesamt_in_gleitzone_m - betrag_versicherter_in_gleitzone_m
 
 
@@ -153,17 +141,6 @@ def betrag_versicherter_in_gleitzone_m_als_differenz_von_gesamt_und_arbeitgeberb
 ) -> float:
     """Employee's unemployment insurance contribution for Midijobs until September
     2022.
-
-    Parameters
-    ----------
-    betrag_gesamt_in_gleitzone_m
-        See :func:`betrag_gesamt_in_gleitzone_m`.
-    betrag_arbeitgeber_in_gleitzone_m
-        See :func:`betrag_arbeitgeber_in_gleitzone_m`.
-
-    Returns
-    -------
-
     """
     return betrag_gesamt_in_gleitzone_m - betrag_arbeitgeber_in_gleitzone_m
 

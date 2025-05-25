@@ -68,7 +68,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_arbeitgeber_regulär_beschäftigt_m: float,
 ) -> float:
-    """Employer's long-term care insurance contribution.
+    """Long-term care insurance contribution paid by the employer.
 
     Before Midijob introduction in April 2003.
     """
@@ -95,7 +95,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     betrag_arbeitgeber_in_gleitzone_m: float,
     betrag_arbeitgeber_regulär_beschäftigt_m: float,
 ) -> float:
-    """Employer's long-term care insurance contribution.
+    """Long-term care insurance contribution paid by the employer.
 
     After Midijob introduction in April 2003.
     """
@@ -119,7 +119,7 @@ def betrag_selbstständig_m(
     beitragssatz_arbeitnehmer: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
-    """Self-employed individuals' long-term care insurance contribution until 2004.
+    """Self-employed individuals' long-term care insurance contribution.
 
     Self-employed pay the full contribution (employer + employee), which is either
     assessed on their self-employement income or 3/4 of the 'Bezugsgröße'
@@ -161,7 +161,7 @@ def betrag_gesamt_in_gleitzone_m(
     beitragssatz_arbeitnehmer: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
-    """Sum of employee and employer long-term care insurance contributions until 2004."""
+    """Sum of employee and employer long-term care insurance contributions."""
 
     return sozialversicherung__midijob_bemessungsentgelt_m * (
         beitragssatz_arbeitnehmer + beitragssatz_arbeitgeber
@@ -177,9 +177,7 @@ def betrag_versicherter_in_gleitzone_m_als_differenz_von_gesamt_und_arbeitgeberb
     betrag_arbeitgeber_in_gleitzone_m: float,
     betrag_gesamt_in_gleitzone_m: float,
 ) -> float:
-    """Employee's long-term care insurance contribution for Midijobs
-    until September 2022.
-    """
+    """Employee's long-term care insurance contribution for Midijobs."""
     return betrag_gesamt_in_gleitzone_m - betrag_arbeitgeber_in_gleitzone_m
 
 
@@ -192,9 +190,7 @@ def betrag_versicherter_in_gleitzone_m_direkt(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     beitragssatz_arbeitnehmer: float,
 ) -> float:
-    """Employee's long-term care insurance contribution between October 2022 and
-    June 2023.
-    """
+    """Employee's long-term care insurance contribution for Midijobs."""
     return (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
         * beitragssatz_arbeitnehmer
@@ -212,7 +208,7 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
-    """Employee's long-term care insurance contribution since July 2023."""
+    """Employee's long-term care insurance contribution."""
 
     base = (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
@@ -246,7 +242,7 @@ def betrag_arbeitgeber_in_gleitzone_m_mit_festem_beitragssatz(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
-    """Employer's long-term care insurance contribution in Midijob range."""
+    """Employer's long-term care insurance contribution for Midijobs."""
 
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
@@ -259,7 +255,7 @@ def betrag_arbeitgeber_in_gleitzone_m_als_differenz_von_gesamt_und_versichertenb
     betrag_gesamt_in_gleitzone_m: float,
     betrag_versicherter_m: float,
 ) -> float:
-    """Employer's long-term care insurance contribution since October 2022."""
+    """Employer's long-term care insurance contribution for Midijobs."""
     return betrag_gesamt_in_gleitzone_m - betrag_versicherter_m
 
 
@@ -272,8 +268,7 @@ def betrag_rentner_m_reduzierter_beitrag(
     sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m: float,
     beitragssatz_arbeitnehmer: float,
 ) -> float:
-    """Long-term care insurance contribution from pension income from 1995 until March
-    2004.
+    """Long-term care insurance contribution from pension income.
 
     Pensioners pay the same contribution as employees.
     """
@@ -292,7 +287,7 @@ def betrag_rentner_m_ohne_zusatz_für_kinderlose(
     sozialversicherung__kranken__beitrag__bemessungsgrundlage_rente_m: float,
     beitragssatz: float,
 ) -> float:
-    """Health insurance contribution from pension income from April until December 2004.
+    """Health insurance contribution from pension income.
 
     Pensioners pay twice the contribution of employees.
     """
@@ -307,7 +302,7 @@ def betrag_rentner_m_mit_zusatz_für_kinderlose(
     beitragssatz_arbeitnehmer: float,
     beitragssatz_nach_kinderzahl: dict[str, float],
 ) -> float:
-    """Health insurance contribution from pension income since 2005.
+    """Health insurance contribution from pension income.
 
     Pensioners pay twice the contribution of employees, but only once the additional
     charge for childless individuals.
