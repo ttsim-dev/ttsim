@@ -238,12 +238,11 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
     end_date="2022-09-30",
     leaf_name="betrag_arbeitgeber_in_gleitzone_m",
 )
-def betrag_arbeitgeber_in_gleitzone_m_mit_festem_beitragssatz(
+def betrag_arbeitgeber_in_gleitzone_m_als_anteil_des_bruttolohns(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's long-term care insurance contribution for Midijobs."""
-
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         * beitragssatz_arbeitgeber
@@ -251,12 +250,17 @@ def betrag_arbeitgeber_in_gleitzone_m_mit_festem_beitragssatz(
 
 
 @policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_in_gleitzone_m")
-def betrag_arbeitgeber_in_gleitzone_m_als_differenz_von_gesamt_und_versichertenbeitrag(
-    betrag_gesamt_in_gleitzone_m: float,
-    betrag_versicherter_m: float,
+def betrag_arbeitgeber_in_gleitzone_m_als_anteil_der_beitragspflichtigen_einnahmen(
+    sozialversicherung__midijob_bemessungsentgelt_m: float,
+    sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
+    beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's long-term care insurance contribution for Midijobs."""
-    return betrag_gesamt_in_gleitzone_m - betrag_versicherter_m
+    return (
+        sozialversicherung__midijob_bemessungsentgelt_m * beitragssatz_arbeitgeber * 2
+        - sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
+        * beitragssatz_arbeitgeber
+    )
 
 
 @policy_function(

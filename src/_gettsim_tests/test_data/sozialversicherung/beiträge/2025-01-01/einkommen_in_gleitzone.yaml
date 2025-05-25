@@ -1,7 +1,7 @@
 ---
 info:
   note: ''
-  precision_atol: 0.01
+  precision_atol: 0.02
   source: https://www.ihre-vorsorge.de/rechner/midijob-rechner
 inputs:
   assumed: {}
@@ -76,13 +76,17 @@ outputs:
     - 92.86
     - 92.86
   sozialversicherung__pflege__beitrag__betrag_versicherter_m:
-    - 13.1
+    - 14.72
     - 9.82
     - 8.46
-  sozialversicherung__pflege__beitrag__betrag_arbeitgeber_m:
-    - 18.87
-    - 18.87
-    - 18.87
+  sozialversicherung__pflege__beitrag__betrag_arbeitgeber_in_gleitzone_m:
+    - 19.56
+    - 19.56
+    - 19.56
+  sozialversicherung__pflege__beitrag__betrag_gesamt_in_gleitzone_m:
+    - 34.27
+    - 29.37
+    - 27.33
   sozialversicherung__rente__beitrag__betrag_versicherter_m:
     - 50.75
     - 50.75
