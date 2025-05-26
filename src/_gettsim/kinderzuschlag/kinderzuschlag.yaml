@@ -341,11 +341,12 @@ parameter_existenzminimum:
       kind: 288
     reference: 14. Existenzminimumsbericht, Bundestag Drucksache 20/4443, Übersicht 4.
   2024-01-01:
-    updates_previous: true
     regelsatz:
       single: 6444
       paar: 11592
-      kind: 4548
+      kind: 4764  # 4548
+    bildung_und_teilhabe:
+      kind: 340  # 336
     kosten_der_unterkunft:
       single: 3924
       paar: 5892
@@ -354,7 +355,11 @@ parameter_existenzminimum:
       single: 1104
       paar: 1500
       kind: 312
-    reference: 14. Existenzminimumsbericht, Bundestag Drucksache 20/4443, Übersicht 4.
+    reference: V. v. 24.10.2023 BGBl. 2023 I Nr. 287
+    note: >-
+      Differs from 14. Existenzminimumsbericht, values are derived based on the
+      Regelbedarfsstufen-Fortschreibungsverordnung 2024 linked above:
+      12 * (6 · 357 + 8 · 390 + 4 · 471) / 18 = 4764.  BuT similar.
   2025-01-01:
     updates_previous: true
     regelsatz:
