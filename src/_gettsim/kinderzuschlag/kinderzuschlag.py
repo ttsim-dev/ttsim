@@ -148,7 +148,7 @@ def vermögensfreibetrag_bg_ab_2023(
     end_date="2008-09-30",
     leaf_name="basisbetrag_m_bg",
 )
-def basisbetrag_m_bg_kein_check_eink_min(
+def basisbetrag_m_bg_check_maximales_netteinkommen(
     nettoeinkommen_eltern_m_bg: float,
     maximales_nettoeinkommen_m_bg: float,
     basisbetrag_kind_m_bg: float,
@@ -181,7 +181,7 @@ def basisbetrag_m_bg_kein_check_eink_min(
     end_date="2019-06-30",
     leaf_name="basisbetrag_m_bg",
 )
-def basisbetrag_m_bg_check_eink_max(
+def basisbetrag_m_bg_check_mindestbruttoeinkommen_und_maximales_nettoeinkommen(
     bruttoeinkommen_eltern_m_bg: float,
     nettoeinkommen_eltern_m_bg: float,
     mindestbruttoeinkommen_m_bg: float,
@@ -214,8 +214,8 @@ def basisbetrag_m_bg_check_eink_max(
     return out
 
 
-@policy_function(start_date="2019-07-01")
-def basisbetrag_m_bg(
+@policy_function(start_date="2019-07-01", leaf_name="basisbetrag_m_bg")
+def basisbetrag_m_bg_check_mindestbruttoeinkommen(
     bruttoeinkommen_eltern_m_bg: float,
     mindestbruttoeinkommen_m_bg: float,
     basisbetrag_kind_m_bg: float,
