@@ -412,12 +412,13 @@ for year in range(1990, 2023):
 def mock__elterngeld__geschwisterbonus_m(
     basisbetrag_m: float,
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg: bool,
-    elterngeld_params: dict[str, float],
+    geschwisterbonus_aufschlag: float,
+    geschwisterbonus_minimum: float,
 ) -> float:
     if geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg:
         out = max(
-            elterngeld_params["geschwisterbonus_aufschlag"] * basisbetrag_m,
-            elterngeld_params["geschwisterbonus_minimum"],
+            geschwisterbonus_aufschlag * basisbetrag_m,
+            geschwisterbonus_minimum,
         )
     else:
         out = 0.0
@@ -432,15 +433,14 @@ def test_geschwisterbonus_m(backend):
     # ==================================================================================
     basisbetrag_m = 3.0
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = True
-    elterngeld_params = {
-        "geschwisterbonus_aufschlag": 1.0,
-        "geschwisterbonus_minimum": 2.0,
-    }
+    geschwisterbonus_aufschlag = 1.0
+    geschwisterbonus_minimum = 2.0
 
     exp = mock__elterngeld__geschwisterbonus_m(
         basisbetrag_m=basisbetrag_m,
         geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-        elterngeld_params=elterngeld_params,
+        geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
+        geschwisterbonus_minimum=geschwisterbonus_minimum,
     )
     assert exp == 3.0
 
@@ -456,7 +456,8 @@ def test_geschwisterbonus_m(backend):
         mock__elterngeld__geschwisterbonus_m(
             basisbetrag_m=basisbetrag_m,
             geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-            elterngeld_params=elterngeld_params,
+            geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
+            geschwisterbonus_minimum=geschwisterbonus_minimum,
         )
 
     # Call converted function on array input and test result
@@ -467,7 +468,8 @@ def test_geschwisterbonus_m(backend):
     got = converted(
         basisbetrag_m=basisbetrag_m,
         geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-        elterngeld_params=elterngeld_params,
+        geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
+        geschwisterbonus_minimum=geschwisterbonus_minimum,
     )
     assert_array_equal(got, full(shape, exp))
 
@@ -478,11 +480,11 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
-    elterngeld_params: dict[str, float],
+    max_arbeitsstunden_w: int,
 ) -> bool:
     return (
         claimed
-        and arbeitsstunden_w <= elterngeld_params["max_arbeitsstunden_w"]
+        and arbeitsstunden_w <= max_arbeitsstunden_w
         and einkommen_vorjahr_unter_bezugsgrenze
         and kind_grundsätzlich_anspruchsberechtigt_fg
         and bezugsmonate_unter_grenze_fg
@@ -500,9 +502,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
     kind_grundsätzlich_anspruchsberechtigt_fg = True
     einkommen_vorjahr_unter_bezugsgrenze = True
     bezugsmonate_unter_grenze_fg = True
-    elterngeld_params = {
-        "max_arbeitsstunden_w": 31.0,
-    }
+    max_arbeitsstunden_w = 31
 
     exp = mock__elterngeld__grundsätzlich_anspruchsberechtigt(
         claimed=claimed,
@@ -510,7 +510,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
         einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
         bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-        elterngeld_params=elterngeld_params,
+        max_arbeitsstunden_w=max_arbeitsstunden_w,
     )
 
     assert exp is True
@@ -527,7 +527,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
             kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
             einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
             bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-            elterngeld_params=elterngeld_params,
+            max_arbeitsstunden_w=max_arbeitsstunden_w,
         )
 
     # Call converted function on array input and test result
@@ -541,7 +541,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
         einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
         bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-        elterngeld_params=elterngeld_params,
+        max_arbeitsstunden_w=max_arbeitsstunden_w,
     )
     assert_array_equal(got, full(shape, exp))
 

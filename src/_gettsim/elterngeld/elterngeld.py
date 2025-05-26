@@ -75,7 +75,7 @@ def basisbetrag_m(
     nettoeinkommen_vorjahr_m: float,
     lohnersatzanteil: float,
     anzurechnendes_nettoeinkommen_m: float,
-    elterngeld_params: dict,
+    max_zu_berücksichtigendes_einkommen: float,
 ) -> float:
     """Base parental leave benefit without accounting for floor and ceiling.
 
@@ -84,7 +84,7 @@ def basisbetrag_m(
     """
     berücksichtigtes_einkommen = min(
         nettoeinkommen_vorjahr_m,
-        elterngeld_params["max_zu_berücksichtigendes_einkommen"],
+        max_zu_berücksichtigendes_einkommen,
     )
     return (
         berücksichtigtes_einkommen - anzurechnendes_nettoeinkommen_m
@@ -106,7 +106,8 @@ def anspruchshöhe_m(
     basisbetrag_m: float,
     geschwisterbonus_m: float,
     mehrlingsbonus_m: float,
-    elterngeld_params: dict,
+    mindestbetrag: float,
+    höchstbetrag: float,
 ) -> float:
     """Elterngeld before checking eligibility.
 
@@ -115,11 +116,8 @@ def anspruchshöhe_m(
     """
     return (
         min(
-            max(
-                basisbetrag_m,
-                elterngeld_params["mindestbetrag"],
-            ),
-            elterngeld_params["höchstbetrag"],
+            max(basisbetrag_m, mindestbetrag),
+            höchstbetrag,
         )
         + geschwisterbonus_m
         + mehrlingsbonus_m
@@ -133,12 +131,12 @@ def grundsätzlich_anspruchsberechtigt(
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
-    elterngeld_params: dict,
+    max_arbeitsstunden_w: int,
 ) -> bool:
     """Parent is eligible to receive Elterngeld."""
     return (
         claimed
-        and arbeitsstunden_w <= elterngeld_params["max_arbeitsstunden_w"]
+        and arbeitsstunden_w <= max_arbeitsstunden_w
         and einkommen_vorjahr_unter_bezugsgrenze
         and kind_grundsätzlich_anspruchsberechtigt_fg
         and bezugsmonate_unter_grenze_fg
@@ -151,7 +149,7 @@ def bezugsmonate_unter_grenze_fg(
     bezugsmonate_partner: int,
     familie__alleinerziehend: bool,
     anzahl_anträge_fg: int,
-    elterngeld_params: dict,
+    max_bezugsmonate: dict[str, int],
 ) -> bool:
     """Elterngeld claimed for less than the maximum number of months in the past by the
     parent.
@@ -160,34 +158,25 @@ def bezugsmonate_unter_grenze_fg(
     if familie__alleinerziehend or bezugsmonate_partner >= 2:
         out = (
             bisherige_bezugsmonate_fg
-            < elterngeld_params["max_bezugsmonate"]["basismonate"]
-            + elterngeld_params["max_bezugsmonate"]["partnermonate"]
+            < max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
         )
     elif anzahl_anträge_fg > 1:
         out = (
             bisherige_bezugsmonate_fg + 1
-            < elterngeld_params["max_bezugsmonate"]["basismonate"]
-            + elterngeld_params["max_bezugsmonate"]["partnermonate"]
+            < max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
         )
     else:
-        out = (
-            bisherige_bezugsmonate_fg
-            < elterngeld_params["max_bezugsmonate"]["basismonate"]
-        )
+        out = bisherige_bezugsmonate_fg < max_bezugsmonate["basismonate"]
     return out
 
 
 @policy_function(start_date="2007-01-01")
 def kind_grundsätzlich_anspruchsberechtigt(
     alter: int,
-    elterngeld_params: dict,
+    max_bezugsmonate: dict[str, int],
 ) -> bool:
     """Child is young enough to give rise to Elterngeld claim."""
-    return (
-        alter
-        <= elterngeld_params["max_bezugsmonate"]["basismonate"]
-        + elterngeld_params["max_bezugsmonate"]["partnermonate"]
-    )
+    return alter <= max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
 
 
 @policy_function(start_date="2011-01-01")
@@ -195,7 +184,11 @@ def lohnersatzanteil(
     nettoeinkommen_vorjahr_m: float,
     lohnersatzanteil_einkommen_untere_grenze: float,
     lohnersatzanteil_einkommen_obere_grenze: float,
-    elterngeld_params: dict,
+    einkommensschritte_korrektur: float,
+    satz: float,
+    prozent_korrektur: float,
+    prozent_minimum: float,
+    nettoeinkommensstufen_für_lohnersatzrate: dict[str, float],
 ) -> float:
     """Replacement rate of Elterngeld (before applying floor and ceiling rules).
 
@@ -207,31 +200,31 @@ def lohnersatzanteil(
     # Higher replacement rate if considered income is below a threshold
     if (
         nettoeinkommen_vorjahr_m
-        < elterngeld_params["nettoeinkommensstufen"]["lower_threshold"]
+        < nettoeinkommensstufen_für_lohnersatzrate["lower_threshold"]
         and nettoeinkommen_vorjahr_m > 0
     ):
-        out = elterngeld_params["satz"] + (
+        out = satz + (
             lohnersatzanteil_einkommen_untere_grenze
-            / elterngeld_params["einkommensschritte_korrektur"]
-            * elterngeld_params["prozent_korrektur"]
+            / einkommensschritte_korrektur
+            * prozent_korrektur
         )
     # Lower replacement rate if considered income is above a threshold
     elif (
         nettoeinkommen_vorjahr_m
-        > elterngeld_params["nettoeinkommensstufen"]["upper_threshold"]
+        > nettoeinkommensstufen_für_lohnersatzrate["upper_threshold"]
     ):
         # Replacement rate is only lowered up to a specific value
         out = max(
-            elterngeld_params["satz"]
+            satz
             - (
                 lohnersatzanteil_einkommen_obere_grenze
-                / elterngeld_params["einkommensschritte_korrektur"]
-                * elterngeld_params["prozent_korrektur"]
+                / einkommensschritte_korrektur
+                * prozent_korrektur
             ),
-            elterngeld_params["prozent_minimum"],
+            prozent_minimum,
         )
     else:
-        out = elterngeld_params["satz"]
+        out = satz
 
     return out
 
@@ -240,7 +233,7 @@ def lohnersatzanteil(
 def anrechenbarer_betrag_m(
     betrag_m: float,
     anzahl_mehrlinge_fg: int,
-    elterngeld_params: dict,
+    mindestbetrag: float,
 ) -> float:
     """Elterngeld that can be considered as income for other transfers.
 
@@ -254,7 +247,7 @@ def anrechenbarer_betrag_m(
 
     """
     return max(
-        betrag_m - ((1 + anzahl_mehrlinge_fg) * elterngeld_params["mindestbetrag"]),
+        betrag_m - ((1 + anzahl_mehrlinge_fg) * mindestbetrag),
         0,
     )
 
