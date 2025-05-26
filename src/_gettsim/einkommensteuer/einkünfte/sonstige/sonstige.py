@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
+from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
 
 
 @policy_function()
@@ -30,7 +30,7 @@ def renteneinkünfte_m(
 @policy_function()
 def ertragsanteil_an_rente(
     sozialversicherung__rente__jahr_renteneintritt: int,
-    parameter_ertragsanteil_an_rente: PiecewisePolynomialParameters,
+    parameter_ertragsanteil_an_rente: PiecewisePolynomialParamValue,
 ) -> float:
     """Share of pensions subject to income taxation."""
     return piecewise_polynomial(

@@ -7,36 +7,40 @@ from typing import TYPE_CHECKING, Literal
 
 import yaml
 
-from ttsim.ttsim_objects import TTSIMObject
+from ttsim.column_objects_param_function import ColumnObject, ParamFunction
 
 if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
     from ttsim.typing import (
-        FlatOrigParamSpecDict,
-        FlatTTSIMObjectDict,
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
         OrigParamSpec,
     )
 
 
-def orig_ttsim_objects_tree(root: Path) -> FlatTTSIMObjectDict:
+def orig_tree_with_column_objects_param_functions(
+    root: Path,
+) -> FlatColumnObjectsParamFunctions:
     """
-    Load the original TTSIMObjects tree from the resource directory.
+    Load the original ColumnObjectParamFunctions tree from the resource directory.
 
     "Original" means:
     - Module names are not removed from the path.
-    - The last path element is the TTSIMObject's original name, not the leaf name.
+    - The last path element is the ColumnObject's original name, not the leaf name.
 
     Parameters
     ----------
     root:
-        The resource directory to load the TTSIMObjects tree from.
+        The resource directory to load the ColumnObjectParamFunctions tree from.
     """
     return {
         k: v
         for path in _find_files_recursively(root=root, suffix=".py")
-        for k, v in _tree_path_to_orig_ttsim_objects(path=path, root=root).items()
+        for k, v in _tree_path_to_orig_column_objects_params_functions(
+            path=path, root=root
+        ).items()
     }
 
 
@@ -61,7 +65,9 @@ def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list
     ]
 
 
-def _tree_path_to_orig_ttsim_objects(path: Path, root: Path) -> FlatTTSIMObjectDict:
+def _tree_path_to_orig_column_objects_params_functions(
+    path: Path, root: Path
+) -> FlatColumnObjectsParamFunctions:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 
     Parameters
@@ -73,14 +79,14 @@ def _tree_path_to_orig_ttsim_objects(path: Path, root: Path) -> FlatTTSIMObjectD
 
     Returns
     -------
-    A flat tree of TTSIMObjects.
+    A flat tree of ColumnObjectParamFunctions.
     """
     module = _load_module(path=path, root=root)
     tree_path = path.relative_to(root).parts
     return {
         (*tree_path, name): obj
         for name, obj in inspect.getmembers(module)
-        if isinstance(obj, TTSIMObject)
+        if isinstance(obj, ColumnObject | ParamFunction)
     }
 
 
@@ -99,7 +105,7 @@ def _load_module(path: Path, root: Path) -> ModuleType:
     return module
 
 
-def orig_params_tree(root: Path) -> FlatOrigParamSpecDict:
+def orig_params_tree(root: Path) -> FlatOrigParamSpecs:
     """
     Load the original contents of yaml files found in *root*.
 
@@ -111,7 +117,7 @@ def orig_params_tree(root: Path) -> FlatOrigParamSpecDict:
     Parameters
     ----------
     root:
-        The resource directory to load the TTSIMObjects tree from.
+        The resource directory to load the ColumnObjectParamFunctions tree from.
     """
     return {
         k: v
@@ -122,7 +128,7 @@ def orig_params_tree(root: Path) -> FlatOrigParamSpecDict:
     }
 
 
-def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> FlatOrigParamSpecDict:
+def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> FlatOrigParamSpecs:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 
     Parameters

@@ -9,7 +9,7 @@ import pytest
 
 from ttsim.config import numpy_or_jax as np
 from ttsim.piecewise_polynomial import (
-    PiecewisePolynomialParameters,
+    PiecewisePolynomialParamValue,
     get_piecewise_parameters,
     piecewise_polynomial,
 )
@@ -17,7 +17,7 @@ from ttsim.piecewise_polynomial import (
 
 @pytest.fixture
 def parameters():
-    params = PiecewisePolynomialParameters(
+    params = PiecewisePolynomialParamValue(
         thresholds=np.array([-np.inf, 9168.0, 14254.0, 55960.0, 265326.0, np.inf]),
         rates=np.array(
             [
@@ -80,7 +80,7 @@ def test_get_piecewise_parameters_all_intercepts_supplied():
     numpy.testing.assert_allclose(actual.intercepts, expected, atol=1e-7)
 
 
-def test_piecewise_polynomial(parameters: PiecewisePolynomialParameters):
+def test_piecewise_polynomial(parameters: PiecewisePolynomialParamValue):
     x = np.array([-1_000, 1_000, 10_000, 30_000, 100_000, 1_000_000])
     expected = np.array([0.0, 0.0, 246.53, 10551.65, 66438.2, 866518.64])
 

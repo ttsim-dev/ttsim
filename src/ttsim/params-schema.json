@@ -47,6 +47,9 @@
             "piecewise_linear",
             "piecewise_quadratic",
             "piecewise_cubic",
+            "consecutive_int_lookup_table",
+            "birth_month_based_phase_inout",
+            "birth_year_based_phase_inout",
             "require_converter"
           ]
         },
@@ -54,6 +57,7 @@
           "type": ["string", "null"],
           "enum": ["Year", "Quarter", "Month", "Week", "Day", "Hour", null]
         },
+        "add_jahresanfang": {"type": "boolean"},
         "access_different_date": {
           "type": "string",
           "enum": ["vorjahr", "jahresanfang"]

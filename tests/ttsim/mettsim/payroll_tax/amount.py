@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ttsim import (
-    PiecewisePolynomialParameters,
+    PiecewisePolynomialParamValue,
     piecewise_polynomial,
     policy_function,
 )
@@ -26,7 +26,7 @@ def amount_y(
 @policy_function(vectorization_strategy="vectorize")
 def amount_standard_y(
     income__amount_y: float,
-    tax_schedule_standard: PiecewisePolynomialParameters,
+    tax_schedule_standard: PiecewisePolynomialParamValue,
 ) -> float:
     """Payroll tax amount for the standard tax schedule."""
     return piecewise_polynomial(
@@ -38,7 +38,7 @@ def amount_standard_y(
 @policy_function(vectorization_strategy="vectorize")
 def amount_reduced_y(
     income__amount_y: float,
-    tax_schedule_reduced: PiecewisePolynomialParameters,
+    tax_schedule_reduced: PiecewisePolynomialParamValue,
 ) -> float:
     """Payroll tax amount for the reduced tax schedule."""
     return piecewise_polynomial(

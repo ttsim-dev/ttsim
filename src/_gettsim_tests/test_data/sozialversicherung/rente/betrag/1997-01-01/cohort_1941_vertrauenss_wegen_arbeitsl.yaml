@@ -47,7 +47,7 @@ inputs:
     weiblich:
       - false
 outputs:
-  sozialversicherung__rente__altersrente__altersgrenze_abschlagsfrei:
+  sozialversicherung__rente__altersrente__altersgrenze:
     - 60.083333
   sozialversicherung__rente__altersrente__altersgrenze_vorzeitig:
     - 60.0
@@ -59,7 +59,7 @@ outputs:
     - true
   sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze:
     - 60.083333
-  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_ohne_vertrauensschutzprüfung:
+  sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_ohne_vertrauensschutz:
     - 64.083333
   sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_vorzeitig:
     - 60.0

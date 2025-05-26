@@ -8,13 +8,13 @@ Three tax brackets:
 
 from __future__ import annotations
 
-from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
+from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
 
 
 @policy_function(vectorization_strategy="vectorize")
 def amount_y(
     acre_size_in_hectares: float,
-    tax_schedule: PiecewisePolynomialParameters,
+    tax_schedule: PiecewisePolynomialParamValue,
 ) -> float:
     """Property tax amount for the standard tax schedule."""
     return piecewise_polynomial(
