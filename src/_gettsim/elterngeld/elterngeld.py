@@ -33,7 +33,7 @@ def bezugsmonate_partner(
 
 
 @agg_by_group_function(agg_type=AggType.MIN)
-def alter_monate_jüngstes_mitglied_fg(alter_monate: float, fg_id: int) -> float:
+def alter_monate_jüngstes_mitglied_fg(alter_monate: int, fg_id: int) -> float:
     pass
 
 
@@ -254,7 +254,7 @@ def anrechenbarer_betrag_m(
 
 @policy_function()
 def jüngstes_kind_oder_mehrling(
-    alter_monate: float,
+    alter_monate: int,
     alter_monate_jüngstes_mitglied_fg: float,
     familie__kind: bool,
 ) -> bool:

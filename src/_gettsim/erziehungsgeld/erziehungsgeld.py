@@ -152,7 +152,7 @@ def basisbetrag_m(
     budgetsatz: bool,
     anzurechnendes_einkommen_y: float,
     einkommensgrenze_y: float,
-    alter_monate: float,
+    alter_monate: int,
     satz: dict[str, float],
     einkommensgrenze: EinkommensgrenzeErziehungsgeld,
 ) -> float:
@@ -175,7 +175,7 @@ def basisbetrag_m(
 def abzug_durch_einkommen_m(
     anzurechnendes_einkommen_m: float,
     einkommensgrenze_m: float,
-    alter_monate: float,
+    alter_monate: int,
     abschlagsfaktor: float,
     einkommensgrenze: EinkommensgrenzeErziehungsgeld,
 ) -> float:
@@ -200,7 +200,7 @@ def abzug_durch_einkommen_m(
 )
 def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
     familie__kind: bool,
-    alter_monate: float,
+    alter_monate: int,
     budgetsatz: bool,
     maximales_kindsalter_budgetsatz: float,
     maximales_kindsalter_regelsatz: float,
@@ -226,7 +226,7 @@ def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
 def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
     familie__kind: bool,
     geburtsjahr: int,
-    alter_monate: float,
+    alter_monate: int,
     budgetsatz: bool,
     abolishment_cohort: int,
     maximales_kindsalter_budgetsatz: float,
@@ -318,7 +318,7 @@ def einkommensgrenze_y(
     start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
 )
 def einkommensgrenze_ohne_geschwisterbonus(
-    alter_monate: float,
+    alter_monate: int,
     einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze: float,
     einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze: float,
     einkommensgrenze: EinkommensgrenzeErziehungsgeld,
