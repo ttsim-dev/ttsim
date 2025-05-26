@@ -13,7 +13,7 @@ abzugsbeträge_steuern_sozialversicherung:
     en: null
   unit: Share
   reference_period: null
-  type: dict
+  type: consecutive_int_lookup_table
   1984-01-01:
     0: 0.06
     1: 0.125
