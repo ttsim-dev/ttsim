@@ -1,6 +1,6 @@
 ---
 info:
-  note: ''
+  note: Zusatzbeitrag is assumed to be 0.013.
   precision_atol: 0.01
   source: https://apps.datev.de/help-center/documents/1038903
 inputs:
@@ -50,6 +50,14 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
+    wohnort_ost:
+      - false
+      - false
+      - false
+    sozialversicherung__kranken__beitrag__zusatzbeitragssatz:
+      - 0.013
+      - 0.013
+      - 0.013
 outputs:
   sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m:
     - 563.61
@@ -71,10 +79,18 @@ outputs:
     - 44.8
     - 44.8
     - 44.8
+  sozialversicherung__kranken__beitrag__betrag_versicherter_in_gleitzone_m:
+    - 44.8
+    - 44.8
+    - 44.8
   sozialversicherung__kranken__beitrag__betrag_arbeitgeber_m:
     - 86.86
     - 86.86
     - 86.86
+  sozialversicherung__kranken__beitrag__betrag_gesamt_in_gleitzone_m:
+    - 131.66
+    - 131.66
+    - 131.66
   sozialversicherung__pflege__beitrag__betrag_versicherter_m:
     - 14.55
     - 9.58
