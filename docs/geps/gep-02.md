@@ -29,7 +29,7 @@ by GETTSIM. All these arrays have the same length. This length corresponds to th
 of individuals. Functions operate on a single row of data.
 
 Arrays are stored in a nested dictionary (a pytree). One level of the dictionary is
-called a *namespace*, the data columns are called *leaves*. The outermost level is
+called a *namespace*, the data columns are called *leaves*. The innermost level is
 called the *leaf name*.
 
 If a leaf name is `[x]_id` with `id` {math}`\in \{` `hh`, `bg`, `fg`, `ehe`, `eg`, `sn`,
