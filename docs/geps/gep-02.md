@@ -32,8 +32,8 @@ Arrays are stored in a nested dictionary (a pytree). One level of the dictionary
 called a *namespace*, the data columns are called *leaves*. The outermost level is
 called the *leaf name*.
 
-If a leaf name is `[x]_id` with `x` {math}`\in \{` `_hh`, `_bg`, `_fg`, `_ehe`, `_eg`,
-`_sn` {math}`\}`, it will be the same for all households, Bedarfsgemeinschaften, or any
+If a leaf name is `[x]_id` with `id` {math}`\in \{` `hh`, `bg`, `fg`, `ehe`, `eg`,
+`sn`, `wthh` {math}`\}`, it will be the same for all households, Bedarfsgemeinschaften, or any
 other grouping of individuals specified in {ref}`GEP 1 <gep-1-column-names>`.
 
 Any leaf name `p_id_[y]` indicates a link to a different individual (e.g., child-parent

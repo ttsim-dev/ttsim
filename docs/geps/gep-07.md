@@ -29,7 +29,7 @@ namespace architecture introduced in GEP 6.
 ## Motivation and Scope
 
 The current GETTSIM interface presents several challenges that affect both new and
-experienced users \[[1]\]:
+experienced users:
 
 1. **High Entry Barrier**: Users need detailed knowledge of the Directed Acyclic Graph
    (DAG) structure and precise input requirements, making it difficult for newcomers to
@@ -39,7 +39,7 @@ experienced users \[[1]\]:
    is challenging due to the fine-grained nature of the graph.
 
 1. **Limited Flexibility**: The current interface makes it difficult to work with
-   different datasets / areas of the
+   different datasets / areas of the taxes and transfers system.
 
 This GEP aims to address these issues by introducing a more intuitive and flexible
 interface while maintaining GETTSIM's computational robustness.
@@ -55,8 +55,8 @@ interface while maintaining GETTSIM's computational robustness.
 
 
    get_input_template(
-       target_variables=["kindergeld", "einkommensteuer"],
-       policy_environment=set_up_policy_environment("2025-01-01"),
+       target_variables=[("kindergeld", "betrag_m"), ("einkommensteuer", "betrag_y_sn")],
+       policy_date="2025-01-01",
    )
    ```
 
@@ -251,7 +251,7 @@ interface while maintaining GETTSIM's computational robustness.
    ```python
    # Set up the base environment
    get_policy_environment = gettsim.concatenate_functions(
-       targets=["policy_environment", "set_up_policy_environment"],
+       targets=["policy_environment"],
    )
    base_environment = get_policy_environment(policy_date="2025-01-01")
    # Modify
