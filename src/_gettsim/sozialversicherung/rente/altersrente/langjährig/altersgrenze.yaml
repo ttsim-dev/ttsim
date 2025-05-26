@@ -35,7 +35,7 @@ altersgrenze_gestaffelt:
       https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/242-altersrente-fuer-langjaehrig-versicherte-altersgrenzen.html
   unit: Years
   reference_period: null
-  type: birth_month_based_phase_in
+  type: birth_month_based_phase_inout
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
     note: Increase of full retirement age from 63 to 65 for birth cohort 1938-1943.
@@ -341,7 +341,7 @@ altersgrenze_vorzeitig_gestaffelt:
       https://www.sozialgesetzbuch-sgb.de/sgbvi/236.html
   unit: Years
   reference_period: null
-  type: birth_year_based_phase_in
+  type: birth_year_based_phase_inout
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
     note: Early retirement age decreased from 63 to 62 starting from birth cohort 1944.

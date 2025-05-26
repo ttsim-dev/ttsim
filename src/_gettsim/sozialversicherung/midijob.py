@@ -31,13 +31,10 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
     minijobgrenze: float,
     midijobgrenze: float,
 ) -> float:
-    """Income subject to employee social insurance contributions for midijob since
-    October 2022.
+    """Income subject to employee social insurance contributions for Bruttolöhne in
+    Gleitzone.
 
-    Gesonderte Beitragspflichtige Einnahme is the reference income for midijobs subject
-    to employee social insurance contribution.
-
-    Legal reference: Changes in § 20 SGB IV from 01.10.2022
+    Legal reference: § 20 SGB IV ("Gesonderte beitragspflichtige Einnahmen")
     """
     quotient = midijobgrenze / (midijobgrenze - minijobgrenze)
     einkommen_diff = (
@@ -59,7 +56,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
     sozialversicherung__rente__beitrag__beitragssatz_jahresanfang: float,
     sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
-    sozialversicherung__pflege__beitrag__beitragssatz: float,
+    sozialversicherung__pflege__beitrag__beitragssatz_jahresanfang: float,
     minijob_arbeitgeberpauschale_lohnsteuer: float,
     sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale: float,
     sozialversicherung__rente__beitrag__minijob_arbeitgeberpauschale: float,
@@ -71,9 +68,9 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
-        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang
-        + sozialversicherung__pflege__beitrag__beitragssatz
+        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang / 2
+        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang / 2
+        + sozialversicherung__pflege__beitrag__beitragssatz_jahresanfang / 2
     )
 
     # Then calculate specific shares
@@ -123,11 +120,12 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
-        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang
+        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang / 2
+        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang / 2
         + sozialversicherung__pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang[
             "standard"
         ]
+        / 2
     )
 
     an_anteil = (
@@ -177,11 +175,12 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     # First calculate the factor F from the formula in § 163 (10) SGB VI
     # Therefore sum the contributions which are the same for employee and employer
     allg_sozialv_beitr = (
-        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang
+        sozialversicherung__rente__beitrag__beitragssatz_jahresanfang / 2
         + sozialversicherung__pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang[
             "standard"
         ]
-        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang
+        / 2
+        + sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang / 2
     )
 
     # Then calculate specific shares

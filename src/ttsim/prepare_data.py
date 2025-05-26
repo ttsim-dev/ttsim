@@ -118,7 +118,7 @@ def _fail_if_mapper_has_incorrect_format(
     incorrect_types = {
         k: type(v)
         for k, v in dt.flatten_to_qual_names(inputs_tree_to_df_columns).items()
-        if not isinstance(v, str | int | bool)
+        if not isinstance(v, str | int | float | bool)
     }
     if incorrect_types:
         formatted_incorrect_types = "\n".join(
@@ -126,7 +126,7 @@ def _fail_if_mapper_has_incorrect_format(
         )
         msg = format_errors_and_warnings(
             f"""Values of the input tree to column mapping must be strings, integers,
-            or booleans.
+            floats, or Booleans.
             Found the following incorrect types:
 
             {formatted_incorrect_types}

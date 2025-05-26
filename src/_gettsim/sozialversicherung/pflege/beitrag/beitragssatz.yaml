@@ -13,9 +13,9 @@ beitragssatz:
   type: scalar
   add_jahresanfang: true
   1995-01-01:
-    value: 0.005
+    value: 0.01
   1997-01-01:
-    value: 0.0085
+    value: 0.017
   2005-01-01:
     note: >-
       Special contribution rate for childless individuals. See
@@ -34,29 +34,29 @@ beitragssatz_nach_kinderzahl:
   type: dict
   add_jahresanfang: true
   2005-01-01:
-    standard: 0.0085
+    standard: 0.017
     zusatz_kinderlos: 0.0025
   2008-01-01:
-    standard: 0.00975
+    standard: 0.0195
     zusatz_kinderlos: 0.0025
   2013-01-01:
     updates_previous: true
-    standard: 0.01025
+    standard: 0.0205
   2015-01-01:
-    standard: 0.01175
+    standard: 0.0235
     zusatz_kinderlos: 0.0025
   2017-01-01:
     updates_previous: true
-    standard: 0.01275
+    standard: 0.0255
   2019-01-01:
-    standard: 0.01525
+    standard: 0.0305
     zusatz_kinderlos: 0.0025
   2022-01-01:
     updates_previous: true
     zusatz_kinderlos: 0.0035
     reference: Art. 2 Nr. 14 G. v. 11.07.2021, BGBl. I S. 2754.
   2023-07-01:
-    standard: 0.017
+    standard: 0.034
     zusatz_kinderlos: 0.006
     abschlag_für_kinder_bis_24: 0.0025
     note: >-
@@ -65,7 +65,7 @@ beitragssatz_nach_kinderzahl:
       for people with children.
   2025-01-01:
     updates_previous: true
-    standard: 0.018
+    standard: 0.036
     reference: >-
       Pflege-Beitragssatz-Anpassungsverordnung 2025, Bundestag-Drucksache 20/1371
 zusatz_kinderlos_mindestalter:
