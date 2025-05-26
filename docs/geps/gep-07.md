@@ -94,6 +94,9 @@ interface while maintaining GETTSIM's computational robustness.
    payments to zero, it is often easiest to look at a visual representation of the DAG,
    see below.
 
+   `get_input_template` takes an argument `input_columns`, which can be used to
+   iteratively adjust the template to the user's needs.
+
 1. **One-stop-shop**
 
    Setting up a policy environment and computing the results used to require two steps.
@@ -225,8 +228,15 @@ interface while maintaining GETTSIM's computational robustness.
    1. Run this function.
 
    Once more, this is powered by `dags`, so the custom function can be freely composed
-   from many elements. The simplest example is to recreate the above by just requesting
-   `outputs_df` as the final target, along with the checks included by default in `oss`:
+   from many elements. The big advantages of this approach as opposed to exposing all
+   functions and requiring users to run them themselves (which will also work, but is
+   not encouraged) are safety and flexibility. It is clear which functions are run and
+   on which data this happens. When modifying inputs that affect multiple functions, the
+   user does not need to check that inputs are changed for all functions, this happens
+   automatically.
+
+   The simplest example is to recreate the above by just requesting `outputs_df` as the
+   final target, along with the checks included by default in `oss`:
 
    ```python
    get_outputs_df = gettsim.concatenate_functions(
@@ -293,6 +303,13 @@ interface while maintaining GETTSIM's computational robustness.
    - `rounding=True`
    - `debug=False`
    - `jit=False`
+
+1. **Intermediate cases**
+
+   The DAG-based interface is powerful, but it is also complex unless people are used to
+   functional programming and declarative interfaces. Just as `oss` is a wrapper around
+   the DAG-based interface, GETTSIM may add additional wrappers for common use cases.
+   This will be done in an iterative process based on user feedback.
 
 1. **Ecosystem**
 
