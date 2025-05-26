@@ -664,3 +664,8 @@ the parameter (see the previous section), the following types are possible:
 ## Copyright
 
 This document has been placed in the public domain.
+
+## Appendix: json-schema for the yaml files
+
+```{literalinclude} ../../src/ttsim/params-schema.json
+```
