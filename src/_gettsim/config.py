@@ -21,7 +21,6 @@ INTERNAL_PARAMS_GROUPS = [
     "erwerbsm_rente",
     "grunds_im_alter",
     "lohnst",
-    "erziehungsgeld",
 ]
 
 _TO_DELETE_DEFAULT_TARGETS = {
