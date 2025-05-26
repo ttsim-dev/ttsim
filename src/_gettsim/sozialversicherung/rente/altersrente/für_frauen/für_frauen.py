@@ -5,35 +5,18 @@ Revoked for birth cohorts after 1951.
 
 from __future__ import annotations
 
-from ttsim import policy_function
-
-
-@policy_function(
-    end_date="1989-12-17",
-    leaf_name="altersgrenze",
-    vectorization_strategy="not_required",
-)
-def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
-    """Full retirement age (FRA) for women.
-
-    FRA is the same for each birth cohort.
-
-    Does not check for eligibility for this pathway into retirement.
-    """
-
-    return ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"]
+from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
 
 
 @policy_function(
     start_date="1989-12-18",
     end_date="2017-12-31",
     leaf_name="altersgrenze",
-    vectorization_strategy="loop",
 )
 def altersgrenze_mit_staffelung(
     geburtsjahr: int,
     geburtsmonat: int,
-    ges_rente_params: dict,
+    altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Full retirement age (FRA) for women.
 
@@ -41,58 +24,22 @@ def altersgrenze_mit_staffelung(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    if (
-        geburtsjahr
-        <= ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][
-            "max_birthyear_old_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][
-            "entry_age_old_regime"
-        ]
-    elif (
-        geburtsjahr
-        >= ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][
-            "min_birthyear_new_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][
-            "entry_age_new_regime"
-        ]
-    else:
-        out = ges_rente_params["altersgrenze_für_frauen_abschlagsfrei"][geburtsjahr][
-            geburtsmonat
-        ]
+    birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return out
-
-
-@policy_function(
-    end_date="1989-12-17",
-    leaf_name="altersgrenze_vorzeitig",
-    vectorization_strategy="not_required",
-)
-def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
-    """Early retirement age (ERA) for Renten für Frauen.
-
-    ERA does not depend on birth year and month.
-
-    Does not check for eligibility for this pathway into retirement.
-    """
-
-    return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
+    return altersgrenze_gestaffelt.values_to_look_up[
+        birth_month_since_ad - altersgrenze_gestaffelt.base_value_to_subtract
+    ]
 
 
 @policy_function(
     start_date="1989-12-18",
     end_date="1996-09-26",
     leaf_name="altersgrenze_vorzeitig",
-    vectorization_strategy="loop",
 )
 def altersgrenze_vorzeitig_mit_staffelung(
     geburtsjahr: int,
     geburtsmonat: int,
-    ges_rente_params: dict,
+    altersgrenze_vorzeitig_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
 
@@ -100,47 +47,11 @@ def altersgrenze_vorzeitig_mit_staffelung(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    if (
-        geburtsjahr
-        <= ges_rente_params["altersgrenze_für_frauen_vorzeitig"][
-            "max_birthyear_old_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_für_frauen_vorzeitig"][
-            "entry_age_old_regime"
-        ]
-    elif (
-        geburtsjahr
-        >= ges_rente_params["altersgrenze_für_frauen_vorzeitig"][
-            "min_birthyear_new_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_für_frauen_vorzeitig"][
-            "entry_age_new_regime"
-        ]
-    else:
-        out = ges_rente_params["altersgrenze_für_frauen_vorzeitig"][geburtsjahr][
-            geburtsmonat
-        ]
+    birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return out
-
-
-@policy_function(
-    start_date="1996-09-27",
-    end_date="2017-12-31",
-    leaf_name="altersgrenze_vorzeitig",
-    vectorization_strategy="not_required",
-)
-def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(ges_rente_params: dict) -> float:
-    """Early retirement age (ERA) for Renten für Frauen.
-
-    ERA does not depend on birth year and month.
-
-    Does not check for eligibility for this pathway into retirement.
-    """
-
-    return ges_rente_params["altersgrenze_für_frauen_vorzeitig"]
+    return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+    ]
 
 
 @policy_function(end_date="1997-12-15", leaf_name="grundsätzlich_anspruchsberechtigt")

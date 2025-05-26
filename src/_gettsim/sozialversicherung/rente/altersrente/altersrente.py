@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import RoundingSpec, param_function, policy_function
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function(
@@ -124,14 +124,6 @@ def rentenwert_nach_wohnort(
         if wohnort_ost
         else parameter_rentenwert_nach_wohnort["west"]
     )
-
-
-@param_function(start_date="2023-07-01", leaf_name="rentenwert")
-def _parameter_rentenwert_einheitlich(
-    parameter_rentenwert_einheitlich: float,
-) -> float:
-    """Parameter Rentenwert einheitlich."""
-    return parameter_rentenwert_einheitlich
 
 
 @policy_function()

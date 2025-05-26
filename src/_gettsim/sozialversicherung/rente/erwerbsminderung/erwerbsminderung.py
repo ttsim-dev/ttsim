@@ -143,7 +143,7 @@ def entgeltpunkte_ost(
 def zurechnungszeit(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
-    erwerbsm_rente_params: dict,
+    zurechnungszeitgrenze: float,
 ) -> float:
     """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
 
@@ -153,8 +153,6 @@ def zurechnungszeit(
     additional earning points. They receive their average earned income points for each
     year between their age of retirement and the "zurechnungszeitgrenze".
     """
-    zurechnungszeitgrenze = erwerbsm_rente_params["zurechnungszeitgrenze"]
-
     return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
     ) * mean_entgeltpunkte_pro_bewertungsmonat
@@ -163,27 +161,25 @@ def zurechnungszeit(
 @policy_function(start_date="2001-01-01")
 def rentenartfaktor(
     teilweise_erwerbsgemindert: bool,
-    erwerbsm_rente_params: dict,
+    parameter_rentenartfaktor: dict[str, float],
 ) -> float:
     """Rentenartfaktor.
 
     Legal reference: SGB VI § 67: rentenartfaktor
     """
-
     if teilweise_erwerbsgemindert:
-        out = erwerbsm_rente_params["rentenartfaktor"]["teilw"]
-
+        return parameter_rentenartfaktor["teilweise"]
     else:
-        out = erwerbsm_rente_params["rentenartfaktor"]["voll"]
-
-    return out
+        return parameter_rentenartfaktor["voll"]
 
 
 @policy_function(start_date="2001-01-01")
 def zugangsfaktor(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     wartezeit_langjährig_versichert_erfüllt: bool,
-    erwerbsm_rente_params: dict,
+    altersgrenze_allgemein: float,
+    altersgrenze_langjährig_versichert: float,
+    min_zugangsfaktor: float,
     sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
         str, float
     ],
@@ -202,11 +198,9 @@ def zugangsfaktor(
     """
 
     if wartezeit_langjährig_versichert_erfüllt:
-        altersgrenze = erwerbsm_rente_params[
-            "altersgrenze_langjährig_versicherte_abschlagsfrei"
-        ]
+        altersgrenze = altersgrenze_langjährig_versichert
     else:
-        altersgrenze = erwerbsm_rente_params["parameter_altersgrenze"]
+        altersgrenze = altersgrenze_allgemein
 
     zugangsfaktor = (
         1
@@ -217,7 +211,7 @@ def zugangsfaktor(
             ]
         )
     )
-    return max(zugangsfaktor, erwerbsm_rente_params["min_zugangsfaktor"])
+    return max(zugangsfaktor, min_zugangsfaktor)
 
 
 # TODO(@MImmesberger): Reuse Altersrente Wartezeiten for Erwerbsminderungsrente
@@ -231,7 +225,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     sozialversicherung__rente__kinderberücksichtigungszeiten_monate: float,
     sozialversicherung__rente__pflegeberücksichtigungszeiten_monate: float,
     sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten: float,
-    erwerbsm_rente_params: dict,
+    wartezeitgrenze_langjährig_versicherte: float,
 ) -> bool:
     """Wartezeit for Rente für langjährige Versicherte (Erwerbsminderung) is fulfilled.
 
@@ -259,9 +253,7 @@ def wartezeit_langjährig_versichert_erfüllt(
         + sozialversicherung__rente__ersatzzeiten_monate
         + sozialversicherung__rente__pflegeberücksichtigungszeiten_monate
         + sozialversicherung__rente__kinderberücksichtigungszeiten_monate
-    ) / 12 >= erwerbsm_rente_params[
-        "wartezeitgrenze_langjährig_versicherte_abschlagsfrei"
-    ]
+    ) / 12 >= wartezeitgrenze_langjährig_versicherte
 
 
 # TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
@@ -298,7 +290,7 @@ def mean_entgeltpunkte_pro_bewertungsmonat(
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
-    erwerbsm_rente_params: dict,
+    altersgrenze_grundbewertung: float,
 ) -> float:
     """Average earning points per Bewertungsmonat (as part of the "Grundbewertung").
 
@@ -310,7 +302,7 @@ def mean_entgeltpunkte_pro_bewertungsmonat(
 
     belegungsfähiger_gesamtzeitraum = (
         sozialversicherung__rente__alter_bei_renteneintritt
-        - erwerbsm_rente_params["altersgrenze_grundbewertung"]
+        - altersgrenze_grundbewertung
     )
 
     mean_entgeltpunkte_pro_bewertungsmonat = (
