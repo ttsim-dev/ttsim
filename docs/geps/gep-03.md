@@ -46,7 +46,7 @@ Each of these parameters is a dictionary with at least 6 keys: `name`, `descript
 took effect.
 
 Values usually change over time; each time a value is changed, another `YYYY-MM-DD`
-entry is added.
+entry is added. Beyond that, no additional keys are allowed.
 
 1. The `name` key has two sub-keys `de` and `en`, which are
 
@@ -130,8 +130,8 @@ entry is added.
    - `piecewise_linear`,
    - `piecewise_quadratic`,
    - `piecewise_cubic`,
-   - `birth_month_based_phase_out`
-   - `birth_year_based_phase_in`,
+   - `birth_month_based_phase_inout`
+   - `birth_year_based_phase_inout`,
    - `require_converter`,
 
    `scalar` is self-explanatory; `dict` must be a homogeneous dictionary with string or
@@ -140,9 +140,9 @@ entry is added.
    `piecewise_constant`, `piecewise_linear`, `piecewise_quadratic`, `piecewise_cubic`
    will be converted automatically to be used with the `piecewise_polynomial` function.
 
-   `birth_month_based_phase_out` and `birth_year_based_phase_in` are used to phase in or
-   out a parameter based on the birth year of the individual. They are automatically
-   converted to be used as `ConsecutiveIntLookupTableParamValue` objects.
+   `birth_month_based_phase_inout` and `birth_year_based_phase_inout` are used to phase
+   in or out a parameter based on the birth year of the individual. They are
+   automatically converted to be used as `ConsecutiveIntLookupTableParamValue` objects.
 
    `require_converter` can be anything. However there must be a converter function in
    the codebase.
@@ -424,9 +424,9 @@ The following walks through several cases.
         upper_threshold: inf
   ```
 
-- Phase-in of age thresholds based on the birth year of the individual (e.g. increasing
-  statutory retirement age thresholds) should be specified as type
-  `birth_year_based_phase_in`. The parameter specification is converted to a lookup
+- Phase-in or phase-out of age thresholds based on the birth year of the individual
+  (e.g. increasing statutory retirement age thresholds) should be specified as type
+  `birth_year_based_phase_inout`. The parameter specification is converted to a lookup
   table that maps a birth year to the age threshold. The conversion requires the
   following stucture after the `YYYY-MM-DD` key:
 
@@ -459,7 +459,7 @@ The following walks through several cases.
       is higher or lower unless special regulations apply.
   unit: Years
   reference_period: null
-  type: birth_year_based_phase_in
+  type: birth_year_based_phase_inout
   2007-04-20:
     reference: RV-Altersgrenzenanpassungsgesetz 20.04.2007. BGBl. I S. 554
     note: >-
@@ -528,10 +528,11 @@ The following walks through several cases.
       months: 0
   ```
 
-- Phase-in of age thresholds based on the birth month of the individual should be
-  specified as type `birth_month_based_phase_in`. The parameter specification is the
-  same as for `birth_year_based_phase_in`, except that the `YYYY` entries are followed
-  by `MM` keys. The `MM` keys a have the following structure:
+- Phase-in or phase-out of age thresholds based on the birth month of the individual
+  should be specified as type `birth_month_based_phase_inout`. The parameter
+  specification is the same as for `birth_year_based_phase_inout`, except that the
+  `YYYY` entries are followed by `MM` keys. The `MM` keys a have the following
+  structure:
 
   - `first_birthmonth_to_consider`: The birth month at which the lookup table starts
     (just choose some birthmonth that is far enough in the past).
@@ -648,7 +649,7 @@ the parameter (see the previous section), the following types are possible:
   entries except for the `note` and `reference` keys.
 - `piecewise_constant` / `piecewise_linear` / `piecewise_quadratic` / `piecewise_cubic`
   parameters are converted to `PiecewisePolynomialParameter` objects.
-- `birth_month_based_phase_out` and `birth_year_based_phase_in` are converted to
+- `birth_month_based_phase_inout` and `birth_year_based_phase_inout` are converted to
   `ConsecutiveIntLookupTableParamValue` objects.
 - `require_converter` must have a `params_function` that converts the `YYYY-MM-DD`
   entries to a clear type.
