@@ -1,101 +1,4 @@
 ---
-parameter_altersgrenze:
-  name:
-    de: Regelaltersgrenze
-    en: Statutory retirement age
-  description:
-    de: >-
-      § 77 SGB VI
-      Altersgrenze bis zu der man die Erwerbsminderungsrente ohne Abzüge in
-      Anspruch nehmen kann. Bis 2012 lag die Regelaltersgrenze bei 63. Ab dann
-      schrittweise Anhebung bis 65.
-      https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/295-erwerbsminderungsrente-und-rentenabschlaege.html
-    en: >-
-      § 77 SGB VI
-      Age limit up to which one can claim the public disability insurance without
-      deductions. Up to 2012, the standard retirement age was 63.
-      From then on gradual increase until 65.
-      https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/295-erwerbsminderungsrente-und-rentenabschlaege.html
-  unit: Years
-  reference_period: null
-  type: scalar
-  2001-01-01:
-    value: 63
-  2012-01-01:
-    value: 63.083333
-  2012-02-01:
-    value: 63.166666
-  2012-03-01:
-    value: 63.25
-  2012-04-01:
-    value: 63.333333
-  2012-05-01:
-    value: 63.416666
-  2012-06-01:
-    value: 63.5
-  2013-01-01:
-    value: 63.583333
-  2014-01-01:
-    value: 63.666666
-  2015-01-01:
-    value: 63.75
-  2016-01-01:
-    value: 63.833333
-  2017-01-01:
-    value: 63.916666
-  2018-01-01:
-    value: 64
-  2019-01-01:
-    value: 64.166666
-  2020-01-01:
-    value: 64.333333
-  2021-01-01:
-    value: 64.5
-  2022-01-01:
-    value: 64.666666
-  2023-01-01:
-    value: 64.833333
-  2024-01-01:
-    value: 65
-altersgrenze_langjährig_versicherte_abschlagsfrei:
-  name:
-    de: Regelaltersgrenze für langjährige Versicherte
-    en: Statutory retirement age for long-term insured persons
-  description:
-    de: >-
-      § 77 Abs. 4 SGB VI
-      Altersgrenze bis zu der man die Erwerbsminderungsrente ohne Abzüge in Anspruch
-      nehmen kann, wenn man bestimmte zeitliche Bedingungen erfüllt. Bedingungen werden
-      in § 77 Abs. 4 SGB VI definiert.
-    en: >-
-      § 77 Abs. 4 SGB VI
-      Age limit up to which one can claim public disability insurance without deductions
-      under certain time conditions. These conditions are defined in § 77 4 SGB VI.
-  unit: Years
-  reference_period: null
-  type: scalar
-  2001-01-01:
-    value: 63
-wartezeitgrenze_langjährig_versicherte_abschlagsfrei:
-  name:
-    de: Wartezeitgrenze für abschlagsfreie Erwerbsminderungsrente
-    en: Waiting time limit for public disability pension without deductions
-  description:
-    de: >-
-      § 264d SGB VI
-      Anzahl an Wartezeitjahren nach § 51 Absatz 3a SGB VI, die für eine abschlagsfreie
-      Erwerbsminderungsrente mit 63 nachgewiesen werden müssen.
-    en: >-
-      § 264d SGB VI
-      Number of waiting years in accordance with § 51 Absatz 3a SGB VI, which must be
-      proven for a public disability pension at 63 without deductions.
-  unit: Years
-  reference_period: null
-  type: scalar
-  2001-01-01:
-    value: 35
-  2024-01-01:
-    value: 40
 zurechnungszeitgrenze:
   name:
     de: Zurechnungszeitgrenze
@@ -235,7 +138,7 @@ min_zugangsfaktor:
   type: scalar
   2000-01-01:
     value: 0.892
-rentenartfaktor:
+parameter_rentenartfaktor:
   name:
     de: Rentenartfaktor für teilweise Erwerbsminderungsrente
     en: Pension type factor for partial reduction in public disability insurance
@@ -255,7 +158,7 @@ rentenartfaktor:
   reference_period: null
   type: dict
   2001-01-01:
-    teilw: 0.5
+    teilweise: 0.5
     voll: 1.0
 altersgrenze_grundbewertung:
   name:

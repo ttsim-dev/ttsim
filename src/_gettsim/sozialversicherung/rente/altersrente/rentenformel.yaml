@@ -372,8 +372,8 @@ parameter_rentenwert_nach_wohnort:
     west: 36.02
     ost: 35.52
   2023-07-01:
-    note: Rentenwert einheitlich. Siehe ``parameter_rentenwert_einheitlich``.
-parameter_rentenwert_einheitlich:
+    note: Rentenwert einheitlich. Siehe `rentenwert`.
+rentenwert:
   name:
     de: Rentenwert (Wert eines Entgeltpunktes).
     en: Value of one Entgeltpunkt.
