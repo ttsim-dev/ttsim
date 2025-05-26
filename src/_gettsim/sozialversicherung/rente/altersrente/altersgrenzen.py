@@ -10,7 +10,7 @@ from ttsim import policy_function
     leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_mit_arbeitsl_frauen_ohne_besond_langj(
+def altersgrenze_mit_arbeitslosigkeit_frauen_ohne_besonders_langjährig(
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze: float,
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
@@ -53,7 +53,7 @@ def altersgrenze_mit_arbeitsl_frauen_ohne_besond_langj(
     leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_mit_frauen_arbeitsl_besond_langj(
+def altersgrenze_mit_arbeitslosigkeit_frauen_besonders_langjährig(
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__für_frauen__altersgrenze: float,
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
@@ -109,7 +109,7 @@ def altersgrenze_mit_frauen_arbeitsl_besond_langj(
     leaf_name="altersgrenze",
     vectorization_strategy="loop",
 )
-def altersgrenze_mit_besond_langj_ohne_arbeitsl_frauen(
+def altersgrenze_mit_besonders_langjährig_ohne_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__besonders_langjährig__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__besonders_langjährig__altersgrenze: float,
     sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt: bool,
@@ -145,7 +145,7 @@ def altersgrenze_mit_besond_langj_ohne_arbeitsl_frauen(
     leaf_name="altersgrenze_vorzeitig",
     vectorization_strategy="loop",
 )
-def altersgrenze_vorzeitig_mit_rente_arbeitsl_frauen(
+def altersgrenze_vorzeitig_mit_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze_vorzeitig: float,
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
@@ -184,7 +184,7 @@ def altersgrenze_vorzeitig_mit_rente_arbeitsl_frauen(
 
 
 @policy_function(start_date="2018-01-01", leaf_name="altersgrenze_vorzeitig")
-def altersgrenze_vorzeitig_ohne_rente_arbeitsl_frauen(
+def altersgrenze_vorzeitig_ohne_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__langjährig__altersgrenze_vorzeitig: float,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
@@ -208,7 +208,7 @@ def altersgrenze_vorzeitig_ohne_rente_arbeitsl_frauen(
 @policy_function(
     end_date="2017-12-31", leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt"
 )
-def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_rente_arbeitsl_frauen(
+def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
@@ -231,7 +231,7 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_rente_arbeitsl_frauen(
 @policy_function(
     start_date="2018-01-01", leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt"
 )
-def vorzeitig_grundsätzlich_anspruchsberechtigt_vorzeitig_ohne_rente_arbeitsl_frauen(
+def vorzeitig_grundsätzlich_anspruchsberechtigt_vorzeitig_ohne_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt: bool,
 ) -> bool:
     """Eligibility for early retirement.
@@ -243,7 +243,7 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_vorzeitig_ohne_rente_arbeitsl_f
 
 
 @policy_function(end_date="2017-12-31", leaf_name="referenzalter_abschlag")
-def referenzalter_abschlag_mit_rente_arbeitsl_frauen(
+def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze: float,
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
@@ -306,7 +306,7 @@ def referenzalter_abschlag_mit_rente_arbeitsl_frauen(
 
 
 @policy_function(start_date="2018-01-01", leaf_name="referenzalter_abschlag")
-def referenzalter_abschlag_ohne_rente_arbeitsl_frauen(
+def referenzalter_abschlag_ohne_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__langjährig__altersgrenze: float,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
