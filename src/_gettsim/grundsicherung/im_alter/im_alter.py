@@ -96,7 +96,7 @@ def mehrbedarf_schwerbehinderung_g_m(
     return out
 
 
-@policy_function(start_date="2003-01-01")
+@policy_function(start_date="2005-01-01")
 def vermögensfreibetrag_eg(
     arbeitslosengeld_2__anzahl_erwachsene_fg: int,
     arbeitslosengeld_2__anzahl_kinder_fg: int,
