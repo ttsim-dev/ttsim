@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
+from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(start_date="2007-04-20", end_date="2030-12-31")
 def altersgrenze(
-    geburtsjahr: int, altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue
+    geburtsjahr: int, altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue
 ) -> float:
     """Normal retirement age (NRA) during the phase-in period.
 
@@ -20,7 +20,7 @@ def altersgrenze(
     Does not check for eligibility for this pathway into retirement.
     """
     return altersgrenze_gestaffelt.values_to_look_up[
-        geburtsjahr - altersgrenze_gestaffelt.base_value_to_subtract
+        geburtsjahr - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 

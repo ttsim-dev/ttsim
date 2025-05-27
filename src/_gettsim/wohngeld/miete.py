@@ -2,8 +2,131 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
+from ttsim import (
+    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveInt2dLookupTableParamValue,
+    get_consecutive_int_1d_lookup_table_param_value,
+    get_consecutive_int_2d_lookup_table_param_value,
+    param_function,
+    policy_function,
+)
 from ttsim.config import numpy_or_jax as np
+
+
+@param_function(
+    start_date="1984-01-01", end_date="2008-12-31", leaf_name="max_miete_m_lookup"
+)
+def max_miete_m_lookup_mit_baujahr(
+    raw_max_miete_m_nach_baujahr: dict[int | str, dict[int, dict[int, float]]],
+    max_anzahl_personen: dict[str, int],
+) -> dict[int, ConsecutiveInt2dLookupTableParamValue]:
+    """Maximum rent considered in Wohngeld calculation."""
+    tmp = raw_max_miete_m_nach_baujahr.copy()
+    per_additional_person = tmp.pop("jede_weitere_person")
+    max_n_p_defined = max(tmp.keys())
+    assert all(isinstance(i, int) for i in tmp)
+    baujahre = sorted(tmp[1].keys())
+    out = {}
+    for baujahr in baujahre:
+        this_dict = {n_p: tmp[n_p][baujahr] for n_p in tmp}
+        for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
+            this_dict[n_p] = {
+                ms: this_dict[max_n_p_defined][ms]
+                + (n_p - max_n_p_defined) * per_additional_person[baujahr][ms]  # type: ignore[operator]
+                for ms in this_dict[max_n_p_defined]
+            }
+        out[baujahr] = get_consecutive_int_2d_lookup_table_param_value(this_dict)
+    return out
+
+
+@param_function(start_date="2009-01-01", leaf_name="max_miete_m_lookup")
+def max_miete_m_lookup_ohne_baujahr(
+    raw_max_miete_m: dict[int | str, dict[int, float]],
+    max_anzahl_personen: dict[str, int],
+) -> ConsecutiveInt2dLookupTableParamValue:
+    """Maximum rent considered in Wohngeld calculation."""
+    expanded = raw_max_miete_m.copy()
+    per_additional_person = expanded.pop("jede_weitere_person")
+    max_n_p_defined = max(expanded.keys())
+    assert all(isinstance(i, int) for i in expanded)
+    for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
+        expanded[n_p] = {
+            ms: expanded[max_n_p_defined][ms]
+            + (n_p - max_n_p_defined) * per_additional_person[ms]  # type: ignore[operator]
+            for ms in expanded[max_n_p_defined]
+        }
+    return get_consecutive_int_2d_lookup_table_param_value(expanded)
+
+
+@param_function(start_date="1984-01-01")
+def min_miete_lookup(
+    raw_min_miete_m: dict[int, float],
+    max_anzahl_personen: dict[str, int],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Minimum rent considered in Wohngeld calculation."""
+    max_n_p_normal = max_anzahl_personen["normale_berechnung"]
+    assert max(raw_min_miete_m.keys()) == max_n_p_normal, (
+        "The maximum number of persons for the normal calculation of the basic"
+        "Wohngeld formula `max_anzahl_personen['normale_berechnung'] "
+        f"(got: {max_n_p_normal}) must be the same as the maximum number of household "
+        "members in `koeffizienten_berechnungsformel` "
+        f"(got: {max(raw_min_miete_m.keys())})"
+    )
+    expanded = raw_min_miete_m.copy()
+    for n_p in range(max_n_p_normal + 1, max_anzahl_personen["indizierung"] + 1):
+        expanded[n_p] = raw_min_miete_m[max_n_p_normal]
+    return get_consecutive_int_1d_lookup_table_param_value(expanded)
+
+
+@param_function(start_date="2021-01-01")
+def heizkostenentlastung_m_lookup(
+    raw_heizkostenentlastung_m: dict[int | str, float],
+    max_anzahl_personen: dict[str, int],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Heizkostenentlastung as a lookup table."""
+    expanded = raw_heizkostenentlastung_m.copy()
+    per_additional_person = expanded.pop("jede_weitere_person")
+    max_n_p_defined = max(expanded.keys())
+    assert all(isinstance(i, int) for i in expanded)
+    for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
+        expanded[n_p] = (
+            expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
+        )
+    return get_consecutive_int_1d_lookup_table_param_value(expanded)
+
+
+@param_function(start_date="2023-01-01")
+def dauerhafte_heizkostenkomponente_m_lookup(
+    raw_dauerhafte_heizkostenkomponente_m: dict[int | str, float],
+    max_anzahl_personen: dict[str, int],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Dauerhafte Heizkostenenkomponente as a lookup table."""
+    expanded = raw_dauerhafte_heizkostenkomponente_m.copy()
+    per_additional_person = expanded.pop("jede_weitere_person")
+    max_n_p_defined = max(expanded.keys())
+    assert all(isinstance(i, int) for i in expanded)
+    for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
+        expanded[n_p] = (
+            expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
+        )
+    return get_consecutive_int_1d_lookup_table_param_value(expanded)
+
+
+@param_function(start_date="2023-01-01")
+def klimakomponente_m_lookup(
+    raw_klimakomponente_m: dict[int | str, float],
+    max_anzahl_personen: dict[str, int],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Klimakomponente as a lookup table."""
+    expanded = raw_klimakomponente_m.copy()
+    per_additional_person = expanded.pop("jede_weitere_person")
+    max_n_p_defined = max(expanded.keys())
+    assert all(isinstance(i, int) for i in expanded)
+    for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
+        expanded[n_p] = (
+            expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
+        )
+    return get_consecutive_int_1d_lookup_table_param_value(expanded)
 
 
 @policy_function()
@@ -61,210 +184,133 @@ def miete_m_bg(
     return miete_m_hh * (arbeitslosengeld_2__anzahl_personen_bg / anzahl_personen_hh)
 
 
-@policy_function(vectorization_strategy="loop")
-def min_miete_m_hh(anzahl_personen_hh: int, wohngeld_params: dict) -> float:
-    """Minimum rent considered in Wohngeld calculation.
-
-    Parameters
-    ----------
-    anzahl_personen_hh
-        See :func:`anzahl_personen_hh`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-    Returns
-    -------
-
-    """
-    return wohngeld_params["min_miete"][
-        min(anzahl_personen_hh, max(wohngeld_params["min_miete"]))
+@policy_function()
+def min_miete_m_hh(
+    anzahl_personen_hh: int, min_miete_lookup: ConsecutiveInt1dLookupTableParamValue
+) -> float:
+    """Minimum rent considered in Wohngeld calculation."""
+    return min_miete_lookup.values_to_look_up[
+        anzahl_personen_hh - min_miete_lookup.base_to_subtract
     ]
 
 
 @policy_function(
-    end_date="2008-12-31", leaf_name="miete_m_hh", vectorization_strategy="loop"
+    start_date="1984-01-01",
+    end_date="2008-12-31",
+    leaf_name="miete_m_hh",
+    vectorization_strategy="loop",
 )
-def miete_m_hh_bis_2008(
+def miete_m_hh_mit_baujahr(
     mietstufe: int,
     wohnen__baujahr_immobilie_hh: int,
     anzahl_personen_hh: int,
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
-    wohngeld_params: dict,
+    max_miete_m_lookup: dict[int, ConsecutiveInt2dLookupTableParamValue],
 ) -> float:
-    """Rent considered in housing benefit calculation on household level until 2008.
-
-    Parameters
-    ----------
-    mietstufe
-        See basic input variable :ref:`mietstufe <mietstufe>`.
-    wohnen__baujahr_immobilie_hh
-        See basic input variable :ref:`wohnen__baujahr_immobilie_hh <wohnen__baujahr_immobilie_hh>`.
-    anzahl_personen_hh
-        See :func:`anzahl_personen_hh`.
-    wohnen__bruttokaltmiete_m_hh
-        See :func:`wohnen__bruttokaltmiete_m_hh`.
-    min_miete_m_hh
-        See :func:`min_miete_m_hh`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
-    """
-    max_berücks_personen = wohngeld_params["bonus_sehr_große_haushalte"][
-        "max_anz_personen_normale_berechnung"
-    ]
-    berücks_personen = min(anzahl_personen_hh, max_berücks_personen)
-
-    # Get yearly cutoff in params which is closest and above the construction year
-    # of the property. We assume that the same cutoffs exist for each household
-    # size.
-    params_max_miete = wohngeld_params["max_miete"]
+    """Rent considered in housing benefit calculation on household level until 2008."""
     selected_bin_index = np.searchsorted(
-        np.asarray(sorted(params_max_miete[1])),
+        np.asarray(sorted(max_miete_m_lookup.keys())),
         wohnen__baujahr_immobilie_hh,
         side="left",
     )
-
-    constr_year = list(params_max_miete[1])[selected_bin_index]
-
-    # Calc maximal considered rent
-    max_definierte_hh_größe = max(i for i in params_max_miete if isinstance(i, int))
-    if anzahl_personen_hh <= max_definierte_hh_größe:
-        max_miete_m = params_max_miete[anzahl_personen_hh][constr_year][mietstufe]
-    else:
-        max_miete_m = params_max_miete[max_definierte_hh_größe][constr_year][
-            mietstufe
-        ] + params_max_miete["jede_weitere_person"][constr_year][mietstufe] * (
-            berücks_personen - max_definierte_hh_größe
-        )
-
-    out = min(wohnen__bruttokaltmiete_m_hh, max_miete_m)
-    return max(out, min_miete_m_hh)
+    constr_year = list(max_miete_m_lookup.keys())[selected_bin_index]
+    lookup = max_miete_m_lookup[constr_year]
+    max_miete_m = lookup.values_to_look_up[
+        anzahl_personen_hh - lookup.base_to_subtract_rows,
+        mietstufe - lookup.base_to_subtract_cols,
+    ]
+    return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
 
 @policy_function(
-    start_date="2009-01-01", leaf_name="miete_m_hh", vectorization_strategy="loop"
+    start_date="2009-01-01",
+    end_date="2020-12-31",
+    leaf_name="miete_m_hh",
 )
-def miete_m_hh_ab_2009(  # noqa: PLR0912 (see #516)
+def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     mietstufe: int,
     anzahl_personen_hh: int,
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
-    wohngeld_params: dict,
+    max_miete_m_lookup: ConsecutiveInt2dLookupTableParamValue,
 ) -> float:
-    """Rent considered in housing benefit since 2009.
+    """Rent considered in housing benefit since 2009."""
 
-    Parameters
-    ----------
-    mietstufe
-        See basic input variable :ref:`mietstufe <mietstufe>`.
-    anzahl_personen_hh
-        See :func:`anzahl_personen_hh`.
-    wohnen__bruttokaltmiete_m_hh
-        See :func:`wohnen__bruttokaltmiete_m_hh`.
-    min_miete_m_hh
-        See :func:`min_miete_m_hh`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
-    """
-    params_max_miete = wohngeld_params["max_miete"]
-
-    max_berücks_personen = wohngeld_params["bonus_sehr_große_haushalte"][
-        "max_anz_personen_normale_berechnung"
+    max_miete_m = max_miete_m_lookup.values_to_look_up[
+        anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows,
+        mietstufe - max_miete_m_lookup.base_to_subtract_cols,
     ]
-    berücks_personen = min(anzahl_personen_hh, max_berücks_personen)
 
-    # Calc maximal considered rent
-    max_definierte_hh_größe = max(i for i in params_max_miete if isinstance(i, int))
-    if anzahl_personen_hh <= max_definierte_hh_größe:
-        max_miete_m = params_max_miete[anzahl_personen_hh][mietstufe]
-    else:
-        max_miete_m = (
-            params_max_miete[max_definierte_hh_größe][mietstufe]
-            + (berücks_personen - max_definierte_hh_größe)
-            * params_max_miete["jede_weitere_person"][mietstufe]
+    return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
+
+
+@policy_function(
+    start_date="2021-01-01",
+    end_date="2022-12-31",
+    leaf_name="miete_m_hh",
+)
+def miete_m_hh_mit_heizkostenentlastung(
+    mietstufe: int,
+    anzahl_personen_hh: int,
+    wohnen__bruttokaltmiete_m_hh: float,
+    min_miete_m_hh: float,
+    max_miete_m_lookup: ConsecutiveInt2dLookupTableParamValue,
+    heizkostenentlastung_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+) -> float:
+    """Rent considered in housing benefit since 2009."""
+    max_miete_m = max_miete_m_lookup.values_to_look_up[
+        anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows,
+        mietstufe - max_miete_m_lookup.base_to_subtract_cols,
+    ]
+
+    heating_allowance_m = heizkostenentlastung_m_lookup.values_to_look_up[
+        anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract
+    ]
+
+    return (
+        max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
+        + heating_allowance_m
+    )
+
+
+@policy_function(
+    start_date="2023-01-01",
+    leaf_name="miete_m_hh",
+)
+def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakomponente(
+    mietstufe: int,
+    anzahl_personen_hh: int,
+    wohnen__bruttokaltmiete_m_hh: float,
+    min_miete_m_hh: float,
+    max_miete_m_lookup: ConsecutiveInt2dLookupTableParamValue,
+    heizkostenentlastung_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+    dauerhafte_heizkostenkomponente_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+    klimakomponente_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+) -> float:
+    """Rent considered in housing benefit since 2009."""
+    max_miete_m = max_miete_m_lookup.values_to_look_up[
+        anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows,
+        mietstufe - max_miete_m_lookup.base_to_subtract_cols,
+    ]
+
+    heizkostenentlastung = heizkostenentlastung_m_lookup.values_to_look_up[
+        anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract
+    ]
+    dauerhafte_heizkostenkomponente = (
+        dauerhafte_heizkostenkomponente_m_lookup.values_to_look_up[
+            anzahl_personen_hh
+            - dauerhafte_heizkostenkomponente_m_lookup.base_to_subtract
+        ]
+    )
+    klimakomponente = klimakomponente_m_lookup.values_to_look_up[
+        anzahl_personen_hh - klimakomponente_m_lookup.base_to_subtract
+    ]
+    return (
+        max(
+            min(wohnen__bruttokaltmiete_m_hh, max_miete_m + klimakomponente),
+            min_miete_m_hh,
         )
-
-    # Calc heating allowance. Until 2020, heating allowance was not
-    # introduced yet. For this time frame, the respective parameter is
-    # not part of wohngeld_params and heating allowance is set to 0.
-    # TODO(@MImmesberger): Solve via policy_function decorator.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/711
-    if "heizkostenentlastung_m" in wohngeld_params:
-        max_def_hh_größe_heating = max(
-            i for i in wohngeld_params["heizkostenentlastung_m"] if isinstance(i, int)
-        )
-    if "heizkostenentlastung_m" in wohngeld_params:
-        if anzahl_personen_hh <= max_def_hh_größe_heating:
-            heating_allowance_m = wohngeld_params["heizkostenentlastung_m"][
-                anzahl_personen_hh
-            ]
-        else:
-            heating_allowance_m = (
-                wohngeld_params["heizkostenentlastung_m"][max_def_hh_größe_heating]
-                + (berücks_personen - max_def_hh_größe_heating)
-                * (wohngeld_params["heizkostenentlastung_m"]["jede_weitere_person"])
-            )
-    else:
-        heating_allowance_m = 0
-
-    # Calc heating cost component. Until 2022, heating cost component was not
-    # introduced yet. For this time frame, the respective parameter is not part
-    # of params and heating cost component is set to 0.
-    if "dauerhafte_heizkostenkomponente_m" in wohngeld_params:
-        max_def_hh_größe_heating = max(
-            i
-            for i in wohngeld_params["dauerhafte_heizkostenkomponente_m"]
-            if isinstance(i, int)
-        )
-    if "dauerhafte_heizkostenkomponente_m" in wohngeld_params:
-        if anzahl_personen_hh <= max_def_hh_größe_heating:
-            heating_component_m = wohngeld_params["dauerhafte_heizkostenkomponente_m"][
-                anzahl_personen_hh
-            ]
-        else:
-            heating_component_m = (
-                wohngeld_params["dauerhafte_heizkostenkomponente_m"][
-                    max_def_hh_größe_heating
-                ]
-                + (berücks_personen - max_def_hh_größe_heating)
-                * (
-                    wohngeld_params["dauerhafte_heizkostenkomponente_m"][
-                        "jede_weitere_person"
-                    ]
-                )
-            )
-    else:
-        heating_component_m = 0
-
-    # Calc climate component. Until 2022, climate component was not
-    # introduced yet. For this time frame, the respective parameter is not
-    # part of params and climate component is set to 0.
-    if "klimakomponente_m" in wohngeld_params:
-        max_def_hh_größe_heating = max(
-            i for i in wohngeld_params["klimakomponente_m"] if isinstance(i, int)
-        )
-    if "klimakomponente_m" in wohngeld_params:
-        if anzahl_personen_hh <= max_def_hh_größe_heating:
-            climate_component_m = wohngeld_params["klimakomponente_m"][
-                anzahl_personen_hh
-            ]
-        else:
-            climate_component_m = (
-                wohngeld_params["klimakomponente_m"][max_def_hh_größe_heating]
-                + (berücks_personen - max_def_hh_größe_heating)
-                * (wohngeld_params["klimakomponente_m"]["jede_weitere_person"])
-            )
-    else:
-        climate_component_m = 0
-
-    out = min(wohnen__bruttokaltmiete_m_hh, max_miete_m + climate_component_m)
-    out = max(out, min_miete_m_hh) + heating_allowance_m + heating_component_m
-
-    return out
+        + heizkostenentlastung
+        + dauerhafte_heizkostenkomponente
+    )

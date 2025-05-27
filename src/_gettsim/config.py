@@ -8,7 +8,6 @@ GETTSIM_ROOT = Path(__file__).parent.resolve()
 INTERNAL_PARAMS_GROUPS = [
     "unterhalt",
     "unterhaltsvors",
-    "wohngeld",
     "grunds_im_alter",
 ]
 

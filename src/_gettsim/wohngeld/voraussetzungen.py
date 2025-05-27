@@ -5,8 +5,27 @@ from __future__ import annotations
 from ttsim import policy_function
 
 
-@policy_function()
-def grundsätzlich_anspruchsberechtigt_wthh(
+@policy_function(
+    start_date="2005-01-01",
+    end_date="2008-12-31",
+    leaf_name="grundsätzlich_anspruchsberechtigt_wthh",
+)
+def grundsätzlich_anspruchsberechtigt_wthh_ohne_vermögensprüfung(
+    mindesteinkommen_erreicht_wthh: bool,
+) -> bool:
+    """Check whether the household meets the conditions for Wohngeld.
+
+    This target is used to calculate the actual Wohngeld of all Bedarfsgemeinschaften
+    that passed the priority check against Arbeitslosengeld II / Bürgergeld.
+
+    """
+    return mindesteinkommen_erreicht_wthh
+
+
+@policy_function(
+    start_date="2009-01-01", leaf_name="grundsätzlich_anspruchsberechtigt_wthh"
+)
+def grundsätzlich_anspruchsberechtigt_wthh_mit_vermögensprüfung(
     mindesteinkommen_erreicht_wthh: bool,
     vermögensgrenze_unterschritten_wthh: bool,
 ) -> bool:
@@ -15,22 +34,31 @@ def grundsätzlich_anspruchsberechtigt_wthh(
     This target is used to calculate the actual Wohngeld of all Bedarfsgemeinschaften
     that passed the priority check against Arbeitslosengeld II / Bürgergeld.
 
-    Parameters
-    ----------
-    mindesteinkommen_erreicht_wthh
-        See :func:`mindesteinkommen_erreicht_wthh`.
-    vermögensgrenze_unterschritten_wthh
-        See :func:`vermögensgrenze_unterschritten_wthh`.
-
-    Returns
-    -------
-
     """
     return mindesteinkommen_erreicht_wthh and vermögensgrenze_unterschritten_wthh
 
 
-@policy_function()
-def grundsätzlich_anspruchsberechtigt_bg(
+@policy_function(
+    start_date="2005-01-01",
+    end_date="2008-12-31",
+    leaf_name="grundsätzlich_anspruchsberechtigt_bg",
+)
+def grundsätzlich_anspruchsberechtigt_bg_ohne_vermögensprüfung(
+    mindesteinkommen_erreicht_bg: bool,
+) -> bool:
+    """Check whether the household meets the conditions for Wohngeld.
+
+    This target is used for the priority check calculation against Arbeitslosengeld II /
+    Bürgergeld on the Bedarfsgemeinschaft level.
+
+    """
+    return mindesteinkommen_erreicht_bg
+
+
+@policy_function(
+    start_date="2009-01-01", leaf_name="grundsätzlich_anspruchsberechtigt_bg"
+)
+def grundsätzlich_anspruchsberechtigt_bg_mit_vermögensprüfung(
     mindesteinkommen_erreicht_bg: bool,
     vermögensgrenze_unterschritten_bg: bool,
 ) -> bool:
@@ -39,79 +67,42 @@ def grundsätzlich_anspruchsberechtigt_bg(
     This target is used for the priority check calculation against Arbeitslosengeld II /
     Bürgergeld on the Bedarfsgemeinschaft level.
 
-    Parameters
-    ----------
-    mindesteinkommen_erreicht_bg
-        See :func:`mindesteinkommen_erreicht_bg`.
-    vermögensgrenze_unterschritten_bg
-        See :func:`vermögensgrenze_unterschritten_bg`.
-
-    Returns
-    -------
-
     """
     return mindesteinkommen_erreicht_bg and vermögensgrenze_unterschritten_bg
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(start_date="2009-01-01")
 def vermögensgrenze_unterschritten_wthh(
     vermögen_wthh: float,
     anzahl_personen_wthh: int,
-    wohngeld_params: dict,
+    parameter_vermögensfreibetrag: dict[str, float],
 ) -> bool:
-    """Wealth is below the eligibility threshold for housing benefits.
+    """Wealth is below the eligibility threshold for housing benefits."""
+    vermögensfreibetrag = parameter_vermögensfreibetrag[
+        "grundfreibetrag"
+    ] + parameter_vermögensfreibetrag["je_weitere_person"] * (anzahl_personen_wthh - 1)
 
-    Parameters
-    ----------
-    vermögen_wthh
-        See :func:`vermögen_wthh <vermögen_wthh>`.
-    anzahl_personen_wthh
-        See :func:`anzahl_personen_wthh`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
-    """
-
-    return vermögensprüfung(
-        vermögen=vermögen_wthh,
-        anzahl_personen=anzahl_personen_wthh,
-        params=wohngeld_params,
-    )
+    return vermögen_wthh <= vermögensfreibetrag
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(start_date="2009-01-01")
 def vermögensgrenze_unterschritten_bg(
     vermögen_bg: float,
     arbeitslosengeld_2__anzahl_personen_bg: int,
-    wohngeld_params: dict,
+    parameter_vermögensfreibetrag: dict[str, float],
 ) -> bool:
-    """Wealth is below the eligibility threshold for housing benefits.
+    """Wealth is below the eligibility threshold for housing benefits."""
 
-    Parameters
-    ----------
-    vermögen_bg
-        See :func:`vermögen_bg <vermögen_bg>`.
-    arbeitslosengeld_2__anzahl_personen_bg
-        See :func:`arbeitslosengeld_2__anzahl_personen_bg`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
-    """
-
-    return vermögensprüfung(
-        vermögen=vermögen_bg,
-        anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
-        params=wohngeld_params,
+    vermögensfreibetrag = parameter_vermögensfreibetrag[
+        "grundfreibetrag"
+    ] + parameter_vermögensfreibetrag["je_weitere_person"] * (
+        arbeitslosengeld_2__anzahl_personen_bg - 1
     )
 
+    return vermögen_bg <= vermögensfreibetrag
 
-@policy_function()
+
+@policy_function(start_date="2005-01-01")
 def mindesteinkommen_erreicht_wthh(
     arbeitslosengeld_2__regelbedarf_m_wthh: float,
     einkommen_für_mindesteinkommen_m_wthh: float,
@@ -127,23 +118,13 @@ def mindesteinkommen_erreicht_wthh(
 
     The allowance for discretionary judgment is ignored here.
 
-    Parameters
-    ----------
-    arbeitslosengeld_2__regelbedarf_m_wthh
-        See :func:`arbeitslosengeld_2__regelbedarf_m_wthh`.
-    einkommen_für_mindesteinkommen_m_wthh
-        See :func:`einkommen_für_mindesteinkommen_m_wthh`.
-
-    Returns
-    -------
-
     """
     return (
         einkommen_für_mindesteinkommen_m_wthh >= arbeitslosengeld_2__regelbedarf_m_wthh
     )
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def mindesteinkommen_erreicht_bg(
     arbeitslosengeld_2__regelbedarf_m_bg: float,
     einkommen_für_mindesteinkommen_m_bg: float,
@@ -159,21 +140,11 @@ def mindesteinkommen_erreicht_bg(
 
     The allowance for discretionary judgment is ignored here.
 
-    Parameters
-    ----------
-    arbeitslosengeld_2__regelbedarf_m_bg
-        See :func:`arbeitslosengeld_2__regelbedarf_m_bg`.
-    einkommen_für_mindesteinkommen_m_bg
-        See :func:`einkommen_für_mindesteinkommen_m_bg`.
-
-    Returns
-    -------
-
     """
     return einkommen_für_mindesteinkommen_m_bg >= arbeitslosengeld_2__regelbedarf_m_bg
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def einkommen_für_mindesteinkommen_m(
     arbeitslosengeld_2__nettoeinkommen_vor_abzug_freibetrag_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
@@ -188,22 +159,6 @@ def einkommen_für_mindesteinkommen_m(
     According to BMI Erlass of 11.03.2020, Unterhaltsvorschuss, Kinderzuschlag and
     Kindergeld count as income for this check.
 
-    Parameters
-    ----------
-    arbeitslosengeld_2__nettoeinkommen_vor_abzug_freibetrag_m
-        See :func:`arbeitslosengeld_2__nettoeinkommen_vor_abzug_freibetrag_m`.
-    unterhalt__tatsächlich_erhaltener_betrag_m
-        See :func:`unterhalt__tatsächlich_erhaltener_betrag_m`.
-    unterhaltsvorschuss__betrag_m
-        See :func:`unterhaltsvorschuss__betrag_m`.
-    kindergeld__betrag_m
-        See :func:`kindergeld__betrag_m`.
-    kinderzuschlag__anspruchshöhe_m
-        See :func:`kinderzuschlag__anspruchshöhe_m`.
-
-    Returns
-    -------
-
     """
 
     return (
@@ -213,32 +168,3 @@ def einkommen_für_mindesteinkommen_m(
         + kindergeld__betrag_m
         + kinderzuschlag__anspruchshöhe_m
     )
-
-
-def vermögensprüfung(
-    vermögen: float,
-    anzahl_personen: int,
-    params: dict,
-) -> bool:
-    """Wealth check for housing benefit calculation.
-
-    The payment depends on the wealth of the household and the number of household
-    members.
-
-    Note: This function is not a direct target in the DAG, but a helper function to
-    re-use code in various places
-
-    """
-
-    vermögensfreibetrag = params["parameter_vermögensfreibetrag"][
-        "grundfreibetrag"
-    ] + params["parameter_vermögensfreibetrag"]["je_weitere_person"] * (
-        anzahl_personen - 1
-    )
-
-    if vermögen <= vermögensfreibetrag:
-        out = True
-    else:
-        out = False
-
-    return out
