@@ -13,6 +13,13 @@ inputs:
       - 15
       - 6
       - 5
+    alter_monate:
+      - 516
+      - 576
+      - 168
+      - 180
+      - 72
+      - 60
     anzahl_personen_hh:
       - 6
       - 6
