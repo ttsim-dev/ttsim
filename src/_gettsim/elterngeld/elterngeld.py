@@ -253,6 +253,9 @@ def lohnersatzanteil(
     return out
 
 
+# TODO(@MImmesberger): Elterngeld is considered as SGB II income since 2011. Also, there
+# is a 300€ Freibetrag under some conditions since 2011.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/549
 @policy_function(start_date="2007-01-01")
 def anrechenbarer_betrag_m(
     betrag_m: float,
