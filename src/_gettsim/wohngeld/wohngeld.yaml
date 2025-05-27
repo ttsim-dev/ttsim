@@ -1,17 +1,23 @@
 ---
 max_anzahl_personen:
   name:
-    de: Maximale Anzahl an Personen
-    en: Maximum number of persons
+    de: Maximale Anzahl an Personen für die Wohngeldformel
+    en: Maximum number of persons for the Wohngeld formula
   description:
     de: >-
-      `normale_berechnung` ist der Maximalwert an berücksichtigten Personen, für welche
-      die Wohngeldformel im Gesetz spezifiziert ist. `indizierung` ist kein
-      Politikparameter, sondern bestimmt die Größe der Lookup-Tabelle
+      Dies sind rein technische Parameter, welche für das korrekte Setzen der
+      Datenstrukturen notwendig sind.
+      - `normale_berechnung` ist der Maximalwert an berücksichtigten Personen, für
+        welche die Wohngeldformel im Gesetz spezifiziert ist.
+      - `indizierung` hat keinerlei Referenz zu einem Gesetz und ist somit kein
+        Politikparameter, sondern bestimmt die Größe der Lookup-Tabellen.
     en: >-
-      `normale_berechnung` is the maximum number of persons considered for the
-      calculation of the housing allowance. `indizierung` is not a policy parameter,
-      but determines the size of the lookup table.
+      These are purely technical parameters that are necessary for the correct
+      setting of the data structures.
+      - `normale_berechnung` is the maximum number of persons considered for the
+        calculation of the housing allowance.
+      - `indizierung` is not a policy parameter, but determines the size of the
+        lookup tables.
   unit: null
   reference_period: null
   type: dict

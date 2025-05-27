@@ -96,26 +96,3 @@ faktoren_minijobformel:
     zähler: 130
     nenner: 3
     reference: Art. 7 G. v. 28.06.2022 BGBl. I S. 969
-minijob_arbeitgeberpauschale_lohnsteuer:
-  name:
-    de: Pauschalierte Lohnsteuer bei geringfügiger Beschäftigung
-    en: Fixed income tax rate for marginal employment
-  description:
-    de: >-
-      Pauschalierte Lohnsteuer des Arbeitgebers bei geringfügiger Beschäftigung
-      (§40a II EStG)
-    en: Fixed income tax rate for marginal employment (§40a II EStG)
-  unit: Share
-  reference_period: null
-  type: scalar
-  add_jahresanfang: true
-  1984-01-01:
-    value: 0
-  1999-01-01:
-    value: 0
-  2003-04-01:
-    value: 0.02
-  2007-01-01:
-    value: 0.02
-  2022-10-01:
-    note: Ceased to exist
