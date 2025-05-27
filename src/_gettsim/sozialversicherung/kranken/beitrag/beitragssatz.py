@@ -155,15 +155,6 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     """Employee's health insurance contribution rate.
 
     Since 2019. Zusatzbeitrag is split equally between employers and employees.
-
-    Parameters
-    ----------
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
     return (
         parameter_beitragssatz["allgemein"]

@@ -140,19 +140,6 @@ def miete_m_wthh(
 
     This target is used to calculate the actual Wohngeld of all Bedarfsgemeinschaften
     that passed the priority check against Arbeitslosengeld II / Bürgergeld.
-
-    Parameters
-    ----------
-    miete_m_hh
-        See :func:`miete_m_hh`.
-    anzahl_personen_wthh
-        See :func:`anzahl_personen_wthh`.
-    anzahl_personen_hh
-        See :func:`anzahl_personen_hh`.
-
-    Returns
-    -------
-
     """
     return miete_m_hh * (anzahl_personen_wthh / anzahl_personen_hh)
 
@@ -167,19 +154,6 @@ def miete_m_bg(
 
     This target is used for the priority check calculation against Arbeitslosengeld II /
     Bürgergeld on the Bedarfsgemeinschaft level.
-
-    Parameters
-    ----------
-    miete_m_hh
-        See :func:`miete_m_hh`.
-    arbeitslosengeld_2__anzahl_personen_bg
-        See :func:`arbeitslosengeld_2__anzahl_personen_bg`.
-    anzahl_personen_hh
-        See :func:`anzahl_personen_hh`.
-
-    Returns
-    -------
-
     """
     return miete_m_hh * (arbeitslosengeld_2__anzahl_personen_bg / anzahl_personen_hh)
 

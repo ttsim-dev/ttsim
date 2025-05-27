@@ -12,17 +12,6 @@ def betrag_y(
 ) -> float:
     """Taxable income from dependent employment. In particular, taxable income is set to
     0 for marginally employed persons.
-
-    Parameters
-    ----------
-    betrag_ohne_minijob_y
-        See :func:`betrag_ohne_minijob_y`.
-    sozialversicherung__geringfügig_beschäftigt
-        See :func:`sozialversicherung__geringfügig_beschäftigt`.
-
-    Returns
-    -------
-
     """
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0

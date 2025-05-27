@@ -65,15 +65,6 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
 ) -> float:
     """Income tax calculation on Steuernummer level allowing for claiming
     Kinderfreibetrag and receiving Kindergeld at the same time.
-
-    Parameters
-    ----------
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-
-    Returns
-    -------
-
     """
     return betrag_mit_kinderfreibetrag_y_sn
 
@@ -91,23 +82,7 @@ def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
     kinderfreibetrag_günstiger_sn: bool,
     relevantes_kindergeld_y_sn: float,
 ) -> float:
-    """Income tax calculation on Steuernummer level since 1997.
-
-    Parameters
-    ----------
-    betrag_ohne_kinderfreibetrag_y_sn
-        See :func:`betrag_ohne_kinderfreibetrag_y_sn`.
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-    kinderfreibetrag_günstiger_sn
-        See :func:`kinderfreibetrag_günstiger_sn`.
-    relevantes_kindergeld_y_sn
-        See :func:`relevantes_kindergeld_y_sn`.
-
-    Returns
-    -------
-
-    """
+    """Income tax calculation on Steuernummer level since 1997."""
     if kinderfreibetrag_günstiger_sn:
         out = betrag_mit_kinderfreibetrag_y_sn + relevantes_kindergeld_y_sn
     else:
@@ -122,20 +97,7 @@ def kinderfreibetrag_günstiger_sn(
     betrag_mit_kinderfreibetrag_y_sn: float,
     relevantes_kindergeld_y_sn: float,
 ) -> bool:
-    """Kinderfreibetrag more favorable than Kindergeld.
-
-    Parameters
-    ----------
-    betrag_ohne_kinderfreibetrag_y_sn
-        See :func:`betrag_ohne_kinderfreibetrag_y_sn`.
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-    relevantes_kindergeld_y_sn
-        See :func:`relevantes_kindergeld_y_sn`.
-    Returns
-    -------
-
-    """
+    """Kinderfreibetrag more favorable than Kindergeld."""
     unterschiedsbeitrag = (
         betrag_ohne_kinderfreibetrag_y_sn - betrag_mit_kinderfreibetrag_y_sn
     )
@@ -196,11 +158,9 @@ def betrag_ohne_kinderfreibetrag_y_sn(
 
     """
     zu_verst_eink_per_indiv = gesamteinkommen_y / anzahl_personen_sn
-    out = anzahl_personen_sn * einkommensteuertarif(
+    return anzahl_personen_sn * einkommensteuertarif(
         x=zu_verst_eink_per_indiv, params=parameter_einkommensteuertarif
     )
-
-    return out
 
 
 @policy_function(

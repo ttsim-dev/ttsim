@@ -17,21 +17,7 @@ def zu_versteuerndes_einkommen_y_sn_mit_abrundungsregel(
     einkommensteuer__gesamteinkommen_y: float,
     kinderfreibetrag_günstiger_sn: bool,
 ) -> float:
-    """Calculate taxable income on Steuernummer level.
-
-    Parameters
-    ----------
-    zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn
-        See :func:`zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn`.
-    einkommensteuer__gesamteinkommen_y
-        See :func:`einkommensteuer__gesamteinkommen_y`.
-    kinderfreibetrag_günstiger_sn
-        See :func:`kinderfreibetrag_günstiger_sn`.
-
-    Returns
-    -------
-
-    """
+    """Calculate taxable income on Steuernummer level."""
     if kinderfreibetrag_günstiger_sn:
         out = zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn
     else:
@@ -56,21 +42,7 @@ def zu_versteuerndes_einkommen_y_sn_mit_grober_54er_rundungsregel(
     einkommensteuer__gesamteinkommen_y: float,
     kinderfreibetrag_günstiger_sn: bool,
 ) -> float:
-    """Calculate taxable income on Steuernummer level.
-
-    Parameters
-    ----------
-    zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn
-        See :func:`zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn`.
-    einkommensteuer__gesamteinkommen_y
-        See :func:`einkommensteuer__gesamteinkommen_y`.
-    kinderfreibetrag_günstiger_sn
-        See :func:`kinderfreibetrag_günstiger_sn`.
-
-    Returns
-    -------
-
-    """
+    """Calculate taxable income on Steuernummer level."""
     if kinderfreibetrag_günstiger_sn:
         out = zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn
     else:
@@ -94,21 +66,7 @@ def zu_versteuerndes_einkommen_y_sn_mit_dmark_rundungsregel(
     einkommensteuer__gesamteinkommen_y: float,
     kinderfreibetrag_günstiger_sn: bool,
 ) -> float:
-    """Calculate taxable income on Steuernummer level.
-
-    Parameters
-    ----------
-    zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn
-        See :func:`zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn`.
-    einkommensteuer__gesamteinkommen_y
-        See :func:`einkommensteuer__gesamteinkommen_y`.
-    kinderfreibetrag_günstiger_sn
-        See :func:`kinderfreibetrag_günstiger_sn`.
-
-    Returns
-    -------
-
-    """
+    """Calculate taxable income on Steuernummer level."""
     if kinderfreibetrag_günstiger_sn:
         out = zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn
     else:
@@ -122,19 +80,7 @@ def zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn(
     einkommensteuer__gesamteinkommen_y: float,
     kinderfreibetrag_y_sn: float,
 ) -> float:
-    """Calculate taxable income with child allowance on Steuernummer level.
-
-    Parameters
-    ----------
-    einkommensteuer__gesamteinkommen_y
-        See :func:`einkommensteuer__gesamteinkommen_y`.
-    kinderfreibetrag_y_sn
-        See :func:`kinderfreibetrag_y_sn`.
-
-    Returns
-    -------
-
-    """
+    """Calculate taxable income with child allowance on Steuernummer level."""
 
     out = einkommensteuer__gesamteinkommen_y - kinderfreibetrag_y_sn
     return max(out, 0.0)

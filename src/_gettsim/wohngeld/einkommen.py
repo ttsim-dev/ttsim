@@ -129,8 +129,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
     eink_ind = (
         einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
     )
-    out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
-    return out
+    return (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
 
 
 @policy_function(start_date="2007-01-01", leaf_name="einkommen_vor_freibetrag_m")
@@ -174,8 +173,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     eink_ind = (
         einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
     )
-    out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
-    return out
+    return (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
 
 
 @policy_function(
@@ -265,7 +263,6 @@ def ist_kind_mit_erwerbseinkommen(
     kindergeld__grundsätzlich_anspruchsberechtigt: bool,
 ) -> bool:
     """Check if children are working."""
-    out = (
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m > 0
     ) and kindergeld__grundsätzlich_anspruchsberechtigt
-    return out

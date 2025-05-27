@@ -31,14 +31,6 @@ def anzahl_kinderfreibeträge(
     Note: Users should overwrite this function if there are single parents in the data
     who should receive two instead of one Kinderfreibeträge. GETTSIM does not
     automatically do this, even if the p_id of the other parent is set to missing (-1).
-
-    Parameters
-    ----------
-    anzahl_kinderfreibeträge_1
-        See :func:`p_id_kinderfreibetr_empfänger_1 <p_id_kinderfreibetr_empfänger_1>`.
-    anzahl_kinderfreibeträge_2
-        See :func:`p_id_kinderfreibetr_empfänger_2 <p_id_kinderfreibetr_empfänger_2>`.
-
     """
     return anzahl_kinderfreibeträge_1 + anzahl_kinderfreibeträge_2
 
@@ -65,17 +57,7 @@ def anzahl_kinderfreibeträge_2(
 def p_id_kinderfreibetragsempfänger_1(
     familie__p_id_elternteil_1: int,
 ) -> int:
-    """Assigns child allowance to parent 1.
-
-    Parameters
-    ----------
-    familie__p_id_elternteil_1
-        See :func:`familie__p_id_elternteil_1`.
-
-    Returns
-    -------
-
-    """
+    """Assigns child allowance to parent 1."""
     return familie__p_id_elternteil_1
 
 
@@ -83,15 +65,5 @@ def p_id_kinderfreibetragsempfänger_1(
 def p_id_kinderfreibetragsempfänger_2(
     familie__p_id_elternteil_2: int,
 ) -> int:
-    """Assigns child allowance to parent 2.
-
-    Parameters
-    ----------
-    familie__p_id_elternteil_2
-        See :func:`familie__p_id_elternteil_2`.
-
-    Returns
-    -------
-
-    """
+    """Assigns child allowance to parent 2."""
     return familie__p_id_elternteil_2

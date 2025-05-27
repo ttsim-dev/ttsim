@@ -115,19 +115,7 @@ def kind_bis_10_mit_kindergeld(
     alter: int,
     grundsätzlich_anspruchsberechtigt: bool,
 ) -> bool:
-    """Child under the age of 11 and eligible for Kindergeld.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt_nach_stunden`.
-
-    Returns
-    -------
-
-    """
+    """Child under the age of 11 and eligible for Kindergeld."""
     return grundsätzlich_anspruchsberechtigt and (alter <= 10)
 
 
@@ -137,21 +125,7 @@ def gleiche_fg_wie_empfänger(
     p_id_empfänger: np.ndarray,  # int
     fg_id: np.ndarray,  # int
 ) -> np.ndarray:  # bool
-    """The child's Kindergeldempfänger is in the same Familiengemeinschaft.
-
-    Parameters
-    ----------
-    p_id
-        See basic input variable :ref:`p_id <p_id>`.
-    p_id_empfänger
-        See basic input variable :ref:`p_id_empfänger <p_id_empfänger>`.
-    fg_id
-        See basic input variable :ref:`fg_id <fg_id>`.
-
-    Returns
-    -------
-
-    """
+    """The child's Kindergeldempfänger is in the same Familiengemeinschaft."""
     fg_id_kindergeldempfänger = join(
         p_id_empfänger,
         p_id,

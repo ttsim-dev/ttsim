@@ -29,19 +29,6 @@ def wohngeld_vorrang_vor_arbeitslosengeld_2_bg(
 
     Housing benefit has priority if the sum of housing benefit and income covers the
     needs according to SGB II of the Bedarfsgemeinschaft.
-
-    Parameters
-    ----------
-    arbeitslosengeld_2__regelbedarf_m_bg
-        See :func:`arbeitslosengeld_2__regelbedarf_m_bg`.
-    arbeitslosengeld_2__anzurechnendes_einkommen_m_bg
-        See :func:`arbeitslosengeld_2__anzurechnendes_einkommen_m_bg`.
-    wohngeld__anspruchshöhe_m_bg
-        See :func:`wohngeld__anspruchshöhe_m_bg`.
-
-    Returns
-    -------
-
     """
     return (
         arbeitslosengeld_2__anzurechnendes_einkommen_m_bg + wohngeld__anspruchshöhe_m_bg
@@ -55,21 +42,7 @@ def kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg(
     arbeitslosengeld_2__anzurechnendes_einkommen_m_bg: float,
     kinderzuschlag__anspruchshöhe_m_bg: float,
 ) -> bool:
-    """Check if child benefit has priority.
-
-    Parameters
-    ----------
-    arbeitslosengeld_2__regelbedarf_m_bg
-        See :func:`arbeitslosengeld_2__regelbedarf_m_bg`.
-    arbeitslosengeld_2__anzurechnendes_einkommen_m_bg
-        See :func:`arbeitslosengeld_2__anzurechnendes_einkommen_m_bg`.
-    kinderzuschlag__anspruchshöhe_m_bg
-        See :func:`kinderzuschlag__anspruchshöhe_m_bg`.
-
-    Returns
-    -------
-
-    """
+    """Check if child benefit has priority."""
     return (
         arbeitslosengeld_2__anzurechnendes_einkommen_m_bg
         + kinderzuschlag__anspruchshöhe_m_bg
@@ -84,23 +57,7 @@ def wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg(
     kinderzuschlag__anspruchshöhe_m_bg: float,
     wohngeld__anspruchshöhe_m_bg: float,
 ) -> bool:
-    """Check if housing and child benefit have priority.
-
-    Parameters
-    ----------
-    arbeitslosengeld_2__regelbedarf_m_bg
-        See :func:`arbeitslosengeld_2__regelbedarf_m_bg`.
-    arbeitslosengeld_2__anzurechnendes_einkommen_m_bg
-        See :func:`arbeitslosengeld_2__anzurechnendes_einkommen_m_bg`.
-    kinderzuschlag__anspruchshöhe_m_bg
-        See :func:`kinderzuschlag__anspruchshöhe_m_bg`.
-    wohngeld__anspruchshöhe_m_bg
-        See :func:`wohngeld__anspruchshöhe_m_bg`.
-
-    Returns
-    -------
-
-    """
+    """Check if housing and child benefit have priority."""
 
     return (
         arbeitslosengeld_2__anzurechnendes_einkommen_m_bg
