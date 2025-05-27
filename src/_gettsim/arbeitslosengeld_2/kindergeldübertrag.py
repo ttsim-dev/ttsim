@@ -17,7 +17,9 @@ def kindergeldübertrag_m(
     pass
 
 
-@policy_function(end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m")
+@policy_function(
+    start_date="2005-01-01", end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m"
+)
 def _mean_kindergeld_per_child_gestaffelt_m(
     kindergeld__betrag_m: float,
     kindergeld__anzahl_ansprüche: int,
@@ -41,7 +43,7 @@ def _mean_kindergeld_per_child_gestaffelt_m(
 )
 def _mean_kindergeld_per_child_ohne_staffelung_m(
     kindergeld__anzahl_ansprüche: int,
-    kindergeld__satz_einheitlich: float,
+    kindergeld__satz: float,
 ) -> float:
     """Kindergeld per child.
 
@@ -49,10 +51,10 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
     `kindergeld_zur_bedarfsdeckung_m`.
 
     """
-    return kindergeld__satz_einheitlich if kindergeld__anzahl_ansprüche > 0 else 0.0
+    return kindergeld__satz if kindergeld__anzahl_ansprüche > 0 else 0.0
 
 
-@policy_function(vectorization_strategy="not_required")
+@policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def kindergeld_zur_bedarfsdeckung_m(
     kindergeld_pro_kind_m: float,
     kindergeld__p_id_empfänger: np.ndarray,  # int
@@ -76,7 +78,7 @@ def kindergeld_zur_bedarfsdeckung_m(
     )
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def differenz_kindergeld_kindbedarf_m(
     regelbedarf_m_bg: float,
     nettoeinkommen_nach_abzug_freibetrag_m: float,
@@ -115,7 +117,7 @@ def differenz_kindergeld_kindbedarf_m(
     return out
 
 
-@policy_function(vectorization_strategy="not_required")
+@policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def in_anderer_bg_als_kindergeldempfänger(
     p_id: np.ndarray,  # int
     kindergeld__p_id_empfänger: np.ndarray,  # int

@@ -6,13 +6,13 @@ from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from _gettsim.solidaritätszuschlag.solidaritätszuschlag import (
     solidaritätszuschlagstarif,
 )
-from ttsim import PiecewisePolynomialParameters, policy_function
+from ttsim import PiecewisePolynomialParamValue, policy_function
 
 
 @policy_function(vectorization_strategy="loop")
 def betrag_m(
     einkommen_y: float,
-    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     steuerklasse: int,
     einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
 ) -> float:
@@ -30,7 +30,7 @@ def betrag_mit_kinderfreibetrag_m(
     einkommen_y: float,
     kinderfreibetrag_soli_y: float,
     steuerklasse: int,
-    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
 ) -> float:
     """Withholding tax taking child allowances into account.
@@ -53,7 +53,7 @@ def betrag_mit_kinderfreibetrag_m(
 @policy_function(vectorization_strategy="loop")
 def betrag_soli_y(
     betrag_mit_kinderfreibetrag_y: float,
-    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
 ) -> float:
     """Solidarity surcharge on Lohnsteuer (withholding tax on earnings)."""
 
@@ -86,7 +86,7 @@ def kinderfreibetrag_soli_y(
 
 def lohnsteuerformel(
     einkommen_y: float,
-    parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
     steuerklasse: int,
 ) -> float:
@@ -177,7 +177,7 @@ def lohnsteuerformel(
 
 
 def basis_für_klassen_5_6(
-    einkommen_y: float, parameter_einkommensteuertarif: PiecewisePolynomialParameters
+    einkommen_y: float, parameter_einkommensteuertarif: PiecewisePolynomialParamValue
 ) -> float:
     """Calculate base for Lohnsteuer for steuerklasse 5 and 6, by applying
     obtaining twice the difference between applying the factors 1.25 and 0.75

@@ -280,7 +280,7 @@ class TestCreateFunctionsForTimeUnits:
         self, name: str, expected: list[str]
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            ttsim_objects={name: policy_function(leaf_name=name)(return_one)},
+            column_objects={name: policy_function(leaf_name=name)(return_one)},
             data={},
             groupings=("sn", "kin"),
         )
@@ -290,7 +290,9 @@ class TestCreateFunctionsForTimeUnits:
 
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            ttsim_objects={"test1_d": policy_function(leaf_name="test1_d")(return_one)},
+            column_objects={
+                "test1_d": policy_function(leaf_name="test1_d")(return_one)
+            },
             data={"test2_y": None},
             groupings=("sn", "kin"),
         )
@@ -302,7 +304,7 @@ class TestCreateFunctionsForTimeUnits:
         self,
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            ttsim_objects={"test_d": policy_function(leaf_name="test_d")(return_one)},
+            column_objects={"test_d": policy_function(leaf_name="test_d")(return_one)},
             data={"test_y": None},
             groupings=("sn", "kin"),
         )
@@ -328,13 +330,14 @@ class TestCreateFunctionForTimeUnit:
         assert function(1) == 7
 
 
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
 def test_should_not_create_cycle():
+    # Check for:
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
     def x(test_m: int) -> int:
         return test_m
 
     time_conversion_functions = create_time_conversion_functions(
-        ttsim_objects={"test_d": policy_function(leaf_name="test_d")(x)},
+        column_objects={"test_d": policy_function(leaf_name="test_d")(x)},
         data={},
         groupings=(),
     )

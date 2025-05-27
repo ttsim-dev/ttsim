@@ -17,7 +17,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 - {gh}`885`, {gh}`886`: Cleanups ({ghuser}`MImmesberger`).
 - {gh}`867` Vectorize `piecewise_polynomial` ({ghuser}`mj023`).
 - {gh}`880` Validate parameter files using json schema ({ghuser}`hmgaudecker`).
-- {gh}`876` Add DataFrame to NestedDataDict conversion ({ghuser}`MImmesberger`).
+- {gh}`876` Add DataFrame to NestedData conversion ({ghuser}`MImmesberger`).
 - {gh}`873` Implement aggregation decorators ({ghuser}`hmgaudecker`, `MImmesberger`).
 - {gh}`859` Add RoundingSpec dataclass ({ghuser}`hmgaudecker`, `MImmesberger`).
 - {gh}`854` Add PolicyInput class and update hierarchy of TTSIM objects
