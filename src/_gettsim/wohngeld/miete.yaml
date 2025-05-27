@@ -4,8 +4,16 @@ raw_min_miete:
     de: Minimalwert für Parameter M der Wohngeldformel
     en: Minimum value for parameter M of the Wohngeld formula
   description:
-    de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
-    en: null
+    de: >-
+      WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
+      Parameter ist abhängig von der Anzahl der Haushaltsmitglieder. Keys in den
+      Parameter-Dicts beziehen sich auf die Anzahl der Haushaltsmitglieder. Bei mehr als
+      12 Mitgliedern wird der Wert für 12 Mitglieder verwendet.
+    en: >-
+      WoGG - Appendix 3 (until 2019 Appendix 2) (to § 19 (2))
+      Parameter is dependent on the number of household members. Keys in the parameter
+      dicts refer to the number of household members. If there are more than 12 members,
+      the value for 12 members is used.
   unit: Euros
   reference_period: Month
   type: dict
