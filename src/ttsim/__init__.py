@@ -24,7 +24,8 @@ from ttsim.compute_taxes_and_transfers import (
     compute_taxes_and_transfers,
 )
 from ttsim.param_objects import (
-    ConsecutiveIntLookupTableParamValue,
+    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveInt2dLookupTableParamValue,
     DictParam,
     ParamObject,
     PiecewisePolynomialParam,
@@ -41,7 +42,8 @@ from ttsim.policy_environment import (
     PolicyEnvironment,
     get_birth_month_based_phase_inout_param_value,
     get_birth_year_based_phase_inout_param_value,
-    get_consecutive_int_lookup_table_param_value,
+    get_consecutive_int_1d_lookup_table_param_value,
+    get_consecutive_int_2d_lookup_table_param_value,
     set_up_policy_environment,
 )
 from ttsim.prepare_data import create_data_tree_from_df
@@ -59,7 +61,8 @@ __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
-    "ConsecutiveIntLookupTableParamValue",
+    "ConsecutiveInt1dLookupTableParamValue",
+    "ConsecutiveInt2dLookupTableParamValue",
     "DictParam",
     "FKType",
     "FunctionsAndColumnsOverlapWarning",
@@ -83,7 +86,8 @@ __all__ = [
     "create_time_conversion_functions",
     "get_birth_month_based_phase_inout_param_value",
     "get_birth_year_based_phase_inout_param_value",
-    "get_consecutive_int_lookup_table_param_value",
+    "get_consecutive_int_1d_lookup_table_param_value",
+    "get_consecutive_int_2d_lookup_table_param_value",
     "get_piecewise_parameters",
     "group_creation_function",
     "insert_path_and_value",

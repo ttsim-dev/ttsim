@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
-from ttsim.param_objects import ConsecutiveIntLookupTableParamValue
+from ttsim.param_objects import (
+    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveInt2dLookupTableParamValue,
+)
 
 
 @dataclass(frozen=True)
@@ -33,7 +36,12 @@ class ExistenzminimumNachAufwendungenMitBildungUndTeilhabe:
 @dataclass(frozen=True)
 class WohngeldBasisformelParamValues:
     skalierungsfaktor: float
-    a: ConsecutiveIntLookupTableParamValue
-    b: ConsecutiveIntLookupTableParamValue
-    c: ConsecutiveIntLookupTableParamValue
-    zusatzbetrag_nach_haushaltsgröße: ConsecutiveIntLookupTableParamValue
+    a: ConsecutiveInt1dLookupTableParamValue
+    b: ConsecutiveInt1dLookupTableParamValue
+    c: ConsecutiveInt1dLookupTableParamValue
+    zusatzbetrag_nach_haushaltsgröße: ConsecutiveInt1dLookupTableParamValue
+
+
+@dataclass(frozen=True)
+class WohngeldMaxMieteNachBaujahrParamValues:
+    max_miete_nach_baujahr: dict[int, ConsecutiveInt2dLookupTableParamValue]

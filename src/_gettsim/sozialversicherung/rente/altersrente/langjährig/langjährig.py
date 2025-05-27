@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
+from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(
@@ -12,7 +12,7 @@ from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
 def altersgrenze_gestaffelt_ab_1989(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """
     Full retirement age (FRA) for long term insured.
@@ -38,7 +38,7 @@ def altersgrenze_gestaffelt_ab_1989(
 )
 def altersgrenze_vorzeitig_gestaffelt_ab_1989_bis_1996(
     geburtsjahr: int,
-    altersgrenze_vorzeitig_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_vorzeitig_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Early retirement age (ERA) for Renten für langjährig Versicherte.
 

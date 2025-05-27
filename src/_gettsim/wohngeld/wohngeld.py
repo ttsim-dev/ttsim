@@ -23,7 +23,7 @@ from ttsim import (
     AggType,
     RoundingSpec,
     agg_by_group_function,
-    get_consecutive_int_lookup_table_param_value,
+    get_consecutive_int_1d_lookup_table_param_value,
     param_function,
     policy_function,
 )
@@ -163,10 +163,10 @@ def basisformel_params(
 
     return WohngeldBasisformelParamValues(
         skalierungsfaktor=skalierungsfaktor,
-        a=get_consecutive_int_lookup_table_param_value(a),
-        b=get_consecutive_int_lookup_table_param_value(b),
-        c=get_consecutive_int_lookup_table_param_value(c),
-        zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_lookup_table_param_value(
+        a=get_consecutive_int_1d_lookup_table_param_value(a),
+        b=get_consecutive_int_1d_lookup_table_param_value(b),
+        c=get_consecutive_int_1d_lookup_table_param_value(c),
+        zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_1d_lookup_table_param_value(
             zusatzbetrag_nach_haushaltsgröße
         ),
     )

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from ttsim import (
     AggType,
-    ConsecutiveIntLookupTableParamValue,
+    ConsecutiveInt1dLookupTableParamValue,
     PiecewisePolynomialParamValue,
     agg_by_p_id_function,
     piecewise_polynomial,
@@ -73,7 +73,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y: float,
     familie__kind: bool,
-    abzugsbeträge_steuern_sozialversicherung: ConsecutiveIntLookupTableParamValue,
+    abzugsbeträge_steuern_sozialversicherung: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Calculate housing benefit subtractions on the individual level.
 

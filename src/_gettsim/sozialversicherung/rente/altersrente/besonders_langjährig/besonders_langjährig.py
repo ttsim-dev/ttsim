@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
+from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(
@@ -10,7 +10,7 @@ from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
     end_date="2028-12-31",
 )
 def altersgrenze(
-    geburtsjahr: int, altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue
+    geburtsjahr: int, altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue
 ) -> float:
     """
     Full retirement age (FRA) for very long term insured.

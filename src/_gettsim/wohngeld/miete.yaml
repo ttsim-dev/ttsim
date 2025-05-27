@@ -1,5 +1,5 @@
 ---
-min_miete:
+raw_min_miete:
   name:
     de: Minimalwert für Parameter M der Wohngeldformel
     en: Minimum value for parameter M of the Wohngeld formula
@@ -90,17 +90,16 @@ min_miete:
     10: 152
     11: 187
     12: 298
-max_miete:
+raw_max_miete_nach_baujahr:
   name:
-    de: Höchstbeträge für Miete und Belastung
-    en: Maximum values for rent and burden
+    de: Höchstbeträge für Miete und Belastung, nach Baujahr der Immobilie
+    en: Maximum values for rent and burden, by year of construction of the property
   description:
     de: >-
-      Anlage 1 WoGG, bis 2019 §12 (1) WoGG. Vor 2009 §8 (1) WoGG. Seit 2022 auch §24
-      Wohngeldverordnung (WoGV).
+      Anlage 1 WoGG, §8 (1) WoGG.
       Die Werte sind geordnet nach
       - Anzahl Personen
-      - maximales Baujahr des Hauses (vor 2009)
+      - maximales Baujahr des Hauses
       - Mietstufe
     en: null
   unit: Euros
@@ -933,6 +932,7 @@ max_miete:
         3: 420
         4: 454
         5: 520
+        6: 550  # FixMe: made up
       1991:
         1: 400
         2: 425
@@ -993,6 +993,22 @@ max_miete:
         6: 90
     reference: Art. 5 G. v. 22.12.1999, BGBl I S. 2671.
     note: Nimmt die Umrechnung in Euro von 2002 vorweg.
+  2009-01-01:
+    note: Keine Differenzierung nach Baujahr, siehe `raw_max_miete`.
+raw_max_miete:
+  name:
+    de: Höchstbeträge für Miete und Belastung
+    en: Maximum values for rent and burden
+  description:
+    de: >-
+      Anlage 1 WoGG, bis 2019 §12 (1) WoGG. Seit 2022 auch §24 Wohngeldverordnung
+      (WoGV). Die Werte sind geordnet nach
+      - Anzahl Personen
+      - Mietstufe
+    en: null
+  unit: Euros
+  reference_period: Month
+  type: require_converter
   2009-01-01:
     1:
       1: 292
@@ -1231,7 +1247,7 @@ max_miete:
       5: 129
       6: 149
       7: 163
-heizkostenentlastung_m:
+raw_heizkostenentlastung_m:
   name:
     de: Heizkostenentlastung aufgrund der CO2-Bepreisung
     en: Reduction in heating costs due to CO2 pricing
@@ -1244,7 +1260,7 @@ heizkostenentlastung_m:
       household size
   unit: Euros
   reference_period: Month
-  type: dict
+  type: require_converter
   2021-01-01:
     reference: §12 (6) WoGG, Art. 1 G. v. 15.05.2020, BGBl I S. 1015.
     1: 14.4
@@ -1253,7 +1269,7 @@ heizkostenentlastung_m:
     4: 25.8
     5: 29.4
     jede_weitere_person: 3.6
-dauerhafte_heizkostenkomponente_m:
+raw_dauerhafte_heizkostenkomponente_m:
   name:
     de: Dauerhafte Heizkostenkomponente
     en: Permanent heating cost component
@@ -1266,7 +1282,7 @@ dauerhafte_heizkostenkomponente_m:
       housing subsidy reform 2023
   unit: Euros
   reference_period: Month
-  type: dict
+  type: require_converter
   2023-01-01:
     reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160
     1: 96
@@ -1275,10 +1291,10 @@ dauerhafte_heizkostenkomponente_m:
     4: 172
     5: 196
     jede_weitere_person: 24
-klimakomponente_m:
+raw_klimakomponente_m:
   name:
     de: Klimakomponente
-    en: climate component
+    en: Climate component
   description:
     de: >-
       Als Klimakomponente zu berücksichtigender Zuschlag zu den Höchstbeträgen nach §12
@@ -1290,7 +1306,7 @@ klimakomponente_m:
       introduced with the housing subsidy reform 2023
   unit: Euros
   reference_period: Month
-  type: dict
+  type: require_converter
   2023-01-01:
     reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160
     1: 19.20

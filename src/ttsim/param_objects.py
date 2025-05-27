@@ -86,14 +86,27 @@ class PiecewisePolynomialParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class ConsecutiveIntLookupTableParam(ParamObject):
+class ConsecutiveInt1dLookupTableParam(ParamObject):
     """A parameter with its contents read and converted from a YAML file.
 
-    Its value is a ConsecutiveIntLookupTableParamValue object, i.e., it contains the
+    Its value is a ConsecutiveInt1dLookupTableParamValue object, i.e., it contains the
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveIntLookupTableParamValue
+    value: ConsecutiveInt1dLookupTableParamValue
+    note: str | None = None
+    reference: str | None = None
+
+
+@dataclass(frozen=True)
+class ConsecutiveInt2dLookupTableParam(ParamObject):
+    """A parameter with its contents read and converted from a YAML file.
+
+    Its value is a ConsecutiveInt2dLookupTableParamValue object, i.e., it contains the
+    parameters for calling `lookup_table`.
+    """
+
+    value: ConsecutiveInt2dLookupTableParamValue
     note: str | None = None
     reference: str | None = None
 
@@ -123,8 +136,17 @@ class PiecewisePolynomialParamValue:
 
 
 @dataclass(frozen=True)
-class ConsecutiveIntLookupTableParamValue:
+class ConsecutiveInt1dLookupTableParamValue:
     """The parameters expected by lookup_table"""
 
     base_to_subtract: int
+    values_to_look_up: np.ndarray
+
+
+@dataclass(frozen=True)
+class ConsecutiveInt2dLookupTableParamValue:
+    """The parameters expected by lookup_table"""
+
+    base_to_subtract_rows: int
+    base_to_subtract_cols: int
     values_to_look_up: np.ndarray
