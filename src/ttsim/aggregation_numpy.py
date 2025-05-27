@@ -7,7 +7,7 @@ import numpy_groupies as npg
 def grouped_count(group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if_dtype_not_int(group_id, agg_func="grouped_count")
     out_on_hh = npg.aggregate(
-        group_id, numpy.ones(len(group_id)), func="sum", fill_value=0
+        group_id, numpy.ones(len(group_id), dtype=int), func="sum", fill_value=0
     )
 
     return out_on_hh[group_id]

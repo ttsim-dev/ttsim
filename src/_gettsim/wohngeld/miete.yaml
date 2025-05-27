@@ -1,559 +1,19 @@
 ---
-faktor_berechnungsformel:
-  name:
-    de: Faktor am Anfang der Wohngeldformel
-    en: Factor at the beginning of the Wohngeld formula
-  description:
-    de: Anlage 2 WoGG zu §19 Abs. 2 WoGG
-    en: null
-  unit: null
-  reference_period: null
-  type: scalar
-  1984-01-01:
-    value: 1
-  2009-01-01:
-    value: 1.08
-    reference: Art. 1 G. v. 24.09 2008 BGBl. I S. 1856
-  2016-01-01:
-    value: 1.15
-    reference: Art. 1 G. v. 08.10.2015 BGBl 38 S.1610
-koeffizienten_berechnungsformel:
-  name:
-    de: Parameter a, b, c der Wohngeldformel
-    en: Parameters a, b, c of the Wohngeld formula
-  description:
-    de: >-
-      WoGG - Anlage 2 (bis 2019 Anlage 1) (zu § 19 (1)). Seit 2022 auch §24
-      Wohngeldverordnung (WoGV).
-      Die Schlüssel von 1 to 12 beziehen sich auf die Haushaltsgröße.
-    en: The keys from 1 to 12 below refer to the household size.
-  unit: null
-  reference_period: null
-  type: require_converter
-  1984-01-01:
-    note: Parameter aus Regressionsanalyse der Wohngeldtabellen
-    1:
-      a: 0.0532
-      b: 0.00135
-      c: 0.0000632
-    2:
-      a: 0.0574
-      b: 0.000957
-      c: 0.0000352
-    3:
-      a: 0.0612
-      b: 0.00078
-      c: 0.0000202
-    4:
-      a: 0.0596
-      b: 0.000613
-      c: 2.78e-06
-    5:
-      a: 0.0572
-      b: 0.000554
-      c: 5.38e-07
-    6:
-      a: 0.0365
-      b: 0.000531
-      c: 4.62e-06
-    7:
-      a: 0.0129
-      b: 0.000502
-      c: 0.0000124
-    8:
-      a: -0.0176
-      b: 0.000468
-      c: 0.0000253
-    9:
-      a: -0.0397
-      b: 0.000424
-      c: 0.0000364
-    10:
-      a: -0.0595
-      b: 0.000373
-      c: 0.0000481
-    11:
-      a: -0.0595
-      b: 0.000373
-      c: 0.0000481
-    12:
-      a: -0.0595
-      b: 0.000373
-      c: 0.0000481
-  1990-01-01:
-    note: Parameter aus Regressionsanalyse der Wohngeldtabellen
-    1:
-      a: 0.0648
-      b: 0.00102
-      c: 0.0000613
-    2:
-      a: 0.0694
-      b: 0.000715
-      c: 0.0000347
-    3:
-      a: 0.0741
-      b: 0.000604
-      c: 0.000011
-    4:
-      a: 0.0669
-      b: 0.000476
-      c: 1.75e-06
-    5:
-      a: 0.064
-      b: 0.00043
-      c: 9.14e-07
-    6:
-      a: 0.0445
-      b: 0.000414
-      c: 4.02e-06
-    7:
-      a: 0.0226
-      b: 0.000397
-      c: 9.44e-06
-    8:
-      a: -0.0005
-      b: 0.000387
-      c: 0.0000136
-    9:
-      a: -0.0281
-      b: 0.000337
-      c: 0.0000308
-    10:
-      a: -0.0455
-      b: 0.000298
-      c: 0.0000386
-    11:
-      a: -0.0455
-      b: 0.000298
-      c: 0.0000386
-    12:
-      a: -0.0455
-      b: 0.000298
-      c: 0.0000386
-  1992-01-01:
-    note: Parameter aus Regressionsanalyse der Wohngeldtabellen
-    1:
-      a: 0.0666
-      b: 0.00102
-      c: 0.0000579
-    2:
-      a: 0.0716
-      b: 0.000713
-      c: 0.0000317
-    3:
-      a: 0.0748
-      b: 0.000604
-      c: 0.0000102
-    4:
-      a: 0.0671
-      b: 0.000475
-      c: 1.63e-06
-    5:
-      a: 0.0642
-      b: 0.00043
-      c: 8.96e-07
-    6:
-      a: 0.0463
-      b: 0.000419
-      c: 1.35e-06
-    7:
-      a: 0.0256
-      b: 0.000404
-      c: 5.66e-06
-    8:
-      a: -0.00252
-      b: 0.000377
-      c: 0.0000173
-    9:
-      a: -0.00252
-      b: 0.000377
-      c: 0.0000173
-    10:
-      a: -0.00252
-      b: 0.000377
-      c: 0.0000173
-    11:
-      a: -0.00252
-      b: 0.000377
-      c: 0.0000173
-    12:
-      a: -0.00252
-      b: 0.000377
-      c: 0.0000173
-  2001-01-01:
-    reference: Art. 5 G. v. 22.12.1999 BGBl. I S. 2671
-    1:
-      a: 0.063
-      b: 0.000796
-      c: 0.00009102
-    2:
-      a: 0.057
-      b: 0.000576
-      c: 0.00006431
-    3:
-      a: 0.055
-      b: 0.000518
-      c: 0.0000325
-    4:
-      a: 0.047
-      b: 0.000395
-      c: 0.00002325
-    5:
-      a: 0.042
-      b: 0.000348
-      c: 0.00002151
-    6:
-      a: 0.037
-      b: 0.000327
-      c: 0.00001519
-    7:
-      a: 0.033
-      b: 0.000313
-      c: 8.745e-06
-    8:
-      a: 0.023
-      b: 0.000296
-      c: 7.44e-06
-    9:
-      a: -0.017
-      b: 0.000225
-      c: 0.00003522
-    10:
-      a: -0.037
-      b: 0.000157
-      c: 0.00005547
-    11:
-      a: -0.067
-      b: 0.000153
-      c: 0.00005686
-    12:
-      a: -0.092
-      b: 0.000136
-      c: 0.00006182
-  2009-01-01:
-    reference: Art. 1 G. v. 24.09 2008 BGBl. I S. 1856
-    1:
-      a: 0.063
-      b: 0.0007963
-      c: 0.00009102
-    2:
-      a: 0.057
-      b: 0.0005761
-      c: 0.00006431
-    3:
-      a: 0.055
-      b: 0.0005176
-      c: 0.0000325
-    4:
-      a: 0.047
-      b: 0.0003945
-      c: 0.00002325
-    5:
-      a: 0.042
-      b: 0.0003483
-      c: 0.00002151
-    6:
-      a: 0.037
-      b: 0.0003269
-      c: 0.00001519
-    7:
-      a: 0.033
-      b: 0.0003129
-      c: 8.745e-06
-    8:
-      a: 0.023
-      b: 0.0002959
-      c: 7.44e-06
-    9:
-      a: -0.0197
-      b: 0.0002245
-      c: 0.00003459
-    10:
-      a: -0.0401
-      b: 0.0001565
-      c: 0.0000514
-    11:
-      a: -0.066
-      b: 0.00012
-      c: 0.00005686
-    12:
-      a: -0.0899
-      b: 0.000109
-      c: 0.00006182
-  2016-01-01:
-    reference: Art. 1 G. v. 08.10.2015 BGBl 38 S.1610
-    1:
-      a: 0.04
-      b: 0.00063
-      c: 0.000138
-    2:
-      a: 0.03
-      b: 0.00044
-      c: 0.000103
-    3:
-      a: 0.02
-      b: 0.00038
-      c: 0.000083
-    4:
-      a: 0.01
-      b: 0.00034
-      c: 0.000043
-    5:
-      a: 0
-      b: 0.0003
-      c: 0.000042
-    6:
-      a: -0.01
-      b: 0.00028
-      c: 0.000036
-    7:
-      a: -0.02
-      b: 0.00026
-      c: 0.000037
-    8:
-      a: -0.03
-      b: 0.00023
-      c: 0.000037
-    9:
-      a: -0.04
-      b: 0.0002
-      c: 0.000039
-    10:
-      a: -0.06
-      b: 0.00016
-      c: 0.000045
-    11:
-      a: -0.1
-      b: 0.00012
-      c: 0.000053
-    12:
-      a: -0.14
-      b: 0.00011
-      c: 0.00006
-  2020-01-01:
-    reference: Art. 1 G. v. 30.11.2019 BGBl. I S. 1877
-    1:
-      a: 0.04
-      b: 0.00058
-      c: 0.000118
-    2:
-      a: 0.03
-      b: 0.000405
-      c: 0.000088
-    3:
-      a: 0.02
-      b: 0.00035
-      c: 0.0000709
-    4:
-      a: 0.01
-      b: 0.000313
-      c: 0.0000368
-    5:
-      a: 0
-      b: 0.000276
-      c: 0.0000359
-    6:
-      a: -0.01
-      b: 0.000258
-      c: 0.0000308
-    7:
-      a: -0.02
-      b: 0.000239
-      c: 0.0000316
-    8:
-      a: -0.03
-      b: 0.000212
-      c: 0.0000316
-    9:
-      a: -0.04
-      b: 0.000184
-      c: 0.0000333
-    10:
-      a: -0.06
-      b: 0.000147
-      c: 0.0000385
-    11:
-      a: -0.1
-      b: 0.00011
-      c: 0.0000453
-    12:
-      a: -0.14
-      b: 0.000101
-      c: 0.0000513
-  2022-01-01:
-    reference: V. v. 03.06.2021 BGBl. I S. 1369.
-    1:
-      a: 0.04
-      b: 0.000564
-      c: 0.0001157
-    2:
-      a: 0.03
-      b: 0.000394
-      c: 0.0000863
-    3:
-      a: 0.02
-      b: 0.00034
-      c: 0.0000695
-    4:
-      a: 0.01
-      b: 0.000304
-      c: 0.0000361
-    5:
-      a: 0
-      b: 0.000268
-      c: 0.0000352
-    6:
-      a: -0.01
-      b: 0.000251
-      c: 0.0000302
-    7:
-      a: -0.02
-      b: 0.000232
-      c: 0.000031
-    8:
-      a: -0.03
-      b: 0.000206
-      c: 0.000031
-    9:
-      a: -0.04
-      b: 0.000179
-      c: 0.0000326
-    10:
-      a: -0.06
-      b: 0.000143
-      c: 0.0000377
-    11:
-      a: -0.1
-      b: 0.000107
-      c: 0.0000444
-    12:
-      a: -0.14
-      b: 0.000098
-      c: 0.0000503
-  2023-01-01:
-    reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160
-    1:
-      a: 0.04
-      b: 0.0004991
-      c: 0.0000462
-    2:
-      a: 0.03
-      b: 0.0003716
-      c: 0.0000345
-    3:
-      a: 0.02
-      b: 0.0003035
-      c: 0.0000278
-    4:
-      a: 0.01
-      b: 0.0002251
-      c: 0.00002
-    5:
-      a: 0
-      b: 0.0001985
-      c: 0.0000195
-    6:
-      a: -0.01
-      b: 0.0001792
-      c: 0.0000188
-    7:
-      a: -0.02
-      b: 0.0001657
-      c: 0.0000187
-    8:
-      a: -0.03
-      b: 0.0001648
-      c: 0.0000187
-    9:
-      a: -0.04
-      b: 0.0001432
-      c: 0.0000188
-    10:
-      a: -0.06
-      b: 0.00013
-      c: 0.0000188
-    11:
-      a: -0.09
-      b: 0.0001188
-      c: 0.0000222
-    12:
-      a: -0.12
-      b: 0.0001152
-      c: 0.0000251
-bonus_sehr_große_haushalte:
-  name:
-    de: Zusätzlicher Betrag für große Haushalte
-    en: Additional amount for big households
-  description:
-    de: >-
-      Haushalte mit mehr als 12 Personen erhalten einen zusätzlichen Betrag pro Person,
-      der auf das Wohngeld für einen Haushalt mit 12 Personen angerechnet wird.
-      §19 Abs. 3 WoGG
-    en: >-
-      Households with more than 12 persons receive an additional amount per person,
-      which is counted towards the housing allowance for a household of 12 people.
-      §19 Abs. 3 WoGG
-  unit: Euros
-  reference_period: Month
-  type: dict
-  2001-01-01:
-    max_anz_personen_normale_berechnung: 12
-    bonus_jede_weitere_person: 40
-    reference: Art. 5 G. v. 22.12.1999 BGBl. I S. 2671
-  2009-01-01:
-    bonus_jede_weitere_person: 43
-    deviation_from: previous
-    reference: Art. 1 G. v. 24.09 2008 BGBl. I S. 1856
-  2016-01-01:
-    bonus_jede_weitere_person: 47
-    deviation_from: previous
-    reference: Art. 1 G. v. 08.10.2015 BGBl 38 S.1610
-  2020-01-01:
-    bonus_jede_weitere_person: 51
-    deviation_from: previous
-    reference: Art. 1 G. v. 30.11.2019 BGBl. I S. 1877
-  2023-01-01:
-    bonus_jede_weitere_person: 57
-    deviation_from: previous
-    reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160
-abzugsbeträge_steuern_sozialversicherung:
-  name:
-    de: >-
-      Prozentualer Pauschalabzug vom Bruttoeinkommen, falls 0, 1, 2, 3 Kriterien erfüllt
-      sind
-    en: null
-  description:
-    de: >-
-      § 16 (1, 2) WoGG
-      Kriterien sind entrichtete Steuern / entrichtete GKV- und GPV-Beiträge /
-      entrichtete GRV-Beiträge
-    en: null
-  unit: Share
-  reference_period: null
-  type: dict
-  1984-01-01:
-    0: 0.06
-    1: 0.125
-    2: 0.2
-    3: 0.3
-  1991-01-01:
-    deviation_from: previous
-    3: 0.26
-  2002-01-01:
-    deviation_from: previous
-    1: 0.1
-    3: 0.3
-  2016-01-01:
-    deviation_from: previous
-    0: 0.0
-    reference: Art. G. v. 02.10.2015 BGBl I S. 1610
-min_miete:
+raw_min_miete_m:
   name:
     de: Minimalwert für Parameter M der Wohngeldformel
     en: Minimum value for parameter M of the Wohngeld formula
   description:
-    de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
-    en: null
+    de: >-
+      WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
+      Parameter ist abhängig von der Anzahl der Haushaltsmitglieder. Keys in den
+      Parameter-Dicts beziehen sich auf die Anzahl der Haushaltsmitglieder. Bei mehr als
+      12 Mitgliedern wird der Wert für 12 Mitglieder verwendet.
+    en: >-
+      WoGG - Appendix 3 (until 2019 Appendix 2) (to § 19 (2))
+      Parameter is dependent on the number of household members. Keys in the parameter
+      dicts refer to the number of household members. If there are more than 12 members,
+      the value for 12 members is used.
   unit: Euros
   reference_period: Month
   type: dict
@@ -624,207 +84,30 @@ min_miete:
     10: 146
     11: 180
     12: 286
-min_einkommen:
+  2025-01-01:
+    reference: Art. 1 V. v. 21.10.2024 BGBl. 2024 I Nr. 314
+    1: 54
+    2: 67
+    3: 79
+    4: 92
+    5: 103
+    6: 103
+    7: 115
+    8: 128
+    9: 140
+    10: 152
+    11: 187
+    12: 298
+raw_max_miete_m_nach_baujahr:
   name:
-    de: Minimalwert für Parameter Y
-    en: null
-  description:
-    de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
-    en: null
-  unit: Euros
-  reference_period: Month
-  type: dict
-  1984-01-01:
-    1: 0
-    2: 0
-    3: 0
-    4: 0
-    5: 0
-    6: 0
-    7: 0
-    8: 0
-    9: 0
-    10: 0
-    11: 0
-    12: 0
-  2001-01-01:
-    1: 120
-    2: 150
-    3: 200
-    4: 250
-    5: 285
-    6: 320
-    7: 355
-    8: 385
-    9: 555
-    10: 730
-    11: 1000
-    12: 1175
-  2009-01-01:
-    1: 205
-    2: 245
-    3: 265
-    4: 315
-    5: 345
-    6: 365
-    7: 385
-    8: 415
-    9: 585
-    10: 805
-    11: 1085
-    12: 1255
-  2016-01-01:
-    reference: Art. 1 G. v. 08.10.2015 BGBl Nr.38, S.1617
-    1: 239
-    2: 310
-    3: 360
-    4: 389
-    5: 463
-    6: 537
-    7: 610
-    8: 684
-    9: 758
-    10: 832
-    11: 1085
-    12: 1255
-  2020-01-01:
-    reference: Art. 1 G. v. 30.11.2019 BGBl. I S. 1877
-    1: 275
-    2: 357
-    3: 414
-    4: 447
-    5: 532
-    6: 618
-    7: 702
-    8: 787
-    9: 872
-    10: 957
-    11: 1248
-    12: 1443
-  2023-01-01:
-    reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160
-    1: 350
-    2: 600
-    3: 800
-    4: 1000
-    5: 1200
-    6: 1400
-    7: 1600
-    8: 1800
-    9: 2000
-    10: 2200
-    11: 2400
-    12: 2600
-freibetrag_kinder_m:
-  name:
-    de: Monatlicher Freibetrag für Alleinerziehende und arbeitende Kinder
-    en: null
-  description:
-    de: § 17 (4/5) WoGG
-    en: null
-  unit: Euros
-  reference_period: Month
-  type: dict
-  1984-01-01:
-    alleinerziehend: 51
-    arbeitendes_kind: 0
-  2001-01-01:
-    deviation_from: previous
-    arbeitendes_kind: 51
-  2002-01-01:
-    alleinerziehend: 50
-    arbeitendes_kind: 50
-  2016-01-01:
-    note: >-
-      neu §17 3. WoGG a) Alleinerziehend b) Kind unter 18 und neu §17 4. WoGG Kind noch
-      nicht 25J.
-    reference: Art. 1 G. v. 08.10.2015 BGBl Nr.38, S.1617
-    alleinerziehend: 110
-    arbeitendes_kind: 100
-freibetrag_bei_behinderung_gestaffelt_y:
-  name:
-    de: Jährlicher Freibetrag pro behindertes Haushaltsmitglied
-    en: Annual allowance per disabled household member
+    de: Höchstbeträge für Miete und Belastung, nach Baujahr der Immobilie
+    en: Maximum values for rent and burden, by year of construction of the property
   description:
     de: >-
-      § 17 (2) WoGG
-      Der Betrag ist abhängig vom Behinderungsgrad der jeweiligen Person.
-      Achtung: Die Zahlen vor 1991 erscheinen falsch. Senkung in 1986 unwahrscheinlich,
-      im Zweifel wurde dort eher die Stufe mit Behinderungsgrad 1-80% eingeführt.
-    en: null
-  unit: Euros
-  reference_period: Year
-  type: piecewise_constant
-  1984-01-01:
-    0:
-      lower_threshold: -inf
-      intercept_at_lower_threshold: 0
-    1:
-      lower_threshold: 80
-      upper_threshold: inf
-      intercept_at_lower_threshold: 1224
-  1986-01-01:
-    deviation_from: previous
-    1:
-      lower_threshold: 80
-      upper_threshold: inf
-      intercept_at_lower_threshold: 612
-  1991-01-01:
-    0:
-      lower_threshold: -inf
-      intercept_at_lower_threshold: 0
-    1:
-      lower_threshold: 1
-      intercept_at_lower_threshold: 1224
-    2:
-      lower_threshold: 80
-      upper_threshold: inf
-      intercept_at_lower_threshold: 1536
-  2002-01-01:
-    0:
-      lower_threshold: -inf
-      intercept_at_lower_threshold: 0
-    1:
-      lower_threshold: 1
-      intercept_at_lower_threshold: 1200
-    2:
-      lower_threshold: 80
-      upper_threshold: inf
-      intercept_at_lower_threshold: 1500
-  # TODO: Comment in after moving to new infrastructure
-  # 2016-01-01:
-  #   note: Replaced by new rule, see 'freibetrag_bei_behinderung_pauschal_y'
-freibetrag_bei_behinderung_pauschal_y:
-  name:
-    de: Jährlicher Freibetrag pro behindertes Haushaltsmitglied
-    en: Annual allowance per disabled household member
-  description:
-    de: >-
-      § 17 Nr. 1 WoGG.
-      Für Menschen mit Behinderungsgrad unter 100% muss zusätzlich Pflegebedürftigkeit
-      gem. §14 SGB XI. und gleichzeitig Häusliche/teilstationäre/Kurzzeit-Pflege
-      vorliegen. Dies ist aktuell nicht implementiert.
-    en: null
-  unit: Euros
-  reference_period: Year
-  type: scalar
-  2016-01-01:
-    reference: 2 Art. 1 G. v. 08.10.2015 BGBl Nr.38 S.1612
-    value: 1500
-  2020-01-01:
-    reference: Art. 1 G. v. 30.11.2019 BGBl. I S. 1877
-    value: 1800
-max_miete:
-  name:
-    de: Höchstbeträge für Miete und Belastung
-    en: Maximum values for rent and burden
-  description:
-    de: >-
-      Anlage 1 WoGG, bis 2019 §12 (1) WoGG. Vor 2009 §8 (1) WoGG. Seit 2022 auch §24
-      Wohngeldverordnung (WoGV).
+      Anlage 1 WoGG, §8 (1) WoGG.
       Die Werte sind geordnet nach
       - Anzahl Personen
-      - maximales Baujahr des Hauses (vor 2009)
+      - maximales Baujahr des Hauses
       - Mietstufe
     en: null
   unit: Euros
@@ -1657,6 +940,7 @@ max_miete:
         3: 420
         4: 454
         5: 520
+        6: 550  # FixMe: made up
       1991:
         1: 400
         2: 425
@@ -1717,6 +1001,22 @@ max_miete:
         6: 90
     reference: Art. 5 G. v. 22.12.1999, BGBl I S. 2671.
     note: Nimmt die Umrechnung in Euro von 2002 vorweg.
+  2009-01-01:
+    note: Keine Differenzierung nach Baujahr, siehe `raw_max_miete_m`.
+raw_max_miete_m:
+  name:
+    de: Höchstbeträge für Miete und Belastung
+    en: Maximum values for rent and burden
+  description:
+    de: >-
+      Anlage 1 WoGG, bis 2019 §12 (1) WoGG. Seit 2022 auch §24 Wohngeldverordnung
+      (WoGV). Die Werte sind geordnet nach
+      - Anzahl Personen
+      - Mietstufe
+    en: null
+  unit: Euros
+  reference_period: Month
+  type: require_converter
   2009-01-01:
     1:
       1: 292
@@ -1905,30 +1205,57 @@ max_miete:
       6: 143
       7: 157
     reference: V. v. 03.06.2021 BGBl. I S. 1369.
-parameter_vermögensfreibetrag:
-  name:
-    de: Vermögensgrundfreibetrag für den Haushalt
-    en: Basic wealth exemption at the household level
-  description:
-    de: >-
-      Wohngeld-Verwaltungsvorschift 21.37. Seit 2009 (G. v. 24.09.2008, BGBl. I S. 1856)
-      wird durch §21 Nr. 3 WoGG geregelt, dass hohes Vermögen ein Ausschlussgrund für
-      Wohngeld sein kann. Die genauen Werte regelt die Verwaltungsvorschrift vom April
-      2009. Vorher war hohes Vermögen laut WoGG kein Ausschlussgrund.
-    en: Since 2009, wealth might be a reason not to grand housing benefit.
-  unit: Euros
-  reference_period: null
-  type: dict
-  1970-01-01:
-    grundfreibetrag: inf
-    je_weitere_person: inf
-    note: No wealth threshold in place.
-  2009-01-01:
-    grundfreibetrag: 60000
-    je_weitere_person: 30000
-    reference: Wohngeld-Verwaltungsvorschrift 2009.
-    note: At least in place since then.
-heizkostenentlastung_m:
+  2025-01-01:
+    reference: Art. 1 V. v. 21.10.2024 BGBl. 2024 I Nr. 314
+    1:
+      1: 361
+      2: 408
+      3: 456
+      4: 511
+      5: 562
+      6: 615
+      7: 677
+    2:
+      1: 437
+      2: 493
+      3: 551
+      4: 619
+      5: 680
+      6: 745
+      7: 820
+    3:
+      1: 521
+      2: 587
+      3: 657
+      4: 737
+      5: 809
+      6: 887
+      7: 975
+    4:
+      1: 608
+      2: 686
+      3: 766
+      4: 858
+      5: 946
+      6: 1035
+      7: 1139
+    5:
+      1: 694
+      2: 782
+      3: 875
+      4: 982
+      5: 1080
+      6: 1183
+      7: 1302
+    jede_weitere_person:
+      1: 82
+      2: 94
+      3: 106
+      4: 119
+      5: 129
+      6: 149
+      7: 163
+raw_heizkostenentlastung_m:
   name:
     de: Heizkostenentlastung aufgrund der CO2-Bepreisung
     en: Reduction in heating costs due to CO2 pricing
@@ -1941,7 +1268,7 @@ heizkostenentlastung_m:
       household size
   unit: Euros
   reference_period: Month
-  type: dict
+  type: require_converter
   2021-01-01:
     reference: §12 (6) WoGG, Art. 1 G. v. 15.05.2020, BGBl I S. 1015.
     1: 14.4
@@ -1950,7 +1277,7 @@ heizkostenentlastung_m:
     4: 25.8
     5: 29.4
     jede_weitere_person: 3.6
-dauerhafte_heizkostenkomponente_m:
+raw_dauerhafte_heizkostenkomponente_m:
   name:
     de: Dauerhafte Heizkostenkomponente
     en: Permanent heating cost component
@@ -1963,7 +1290,7 @@ dauerhafte_heizkostenkomponente_m:
       housing subsidy reform 2023
   unit: Euros
   reference_period: Month
-  type: dict
+  type: require_converter
   2023-01-01:
     reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160
     1: 96
@@ -1972,10 +1299,10 @@ dauerhafte_heizkostenkomponente_m:
     4: 172
     5: 196
     jede_weitere_person: 24
-klimakomponente_m:
+raw_klimakomponente_m:
   name:
     de: Klimakomponente
-    en: climate component
+    en: Climate component
   description:
     de: >-
       Als Klimakomponente zu berücksichtigender Zuschlag zu den Höchstbeträgen nach §12
@@ -1987,7 +1314,7 @@ klimakomponente_m:
       introduced with the housing subsidy reform 2023
   unit: Euros
   reference_period: Month
-  type: dict
+  type: require_converter
   2023-01-01:
     reference: Art. 1 G. v. 08.12.2022 BGBl. I Nr. 48 S. 2160
     1: 19.20

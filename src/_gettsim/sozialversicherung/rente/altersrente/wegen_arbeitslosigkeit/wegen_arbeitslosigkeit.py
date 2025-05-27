@@ -9,7 +9,7 @@ are older than the Regelaltersgrenze).
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
+from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(
@@ -20,7 +20,7 @@ from ttsim import ConsecutiveIntLookupTableParamValue, policy_function
 def altersgrenze_bis_1996(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
@@ -29,7 +29,7 @@ def altersgrenze_bis_1996(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 
@@ -82,7 +82,7 @@ def altersgrenze_ab_2010(
 def altersgrenze_vorzeitig_ohne_vertrauensschutz_bis_1996_07(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_vorzeitig_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_vorzeitig_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Early retirement age of pension for unemployed.
 
@@ -91,7 +91,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_bis_1996_07(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
     ]
 
 
@@ -145,7 +145,7 @@ def altersgrenze_vorzeitig_mit_vertrauensschutzprüfung_ab_07_2004(
 def altersgrenze_ohne_vertrauensschutz(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Full retirement age for unemployed without Vertrauensschutz.
 
@@ -156,7 +156,7 @@ def altersgrenze_ohne_vertrauensschutz(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 
@@ -164,14 +164,13 @@ def altersgrenze_ohne_vertrauensschutz(
 def altersgrenze_mit_vertrauensschutz(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_gestaffelt_vertrauensschutz: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_gestaffelt_vertrauensschutz: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Full retirement age for unemployed for individuals under Vertrauensschutz."""
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt_vertrauensschutz.values_to_look_up[
-        birth_month_since_ad
-        - altersgrenze_gestaffelt_vertrauensschutz.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_gestaffelt_vertrauensschutz.base_to_subtract
     ]
 
 
@@ -183,7 +182,7 @@ def altersgrenze_mit_vertrauensschutz(
 def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_12_1989_bis_09_1996(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_vorzeitig_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_vorzeitig_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Early retirement age of pension for unemployed without Vertrauensschutz.
 
@@ -194,7 +193,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_12_1989_bis_09_1996(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
     ]
 
 
@@ -206,7 +205,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_12_1989_bis_09_1996(
 def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_07_2004(
     geburtsjahr: int,
     geburtsmonat: int,
-    altersgrenze_vorzeitig_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersgrenze_vorzeitig_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Early retirement age of pension for unemployed without Vertrauensschutz.
 
@@ -217,7 +216,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_07_2004(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
     ]
 
 

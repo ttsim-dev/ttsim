@@ -23,8 +23,9 @@ from ttsim.loader import (
     orig_tree_with_column_objects_param_functions,
 )
 from ttsim.param_objects import (
-    ConsecutiveIntLookupTableParam,
-    ConsecutiveIntLookupTableParamValue,
+    ConsecutiveInt1dLookupTableParam,
+    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveInt2dLookupTableParamValue,
     DictParam,
     ParamObject,
     PiecewisePolynomialParam,
@@ -543,21 +544,26 @@ def get_one_param(  # noqa: PLR0911
             parameter_dict=cleaned_spec["value"],
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    elif spec["type"] == "consecutive_int_lookup_table":
-        cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
+    elif spec["type"] == "consecutive_int_1d_lookup_table":
+        cleaned_spec["value"] = get_consecutive_int_1d_lookup_table_param_value(
             cleaned_spec["value"]
         )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+    elif spec["type"] == "consecutive_int_2d_lookup_table":
+        cleaned_spec["value"] = get_consecutive_int_2d_lookup_table_param_value(
+            cleaned_spec["value"]
+        )
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "birth_month_based_phase_inout":
         cleaned_spec["value"] = get_birth_month_based_phase_inout_param_value(
             cleaned_spec["value"]
         )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "birth_year_based_phase_inout":
         cleaned_spec["value"] = get_birth_year_based_phase_inout_param_value(
             cleaned_spec["value"]
         )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
     else:
@@ -637,18 +643,46 @@ def _get_params_contents(
         return current_spec
 
 
-def get_consecutive_int_lookup_table_param_value(
+def get_consecutive_int_1d_lookup_table_param_value(
     raw: dict[int, float | int | bool],
-) -> ConsecutiveIntLookupTableParamValue:
-    """Get the parameters for a look-up table."""
-    look_up_keys = numpy.asarray(sorted(raw))
-    assert (look_up_keys - min(look_up_keys) == np.arange(len(look_up_keys))).all(), (
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Get the parameters for a 1-dimensional lookup table."""
+    lookup_keys = numpy.asarray(sorted(raw))
+    assert (lookup_keys - min(lookup_keys) == np.arange(len(lookup_keys))).all(), (
         "Dictionary keys must be consecutive integers."
     )
 
-    return ConsecutiveIntLookupTableParamValue(
-        base_value_to_subtract=min(look_up_keys),
-        values_to_look_up=np.asarray([raw[k] for k in look_up_keys]),
+    return ConsecutiveInt1dLookupTableParamValue(
+        base_to_subtract=min(lookup_keys),
+        values_to_look_up=np.asarray([raw[k] for k in lookup_keys]),
+    )
+
+
+def get_consecutive_int_2d_lookup_table_param_value(
+    raw: dict[int, dict[int, float | int | bool]],
+) -> ConsecutiveInt2dLookupTableParamValue:
+    """Get the parameters for a 2-dimensional lookup table."""
+    lookup_keys_rows = numpy.asarray(sorted(raw.keys()))
+    lookup_keys_cols = numpy.asarray(sorted(raw[lookup_keys_rows[0]].keys()))
+    for row, col_value in raw.items():
+        lookup_keys_this_col = numpy.asarray(sorted(col_value.keys()))
+        assert (lookup_keys_cols == lookup_keys_this_col).all(), (
+            "Column keys must be the same in each column, got:"
+            f"{lookup_keys_cols} and {lookup_keys_this_col}"
+        )
+    for lookup_keys in lookup_keys_rows, lookup_keys_cols:
+        assert (lookup_keys - min(lookup_keys) == np.arange(len(lookup_keys))).all(), (
+            f"Dictionary keys must be consecutive integers, got: {lookup_keys}"
+        )
+    return ConsecutiveInt2dLookupTableParamValue(
+        base_to_subtract_rows=min(lookup_keys_rows),
+        base_to_subtract_cols=min(lookup_keys_cols),
+        values_to_look_up=np.array(
+            [
+                raw[row][col]
+                for row, col in itertools.product(lookup_keys_rows, lookup_keys_cols)
+            ]
+        ).reshape(len(lookup_keys_rows), len(lookup_keys_cols)),
     )
 
 
@@ -719,7 +753,7 @@ def get_birth_month_based_phase_inout_param_value(
             last_m_since_ad_phase_inout + 1, last_m_since_ad_to_consider + 1
         )
     }
-    return get_consecutive_int_lookup_table_param_value(
+    return get_consecutive_int_1d_lookup_table_param_value(
         {**before_phase_inout, **during_phase_inout, **after_phase_inout}
     )
 
@@ -751,7 +785,7 @@ def get_birth_year_based_phase_inout_param_value(
         b_y: _year_fraction(raw[last_birthyear_phase_inout])
         for b_y in range(last_birthyear_phase_inout + 1, last_birthyear_to_consider + 1)
     }
-    return get_consecutive_int_lookup_table_param_value(
+    return get_consecutive_int_1d_lookup_table_param_value(
         {**before_phase_inout, **during_phase_inout, **after_phase_inout}
     )
 
