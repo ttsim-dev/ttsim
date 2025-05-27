@@ -248,7 +248,7 @@ def einkommen(
     einkommen_vor_freibetrag: float,
     einkommensfreibetrag: float,
     anzahl_personen: int,
-    min_einkommen: dict,
+    min_einkommen: dict[int, float],
 ) -> float:
     """Calculate final income relevant for calculation of housing benefit on household
     level.

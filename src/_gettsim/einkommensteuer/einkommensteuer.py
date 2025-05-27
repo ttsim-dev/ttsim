@@ -253,20 +253,8 @@ def relevantes_kindergeld_ohne_staffelung_m(
     return kindergeld__satz * kindergeld_ansprüche / 2
 
 
-def einkommensteuertarif(x: float, params: dict) -> float:
-    """The German income tax tariff.
-
-    Parameters
-    ----------
-    x : float
-        The series of floats which the income tax schedule is applied to.
-    params : dict
-        Dictionary created in respy.piecewise_functions.
-
-    Returns
-    -------
-
-    """
+def einkommensteuertarif(x: float, params: PiecewisePolynomialParamValue) -> float:
+    """The German income tax tariff."""
     return piecewise_polynomial(
         x=x,
         parameters=params,
