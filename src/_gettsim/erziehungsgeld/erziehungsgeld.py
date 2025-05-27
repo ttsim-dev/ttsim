@@ -2,12 +2,44 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any, Literal
+
 from ttsim import (
     AggType,
     RoundingSpec,
     agg_by_p_id_function,
+    param_function,
     policy_function,
 )
+
+ErziehungsgeldSätze = Literal["regelsatz", "budgetsatz"]
+
+
+@dataclass(frozen=True)
+class EinkommensgrenzeErziehungsgeld:
+    regulär_alleinerziehend: dict[ErziehungsgeldSätze, float]
+    regulär_paar: dict[ErziehungsgeldSätze, float]
+    reduziert_alleinerziehend: dict[ErziehungsgeldSätze, float]
+    reduziert_paar: dict[ErziehungsgeldSätze, float]
+
+
+@param_function(
+    start_date="2004-02-09",
+    end_date="2008-12-31",
+)
+def einkommensgrenze(
+    parameter_einkommensgrenze: dict[str, Any],
+) -> EinkommensgrenzeErziehungsgeld:
+    """Parameter der Einkommensgrenze des Erziehungsgelds."""
+    return EinkommensgrenzeErziehungsgeld(
+        regulär_alleinerziehend=parameter_einkommensgrenze["regulär_alleinerziehend"],
+        regulär_paar=parameter_einkommensgrenze["regulär_paar"],
+        reduziert_alleinerziehend=parameter_einkommensgrenze[
+            "reduziert_alleinerziehend"
+        ],
+        reduziert_paar=parameter_einkommensgrenze["reduziert_paar"],
+    )
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -27,18 +59,6 @@ def betrag_m(
     """Total parental leave benefits (Erziehungsgeld) received by the parent.
 
     Legal reference: BErzGG (BGBl. I 1985 S. 2154; BGBl. I 2004 S. 206)
-
-    Parameters
-    ----------
-    anspruchshöhe_m
-        See :func:`anspruchshöhe_m`.
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt`.
-
-    Returns
-    -------
-    Parental leave benefits (Erziehungsgeld).
-
     """
     if grundsätzlich_anspruchsberechtigt:
         out: float = anspruchshöhe_m
@@ -53,7 +73,7 @@ def betrag_m(
     leaf_name="anspruchshöhe_kind_m",
     rounding_spec=RoundingSpec(base=0.01, direction="nearest"),
 )
-def erziehungsgeld_kind_ohne_budgetsatz_m() -> float:
+def erziehungsgeld_kind_ohne_budgetsatz_m() -> NotImplementedError:
     raise NotImplementedError(
         """
     Erziehungsgeld is not implemented yet prior to 2004, see
@@ -79,20 +99,6 @@ def anspruchshöhe_kind_mit_budgetsatz_m(
     threshold and the eligibility for erziehungsgeld is needed.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
-
-    Parameters
-    ----------
-    kind_grundsätzlich_anspruchsberechtigt
-        See :func:`kind_grundsätzlich_anspruchsberechtigt`.
-    abzug_durch_einkommen_m
-        See :func:`abzug_durch_einkommen_m`.
-    basisbetrag_m
-        See :func:`erziehungsgeld_ohne_abzug`.
-
-
-    Returns
-    -------
-    Monthly claim of parental leave benefit (Erziehungsgeld) on child level
     """
     if kind_grundsätzlich_anspruchsberechtigt:
         out = max(
@@ -110,40 +116,21 @@ def basisbetrag_m(
     budgetsatz: bool,
     anzurechnendes_einkommen_y: float,
     einkommensgrenze_y: float,
-    alter_monate: float,
-    erziehungsgeld_params: dict,
+    alter_monate: int,
+    altersgrenze_für_reduziertes_einkommenslimit_kind_monate: int,
+    satz: dict[str, float],
 ) -> float:
-    """Parental leave benefit (Erziehungsgeld) without means-test on child level.
-
-    Parameters
-    ----------
-    budgetsatz
-        See :See basic input variable :ref:`budgetsatz
-        <budgetsatz>`.
-    anzurechnendes_einkommen_y
-        See :func:`anzurechnendes_einkommen_y`.
-    einkommensgrenze_y
-        See :func:`einkommensgrenze_y`.
-    alter_monate
-        See :func:`alter_monate`.
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-
-    Returns
-    -------
-    Parental leave benefit (Erziehungsgeld) without means-test
-    """
+    """Parental leave benefit (Erziehungsgeld) without means-test on child level."""
     # no benefit if income is above threshold and child is younger than threshold
     if (
         anzurechnendes_einkommen_y > einkommensgrenze_y
-        and alter_monate
-        < erziehungsgeld_params["einkommensgrenze"]["start_age_m_reduced_income_limit"]
+        and alter_monate < altersgrenze_für_reduziertes_einkommenslimit_kind_monate
     ):
         out = 0.0
     elif budgetsatz:
-        out = erziehungsgeld_params["satz"]["budgetsatz"]
+        out = satz["budgetsatz"]
     else:
-        out = erziehungsgeld_params["satz"]["regelsatz"]
+        out = satz["regelsatz"]
 
     return out
 
@@ -152,34 +139,19 @@ def basisbetrag_m(
 def abzug_durch_einkommen_m(
     anzurechnendes_einkommen_m: float,
     einkommensgrenze_m: float,
-    alter_monate: float,
-    erziehungsgeld_params: dict,
+    alter_monate: int,
+    altersgrenze_für_reduziertes_einkommenslimit_kind_monate: float,
+    abschlagsfaktor: float,
 ) -> float:
     """Reduction of parental leave benefits (means-test).
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.209)
-
-    Parameters
-    ----------
-    anzurechnendes_einkommen_m
-        See :func:`anzurechnendes_einkommen_y`.
-    einkommensgrenze_m
-        See :func:`einkommensgrenze_y`.
-    alter_monate
-        See :func:`alter_monate`.
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-
-    Returns
-    -------
-    Income reduction for parental leave benefit (Erziehungsgeld)
     """
     if (
         anzurechnendes_einkommen_m > einkommensgrenze_m
-        and alter_monate
-        >= erziehungsgeld_params["einkommensgrenze"]["start_age_m_reduced_income_limit"]
+        and alter_monate >= altersgrenze_für_reduziertes_einkommenslimit_kind_monate
     ):
-        out = anzurechnendes_einkommen_m * erziehungsgeld_params["abschlagsfaktor"]
+        out = anzurechnendes_einkommen_m * abschlagsfaktor
     else:
         out = 0.0
     return out
@@ -192,42 +164,20 @@ def abzug_durch_einkommen_m(
 )
 def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
     familie__kind: bool,
-    alter_monate: float,
+    alter_monate: int,
     budgetsatz: bool,
-    erziehungsgeld_params: dict,
+    maximales_kindsalter_budgetsatz: float,
+    maximales_kindsalter_regelsatz: float,
 ) -> bool:
     """Eligibility for parental leave benefit (Erziehungsgeld) on child level.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
-
-    Parameters
-    ----------
-    familie__kind
-        See :See basic input variable :ref:`familie__kind <familie__kind>`.
-    alter_monate
-        See :func:`alter_monate`.
-    budgetsatz
-        See :See basic input variable :ref:`budgetsatz
-        <budgetsatz>`.
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-
-    Returns
-    -------
-    eligibility of (Erziehungsgeld) as a bool
-
     """
     if budgetsatz:
-        out = (
-            familie__kind
-            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_budgetsatz"]
-        )
+        out = familie__kind and alter_monate <= maximales_kindsalter_budgetsatz
 
     else:
-        out = (
-            familie__kind
-            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_regelsatz"]
-        )
+        out = familie__kind and alter_monate <= maximales_kindsalter_regelsatz
 
     return out
 
@@ -240,45 +190,22 @@ def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
 def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
     familie__kind: bool,
     geburtsjahr: int,
-    alter_monate: float,
+    alter_monate: int,
     budgetsatz: bool,
-    erziehungsgeld_params: dict,
+    abolishment_cohort: int,
+    maximales_kindsalter_budgetsatz: float,
+    maximales_kindsalter_regelsatz: float,
 ) -> bool:
     """Eligibility for parental leave benefit (Erziehungsgeld) on child level. Abolished
     for children born after the cut-off date.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
-
-    Parameters
-    ----------
-    familie__kind
-        See :See basic input variable :ref:`familie__kind <familie__kind>`.
-    geburtsjahr
-        See :func:`geburtsjahr`.
-    alter_monate
-        See :func:`alter_monate`.
-    budgetsatz
-        See :See basic input variable :ref:`budgetsatz
-        <budgetsatz>`.
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-
-    Returns
-    -------
-    eligibility of (Erziehungsgeld) as a bool
-
     """
-    if budgetsatz and geburtsjahr <= erziehungsgeld_params["abolishment_cohort"]:
-        out = (
-            familie__kind
-            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_budgetsatz"]
-        )
+    if budgetsatz and geburtsjahr <= abolishment_cohort:
+        out = familie__kind and alter_monate <= maximales_kindsalter_budgetsatz
 
-    elif geburtsjahr <= erziehungsgeld_params["abolishment_cohort"]:
-        out = (
-            familie__kind
-            and alter_monate <= erziehungsgeld_params["maximales_kindsalter_regelsatz"]
-        )
+    elif geburtsjahr <= abolishment_cohort:
+        out = familie__kind and alter_monate <= maximales_kindsalter_regelsatz
 
     else:
         out = False
@@ -290,28 +217,14 @@ def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
 def grundsätzlich_anspruchsberechtigt(
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
-    erziehungsgeld_params: dict,
+    maximale_wochenarbeitszeit: float,
 ) -> bool:
     """Eligibility for parental leave benefit (Erziehungsgeld) on parental level.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.207)
-
-    Parameters
-    ----------
-    arbeitsstunden_w
-        See :See basic input variable :ref:`arbeitsstunden_w <arbeitsstunden_w>`.
-    kind_grundsätzlich_anspruchsberechtigt_fg
-        See :func:`kind_grundsätzlich_anspruchsberechtigt_fg`.
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-
-    Returns
-    -------
-    eligibility of parental leave benefit (Erziehungsgeld) as a bool
-
     """
     return kind_grundsätzlich_anspruchsberechtigt_fg and (
-        arbeitsstunden_w <= erziehungsgeld_params["maximale_wochenarbeitszeit"]
+        arbeitsstunden_w <= maximale_wochenarbeitszeit
     )
 
 
@@ -320,7 +233,7 @@ def anzurechnendes_einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg: float,
     arbeitslosengeld_2__anzahl_erwachsene_fg: int,
     kind_grundsätzlich_anspruchsberechtigt: bool,
-    erziehungsgeld_params: dict,
+    pauschaler_abzug_vom_einkommen: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
 ) -> float:
     """Income relevant for means testing for parental leave benefit (Erziehungsgeld).
@@ -329,7 +242,6 @@ def anzurechnendes_einkommen_y(
 
     There is special rule for "Beamte, Soldaten und Richter" which is not
     implemented yet.
-
     """
 
     if kind_grundsätzlich_anspruchsberechtigt:
@@ -337,7 +249,7 @@ def anzurechnendes_einkommen_y(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
             - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale
             * arbeitslosengeld_2__anzahl_erwachsene_fg
-        ) * erziehungsgeld_params["pauschaler_abzug_vom_einkommen"]
+        ) * pauschaler_abzug_vom_einkommen
     else:
         out = 0.0
     return out
@@ -350,32 +262,16 @@ def einkommensgrenze_y(
     einkommensgrenze_ohne_geschwisterbonus: float,
     arbeitslosengeld_2__anzahl_kinder_fg: float,
     kind_grundsätzlich_anspruchsberechtigt: bool,
-    erziehungsgeld_params: dict,
+    aufschlag_einkommen: float,
 ) -> float:
     """Income threshold for parental leave benefit (Erziehungsgeld).
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
-
-    Parameters
-    ----------
-    einkommensgrenze_ohne_geschwisterbonus
-        See :func:`einkommensgrenze_ohne_geschwisterbonus`.
-    arbeitslosengeld_2__anzahl_kinder_fg
-        See :func:`arbeitslosengeld_2__anzahl_kinder_fg`.
-    kind_grundsätzlich_anspruchsberechtigt
-        See :func:`kind_grundsätzlich_anspruchsberechtigt`.
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-
-    Returns
-    -------
-    income threshold for parental leave benefit (Erziehungsgeld) on child level
     """
 
     out = (
         einkommensgrenze_ohne_geschwisterbonus
-        + (arbeitslosengeld_2__anzahl_kinder_fg - 1)
-        * erziehungsgeld_params["aufschlag_einkommen"]
+        + (arbeitslosengeld_2__anzahl_kinder_fg - 1) * aufschlag_einkommen
     )
     if not kind_grundsätzlich_anspruchsberechtigt:
         out = 0.0
@@ -386,54 +282,64 @@ def einkommensgrenze_y(
     start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
 )
 def einkommensgrenze_ohne_geschwisterbonus(
-    familie__alleinerziehend_fg: bool,
-    alter_monate: float,
-    budgetsatz: bool,
-    erziehungsgeld_params: dict,
+    alter_monate: int,
+    einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze: float,
+    einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze: float,
+    altersgrenze_für_reduziertes_einkommenslimit_kind_monate: float,
 ) -> float:
-    """Income threshold for parental leave benefit (Erziehungsgeld) on child level
-    before adding the bonus for additional children
+    """Income threshold for parental leave benefit (Erziehungsgeld) before adding the
+    bonus for additional children.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
-
-    Parameters
-    ----------
-    erziehungsgeld_params
-        See params documentation :ref:`erziehungsgeld_params <erziehungsgeld_params>`.
-    familie__alleinerziehend_fg
-        See :func:`familie__alleinerziehend_fg`.
-    alter_monate
-        See :func:`alter_monate`.
-    budgetsatz
-        See :See basic input variable :ref:`budgetsatz
-        <budgetsatz>`.
-
-    Returns
-    -------
-    Income threshold for parental leave benefit (Erziehungsgeld) before child bonus
     """
-    # There are different income thresholds depending on the age of the child,
-    # the fact if a person is a single parent, and if regelsatz or budgetsatz is applied
-
-    if (
-        alter_monate
-        < erziehungsgeld_params["einkommensgrenze"]["start_age_m_reduced_income_limit"]
-    ):
-        limit = "limit"
+    if alter_monate < altersgrenze_für_reduziertes_einkommenslimit_kind_monate:
+        return einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze
     else:
-        limit = "reduced_limit"
+        return einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze
 
-    if familie__alleinerziehend_fg:
-        status_eltern = "alleinerziehend"
+
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
+def einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze(
+    familie__alleinerziehend_fg: bool,
+    budgetsatz: bool,
+    einkommensgrenze: EinkommensgrenzeErziehungsgeld,
+) -> float:
+    """Base income threshold for parents of children younger than the age threshold.
+
+    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
+    """
+    if budgetsatz and familie__alleinerziehend_fg:
+        return einkommensgrenze.regulär_alleinerziehend["budgetsatz"]
+    elif budgetsatz and not familie__alleinerziehend_fg:
+        return einkommensgrenze.regulär_paar["budgetsatz"]
+    elif not budgetsatz and familie__alleinerziehend_fg:
+        return einkommensgrenze.regulär_alleinerziehend["regelsatz"]
     else:
-        status_eltern = "paar"
+        return einkommensgrenze.regulär_paar["regelsatz"]
 
-    if budgetsatz:
-        satz = "budgetsatz"
+
+@policy_function(
+    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+)
+def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
+    familie__alleinerziehend_fg: bool,
+    budgetsatz: bool,
+    einkommensgrenze: EinkommensgrenzeErziehungsgeld,
+) -> float:
+    """Base income threshold for parents of children older than age threshold.
+
+    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
+    """
+    if budgetsatz and familie__alleinerziehend_fg:
+        return einkommensgrenze.reduziert_alleinerziehend["budgetsatz"]
+    elif budgetsatz and not familie__alleinerziehend_fg:
+        return einkommensgrenze.reduziert_paar["budgetsatz"]
+    elif not budgetsatz and familie__alleinerziehend_fg:
+        return einkommensgrenze.reduziert_alleinerziehend["regelsatz"]
     else:
-        satz = "regelsatz"
-
-    return erziehungsgeld_params["einkommensgrenze"][limit][status_eltern][satz]
+        return einkommensgrenze.reduziert_paar["regelsatz"]
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
