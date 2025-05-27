@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import re
 import warnings
 from dataclasses import dataclass
 
@@ -41,7 +40,6 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
-from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import TTSIMArray
 
 if IS_JAX_INSTALLED:
@@ -956,36 +954,6 @@ def test_user_provided_aggregate_by_p_id_specs(
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
-
-
-@pytest.mark.parametrize(
-    ("tree", "leaf_checker", "err_substr"),
-    [
-        (
-            {"a": 1, "b": 2},
-            lambda leaf: leaf is None,
-            "Leaf at tree[a] is invalid: got 1 of type <class 'int'>.",
-        ),
-        (
-            {"a": None, "b": {"c": None, "d": 1}},
-            lambda leaf: leaf is None,
-            "Leaf at tree[b][d] is invalid: got 1 of type <class 'int'>.",
-        ),
-        (
-            [1, 2, 3],
-            lambda leaf: leaf is None,
-            "tree must be a dict, got <class 'list'>.",
-        ),
-        (
-            {1: 2},
-            lambda leaf: leaf is None,
-            "Key 1 in tree must be a string but got <class 'int'>.",
-        ),
-    ],
-)
-def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
-    with pytest.raises(TypeError, match=re.escape(err_substr)):
-        assert_valid_ttsim_pytree(tree, leaf_checker, "tree")
 
 
 @pytest.mark.parametrize(
