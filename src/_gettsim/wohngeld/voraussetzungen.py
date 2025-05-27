@@ -82,12 +82,7 @@ def vermögensgrenze_unterschritten_wthh(
         "grundfreibetrag"
     ] + parameter_vermögensfreibetrag["je_weitere_person"] * (anzahl_personen_wthh - 1)
 
-    if vermögen_wthh <= vermögensfreibetrag:
-        out = True
-    else:
-        out = False
-
-    return out
+    return vermögen_wthh <= vermögensfreibetrag
 
 
 @policy_function(start_date="2009-01-01")
@@ -104,12 +99,7 @@ def vermögensgrenze_unterschritten_bg(
         arbeitslosengeld_2__anzahl_personen_bg - 1
     )
 
-    if vermögen_bg <= vermögensfreibetrag:
-        out = True
-    else:
-        out = False
-
-    return out
+    return vermögen_bg <= vermögensfreibetrag
 
 
 @policy_function(start_date="2005-01-01")
