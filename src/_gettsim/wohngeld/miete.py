@@ -218,8 +218,9 @@ def miete_m_hh_mit_baujahr(
     constr_year = list(max_miete_lookup.keys())[selected_bin_index]
     lookup = max_miete_lookup[constr_year]
     max_miete_m = lookup.values_to_look_up[
-        anzahl_personen_hh - lookup.base_to_subtract_rows
-    ][mietstufe - lookup.base_to_subtract_cols]
+        anzahl_personen_hh - lookup.base_to_subtract_rows,
+        mietstufe - lookup.base_to_subtract_cols,
+    ]
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
 
@@ -227,7 +228,6 @@ def miete_m_hh_mit_baujahr(
     start_date="2009-01-01",
     end_date="2020-12-31",
     leaf_name="miete_m_hh",
-    vectorization_strategy="loop",
 )
 def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     mietstufe: int,
@@ -239,8 +239,9 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     """Rent considered in housing benefit since 2009."""
 
     max_miete_m = max_miete_lookup.values_to_look_up[
-        anzahl_personen_hh - max_miete_lookup.base_to_subtract_rows
-    ][mietstufe - max_miete_lookup.base_to_subtract_cols]
+        anzahl_personen_hh - max_miete_lookup.base_to_subtract_rows,
+        mietstufe - max_miete_lookup.base_to_subtract_cols,
+    ]
 
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
@@ -249,7 +250,6 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     start_date="2021-01-01",
     end_date="2022-12-31",
     leaf_name="miete_m_hh",
-    vectorization_strategy="loop",
 )
 def miete_m_hh_mit_heizkostenentlastung(
     mietstufe: int,
@@ -261,8 +261,9 @@ def miete_m_hh_mit_heizkostenentlastung(
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_lookup.values_to_look_up[
-        anzahl_personen_hh - max_miete_lookup.base_to_subtract_rows
-    ][mietstufe - max_miete_lookup.base_to_subtract_cols]
+        anzahl_personen_hh - max_miete_lookup.base_to_subtract_rows,
+        mietstufe - max_miete_lookup.base_to_subtract_cols,
+    ]
 
     heating_allowance_m = heizkostenentlastung_m_lookup.values_to_look_up[
         anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract
@@ -277,7 +278,6 @@ def miete_m_hh_mit_heizkostenentlastung(
 @policy_function(
     start_date="2023-01-01",
     leaf_name="miete_m_hh",
-    vectorization_strategy="loop",
 )
 def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakomponente(
     mietstufe: int,
@@ -291,8 +291,9 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_lookup.values_to_look_up[
-        anzahl_personen_hh - max_miete_lookup.base_to_subtract_rows
-    ][mietstufe - max_miete_lookup.base_to_subtract_cols]
+        anzahl_personen_hh - max_miete_lookup.base_to_subtract_rows,
+        mietstufe - max_miete_lookup.base_to_subtract_cols,
+    ]
 
     heizkostenentlastung = heizkostenentlastung_m_lookup.values_to_look_up[
         anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract
