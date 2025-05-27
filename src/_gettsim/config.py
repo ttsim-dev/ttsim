@@ -6,8 +6,6 @@ from pathlib import Path
 GETTSIM_ROOT = Path(__file__).parent.resolve()
 
 INTERNAL_PARAMS_GROUPS = [
-    "unterhalt",
-    "unterhaltsvors",
     "grunds_im_alter",
 ]
 
