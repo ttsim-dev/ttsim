@@ -53,7 +53,7 @@ def lohnersatzanteil_einkommen_obere_grenze(
 
 
 @policy_function(
-    start_date="2007-01-01",
+    start_date="2011-01-01",
     end_date="2024-03-31",
     leaf_name="einkommen_vorjahr_unter_bezugsgrenze",
 )
@@ -65,7 +65,6 @@ def einkommen_vorjahr_unter_bezugsgrenze_mit_unterscheidung_single_paar(
     ],
 ) -> bool:
     """Income before birth is below income threshold for Elterngeld."""
-    # FIXME: Parameter not available before 2011.
     if familie__alleinerziehend:
         out = (
             zu_versteuerndes_einkommen_vorjahr_y_sn

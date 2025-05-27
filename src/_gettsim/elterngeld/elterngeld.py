@@ -124,8 +124,29 @@ def anspruchshöhe_m(
     )
 
 
-@policy_function(start_date="2007-01-01")
-def grundsätzlich_anspruchsberechtigt(
+@policy_function(
+    start_date="2007-01-01",
+    end_date="2010-12-31",
+    leaf_name="grundsätzlich_anspruchsberechtigt",
+)
+def grundsätzlich_anspruchsberechtigt_ohne_maximales_vorjahreseinkommen(
+    claimed: bool,
+    arbeitsstunden_w: float,
+    kind_grundsätzlich_anspruchsberechtigt_fg: bool,
+    bezugsmonate_unter_grenze_fg: bool,
+    max_arbeitsstunden_w: int,
+) -> bool:
+    """Parent is eligible to receive Elterngeld."""
+    return (
+        claimed
+        and arbeitsstunden_w <= max_arbeitsstunden_w
+        and kind_grundsätzlich_anspruchsberechtigt_fg
+        and bezugsmonate_unter_grenze_fg
+    )
+
+
+@policy_function(start_date="2011-01-01", leaf_name="grundsätzlich_anspruchsberechtigt")
+def grundsätzlich_anspruchsberechtigt_mit_maximales_vorjahreseinkommen(
     claimed: bool,
     arbeitsstunden_w: float,
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
@@ -133,7 +154,10 @@ def grundsätzlich_anspruchsberechtigt(
     bezugsmonate_unter_grenze_fg: bool,
     max_arbeitsstunden_w: int,
 ) -> bool:
-    """Parent is eligible to receive Elterngeld."""
+    """Parent is eligible to receive Elterngeld.
+
+    Maximum income in the previous year introduced via § 1 (8) BEEG.
+    """
     return (
         claimed
         and arbeitsstunden_w <= max_arbeitsstunden_w
