@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from ttsim import (
     AggType,
@@ -13,24 +13,15 @@ from ttsim import (
     policy_function,
 )
 
-
-@dataclass(frozen=True)
-class EinkommensgrenzeErziehungsgeldGegebenFamilienstandNachSatzArt:
-    regelsatz: float
-    budgetsatz: float
-
-
-@dataclass(frozen=True)
-class EinkommensgrenzeErziehungsgeldNachFamilienstand:
-    alleinerziehend: EinkommensgrenzeErziehungsgeldGegebenFamilienstandNachSatzArt
-    paar: EinkommensgrenzeErziehungsgeldGegebenFamilienstandNachSatzArt
+ErziehungsgeldSätze = Literal["regelsatz", "budgetsatz"]
 
 
 @dataclass(frozen=True)
 class EinkommensgrenzeErziehungsgeld:
-    regulär: EinkommensgrenzeErziehungsgeldNachFamilienstand
-    reduziert: EinkommensgrenzeErziehungsgeldNachFamilienstand
-    maximalalter_reguläres_limit_monate: int
+    regulär_alleinerziehend: dict[ErziehungsgeldSätze, float]
+    regulär_paar: dict[ErziehungsgeldSätze, float]
+    reduziert_alleinerziehend: dict[ErziehungsgeldSätze, float]
+    reduziert_paar: dict[ErziehungsgeldSätze, float]
 
 
 @param_function(
@@ -41,40 +32,13 @@ def einkommensgrenze(
     parameter_einkommensgrenze: dict[str, Any],
 ) -> EinkommensgrenzeErziehungsgeld:
     """Parameter der Einkommensgrenze des Erziehungsgelds."""
-    regulär = EinkommensgrenzeErziehungsgeldNachFamilienstand(
-        alleinerziehend=EinkommensgrenzeErziehungsgeldGegebenFamilienstandNachSatzArt(
-            regelsatz=parameter_einkommensgrenze["regulär"]["alleinerziehend"][
-                "regelsatz"
-            ],
-            budgetsatz=parameter_einkommensgrenze["regulär"]["alleinerziehend"][
-                "budgetsatz"
-            ],
-        ),
-        paar=EinkommensgrenzeErziehungsgeldGegebenFamilienstandNachSatzArt(
-            regelsatz=parameter_einkommensgrenze["regulär"]["paar"]["regelsatz"],
-            budgetsatz=parameter_einkommensgrenze["regulär"]["paar"]["budgetsatz"],
-        ),
-    )
-    reduziert = EinkommensgrenzeErziehungsgeldNachFamilienstand(
-        alleinerziehend=EinkommensgrenzeErziehungsgeldGegebenFamilienstandNachSatzArt(
-            regelsatz=parameter_einkommensgrenze["reduziert"]["alleinerziehend"][
-                "regelsatz"
-            ],
-            budgetsatz=parameter_einkommensgrenze["reduziert"]["alleinerziehend"][
-                "budgetsatz"
-            ],
-        ),
-        paar=EinkommensgrenzeErziehungsgeldGegebenFamilienstandNachSatzArt(
-            regelsatz=parameter_einkommensgrenze["reduziert"]["paar"]["regelsatz"],
-            budgetsatz=parameter_einkommensgrenze["reduziert"]["paar"]["budgetsatz"],
-        ),
-    )
     return EinkommensgrenzeErziehungsgeld(
-        regulär=regulär,
-        reduziert=reduziert,
-        maximalalter_reguläres_limit_monate=parameter_einkommensgrenze[
-            "start_age_m_reduced_income_limit"
+        regulär_alleinerziehend=parameter_einkommensgrenze["regulär_alleinerziehend"],
+        regulär_paar=parameter_einkommensgrenze["regulär_paar"],
+        reduziert_alleinerziehend=parameter_einkommensgrenze[
+            "reduziert_alleinerziehend"
         ],
+        reduziert_paar=parameter_einkommensgrenze["reduziert_paar"],
     )
 
 
@@ -153,14 +117,14 @@ def basisbetrag_m(
     anzurechnendes_einkommen_y: float,
     einkommensgrenze_y: float,
     alter_monate: int,
+    altersgrenze_für_reduziertes_einkommenslimit_kind_monate: int,
     satz: dict[str, float],
-    einkommensgrenze: EinkommensgrenzeErziehungsgeld,
 ) -> float:
     """Parental leave benefit (Erziehungsgeld) without means-test on child level."""
     # no benefit if income is above threshold and child is younger than threshold
     if (
         anzurechnendes_einkommen_y > einkommensgrenze_y
-        and alter_monate < einkommensgrenze.maximalalter_reguläres_limit_monate
+        and alter_monate < altersgrenze_für_reduziertes_einkommenslimit_kind_monate
     ):
         out = 0.0
     elif budgetsatz:
@@ -176,8 +140,8 @@ def abzug_durch_einkommen_m(
     anzurechnendes_einkommen_m: float,
     einkommensgrenze_m: float,
     alter_monate: int,
+    altersgrenze_für_reduziertes_einkommenslimit_kind_monate: float,
     abschlagsfaktor: float,
-    einkommensgrenze: EinkommensgrenzeErziehungsgeld,
 ) -> float:
     """Reduction of parental leave benefits (means-test).
 
@@ -185,7 +149,7 @@ def abzug_durch_einkommen_m(
     """
     if (
         anzurechnendes_einkommen_m > einkommensgrenze_m
-        and alter_monate >= einkommensgrenze.maximalalter_reguläres_limit_monate
+        and alter_monate >= altersgrenze_für_reduziertes_einkommenslimit_kind_monate
     ):
         out = anzurechnendes_einkommen_m * abschlagsfaktor
     else:
@@ -321,14 +285,14 @@ def einkommensgrenze_ohne_geschwisterbonus(
     alter_monate: int,
     einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze: float,
     einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze: float,
-    einkommensgrenze: EinkommensgrenzeErziehungsgeld,
+    altersgrenze_für_reduziertes_einkommenslimit_kind_monate: float,
 ) -> float:
     """Income threshold for parental leave benefit (Erziehungsgeld) before adding the
     bonus for additional children.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
     """
-    if alter_monate < einkommensgrenze.maximalalter_reguläres_limit_monate:
+    if alter_monate < altersgrenze_für_reduziertes_einkommenslimit_kind_monate:
         return einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze
     else:
         return einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze
@@ -347,13 +311,13 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze(
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
     """
     if budgetsatz and familie__alleinerziehend_fg:
-        return einkommensgrenze.regulär.alleinerziehend.budgetsatz
+        return einkommensgrenze.regulär_alleinerziehend["budgetsatz"]
     elif budgetsatz and not familie__alleinerziehend_fg:
-        return einkommensgrenze.regulär.paar.budgetsatz
+        return einkommensgrenze.regulär_paar["budgetsatz"]
     elif not budgetsatz and familie__alleinerziehend_fg:
-        return einkommensgrenze.regulär.alleinerziehend.regelsatz
+        return einkommensgrenze.regulär_alleinerziehend["regelsatz"]
     else:
-        return einkommensgrenze.regulär.paar.regelsatz
+        return einkommensgrenze.regulär_paar["regelsatz"]
 
 
 @policy_function(
@@ -369,13 +333,13 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
     """
     if budgetsatz and familie__alleinerziehend_fg:
-        return einkommensgrenze.reduziert.alleinerziehend.budgetsatz
+        return einkommensgrenze.reduziert_alleinerziehend["budgetsatz"]
     elif budgetsatz and not familie__alleinerziehend_fg:
-        return einkommensgrenze.reduziert.paar.budgetsatz
+        return einkommensgrenze.reduziert_paar["budgetsatz"]
     elif not budgetsatz and familie__alleinerziehend_fg:
-        return einkommensgrenze.reduziert.alleinerziehend.regelsatz
+        return einkommensgrenze.reduziert_alleinerziehend["regelsatz"]
     else:
-        return einkommensgrenze.reduziert.paar.regelsatz
+        return einkommensgrenze.reduziert_paar["regelsatz"]
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

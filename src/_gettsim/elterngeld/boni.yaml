@@ -46,7 +46,7 @@ geschwisterbonus_minimum:
   2007-01-01:
     value: 75.0
     reference: Art. 1 G. v. 05.12.2006 BGBl. I S. 2748
-parameter_mehrlingsbonus:
+mehrlingsbonus_pro_kind:
   name:
     de: Pauschale für jedes weitere Mehrlingskind
     en: Twin, triplet bonus per additional child

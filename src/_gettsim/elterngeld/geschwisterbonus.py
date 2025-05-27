@@ -27,11 +27,9 @@ def geschwisterbonus_m(
 
 
 @policy_function(start_date="2007-01-01")
-def mehrlingsbonus_m(
-    anzahl_mehrlinge_fg: int, parameter_mehrlingsbonus: float
-) -> float:
+def mehrlingsbonus_m(anzahl_mehrlinge_fg: int, mehrlingsbonus_pro_kind: float) -> float:
     """Elterngeld bonus for multiples."""
-    return anzahl_mehrlinge_fg * parameter_mehrlingsbonus
+    return anzahl_mehrlinge_fg * mehrlingsbonus_pro_kind
 
 
 @policy_function(start_date="2007-01-01")
