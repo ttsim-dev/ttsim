@@ -41,6 +41,9 @@ inputs:
     elterngeld__betrag_m:
       - 0.0
       - 0.0
+    elterngeld__anrechenbarer_betrag_m:
+      - 0.0
+      - 0.0
     familie__alleinerziehend:
       - false
       - false
