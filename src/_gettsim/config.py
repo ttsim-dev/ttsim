@@ -10,7 +10,6 @@ INTERNAL_PARAMS_GROUPS = [
     "unterhaltsvors",
     "elterngeld",
     "grunds_im_alter",
-    "lohnst",
     "erziehungsgeld",
 ]
 
