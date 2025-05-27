@@ -90,7 +90,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     if familie__kind:
         out = 0.0
     else:
-        out = abzug.values_to_look_up[stufe] - abzug.base_to_subtract
+        out = abzug.values_to_look_up[stufe - abzug.base_to_subtract]
     return out
 
 
