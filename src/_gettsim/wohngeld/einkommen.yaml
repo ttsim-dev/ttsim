@@ -4,8 +4,17 @@ min_einkommen:
     de: Minimalwert für Parameter Y
     en: null
   description:
-    de: WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
-    en: null
+    de: >-
+      WoGG - Anlage 3 (bis 2019 Anlage 2) (zu § 19 Abs. 2)
+      Parameter Y ist abhängig von der Anzahl der (wohngeldrechtlichen)
+      Haushaltsmitglieder. Keys in den Parameter-Dicts beziehen sich auf die Anzahl der
+      Haushaltsmitglieder. Bei mehr als 12 Mitgliedern wird der Wert für 12 Mitglieder
+      verwendet.
+    en: >-
+      WoGG - Appendix 3 (until 2019 Appendix 2) (to § 19 (2))
+      Parameter Y is dependent on the number of household members (in the Wohngeld
+      sense). Keys in the parameter dicts refer to the number of household members. If
+      there are more than 12 members, the value for 12 members is used.
   unit: Euros
   reference_period: Month
   type: dict
@@ -211,9 +220,8 @@ freibetrag_bei_behinderung_gestaffelt_y:
       lower_threshold: 80
       upper_threshold: inf
       intercept_at_lower_threshold: 1500
-  # TODO: Comment in after moving to new infrastructure
-  # 2016-01-01:
-  #   note: Replaced by new rule, see 'freibetrag_bei_behinderung_pauschal_y'
+  2016-01-01:
+    note: Replaced by new rule, see 'freibetrag_bei_behinderung_pauschal_y'
 freibetrag_bei_behinderung_pauschal_y:
   name:
     de: Jährlicher Freibetrag pro behindertes Haushaltsmitglied
