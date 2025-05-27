@@ -327,17 +327,7 @@ module = [
 ]
 disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
-    "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
-
-[[tool.mypy.overrides]]
-module = [
-    "src._gettsim.*",
-]
-disable_error_code = [
-    "type-arg" # TODO: Remove once we have proper types for parameters.
-]
-
 
 [[tool.mypy.overrides]]
 module = [

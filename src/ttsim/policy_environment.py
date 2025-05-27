@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal
 import dags.tree as dt
 import numpy
 import optree
-import yaml
 
 from ttsim.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -37,7 +36,6 @@ from ttsim.shared import (
     assert_valid_ttsim_pytree,
     merge_trees,
     to_datetime,
-    upsert_path_and_value,
     upsert_tree,
 )
 
@@ -73,8 +71,7 @@ class PolicyEnvironment:
     def __init__(
         self,
         raw_objects_tree: NestedColumnObjectsParamFunctions,
-        params: dict[str, Any] | None = None,
-        params_tree: NestedParamObjects | None = None,
+        params_tree: NestedParamObjects,
     ):
         # Check tree with policy inputs / functions, params functions.
         assert_valid_ttsim_pytree(
@@ -87,10 +84,6 @@ class PolicyEnvironment:
             raw_objects_tree,
         )
         _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
-
-        # TODO: Delete
-        params_tree = params_tree if params_tree is not None else {}
-        self._params = params if params is not None else {}
 
         # Check tree with params
         assert_valid_ttsim_pytree(
@@ -107,11 +100,6 @@ class PolicyEnvironment:
         Does not include automatically added aggregations / time conversions.
         """
         return self._raw_objects_tree
-
-    @property
-    def params(self) -> dict[str, Any]:
-        """The parameters of the policy environment."""
-        return self._params
 
     @property
     def params_tree(self) -> NestedParamObjects:
@@ -168,11 +156,11 @@ class PolicyEnvironment:
 
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = new_tree  # noqa: SLF001
-        result._params = self._params  # noqa: SLF001
+        result._params_tree = self._params_tree  # noqa: SLF001
 
         return result
 
-    def replace_all_parameters(self, params: dict[str, Any]) -> PolicyEnvironment:
+    def replace_params_tree(self, params_tree: NestedParamObjects) -> PolicyEnvironment:
         """
         Replace all parameters of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
@@ -188,7 +176,7 @@ class PolicyEnvironment:
         """
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = self._raw_objects_tree  # noqa: SLF001
-        result._params = params  # noqa: SLF001
+        result._params_tree = params_tree  # noqa: SLF001
 
         return result
 
@@ -223,31 +211,7 @@ def set_up_policy_environment(
         orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
         orig_params_tree=_orig_params_tree,
     )
-
-    params = {}
-    if "_gettsim" in root.name:
-        from _gettsim.config import (
-            INTERNAL_PARAMS_GROUPS as internal_params_groups,  # noqa: N811
-        )
-
-        for group in internal_params_groups:
-            raw_group_data = yaml.load(
-                (root / "parameters" / f"{group}.yaml").read_text(encoding="utf-8"),
-                Loader=yaml.CLoader,  # noqa: S506
-            )
-            params_one_group = _parse_raw_parameter_group(
-                raw_group_data=raw_group_data,
-                date=date,
-                group=group,
-                parameters=None,
-            )
-
-            # Align parameters for piecewise polynomial functions
-            params[group] = _parse_piecewise_parameters(params_one_group)
-        params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
-    else:
-        params = {}
-        params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
+    params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
     assert "evaluationsjahr" not in params_tree, "evaluationsjahr must not be specified"
     params_tree["evaluationsjahr"] = ScalarParam(
         leaf_name="evaluationsjahr",
@@ -266,7 +230,6 @@ def set_up_policy_environment(
             orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
             date=date,
         ),
-        params=params,
         params_tree=params_tree,
     )
 
@@ -594,10 +557,6 @@ def prep_one_params_spec(
     current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
-    # TODO: Remove this again once we have transferred all files.
-    assert "deviation_from" not in current_spec, (
-        f"'updates_previous' replaces 'deviation_from', {leaf_name}"
-    )
     if len(current_spec) == 0:
         return None
     elif len(current_spec) == 1 and "updates_previous" in current_spec:
@@ -612,9 +571,6 @@ def prep_one_params_spec(
         out["value"] = current_spec["value"]
     else:
         out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
-        # TODO: Remove this again once we have transferred all files.
-        assert "reference" not in out["value"], leaf_name
-        assert "note" not in out["value"], leaf_name
     return out
 
 
@@ -664,7 +620,7 @@ def get_consecutive_int_2d_lookup_table_param_value(
     """Get the parameters for a 2-dimensional lookup table."""
     lookup_keys_rows = numpy.asarray(sorted(raw.keys()))
     lookup_keys_cols = numpy.asarray(sorted(raw[lookup_keys_rows[0]].keys()))
-    for row, col_value in raw.items():
+    for col_value in raw.values():
         lookup_keys_this_col = numpy.asarray(sorted(col_value.keys()))
         assert (lookup_keys_cols == lookup_keys_this_col).all(), (
             "Column keys must be the same in each column, got:"
@@ -788,216 +744,6 @@ def get_birth_year_based_phase_inout_param_value(
     return get_consecutive_int_1d_lookup_table_param_value(
         {**before_phase_inout, **during_phase_inout, **after_phase_inout}
     )
-
-
-def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
-    """Check if parameters are stored in implicit structures and align to general
-    structure.
-
-    Parameters
-    ----------
-    tax_data
-        Loaded raw tax data.
-
-    Returns
-    -------
-    Parsed parameters ready to use in gettsim.
-
-    """
-    for param in tax_data:  # noqa: PLC0206
-        if isinstance(tax_data[param], dict):
-            if "type" in tax_data[param]:
-                if tax_data[param]["type"].startswith("piecewise"):
-                    tax_data[param] = get_piecewise_parameters(
-                        leaf_name=param,
-                        func_type=tax_data[param]["type"],
-                        parameter_dict=tax_data[param],
-                    )
-
-    return tax_data
-
-
-def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
-    raw_group_data: dict[str, Any],
-    date: datetime.date,
-    group: str,
-    parameters: list[str] | None = None,
-) -> dict[str, Any]:
-    """Load data from raw yaml group file.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy system is set up.
-    group
-        Policy system compartment.
-    parameters
-        List of parameters to be loaded. Only relevant for in function calls.
-    yaml_path
-        Path to directory of yaml_file. (Used for testing of this function).
-
-    Returns
-    -------
-    Dictionary of parameters loaded from raw yaml file and striped of unnecessary keys.
-
-    """
-
-    def subtract_years_from_date(date: datetime.date, years: int) -> datetime.date:
-        """Subtract one or more years from a date object."""
-        try:
-            date = date.replace(year=date.year - years)
-
-        # Take care of leap years
-        except ValueError:
-            date = date.replace(year=date.year - years, day=date.day - 1)
-        return date
-
-    def set_date_to_beginning_of_year(date: datetime.date) -> datetime.date:
-        """Set date to the beginning of the year."""
-
-        date = date.replace(month=1, day=1)
-
-        return date
-
-    # Load parameters (exclude 'rounding' parameters which are handled at the
-    # end of this function)
-    not_trans_keys = ["note", "reference", "deviation_from", "access_different_date"]
-    out_params: dict[str, Any] = {}
-    if not parameters:
-        parameters = list(raw_group_data.keys())
-
-    # Load values of all parameters at the specified date
-    for param in parameters:
-        policy_dates = sorted(
-            key for key in raw_group_data[param] if isinstance(key, datetime.date)
-        )
-        past_policies = [d for d in policy_dates if d <= date]
-
-        if not past_policies:
-            # If no policy exists, then we check if the policy maybe agrees right now
-            # with another one.
-            # Otherwise, do not create an entry for this parameter.
-            pass
-        else:
-            max_past_policy_date = numpy.array(past_policies).max()
-            policy_in_place = raw_group_data[param][max_past_policy_date]
-            if "scalar" in policy_in_place:
-                raise ValueError(f"{raw_group_data[param]}")
-            elif "value" in policy_in_place:
-                if policy_in_place["value"] == "inf":
-                    out_params[param] = numpy.inf
-                else:
-                    out_params[param] = policy_in_place["value"]
-            else:
-                out_params[param] = {}
-                # Keys which if given are transferred
-                add_trans_keys = ["type", "progressionsfaktor"]
-                for key in add_trans_keys:
-                    if key in raw_group_data[param]:
-                        out_params[param][key] = raw_group_data[param][key]
-                value_keys = (
-                    key for key in policy_in_place if key not in not_trans_keys
-                )
-                if "deviation_from" in policy_in_place:
-                    if policy_in_place["deviation_from"] == "previous":
-                        new_date = max_past_policy_date - datetime.timedelta(days=1)
-                        out_params[param] = _parse_raw_parameter_group(
-                            raw_group_data=raw_group_data,
-                            date=new_date,
-                            group=group,
-                            parameters=[param],
-                        )[param]
-                    elif "." in policy_in_place["deviation_from"]:
-                        assert (  # noqa: PT018
-                            group == "arbeitsl_geld_2"
-                            and param
-                            == "parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg"
-                        )
-                        path_list = policy_in_place["deviation_from"].split(".")
-                        out_params[param] = _parse_raw_parameter_group(
-                            raw_group_data=raw_group_data,
-                            date=date,
-                            group=path_list[0],
-                            parameters=[path_list[1]],
-                        )[path_list[1]]
-                    for key in value_keys:
-                        key_list: list[str] = []
-                        out_params[param][key] = transfer_dictionary(
-                            policy_in_place[key],
-                            copy.deepcopy(out_params[param][key]),
-                            key_list,
-                        )
-                else:
-                    for key in value_keys:
-                        out_params[param][key] = policy_in_place[key]
-
-            # Also load earlier parameter values if this is specified in yaml
-            if "access_different_date" in raw_group_data[param]:
-                if raw_group_data[param]["access_different_date"] == "vorjahr":
-                    date_last_year = subtract_years_from_date(date, years=1)
-                    params_last_year = _parse_raw_parameter_group(
-                        raw_group_data=raw_group_data,
-                        date=date_last_year,
-                        group=group,
-                        parameters=[param],
-                    )
-                    if param in params_last_year:
-                        out_params[f"{param}_vorjahr"] = params_last_year[param]
-                elif raw_group_data[param]["access_different_date"] == "jahresanfang":
-                    date_beginning_of_year = set_date_to_beginning_of_year(date)
-                    if date_beginning_of_year == date:
-                        out_params[f"{param}_jahresanfang"] = out_params[param]
-                    else:
-                        params_beginning_of_year = _parse_raw_parameter_group(
-                            raw_group_data=raw_group_data,
-                            date=date_beginning_of_year,
-                            group=group,
-                            parameters=[param],
-                        )
-                        if param in params_beginning_of_year:
-                            out_params[f"{param}_jahresanfang"] = (
-                                params_beginning_of_year[param]
-                            )
-                else:
-                    raise ValueError(
-                        "Currently, access_different_date is only implemented for "
-                        "'vorjahr' (last year) and "
-                        "'jahresanfang' (beginning of the year). "
-                        f"For parameter {param} a different string is specified."
-                    )
-
-    for p in out_params.values():
-        if isinstance(p, dict) and "type" in p:
-            if p["type"] == "dict":
-                for k, v in p.items():
-                    if v in {"inf", "-inf"}:
-                        p[k] = float(v)
-            if not p["type"].startswith("piecewise"):
-                p.pop("type", None)
-
-    out_params["datum"] = numpy.datetime64(date)
-
-    return out_params
-
-
-def transfer_dictionary(
-    remaining_dict: dict[str, Any] | Any, new_dict: dict[str, Any], key_list: list[str]
-) -> dict[str, Any]:
-    # To call recursive, always check if object is a dict
-    if isinstance(remaining_dict, dict):
-        for key in remaining_dict:
-            key_list_updated: list[str] = [*key_list, key]
-            new_dict = transfer_dictionary(
-                remaining_dict[key], new_dict, key_list_updated
-            )
-    elif len(key_list) == 0:
-        return remaining_dict
-    else:
-        # Now remaining dict is just a scalar
-        new_dict = upsert_path_and_value(
-            base=new_dict, path_to_upsert=key_list, value_to_upsert=remaining_dict
-        )
-    return new_dict
 
 
 def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(

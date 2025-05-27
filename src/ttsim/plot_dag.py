@@ -16,7 +16,7 @@ from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
 from ttsim.compute_taxes_and_transfers import (
-    _partial_parameters_to_functions,
+    _partial_params_to_functions,
     combine_policy_functions_and_derived_functions,
 )
 from ttsim.shared import (
@@ -106,11 +106,18 @@ def plot_dag(
         input_structure=input_structure,
     )
 
-    processed_functions = _partial_parameters_to_functions(
-        functions=partition_tree_by_reference_tree(
-            tree_to_partition=functions_not_overridden, reference_tree=dag.nodes
-        )[0],
-        processed_params=environment.params,
+    processed_params_tree = _process_params_tree(  # noqa: F821
+        params_tree=environment.params_tree,
+        param_functions={
+            k: v
+            for k, v in column_objects_param_functions.items()  # noqa: F821
+            if isinstance(v, ParamFunction)  # noqa: F821
+        },
+    )
+
+    processed_functions = _partial_params_to_functions(
+        functions=functions_with_rounding_specs,  # noqa: F821
+        processed_params=processed_params_tree,
     )
 
     input_structure = dt.create_tree_with_input_types(

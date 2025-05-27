@@ -143,12 +143,8 @@ def compute_taxes_and_transfers(
         if rounding
         else functions_to_be_used
     )
-    functions_with_partialled_parameters = _partial_parameters_to_functions(
-        functions=functions_with_rounding_specs,
-        processed_params=environment.params,
-    )
     functions_with_partialled_parameters = _partial_params_to_functions(
-        functions=functions_with_partialled_parameters,
+        functions=functions_with_rounding_specs,
         params=processed_params_tree,
     )
     # Remove unnecessary elements from user-provided data.
@@ -470,45 +466,6 @@ def _process_params_tree(
     )
 
 
-def _partial_parameters_to_functions(
-    functions: QualNameColumnFunctions,
-    processed_params: QualNameProcessedParams,
-) -> QualNameColumnFunctions:
-    """Round and partial parameters into functions.
-
-    Parameters
-    ----------
-    functions
-        The functions dict with qualified function names as keys and functions as
-        values.
-    params
-        Dictionary of parameters.
-
-    Returns
-    -------
-    Functions tree with parameters partialled.
-
-    """
-    # Partial parameters to functions such that they disappear in the DAG.
-    # Note: Needs to be done after rounding such that dags recognizes partialled
-    # parameters.
-    processed_functions = {}
-    for name, function in functions.items():
-        arguments = get_free_arguments(function)
-        partial_params = {
-            arg: processed_params[key]
-            for arg in arguments
-            for key in processed_params
-            if arg.endswith(f"{key}_params")
-        }
-        if partial_params:
-            processed_functions[name] = functools.partial(function, **partial_params)
-        else:
-            processed_functions[name] = function
-
-    return processed_functions
-
-
 def _partial_params_to_functions(
     functions: QualNameColumnFunctions,
     params: QualNameProcessedParams,
@@ -807,33 +764,16 @@ def _fail_if_root_nodes_are_missing(
     ValueError
         If root nodes are missing.
     """
-    missing_nodes = []
-
-    for node in root_nodes:
-        if node in functions:
-            func = functions[node]
-            if _func_depends_on_parameters_only(func):
-                # Function depends on parameters only, so it does not have to be present
-                # in the data tree.
-                continue
-        elif node in data or node.endswith("_num_segments"):
-            # Root node is present in the data tree.
-            continue
-        else:
-            missing_nodes.append(node)
+    missing_nodes = [
+        node
+        for node in root_nodes
+        if node not in functions
+        and node not in data
+        and not node.endswith("_num_segments")
+    ]
 
     if missing_nodes:
         formatted = format_list_linewise(
             [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes]
         )
         raise ValueError(f"The following data columns are missing.\n{formatted}")
-
-
-def _func_depends_on_parameters_only(func: ColumnFunction) -> bool:
-    """Check if a function depends on parameters only."""
-    return (
-        len(
-            [a for a in inspect.signature(func).parameters if not a.endswith("_params")]
-        )
-        == 0
-    )

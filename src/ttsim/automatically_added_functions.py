@@ -479,9 +479,6 @@ def create_time_conversion_functions(
                 break
 
         variations = _create_one_set_of_time_conversion_functions(**inputs)
-        for der_name in variations:
-            if der_name in converted_column_objects or der_name in data:
-                raise ValueError("TODO, should never end up here -- left for debugging")
         converted_column_objects = {**converted_column_objects, **variations}
 
     return converted_column_objects
