@@ -1,9 +1,5 @@
 from dataclasses import dataclass
 
-from ttsim.param_objects import (
-    ConsecutiveInt1dLookupTableParamValue,
-)
-
 
 @dataclass(frozen=True)
 class ElementExistenzminimum:
@@ -30,12 +26,3 @@ class ExistenzminimumNachAufwendungenMitBildungUndTeilhabe:
     kosten_der_unterkunft: ElementExistenzminimum
     heizkosten: ElementExistenzminimum
     bildung_und_teilhabe: ElementExistenzminimumNurKind
-
-
-@dataclass(frozen=True)
-class WohngeldBasisformelParamValues:
-    skalierungsfaktor: float
-    a: ConsecutiveInt1dLookupTableParamValue
-    b: ConsecutiveInt1dLookupTableParamValue
-    c: ConsecutiveInt1dLookupTableParamValue
-    zusatzbetrag_nach_haushaltsgröße: ConsecutiveInt1dLookupTableParamValue
