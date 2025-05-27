@@ -5,9 +5,7 @@ from pathlib import Path
 # Obtain the root directory of the package.
 GETTSIM_ROOT = Path(__file__).parent.resolve()
 
-INTERNAL_PARAMS_GROUPS = [
-    "grunds_im_alter",
-]
+INTERNAL_PARAMS_GROUPS: list[str] = []
 
 _TO_DELETE_DEFAULT_TARGETS = {
     "einkommensteuer": {

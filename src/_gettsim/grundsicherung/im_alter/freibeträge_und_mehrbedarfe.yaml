@@ -17,9 +17,6 @@ parameter_vermögensfreibetrag:
   unit: Euros
   reference_period: null
   type: dict
-  1984-01-01:
-    adult: 0
-    child: 0
   2003-01-01:
     adult: 2600
     child: 0
@@ -44,13 +41,6 @@ anrechnungsfreier_anteil_gesetzliche_rente:
   unit: Share
   reference_period: null
   type: piecewise_linear
-  1984-01-01:
-    reference: No income could be deducted
-    0:
-      lower_threshold: -inf
-      upper_threshold: inf
-      rate_linear: 0
-      intercept_at_lower_threshold: 0
   2021-01-01:
     0:
       lower_threshold: -inf
@@ -64,24 +54,22 @@ anrechnungsfreier_anteil_gesetzliche_rente:
     2:
       upper_threshold: inf
       rate_linear: 0.3
-anrechnungsfreie_kapitaleinkünfte:
+freibetrag_kapitaleinkünfte:
   name:
     de: Freibetrag des Kapitaleinkommens für Grundsicherung
     en: Amount of capital income not subject to transfer withdrawal
   description:
     de: >-
-      § 82 SGB XII Abs. 2
+      § 43 SGB XII Abs. 2
       Nur das Kapitaleinkommens, das über diesem Freibetrag liegt, wird auf die
       Grundsicherung im Alter angerechnet.
     en: >-
-      § 82 SGB XII Abs. 2
+      § 43 SGB XII Abs. 2
       Only the capital income above the threshold is considered for the calculation of
       the Grundsicherung im Alter.
   unit: Euros
   reference_period: Year
   type: scalar
-  1984-01-01:
-    value: 0
   2016-01-01:
     value: 26
 anrechnungsfreier_anteil_erwerbseinkünfte:
@@ -118,13 +106,6 @@ anrechnungsfreier_anteil_private_renteneinkünfte:
   unit: Share
   reference_period: null
   type: piecewise_linear
-  1984-01-01:
-    reference: Unclear how it was handled before 2005
-    0:
-      lower_threshold: -inf
-      upper_threshold: inf
-      rate_linear: 0
-      intercept_at_lower_threshold: 0
   2005-01-01:
     0:
       lower_threshold: -inf
