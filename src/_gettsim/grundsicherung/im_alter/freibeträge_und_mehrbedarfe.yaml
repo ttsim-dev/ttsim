@@ -18,11 +18,11 @@ parameter_vermögensfreibetrag:
   reference_period: null
   type: dict
   2003-01-01:
-    adult: 2600
-    child: 0
+    erwachsene: 2600
+    kinder: 0
   2017-04-01:
-    adult: 5000
-    child: 500
+    erwachsene: 5000
+    kinder: 500
 anrechnungsfreier_anteil_gesetzliche_rente:
   name:
     de: Anrechnungsfreier Anteil der staatlichen Rente (bei mind. 33 Grundrentenzeiten)
