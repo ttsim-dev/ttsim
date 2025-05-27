@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParamValue,
-    ConsecutiveInt2dLookupTableParamValue,
 )
 
 
@@ -40,8 +39,3 @@ class WohngeldBasisformelParamValues:
     b: ConsecutiveInt1dLookupTableParamValue
     c: ConsecutiveInt1dLookupTableParamValue
     zusatzbetrag_nach_haushaltsgröße: ConsecutiveInt1dLookupTableParamValue
-
-
-@dataclass(frozen=True)
-class WohngeldMaxMieteNachBaujahrParamValues:
-    max_miete_nach_baujahr: dict[int, ConsecutiveInt2dLookupTableParamValue]
