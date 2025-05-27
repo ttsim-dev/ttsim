@@ -11,7 +11,6 @@ INTERNAL_PARAMS_GROUPS = [
     "wohngeld",
     "elterngeld",
     "grunds_im_alter",
-    "lohnst",
     "erziehungsgeld",
 ]
 
