@@ -8,11 +8,11 @@ import optree
 
 from ttsim import (
     AggType,
-    PiecewisePolynomialParameters,
+    PiecewisePolynomialParamValue,
     RoundingSpec,
     agg_by_group_function,
     agg_by_p_id_function,
-    params_function,
+    param_function,
     piecewise_polynomial,
     policy_function,
 )
@@ -22,45 +22,7 @@ from ttsim.piecewise_polynomial import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParamsRequiringConversion
-
-
-@params_function(start_date="2002-01-01")
-def parameter_einkommensteuertarif(
-    raw_parameter_einkommensteuertarif: RawParamsRequiringConversion,
-) -> PiecewisePolynomialParameters:
-    """Add the quadratic terms to tax tariff function.
-
-    The German tax tariff is defined on several income intervals with distinct
-    marginal tax rates at the thresholds. To ensure an almost linear increase of
-    the average tax rate, the German tax tariff is defined as a quadratic function,
-    where the quadratic rate is the so called linear Progressionsfaktor. For its
-    calculation one needs the lower (low_thres) and upper (upper_thres) thresholds of
-    the interval as well as the marginal tax rate of the interval (rate_iv) and of the
-    following interval (rate_fiv). The formula is then given by:
-
-    (rate_fiv - rate_iv) / (2 * (upper_thres - low_thres))
-
-    """
-    expanded: dict[int, dict[str, float]] = optree.tree_map(  # type: ignore[assignment]
-        float, raw_parameter_einkommensteuertarif
-    )
-
-    # Check and extract lower thresholds.
-    lower_thresholds, upper_thresholds = check_and_get_thresholds(
-        leaf_name="parameter_einkommensteuertarif",
-        parameter_dict=expanded,
-    )[:2]
-    for key in sorted(raw_parameter_einkommensteuertarif.keys()):
-        if "rate_quadratic" not in raw_parameter_einkommensteuertarif[key]:
-            expanded[key]["rate_quadratic"] = (
-                expanded[key + 1]["rate_linear"] - expanded[key]["rate_linear"]
-            ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
-    return get_piecewise_parameters(
-        leaf_name="parameter_einkommensteuertarif",
-        func_type="piecewise_quadratic",
-        parameter_dict=expanded,
-    )
+    from ttsim.typing import RawParam
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
@@ -203,7 +165,7 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
     anzahl_personen_sn: int,
-    parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
 ) -> float:
     """Taxes with child allowance on Steuernummer level.
 
@@ -227,7 +189,7 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
 def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
     anzahl_personen_sn: int,
-    parameter_einkommensteuertarif: PiecewisePolynomialParameters,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
 ) -> float:
     """Taxes without child allowance on Steuernummer level. Also referred to as
     "tarifliche ESt II".
@@ -278,7 +240,7 @@ def relevantes_kindergeld_mit_staffelung_m(
 def relevantes_kindergeld_ohne_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld__satz_einheitlich: float,
+    kindergeld__satz: float,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
@@ -288,7 +250,7 @@ def relevantes_kindergeld_ohne_staffelung_m(
 
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
-    return kindergeld__satz_einheitlich * kindergeld_ansprüche / 2
+    return kindergeld__satz * kindergeld_ansprüche / 2
 
 
 def einkommensteuertarif(x: float, params: dict) -> float:
@@ -308,4 +270,42 @@ def einkommensteuertarif(x: float, params: dict) -> float:
     return piecewise_polynomial(
         x=x,
         parameters=params,
+    )
+
+
+@param_function(start_date="2002-01-01")
+def parameter_einkommensteuertarif(
+    raw_parameter_einkommensteuertarif: RawParam,
+) -> PiecewisePolynomialParamValue:
+    """Add the quadratic terms to tax tariff function.
+
+    The German tax tariff is defined on several income intervals with distinct
+    marginal tax rates at the thresholds. To ensure an almost linear increase of
+    the average tax rate, the German tax tariff is defined as a quadratic function,
+    where the quadratic rate is the so called linear Progressionsfaktor. For its
+    calculation one needs the lower (low_thres) and upper (upper_thres) thresholds of
+    the interval as well as the marginal tax rate of the interval (rate_iv) and of the
+    following interval (rate_fiv). The formula is then given by:
+
+    (rate_fiv - rate_iv) / (2 * (upper_thres - low_thres))
+
+    """
+    expanded: dict[int, dict[str, float]] = optree.tree_map(  # type: ignore[assignment]
+        float, raw_parameter_einkommensteuertarif
+    )
+
+    # Check and extract lower thresholds.
+    lower_thresholds, upper_thresholds = check_and_get_thresholds(
+        leaf_name="parameter_einkommensteuertarif",
+        parameter_dict=expanded,
+    )[:2]
+    for key in sorted(raw_parameter_einkommensteuertarif.keys()):
+        if "rate_quadratic" not in raw_parameter_einkommensteuertarif[key]:
+            expanded[key]["rate_quadratic"] = (
+                expanded[key + 1]["rate_linear"] - expanded[key]["rate_linear"]
+            ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
+    return get_piecewise_parameters(
+        leaf_name="parameter_einkommensteuertarif",
+        func_type="piecewise_quadratic",
+        parameter_dict=expanded,
     )

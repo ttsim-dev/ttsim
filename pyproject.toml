@@ -266,7 +266,7 @@ exclude = []
 # Files which should be ignored until we have rewritten them
 # =========================================================
 "outdated_docs/**/*.ipynb" = ["T201"]
-"tests/ttsim/test_docs.py" = ["F821"]
+"src/_gettsim_tests/test_docs.py" = ["F821"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -291,7 +291,7 @@ disallow_empty_bodies = false
 [[tool.mypy.overrides]]
 module = [
     "src.ttsim.plot_dag",
-    "tests.ttsim.test_docs",
+    "src._gettsim_tests.test_docs",
 ]
 disallow_untyped_defs = false
 ignore_errors = true
@@ -302,6 +302,14 @@ module = [
 ]
 disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.ttsim.test_policy_environment",
+]
+disable_error_code = [
+    "misc",  # Happens when constructing param dictionaries on the fly.
 ]
 
 

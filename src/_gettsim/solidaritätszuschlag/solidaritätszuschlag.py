@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_function
+from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
 
 
 @policy_function(
@@ -11,7 +11,7 @@ from ttsim import PiecewisePolynomialParameters, piecewise_polynomial, policy_fu
 def betrag_y_sn_ohne_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
-    parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+    parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
 ) -> float:
     """Calculate the Solidarity Surcharge on Steuernummer level.
 
@@ -41,7 +41,7 @@ def betrag_y_sn_mit_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
     einkommensteuer__abgeltungssteuer__betrag_y_sn: float,
-    parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+    parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
 ) -> float:
     """Calculate the Solidarity Surcharge on Steuernummer level.
 
@@ -71,7 +71,7 @@ def betrag_y_sn_mit_abgelt_st(
 
 def solidaritätszuschlagstarif(
     steuer_pro_person: float,
-    parameter_solidaritätszuschlag: PiecewisePolynomialParameters,
+    parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
 ) -> float:
     """The isolated function for Solidaritätszuschlag."""
 

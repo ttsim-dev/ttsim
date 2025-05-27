@@ -15,8 +15,15 @@ from ttsim.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
+from ttsim.column_objects_param_function import (
+    ColumnFunction,
+    FKType,
+    ParamFunction,
+    PolicyInput,
+)
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
+from ttsim.param_objects import RawParam
 from ttsim.policy_environment import PolicyEnvironment
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
@@ -30,41 +37,34 @@ from ttsim.shared import (
     merge_trees,
     partition_by_reference_dict,
 )
-from ttsim.ttsim_objects import (
-    FKType,
-    ParamsFunction,
-    PolicyInput,
-    RawTTSIMParam,
-    TTSIMFunction,
-)
 
 if TYPE_CHECKING:
     from ttsim.typing import (
-        NestedDataDict,
+        NestedColumnObjectsParamFunctions,
+        NestedData,
+        NestedParamObjects,
         NestedTargetDict,
-        NestedTTSIMObjectDict,
-        NestedTTSIMParamDict,
-        QualNameDataDict,
-        QualNameProcessedParamDict,
+        QualNameColumnFunctions,
+        QualNameColumnObjectsParamFunctions,
+        QualNameData,
+        QualNameProcessedParams,
         QualNameTargetList,
-        QualNameTTSIMFunctionDict,
-        QualNameTTSIMObjectDict,
     )
 
 
 def compute_taxes_and_transfers(
-    data_tree: NestedDataDict,
+    data_tree: NestedData,
     environment: PolicyEnvironment,
     targets_tree: NestedTargetDict,
     rounding: bool = True,
     debug: bool = False,
     jit: bool = False,
-) -> NestedDataDict:
+) -> NestedData:
     """Compute taxes and transfers.
 
     Parameters
     ----------
-    data_tree : NestedDataDict
+    data_tree : NestedData
         Data provided by the user.
     environment: PolicyEnvironment
         The policy environment which contains all necessary functions and parameters.
@@ -81,7 +81,7 @@ def compute_taxes_and_transfers(
 
     Returns
     -------
-    results : NestedDataDict
+    results : NestedData
         The computed variables as a tree.
 
     """
@@ -102,25 +102,32 @@ def compute_taxes_and_transfers(
         targets=targets_tree,
         top_level_namespace=top_level_namespace,
     )
-    # Flatten nested objects to qualified names
-    targets = dt.qual_names(targets_tree)
     data = dt.flatten_to_qual_names(data_tree)
-    ttsim_objects = remove_tree_logic_from_ttsim_objects_tree(
-        raw_objects_tree=environment.raw_objects_tree,
-        top_level_namespace=top_level_namespace,
+    column_objects_param_functions = (
+        remove_tree_logic_from_tree_with_column_objects_param_functions(
+            raw_objects_tree=environment.raw_objects_tree,
+            top_level_namespace=top_level_namespace,
+        )
     )
     # Process parameters
     processed_params_tree = _process_params_tree(
         params_tree=environment.params_tree,
-        params_functions={
-            k: v for k, v in ttsim_objects.items() if isinstance(v, ParamsFunction)
+        param_functions={
+            k: v
+            for k, v in column_objects_param_functions.items()
+            if isinstance(v, ParamFunction)
         },
     )
 
+    # Flatten nested objects to qualified names
+    all_targets = set(dt.qual_names(targets_tree))
+    params_targets = {t for t in all_targets if t in processed_params_tree}
+    function_targets = all_targets - params_targets
+
     # Add derived functions to the qualified functions tree.
     functions = combine_policy_functions_and_derived_functions(
-        ttsim_objects=ttsim_objects,
-        targets=targets,
+        column_objects_param_functions=column_objects_param_functions,
+        targets=function_targets,
         data=data,
         groupings=environment.grouping_levels,
     )
@@ -138,7 +145,7 @@ def compute_taxes_and_transfers(
     )
     functions_with_partialled_parameters = _partial_parameters_to_functions(
         functions=functions_with_rounding_specs,
-        params=environment.params,
+        processed_params=environment.params,
     )
     functions_with_partialled_parameters = _partial_params_to_functions(
         functions=functions_with_partialled_parameters,
@@ -148,7 +155,7 @@ def compute_taxes_and_transfers(
     input_data = _create_input_data_for_concatenated_function(
         data=data,
         functions=functions_with_partialled_parameters,
-        targets=targets,
+        targets=function_targets,
     )
 
     _fail_if_group_variables_not_constant_within_groups(
@@ -161,14 +168,17 @@ def compute_taxes_and_transfers(
     }
     _fail_if_foreign_keys_are_invalid_in_data(
         data=_input_data_with_p_id,
-        ttsim_objects=ttsim_objects,
+        column_objects_param_functions=column_objects_param_functions,
     )
     if debug:
-        targets = sorted([*targets, *functions_with_partialled_parameters.keys()])
+        function_targets = {
+            *function_targets,
+            *functions_with_partialled_parameters.keys(),
+        }
 
     tax_transfer_function = concatenate_functions(
         functions=functions_with_partialled_parameters,
-        targets=targets,
+        targets=list(function_targets),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
@@ -191,15 +201,20 @@ def compute_taxes_and_transfers(
         tax_transfer_function = jax.jit(tax_transfer_function)
     results = tax_transfer_function(**input_data)
 
-    result_tree = dt.unflatten_from_qual_names(results)
+    results_tree = dt.unflatten_from_qual_names(
+        {
+            **results,
+            **{pt: processed_params_tree[pt] for pt in params_targets},
+        }
+    )
 
     if debug:
-        result_tree = merge_trees(
-            left=result_tree,
+        results_tree = merge_trees(
+            left=results_tree,
             right=dt.unflatten_from_qual_names(input_data),
         )
 
-    return result_tree
+    return results_tree
 
 
 def _get_top_level_namespace(
@@ -258,11 +273,11 @@ def _get_top_level_namespace(
     return all_top_level_names
 
 
-def remove_tree_logic_from_ttsim_objects_tree(
-    raw_objects_tree: NestedTTSIMObjectDict,
+def remove_tree_logic_from_tree_with_column_objects_param_functions(
+    raw_objects_tree: NestedColumnObjectsParamFunctions,
     top_level_namespace: set[str],
-) -> QualNameTTSIMObjectDict:
-    """Map qualified names to TTSIM objects without tree logic."""
+) -> QualNameColumnObjectsParamFunctions:
+    """Map qualified names to column objects / param functions without tree logic."""
     return {
         name: f_or_i.remove_tree_logic(
             tree_path=dt.tree_path_from_qual_name(name),
@@ -273,22 +288,25 @@ def remove_tree_logic_from_ttsim_objects_tree(
 
 
 def combine_policy_functions_and_derived_functions(
-    ttsim_objects: QualNameTTSIMObjectDict,
+    column_objects_param_functions: QualNameColumnObjectsParamFunctions,
     targets: QualNameTargetList,
-    data: QualNameDataDict,
+    data: QualNameData,
     groupings: tuple[str, ...],
-) -> QualNameTTSIMFunctionDict:
-    """Add derived functions to the qualified functions dict.
+) -> QualNameColumnFunctions:
+    """Return a mapping of qualified names to functions operating on columns.
+
+    Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
+    PolicyInputs).
 
     Derived functions are time converted functions and aggregation functions (aggregate
     by p_id or by group).
 
-    Checks that all targets have a corresponding function in the functions tree or can
+    Check that all targets have a corresponding function in the functions tree or can
     be taken from the data.
 
     Parameters
     ----------
-    functions
+    column_objects_param_functions
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
     targets
@@ -305,12 +323,20 @@ def combine_policy_functions_and_derived_functions(
     """
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
-        ttsim_objects=ttsim_objects,
+        column_objects={
+            k: v
+            for k, v in column_objects_param_functions.items()
+            if not isinstance(v, ParamFunction)
+        },
         data=data,
         groupings=groupings,
     )
     out = {
-        **{qn: f for qn, f in ttsim_objects.items() if isinstance(f, TTSIMFunction)},
+        **{
+            qn: f
+            for qn, f in column_objects_param_functions.items()
+            if isinstance(f, ColumnFunction)
+        },
         **time_conversion_functions,
     }
     # Create aggregation functions by group.
@@ -322,13 +348,17 @@ def combine_policy_functions_and_derived_functions(
     )
     out = {**aggregate_by_group_functions, **out}
 
-    _fail_if_targets_not_in_functions(functions=out, targets=targets)
+    _fail_if_function_targets_not_in_functions(
+        functions=out,
+        targets=targets,
+    )
 
     return out
 
 
-def _fail_if_targets_not_in_functions(
-    functions: QualNameTTSIMFunctionDict, targets: QualNameTargetList
+def _fail_if_function_targets_not_in_functions(
+    functions: QualNameColumnFunctions,
+    targets: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -358,10 +388,10 @@ def _fail_if_targets_not_in_functions(
 
 
 def _create_input_data_for_concatenated_function(
-    data: QualNameDataDict,
-    functions: QualNameTTSIMFunctionDict,
+    data: QualNameData,
+    functions: QualNameColumnFunctions,
     targets: QualNameTargetList,
-) -> QualNameDataDict:
+) -> QualNameData:
     """Create input data for the concatenated function.
 
     1. Check that all root nodes are present in the user-provided data.
@@ -402,16 +432,16 @@ def _create_input_data_for_concatenated_function(
 
 
 def _process_params_tree(
-    params_tree: NestedTTSIMParamDict,
-    params_functions: QualNameTTSIMFunctionDict,
-) -> QualNameProcessedParamDict:
+    params_tree: NestedParamObjects,
+    param_functions: QualNameColumnFunctions,
+) -> QualNameProcessedParams:
     """Return a mapping of qualified names to processed parameter values.
 
     Notes:
 
-    - This gets rid of the TTSIMParam objects and all meta-information like
+    - This gets rid of the ParamObject objects and all meta-information like
       extended names, descriptions, units, etc.
-    - RawParamsRequiringConversion are filtered out, converted values are left.
+    - RawParams are filtered out, converted values are left.
 
     """
 
@@ -419,7 +449,7 @@ def _process_params_tree(
 
     # Construct a function for the processing of all params.
     process = concatenate_functions(
-        functions=params_functions,
+        functions=param_functions,
         targets=None,
         return_type="dict",
         aggregator=None,
@@ -434,16 +464,16 @@ def _process_params_tree(
         left={
             k: v.value
             for k, v in qual_name_params.items()
-            if not isinstance(v, RawTTSIMParam)
+            if not isinstance(v, RawParam)
         },
         right=processed,
     )
 
 
 def _partial_parameters_to_functions(
-    functions: QualNameTTSIMFunctionDict,
-    params: QualNameProcessedParamDict,
-) -> QualNameTTSIMFunctionDict:
+    functions: QualNameColumnFunctions,
+    processed_params: QualNameProcessedParams,
+) -> QualNameColumnFunctions:
     """Round and partial parameters into functions.
 
     Parameters
@@ -466,9 +496,9 @@ def _partial_parameters_to_functions(
     for name, function in functions.items():
         arguments = get_free_arguments(function)
         partial_params = {
-            arg: params[key]
+            arg: processed_params[key]
             for arg in arguments
-            for key in params
+            for key in processed_params
             if arg.endswith(f"{key}_params")
         }
         if partial_params:
@@ -480,9 +510,9 @@ def _partial_parameters_to_functions(
 
 
 def _partial_params_to_functions(
-    functions: QualNameTTSIMFunctionDict,
-    params: QualNameProcessedParamDict,
-) -> QualNameTTSIMFunctionDict:
+    functions: QualNameColumnFunctions,
+    params: QualNameProcessedParams,
+) -> QualNameColumnFunctions:
     """Partial parameters to functions such that they disappear from the DAG.
 
     Note: Needs to be done after rounding such that dags recognizes partialled
@@ -515,8 +545,8 @@ def _partial_params_to_functions(
 
 
 def _add_rounding_to_functions(
-    functions: QualNameTTSIMFunctionDict,
-) -> QualNameTTSIMFunctionDict:
+    functions: QualNameColumnFunctions,
+) -> QualNameColumnFunctions:
     """Add appropriate rounding of outputs to function.
 
     Parameters
@@ -553,12 +583,12 @@ def _fail_if_targets_tree_not_valid(targets_tree: NestedTargetDict) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=targets_tree,
-        leaf_checker=lambda leaf: leaf is None,
+        leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
         tree_name="targets_tree",
     )
 
 
-def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
+def _fail_if_data_tree_not_valid(data_tree: NestedData) -> None:
     """
     Validate that the data tree is a dictionary with string keys and pd.Series or
     np.ndarray leaves.
@@ -572,7 +602,7 @@ def _fail_if_data_tree_not_valid(data_tree: NestedDataDict) -> None:
 
 
 def _fail_if_group_variables_not_constant_within_groups(
-    data: QualNameDataDict,
+    data: QualNameData,
     groupings: tuple[str, ...],
 ) -> None:
     """
@@ -615,7 +645,7 @@ def _fail_if_group_variables_not_constant_within_groups(
         raise ValueError(msg)
 
 
-def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
+def _fail_if_p_id_is_non_unique(data_tree: NestedData) -> None:
     """Check that pid is unique."""
     p_id = data_tree.get("p_id", None)
     if p_id is None:
@@ -640,8 +670,8 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedDataDict) -> None:
 
 
 def _fail_if_foreign_keys_are_invalid_in_data(
-    data: QualNameDataDict,
-    ttsim_objects: QualNameTTSIMObjectDict,
+    data: QualNameData,
+    column_objects_param_functions: QualNameColumnObjectsParamFunctions,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -653,8 +683,8 @@ def _fail_if_foreign_keys_are_invalid_in_data(
     valid_ids = set(data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
-        for k, v in ttsim_objects.items()
-        if isinstance(v, PolicyInput | TTSIMFunction)
+        for k, v in column_objects_param_functions.items()
+        if isinstance(v, PolicyInput | ColumnFunction)
     }
 
     for fk_name, fk in relevant_objects.items():
@@ -689,7 +719,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
 
 
 def _warn_if_functions_overridden_by_data(
-    functions_overridden: QualNameTTSIMFunctionDict,
+    functions_overridden: QualNameColumnFunctions,
 ) -> None:
     """Warn if functions are overridden by data."""
     if len(functions_overridden) > 0:
@@ -717,9 +747,9 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
                 """
                 This is already present among the hard-coded functions of the taxes and
                 transfers system. If you want this data column to be used instead of
-                calculating it within GETTSIM you need not do anything. If you want this
+                calculating it within TTSIM you need not do anything. If you want this
                 data column to be calculated by hard-coded functions, remove it from the
-                *data* you pass to GETTSIM. You need to pick one option for each column
+                *data* you pass to TTSIM. You need to pick one option for each column
                 that appears in the list above.
                 """
             )
@@ -729,9 +759,9 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
                 """
                 These are already present among the hard-coded functions of the taxes
                 and transfers system. If you want a data column to be used instead of
-                calculating it within GETTSIM you do not need to do anything. If you
+                calculating it within TTSIM you do not need to do anything. If you
                 want data columns to be calculated by hard-coded functions, remove them
-                from the *data* you pass to GETTSIM. You need to pick one option for
+                from the *data* you pass to TTSIM. You need to pick one option for
                 each column that appears in the list above.
                 """
             )
@@ -739,10 +769,10 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
         how_to_ignore = format_errors_and_warnings(
             """
             If you want to ignore this warning, add the following code to your script
-            before calling GETTSIM:
+            before calling TTSIM:
 
                 import warnings
-                from gettsim import FunctionsAndColumnsOverlapWarning
+                from ttsim import FunctionsAndColumnsOverlapWarning
 
                 warnings.filterwarnings(
                     "ignore",
@@ -754,8 +784,8 @@ class FunctionsAndColumnsOverlapWarning(UserWarning):
 
 
 def _fail_if_root_nodes_are_missing(
-    functions: QualNameTTSIMFunctionDict,
-    data: QualNameDataDict,
+    functions: QualNameColumnFunctions,
+    data: QualNameData,
     root_nodes: list[str],
 ) -> None:
     """Fail if root nodes are missing.
@@ -799,7 +829,7 @@ def _fail_if_root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-def _func_depends_on_parameters_only(func: TTSIMFunction) -> bool:
+def _func_depends_on_parameters_only(func: ColumnFunction) -> bool:
     """Check if a function depends on parameters only."""
     return (
         len(

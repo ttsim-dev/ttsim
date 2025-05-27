@@ -20,7 +20,7 @@ def anzahl_ansprüche(
 @policy_function(start_date="2023-01-01", leaf_name="betrag_m")
 def betrag_ohne_staffelung_m(
     anzahl_ansprüche: int,
-    satz_einheitlich: float,
+    satz: float,
 ) -> float:
     """Sum of Kindergeld for eligible children.
 
@@ -29,7 +29,7 @@ def betrag_ohne_staffelung_m(
 
     """
 
-    return satz_einheitlich * anzahl_ansprüche
+    return satz * anzahl_ansprüche
 
 
 @policy_function(

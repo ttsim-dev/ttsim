@@ -5,47 +5,65 @@ from __future__ import annotations
 from ttsim import policy_function
 
 
-@policy_function(start_date="2001-01-01")
-def betrag_m(
+@policy_function(start_date="2001-01-01", end_date="2023-06-30", leaf_name="betrag_m")
+def betrag_m_nach_wohnort(
     zugangsfaktor: float,
     entgeltpunkte_west: float,
     entgeltpunkte_ost: float,
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
-    ges_rente_params: dict,
+    sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort: dict[
+        str, float
+    ],
 ) -> float:
-    """Erwerbsminderungsrente (amount paid by public disability insurance if claimed)
+    """Erwerbsminderungsrente (public disability insurance).
 
     Legal reference: SGB VI § 64: Rentenformel für Monatsbetrag der Rente
-
-
-    Parameters
-    ----------
-    zugangsfaktor
-        See :func:`zugangsfaktor`.
-    entgeltpunkte_west
-        See :func:`entgeltpunkte_west`.
-    entgeltpunkte_ost
-        See :func:`entgeltpunkte_ost`.
-    rentenwert
-        See :func:`rentenwert`.
-    rentenartfaktor
-        See :func:`rentenartfaktor`.
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt`.
-    Returns
-    -------
-    Erwerbsminderungsrente (amount paid by public disability insurance if claimed)
-
     """
 
     if grundsätzlich_anspruchsberechtigt:
         out = (
             (
-                entgeltpunkte_west * ges_rente_params["parameter_rentenwert"]["west"]
-                + entgeltpunkte_ost * ges_rente_params["parameter_rentenwert"]["ost"]
+                entgeltpunkte_west
+                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
+                    "west"
+                ]
+                + entgeltpunkte_ost
+                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
+                    "ost"
+                ]
             )
             * zugangsfaktor
+            * rentenartfaktor
+        )
+    else:
+        out = 0.0
+    return out
+
+
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
+@policy_function(start_date="2023-07-01", leaf_name="betrag_m")
+def betrag_m_einheitlich(
+    zugangsfaktor: float,
+    entgeltpunkte_west: float,
+    entgeltpunkte_ost: float,
+    rentenartfaktor: float,
+    grundsätzlich_anspruchsberechtigt: bool,
+    sozialversicherung__rente__altersrente__rentenwert: float,
+) -> float:
+    """Erwerbsminderungsrente (public disability insurance).
+
+    Legal reference: SGB VI § 64: Rentenformel für Monatsbetrag der Rente
+    """
+
+    if grundsätzlich_anspruchsberechtigt:
+        out = (
+            (entgeltpunkte_ost + entgeltpunkte_west)
+            * zugangsfaktor
+            * sozialversicherung__rente__altersrente__rentenwert
             * rentenartfaktor
         )
     else:
@@ -61,23 +79,9 @@ def grundsätzlich_anspruchsberechtigt(
     sozialversicherung__rente__mindestwartezeit_erfüllt: bool,
 ) -> bool:
     """
-    Eligibility for Erwerbsminderungsrente (public disability insurance claim).
+    Eligibility for Erwerbsminderungsrente.
 
-    Legal reference: § 43 Abs. 1  SGB VI
-
-    Parameters
-    ----------
-    voll_erwerbsgemindert
-        See basic input variable :ref:`voll_erwerbsgemindert <voll_erwerbsgemindert>.
-    teilweise_erwerbsgemindert
-        See basic input variable :ref:`teilweise_erwerbsgemindert <teilweise_erwerbsgemindert>.
-    sozialversicherung__rente__pflichtbeitragsmonate
-        See basic input variable :ref:`sozialversicherung__rente__pflichtbeitragsmonate <sozialversicherung__rente__pflichtbeitragsmonate>.
-    sozialversicherung__rente__mindestwartezeit_erfüllt
-        See :func:`sozialversicherung__rente__mindestwartezeit_erfüllt`.
-    Returns
-    -------
-    Eligibility for Erwerbsminderungsrente (public disability insurance claim) as a bool
+    Legal reference: § 43 Abs. 1  SGB VI.
     """
 
     anspruch_erwerbsm_rente = (
@@ -89,149 +93,98 @@ def grundsätzlich_anspruchsberechtigt(
     return anspruch_erwerbsm_rente
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function(start_date="2001-01-01")
 def entgeltpunkte_west(
     sozialversicherung__rente__entgeltpunkte_west: float,
     zurechnungszeit: float,
-    sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost: float,
+    anteil_entgeltpunkte_ost: float,
 ) -> float:
-    """Entgeltpunkte accumulated in Western Germany which Erwerbsminderungsrente
-    is based on (public disability insurance)
-    In the case of the public disability insurance,
-    pensioners are credited with additional earning points.
-    They receive their average earned income points for
-    each year between their age of retirement and the "zurechnungszeitgrenze".
+    """Entgeltpunkte from West German Beitrags- and Zurechnungszeiten.
 
-    Parameters
-    ----------
-    sozialversicherung__rente__entgeltpunkte_west
-        See basic input variable :ref:`sozialversicherung__rente__entgeltpunkte_west <sozialversicherung__rente__entgeltpunkte_west>
-    zurechnungszeit
-        See :func:`zurechnungszeit`.
-    sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost
-        See :func:`sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost`.
-
-    Returns
-    -------
-    Final pension points for Erwerbsminderungsrente (public disability insurance)
-
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "zurechnungszeitgrenze".
     """
 
     return sozialversicherung__rente__entgeltpunkte_west + (
-        zurechnungszeit
-        * (1 - sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost)
+        zurechnungszeit * (1 - anteil_entgeltpunkte_ost)
     )
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function(start_date="2001-01-01")
 def entgeltpunkte_ost(
     sozialversicherung__rente__entgeltpunkte_ost: float,
     zurechnungszeit: float,
-    sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost: float,
+    anteil_entgeltpunkte_ost: float,
 ) -> float:
-    """Entgeltpunkte accumulated in Eastern Germany which Erwerbsminderungsrente
-    is based on (public disability insurance)
-    In the case of the public disability insurance,
-    pensioners are credited with additional earning points.
-    They receive their average earned income points for
-    each year between their age of retirement and the "zurechnungszeitgrenze".
+    """Entgeltpunkte from East German Beitrags- and Zurechnungszeiten.
 
-    Parameters
-    ----------
-    sozialversicherung__rente__entgeltpunkte_ost
-        See basic input variable :ref:`sozialversicherung__rente__entgeltpunkte_ost <sozialversicherung__rente__entgeltpunkte_ost>
-    zurechnungszeit
-        See :func:`zurechnungszeit`.
-    sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost
-        See :func:`sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost`.
+    Provides the Entgeltpunkt-basis for calculation of the Erwerbsminderungsrente.
 
-    Returns
-    -------
-    Final pension points for Erwerbsminderungsrente (public disability insurance)
-
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "zurechnungszeitgrenze".
     """
 
     return sozialversicherung__rente__entgeltpunkte_ost + (
-        zurechnungszeit
-        * sozialversicherung__rente__altersrente__anteil_entgeltpunkte_ost
+        zurechnungszeit * anteil_entgeltpunkte_ost
     )
 
 
 @policy_function(start_date="2001-01-01")
 def zurechnungszeit(
-    durchschnittliche_entgeltpunkte: float,
+    mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
-    erwerbsm_rente_params: dict,
+    zurechnungszeitgrenze: float,
 ) -> float:
-    """Additional Entgeltpunkte accumulated through "Zurechnungszeit" for
-    Erwerbsminderungsrente (public disability insurance)
-    In the case of the public disability insurance,
-    pensioners are credited with additional earning points.
-    They receive their average earned income points for
-    each year between their age of retirement and the "zurechnungszeitgrenze".
+    """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
 
-    Parameters
-    ----------
-    durchschnittliche_entgeltpunkte
-        See :func:`durchschnittliche_entgeltpunkte`.
-    sozialversicherung__rente__alter_bei_renteneintritt
-        See :func:`sozialversicherung__rente__alter_bei_renteneintritt`.
-    erwerbsm_rente_params
-        See params documentation :ref:`erwerbsm_rente_params <erwerbsm_rente_params>.
+    Provides the Entgeltpunkt-basis for calculation of the Erwerbsminderungsrente.
 
-
-    Returns
-    -------
-    Final pension points for Erwerbsminderungsrente (public disability insurance)
-
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "zurechnungszeitgrenze".
     """
-    zurechnungszeitgrenze = erwerbsm_rente_params["zurechnungszeitgrenze"]
-
     return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
-    ) * durchschnittliche_entgeltpunkte
+    ) * mean_entgeltpunkte_pro_bewertungsmonat
 
 
 @policy_function(start_date="2001-01-01")
 def rentenartfaktor(
     teilweise_erwerbsgemindert: bool,
-    erwerbsm_rente_params: dict,
+    parameter_rentenartfaktor: dict[str, float],
 ) -> float:
-    """rentenartfaktor for Erwerbsminderungsrente
-    (public disability insurance)
+    """Rentenartfaktor.
 
     Legal reference: SGB VI § 67: rentenartfaktor
-
-    Parameters
-    ----------
-    teilweise_erwerbsgemindert
-        See basic input variable :ref:`teilweise_erwerbsgemindert <teilweise_erwerbsgemindert>.
-    erwerbsm_rente_params
-        See params documentation :ref:`erwerbsm_rente_params <erwerbsm_rente_params>.
-
-    Returns
-    -------
-    rentenartfaktor
-
     """
-
     if teilweise_erwerbsgemindert:
-        out = erwerbsm_rente_params["rentenartfaktor"]["teilw"]
-
+        return parameter_rentenartfaktor["teilweise"]
     else:
-        out = erwerbsm_rente_params["rentenartfaktor"]["voll"]
-
-    return out
+        return parameter_rentenartfaktor["voll"]
 
 
 @policy_function(start_date="2001-01-01")
 def zugangsfaktor(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     wartezeit_langjährig_versichert_erfüllt: bool,
-    ges_rente_params: dict,
-    erwerbsm_rente_params: dict,
+    altersgrenze_allgemein: float,
+    altersgrenze_langjährig_versichert: float,
+    min_zugangsfaktor: float,
+    sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
+        str, float
+    ],
 ) -> float:
-    """Zugangsfaktor for Erwerbsminderungsrente (public disability insurance)
+    """Zugangsfaktor.
 
     For each month that a pensioner retires before the age limit, a fraction of the
     pension is deducted. The maximum deduction is capped. This max deduction is the norm
@@ -242,47 +195,23 @@ def zugangsfaktor(
     Paragraph 4 regulates an exceptional case in which pensioners can already retire at
     63 without deductions if they can prove 40 years of (Pflichtbeiträge,
     Berücksichtigungszeiten and certain Anrechnungszeiten or Ersatzzeiten).
-
-    Parameters
-    ----------
-    sozialversicherung__rente__alter_bei_renteneintritt
-        See :func:`sozialversicherung__rente__alter_bei_renteneintritt`.
-    wartezeit_langjährig_versichert_erfüllt
-        See :func:`wartezeit_langjährig_versichert_erfüllt`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>.
-    erwerbsm_rente_params
-        See params documentation :ref:`erwerbsm_rente_params <erwerbsm_rente_params>.
-
-
-    Returns
-    -------
-    Zugangsfaktor for Erwerbsminderungsrente (public disability insurance)
-
     """
 
     if wartezeit_langjährig_versichert_erfüllt:
-        altersgrenze_abschlagsfrei = erwerbsm_rente_params[
-            "altersgrenze_langjährig_versicherte_abschlagsfrei"
-        ]
+        altersgrenze = altersgrenze_langjährig_versichert
     else:
-        altersgrenze_abschlagsfrei = erwerbsm_rente_params[
-            "parameter_altersgrenze_abschlagsfrei"
-        ]
+        altersgrenze = altersgrenze_allgemein
 
     zugangsfaktor = (
         1
-        + (
-            sozialversicherung__rente__alter_bei_renteneintritt
-            - altersgrenze_abschlagsfrei
-        )
+        + (sozialversicherung__rente__alter_bei_renteneintritt - altersgrenze)
         * (
-            ges_rente_params["zugangsfaktor_veränderung_pro_jahr"][
+            sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr[
                 "vorzeitiger_renteneintritt"
             ]
         )
     )
-    return max(zugangsfaktor, erwerbsm_rente_params["min_zugangsfaktor"])
+    return max(zugangsfaktor, min_zugangsfaktor)
 
 
 # TODO(@MImmesberger): Reuse Altersrente Wartezeiten for Erwerbsminderungsrente
@@ -295,8 +224,8 @@ def wartezeit_langjährig_versichert_erfüllt(
     sozialversicherung__rente__ersatzzeiten_monate: float,
     sozialversicherung__rente__kinderberücksichtigungszeiten_monate: float,
     sozialversicherung__rente__pflegeberücksichtigungszeiten_monate: float,
-    ges_rente_params: dict,
-    erwerbsm_rente_params: dict,
+    sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten: float,
+    wartezeitgrenze_langjährig_versicherte: float,
 ) -> bool:
     """Wartezeit for Rente für langjährige Versicherte (Erwerbsminderung) is fulfilled.
 
@@ -306,40 +235,10 @@ def wartezeit_langjährig_versichert_erfüllt(
 
     This pathway makes it possible to claim pension benefits without deductions at the
     age of 63.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__pflichtbeitragsmonate
-        See basic input variable
-        :ref:<sozialversicherung__rente__pflichtbeitragsmonate>`.
-    sozialversicherung__rente__freiwillige_beitragsmonate
-        See basic input variable
-        :ref:<sozialversicherung__rente__freiwillige_beitragsmonate>`.
-    sozialversicherung__rente__anrechnungsmonate_45_jahre_wartezeit
-        See :func:`sozialversicherung__rente__anrechnungsmonate_45_jahre_wartezeit`.
-    sozialversicherung__rente__ersatzzeiten_monate
-        See basic input variable :ref:<sozialversicherung__rente__ersatzzeiten_monate>`.
-    sozialversicherung__rente__kinderberücksichtigungszeiten_monate
-        See basic input variable
-        :ref:<sozialversicherung__rente__kinderberücksichtigungszeiten_monate>`.
-    sozialversicherung__rente__pflegeberücksichtigungszeiten_monate
-        See basic input variable
-        :ref:<sozialversicherung__rente__pflegeberücksichtigungszeiten_monate>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-    erwerbsm_rente_params
-        See params documentation :ref:`erwerbsm_rente_params <erwerbsm_rente_params>`.
-
-    Returns
-    -------
-    Wartezeit for Rente für langjährige Versicherte (Erwerbsminderung) is fulfilled
-
     """
     if (
         sozialversicherung__rente__pflichtbeitragsmonate / 12
-        >= ges_rente_params[
-            "mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beiträge"
-        ]
+        >= sozialversicherung__rente__mindestpflichtbeitragsjahre_für_anrechenbarkeit_freiwilliger_beitragszeiten
     ):
         freiwillige_beitragszeiten = (
             sozialversicherung__rente__freiwillige_beitragsmonate
@@ -354,48 +253,61 @@ def wartezeit_langjährig_versichert_erfüllt(
         + sozialversicherung__rente__ersatzzeiten_monate
         + sozialversicherung__rente__pflegeberücksichtigungszeiten_monate
         + sozialversicherung__rente__kinderberücksichtigungszeiten_monate
-    ) / 12 >= erwerbsm_rente_params[
-        "wartezeitgrenze_langjährig_versicherte_abschlagsfrei"
-    ]
+    ) / 12 >= wartezeitgrenze_langjährig_versicherte
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function()
-def durchschnittliche_entgeltpunkte(
+def anteil_entgeltpunkte_ost(
+    sozialversicherung__rente__entgeltpunkte_west: float,
+    sozialversicherung__rente__entgeltpunkte_ost: float,
+) -> float:
+    """Proportion of Entgeltpunkte accumulated in East Germany."""
+    if (
+        sozialversicherung__rente__entgeltpunkte_west
+        == sozialversicherung__rente__entgeltpunkte_ost
+        == 0.0
+    ):
+        out = 0.0
+    else:
+        out = sozialversicherung__rente__entgeltpunkte_ost / (
+            sozialversicherung__rente__entgeltpunkte_west
+            + sozialversicherung__rente__entgeltpunkte_ost
+        )
+
+    return out
+
+
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023 (first check whether this is also the case here, not
+# only for old-age pensions).
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
+@policy_function()
+def mean_entgeltpunkte_pro_bewertungsmonat(
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
-    erwerbsm_rente_params: dict,
+    altersgrenze_grundbewertung: float,
 ) -> float:
-    """Average earning points as part of the "Grundbewertung".
-    Earnings points are divided by "belegungsfähige Gesamtzeitraum" which is
-    the period from the age of 17 until the start of the pension.
+    """Average earning points per Bewertungsmonat (as part of the "Grundbewertung").
+
+    Earnings points are divided by "belegungsfähige Gesamtzeitraum" which is the period
+    from the age of 17 until the start of the pension.
 
     Legal reference: SGB VI § 72: Grundbewertung
-
-    Parameters
-    ----------
-    sozialversicherung__rente__entgeltpunkte_west
-        See basic input variable :ref:<sozialversicherung__rente__entgeltpunkte_west>
-    sozialversicherung__rente__entgeltpunkte_ost
-        See basic input variable :ref:<sozialversicherung__rente__entgeltpunkte_ost>
-    sozialversicherung__rente__alter_bei_renteneintritt
-        See :func:`sozialversicherung__rente__alter_bei_renteneintritt`.
-    erwerbsm_rente_params
-        See params documentation :ref:`erwerbsm_rente_params <erwerbsm_rente_params>.
-
-    Returns
-    -------
-    average entgeltp
     """
 
     belegungsfähiger_gesamtzeitraum = (
         sozialversicherung__rente__alter_bei_renteneintritt
-        - erwerbsm_rente_params["altersgrenze_grundbewertung"]
+        - altersgrenze_grundbewertung
     )
 
-    durchschnittliche_entgeltpunkte = (
+    mean_entgeltpunkte_pro_bewertungsmonat = (
         sozialversicherung__rente__entgeltpunkte_west
         + sozialversicherung__rente__entgeltpunkte_ost
     ) / belegungsfähiger_gesamtzeitraum
 
-    return durchschnittliche_entgeltpunkte
+    return mean_entgeltpunkte_pro_bewertungsmonat

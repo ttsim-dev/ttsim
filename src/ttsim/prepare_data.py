@@ -9,13 +9,13 @@ import pandas as pd
 from ttsim.shared import format_errors_and_warnings, format_list_linewise
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedDataDict, NestedInputsPathsToDfColumns
+    from ttsim.typing import NestedData, NestedInputsPathsToDfColumns
 
 
 def create_data_tree_from_df(
     inputs_tree_to_df_columns: NestedInputsPathsToDfColumns,
     df: pd.DataFrame,
-) -> NestedDataDict:
+) -> NestedData:
     """Transform a pandas DataFrame to a nested dictionary expected by TTSIM.
     `
         Args
@@ -118,7 +118,7 @@ def _fail_if_mapper_has_incorrect_format(
     incorrect_types = {
         k: type(v)
         for k, v in dt.flatten_to_qual_names(inputs_tree_to_df_columns).items()
-        if not isinstance(v, str | int | bool)
+        if not isinstance(v, str | int | float | bool)
     }
     if incorrect_types:
         formatted_incorrect_types = "\n".join(
@@ -126,7 +126,7 @@ def _fail_if_mapper_has_incorrect_format(
         )
         msg = format_errors_and_warnings(
             f"""Values of the input tree to column mapping must be strings, integers,
-            or booleans.
+            floats, or Booleans.
             Found the following incorrect types:
 
             {formatted_incorrect_types}

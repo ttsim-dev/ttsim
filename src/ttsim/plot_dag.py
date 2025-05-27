@@ -110,7 +110,7 @@ def plot_dag(
         functions=partition_tree_by_reference_tree(
             tree_to_partition=functions_not_overridden, reference_tree=dag.nodes
         )[0],
-        params=environment.params,
+        processed_params=environment.params,
     )
 
     input_structure = dt.create_tree_with_input_types(
@@ -339,10 +339,7 @@ def _add_url_to_dag(dag):
 
 
 def _create_url(func_name):
-    return (
-        f"https://gettsim.readthedocs.io/en/latest/gettsim_objects"
-        f"/functions.html#gettsim.functions.{func_name}"
-    )
+    raise NotImplementedError("Not implemented yet.")
 
 
 def _replace_functions_with_source_code(dag):
