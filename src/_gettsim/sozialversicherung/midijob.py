@@ -57,7 +57,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     sozialversicherung__rente__beitrag__beitragssatz_jahresanfang: float,
     sozialversicherung__arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
     sozialversicherung__pflege__beitrag__beitragssatz_jahresanfang: float,
-    minijob_arbeitgeberpauschale_lohnsteuer: float,
+    lohnsteuer__minijob_arbeitgeberpauschale: float,
     sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale: float,
     sozialversicherung__rente__beitrag__minijob_arbeitgeberpauschale: float,
 ) -> float:
@@ -87,7 +87,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     pausch_mini = (
         sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale
         + sozialversicherung__rente__beitrag__minijob_arbeitgeberpauschale
-        + minijob_arbeitgeberpauschale_lohnsteuer
+        + lohnsteuer__minijob_arbeitgeberpauschale
     )
 
     # Now calculate final factor
@@ -108,7 +108,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     sozialversicherung__pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang: dict[
         str, float
     ],
-    minijob_arbeitgeberpauschale_lohnsteuer: float,
+    lohnsteuer__minijob_arbeitgeberpauschale: float,
     sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale: float,
     sozialversicherung__rente__beitrag__minijob_arbeitgeberpauschale: float,
 ) -> float:
@@ -141,7 +141,7 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     pausch_mini = (
         sozialversicherung__kranken__beitrag__minijob_arbeitgeberpauschale
         + sozialversicherung__rente__beitrag__minijob_arbeitgeberpauschale
-        + minijob_arbeitgeberpauschale_lohnsteuer
+        + lohnsteuer__minijob_arbeitgeberpauschale
     )
 
     # Now calculate final factor

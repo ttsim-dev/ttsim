@@ -1,0 +1,20 @@
+---
+minijob_arbeitgeberpauschale:
+  name:
+    de: Pauschalierter Lohnsteuersatz bei geringfügiger Beschäftigung
+    en: Fixed income tax rate for marginal employment
+  description:
+    de: >-
+      Pauschalierter Lohnsteuersatz des Arbeitgebers bei geringfügiger Beschäftigung
+      (§40a II EStG)
+    en: Fixed income tax rate for marginal employment (§40a II EStG)
+  unit: Share
+  reference_period: null
+  type: scalar
+  add_jahresanfang: true
+  2003-04-01:
+    value: 0.02
+  2007-01-01:
+    value: 0.02
+  2022-10-01:
+    note: Ceased to exist
