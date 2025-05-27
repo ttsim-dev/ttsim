@@ -9,7 +9,6 @@ INTERNAL_PARAMS_GROUPS = [
     "unterhalt",
     "unterhaltsvors",
     "wohngeld",
-    "kinderzuschl",
     "grunds_im_alter",
 ]
 

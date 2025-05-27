@@ -9,7 +9,7 @@ from ttsim import (
     AggType,
     RoundingSpec,
     agg_by_p_id_function,
-    params_function,
+    param_function,
     policy_function,
 )
 
@@ -33,7 +33,7 @@ class EinkommensgrenzeErziehungsgeld:
     maximalalter_reguläres_limit_monate: int
 
 
-@params_function(
+@param_function(
     start_date="2004-02-09",
     end_date="2008-12-31",
 )
