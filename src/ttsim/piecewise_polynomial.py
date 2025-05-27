@@ -113,13 +113,9 @@ def get_piecewise_parameters(
     -------
 
     """
-    # Get all interval keys.
-    # TODO: Remove by only passing the time-dependent parameters.
-    keys = sorted(key for key in parameter_dict if isinstance(key, int))
-    parameter_dict = {key: parameter_dict[key] for key in keys}
 
     # Check if keys are consecutive numbers and starting at 0.
-    if keys != list(range(len(keys))):
+    if sorted(parameter_dict) != list(range(len(parameter_dict))):
         raise ValueError(
             f"The keys of {leaf_name} do not start with 0 or are not consecutive"
             f" numbers."

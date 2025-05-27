@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import optree
 import pandas as pd
 import pytest
-import yaml
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
@@ -28,7 +27,6 @@ from ttsim.policy_environment import (
     _get_params_contents,
     _param_with_active_periods,
     _ParamWithActivePeriod,
-    _parse_raw_parameter_group,
     active_params_tree,
     active_tree_with_column_objects_param_functions,
     fail_because_active_periods_overlap,
@@ -100,25 +98,31 @@ def some_int_param():
 class TestPolicyEnvironment:
     def test_func_exists_in_tree(self):
         function = policy_function(leaf_name="foo")(return_one)
-        environment = PolicyEnvironment({"foo": function})
+        environment = PolicyEnvironment(
+            raw_objects_tree={"foo": function}, params_tree={}
+        )
 
         assert environment.raw_objects_tree["foo"] == function
 
     def test_func_does_not_exist_in_tree(self):
-        environment = PolicyEnvironment({}, {})
+        environment = PolicyEnvironment(raw_objects_tree={}, params_tree={})
 
         assert "foo" not in environment.raw_objects_tree
 
     @pytest.mark.parametrize(
         "environment",
         [
-            PolicyEnvironment({}, {}),
-            PolicyEnvironment({"foo": policy_function(leaf_name="foo")(return_one)}),
+            PolicyEnvironment(raw_objects_tree={}, params_tree={}),
             PolicyEnvironment(
-                {
+                raw_objects_tree={"foo": policy_function(leaf_name="foo")(return_one)},
+                params_tree={},
+            ),
+            PolicyEnvironment(
+                raw_objects_tree={
                     "foo": policy_function(leaf_name="foo")(return_one),
                     "bar": policy_function(leaf_name="bar")(return_two),
-                }
+                },
+                params_tree={},
             ),
         ],
     )
@@ -131,15 +135,48 @@ class TestPolicyEnvironment:
     @pytest.mark.parametrize(
         "environment",
         [
-            PolicyEnvironment({}, {}),
-            PolicyEnvironment({}, {"foo": {"bar": 1}}),
+            PolicyEnvironment(raw_objects_tree={}, params_tree={}),
+            PolicyEnvironment(
+                raw_objects_tree={},
+                params_tree={
+                    "foo": {
+                        "bar": ScalarParam(
+                            value=1,
+                            leaf_name="bar",
+                            start_date="2025-01-01",
+                            end_date="2025-12-31",
+                            name="bar",
+                            description="bar",
+                            unit=None,
+                            reference_period=None,
+                            note=None,
+                            reference=None,
+                        )
+                    }
+                },
+            ),
         ],
     )
-    def test_replace_all_parameters(self, environment: PolicyEnvironment):
-        new_params = {"foo": {"bar": 2}}
-        new_environment = environment.replace_all_parameters(new_params)
+    def test_replace_params_tree(self, environment: PolicyEnvironment):
+        new_params = {
+            "foo": {
+                "bar": ScalarParam(
+                    value=2,
+                    leaf_name="bar",
+                    start_date="2025-01-01",
+                    end_date="2025-12-31",
+                    name="bar",
+                    description="bar",
+                    unit=None,
+                    reference_period=None,
+                    note=None,
+                    reference=None,
+                )
+            }
+        }
+        new_environment = environment.replace_params_tree(new_params)
 
-        assert new_environment.params == new_params
+        assert new_environment.params_tree == new_params
 
 
 def test_leap_year_correctly_handled():
@@ -162,59 +199,6 @@ def test_add_jahresanfang():
     assert _active_ttsim_params_tree["foo_jahresanfang"].value == 1
 
 
-def test_fail_if_invalid_access_different_date_old():
-    with pytest.raises(ValueError):
-        group = "invalid_access_diff_date"
-        raw_group_data = yaml.load(
-            (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
-                encoding="utf-8"
-            ),
-            Loader=yaml.CLoader,  # noqa: S506
-        )
-        _parse_raw_parameter_group(
-            raw_group_data=raw_group_data,
-            date=pd.to_datetime("2020-01-01").date(),
-            group=group,
-            parameters=None,
-        )
-
-
-def test_access_different_date_vorjahr_old():
-    group = "test_access_diff_date_vorjahr"
-    raw_group_data = yaml.load(
-        (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
-            encoding="utf-8"
-        ),
-        Loader=yaml.CLoader,  # noqa: S506
-    )
-    params = _parse_raw_parameter_group(
-        raw_group_data=raw_group_data,
-        date=pd.to_datetime("2020-01-01").date(),
-        group=group,
-        parameters=None,
-    )
-    assert params["foo"] == 2020
-    assert params["foo_vorjahr"] == 2019
-
-
-def test_access_different_date_jahresanfang_old():
-    group = "test_access_diff_date_jahresanfang"
-    raw_group_data = yaml.load(
-        (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
-            encoding="utf-8"
-        ),
-        Loader=yaml.CLoader,  # noqa: S506
-    )
-    params = _parse_raw_parameter_group(
-        raw_group_data=raw_group_data,
-        date=pd.to_datetime("2020-07-01").date(),
-        group=group,
-        parameters=None,
-    )
-    assert params["foo"] == 2021
-    assert params["foo_jahresanfang"] == 2020
-
-
 @pytest.mark.parametrize(
     "functions_tree",
     [
@@ -232,7 +216,7 @@ def test_dont_destroy_group_by_functions():
     functions_tree = {
         "foo": group_creation_function()(return_one),
     }
-    environment = PolicyEnvironment(functions_tree)
+    environment = PolicyEnvironment(raw_objects_tree=functions_tree, params_tree={})
     assert isinstance(environment.raw_objects_tree["foo"], GroupCreationFunction)
 
 
@@ -240,14 +224,16 @@ def test_creating_environment_fails_when_group_ids_are_outside_top_level_namespa
     with pytest.raises(
         ValueError, match="Group identifiers must live in the top-level namespace. Got:"
     ):
-        PolicyEnvironment({"n1": {"fam_id": fam_id}})
+        PolicyEnvironment(raw_objects_tree={"n1": {"fam_id": fam_id}}, params_tree={})
 
 
 def test_upserting_group_ids_outside_top_level_namespace_fails():
     with pytest.raises(
         ValueError, match="Group identifiers must live in the top-level namespace. Got:"
     ):
-        PolicyEnvironment({}).upsert_objects({"n1": {"fam_id": fam_id}})
+        PolicyEnvironment(raw_objects_tree={}, params_tree={}).upsert_objects(
+            {"n1": {"fam_id": fam_id}}
+        )
 
 
 def test_input_is_recognized_as_potential_group_id():

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import pytest
 
 from ttsim.shared import (
+    assert_valid_ttsim_pytree,
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
     get_re_pattern_for_all_time_units_and_groupings,
@@ -20,6 +22,36 @@ from ttsim.shared import (
 @dataclass
 class SampleDataClass:
     a: int
+
+
+@pytest.mark.parametrize(
+    ("tree", "leaf_checker", "err_substr"),
+    [
+        (
+            {"a": 1, "b": 2},
+            lambda leaf: leaf is None,
+            "Leaf at tree[a] is invalid: got 1 of type <class 'int'>.",
+        ),
+        (
+            {"a": None, "b": {"c": None, "d": 1}},
+            lambda leaf: leaf is None,
+            "Leaf at tree[b][d] is invalid: got 1 of type <class 'int'>.",
+        ),
+        (
+            [1, 2, 3],
+            lambda leaf: leaf is None,
+            "tree must be a dict, got <class 'list'>.",
+        ),
+        (
+            {1: 2},
+            lambda leaf: leaf is None,
+            "Key 1 in tree must be a string but got <class 'int'>.",
+        ),
+    ],
+)
+def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
+    with pytest.raises(TypeError, match=re.escape(err_substr)):
+        assert_valid_ttsim_pytree(tree, leaf_checker, "tree")
 
 
 @pytest.mark.parametrize(

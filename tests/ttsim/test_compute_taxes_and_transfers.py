@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import re
 import warnings
 from dataclasses import dataclass
 
@@ -41,7 +40,6 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
-from ttsim.shared import assert_valid_ttsim_pytree
 from ttsim.typing import TTSIMArray
 
 if IS_JAX_INSTALLED:
@@ -392,7 +390,7 @@ def test_create_agg_by_group_functions(
     targets_tree,
     data_tree,
 ):
-    environment = PolicyEnvironment(raw_objects_tree=objects_tree)
+    environment = PolicyEnvironment(raw_objects_tree=objects_tree, params_tree={})
     compute_taxes_and_transfers(
         environment=environment,
         data_tree=data_tree,
@@ -469,10 +467,11 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
 
 def test_output_is_tree(minimal_input_data):
     environment = PolicyEnvironment(
-        {
+        raw_objects_tree={
             "p_id": p_id,
             "module": {"some_func": some_func},
-        }
+        },
+        params_tree={},
     )
 
     out = compute_taxes_and_transfers(
@@ -523,10 +522,11 @@ def test_params_target_is_allowed(minimal_input_data):
 
 def test_warn_if_functions_and_columns_overlap():
     environment = PolicyEnvironment(
-        {
+        raw_objects_tree={
             "some_func": some_func,
             "some_target": another_func,
-        }
+        },
+        params_tree={},
     )
     with pytest.warns(FunctionsAndColumnsOverlapWarning):
         compute_taxes_and_transfers(
@@ -541,7 +541,10 @@ def test_warn_if_functions_and_columns_overlap():
 
 
 def test_dont_warn_if_functions_and_columns_dont_overlap():
-    environment = PolicyEnvironment({"some_func": some_func})
+    environment = PolicyEnvironment(
+        raw_objects_tree={"some_func": some_func},
+        params_tree={},
+    )
     with warnings.catch_warnings():
         warnings.filterwarnings("error", category=FunctionsAndColumnsOverlapWarning)
         compute_taxes_and_transfers(
@@ -557,10 +560,11 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
 
 def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
     environment = PolicyEnvironment(
-        {
+        raw_objects_tree={
             "some_func": some_func,
             "unique": another_func,
-        }
+        },
+        params_tree={},
     )
     with warnings.catch_warnings(
         category=FunctionsAndColumnsOverlapWarning, record=True
@@ -663,10 +667,11 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
         return b
 
     environment = PolicyEnvironment(
-        {
+        raw_objects_tree={
             "b": policy_function(leaf_name="b")(b),
             "c": policy_function(leaf_name="c")(c),
-        }
+        },
+        params_tree={},
     )
 
     with pytest.raises(
@@ -690,7 +695,10 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
     def b(a):
         return a
 
-    environment = PolicyEnvironment({"a": a, "b": b})
+    environment = PolicyEnvironment(
+        raw_objects_tree={"a": a, "b": b},
+        params_tree={},
+    )
     compute_taxes_and_transfers(
         data_tree=minimal_input_data,
         environment=environment,
@@ -702,7 +710,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
 def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions(
     minimal_input_data,
 ):
-    environment = PolicyEnvironment({})
+    environment = PolicyEnvironment(raw_objects_tree={}, params_tree={})
 
     with pytest.raises(
         ValueError,
@@ -724,7 +732,7 @@ def test_fail_if_missing_p_id():
     ):
         compute_taxes_and_transfers(
             data_tree=data,
-            environment=PolicyEnvironment({}),
+            environment=PolicyEnvironment(raw_objects_tree={}, params_tree={}),
             targets_tree={},
             jit=jit,
         )
@@ -740,7 +748,7 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
     ):
         compute_taxes_and_transfers(
             data_tree=data,
-            environment=PolicyEnvironment({}),
+            environment=PolicyEnvironment(raw_objects_tree={}, params_tree={}),
             targets_tree={},
             jit=jit,
         )
@@ -780,7 +788,7 @@ def test_user_provided_aggregate_by_group_specs():
 
     out = compute_taxes_and_transfers(
         data_tree=data,
-        environment=PolicyEnvironment(raw_objects_tree=inputs),
+        environment=PolicyEnvironment(raw_objects_tree=inputs, params_tree={}),
         targets_tree={"module_name": {"betrag_m_fam": None}},
         jit=jit,
     )
@@ -809,14 +817,15 @@ def test_user_provided_aggregation():
         pass
 
     environment = PolicyEnvironment(
-        {
+        raw_objects_tree={
             "p_id": p_id,
             "fam_id": fam_id,
             "module_name": {
                 "betrag_m_double": betrag_m_double,
                 "betrag_m_double_fam": betrag_m_double_fam,
             },
-        }
+        },
+        params_tree={},
     )
 
     actual = compute_taxes_and_transfers(
@@ -860,7 +869,8 @@ def test_user_provided_aggregation_with_time_conversion():
                 "betrag_double_m": betrag_double_m,
                 "max_betrag_double_m_fam": max_betrag_double_m_fam,
             },
-        }
+        },
+        params_tree={},
     )
 
     actual = compute_taxes_and_transfers(
@@ -935,7 +945,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         },
     )
 
-    environment = PolicyEnvironment(raw_objects_tree=raw_objects_tree)
+    environment = PolicyEnvironment(raw_objects_tree=raw_objects_tree, params_tree={})
     out = compute_taxes_and_transfers(
         minimal_input_data_shared_fam,
         environment,
@@ -944,36 +954,6 @@ def test_user_provided_aggregate_by_p_id_specs(
     )["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
-
-
-@pytest.mark.parametrize(
-    ("tree", "leaf_checker", "err_substr"),
-    [
-        (
-            {"a": 1, "b": 2},
-            lambda leaf: leaf is None,
-            "Leaf at tree[a] is invalid: got 1 of type <class 'int'>.",
-        ),
-        (
-            {"a": None, "b": {"c": None, "d": 1}},
-            lambda leaf: leaf is None,
-            "Leaf at tree[b][d] is invalid: got 1 of type <class 'int'>.",
-        ),
-        (
-            [1, 2, 3],
-            lambda leaf: leaf is None,
-            "tree must be a dict, got <class 'list'>.",
-        ),
-        (
-            {1: 2},
-            lambda leaf: leaf is None,
-            "Key 1 in tree must be a string but got <class 'int'>.",
-        ),
-    ],
-)
-def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
-    with pytest.raises(TypeError, match=re.escape(err_substr)):
-        assert_valid_ttsim_pytree(tree, leaf_checker, "tree")
 
 
 @pytest.mark.parametrize(
@@ -988,7 +968,8 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 raw_objects_tree={
                     "foo_m": policy_function(leaf_name="foo_m")(identity),
                     "fam_id": fam_id,
-                }
+                },
+                params_tree={},
             ),
             ["m", "y"],
             {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
@@ -998,7 +979,8 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 raw_objects_tree={
                     "foo": policy_function(leaf_name="foo")(identity),
                     "fam_id": fam_id,
-                }
+                },
+                params_tree={},
             ),
             ["m", "y"],
             {"foo", "foo_fam"},
