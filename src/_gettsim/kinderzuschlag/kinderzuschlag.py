@@ -25,18 +25,6 @@ def satz_mit_gestaffeltem_kindergeld(
     subsistence levels. This function implements that calculation.
 
     For 2023 the amount is once again explicitly specified as a parameter.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy parameters are set up.
-    params
-        A dictionary with parameters from the policy environment.
-
-    Returns
-    -------
-    updated dictionary
-
     """
 
     return max(
