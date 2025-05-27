@@ -37,7 +37,13 @@ from ttsim.piecewise_polynomial import (
     piecewise_polynomial,
 )
 from ttsim.plot_dag import plot_dag
-from ttsim.policy_environment import PolicyEnvironment, set_up_policy_environment
+from ttsim.policy_environment import (
+    PolicyEnvironment,
+    get_birth_month_based_phase_inout_param_value,
+    get_birth_year_based_phase_inout_param_value,
+    get_consecutive_int_lookup_table_param_value,
+    set_up_policy_environment,
+)
 from ttsim.prepare_data import create_data_tree_from_df
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import (
@@ -75,6 +81,9 @@ __all__ = [
     "compute_taxes_and_transfers",
     "create_data_tree_from_df",
     "create_time_conversion_functions",
+    "get_birth_month_based_phase_inout_param_value",
+    "get_birth_year_based_phase_inout_param_value",
+    "get_consecutive_int_lookup_table_param_value",
     "get_piecewise_parameters",
     "group_creation_function",
     "insert_path_and_value",

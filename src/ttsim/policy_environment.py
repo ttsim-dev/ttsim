@@ -647,7 +647,7 @@ def get_consecutive_int_lookup_table_param_value(
     )
 
     return ConsecutiveIntLookupTableParamValue(
-        base_value_to_subtract=min(look_up_keys),
+        base_to_subtract=min(look_up_keys),
         values_to_look_up=np.asarray([raw[k] for k in look_up_keys]),
     )
 

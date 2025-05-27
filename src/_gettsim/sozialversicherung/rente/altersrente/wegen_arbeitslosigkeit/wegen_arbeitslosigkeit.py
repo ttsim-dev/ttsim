@@ -29,7 +29,7 @@ def altersgrenze_bis_1996(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 
@@ -91,7 +91,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_bis_1996_07(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
     ]
 
 
@@ -156,7 +156,7 @@ def altersgrenze_ohne_vertrauensschutz(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 
@@ -170,8 +170,7 @@ def altersgrenze_mit_vertrauensschutz(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt_vertrauensschutz.values_to_look_up[
-        birth_month_since_ad
-        - altersgrenze_gestaffelt_vertrauensschutz.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_gestaffelt_vertrauensschutz.base_to_subtract
     ]
 
 
@@ -194,7 +193,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_12_1989_bis_09_1996(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
     ]
 
 
@@ -217,7 +216,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_07_2004(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
     ]
 
 

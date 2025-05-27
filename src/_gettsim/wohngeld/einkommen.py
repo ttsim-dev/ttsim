@@ -26,7 +26,7 @@ def einkommen_m_wthh(
     anzahl_personen_wthh: int,
     freibetrag_m_wthh: float,
     einkommen_vor_freibetrag_m_wthh: float,
-    wohngeld_params: dict,
+    min_einkommen: dict[int, float],
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -38,9 +38,9 @@ def einkommen_m_wthh(
     """
     return einkommen(
         anzahl_personen=anzahl_personen_wthh,
-        einkommen_freibetrag=freibetrag_m_wthh,
+        einkommensfreibetrag=freibetrag_m_wthh,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_wthh,
-        params=wohngeld_params,
+        min_einkommen=min_einkommen,
     )
 
 
@@ -49,7 +49,7 @@ def einkommen_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     freibetrag_m_bg: float,
     einkommen_vor_freibetrag_m_bg: float,
-    wohngeld_params: dict,
+    min_einkommen: dict[int, float],
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -61,9 +61,9 @@ def einkommen_m_bg(
     """
     return einkommen(
         anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
-        einkommen_freibetrag=freibetrag_m_bg,
+        einkommensfreibetrag=freibetrag_m_bg,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_bg,
-        params=wohngeld_params,
+        min_einkommen=min_einkommen,
     )
 
 
@@ -90,7 +90,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     if familie__kind:
         out = 0.0
     else:
-        out = abzug.values_to_look_up[stufe] - abzug.base_value_to_subtract
+        out = abzug.values_to_look_up[stufe] - abzug.base_to_subtract
     return out
 
 
@@ -245,22 +245,18 @@ def freibetrag_m_ab_2016(
 
 
 def einkommen(
-    anzahl_personen: int,
-    einkommen_freibetrag: float,
     einkommen_vor_freibetrag: float,
-    params: dict,
+    einkommensfreibetrag: float,
+    anzahl_personen: int,
+    min_einkommen: dict,
 ) -> float:
     """Calculate final income relevant for calculation of housing benefit on household
     level.
 
     """
-    eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommen_freibetrag
-    unteres_eink = params["min_einkommen"][
-        min(anzahl_personen, max(params["min_einkommen"]))
-    ]
-
-    out = max(eink_nach_abzug_m_hh, unteres_eink)
-    return out
+    eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
+    unteres_eink = min_einkommen[min(anzahl_personen, max(min_einkommen))]
+    return max(eink_nach_abzug_m_hh, unteres_eink)
 
 
 @policy_function()

@@ -23,7 +23,7 @@ def altersgrenze(
     Does not check for eligibility for this pathway into retirement.
     """
     return altersgrenze_gestaffelt.values_to_look_up[
-        geburtsjahr - altersgrenze_gestaffelt.base_value_to_subtract
+        geburtsjahr - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 

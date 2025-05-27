@@ -27,7 +27,7 @@ def altersgrenze_mit_staffelung(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 
@@ -50,7 +50,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_value_to_subtract
+        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
     ]
 
 

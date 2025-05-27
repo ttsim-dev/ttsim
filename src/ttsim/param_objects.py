@@ -126,5 +126,5 @@ class PiecewisePolynomialParamValue:
 class ConsecutiveIntLookupTableParamValue:
     """The parameters expected by lookup_table"""
 
-    base_value_to_subtract: int
+    base_to_subtract: int
     values_to_look_up: np.ndarray
