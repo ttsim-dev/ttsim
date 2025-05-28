@@ -4,7 +4,7 @@ import networkx as nx
 import pytest
 from mettsim.config import METTSIM_ROOT
 
-from ttsim import PolicyEnvironment, plot_dag, set_up_policy_environment
+from ttsim import plot_dag, set_up_policy_environment
 from ttsim.plot_dag import (
     _get_selected_nodes,
     _kth_order_neighbors,
@@ -132,7 +132,7 @@ def test_should_fail_if_target_is_missing():
         ValueError, match="The following targets have no corresponding function"
     ):
         plot_dag(
-            environment=PolicyEnvironment({}),
+            environment={},
             targets=["erwachsene_alle_rentenbezieher_kin"],
         )
 

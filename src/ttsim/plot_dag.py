@@ -25,11 +25,11 @@ from ttsim.shared import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.policy_environment import PolicyEnvironment
+    from ttsim.typing import NestedPolicyEnvironment
 
 
 def plot_dag(
-    environment: PolicyEnvironment,
+    policy_environment: NestedPolicyEnvironment,
     targets=None,
     columns_overriding_functions=None,
     selectors=None,
@@ -83,7 +83,7 @@ def plot_dag(
 
     # Load functions.
     all_functions = combine_policy_functions_and_derived_functions(
-        environment=environment,
+        environment=policy_environment,
         targets=targets,
         data=names_of_columns_overriding_functions,
     )
@@ -107,7 +107,7 @@ def plot_dag(
     )
 
     processed_tree_with_params = _process_tree_with_params(  # noqa: F821
-        tree_with_params=environment.tree_with_params,
+        tree_with_params=policy_environment.tree_with_params,
         param_functions={
             k: v
             for k, v in column_objects_param_functions.items()  # noqa: F821

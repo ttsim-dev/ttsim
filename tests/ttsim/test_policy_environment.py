@@ -12,8 +12,6 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
-    GroupCreationFunction,
-    PolicyEnvironment,
     ScalarParam,
     group_creation_function,
     policy_function,
@@ -33,13 +31,17 @@ from ttsim.policy_environment import (
     active_tree_with_column_objects_and_param_functions,
     active_tree_with_params,
     fail_because_active_periods_overlap,
+    fail_if_group_ids_are_outside_top_level_namespace,
     fail_if_name_of_last_branch_element_not_leaf_name_of_function,
+    grouping_levels,
+    upsert_tree_into_policy_environment,
 )
 
 if TYPE_CHECKING:
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         NestedColumnObjectsParamFunctions,
+        NestedPolicyEnvironment,
         OrigParamSpec,
     )
 
@@ -98,90 +100,6 @@ def some_int_param():
     )
 
 
-class TestPolicyEnvironment:
-    def test_func_exists_in_tree(self):
-        function = policy_function(leaf_name="foo")(return_one)
-        environment = PolicyEnvironment(
-            raw_objects_tree={"foo": function}, tree_with_params={}
-        )
-
-        assert environment.raw_objects_tree["foo"] == function
-
-    def test_func_does_not_exist_in_tree(self):
-        environment = PolicyEnvironment(raw_objects_tree={}, tree_with_params={})
-
-        assert "foo" not in environment.raw_objects_tree
-
-    @pytest.mark.parametrize(
-        "environment",
-        [
-            PolicyEnvironment(raw_objects_tree={}, tree_with_params={}),
-            PolicyEnvironment(
-                raw_objects_tree={"foo": policy_function(leaf_name="foo")(return_one)},
-                tree_with_params={},
-            ),
-            PolicyEnvironment(
-                raw_objects_tree={
-                    "foo": policy_function(leaf_name="foo")(return_one),
-                    "bar": policy_function(leaf_name="bar")(return_two),
-                },
-                tree_with_params={},
-            ),
-        ],
-    )
-    def test_upsert_functions(self, environment: PolicyEnvironment):
-        new_function = policy_function(leaf_name="foo")(return_three)
-        new_environment = environment.upsert_objects({"foo": new_function})
-
-        assert new_environment.raw_objects_tree["foo"] == new_function
-
-    @pytest.mark.parametrize(
-        "environment",
-        [
-            PolicyEnvironment(raw_objects_tree={}, tree_with_params={}),
-            PolicyEnvironment(
-                raw_objects_tree={},
-                tree_with_params={
-                    "foo": {
-                        "bar": ScalarParam(
-                            value=1,
-                            leaf_name="bar",
-                            start_date="2025-01-01",
-                            end_date="2025-12-31",
-                            name="bar",
-                            description="bar",
-                            unit=None,
-                            reference_period=None,
-                            note=None,
-                            reference=None,
-                        )
-                    }
-                },
-            ),
-        ],
-    )
-    def test_replace_tree_with_params(self, environment: PolicyEnvironment):
-        new_params = {
-            "foo": {
-                "bar": ScalarParam(
-                    value=2,
-                    leaf_name="bar",
-                    start_date="2025-01-01",
-                    end_date="2025-12-31",
-                    name="bar",
-                    description="bar",
-                    unit=None,
-                    reference_period=None,
-                    note=None,
-                    reference=None,
-                )
-            }
-        }
-        new_environment = environment.replace_tree_with_params(new_params)
-
-        assert new_environment.tree_with_params == new_params
-
-
 def test_leap_year_correctly_handled():
     set_up_policy_environment(date="2020-02-29", root=METTSIM_ROOT)
 
@@ -217,42 +135,53 @@ def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
         fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
 
 
-def test_dont_destroy_group_by_functions():
-    functions_tree = {
-        "foo": group_creation_function()(return_one),
-    }
-    environment = PolicyEnvironment(
-        raw_objects_tree=functions_tree, tree_with_params={}
+def test_fail_if_group_ids_are_outside_top_level_namespace():
+    with pytest.raises(
+        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+    ):
+        fail_if_group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
+
+
+def test_upsert_tree_into_policy_environment_fail_with_group_ids_outside_top_level_namespace():  # noqa: E501
+    with pytest.raises(
+        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+    ):
+        upsert_tree_into_policy_environment(
+            policy_environment={},
+            tree_to_upsert={"n1": {"fam_id": fam_id}},
+        )
+
+
+@pytest.mark.parametrize(
+    "policy_environment",
+    [
+        {},
+        {"foo": policy_function(leaf_name="foo")(return_one)},
+        {
+            "foo": policy_function(leaf_name="foo")(return_one),
+            "bar": policy_function(leaf_name="bar")(return_two),
+        },
+    ],
+)
+def test_upsert_tree_into_policy_environment(
+    policy_environment: NestedPolicyEnvironment,
+):
+    new_function = policy_function(leaf_name="foo")(return_three)
+    new_environment = upsert_tree_into_policy_environment(
+        policy_environment=policy_environment, tree_to_upsert={"foo": new_function}
     )
-    assert isinstance(environment.raw_objects_tree["foo"], GroupCreationFunction)
 
-
-def test_creating_environment_fails_when_group_ids_are_outside_top_level_namespace():
-    with pytest.raises(
-        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
-    ):
-        PolicyEnvironment(
-            raw_objects_tree={"n1": {"fam_id": fam_id}}, tree_with_params={}
-        )
-
-
-def test_upserting_group_ids_outside_top_level_namespace_fails():
-    with pytest.raises(
-        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
-    ):
-        PolicyEnvironment(raw_objects_tree={}, tree_with_params={}).upsert_objects(
-            {"n1": {"fam_id": fam_id}}
-        )
+    assert new_environment["foo"] == new_function
 
 
 def test_input_is_recognized_as_potential_group_id():
     environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
-    assert "kin" in environment.grouping_levels
+    assert "kin" in grouping_levels(environment)
 
 
 def test_p_id_not_recognized_as_potential_group_id():
     environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
-    assert "p" not in environment.grouping_levels
+    assert "p" not in grouping_levels(environment)
 
 
 @pytest.mark.parametrize(
@@ -842,18 +771,3 @@ def test_get_params_contents_with_updated_previous(
         "b": 4,
     }
     assert params_contents == expected
-
-
-def test_combining_trees_works_with_overlapping_keys(some_int_param):
-    policy_environment = PolicyEnvironment(
-        raw_objects_tree={
-            "a": {"b": policy_function(leaf_name="a")(return_one)},
-        },
-        tree_with_params={"a": {"c": some_int_param}},
-    )
-    expected: NestedColumnObjectsParamFunctions = {
-        "a": {"b": policy_function(leaf_name="a")(return_one), "c": some_int_param},
-    }
-    assert optree.tree_paths(policy_environment.combined_tree) == optree.tree_paths(
-        expected
-    )

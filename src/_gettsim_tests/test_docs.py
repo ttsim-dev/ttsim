@@ -83,7 +83,7 @@ def test_all_input_vars_documented(
         for c in arguments
         if (c not in defined_functions)
         and (
-            remove_group_suffix(c, groupings=environment.grouping_levels)
+            remove_group_suffix(c, groupings=grouping_levels(policy_environment))
             not in defined_functions
         )
         and (not c.endswith("_params"))

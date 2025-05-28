@@ -23,7 +23,7 @@ def test_full_taxes_transfers(test: PolicyTest):
 
     compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=environment,
         targets_tree=test.target_structure,
     )
 
@@ -34,7 +34,7 @@ def test_data_types(test: PolicyTest):
 
     result = compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=environment,
         targets_tree=test.target_structure,
     )
 
@@ -71,6 +71,6 @@ def test_allow_none_as_target_tree(test: PolicyTest):
 
     compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=environment,
         targets_tree=None,
     )

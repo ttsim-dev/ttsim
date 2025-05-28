@@ -57,6 +57,8 @@ if TYPE_CHECKING:
         ColumnObject | ParamFunction | ParamObject | "NestedPolicyEnvironment",
     ]
     """Tree mapping TTSIM paths to column objects, param functions, param objects."""
+    QualNamePolicyEnvironment = Mapping[str, ColumnObject | ParamFunction | ParamObject]
+    """Tree mapping TTSIM paths to column objects, param functions, param objects."""
     FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...], ColumnObject | ParamFunction
     ]

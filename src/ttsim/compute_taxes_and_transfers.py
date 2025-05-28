@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import networkx as nx
@@ -23,8 +23,8 @@ from ttsim.column_objects_param_function import (
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
-from ttsim.param_objects import RawParam
-from ttsim.policy_environment import PolicyEnvironment
+from ttsim.param_objects import ParamObject, RawParam
+from ttsim.policy_environment import fail_if_environment_not_valid, grouping_levels
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
     fail_if_multiple_time_units_for_same_base_name_and_group,
@@ -40,13 +40,14 @@ from ttsim.shared import (
 
 if TYPE_CHECKING:
     from ttsim.typing import (
-        NestedColumnObjectsParamFunctions,
         NestedData,
         NestedParamObjects,
+        NestedPolicyEnvironment,
         NestedTargetDict,
         QualNameColumnFunctions,
         QualNameColumnObjectsParamFunctions,
         QualNameData,
+        QualNamePolicyEnvironment,
         QualNameProcessedParams,
         QualNameTargetList,
     )
@@ -54,7 +55,7 @@ if TYPE_CHECKING:
 
 def compute_taxes_and_transfers(
     data_tree: NestedData,
-    environment: PolicyEnvironment,
+    policy_environment: NestedPolicyEnvironment,
     targets_tree: NestedTargetDict,
     rounding: bool = True,
     debug: bool = False,
@@ -66,7 +67,7 @@ def compute_taxes_and_transfers(
     ----------
     data_tree : NestedData
         Data provided by the user.
-    environment: PolicyEnvironment
+    environment: NestedPolicyEnvironment
         The policy environment which contains all necessary functions and parameters.
     targets_tree : NestedTargetDict | None
         The targets tree.
@@ -89,29 +90,27 @@ def compute_taxes_and_transfers(
     # Check user inputs
     _fail_if_targets_tree_not_valid(targets_tree)
     _fail_if_data_tree_not_valid(data_tree)
-    _fail_if_environment_not_valid(environment)
+    fail_if_environment_not_valid(policy_environment)
 
     top_level_namespace = _get_top_level_namespace(
-        environment=environment,
+        policy_environment=policy_environment,
         time_units=tuple(TIME_UNIT_LABELS.keys()),
     )
     # Check that all paths in the params tree are valid
     dt.fail_if_paths_are_invalid(
-        functions=environment.combined_tree,
+        functions=policy_environment,
         data_tree=data_tree,
         targets=targets_tree,
         top_level_namespace=top_level_namespace,
     )
     data = dt.flatten_to_qual_names(data_tree)
-    column_objects_param_functions = (
-        remove_tree_logic_from_tree_with_column_objects_and_param_functions(
-            raw_objects_tree=environment.raw_objects_tree,
-            top_level_namespace=top_level_namespace,
-        )
+    column_objects_param_functions = remove_tree_logic_from_policy_environment(
+        policy_environment=policy_environment,
+        top_level_namespace=top_level_namespace,
     )
     # Process parameters
     processed_tree_with_params = _process_tree_with_params(
-        tree_with_params=environment.tree_with_params,
+        tree_with_params=policy_environment.tree_with_params,
         param_functions={
             k: v
             for k, v in column_objects_param_functions.items()
@@ -129,7 +128,7 @@ def compute_taxes_and_transfers(
         column_objects_param_functions=column_objects_param_functions,
         targets=function_targets,
         data=data,
-        groupings=environment.grouping_levels,
+        groupings=grouping_levels(policy_environment),
     )
 
     functions_overridden, functions_to_be_used = partition_by_reference_dict(
@@ -156,7 +155,7 @@ def compute_taxes_and_transfers(
 
     _fail_if_group_variables_not_constant_within_groups(
         data=input_data,
-        groupings=environment.grouping_levels,
+        groupings=grouping_levels(policy_environment),
     )
     _input_data_with_p_id = {
         "p_id": data["p_id"],
@@ -214,7 +213,7 @@ def compute_taxes_and_transfers(
 
 
 def _get_top_level_namespace(
-    environment: PolicyEnvironment,
+    policy_environment: NestedPolicyEnvironment,
     time_units: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
@@ -230,15 +229,15 @@ def _get_top_level_namespace(
         The top level namespace.
     """
 
-    direct_top_level_names = set(environment.combined_tree.keys())
+    direct_top_level_names = set(policy_environment.keys())
 
     # Do not create variations for lower-level namespaces.
     top_level_objects_for_variations = direct_top_level_names - {
-        k for k, v in environment.combined_tree.items() if isinstance(v, dict)
+        k for k, v in policy_environment.items() if isinstance(v, dict)
     }
 
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        groupings=environment.grouping_levels,
+        groupings=grouping_levels(policy_environment),
         time_units=time_units,
     )
     bngs_to_variations = {}
@@ -256,31 +255,34 @@ def _get_top_level_namespace(
                 all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    gp = group_pattern(environment.grouping_levels)
+    gp = group_pattern(grouping_levels(policy_environment))
     potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
 
     for name in potential_base_names:
-        for g in environment.grouping_levels:
+        for g in grouping_levels(policy_environment):
             all_top_level_names.add(f"{name}_{g}")
 
     # Add num_segments to grouping variables
-    for g in environment.grouping_levels:
+    for g in grouping_levels(policy_environment):
         all_top_level_names.add(f"{g}_id_num_segments")
     return all_top_level_names
 
 
-def remove_tree_logic_from_tree_with_column_objects_and_param_functions(
-    raw_objects_tree: NestedColumnObjectsParamFunctions,
+def remove_tree_logic_from_policy_environment(
+    policy_environment: NestedPolicyEnvironment,
     top_level_namespace: set[str],
-) -> QualNameColumnObjectsParamFunctions:
+) -> QualNamePolicyEnvironment:
     """Map qualified names to column objects / param functions without tree logic."""
-    return {
-        name: f_or_i.remove_tree_logic(
-            tree_path=dt.tree_path_from_qual_name(name),
-            top_level_namespace=top_level_namespace,
-        )
-        for name, f_or_i in dt.flatten_to_qual_names(raw_objects_tree).items()
-    }
+    out = {}
+    for name, obj in dt.flatten_to_qual_names(policy_environment).items():
+        if isinstance(obj, ParamObject):
+            out[name] = obj
+        else:
+            out[name] = obj.remove_tree_logic(
+                tree_path=dt.tree_path_from_qual_name(name),
+                top_level_namespace=top_level_namespace,
+            )
+    return out
 
 
 def combine_policy_functions_and_derived_functions(
@@ -522,16 +524,6 @@ def _add_rounding_to_functions(
         else func
         for name, func in functions.items()
     }
-
-
-def _fail_if_environment_not_valid(environment: Any) -> None:
-    """
-    Validate that the environment is a PolicyEnvironment.
-    """
-    if not isinstance(environment, PolicyEnvironment):
-        raise TypeError(
-            f"The environment must be a PolicyEnvironment, got {type(environment)}."
-        )
 
 
 def _fail_if_targets_tree_not_valid(targets_tree: NestedTargetDict) -> None:

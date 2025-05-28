@@ -104,13 +104,13 @@ def oss(
         inputs_tree_to_df_columns=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
     )
-    policy_environment = set_up_policy_environment(
+    environment = set_up_policy_environment(
         date=date,
         root=GETTSIM_ROOT,
     )
     return compute_taxes_and_transfers(
         data_tree=data_tree,
-        environment=policy_environment,
+        policy_environment=environment,
         targets_tree=targets_tree_to_outputs_df_columns,
         rounding=True,
         debug=False,

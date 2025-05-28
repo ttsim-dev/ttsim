@@ -21,7 +21,6 @@ from _gettsim_tests import TEST_DIR
 from ttsim import (
     FunctionsAndColumnsOverlapWarning,
     GroupCreationFunction,
-    PolicyEnvironment,
     PolicyFunction,
     compute_taxes_and_transfers,
     group_creation_function,
@@ -50,7 +49,6 @@ def test(*args: Any) -> None:
 __all__ = [
     "FunctionsAndColumnsOverlapWarning",
     "GroupCreationFunction",
-    "PolicyEnvironment",
     "PolicyFunction",
     "__version__",
     "compute_taxes_and_transfers",

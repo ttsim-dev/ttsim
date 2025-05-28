@@ -51,133 +51,55 @@ if TYPE_CHECKING:
         NestedAnyTTSIMObject,
         NestedColumnObjectsParamFunctions,
         NestedParamObjects,
+        NestedPolicyEnvironment,
         OrigParamSpec,
     )
 
 
-class PolicyEnvironment:
-    """
-    A container for policy functions and parameters.
+def grouping_levels(policy_environment: NestedPolicyEnvironment) -> tuple[str, ...]:
+    """The grouping levels of the policy environment."""
+    return tuple(
+        name.rsplit("_", 1)[0]
+        for name in policy_environment
+        if name.endswith("_id") and name != "p_id"
+    )
 
-    Almost always, instances are created with `set_up_policy_environment()`.
+
+def upsert_tree_into_policy_environment(
+    policy_environment: NestedPolicyEnvironment, tree_to_upsert: NestedAny
+) -> NestedPolicyEnvironment:
+    """Update and insert *tree_to_upsert* into the existing objects tree.
+
+    Adds to or overwrites elements of the policy environment. Note that this
+    method does not modify the current policy environment but returns a new one.
 
     Parameters
     ----------
-    raw_objects_tree
-        The pytree of policy inputs, policy functions, agg functions, param functions.
-    tree_with_params
-        The pytree of policy parameters.
+    policy_environment
+        The policy environment to update.
+    tree_to_upsert
+        The functions to add or overwrite. Plain functions are converted to
+        PolicyFunctions. If you need `param_functions`, you will need to
+        decorate them with `@param_function`.
+
+    Returns
+    -------
+    The policy environment with the upserted functions.
     """
 
-    def __init__(
-        self,
-        raw_objects_tree: NestedColumnObjectsParamFunctions,
-        tree_with_params: NestedParamObjects,
-    ):
-        # Check tree with policy inputs / functions, params functions.
-        assert_valid_ttsim_pytree(
-            tree=raw_objects_tree,
-            leaf_checker=lambda leaf: isinstance(leaf, ColumnObject | ParamFunction),
-            tree_name="raw_objects_tree",
-        )
-        fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
-        self._raw_objects_tree = raw_objects_tree
-
-        # Check tree with params
-        assert_valid_ttsim_pytree(
-            tree=tree_with_params,
-            leaf_checker=lambda leaf: isinstance(leaf, ParamObject),
-            tree_name="raw_objects_tree",
-        )
-        self._tree_with_params = tree_with_params
-
-    @property
-    def raw_objects_tree(self) -> NestedColumnObjectsParamFunctions:
-        """The raw column objects and params functions including policy_inputs.
-
-        Does not include automatically added aggregations / time conversions.
-        """
-        return self._raw_objects_tree
-
-    @property
-    def tree_with_params(self) -> NestedParamObjects:
-        """The parameters of the policy environment."""
-        return self._tree_with_params
-
-    @property
-    def combined_tree(self) -> NestedAnyTTSIMObject:
-        """The combined tree of raw objects and params."""
-        return merge_trees(self._raw_objects_tree, self._tree_with_params)
-
-    @property
-    def grouping_levels(self) -> tuple[str, ...]:
-        """The grouping levels of the policy environment."""
-        return tuple(
-            name.rsplit("_", 1)[0]
-            for name in self._raw_objects_tree.keys()  # noqa: SIM118
-            if name.endswith("_id") and name != "p_id"
-        )
-
-    def upsert_objects(
-        self, tree_to_upsert: NestedColumnObjectsParamFunctions
-    ) -> PolicyEnvironment:
-        """Update and insert *tree_to_upsert* into the existing objects tree.
-
-        Adds to or overwrites elements of the policy environment. Note that this
-        method does not modify the current policy environment but returns a new one.
-
-        Parameters
-        ----------
+    tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
         tree_to_upsert
-            The functions to add or overwrite.
+    )
 
-        Returns
-        -------
-        The policy environment with the upserted functions.
-        """
+    # Add functions tree to upsert to new functions tree
+    new_environment = upsert_tree(
+        base=policy_environment,
+        to_upsert=tree_to_upsert_with_correct_types,
+    )
 
-        tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
-            tree_to_upsert
-        )
-        fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-            tree_to_upsert_with_correct_types
-        )
+    fail_if_group_ids_are_outside_top_level_namespace(new_environment)
 
-        # Add functions tree to upsert to new functions tree
-        new_tree = upsert_tree(
-            base={**self._raw_objects_tree},
-            to_upsert=tree_to_upsert_with_correct_types,
-        )
-
-        fail_if_group_ids_are_outside_top_level_namespace(new_tree)
-
-        result = object.__new__(PolicyEnvironment)
-        result._raw_objects_tree = new_tree  # noqa: SLF001
-        result._tree_with_params = self._tree_with_params  # noqa: SLF001
-
-        return result
-
-    def replace_tree_with_params(
-        self, tree_with_params: NestedParamObjects
-    ) -> PolicyEnvironment:
-        """
-        Replace all parameters of the policy environment. Note that this
-        method does not modify the current policy environment but returns a new one.
-
-        Parameters
-        ----------
-        params:
-            The new parameters.
-
-        Returns
-        -------
-        The policy environment with the new parameters.
-        """
-        result = object.__new__(PolicyEnvironment)
-        result._raw_objects_tree = self._raw_objects_tree  # noqa: SLF001
-        result._tree_with_params = tree_with_params  # noqa: SLF001
-
-        return result
+    return new_environment
 
 
 @dataclass(frozen=True)
@@ -193,7 +115,7 @@ class OrigTreesWithFileNames:
 
 def set_up_policy_environment(
     root: Path, date: datetime.date | DashedISOString
-) -> PolicyEnvironment:
+) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
 
@@ -221,13 +143,9 @@ def set_up_policy_environment(
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_active_periods_overlap(orig_trees)
 
-    tree_with_params = active_tree_with_params(
-        orig_tree_with_params=orig_trees.params, date=date
-    )
-    assert "evaluationsjahr" not in tree_with_params, (
-        "evaluationsjahr must not be specified"
-    )
-    tree_with_params["evaluationsjahr"] = ScalarParam(
+    a_tree = active_tree(orig_trees=orig_trees, date=date)
+    assert "evaluationsjahr" not in a_tree, "evaluationsjahr must not be specified"
+    a_tree["evaluationsjahr"] = ScalarParam(
         leaf_name="evaluationsjahr",
         start_date=date,
         end_date=date,
@@ -239,13 +157,8 @@ def set_up_policy_environment(
         note=None,
         reference=None,
     )
-    return PolicyEnvironment(
-        raw_objects_tree=active_tree_with_column_objects_and_param_functions(
-            orig_tree_with_column_objects_and_param_functions=orig_trees.column_objects_and_param_functions,
-            date=date,
-        ),
-        tree_with_params=tree_with_params,
-    )
+    fail_if_group_ids_are_outside_top_level_namespace(a_tree)
+    return a_tree
 
 
 def convert_plain_functions_to_policy_functions(
@@ -267,10 +180,12 @@ def convert_plain_functions_to_policy_functions(
         The converted tree.
 
     """
-    return optree.tree_map(
+    converted = optree.tree_map(
         lambda leaf: _convert_to_policy_function_if_callable(leaf),
         tree,
     )
+    fail_if_name_of_last_branch_element_not_leaf_name_of_function(converted)
+    return converted
 
 
 def _convert_to_policy_function_if_callable(
@@ -343,6 +258,20 @@ def fail_because_active_periods_overlap(orig_trees: OrigTreesWithFileNames) -> N
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
                 )
+
+
+def active_tree(
+    orig_trees: OrigTreesWithFileNames, date: datetime.date
+) -> NestedPolicyEnvironment:
+    return merge_trees(
+        left=active_tree_with_column_objects_and_param_functions(
+            orig_tree_with_column_objects_and_param_functions=orig_trees.column_objects_and_param_functions,
+            date=date,
+        ),
+        right=active_tree_with_params(
+            orig_tree_with_params=orig_trees.params, date=date
+        ),
+    )
 
 
 def active_tree_with_column_objects_and_param_functions(
@@ -765,12 +694,12 @@ def get_birth_year_based_phase_inout_param_value(
 
 
 def fail_if_group_ids_are_outside_top_level_namespace(
-    raw_objects_tree: NestedColumnObjectsParamFunctions,
+    policy_environment: NestedPolicyEnvironment,
 ) -> None:
     """Fail if group ids are outside the top level namespace."""
     group_ids_outside_top_level_namespace = {
         tree_path
-        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
+        for tree_path in dt.flatten_to_tree_paths(policy_environment)
         if len(tree_path) > 1 and tree_path[-1].endswith("_id")
     }
     if group_ids_outside_top_level_namespace:
@@ -779,6 +708,17 @@ def fail_if_group_ids_are_outside_top_level_namespace(
             f"{group_ids_outside_top_level_namespace}\n\n"
             "To fix this error, move the group identifiers to the top-level namespace."
         )
+
+
+def fail_if_environment_not_valid(policy_environment: NestedPolicyEnvironment) -> None:
+    """Validate that the environment is a pytree with supported types."""
+    assert_valid_ttsim_pytree(
+        tree=policy_environment,
+        leaf_checker=lambda leaf: isinstance(
+            leaf, ColumnObject | ParamFunction | ParamObject
+        ),
+        tree_name="policy_environment",
+    )
 
 
 def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
