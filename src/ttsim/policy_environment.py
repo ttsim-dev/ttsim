@@ -80,7 +80,7 @@ class PolicyEnvironment:
             leaf_checker=lambda leaf: isinstance(leaf, ColumnObject | ParamFunction),
             tree_name="raw_objects_tree",
         )
-        _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
+        fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
         self._raw_objects_tree = raw_objects_tree
 
         # Check tree with params
@@ -139,7 +139,7 @@ class PolicyEnvironment:
         tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
             tree_to_upsert
         )
-        _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+        fail_if_name_of_last_branch_element_not_leaf_name_of_function(
             tree_to_upsert_with_correct_types
         )
 
@@ -149,7 +149,7 @@ class PolicyEnvironment:
             to_upsert=tree_to_upsert_with_correct_types,
         )
 
-        _fail_if_group_ids_are_outside_top_level_namespace(new_tree)
+        fail_if_group_ids_are_outside_top_level_namespace(new_tree)
 
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = new_tree  # noqa: SLF001
@@ -180,6 +180,17 @@ class PolicyEnvironment:
         return result
 
 
+@dataclass(frozen=True)
+class OrigTreesWithFileNames:
+    """
+    A container for the original trees of policy functions, policy inputs,
+    param functions and parameters.
+    """
+
+    column_objects_and_param_functions: FlatColumnObjectsParamFunctions
+    params: FlatOrigParamSpecs
+
+
 def set_up_policy_environment(
     root: Path, date: datetime.date | DashedISOString
 ) -> PolicyEnvironment:
@@ -201,17 +212,17 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
-    _orig_tree_with_column_objects_and_param_functions = (
-        orig_tree_with_column_objects_and_param_functions(root)
+    orig_trees = OrigTreesWithFileNames(
+        column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions(
+            root
+        ),
+        params=orig_tree_with_params(root),
     )
-    _orig_tree_with_params = orig_tree_with_params(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
-    fail_because_active_periods_overlap(
-        orig_tree_with_column_objects_and_param_functions=_orig_tree_with_column_objects_and_param_functions,
-        orig_tree_with_params=_orig_tree_with_params,
-    )
+    fail_because_active_periods_overlap(orig_trees)
+
     tree_with_params = active_tree_with_params(
-        orig_tree_with_params=_orig_tree_with_params, date=date
+        orig_tree_with_params=orig_trees.params, date=date
     )
     assert "evaluationsjahr" not in tree_with_params, (
         "evaluationsjahr must not be specified"
@@ -230,17 +241,64 @@ def set_up_policy_environment(
     )
     return PolicyEnvironment(
         raw_objects_tree=active_tree_with_column_objects_and_param_functions(
-            orig_tree_with_column_objects_and_param_functions=_orig_tree_with_column_objects_and_param_functions,
+            orig_tree_with_column_objects_and_param_functions=orig_trees.column_objects_and_param_functions,
             date=date,
         ),
         tree_with_params=tree_with_params,
     )
 
 
-def fail_because_active_periods_overlap(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    orig_tree_with_params: FlatOrigParamSpecs,
-) -> None:
+def convert_plain_functions_to_policy_functions(
+    tree: NestedAny,
+) -> NestedAnyTTSIMObject:
+    """Convert all plain functions in a tree to PolicyFunctions.
+
+    Convenience function if users do not want to apply decorators in modifications of
+    the taxes and transfers system.
+
+    Parameters
+    ----------
+    tree
+        The tree of functions to convert.
+
+    Returns
+    -------
+    converted_tree
+        The converted tree.
+
+    """
+    return optree.tree_map(
+        lambda leaf: _convert_to_policy_function_if_callable(leaf),
+        tree,
+    )
+
+
+def _convert_to_policy_function_if_callable(
+    obj: ColumnObject | ParamFunction | GenericCallable | Any,
+) -> ColumnObject:
+    """Convert a Callable to a PolicyFunction if it is not already a ColumnObject or
+    ParamFunction. If it is not a Callable, return it unchanged.
+
+    Parameters
+    ----------
+    obj
+        The object to convert.
+
+    Returns
+    -------
+    converted_object
+        The converted object.
+
+    """
+    if isinstance(obj, (ColumnObject, ParamFunction)) or not callable(obj):
+        converted_object = obj
+    else:
+        converted_object = policy_function(leaf_name=obj.__name__)(obj)
+
+    return converted_object
+
+
+def fail_because_active_periods_overlap(orig_trees: OrigTreesWithFileNames) -> None:
     """Fail because active periods of objects / parameters overlap.
 
     Checks that objects or parameters with the same tree path / qualified name are not
@@ -256,14 +314,14 @@ def fail_because_active_periods_overlap(
     overlap_checker: dict[
         tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
     ] = {}
-    for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items():
+    for orig_path, obj in orig_trees.column_objects_and_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:
             overlap_checker[path].append(obj)
         else:
             overlap_checker[path] = [obj]
 
-    for orig_path, obj in orig_tree_with_params.items():
+    for orig_path, obj in orig_trees.params.items():
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
@@ -285,6 +343,34 @@ def fail_because_active_periods_overlap(
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
                 )
+
+
+def active_tree_with_column_objects_and_param_functions(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    date: datetime.date,
+) -> NestedColumnObjectsParamFunctions:
+    """
+    Traverse `root` and return all ColumnObjectParamFunctions for a given date.
+
+    Parameters
+    ----------
+    root:
+        The directory to traverse.
+    date:
+        The date for which policy objects should be loaded.
+
+    Returns
+    -------
+    A tree of active ColumnObjectParamFunctions.
+    """
+
+    flat_objects_tree = {
+        (*orig_path[:-2], obj.leaf_name): obj
+        for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items()
+        if obj.is_active(date)
+    }
+
+    return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
 @dataclass(frozen=True)
@@ -389,101 +475,6 @@ class ConflictingActivePeriodsError(Exception):
         Overlap from {self.overlap_start} to {self.overlap_end}."""
 
 
-def active_tree_with_column_objects_and_param_functions(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    date: datetime.date,
-) -> NestedColumnObjectsParamFunctions:
-    """
-    Traverse `root` and return all ColumnObjectParamFunctions for a given date.
-
-    Parameters
-    ----------
-    root:
-        The directory to traverse.
-    date:
-        The date for which policy objects should be loaded.
-
-    Returns
-    -------
-    A tree of active ColumnObjectParamFunctions.
-    """
-
-    flat_objects_tree = {
-        (*orig_path[:-2], obj.leaf_name): obj
-        for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items()
-        if obj.is_active(date)
-    }
-
-    return dt.unflatten_from_tree_paths(flat_objects_tree)
-
-
-def convert_plain_functions_to_policy_functions(
-    tree: NestedAny,
-) -> NestedAnyTTSIMObject:
-    """Convert all plain functions in a tree to PolicyFunctions.
-
-    Convenience function if users do not want to apply decorators in modifications of
-    the taxes and transfers system.
-
-    Parameters
-    ----------
-    tree
-        The tree of functions to convert.
-
-    Returns
-    -------
-    converted_tree
-        The converted tree.
-
-    """
-    return optree.tree_map(
-        lambda leaf: _convert_to_policy_function_if_callable(leaf),
-        tree,
-    )
-
-
-def _convert_to_policy_function_if_callable(
-    obj: ColumnObject | ParamFunction | GenericCallable | Any,
-) -> ColumnObject:
-    """Convert a Callable to a PolicyFunction if it is not already a ColumnObject or
-    ParamFunction. If it is not a Callable, return it unchanged.
-
-    Parameters
-    ----------
-    obj
-        The object to convert.
-
-    Returns
-    -------
-    converted_object
-        The converted object.
-
-    """
-    if isinstance(obj, (ColumnObject, ParamFunction)) or not callable(obj):
-        converted_object = obj
-    else:
-        converted_object = policy_function(leaf_name=obj.__name__)(obj)
-
-    return converted_object
-
-
-def _fail_if_group_ids_are_outside_top_level_namespace(
-    raw_objects_tree: NestedColumnObjectsParamFunctions,
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
-        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
-
-
 def active_tree_with_params(
     orig_tree_with_params: FlatOrigParamSpecs,
     date: datetime.date,
@@ -518,8 +509,8 @@ def get_one_param(  # noqa: PLR0911
     spec: OrigParamSpec,
     date: datetime.date,
 ) -> ParamObject:
-    """Parse the original specification found in the yaml tree."""
-    cleaned_spec = prep_one_params_spec(leaf_name=leaf_name, spec=spec, date=date)
+    """Parse the original specification found in the yaml tree to a ParamObject."""
+    cleaned_spec = _clean_one_param_spec(leaf_name=leaf_name, spec=spec, date=date)
 
     if cleaned_spec is None:
         return None
@@ -560,7 +551,7 @@ def get_one_param(  # noqa: PLR0911
         raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
 
-def prep_one_params_spec(
+def _clean_one_param_spec(
     leaf_name: str, spec: OrigParamSpec, date: datetime.date
 ) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a ParamObject."""
@@ -597,14 +588,14 @@ def prep_one_params_spec(
         )
         out["value"] = current_spec["value"]
     else:
-        out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
+        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
     return out
 
 
-def _get_params_contents(
+def _get_param_value(
     relevant_specs: list[dict[str | int, Any]],
 ) -> dict[str | int, Any]:
-    """Get the contents of the parameters.
+    """Get the value of a parameter.
 
     Implementation is a recursion in order to handle the 'updates_previous' machinery.
 
@@ -619,7 +610,7 @@ def _get_params_contents(
             f"{relevant_specs}"
         )
         return upsert_tree(
-            base=_get_params_contents(relevant_specs=relevant_specs[:-1]),
+            base=_get_param_value(relevant_specs=relevant_specs[:-1]),
             to_upsert=current_spec,
         )
     else:
@@ -773,7 +764,24 @@ def get_birth_year_based_phase_inout_param_value(
     )
 
 
-def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+def fail_if_group_ids_are_outside_top_level_namespace(
+    raw_objects_tree: NestedColumnObjectsParamFunctions,
+) -> None:
+    """Fail if group ids are outside the top level namespace."""
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
+        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
+        )
+
+
+def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
     functions_tree: NestedColumnObjectsParamFunctions,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last

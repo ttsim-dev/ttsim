@@ -26,19 +26,19 @@ from ttsim.loader import (
 )
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
-    _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
-    _get_params_contents,
+    OrigTreesWithFileNames,
+    _get_param_value,
     _param_with_active_periods,
     _ParamWithActivePeriod,
     active_tree_with_column_objects_and_param_functions,
     active_tree_with_params,
     fail_because_active_periods_overlap,
+    fail_if_name_of_last_branch_element_not_leaf_name_of_function,
 )
 
 if TYPE_CHECKING:
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
-        FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,
         OrigParamSpec,
     )
@@ -214,7 +214,7 @@ def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
     functions_tree: NestedColumnObjectsParamFunctions,
 ):
     with pytest.raises(KeyError):
-        _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
+        fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
 
 
 def test_dont_destroy_group_by_functions():
@@ -344,11 +344,11 @@ def identity(x):
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
+    "orig_trees",
     [
         # Same global module, no overlapping periods, no name clashes.
-        (
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={
                 ("c", "a"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -360,7 +360,7 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            {
+            params={
                 ("c", "g"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
@@ -368,8 +368,8 @@ def identity(x):
             },
         ),
         # Same submodule, overlapping periods, different leaf names so no name clashes.
-        (
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={
                 ("x", "c", "a"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -381,7 +381,7 @@ def identity(x):
                     leaf_name="g",
                 )(identity),
             },
-            {
+            params={
                 ("x", "c", "h"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
@@ -389,8 +389,8 @@ def identity(x):
             },
         ),
         # Different submodules, no overlapping periods, no name clashes.
-        (
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={
                 ("x", "c", "f"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -400,7 +400,7 @@ def identity(x):
                     end_date="2023-02-28",
                 )(identity),
             },
-            {
+            params={
                 ("x", "c", "g"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
@@ -408,8 +408,8 @@ def identity(x):
             },
         ),
         # Different paths, overlapping periods, same names but no clashes.
-        (
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={
                 ("x", "a", "b"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -421,7 +421,7 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            {
+            params={
                 ("z", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
@@ -429,9 +429,9 @@ def identity(x):
             },
         ),
         # Different yaml files, no name clashes because of different names.
-        (
-            {},
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={},
+            params={
                 ("x", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 5},
@@ -444,14 +444,8 @@ def identity(x):
         ),
     ],
 )
-def test_fail_because_active_periods_overlap_passes(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    orig_tree_with_params: FlatOrigParamSpecs,
-):
-    fail_because_active_periods_overlap(
-        orig_tree_with_column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions,
-        orig_tree_with_params=orig_tree_with_params,
-    )
+def test_fail_because_active_periods_overlap_passes(orig_trees: OrigTreesWithFileNames):
+    fail_because_active_periods_overlap(orig_trees)
 
 
 @pytest.mark.parametrize(
@@ -527,17 +521,19 @@ def test_fail_because_of_conflicting_active_periods(
 ):
     with pytest.raises(ConflictingActivePeriodsError):
         fail_because_active_periods_overlap(
-            orig_tree_with_column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions,
-            orig_tree_with_params={},
+            OrigTreesWithFileNames(
+                column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions,
+                params={},
+            )
         )
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
+    "orig_trees",
     [
         # Same global module, no overlap in functions, name clashes leaf name / yaml.
-        (
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={
                 ("c", "a"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -549,7 +545,7 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            {
+            params={
                 ("c", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
@@ -557,8 +553,8 @@ def test_fail_because_of_conflicting_active_periods(
             },
         ),
         # Same paths, no overlap in functions, name clashes leaf name / yaml.
-        (
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={
                 ("x", "a", "b"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -570,7 +566,7 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            {
+            params={
                 ("x", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
@@ -578,9 +574,9 @@ def test_fail_because_of_conflicting_active_periods(
             },
         ),
         # Same paths, name clashes within params from different yaml files.
-        (
-            {},
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={},
+            params={
                 ("x", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
@@ -593,23 +589,17 @@ def test_fail_because_of_conflicting_active_periods(
         ),
     ],
 )
-def test_fail_because_of_conflicting_names(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    orig_tree_with_params: FlatOrigParamSpecs,
-):
+def test_fail_because_of_conflicting_names(orig_trees: OrigTreesWithFileNames):
     with pytest.raises(ConflictingActivePeriodsError):
-        fail_because_active_periods_overlap(
-            orig_tree_with_column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions,
-            orig_tree_with_params=orig_tree_with_params,
-        )
+        fail_because_active_periods_overlap(orig_trees)
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
+    "orig_trees",
     [
         # Same leaf names across functions / parameters, but no overlapping periods.
-        (
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={
                 ("c", "a"): policy_function(
                     start_date="2012-01-01",
                     end_date="2015-12-31",
@@ -621,7 +611,7 @@ def test_fail_because_of_conflicting_names(
                     leaf_name="f",
                 )(identity),
             },
-            {
+            params={
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
@@ -645,9 +635,9 @@ def test_fail_because_of_conflicting_names(
             },
         ),
         # Different periods specified in different files.
-        (
-            {},
-            {
+        OrigTreesWithFileNames(
+            column_objects_and_param_functions={},
+            params={
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
@@ -679,14 +669,8 @@ def test_fail_because_of_conflicting_names(
         ),
     ],
 )
-def test_pass_because_no_overlap_functions_params(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    orig_tree_with_params: FlatOrigParamSpecs,
-):
-    fail_because_active_periods_overlap(
-        orig_tree_with_column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions,
-        orig_tree_with_params=orig_tree_with_params,
-    )
+def test_pass_because_no_overlap_functions_params(orig_trees: OrigTreesWithFileNames):
+    fail_because_active_periods_overlap(orig_trees)
 
 
 @pytest.mark.parametrize(
@@ -852,7 +836,7 @@ def test_active_tree_with_column_objects_and_param_functions(
 def test_get_params_contents_with_updated_previous(
     some_params_spec_with_updates_previous,
 ):
-    params_contents = _get_params_contents(some_params_spec_with_updates_previous)
+    params_contents = _get_param_value(some_params_spec_with_updates_previous)
     expected = {
         "a": 1,
         "b": 4,
