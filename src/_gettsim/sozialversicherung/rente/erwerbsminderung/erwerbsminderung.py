@@ -144,8 +144,41 @@ def entgeltpunkte_ost(
     )
 
 
-@policy_function(start_date="2001-01-01")
-def zurechnungszeit(
+@policy_function(
+    start_date="2000-12-23", end_date="2014-06-30", leaf_name="zurechnungszeit"
+)
+def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
+    mean_entgeltpunkte_pro_bewertungsmonat: float,
+    sozialversicherung__rente__alter_bei_renteneintritt: float,
+    sozialversicherung__rente__jahr_renteneintritt: int,
+    sozialversicherung__rente__monat_renteneintritt: int,
+    zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+) -> float:
+    """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
+
+    Provides the Entgeltpunkt-basis for calculation of the Erwerbsminderungsrente.
+
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "zurechnungszeitgrenze".
+    """
+    claiming_month_since_ad = (
+        sozialversicherung__rente__jahr_renteneintritt * 12
+        + sozialversicherung__rente__monat_renteneintritt
+    )
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
+        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
+    ]
+    return (
+        altersgrenze_zurechnungszeit
+        - (sozialversicherung__rente__alter_bei_renteneintritt)
+    ) * mean_entgeltpunkte_pro_bewertungsmonat
+
+
+@policy_function(
+    start_date="2014-07-01", end_date="2017-07-16", leaf_name="zurechnungszeit"
+)
+def zurechnungszeit_mit_einheitlicher_altersgrenze(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     zurechnungszeitgrenze: float,
@@ -160,6 +193,35 @@ def zurechnungszeit(
     """
     return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
+    ) * mean_entgeltpunkte_pro_bewertungsmonat
+
+
+@policy_function(start_date="2017-07-17", leaf_name="zurechnungszeit")
+def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
+    mean_entgeltpunkte_pro_bewertungsmonat: float,
+    sozialversicherung__rente__alter_bei_renteneintritt: float,
+    sozialversicherung__rente__jahr_renteneintritt: int,
+    sozialversicherung__rente__monat_renteneintritt: int,
+    zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+) -> float:
+    """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
+
+    Provides the Entgeltpunkt-basis for calculation of the Erwerbsminderungsrente.
+
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "zurechnungszeitgrenze".
+    """
+    claiming_month_since_ad = (
+        sozialversicherung__rente__jahr_renteneintritt * 12
+        + sozialversicherung__rente__monat_renteneintritt
+    )
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
+        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
+    ]
+    return (
+        altersgrenze_zurechnungszeit
+        - (sozialversicherung__rente__alter_bei_renteneintritt)
     ) * mean_entgeltpunkte_pro_bewertungsmonat
 
 
