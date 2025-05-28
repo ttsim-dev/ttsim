@@ -118,7 +118,7 @@ def test_rounding(rounding_spec, input_values, exp_output):
 
     environment = PolicyEnvironment(
         raw_objects_tree={"namespace": {"test_func": test_func, "x": x}, "p_id": p_id},
-        params_tree={},
+        tree_with_params={},
     )
 
     calc_result = compute_taxes_and_transfers(
@@ -152,7 +152,7 @@ def test_rounding_with_time_conversion():
             "x": x,
             "p_id": p_id,
         },
-        params_tree={},
+        tree_with_params={},
     )
 
     calc_result = compute_taxes_and_transfers(
@@ -189,7 +189,7 @@ def test_no_rounding(
             "x": x,
             "p_id": p_id,
         },
-        params_tree={},
+        tree_with_params={},
     )
 
     calc_result = compute_taxes_and_transfers(

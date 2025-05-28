@@ -7,8 +7,8 @@ import pytest
 
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import PolicyInput
-from ttsim.loader import orig_tree_with_column_objects_param_functions
-from ttsim.policy_environment import active_tree_with_column_objects_param_functions
+from ttsim.loader import orig_tree_with_column_objects_and_param_functions
+from ttsim.policy_environment import active_tree_with_column_objects_and_param_functions
 from ttsim.shared import remove_group_suffix
 
 
@@ -31,12 +31,12 @@ def all_function_names():
 @pytest.fixture(scope="module")
 def time_indep_function_names(all_function_names):
     time_dependent_functions = {}
-    _orig_tree_with_column_objects_param_functions = (
-        orig_tree_with_column_objects_param_functions(root=GETTSIM_ROOT)
+    _orig_tree_with_column_objects_and_param_functions = (
+        orig_tree_with_column_objects_and_param_functions(root=GETTSIM_ROOT)
     )
     for year in range(1990, 2023):
-        year_functions = active_tree_with_column_objects_param_functions(
-            orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
+        year_functions = active_tree_with_column_objects_and_param_functions(
+            orig_tree_with_column_objects_and_param_functions=_orig_tree_with_column_objects_and_param_functions,
             date=datetime.date(year=year, month=1, day=1),
         )
         new_dict = {func.function.__name__: func.leaf_name for func in year_functions}

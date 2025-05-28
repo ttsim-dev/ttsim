@@ -35,7 +35,7 @@ from ttsim.compute_taxes_and_transfers import (
     _fail_if_p_id_is_non_unique,
     _get_top_level_namespace,
     _partial_params_to_functions,
-    _process_params_tree,
+    _process_tree_with_params,
     create_agg_by_group_functions,
 )
 from ttsim.config import IS_JAX_INSTALLED
@@ -390,7 +390,7 @@ def test_create_agg_by_group_functions(
     targets_tree,
     data_tree,
 ):
-    environment = PolicyEnvironment(raw_objects_tree=objects_tree, params_tree={})
+    environment = PolicyEnvironment(raw_objects_tree=objects_tree, tree_with_params={})
     compute_taxes_and_transfers(
         environment=environment,
         data_tree=data_tree,
@@ -471,7 +471,7 @@ def test_output_is_tree(minimal_input_data):
             "p_id": p_id,
             "module": {"some_func": some_func},
         },
-        params_tree={},
+        tree_with_params={},
     )
 
     out = compute_taxes_and_transfers(
@@ -492,7 +492,7 @@ def test_params_target_is_allowed(minimal_input_data):
             "p_id": p_id,
             "module": {"some_func": some_func},
         },
-        params_tree={
+        tree_with_params={
             "some_param": ScalarParam(
                 value=1,
                 leaf_name="some_param",
@@ -526,7 +526,7 @@ def test_warn_if_functions_and_columns_overlap():
             "some_func": some_func,
             "some_target": another_func,
         },
-        params_tree={},
+        tree_with_params={},
     )
     with pytest.warns(FunctionsAndColumnsOverlapWarning):
         compute_taxes_and_transfers(
@@ -543,7 +543,7 @@ def test_warn_if_functions_and_columns_overlap():
 def test_dont_warn_if_functions_and_columns_dont_overlap():
     environment = PolicyEnvironment(
         raw_objects_tree={"some_func": some_func},
-        params_tree={},
+        tree_with_params={},
     )
     with warnings.catch_warnings():
         warnings.filterwarnings("error", category=FunctionsAndColumnsOverlapWarning)
@@ -564,7 +564,7 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
             "some_func": some_func,
             "unique": another_func,
         },
-        params_tree={},
+        tree_with_params={},
     )
     with warnings.catch_warnings(
         category=FunctionsAndColumnsOverlapWarning, record=True
@@ -671,7 +671,7 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
             "b": policy_function(leaf_name="b")(b),
             "c": policy_function(leaf_name="c")(c),
         },
-        params_tree={},
+        tree_with_params={},
     )
 
     with pytest.raises(
@@ -697,7 +697,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
 
     environment = PolicyEnvironment(
         raw_objects_tree={"a": a, "b": b},
-        params_tree={},
+        tree_with_params={},
     )
     compute_taxes_and_transfers(
         data_tree=minimal_input_data,
@@ -710,7 +710,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
 def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions(
     minimal_input_data,
 ):
-    environment = PolicyEnvironment(raw_objects_tree={}, params_tree={})
+    environment = PolicyEnvironment(raw_objects_tree={}, tree_with_params={})
 
     with pytest.raises(
         ValueError,
@@ -732,7 +732,7 @@ def test_fail_if_missing_p_id():
     ):
         compute_taxes_and_transfers(
             data_tree=data,
-            environment=PolicyEnvironment(raw_objects_tree={}, params_tree={}),
+            environment=PolicyEnvironment(raw_objects_tree={}, tree_with_params={}),
             targets_tree={},
             jit=jit,
         )
@@ -748,7 +748,7 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
     ):
         compute_taxes_and_transfers(
             data_tree=data,
-            environment=PolicyEnvironment(raw_objects_tree={}, params_tree={}),
+            environment=PolicyEnvironment(raw_objects_tree={}, tree_with_params={}),
             targets_tree={},
             jit=jit,
         )
@@ -788,7 +788,7 @@ def test_user_provided_aggregate_by_group_specs():
 
     out = compute_taxes_and_transfers(
         data_tree=data,
-        environment=PolicyEnvironment(raw_objects_tree=inputs, params_tree={}),
+        environment=PolicyEnvironment(raw_objects_tree=inputs, tree_with_params={}),
         targets_tree={"module_name": {"betrag_m_fam": None}},
         jit=jit,
     )
@@ -825,7 +825,7 @@ def test_user_provided_aggregation():
                 "betrag_m_double_fam": betrag_m_double_fam,
             },
         },
-        params_tree={},
+        tree_with_params={},
     )
 
     actual = compute_taxes_and_transfers(
@@ -870,7 +870,7 @@ def test_user_provided_aggregation_with_time_conversion():
                 "max_betrag_double_m_fam": max_betrag_double_m_fam,
             },
         },
-        params_tree={},
+        tree_with_params={},
     )
 
     actual = compute_taxes_and_transfers(
@@ -945,7 +945,9 @@ def test_user_provided_aggregate_by_p_id_specs(
         },
     )
 
-    environment = PolicyEnvironment(raw_objects_tree=raw_objects_tree, params_tree={})
+    environment = PolicyEnvironment(
+        raw_objects_tree=raw_objects_tree, tree_with_params={}
+    )
     out = compute_taxes_and_transfers(
         minimal_input_data_shared_fam,
         environment,
@@ -969,7 +971,7 @@ def test_user_provided_aggregate_by_p_id_specs(
                     "foo_m": policy_function(leaf_name="foo_m")(identity),
                     "fam_id": fam_id,
                 },
-                params_tree={},
+                tree_with_params={},
             ),
             ["m", "y"],
             {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
@@ -980,7 +982,7 @@ def test_user_provided_aggregate_by_p_id_specs(
                     "foo": policy_function(leaf_name="foo")(identity),
                     "fam_id": fam_id,
                 },
-                params_tree={},
+                tree_with_params={},
             ),
             ["m", "y"],
             {"foo", "foo_fam"},
@@ -995,8 +997,8 @@ def test_get_top_level_namespace(environment, time_units, expected):
     assert all(name in result for name in expected)
 
 
-def test_params_tree_is_processed():
-    params_tree = {
+def test_tree_with_params_is_processed():
+    tree_with_params = {
         "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
         "some_dict_param": SOME_DICT_PARAM,
@@ -1006,8 +1008,8 @@ def test_params_tree_is_processed():
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
     }
-    processed_params_tree = _process_params_tree(
-        params_tree=params_tree,
+    processed_tree_with_params = _process_tree_with_params(
+        tree_with_params=tree_with_params,
         param_functions=param_functions,
     )
     expected = {
@@ -1020,4 +1022,4 @@ def test_params_tree_is_processed():
         "some_dict_param": SOME_DICT_PARAM.value,
         "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM.value,
     }
-    assert processed_params_tree == expected
+    assert processed_tree_with_params == expected

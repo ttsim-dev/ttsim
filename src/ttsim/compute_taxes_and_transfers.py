@@ -104,14 +104,14 @@ def compute_taxes_and_transfers(
     )
     data = dt.flatten_to_qual_names(data_tree)
     column_objects_param_functions = (
-        remove_tree_logic_from_tree_with_column_objects_param_functions(
+        remove_tree_logic_from_tree_with_column_objects_and_param_functions(
             raw_objects_tree=environment.raw_objects_tree,
             top_level_namespace=top_level_namespace,
         )
     )
     # Process parameters
-    processed_params_tree = _process_params_tree(
-        params_tree=environment.params_tree,
+    processed_tree_with_params = _process_tree_with_params(
+        tree_with_params=environment.tree_with_params,
         param_functions={
             k: v
             for k, v in column_objects_param_functions.items()
@@ -121,7 +121,7 @@ def compute_taxes_and_transfers(
 
     # Flatten nested objects to qualified names
     all_targets = set(dt.qual_names(targets_tree))
-    params_targets = {t for t in all_targets if t in processed_params_tree}
+    params_targets = {t for t in all_targets if t in processed_tree_with_params}
     function_targets = all_targets - params_targets
 
     # Add derived functions to the qualified functions tree.
@@ -145,7 +145,7 @@ def compute_taxes_and_transfers(
     )
     functions_with_partialled_parameters = _partial_params_to_functions(
         functions=functions_with_rounding_specs,
-        params=processed_params_tree,
+        params=processed_tree_with_params,
     )
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
@@ -200,7 +200,7 @@ def compute_taxes_and_transfers(
     results_tree = dt.unflatten_from_qual_names(
         {
             **results,
-            **{pt: processed_params_tree[pt] for pt in params_targets},
+            **{pt: processed_tree_with_params[pt] for pt in params_targets},
         }
     )
 
@@ -269,7 +269,7 @@ def _get_top_level_namespace(
     return all_top_level_names
 
 
-def remove_tree_logic_from_tree_with_column_objects_param_functions(
+def remove_tree_logic_from_tree_with_column_objects_and_param_functions(
     raw_objects_tree: NestedColumnObjectsParamFunctions,
     top_level_namespace: set[str],
 ) -> QualNameColumnObjectsParamFunctions:
@@ -427,8 +427,8 @@ def _create_input_data_for_concatenated_function(
     return {k: np.array(v) for k, v in data.items() if k in root_nodes}
 
 
-def _process_params_tree(
-    params_tree: NestedParamObjects,
+def _process_tree_with_params(
+    tree_with_params: NestedParamObjects,
     param_functions: QualNameColumnFunctions,
 ) -> QualNameProcessedParams:
     """Return a mapping of qualified names to processed parameter values.
@@ -441,7 +441,7 @@ def _process_params_tree(
 
     """
 
-    qual_name_params = dt.flatten_to_qual_names(params_tree)
+    qual_name_params = dt.flatten_to_qual_names(tree_with_params)
 
     # Construct a function for the processing of all params.
     process = concatenate_functions(

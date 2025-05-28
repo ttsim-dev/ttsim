@@ -106,8 +106,8 @@ def plot_dag(
         input_structure=input_structure,
     )
 
-    processed_params_tree = _process_params_tree(  # noqa: F821
-        params_tree=environment.params_tree,
+    processed_tree_with_params = _process_tree_with_params(  # noqa: F821
+        tree_with_params=environment.tree_with_params,
         param_functions={
             k: v
             for k, v in column_objects_param_functions.items()  # noqa: F821
@@ -117,7 +117,7 @@ def plot_dag(
 
     processed_functions = _partial_params_to_functions(
         functions=functions_with_rounding_specs,  # noqa: F821
-        processed_params=processed_params_tree,
+        processed_params=processed_tree_with_params,
     )
 
     input_structure = dt.create_tree_with_input_types(

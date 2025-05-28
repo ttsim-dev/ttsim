@@ -18,8 +18,8 @@ from ttsim.column_objects_param_function import (
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.loader import (
-    orig_params_tree,
-    orig_tree_with_column_objects_param_functions,
+    orig_tree_with_column_objects_and_param_functions,
+    orig_tree_with_params,
 )
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParam,
@@ -64,14 +64,14 @@ class PolicyEnvironment:
     ----------
     raw_objects_tree
         The pytree of policy inputs, policy functions, agg functions, param functions.
-    params_tree
+    tree_with_params
         The pytree of policy parameters.
     """
 
     def __init__(
         self,
         raw_objects_tree: NestedColumnObjectsParamFunctions,
-        params_tree: NestedParamObjects,
+        tree_with_params: NestedParamObjects,
     ):
         # Check tree with policy inputs / functions, params functions.
         assert_valid_ttsim_pytree(
@@ -87,11 +87,11 @@ class PolicyEnvironment:
 
         # Check tree with params
         assert_valid_ttsim_pytree(
-            tree=params_tree,
+            tree=tree_with_params,
             leaf_checker=lambda leaf: isinstance(leaf, ParamObject),
             tree_name="raw_objects_tree",
         )
-        self._params_tree = params_tree
+        self._tree_with_params = tree_with_params
 
     @property
     def raw_objects_tree(self) -> NestedColumnObjectsParamFunctions:
@@ -102,14 +102,14 @@ class PolicyEnvironment:
         return self._raw_objects_tree
 
     @property
-    def params_tree(self) -> NestedParamObjects:
+    def tree_with_params(self) -> NestedParamObjects:
         """The parameters of the policy environment."""
-        return self._params_tree
+        return self._tree_with_params
 
     @property
     def combined_tree(self) -> NestedAnyTTSIMObject:
         """The combined tree of raw objects and params."""
-        return merge_trees(self._raw_objects_tree, self._params_tree)
+        return merge_trees(self._raw_objects_tree, self._tree_with_params)
 
     @property
     def grouping_levels(self) -> tuple[str, ...]:
@@ -156,11 +156,13 @@ class PolicyEnvironment:
 
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = new_tree  # noqa: SLF001
-        result._params_tree = self._params_tree  # noqa: SLF001
+        result._tree_with_params = self._tree_with_params  # noqa: SLF001
 
         return result
 
-    def replace_params_tree(self, params_tree: NestedParamObjects) -> PolicyEnvironment:
+    def replace_tree_with_params(
+        self, tree_with_params: NestedParamObjects
+    ) -> PolicyEnvironment:
         """
         Replace all parameters of the policy environment. Note that this
         method does not modify the current policy environment but returns a new one.
@@ -176,7 +178,7 @@ class PolicyEnvironment:
         """
         result = object.__new__(PolicyEnvironment)
         result._raw_objects_tree = self._raw_objects_tree  # noqa: SLF001
-        result._params_tree = params_tree  # noqa: SLF001
+        result._tree_with_params = tree_with_params  # noqa: SLF001
 
         return result
 
@@ -202,18 +204,22 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
-    _orig_tree_with_column_objects_param_functions = (
-        orig_tree_with_column_objects_param_functions(root)
+    _orig_tree_with_column_objects_and_param_functions = (
+        orig_tree_with_column_objects_and_param_functions(root)
     )
-    _orig_params_tree = orig_params_tree(root)
+    _orig_tree_with_params = orig_tree_with_params(root)
     # Will move this line out eventually. Just include in tests, do not run every time.
     fail_because_active_periods_overlap(
-        orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
-        orig_params_tree=_orig_params_tree,
+        orig_tree_with_column_objects_and_param_functions=_orig_tree_with_column_objects_and_param_functions,
+        orig_tree_with_params=_orig_tree_with_params,
     )
-    params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
-    assert "evaluationsjahr" not in params_tree, "evaluationsjahr must not be specified"
-    params_tree["evaluationsjahr"] = ScalarParam(
+    tree_with_params = active_tree_with_params(
+        orig_tree_with_params=_orig_tree_with_params, date=date
+    )
+    assert "evaluationsjahr" not in tree_with_params, (
+        "evaluationsjahr must not be specified"
+    )
+    tree_with_params["evaluationsjahr"] = ScalarParam(
         leaf_name="evaluationsjahr",
         start_date=date,
         end_date=date,
@@ -226,17 +232,17 @@ def set_up_policy_environment(
         reference=None,
     )
     return PolicyEnvironment(
-        raw_objects_tree=active_tree_with_column_objects_param_functions(
-            orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
+        raw_objects_tree=active_tree_with_column_objects_and_param_functions(
+            orig_tree_with_column_objects_and_param_functions=_orig_tree_with_column_objects_and_param_functions,
             date=date,
         ),
-        params_tree=params_tree,
+        tree_with_params=tree_with_params,
     )
 
 
 def fail_because_active_periods_overlap(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
-    orig_params_tree: FlatOrigParamSpecs,
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
 ) -> None:
     """Fail because active periods of objects / parameters overlap.
 
@@ -253,14 +259,14 @@ def fail_because_active_periods_overlap(
     overlap_checker: dict[
         tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
     ] = {}
-    for orig_path, obj in orig_tree_with_column_objects_param_functions.items():
+    for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:
             overlap_checker[path].append(obj)
         else:
             overlap_checker[path] = [obj]
 
-    for orig_path, obj in orig_params_tree.items():
+    for orig_path, obj in orig_tree_with_params.items():
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
@@ -386,8 +392,8 @@ class ConflictingActivePeriodsError(Exception):
         Overlap from {self.overlap_start} to {self.overlap_end}."""
 
 
-def active_tree_with_column_objects_param_functions(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
+def active_tree_with_column_objects_and_param_functions(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
     date: datetime.date,
 ) -> NestedColumnObjectsParamFunctions:
     """
@@ -407,7 +413,7 @@ def active_tree_with_column_objects_param_functions(
 
     flat_objects_tree = {
         (*orig_path[:-2], obj.leaf_name): obj
-        for orig_path, obj in orig_tree_with_column_objects_param_functions.items()
+        for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items()
         if obj.is_active(date)
     }
 
@@ -457,13 +463,13 @@ def _fail_if_group_ids_are_outside_top_level_namespace(
         )
 
 
-def active_params_tree(
-    orig_params_tree: FlatOrigParamSpecs,
+def active_tree_with_params(
+    orig_tree_with_params: FlatOrigParamSpecs,
     date: datetime.date,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
-    flat_params_tree = {}
-    for orig_path, orig_params_spec in orig_params_tree.items():
+    flat_tree_with_params = {}
+    for orig_path, orig_params_spec in orig_tree_with_params.items():
         path_to_keep = orig_path[:-2]
         leaf_name = orig_path[-1]
         param = get_one_param(
@@ -472,7 +478,7 @@ def active_params_tree(
             date=date,
         )
         if param is not None:
-            flat_params_tree[(*path_to_keep, leaf_name)] = param
+            flat_tree_with_params[(*path_to_keep, leaf_name)] = param
         if orig_params_spec.get("add_jahresanfang", False):
             date_jan1 = date.replace(month=1, day=1)
             leaf_name_jan1 = f"{leaf_name}_jahresanfang"
@@ -482,8 +488,8 @@ def active_params_tree(
                 date=date_jan1,
             )
             if param is not None:
-                flat_params_tree[(*path_to_keep, leaf_name_jan1)] = param
-    return dt.unflatten_from_tree_paths(flat_params_tree)
+                flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
+    return dt.unflatten_from_tree_paths(flat_tree_with_params)
 
 
 def get_one_param(  # noqa: PLR0911

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     )
 
 
-def orig_tree_with_column_objects_param_functions(
+def orig_tree_with_column_objects_and_param_functions(
     root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """
@@ -105,7 +105,7 @@ def _load_module(path: Path, root: Path) -> ModuleType:
     return module
 
 
-def orig_params_tree(root: Path) -> FlatOrigParamSpecs:
+def orig_tree_with_params(root: Path) -> FlatOrigParamSpecs:
     """
     Load the original contents of yaml files found in *root*.
 
