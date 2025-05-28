@@ -40,9 +40,7 @@ def betrag_ohne_staffelung_m(
     return satz * anzahl_ansprüche
 
 
-@policy_function(
-    end_date="2022-12-31", leaf_name="betrag_m", vectorization_strategy="loop"
-)
+@policy_function(end_date="2022-12-31", leaf_name="betrag_m")
 def betrag_gestaffelt_m(
     anzahl_ansprüche: int,
     satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,

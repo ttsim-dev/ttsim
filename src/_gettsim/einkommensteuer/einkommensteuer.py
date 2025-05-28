@@ -164,11 +164,7 @@ def betrag_ohne_kinderfreibetrag_y_sn(
     )
 
 
-@policy_function(
-    end_date="2022-12-31",
-    leaf_name="relevantes_kindergeld_m",
-    vectorization_strategy="loop",
-)
+@policy_function(end_date="2022-12-31", leaf_name="relevantes_kindergeld_m")
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,

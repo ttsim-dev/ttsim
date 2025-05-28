@@ -48,11 +48,7 @@ def altersfreibetrag_y_bis_2004(
     return out
 
 
-@policy_function(
-    start_date="2005-01-01",
-    leaf_name="altersfreibetrag_y",
-    vectorization_strategy="loop",
-)
+@policy_function(start_date="2005-01-01", leaf_name="altersfreibetrag_y")
 def altersfreibetrag_y_ab_2005(
     alter: int,
     geburtsjahr: int,
