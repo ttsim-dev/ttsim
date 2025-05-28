@@ -37,8 +37,17 @@ if TYPE_CHECKING:
     QualNameData = Mapping[str, TTSIMArray]
     """Mapping of qualified name paths to data (1-d arrays)."""
     NestedAnyTTSIMObject = Mapping[
-        str, ColumnObject | ParamFunction | ParamObject | "NestedAnyTTSIMObject"
+        str,
+        ColumnObject
+        | ParamFunction
+        | ParamObject
+        | int
+        | float
+        | bool
+        | TTSIMArray
+        | "NestedAnyTTSIMObject",
     ]
+    NestedAny = Mapping[str, Any | "NestedAnyTTSIMObject"]
     """Tree mapping TTSIM paths to any type of TTSIM object."""
     NestedColumnObjectsParamFunctions = Mapping[
         str, ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions"

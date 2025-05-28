@@ -47,6 +47,7 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,
+        NestedAny,
         NestedAnyTTSIMObject,
         NestedColumnObjectsParamFunctions,
         NestedParamObjects,
@@ -79,11 +80,8 @@ class PolicyEnvironment:
             leaf_checker=lambda leaf: isinstance(leaf, ColumnObject | ParamFunction),
             tree_name="raw_objects_tree",
         )
-        self._raw_objects_tree = optree.tree_map(
-            lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
-            raw_objects_tree,
-        )
         _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
+        self._raw_objects_tree = raw_objects_tree
 
         # Check tree with params
         assert_valid_ttsim_pytree(
@@ -138,9 +136,8 @@ class PolicyEnvironment:
         The policy environment with the upserted functions.
         """
 
-        tree_to_upsert_with_correct_types = optree.tree_map(
-            lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
-            tree_to_upsert,
+        tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
+            tree_to_upsert
         )
         _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
             tree_to_upsert_with_correct_types
@@ -420,14 +417,40 @@ def active_tree_with_column_objects_and_param_functions(
     return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
-def _convert_to_policy_function_if_not_ttsim_object(
-    input_object: GenericCallable | ColumnObject | ParamFunction,
-) -> ColumnObject:
-    """Convert an object to a PolicyFunction if it is not already a ColumnObject.
+def convert_plain_functions_to_policy_functions(
+    tree: NestedAny,
+) -> NestedAnyTTSIMObject:
+    """Convert all plain functions in a tree to PolicyFunctions.
+
+    Convenience function if users do not want to apply decorators in modifications of
+    the taxes and transfers system.
 
     Parameters
     ----------
-    input_object
+    tree
+        The tree of functions to convert.
+
+    Returns
+    -------
+    converted_tree
+        The converted tree.
+
+    """
+    return optree.tree_map(
+        lambda leaf: _convert_to_policy_function_if_callable(leaf),
+        tree,
+    )
+
+
+def _convert_to_policy_function_if_callable(
+    obj: ColumnObject | ParamFunction | GenericCallable | Any,
+) -> ColumnObject:
+    """Convert a Callable to a PolicyFunction if it is not already a ColumnObject or
+    ParamFunction. If it is not a Callable, return it unchanged.
+
+    Parameters
+    ----------
+    obj
         The object to convert.
 
     Returns
@@ -436,12 +459,10 @@ def _convert_to_policy_function_if_not_ttsim_object(
         The converted object.
 
     """
-    if isinstance(input_object, ColumnObject | ParamFunction):
-        converted_object = input_object
+    if isinstance(obj, (ColumnObject, ParamFunction)) or not callable(obj):
+        converted_object = obj
     else:
-        converted_object = policy_function(leaf_name=input_object.__name__)(
-            input_object
-        )
+        converted_object = policy_function(leaf_name=obj.__name__)(obj)
 
     return converted_object
 
