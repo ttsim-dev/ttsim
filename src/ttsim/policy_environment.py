@@ -517,14 +517,18 @@ def get_one_param(  # noqa: PLR0911
             cleaned_spec["value"]
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "birth_month_based_phase_inout":
-        cleaned_spec["value"] = get_birth_month_based_phase_inout_param_value(
-            cleaned_spec["value"]
+    elif spec["type"] == "birth_month_based_phase_inout_of_age_thresholds":
+        cleaned_spec["value"] = (
+            get_birth_month_based_phase_inout_of_age_thresholds_param_value(
+                cleaned_spec["value"]
+            )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "birth_year_based_phase_inout":
-        cleaned_spec["value"] = get_birth_year_based_phase_inout_param_value(
-            cleaned_spec["value"]
+    elif spec["type"] == "birth_year_based_phase_inout_of_age_thresholds":
+        cleaned_spec["value"] = (
+            get_birth_year_based_phase_inout_of_age_thresholds_param_value(
+                cleaned_spec["value"]
+            )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
@@ -646,10 +650,10 @@ def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
     return r["years"] + r["months"] / 12
 
 
-def get_birth_month_based_phase_inout_param_value(
+def get_birth_month_based_phase_inout_of_age_thresholds_param_value(
     raw: dict[str | int, Any],
 ) -> dict[int, float]:
-    """Get the parameters for birth month-based phase-in.
+    """Get the parameters for birth month-based phase-in/phase-out of age thresholds.
 
     Fills up months for which no parameters are given with the last given value.
     """
@@ -714,10 +718,10 @@ def get_birth_month_based_phase_inout_param_value(
     )
 
 
-def get_birth_year_based_phase_inout_param_value(
+def get_birth_year_based_phase_inout_of_age_thresholds_param_value(
     raw: dict[str | int, Any],
 ) -> dict[int, float]:
-    """Get the parameters for birth year-based phase-in.
+    """Get the parameters for birth year-based phase-in/phase-out of age thresholds.
 
     Requires all birth years to be given.
     """

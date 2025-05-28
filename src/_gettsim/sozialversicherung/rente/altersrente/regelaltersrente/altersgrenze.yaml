@@ -44,7 +44,7 @@ altersgrenze_gestaffelt:
       is higher or lower unless special regulations apply.
   unit: Years
   reference_period: null
-  type: birth_year_based_phase_inout
+  type: birth_year_based_phase_inout_of_age_thresholds
   2007-04-20:
     reference: RV-Altersgrenzenanpassungsgesetz 20.04.2007. BGBl. I S. 554
     note: >-
