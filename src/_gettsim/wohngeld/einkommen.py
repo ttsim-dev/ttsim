@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from ttsim import (
     AggType,
+    ConsecutiveInt1dLookupTableParamValue,
+    PiecewisePolynomialParamValue,
     agg_by_p_id_function,
     piecewise_polynomial,
     policy_function,
@@ -24,7 +26,7 @@ def einkommen_m_wthh(
     anzahl_personen_wthh: int,
     freibetrag_m_wthh: float,
     einkommen_vor_freibetrag_m_wthh: float,
-    wohngeld_params: dict,
+    min_einkommen: dict[int, float],
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -33,26 +35,12 @@ def einkommen_m_wthh(
     This target is used to calculate the actual Wohngeld of all Bedarfsgemeinschaften
     that passed the priority check against Arbeitslosengeld II / Bürgergeld.
 
-    Parameters
-    ----------
-    anzahl_personen_wthh
-        See :func:`anzahl_personen_wthh`.
-    freibetrag_m_wthh
-        See :func:`freibetrag_m_wthh`.
-    einkommen_vor_freibetrag_m_wthh
-        See :func:`einkommen_vor_freibetrag_m_wthh`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
     """
     return einkommen(
         anzahl_personen=anzahl_personen_wthh,
-        einkommen_freibetrag=freibetrag_m_wthh,
+        einkommensfreibetrag=freibetrag_m_wthh,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_wthh,
-        params=wohngeld_params,
+        min_einkommen=min_einkommen,
     )
 
 
@@ -61,7 +49,7 @@ def einkommen_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     freibetrag_m_bg: float,
     einkommen_vor_freibetrag_m_bg: float,
-    wohngeld_params: dict,
+    min_einkommen: dict[int, float],
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -70,26 +58,12 @@ def einkommen_m_bg(
     This target is used for the priority check calculation against Arbeitslosengeld II /
     Bürgergeld on the Bedarfsgemeinschaft level.
 
-    Parameters
-    ----------
-    arbeitslosengeld_2__anzahl_personen_bg
-        See :func:`arbeitslosengeld_2__anzahl_personen_bg`.
-    freibetrag_m_bg
-        See :func:`freibetrag_m_bg`.
-    einkommen_vor_freibetrag_m_bg
-        See :func:`einkommen_vor_freibetrag_m_bg`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
     """
     return einkommen(
         anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
-        einkommen_freibetrag=freibetrag_m_bg,
+        einkommensfreibetrag=freibetrag_m_bg,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_bg,
-        params=wohngeld_params,
+        min_einkommen=min_einkommen,
     )
 
 
@@ -99,31 +73,12 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y: float,
     familie__kind: bool,
-    wohngeld_params: dict,
+    abzugsbeträge_steuern_sozialversicherung: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Calculate housing benefit subtractions on the individual level.
 
     Note that einkommensteuer__betrag_y_sn is used as an approximation for taxes
     on income (as mentioned in § 16 WoGG Satz 1 Nr. 1).
-
-    Parameters
-    ----------
-    einkommensteuer__betrag_y_sn
-        See :func:
-        `einkommensteuer__betrag_y_sn`.
-    sozialversicherung__rente__beitrag__betrag_versicherter_y
-        See :func:
-        `sozialversicherung__rente__beitrag__betrag_versicherter_y`.
-    sozialversicherung__kranken__beitrag__betrag_versicherter_y
-        See :func:
-        `sozialversicherung__kranken__beitrag__betrag_versicherter_y`.
-    familie__kind
-        See basic input variable :ref:`familie__kind <familie__kind>`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
 
     """
     stufe = (
@@ -131,10 +86,11 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
         + (sozialversicherung__rente__beitrag__betrag_versicherter_y > 0)
         + (sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0)
     )
+    abzug = abzugsbeträge_steuern_sozialversicherung
     if familie__kind:
         out = 0.0
     else:
-        out = wohngeld_params["abzugsbeträge_steuern_sozialversicherung"][stufe]
+        out = abzug.values_to_look_up[stufe - abzug.base_to_subtract]
     return out
 
 
@@ -155,32 +111,6 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
     and deducting individual housing benefit subtractions.
     Reference: § 14 WoGG
 
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        See :func:`_eink_selbst`.
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m`.
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
-        See :func:`einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m`.
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
-        See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
-    sozialversicherung__arbeitslosen__betrag_m
-        See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m
-        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
-    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
-        See :func:`einkommensteuer__einkünfte__sonstige__renteneinkünfte_m`.
-    unterhalt__tatsächlich_erhaltener_betrag_m
-        See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
-    unterhaltsvorschuss__betrag_m
-        See :func:`unterhaltsvorschuss__betrag_m`.
-    abzugsanteil_vom_einkommen_für_steuern_sozialversicherung
-        See :func:`abzugsanteil_vom_einkommen_für_steuern_sozialversicherung`.
-
-    Returns
-    -------
-
     """
     einkommen = (
         einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
@@ -199,8 +129,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
     eink_ind = (
         einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
     )
-    out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
-    return out
+    return (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
 
 
 @policy_function(start_date="2007-01-01", leaf_name="einkommen_vor_freibetrag_m")
@@ -221,33 +150,6 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     and deducting individual housing benefit subtractions.
     Reference: § 14 WoGG
 
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        See :func:`_eink_selbst`.
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m`.
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
-        See :func:`einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m`.
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
-        See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
-    sozialversicherung__arbeitslosen__betrag_m
-        See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m
-        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
-    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
-        See :func:`einkommensteuer__einkünfte__sonstige__renteneinkünfte_m`.
-    unterhalt__tatsächlich_erhaltener_betrag_m
-        See basic input variable :ref:`unterhalt__tatsächlich_erhaltener_betrag_m <unterhalt__tatsächlich_erhaltener_betrag_m>`.
-    unterhaltsvorschuss__betrag_m
-        See :func:`unterhaltsvorschuss__betrag_m`.
-    elterngeld__anrechenbarer_betrag_m
-        See :func:`elterngeld__anrechenbarer_betrag_m`.
-    abzugsanteil_vom_einkommen_für_steuern_sozialversicherung
-        See :func:`abzugsanteil_vom_einkommen_für_steuern_sozialversicherung`.
-
-    Returns
-    -------
 
     """
     # TODO(@MImmesberger): Find out whether unterhalt__tatsächlich_erhaltener_betrag_m and
@@ -271,8 +173,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     eink_ind = (
         einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
     )
-    out = (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
-    return out
+    return (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
 
 
 @policy_function(
@@ -285,55 +186,33 @@ def freibetrag_m_bis_2015(
     familie__alleinerziehend: bool,
     familie__kind: bool,
     alleinerziehendenbonus: int,
-    wohngeld_params: dict,
+    freibetrag_bei_behinderung_gestaffelt_y: PiecewisePolynomialParamValue,
+    freibetrag_kinder_m: dict[str, float],
 ) -> float:
-    """Calculate housing benefit subtractions for one individual until 2015.
+    """Calculate housing benefit subtractions for one individual until 2015."""
 
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    ist_kind_mit_erwerbseinkommen
-        See :func:`ist_kind_mit_erwerbseinkommen`.
-    behinderungsgrad
-        See basic input variable :ref:`behinderungsgrad <behinderungsgrad>`.
-    familie__alleinerziehend
-        See basic input variable :ref:`familie__alleinerziehend <familie__alleinerziehend>`.
-    familie__kind
-        See basic input variable :ref:`familie__kind <familie__kind>`.
-    alleinerziehendenbonus
-        See :func:`alleinerziehendenbonus`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
-    """
-
-    freibetrag_bei_behinderung_m = (
+    freibetrag_bei_behinderung = (
         piecewise_polynomial(
-            behinderungsgrad,
-            parameters=wohngeld_params["freibetrag_bei_behinderung_gestaffelt_y"],
+            x=behinderungsgrad,
+            parameters=freibetrag_bei_behinderung_gestaffelt_y,
         )
         / 12
     )
 
     # Subtraction for single parents and working children
     if ist_kind_mit_erwerbseinkommen:
-        freibetrag_kinder_m = min(
+        freibetrag_kinder = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
-            wohngeld_params["freibetrag_kinder_m"]["arbeitendes_kind"],
+            freibetrag_kinder_m["arbeitendes_kind"],
         )
 
     elif familie__alleinerziehend and (not familie__kind):
-        freibetrag_kinder_m = (
-            alleinerziehendenbonus
-            * wohngeld_params["freibetrag_kinder_m"]["alleinerziehend"]
+        freibetrag_kinder = (
+            alleinerziehendenbonus * freibetrag_kinder_m["alleinerziehend"]
         )
     else:
-        freibetrag_kinder_m = 0.0
-    return freibetrag_bei_behinderung_m + freibetrag_kinder_m
+        freibetrag_kinder = 0.0
+    return freibetrag_bei_behinderung + freibetrag_kinder
 
 
 @policy_function(start_date="2016-01-01", leaf_name="freibetrag_m")
@@ -342,79 +221,40 @@ def freibetrag_m_ab_2016(
     ist_kind_mit_erwerbseinkommen: bool,
     behinderungsgrad: int,
     familie__alleinerziehend: bool,
-    wohngeld_params: dict,
+    freibetrag_bei_behinderung_pauschal_y: float,
+    freibetrag_kinder_m: dict[str, float],
 ) -> float:
-    """Calculate housing benefit subtracting for one individual since 2016.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    ist_kind_mit_erwerbseinkommen
-        See :func:`ist_kind_mit_erwerbseinkommen`.
-    behinderungsgrad
-        See basic input variable :ref:`behinderungsgrad <behinderungsgrad>`.
-    familie__alleinerziehend
-        See basic input variable :ref:`familie__alleinerziehend <familie__alleinerziehend>`.
-    familie__kind
-        See basic input variable :ref:`familie__kind <familie__kind>`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-    Returns
-    -------
-
-    """
-    freibetrag_bei_behinderung_m = (
-        wohngeld_params["freibetrag_bei_behinderung_pauschal_y"] / 12
-        if behinderungsgrad > 0
-        else 0
+    """Calculate housing benefit subtracting for one individual since 2016."""
+    freibetrag_bei_behinderung = (
+        freibetrag_bei_behinderung_pauschal_y / 12 if behinderungsgrad > 0 else 0
     )
 
     if ist_kind_mit_erwerbseinkommen:
-        freibetrag_kinder_m = min(
+        freibetrag_kinder = min(
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
-            wohngeld_params["freibetrag_kinder_m"]["arbeitendes_kind"],
+            freibetrag_kinder_m["arbeitendes_kind"],
         )
     elif familie__alleinerziehend:
-        freibetrag_kinder_m = wohngeld_params["freibetrag_kinder_m"]["alleinerziehend"]
+        freibetrag_kinder = freibetrag_kinder_m["alleinerziehend"]
     else:
-        freibetrag_kinder_m = 0.0
+        freibetrag_kinder = 0.0
 
-    return freibetrag_bei_behinderung_m + freibetrag_kinder_m
+    return freibetrag_bei_behinderung + freibetrag_kinder
 
 
 def einkommen(
-    anzahl_personen: int,
-    einkommen_freibetrag: float,
     einkommen_vor_freibetrag: float,
-    params: dict,
+    einkommensfreibetrag: float,
+    anzahl_personen: int,
+    min_einkommen: dict[int, float],
 ) -> float:
     """Calculate final income relevant for calculation of housing benefit on household
     level.
-    Reference: § 13 WoGG
-
-    Parameters
-    ----------
-    anzahl_personen
-        Number of people Wohngeld is being calculated for.
-    einkommen_freibetrag
-        Income that is not considered for Wohngeld calculation.
-    einkommen_vor_freibetrag
-        Sum of income.
-    params
-        See params documentation :ref:`params <params>`.
-
-    Returns
-    -------
 
     """
-    eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommen_freibetrag
-    unteres_eink = params["min_einkommen"][
-        min(anzahl_personen, max(params["min_einkommen"]))
-    ]
-
-    out = max(eink_nach_abzug_m_hh, unteres_eink)
-    return out
+    eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
+    unteres_eink = min_einkommen[min(anzahl_personen, max(min_einkommen))]
+    return max(eink_nach_abzug_m_hh, unteres_eink)
 
 
 @policy_function()
@@ -422,27 +262,7 @@ def ist_kind_mit_erwerbseinkommen(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     kindergeld__grundsätzlich_anspruchsberechtigt: bool,
 ) -> bool:
-    """Check if children are working.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    kindergeld__grundsätzlich_anspruchsberechtigt
-        See :func:`kindergeld__grundsätzlich_anspruchsberechtigt`.
-
-    Returns
-    -------
-
-    """
-    out = (
+    """Check if children are working."""
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m > 0
     ) and kindergeld__grundsätzlich_anspruchsberechtigt
-    return out
-
-
-@agg_by_p_id_function(agg_type=AggType.SUM)
-def wohngeld_spec_target(
-    wohngeld_source_field: bool, p_id_field: int, p_id: int
-) -> int:
-    pass

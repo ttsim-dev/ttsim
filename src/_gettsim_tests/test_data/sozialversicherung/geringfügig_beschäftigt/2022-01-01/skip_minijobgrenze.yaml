@@ -1,6 +1,6 @@
 ---
 info:
-  note: ''
+  note: Cannot test for targets that are purely parameters.
   precision_atol: 0.01
   source: ''
 inputs:
@@ -12,5 +12,5 @@ inputs:
     sozialversicherung__pflege__beitrag__hat_kinder:
       - false
 outputs:
-  sozialversicherung__minijob_grenze:
+  sozialversicherung__minijobgrenze:
     - 450.0

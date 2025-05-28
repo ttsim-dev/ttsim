@@ -10,11 +10,17 @@ def bezieht_rente() -> bool:
     """Draws public pension benefits."""
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_input()
 def entgeltpunkte_ost() -> float:
     """Earnings points for pension claim accumulated in Eastern states."""
 
 
+# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
+# Germany starting in July 2023.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_input()
 def entgeltpunkte_west() -> float:
     """Earnings points for pension claim accumulated in Western states."""
@@ -22,7 +28,8 @@ def entgeltpunkte_west() -> float:
 
 @policy_input()
 def ersatzzeiten_monate() -> float:
-    """Total months during military, persecution/escape, internment, and consecutive sickness."""
+    """Total months during military, persecution/escape, internment, and consecutive
+    sickness."""
 
 
 @policy_input()
@@ -62,7 +69,8 @@ def monate_in_arbeitslosigkeit() -> float:
 
 @policy_input()
 def monate_in_arbeitsunfähigkeit() -> float:
-    """Total months of sickness, rehabilitation, measures for worklife participation(Teilhabe)."""
+    """Total months of sickness, rehabilitation, measures for worklife
+    participation(Teilhabe)."""
 
 
 @policy_input()
@@ -82,7 +90,8 @@ def monate_in_schulausbildung() -> float:
 
 @policy_input()
 def monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit() -> float:
-    """Total months of unemployment (only time of Entgeltersatzleistungen, not ALGII),i.e. Arbeitslosengeld, Unterhaltsgeld, Übergangsgeld."""
+    """Total months of unemployment (only time of Entgeltersatzleistungen, not
+    ALGII),i.e. Arbeitslosengeld, Unterhaltsgeld, Übergangsgeld."""
 
 
 @policy_input()

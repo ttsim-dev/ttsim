@@ -10,6 +10,13 @@ def alter() -> int:
     """Age in years."""
 
 
+# TODO(@MImmesberger): Remove once evaluation date is available.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/211
+@policy_input()
+def alter_monate() -> int:
+    """Age in months."""
+
+
 @policy_input()
 def arbeitsstunden_w() -> float:
     """Working hours."""

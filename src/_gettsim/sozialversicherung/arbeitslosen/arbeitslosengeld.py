@@ -3,39 +3,28 @@
 from __future__ import annotations
 
 from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
-from ttsim import piecewise_polynomial, policy_function
+from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(end_date="1998-07-31", leaf_name="betrag_m")
+def betrag_m_not_implemented() -> float:
+    """Calculate individual unemployment benefit."""
+    raise NotImplementedError("Not implemented yet.")
+
+
+@policy_function(start_date="1998-08-01")
 def betrag_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     grundsätzlich_anspruchsberechtigt: bool,
     einkommen_vorjahr_proxy_m: float,
-    arbeitsl_geld_params: dict,
+    satz: dict[str, float],
 ) -> float:
-    """Calculate individual unemployment benefit.
-
-    Parameters
-    ----------
-    einkommensteuer__anzahl_kinderfreibeträge
-        See :func:
-        `einkommensteuer__anzahl_kinderfreibeträge`.
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt`.
-    einkommen_vorjahr_proxy_m
-        See :func:`einkommen_vorjahr_proxy_m`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-
-    Returns
-    -------
-
-    """
+    """Calculate individual unemployment benefit."""
 
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
-        arbeitsl_geld_satz = arbeitsl_geld_params["satz"]["allgemein"]
-    elif einkommensteuer__anzahl_kinderfreibeträge > 0:
-        arbeitsl_geld_satz = arbeitsl_geld_params["satz"]["erhöht"]
+        arbeitsl_geld_satz = satz["allgemein"]
+    else:
+        arbeitsl_geld_satz = satz["erhöht"]
 
     if grundsätzlich_anspruchsberechtigt:
         out = einkommen_vorjahr_proxy_m * arbeitsl_geld_satz
@@ -51,7 +40,8 @@ def monate_verbleibender_anspruchsdauer(
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
     anwartschaftszeit: bool,
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
-    arbeitsl_geld_params: dict,
+    anspruchsdauer_nach_alter: PiecewisePolynomialParamValue,
+    anspruchsdauer_nach_versicherungspflichtigen_monaten: PiecewisePolynomialParamValue,
 ) -> int:
     """Calculate the remaining amount of months a person can receive unemployment
     benefits.
@@ -59,13 +49,11 @@ def monate_verbleibender_anspruchsdauer(
     """
     nach_alter = piecewise_polynomial(
         alter,
-        parameters=arbeitsl_geld_params["anspruchsdauer_nach_alter"],
+        parameters=anspruchsdauer_nach_alter,
     )
     nach_versich_pfl = piecewise_polynomial(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        parameters=arbeitsl_geld_params[
-            "anspruchsdauer_nach_versicherungspflichtigen_monaten"
-        ],
+        parameters=anspruchsdauer_nach_versicherungspflichtigen_monaten,
     )
     if anwartschaftszeit:
         anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
@@ -87,75 +75,32 @@ def grundsätzlich_anspruchsberechtigt(
     arbeitssuchend: bool,
     monate_verbleibender_anspruchsdauer: int,
     arbeitsstunden_w: float,
-    arbeitsl_geld_params: dict,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    stundengrenze: float,
 ) -> bool:
-    """Check eligibility for unemployment benefit.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    arbeitssuchend
-        See basic input variable :ref:`arbeitssuchend <arbeitssuchend>`.
-    monate_verbleibender_anspruchsdauer
-        See :func:`monate_verbleibender_anspruchsdauer`.
-    arbeitsstunden_w
-        See basic input variable :ref:`arbeitsstunden_w <arbeitsstunden_w>`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
-        See :func:`sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze`.
-
-    Returns
-    -------
-
-    """
+    """Check eligibility for unemployment benefit."""
     regelaltersgrenze = (
         sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     )
 
-    out = (
+    return (
         arbeitssuchend
         and (monate_verbleibender_anspruchsdauer > 0)
         and (alter < regelaltersgrenze)
-        and (arbeitsstunden_w < arbeitsl_geld_params["stundengrenze"])
+        and (arbeitsstunden_w < stundengrenze)
     )
-
-    return out
 
 
 @policy_function(vectorization_strategy="loop")
 def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
-    arbeitsl_geld_params: dict,
-    eink_st_params: dict,
-    eink_st_abzuege_params: dict,
-    soli_st_params: dict,
+    sozialversicherungspauschale: float,
+    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
+    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
 ) -> float:
-    """Approximate last years income for unemployment benefit.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m
-        See :func:
-        `sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m`.
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m>`.
-    arbeitsl_geld_params
-        See params documentation :ref:`arbeitsl_geld_params <arbeitsl_geld_params>`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params <eink_st_params>`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-    soli_st_params
-        See params documentation :ref:`soli_st_params <soli_st_params>`.
-
-    Returns
-    -------
-
-    """
+    """Approximate last years income for unemployment benefit."""
     # Relevant wage is capped at the contribution thresholds
     max_wage = min(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m,
@@ -163,20 +108,21 @@ def einkommen_vorjahr_proxy_m(
     )
 
     # We need to deduct lump-sum amounts for contributions, taxes and soli
-    prox_ssc = arbeitsl_geld_params["sozialversicherungspauschale"] * max_wage
+    prox_ssc = sozialversicherungspauschale * max_wage
 
     # Fictive taxes (Lohnsteuer) are approximated by applying the wage to the tax tariff
     # Caution: currently wrong calculation due to
-    # 12 * max_wage - eink_st_abzuege_params["werbungskostenpauschale"] not being
+    # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale not being
     # the same as zu versteuerndes einkommen
     # waiting for PR Lohnsteuer #150 to be merged to correct this problem
     prox_tax = einkommensteuertarif(
-        12 * max_wage - eink_st_abzuege_params["werbungskostenpauschale"],
-        eink_st_params,
+        12 * max_wage
+        - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
+        einkommensteuer__parameter_einkommensteuertarif,
     )
     prox_soli = piecewise_polynomial(
-        x=prox_tax, parameters=soli_st_params["parameter_solidaritätszuschlag"]
+        x=prox_tax,
+        parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
-    out = max(out, 0.0)
-    return out
+    return max(out, 0.0)

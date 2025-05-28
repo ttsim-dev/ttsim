@@ -49,5 +49,5 @@ inputs:
     weiblich:
       - false
 outputs:
-  sozialversicherung__rente__altersrente__altersgrenze_abschlagsfrei:
+  sozialversicherung__rente__altersrente__altersgrenze:
     - 63.0

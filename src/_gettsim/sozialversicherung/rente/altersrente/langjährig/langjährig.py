@@ -2,57 +2,20 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
-
-
-@policy_function(
-    end_date="1989-12-17",
-    leaf_name="altersgrenze",
-    vectorization_strategy="not_required",
-)
-def altersgrenze_ohne_staffelung(ges_rente_params: dict) -> float:
-    """
-    Full retirement age (FRA) for long term insured.
-
-    FRA is the same for each birth year.
-
-    Calculate the age, at which a long term insured person (at least 35 years) is
-    eligible to claim the full pension (without deductions). This pension scheme allows
-    for early retirement (e.g. age 63) with deductions. Hence this threshold is needed
-    as reference for calculating the zugangsfaktor.
-
-    Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age for long term insured.
-
-    """
-    return ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"]
+from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(
     start_date="1989-12-18",
-    end_date="2007-04-19",
     leaf_name="altersgrenze",
-    vectorization_strategy="loop",
 )
-def altersgrenze_mit_staffelung_nach_geburtsmonat(
+def altersgrenze_gestaffelt_ab_1989(
     geburtsjahr: int,
     geburtsmonat: int,
-    ges_rente_params: dict,
+    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """
     Full retirement age (FRA) for long term insured.
-
-    FRA depends on birth year and month.
 
     Calculate the age, at which a long term insured person (at least 35 years) is
     eligible to claim the full pension (without deductions). This pension scheme allows
@@ -60,202 +23,30 @@ def altersgrenze_mit_staffelung_nach_geburtsmonat(
     as reference for calculating the zugangsfaktor.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age (without deductions) for long term insured.
     """
-    if (
-        geburtsjahr
-        <= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "max_birthyear_old_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "entry_age_old_regime"
-        ]
-    elif (
-        geburtsjahr
-        >= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "min_birthyear_new_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "entry_age_new_regime"
-        ]
-    else:
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            geburtsjahr
-        ][geburtsmonat]
+    birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return out
-
-
-@policy_function(
-    start_date="2007-04-20", leaf_name="altersgrenze", vectorization_strategy="loop"
-)
-def altersgrenze_mit_staffelung_nach_geburtsjahr(
-    geburtsjahr: int,
-    geburtsmonat: int,
-    ges_rente_params: dict,
-) -> float:
-    """
-    Full retirement age (FRA) for long term insured.
-
-    FRA depends on birth year.
-
-    Calculate the age, at which a long term insured person (at least 35 years) is
-    eligible to claim the full pension (without deductions). This pension scheme allows
-    for early retirement (e.g. age 63) with deductions. Hence this threshold is needed
-    as reference for calculating the zugangsfaktor.
-
-    Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    geburtsmonat
-        See basic input variable :ref:`geburtsmonat <geburtsmonat>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Full retirement age (without deductions) for long term insured.
-    """
-    if (
-        geburtsjahr
-        <= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "max_birthyear_old_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "entry_age_old_regime"
-        ]
-    elif (
-        geburtsjahr
-        >= ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "min_birthyear_new_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            "entry_age_new_regime"
-        ]
-    else:
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_abschlagsfrei"][
-            geburtsjahr
-        ][geburtsmonat]
-
-    return out
-
-
-@policy_function(
-    end_date="1989-12-17",
-    leaf_name="altersgrenze_vorzeitig",
-    vectorization_strategy="not_required",
-)
-def altersgrenze_vorzeitig_ohne_staffelung(ges_rente_params: dict) -> float:
-    """Early retirement age (ERA) for Rente für langjährig Versicherte.
-
-    ERA does not depend on birth year and month.
-
-    Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age
-
-    """
-
-    return ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"]
+    return altersgrenze_gestaffelt.values_to_look_up[
+        birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
+    ]
 
 
 @policy_function(
     start_date="1989-12-18",
     end_date="1996-09-26",
     leaf_name="altersgrenze_vorzeitig",
-    vectorization_strategy="loop",
 )
-def altersgrenze_vorzeitig_mit_staffelung(
+def altersgrenze_vorzeitig_gestaffelt_ab_1989_bis_1996(
     geburtsjahr: int,
-    ges_rente_params: dict,
+    altersgrenze_vorzeitig_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
-    """Early retirement age (ERA) for Renten für Frauen.
-
-    ERA depends on birth year and month.
+    """Early retirement age (ERA) for Renten für langjährig Versicherte.
 
     Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age
-
     """
-    if (
-        geburtsjahr
-        <= ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
-            "max_birthyear_old_regime"
-        ]
-    ):
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
-            "entry_age_old_regime"
-        ]
-    else:
-        out = ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"][
-            "entry_age_new_regime"
-        ]
-
-    return out
-
-
-@policy_function(
-    start_date="1996-09-27",
-    leaf_name="altersgrenze_vorzeitig",
-    vectorization_strategy="not_required",
-)
-def altersgrenze_vorzeitig_ohne_staffelung_nach_1996(ges_rente_params: dict) -> float:
-    """Early retirement age (ERA) for Rente für langjährig Versicherte.
-
-    ERA does not depend on birth year and month.
-
-    Does not check for eligibility for this pathway into retirement.
-
-    Parameters
-    ----------
-    geburtsjahr
-        See basic input variable :ref:`geburtsjahr <geburtsjahr>`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-
-    Returns
-    -------
-    Early retirement age
-    """
-    return ges_rente_params["altersgrenze_langjährig_versicherte_vorzeitig"]
+    return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
+        geburtsjahr - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
+    ]
 
 
 @policy_function()
@@ -265,15 +56,5 @@ def grundsätzlich_anspruchsberechtigt(
     """Determining the eligibility for Altersrente für langjährig
     Versicherte (pension for long-term insured). Wartezeit 35 years and
     crossing the age threshold.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__wartezeit_35_jahre_erfüllt
-        See :func:`sozialversicherung__rente__wartezeit_35_jahre_erfüllt`.
-
-    Returns
-    -------
-    Eligibility as bool.
-
     """
     return sozialversicherung__rente__wartezeit_35_jahre_erfüllt

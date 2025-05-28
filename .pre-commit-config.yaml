@@ -96,7 +96,7 @@ repos:
           - types-PyYAML
           - types-pytz
           - numpy >= 2
-          - dags >= 0.3
+          # - dags >= 0.3
           - optree >= 0.15
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.33.0

@@ -11,8 +11,8 @@ import numpy
 import pytest
 from dags import concatenate_functions
 
+from ttsim.column_objects_param_function import AggByGroupFunction, AggByPIDFunction
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.ttsim_objects import AggByGroupFunction, AggByPIDFunction
 
 if IS_JAX_INSTALLED:
     import jax.numpy
@@ -20,8 +20,8 @@ from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
 from ttsim import GroupCreationFunction, PolicyInput, policy_function
-from ttsim.loader import orig_ttsim_objects_tree
-from ttsim.policy_environment import active_ttsim_objects_tree
+from ttsim.loader import orig_tree_with_column_objects_param_functions
+from ttsim.policy_environment import active_tree_with_column_objects_param_functions
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -48,7 +48,9 @@ if IS_JAX_INSTALLED:
 # String comparison
 # ======================================================================================
 
-ORIG_METTSIM_OBJECTS_TREE = orig_ttsim_objects_tree(root=METTSIM_ROOT / "mettsim")
+ORIG_METTSIM_OBJECTS_TREE = orig_tree_with_column_objects_param_functions(
+    root=METTSIM_ROOT / "mettsim"
+)
 
 
 def string_equal(s1, s2):
@@ -373,7 +375,7 @@ def test_disallowed_operation_wrapper(func):
 
 
 # ======================================================================================
-# Test that functions defined in gettsim can be made vectorizable
+# Test that functions defined in METTSIM can be made vectorizable
 # ======================================================================================
 
 
@@ -384,8 +386,8 @@ for year in range(1990, 2023):
         [
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
-                active_ttsim_objects_tree(
-                    orig_ttsim_objects_tree=ORIG_METTSIM_OBJECTS_TREE,
+                active_tree_with_column_objects_param_functions(
+                    orig_tree_with_column_objects_param_functions=ORIG_METTSIM_OBJECTS_TREE,
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).items()
@@ -405,19 +407,20 @@ for year in range(1990, 2023):
 
 
 # ======================================================================================
-# Test that vectorized functions defined in gettsim can be called with array input
+# Test that vectorized functions defined in METTSIM can be called with array input
 # ======================================================================================
 
 
 def mock__elterngeld__geschwisterbonus_m(
     basisbetrag_m: float,
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg: bool,
-    elterngeld_params: dict[str, float],
+    geschwisterbonus_aufschlag: float,
+    geschwisterbonus_minimum: float,
 ) -> float:
     if geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg:
         out = max(
-            elterngeld_params["geschwisterbonus_aufschlag"] * basisbetrag_m,
-            elterngeld_params["geschwisterbonus_minimum"],
+            geschwisterbonus_aufschlag * basisbetrag_m,
+            geschwisterbonus_minimum,
         )
     else:
         out = 0.0
@@ -428,23 +431,22 @@ def mock__elterngeld__geschwisterbonus_m(
 def test_geschwisterbonus_m(backend):
     full = modules[backend].full
 
-    # Test original gettsim function on scalar input
+    # Test original METTSIM function on scalar input
     # ==================================================================================
     basisbetrag_m = 3.0
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = True
-    elterngeld_params = {
-        "geschwisterbonus_aufschlag": 1.0,
-        "geschwisterbonus_minimum": 2.0,
-    }
+    geschwisterbonus_aufschlag = 1.0
+    geschwisterbonus_minimum = 2.0
 
     exp = mock__elterngeld__geschwisterbonus_m(
         basisbetrag_m=basisbetrag_m,
         geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-        elterngeld_params=elterngeld_params,
+        geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
+        geschwisterbonus_minimum=geschwisterbonus_minimum,
     )
     assert exp == 3.0
 
-    # Create array inputs and assert that gettsim functions raises error
+    # Create array inputs and assert that METTSIM functions raises error
     # ==================================================================================
     shape = (10, 2)
     basisbetrag_m = full(shape, basisbetrag_m)
@@ -456,7 +458,8 @@ def test_geschwisterbonus_m(backend):
         mock__elterngeld__geschwisterbonus_m(
             basisbetrag_m=basisbetrag_m,
             geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-            elterngeld_params=elterngeld_params,
+            geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
+            geschwisterbonus_minimum=geschwisterbonus_minimum,
         )
 
     # Call converted function on array input and test result
@@ -467,7 +470,8 @@ def test_geschwisterbonus_m(backend):
     got = converted(
         basisbetrag_m=basisbetrag_m,
         geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-        elterngeld_params=elterngeld_params,
+        geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
+        geschwisterbonus_minimum=geschwisterbonus_minimum,
     )
     assert_array_equal(got, full(shape, exp))
 
@@ -478,11 +482,11 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     kind_grundsätzlich_anspruchsberechtigt_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
-    elterngeld_params: dict[str, float],
+    max_arbeitsstunden_w: int,
 ) -> bool:
     return (
         claimed
-        and arbeitsstunden_w <= elterngeld_params["max_arbeitsstunden_w"]
+        and arbeitsstunden_w <= max_arbeitsstunden_w
         and einkommen_vorjahr_unter_bezugsgrenze
         and kind_grundsätzlich_anspruchsberechtigt_fg
         and bezugsmonate_unter_grenze_fg
@@ -493,16 +497,14 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
 def test_grundsätzlich_anspruchsberechtigt(backend):
     full = modules[backend].full
 
-    # Test original gettsim function on scalar input
+    # Test original METTSIM function on scalar input
     # ==================================================================================
     claimed = True
     arbeitsstunden_w = 20.0
     kind_grundsätzlich_anspruchsberechtigt_fg = True
     einkommen_vorjahr_unter_bezugsgrenze = True
     bezugsmonate_unter_grenze_fg = True
-    elterngeld_params = {
-        "max_arbeitsstunden_w": 31.0,
-    }
+    max_arbeitsstunden_w = 31
 
     exp = mock__elterngeld__grundsätzlich_anspruchsberechtigt(
         claimed=claimed,
@@ -510,12 +512,12 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
         einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
         bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-        elterngeld_params=elterngeld_params,
+        max_arbeitsstunden_w=max_arbeitsstunden_w,
     )
 
     assert exp is True
 
-    # Create array inputs and assert that gettsim functions raises error
+    # Create array inputs and assert that METTSIM functions raises error
     # ==================================================================================
     shape = (10, 1)
     arbeitsstunden_w = full(shape, arbeitsstunden_w)
@@ -527,7 +529,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
             kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
             einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
             bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-            elterngeld_params=elterngeld_params,
+            max_arbeitsstunden_w=max_arbeitsstunden_w,
         )
 
     # Call converted function on array input and test result
@@ -541,7 +543,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
         einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
         bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-        elterngeld_params=elterngeld_params,
+        max_arbeitsstunden_w=max_arbeitsstunden_w,
     )
     assert_array_equal(got, full(shape, exp))
 

@@ -6,16 +6,7 @@ from typing import Literal, get_args
 import numpy
 
 from ttsim.config import numpy_or_jax as np
-
-
-@dataclass(frozen=True)
-class PiecewisePolynomialParameters:
-    """The parameters expected by piecewise_polynomial"""
-
-    thresholds: np.ndarray
-    intercepts: np.ndarray
-    rates: np.ndarray
-
+from ttsim.param_objects import PiecewisePolynomialParamValue
 
 FUNC_TYPES = Literal[
     "piecewise_constant",
@@ -57,7 +48,7 @@ assert set(OPTIONS_REGISTRY.keys()) == set(get_args(FUNC_TYPES)), (
 
 def piecewise_polynomial(
     x: np.ndarray,
-    parameters: PiecewisePolynomialParameters,
+    parameters: PiecewisePolynomialParamValue,
     rates_multiplier: np.ndarray = 1.0,
 ) -> np.ndarray:
     """Calculate value of the piecewise function at `x`. If the first interval begins
@@ -109,7 +100,7 @@ def get_piecewise_parameters(
     leaf_name: str,
     func_type: FUNC_TYPES,
     parameter_dict: dict[int, dict[str, float]],
-) -> PiecewisePolynomialParameters:
+) -> PiecewisePolynomialParamValue:
     """Create the objects for piecewise polynomial.
 
     Parameters
@@ -122,13 +113,9 @@ def get_piecewise_parameters(
     -------
 
     """
-    # Get all interval keys.
-    # FixMe: Remove by only passing the time-dependent parameters.
-    keys = sorted(key for key in parameter_dict if isinstance(key, int))
-    parameter_dict = {key: parameter_dict[key] for key in keys}
 
     # Check if keys are consecutive numbers and starting at 0.
-    if keys != list(range(len(keys))):
+    if sorted(parameter_dict) != list(range(len(parameter_dict))):
         raise ValueError(
             f"The keys of {leaf_name} do not start with 0 or are not consecutive"
             f" numbers."
@@ -154,7 +141,7 @@ def get_piecewise_parameters(
         upper_thresholds=upper_thresholds,
         rates=rates,
     )
-    return PiecewisePolynomialParameters(
+    return PiecewisePolynomialParamValue(
         thresholds=thresholds,
         rates=rates,
         intercepts=intercepts,

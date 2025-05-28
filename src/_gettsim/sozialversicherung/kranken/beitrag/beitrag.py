@@ -16,24 +16,6 @@ def betrag_versicherter_m_ohne_midijob(
     """Public health insurance contributions paid by the insured person.
 
     Before Midijob introduction in April 2003.
-
-    Parameters
-    ----------
-    sozialversicherung__geringfügig_beschäftigt
-        See :func:`sozialversicherung__geringfügig_beschäftigt`.
-    betrag_rentner_m
-        See :func:`betrag_rentner_m`.
-    betrag_selbstständig_m
-        See :func:`betrag_selbstständig_m`.
-    betrag_versicherter_regulär_beschäftigt_m
-        See :func:`betrag_versicherter_regulär_beschäftigt_m`.
-    einkommensteuer__einkünfte__ist_selbstständig
-        See basic input variable :ref:`einkommensteuer__einkünfte__ist_selbstständig <einkommensteuer__einkünfte__ist_selbstständig>`.
-
-
-    Returns
-    -------
-
     """
     if einkommensteuer__einkünfte__ist_selbstständig:
         out = betrag_selbstständig_m
@@ -52,42 +34,20 @@ def betrag_versicherter_m_mit_midijob(
     betrag_rentner_m: float,
     betrag_selbstständig_m: float,
     sozialversicherung__in_gleitzone: bool,
-    betrag_versicherter_midijob_m: float,
+    betrag_versicherter_in_gleitzone_m: float,
     betrag_versicherter_regulär_beschäftigt_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
 ) -> float:
     """Public health insurance contributions paid by the insured person.
 
     After Midijob introduction in April 2003.
-
-    Parameters
-    ----------
-    sozialversicherung__geringfügig_beschäftigt
-        See :func:`sozialversicherung__geringfügig_beschäftigt`.
-    betrag_rentner_m
-        See :func:`betrag_rentner_m`.
-    betrag_selbstständig_m
-        See :func:`betrag_selbstständig_m`.
-    betrag_versicherter_midijob_m
-        See :func:`betrag_versicherter_midijob_m`.
-    betrag_versicherter_regulär_beschäftigt_m
-        See :func:`betrag_versicherter_regulär_beschäftigt_m`.
-    sozialversicherung__in_gleitzone
-        See :func:`sozialversicherung__in_gleitzone`.
-    einkommensteuer__einkünfte__ist_selbstständig
-        See basic input variable :ref:`einkommensteuer__einkünfte__ist_selbstständig <einkommensteuer__einkünfte__ist_selbstständig>`.
-
-
-    Returns
-    -------
-
     """
     if einkommensteuer__einkünfte__ist_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
-        out = betrag_versicherter_midijob_m
+        out = betrag_versicherter_in_gleitzone_m
     else:
         out = betrag_versicherter_regulär_beschäftigt_m
 
@@ -101,41 +61,19 @@ def betrag_arbeitgeber_m_ohne_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    ges_krankenv_params: dict,
+    minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
 
     Before Midijob introduction in April 2003.
-
-    Parameters
-    ----------
-    sozialversicherung__geringfügig_beschäftigt
-        See :func:`sozialversicherung__geringfügig_beschäftigt`.
-    einkommen_m
-        See :func:`einkommen_m`.
-    beitragssatz_arbeitgeber
-        See :func:`beitragssatz_arbeitgeber`.
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    einkommensteuer__einkünfte__ist_selbstständig
-        See basic input variable :ref:`einkommensteuer__einkünfte__ist_selbstständig <einkommensteuer__einkünfte__ist_selbstständig>`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-
-    Returns
-    -------
-
     """
     if einkommensteuer__einkünfte__ist_selbstständig:
         out = 0.0
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * ges_krankenv_params[
-                "arbeitgeberpauschale_bei_geringfügiger_beschäftigung"
-            ]
+            * minijob_arbeitgeberpauschale
         )
     else:
         out = einkommen_m * beitragssatz_arbeitgeber
@@ -148,51 +86,25 @@ def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    betrag_arbeitgeber_midijob_m: float,
+    betrag_arbeitgeber_in_gleitzone_m: float,
     einkommen_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
-    ges_krankenv_params: dict,
+    minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
 
     After Midijob introduction in April 2003.
-
-    Parameters
-    ----------
-    sozialversicherung__geringfügig_beschäftigt
-        See :func:`sozialversicherung__geringfügig_beschäftigt`.
-    betrag_arbeitgeber_midijob_m
-        See :func:`betrag_arbeitgeber_midijob_m`.
-    einkommen_m
-        See :func:`einkommen_m`.
-    beitragssatz_arbeitgeber
-        See :func:`beitragssatz_arbeitgeber`.
-    sozialversicherung__in_gleitzone
-        See :func:`sozialversicherung__in_gleitzone`.
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    einkommensteuer__einkünfte__ist_selbstständig
-        See basic input variable :ref:`einkommensteuer__einkünfte__ist_selbstständig <einkommensteuer__einkünfte__ist_selbstständig>`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-
-    Returns
-    -------
-
     """
     if einkommensteuer__einkünfte__ist_selbstständig:
         out = 0.0
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            * ges_krankenv_params[
-                "arbeitgeberpauschale_bei_geringfügiger_beschäftigung"
-            ]
+            * minijob_arbeitgeberpauschale
         )
     elif sozialversicherung__in_gleitzone:
-        out = betrag_arbeitgeber_midijob_m
+        out = betrag_arbeitgeber_in_gleitzone_m
     else:
         out = einkommen_m * beitragssatz_arbeitgeber
 
@@ -204,49 +116,79 @@ def betrag_versicherter_regulär_beschäftigt_m(
     einkommen_m: float,
     beitragssatz_arbeitnehmer: float,
 ) -> float:
-    """Employee's health insurance contributions for regular jobs.
-
-    Parameters
-    ----------
-    einkommen_m
-        See :func:`einkommen_m`.
-    beitragssatz_arbeitnehmer
-        See :func:`beitragssatz_arbeitnehmer`.
-    Returns
-    -------
-
-    """
+    """Employee's health insurance contributions for regular jobs."""
     return beitragssatz_arbeitnehmer * einkommen_m
 
 
-@policy_function(vectorization_strategy="loop")
-def betrag_selbstständig_m(
+@policy_function(
+    vectorization_strategy="loop",
+    end_date="2005-06-30",
+    leaf_name="betrag_selbstständig_m",
+)
+def betrag_selbstständig_m_mit_einheitlichen_beitragssatz(
     bemessungsgrundlage_selbstständig_m: float,
-    ges_krankenv_params: dict,
+    beitragssatz: float,
+) -> float:
+    """Health insurance contributions for self-employed's income. The self-employed
+    pay the full reduced contribution.
+    """
+    return beitragssatz * bemessungsgrundlage_selbstständig_m
+
+
+@policy_function(
+    vectorization_strategy="loop",
+    start_date="2005-07-01",
+    end_date="2008-12-31",
+    leaf_name="betrag_selbstständig_m",
+)
+def betrag_selbstständig_m_ohne_ermäßigtem_beitragssatz(
+    bemessungsgrundlage_selbstständig_m: float,
+    parameter_beitragssatz: dict[str, float],
+) -> float:
+    """Health insurance contributions for self-employed's income. The self-employed
+    pay the full reduced contribution.
+    """
+    return (
+        parameter_beitragssatz["mean_allgemein"] * bemessungsgrundlage_selbstständig_m
+    )
+
+
+@policy_function(
+    vectorization_strategy="loop",
+    start_date="2009-01-01",
+    end_date="2014-12-31",
+    leaf_name="betrag_selbstständig_m",
+)
+def betrag_selbstständig_m_ohne_zusatzbeitrag(
+    bemessungsgrundlage_selbstständig_m: float,
+    parameter_beitragssatz: dict[str, float],
+) -> float:
+    """Health insurance contributions for self-employed's income. The self-employed
+    pay the full reduced contribution.
+    """
+    return parameter_beitragssatz["ermäßigt"] * bemessungsgrundlage_selbstständig_m
+
+
+@policy_function(
+    vectorization_strategy="loop",
+    start_date="2015-01-01",
+    leaf_name="betrag_selbstständig_m",
+)
+def betrag_selbstständig_m_mit_zusatzbeitrag(
+    bemessungsgrundlage_selbstständig_m: float,
+    parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance contributions for self-employed's income. The self-employed
     pay the full reduced contribution.
 
-    Parameters
-    ----------
-    bemessungsgrundlage_selbstständig_m
-        See :func:`bemessungsgrundlage_selbstständig_m`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
+    Contribution rate includes the insurance provider-specific Zusatzbeitrag introduced
+    in 2015.
     """
-    params = ges_krankenv_params["parameter_beitragssatz"]
-    # The below must be done via start_date/end_date in order to enable vectorization.
-    ermäßigter_beitrag = (
-        params["ermäßigt"] if ("ermäßigt" in params) else params["mean_allgemein"]
+    beitrag = (
+        parameter_beitragssatz["ermäßigt"]
+        + parameter_beitragssatz["mean_zusatzbeitrag"]
     )
-    zusatzbeitrag = params.get("mean_zusatzbeitrag", 0.0)
-    ges_krankenv_beitragssatz_selbst = ermäßigter_beitrag + zusatzbeitrag
-
-    return ges_krankenv_beitragssatz_selbst * bemessungsgrundlage_selbstständig_m
+    return beitrag * bemessungsgrundlage_selbstständig_m
 
 
 @policy_function()
@@ -254,24 +196,13 @@ def betrag_rentner_m(
     bemessungsgrundlage_rente_m: float,
     beitragssatz_arbeitnehmer: float,
 ) -> float:
-    """Health insurance contributions for pension incomes.
-
-    Parameters
-    ----------
-    bemessungsgrundlage_rente_m
-        See :func:`bemessungsgrundlage_rente_m`.
-    beitragssatz_arbeitnehmer
-        See :func:`beitragssatz_arbeitnehmer`.
-    Returns
-    -------
-
-    """
+    """Health insurance contributions for pension incomes."""
 
     return beitragssatz_arbeitnehmer * bemessungsgrundlage_rente_m
 
 
 @policy_function(start_date="2003-04-01")
-def betrag_gesamt_midijob_m(
+def betrag_gesamt_in_gleitzone_m(
     sozialversicherung__midijob_bemessungsentgelt_m: float,
     beitragssatz_arbeitnehmer: float,
     beitragssatz_arbeitgeber: float,
@@ -279,21 +210,6 @@ def betrag_gesamt_midijob_m(
     """Sum of employee and employer health insurance contribution for midijobs.
 
     Midijobs were introduced in April 2003.
-
-    Parameters
-    ----------
-    sozialversicherung__midijob_bemessungsentgelt_m
-        See :func:`sozialversicherung__midijob_bemessungsentgelt_m`.
-    beitragssatz_arbeitnehmer
-        See
-        :func:`beitragssatz_arbeitnehmer`.
-    beitragssatz_arbeitgeber
-        See
-        :func:`beitragssatz_arbeitgeber`.
-
-    Returns
-    -------
-
     """
     return (
         beitragssatz_arbeitnehmer + beitragssatz_arbeitgeber
@@ -303,9 +219,9 @@ def betrag_gesamt_midijob_m(
 @policy_function(
     start_date="2003-04-01",
     end_date="2022-09-30",
-    leaf_name="betrag_arbeitgeber_midijob_m",
+    leaf_name="betrag_arbeitgeber_in_gleitzone_m",
 )
-def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz(
+def betrag_arbeitgeber_in_gleitzone_m_mit_festem_beitragssatz(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     sozialversicherung__in_gleitzone: bool,
     beitragssatz_arbeitgeber: float,
@@ -313,19 +229,6 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz(
     """Employers' health insurance contribution for midijobs until September 2022.
 
     Midijobs were introduced in April 2003.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-    sozialversicherung__in_gleitzone
-        See :func:`sozialversicherung__in_gleitzone`.
-    beitragssatz_arbeitgeber
-        See
-        :func:`beitragssatz_arbeitgeber`.
-    Returns
-    -------
-
     """
     if sozialversicherung__in_gleitzone:
         out = (
@@ -338,32 +241,17 @@ def betrag_arbeitgeber_midijob_m_mit_festem_beitragssatz(
     return out
 
 
-@policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_midijob_m")
-def betrag_arbeitgeber_midijob_m_als_differenz_von_gesamt_und_versichertenbeitrag(
-    betrag_gesamt_midijob_m: float,
-    betrag_versicherter_midijob_m: float,
+@policy_function(start_date="2022-10-01", leaf_name="betrag_arbeitgeber_in_gleitzone_m")
+def betrag_arbeitgeber_in_gleitzone_m_als_differenz_von_gesamt_und_versichertenbeitrag(
+    betrag_gesamt_in_gleitzone_m: float,
+    betrag_versicherter_in_gleitzone_m: float,
     sozialversicherung__in_gleitzone: bool,
 ) -> float:
     """Employer's health insurance contribution for midijobs since October
     2022.
-
-    Parameters
-    ----------
-    betrag_gesamt_midijob_m
-        See :func:`betrag_gesamt_midijob_m`.
-    betrag_versicherter_midijob_m
-        See :func:`betrag_versicherter_midijob_m`.
-    sozialversicherung__in_gleitzone
-        See :func:`sozialversicherung__in_gleitzone`.
-    beitragssatz_arbeitgeber
-        See
-        :func:`beitragssatz_arbeitgeber`.
-    Returns
-    -------
-
     """
     if sozialversicherung__in_gleitzone:
-        out = betrag_gesamt_midijob_m - betrag_versicherter_midijob_m
+        out = betrag_gesamt_in_gleitzone_m - betrag_versicherter_in_gleitzone_m
     else:
         out = 0.0
 
@@ -373,45 +261,25 @@ def betrag_arbeitgeber_midijob_m_als_differenz_von_gesamt_und_versichertenbeitra
 @policy_function(
     start_date="2003-04-01",
     end_date="2022-09-30",
-    leaf_name="betrag_versicherter_midijob_m",
+    leaf_name="betrag_versicherter_in_gleitzone_m",
 )
-def betrag_versicherter_midijob_m_als_differenz_von_gesamt_und_arbeitgeberbeitrag(
-    betrag_gesamt_midijob_m: float,
-    betrag_arbeitgeber_midijob_m: float,
+def betrag_versicherter_in_gleitzone_m_als_differenz_von_gesamt_und_arbeitgeberbeitrag(
+    betrag_gesamt_in_gleitzone_m: float,
+    betrag_arbeitgeber_in_gleitzone_m: float,
 ) -> float:
-    """Employee's health insurance contribution for midijobs until September 2022.
-
-    Parameters
-    ----------
-    betrag_gesamt_midijob_m
-        See :func:`betrag_gesamt_midijob_m`.
-    betrag_arbeitgeber_midijob_m
-        See :func:`betrag_arbeitgeber_midijob_m`.
-    Returns
-    -------
-
-    """
-    return betrag_gesamt_midijob_m - betrag_arbeitgeber_midijob_m
+    """Employee's health insurance contribution for midijobs until September 2022."""
+    return betrag_gesamt_in_gleitzone_m - betrag_arbeitgeber_in_gleitzone_m
 
 
-@policy_function(start_date="2022-10-01", leaf_name="betrag_versicherter_midijob_m")
-def betrag_versicherter_midijob_m_mit_festem_beitragssatz(
+@policy_function(
+    start_date="2022-10-01",
+    leaf_name="betrag_versicherter_in_gleitzone_m",
+)
+def betrag_versicherter_in_gleitzone_m_mit_festem_beitragssatz(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,
     beitragssatz_arbeitnehmer: float,
 ) -> float:
-    """Employee's health insurance contribution for midijobs since October 2022.
-
-    Parameters
-    ----------
-    sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
-        See :func:`sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m`.
-    beitragssatz_arbeitnehmer
-        See
-        :func:`beitragssatz_arbeitnehmer`.
-    Returns
-    -------
-
-    """
+    """Employee's health insurance contribution for midijobs since October 2022."""
     return (
         sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
         * beitragssatz_arbeitnehmer

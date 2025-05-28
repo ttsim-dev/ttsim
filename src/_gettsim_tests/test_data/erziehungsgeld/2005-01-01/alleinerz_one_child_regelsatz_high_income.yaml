@@ -8,6 +8,9 @@ inputs:
     alter:
       - 25
       - 1
+    alter_monate:
+      - 300
+      - 12
     arbeitslosengeld_2__p_id_einstandspartner:
       - -1
       - -1

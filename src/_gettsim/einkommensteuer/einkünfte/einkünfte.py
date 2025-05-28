@@ -16,7 +16,7 @@ def gesamtbetrag_der_einkünfte_y_mit_kapiteleinkünften(
     sonstige__betrag_y: float,
 ) -> float:
     """Gesamtbetrag der Einkünfte (GdE) with capital income."""
-    out = (
+    return (
         aus_forst_und_landwirtschaft__betrag_y
         + aus_gewerbebetrieb__betrag_y
         + aus_selbstständiger_arbeit__betrag_y
@@ -25,7 +25,6 @@ def gesamtbetrag_der_einkünfte_y_mit_kapiteleinkünften(
         + aus_vermietung_und_verpachtung__betrag_y
         + sonstige__betrag_y
     )
-    return out
 
 
 @policy_function(start_date="2009-01-01", leaf_name="gesamtbetrag_der_einkünfte_y")
@@ -41,7 +40,7 @@ def gesamtbetrag_der_einkünfte_y_ohne_kapitaleinkünfte(
 
     Since 2009 capital income is not subject to normal taxation.
     """
-    out = (
+    return (
         aus_forst_und_landwirtschaft__betrag_y
         + aus_gewerbebetrieb__betrag_y
         + aus_selbstständiger_arbeit__betrag_y
@@ -49,4 +48,3 @@ def gesamtbetrag_der_einkünfte_y_ohne_kapitaleinkünfte(
         + aus_vermietung_und_verpachtung__betrag_y
         + sonstige__betrag_y
     )
-    return out

@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _gettsim.arbeitslosengeld_2.regelbedarf import RegelsatzNachRegelbedarfsstufen
+
 from ttsim import policy_function
 
 
@@ -69,26 +74,17 @@ def betrag_m_eg(
 def mehrbedarf_schwerbehinderung_g_m(
     schwerbehindert_grad_g: bool,
     arbeitslosengeld_2__anzahl_erwachsene_eg: int,
-    grunds_im_alter_params: dict,
-    arbeitsl_geld_2_params: dict,
+    mehrbedarf_bei_schwerbehinderungsgrad_g: float,
+    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
 ) -> float:
-    """Calculate additional allowance for individuals with disabled person's pass G.
-
-    Note:
-
-    - Start date is 2011 because of the reference to regelsatz_nach_regelbedarfsstufen,
-      which was introduced in 2011.
-
-    """
+    """Calculate additional allowance for individuals with disabled person's pass G."""
 
     mehrbedarf_single = (
-        (arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][1])
-        * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
-    )
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz
+    ) * mehrbedarf_bei_schwerbehinderungsgrad_g
     mehrbedarf_in_couple = (
-        (arbeitsl_geld_2_params["regelsatz_nach_regelbedarfsstufen"][2])
-        * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
-    )
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_2.regelsatz
+    ) * mehrbedarf_bei_schwerbehinderungsgrad_g
 
     if (schwerbehindert_grad_g) and (arbeitslosengeld_2__anzahl_erwachsene_eg == 1):
         out = mehrbedarf_single
@@ -100,31 +96,15 @@ def mehrbedarf_schwerbehinderung_g_m(
     return out
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def vermögensfreibetrag_eg(
     arbeitslosengeld_2__anzahl_erwachsene_fg: int,
     arbeitslosengeld_2__anzahl_kinder_fg: int,
-    grunds_im_alter_params: dict,
+    parameter_vermögensfreibetrag: dict[str, float],
 ) -> float:
-    """Calculate wealth not considered for Grundsicherung im Alter on household level.
-
-    Parameters
-    ----------
-    arbeitslosengeld_2__anzahl_erwachsene_fg
-        See :func:`arbeitslosengeld_2__anzahl_erwachsene_fg`.
-    arbeitslosengeld_2__anzahl_kinder_fg
-        See :func:`arbeitslosengeld_2__anzahl_kinder_fg`.
-    grunds_im_alter_params
-        See params documentation :ref:`grunds_im_alter_params <grunds_im_alter_params>`.
-
-    Returns
-    -------
-
-    """
-    out = (
-        grunds_im_alter_params["parameter_vermögensfreibetrag"]["adult"]
+    """Calculate wealth not considered for Grundsicherung im Alter on household level."""
+    return (
+        parameter_vermögensfreibetrag["erwachsene"]
         * arbeitslosengeld_2__anzahl_erwachsene_fg
-        + grunds_im_alter_params["parameter_vermögensfreibetrag"]["child"]
-        * arbeitslosengeld_2__anzahl_kinder_fg
+        + parameter_vermögensfreibetrag["kinder"] * arbeitslosengeld_2__anzahl_kinder_fg
     )
-    return out

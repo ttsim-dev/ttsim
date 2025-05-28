@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ttsim import (
@@ -9,11 +10,13 @@ from ttsim import (
     RoundingSpec,
     agg_by_p_id_function,
     join,
+    param_function,
     policy_function,
 )
 
 if TYPE_CHECKING:
-    import numpy
+    from ttsim import RawParam
+    from ttsim.typing import TTSIMArray
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -50,19 +53,6 @@ def betrag_m(
 
     The amount is specified in §1612a BGB and, ultimately, in
     Mindestunterhaltsverordnung.
-
-    Parameters
-    ----------
-    unterhalt__tatsächlich_erhaltener_betrag_m
-        See basic input variable `unterhalt__tatsächlich_erhaltener_betrag_m`.
-    anspruchshöhe_m
-        See :func:`anspruchshöhe_m`.
-    elternteil_alleinerziehend
-        See :func:`elternteil_alleinerziehend`.
-
-    Returns
-    -------
-
     """
     if elternteil_alleinerziehend:
         out = max(anspruchshöhe_m - unterhalt__tatsächlich_erhaltener_betrag_m, 0.0)
@@ -74,26 +64,13 @@ def betrag_m(
 
 @policy_function(vectorization_strategy="not_required")
 def elternteil_alleinerziehend(
-    kindergeld__p_id_empfänger: numpy.ndarray[int],
-    p_id: numpy.ndarray[int],
-    familie__alleinerziehend: numpy.ndarray[bool],
-) -> numpy.ndarray[bool]:
+    kindergeld__p_id_empfänger: TTSIMArray,  # int
+    p_id: TTSIMArray,  # int
+    familie__alleinerziehend: TTSIMArray,  # bool
+) -> TTSIMArray:  # bool
     """Check if parent that receives Kindergeld is a single parent.
 
     Only single parents receive Kindergeld.
-
-    Parameters
-    ----------
-    kindergeld__p_id_empfänger
-        See basic input variable :ref:`kindergeld__p_id_empfänger`.
-    p_id
-        See basic input variable :ref:`p_id`.
-    familie__alleinerziehend
-        See basic input variable :ref:`familie__alleinerziehend`.
-
-    Returns
-    -------
-
     """
     return join(
         foreign_key=kindergeld__p_id_empfänger,
@@ -118,46 +95,20 @@ def not_implemented_m() -> float:
     )
 
 
-@policy_function(
-    start_date="2023-01-01",
-    leaf_name="kindergeld_erstes_kind_m",
-    vectorization_strategy="not_required",
-)
-def kindergeld_erstes_kind_ohne_staffelung_m(kindergeld_params: dict) -> float:
-    """Kindergeld for first child when Kindergeld does not depend on number of children.
-
-    Parameters
-    ----------
-
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
-    """
-    return kindergeld_params["kindergeldsatz"]
+@param_function(start_date="2023-01-01", leaf_name="kindergeld_erstes_kind_m")
+def kindergeld_erstes_kind_ohne_staffelung_m(
+    kindergeld__satz: float,
+) -> float:
+    """Kindergeld for first child when Kindergeld does not depend on number of children."""
+    return kindergeld__satz
 
 
-@policy_function(
-    end_date="2022-12-31",
-    leaf_name="kindergeld_erstes_kind_m",
-    vectorization_strategy="not_required",
-)
-def kindergeld_erstes_kind_gestaffelt_m(kindergeld_params: dict) -> float:
-    """Kindergeld for first child when Kindergeld does depend on number of children.
-
-    Parameters
-    ----------
-
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
-    """
-    return kindergeld_params["kindergeldsatz"][1]
+@param_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
+def kindergeld_erstes_kind_gestaffelt_m(
+    kindergeld__satz_gestaffelt: dict[int, float],
+) -> float:
+    """Kindergeld for first child when Kindergeld depends on number of children."""
+    return kindergeld__satz_gestaffelt[1]
 
 
 @policy_function(
@@ -169,8 +120,9 @@ def kindergeld_erstes_kind_gestaffelt_m(kindergeld_params: dict) -> float:
 def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     alter: int,
     kindergeld_erstes_kind_m: float,
-    unterhaltsvors_params: dict,
-    eink_st_abzuege_params: dict,
+    berechtigte_altersgruppen: dict[str, Altersgrenzen],
+    faktor_jüngste_altersgruppe: float,
+    einkommensteuer__parameter_kinderfreibetrag: dict[str, float],
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
 
@@ -182,37 +134,28 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     Rule was in priciple also active for 2015 but has been overwritten by an
     Anwendungsvorschrift as Kinderfreibetrag and Kindergeld changed on July 2015.
 
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    kindergeld_erstes_kind_m
-        See :func:`kindergeld_erstes_kind_m`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-    unterhaltsvors_params
-        See params documentation :ref:`unterhaltsvors_params <unterhaltsvors_params>`.
-
-    Returns
-    -------
-
     """
     # TODO(@MImmesberger): Remove explicit parameter conversion.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/575
-    altersgrenzen = unterhaltsvors_params["altersgrenzen_bezug"]
+    sächliches_existenzmininmum = einkommensteuer__parameter_kinderfreibetrag[
+        "sächliches_existenzminimum"
+    ]
 
-    kinderfreibetrag_sächl_existenzmin = eink_st_abzuege_params[
-        "parameter_kinderfreibetrag"
-    ]["sächliches_existenzminimum"]
-
-    if altersgrenzen[1]["min_alter"] <= alter <= altersgrenzen[1]["max_alter"]:
+    if (
+        berechtigte_altersgruppen["kleinkind"].min_alter
+        <= alter
+        <= berechtigte_altersgruppen["kleinkind"].max_alter
+    ):
         out = (
-            unterhaltsvors_params["faktor_jüngste_altersgruppe"]
-            * (2 * kinderfreibetrag_sächl_existenzmin / 12)
+            faktor_jüngste_altersgruppe * (2 * sächliches_existenzmininmum / 12)
             - kindergeld_erstes_kind_m
         )
-    elif altersgrenzen[2]["min_alter"] <= alter <= altersgrenzen[2]["max_alter"]:
-        out = 2 * kinderfreibetrag_sächl_existenzmin / 12 - kindergeld_erstes_kind_m
+    elif (
+        berechtigte_altersgruppen["schulkind"].min_alter
+        <= alter
+        <= berechtigte_altersgruppen["schulkind"].max_alter
+    ):
+        out = 2 * sächliches_existenzmininmum / 12 - kindergeld_erstes_kind_m
     else:
         out = 0.0
 
@@ -227,33 +170,27 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
 )
 def anspruchshöhe_m_anwendungsvors(
     alter: int,
-    unterhaltsvors_params: dict,
+    berechtigte_altersgruppen: dict[str, Altersgrenzen],
+    unterhaltsvorschuss_nach_anwendungsvorschrift: dict[str, float],
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
 
     Rule anspruchshöhe_m_2009_bis_2014 was in priciple also active for
     2015 but has been overwritten by an Anwendungsvorschrift as Kinderfreibetrag and
     Kindergeld changed in July 2015.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    unterhaltsvors_params
-        See params documentation :ref:`unterhaltsvors_params <unterhaltsvors_params>`.
-
-    Returns
-    -------
-
     """
-    altersgrenzen = unterhaltsvors_params["altersgrenzen_bezug"]
-
-    unterhaltsvors = unterhaltsvors_params["anwendungsvorschrift"]
-
-    if altersgrenzen[1]["min_alter"] <= alter <= altersgrenzen[1]["max_alter"]:
-        out = unterhaltsvors[1]
-    elif altersgrenzen[2]["min_alter"] <= alter <= altersgrenzen[2]["max_alter"]:
-        out = unterhaltsvors[2]
+    if (
+        berechtigte_altersgruppen["kleinkind"].min_alter
+        <= alter
+        <= berechtigte_altersgruppen["kleinkind"].max_alter
+    ):
+        out = unterhaltsvorschuss_nach_anwendungsvorschrift["kleinkind"]
+    elif (
+        berechtigte_altersgruppen["schulkind"].min_alter
+        <= alter
+        <= berechtigte_altersgruppen["schulkind"].max_alter
+    ):
+        out = unterhaltsvorschuss_nach_anwendungsvorschrift["schulkind"]
     else:
         out = 0.0
 
@@ -269,7 +206,7 @@ def anspruchshöhe_m_anwendungsvors(
 def anspruchshöhe_m_2016_bis_2017_06(
     alter: int,
     kindergeld_erstes_kind_m: float,
-    unterhalt_params: dict,
+    mindestunterhalt_nach_alter: dict[str, Mindestunterhalt],
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
 
@@ -278,26 +215,19 @@ def anspruchshöhe_m_2016_bis_2017_06(
     Kindes' (§ 1612a (1)) as well as a Verordnungsermächtigung (§ 1612a (4)). The § 1
     Mindesunterhaltsverordnung applies fixed amounts and no relative definition as
     before.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    kindergeld_erstes_kind_m
-        See :func:`kindergeld_erstes_kind_m`.
-    unterhalt_params
-        See params documentation :ref:`unterhalt_params <unterhalt_params>`.
-
-    Returns
-    -------
-
     """
-    mindestunterhalt = unterhalt_params["mindestunterhalt"]
-
-    if mindestunterhalt[1]["min_alter"] <= alter <= mindestunterhalt[1]["max_alter"]:
-        out = mindestunterhalt[1]["betrag"] - kindergeld_erstes_kind_m
-    elif mindestunterhalt[2]["min_alter"] <= alter <= mindestunterhalt[2]["max_alter"]:
-        out = mindestunterhalt[2]["betrag"] - kindergeld_erstes_kind_m
+    if (
+        mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.min_alter
+        <= alter
+        <= mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.max_alter
+    ):
+        out = mindestunterhalt_nach_alter["kleinkind"].satz - kindergeld_erstes_kind_m
+    elif (
+        mindestunterhalt_nach_alter["schulkind"].altersgrenzen.min_alter
+        <= alter
+        <= mindestunterhalt_nach_alter["schulkind"].altersgrenzen.max_alter
+    ):
+        out = mindestunterhalt_nach_alter["schulkind"].satz - kindergeld_erstes_kind_m
     else:
         out = 0.0
 
@@ -311,66 +241,46 @@ def anspruchshöhe_m_ab_2017_07(
     alter: int,
     elternteil_mindesteinkommen_erreicht: bool,
     kindergeld_erstes_kind_m: float,
-    unterhalt_params: dict,
+    mindestunterhalt_nach_alter: dict[str, Mindestunterhalt],
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
 
     Introduction of a minimum income threshold if child is older than some threshold and
     third age group (12-17) via Artikel 23 G. v. 14.08.2017 BGBl. I S. 3122.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    elternteil_mindesteinkommen_erreicht
-        See :func:`elternteil_mindesteinkommen_erreicht`.
-    kindergeld_erstes_kind_m
-        See :func:`kindergeld_erstes_kind_m`.
-    unterhalt_params
-        See params documentation :ref:`unterhalt_params <unterhalt_params>`.
-
-    Returns
-    -------
-
     """
-    mindestunterhalt = unterhalt_params["mindestunterhalt"]
-
-    if mindestunterhalt[1]["min_alter"] <= alter <= mindestunterhalt[1]["max_alter"]:
-        out = mindestunterhalt[1]["betrag"] - kindergeld_erstes_kind_m
-    elif mindestunterhalt[2]["min_alter"] <= alter <= mindestunterhalt[2]["max_alter"]:
-        out = mindestunterhalt[2]["betrag"] - kindergeld_erstes_kind_m
+    if (
+        mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.min_alter
+        <= alter
+        <= mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.max_alter
+    ):
+        out = mindestunterhalt_nach_alter["kleinkind"].satz - kindergeld_erstes_kind_m
     elif (
-        mindestunterhalt[3]["min_alter"] <= alter <= mindestunterhalt[3]["max_alter"]
+        mindestunterhalt_nach_alter["schulkind"].altersgrenzen.min_alter
+        <= alter
+        <= mindestunterhalt_nach_alter["schulkind"].altersgrenzen.max_alter
+    ):
+        out = mindestunterhalt_nach_alter["schulkind"].satz - kindergeld_erstes_kind_m
+    elif (
+        mindestunterhalt_nach_alter["jugendliche"].altersgrenzen.min_alter
+        <= alter
+        <= mindestunterhalt_nach_alter["jugendliche"].altersgrenzen.max_alter
         and elternteil_mindesteinkommen_erreicht
     ):
-        out = mindestunterhalt[3]["betrag"] - kindergeld_erstes_kind_m
+        out = mindestunterhalt_nach_alter["jugendliche"].satz - kindergeld_erstes_kind_m
     else:
         out = 0.0
 
     return out
 
 
-@policy_function(start_date="2017-01-01", vectorization_strategy="not_required")
+@policy_function(start_date="2017-07-01", vectorization_strategy="not_required")
 def elternteil_mindesteinkommen_erreicht(
-    kindergeld__p_id_empfänger: numpy.ndarray[int],
-    p_id: numpy.ndarray[int],
-    mindesteinkommen_erreicht: numpy.ndarray[bool],
-) -> numpy.ndarray[bool]:
+    kindergeld__p_id_empfänger: TTSIMArray,  # int
+    p_id: TTSIMArray,  # int
+    mindesteinkommen_erreicht: TTSIMArray,  # bool
+) -> TTSIMArray:  # bool
     """Income of Unterhaltsvorschuss recipient above threshold (this variable is
-    defined on child level).
-
-    Parameters
-    ----------
-    kindergeld__p_id_empfänger
-        See basic input variable :ref:`kindergeld__p_id_empfänger`.
-    p_id
-        See basic input variable :ref:`p_id`.
-    mindesteinkommen_erreicht
-        See :func:`mindesteinkommen_erreicht`.
-
-    Returns
-    -------
-    """
+    defined on child level)."""
     return join(
         kindergeld__p_id_empfänger,
         p_id,
@@ -379,28 +289,16 @@ def elternteil_mindesteinkommen_erreicht(
     )
 
 
-@policy_function(start_date="2017-01-01")
+@policy_function(start_date="2017-07-01")
 def mindesteinkommen_erreicht(
     einkommen_m: float,
-    unterhaltsvors_params: dict,
+    mindesteinkommen: float,
 ) -> bool:
-    """Check if income is above the threshold for advance alimony payments.
-
-    Parameters
-    ----------
-    einkommen_m
-        See :func:`einkommen_m`.
-    unterhaltsvors_params
-        See params documentation :ref:`unterhaltsvors_params <unterhaltsvors_params>`.
-
-    Returns
-    -------
-
-    """
-    return einkommen_m >= unterhaltsvors_params["mindesteinkommen"]
+    """Check if income is above the threshold for advance alimony payments."""
+    return einkommen_m >= mindesteinkommen
 
 
-@policy_function(start_date="2017-01-01")
+@policy_function(start_date="2017-07-01")
 def einkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
@@ -411,32 +309,8 @@ def einkommen_m(
     sozialversicherung__rente__private_rente_betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
 ) -> float:
-    """Calculate relevant income for advance on alimony payment.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m`.
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m
-        See :func:`einkommensteuer__einkünfte__sonstige__ohne_renten_m`.
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        See :func:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m`.
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
-        See :func:`einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m`.
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
-        See :func:`einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m`.
-    sozialversicherung__rente__altersrente__betrag_m
-        See :func:`sozialversicherung__rente__altersrente__betrag_m`.
-    sozialversicherung__rente__private_rente_betrag_m
-        See :func:`sozialversicherung__rente__private_rente_betrag_m`.
-    sozialversicherung__arbeitslosen__betrag_m
-        See :func:`sozialversicherung__arbeitslosen__betrag_m`.
-
-    Returns
-    -------
-
-    """
-    out = (
+    """Calculate relevant income for advance on alimony payment."""
+    return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
@@ -447,11 +321,69 @@ def einkommen_m(
         + sozialversicherung__arbeitslosen__betrag_m
     )
 
-    return out
-
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def unterhaltsvorschuss_spec_target(
     unterhaltsvorschuss_source_field: bool, p_id_field: int, p_id: int
 ) -> int:
     pass
+
+
+@param_function(start_date="2008-01-01", end_date="2017-06-30")
+def berechtigte_altersgruppen(
+    raw_berechtigte_altersgruppen: RawParam,
+) -> dict[str, Altersgrenzen]:
+    return {
+        "kleinkind": Altersgrenzen(
+            min_alter=raw_berechtigte_altersgruppen["kleinkind"]["min_alter"],
+            max_alter=raw_berechtigte_altersgruppen["kleinkind"]["max_alter"],
+        ),
+        "schulkind": Altersgrenzen(
+            min_alter=raw_berechtigte_altersgruppen["schulkind"]["min_alter"],
+            max_alter=raw_berechtigte_altersgruppen["schulkind"]["max_alter"],
+        ),
+    }
+
+
+@param_function(start_date="2016-01-01")
+def mindestunterhalt_nach_alter(
+    raw_mindestunterhalt: RawParam,
+) -> dict[str, Mindestunterhalt]:
+    kleinkind = Mindestunterhalt(
+        satz=raw_mindestunterhalt["kleinkind"]["satz"],
+        altersgrenzen=Altersgrenzen(
+            min_alter=raw_mindestunterhalt["kleinkind"]["min_alter"],
+            max_alter=raw_mindestunterhalt["kleinkind"]["max_alter"],
+        ),
+    )
+    schulkind = Mindestunterhalt(
+        satz=raw_mindestunterhalt["schulkind"]["satz"],
+        altersgrenzen=Altersgrenzen(
+            min_alter=raw_mindestunterhalt["schulkind"]["min_alter"],
+            max_alter=raw_mindestunterhalt["schulkind"]["max_alter"],
+        ),
+    )
+    jugendliche = Mindestunterhalt(
+        satz=raw_mindestunterhalt["jugendliche"]["satz"],
+        altersgrenzen=Altersgrenzen(
+            min_alter=raw_mindestunterhalt["jugendliche"]["min_alter"],
+            max_alter=raw_mindestunterhalt["jugendliche"]["max_alter"],
+        ),
+    )
+    return {
+        "kleinkind": kleinkind,
+        "schulkind": schulkind,
+        "jugendliche": jugendliche,
+    }
+
+
+@dataclass(frozen=True)
+class Altersgrenzen:
+    min_alter: int
+    max_alter: int
+
+
+@dataclass(frozen=True)
+class Mindestunterhalt:
+    satz: float
+    altersgrenzen: Altersgrenzen

@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import params_function, policy_function
+from ttsim import param_function, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParamsRequiringConversion
+    from ttsim.typing import RawParam
 
 
 @dataclass(frozen=True)
@@ -21,8 +21,8 @@ class BountyPerOrc:
     large_orc: BountyPerLargeOrc
 
 
-@params_function()
-def bounty_per_orc(raw_bounties_per_orc: RawParamsRequiringConversion) -> BountyPerOrc:
+@param_function()
+def bounty_per_orc(raw_bounties_per_orc: RawParam) -> BountyPerOrc:
     return BountyPerOrc(
         small_orc=raw_bounties_per_orc["small_orc"],
         large_orc=BountyPerLargeOrc(

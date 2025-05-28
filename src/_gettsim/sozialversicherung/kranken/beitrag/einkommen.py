@@ -7,7 +7,7 @@ from ttsim import policy_function
 
 @policy_function()
 def einkommen_m(
-    einkommen_regulär_beschäftigt_m: float,
+    einkommen_bis_beitragsbemessungsgrenze_m: float,
     sozialversicherung__regulär_beschäftigt: bool,
 ) -> float:
     """Wage subject to public health insurance contributions.
@@ -16,32 +16,21 @@ def einkommen_m(
     ceiling.
     """
     if sozialversicherung__regulär_beschäftigt:
-        out = einkommen_regulär_beschäftigt_m
+        out = einkommen_bis_beitragsbemessungsgrenze_m
     else:
         out = 0.0
     return out
 
 
 @policy_function()
-def einkommen_regulär_beschäftigt_m(
+def einkommen_bis_beitragsbemessungsgrenze_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     beitragsbemessungsgrenze_m: float,
 ) -> float:
-    """Income subject to public health insurance contributions.
+    """Income from dependent employment, capped at the contribution ceiling.
 
     This does not consider reduced contributions for Mini- and Midijobs. Relevant for
     the computation of payroll taxes.
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See :func:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m`.
-    beitragsbemessungsgrenze_m
-        See :func:`beitragsbemessungsgrenze_m`.
-
-    Returns
-    -------
-    Income subject to public health insurance contributions.
     """
 
     return min(
@@ -50,14 +39,14 @@ def einkommen_regulär_beschäftigt_m(
     )
 
 
-@policy_function()
+@policy_function(start_date="1990-01-01")
 def bemessungsgrundlage_selbstständig_m(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
-    bezugsgröße_selbstständig_m: float,
+    bezugsgröße_selbstständige_m: float,
     einkommensteuer__einkünfte__ist_selbstständig: bool,
     privat_versichert: bool,
     beitragsbemessungsgrenze_m: float,
-    ges_krankenv_params: dict,
+    mindestanteil_bezugsgröße_selbstständige: float,
 ) -> float:
     """Self-employed income which is subject to health insurance contributions.
 
@@ -65,35 +54,13 @@ def bemessungsgrundlage_selbstständig_m(
     voluntarily contribute to the public health system.
 
     Reference: §240 SGB V Abs. 4
-
-    Parameters
-    ----------
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m <einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m>`.
-    bezugsgröße_selbstständig_m
-        See :func:`bezugsgröße_selbstständig_m`.
-    einkommensteuer__einkünfte__ist_selbstständig
-        See basic input variable :ref:`einkommensteuer__einkünfte__ist_selbstständig <einkommensteuer__einkünfte__ist_selbstständig>`.
-    privat_versichert
-        See basic input variable :ref:`privat_versichert <privat_versichert>`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-    beitragsbemessungsgrenze_m
-        See :func:`beitragsbemessungsgrenze_m`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
     # Calculate if self employed insures via public health insurance.
     if einkommensteuer__einkünfte__ist_selbstständig and not privat_versichert:
         out = min(
             beitragsbemessungsgrenze_m,
             max(
-                bezugsgröße_selbstständig_m
-                * ges_krankenv_params["mindestanteil_bezugsgröße_selbstständige"],
+                bezugsgröße_selbstständige_m * mindestanteil_bezugsgröße_selbstständige,
                 einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m,
             ),
         )
@@ -103,64 +70,38 @@ def bemessungsgrundlage_selbstständig_m(
     return out
 
 
-@policy_function(end_date="2000-12-31", leaf_name="beitragsbemessungsgrenze_m")
-def beitragsbemessungsgrenze_m_mit_ost_west_unterschied(
-    wohnort_ost: bool, ges_krankenv_params: dict
-) -> float:
-    """Income threshold up to which health insurance payments apply.
-
-    Parameters
-    ----------
-    wohnort_ost
-        See :func:`wohnort_ost`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-    The income threshold up to which the rate of health insurance contributions apply.
-
-    """
-    params = ges_krankenv_params["parameter_beitragsbemessungsgrenze"]
-
-    out = params["ost"] if wohnort_ost else params["west"]
-
-    return out
-
-
-@policy_function(start_date="2001-01-01", leaf_name="beitragsbemessungsgrenze_m")
-def beitragsbemessungsgrenze_m_ohne_ost_west_unterschied(
-    ges_krankenv_params: dict,
+@policy_function(
+    start_date="1990-01-01",
+    end_date="2000-12-31",
+    leaf_name="beitragsbemessungsgrenze_m",
+)
+def beitragsbemessungsgrenze_m_nach_wohnort(
+    wohnort_ost: bool,
+    parameter_beitragsbemessungsgrenze_nach_wohnort: dict[str, float],
 ) -> float:
     """Income threshold up to which health insurance payments apply."""
-    return ges_krankenv_params["parameter_beitragsbemessungsgrenze"]
+    return (
+        parameter_beitragsbemessungsgrenze_nach_wohnort["ost"]
+        if wohnort_ost
+        else parameter_beitragsbemessungsgrenze_nach_wohnort["west"]
+    )
 
 
-@policy_function()
-def bezugsgröße_selbstständig_m(wohnort_ost: bool, ges_krankenv_params: dict) -> float:
+@policy_function(start_date="1990-01-01", end_date="2024-12-31")
+def bezugsgröße_selbstständige_m(
+    wohnort_ost: bool,
+    bezugsgröße_selbstständige_nach_wohnort: dict[str, float],
+) -> float:
     """Threshold for self employment income subject to health insurance.
 
     Selecting by place of living the income threshold for self employed up to which the
     rate of health insurance contributions apply.
-
-    Parameters
-    ----------
-    wohnort_ost
-        See basic input variable :ref:`wohnort_ost <wohnort_ost>`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
-    out = (
-        ges_krankenv_params["bezugsgröße_selbstständige_m"]["ost"]
+    return (
+        bezugsgröße_selbstständige_nach_wohnort["ost"]
         if wohnort_ost
-        else ges_krankenv_params["bezugsgröße_selbstständige_m"]["west"]
+        else bezugsgröße_selbstständige_nach_wohnort["west"]
     )
-
-    return out
 
 
 @policy_function()
@@ -169,21 +110,7 @@ def bemessungsgrundlage_rente_m(
     sozialversicherung__rente__private_rente_betrag_m: float,
     beitragsbemessungsgrenze_m: float,
 ) -> float:
-    """Pension income which is subject to health insurance contribution.
-
-    Parameters
-    ----------
-    sozialversicherung__rente__altersrente__betrag_m: float,
-        See :func:`sozialversicherung__rente__altersrente__betrag_m`.
-    sozialversicherung__rente__private_rente_betrag_m: float,
-        See :func:`sozialversicherung__rente__private_rente_betrag_m`.
-    beitragsbemessungsgrenze_m
-        See :func:`beitragsbemessungsgrenze_m`.
-
-    Returns
-    -------
-
-    """
+    """Pension income which is subject to health insurance contribution."""
     return min(
         sozialversicherung__rente__altersrente__betrag_m
         + sozialversicherung__rente__private_rente_betrag_m,

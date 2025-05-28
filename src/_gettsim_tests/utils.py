@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
@@ -12,14 +11,12 @@ import yaml
 from _gettsim.config import GETTSIM_ROOT
 from _gettsim_tests import TEST_DIR
 from ttsim import (
-    GroupCreationFunction,
     PolicyEnvironment,
     compute_taxes_and_transfers,
     merge_trees,
     set_up_policy_environment,
     to_datetime,
 )
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 
 # Set display options to show all columns without truncation
@@ -30,7 +27,7 @@ if TYPE_CHECKING:
     import datetime
     from pathlib import Path
 
-    from ttsim.typing import DashedISOString, NestedDataDict, NestedInputStructureDict
+    from ttsim.typing import DashedISOString, NestedData, NestedInputStructureDict
 
 
 def cached_set_up_policy_environment(
@@ -49,9 +46,9 @@ class PolicyTest:
 
     def __init__(
         self,
-        info: NestedDataDict,
-        input_tree: NestedDataDict,
-        expected_output_tree: NestedDataDict,
+        info: NestedData,
+        input_tree: NestedData,
+        expected_output_tree: NestedData,
         path: Path,
         date: datetime.date,
     ) -> None:
@@ -76,29 +73,8 @@ class PolicyTest:
 def execute_test(test: PolicyTest, jit: bool = False) -> None:
     environment = cached_set_up_policy_environment(date=test.date)
 
-    if IS_JAX_INSTALLED:
-        ids = dict.fromkeys(
-            {f"{g}_id" for g in environment.grouping_levels}.intersection(
-                {
-                    g
-                    for g, t in environment.raw_objects_tree.items()
-                    if isinstance(t, GroupCreationFunction)
-                }
-            )
-        )
-        result_ids = compute_taxes_and_transfers(
-            data_tree=test.input_tree,
-            environment=environment,
-            targets_tree=ids,
-            jit=False,
-        )
-        data_tree = merge_trees(test.input_tree, result_ids)
-        targets_tree = copy.deepcopy(test.target_structure)
-        for i in [i for i in ids if i in targets_tree]:
-            del targets_tree[i]
-    else:
-        data_tree = test.input_tree
-        targets_tree = test.target_structure
+    data_tree = test.input_tree
+    targets_tree = test.target_structure
 
     if targets_tree:
         result = compute_taxes_and_transfers(
@@ -116,11 +92,7 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
     if flat_expected_output_tree:
         expected_df = pd.DataFrame(flat_expected_output_tree)
         result_df = pd.DataFrame(flat_result)
-        if IS_JAX_INSTALLED:
-            for i in [i for i in ids if i in expected_df]:
-                result_df = pd.concat(
-                    [result_df, pd.Series(result_ids[i], name=i)], axis=1
-                )
+
         try:
             pd.testing.assert_frame_equal(
                 result_df.sort_index(axis="columns"),
@@ -168,7 +140,7 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
             continue
 
         with path_to_yaml.open("r", encoding="utf-8") as file:
-            raw_test_data: NestedDataDict = yaml.safe_load(file)
+            raw_test_data: NestedData = yaml.safe_load(file)
 
         # TODO(@MImmesberger): Remove this before merging this PR.
         # https://github.com/iza-institute-of-labor-economics/gettsim/pull/884
@@ -186,7 +158,7 @@ def load_policy_test_data(policy_name: str) -> list[PolicyTest]:
     return out
 
 
-def get_test_data_as_tree(test_data: NestedDataDict) -> NestedDataDict:
+def get_test_data_as_tree(test_data: NestedData) -> NestedData:
     provided_inputs = test_data["inputs"].get("provided", {})
     assumed_inputs = test_data["inputs"].get("assumed", {})
 
@@ -217,7 +189,7 @@ def _is_skipped(test_file: Path) -> bool:
 
 
 def _get_policy_tests_from_raw_test_data(
-    raw_test_data: NestedDataDict, path_to_yaml: Path
+    raw_test_data: NestedData, path_to_yaml: Path
 ) -> list[PolicyTest]:
     """Get a list of PolicyTest objects from raw test data.
 
@@ -228,9 +200,9 @@ def _get_policy_tests_from_raw_test_data(
     Returns:
         A list of PolicyTest objects.
     """
-    test_info: NestedDataDict = raw_test_data.get("info", {})
-    inputs: NestedDataDict = raw_test_data.get("inputs", {})
-    input_tree: NestedDataDict = dt.unflatten_from_tree_paths(
+    test_info: NestedData = raw_test_data.get("info", {})
+    inputs: NestedData = raw_test_data.get("inputs", {})
+    input_tree: NestedData = dt.unflatten_from_tree_paths(
         {
             k: pd.Series(v)
             for k, v in dt.flatten_to_tree_paths(
@@ -239,7 +211,7 @@ def _get_policy_tests_from_raw_test_data(
         }
     )
 
-    expected_output_tree: NestedDataDict = dt.unflatten_from_tree_paths(
+    expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
             k: pd.Series(v)
             for k, v in dt.flatten_to_tree_paths(
