@@ -4,9 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import AggType, agg_by_p_id_function, join, policy_function
+from ttsim import (
+    AggType,
+    agg_by_p_id_function,
+    get_consecutive_int_1d_lookup_table_param_value,
+    join,
+    param_function,
+    policy_function,
+)
 
 if TYPE_CHECKING:
+    from ttsim import ConsecutiveInt1dLookupTableParamValue
     from ttsim.config import numpy_or_jax as np
 
 
@@ -37,7 +45,7 @@ def betrag_ohne_staffelung_m(
 )
 def betrag_gestaffelt_m(
     anzahl_ansprüche: int,
-    satz_gestaffelt: dict[int, float],
+    satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Sum of Kindergeld that parents receive for their children.
 
@@ -49,10 +57,9 @@ def betrag_gestaffelt_m(
     if anzahl_ansprüche == 0:
         sum_kindergeld = 0.0
     else:
-        sum_kindergeld = sum(
-            satz_gestaffelt[(min(i, max(satz_gestaffelt)))]
-            for i in range(1, anzahl_ansprüche + 1)
-        )
+        sum_kindergeld = satz_nach_anzahl_kinder.values_to_look_up[
+            anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract
+        ]
 
     return sum_kindergeld
 
@@ -134,3 +141,25 @@ def gleiche_fg_wie_empfänger(
     )
 
     return fg_id_kindergeldempfänger == fg_id
+
+
+@param_function(end_date="2022-12-31")
+def satz_nach_anzahl_kinder(
+    satz_gestaffelt: dict[int, float],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Convert the Kindergeld-Satz by child to the amount of Kindergeld by number of
+    children."""
+    max_num_children = 30
+    max_num_children_in_spec = max(satz_gestaffelt.keys())
+    base_spec = {
+        k: sum(satz_gestaffelt[i] for i in range(1, k + 1))
+        for k in range(1, max_num_children_in_spec + 1)
+    }
+    extended_spec = {
+        k: base_spec[max_num_children_in_spec]
+        + satz_gestaffelt[max_num_children_in_spec] * (k - max_num_children_in_spec)
+        for k in range(max_num_children_in_spec + 1, max_num_children)
+    }
+    return get_consecutive_int_1d_lookup_table_param_value(
+        {**base_spec, **extended_spec}
+    )

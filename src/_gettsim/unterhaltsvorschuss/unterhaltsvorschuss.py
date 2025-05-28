@@ -15,7 +15,7 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import RawParam
+    from ttsim import ConsecutiveInt1dLookupTableParamValue, RawParam
     from ttsim.typing import TTSIMArray
 
 
@@ -105,10 +105,12 @@ def kindergeld_erstes_kind_ohne_staffelung_m(
 
 @param_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_gestaffelt_m(
-    kindergeld__satz_gestaffelt: dict[int, float],
+    kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Kindergeld for first child when Kindergeld depends on number of children."""
-    return kindergeld__satz_gestaffelt[1]
+    return kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
+        1 - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
+    ]
 
 
 @policy_function(
