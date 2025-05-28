@@ -14,7 +14,7 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     AggType,
     DictParam,
-    FunctionsAndColumnsOverlapWarning,
+    FunctionsAndDataOverlapWarning,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
     RawParam,
@@ -30,13 +30,12 @@ from ttsim import (
 )
 from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
-    _fail_if_function_targets_not_in_functions,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
+    _fail_if_targets_not_in_policy_environment,
     _get_top_level_namespace,
-    _partial_params_to_functions,
-    _process_tree_with_params,
-    create_agg_by_group_functions,
+    policy_environment_with_processed_params_and_scalars,
+    required_column_functions,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
@@ -105,6 +104,13 @@ def some_converting_params_func(
         some_float_param=raw_param_spec["some_float_param"],
         some_bool_param=raw_param_spec["some_bool_param"],
     )
+
+
+@param_function()
+def some_function_taking_scalar(
+    some_int_scalar: int, some_float_scalar: float, some_bool_scalar: bool
+) -> float:
+    return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
 
 SOME_RAW_PARAM = RawParam(
@@ -210,9 +216,13 @@ def func_before_partial(arg_1, some_param):
     return arg_1 + some_param
 
 
-func_after_partial = _partial_params_to_functions(
-    {"some_func": func_before_partial},
-    {"some_param": SOME_INT_PARAM.value},
+func_after_partial = required_column_functions(
+    policy_environment_with_processed_params_and_scalars={
+        "some_func": func_before_partial,
+        "some_param": SOME_INT_PARAM.value,
+    },
+    data={"arg_1": np.array([1])},
+    rounding=False,
 )["some_func"]
 
 
@@ -402,69 +412,21 @@ def test_create_agg_by_group_functions(
 
 
 @pytest.mark.parametrize(
-    "functions, targets, expected_error_match",
+    "policy_environment, targets, expected_error_match",
     [
         ({"foo": some_x}, {"bar": None}, "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, "('foo', 'bar')"),
     ],
 )
 def test__fail_if_function_targets_not_in_functions(
-    functions, targets, expected_error_match
+    policy_environment, targets, expected_error_match
 ):
     with pytest.raises(ValueError) as e:
-        _fail_if_function_targets_not_in_functions(
-            functions=functions,
+        _fail_if_targets_not_in_policy_environment(
+            policy_environment=policy_environment,
             targets=targets,
         )
     assert expected_error_match in str(e.value)
-
-
-@pytest.mark.parametrize(
-    (
-        "functions",
-        "targets",
-        "data",
-        "expected",
-    ),
-    [
-        (
-            {"foo": policy_function(leaf_name="foo")(return_x_kin)},
-            {},
-            {"x": pd.Series([1])},
-            ("x_kin"),
-        ),
-        (
-            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
-            {},
-            {"n1__x": pd.Series([1])},
-            ("n1__x_kin"),
-        ),
-        (
-            {},
-            {"x_kin": None},
-            {"x": pd.Series([1])},
-            ("x_kin"),
-        ),
-    ],
-)
-def test_derived_aggregation_functions_are_in_correct_namespace(
-    functions,
-    targets,
-    data,
-    expected,
-):
-    """Test that the derived aggregation functions are in the correct namespace.
-
-    The namespace of the derived aggregation functions should be the same as the
-    namespace of the function that is being aggregated.
-    """
-    result = create_agg_by_group_functions(
-        ttsim_functions_with_time_conversions=functions,
-        data=data,
-        targets=targets,
-        groupings=("kin",),
-    )
-    assert expected in result
 
 
 def test_output_is_tree(minimal_input_data):
@@ -516,7 +478,7 @@ def test_params_target_is_allowed(minimal_input_data):
 
 
 def test_warn_if_functions_and_columns_overlap():
-    with pytest.warns(FunctionsAndColumnsOverlapWarning):
+    with pytest.warns(FunctionsAndDataOverlapWarning):
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
@@ -533,7 +495,7 @@ def test_warn_if_functions_and_columns_overlap():
 
 def test_dont_warn_if_functions_and_columns_dont_overlap():
     with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=FunctionsAndColumnsOverlapWarning)
+        warnings.filterwarnings("error", category=FunctionsAndDataOverlapWarning)
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
@@ -551,9 +513,9 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
         "unique": another_func,
     }
     with warnings.catch_warnings(
-        category=FunctionsAndColumnsOverlapWarning, record=True
+        category=FunctionsAndDataOverlapWarning, record=True
     ) as warning_list:
-        warnings.filterwarnings("ignore", category=FunctionsAndColumnsOverlapWarning)
+        warnings.filterwarnings("ignore", category=FunctionsAndDataOverlapWarning)
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
@@ -967,20 +929,21 @@ def test_get_top_level_namespace(policy_environment, time_units, expected):
     assert all(name in result for name in expected)
 
 
-def test_tree_with_params_is_processed():
-    tree_with_params = {
+def test_policy_environment_with_params_and_scalars_is_processed():
+    policy_environment = {
         "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
         "some_dict_param": SOME_DICT_PARAM,
         "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
-    }
-    param_functions = {
+        "some_int_scalar": 1,
+        "some_float_scalar": 2.0,
+        "some_bool_scalar": True,
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
+        "some_function_taking_scalar": some_function_taking_scalar,
     }
-    processed_tree_with_params = _process_tree_with_params(
-        tree_with_params=tree_with_params,
-        param_functions=param_functions,
+    processed_tree_with_params = policy_environment_with_processed_params_and_scalars(
+        policy_environment_with_derived_functions=policy_environment,
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
@@ -991,5 +954,9 @@ def test_tree_with_params_is_processed():
         "some_int_param": SOME_INT_PARAM.value,
         "some_dict_param": SOME_DICT_PARAM.value,
         "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM.value,
+        "some_int_scalar": 1,
+        "some_float_scalar": 2.0,
+        "some_bool_scalar": True,
+        "some_function_taking_scalar": 4.0,
     }
     assert processed_tree_with_params == expected

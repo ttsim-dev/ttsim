@@ -13,9 +13,11 @@ from ttsim.column_objects_param_function import (
     AggByGroupFunction,
     ColumnFunction,
     ColumnObject,
+    ParamFunction,
     TimeConversionFunction,
 )
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.param_objects import ScalarParam
 from ttsim.shared import (
     fail_if_multiple_time_units_for_same_base_name_and_group,
     get_base_name_and_grouping_suffix,
@@ -30,8 +32,8 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         QualNameColumnFunctions,
-        QualNameColumnObjects,
         QualNameData,
+        QualNamePolicyEnvironment,
         QualNameTargetList,
     )
 
@@ -394,13 +396,30 @@ _time_conversion_functions = {
 }
 
 
+def _convertibles(
+    qual_name_policy_environment: QualNamePolicyEnvironment,
+) -> dict[str, ColumnObject | ParamFunction | ScalarParam]:
+    return {
+        qn: e
+        for qn, e in qual_name_policy_environment.items()
+        if isinstance(e, (ColumnObject, ScalarParam))
+        or (
+            isinstance(e, ParamFunction)
+            and e.function.__annotations__["return"] in {"float", "int", "bool"}
+        )
+    }
+
+
 def create_time_conversion_functions(
-    column_objects: QualNameColumnObjects,
+    qual_name_policy_environment: QualNamePolicyEnvironment,
     data: QualNameData,
     groupings: tuple[str, ...],
 ) -> QualNameColumnFunctions:
     """
-     Create functions that convert variables to different time units.
+    Create functions converting elements of the policy environment to other time units.
+
+    Convertible elements are column objects, scalar parameters and param functions
+    returning a scalar (see function *_convertibles*)
 
     The time unit of a function is determined by a naming convention:
 
@@ -442,10 +461,10 @@ def create_time_conversion_functions(
         groupings=groupings,
         time_units=all_time_units,
     )
-
+    # Map base name and grouping suffix to time conversion inputs.
     bngs_to_time_conversion_inputs = {}
     bngs_to_variations = {}
-    for qual_name, column_object in column_objects.items():
+    for qual_name, element in _convertibles(qual_name_policy_environment).items():
         match = pattern_all.fullmatch(qual_name)
         # We must not find multiple time units for the same base name and group.
         bngs = get_base_name_and_grouping_suffix(match)
@@ -457,7 +476,7 @@ def create_time_conversion_functions(
             bngs_to_time_conversion_inputs[bngs] = {
                 "base_name": bngs[0],
                 "qual_name_source": qual_name,
-                "column_object": column_object,
+                "element": element,
                 "time_unit": match.group("time_unit"),
                 "grouping_suffix": bngs[1],
                 "all_time_units": all_time_units,
@@ -465,7 +484,7 @@ def create_time_conversion_functions(
 
     fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    converted_column_objects: dict[str, ColumnObject] = {}
+    converted_elements: dict[str, ColumnObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
         for qual_name_data in data:
             # If base_name is in provided data, base time conversions on that.
@@ -479,30 +498,30 @@ def create_time_conversion_functions(
                 break
 
         variations = _create_one_set_of_time_conversion_functions(**inputs)
-        converted_column_objects = {**converted_column_objects, **variations}
+        converted_elements = {**converted_elements, **variations}
 
-    return converted_column_objects
+    return converted_elements
 
 
 def _create_one_set_of_time_conversion_functions(
     base_name: str,
     qual_name_source: str,
-    column_object: ColumnObject,
+    element: ColumnObject,
     time_unit: str,
     grouping_suffix: str,
     all_time_units: tuple[str, ...],
 ) -> dict[str, TimeConversionFunction]:
     result: dict[str, TimeConversionFunction] = {}
     dependencies = (
-        set(inspect.signature(column_object).parameters)
-        if isinstance(column_object, ColumnFunction)
+        set(inspect.signature(element).parameters)
+        if isinstance(element, ColumnFunction)
         else set()
     )
 
     for target_time_unit in [tu for tu in all_time_units if tu != time_unit]:
         new_name = f"{base_name}_{target_time_unit}{grouping_suffix}"
 
-        # Without this check, we could create cycles in the DAG: Consider a
+        # Without the following check, we could create cycles in the DAG: Consider a
         # hard-coded function `var_y` that takes `var_m` as an input, assuming it
         # to be provided in the input data. If we create a function `var_m`, which
         # would take `var_y` as input, we create a cycle. If `var_m` is actually
@@ -523,8 +542,8 @@ def _create_one_set_of_time_conversion_functions(
                 ],
             ),
             source=qual_name_source,
-            start_date=column_object.start_date,
-            end_date=column_object.end_date,
+            start_date=element.start_date,
+            end_date=element.end_date,
         )
 
     return result
@@ -541,18 +560,21 @@ def _create_function_for_time_unit(
 
 
 def create_agg_by_group_functions(
-    ttsim_functions_with_time_conversions: QualNameColumnObjects,
+    column_functions: QualNameColumnFunctions,
     data: QualNameData,
     targets: QualNameTargetList,
     groupings: tuple[str, ...],
 ) -> QualNameColumnFunctions:
     gp = group_pattern(groupings)
-    all_functions_and_data = {**ttsim_functions_with_time_conversions, **data}
+    all_functions_and_data = {
+        **column_functions,
+        **data,
+    }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.
         *[t for t in targets if gp.match(t)],
         *_get_potential_agg_by_group_function_names_from_function_arguments(
-            functions=ttsim_functions_with_time_conversions,
+            functions=column_functions,
             group_pattern=gp,
         ),
     }

@@ -30,20 +30,20 @@ def test_full_taxes_transfers(test: PolicyTest):
 
 @pytest.mark.parametrize("test", test_data, ids=lambda x: x.name)
 def test_data_types(test: PolicyTest):
-    environment = cached_set_up_policy_environment(date=test.date)
+    policy_environment = cached_set_up_policy_environment(date=test.date)
 
     result = compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        policy_environment=environment,
+        policy_environment=policy_environment,
         targets_tree=test.target_structure,
     )
 
     flat_types_input_variables = {
         n: pi.data_type
-        for n, pi in dt.flatten_to_qual_names(environment.raw_objects_tree).items()
+        for n, pi in dt.flatten_to_qual_names(policy_environment).items()
         if isinstance(pi, PolicyInput)
     }
-    flat_functions = dt.flatten_to_qual_names(environment.raw_objects_tree)
+    flat_functions = dt.flatten_to_qual_names(policy_environment)
 
     for column_name, result_array in dt.flatten_to_qual_names(result).items():
         if column_name in flat_types_input_variables:

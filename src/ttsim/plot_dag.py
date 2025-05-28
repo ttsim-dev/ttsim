@@ -16,8 +16,8 @@ from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
 from ttsim.compute_taxes_and_transfers import (
-    _partial_params_to_functions,
-    combine_policy_functions_and_derived_functions,
+    add_derived_functions,
+    required_column_functions,
 )
 from ttsim.shared import (
     format_list_linewise,
@@ -82,7 +82,7 @@ def plot_dag(
         names_of_columns_overriding_functions = columns_overriding_functions
 
     # Load functions.
-    all_functions = combine_policy_functions_and_derived_functions(
+    all_functions = add_derived_functions(
         environment=policy_environment,
         targets=targets,
         data=names_of_columns_overriding_functions,
@@ -115,8 +115,8 @@ def plot_dag(
         },
     )
 
-    processed_functions = _partial_params_to_functions(
-        functions=functions_with_rounding_specs,  # noqa: F821
+    processed_functions = required_column_functions(
+        policy_environment_with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
         processed_params=processed_tree_with_params,
     )
 

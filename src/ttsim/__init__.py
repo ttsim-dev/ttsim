@@ -19,8 +19,8 @@ from ttsim.column_objects_param_function import (
     policy_input,
 )
 from ttsim.compute_taxes_and_transfers import (
-    FunctionsAndColumnsOverlapWarning,
-    combine_policy_functions_and_derived_functions,
+    FunctionsAndDataOverlapWarning,
+    add_derived_functions,
     compute_taxes_and_transfers,
 )
 from ttsim.param_objects import (
@@ -66,7 +66,7 @@ __all__ = [
     "ConsecutiveInt2dLookupTableParamValue",
     "DictParam",
     "FKType",
-    "FunctionsAndColumnsOverlapWarning",
+    "FunctionsAndDataOverlapWarning",
     "GroupCreationFunction",
     "OrigTreesWithFileNames",
     "ParamFunction",
@@ -80,9 +80,9 @@ __all__ = [
     "ScalarParam",
     "TimeConversionFunction",
     "active_tree",
+    "add_derived_functions",
     "agg_by_group_function",
     "agg_by_p_id_function",
-    "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
     "create_data_tree_from_df",
     "create_time_conversion_functions",
