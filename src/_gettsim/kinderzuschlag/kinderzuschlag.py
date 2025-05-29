@@ -10,12 +10,13 @@ if TYPE_CHECKING:
     from _gettsim.param_types import (
         ExistenzminimumNachAufwendungenMitBildungUndTeilhabe,
     )
+    from ttsim import ConsecutiveInt1dLookupTableParamValue
 
 
 @param_function(start_date="2021-01-01", end_date="2022-12-31", leaf_name="satz")
 def satz_mit_gestaffeltem_kindergeld(
     existenzminimum: ExistenzminimumNachAufwendungenMitBildungUndTeilhabe,
-    kindergeld__satz_gestaffelt: dict[int, float],
+    kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
     satz_vorjahr_ohne_kindersofortzuschlag: float,
 ) -> float:
     """Prior to 2021, the maximum amount of the Kinderzuschlag was specified directly in
@@ -34,7 +35,9 @@ def satz_mit_gestaffeltem_kindergeld(
             + existenzminimum.heizkosten.kind
         )
         / 12
-        - kindergeld__satz_gestaffelt[1],
+        - kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
+            1 - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
+        ],
         satz_vorjahr_ohne_kindersofortzuschlag,
     )
 
