@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import warnings
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy
@@ -13,10 +14,9 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     AggType,
     DictParam,
-    FunctionsAndColumnsOverlapWarning,
+    FunctionsAndDataOverlapWarning,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
-    PolicyEnvironment,
     RawParam,
     ScalarParam,
     agg_by_group_function,
@@ -30,17 +30,19 @@ from ttsim import (
 )
 from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
-    _fail_if_function_targets_not_in_functions,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
+    _fail_if_targets_not_in_policy_environment_or_data,
     _get_top_level_namespace,
-    _partial_params_to_functions,
-    _process_params_tree,
-    create_agg_by_group_functions,
+    column_functions_with_processed_params_and_scalars,
+    required_column_functions,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.typing import TTSIMArray
+
+if TYPE_CHECKING:
+    from ttsim.typing import NestedPolicyEnvironment
 
 if IS_JAX_INSTALLED:
     jit = True
@@ -102,6 +104,13 @@ def some_converting_params_func(
         some_float_param=raw_param_spec["some_float_param"],
         some_bool_param=raw_param_spec["some_bool_param"],
     )
+
+
+@param_function()
+def some_function_taking_scalar(
+    some_int_scalar: int, some_float_scalar: float, some_bool_scalar: bool
+) -> float:
+    return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
 
 SOME_RAW_PARAM = RawParam(
@@ -194,7 +203,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 
 
 @pytest.fixture(scope="module")
-def mettsim_environment():
+def mettsim_environment() -> NestedPolicyEnvironment:
     return set_up_policy_environment(
         root=METTSIM_ROOT,
         date="2025-01-01",
@@ -207,9 +216,12 @@ def func_before_partial(arg_1, some_param):
     return arg_1 + some_param
 
 
-func_after_partial = _partial_params_to_functions(
-    {"some_func": func_before_partial},
-    {"some_param": SOME_INT_PARAM.value},
+func_after_partial = required_column_functions(
+    policy_environment_with_processed_params_and_scalars={
+        "some_func": func_before_partial,
+        "some_param": SOME_INT_PARAM.value,
+    },
+    rounding=False,
 )["some_func"]
 
 
@@ -279,7 +291,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
 
 @pytest.mark.parametrize(
     (
-        "objects_tree",
+        "policy_environment",
         "targets_tree",
         "data_tree",
     ),
@@ -386,13 +398,12 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
     ],
 )
 def test_create_agg_by_group_functions(
-    objects_tree,
+    policy_environment,
     targets_tree,
     data_tree,
 ):
-    environment = PolicyEnvironment(raw_objects_tree=objects_tree, params_tree={})
     compute_taxes_and_transfers(
-        environment=environment,
+        policy_environment=policy_environment,
         data_tree=data_tree,
         targets_tree=targets_tree,
         jit=jit,
@@ -400,83 +411,35 @@ def test_create_agg_by_group_functions(
 
 
 @pytest.mark.parametrize(
-    "functions, targets, expected_error_match",
+    "policy_environment, targets, data_columns, expected_error_match",
     [
-        ({"foo": some_x}, {"bar": None}, "('bar',)"),
-        ({"foo__baz": some_x}, {"foo__bar": None}, "('foo', 'bar')"),
+        ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
+        ({"foo": some_x}, {"bar": None}, {"spam"}, "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, {"spam"}, "('foo', 'bar')"),
     ],
 )
-def test__fail_if_function_targets_not_in_functions(
-    functions, targets, expected_error_match
+def test_fail_if_targets_not_in_policy_environment_or_data(
+    policy_environment, targets, data_columns, expected_error_match
 ):
     with pytest.raises(ValueError) as e:
-        _fail_if_function_targets_not_in_functions(
-            functions=functions,
+        _fail_if_targets_not_in_policy_environment_or_data(
+            policy_environment=policy_environment,
             targets=targets,
+            data_columns=data_columns,
         )
     assert expected_error_match in str(e.value)
 
 
-@pytest.mark.parametrize(
-    (
-        "functions",
-        "targets",
-        "data",
-        "expected",
-    ),
-    [
-        (
-            {"foo": policy_function(leaf_name="foo")(return_x_kin)},
-            {},
-            {"x": pd.Series([1])},
-            ("x_kin"),
-        ),
-        (
-            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
-            {},
-            {"n1__x": pd.Series([1])},
-            ("n1__x_kin"),
-        ),
-        (
-            {},
-            {"x_kin": None},
-            {"x": pd.Series([1])},
-            ("x_kin"),
-        ),
-    ],
-)
-def test_derived_aggregation_functions_are_in_correct_namespace(
-    functions,
-    targets,
-    data,
-    expected,
-):
-    """Test that the derived aggregation functions are in the correct namespace.
-
-    The namespace of the derived aggregation functions should be the same as the
-    namespace of the function that is being aggregated.
-    """
-    result = create_agg_by_group_functions(
-        ttsim_functions_with_time_conversions=functions,
-        data=data,
-        targets=targets,
-        groupings=("kin",),
-    )
-    assert expected in result
-
-
 def test_output_is_tree(minimal_input_data):
-    environment = PolicyEnvironment(
-        raw_objects_tree={
-            "p_id": p_id,
-            "module": {"some_func": some_func},
-        },
-        params_tree={},
-    )
+    policy_environment = {
+        "p_id": p_id,
+        "module": {"some_func": some_func},
+    }
 
     out = compute_taxes_and_transfers(
         data_tree=minimal_input_data,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"module": {"some_func": None}},
         jit=jit,
     )
@@ -487,30 +450,26 @@ def test_output_is_tree(minimal_input_data):
 
 
 def test_params_target_is_allowed(minimal_input_data):
-    environment = PolicyEnvironment(
-        raw_objects_tree={
-            "p_id": p_id,
-            "module": {"some_func": some_func},
-        },
-        params_tree={
-            "some_param": ScalarParam(
-                value=1,
-                leaf_name="some_param",
-                start_date="2025-01-01",
-                end_date="2025-12-31",
-                unit="Euros",
-                reference_period="Year",
-                name={"de": "Ein Parameter", "en": "Some parameter"},
-                description={"de": "Ein Parameter", "en": "Some parameter"},
-                note=None,
-                reference=None,
-            ),
-        },
-    )
+    policy_environment = {
+        "p_id": p_id,
+        "module": {"some_func": some_func},
+        "some_param": ScalarParam(
+            value=1,
+            leaf_name="some_param",
+            start_date="2025-01-01",
+            end_date="2025-12-31",
+            unit="Euros",
+            reference_period="Year",
+            name={"de": "Ein Parameter", "en": "Some parameter"},
+            description={"de": "Ein Parameter", "en": "Some parameter"},
+            note=None,
+            reference=None,
+        ),
+    }
 
     out = compute_taxes_and_transfers(
         data_tree=minimal_input_data,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"some_param": None, "module": {"some_func": None}},
         jit=jit,
     )
@@ -521,62 +480,51 @@ def test_params_target_is_allowed(minimal_input_data):
 
 
 def test_warn_if_functions_and_columns_overlap():
-    environment = PolicyEnvironment(
-        raw_objects_tree={
-            "some_func": some_func,
-            "some_target": another_func,
-        },
-        params_tree={},
-    )
-    with pytest.warns(FunctionsAndColumnsOverlapWarning):
+    with pytest.warns(FunctionsAndDataOverlapWarning):
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
                 "some_func": pd.Series([1]),
             },
-            environment=environment,
+            policy_environment={
+                "some_func": some_func,
+                "some_target": another_func,
+            },
             targets_tree={"some_target": None},
             jit=jit,
         )
 
 
 def test_dont_warn_if_functions_and_columns_dont_overlap():
-    environment = PolicyEnvironment(
-        raw_objects_tree={"some_func": some_func},
-        params_tree={},
-    )
     with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=FunctionsAndColumnsOverlapWarning)
+        warnings.filterwarnings("error", category=FunctionsAndDataOverlapWarning)
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
                 "x": pd.Series([1]),
             },
-            environment=environment,
+            policy_environment={"some_func": some_func},
             targets_tree={"some_func": None},
             jit=jit,
         )
 
 
 def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
-    environment = PolicyEnvironment(
-        raw_objects_tree={
-            "some_func": some_func,
-            "unique": another_func,
-        },
-        params_tree={},
-    )
+    policy_environment = {
+        "some_func": some_func,
+        "unique": another_func,
+    }
     with warnings.catch_warnings(
-        category=FunctionsAndColumnsOverlapWarning, record=True
+        category=FunctionsAndDataOverlapWarning, record=True
     ) as warning_list:
-        warnings.filterwarnings("ignore", category=FunctionsAndColumnsOverlapWarning)
+        warnings.filterwarnings("ignore", category=FunctionsAndDataOverlapWarning)
         compute_taxes_and_transfers(
             data_tree={
                 "p_id": pd.Series([0]),
                 "some_func": pd.Series([1]),
                 "x": pd.Series([1]),
             },
-            environment=environment,
+            policy_environment=policy_environment,
             targets_tree={"unique": None},
             jit=jit,
         )
@@ -598,8 +546,10 @@ def test_fail_if_p_id_is_non_unique():
         _fail_if_p_id_is_non_unique(data)
 
 
-def test_fail_if_foreign_key_points_to_non_existing_p_id(mettsim_environment):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
+def test_fail_if_foreign_key_points_to_non_existing_p_id(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([0, 1, 2]),
@@ -607,43 +557,55 @@ def test_fail_if_foreign_key_points_to_non_existing_p_id(mettsim_environment):
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         _fail_if_foreign_keys_are_invalid_in_data(
-            data=data, column_objects_param_functions=flat_objects_tree
+            data=data,
+            input_data={k: v for k, v in data.items() if k != "p_id"},
+            flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
         )
 
 
-def test_allow_minus_one_as_foreign_key(mettsim_environment):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
+def test_allow_minus_one_as_foreign_key(mettsim_environment: NestedPolicyEnvironment):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([-1, 1, 2]),
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, column_objects_param_functions=flat_objects_tree
+        data=data,
+        input_data={k: v for k, v in data.items() if k != "p_id"},
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
 
-def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(mettsim_environment):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
+def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, column_objects_param_functions=flat_objects_tree
+        data=data,
+        input_data={k: v for k, v in data.items() if k != "p_id"},
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
 
-def test_fail_if_foreign_key_points_to_same_row_if_allowed(mettsim_environment):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment.raw_objects_tree)
+def test_fail_if_foreign_key_points_to_same_row_if_allowed(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_child_": pd.Series([1, 3, 3]),
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, column_objects_param_functions=flat_objects_tree
+        data=data,
+        input_data={k: v for k, v in data.items() if k != "p_id"},
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
 
@@ -666,13 +628,10 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
     def c(b):
         return b
 
-    environment = PolicyEnvironment(
-        raw_objects_tree={
-            "b": policy_function(leaf_name="b")(b),
-            "c": policy_function(leaf_name="c")(c),
-        },
-        params_tree={},
-    )
+    policy_environment = {
+        "b": policy_function(leaf_name="b")(b),
+        "c": policy_function(leaf_name="c")(c),
+    }
 
     with pytest.raises(
         ValueError,
@@ -680,7 +639,7 @@ def test_missing_root_nodes_raises_error(minimal_input_data):
     ):
         compute_taxes_and_transfers(
             data_tree=minimal_input_data,
-            environment=environment,
+            policy_environment=policy_environment,
             targets_tree={"c": None},
             jit=jit,
         )
@@ -695,13 +654,13 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
     def b(a):
         return a
 
-    environment = PolicyEnvironment(
-        raw_objects_tree={"a": a, "b": b},
-        params_tree={},
-    )
+    policy_environment = {
+        "a": a,
+        "b": b,
+    }
     compute_taxes_and_transfers(
         data_tree=minimal_input_data,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"b": None},
         jit=jit,
     )
@@ -710,15 +669,13 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
 def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions(
     minimal_input_data,
 ):
-    environment = PolicyEnvironment(raw_objects_tree={}, params_tree={})
-
     with pytest.raises(
         ValueError,
         match="The following targets have no corresponding function",
     ):
         compute_taxes_and_transfers(
             data_tree=minimal_input_data,
-            environment=environment,
+            policy_environment={},
             targets_tree={"unknown_target": None},
             jit=jit,
         )
@@ -732,7 +689,7 @@ def test_fail_if_missing_p_id():
     ):
         compute_taxes_and_transfers(
             data_tree=data,
-            environment=PolicyEnvironment(raw_objects_tree={}, params_tree={}),
+            policy_environment={},
             targets_tree={},
             jit=jit,
         )
@@ -748,7 +705,7 @@ def test_fail_if_non_unique_p_id(minimal_input_data):
     ):
         compute_taxes_and_transfers(
             data_tree=data,
-            environment=PolicyEnvironment(raw_objects_tree={}, params_tree={}),
+            policy_environment={},
             targets_tree={},
             jit=jit,
         )
@@ -778,7 +735,7 @@ def test_user_provided_aggregate_by_group_specs():
         "module_name": {"betrag_m": pd.Series([100, 100, 100], name="betrag_m")},
     }
 
-    inputs = {
+    policy_environment = {
         "p_id": p_id,
         "fam_id": fam_id,
         "module_name": {"betrag_m": betrag_m},
@@ -788,7 +745,7 @@ def test_user_provided_aggregate_by_group_specs():
 
     out = compute_taxes_and_transfers(
         data_tree=data,
-        environment=PolicyEnvironment(raw_objects_tree=inputs, params_tree={}),
+        policy_environment=policy_environment,
         targets_tree={"module_name": {"betrag_m_fam": None}},
         jit=jit,
     )
@@ -816,21 +773,18 @@ def test_user_provided_aggregation():
     def betrag_m_double_fam(betrag_m_double, fam_id) -> float:
         pass
 
-    environment = PolicyEnvironment(
-        raw_objects_tree={
-            "p_id": p_id,
-            "fam_id": fam_id,
-            "module_name": {
-                "betrag_m_double": betrag_m_double,
-                "betrag_m_double_fam": betrag_m_double_fam,
-            },
+    policy_environment = {
+        "p_id": p_id,
+        "fam_id": fam_id,
+        "module_name": {
+            "betrag_m_double": betrag_m_double,
+            "betrag_m_double_fam": betrag_m_double_fam,
         },
-        params_tree={},
-    )
+    }
 
     actual = compute_taxes_and_transfers(
         data_tree=data,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"module_name": {"betrag_m_double_fam": None}},
         debug=False,
         jit=jit,
@@ -861,21 +815,18 @@ def test_user_provided_aggregation_with_time_conversion():
     def max_betrag_double_m_fam(betrag_double_m, fam_id) -> float:
         pass
 
-    environment = PolicyEnvironment(
-        {
-            "p_id": p_id,
-            "fam_id": fam_id,
-            "module_name": {
-                "betrag_double_m": betrag_double_m,
-                "max_betrag_double_m_fam": max_betrag_double_m_fam,
-            },
+    policy_environment = {
+        "p_id": p_id,
+        "fam_id": fam_id,
+        "module_name": {
+            "betrag_double_m": betrag_double_m,
+            "max_betrag_double_m_fam": max_betrag_double_m_fam,
         },
-        params_tree={},
-    )
+    }
 
     actual = compute_taxes_and_transfers(
         data_tree=data,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"module_name": {"max_betrag_double_y_fam": None}},
         debug=False,
         jit=jit,
@@ -936,7 +887,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     def source() -> int:
         return np.array([100, 200, 300])
 
-    raw_objects_tree = merge_trees(
+    policy_environment = merge_trees(
         agg_functions,
         {
             "module": {leaf_name: source},
@@ -945,10 +896,9 @@ def test_user_provided_aggregate_by_p_id_specs(
         },
     )
 
-    environment = PolicyEnvironment(raw_objects_tree=raw_objects_tree, params_tree={})
     out = compute_taxes_and_transfers(
-        minimal_input_data_shared_fam,
-        environment,
+        data_tree=minimal_input_data_shared_fam,
+        policy_environment=policy_environment,
         targets_tree=target_tree,
         jit=jit,
     )["module"][next(iter(target_tree["module"].keys()))]
@@ -958,57 +908,52 @@ def test_user_provided_aggregate_by_p_id_specs(
 
 @pytest.mark.parametrize(
     (
-        "environment",
+        "policy_environment",
         "time_units",
         "expected",
     ),
     [
         (
-            PolicyEnvironment(
-                raw_objects_tree={
-                    "foo_m": policy_function(leaf_name="foo_m")(identity),
-                    "fam_id": fam_id,
-                },
-                params_tree={},
-            ),
+            {
+                "foo_m": policy_function(leaf_name="foo_m")(identity),
+                "fam_id": fam_id,
+            },
             ["m", "y"],
             {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
         ),
         (
-            PolicyEnvironment(
-                raw_objects_tree={
-                    "foo": policy_function(leaf_name="foo")(identity),
-                    "fam_id": fam_id,
-                },
-                params_tree={},
-            ),
+            {
+                "foo": policy_function(leaf_name="foo")(identity),
+                "fam_id": fam_id,
+            },
             ["m", "y"],
             {"foo", "foo_fam"},
         ),
     ],
 )
-def test_get_top_level_namespace(environment, time_units, expected):
+def test_get_top_level_namespace(policy_environment, time_units, expected):
     result = _get_top_level_namespace(
-        environment=environment,
+        policy_environment=policy_environment,
         time_units=time_units,
     )
     assert all(name in result for name in expected)
 
 
-def test_params_tree_is_processed():
-    params_tree = {
+def test_policy_environment_with_params_and_scalars_is_processed():
+    policy_environment = {
         "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
         "some_dict_param": SOME_DICT_PARAM,
         "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM,
-    }
-    param_functions = {
+        "some_int_scalar": 1,
+        "some_float_scalar": 2.0,
+        "some_bool_scalar": True,
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
+        "some_function_taking_scalar": some_function_taking_scalar,
     }
-    processed_params_tree = _process_params_tree(
-        params_tree=params_tree,
-        param_functions=param_functions,
+    processed_tree_with_params = column_functions_with_processed_params_and_scalars(
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=policy_environment,
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
@@ -1019,5 +964,9 @@ def test_params_tree_is_processed():
         "some_int_param": SOME_INT_PARAM.value,
         "some_dict_param": SOME_DICT_PARAM.value,
         "some_piecewise_polynomial_param": SOME_PIECEWISE_POLYNOMIAL_PARAM.value,
+        "some_int_scalar": 1,
+        "some_float_scalar": 2.0,
+        "some_bool_scalar": True,
+        "some_function_taking_scalar": 4.0,
     }
-    assert processed_params_tree == expected
+    assert processed_tree_with_params == expected

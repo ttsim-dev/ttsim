@@ -11,7 +11,6 @@ import yaml
 from _gettsim.config import GETTSIM_ROOT
 from _gettsim_tests import TEST_DIR
 from ttsim import (
-    PolicyEnvironment,
     compute_taxes_and_transfers,
     merge_trees,
     set_up_policy_environment,
@@ -27,17 +26,22 @@ if TYPE_CHECKING:
     import datetime
     from pathlib import Path
 
-    from ttsim.typing import DashedISOString, NestedData, NestedInputStructureDict
+    from ttsim.typing import (
+        DashedISOString,
+        NestedData,
+        NestedInputStructureDict,
+        NestedPolicyEnvironment,
+    )
 
 
 def cached_set_up_policy_environment(
     date: datetime.date | DashedISOString,
-) -> PolicyEnvironment:
+) -> NestedPolicyEnvironment:
     return _cached_set_up_policy_environment(to_datetime(date))
 
 
 @lru_cache(maxsize=100)
-def _cached_set_up_policy_environment(date: datetime.date) -> PolicyEnvironment:
+def _cached_set_up_policy_environment(date: datetime.date) -> NestedPolicyEnvironment:
     return set_up_policy_environment(date=date, root=GETTSIM_ROOT)
 
 
@@ -79,7 +83,7 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
     if targets_tree:
         result = compute_taxes_and_transfers(
             data_tree=data_tree,
-            environment=environment,
+            policy_environment=environment,
             targets_tree=targets_tree,
             jit=jit,
         )

@@ -39,10 +39,7 @@ def parent_is_noble() -> bool:
 
 
 @agg_by_group_function(agg_type=AggType.ANY)
-def parent_is_noble_fam(
-    parent_is_noble: bool,
-    fam_id: int,
-) -> bool:
+def parent_is_noble_fam(parent_is_noble: bool, fam_id: int) -> bool:
     pass
 
 

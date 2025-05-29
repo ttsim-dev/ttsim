@@ -20,7 +20,7 @@ def test_groupings(test: PolicyTest):
 
     result = compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=environment,
         targets_tree=test.target_structure,
     )
 

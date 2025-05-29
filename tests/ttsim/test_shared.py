@@ -51,7 +51,9 @@ class SampleDataClass:
 )
 def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     with pytest.raises(TypeError, match=re.escape(err_substr)):
-        assert_valid_ttsim_pytree(tree, leaf_checker, "tree")
+        assert_valid_ttsim_pytree(
+            tree=tree, leaf_checker=leaf_checker, tree_name="tree"
+        )
 
 
 @pytest.mark.parametrize(
