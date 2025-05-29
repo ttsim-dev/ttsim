@@ -311,10 +311,7 @@ def beitragssatz_arbeitgeber_jahresanfang_paritätischer_zusatzbeitrag(
 def zusatzbeitragssatz_von_sonderbeitrag(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
-    """Health insurance top-up (Zusatzbeitrag) rate until December 2014.
-
-    Note: Leave as policy function because it is overridden by Lohnsteuer tests.
-    """
+    """Health insurance top-up (Zusatzbeitrag) rate until December 2014."""
 
     return parameter_beitragssatz["sonderbeitrag"]
 
@@ -326,9 +323,6 @@ def zusatzbeitragssatz_von_sonderbeitrag(
 def zusatzbeitragssatz_von_mean_zusatzbeitrag(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
-    """Health insurance top-up rate (Zusatzbeitrag) since January 2015.
-
-    Note: Leave as policy function because it is overridden by Lohnsteuer tests.
-    """
+    """Health insurance top-up rate (Zusatzbeitrag) since January 2015."""
 
     return parameter_beitragssatz["mean_zusatzbeitrag"]
