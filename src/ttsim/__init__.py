@@ -41,8 +41,6 @@ from ttsim.plot_dag import plot_dag
 from ttsim.policy_environment import (
     OrigTreesWithFileNames,
     active_tree,
-    get_birth_month_based_phase_inout_param_value,
-    get_birth_year_based_phase_inout_param_value,
     get_consecutive_int_1d_lookup_table_param_value,
     get_consecutive_int_2d_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
