@@ -558,6 +558,7 @@ def test_fail_if_foreign_key_points_to_non_existing_p_id(
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         _fail_if_foreign_keys_are_invalid_in_data(
             data=data,
+            input_data={k: v for k, v in data.items() if k != "p_id"},
             flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
         )
 
@@ -571,6 +572,7 @@ def test_allow_minus_one_as_foreign_key(mettsim_environment: NestedPolicyEnviron
 
     _fail_if_foreign_keys_are_invalid_in_data(
         data=data,
+        input_data={k: v for k, v in data.items() if k != "p_id"},
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -586,6 +588,7 @@ def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(
 
     _fail_if_foreign_keys_are_invalid_in_data(
         data=data,
+        input_data={k: v for k, v in data.items() if k != "p_id"},
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -601,6 +604,7 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(
 
     _fail_if_foreign_keys_are_invalid_in_data(
         data=data,
+        input_data={k: v for k, v in data.items() if k != "p_id"},
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 

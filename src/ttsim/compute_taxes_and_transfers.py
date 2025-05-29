@@ -155,9 +155,9 @@ def compute_taxes_and_transfers(
         data=input_data,
         groupings=grouping_levels(policy_environment),
     )
-    _input_data_with_p_id = {"p_id": data_tree["p_id"], **input_data}
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=_input_data_with_p_id,
+        data=data,
+        input_data=input_data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=_flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
     if debug:
@@ -432,7 +432,7 @@ def _create_input_data_for_concatenated_function(
 
     1. Check that all root nodes are present in the user-provided data.
     2. Get only part of the data that is needed for the concatenated function.
-    3. Convert pandas.Series to numpy.array.
+    3. Convert inputs to np.array
 
     Parameters
     ----------
@@ -661,6 +661,7 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedData) -> None:
 
 def _fail_if_foreign_keys_are_invalid_in_data(
     data: QualNameData,
+    input_data: QualNameData,
     flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
 ) -> None:
     """
@@ -680,14 +681,14 @@ def _fail_if_foreign_keys_are_invalid_in_data(
     for fk_name, fk in relevant_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
-        elif fk_name in data:
+        elif fk_name in input_data:
             path = dt.tree_path_from_qual_name(fk_name)
             # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in data[fk_name].tolist()):
+            if not all(i in valid_ids for i in input_data[fk_name].tolist()):
                 message = format_errors_and_warnings(
                     f"""
                     For {path}, the following are not a valid p_id in the input
-                    data: {[i for i in data[fk_name] if i not in valid_ids]}.
+                    data: {[i for i in input_data[fk_name] if i not in valid_ids]}.
                     """
                 )
                 raise ValueError(message)
@@ -695,7 +696,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
             if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
                 equal_to_pid_in_same_row = [
                     i
-                    for i, j in zip(data[fk_name].tolist(), data["p_id"].tolist())
+                    for i, j in zip(input_data[fk_name].tolist(), data["p_id"].tolist())
                     if i == j
                 ]
                 if any(equal_to_pid_in_same_row):
