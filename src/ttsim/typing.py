@@ -25,8 +25,8 @@ if TYPE_CHECKING:
         ColumnFunction,
         ColumnObject,
         ParamFunction,
-        ParamObject,
     )
+    from ttsim.param_objects import ParamObject
 
     FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...], ColumnObject | ParamFunction

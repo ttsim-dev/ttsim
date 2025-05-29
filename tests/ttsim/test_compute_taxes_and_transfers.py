@@ -32,7 +32,7 @@ from ttsim.compute_taxes_and_transfers import (
     _fail_if_foreign_keys_are_invalid_in_data,
     _fail_if_group_variables_not_constant_within_groups,
     _fail_if_p_id_is_non_unique,
-    _fail_if_targets_not_in_policy_environment,
+    _fail_if_targets_not_in_policy_environment_or_data,
     _get_top_level_namespace,
     column_functions_with_processed_params_and_scalars,
     required_column_functions,
@@ -411,19 +411,22 @@ def test_create_agg_by_group_functions(
 
 
 @pytest.mark.parametrize(
-    "policy_environment, targets, expected_error_match",
+    "policy_environment, targets, data_columns, expected_error_match",
     [
-        ({"foo": some_x}, {"bar": None}, "('bar',)"),
-        ({"foo__baz": some_x}, {"foo__bar": None}, "('foo', 'bar')"),
+        ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
+        ({"foo": some_x}, {"bar": None}, {"spam"}, "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, {"spam"}, "('foo', 'bar')"),
     ],
 )
-def test__fail_if_function_targets_not_in_functions(
-    policy_environment, targets, expected_error_match
+def test_fail_if_targets_not_in_policy_environment_or_data(
+    policy_environment, targets, data_columns, expected_error_match
 ):
     with pytest.raises(ValueError) as e:
-        _fail_if_targets_not_in_policy_environment(
+        _fail_if_targets_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
             targets=targets,
+            data_columns=data_columns,
         )
     assert expected_error_match in str(e.value)
 

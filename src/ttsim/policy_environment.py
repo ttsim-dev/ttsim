@@ -53,10 +53,11 @@ if TYPE_CHECKING:
         NestedParamObjects,
         NestedPolicyEnvironment,
         OrigParamSpec,
+        QualNamePolicyEnvironment,
     )
 
 
-def grouping_levels(policy_environment: NestedPolicyEnvironment) -> tuple[str, ...]:
+def grouping_levels(policy_environment: QualNamePolicyEnvironment) -> tuple[str, ...]:
     """The grouping levels of the policy environment."""
     return tuple(
         name.rsplit("_", 1)[0]
@@ -89,6 +90,9 @@ def upsert_tree_into_policy_environment(
 
     tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
         tree_to_upsert
+    )
+    fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+        tree_to_upsert_with_correct_types
     )
 
     # Add functions tree to upsert to new functions tree
@@ -184,7 +188,6 @@ def convert_plain_functions_to_policy_functions(
         lambda leaf: _convert_to_policy_function_if_callable(leaf),
         tree,
     )
-    fail_if_name_of_last_branch_element_not_leaf_name_of_function(converted)
     return converted
 
 

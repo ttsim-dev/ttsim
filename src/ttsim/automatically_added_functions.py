@@ -405,7 +405,7 @@ def _convertibles(
         if isinstance(e, (ColumnObject, ScalarParam))
         or (
             isinstance(e, ParamFunction)
-            and e.function.__annotations__["return"] in {"float", "int", "bool"}
+            and e.function.__annotations__["return"] in {"float", "int"}
         )
     }
 

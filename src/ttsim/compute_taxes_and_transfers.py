@@ -378,16 +378,18 @@ def _add_derived_functions(
         **aggregate_by_group_functions,
     }
 
-    _fail_if_targets_not_in_policy_environment(
+    _fail_if_targets_not_in_policy_environment_or_data(
         policy_environment=out,
+        data_columns=data_columns,
         targets=targets,
     )
 
     return out
 
 
-def _fail_if_targets_not_in_policy_environment(
+def _fail_if_targets_not_in_policy_environment_or_data(
     policy_environment: QualNamePolicyEnvironment,
+    data_columns: QualNameDataColumns,
     targets: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
@@ -396,6 +398,8 @@ def _fail_if_targets_not_in_policy_environment(
     ----------
     functions
         Dictionary containing functions to build the DAG.
+    data_columns
+        The columns which are available in the data tree.
     targets
         The targets which should be computed. They limit the DAG in the way that only
         ancestors of these nodes need to be considered.
@@ -406,13 +410,13 @@ def _fail_if_targets_not_in_policy_environment(
         Raised if any member of `targets` is not among functions.
 
     """
-    targets_not_in_policy_environment = [
+    targets_not_in_policy_environment_or_data = [
         str(dt.tree_path_from_qual_name(n))
         for n in targets
-        if n not in policy_environment
+        if n not in policy_environment and n not in data_columns
     ]
-    if targets_not_in_policy_environment:
-        formatted = format_list_linewise(targets_not_in_policy_environment)
+    if targets_not_in_policy_environment_or_data:
+        formatted = format_list_linewise(targets_not_in_policy_environment_or_data)
         msg = format_errors_and_warnings(
             f"The following targets have no corresponding function:\n\n{formatted}"
         )
