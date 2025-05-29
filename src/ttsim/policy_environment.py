@@ -370,40 +370,6 @@ def _param_with_active_periods(
     return out
 
 
-class ConflictingActivePeriodsError(Exception):
-    def __init__(
-        self,
-        affected_column_objects: list[ColumnObject],
-        path: tuple[str, ...],
-        overlap_start: datetime.date,
-        overlap_end: datetime.date,
-    ) -> None:
-        self.affected_column_objects = affected_column_objects
-        self.path = path
-        self.overlap_start = overlap_start
-        self.overlap_end = overlap_end
-
-    def __str__(self) -> str:
-        overlapping_objects = [
-            obj.__getattribute__("original_function_name")
-            for obj in self.affected_column_objects
-            if obj
-        ]
-        return f"""
-        Functions with path
-
-          {self.path}
-
-        have overlapping start and end dates. The following functions are affected:
-
-          {
-            '''
-          '''.join(overlapping_objects)
-        }
-
-        Overlap from {self.overlap_start} to {self.overlap_end}."""
-
-
 def active_tree_with_params(
     orig_tree_with_params: FlatOrigParamSpecs,
     date: datetime.date,
@@ -737,3 +703,37 @@ def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
                 is not compatible with the PolicyFunction {function.leaf_name}.
                 """
             )
+
+
+class ConflictingActivePeriodsError(Exception):
+    def __init__(
+        self,
+        affected_column_objects: list[ColumnObject],
+        path: tuple[str, ...],
+        overlap_start: datetime.date,
+        overlap_end: datetime.date,
+    ) -> None:
+        self.affected_column_objects = affected_column_objects
+        self.path = path
+        self.overlap_start = overlap_start
+        self.overlap_end = overlap_end
+
+    def __str__(self) -> str:
+        overlapping_objects = [
+            obj.__getattribute__("original_function_name")
+            for obj in self.affected_column_objects
+            if obj
+        ]
+        return f"""
+        Functions with path
+
+          {self.path}
+
+        have overlapping start and end dates. The following functions are affected:
+
+          {
+            '''
+          '''.join(overlapping_objects)
+        }
+
+        Overlap from {self.overlap_start} to {self.overlap_end}."""

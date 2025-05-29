@@ -34,7 +34,7 @@ from ttsim.compute_taxes_and_transfers import (
     _fail_if_p_id_is_non_unique,
     _fail_if_targets_not_in_policy_environment,
     _get_top_level_namespace,
-    policy_environment_with_processed_params_and_scalars,
+    column_functions_with_processed_params_and_scalars,
     required_column_functions,
 )
 from ttsim.config import IS_JAX_INSTALLED
@@ -945,7 +945,7 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_converting_params_func": some_converting_params_func,
         "some_function_taking_scalar": some_function_taking_scalar,
     }
-    processed_tree_with_params = policy_environment_with_processed_params_and_scalars(
+    processed_tree_with_params = column_functions_with_processed_params_and_scalars(
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=policy_environment,
     )
     expected = {

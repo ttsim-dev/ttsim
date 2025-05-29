@@ -45,6 +45,7 @@ if TYPE_CHECKING:
         NestedPolicyEnvironment,
         NestedTargetDict,
         QualNameColumnFunctions,
+        QualNameColumnFunctionsWithProcessedParamsAndScalars,
         QualNameData,
         QualNameDataColumns,
         QualNamePolicyEnvironment,
@@ -124,11 +125,11 @@ def compute_taxes_and_transfers(
             top_level_namespace=top_level_namespace,
         )
     )
-    _policy_environment_with_processed_params_and_scalars = policy_environment_with_processed_params_and_scalars(
+    _column_functions_and_processed_params_and_scalars = column_functions_with_processed_params_and_scalars(
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=_flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
     _required_column_functions = required_column_functions(
-        policy_environment_with_processed_params_and_scalars=_policy_environment_with_processed_params_and_scalars,
+        policy_environment_with_processed_params_and_scalars=_column_functions_and_processed_params_and_scalars,
         rounding=rounding,
     )
     # Super-ugly, will be refactored
@@ -185,13 +186,13 @@ def compute_taxes_and_transfers(
         }
         tax_transfer_function = functools.partial(tax_transfer_function, **static_args)
         tax_transfer_function = jax.jit(tax_transfer_function)
-    results = tax_transfer_function(**input_data)
+    column_results = tax_transfer_function(**input_data)
 
     results_tree = dt.unflatten_from_qual_names(
         {
-            **results,
+            **column_results,
             **{
-                pt: _policy_environment_with_processed_params_and_scalars[pt]
+                pt: _column_functions_and_processed_params_and_scalars[pt]
                 for pt in set(dt.qual_names(targets_tree)) - set(function_targets)
             },
         }
@@ -462,9 +463,17 @@ def _create_input_data_for_concatenated_function(
     return {k: np.array(v) for k, v in data.items() if k in root_nodes}
 
 
-def policy_environment_with_processed_params_and_scalars(
+def _apply_rounding(element: Any) -> Any:
+    return (
+        element.rounding_spec.apply_rounding(element)
+        if getattr(element, "rounding_spec", False)
+        else element
+    )
+
+
+def column_functions_with_processed_params_and_scalars(
     flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
-) -> QualNamePolicyEnvironment:
+) -> QualNameColumnFunctionsWithProcessedParamsAndScalars:
     """Process the parameters and param functions, remove RawParams from the tree."""
     params = {
         k: v
@@ -509,39 +518,8 @@ def policy_environment_with_processed_params_and_scalars(
     }
 
 
-def _apply_rounding(
-    qual_name_policy_environment: QualNamePolicyEnvironment,
-) -> QualNamePolicyEnvironment:
-    """Add appropriate rounding of outputs to function.
-
-    Parameters
-    ----------
-    qual_name_policy_environment
-        Policy environment to which rounding should be applied.
-
-    Returns
-    -------
-    Policy environment with rounding added.
-
-    """
-    return {
-        name: element.rounding_spec.apply_rounding(element)
-        if getattr(element, "rounding_spec", False)
-        else element
-        for name, element in qual_name_policy_environment.items()
-    }
-
-
-def _apply_rounding_to_one_element(element: Any) -> Any:
-    return (
-        element.rounding_spec.apply_rounding(element)
-        if getattr(element, "rounding_spec", False)
-        else element
-    )
-
-
 def required_column_functions(
-    policy_environment_with_processed_params_and_scalars: QualNameProcessedPolicyEnvironment,
+    policy_environment_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
     rounding: bool,
 ) -> QualNameColumnFunctions:
     """Partial parameters to functions such that they disappear from the DAG.
@@ -562,7 +540,7 @@ def required_column_functions(
     processed_functions = {}
     for name, _func in policy_environment_with_processed_params_and_scalars.items():
         if isinstance(_func, ColumnFunction):
-            func = _apply_rounding_to_one_element(_func) if rounding else _func
+            func = _apply_rounding(_func) if rounding else _func
             partial_params = {}
             for arg in [
                 a
