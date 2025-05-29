@@ -30,7 +30,6 @@ from ttsim.automatically_added_functions import (
     y_to_q,
     y_to_w,
 )
-from ttsim.config import numpy_or_jax as np
 
 
 def return_one() -> int:
@@ -293,7 +292,7 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 name: policy_function(leaf_name=name)(return_one)
             },
-            data={},
+            data_columns=set(),
             groupings=("sn", "kin"),
         )
 
@@ -305,7 +304,7 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 "test1_d": policy_function(leaf_name="test1_d")(return_one)
             },
-            data={"test2_y": None},
+            data_columns={"test2_y"},
             groupings=("sn", "kin"),
         )
 
@@ -319,7 +318,7 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 "test_d": policy_function(leaf_name="test_d")(return_one)
             },
-            data={"test_y": None},
+            data_columns={"test_y"},
             groupings=("sn", "kin"),
         )
 
@@ -352,7 +351,7 @@ def test_should_not_create_cycle():
 
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
-        data={},
+        data_columns=set(),
         groupings=(),
     )
 
@@ -363,26 +362,26 @@ def test_should_not_create_cycle():
     (
         "column_functions",
         "targets",
-        "data",
+        "data_columns",
         "expected",
     ),
     [
         (
             {"foo": policy_function(leaf_name="foo")(return_x_kin)},
             {},
-            {"x": np.asarray([1])},
+            {"x"},
             ("x_kin"),
         ),
         (
             {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
             {},
-            {"n1__x": np.asarray([1])},
+            {"n1__x"},
             ("n1__x_kin"),
         ),
         (
             {},
             {"x_kin": None},
-            {"x": np.asarray([1])},
+            {"x"},
             ("x_kin"),
         ),
     ],
@@ -390,7 +389,7 @@ def test_should_not_create_cycle():
 def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
     targets,
-    data,
+    data_columns,
     expected,
 ):
     """Test that the derived aggregation functions are in the correct namespace.
@@ -400,7 +399,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     """
     result = create_agg_by_group_functions(
         column_functions=column_functions,
-        data=data,
+        data_columns=data_columns,
         targets=targets,
         groupings=("kin",),
     )

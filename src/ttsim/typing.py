@@ -28,6 +28,10 @@ if TYPE_CHECKING:
         ParamObject,
     )
 
+    FlatColumnObjectsParamFunctions = Mapping[
+        tuple[str, ...], ColumnObject | ParamFunction
+    ]
+    """Mapping of flat paths to column objects or param functions."""
     NestedInputs = Mapping[str, str | bool | int | float | "NestedInputs"]
     """Tree mapping TTSIM paths to df columns or constants."""
     NestedStrings = Mapping[str, str | "NestedStrings"]
@@ -36,6 +40,8 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to data (1-d arrays)."""
     QualNameData = Mapping[str, TTSIMArray]
     """Mapping of qualified name paths to data (1-d arrays)."""
+    QualNameDataColumns = set[str]
+    """The set of data columns, represented by qualified names."""
     NestedAnyTTSIMObject = Mapping[
         str,
         ColumnObject
@@ -59,20 +65,8 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to column objects, param functions, param objects."""
     QualNamePolicyEnvironment = Mapping[str, ColumnObject | ParamFunction | ParamObject]
     """Tree mapping TTSIM paths to column objects, param functions, param objects."""
-    FlatColumnObjectsParamFunctions = Mapping[
-        tuple[str, ...], ColumnObject | ParamFunction
-    ]
-    """Mapping of flat paths to column objects or param functions."""
     QualNameColumnObjectsParamFunctions = Mapping[str, ColumnObject | ParamFunction]
     """Mapping of qualified name paths to column objects or param functions."""
-    NestedColumnObjects = Mapping[str, ColumnObject | "NestedColumnObjects"]
-    """Tree mapping TTSIM paths to column objects."""
-    FlatColumnObjects = Mapping[tuple[str, ...], ColumnObject]
-    """Mapping of flat paths to column objects."""
-    QualNameColumnObjects = Mapping[str, ColumnObject]
-    """Mapping of qualified name paths to column objects."""
-    NestedColumnFunctions = Mapping[str, ColumnFunction | "NestedColumnFunctions"]
-    """Tree mapping TTSIM paths to functions operating on columns of data."""
     QualNameColumnFunctions = Mapping[str, ColumnFunction]
     """Mapping of qualified name paths to functions operating on columns of data."""
     OrigParamSpec = (

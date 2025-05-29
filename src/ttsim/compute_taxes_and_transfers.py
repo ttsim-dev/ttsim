@@ -45,8 +45,8 @@ if TYPE_CHECKING:
         NestedPolicyEnvironment,
         NestedTargetDict,
         QualNameColumnFunctions,
-        QualNameColumnObjectsParamFunctions,
         QualNameData,
+        QualNameDataColumns,
         QualNamePolicyEnvironment,
         QualNameTargetList,
     )
@@ -110,25 +110,25 @@ def compute_taxes_and_transfers(
         top_level_namespace=top_level_namespace,
     )
     data = dt.flatten_to_qual_names(data_tree)
+    data_columns = set(data.keys())
+    warn_if_elements_overridden_by_data(
+        policy_environment=policy_environment,
+        data_columns=data_columns,
+    )
 
-    _policy_environment_with_derived_functions = (
-        policy_environment_with_derived_functions(
+    _flat_policy_environment_with_derived_functions_and_without_overridden_functions = (
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions(
             data=data,
             policy_environment=policy_environment,
             targets_tree=targets_tree,
             top_level_namespace=top_level_namespace,
         )
     )
-    warn_if_functions_overridden_by_data(
-        policy_environment_with_derived_functions=_policy_environment_with_derived_functions,
-        data_tree=data_tree,
-    )
     _policy_environment_with_processed_params_and_scalars = policy_environment_with_processed_params_and_scalars(
-        policy_environment_with_derived_functions=_policy_environment_with_derived_functions,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=_flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
     _required_column_functions = required_column_functions(
         policy_environment_with_processed_params_and_scalars=_policy_environment_with_processed_params_and_scalars,
-        data=data,
         rounding=rounding,
     )
     # Super-ugly, will be refactored
@@ -137,7 +137,8 @@ def compute_taxes_and_transfers(
     param_targets = [
         t
         for t in set(all_targets) - set(function_targets)
-        if t in _policy_environment_with_derived_functions
+        if t
+        in _flat_policy_environment_with_derived_functions_and_without_overridden_functions
     ]
     # Will just return these.
     own_targets = set(all_targets) - set(function_targets) - set(param_targets)  # noqa: F841
@@ -156,11 +157,8 @@ def compute_taxes_and_transfers(
     _input_data_with_p_id = {"p_id": data_tree["p_id"], **input_data}
     _fail_if_foreign_keys_are_invalid_in_data(
         data=_input_data_with_p_id,
-        column_objects_param_functions=_policy_environment_with_derived_functions,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=_flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
-    function_targets = [
-        t for t in dt.qual_names(targets_tree) if t in _required_column_functions
-    ]
     if debug:
         function_targets = sorted(_required_column_functions.keys())
 
@@ -208,9 +206,9 @@ def compute_taxes_and_transfers(
     return results_tree
 
 
-def policy_environment_with_derived_functions(
+def flat_policy_environment_with_derived_functions_and_without_overridden_functions(
     policy_environment: NestedPolicyEnvironment,
-    data: QualNameData,
+    data: QualNameDataColumns,
     targets_tree: NestedTargetDict,
     top_level_namespace: set[str],
 ) -> QualNamePolicyEnvironment:
@@ -219,18 +217,29 @@ def policy_environment_with_derived_functions(
     Three steps:
     1. Remove all tree logic from the policy environment.
     2. Add derived functions to the policy environment.
+    3. Remove all functions that are overridden by data columns.
 
     """
     flat = remove_tree_logic_from_policy_environment(
         policy_environment=policy_environment,
         top_level_namespace=top_level_namespace,
     )
-    return add_derived_functions(
+    flat_with_derived = _add_derived_functions(
         qual_name_policy_environment=flat,
         targets=dt.qual_names(targets_tree),
-        data=data,
+        data_columns=set(data.keys()),
         groupings=grouping_levels(policy_environment),
     )
+    out = {}
+    for n, f in flat_with_derived.items():
+        # Put scalar data into the policy environment, else skip the key
+        if n in data:
+            if isinstance(data[n], int | float | bool):
+                out[n] = data[n]
+        else:
+            out[n] = f
+
+    return out
 
 
 def _get_top_level_namespace(
@@ -306,10 +315,10 @@ def remove_tree_logic_from_policy_environment(
     return out
 
 
-def add_derived_functions(
+def _add_derived_functions(
     qual_name_policy_environment: QualNamePolicyEnvironment,
     targets: QualNameTargetList,
-    data: QualNameData,
+    data_columns: QualNameDataColumns,
     groupings: tuple[str, ...],
 ) -> QualNameColumnFunctions:
     """Return a mapping of qualified names to functions operating on columns.
@@ -343,7 +352,7 @@ def add_derived_functions(
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment=qual_name_policy_environment,
-        data=data,
+        data_columns=data_columns,
         groupings=groupings,
     )
     column_functions = {
@@ -358,7 +367,7 @@ def add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
-        data=data,
+        data_columns=data_columns,
         targets=targets,
         groupings=groupings,
     )
@@ -454,22 +463,22 @@ def _create_input_data_for_concatenated_function(
 
 
 def policy_environment_with_processed_params_and_scalars(
-    policy_environment_with_derived_functions: QualNamePolicyEnvironment,
+    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
 ) -> QualNamePolicyEnvironment:
     """Process the parameters and param functions, remove RawParams from the tree."""
     params = {
         k: v
-        for k, v in policy_environment_with_derived_functions.items()
+        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
         if isinstance(v, ParamObject)
     }
     scalars = {
         k: v
-        for k, v in policy_environment_with_derived_functions.items()
+        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
         if isinstance(v, float | int | bool)
     }
     param_functions = {
         k: v
-        for k, v in policy_environment_with_derived_functions.items()
+        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
         if isinstance(v, ParamFunction)
     }
     # Construct a function for the processing of all params.
@@ -493,7 +502,7 @@ def policy_environment_with_processed_params_and_scalars(
     return {
         **{
             k: v
-            for k, v in policy_environment_with_derived_functions.items()
+            for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
             if not isinstance(v, RawParam)
         },
         **processed_params,
@@ -533,7 +542,6 @@ def _apply_rounding_to_one_element(element: Any) -> Any:
 
 def required_column_functions(
     policy_environment_with_processed_params_and_scalars: QualNameProcessedPolicyEnvironment,
-    data: QualNameData,
     rounding: bool,
 ) -> QualNameColumnFunctions:
     """Partial parameters to functions such that they disappear from the DAG.
@@ -551,33 +559,28 @@ def required_column_functions(
     Functions tree with parameters partialled.
 
     """
-    # rounded = _apply_rounding(policy_environment_with_processed_params_and_scalars) if rounding else policy_environment_with_processed_params_and_scalars
     processed_functions = {}
-    # By rounding we loose the ColumnFunction wrapper, so loop over the original env.
-    for name, _func in {
-        n: f
-        for n, f in policy_environment_with_processed_params_and_scalars.items()
-        if isinstance(f, ColumnFunction) and n not in data
-    }.items():
-        func = _apply_rounding_to_one_element(_func) if rounding else _func
-        partial_params = {}
-        for arg in [
-            a
-            for a in get_free_arguments(func)
-            if not isinstance(
-                policy_environment_with_processed_params_and_scalars.get(
-                    a, _DUMMY_COLUMN_OBJECT
-                ),
-                ColumnObject,
-            )
-        ]:
-            partial_params[arg] = policy_environment_with_processed_params_and_scalars[
-                arg
-            ]
-        if partial_params:
-            processed_functions[name] = functools.partial(func, **partial_params)
-        else:
-            processed_functions[name] = func
+    for name, _func in policy_environment_with_processed_params_and_scalars.items():
+        if isinstance(_func, ColumnFunction):
+            func = _apply_rounding_to_one_element(_func) if rounding else _func
+            partial_params = {}
+            for arg in [
+                a
+                for a in get_free_arguments(func)
+                if not isinstance(
+                    policy_environment_with_processed_params_and_scalars.get(
+                        a, _DUMMY_COLUMN_OBJECT
+                    ),
+                    ColumnObject,
+                )
+            ]:
+                partial_params[arg] = (
+                    policy_environment_with_processed_params_and_scalars[arg]
+                )
+            if partial_params:
+                processed_functions[name] = functools.partial(func, **partial_params)
+            else:
+                processed_functions[name] = func
 
     return processed_functions
 
@@ -676,7 +679,7 @@ def _fail_if_p_id_is_non_unique(data_tree: NestedData) -> None:
 
 def _fail_if_foreign_keys_are_invalid_in_data(
     data: QualNameData,
-    column_objects_param_functions: QualNameColumnObjectsParamFunctions,
+    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -688,7 +691,7 @@ def _fail_if_foreign_keys_are_invalid_in_data(
     valid_ids = set(data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
-        for k, v in column_objects_param_functions.items()
+        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
         if isinstance(v, PolicyInput | ColumnFunction)
     }
 
@@ -723,16 +726,16 @@ def _fail_if_foreign_keys_are_invalid_in_data(
                     raise ValueError(message)
 
 
-def warn_if_functions_overridden_by_data(
-    policy_environment_with_derived_functions: QualNamePolicyEnvironment,
-    data_tree: NestedData,
+def warn_if_elements_overridden_by_data(
+    policy_environment: NestedPolicyEnvironment,
+    data_columns: QualNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""
     overridden_elements = sorted(
         {
             col
-            for col in dt.flatten_to_qual_names(data_tree)
-            if col in policy_environment_with_derived_functions
+            for col in data_columns
+            if col in dt.flatten_to_qual_names(policy_environment)
         }
     )
     if len(overridden_elements) > 0:

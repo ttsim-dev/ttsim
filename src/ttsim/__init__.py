@@ -20,7 +20,7 @@ from ttsim.column_objects_param_function import (
 )
 from ttsim.compute_taxes_and_transfers import (
     FunctionsAndDataOverlapWarning,
-    add_derived_functions,
+    _add_derived_functions,
     compute_taxes_and_transfers,
 )
 from ttsim.param_objects import (
@@ -79,8 +79,8 @@ __all__ = [
     "RoundingSpec",
     "ScalarParam",
     "TimeConversionFunction",
+    "_add_derived_functions",
     "active_tree",
-    "add_derived_functions",
     "agg_by_group_function",
     "agg_by_p_id_function",
     "compute_taxes_and_transfers",

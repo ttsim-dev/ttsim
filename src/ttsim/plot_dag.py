@@ -16,7 +16,7 @@ from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
 from ttsim.compute_taxes_and_transfers import (
-    add_derived_functions,
+    _add_derived_functions,
     required_column_functions,
 )
 from ttsim.shared import (
@@ -82,7 +82,7 @@ def plot_dag(
         names_of_columns_overriding_functions = columns_overriding_functions
 
     # Load functions.
-    all_functions = add_derived_functions(
+    all_functions = _add_derived_functions(
         environment=policy_environment,
         targets=targets,
         data=names_of_columns_overriding_functions,

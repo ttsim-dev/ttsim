@@ -221,7 +221,6 @@ func_after_partial = required_column_functions(
         "some_func": func_before_partial,
         "some_param": SOME_INT_PARAM.value,
     },
-    data={"arg_1": np.array([1])},
     rounding=False,
 )["some_func"]
 
@@ -555,7 +554,8 @@ def test_fail_if_foreign_key_points_to_non_existing_p_id(
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         _fail_if_foreign_keys_are_invalid_in_data(
-            data=data, column_objects_param_functions=flat_objects_tree
+            data=data,
+            flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
         )
 
 
@@ -567,7 +567,8 @@ def test_allow_minus_one_as_foreign_key(mettsim_environment: NestedPolicyEnviron
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, column_objects_param_functions=flat_objects_tree
+        data=data,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
 
@@ -581,7 +582,8 @@ def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, column_objects_param_functions=flat_objects_tree
+        data=data,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
 
@@ -595,7 +597,8 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(
     }
 
     _fail_if_foreign_keys_are_invalid_in_data(
-        data=data, column_objects_param_functions=flat_objects_tree
+        data=data,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
 
@@ -943,7 +946,7 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_function_taking_scalar": some_function_taking_scalar,
     }
     processed_tree_with_params = policy_environment_with_processed_params_and_scalars(
-        policy_environment_with_derived_functions=policy_environment,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=policy_environment,
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
