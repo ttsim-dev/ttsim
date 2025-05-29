@@ -517,14 +517,18 @@ def get_one_param(  # noqa: PLR0911
             cleaned_spec["value"]
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "birth_month_based_phase_inout":
-        cleaned_spec["value"] = get_birth_month_based_phase_inout_param_value(
-            cleaned_spec["value"]
+    elif spec["type"] == "month_based_phase_inout_of_age_thresholds":
+        cleaned_spec["value"] = (
+            get_month_based_phase_inout_of_age_thresholds_param_value(
+                cleaned_spec["value"]
+            )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "birth_year_based_phase_inout":
-        cleaned_spec["value"] = get_birth_year_based_phase_inout_param_value(
-            cleaned_spec["value"]
+    elif spec["type"] == "year_based_phase_inout_of_age_thresholds":
+        cleaned_spec["value"] = (
+            get_year_based_phase_inout_of_age_thresholds_param_value(
+                cleaned_spec["value"]
+            )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "require_converter":
@@ -646,10 +650,10 @@ def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
     return r["years"] + r["months"] / 12
 
 
-def get_birth_month_based_phase_inout_param_value(
+def get_month_based_phase_inout_of_age_thresholds_param_value(
     raw: dict[str | int, Any],
 ) -> dict[int, float]:
-    """Get the parameters for birth month-based phase-in.
+    """Get the parameters for month-based phase-in/phase-out of age thresholds.
 
     Fills up months for which no parameters are given with the last given value.
     """
@@ -671,29 +675,23 @@ def get_birth_month_based_phase_inout_param_value(
                 lookup_table[m] = lookup_table[m - 1]
         return lookup_table
 
-    first_m_since_ad_to_consider = _m_since_ad(
-        y=raw.pop("first_birthyear_to_consider"), m=1
-    )
-    last_m_since_ad_to_consider = _m_since_ad(
-        y=raw.pop("last_birthyear_to_consider"), m=12
-    )
+    first_m_since_ad_to_consider = _m_since_ad(y=raw.pop("first_year_to_consider"), m=1)
+    last_m_since_ad_to_consider = _m_since_ad(y=raw.pop("last_year_to_consider"), m=12)
     assert all(isinstance(k, int) for k in raw)
-    first_birthyear_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
-    first_birthmonth_phase_inout: int = min(raw[first_birthyear_phase_inout].keys())
+    first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
+    first_month_phase_inout: int = min(raw[first_year_phase_inout].keys())
     first_m_since_ad_phase_inout = _m_since_ad(
-        y=first_birthyear_phase_inout, m=first_birthmonth_phase_inout
+        y=first_year_phase_inout, m=first_month_phase_inout
     )
-    last_birthyear_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
-    last_birthmonth_phase_inout: int = max(raw[last_birthyear_phase_inout].keys())
+    last_year_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
+    last_month_phase_inout: int = max(raw[last_year_phase_inout].keys())
     last_m_since_ad_phase_inout = _m_since_ad(
-        y=last_birthyear_phase_inout, m=last_birthmonth_phase_inout
+        y=last_year_phase_inout, m=last_month_phase_inout
     )
     assert first_m_since_ad_to_consider <= first_m_since_ad_phase_inout
     assert last_m_since_ad_to_consider >= last_m_since_ad_phase_inout
     before_phase_inout: dict[int, float] = {
-        b_m: _year_fraction(
-            raw[first_birthyear_phase_inout][first_birthmonth_phase_inout]
-        )
+        b_m: _year_fraction(raw[first_year_phase_inout][first_month_phase_inout])
         for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_inout)
     }
     during_phase_inout: dict[int, float] = _fill_phase_inout(
@@ -702,9 +700,7 @@ def get_birth_month_based_phase_inout_param_value(
         last_m_since_ad_phase_inout=last_m_since_ad_phase_inout,
     )
     after_phase_inout: dict[int, float] = {
-        b_m: _year_fraction(
-            raw[last_birthyear_phase_inout][last_birthmonth_phase_inout]
-        )
+        b_m: _year_fraction(raw[last_year_phase_inout][last_month_phase_inout])
         for b_m in range(
             last_m_since_ad_phase_inout + 1, last_m_since_ad_to_consider + 1
         )
@@ -714,32 +710,32 @@ def get_birth_month_based_phase_inout_param_value(
     )
 
 
-def get_birth_year_based_phase_inout_param_value(
+def get_year_based_phase_inout_of_age_thresholds_param_value(
     raw: dict[str | int, Any],
 ) -> dict[int, float]:
-    """Get the parameters for birth year-based phase-in.
+    """Get the parameters for year-based phase-in/phase-out of age thresholds.
 
-    Requires all birth years to be given.
+    Requires all years to be given.
     """
 
-    first_birthyear_to_consider = raw.pop("first_birthyear_to_consider")
-    last_birthyear_to_consider = raw.pop("last_birthyear_to_consider")
+    first_year_to_consider = raw.pop("first_year_to_consider")
+    last_year_to_consider = raw.pop("last_year_to_consider")
     assert all(isinstance(k, int) for k in raw)
-    first_birthyear_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
-    last_birthyear_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
-    assert first_birthyear_to_consider <= first_birthyear_phase_inout
-    assert last_birthyear_to_consider >= last_birthyear_phase_inout
+    first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
+    last_year_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
+    assert first_year_to_consider <= first_year_phase_inout
+    assert last_year_to_consider >= last_year_phase_inout
     before_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[first_birthyear_phase_inout])
-        for b_y in range(first_birthyear_to_consider, first_birthyear_phase_inout)
+        b_y: _year_fraction(raw[first_year_phase_inout])
+        for b_y in range(first_year_to_consider, first_year_phase_inout)
     }
     during_phase_inout: dict[int, float] = {
         b_y: _year_fraction(raw[b_y])  # type: ignore[misc]
         for b_y in raw
     }
     after_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[last_birthyear_phase_inout])
-        for b_y in range(last_birthyear_phase_inout + 1, last_birthyear_to_consider + 1)
+        b_y: _year_fraction(raw[last_year_phase_inout])
+        for b_y in range(last_year_phase_inout + 1, last_year_to_consider + 1)
     }
     return get_consecutive_int_1d_lookup_table_param_value(
         {**before_phase_inout, **during_phase_inout, **after_phase_inout}
