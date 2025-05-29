@@ -44,7 +44,7 @@ altersgrenze_gestaffelt:
       is higher or lower unless special regulations apply.
   unit: Years
   reference_period: null
-  type: birth_year_based_phase_inout
+  type: year_based_phase_inout_of_age_thresholds
   2007-04-20:
     reference: RV-Altersgrenzenanpassungsgesetz 20.04.2007. BGBl. I S. 554
     note: >-
@@ -52,8 +52,8 @@ altersgrenze_gestaffelt:
       Vertrauensschutz (Art. 56) applies for birth cohorts before 1955 who were in
       Altersteilzeit before January 1st, 2007 or received "Anpassungsgeld für
       entlassene Arbeitnehmer des Bergbaus".
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 2031
+    first_year_to_consider: 1900
+    last_year_to_consider: 2031
     1946:
       years: 65
       months: 0

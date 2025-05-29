@@ -22,6 +22,7 @@ from ttsim.piecewise_polynomial import (
 )
 
 if TYPE_CHECKING:
+    from ttsim import ConsecutiveInt1dLookupTableParamValue
     from ttsim.typing import RawParam
 
 
@@ -163,18 +164,17 @@ def betrag_ohne_kinderfreibetrag_y_sn(
     )
 
 
-@policy_function(
-    end_date="2022-12-31",
-    leaf_name="relevantes_kindergeld_m",
-    vectorization_strategy="loop",
-)
+@policy_function(end_date="2022-12-31", leaf_name="relevantes_kindergeld_m")
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld__satz_gestaffelt: dict[int, float],
+    kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
+
+    Note: It doesn't matter which parent actually receives the Kindergeld. For income
+    tax purposes, only the eligibility to claim Kindergeld is relevant.
 
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."
@@ -182,15 +182,12 @@ def relevantes_kindergeld_mit_staffelung_m(
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
 
-    if kindergeld_ansprüche == 0:
-        relevantes_kindergeld = 0.0
-    else:
-        relevantes_kindergeld = sum(
-            kindergeld__satz_gestaffelt[(min(i, max(kindergeld__satz_gestaffelt)))]
-            for i in range(1, kindergeld_ansprüche + 1)
-        )
-
-    return relevantes_kindergeld / 2
+    return (
+        kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
+            kindergeld_ansprüche - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
+        ]
+        / 2
+    )
 
 
 @policy_function(
@@ -204,6 +201,9 @@ def relevantes_kindergeld_ohne_staffelung_m(
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
+
+    Note: It doesn't matter which parent actually receives the Kindergeld. For income
+    tax purposes, only the eligibility to claim Kindergeld is relevant.
 
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."

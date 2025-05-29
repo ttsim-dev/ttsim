@@ -2,7 +2,7 @@
 info:
   note: ''
   precision_atol: 0.01
-  source: Own calculations
+  source: Regression test.
 inputs:
   assumed:
     geburtsjahr:

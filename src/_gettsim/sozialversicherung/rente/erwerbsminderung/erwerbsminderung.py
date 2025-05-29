@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ttsim import policy_function
+
+if TYPE_CHECKING:
+    from ttsim import ConsecutiveInt1dLookupTableParamValue
 
 
 @policy_function(start_date="2001-01-01", end_date="2023-06-30", leaf_name="betrag_m")
@@ -139,8 +144,41 @@ def entgeltpunkte_ost(
     )
 
 
-@policy_function(start_date="2001-01-01")
-def zurechnungszeit(
+@policy_function(
+    start_date="2000-12-23", end_date="2014-06-30", leaf_name="zurechnungszeit"
+)
+def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
+    mean_entgeltpunkte_pro_bewertungsmonat: float,
+    sozialversicherung__rente__alter_bei_renteneintritt: float,
+    sozialversicherung__rente__jahr_renteneintritt: int,
+    sozialversicherung__rente__monat_renteneintritt: int,
+    zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+) -> float:
+    """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
+
+    Provides the Entgeltpunkt-basis for calculation of the Erwerbsminderungsrente.
+
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "zurechnungszeitgrenze".
+    """
+    claiming_month_since_ad = (
+        sozialversicherung__rente__jahr_renteneintritt * 12
+        + sozialversicherung__rente__monat_renteneintritt
+    )
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
+        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
+    ]
+    return (
+        altersgrenze_zurechnungszeit
+        - (sozialversicherung__rente__alter_bei_renteneintritt)
+    ) * mean_entgeltpunkte_pro_bewertungsmonat
+
+
+@policy_function(
+    start_date="2014-07-01", end_date="2017-07-16", leaf_name="zurechnungszeit"
+)
+def zurechnungszeit_mit_einheitlicher_altersgrenze(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     zurechnungszeitgrenze: float,
@@ -155,6 +193,35 @@ def zurechnungszeit(
     """
     return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
+    ) * mean_entgeltpunkte_pro_bewertungsmonat
+
+
+@policy_function(start_date="2017-07-17", leaf_name="zurechnungszeit")
+def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
+    mean_entgeltpunkte_pro_bewertungsmonat: float,
+    sozialversicherung__rente__alter_bei_renteneintritt: float,
+    sozialversicherung__rente__jahr_renteneintritt: int,
+    sozialversicherung__rente__monat_renteneintritt: int,
+    zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+) -> float:
+    """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
+
+    Provides the Entgeltpunkt-basis for calculation of the Erwerbsminderungsrente.
+
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "zurechnungszeitgrenze".
+    """
+    claiming_month_since_ad = (
+        sozialversicherung__rente__jahr_renteneintritt * 12
+        + sozialversicherung__rente__monat_renteneintritt
+    )
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
+        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
+    ]
+    return (
+        altersgrenze_zurechnungszeit
+        - (sozialversicherung__rente__alter_bei_renteneintritt)
     ) * mean_entgeltpunkte_pro_bewertungsmonat
 
 
@@ -173,11 +240,42 @@ def rentenartfaktor(
         return parameter_rentenartfaktor["voll"]
 
 
-@policy_function(start_date="2001-01-01")
-def zugangsfaktor(
+@policy_function(end_date="2011-12-31", leaf_name="zugangsfaktor")
+def zugangsfaktor_ohne_gestaffelte_altersgrenze(
+    sozialversicherung__rente__alter_bei_renteneintritt: float,
+    altersgrenze: float,
+    min_zugangsfaktor: float,
+    sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
+        str, float
+    ],
+) -> float:
+    """Zugangsfaktor.
+
+    For each month that a pensioner retires before the age limit, a fraction of the
+    pension is deducted. The maximum deduction is capped. This max deduction is the norm
+    for the public disability insurance.
+
+    Legal reference: § 77 Abs. 2-4  SGB VI
+    """
+    zugangsfaktor = (
+        1
+        + (sozialversicherung__rente__alter_bei_renteneintritt - altersgrenze)
+        * (
+            sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr[
+                "vorzeitiger_renteneintritt"
+            ]
+        )
+    )
+    return max(zugangsfaktor, min_zugangsfaktor)
+
+
+@policy_function(start_date="2012-01-01", leaf_name="zugangsfaktor")
+def zugangsfaktor_mit_gestaffelter_altersgrenze(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     wartezeit_langjährig_versichert_erfüllt: bool,
-    altersgrenze_allgemein: float,
+    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    sozialversicherung__rente__jahr_renteneintritt: int,
+    sozialversicherung__rente__monat_renteneintritt: int,
     altersgrenze_langjährig_versichert: float,
     min_zugangsfaktor: float,
     sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
@@ -196,15 +294,21 @@ def zugangsfaktor(
     63 without deductions if they can prove 40 years of (Pflichtbeiträge,
     Berücksichtigungszeiten and certain Anrechnungszeiten or Ersatzzeiten).
     """
+    claiming_month_since_ad = (
+        sozialversicherung__rente__jahr_renteneintritt * 12
+        + sozialversicherung__rente__monat_renteneintritt
+    )
 
     if wartezeit_langjährig_versichert_erfüllt:
-        altersgrenze = altersgrenze_langjährig_versichert
+        grenze_abschlagsfrei = altersgrenze_langjährig_versichert
     else:
-        altersgrenze = altersgrenze_allgemein
+        grenze_abschlagsfrei = altersgrenze_gestaffelt.values_to_look_up[
+            claiming_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
+        ]
 
     zugangsfaktor = (
         1
-        + (sozialversicherung__rente__alter_bei_renteneintritt - altersgrenze)
+        + (sozialversicherung__rente__alter_bei_renteneintritt - grenze_abschlagsfrei)
         * (
             sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr[
                 "vorzeitiger_renteneintritt"

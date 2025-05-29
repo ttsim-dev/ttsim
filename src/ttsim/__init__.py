@@ -45,6 +45,8 @@ from ttsim.policy_environment import (
     get_birth_year_based_phase_inout_param_value,
     get_consecutive_int_1d_lookup_table_param_value,
     get_consecutive_int_2d_lookup_table_param_value,
+    get_month_based_phase_inout_of_age_thresholds_param_value,
+    get_year_based_phase_inout_of_age_thresholds_param_value,
     set_up_policy_environment,
 )
 from ttsim.prepare_data import create_data_tree_from_df
@@ -86,11 +88,11 @@ __all__ = [
     "compute_taxes_and_transfers",
     "create_data_tree_from_df",
     "create_time_conversion_functions",
-    "get_birth_month_based_phase_inout_param_value",
-    "get_birth_year_based_phase_inout_param_value",
     "get_consecutive_int_1d_lookup_table_param_value",
     "get_consecutive_int_2d_lookup_table_param_value",
+    "get_month_based_phase_inout_of_age_thresholds_param_value",
     "get_piecewise_parameters",
+    "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
     "insert_path_and_value",
     "join",

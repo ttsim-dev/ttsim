@@ -2,24 +2,20 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
-from ttsim.config import numpy_or_jax as np
+from typing import TYPE_CHECKING
+
+from ttsim import piecewise_polynomial, policy_function
+
+if TYPE_CHECKING:
+    from ttsim import PiecewisePolynomialParam
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def pauschbetrag_behinderung_y(
-    behinderungsgrad: int, parameter_behindertenpauschbetrag: dict[int, float]
+    behinderungsgrad: int, parameter_behindertenpauschbetrag: PiecewisePolynomialParam
 ) -> float:
     """Assign tax deduction allowance for handicaped to different handicap degrees."""
-
-    # Get disability degree thresholds
-    bins = sorted(parameter_behindertenpauschbetrag)
-
-    # Select corresponding bin.
-    selected_bin_index = (
-        np.searchsorted(np.asarray([*bins, np.inf]), behinderungsgrad, side="right") - 1
+    return piecewise_polynomial(
+        x=behinderungsgrad,
+        parameters=parameter_behindertenpauschbetrag,
     )
-    selected_bin = bins[selected_bin_index]
-
-    # Select appropriate pauschbetrag.
-    return parameter_behindertenpauschbetrag[selected_bin]
