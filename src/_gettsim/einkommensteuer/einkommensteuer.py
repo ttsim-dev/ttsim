@@ -182,14 +182,12 @@ def relevantes_kindergeld_mit_staffelung_m(
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
 
-    if kindergeld_ansprüche == 0:
-        relevantes_kindergeld = 0.0
-    else:
-        relevantes_kindergeld = kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
+    return (
+        kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
             kindergeld_ansprüche - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
         ]
-
-    return relevantes_kindergeld / 2
+        / 2
+    )
 
 
 @policy_function(

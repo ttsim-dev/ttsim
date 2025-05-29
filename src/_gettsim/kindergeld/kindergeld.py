@@ -51,15 +51,9 @@ def betrag_gestaffelt_m(
     being claimed for.
 
     """
-
-    if anzahl_ansprüche == 0:
-        sum_kindergeld = 0.0
-    else:
-        sum_kindergeld = satz_nach_anzahl_kinder.values_to_look_up[
-            anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract
-        ]
-
-    return sum_kindergeld
+    return satz_nach_anzahl_kinder.values_to_look_up[
+        anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract
+    ]
 
 
 @policy_function(
@@ -159,5 +153,5 @@ def satz_nach_anzahl_kinder(
         for k in range(max_num_children_in_spec + 1, max_num_children)
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        {**base_spec, **extended_spec}
+        {0: 0.0, **base_spec, **extended_spec}
     )

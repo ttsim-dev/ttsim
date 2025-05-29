@@ -22,8 +22,8 @@ def altersfreibetrag_y_bis_2004(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y: float,
     altersentlastungsbetrag_altersgrenze: int,
-    maximaler_altersentlastungsbetrag_einheitlich: float,
-    altersentlastungsquote_einheitlich: float,
+    maximaler_altersentlastungsbetrag: float,
+    altersentlastungsquote: float,
 ) -> float:
     """Calculate tax deduction allowance for elderly until 2004."""
     altersgrenze = altersentlastungsbetrag_altersgrenze
@@ -35,12 +35,12 @@ def altersfreibetrag_y_bis_2004(
     )
     if alter > altersgrenze:
         out = min(
-            altersentlastungsquote_einheitlich
+            altersentlastungsquote
             * (
                 einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
                 + weiteres_einkommen
             ),
-            maximaler_altersentlastungsbetrag_einheitlich,
+            maximaler_altersentlastungsbetrag,
         )
     else:
         out = 0.0
@@ -62,9 +62,11 @@ def altersfreibetrag_y_ab_2005(
     altersentlastungsquote_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Calculate tax deduction allowance for elderly since 2005."""
-    betrag_max = maximaler_altersentlastungsbetrag_gestaffelt.values_to_look_up[
-        geburtsjahr - maximaler_altersentlastungsbetrag_gestaffelt.base_to_subtract
-    ]
+    maximaler_altersentlastungsbetrag = (
+        maximaler_altersentlastungsbetrag_gestaffelt.values_to_look_up[
+            geburtsjahr - maximaler_altersentlastungsbetrag_gestaffelt.base_to_subtract
+        ]
+    )
 
     einkommen_lohn = (
         0
@@ -82,7 +84,7 @@ def altersfreibetrag_y_ab_2005(
     ] * (einkommen_lohn + weiteres_einkommen)
 
     if alter > altersentlastungsbetrag_altersgrenze:
-        out = min(betrag, betrag_max)
+        out = min(betrag, maximaler_altersentlastungsbetrag)
     else:
         out = 0.0
 

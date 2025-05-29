@@ -18,7 +18,7 @@ altersentlastungsbetrag_altersgrenze:
   type: scalar
   1984-01-01:
     value: 64
-maximaler_altersentlastungsbetrag_einheitlich:
+maximaler_altersentlastungsbetrag:
   name:
     de: Höchstbetrag des Altersentlastungsbetrags
     en: Maximum Amount of Tax Credit for older employees.
@@ -90,7 +90,7 @@ raw_maximaler_altersentlastungsbetrag_gestaffelt:
     1973: 76
     1974: 38
     1975: 0
-altersentlastungsquote_einheitlich:
+altersentlastungsquote:
   name:
     de: Anteil des Altersentlastungsbetrags
     en: Income share deducted for older employees.
