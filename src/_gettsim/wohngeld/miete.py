@@ -172,7 +172,6 @@ def min_miete_m_hh(
     start_date="1984-01-01",
     end_date="2008-12-31",
     leaf_name="miete_m_hh",
-    
 )
 def miete_m_hh_mit_baujahr(
     mietstufe: np.ndarray,
@@ -192,10 +191,20 @@ def miete_m_hh_mit_baujahr(
         wohnen__baujahr_immobilie_hh,
         side="left",
     )
-    full_lookup_table = np.stack([max_miete_m_lookup[key].values_to_look_up for key in keys], axis=0)
-    full_lookup_col_substract = np.asarray([max_miete_m_lookup[key].base_to_subtract_cols for key in keys])
-    full_lookup_row_substract = np.asarray([max_miete_m_lookup[key].base_to_subtract_rows for key in keys])
-    max_miete_m = full_lookup_table[selected_bin_index, anzahl_personen_hh - full_lookup_row_substract[selected_bin_index], mietstufe - full_lookup_col_substract[selected_bin_index]]
+    full_lookup_table = np.stack(
+        [max_miete_m_lookup[key].values_to_look_up for key in keys], axis=0
+    )
+    full_lookup_col_substract = np.asarray(
+        [max_miete_m_lookup[key].base_to_subtract_cols for key in keys]
+    )
+    full_lookup_row_substract = np.asarray(
+        [max_miete_m_lookup[key].base_to_subtract_rows for key in keys]
+    )
+    max_miete_m = full_lookup_table[
+        selected_bin_index,
+        anzahl_personen_hh - full_lookup_row_substract[selected_bin_index],
+        mietstufe - full_lookup_col_substract[selected_bin_index],
+    ]
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
 

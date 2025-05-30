@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import datetime
 
-from ttsim.config import numpy_or_jax as np
-
 from ttsim import policy_function
+from ttsim.config import numpy_or_jax as np
 
 
 @policy_function()
