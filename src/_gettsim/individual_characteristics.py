@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import datetime
 
-import numpy
+from ttsim.config import numpy_or_jax as np
 
 from ttsim import policy_function
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def geburtsdatum(
     geburtsjahr: int,
     geburtsmonat: int,
     geburtstag: int,
-) -> numpy.datetime64:
+) -> np.datetime64:
     """Create date of birth datetime variable."""
-    return numpy.datetime64(
+    return np.datetime64(
         datetime.datetime(
             geburtsjahr,
             geburtsmonat,

@@ -172,28 +172,30 @@ def min_miete_m_hh(
     start_date="1984-01-01",
     end_date="2008-12-31",
     leaf_name="miete_m_hh",
-    vectorization_strategy="loop",
+    
 )
 def miete_m_hh_mit_baujahr(
-    mietstufe: int,
-    wohnen__baujahr_immobilie_hh: int,
-    anzahl_personen_hh: int,
-    wohnen__bruttokaltmiete_m_hh: float,
-    min_miete_m_hh: float,
+    mietstufe: np.ndarray,
+    wohnen__baujahr_immobilie_hh: np.ndarray,
+    anzahl_personen_hh: np.ndarray,
+    wohnen__bruttokaltmiete_m_hh: np.ndarray,
+    min_miete_m_hh: np.ndarray,
     max_miete_m_lookup: dict[int, ConsecutiveInt2dLookupTableParamValue],
-) -> float:
+) -> np.ndarray:
     """Rent considered in housing benefit calculation on household level until 2008."""
+
+    # TODO(@mj023): Use N-dimensional Lookup Table once available
+
+    keys = sorted(max_miete_m_lookup.keys())
     selected_bin_index = np.searchsorted(
-        np.asarray(sorted(max_miete_m_lookup.keys())),
+        np.asarray(keys),
         wohnen__baujahr_immobilie_hh,
         side="left",
     )
-    constr_year = list(max_miete_m_lookup.keys())[selected_bin_index]
-    lookup = max_miete_m_lookup[constr_year]
-    max_miete_m = lookup.values_to_look_up[
-        anzahl_personen_hh - lookup.base_to_subtract_rows,
-        mietstufe - lookup.base_to_subtract_cols,
-    ]
+    full_lookup_table = np.stack([max_miete_m_lookup[key].values_to_look_up for key in keys], axis=0)
+    full_lookup_col_substract = np.asarray([max_miete_m_lookup[key].base_to_subtract_cols for key in keys])
+    full_lookup_row_substract = np.asarray([max_miete_m_lookup[key].base_to_subtract_rows for key in keys])
+    max_miete_m = full_lookup_table[selected_bin_index, anzahl_personen_hh - full_lookup_row_substract[selected_bin_index], mietstufe - full_lookup_col_substract[selected_bin_index]]
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
 
