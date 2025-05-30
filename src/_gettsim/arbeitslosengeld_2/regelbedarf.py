@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import param_function, policy_function
+from ttsim import param_function, policy_function, get_consecutive_int_1d_lookup_table_param_value, ConsecutiveInt1dLookupTableParamValue
 
 if TYPE_CHECKING:
     from ttsim.typing import RawParam
@@ -25,7 +25,7 @@ def regelbedarf_m(
     return regelsatz_m + kosten_der_unterkunft_m
 
 
-@policy_function(start_date="2005-01-01", vectorization_strategy="loop")
+@policy_function(start_date="2005-01-01")
 def mehrbedarf_alleinerziehend_m(
     familie__alleinerziehend: bool,
     anzahl_kinder_fg: int,
@@ -55,7 +55,8 @@ def mehrbedarf_alleinerziehend_m(
                         "kind_bis_6_oder_mehrere_bis_15"
                     ]
                     if (anzahl_kinder_bis_6_fg >= 1)
-                    or (2 <= anzahl_kinder_bis_15_fg <= 3)
+                    or anzahl_kinder_bis_15_fg == 2
+                    or anzahl_kinder_bis_15_fg == 3
                     else 0.0
                 ),
             ),
@@ -303,7 +304,7 @@ def anerkannte_warmmiete_je_qm_m(
     return min(out, mietobergrenze_pro_qm)
 
 
-@policy_function(vectorization_strategy="loop", start_date="2005-01-01")
+@policy_function(start_date="2005-01-01")
 def berechtigte_wohnfläche(
     wohnfläche: float,
     wohnen__bewohnt_eigentum_hh: bool,
@@ -317,8 +318,8 @@ def berechtigte_wohnfläche(
     """
     if wohnen__bewohnt_eigentum_hh:
         if anzahl_personen_hh <= berechtigte_wohnfläche_eigentum.max_anzahl_direkt:
-            maximum = berechtigte_wohnfläche_eigentum.anzahl_personen_zu_fläche[
-                anzahl_personen_hh
+            maximum = berechtigte_wohnfläche_eigentum.anzahl_personen_zu_fläche.values_to_look_up[
+                min(anzahl_personen_hh, berechtigte_wohnfläche_eigentum.max_anzahl_direkt) - berechtigte_wohnfläche_eigentum.anzahl_personen_zu_fläche.base_to_subtract
             ]
         else:
             maximum = (
@@ -506,7 +507,7 @@ def regelsatz_nach_regelbedarfsstufen(
 
 @dataclass(frozen=True)
 class BerechtigteWohnflächeEigentum:
-    anzahl_personen_zu_fläche: dict[int, float]
+    anzahl_personen_zu_fläche: ConsecutiveInt1dLookupTableParamValue
     je_weitere_person: float
     max_anzahl_direkt: int
 
@@ -517,12 +518,12 @@ def berechtigte_wohnfläche_eigentum(
 ) -> BerechtigteWohnflächeEigentum:
     """Berechtigte Wohnfläche für Eigenheim."""
     return BerechtigteWohnflächeEigentum(
-        anzahl_personen_zu_fläche={
+        anzahl_personen_zu_fläche=get_consecutive_int_1d_lookup_table_param_value({
             1: parameter_berechtigte_wohnfläche_eigentum[1],
             2: parameter_berechtigte_wohnfläche_eigentum[2],
             3: parameter_berechtigte_wohnfläche_eigentum[3],
             4: parameter_berechtigte_wohnfläche_eigentum[4],
-        },
+        }),
         je_weitere_person=parameter_berechtigte_wohnfläche_eigentum[
             "je_weitere_person"
         ],
