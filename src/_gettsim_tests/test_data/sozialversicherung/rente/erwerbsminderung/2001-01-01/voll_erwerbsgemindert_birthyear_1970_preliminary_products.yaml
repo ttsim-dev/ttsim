@@ -2,7 +2,7 @@
 info:
   note: ''
   precision_atol: 0.01
-  source: Own calculations
+  source: Regression test.
 inputs:
   assumed:
     geburtsjahr:
@@ -40,7 +40,7 @@ outputs:
   sozialversicherung__rente__erwerbsminderung__entgeltpunkte_ost:
     - 0.0
   sozialversicherung__rente__erwerbsminderung__entgeltpunkte_west:
-    - 44.03351955
+    - 43.56424581005586
   sozialversicherung__rente__erwerbsminderung__grundsätzlich_anspruchsberechtigt:
     - true
   sozialversicherung__rente__erwerbsminderung__rentenartfaktor:

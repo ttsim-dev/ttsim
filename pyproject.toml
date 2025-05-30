@@ -256,6 +256,7 @@ extend-ignore = [
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
+"src/ttsim/compute_taxes_and_transfers.py" = ["E501"]
 "src/ttsim/functions/all_functions_for_docs.py" = ["F401", "E501", "F403"]
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
@@ -354,7 +355,7 @@ filterwarnings = [
     "ignore:The TerminalReporter.writer attribute is",
     "ignore:Repeated execution of the test suite",
     "ignore:Using or importing the ABCs from 'collections'",
-    "ignore::ttsim.compute_taxes_and_transfers.FunctionsAndColumnsOverlapWarning"
+    "ignore::ttsim.compute_taxes_and_transfers.FunctionsAndDataOverlapWarning"
 ]
 markers = [
     "wip: Tests that are work-in-progress.",

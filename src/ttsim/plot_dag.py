@@ -16,8 +16,8 @@ from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
 from ttsim.compute_taxes_and_transfers import (
-    _partial_params_to_functions,
-    combine_policy_functions_and_derived_functions,
+    _add_derived_functions,
+    required_column_functions,
 )
 from ttsim.shared import (
     format_list_linewise,
@@ -25,11 +25,11 @@ from ttsim.shared import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.policy_environment import PolicyEnvironment
+    from ttsim.typing import NestedPolicyEnvironment
 
 
 def plot_dag(
-    environment: PolicyEnvironment,
+    policy_environment: NestedPolicyEnvironment,
     targets=None,
     columns_overriding_functions=None,
     selectors=None,
@@ -82,8 +82,8 @@ def plot_dag(
         names_of_columns_overriding_functions = columns_overriding_functions
 
     # Load functions.
-    all_functions = combine_policy_functions_and_derived_functions(
-        environment=environment,
+    all_functions = _add_derived_functions(
+        environment=policy_environment,
         targets=targets,
         data=names_of_columns_overriding_functions,
     )
@@ -106,8 +106,8 @@ def plot_dag(
         input_structure=input_structure,
     )
 
-    processed_params_tree = _process_params_tree(  # noqa: F821
-        params_tree=environment.params_tree,
+    processed_tree_with_params = _process_tree_with_params(  # noqa: F821
+        tree_with_params=policy_environment.tree_with_params,
         param_functions={
             k: v
             for k, v in column_objects_param_functions.items()  # noqa: F821
@@ -115,9 +115,9 @@ def plot_dag(
         },
     )
 
-    processed_functions = _partial_params_to_functions(
-        functions=functions_with_rounding_specs,  # noqa: F821
-        processed_params=processed_params_tree,
+    processed_functions = required_column_functions(
+        policy_environment_with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
+        processed_params=processed_tree_with_params,
     )
 
     input_structure = dt.create_tree_with_input_types(

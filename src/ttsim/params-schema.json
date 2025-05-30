@@ -49,8 +49,8 @@
             "piecewise_cubic",
             "consecutive_int_1d_lookup_table",
             "consecutive_int_2d_lookup_table",
-            "birth_month_based_phase_inout",
-            "birth_year_based_phase_inout",
+            "month_based_phase_inout_of_age_thresholds",
+            "year_based_phase_inout_of_age_thresholds",
             "require_converter"
           ]
         },

@@ -19,8 +19,8 @@ from ttsim.column_objects_param_function import (
     policy_input,
 )
 from ttsim.compute_taxes_and_transfers import (
-    FunctionsAndColumnsOverlapWarning,
-    combine_policy_functions_and_derived_functions,
+    FunctionsAndDataOverlapWarning,
+    _add_derived_functions,
     compute_taxes_and_transfers,
 )
 from ttsim.param_objects import (
@@ -39,11 +39,12 @@ from ttsim.piecewise_polynomial import (
 )
 from ttsim.plot_dag import plot_dag
 from ttsim.policy_environment import (
-    PolicyEnvironment,
-    get_birth_month_based_phase_inout_param_value,
-    get_birth_year_based_phase_inout_param_value,
+    OrigTreesWithFileNames,
+    active_tree,
     get_consecutive_int_1d_lookup_table_param_value,
     get_consecutive_int_2d_lookup_table_param_value,
+    get_month_based_phase_inout_of_age_thresholds_param_value,
+    get_year_based_phase_inout_of_age_thresholds_param_value,
     set_up_policy_environment,
 )
 from ttsim.prepare_data import create_data_tree_from_df
@@ -65,30 +66,31 @@ __all__ = [
     "ConsecutiveInt2dLookupTableParamValue",
     "DictParam",
     "FKType",
-    "FunctionsAndColumnsOverlapWarning",
+    "FunctionsAndDataOverlapWarning",
     "GroupCreationFunction",
+    "OrigTreesWithFileNames",
     "ParamFunction",
     "ParamObject",
     "PiecewisePolynomialParam",
     "PiecewisePolynomialParamValue",
-    "PolicyEnvironment",
     "PolicyFunction",
     "PolicyInput",
     "RawParam",
     "RoundingSpec",
     "ScalarParam",
     "TimeConversionFunction",
+    "_add_derived_functions",
+    "active_tree",
     "agg_by_group_function",
     "agg_by_p_id_function",
-    "combine_policy_functions_and_derived_functions",
     "compute_taxes_and_transfers",
     "create_data_tree_from_df",
     "create_time_conversion_functions",
-    "get_birth_month_based_phase_inout_param_value",
-    "get_birth_year_based_phase_inout_param_value",
     "get_consecutive_int_1d_lookup_table_param_value",
     "get_consecutive_int_2d_lookup_table_param_value",
+    "get_month_based_phase_inout_of_age_thresholds_param_value",
     "get_piecewise_parameters",
+    "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
     "insert_path_and_value",
     "join",

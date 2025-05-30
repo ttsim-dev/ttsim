@@ -62,7 +62,7 @@ def execute_test(test: PolicyTest, jit: bool = False) -> None:
     if targets_tree:
         result = compute_taxes_and_transfers(
             data_tree=data_tree,
-            environment=environment,
+            policy_environment=environment,
             targets_tree=targets_tree,
             jit=jit,
         )
