@@ -50,7 +50,7 @@ def anspruchshöhe_m(
 
 
 @policy_function(
-    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+    start_date="2004-01-01", end_date="2008-12-31"
 )
 def betrag_m(
     anspruchshöhe_m: int,
@@ -61,7 +61,7 @@ def betrag_m(
     Legal reference: BErzGG (BGBl. I 1985 S. 2154; BGBl. I 2004 S. 206)
     """
     if grundsätzlich_anspruchsberechtigt:
-        out: float = anspruchshöhe_m
+        out = anspruchshöhe_m
     else:
         out = 0.0
 
@@ -256,7 +256,7 @@ def anzurechnendes_einkommen_y(
 
 
 @policy_function(
-    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+    start_date="2004-01-01", end_date="2008-12-31"
 )
 def einkommensgrenze_y(
     einkommensgrenze_ohne_geschwisterbonus: float,
@@ -279,7 +279,7 @@ def einkommensgrenze_y(
 
 
 @policy_function(
-    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+    start_date="2004-01-01", end_date="2008-12-31"
 )
 def einkommensgrenze_ohne_geschwisterbonus(
     alter_monate: int,
@@ -299,7 +299,7 @@ def einkommensgrenze_ohne_geschwisterbonus(
 
 
 @policy_function(
-    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+    start_date="2004-01-01", end_date="2008-12-31"
 )
 def einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze(
     familie__alleinerziehend_fg: bool,
@@ -321,7 +321,7 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze(
 
 
 @policy_function(
-    start_date="2004-01-01", end_date="2008-12-31", vectorization_strategy="loop"
+    start_date="2004-01-01", end_date="2008-12-31"
 )
 def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
     familie__alleinerziehend_fg: bool,

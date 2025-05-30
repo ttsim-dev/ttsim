@@ -34,7 +34,7 @@ def betrag_m(
     return out
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def monate_verbleibender_anspruchsdauer(
     alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
@@ -55,6 +55,7 @@ def monate_verbleibender_anspruchsdauer(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
         parameters=anspruchsdauer_nach_versicherungspflichtigen_monaten,
     )
+    anspruchsdauer_gesamt = 0
     if anwartschaftszeit:
         anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
 
@@ -91,7 +92,7 @@ def grundsätzlich_anspruchsberechtigt(
     )
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
@@ -115,7 +116,7 @@ def einkommen_vorjahr_proxy_m(
     # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale not being
     # the same as zu versteuerndes einkommen
     # waiting for PR Lohnsteuer #150 to be merged to correct this problem
-    prox_tax = einkommensteuertarif(
+    prox_tax = piecewise_polynomial(
         12 * max_wage
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
         einkommensteuer__parameter_einkommensteuertarif,
