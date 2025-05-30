@@ -5,7 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import param_function, policy_function, get_consecutive_int_1d_lookup_table_param_value, ConsecutiveInt1dLookupTableParamValue
+from ttsim import (
+    ConsecutiveInt1dLookupTableParamValue,
+    get_consecutive_int_1d_lookup_table_param_value,
+    param_function,
+    policy_function,
+)
 
 if TYPE_CHECKING:
     from ttsim.typing import RawParam
@@ -319,7 +324,11 @@ def berechtigte_wohnfläche(
     if wohnen__bewohnt_eigentum_hh:
         if anzahl_personen_hh <= berechtigte_wohnfläche_eigentum.max_anzahl_direkt:
             maximum = berechtigte_wohnfläche_eigentum.anzahl_personen_zu_fläche.values_to_look_up[
-                min(anzahl_personen_hh, berechtigte_wohnfläche_eigentum.max_anzahl_direkt) - berechtigte_wohnfläche_eigentum.anzahl_personen_zu_fläche.base_to_subtract
+                min(
+                    anzahl_personen_hh,
+                    berechtigte_wohnfläche_eigentum.max_anzahl_direkt,
+                )
+                - berechtigte_wohnfläche_eigentum.anzahl_personen_zu_fläche.base_to_subtract
             ]
         else:
             maximum = (
@@ -518,12 +527,14 @@ def berechtigte_wohnfläche_eigentum(
 ) -> BerechtigteWohnflächeEigentum:
     """Berechtigte Wohnfläche für Eigenheim."""
     return BerechtigteWohnflächeEigentum(
-        anzahl_personen_zu_fläche=get_consecutive_int_1d_lookup_table_param_value({
-            1: parameter_berechtigte_wohnfläche_eigentum[1],
-            2: parameter_berechtigte_wohnfläche_eigentum[2],
-            3: parameter_berechtigte_wohnfläche_eigentum[3],
-            4: parameter_berechtigte_wohnfläche_eigentum[4],
-        }),
+        anzahl_personen_zu_fläche=get_consecutive_int_1d_lookup_table_param_value(
+            {
+                1: parameter_berechtigte_wohnfläche_eigentum[1],
+                2: parameter_berechtigte_wohnfläche_eigentum[2],
+                3: parameter_berechtigte_wohnfläche_eigentum[3],
+                4: parameter_berechtigte_wohnfläche_eigentum[4],
+            }
+        ),
         je_weitere_person=parameter_berechtigte_wohnfläche_eigentum[
             "je_weitere_person"
         ],
