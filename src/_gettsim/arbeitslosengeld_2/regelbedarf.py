@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from ttsim import param_function, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParam
+    from ttsim import RawParam
 
 
 @policy_function(start_date="2005-01-01")
