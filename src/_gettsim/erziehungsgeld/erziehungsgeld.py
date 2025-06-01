@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 
+from _gettsim.param_types import EinkommensgrenzeErziehungsgeld
 from ttsim import (
     AggType,
     RoundingSpec,
@@ -12,16 +12,6 @@ from ttsim import (
     param_function,
     policy_function,
 )
-
-ErziehungsgeldSätze = Literal["regelsatz", "budgetsatz"]
-
-
-@dataclass(frozen=True)
-class EinkommensgrenzeErziehungsgeld:
-    regulär_alleinerziehend: dict[ErziehungsgeldSätze, float]
-    regulär_paar: dict[ErziehungsgeldSätze, float]
-    reduziert_alleinerziehend: dict[ErziehungsgeldSätze, float]
-    reduziert_paar: dict[ErziehungsgeldSätze, float]
 
 
 @param_function(

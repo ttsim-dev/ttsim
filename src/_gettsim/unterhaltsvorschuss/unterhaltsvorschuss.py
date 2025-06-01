@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from _gettsim.param_types import Altersgrenzen, SatzMitAltersgrenzen
 from ttsim import (
     AggType,
     RoundingSpec,
@@ -208,7 +208,7 @@ def anspruchshöhe_m_anwendungsvors(
 def anspruchshöhe_m_2016_bis_2017_06(
     alter: int,
     kindergeld_erstes_kind_m: float,
-    mindestunterhalt_nach_alter: dict[str, Mindestunterhalt],
+    mindestunterhalt_nach_alter: dict[str, SatzMitAltersgrenzen],
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
 
@@ -243,7 +243,7 @@ def anspruchshöhe_m_ab_2017_07(
     alter: int,
     elternteil_mindesteinkommen_erreicht: bool,
     kindergeld_erstes_kind_m: float,
-    mindestunterhalt_nach_alter: dict[str, Mindestunterhalt],
+    mindestunterhalt_nach_alter: dict[str, SatzMitAltersgrenzen],
 ) -> float:
     """Claim for advance on alimony payment (Unterhaltsvorschuss) on child level.
 
@@ -350,22 +350,22 @@ def berechtigte_altersgruppen(
 @param_function(start_date="2016-01-01")
 def mindestunterhalt_nach_alter(
     raw_mindestunterhalt: RawParam,
-) -> dict[str, Mindestunterhalt]:
-    kleinkind = Mindestunterhalt(
+) -> dict[str, SatzMitAltersgrenzen]:
+    kleinkind = SatzMitAltersgrenzen(
         satz=raw_mindestunterhalt["kleinkind"]["satz"],
         altersgrenzen=Altersgrenzen(
             min_alter=raw_mindestunterhalt["kleinkind"]["min_alter"],
             max_alter=raw_mindestunterhalt["kleinkind"]["max_alter"],
         ),
     )
-    schulkind = Mindestunterhalt(
+    schulkind = SatzMitAltersgrenzen(
         satz=raw_mindestunterhalt["schulkind"]["satz"],
         altersgrenzen=Altersgrenzen(
             min_alter=raw_mindestunterhalt["schulkind"]["min_alter"],
             max_alter=raw_mindestunterhalt["schulkind"]["max_alter"],
         ),
     )
-    jugendliche = Mindestunterhalt(
+    jugendliche = SatzMitAltersgrenzen(
         satz=raw_mindestunterhalt["jugendliche"]["satz"],
         altersgrenzen=Altersgrenzen(
             min_alter=raw_mindestunterhalt["jugendliche"]["min_alter"],
@@ -377,15 +377,3 @@ def mindestunterhalt_nach_alter(
         "schulkind": schulkind,
         "jugendliche": jugendliche,
     }
-
-
-@dataclass(frozen=True)
-class Altersgrenzen:
-    min_alter: int
-    max_alter: int
-
-
-@dataclass(frozen=True)
-class Mindestunterhalt:
-    satz: float
-    altersgrenzen: Altersgrenzen
