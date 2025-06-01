@@ -53,8 +53,7 @@ def minijobgrenze_abgeleitet_von_mindestlohn(
     mindestlohn: float,
     faktoren_minijobformel: dict[str, float],
 ) -> float:
-    """Minijob income threshold since 10/2022. Since then, it is calculated endogenously
-    from the statutory minimum wage.
+    """Minijob income threshold, derived from the statutory minimum wage.
 
     Rounding according to § 8 Abs. 1a Satz 2 SGB IV.
     """
