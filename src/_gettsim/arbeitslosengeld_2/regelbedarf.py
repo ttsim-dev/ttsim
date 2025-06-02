@@ -59,7 +59,7 @@ def mehrbedarf_alleinerziehend_m(
                     parameter_mehrbedarf_alleinerziehend[
                         "kind_bis_6_oder_mehrere_bis_15"
                     ]
-                    if (anzahl_kinder_bis_6_fg >= 1)
+                    if (anzahl_kinder_bis_6_fg >= 1)  # noqa: PLR1714
                     or anzahl_kinder_bis_15_fg == 2
                     or anzahl_kinder_bis_15_fg == 3
                     else 0.0

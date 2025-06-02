@@ -64,7 +64,6 @@ def einkommen_m(
         base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
     ),
     start_date="2021-01-01",
-    vectorization_strategy="loop",
 )
 def anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
@@ -88,14 +87,16 @@ def anzurechnendes_einkommen_m(
     # Note: Thresholds are defined relativ to rentenwert which is implemented by
     # dividing the income by rentenwert and multiply rentenwert to the result.
     if familie__anzahl_personen_ehe == 2:
-        params = anzurechnendes_einkommen_mit_partner
+        out = sozialversicherung__rente__altersrente__rentenwert * piecewise_polynomial(
+            x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
+            parameters=anzurechnendes_einkommen_mit_partner,
+        )
     else:
-        params = anzurechnendes_einkommen_ohne_partner
-
-    return sozialversicherung__rente__altersrente__rentenwert * piecewise_polynomial(
-        x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
-        parameters=params,
-    )
+        out = sozialversicherung__rente__altersrente__rentenwert * piecewise_polynomial(
+            x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
+            parameters=anzurechnendes_einkommen_ohne_partner,
+        )
+    return out
 
 
 @policy_function(
@@ -185,7 +186,6 @@ def höchstbetrag_m(
         reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
-    vectorization_strategy="loop",
 )
 def mean_entgeltpunkte_zuschlag(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
@@ -202,7 +202,7 @@ def mean_entgeltpunkte_zuschlag(
 
     Legal reference: § 76g SGB VI
     """
-
+    out = 0.0
     # Return 0 if Grundrentenzeiten below minimum
     if grundrentenzeiten_monate < berücksichtigte_wartezeit_monate["min"]:
         out = 0.0
