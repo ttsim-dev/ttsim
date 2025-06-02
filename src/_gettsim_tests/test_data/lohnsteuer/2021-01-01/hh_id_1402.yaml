@@ -26,7 +26,7 @@ inputs:
       - 0.0148
     sozialversicherung__pflege__beitrag__hat_kinder:
       - false
-    sozialversicherung__pflege__beitrag__zusatzbetrag_kinderlos:
+    sozialversicherung__pflege__beitrag__zahlt_zusatzbetrag_kinderlos:
       - true
     sozialversicherung__regulär_beschäftigt:
       - true

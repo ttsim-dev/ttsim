@@ -110,7 +110,7 @@ inputs:
       - false
       - false
       - false
-    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__ertragsanteil_an_rente:
       - 0.0
       - 0.0
       - 0.0
@@ -119,6 +119,14 @@ inputs:
       - 0.0
       - 0.0
     elterngeld__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    elterngeld__anrechenbarer_betrag_m:
       - 0.0
       - 0.0
       - 0.0
@@ -378,11 +386,11 @@ outputs:
   bg_id:
     - 0
     - 0
-    - 100
-    - 200
-    - 200
-    - 300
-    - 300
+    - 1
+    - 2
+    - 2
+    - 3
+    - 3
   arbeitslosengeld_2__bruttokaltmiete_m_wthh:
     - 514.29
     - 514.29

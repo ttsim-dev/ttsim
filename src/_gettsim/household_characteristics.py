@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim import AggType, agg_by_group_function, policy_function
 
 
@@ -22,17 +24,5 @@ def anzahl_personen_hh(hh_id: int) -> int:
 def erwachsene_alle_rentenbezieher_hh(
     anzahl_erwachsene_hh: int, anzahl_rentenbezieher_hh: int
 ) -> bool:
-    """Calculate if all adults in the household are pensioners.
-
-    Parameters
-    ----------
-    anzahl_erwachsene_hh
-        See :func:`anzahl_erwachsene_hh`.
-    anzahl_rentenbezieher_hh
-        See :func:`anzahl_rentenbezieher_hh`.
-
-    Returns
-    -------
-
-    """
+    """Calculate if all adults in the household are pensioners."""
     return anzahl_erwachsene_hh == anzahl_rentenbezieher_hh

@@ -21,7 +21,7 @@ inputs:
       - false
       - false
     arbeitslosengeld_2__p_id_einstandspartner:
-      - 57
+      - 58
       - -1
       - 56
     arbeitsstunden_w:

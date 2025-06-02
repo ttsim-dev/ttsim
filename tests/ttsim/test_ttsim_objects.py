@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 
 import pytest
@@ -11,6 +13,7 @@ from ttsim import (
     policy_function,
     policy_input,
 )
+from ttsim.column_objects_param_function import ParamFunction, param_function
 
 # ======================================================================================
 # PolicyFunction and policy_function
@@ -23,7 +26,7 @@ def simple_policy_function(x):
 
 
 @policy_function(leaf_name="simple_policy_function")
-def policy_function_with_internal_name(x):
+def policy_function_with_different_leaf_name(x):
     return x
 
 
@@ -36,7 +39,7 @@ def policy_function_with_dates(x):
     "function",
     [
         simple_policy_function,
-        policy_function_with_internal_name,
+        policy_function_with_different_leaf_name,
     ],
 )
 def test_policy_function_type(function):
@@ -47,7 +50,7 @@ def test_policy_function_type(function):
     "function",
     [
         simple_policy_function,
-        policy_function_with_internal_name,
+        policy_function_with_different_leaf_name,
     ],
 )
 def test_policy_function_name(function):
@@ -57,6 +60,53 @@ def test_policy_function_name(function):
 def test_policy_function_with_dates():
     assert str(policy_function_with_dates.start_date) == "2007-01-01"
     assert str(policy_function_with_dates.end_date) == "2011-12-31"
+
+
+# ======================================================================================
+# ParamFunction and param_function
+# ======================================================================================
+
+
+@param_function()
+def simple_param_function(x):
+    return x
+
+
+@param_function(leaf_name="simple_param_function")
+def param_function_with_different_leaf_name(x):
+    return x
+
+
+@param_function(start_date="2007-01-01", end_date="2011-12-31")
+def param_function_with_dates(x):
+    return x
+
+
+@pytest.mark.parametrize(
+    "function",
+    [
+        simple_param_function,
+        param_function_with_different_leaf_name,
+    ],
+)
+def test_param_function_type(function):
+    assert isinstance(function, ParamFunction)
+
+
+@pytest.mark.parametrize(
+    "function",
+    [
+        simple_param_function,
+        param_function_with_different_leaf_name,
+    ],
+)
+def test_param_function_name(function):
+    assert function.leaf_name == "simple_param_function"
+
+
+def test_param_function_with_dates():
+    assert str(param_function_with_dates.start_date) == "2007-01-01"
+    assert str(param_function_with_dates.end_date) == "2011-12-31"
 
 
 # ======================================================================================

@@ -1,8 +1,21 @@
 """Basic child allowance (Kindergeld)."""
 
-import numpy
+from __future__ import annotations
 
-from ttsim import AggType, agg_by_p_id_function, join, policy_function
+from typing import TYPE_CHECKING
+
+from ttsim import (
+    AggType,
+    agg_by_p_id_function,
+    get_consecutive_int_1d_lookup_table_param_value,
+    join,
+    param_function,
+    policy_function,
+)
+
+if TYPE_CHECKING:
+    from ttsim import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -15,63 +28,32 @@ def anzahl_ansprüche(
 @policy_function(start_date="2023-01-01", leaf_name="betrag_m")
 def betrag_ohne_staffelung_m(
     anzahl_ansprüche: int,
-    kindergeld_params: dict,
+    satz: float,
 ) -> float:
     """Sum of Kindergeld for eligible children.
 
     Kindergeld claim is the same for each child, i.e. increases linearly with the number
     of children.
 
-    Parameters
-    ----------
-    anzahl_ansprüche
-        See :func:`anzahl_ansprüche`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
     """
 
-    return kindergeld_params["kindergeld"] * anzahl_ansprüche
+    return satz * anzahl_ansprüche
 
 
-@policy_function(
-    end_date="2022-12-31", leaf_name="betrag_m", vectorization_strategy="loop"
-)
+@policy_function(end_date="2022-12-31", leaf_name="betrag_m")
 def betrag_gestaffelt_m(
     anzahl_ansprüche: int,
-    kindergeld_params: dict,
+    satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Sum of Kindergeld that parents receive for their children.
 
     Kindergeld claim for each child depends on the number of children Kindergeld is
     being claimed for.
 
-    Parameters
-    ----------
-    anzahl_ansprüche
-        See :func:`anzahl_ansprüche`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-
     """
-
-    if anzahl_ansprüche == 0:
-        sum_kindergeld = 0.0
-    else:
-        sum_kindergeld = sum(
-            kindergeld_params["kindergeld"][
-                (min(i, max(kindergeld_params["kindergeld"])))
-            ]
-            for i in range(1, anzahl_ansprüche + 1)
-        )
-
-    return sum_kindergeld
+    return satz_nach_anzahl_kinder.values_to_look_up[
+        anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract
+    ]
 
 
 @policy_function(
@@ -81,8 +63,9 @@ def betrag_gestaffelt_m(
 def grundsätzlich_anspruchsberechtigt_nach_lohn(
     alter: int,
     in_ausbildung: bool,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    kindergeld_params: dict,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
+    altersgrenze: dict[str, int],
+    maximales_einkommen_des_kindes: float,
 ) -> bool:
     """Determine kindergeld eligibility for an individual child depending on kids wage.
 
@@ -90,31 +73,15 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
     returns a boolean variable whether a specific person is a child eligible for
     child benefit
 
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-    in_ausbildung
-        See basic input variable :ref:`in_ausbildung <in_ausbildung>`.
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        See basic input variable :ref:`einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m <einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m>`.
-
-    Returns
-    -------
-
     """
-    out = (alter < kindergeld_params["altersgrenze"]["ohne_bedingungen"]) or (
-        (alter < kindergeld_params["altersgrenze"]["mit_bedingungen"])
+    return (alter < altersgrenze["ohne_bedingungen"]) or (
+        (alter < altersgrenze["mit_bedingungen"])
         and in_ausbildung
         and (
-            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-            <= kindergeld_params["einkommensgrenze"] / 12
+            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
+            <= maximales_einkommen_des_kindes
         )
     )
-
-    return out
 
 
 @policy_function(
@@ -125,7 +92,8 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
     alter: int,
     in_ausbildung: bool,
     arbeitsstunden_w: float,
-    kindergeld_params: dict,
+    altersgrenze: dict[str, int],
+    maximale_arbeitsstunden_des_kindes: float,
 ) -> bool:
     """Determine kindergeld eligibility for an individual child depending on working
     hours.
@@ -133,29 +101,12 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
     The current eligibility rule is, that kids must not work more than 20
     hour and are below 25.
 
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    in_ausbildung
-        See :func:`in_ausbildung`.
-    arbeitsstunden_w
-        See :func:`arbeitsstunden_w`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-
-    Returns
-    -------
-    Boolean indiciating kindergeld eligibility.
-
     """
-    out = (alter < kindergeld_params["altersgrenze"]["ohne_bedingungen"]) or (
-        (alter < kindergeld_params["altersgrenze"]["mit_bedingungen"])
+    return (alter < altersgrenze["ohne_bedingungen"]) or (
+        (alter < altersgrenze["mit_bedingungen"])
         and in_ausbildung
-        and (arbeitsstunden_w <= kindergeld_params["stundengrenze"])
+        and (arbeitsstunden_w <= maximale_arbeitsstunden_des_kindes)
     )
-
-    return out
 
 
 @policy_function()
@@ -163,44 +114,17 @@ def kind_bis_10_mit_kindergeld(
     alter: int,
     grundsätzlich_anspruchsberechtigt: bool,
 ) -> bool:
-    """Child under the age of 11 and eligible for Kindergeld.
-
-    Parameters
-    ----------
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    grundsätzlich_anspruchsberechtigt
-        See :func:`grundsätzlich_anspruchsberechtigt_nach_stunden`.
-
-    Returns
-    -------
-
-    """
-    out = grundsätzlich_anspruchsberechtigt and (alter <= 10)
-    return out
+    """Child under the age of 11 and eligible for Kindergeld."""
+    return grundsätzlich_anspruchsberechtigt and (alter <= 10)
 
 
 @policy_function(vectorization_strategy="not_required")
 def gleiche_fg_wie_empfänger(
-    p_id: numpy.ndarray[int],
-    p_id_empfänger: numpy.ndarray[int],
-    fg_id: numpy.ndarray[int],
-) -> numpy.ndarray[bool]:
-    """The child's Kindergeldempfänger is in the same Familiengemeinschaft.
-
-    Parameters
-    ----------
-    p_id
-        See basic input variable :ref:`p_id <p_id>`.
-    p_id_empfänger
-        See basic input variable :ref:`p_id_empfänger <p_id_empfänger>`.
-    fg_id
-        See basic input variable :ref:`fg_id <fg_id>`.
-
-    Returns
-    -------
-
-    """
+    p_id: np.ndarray,  # int
+    p_id_empfänger: np.ndarray,  # int
+    fg_id: np.ndarray,  # int
+) -> np.ndarray:  # bool
+    """The child's Kindergeldempfänger is in the same Familiengemeinschaft."""
     fg_id_kindergeldempfänger = join(
         p_id_empfänger,
         p_id,
@@ -209,3 +133,25 @@ def gleiche_fg_wie_empfänger(
     )
 
     return fg_id_kindergeldempfänger == fg_id
+
+
+@param_function(end_date="2022-12-31")
+def satz_nach_anzahl_kinder(
+    satz_gestaffelt: dict[int, float],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Convert the Kindergeld-Satz by child to the amount of Kindergeld by number of
+    children."""
+    max_num_children = 30
+    max_num_children_in_spec = max(satz_gestaffelt.keys())
+    base_spec = {
+        k: sum(satz_gestaffelt[i] for i in range(1, k + 1))
+        for k in range(1, max_num_children_in_spec + 1)
+    }
+    extended_spec = {
+        k: base_spec[max_num_children_in_spec]
+        + satz_gestaffelt[max_num_children_in_spec] * (k - max_num_children_in_spec)
+        for k in range(max_num_children_in_spec + 1, max_num_children)
+    }
+    return get_consecutive_int_1d_lookup_table_param_value(
+        {0: 0.0, **base_spec, **extended_spec}
+    )

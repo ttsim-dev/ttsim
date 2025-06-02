@@ -1,16 +1,55 @@
-from typing import TypedDict
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Literal, get_args
 
 import numpy
 
 from ttsim.config import numpy_or_jax as np
+from ttsim.param_objects import PiecewisePolynomialParamValue
+
+FUNC_TYPES = Literal[
+    "piecewise_constant",
+    "piecewise_linear",
+    "piecewise_quadratic",
+    "piecewise_cubic",
+]
+
+
+@dataclass(frozen=True)
+class RatesOptions:
+    required_keys: tuple[Literal["rate_linear", "rate_quadratic", "rate_cubic"], ...]
+    rates_size: int
+
+
+OPTIONS_REGISTRY = {
+    "piecewise_constant": RatesOptions(
+        required_keys=(),
+        rates_size=1,
+    ),
+    "piecewise_linear": RatesOptions(
+        required_keys=("rate_linear",),
+        rates_size=1,
+    ),
+    "piecewise_quadratic": RatesOptions(
+        required_keys=("rate_linear", "rate_quadratic"),
+        rates_size=2,
+    ),
+    "piecewise_cubic": RatesOptions(
+        required_keys=("rate_linear", "rate_quadratic", "rate_cubic"),
+        rates_size=3,
+    ),
+}
+
+assert set(OPTIONS_REGISTRY.keys()) == set(get_args(FUNC_TYPES)), (
+    "Keys in OPTIONS_REGISTRY must match FUNC_TYPES"
+)
 
 
 def piecewise_polynomial(
     x: np.ndarray,
-    thresholds: np.ndarray,
-    rates: np.ndarray,
-    intercepts_at_lower_thresholds: np.ndarray,
-    rates_multiplier: np.ndarray = 1,
+    parameters: PiecewisePolynomialParamValue,
+    rates_multiplier: np.ndarray = 1.0,
 ) -> np.ndarray:
     """Calculate value of the piecewise function at `x`. If the first interval begins
     at -inf the polynomial of that interval can only have slope of 0. Requesting a
@@ -25,7 +64,7 @@ def piecewise_polynomial(
     coefficients : np.ndarray
             A two-dimensional array where columns are interval sections and rows
             correspond to the coefficient of the nth polynomial.
-    intercepts_at_lower_thresholds : np.ndarray
+    intercepts : np.ndarray
         The intercepts at the lower threshold of each interval.
     rates_multiplier : np.ndarray
                        Multiplier to create individual or scaled rates.
@@ -36,17 +75,19 @@ def piecewise_polynomial(
         The value of `x` under the piecewise function.
 
     """
-    order = rates.shape[0]
+    order = parameters.rates.shape[0]
     # Get interval of requested value
-    selected_bin = np.searchsorted(thresholds, x, side="right") - 1
-    coefficients = rates[:, selected_bin].T
+    selected_bin = np.searchsorted(parameters.thresholds, x, side="right") - 1
+    coefficients = parameters.rates[:, selected_bin].T
     # Calculate distance from X to lower threshold
     increment_to_calc = np.where(
-        thresholds[selected_bin] == -np.inf, 0, x - thresholds[selected_bin]
+        parameters.thresholds[selected_bin] == -np.inf,
+        0,
+        x - parameters.thresholds[selected_bin],
     )
     # Evaluate polynomial at X
     out = (
-        intercepts_at_lower_thresholds[selected_bin]
+        parameters.intercepts[selected_bin]
         + (
             ((increment_to_calc.reshape(-1, 1)) ** np.arange(1, order + 1, 1))
             * (coefficients)
@@ -56,66 +97,60 @@ def piecewise_polynomial(
 
 
 def get_piecewise_parameters(
-    parameter_dict: dict,
-    parameter: str,
-    func_type: str,
-) -> dict:
+    leaf_name: str,
+    func_type: FUNC_TYPES,
+    parameter_dict: dict[int, dict[str, float]],
+) -> PiecewisePolynomialParamValue:
     """Create the objects for piecewise polynomial.
 
     Parameters
     ----------
     parameter_dict
-    parameter
+    leaf_name
     func_type
 
     Returns
     -------
 
     """
-    # Get all interval keys.
-    keys = sorted(key for key in parameter_dict if isinstance(key, int))
 
     # Check if keys are consecutive numbers and starting at 0.
-    if keys != list(range(len(keys))):
+    if sorted(parameter_dict) != list(range(len(parameter_dict))):
         raise ValueError(
-            f"The keys of {parameter} do not start with 0 or are not consecutive"
+            f"The keys of {leaf_name} do not start with 0 or are not consecutive"
             f" numbers."
         )
 
     # Extract lower thresholds.
     lower_thresholds, upper_thresholds, thresholds = check_and_get_thresholds(
-        parameter_dict=parameter_dict, parameter=parameter, keys=keys
+        leaf_name=leaf_name,
+        parameter_dict=parameter_dict,
     )
 
     # Create and fill rates-array
     rates = _check_and_get_rates(
         parameter_dict=parameter_dict,
-        parameter=parameter,
-        keys=keys,
+        leaf_name=leaf_name,
         func_type=func_type,
     )
-    # Create and fill interecept-array
+    # Create and fill intercept-array
     intercepts = _check_and_get_intercepts(
         parameter_dict=parameter_dict,
-        parameter=parameter,
+        leaf_name=leaf_name,
         lower_thresholds=lower_thresholds,
         upper_thresholds=upper_thresholds,
         rates=rates,
-        keys=keys,
     )
-    piecewise_elements = {
-        "thresholds": numpy.array(thresholds),
-        "rates": rates,
-        "intercepts_at_lower_thresholds": intercepts,
-    }
-
-    return piecewise_elements
+    return PiecewisePolynomialParamValue(
+        thresholds=thresholds,
+        rates=rates,
+        intercepts=intercepts,
+    )
 
 
 def check_and_get_thresholds(
-    parameter_dict: dict,
-    parameter: str,
-    keys: list[int],
+    leaf_name: str,
+    parameter_dict: dict[int, dict[str, float]],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Check and transfer raw threshold data.
 
@@ -125,33 +160,34 @@ def check_and_get_thresholds(
     Parameters
     ----------
     parameter_dict
-    parameter
+    leaf_name
     keys
 
     Returns
     -------
 
     """
-    lower_thresholds = numpy.zeros(len(keys))
-    upper_thresholds = numpy.zeros(len(keys))
+    keys = sorted(parameter_dict.keys())
+    lower_thresholds = numpy.zeros(len(parameter_dict))
+    upper_thresholds = numpy.zeros(len(parameter_dict))
 
     # Check if lowest threshold exists.
     if "lower_threshold" not in parameter_dict[0]:
         raise ValueError(
-            f"The first piece of {parameter} needs to contain a lower_threshold value."
+            f"The first piece of {leaf_name} needs to contain a lower_threshold value."
         )
     lower_thresholds[0] = parameter_dict[0]["lower_threshold"]
 
     # Check if highest upper_threshold exists.
     if "upper_threshold" not in parameter_dict[keys[-1]]:
         raise ValueError(
-            f"The last piece of {parameter} needs to contain an upper_threshold value."
+            f"The last piece of {leaf_name} needs to contain an upper_threshold value."
         )
     upper_thresholds[keys[-1]] = parameter_dict[keys[-1]]["upper_threshold"]
 
     # Check if the function is defined on the complete real line
     if (upper_thresholds[keys[-1]] != numpy.inf) | (lower_thresholds[0] != -numpy.inf):
-        raise ValueError(f"{parameter} needs to be defined on the entire real line.")
+        raise ValueError(f"{leaf_name} needs to be defined on the entire real line.")
 
     for interval in keys[1:]:
         if "lower_threshold" in parameter_dict[interval]:
@@ -160,7 +196,7 @@ def check_and_get_thresholds(
             lower_thresholds[interval] = parameter_dict[interval - 1]["upper_threshold"]
         else:
             raise ValueError(
-                f"In {interval} of {parameter} is no lower upper threshold or an upper"
+                f"In {interval} of {leaf_name} is no lower upper threshold or an upper"
                 f" in the piece before."
             )
 
@@ -171,28 +207,22 @@ def check_and_get_thresholds(
             upper_thresholds[interval] = parameter_dict[interval + 1]["lower_threshold"]
         else:
             raise ValueError(
-                f"In {interval} of {parameter} is no upper threshold or a lower"
+                f"In {interval} of {leaf_name} is no upper threshold or a lower"
                 f" threshold in the piece after."
             )
 
     if not numpy.allclose(lower_thresholds[1:], upper_thresholds[:-1]):
         raise ValueError(
-            f"The lower and upper thresholds of {parameter} have to coincide"
+            f"The lower and upper thresholds of {leaf_name} have to coincide"
         )
     thresholds = sorted([lower_thresholds[0], *upper_thresholds])
-    return lower_thresholds, upper_thresholds, thresholds
-
-
-class Options(TypedDict):
-    necessary_keys: list[str]
-    rates_size: int
+    return np.array(lower_thresholds), np.array(upper_thresholds), np.array(thresholds)
 
 
 def _check_and_get_rates(
-    parameter_dict: dict,
-    parameter: str,
-    keys: list[int],
-    func_type: str,
+    leaf_name: str,
+    func_type: FUNC_TYPES,
+    parameter_dict: dict[int, dict[str, float]],
 ) -> np.ndarray:
     """Check and transfer raw rates data.
 
@@ -202,7 +232,7 @@ def _check_and_get_rates(
     Parameters
     ----------
     parameter_dict
-    parameter
+    leaf_name
     keys
     func_type
 
@@ -210,52 +240,27 @@ def _check_and_get_rates(
     -------
 
     """
-    options_dict = {
-        "quadratic": Options(
-            necessary_keys=["rate_linear", "rate_quadratic"],
-            rates_size=2,
-        ),
-        "cubic": Options(
-            necessary_keys=["rate_linear", "rate_quadratic", "rate_cubic"],
-            rates_size=3,
-        ),
-    }
-    # Allow for specification of rate with "rate" and "rate_linear"
-    if func_type == "linear":
-        rates = numpy.zeros((1, len(keys)))
+    keys = sorted(parameter_dict.keys())
+    rates = numpy.zeros((OPTIONS_REGISTRY[func_type].rates_size, len(keys)))
+    for i, rate_type in enumerate(OPTIONS_REGISTRY[func_type].required_keys):
         for interval in keys:
-            if "rate" in parameter_dict[interval]:
-                rates[0, interval] = parameter_dict[interval]["rate"]
-            elif "rate_linear" in parameter_dict[interval]:
-                rates[0, interval] = parameter_dict[interval]["rate_linear"]
+            if rate_type in parameter_dict[interval]:
+                rates[i, interval] = parameter_dict[interval][rate_type]
             else:
                 raise ValueError(
-                    f"In {interval} of {parameter} there is no rate specified."
+                    f"In interval {interval} of {leaf_name}, {rate_type} is missing."
                 )
-    elif func_type in options_dict:
-        rates = numpy.zeros((options_dict[func_type]["rates_size"], len(keys)))
-        for i, rate_type in enumerate(options_dict[func_type]["necessary_keys"]):
-            for interval in keys:
-                if rate_type in parameter_dict[interval]:
-                    rates[i, interval] = parameter_dict[interval][rate_type]
-                else:
-                    raise ValueError(
-                        f"In {interval} of {parameter} {rate_type} is missing."
-                    )
-    else:
-        raise ValueError(f"Piecewise function {func_type} not specified.")
-    return rates
+    return np.array(rates)
 
 
 def _check_and_get_intercepts(
-    parameter_dict: dict,
-    parameter: str,
+    leaf_name: str,
+    parameter_dict: dict[int, dict[str, float]],
     lower_thresholds: np.ndarray,
     upper_thresholds: np.ndarray,
     rates: np.ndarray,
-    keys: list[int],
 ) -> np.ndarray:
-    """Check and transfer raw intercepte data. If necessary create intercepts.
+    """Check and transfer raw intercept data. If necessary create intercepts.
 
     Transfer and check raw rates data, which needs to be specified in a
     piecewise_polynomial layout in the yaml file.
@@ -263,7 +268,7 @@ def _check_and_get_intercepts(
     Parameters
     ----------
     parameter_dict
-    parameter
+    leaf_name
     lower_thresholds
     upper_thresholds
     rates
@@ -273,11 +278,12 @@ def _check_and_get_intercepts(
     -------
 
     """
+    keys = sorted(parameter_dict.keys())
     intercepts = numpy.zeros(len(keys))
     count_intercepts_supplied = 1
 
     if "intercept_at_lower_threshold" not in parameter_dict[0]:
-        raise ValueError(f"The first piece of {parameter} needs an intercept.")
+        raise ValueError(f"The first piece of {leaf_name} needs an intercept.")
     else:
         intercepts[0] = parameter_dict[0]["intercept_at_lower_threshold"]
         # Check if all intercepts are supplied.
@@ -300,7 +306,7 @@ def _check_and_get_intercepts(
             intercepts = _create_intercepts(
                 lower_thresholds, upper_thresholds, rates, intercepts[0]
             )
-    return intercepts
+    return np.array(intercepts)
 
 
 def _create_intercepts(
@@ -334,17 +340,17 @@ def _create_intercepts(
     -------
 
     """
-    intercepts_at_lower_thresholds = numpy.full_like(upper_thresholds, numpy.nan)
-    intercepts_at_lower_thresholds[0] = intercept_at_lowest_threshold
+    intercepts = numpy.full_like(upper_thresholds, numpy.nan)
+    intercepts[0] = intercept_at_lowest_threshold
     for i, up_thr in enumerate(upper_thresholds[:-1]):
-        intercepts_at_lower_thresholds[i + 1] = _calculate_one_intercept(
+        intercepts[i + 1] = _calculate_one_intercept(
             x=up_thr,
             lower_thresholds=lower_thresholds,
             upper_thresholds=upper_thresholds,
             rates=rates,
-            intercepts_at_lower_thresholds=intercepts_at_lower_thresholds,
+            intercepts=intercepts,
         )
-    return intercepts_at_lower_thresholds
+    return np.array(intercepts)
 
 
 def _calculate_one_intercept(
@@ -352,7 +358,7 @@ def _calculate_one_intercept(
     lower_thresholds: np.ndarray,
     upper_thresholds: np.ndarray,
     rates: np.ndarray,
-    intercepts_at_lower_thresholds: np.ndarray,
+    intercepts: np.ndarray,
 ) -> float:
     """Calculate the intercepts from the raw data.
 
@@ -367,7 +373,7 @@ def _calculate_one_intercept(
     rates : numpy.ndarray
         A two-dimensional array where columns are interval sections and rows correspond
         to the nth polynomial.
-    intercepts_at_lower_thresholds : numpy.ndarray
+    intercepts : numpy.ndarray
         The intercepts at the lower threshold of each interval.
 
     Returns
@@ -381,7 +387,7 @@ def _calculate_one_intercept(
     if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or numpy.isnan(x):
         return numpy.nan
     index_interval = numpy.searchsorted(upper_thresholds, x, side="left")
-    intercept_interval = intercepts_at_lower_thresholds[index_interval]
+    intercept_interval = intercepts[index_interval]
 
     # Select threshold and calculate corresponding increment into interval
     lower_threshold_interval = lower_thresholds[index_interval]

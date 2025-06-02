@@ -1,0 +1,20 @@
+---
+info:
+  note: ''
+  precision_atol: 0.01
+  source: ''
+inputs:
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+    property_tax__acre_size_in_hectares:
+      - 5
+      - 20
+      - 200
+outputs:
+  property_tax__amount_y:
+    - 0.0
+    - 1000.0
+    - 10000.0

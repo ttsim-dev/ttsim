@@ -13,6 +13,13 @@ inputs:
       - 15
       - 6
       - 5
+    alter_monate:
+      - 516
+      - 576
+      - 168
+      - 180
+      - 72
+      - 60
     anzahl_personen_hh:
       - 6
       - 6
@@ -90,7 +97,7 @@ inputs:
       - false
       - false
       - false
-    einkommensteuer__einkünfte__sonstige__rente_ertragsanteil:
+    einkommensteuer__einkünfte__sonstige__ertragsanteil_an_rente:
       - 0.0
       - 0.0
       - 0.0

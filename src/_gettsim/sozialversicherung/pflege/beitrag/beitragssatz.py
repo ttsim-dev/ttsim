@@ -1,9 +1,84 @@
 """Contribution rate to public long-term care insurance."""
 
-from ttsim import AggType, agg_by_p_id_function, policy_function
+from __future__ import annotations
+
+from ttsim import AggType, agg_by_p_id_function, param_function, policy_function
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM)
+@param_function(start_date="1995-01-01", end_date="2004-12-31")
+def beitragssatz_arbeitnehmer(beitragssatz: float) -> float:
+    """Employee's long-term care insurance contribution rate."""
+    return beitragssatz / 2
+
+
+@policy_function(
+    start_date="2005-01-01",
+    end_date="2023-06-30",
+    leaf_name="beitragssatz_arbeitnehmer",
+)
+def beitragssatz_arbeitnehmer_zusatz_kinderlos_dummy(
+    zahlt_zusatzbetrag_kinderlos: bool,
+    beitragssatz_nach_kinderzahl: dict[str, float],
+) -> float:
+    """Employee's long-term care insurance contribution rate.
+
+    Since 2005, the contribution rate is increased for childless individuals.
+    """
+
+    # Add additional contribution for childless individuals
+    if zahlt_zusatzbetrag_kinderlos:
+        out = (
+            beitragssatz_nach_kinderzahl["standard"] / 2
+            + beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
+        )
+    else:
+        out = beitragssatz_nach_kinderzahl["standard"] / 2
+
+    return out
+
+
+@policy_function(
+    start_date="2023-07-01",
+    leaf_name="beitragssatz_arbeitnehmer",
+)
+def beitragssatz_arbeitnehmer_mit_abschlag_nach_kinderzahl(
+    anzahl_kinder_bis_24: int,
+    zahlt_zusatzbetrag_kinderlos: bool,
+    beitragssatz_nach_kinderzahl: dict[str, float],
+) -> float:
+    """Employee's long-term care insurance contribution rate.
+
+    Since July 2023, the contribution rate is reduced for individuals with children
+    younger than 25.
+    """
+    base = beitragssatz_nach_kinderzahl["standard"] / 2
+
+    add = 0.0
+    if zahlt_zusatzbetrag_kinderlos:
+        add = add + beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
+    if anzahl_kinder_bis_24 >= 2:
+        add = add - beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"] * min(
+            anzahl_kinder_bis_24 - 1, 4
+        )
+
+    return base + add
+
+
+@policy_function(start_date="2005-01-01")
+def zahlt_zusatzbetrag_kinderlos(
+    hat_kinder: bool,
+    alter: int,
+    zusatz_kinderlos_mindestalter: int,
+) -> bool:
+    """Whether additional care insurance contribution for childless individuals applies.
+
+    Not relevant before 2005 because the contribution rate was independent of the number
+    of children.
+    """
+    return (not hat_kinder) and alter >= zusatz_kinderlos_mindestalter
+
+
+@agg_by_p_id_function(agg_type=AggType.SUM, start_date="2005-01-01")
 def anzahl_kinder_bis_24_elternteil_1(
     alter_bis_24: bool,
     einkommensteuer__p_id_kinderfreibetragsempfänger_1: int,
@@ -12,7 +87,7 @@ def anzahl_kinder_bis_24_elternteil_1(
     pass
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM)
+@agg_by_p_id_function(agg_type=AggType.SUM, start_date="2005-01-01")
 def anzahl_kinder_bis_24_elternteil_2(
     alter_bis_24: bool,
     einkommensteuer__p_id_kinderfreibetragsempfänger_2: int,
@@ -21,149 +96,26 @@ def anzahl_kinder_bis_24_elternteil_2(
     pass
 
 
-@policy_function(
-    start_date="1995-01-01",
-    end_date="2004-12-31",
-    leaf_name="beitragssatz",
-    vectorization_strategy="loop",
-)
-def beitragssatz_ohne_zusatz_für_kinderlose(
-    ges_pflegev_params: dict,
-) -> float:
-    """Employee's long-term care insurance contribution rate.
-
-    Before 2005, the contribution rate was independent of the number of children.
-
-    Parameters
-    ----------
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
-    """
-
-    return ges_pflegev_params["beitr_satz"]
-
-
-@policy_function(
-    start_date="2005-01-01",
-    end_date="2023-06-30",
-    leaf_name="beitragssatz",
-    vectorization_strategy="loop",
-)
-def beitragssatz_zusatz_kinderlos_dummy(
-    zusatzbetrag_kinderlos: bool,
-    ges_pflegev_params: dict,
-) -> float:
-    """Employee's long-term care insurance contribution rate.
-
-    Since 2005, the contribution rate is increased for childless individuals.
-
-    Parameters
-    ----------
-    zusatzbetrag_kinderlos
-        See :func:`zusatzbetrag_kinderlos`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
-    """
-    out = ges_pflegev_params["beitr_satz"]["standard"]
-
-    # Add additional contribution for childless individuals
-    if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
-
-    return out
-
-
-@policy_function(
-    start_date="2023-07-01", leaf_name="beitragssatz", vectorization_strategy="loop"
-)
-def beitragssatz_mit_kinder_abschlag(
-    anzahl_kinder_bis_24: int,
-    zusatzbetrag_kinderlos: bool,
-    ges_pflegev_params: dict,
-) -> float:
-    """Employee's long-term care insurance contribution rate.
-
-    Since July 2023, the contribution rate is reduced for individuals with children
-    younger than 25.
-
-    Parameters
-    ----------
-    anzahl_kinder_bis_24: int,
-        See :func:`anzahl_kinder_bis_24`.
-    zusatzbetrag_kinderlos
-        See :func:`zusatzbetrag_kinderlos`.
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
-    """
-    out = ges_pflegev_params["beitr_satz"]["standard"]
-
-    # Add additional contribution for childless individuals
-    if zusatzbetrag_kinderlos:
-        out += ges_pflegev_params["beitr_satz"]["zusatz_kinderlos"]
-
-    # Reduced contribution for individuals with two or more children under 25
-    if anzahl_kinder_bis_24 >= 2:
-        out -= ges_pflegev_params["beitr_satz"]["abschlag_kinder"] * min(
-            anzahl_kinder_bis_24 - 1, 4
-        )
-
-    return out
-
-
-@policy_function(start_date="2005-01-01", vectorization_strategy="loop")
-def zusatzbetrag_kinderlos(
-    hat_kinder: bool,
-    alter: int,
-    ges_pflegev_params: dict,
-) -> bool:
-    """Whether additional care insurance contribution for childless individuals applies.
-
-    Not relevant before 2005 because the contribution rate was independent of the number
-    of children.
-
-    Parameters
-    ----------
-    hat_kinder
-        See basic input variable :ref:`hat_kinder <hat_kinder>`.
-    alter
-        See basic input variable :ref:`alter <alter>`.
-    ges_pflegev_params: dict,
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
-    """
-    mindestalter = ges_pflegev_params["zusatz_kinderlos_mindestalter"]
-    return (not hat_kinder) and alter >= mindestalter
-
-
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def anzahl_kinder_bis_24(
     anzahl_kinder_bis_24_elternteil_1: int,
     anzahl_kinder_bis_24_elternteil_2: int,
 ) -> int:
-    """Number of children under 25 years of age.
-    Parameters
-    ----------
-    anzahl_kinder_bis_24_elternteil_1
-        See :func:`anzahl_kinder_bis_24_elternteil_1`.
-    anzahl_kinder_bis_24_elternteil_2
-        See :func:`anzahl_kinder_bis_24_elternteil_2`.
-
-    Returns
-    -------
-    """
+    """Number of children under 25 years of age."""
     return anzahl_kinder_bis_24_elternteil_1 + anzahl_kinder_bis_24_elternteil_2
+
+
+@param_function(
+    start_date="1995-01-01", end_date="2004-12-31", leaf_name="beitragssatz_arbeitgeber"
+)
+def beitragssatz_arbeitgeber_einheitliche_basis(beitragssatz: float) -> float:
+    """Employer's long-term care insurance contribution rate."""
+    return beitragssatz / 2
+
+
+@param_function(start_date="2005-01-01", leaf_name="beitragssatz_arbeitgeber")
+def beitragssatz_arbeitgeber_basis_nach_kinderzahl(
+    beitragssatz_nach_kinderzahl: dict[str, float],
+) -> float:
+    """Employer's long-term care insurance contribution rate."""
+    return beitragssatz_nach_kinderzahl["standard"] / 2

@@ -1,4 +1,11 @@
-"""Subsistence transfer for the elderly (Grundsicherung im Alter)."""
+"""Grundsicherung im Alter."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _gettsim.arbeitslosengeld_2.regelbedarf import RegelsatzNachRegelbedarfsstufen
 
 from ttsim import policy_function
 
@@ -21,34 +28,6 @@ def betrag_m_eg(
 
     # ToDo: There is no check for Wohngeld included as Wohngeld is
     # ToDo: currently not implemented for retirees.
-
-    Parameters
-    ----------
-    arbeitslosengeld_2__regelbedarf_m_bg
-        See :func:`arbeitslosengeld_2__regelbedarf_m_bg`.
-    mehrbedarf_schwerbehinderung_g_m_eg
-        See :func:`mehrbedarf_schwerbehinderung_g_m_eg`.
-    kindergeld__betrag_m_eg
-        See :func:`kindergeld__betrag_m_eg`.
-    unterhalt__tatsächlich_erhaltener_betrag_m_eg
-        See basic input variable
-        :ref:`unterhalt__tatsächlich_erhaltener_betrag_m_eg <unterhalt__tatsächlich_erhaltener_betrag_m_eg>`.
-    unterhaltsvorschuss__betrag_m_eg
-        See :func:`unterhaltsvorschuss__betrag_m_eg`.
-    einkommen_m_eg
-        See :func:`einkommen_m_eg`.
-    erwachsene_alle_rentenbezieher_hh
-        See :func:`erwachsene_alle_rentenbezieher_hh`.
-    vermögen_eg
-        See basic input variable :ref:`vermögen_eg`.
-    vermögensfreibetrag_eg
-        See :func:`vermögensfreibetrag_eg`.
-    arbeitslosengeld_2__anzahl_kinder_eg
-        See :func:`arbeitslosengeld_2__anzahl_kinder_eg`.
-    arbeitslosengeld_2__anzahl_personen_eg
-        See :func:`arbeitslosengeld_2__anzahl_personen_eg`.
-    Returns
-    -------
 
     """
 
@@ -91,38 +70,21 @@ def betrag_m_eg(
     return max(out, 0.0)
 
 
-@policy_function()
+@policy_function(start_date="2011-01-01")
 def mehrbedarf_schwerbehinderung_g_m(
     schwerbehindert_grad_g: bool,
     arbeitslosengeld_2__anzahl_erwachsene_eg: int,
-    grunds_im_alter_params: dict,
-    arbeitsl_geld_2_params: dict,
+    mehrbedarf_bei_schwerbehinderungsgrad_g: float,
+    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
 ) -> float:
-    """Calculate additional allowance for individuals with disabled person's pass G.
+    """Calculate additional allowance for individuals with disabled person's pass G."""
 
-    Parameters
-    ----------
-    schwerbehindert_grad_g
-        See basic input variable :ref:`behinderungsgrad <schwerbehindert_grad_g>`.
-    arbeitslosengeld_2__anzahl_erwachsene_eg
-        See :func:`arbeitslosengeld_2__anzahl_erwachsene_eg`.
-    ges_rente_params
-        See params documentation :ref:`ges_rente_params <ges_rente_params>`.
-    arbeitsl_geld_2_params
-        See params documentation :ref:`arbeitsl_geld_2_params <arbeitsl_geld_2_params>`.
-    Returns
-    -------
-
-    """
-    # mehrbedarf for disabilities = % of regelsatz of the person getting the mehrbedarf
     mehrbedarf_single = (
-        (arbeitsl_geld_2_params["regelsatz"][1])
-        * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
-    )
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz
+    ) * mehrbedarf_bei_schwerbehinderungsgrad_g
     mehrbedarf_in_couple = (
-        (arbeitsl_geld_2_params["regelsatz"][2])
-        * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
-    )
+        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_2.regelsatz
+    ) * mehrbedarf_bei_schwerbehinderungsgrad_g
 
     if (schwerbehindert_grad_g) and (arbeitslosengeld_2__anzahl_erwachsene_eg == 1):
         out = mehrbedarf_single
@@ -134,31 +96,15 @@ def mehrbedarf_schwerbehinderung_g_m(
     return out
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def vermögensfreibetrag_eg(
     arbeitslosengeld_2__anzahl_erwachsene_fg: int,
     arbeitslosengeld_2__anzahl_kinder_fg: int,
-    grunds_im_alter_params: dict,
+    parameter_vermögensfreibetrag: dict[str, float],
 ) -> float:
-    """Calculate wealth not considered for Grundsicherung im Alter on household level.
-
-    Parameters
-    ----------
-    arbeitslosengeld_2__anzahl_erwachsene_fg
-        See :func:`arbeitslosengeld_2__anzahl_erwachsene_fg`.
-    arbeitslosengeld_2__anzahl_kinder_fg
-        See :func:`arbeitslosengeld_2__anzahl_kinder_fg`.
-    grunds_im_alter_params
-        See params documentation :ref:`grunds_im_alter_params <grunds_im_alter_params>`.
-
-    Returns
-    -------
-
-    """
-    out = (
-        grunds_im_alter_params["vermögensfreibetrag"]["adult"]
+    """Calculate wealth not considered for Grundsicherung im Alter on household level."""
+    return (
+        parameter_vermögensfreibetrag["erwachsene"]
         * arbeitslosengeld_2__anzahl_erwachsene_fg
-        + grunds_im_alter_params["vermögensfreibetrag"]["child"]
-        * arbeitslosengeld_2__anzahl_kinder_fg
+        + parameter_vermögensfreibetrag["kinder"] * arbeitslosengeld_2__anzahl_kinder_fg
     )
-    return out

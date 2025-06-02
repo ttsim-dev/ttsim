@@ -21,7 +21,7 @@ inputs:
       - false
       - false
     arbeitslosengeld_2__p_id_einstandspartner:
-      - 47
+      - 48
       - -1
       - 46
     arbeitsstunden_w:
@@ -69,9 +69,9 @@ inputs:
       - true
       - false
     familie__p_id_ehepartner:
-      - 47
-      - 46
+      - 48
       - -1
+      - 46
     familie__p_id_elternteil_1:
       - -1
       - 46

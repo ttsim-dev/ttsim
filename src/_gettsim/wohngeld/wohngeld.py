@@ -16,7 +16,31 @@ priority check, but cannot cover their needs with the Wohngeld calculated in poi
 3. In this sense, this implementation is an approximation of the actual Wohngeld.
 """
 
-from ttsim import AggType, RoundingSpec, agg_by_group_function, policy_function
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from ttsim import (
+    AggType,
+    RoundingSpec,
+    agg_by_group_function,
+    get_consecutive_int_1d_lookup_table_param_value,
+    param_function,
+    policy_function,
+)
+
+if TYPE_CHECKING:
+    from ttsim.param_objects import ConsecutiveInt1dLookupTableParamValue
+
+
+@dataclass(frozen=True)
+class BasisformelParamValues:
+    skalierungsfaktor: float
+    a: ConsecutiveInt1dLookupTableParamValue
+    b: ConsecutiveInt1dLookupTableParamValue
+    c: ConsecutiveInt1dLookupTableParamValue
+    zusatzbetrag_nach_haushaltsgröße: ConsecutiveInt1dLookupTableParamValue
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
@@ -31,23 +55,7 @@ def betrag_m_wthh(
     vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh: bool,
     vorrangprüfungen__wohngeld_vorrang_wthh: bool,
 ) -> float:
-    """Housing benefit after wealth and priority checks.
-
-    Parameters
-    ----------
-    anspruchshöhe_m_wthh
-        See :func:`anspruchshöhe_m_wthh`.
-    erwachsene_alle_rentenbezieher_hh
-        See :func:`erwachsene_alle_rentenbezieher_hh <erwachsene_alle_rentenbezieher_hh>`.
-    vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh
-        See :func:`vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh`.
-    vorrangprüfungen__wohngeld_vorrang_wthh
-        See :func:`vorrangprüfungen__wohngeld_vorrang_wthh`.
-
-    Returns
-    -------
-
-    """
+    """Housing benefit after wealth and priority checks."""
     # TODO (@MImmesberger): This implementation may be only an approximation of the
     # actual rules for individuals that are on the margin of the priority check.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/752
@@ -83,7 +91,7 @@ def anspruchshöhe_m_wthh(
     einkommen_m_wthh: float,
     miete_m_wthh: float,
     grundsätzlich_anspruchsberechtigt_wthh: bool,
-    wohngeld_params: dict,
+    basisformel_params: BasisformelParamValues,
 ) -> float:
     """Housing benefit after wealth and income check.
 
@@ -91,29 +99,13 @@ def anspruchshöhe_m_wthh(
     the household that passed the priority check against Arbeitslosengeld 2. Returns
     zero if not eligible.
 
-    Parameters
-    ----------
-    anzahl_personen_wthh
-        See :func:`anzahl_personen_wthh`.
-    einkommen_m_wthh
-        See :func:`einkommen_m_wthh`.
-    miete_m_wthh
-        See :func:`miete_m_wthh`.
-    grundsätzlich_anspruchsberechtigt_wthh
-        See :func:`grundsätzlich_anspruchsberechtigt_wthh`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
-
     """
     if grundsätzlich_anspruchsberechtigt_wthh:
         out = basisformel(
             anzahl_personen=anzahl_personen_wthh,
             einkommen_m=einkommen_m_wthh,
             miete_m=miete_m_wthh,
-            params=wohngeld_params,
+            params=basisformel_params,
         )
     else:
         out = 0.0
@@ -134,27 +126,11 @@ def anspruchshöhe_m_bg(
     einkommen_m_bg: float,
     miete_m_bg: float,
     grundsätzlich_anspruchsberechtigt_bg: bool,
-    wohngeld_params: dict,
+    basisformel_params: BasisformelParamValues,
 ) -> float:
     """Housing benefit after wealth and income check.
 
     This target is used for the priority check calculation against Arbeitslosengeld 2.
-
-    Parameters
-    ----------
-    arbeitslosengeld_2__anzahl_personen_bg
-        See :func:`arbeitslosengeld_2__anzahl_personen_bg`.
-    einkommen_m_bg
-        See :func:`einkommen_m_bg`.
-    miete_m_bg
-        See :func:`miete_m_bg`.
-    grundsätzlich_anspruchsberechtigt_bg
-        See :func:`grundsätzlich_anspruchsberechtigt_bg`.
-    wohngeld_params
-        See params documentation :ref:`wohngeld_params <wohngeld_params>`.
-
-    Returns
-    -------
 
     """
     if grundsätzlich_anspruchsberechtigt_bg:
@@ -162,7 +138,7 @@ def anspruchshöhe_m_bg(
             anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
             einkommen_m=einkommen_m_bg,
             miete_m=miete_m_bg,
-            params=wohngeld_params,
+            params=basisformel_params,
         )
     else:
         out = 0.0
@@ -170,60 +146,69 @@ def anspruchshöhe_m_bg(
     return out
 
 
+@param_function()
+def basisformel_params(
+    skalierungsfaktor: float,
+    koeffizienten_berechnungsformel: dict[int, dict[str, float]],
+    max_anzahl_personen: dict[str, int],
+    zusatzbetrag_pro_person_in_großen_haushalten: float,
+) -> BasisformelParamValues:
+    """Convert the parameters of the Wohngeld basis formula to a format that can be
+    used by Numpy and Jax.
+    """
+    a = {i: v["a"] for i, v in koeffizienten_berechnungsformel.items()}
+    b = {i: v["b"] for i, v in koeffizienten_berechnungsformel.items()}
+    c = {i: v["c"] for i, v in koeffizienten_berechnungsformel.items()}
+    max_normal = max_anzahl_personen["normale_berechnung"]
+    for koeff in [a, b, c]:
+        assert max(koeff.keys()) == max_normal, (
+            "The maximum number of persons for the normal calculation of the basic"
+            "Wohngeld formula `max_anzahl_personen['normale_berechnung'] "
+            f"(got: {max_normal}) must be the same as the maximum number of household "
+            f"members in `koeffizienten_berechnungsformel` (got: {max(koeff.keys())})"
+        )
+    zusatzbetrag_nach_haushaltsgröße = dict.fromkeys(range(max_normal + 1), 0.0)
+    for i in range(max_normal + 1, max_anzahl_personen["indizierung"] + 1):
+        for koeff in [a, b, c]:
+            koeff[i] = koeff[max_normal]
+        zusatzbetrag_nach_haushaltsgröße[i] = (
+            i - max_normal
+        ) * zusatzbetrag_pro_person_in_großen_haushalten
+
+    return BasisformelParamValues(
+        skalierungsfaktor=skalierungsfaktor,
+        a=get_consecutive_int_1d_lookup_table_param_value(a),
+        b=get_consecutive_int_1d_lookup_table_param_value(b),
+        c=get_consecutive_int_1d_lookup_table_param_value(c),
+        zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_1d_lookup_table_param_value(
+            zusatzbetrag_nach_haushaltsgröße
+        ),
+    )
+
+
 def basisformel(
     anzahl_personen: int,
     einkommen_m: float,
     miete_m: float,
-    params: dict,
+    params: BasisformelParamValues,
 ) -> float:
     """Basic formula for housing benefit calculation.
 
     Note: This function is not a direct target in the DAG, but a helper function to
     store the code for Wohngeld calculation.
 
-    Parameters
-    ----------
-    anzahl_personen
-        Number of people Wohngeld is being calculated for.
-    einkommen_m
-        Sum of income of people Wohngeld should be calculated for.
-    miete_m
-        Sum of rent.
-    params
-        See params documentation :ref:`params <params>`.
-
-    Returns
-    -------
-
     """
-    max_berücks_personen = params["bonus_sehr_große_haushalte"][
-        "max_anz_personen_normale_berechnung"
-    ]
-
-    koeffizienten = params["koeffizienten_berechnungsformel"][
-        min(anzahl_personen, max_berücks_personen)
-    ]
-    out = params["faktor_berechnungsformel"] * (
-        miete_m
-        - (
-            (
-                koeffizienten["a"]
-                + (koeffizienten["b"] * miete_m)
-                + (koeffizienten["c"] * einkommen_m)
-            )
-            * einkommen_m
-        )
+    a = params.a.values_to_look_up[anzahl_personen - params.a.base_to_subtract]
+    b = params.b.values_to_look_up[anzahl_personen - params.b.base_to_subtract]
+    c = params.c.values_to_look_up[anzahl_personen - params.c.base_to_subtract]
+    zusatzbetrag_nach_haushaltsgröße = (
+        params.zusatzbetrag_nach_haushaltsgröße.values_to_look_up[
+            anzahl_personen - params.zusatzbetrag_nach_haushaltsgröße.base_to_subtract
+        ]
     )
-    out = max(out, 0.0)
-
-    if anzahl_personen > max_berücks_personen:
-        # If more than 12 persons, there is a lump-sum on top.
-        # The maximum is still capped at `miete_m`.
-        out = min(
-            out
-            + params["bonus_sehr_große_haushalte"]["bonus_jede_weitere_person"]
-            * (anzahl_personen - max_berücks_personen),
-            miete_m,
-        )
-
-    return out
+    out = max(
+        0.0,
+        params.skalierungsfaktor
+        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
+    )
+    return min(miete_m, out + zusatzbetrag_nach_haushaltsgröße)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dags.tree as dt
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -18,14 +20,12 @@ def test_aggregate_by_p_id(test: PolicyTest):
 
     result = compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=environment,
         targets_tree=test.target_structure,
     )
 
     flat_result = dt.flatten_to_qual_names(result)
     flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
 
-    for result, expected in zip(
-        flat_result.values(), flat_expected_output_tree.values()
-    ):
-        assert_array_almost_equal(result, expected, decimal=2)
+    for col, actual in flat_result.items():
+        assert_array_almost_equal(actual, flat_expected_output_tree[col], decimal=2)

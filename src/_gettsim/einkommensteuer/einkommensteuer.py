@@ -1,13 +1,28 @@
 """Income taxes."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import optree
+
 from ttsim import (
     AggType,
+    PiecewisePolynomialParamValue,
     RoundingSpec,
     agg_by_group_function,
     agg_by_p_id_function,
+    param_function,
     piecewise_polynomial,
     policy_function,
 )
+from ttsim.piecewise_polynomial import (
+    check_and_get_thresholds,
+    get_piecewise_parameters,
+)
+
+if TYPE_CHECKING:
+    from ttsim import ConsecutiveInt1dLookupTableParamValue, RawParam
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
@@ -50,15 +65,6 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
 ) -> float:
     """Income tax calculation on Steuernummer level allowing for claiming
     Kinderfreibetrag and receiving Kindergeld at the same time.
-
-    Parameters
-    ----------
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-
-    Returns
-    -------
-
     """
     return betrag_mit_kinderfreibetrag_y_sn
 
@@ -76,23 +82,7 @@ def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
     kinderfreibetrag_günstiger_sn: bool,
     relevantes_kindergeld_y_sn: float,
 ) -> float:
-    """Income tax calculation on Steuernummer level since 1997.
-
-    Parameters
-    ----------
-    betrag_ohne_kinderfreibetrag_y_sn
-        See :func:`betrag_ohne_kinderfreibetrag_y_sn`.
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-    kinderfreibetrag_günstiger_sn
-        See :func:`kinderfreibetrag_günstiger_sn`.
-    relevantes_kindergeld_y_sn
-        See :func:`relevantes_kindergeld_y_sn`.
-
-    Returns
-    -------
-
-    """
+    """Income tax calculation on Steuernummer level since 1997."""
     if kinderfreibetrag_günstiger_sn:
         out = betrag_mit_kinderfreibetrag_y_sn + relevantes_kindergeld_y_sn
     else:
@@ -107,26 +97,12 @@ def kinderfreibetrag_günstiger_sn(
     betrag_mit_kinderfreibetrag_y_sn: float,
     relevantes_kindergeld_y_sn: float,
 ) -> bool:
-    """Kinderfreibetrag more favorable than Kindergeld.
-
-    Parameters
-    ----------
-    betrag_ohne_kinderfreibetrag_y_sn
-        See :func:`betrag_ohne_kinderfreibetrag_y_sn`.
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-    relevantes_kindergeld_y_sn
-        See :func:`relevantes_kindergeld_y_sn`.
-    Returns
-    -------
-
-    """
+    """Kinderfreibetrag more favorable than Kindergeld."""
     unterschiedsbeitrag = (
         betrag_ohne_kinderfreibetrag_y_sn - betrag_mit_kinderfreibetrag_y_sn
     )
 
-    out = unterschiedsbeitrag > relevantes_kindergeld_y_sn
-    return out
+    return unterschiedsbeitrag > relevantes_kindergeld_y_sn
 
 
 @policy_function(
@@ -151,32 +127,19 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
     anzahl_personen_sn: int,
-    eink_st_params: dict,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
 ) -> float:
-    """Taxes with child allowance on Steuernummer level. Also referred to as "tarifliche
-    ESt I".
+    """Taxes with child allowance on Steuernummer level.
 
-    Parameters
-    ----------
-    zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn
-        See :func:`zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn`.
-    anzahl_personen_sn
-        See :func:`anzahl_personen_sn`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params <eink_st_params>`.
-
-    Returns
-    -------
+    Also referred to as "tarifliche ESt I".
 
     """
     zu_verst_eink_per_indiv = (
         zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn / anzahl_personen_sn
     )
-    out = anzahl_personen_sn * einkommensteuertarif(
-        zu_verst_eink_per_indiv, params=eink_st_params
+    return anzahl_personen_sn * einkommensteuertarif(
+        x=zu_verst_eink_per_indiv, params=parameter_einkommensteuertarif
     )
-
-    return out
 
 
 @policy_function(
@@ -188,72 +151,42 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
 def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
     anzahl_personen_sn: int,
-    eink_st_params: dict,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
 ) -> float:
     """Taxes without child allowance on Steuernummer level. Also referred to as
     "tarifliche ESt II".
 
-    Parameters
-    ----------
-    gesamteinkommen_y
-        See :func:`gesamteinkommen_y`.
-    anzahl_personen_sn
-        See :func:`anzahl_personen_sn`.
-    eink_st_params
-        See params documentation :ref:`eink_st_params <eink_st_params>`.
-
-    Returns
-    -------
-
     """
     zu_verst_eink_per_indiv = gesamteinkommen_y / anzahl_personen_sn
-    out = anzahl_personen_sn * einkommensteuertarif(
-        zu_verst_eink_per_indiv, params=eink_st_params
+    return anzahl_personen_sn * einkommensteuertarif(
+        x=zu_verst_eink_per_indiv, params=parameter_einkommensteuertarif
     )
 
-    return out
 
-
-@policy_function(
-    end_date="2022-12-31",
-    leaf_name="relevantes_kindergeld_m",
-    vectorization_strategy="loop",
-)
+@policy_function(end_date="2022-12-31", leaf_name="relevantes_kindergeld_m")
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld_params: dict,
+    kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
 
+    Note: It doesn't matter which parent actually receives the Kindergeld. For income
+    tax purposes, only the eligibility to claim Kindergeld is relevant.
+
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."
 
-    Parameters
-    ----------
-    anzahl_kindergeld_ansprüche_1
-        See :func:`anzahl_kindergeld_ansprüche_1`.
-    anzahl_kindergeld_ansprüche_2
-        See :func:`anzahl_kindergeld_ansprüche_2`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-    Returns
-    -------
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
 
-    if kindergeld_ansprüche == 0:
-        relevantes_kindergeld = 0.0
-    else:
-        relevantes_kindergeld = sum(
-            kindergeld_params["kindergeld"][
-                (min(i, max(kindergeld_params["kindergeld"])))
-            ]
-            for i in range(1, kindergeld_ansprüche + 1)
-        )
-
-    return relevantes_kindergeld / 2
+    return (
+        kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
+            kindergeld_ansprüche - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
+        ]
+        / 2
+    )
 
 
 @policy_function(
@@ -263,50 +196,63 @@ def relevantes_kindergeld_mit_staffelung_m(
 def relevantes_kindergeld_ohne_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld_params: dict,
+    kindergeld__satz: float,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
 
+    Note: It doesn't matter which parent actually receives the Kindergeld. For income
+    tax purposes, only the eligibility to claim Kindergeld is relevant.
+
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."
 
-    Parameters
-    ----------
-    anzahl_kindergeld_ansprüche_1
-        See :func:`anzahl_kindergeld_ansprüche_1`.
-    anzahl_kindergeld_ansprüche_2
-        See :func:`anzahl_kindergeld_ansprüche_2`.
-    kindergeld_params
-        See params documentation :ref:`kindergeld_params <kindergeld_params>`.
-    Returns
-    -------
-
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
-    return kindergeld_params["kindergeld"] * kindergeld_ansprüche / 2
+    return kindergeld__satz * kindergeld_ansprüche / 2
 
 
-def einkommensteuertarif(x: float, params: dict) -> float:
-    """The German income tax tariff.
+def einkommensteuertarif(x: float, params: PiecewisePolynomialParamValue) -> float:
+    """The German income tax tariff."""
+    return piecewise_polynomial(
+        x=x,
+        parameters=params,
+    )
 
-    Parameters
-    ----------
-    x : float
-        The series of floats which the income tax schedule is applied to.
-    params : dict
-        Dictionary created in respy.piecewise_functions.
 
-    Returns
-    -------
+@param_function(start_date="2002-01-01")
+def parameter_einkommensteuertarif(
+    raw_parameter_einkommensteuertarif: RawParam,
+) -> PiecewisePolynomialParamValue:
+    """Add the quadratic terms to tax tariff function.
+
+    The German tax tariff is defined on several income intervals with distinct
+    marginal tax rates at the thresholds. To ensure an almost linear increase of
+    the average tax rate, the German tax tariff is defined as a quadratic function,
+    where the quadratic rate is the so called linear Progressionsfaktor. For its
+    calculation one needs the lower (low_thres) and upper (upper_thres) thresholds of
+    the interval as well as the marginal tax rate of the interval (rate_iv) and of the
+    following interval (rate_fiv). The formula is then given by:
+
+    (rate_fiv - rate_iv) / (2 * (upper_thres - low_thres))
 
     """
-    out = piecewise_polynomial(
-        x=x,
-        thresholds=params["eink_st_tarif"]["thresholds"],
-        rates=params["eink_st_tarif"]["rates"],
-        intercepts_at_lower_thresholds=params["eink_st_tarif"][
-            "intercepts_at_lower_thresholds"
-        ],
+    expanded: dict[int, dict[str, float]] = optree.tree_map(  # type: ignore[assignment]
+        float, raw_parameter_einkommensteuertarif
     )
-    return out
+
+    # Check and extract lower thresholds.
+    lower_thresholds, upper_thresholds = check_and_get_thresholds(
+        leaf_name="parameter_einkommensteuertarif",
+        parameter_dict=expanded,
+    )[:2]
+    for key in sorted(raw_parameter_einkommensteuertarif.keys()):
+        if "rate_quadratic" not in raw_parameter_einkommensteuertarif[key]:
+            expanded[key]["rate_quadratic"] = (
+                expanded[key + 1]["rate_linear"] - expanded[key]["rate_linear"]
+            ) / (2 * (upper_thresholds[key] - lower_thresholds[key]))
+    return get_piecewise_parameters(
+        leaf_name="parameter_einkommensteuertarif",
+        func_type="piecewise_quadratic",
+        parameter_dict=expanded,
+    )

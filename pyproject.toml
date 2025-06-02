@@ -41,7 +41,7 @@ classifiers = [
 # Dependencies and requirements
 requires-python = ">=3.11"
 dependencies = [
-    "dags>=0.3.0",
+    # "dags>=0.3.1",
     "ipywidgets",
     "networkx",
     "numpy",
@@ -129,6 +129,7 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
 pdbp = "*"
 
 [tool.pixi.target.unix.pypi-dependencies]
@@ -246,6 +247,7 @@ extend-ignore = [
     "PT011", # pytest raises without match statement
     "INP001", # implicit namespace packages without init.
     "E721", # Use `is` and `is not` for type comparisons
+    "TD003", # Missing issue link -- remove again once we got rid of ad-hoc TODOs.
 
     # Things ignored to avoid conflicts with ruff-format
     # ==================================================
@@ -254,10 +256,10 @@ extend-ignore = [
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
+"src/ttsim/compute_taxes_and_transfers.py" = ["E501"]
 "src/ttsim/functions/all_functions_for_docs.py" = ["F401", "E501", "F403"]
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
-"src/ttsim/policy_environment.py" = ["S506", "PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
 "docs/**/*.ipynb" = ["T201"]
@@ -265,7 +267,7 @@ exclude = []
 # Files which should be ignored until we have rewritten them
 # =========================================================
 "outdated_docs/**/*.ipynb" = ["T201"]
-"tests/ttsim/test_docs.py" = ["F821"]
+"src/_gettsim_tests/test_docs.py" = ["F821"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -285,11 +287,12 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 explicit_package_bases = true
+disallow_empty_bodies = false
 
 [[tool.mypy.overrides]]
 module = [
     "src.ttsim.plot_dag",
-    "tests.ttsim.test_docs",
+    "src._gettsim_tests.test_docs",
 ]
 disallow_untyped_defs = false
 ignore_errors = true
@@ -297,22 +300,34 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
     "tests.*",
-    "src._gettsim_tests.*",
 ]
 disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
-    "empty-body",  # Happens for all functions decorated with @policy_input
-    "type-arg" # TODO: Remove once we have proper types for parameters.
 ]
 
 [[tool.mypy.overrides]]
 module = [
-    "src.ttsim.*",
-    "src._gettsim.*",
+    "tests.ttsim.test_policy_environment",
 ]
 disable_error_code = [
-    "empty-body",  # Happens for all functions decorated with @policy_input
-    "type-arg" # TODO: Remove once we have proper types for parameters.
+    "misc",  # Happens when constructing param dictionaries on the fly.
+]
+
+
+[[tool.mypy.overrides]]
+module = [
+    "src.ttsim.aggregation_numpy",
+]
+disable_error_code = [
+    "type-arg" # ndarray is not typed further.
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "src._gettsim_tests.*",
+]
+disable_error_code = [
+    "no-untyped-def",  # All tests return None, don't clutter source code.
 ]
 
 [[tool.mypy.overrides]]
@@ -340,7 +355,7 @@ filterwarnings = [
     "ignore:The TerminalReporter.writer attribute is",
     "ignore:Repeated execution of the test suite",
     "ignore:Using or importing the ABCs from 'collections'",
-    "ignore::ttsim.compute_taxes_and_transfers.FunctionsAndColumnsOverlapWarning"
+    "ignore::ttsim.compute_taxes_and_transfers.FunctionsAndDataOverlapWarning"
 ]
 markers = [
     "wip: Tests that are work-in-progress.",

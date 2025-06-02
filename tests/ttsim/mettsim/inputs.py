@@ -1,4 +1,6 @@
-from ttsim import FKType, policy_input
+from __future__ import annotations
+
+from ttsim import AggType, FKType, agg_by_group_function, policy_input
 
 
 @policy_input()
@@ -34,6 +36,11 @@ def age() -> int:
 @policy_input()
 def parent_is_noble() -> bool:
     """Whether at least one parent is noble."""
+
+
+@agg_by_group_function(agg_type=AggType.ANY)
+def parent_is_noble_fam(parent_is_noble: bool, fam_id: int) -> bool:
+    pass
 
 
 @policy_input()

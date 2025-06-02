@@ -1,5 +1,7 @@
 """Einkünfte aus nichtselbstständiger Arbeit."""
 
+from __future__ import annotations
+
 from ttsim import policy_function
 
 
@@ -10,17 +12,6 @@ def betrag_y(
 ) -> float:
     """Taxable income from dependent employment. In particular, taxable income is set to
     0 for marginally employed persons.
-
-    Parameters
-    ----------
-    betrag_ohne_minijob_y
-        See :func:`betrag_ohne_minijob_y`.
-    sozialversicherung__geringfügig_beschäftigt
-        See :func:`sozialversicherung__geringfügig_beschäftigt`.
-
-    Returns
-    -------
-
     """
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -31,28 +22,7 @@ def betrag_y(
 
 
 @policy_function()
-def betrag_ohne_minijob_y(
-    bruttolohn_y: float,
-    eink_st_abzuege_params: dict,
-) -> float:
-    """Aggregate monthly gross wage to yearly income and deduct
-    'Werbungskostenpauschale'.
+def betrag_ohne_minijob_y(bruttolohn_y: float, werbungskostenpauschale: float) -> float:
+    """Take gross wage and deduct Werbungskostenpauschale."""
 
-    The wage is reducted by a lump sum payment for 'Werbungskosten'
-
-    Parameters
-    ----------
-    bruttolohn_y
-        See basic input variable :ref:`bruttolohn_y <bruttolohn_y>`.
-    eink_st_abzuege_params
-        See params documentation :ref:`eink_st_abzuege_params <eink_st_abzuege_params>`.
-
-    Returns
-    -------
-
-    """
-    abzug = eink_st_abzuege_params["werbungskostenpauschale"]
-
-    out = bruttolohn_y - abzug
-
-    return max(out, 0.0)
+    return max(bruttolohn_y - werbungskostenpauschale, 0.0)

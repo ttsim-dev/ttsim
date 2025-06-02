@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 
 ## Unpublished
 
+- {gh}`894`, {gh}`896` Cleanups ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`).
+- {gh}`891` Prepare for jitting / vectorization of GETTSIM` ({ghuser}`hmgaudecker\`).
 - {gh}`879` Vectorize METTSIM ({ghuser}`timmens`, {ghuser}`hmgaudecker`).
 - {gh}`887` Enable typing ({ghuser}`hmgaudecker`, {ghuser}`timmens`).
 - {gh}`888` Remove SUPPORTED_GROUPINGS entirely, infer groupings from object names
@@ -15,7 +17,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 - {gh}`885`, {gh}`886`: Cleanups ({ghuser}`MImmesberger`).
 - {gh}`867` Vectorize `piecewise_polynomial` ({ghuser}`mj023`).
 - {gh}`880` Validate parameter files using json schema ({ghuser}`hmgaudecker`).
-- {gh}`876` Add DataFrame to NestedDataDict conversion ({ghuser}`MImmesberger`).
+- {gh}`876` Add DataFrame to NestedData conversion ({ghuser}`MImmesberger`).
 - {gh}`873` Implement aggregation decorators ({ghuser}`hmgaudecker`, `MImmesberger`).
 - {gh}`859` Add RoundingSpec dataclass ({ghuser}`hmgaudecker`, `MImmesberger`).
 - {gh}`854` Add PolicyInput class and update hierarchy of TTSIM objects

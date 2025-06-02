@@ -1,0 +1,99 @@
+---
+stundengrenze:
+  name:
+    de: Stundengrenze für Bezug von Arbeitslosengeld
+    en: Working hours limit to receive unemployment benefit
+  description:
+    de: >-
+      §138 (3) SGB III, früher auch §102 (2) AFG. Grenze, ab der keine Arbeitslosigkeit
+      mehr unterstellt wird.
+    en: null
+  unit: Hours
+  reference_period: Week
+  type: scalar
+  1969-07-01:
+    value: 20
+  1986-01-01:
+    value: 19
+    reference: Art. 1 G. v. 20.12.1985 BGBl I S. 2484
+  1989-01-01:
+    value: 18
+    reference: Art. 1 G. v. 20.12.1988 BGBl I S. 2343
+  2012-04-01:
+    value: 15
+    reference: Art. 2 G. v. 20.12.2011 BGBl I S. 2854
+anspruchsdauer_nach_alter:
+  name:
+    de: Anspruchsdauer für ALG 1 nach Alter.
+    en: Period of ALG 1 eligibility based on age.
+  description:
+    de: >-
+      § 147 Abs. 2 SGB III
+      Dauer des Anspruchs auf ALG 1 richtet sich nach Alter und wie viele Monate
+      eine Person versicherungsplichtig in den letzten 5 Jahren war.
+    en: >-
+      § 147 Abs. 2 SGB III
+      The length of ALG 1 eligibility depends on age and on how many months a
+      person was subject to compulsory insurance
+  unit: Months
+  reference_period: null
+  type: piecewise_constant
+  1997-03-24:
+    0:
+      lower_threshold: -inf
+      intercept_at_lower_threshold: 0
+    1:
+      lower_threshold: 0
+      intercept_at_lower_threshold: 12
+    2:
+      lower_threshold: 50
+      intercept_at_lower_threshold: 15
+    3:
+      lower_threshold: 55
+      intercept_at_lower_threshold: 18
+    4:
+      lower_threshold: 58
+      upper_threshold: inf
+      intercept_at_lower_threshold: 24
+anspruchsdauer_nach_versicherungspflichtigen_monaten:
+  name:
+    de: Anspruchsdauer für ALG 1 nach versicherungspflichtigen Monaten.
+    en: Period of ALG 1 eligibility based on months of compulsory insurance.
+  description:
+    de: >-
+      § 147 Abs. 2 SGB III
+      Dauer des Anspruchs auf ALG 1 richtet sich nach Alter und wie viele Monate
+      eine Person versicherungsplichtig in den letzten 5 Jahren war.
+    en: >-
+      § 147 Abs. 2 SGB III
+      The length of ALG 1 eligibility depends on age and on how many months a
+      person was subject to compulsory insurance
+  unit: Months
+  reference_period: null
+  type: piecewise_constant
+  1997-03-24:
+    0:
+      lower_threshold: -inf
+      intercept_at_lower_threshold: 0
+    1:
+      lower_threshold: 12
+      intercept_at_lower_threshold: 6
+    2:
+      lower_threshold: 18
+      intercept_at_lower_threshold: 8
+    3:
+      lower_threshold: 20
+      intercept_at_lower_threshold: 10
+    4:
+      lower_threshold: 24
+      intercept_at_lower_threshold: 12
+    5:
+      lower_threshold: 30
+      intercept_at_lower_threshold: 15
+    6:
+      lower_threshold: 36
+      intercept_at_lower_threshold: 18
+    7:
+      lower_threshold: 48
+      upper_threshold: inf
+      intercept_at_lower_threshold: 24

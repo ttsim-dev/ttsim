@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dags.tree as dt
 import pytest
 
@@ -7,7 +9,10 @@ from _gettsim_tests.utils import (
     load_policy_test_data,
 )
 from ttsim import compute_taxes_and_transfers
-from ttsim.ttsim_objects import PolicyInput, check_series_has_expected_type
+from ttsim.column_objects_param_function import (
+    PolicyInput,
+    check_series_has_expected_type,
+)
 
 test_data = load_policy_test_data("full_taxes_and_transfers")
 
@@ -18,27 +23,27 @@ def test_full_taxes_transfers(test: PolicyTest):
 
     compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=environment,
         targets_tree=test.target_structure,
     )
 
 
 @pytest.mark.parametrize("test", test_data, ids=lambda x: x.name)
 def test_data_types(test: PolicyTest):
-    environment = cached_set_up_policy_environment(date=test.date)
+    policy_environment = cached_set_up_policy_environment(date=test.date)
 
     result = compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree=test.target_structure,
     )
 
     flat_types_input_variables = {
         n: pi.data_type
-        for n, pi in dt.flatten_to_qual_names(environment.raw_objects_tree).items()
+        for n, pi in dt.flatten_to_qual_names(policy_environment).items()
         if isinstance(pi, PolicyInput)
     }
-    flat_functions = dt.flatten_to_qual_names(environment.raw_objects_tree)
+    flat_functions = dt.flatten_to_qual_names(policy_environment)
 
     for column_name, result_array in dt.flatten_to_qual_names(result).items():
         if column_name in flat_types_input_variables:
@@ -66,6 +71,6 @@ def test_allow_none_as_target_tree(test: PolicyTest):
 
     compute_taxes_and_transfers(
         data_tree=test.input_tree,
-        environment=environment,
+        policy_environment=environment,
         targets_tree=None,
     )

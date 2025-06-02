@@ -1,4 +1,6 @@
-"""Alimony payments (Unterhalt)."""
+"""Unterhalt (child support)."""
+
+from __future__ import annotations
 
 from ttsim import policy_function
 
@@ -7,29 +9,14 @@ from ttsim import policy_function
 def kind_festgelegter_zahlbetrag_m(
     anspruch_m: float,
     kindergeld__betrag_m: float,
-    unterhalt_params: dict,
     familie__kind: bool,
+    abzugsrate_kindergeld: dict[str, float],
 ) -> float:
     """Monthly actual child alimony payments to be received by the child after
-    deductions.
-
-    Parameters
-    ----------
-    anspruch_m
-        See basic input variable :ref:`anspruch_m <anspruch_m>`.
-    kindergeld__betrag_m
-        See :func:`kindergeld__betrag_m`.
-    unterhalt_params
-        See params documentation :ref:`unterhalt_params <unterhalt_params>`.
-    familie__kind
-        See basic input variable :ref:`familie__kind <familie__kind>`.
-
-    Returns
-    -------
-    """
+    deductions."""
     if familie__kind:
-        abzugsrate = unterhalt_params["abzugsrate_kindergeld"]["kind"]
+        abzugsrate = abzugsrate_kindergeld["minderjährig"]
     else:
-        abzugsrate = unterhalt_params["abzugsrate_kindergeld"]["erwachsener"]
+        abzugsrate = abzugsrate_kindergeld["volljährig"]
 
     return anspruch_m - abzugsrate * kindergeld__betrag_m

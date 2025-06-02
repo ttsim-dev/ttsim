@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import (
-    PolicyEnvironment,
+    OrigTreesWithFileNames,
     RoundingSpec,
+    active_tree,
     compute_taxes_and_transfers,
     policy_function,
     policy_input,
@@ -94,7 +97,12 @@ def test_malformed_rounding_specs():
         def test_func():
             return 0
 
-        PolicyEnvironment({"test_func": test_func})
+        active_tree(
+            orig_trees=OrigTreesWithFileNames(
+                column_objects_and_param_functions={"x.py": {"test_func": test_func}},
+                params={},
+            )
+        )
 
 
 @pytest.mark.parametrize(
@@ -113,14 +121,11 @@ def test_rounding(rounding_spec, input_values, exp_output):
         "p_id": np.array([1, 2]),
         "namespace": {"x": np.array(input_values)},
     }
-
-    environment = PolicyEnvironment(
-        {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
-    )
+    policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data_tree,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"namespace": {"test_func": None}},
     )
     assert_series_equal(
@@ -143,17 +148,15 @@ def test_rounding_with_time_conversion():
         "x": np.array([1.2, 1.5]),
     }
 
-    environment = PolicyEnvironment(
-        {
-            "test_func_m": test_func_m,
-            "x": x,
-            "p_id": p_id,
-        }
-    )
+    policy_environment = {
+        "test_func_m": test_func_m,
+        "x": x,
+        "p_id": p_id,
+    }
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"test_func_y": None},
     )
     assert_series_equal(
@@ -179,17 +182,15 @@ def test_no_rounding(
 
     data = {"p_id": np.array([1, 2])}
     data["x"] = np.array(input_values_exp_output)
-    environment = PolicyEnvironment(
-        {
-            "test_func": test_func,
-            "x": x,
-            "p_id": p_id,
-        }
-    )
+    policy_environment = {
+        "test_func": test_func,
+        "x": x,
+        "p_id": p_id,
+    }
 
     calc_result = compute_taxes_and_transfers(
         data_tree=data,
-        environment=environment,
+        policy_environment=policy_environment,
         targets_tree={"test_func": None},
         rounding=False,
     )

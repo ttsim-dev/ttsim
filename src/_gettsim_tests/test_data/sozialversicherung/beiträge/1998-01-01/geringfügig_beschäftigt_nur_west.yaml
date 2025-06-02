@@ -1,6 +1,5 @@
 ---
 info:
-  note: ''
   precision_atol: 1
   source: Regression test. Unclear whether numbers are correct by external standards.
 inputs:

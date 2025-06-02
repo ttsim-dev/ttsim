@@ -2,7 +2,7 @@
 info:
   note: ''
   precision_atol: 0.01
-  source: Own calculations
+  source: Regression test.
 inputs:
   assumed:
     geburtsjahr:
@@ -30,7 +30,7 @@ inputs:
     sozialversicherung__rente__jahr_renteneintritt:
       - 2018
     sozialversicherung__rente__monat_renteneintritt:
-      - 2
+      - 1
     sozialversicherung__rente__pflichtbeitragsmonate:
       - 60.0
     wohnort_ost:
@@ -40,7 +40,7 @@ outputs:
   sozialversicherung__rente__erwerbsminderung__entgeltpunkte_ost:
     - 0.0
   sozialversicherung__rente__erwerbsminderung__entgeltpunkte_west:
-    - 29.44
+    - 30.0
   sozialversicherung__rente__erwerbsminderung__grundsätzlich_anspruchsberechtigt:
     - true
   sozialversicherung__rente__erwerbsminderung__rentenartfaktor:
