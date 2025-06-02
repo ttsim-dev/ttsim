@@ -192,7 +192,7 @@ def kindersatz_m_nach_regelbedarfsstufen_mit_sofortzuschlag(
     end_date="2010-12-31",
     leaf_name="erwachsenensatz_m",
 )
-def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
+def erwachsenensatz_m_bis_2010(
     mehrbedarf_alleinerziehend_m: float,
     kindersatz_m: float,
     p_id_einstandspartner: int,
@@ -217,7 +217,7 @@ def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
     start_date="2011-01-01",
     leaf_name="erwachsenensatz_m",
 )
-def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
+def erwachsenensatz_m_ab_2011(
     mehrbedarf_alleinerziehend_m: float,
     kindersatz_m: float,
     p_id_einstandspartner: int,
