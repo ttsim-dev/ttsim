@@ -228,4 +228,4 @@ def vorsorgepauschale_y_ab_2023(
     leaf_name="vorsorgepauschale_y",
 )
 def vorsorgepauschale_y_ab_2005_bis_2009() -> float:
-    return 0.0
+    raise NotImplementedError("Vorsorgepauschale not implemented before 2010.")
