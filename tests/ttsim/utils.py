@@ -9,7 +9,7 @@ import pandas as pd
 import yaml
 from mettsim.config import METTSIM_ROOT
 
-from ttsim import compute_taxes_and_transfers, merge_trees, set_up_policy_environment
+from ttsim import compute_taxes_and_transfers, merge_trees, policy_environment
 from ttsim.config import numpy_or_jax as np
 from ttsim.shared import to_datetime
 
@@ -54,7 +54,7 @@ class PolicyTest:
 
 
 def execute_test(test: PolicyTest, jit: bool = False) -> None:
-    environment = set_up_policy_environment(date=test.date, root=METTSIM_ROOT)
+    environment = policy_environment(date=test.date, root=METTSIM_ROOT)
 
     data_tree = test.input_tree
     targets_tree = test.target_structure

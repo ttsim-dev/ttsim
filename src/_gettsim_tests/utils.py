@@ -13,7 +13,7 @@ from _gettsim_tests import TEST_DIR
 from ttsim import (
     compute_taxes_and_transfers,
     merge_trees,
-    set_up_policy_environment,
+    policy_environment,
     to_datetime,
 )
 from ttsim.config import numpy_or_jax as np
@@ -42,7 +42,7 @@ def cached_set_up_policy_environment(
 
 @lru_cache(maxsize=100)
 def _cached_set_up_policy_environment(date: datetime.date) -> NestedPolicyEnvironment:
-    return set_up_policy_environment(date=date, root=GETTSIM_ROOT)
+    return policy_environment(date=date, root=GETTSIM_ROOT)
 
 
 class PolicyTest:

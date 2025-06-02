@@ -5,10 +5,9 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import (
-    OrigTreesWithFileNames,
     RoundingSpec,
-    active_tree,
     compute_taxes_and_transfers,
+    policy_environment,
     policy_function,
     policy_input,
 )
@@ -97,11 +96,10 @@ def test_malformed_rounding_specs():
         def test_func():
             return 0
 
-        active_tree(
-            orig_trees=OrigTreesWithFileNames(
-                column_objects_and_param_functions={"x.py": {"test_func": test_func}},
-                params={},
-            )
+        policy_environment(
+            active_tree_with_column_objects_and_param_functions={
+                "x.py": {"test_func": test_func}
+            },
         )
 
 

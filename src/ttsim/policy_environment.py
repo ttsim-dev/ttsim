@@ -117,8 +117,19 @@ class OrigTreesWithFileNames:
     params: FlatOrigParamSpecs
 
 
-def set_up_policy_environment(
-    root: Path, date: datetime.date | DashedISOString
+def orig_trees(root: Path) -> OrigTreesWithFileNames:
+    return OrigTreesWithFileNames(
+        column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions(
+            root
+        ),
+        params=orig_tree_with_params(root),
+    )
+
+
+def policy_environment(
+    active_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    active_tree_with_params: FlatOrigParamSpecs,
+    date: datetime.date | DashedISOString,
 ) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -138,16 +149,11 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
-    orig_trees = OrigTreesWithFileNames(
-        column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions(
-            root
-        ),
-        params=orig_tree_with_params(root),
+    a_tree = merge_trees(
+        left=active_tree_with_column_objects_and_param_functions,
+        right=active_tree_with_params,
     )
-    # Will move this line out eventually. Just include in tests, do not run every time.
-    fail_because_active_periods_overlap(orig_trees)
 
-    a_tree = active_tree(orig_trees=orig_trees, date=date)
     assert "evaluationsjahr" not in a_tree, "evaluationsjahr must not be specified"
     a_tree["evaluationsjahr"] = ScalarParam(
         leaf_name="evaluationsjahr",
@@ -216,7 +222,10 @@ def _convert_to_policy_function_if_callable(
     return converted_object
 
 
-def fail_because_active_periods_overlap(orig_trees: OrigTreesWithFileNames) -> None:
+def fail_if_active_periods_overlap(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
+) -> None:
     """Fail because active periods of objects / parameters overlap.
 
     Checks that objects or parameters with the same tree path / qualified name are not
@@ -232,14 +241,14 @@ def fail_because_active_periods_overlap(orig_trees: OrigTreesWithFileNames) -> N
     overlap_checker: dict[
         tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
     ] = {}
-    for orig_path, obj in orig_trees.column_objects_and_param_functions.items():
+    for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:
             overlap_checker[path].append(obj)
         else:
             overlap_checker[path] = [obj]
 
-    for orig_path, obj in orig_trees.params.items():
+    for orig_path, obj in orig_tree_with_params.items():
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
@@ -261,20 +270,6 @@ def fail_because_active_periods_overlap(orig_trees: OrigTreesWithFileNames) -> N
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
                 )
-
-
-def active_tree(
-    orig_trees: OrigTreesWithFileNames, date: datetime.date
-) -> NestedPolicyEnvironment:
-    return merge_trees(
-        left=active_tree_with_column_objects_and_param_functions(
-            orig_tree_with_column_objects_and_param_functions=orig_trees.column_objects_and_param_functions,
-            date=date,
-        ),
-        right=active_tree_with_params(
-            orig_tree_with_params=orig_trees.params, date=date
-        ),
-    )
 
 
 def active_tree_with_column_objects_and_param_functions(
@@ -382,7 +377,7 @@ def active_tree_with_params(
     for orig_path, orig_params_spec in orig_tree_with_params.items():
         path_to_keep = orig_path[:-2]
         leaf_name = orig_path[-1]
-        param = get_one_param(
+        param = _get_one_param(
             leaf_name=leaf_name,
             spec=orig_params_spec,
             date=date,
@@ -392,7 +387,7 @@ def active_tree_with_params(
         if orig_params_spec.get("add_jahresanfang", False):
             date_jan1 = date.replace(month=1, day=1)
             leaf_name_jan1 = f"{leaf_name}_jahresanfang"
-            param = get_one_param(
+            param = _get_one_param(
                 leaf_name=leaf_name_jan1,
                 spec=orig_params_spec,
                 date=date_jan1,
@@ -402,7 +397,7 @@ def active_tree_with_params(
     return dt.unflatten_from_tree_paths(flat_tree_with_params)
 
 
-def get_one_param(  # noqa: PLR0911
+def _get_one_param(  # noqa: PLR0911
     leaf_name: str,
     spec: OrigParamSpec,
     date: datetime.date,
@@ -675,7 +670,7 @@ def fail_if_group_ids_are_outside_top_level_namespace(
         )
 
 
-def fail_if_environment_not_valid(policy_environment: NestedPolicyEnvironment) -> None:
+def fail_if_environment_is_invalid(policy_environment: NestedPolicyEnvironment) -> None:
     """Validate that the environment is a pytree with supported types."""
     assert_valid_ttsim_pytree(
         tree=policy_environment,

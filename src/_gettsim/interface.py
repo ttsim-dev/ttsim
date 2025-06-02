@@ -7,7 +7,7 @@ from ttsim import (
     compute_taxes_and_transfers,
     dataframe_to_nested_data,
     nested_data_to_dataframe,
-    set_up_policy_environment,
+    policy_environment,
 )
 
 if TYPE_CHECKING:
@@ -107,7 +107,7 @@ def oss(
         inputs_tree_to_df_columns=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
     )
-    environment = set_up_policy_environment(
+    environment = policy_environment(
         date=date,
         root=GETTSIM_ROOT,
     )

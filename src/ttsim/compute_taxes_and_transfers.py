@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import datetime
 import functools
-import inspect
 import warnings
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -23,10 +23,9 @@ from ttsim.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 from ttsim.param_objects import ParamObject, RawParam
-from ttsim.policy_environment import fail_if_environment_not_valid, grouping_levels
+from ttsim.policy_environment import fail_if_environment_is_invalid, grouping_levels
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
     fail_if_multiple_time_units_for_same_base_name_and_group,
@@ -95,121 +94,237 @@ def compute_taxes_and_transfers(
     """
 
     # Check user inputs
-    _fail_if_targets_tree_not_valid(targets_tree)
-    _fail_if_data_tree_not_valid(data_tree)
-    fail_if_environment_not_valid(policy_environment)
+    fail_if_targets_tree_is_invalid(targets_tree)
+    fail_if_data_tree_is_invalid(data_tree)
+    fail_if_environment_is_invalid(policy_environment)
 
-    top_level_namespace = _get_top_level_namespace(
+    top_level_namespace = top_level_namespace(
         policy_environment=policy_environment,
-        time_units=tuple(TIME_UNIT_LABELS.keys()),
     )
     # Check that all paths in the params tree are valid
-    dt.fail_if_paths_are_invalid(
-        functions=policy_environment,
-        data_tree=data_tree,
-        targets=targets_tree,
-        top_level_namespace=top_level_namespace,
-    )
-    data = dt.flatten_to_qual_names(data_tree)
-    data_columns = set(data.keys())
+
+    qual_name_data = dt.flatten_to_qual_names(data_tree)
+    qual_name_data_columns = qual_name_data_columns(qual_name_data)
     warn_if_elements_overridden_by_data(
         policy_environment=policy_environment,
-        data_columns=data_columns,
+        data_columns=qual_name_data_columns,
     )
 
-    _flat_policy_environment_with_derived_functions_and_without_overridden_functions = (
+    flat_policy_environment_with_derived_functions_and_without_overridden_functions = (
         flat_policy_environment_with_derived_functions_and_without_overridden_functions(
-            data=data,
+            qual_name_data=qual_name_data,
             policy_environment=policy_environment,
             targets_tree=targets_tree,
             top_level_namespace=top_level_namespace,
         )
     )
-    _column_functions_and_processed_params_and_scalars = column_functions_with_processed_params_and_scalars(
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=_flat_policy_environment_with_derived_functions_and_without_overridden_functions,
+    column_functions_and_processed_params_and_scalars = column_functions_with_processed_params_and_scalars(
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
-    _required_column_functions = required_column_functions(
-        policy_environment_with_processed_params_and_scalars=_column_functions_and_processed_params_and_scalars,
+    required_column_functions = required_column_functions(
+        policy_environment_with_processed_params_and_scalars=column_functions_and_processed_params_and_scalars,
         rounding=rounding,
     )
     # Super-ugly, will be refactored
-    all_targets = dt.qual_names(targets_tree)
-    function_targets = [t for t in all_targets if t in _required_column_functions]
-    param_targets = [
-        t
-        for t in set(all_targets) - set(function_targets)
-        if t
-        in _flat_policy_environment_with_derived_functions_and_without_overridden_functions
-    ]
+    qual_name_targets = qual_name_targets(targets_tree)
+    qual_name_column_targets = qual_name_column_targets(
+        required_column_functions, qual_name_targets
+    )
+    qual_name_param_targets = qual_name_param_targets(
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions,
+        qual_name_targets,
+        qual_name_column_targets,
+    )
     # Will just return these.
-    own_targets = set(all_targets) - set(function_targets) - set(param_targets)  # noqa: F841
+    qual_name_own_targets = qual_name_own_targets(
+        qual_name_targets, qual_name_column_targets, qual_name_param_targets
+    )
+
+    tax_transfer_dag = tax_transfer_dag(
+        required_column_functions=required_column_functions,
+        qual_name_function_targets=qual_name_column_targets,
+    )
+
+    fail_if_root_nodes_are_missing(
+        tax_transfer_dag=tax_transfer_dag,
+        qual_name_data=qual_name_data,
+        required_column_functions=required_column_functions,
+        qual_name_function_targets=qual_name_column_targets,
+    )
 
     # Remove unnecessary elements from user-provided data.
-    input_data = _create_input_data_for_concatenated_function(
-        data=data,
-        functions=_required_column_functions,
-        function_targets=function_targets,
+    qual_name_input_data = qual_name_input_data(
+        tax_transfer_dag=tax_transfer_dag,
+        qual_name_data=qual_name_data,
+        required_column_functions=required_column_functions,
+        qual_name_function_targets=qual_name_column_targets,
     )
 
-    _fail_if_group_variables_not_constant_within_groups(
-        data=input_data,
-        groupings=grouping_levels(policy_environment),
+    fail_if_group_variables_are_not_constant_within_groups(
+        input_data=qual_name_input_data,
+        grouping_levels=grouping_levels(policy_environment),
     )
-    _fail_if_foreign_keys_are_invalid_in_data(
-        data=data,
-        input_data=input_data,
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=_flat_policy_environment_with_derived_functions_and_without_overridden_functions,
+    fail_if_foreign_keys_are_invalid_in_data(
+        input_data=qual_name_input_data,
+        qual_name_data=qual_name_data,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
-    if debug:
-        function_targets = sorted(_required_column_functions.keys())
 
-    tax_transfer_function = concatenate_functions(
-        functions=_required_column_functions,
-        targets=list(function_targets),
+    tax_transfer_function = tax_transfer_function(
+        tax_transfer_dag=tax_transfer_dag,
+        required_column_functions=required_column_functions,
+        qual_name_function_targets=qual_name_column_targets,
+        # backend=backend
+    )
+
+    column_results = tax_transfer_function(qual_name_input_data)
+
+    qual_name_results = qual_name_results(
+        column_results=column_results,
+        qual_name_param_targets=qual_name_param_targets,
+        column_functions_and_processed_params_and_scalars=column_functions_and_processed_params_and_scalars,
+        qual_name_own_targets=qual_name_own_targets,
+        qual_name_data=qual_name_data,
+        qual_name_targets=qual_name_targets,
+    )
+    nested_results = nested_results(qual_name_results)
+
+    return nested_results
+
+
+def fail_if_any_paths_are_invalid(
+    policy_environment: NestedPolicyEnvironment,
+    data_tree: NestedData,
+    targets_tree: NestedTargetDict,
+    top_level_namespace: set[str],
+) -> None:
+    """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
+    return dt.fail_if_paths_are_invalid(
+        functions=policy_environment,
+        data_tree=data_tree,
+        targets=targets_tree,
+        top_level_namespace=top_level_namespace,
+    )
+
+
+def qual_name_data_columns(qual_name_data):
+    return set(qual_name_data.keys())
+
+
+def nested_results(qual_name_results: QualNameData) -> NestedData:
+    return dt.unflatten_from_qual_names(qual_name_results)
+
+
+def qual_name_results(
+    column_results: QualNameData,
+    qual_name_param_targets: QualNameTargetList,
+    column_functions_and_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
+    qual_name_own_targets: QualNameTargetList,
+    qual_name_data: QualNameData,
+    qual_name_targets: QualNameTargetList,
+):
+    unordered = {
+        **column_results,
+        **{
+            pt: column_functions_and_processed_params_and_scalars[pt]
+            for pt in qual_name_param_targets
+        },
+        **{ot: qual_name_data[ot] for ot in qual_name_own_targets},
+    }
+    return {k: unordered[k] for k in qual_name_targets}
+
+
+def tax_transfer_dag(
+    required_column_functions: QualNameColumnFunctions,
+    qual_name_function_targets: QualNameTargetList,
+) -> nx.DiGraph:
+    """Thin wrapper around `create_dag`."""
+    return create_dag(
+        functions=required_column_functions,
+        targets=qual_name_function_targets,
+    )
+
+
+def tax_transfer_function(
+    tax_transfer_dag: nx.DiGraph,
+    required_column_functions: QualNameColumnFunctions,
+    qual_name_function_targets: QualNameTargetList,
+    # backend: numpy | jax,
+) -> Callable[[QualNameData], QualNameData]:
+    """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
+
+    ttf_with_keyword_args = concatenate_functions(
+        dag=tax_transfer_dag,
+        functions=required_column_functions,
+        targets=list(qual_name_function_targets),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
         set_annotations=False,
     )
 
-    if jit:
-        if not IS_JAX_INSTALLED:
-            raise ImportError(
-                "JAX is not installed. Please install JAX to use JIT compilation."
-            )
-        import jax
+    # if backend == jax:
+    #     if not IS_JAX_INSTALLED:
+    #         raise ImportError(
+    #             "JAX is not installed. Please install JAX to use JIT compilation."
+    #         )
+    #     import jax
 
-        static_args = {
-            argname: data_tree["p_id"].max() + 1
-            for argname in inspect.signature(tax_transfer_function).parameters
-            if argname.endswith("_num_segments")
-        }
-        tax_transfer_function = functools.partial(tax_transfer_function, **static_args)
-        tax_transfer_function = jax.jit(tax_transfer_function)
-    column_results = tax_transfer_function(**input_data)
+    #     static_args = {
+    #         argname: data_tree["p_id"].max() + 1
+    #         for argname in inspect.signature(ttf_with_keyword_args).parameters
+    #         if argname.endswith("_num_segments")
+    #     }
+    #     ttf_with_keyword_args=functools.partial(ttf_with_keyword_args, **static_args)
+    #     ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 
-    results_tree = dt.unflatten_from_qual_names(
-        {
-            **column_results,
-            **{
-                pt: _column_functions_and_processed_params_and_scalars[pt]
-                for pt in set(dt.qual_names(targets_tree)) - set(function_targets)
-            },
-        }
+    def wrapper(qual_name_data: QualNameData) -> QualNameData:
+        return ttf_with_keyword_args(**qual_name_data)
+
+    return wrapper
+
+
+def qual_name_targets(targets_tree: NestedTargetDict) -> QualNameTargetList:
+    """All targets in their qualified name-representation."""
+    return dt.qual_names(targets_tree)
+
+
+def qual_name_column_targets(required_column_functions, qual_name_targets):
+    """All targets that are column functions."""
+    return [t for t in qual_name_targets if t in required_column_functions]
+
+
+def qual_name_param_targets(
+    _flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
+    qual_name_targets: QualNameTargetList,
+    qual_name_function_targets: QualNameTargetList,
+) -> QualNameTargetList:
+    possible_targets = set(qual_name_targets) - set(qual_name_function_targets)
+    return [
+        t
+        for t in qual_name_targets
+        if t in possible_targets
+        and t
+        in _flat_policy_environment_with_derived_functions_and_without_overridden_functions
+    ]
+
+
+def qual_name_own_targets(
+    qual_name_targets: QualNameTargetList,
+    qual_name_function_targets: QualNameTargetList,
+    qual_name_param_targets: QualNameTargetList,
+) -> QualNameTargetList:
+    possible_targets = (
+        set(qual_name_targets)
+        - set(qual_name_function_targets)
+        - set(qual_name_param_targets)
     )
-
-    if debug:
-        results_tree = merge_trees(
-            left=results_tree,
-            right=dt.unflatten_from_qual_names(input_data),
-        )
-
-    return results_tree
+    return [t for t in qual_name_targets if t in possible_targets]
 
 
 def flat_policy_environment_with_derived_functions_and_without_overridden_functions(
     policy_environment: NestedPolicyEnvironment,
-    data: QualNameDataColumns,
+    qual_name_data: QualNameDataColumns,
     targets_tree: NestedTargetDict,
     top_level_namespace: set[str],
 ) -> QualNamePolicyEnvironment:
@@ -221,31 +336,30 @@ def flat_policy_environment_with_derived_functions_and_without_overridden_functi
     3. Remove all functions that are overridden by data columns.
 
     """
-    flat = remove_tree_logic_from_policy_environment(
+    flat = _remove_tree_logic_from_policy_environment(
         policy_environment=policy_environment,
         top_level_namespace=top_level_namespace,
     )
     flat_with_derived = _add_derived_functions(
         qual_name_policy_environment=flat,
         targets=dt.qual_names(targets_tree),
-        data_columns=set(data.keys()),
+        data_columns=set(qual_name_data.keys()),
         groupings=grouping_levels(policy_environment),
     )
     out = {}
     for n, f in flat_with_derived.items():
         # Put scalar data into the policy environment, else skip the key
-        if n in data:
-            if isinstance(data[n], int | float | bool):
-                out[n] = data[n]
+        if n in qual_name_data:
+            if isinstance(qual_name_data[n], int | float | bool):
+                out[n] = qual_name_data[n]
         else:
             out[n] = f
 
     return out
 
 
-def _get_top_level_namespace(
+def top_level_namespace(
     policy_environment: NestedPolicyEnvironment,
-    time_units: tuple[str, ...],
 ) -> set[str]:
     """Get the top level namespace.
 
@@ -260,6 +374,7 @@ def _get_top_level_namespace(
         The top level namespace.
     """
 
+    time_units = tuple(TIME_UNIT_LABELS.keys())
     direct_top_level_names = set(policy_environment.keys())
 
     # Do not create variations for lower-level namespaces.
@@ -299,7 +414,7 @@ def _get_top_level_namespace(
     return all_top_level_names
 
 
-def remove_tree_logic_from_policy_environment(
+def _remove_tree_logic_from_policy_environment(
     policy_environment: NestedPolicyEnvironment,
     top_level_namespace: set[str],
 ) -> QualNamePolicyEnvironment:
@@ -378,19 +493,13 @@ def _add_derived_functions(
         **aggregate_by_group_functions,
     }
 
-    _fail_if_targets_not_in_policy_environment_or_data(
-        policy_environment=out,
-        data_columns=data_columns,
-        targets=targets,
-    )
-
     return out
 
 
-def _fail_if_targets_not_in_policy_environment_or_data(
+def fail_if_targets_are_not_in_policy_environment_or_data(
     policy_environment: QualNamePolicyEnvironment,
     data_columns: QualNameDataColumns,
-    targets: QualNameTargetList,
+    qual_name_targets: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -412,7 +521,7 @@ def _fail_if_targets_not_in_policy_environment_or_data(
     """
     targets_not_in_policy_environment_or_data = [
         str(dt.tree_path_from_qual_name(n))
-        for n in targets
+        for n in qual_name_targets
         if n not in policy_environment and n not in data_columns
     ]
     if targets_not_in_policy_environment_or_data:
@@ -423,10 +532,9 @@ def _fail_if_targets_not_in_policy_environment_or_data(
         raise ValueError(msg)
 
 
-def _create_input_data_for_concatenated_function(
-    data: QualNameData,
-    functions: QualNameColumnFunctions,
-    function_targets: QualNameTargetList,
+def qual_name_input_data(
+    tax_transfer_dag: nx.DiGraph,
+    qual_name_data: QualNameData,
 ) -> QualNameData:
     """Create input data for the concatenated function.
 
@@ -449,22 +557,14 @@ def _create_input_data_for_concatenated_function(
     Inputs for the concatenated function.
 
     """
-    # Create dag using processed functions
-    dag = create_dag(functions=functions, targets=function_targets)
 
-    # Create root nodes tree
+    # Obtain root nodes
     root_nodes = nx.subgraph_view(
-        dag, filter_node=lambda n: dag.in_degree(n) == 0
+        tax_transfer_dag, filter_node=lambda n: tax_transfer_dag.in_degree(n) == 0
     ).nodes
 
-    _fail_if_root_nodes_are_missing(
-        functions=functions,
-        data=data,
-        root_nodes=root_nodes,
-    )
-
-    # Get only part of the data tree that is needed
-    return {k: np.array(v) for k, v in data.items() if k in root_nodes}
+    # Restrict the passed data to the subset that is actually used.
+    return {k: np.array(v) for k, v in qual_name_data.items() if k in root_nodes}
 
 
 def _apply_rounding(element: Any) -> Any:
@@ -567,7 +667,7 @@ def required_column_functions(
     return processed_functions
 
 
-def _fail_if_targets_tree_not_valid(targets_tree: NestedTargetDict) -> None:
+def fail_if_targets_tree_is_invalid(targets_tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """
@@ -578,22 +678,54 @@ def _fail_if_targets_tree_not_valid(targets_tree: NestedTargetDict) -> None:
     )
 
 
-def _fail_if_data_tree_not_valid(data_tree: NestedData) -> None:
+def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
     """
-    Validate that the data tree is a dictionary with string keys and pd.Series or
-    np.ndarray leaves.
+    Validate the basic structure of the data tree.
+
+    1. It must be is a dictionary with string keys and Series or Array leaves.
+    2. It must contain the `p_id` column.
+    3. Each element of `p_id` must uniquely identify a row.
+
+    Parameters
+    ----------
+    data_tree
+        The data tree.
+
+    Raises
+    ------
+    ValueError
+        If any of the above conditions is not met.
     """
     assert_valid_ttsim_pytree(
         tree=data_tree,
         leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
         tree_name="data_tree",
     )
-    _fail_if_p_id_is_non_unique(data_tree)
+    p_id = data_tree.get("p_id", None)
+    if p_id is None:
+        raise ValueError("The input data must contain the `p_id` column.")
+
+    # Check for non-unique p_ids
+    p_id_counts: dict[int, int] = {}
+    # Need the map because Jax loop items are 1-element arrays.
+    for i in map(int, p_id):
+        if i in p_id_counts:
+            p_id_counts[i] += 1
+        else:
+            p_id_counts[i] = 1
+
+    non_unique_p_ids = [i for i, count in p_id_counts.items() if count > 1]
+
+    if non_unique_p_ids:
+        message = (
+            f"The following `p_id`s are non-unique in the input data:{non_unique_p_ids}"
+        )
+        raise ValueError(message)
 
 
-def _fail_if_group_variables_not_constant_within_groups(
-    data: QualNameData,
-    groupings: tuple[str, ...],
+def fail_if_group_variables_are_not_constant_within_groups(
+    input_data: QualNameData,
+    grouping_levels: tuple[str, ...],
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -607,13 +739,13 @@ def _fail_if_group_variables_not_constant_within_groups(
     """
     faulty_data_columns = []
 
-    for name, data_column in data.items():
+    for name, data_column in input_data.items():
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            groupings=groupings,
+            groupings=grouping_levels,
         )
-        if group_by_id in data:
-            group_by_id_series = pd.Series(data[group_by_id])
+        if group_by_id in input_data:
+            group_by_id_series = pd.Series(input_data[group_by_id])
             leaf_series = pd.Series(data_column)
             unique_counts = leaf_series.groupby(group_by_id_series).nunique(
                 dropna=False
@@ -635,33 +767,9 @@ def _fail_if_group_variables_not_constant_within_groups(
         raise ValueError(msg)
 
 
-def _fail_if_p_id_is_non_unique(data_tree: NestedData) -> None:
-    """Check that pid is unique."""
-    p_id = data_tree.get("p_id", None)
-    if p_id is None:
-        raise ValueError("The input data must contain the p_id.")
-
-    # Check for non-unique p_ids
-    p_id_counts: dict[int, int] = {}
-    # Need the map because Jax loop items are 1-element arrays.
-    for i in map(int, p_id):
-        if i in p_id_counts:
-            p_id_counts[i] += 1
-        else:
-            p_id_counts[i] = 1
-
-    non_unique_p_ids = [i for i, count in p_id_counts.items() if count > 1]
-
-    if non_unique_p_ids:
-        message = (
-            f"The following p_ids are non-unique in the input data:{non_unique_p_ids}"
-        )
-        raise ValueError(message)
-
-
-def _fail_if_foreign_keys_are_invalid_in_data(
-    data: QualNameData,
+def fail_if_foreign_keys_are_invalid_in_data(
     input_data: QualNameData,
+    qual_name_data: QualNameData,
     flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
 ) -> None:
     """
@@ -669,9 +777,12 @@ def _fail_if_foreign_keys_are_invalid_in_data(
 
     Foreign keys must point to an existing `p_id` in the input data and must not refer
     to the `p_id` of the same row.
+
+    We need qual_name_data because we cannot guarantee that `p_id` is present in the
+    input data.
     """
 
-    valid_ids = set(data["p_id"].tolist()) | {-1}
+    valid_ids = set(qual_name_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
         for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
@@ -696,7 +807,9 @@ def _fail_if_foreign_keys_are_invalid_in_data(
             if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
                 equal_to_pid_in_same_row = [
                     i
-                    for i, j in zip(input_data[fk_name].tolist(), data["p_id"].tolist())
+                    for i, j in zip(
+                        input_data[fk_name].tolist(), qual_name_data["p_id"].tolist()
+                    )
                     if i == j
                 ]
                 if any(equal_to_pid_in_same_row):
@@ -782,35 +895,38 @@ class FunctionsAndDataOverlapWarning(UserWarning):
         super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
 
 
-def _fail_if_root_nodes_are_missing(
-    functions: QualNameColumnFunctions,
-    data: QualNameData,
-    root_nodes: list[str],
+def fail_if_root_nodes_are_missing(
+    tax_transfer_dag: nx.DiGraph,
+    required_column_functions: QualNameColumnFunctions,
+    qual_name_data: QualNameData,
 ) -> None:
     """Fail if root nodes are missing.
 
-    Fails if there are root nodes in the DAG (i.e. nodes without predecessors that do
-    not depend on parameters only) that are not present in the data tree.
-
     Parameters
     ----------
-    functions
-        Dictionary of functions that are overridden by data.
-    root_nodes
-        List of root nodes.
-    data
-        Dictionary of data.
+    tax_transfer_dag
+        The DAG of taxes and transfers functions.
+    required_column_functions
+        The functions operating on columns that make up the DAG.
+    qual_name_data
+        The data tree in qualified name representation.
 
     Raises
     ------
     ValueError
         If root nodes are missing.
     """
+
+    # Obtain root nodes
+    root_nodes = nx.subgraph_view(
+        tax_transfer_dag, filter_node=lambda n: tax_transfer_dag.in_degree(n) == 0
+    ).nodes
+
     missing_nodes = [
         node
         for node in root_nodes
-        if node not in functions
-        and node not in data
+        if node not in required_column_functions  # TODO: Check whether still needed.
+        and node not in qual_name_data
         and not node.endswith("_num_segments")
     ]
 

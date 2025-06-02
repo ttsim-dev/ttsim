@@ -1,10 +1,11 @@
+# ruff: noqa
+# type: ignore
 from __future__ import annotations
 
 import networkx as nx
 import pytest
-from mettsim.config import METTSIM_ROOT
 
-from ttsim import plot_dag, set_up_policy_environment
+from ttsim import plot_dag
 from ttsim.plot_dag import (
     _get_selected_nodes,
     _kth_order_neighbors,
@@ -13,7 +14,7 @@ from ttsim.plot_dag import (
     _select_nodes_in_dag,
 )
 
-environment = set_up_policy_environment(date="2020-01-01", root=METTSIM_ROOT)
+# environment = policy_environment(date="2020-01-01", root=METTSIM_ROOT)
 
 
 @pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")

@@ -14,8 +14,8 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     ScalarParam,
     group_creation_function,
+    policy_environment,
     policy_function,
-    set_up_policy_environment,
 )
 from ttsim.column_objects_param_function import DEFAULT_END_DATE
 from ttsim.loader import (
@@ -30,7 +30,7 @@ from ttsim.policy_environment import (
     _ParamWithActivePeriod,
     active_tree_with_column_objects_and_param_functions,
     active_tree_with_params,
-    fail_because_active_periods_overlap,
+    fail_if_active_periods_overlap,
     fail_if_group_ids_are_outside_top_level_namespace,
     fail_if_name_of_last_branch_element_not_leaf_name_of_function,
     grouping_levels,
@@ -40,6 +40,7 @@ from ttsim.policy_environment import (
 if TYPE_CHECKING:
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,
         NestedPolicyEnvironment,
         OrigParamSpec,
@@ -101,12 +102,12 @@ def some_int_param():
 
 
 def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="2020-02-29", root=METTSIM_ROOT)
+    policy_environment(date="2020-02-29", root=METTSIM_ROOT)
 
 
 def test_fail_if_invalid_date():
     with pytest.raises(ValueError):
-        set_up_policy_environment(date="2020-02-30", root=METTSIM_ROOT)
+        policy_environment(date="2020-02-30", root=METTSIM_ROOT)
 
 
 def test_add_jahresanfang():
@@ -175,12 +176,12 @@ def test_upsert_tree_into_policy_environment(
 
 
 def test_input_is_recognized_as_potential_group_id():
-    environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
+    environment = policy_environment(root=METTSIM_ROOT, date="2020-01-01")
     assert "kin" in grouping_levels(environment)
 
 
 def test_p_id_not_recognized_as_potential_group_id():
-    environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
+    environment = policy_environment(root=METTSIM_ROOT, date="2020-01-01")
     assert "p" not in grouping_levels(environment)
 
 
@@ -273,11 +274,11 @@ def identity(x):
 
 
 @pytest.mark.parametrize(
-    "orig_trees",
+    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
     [
         # Same global module, no overlapping periods, no name clashes.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={
+        (
+            {
                 ("c", "a"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -289,7 +290,7 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            params={
+            {
                 ("c", "g"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
@@ -297,8 +298,8 @@ def identity(x):
             },
         ),
         # Same submodule, overlapping periods, different leaf names so no name clashes.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={
+        (
+            {
                 ("x", "c", "a"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -310,7 +311,7 @@ def identity(x):
                     leaf_name="g",
                 )(identity),
             },
-            params={
+            {
                 ("x", "c", "h"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
@@ -318,8 +319,8 @@ def identity(x):
             },
         ),
         # Different submodules, no overlapping periods, no name clashes.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={
+        (
+            {
                 ("x", "c", "f"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -329,7 +330,7 @@ def identity(x):
                     end_date="2023-02-28",
                 )(identity),
             },
-            params={
+            {
                 ("x", "c", "g"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
@@ -337,8 +338,8 @@ def identity(x):
             },
         ),
         # Different paths, overlapping periods, same names but no clashes.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={
+        (
+            {
                 ("x", "a", "b"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -350,7 +351,7 @@ def identity(x):
                     leaf_name="f",
                 )(identity),
             },
-            params={
+            {
                 ("z", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
@@ -358,9 +359,9 @@ def identity(x):
             },
         ),
         # Different yaml files, no name clashes because of different names.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={},
-            params={
+        (
+            {},
+            {
                 ("x", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 5},
@@ -373,96 +374,100 @@ def identity(x):
         ),
     ],
 )
-def test_fail_because_active_periods_overlap_passes(orig_trees: OrigTreesWithFileNames):
-    fail_because_active_periods_overlap(orig_trees)
+def test_fail_because_active_periods_overlap_passes(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
+):
+    fail_if_active_periods_overlap(
+        orig_tree_with_column_objects_and_param_functions,
+        orig_tree_with_params,
+    )
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions",
+    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
     [
         # Exact overlap.
-        {
-            ("a",): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-            ("b",): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("a",): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("b",): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Active period for "a" is subset of "b".
-        {
-            ("a"): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-            ("b"): policy_function(
-                start_date="2021-01-02",
-                end_date="2023-02-01",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("a"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("b"): policy_function(
+                    start_date="2021-01-02",
+                    end_date="2023-02-01",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Some overlap.
-        {
-            ("a",): policy_function(
-                start_date="2023-01-02",
-                end_date="2023-02-01",
-                leaf_name="f",
-            )(identity),
-            ("b",): policy_function(
-                start_date="2022-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("a",): policy_function(
+                    start_date="2023-01-02",
+                    end_date="2023-02-01",
+                    leaf_name="f",
+                )(identity),
+                ("b",): policy_function(
+                    start_date="2022-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Same as before, but defined in different modules.
-        {
-            ("c", "a"): policy_function(
-                start_date="2023-01-02",
-                end_date="2023-02-01",
-                leaf_name="f",
-            )(identity),
-            ("d", "b"): policy_function(
-                start_date="2022-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("c", "a"): policy_function(
+                    start_date="2023-01-02",
+                    end_date="2023-02-01",
+                    leaf_name="f",
+                )(identity),
+                ("d", "b"): policy_function(
+                    start_date="2022-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Same as before, but defined in different modules without leaf name.
-        {
-            ("c", "f"): policy_function(
-                start_date="2023-01-02",
-                end_date="2023-02-01",
-            )(identity),
-            ("d", "f"): policy_function(
-                start_date="2022-01-01",
-                end_date="2023-01-31",
-            )(identity),
-        },
-    ],
-)
-def test_fail_because_of_conflicting_active_periods(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-):
-    with pytest.raises(ConflictingActivePeriodsError):
-        fail_because_active_periods_overlap(
-            OrigTreesWithFileNames(
-                column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions,
-                params={},
-            )
-        )
-
-
-@pytest.mark.parametrize(
-    "orig_trees",
-    [
+        (
+            {
+                ("c", "f"): policy_function(
+                    start_date="2023-01-02",
+                    end_date="2023-02-01",
+                )(identity),
+                ("d", "f"): policy_function(
+                    start_date="2022-01-01",
+                    end_date="2023-01-31",
+                )(identity),
+            },
+            {},
+        ),
         # Same global module, no overlap in functions, name clashes leaf name / yaml.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={
+        (
+            {
                 ("c", "a"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -474,7 +479,7 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            params={
+            {
                 ("c", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
@@ -482,8 +487,8 @@ def test_fail_because_of_conflicting_active_periods(
             },
         ),
         # Same paths, no overlap in functions, name clashes leaf name / yaml.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={
+        (
+            {
                 ("x", "a", "b"): policy_function(
                     start_date="2023-01-01",
                     end_date="2023-01-31",
@@ -495,7 +500,7 @@ def test_fail_because_of_conflicting_active_periods(
                     leaf_name="f",
                 )(identity),
             },
-            params={
+            {
                 ("x", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
@@ -503,9 +508,9 @@ def test_fail_because_of_conflicting_active_periods(
             },
         ),
         # Same paths, name clashes within params from different yaml files.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={},
-            params={
+        (
+            {},
+            {
                 ("x", "a", "f"): {
                     **GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
@@ -518,9 +523,15 @@ def test_fail_because_of_conflicting_active_periods(
         ),
     ],
 )
-def test_fail_because_of_conflicting_names(orig_trees: OrigTreesWithFileNames):
+def test_fail_because_active_periods_overlap_raises(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
+):
     with pytest.raises(ConflictingActivePeriodsError):
-        fail_because_active_periods_overlap(orig_trees)
+        fail_if_active_periods_overlap(
+            orig_tree_with_column_objects_and_param_functions,
+            orig_tree_with_params,
+        )
 
 
 @pytest.mark.parametrize(
@@ -599,7 +610,7 @@ def test_fail_because_of_conflicting_names(orig_trees: OrigTreesWithFileNames):
     ],
 )
 def test_pass_because_no_overlap_functions_params(orig_trees: OrigTreesWithFileNames):
-    fail_because_active_periods_overlap(orig_trees)
+    fail_if_active_periods_overlap(orig_trees)
 
 
 @pytest.mark.parametrize(

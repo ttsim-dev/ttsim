@@ -111,7 +111,6 @@ numpydoc = "*"
 openpyxl = "*"
 ipywidgets = "*"
 jupyterlab = "*"
-networkx = "*" # Remove once dags is a proper dependency
 plotly = ">=5.24,<6"
 pygments = "*"
 pygraphviz = "*"
@@ -129,7 +128,7 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "allow-passing-dag-to-concatenate_functions"}
 pdbp = "*"
 
 [tool.pixi.target.unix.pypi-dependencies]
@@ -256,13 +255,14 @@ extend-ignore = [
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
-"src/ttsim/compute_taxes_and_transfers.py" = ["E501"]
+"src/ttsim/compute_taxes_and_transfers.py" = ["E501", "ERA001"]
 "src/ttsim/functions/all_functions_for_docs.py" = ["F401", "E501", "F403"]
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
 "docs/**/*.ipynb" = ["T201"]
+"tests/ttsim/test_plot_dag.py" = ["PGH004"]
 
 # Files which should be ignored until we have rewritten them
 # =========================================================

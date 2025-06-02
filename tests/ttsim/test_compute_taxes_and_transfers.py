@@ -21,21 +21,20 @@ from ttsim import (
     ScalarParam,
     agg_by_group_function,
     agg_by_p_id_function,
+    column_functions_with_processed_params_and_scalars,
     compute_taxes_and_transfers,
+    fail_if_data_tree_is_invalid,
+    fail_if_foreign_keys_are_invalid_in_data,
+    fail_if_group_variables_are_not_constant_within_groups,
+    fail_if_targets_are_not_in_policy_environment_or_data,
+    main,
     merge_trees,
     param_function,
+    policy_environment,
     policy_function,
     policy_input,
-    set_up_policy_environment,
-)
-from ttsim.compute_taxes_and_transfers import (
-    _fail_if_foreign_keys_are_invalid_in_data,
-    _fail_if_group_variables_not_constant_within_groups,
-    _fail_if_p_id_is_non_unique,
-    _fail_if_targets_not_in_policy_environment_or_data,
-    _get_top_level_namespace,
-    column_functions_with_processed_params_and_scalars,
     required_column_functions,
+    top_level_namespace,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
@@ -204,7 +203,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 
 @pytest.fixture(scope="module")
 def mettsim_environment() -> NestedPolicyEnvironment:
-    return set_up_policy_environment(
+    return policy_environment(
         root=METTSIM_ROOT,
         date="2025-01-01",
     )
@@ -419,13 +418,13 @@ def test_create_agg_by_group_functions(
         ({"foo__baz": some_x}, {"foo__bar": None}, {"spam"}, "('foo', 'bar')"),
     ],
 )
-def test_fail_if_targets_not_in_policy_environment_or_data(
+def test_fail_if_targets_are_not_in_policy_environment_or_data(
     policy_environment, targets, data_columns, expected_error_match
 ):
     with pytest.raises(ValueError) as e:
-        _fail_if_targets_not_in_policy_environment_or_data(
+        fail_if_targets_are_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
-            targets=targets,
+            qual_name_targets=targets,
             data_columns=data_columns,
         )
     assert expected_error_match in str(e.value)
@@ -437,11 +436,13 @@ def test_output_is_tree(minimal_input_data):
         "module": {"some_func": some_func},
     }
 
-    out = compute_taxes_and_transfers(
-        data_tree=minimal_input_data,
-        policy_environment=policy_environment,
-        targets_tree={"module": {"some_func": None}},
-        jit=jit,
+    out = main(
+        inputs={
+            "data_tree": minimal_input_data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"module": {"some_func": None}},
+            # "jit": jit,
+        }
     )
 
     assert isinstance(out, dict)
@@ -535,15 +536,17 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
 def test_fail_if_p_id_does_not_exist():
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
-    with pytest.raises(ValueError):
-        _fail_if_p_id_is_non_unique(data)
+    with pytest.raises(
+        ValueError, match="The input data must contain the `p_id` column."
+    ):
+        fail_if_data_tree_is_invalid(data_tree=data)
 
 
 def test_fail_if_p_id_is_non_unique():
     data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
 
-    with pytest.raises(ValueError):
-        _fail_if_p_id_is_non_unique(data)
+    with pytest.raises(ValueError, match="The following `p_id`s are non-unique"):
+        fail_if_data_tree_is_invalid(data_tree=data)
 
 
 def test_fail_if_foreign_key_points_to_non_existing_p_id(
@@ -556,9 +559,9 @@ def test_fail_if_foreign_key_points_to_non_existing_p_id(
     }
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
-        _fail_if_foreign_keys_are_invalid_in_data(
-            data=data,
+        fail_if_foreign_keys_are_invalid_in_data(
             input_data={k: v for k, v in data.items() if k != "p_id"},
+            qual_name_data=data,
             flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
         )
 
@@ -570,9 +573,9 @@ def test_allow_minus_one_as_foreign_key(mettsim_environment: NestedPolicyEnviron
         "p_id_spouse": pd.Series([-1, 1, 2]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(
-        data=data,
+    fail_if_foreign_keys_are_invalid_in_data(
         input_data={k: v for k, v in data.items() if k != "p_id"},
+        qual_name_data=data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -586,9 +589,9 @@ def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(
         "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(
-        data=data,
+    fail_if_foreign_keys_are_invalid_in_data(
         input_data={k: v for k, v in data.items() if k != "p_id"},
+        qual_name_data=data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -602,9 +605,9 @@ def test_fail_if_foreign_key_points_to_same_row_if_allowed(
         "p_id_child_": pd.Series([1, 3, 3]),
     }
 
-    _fail_if_foreign_keys_are_invalid_in_data(
-        data=data,
+    fail_if_foreign_keys_are_invalid_in_data(
         input_data={k: v for k, v in data.items() if k != "p_id"},
+        qual_name_data=data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -615,9 +618,9 @@ def test_fail_if_group_variables_not_constant_within_groups():
         "kin_id": pd.Series([1, 1, 2], name="kin_id"),
     }
     with pytest.raises(ValueError):
-        _fail_if_group_variables_not_constant_within_groups(
-            data=data,
-            groupings=("kin",),
+        fail_if_group_variables_are_not_constant_within_groups(
+            input_data=data,
+            grouping_levels=("kin",),
         )
 
 
@@ -932,7 +935,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     ],
 )
 def test_get_top_level_namespace(policy_environment, time_units, expected):
-    result = _get_top_level_namespace(
+    result = top_level_namespace(
         policy_environment=policy_environment,
         time_units=time_units,
     )
