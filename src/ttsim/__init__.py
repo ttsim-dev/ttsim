@@ -23,7 +23,9 @@ from ttsim.compute_taxes_and_transfers import (
     _add_derived_functions,
     compute_taxes_and_transfers,
 )
+from ttsim.convert_nested_data import dataframe_to_nested_data, nested_data_to_dataframe
 from ttsim.param_objects import (
+    ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
     ConsecutiveInt2dLookupTableParamValue,
     DictParam,
@@ -47,7 +49,6 @@ from ttsim.policy_environment import (
     get_year_based_phase_inout_of_age_thresholds_param_value,
     set_up_policy_environment,
 )
-from ttsim.prepare_data import create_data_tree_from_df
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import (
     insert_path_and_value,
@@ -62,6 +63,7 @@ __all__ = [
     "AggByGroupFunction",
     "AggByPIDFunction",
     "AggType",
+    "ConsecutiveInt1dLookupTableParam",
     "ConsecutiveInt1dLookupTableParamValue",
     "ConsecutiveInt2dLookupTableParamValue",
     "DictParam",
@@ -84,8 +86,8 @@ __all__ = [
     "agg_by_group_function",
     "agg_by_p_id_function",
     "compute_taxes_and_transfers",
-    "create_data_tree_from_df",
     "create_time_conversion_functions",
+    "dataframe_to_nested_data",
     "get_consecutive_int_1d_lookup_table_param_value",
     "get_consecutive_int_2d_lookup_table_param_value",
     "get_month_based_phase_inout_of_age_thresholds_param_value",
@@ -95,6 +97,7 @@ __all__ = [
     "insert_path_and_value",
     "join",
     "merge_trees",
+    "nested_data_to_dataframe",
     "param_function",
     "piecewise_polynomial",
     "plot_dag",
