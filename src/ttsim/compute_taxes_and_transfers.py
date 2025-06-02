@@ -105,7 +105,7 @@ def compute_taxes_and_transfers(
 
     qual_name_data = qual_name_data(data_tree)
     qual_name_data_columns = qual_name_data_columns(qual_name_data)
-    warn_if_elements_overridden_by_data(
+    warn_if_functions_and_data_columns_overlap(
         policy_environment=policy_environment,
         qual_name_data_columns=qual_name_data_columns,
     )
@@ -161,11 +161,11 @@ def compute_taxes_and_transfers(
     )
 
     fail_if_group_variables_are_not_constant_within_groups(
-        input_data=qual_name_input_data,
+        qual_name_input_data=qual_name_input_data,
         grouping_levels=grouping_levels(policy_environment),
     )
     fail_if_foreign_keys_are_invalid_in_data(
-        input_data=qual_name_input_data,
+        qual_name_input_data=qual_name_input_data,
         qual_name_data=qual_name_data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
@@ -730,13 +730,14 @@ def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
 
     if non_unique_p_ids:
         message = (
-            f"The following `p_id`s are non-unique in the input data:{non_unique_p_ids}"
+            "The following `p_id`s are not unique in the input data:\n\n"
+            f"{non_unique_p_ids}\n\n"
         )
         raise ValueError(message)
 
 
 def fail_if_group_variables_are_not_constant_within_groups(
-    input_data: QualNameData,
+    qual_name_input_data: QualNameData,
     grouping_levels: tuple[str, ...],
 ) -> None:
     """
@@ -751,13 +752,13 @@ def fail_if_group_variables_are_not_constant_within_groups(
     """
     faulty_data_columns = []
 
-    for name, data_column in input_data.items():
+    for name, data_column in qual_name_input_data.items():
         group_by_id = get_name_of_group_by_id(
             target_name=name,
             groupings=grouping_levels,
         )
-        if group_by_id in input_data:
-            group_by_id_series = pd.Series(input_data[group_by_id])
+        if group_by_id in qual_name_input_data:
+            group_by_id_series = pd.Series(qual_name_input_data[group_by_id])
             leaf_series = pd.Series(data_column)
             unique_counts = leaf_series.groupby(group_by_id_series).nunique(
                 dropna=False
@@ -780,7 +781,7 @@ def fail_if_group_variables_are_not_constant_within_groups(
 
 
 def fail_if_foreign_keys_are_invalid_in_data(
-    input_data: QualNameData,
+    qual_name_input_data: QualNameData,
     qual_name_data: QualNameData,
     flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
 ) -> None:
@@ -804,14 +805,14 @@ def fail_if_foreign_keys_are_invalid_in_data(
     for fk_name, fk in relevant_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
-        elif fk_name in input_data:
+        elif fk_name in qual_name_input_data:
             path = dt.tree_path_from_qual_name(fk_name)
             # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in input_data[fk_name].tolist()):
+            if not all(i in valid_ids for i in qual_name_input_data[fk_name].tolist()):
                 message = format_errors_and_warnings(
                     f"""
                     For {path}, the following are not a valid p_id in the input
-                    data: {[i for i in input_data[fk_name] if i not in valid_ids]}.
+                    data: {[i for i in qual_name_input_data[fk_name] if i not in valid_ids]}.
                     """
                 )
                 raise ValueError(message)
@@ -820,7 +821,8 @@ def fail_if_foreign_keys_are_invalid_in_data(
                 equal_to_pid_in_same_row = [
                     i
                     for i, j in zip(
-                        input_data[fk_name].tolist(), qual_name_data["p_id"].tolist()
+                        qual_name_input_data[fk_name].tolist(),
+                        qual_name_data["p_id"].tolist(),
                     )
                     if i == j
                 ]
@@ -834,7 +836,7 @@ def fail_if_foreign_keys_are_invalid_in_data(
                     raise ValueError(message)
 
 
-def warn_if_elements_overridden_by_data(
+def warn_if_functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
     qual_name_data_columns: QualNameDataColumns,
 ) -> None:
@@ -848,12 +850,12 @@ def warn_if_elements_overridden_by_data(
     )
     if len(overridden_elements) > 0:
         warnings.warn(
-            FunctionsAndDataOverlapWarning(overridden_elements),
+            FunctionsAndDataColumnsOverlapWarning(overridden_elements),
             stacklevel=3,
         )
 
 
-class FunctionsAndDataOverlapWarning(UserWarning):
+class FunctionsAndDataColumnsOverlapWarning(UserWarning):
     """
     Warning that functions which compute columns overlap with existing columns.
 
@@ -896,11 +898,11 @@ class FunctionsAndDataOverlapWarning(UserWarning):
             before calling TTSIM:
 
                 import warnings
-                from ttsim import FunctionsAndDataOverlapWarning
+                from ttsim import FunctionsAndDataColumnsOverlapWarning
 
                 warnings.filterwarnings(
                     "ignore",
-                    category=FunctionsAndDataOverlapWarning
+                    category=FunctionsAndDataColumnsOverlapWarning
                 )
             """
         )

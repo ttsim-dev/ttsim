@@ -4,6 +4,7 @@ from typing import Any
 
 import dags
 import networkx as nx
+import numpy as np
 
 from ttsim.aggregation import AggType
 from ttsim.automatically_added_functions import create_time_conversion_functions
@@ -24,7 +25,7 @@ from ttsim.column_objects_param_function import (
     policy_input,
 )
 from ttsim.compute_taxes_and_transfers import (
-    FunctionsAndDataOverlapWarning,
+    FunctionsAndDataColumnsOverlapWarning,
     _add_derived_functions,
     column_functions_with_processed_params_and_scalars,
     column_results,
@@ -50,7 +51,7 @@ from ttsim.compute_taxes_and_transfers import (
     tax_transfer_dag,
     tax_transfer_function,
     top_level_namespace,
-    warn_if_elements_overridden_by_data,
+    warn_if_functions_and_data_columns_overlap,
 )
 from ttsim.convert_nested_data import dataframe_to_nested_data, nested_data_to_dataframe
 from ttsim.param_objects import (
@@ -87,6 +88,7 @@ from ttsim.policy_environment import (
 )
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import (
+    format_list_linewise,
     insert_path_and_value,
     join,
     merge_trees,
@@ -96,7 +98,7 @@ from ttsim.shared import (
 )
 
 
-def possible_targets():
+def function_collection():
     return {
         "active_tree_with_column_objects_and_param_functions": active_tree_with_column_objects_and_param_functions,
         "active_tree_with_params": active_tree_with_params,
@@ -130,7 +132,7 @@ def possible_targets():
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
         "top_level_namespace": top_level_namespace,
-        "warn_if_elements_overridden_by_data": warn_if_elements_overridden_by_data,
+        "warn_if_functions_and_data_columns_overlap": warn_if_functions_and_data_columns_overlap,
     }
 
 
@@ -138,137 +140,169 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
     """
     Main function that processes the inputs and returns the outputs.
     """
+    possible_targets = function_collection()
+    for key in inputs:
+        if key in function_collection():
+            del possible_targets[key]
+
+    # Collect all missing targets first
+    missing_targets = []
+    for t in targets:
+        if t not in possible_targets:
+            missing_targets.append(t)
+
+    # Raise error with all missing targets listed nicely
+    if missing_targets:
+        if len(missing_targets) == 1:
+            raise ValueError(f"Target '{missing_targets[0]}' does not exist.")
+        else:
+            targets_str = format_list_linewise(missing_targets)
+            raise ValueError(f"Targets '{targets_str}' do not exist.")
+
     dag = dags.create_dag(
-        functions=possible_targets(),
+        functions=possible_targets,
         targets=targets,
     )
-    draw_tax_transfer_dag(dag, "dag.html")
+    f = dags.concatenate_functions(
+        dag=dag,
+        functions=possible_targets,
+        targets=targets,
+        return_type="dict",
+        enforce_signature=False,
+        set_annotations=False,
+    )
+    return f(**inputs)
 
-    return inputs
 
-
-def draw_tax_transfer_dag(
-    tax_transfer_dag: nx.DiGraph,
+def draw_dag(
+    dag: nx.DiGraph,
     output_path: str = "tax_transfer_dag.html",
 ) -> None:
-    """Draw the tax transfer DAG and save it as an interactive HTML file.
+    """Draw the DAG and save it as an interactive HTML file.
 
     Parameters
     ----------
-    tax_transfer_dag
+    dag
         The DAG to draw.
     output_path
         The path where to save the HTML file.
     """
     import plotly.graph_objects as go
 
-    # Calculate node levels using longest path from source
-    levels = {}
-    for node in tax_transfer_dag.nodes():
-        if tax_transfer_dag.in_degree(node) == 0:  # Source node
-            levels[node] = 0
-        else:
-            # Find longest path from any source to this node
-            max_level = 0
-            for source in [
-                n
-                for n in tax_transfer_dag.nodes()
-                if tax_transfer_dag.in_degree(n) == 0
-            ]:
-                try:
-                    path = nx.shortest_path_length(tax_transfer_dag, source, node)
-                    max_level = max(max_level, path)
-                except nx.NetworkXNoPath:
-                    continue
-            levels[node] = max_level
+    # Use Graphviz's dot layout for proper DAG visualization
+    try:
+        # Try to use pygraphviz for better DAG layout
+        pos = nx.nx_agraph.pygraphviz_layout(dag, prog="dot", args="-Grankdir=LR")
+    except (ImportError, FileNotFoundError):
+        # Fallback to spring layout if pygraphviz is not available
+        print("Warning: pygraphviz not available, using spring layout")
+        pos = nx.spring_layout(dag, k=2, iterations=50)
+        # Rotate to make it left-to-right
+        pos = {node: (y, -x) for node, (x, y) in pos.items()}
 
-    # Create positions based on levels
-    pos = {}
-    nodes_by_level = {}
-    for node, level in levels.items():
-        if level not in nodes_by_level:
-            nodes_by_level[level] = []
-        nodes_by_level[level].append(node)
+    # Create edge traces with arrows
+    edge_traces = []
+    annotations = []
 
-    # Position nodes in a hierarchical layout
-    max_level = max(levels.values())
-    for level in range(max_level + 1):
-        nodes = nodes_by_level.get(level, [])
-        for i, node in enumerate(sorted(nodes)):
-            pos[node] = (
-                i - len(nodes) / 2,
-                -level,
-            )  # Center nodes horizontally at each level
-
-    # Create edge trace with arrows
-    edge_x = []
-    edge_y = []
-    for edge in tax_transfer_dag.edges():
+    for edge in dag.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
-        # Add a small offset to make arrows visible
+
+        # Calculate the direction vector
         dx = x1 - x0
         dy = y1 - y0
-        length = (dx**2 + dy**2) ** 0.5
-        if length > 0:
-            x1 = x0 + dx * 0.9  # Shorten the line to make room for arrow
-            y1 = y0 + dy * 0.9
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
+        length = np.sqrt(dx**2 + dy**2)
 
-    edge_trace = go.Scatter(
-        x=edge_x,
-        y=edge_y,
-        line=dict(width=1, color="#888"),
-        hoverinfo="none",
-        mode="lines",
-    )
+        if length > 0:
+            # Normalize the direction vector
+            dx = dx / length
+            dy = dy / length
+
+            # Calculate start and end points with symmetric offsets
+            offset = 50  # Offset in pygraphviz coordinate units
+            x0 = x0 + dx * offset
+            y0 = y0 + dy * offset
+            x1 = x1 - dx * offset
+            y1 = y1 - dy * offset
+
+            # Create the edge line
+            edge_trace = go.Scatter(
+                x=[x0, x1],
+                y=[y0, y1],
+                line=dict(width=1.5, color="#888"),
+                hoverinfo="none",
+                mode="lines",
+            )
+            edge_traces.append(edge_trace)
+
+            # Add arrow using Plotly annotation
+            annotations.append(
+                dict(
+                    x=x1,
+                    y=y1,
+                    ax=x0,
+                    ay=y0,
+                    xref="x",
+                    yref="y",
+                    axref="x",
+                    ayref="y",
+                    arrowhead=2,
+                    arrowsize=1.25,
+                    arrowwidth=2,
+                    arrowcolor="#888",
+                    showarrow=True,
+                    text="",
+                )
+            )
 
     # Create node trace
     node_x = []
     node_y = []
     node_text = []
-    for node in tax_transfer_dag.nodes():
+    node_colors = []
+
+    for node in dag.nodes():
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
         node_text.append(node)
 
+        # Color nodes that start with "fail_" in pale red
+        if node.startswith("fail_"):
+            node_colors.append("#ffb3b3")  # Pale red
+        else:
+            node_colors.append("#1f77b4")  # Blue
+
     node_trace = go.Scatter(
         x=node_x,
         y=node_y,
-        mode="markers+text",
+        mode="markers",
         hoverinfo="text",
         text=node_text,
-        textposition="top center",
         marker=dict(
             showscale=False,
-            colorscale="YlGnBu",
-            size=20,
-            colorbar=dict(
-                thickness=15,
-                title="Node Connections",
-                xanchor="left",
-                titleside="right",
-            ),
+            color=node_colors,
+            size=25,
+            line=dict(width=2, color="white"),
         ),
     )
 
-    # Create the figure with a fixed aspect ratio
+    # Create the figure with specified canvas size (600x900)
     fig = go.Figure(
-        data=[edge_trace, node_trace],
+        data=edge_traces + [node_trace],
         layout=go.Layout(
-            title="Tax Transfer DAG",
+            title="DAG Visualization",
             titlefont_size=16,
             showlegend=False,
             hovermode="closest",
-            margin=dict(b=20, l=5, r=5, t=40),
+            margin=dict(b=40, l=40, r=40, t=60),
+            width=1800,
+            height=1200,
+            annotations=annotations,
             xaxis=dict(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                scaleanchor="y",
-                scaleratio=1,
             ),
             yaxis=dict(
                 showgrid=False,
@@ -291,7 +325,7 @@ __all__ = [
     "ConsecutiveInt2dLookupTableParamValue",
     "DictParam",
     "FKType",
-    "FunctionsAndDataOverlapWarning",
+    "FunctionsAndDataColumnsOverlapWarning",
     "GroupCreationFunction",
     "OrigTreesWithFileNames",
     "ParamFunction",
