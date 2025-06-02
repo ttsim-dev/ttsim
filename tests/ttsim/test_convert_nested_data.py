@@ -304,13 +304,13 @@ def test_nested_data_to_dataframe(
     result_nested_data = compute_taxes_and_transfers(
         data_tree=minimal_data_tree,
         policy_environment=environment,
-        targets_tree={
-            "p_id": None,
-            **targets_tree_to_outputs_df_columns,
-        },
+        targets_tree=targets_tree_to_outputs_df_columns,
     )
     result_df = nested_data_to_dataframe(
-        nested_data_with_p_id=result_nested_data,
+        nested_data_with_p_id={
+            "p_id": minimal_data_tree["p_id"],
+            **result_nested_data,
+        },
         nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
     )
     pd.testing.assert_frame_equal(result_df, expected_output, check_like=True)
@@ -346,16 +346,16 @@ def test_nested_data_to_dataframe_fails_if_noncompatible_objects_are_returned(
     result_nested_data = compute_taxes_and_transfers(
         data_tree=minimal_data_tree,
         policy_environment=environment,
-        targets_tree={
-            "p_id": None,
-            **targets_tree_to_outputs_df_columns,
-        },
+        targets_tree=targets_tree_to_outputs_df_columns,
     )
     with pytest.raises(
         TypeError, match=r"The following paths contain non-scalar\nobjects"
     ):
         nested_data_to_dataframe(
-            nested_data_with_p_id=result_nested_data,
+            nested_data_with_p_id={
+                "p_id": minimal_data_tree["p_id"],
+                **result_nested_data,
+            },
             nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
         )
 
@@ -382,16 +382,16 @@ def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
     result_nested_data = compute_taxes_and_transfers(
         data_tree=minimal_data_tree,
         policy_environment=environment,
-        targets_tree={
-            "p_id": None,
-            **targets_tree_to_outputs_df_columns,
-        },
+        targets_tree=targets_tree_to_outputs_df_columns,
     )
     with pytest.raises(
         ValueError,
         match="failed because the following paths\nare not mapped to a column name",
     ):
         nested_data_to_dataframe(
-            nested_data_with_p_id=result_nested_data,
+            nested_data_with_p_id={
+                "p_id": minimal_data_tree["p_id"],
+                **result_nested_data,
+            },
             nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
         )

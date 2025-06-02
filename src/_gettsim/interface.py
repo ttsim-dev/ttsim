@@ -114,15 +114,16 @@ def oss(
     taxes_and_transfers_result = compute_taxes_and_transfers(
         data_tree=data_tree,
         policy_environment=environment,
-        targets_tree={
-            "p_id": None,
-            **targets_tree_to_outputs_df_columns,
-        },
+        targets_tree=targets_tree_to_outputs_df_columns,
         rounding=True,
         debug=False,
         jit=False,
     )
+    nested_data_with_p_id = {
+        "p_id": data_tree["p_id"],
+        **taxes_and_transfers_result,
+    }
     return nested_data_to_dataframe(
-        nested_data_with_p_id=taxes_and_transfers_result,
+        nested_data_with_p_id=nested_data_with_p_id,
         nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
     )
