@@ -6,7 +6,7 @@ from pandas._testing import assert_series_equal
 
 from ttsim import (
     RoundingSpec,
-    compute_taxes_and_transfers,
+    main,
     policy_environment,
     policy_function,
     policy_input,
@@ -121,13 +121,17 @@ def test_rounding(rounding_spec, input_values, exp_output):
     }
     policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
-    calc_result = compute_taxes_and_transfers(
-        data_tree=data_tree,
-        policy_environment=policy_environment,
-        targets_tree={"namespace": {"test_func": None}},
-    )
+    nested_results = main(
+        inputs={
+            "data_tree": data_tree,
+            "policy_environment": policy_environment,
+            "targets_tree": {"namespace": {"test_func": None}},
+            "rounding": True,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
     assert_series_equal(
-        pd.Series(calc_result["namespace"]["test_func"]),
+        pd.Series(nested_results["namespace"]["test_func"]),
         pd.Series(exp_output, dtype=DTYPE),
         check_names=False,
     )
@@ -152,13 +156,17 @@ def test_rounding_with_time_conversion():
         "p_id": p_id,
     }
 
-    calc_result = compute_taxes_and_transfers(
-        data_tree=data,
-        policy_environment=policy_environment,
-        targets_tree={"test_func_y": None},
-    )
+    nested_results = main(
+        inputs={
+            "data_tree": data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"test_func_y": None},
+            "rounding": True,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
     assert_series_equal(
-        pd.Series(calc_result["test_func_y"]),
+        pd.Series(nested_results["test_func_y"]),
         pd.Series([12.0, 12.0], dtype=DTYPE),
         check_names=False,
     )
@@ -186,14 +194,17 @@ def test_no_rounding(
         "p_id": p_id,
     }
 
-    calc_result = compute_taxes_and_transfers(
-        data_tree=data,
-        policy_environment=policy_environment,
-        targets_tree={"test_func": None},
-        rounding=False,
-    )
+    nested_results = main(
+        inputs={
+            "data_tree": data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"test_func": None},
+            "rounding": False,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
     assert_series_equal(
-        pd.Series(calc_result["test_func"]),
+        pd.Series(nested_results["test_func"]),
         pd.Series(input_values_exp_output, dtype=DTYPE),
         check_names=False,
     )
