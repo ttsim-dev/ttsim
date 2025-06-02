@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class Regelbedarfsstufen:
-    """Regelsatz as a fraction of the Basissatz."""
-
     rbs_1: float
     rbs_2: float
     rbs_3: float
@@ -26,7 +24,7 @@ class Regelbedarfsstufen:
 def regelbedarfsstufen(
     parameter_regelbedarfsstufen: RawParam,
 ) -> Regelbedarfsstufen:
-    """Regelsatz nach Regelbedarfsstufen."""
+    """Regelbedarfsstufen nach SGB XII § 28 (Anlage)."""
     rbs_4 = SatzMitAltersgrenzen(
         satz=parameter_regelbedarfsstufen[4]["betrag"],
         altersgrenzen=Altersgrenzen(
