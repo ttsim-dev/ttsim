@@ -5,15 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import (
-    ConsecutiveInt1dLookupTableParamValue,
-    get_consecutive_int_1d_lookup_table_param_value,
-    param_function,
-    policy_function,
-)
+from ttsim import param_function, policy_function, ConsecutiveInt1dLookupTableParamValue, get_consecutive_int_1d_lookup_table_param_value
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParam
+    from ttsim import RawParam
 
 
 @policy_function(start_date="2005-01-01")

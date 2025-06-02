@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import (
     compute_taxes_and_transfers,
-    create_data_tree_from_df,
+    dataframe_to_nested_data,
+    nested_data_to_dataframe,
     set_up_policy_environment,
 )
 
@@ -37,6 +38,8 @@ def oss(
             A tree that has the desired targets as the path (sequence of keys) and maps
             them to the data columns the user would like to have.
 
+    Returns:
+        A DataFrame with the results.
 
     Examples:
     --------
@@ -100,7 +103,7 @@ def oss(
     2          0.00
     3          9.82
     """
-    data_tree = create_data_tree_from_df(
+    data_tree = dataframe_to_nested_data(
         inputs_tree_to_df_columns=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
     )
@@ -108,11 +111,19 @@ def oss(
         date=date,
         root=GETTSIM_ROOT,
     )
-    return compute_taxes_and_transfers(
+    taxes_and_transfers_result = compute_taxes_and_transfers(
         data_tree=data_tree,
         policy_environment=environment,
         targets_tree=targets_tree_to_outputs_df_columns,
         rounding=True,
         debug=False,
         jit=False,
+    )
+    nested_data_with_p_id = {
+        "p_id": data_tree["p_id"],
+        **taxes_and_transfers_result,
+    }
+    return nested_data_to_dataframe(
+        nested_data_with_p_id=nested_data_with_p_id,
+        nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
     )
