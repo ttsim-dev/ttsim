@@ -142,7 +142,7 @@ def compute_taxes_and_transfers(
         in _flat_policy_environment_with_derived_functions_and_without_overridden_functions
     ]
     # Will just return these.
-    own_targets = set(all_targets) - set(function_targets) - set(param_targets)  # noqa: F841
+    own_targets = set(all_targets) - set(function_targets) - set(param_targets)
 
     # Remove unnecessary elements from user-provided data.
     input_data = _create_input_data_for_concatenated_function(
@@ -193,8 +193,9 @@ def compute_taxes_and_transfers(
             **column_results,
             **{
                 pt: _column_functions_and_processed_params_and_scalars[pt]
-                for pt in set(dt.qual_names(targets_tree)) - set(function_targets)
+                for pt in set(param_targets)
             },
+            **{pt: data_tree[pt] for pt in own_targets},
         }
     )
 
