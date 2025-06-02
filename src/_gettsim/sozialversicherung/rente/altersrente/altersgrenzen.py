@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from ttsim import policy_function
+from ttsim.config import numpy_or_jax as np
 
 
 @policy_function(
     end_date="2011-12-31",
     leaf_name="altersgrenze",
-    vectorization_strategy="loop",
 )
 def altersgrenze_mit_arbeitslosigkeit_frauen_ohne_besonders_langjährig(
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
@@ -29,19 +29,17 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_ohne_besonders_langjährig(
 
     out = sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     if sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [out, sozialversicherung__rente__altersrente__für_frauen__altersgrenze]
+        out = np.minimum(
+            out, sozialversicherung__rente__altersrente__für_frauen__altersgrenze
         )
     if sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [
-                out,
-                sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze,
-            ]
+        out = np.minimum(
+            out,
+            sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze,
         )
     if sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [out, sozialversicherung__rente__altersrente__langjährig__altersgrenze]
+        out = np.minimum(
+            out, sozialversicherung__rente__altersrente__langjährig__altersgrenze
         )
 
     return out
@@ -51,7 +49,6 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_ohne_besonders_langjährig(
     start_date="2012-01-01",
     end_date="2017-12-31",
     leaf_name="altersgrenze",
-    vectorization_strategy="loop",
 )
 def altersgrenze_mit_arbeitslosigkeit_frauen_besonders_langjährig(
     sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt: bool,
@@ -79,26 +76,22 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_besonders_langjährig(
 
     out = sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     if sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [out, sozialversicherung__rente__altersrente__für_frauen__altersgrenze]
+        out = np.minimum(
+            out, sozialversicherung__rente__altersrente__für_frauen__altersgrenze
         )
     if sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [
-                out,
-                sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze,
-            ]
+        out = np.minimum(
+            out,
+            sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__altersgrenze,
         )
     if sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [out, sozialversicherung__rente__altersrente__langjährig__altersgrenze]
+        out = np.minimum(
+            out, sozialversicherung__rente__altersrente__langjährig__altersgrenze
         )
     if sozialversicherung__rente__altersrente__besonders_langjährig__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [
-                out,
-                sozialversicherung__rente__altersrente__besonders_langjährig__altersgrenze,
-            ]
+        out = np.minimum(
+            out,
+            sozialversicherung__rente__altersrente__besonders_langjährig__altersgrenze,
         )
 
     return out
@@ -107,7 +100,6 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_besonders_langjährig(
 @policy_function(
     start_date="2018-01-01",
     leaf_name="altersgrenze",
-    vectorization_strategy="loop",
 )
 def altersgrenze_mit_besonders_langjährig_ohne_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__besonders_langjährig__grundsätzlich_anspruchsberechtigt: bool,
@@ -126,15 +118,13 @@ def altersgrenze_mit_besonders_langjährig_ohne_arbeitslosigkeit_frauen(
 
     out = sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
     if sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [out, sozialversicherung__rente__altersrente__langjährig__altersgrenze]
+        out = np.minimum(
+            out, sozialversicherung__rente__altersrente__langjährig__altersgrenze
         )
     if sozialversicherung__rente__altersrente__besonders_langjährig__grundsätzlich_anspruchsberechtigt:
-        out = min(
-            [
-                out,
-                sozialversicherung__rente__altersrente__besonders_langjährig__altersgrenze,
-            ]
+        out = np.minimum(
+            out,
+            sozialversicherung__rente__altersrente__besonders_langjährig__altersgrenze,
         )
 
     return out
@@ -143,7 +133,6 @@ def altersgrenze_mit_besonders_langjährig_ohne_arbeitslosigkeit_frauen(
 @policy_function(
     end_date="2017-12-31",
     leaf_name="altersgrenze_vorzeitig",
-    vectorization_strategy="loop",
 )
 def altersgrenze_vorzeitig_mit_arbeitslosigkeit_frauen(
     sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt: bool,
@@ -176,9 +165,9 @@ def altersgrenze_vorzeitig_mit_arbeitslosigkeit_frauen(
     if sozialversicherung__rente__altersrente__langjährig__grundsätzlich_anspruchsberechtigt:
         out = langjährig_vorzeitig
     if sozialversicherung__rente__altersrente__für_frauen__grundsätzlich_anspruchsberechtigt:
-        out = min([out, frauen_vorzeitig])
+        out = np.minimum(out, frauen_vorzeitig)
     if sozialversicherung__rente__altersrente__wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt:
-        out = min([out, arbeitsl_vorzeitig])
+        out = np.minimum(out, arbeitsl_vorzeitig)
 
     return out
 
