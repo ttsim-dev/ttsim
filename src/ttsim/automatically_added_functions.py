@@ -412,7 +412,7 @@ def _convertibles(
 
 def create_time_conversion_functions(
     qual_name_policy_environment: QualNamePolicyEnvironment,
-    data_columns: QualNameDataColumns,
+    qual_name_data_columns: QualNameDataColumns,
     groupings: tuple[str, ...],
 ) -> QualNameColumnFunctions:
     """
@@ -448,7 +448,7 @@ def create_time_conversion_functions(
     functions
         The functions dict with qualified function names as keys and functions as
         values.
-    data_columns
+    qual_name_data_columns
         The data columns, represented by qualified names.
 
     Returns
@@ -486,7 +486,7 @@ def create_time_conversion_functions(
 
     converted_elements: dict[str, ColumnObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
-        for qual_name_data in data_columns:
+        for qual_name_data in qual_name_data_columns:
             # If base_name is in provided data, base time conversions on that.
             if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
@@ -561,14 +561,14 @@ def _create_function_for_time_unit(
 
 def create_agg_by_group_functions(
     column_functions: QualNameColumnFunctions,
-    data_columns: QualNameDataColumns,
+    qual_name_data_columns: QualNameDataColumns,
     targets: QualNameTargetList,
     groupings: tuple[str, ...],
 ) -> QualNameColumnFunctions:
     gp = group_pattern(groupings)
     all_functions_and_data = {
         **column_functions,
-        **dict.fromkeys(data_columns),
+        **dict.fromkeys(qual_name_data_columns),
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.

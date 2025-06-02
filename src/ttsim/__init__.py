@@ -27,6 +27,7 @@ from ttsim.compute_taxes_and_transfers import (
     FunctionsAndDataOverlapWarning,
     _add_derived_functions,
     column_functions_with_processed_params_and_scalars,
+    column_results,
     compute_taxes_and_transfers,
     fail_if_any_paths_are_invalid,
     fail_if_data_tree_is_invalid,
@@ -38,6 +39,7 @@ from ttsim.compute_taxes_and_transfers import (
     flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     nested_results,
     qual_name_column_targets,
+    qual_name_data,
     qual_name_data_columns,
     qual_name_input_data,
     qual_name_own_targets,
@@ -78,6 +80,7 @@ from ttsim.policy_environment import (
     get_consecutive_int_2d_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
+    grouping_levels,
     orig_tree_with_column_objects_and_param_functions,
     orig_tree_with_params,
     policy_environment,
@@ -95,37 +98,39 @@ from ttsim.shared import (
 
 def possible_targets():
     return {
-        "orig_tree_with_column_objects_and_param_functions": orig_tree_with_column_objects_and_param_functions,
-        "orig_tree_with_params": orig_tree_with_params,
         "active_tree_with_column_objects_and_param_functions": active_tree_with_column_objects_and_param_functions,
         "active_tree_with_params": active_tree_with_params,
+        "column_functions_with_processed_params_and_scalars": column_functions_with_processed_params_and_scalars,
+        "column_results": column_results,
         "fail_if_active_periods_overlap": fail_if_active_periods_overlap,
+        "fail_if_any_paths_are_invalid": fail_if_any_paths_are_invalid,
+        "fail_if_data_tree_is_invalid": fail_if_data_tree_is_invalid,
         "fail_if_environment_is_invalid": fail_if_environment_is_invalid,
+        "fail_if_foreign_keys_are_invalid_in_data": fail_if_foreign_keys_are_invalid_in_data,
         "fail_if_group_ids_are_outside_top_level_namespace": fail_if_group_ids_are_outside_top_level_namespace,
-        "policy_environment": policy_environment,
-        "compute_taxes_and_transfers": compute_taxes_and_transfers,
-        "qual_name_data_columns": qual_name_data_columns,
+        "fail_if_group_variables_are_not_constant_within_groups": fail_if_group_variables_are_not_constant_within_groups,
+        "fail_if_root_nodes_are_missing": fail_if_root_nodes_are_missing,
+        "fail_if_targets_are_not_in_policy_environment_or_data": fail_if_targets_are_not_in_policy_environment_or_data,
+        "fail_if_targets_tree_is_invalid": fail_if_targets_tree_is_invalid,
+        "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
+        "grouping_levels": grouping_levels,
         "nested_results": nested_results,
+        "orig_tree_with_column_objects_and_param_functions": orig_tree_with_column_objects_and_param_functions,
+        "orig_tree_with_params": orig_tree_with_params,
+        "policy_environment": policy_environment,
+        "qual_name_column_targets": qual_name_column_targets,
+        "qual_name_data": qual_name_data,
+        "qual_name_data_columns": qual_name_data_columns,
+        "qual_name_input_data": qual_name_input_data,
+        "qual_name_own_targets": qual_name_own_targets,
+        "qual_name_param_targets": qual_name_param_targets,
         "qual_name_results": qual_name_results,
+        "qual_name_targets": qual_name_targets,
+        "required_column_functions": required_column_functions,
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
-        "qual_name_targets": qual_name_targets,
-        "qual_name_column_targets": qual_name_column_targets,
-        "qual_name_param_targets": qual_name_param_targets,
-        "qual_name_own_targets": qual_name_own_targets,
-        "fail_if_any_paths_are_invalid": fail_if_any_paths_are_invalid,
-        "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
         "top_level_namespace": top_level_namespace,
-        "column_functions_with_processed_params_and_scalars": column_functions_with_processed_params_and_scalars,
-        "required_column_functions": required_column_functions,
-        "fail_if_targets_tree_is_invalid": fail_if_targets_tree_is_invalid,
-        "fail_if_targets_are_not_in_policy_environment_or_data": fail_if_targets_are_not_in_policy_environment_or_data,
-        "fail_if_data_tree_is_invalid": fail_if_data_tree_is_invalid,
-        "fail_if_group_variables_are_not_constant_within_groups": fail_if_group_variables_are_not_constant_within_groups,
-        "fail_if_foreign_keys_are_invalid_in_data": fail_if_foreign_keys_are_invalid_in_data,
         "warn_if_elements_overridden_by_data": warn_if_elements_overridden_by_data,
-        "fail_if_root_nodes_are_missing": fail_if_root_nodes_are_missing,
-        "qual_name_input_data": qual_name_input_data,
     }
 
 
@@ -157,22 +162,64 @@ def draw_tax_transfer_dag(
     """
     import plotly.graph_objects as go
 
-    # Get node positions using spring layout
-    pos = nx.spring_layout(tax_transfer_dag, k=1, iterations=50)
+    # Calculate node levels using longest path from source
+    levels = {}
+    for node in tax_transfer_dag.nodes():
+        if tax_transfer_dag.in_degree(node) == 0:  # Source node
+            levels[node] = 0
+        else:
+            # Find longest path from any source to this node
+            max_level = 0
+            for source in [
+                n
+                for n in tax_transfer_dag.nodes()
+                if tax_transfer_dag.in_degree(n) == 0
+            ]:
+                try:
+                    path = nx.shortest_path_length(tax_transfer_dag, source, node)
+                    max_level = max(max_level, path)
+                except nx.NetworkXNoPath:
+                    continue
+            levels[node] = max_level
 
-    # Create edge trace
+    # Create positions based on levels
+    pos = {}
+    nodes_by_level = {}
+    for node, level in levels.items():
+        if level not in nodes_by_level:
+            nodes_by_level[level] = []
+        nodes_by_level[level].append(node)
+
+    # Position nodes in a hierarchical layout
+    max_level = max(levels.values())
+    for level in range(max_level + 1):
+        nodes = nodes_by_level.get(level, [])
+        for i, node in enumerate(sorted(nodes)):
+            pos[node] = (
+                i - len(nodes) / 2,
+                -level,
+            )  # Center nodes horizontally at each level
+
+    # Create edge trace with arrows
     edge_x = []
     edge_y = []
     for edge in tax_transfer_dag.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
+        # Add a small offset to make arrows visible
+        dx = x1 - x0
+        dy = y1 - y0
+        length = (dx**2 + dy**2) ** 0.5
+        if length > 0:
+            x1 = x0 + dx * 0.9  # Shorten the line to make room for arrow
+            y1 = y0 + dy * 0.9
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
     edge_trace = go.Scatter(
         x=edge_x,
         y=edge_y,
-        line=dict(width=0.5, color="#888"),
+        line=dict(width=1, color="#888"),
         hoverinfo="none",
         mode="lines",
     )
@@ -207,7 +254,7 @@ def draw_tax_transfer_dag(
         ),
     )
 
-    # Create the figure
+    # Create the figure with a fixed aspect ratio
     fig = go.Figure(
         data=[edge_trace, node_trace],
         layout=go.Layout(
@@ -216,8 +263,18 @@ def draw_tax_transfer_dag(
             showlegend=False,
             hovermode="closest",
             margin=dict(b=20, l=5, r=5, t=40),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            xaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False,
+                scaleanchor="y",
+                scaleratio=1,
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False,
+            ),
         ),
     )
 

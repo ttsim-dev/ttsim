@@ -103,11 +103,11 @@ def compute_taxes_and_transfers(
     )
     # Check that all paths in the params tree are valid
 
-    qual_name_data = dt.flatten_to_qual_names(data_tree)
+    qual_name_data = qual_name_data(data_tree)
     qual_name_data_columns = qual_name_data_columns(qual_name_data)
     warn_if_elements_overridden_by_data(
         policy_environment=policy_environment,
-        data_columns=qual_name_data_columns,
+        qual_name_data_columns=qual_name_data_columns,
     )
 
     flat_policy_environment_with_derived_functions_and_without_overridden_functions = (
@@ -118,11 +118,11 @@ def compute_taxes_and_transfers(
             top_level_namespace=top_level_namespace,
         )
     )
-    column_functions_and_processed_params_and_scalars = column_functions_with_processed_params_and_scalars(
+    column_functions_with_processed_params_and_scalars = column_functions_with_processed_params_and_scalars(
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     )
     required_column_functions = required_column_functions(
-        policy_environment_with_processed_params_and_scalars=column_functions_and_processed_params_and_scalars,
+        column_functions_with_processed_params_and_scalars=column_functions_with_processed_params_and_scalars,
         rounding=rounding,
     )
     # Super-ugly, will be refactored
@@ -142,14 +142,14 @@ def compute_taxes_and_transfers(
 
     tax_transfer_dag = tax_transfer_dag(
         required_column_functions=required_column_functions,
-        qual_name_function_targets=qual_name_column_targets,
+        qual_name_column_targets=qual_name_column_targets,
     )
 
     fail_if_root_nodes_are_missing(
         tax_transfer_dag=tax_transfer_dag,
         qual_name_data=qual_name_data,
         required_column_functions=required_column_functions,
-        qual_name_function_targets=qual_name_column_targets,
+        qual_name_column_targets=qual_name_column_targets,
     )
 
     # Remove unnecessary elements from user-provided data.
@@ -157,7 +157,7 @@ def compute_taxes_and_transfers(
         tax_transfer_dag=tax_transfer_dag,
         qual_name_data=qual_name_data,
         required_column_functions=required_column_functions,
-        qual_name_function_targets=qual_name_column_targets,
+        qual_name_column_targets=qual_name_column_targets,
     )
 
     fail_if_group_variables_are_not_constant_within_groups(
@@ -173,16 +173,16 @@ def compute_taxes_and_transfers(
     tax_transfer_function = tax_transfer_function(
         tax_transfer_dag=tax_transfer_dag,
         required_column_functions=required_column_functions,
-        qual_name_function_targets=qual_name_column_targets,
+        qual_name_column_targets=qual_name_column_targets,
         # backend=backend
     )
 
-    column_results = tax_transfer_function(qual_name_input_data)
+    column_results = column_results(qual_name_input_data, tax_transfer_function)
 
     qual_name_results = qual_name_results(
         column_results=column_results,
         qual_name_param_targets=qual_name_param_targets,
-        column_functions_and_processed_params_and_scalars=column_functions_and_processed_params_and_scalars,
+        column_functions_with_processed_params_and_scalars=column_functions_with_processed_params_and_scalars,
         qual_name_own_targets=qual_name_own_targets,
         qual_name_data=qual_name_data,
         qual_name_targets=qual_name_targets,
@@ -190,6 +190,17 @@ def compute_taxes_and_transfers(
     nested_results = nested_results(qual_name_results)
 
     return nested_results
+
+
+def column_results(
+    qual_name_input_data: QualNameData,
+    tax_transfer_function: Callable[[QualNameData], QualNameData],
+) -> QualNameData:
+    return tax_transfer_function(qual_name_input_data)
+
+
+def qual_name_data(data_tree):
+    return dt.flatten_to_qual_names(data_tree)
 
 
 def fail_if_any_paths_are_invalid(
@@ -218,7 +229,7 @@ def nested_results(qual_name_results: QualNameData) -> NestedData:
 def qual_name_results(
     column_results: QualNameData,
     qual_name_param_targets: QualNameTargetList,
-    column_functions_and_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
+    column_functions_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
     qual_name_own_targets: QualNameTargetList,
     qual_name_data: QualNameData,
     qual_name_targets: QualNameTargetList,
@@ -226,7 +237,7 @@ def qual_name_results(
     unordered = {
         **column_results,
         **{
-            pt: column_functions_and_processed_params_and_scalars[pt]
+            pt: column_functions_with_processed_params_and_scalars[pt]
             for pt in qual_name_param_targets
         },
         **{ot: qual_name_data[ot] for ot in qual_name_own_targets},
@@ -236,19 +247,19 @@ def qual_name_results(
 
 def tax_transfer_dag(
     required_column_functions: QualNameColumnFunctions,
-    qual_name_function_targets: QualNameTargetList,
+    qual_name_column_targets: QualNameTargetList,
 ) -> nx.DiGraph:
     """Thin wrapper around `create_dag`."""
     return create_dag(
         functions=required_column_functions,
-        targets=qual_name_function_targets,
+        targets=qual_name_column_targets,
     )
 
 
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
     required_column_functions: QualNameColumnFunctions,
-    qual_name_function_targets: QualNameTargetList,
+    qual_name_column_targets: QualNameTargetList,
     # backend: numpy | jax,
 ) -> Callable[[QualNameData], QualNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
@@ -256,7 +267,7 @@ def tax_transfer_function(
     ttf_with_keyword_args = concatenate_functions(
         dag=tax_transfer_dag,
         functions=required_column_functions,
-        targets=list(qual_name_function_targets),
+        targets=list(qual_name_column_targets),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
@@ -295,28 +306,28 @@ def qual_name_column_targets(required_column_functions, qual_name_targets):
 
 
 def qual_name_param_targets(
-    _flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
+    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
     qual_name_targets: QualNameTargetList,
-    qual_name_function_targets: QualNameTargetList,
+    qual_name_column_targets: QualNameTargetList,
 ) -> QualNameTargetList:
-    possible_targets = set(qual_name_targets) - set(qual_name_function_targets)
+    possible_targets = set(qual_name_targets) - set(qual_name_column_targets)
     return [
         t
         for t in qual_name_targets
         if t in possible_targets
         and t
-        in _flat_policy_environment_with_derived_functions_and_without_overridden_functions
+        in flat_policy_environment_with_derived_functions_and_without_overridden_functions
     ]
 
 
 def qual_name_own_targets(
     qual_name_targets: QualNameTargetList,
-    qual_name_function_targets: QualNameTargetList,
+    qual_name_column_targets: QualNameTargetList,
     qual_name_param_targets: QualNameTargetList,
 ) -> QualNameTargetList:
     possible_targets = (
         set(qual_name_targets)
-        - set(qual_name_function_targets)
+        - set(qual_name_column_targets)
         - set(qual_name_param_targets)
     )
     return [t for t in qual_name_targets if t in possible_targets]
@@ -324,7 +335,8 @@ def qual_name_own_targets(
 
 def flat_policy_environment_with_derived_functions_and_without_overridden_functions(
     policy_environment: NestedPolicyEnvironment,
-    qual_name_data: QualNameDataColumns,
+    qual_name_data: QualNameData,
+    qual_name_data_columns: QualNameDataColumns,
     targets_tree: NestedTargetDict,
     top_level_namespace: set[str],
 ) -> QualNamePolicyEnvironment:
@@ -343,7 +355,7 @@ def flat_policy_environment_with_derived_functions_and_without_overridden_functi
     flat_with_derived = _add_derived_functions(
         qual_name_policy_environment=flat,
         targets=dt.qual_names(targets_tree),
-        data_columns=set(qual_name_data.keys()),
+        qual_name_data_columns=qual_name_data_columns,
         groupings=grouping_levels(policy_environment),
     )
     out = {}
@@ -434,7 +446,7 @@ def _remove_tree_logic_from_policy_environment(
 def _add_derived_functions(
     qual_name_policy_environment: QualNamePolicyEnvironment,
     targets: QualNameTargetList,
-    data_columns: QualNameDataColumns,
+    qual_name_data_columns: QualNameDataColumns,
     groupings: tuple[str, ...],
 ) -> QualNameColumnFunctions:
     """Return a mapping of qualified names to functions operating on columns.
@@ -468,7 +480,7 @@ def _add_derived_functions(
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment=qual_name_policy_environment,
-        data_columns=data_columns,
+        qual_name_data_columns=qual_name_data_columns,
         groupings=groupings,
     )
     column_functions = {
@@ -483,7 +495,7 @@ def _add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
-        data_columns=data_columns,
+        qual_name_data_columns=qual_name_data_columns,
         targets=targets,
         groupings=groupings,
     )
@@ -498,7 +510,7 @@ def _add_derived_functions(
 
 def fail_if_targets_are_not_in_policy_environment_or_data(
     policy_environment: QualNamePolicyEnvironment,
-    data_columns: QualNameDataColumns,
+    qual_name_data_columns: QualNameDataColumns,
     qual_name_targets: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
@@ -507,7 +519,7 @@ def fail_if_targets_are_not_in_policy_environment_or_data(
     ----------
     functions
         Dictionary containing functions to build the DAG.
-    data_columns
+    qual_name_data_columns
         The columns which are available in the data tree.
     targets
         The targets which should be computed. They limit the DAG in the way that only
@@ -522,7 +534,7 @@ def fail_if_targets_are_not_in_policy_environment_or_data(
     targets_not_in_policy_environment_or_data = [
         str(dt.tree_path_from_qual_name(n))
         for n in qual_name_targets
-        if n not in policy_environment and n not in data_columns
+        if n not in policy_environment and n not in qual_name_data_columns
     ]
     if targets_not_in_policy_environment_or_data:
         formatted = format_list_linewise(targets_not_in_policy_environment_or_data)
@@ -623,7 +635,7 @@ def column_functions_with_processed_params_and_scalars(
 
 
 def required_column_functions(
-    policy_environment_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
+    column_functions_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
     rounding: bool,
 ) -> QualNameColumnFunctions:
     """Partial parameters to functions such that they disappear from the DAG.
@@ -642,7 +654,7 @@ def required_column_functions(
 
     """
     processed_functions = {}
-    for name, _func in policy_environment_with_processed_params_and_scalars.items():
+    for name, _func in column_functions_with_processed_params_and_scalars.items():
         if isinstance(_func, ColumnFunction):
             func = _apply_rounding(_func) if rounding else _func
             partial_params = {}
@@ -650,14 +662,14 @@ def required_column_functions(
                 a
                 for a in get_free_arguments(func)
                 if not isinstance(
-                    policy_environment_with_processed_params_and_scalars.get(
+                    column_functions_with_processed_params_and_scalars.get(
                         a, _DUMMY_COLUMN_OBJECT
                     ),
                     ColumnObject,
                 )
             ]:
                 partial_params[arg] = (
-                    policy_environment_with_processed_params_and_scalars[arg]
+                    column_functions_with_processed_params_and_scalars[arg]
                 )
             if partial_params:
                 processed_functions[name] = functools.partial(func, **partial_params)
@@ -824,13 +836,13 @@ def fail_if_foreign_keys_are_invalid_in_data(
 
 def warn_if_elements_overridden_by_data(
     policy_environment: NestedPolicyEnvironment,
-    data_columns: QualNameDataColumns,
+    qual_name_data_columns: QualNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""
     overridden_elements = sorted(
         {
             col
-            for col in data_columns
+            for col in qual_name_data_columns
             if col in dt.flatten_to_qual_names(policy_environment)
         }
     )

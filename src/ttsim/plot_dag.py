@@ -116,7 +116,7 @@ def plot_dag(
     )
 
     processed_functions = required_column_functions(
-        policy_environment_with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
+        column_functions_with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
         processed_params=processed_tree_with_params,
     )
 

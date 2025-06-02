@@ -216,7 +216,7 @@ def func_before_partial(arg_1, some_param):
 
 
 func_after_partial = required_column_functions(
-    policy_environment_with_processed_params_and_scalars={
+    column_functions_with_processed_params_and_scalars={
         "some_func": func_before_partial,
         "some_param": SOME_INT_PARAM.value,
     },
@@ -410,7 +410,7 @@ def test_create_agg_by_group_functions(
 
 
 @pytest.mark.parametrize(
-    "policy_environment, targets, data_columns, expected_error_match",
+    "policy_environment, targets, qual_name_data_columns, expected_error_match",
     [
         ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
@@ -419,13 +419,13 @@ def test_create_agg_by_group_functions(
     ],
 )
 def test_fail_if_targets_are_not_in_policy_environment_or_data(
-    policy_environment, targets, data_columns, expected_error_match
+    policy_environment, targets, qual_name_data_columns, expected_error_match
 ):
     with pytest.raises(ValueError) as e:
         fail_if_targets_are_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
             qual_name_targets=targets,
-            data_columns=data_columns,
+            qual_name_data_columns=qual_name_data_columns,
         )
     assert expected_error_match in str(e.value)
 
