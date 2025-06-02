@@ -120,9 +120,9 @@ def some_converting_params_func(
 
 @param_function()
 def some_param_function_taking_scalar(
-    some_int_param: int, some_float_scalar: float, some_bool_scalar: bool
+    some_int_scalar: int, some_float_scalar: float, some_bool_scalar: bool
 ) -> float:
-    return some_int_param + some_float_scalar + int(some_bool_scalar)
+    return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
 
 @policy_function()
