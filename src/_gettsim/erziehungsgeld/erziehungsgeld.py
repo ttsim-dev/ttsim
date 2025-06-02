@@ -51,7 +51,7 @@ def anspruchshöhe_m(
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def betrag_m(
-    anspruchshöhe_m: int,
+    anspruchshöhe_m: float,
     grundsätzlich_anspruchsberechtigt: bool,
 ) -> float:
     """Total parental leave benefits (Erziehungsgeld) received by the parent.

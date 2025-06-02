@@ -41,7 +41,7 @@ def monate_verbleibender_anspruchsdauer(
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
     anspruchsdauer_nach_alter: PiecewisePolynomialParamValue,
     anspruchsdauer_nach_versicherungspflichtigen_monaten: PiecewisePolynomialParamValue,
-) -> int:
+) -> float:
     """Calculate the remaining amount of months a person can receive unemployment
     benefits.
 
