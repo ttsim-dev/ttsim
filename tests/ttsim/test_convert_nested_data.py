@@ -349,7 +349,7 @@ def test_nested_data_to_dataframe_fails_if_noncompatible_objects_are_returned(
         targets_tree=targets_tree_to_outputs_df_columns,
     )
     with pytest.raises(
-        TypeError, match=r"The\nfollowing paths contain non-scalar objects"
+        TypeError, match=r"The following paths contain non-scalar\nobjects"
     ):
         nested_data_to_dataframe(
             nested_data_with_p_id={

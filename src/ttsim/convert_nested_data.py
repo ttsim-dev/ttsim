@@ -142,7 +142,7 @@ def _fail_if_incompatible_objects_in_nested_data(
         msg = format_errors_and_warnings(
             "The data returned contains objects that cannot be cast to "
             "a pandas.DataFrame column. Make sure that the requested targets return "
-            "scalars (int, bool, float) only."
+            "scalars (int, bool, float - or their numpy equivalents) only."
             "The following paths contain non-scalar objects: "
             f"{format_list_linewise(faulty_paths)}"
         )
