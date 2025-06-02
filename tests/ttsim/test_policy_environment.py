@@ -14,7 +14,7 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     ScalarParam,
     group_creation_function,
-    policy_environment,
+    main,
     policy_function,
 )
 from ttsim.column_objects_param_function import DEFAULT_END_DATE
@@ -24,7 +24,6 @@ from ttsim.loader import (
 )
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
-    OrigTreesWithFileNames,
     _get_param_value,
     _param_with_active_periods,
     _ParamWithActivePeriod,
@@ -33,7 +32,6 @@ from ttsim.policy_environment import (
     fail_if_active_periods_overlap,
     fail_if_group_ids_are_outside_top_level_namespace,
     fail_if_name_of_last_branch_element_not_leaf_name_of_function,
-    grouping_levels,
     upsert_tree_into_policy_environment,
 )
 
@@ -99,15 +97,6 @@ def some_int_param():
         note=None,
         reference=None,
     )
-
-
-def test_leap_year_correctly_handled():
-    policy_environment(date="2020-02-29", root=METTSIM_ROOT)
-
-
-def test_fail_if_invalid_date():
-    with pytest.raises(ValueError):
-        policy_environment(date="2020-02-30", root=METTSIM_ROOT)
 
 
 def test_add_jahresanfang():
@@ -176,13 +165,25 @@ def test_upsert_tree_into_policy_environment(
 
 
 def test_input_is_recognized_as_potential_group_id():
-    environment = policy_environment(root=METTSIM_ROOT, date="2020-01-01")
-    assert "kin" in grouping_levels(environment)
+    grouping_levels = main(
+        inputs={
+            "root": METTSIM_ROOT,
+            "date": datetime.date(2020, 1, 1),
+        },
+        targets=["grouping_levels"],
+    )["grouping_levels"]
+    assert "kin" in grouping_levels
 
 
 def test_p_id_not_recognized_as_potential_group_id():
-    environment = policy_environment(root=METTSIM_ROOT, date="2020-01-01")
-    assert "p" not in grouping_levels(environment)
+    grouping_levels = main(
+        inputs={
+            "root": METTSIM_ROOT,
+            "date": datetime.date(2020, 1, 1),
+        },
+        targets=["grouping_levels"],
+    )["grouping_levels"]
+    assert "p" not in grouping_levels
 
 
 @pytest.mark.parametrize(
@@ -535,11 +536,11 @@ def test_fail_because_active_periods_overlap_raises(
 
 
 @pytest.mark.parametrize(
-    "orig_trees",
+    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
     [
         # Same leaf names across functions / parameters, but no overlapping periods.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={
+        (
+            {
                 ("c", "a"): policy_function(
                     start_date="2012-01-01",
                     end_date="2015-12-31",
@@ -551,7 +552,7 @@ def test_fail_because_active_periods_overlap_raises(
                     leaf_name="f",
                 )(identity),
             },
-            params={
+            {
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
@@ -575,9 +576,9 @@ def test_fail_because_active_periods_overlap_raises(
             },
         ),
         # Different periods specified in different files.
-        OrigTreesWithFileNames(
-            column_objects_and_param_functions={},
-            params={
+        (
+            {},
+            {
                 ("c", "f"): {
                     "name": {"de": "foo", "en": "foo"},
                     "description": {"de": "foo", "en": "foo"},
@@ -609,8 +610,14 @@ def test_fail_because_active_periods_overlap_raises(
         ),
     ],
 )
-def test_pass_because_no_overlap_functions_params(orig_trees: OrigTreesWithFileNames):
-    fail_if_active_periods_overlap(orig_trees)
+def test_pass_because_no_overlap_functions_params(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
+):
+    fail_if_active_periods_overlap(
+        orig_tree_with_column_objects_and_param_functions,
+        orig_tree_with_params,
+    )
 
 
 @pytest.mark.parametrize(

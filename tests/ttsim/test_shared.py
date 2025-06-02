@@ -14,6 +14,7 @@ from ttsim.shared import (
     insert_path_and_value,
     merge_trees,
     partition_tree_by_reference_tree,
+    to_datetime,
     upsert_path_and_value,
     upsert_tree,
 )
@@ -22,6 +23,15 @@ from ttsim.shared import (
 @dataclass
 class SampleDataClass:
     a: int
+
+
+def test_leap_year_correctly_handled():
+    to_datetime(date="2020-02-29")
+
+
+def test_fail_if_invalid_date():
+    with pytest.raises(ValueError):
+        to_datetime(date="2020-02-30")
 
 
 @pytest.mark.parametrize(
