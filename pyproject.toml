@@ -262,6 +262,7 @@ exclude = []
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
+"src/_gettsim/unterhaltsvorschuss/unterhaltsvorschuss.py" = ["PLR1716"]
 "docs/**/*.ipynb" = ["T201"]
 
 # Files which should be ignored until we have rewritten them
