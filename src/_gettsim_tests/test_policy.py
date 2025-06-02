@@ -1,24 +1,29 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from _gettsim_tests.utils import (
+from _gettsim.config import GETTSIM_ROOT
+from ttsim.config import IS_JAX_INSTALLED
+from ttsim.testing_utils import (
     PolicyTest,
     execute_test,
-    get_policy_test_ids_and_cases,
+    load_policy_test_data,
 )
-from ttsim.config import IS_JAX_INSTALLED
 
-policy_test_ids_and_cases = get_policy_test_ids_and_cases()
+TEST_DIR = Path(__file__).parent
+
+POLICY_TEST_IDS_AND_CASES = load_policy_test_data(test_dir=TEST_DIR, policy_name="")
 
 
 @pytest.mark.parametrize(
     "test",
-    policy_test_ids_and_cases.values(),
-    ids=policy_test_ids_and_cases.keys(),
+    POLICY_TEST_IDS_AND_CASES.values(),
+    ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
 def test_policy(test: PolicyTest):
     if IS_JAX_INSTALLED:
-        execute_test(test, jit=True)
+        execute_test(test, root=GETTSIM_ROOT, jit=True)
     else:
-        execute_test(test)
+        execute_test(test, root=GETTSIM_ROOT, jit=False)
