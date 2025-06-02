@@ -2,21 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from _gettsim.param_types import (
-    Altersgrenzen,
-    BerechtigteWohnflächeEigentum,
-    SatzMitAltersgrenzen,
-    SGBIIRegelsatzAnteilErwachsen,
-    SGBIIRegelsatzAnteilKind,
-    SGBIIRegelsatzAnteilKindNachAlter,
-    SGBIIRegelsatzAnteilsbasiert,
-    SGBIIRegelsatzNachRegelbedarfsstufen,
-)
 from ttsim import param_function, policy_function
 
 if TYPE_CHECKING:
+    from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
     from ttsim import RawParam
 
 
@@ -81,7 +73,7 @@ def mehrbedarf_alleinerziehend_m(
 def kindersatz_m_anteilsbasiert(
     alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
-    regelsatz_anteilsbasiert: SGBIIRegelsatzAnteilsbasiert,
+    regelsatz_anteilsbasiert: RegelsatzAnteilsbasiert,
 ) -> float:
     """Basic monthly subsistence / SGB II needs of children until 2010."""
     basissatz = regelsatz_anteilsbasiert.basissatz
@@ -123,32 +115,32 @@ def kindersatz_m_anteilsbasiert(
 def kindersatz_m_nach_regelbedarfsstufen_ohne_sofortzuschlag(
     alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
-    regelsatz_nach_regelbedarfsstufen: SGBIIRegelsatzNachRegelbedarfsstufen,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
 ) -> float:
     """Basic monthly subsistence / SGB II needs of children since 2011.
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     if (
-        alter >= regelsatz_nach_regelbedarfsstufen.rbs_6.altersgrenzen.min_alter
-        and alter <= regelsatz_nach_regelbedarfsstufen.rbs_6.altersgrenzen.max_alter
+        alter >= grundsicherung__regelbedarfsstufen.rbs_6.altersgrenzen.min_alter
+        and alter <= grundsicherung__regelbedarfsstufen.rbs_6.altersgrenzen.max_alter
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = regelsatz_nach_regelbedarfsstufen.rbs_6.satz
+        out = grundsicherung__regelbedarfsstufen.rbs_6.satz
     elif (
-        alter >= regelsatz_nach_regelbedarfsstufen.rbs_5.altersgrenzen.min_alter
-        and alter <= regelsatz_nach_regelbedarfsstufen.rbs_5.altersgrenzen.max_alter
+        alter >= grundsicherung__regelbedarfsstufen.rbs_5.altersgrenzen.min_alter
+        and alter <= grundsicherung__regelbedarfsstufen.rbs_5.altersgrenzen.max_alter
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = regelsatz_nach_regelbedarfsstufen.rbs_5.satz
+        out = grundsicherung__regelbedarfsstufen.rbs_5.satz
     elif (
-        alter >= regelsatz_nach_regelbedarfsstufen.rbs_4.altersgrenzen.min_alter
-        and alter <= regelsatz_nach_regelbedarfsstufen.rbs_4.altersgrenzen.max_alter
+        alter >= grundsicherung__regelbedarfsstufen.rbs_4.altersgrenzen.min_alter
+        and alter <= grundsicherung__regelbedarfsstufen.rbs_4.altersgrenzen.max_alter
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = regelsatz_nach_regelbedarfsstufen.rbs_4.satz
+        out = grundsicherung__regelbedarfsstufen.rbs_4.satz
     elif kindergeld__gleiche_fg_wie_empfänger:  # adult children with parents in FG
-        out = regelsatz_nach_regelbedarfsstufen.rbs_3
+        out = grundsicherung__regelbedarfsstufen.rbs_3
     else:
         out = 0.0
 
@@ -162,7 +154,7 @@ def kindersatz_m_nach_regelbedarfsstufen_ohne_sofortzuschlag(
 def kindersatz_m_nach_regelbedarfsstufen_mit_sofortzuschlag(
     alter: int,
     kindergeld__gleiche_fg_wie_empfänger: bool,
-    regelsatz_nach_regelbedarfsstufen: SGBIIRegelsatzNachRegelbedarfsstufen,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
     kindersofortzuschlag: float,
 ) -> float:
     """Basic monthly subsistence / SGB II needs of children since 2011.
@@ -170,25 +162,25 @@ def kindersatz_m_nach_regelbedarfsstufen_mit_sofortzuschlag(
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     if (
-        alter >= regelsatz_nach_regelbedarfsstufen.rbs_6.altersgrenzen.min_alter
-        and alter <= regelsatz_nach_regelbedarfsstufen.rbs_6.altersgrenzen.max_alter
+        alter >= grundsicherung__regelbedarfsstufen.rbs_6.altersgrenzen.min_alter
+        and alter <= grundsicherung__regelbedarfsstufen.rbs_6.altersgrenzen.max_alter
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofortzuschlag + regelsatz_nach_regelbedarfsstufen.rbs_6.satz
+        out = kindersofortzuschlag + grundsicherung__regelbedarfsstufen.rbs_6.satz
     elif (
-        alter >= regelsatz_nach_regelbedarfsstufen.rbs_5.altersgrenzen.min_alter
-        and alter <= regelsatz_nach_regelbedarfsstufen.rbs_5.altersgrenzen.max_alter
+        alter >= grundsicherung__regelbedarfsstufen.rbs_5.altersgrenzen.min_alter
+        and alter <= grundsicherung__regelbedarfsstufen.rbs_5.altersgrenzen.max_alter
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofortzuschlag + regelsatz_nach_regelbedarfsstufen.rbs_5.satz
+        out = kindersofortzuschlag + grundsicherung__regelbedarfsstufen.rbs_5.satz
     elif (
-        alter >= regelsatz_nach_regelbedarfsstufen.rbs_4.altersgrenzen.min_alter
-        and alter <= regelsatz_nach_regelbedarfsstufen.rbs_4.altersgrenzen.max_alter
+        alter >= grundsicherung__regelbedarfsstufen.rbs_4.altersgrenzen.min_alter
+        and alter <= grundsicherung__regelbedarfsstufen.rbs_4.altersgrenzen.max_alter
         and kindergeld__gleiche_fg_wie_empfänger
     ):
-        out = kindersofortzuschlag + regelsatz_nach_regelbedarfsstufen.rbs_4.satz
+        out = kindersofortzuschlag + grundsicherung__regelbedarfsstufen.rbs_4.satz
     elif kindergeld__gleiche_fg_wie_empfänger:  # adult children with parents in FG
-        out = kindersofortzuschlag + regelsatz_nach_regelbedarfsstufen.rbs_3
+        out = kindersofortzuschlag + grundsicherung__regelbedarfsstufen.rbs_3
     else:
         out = 0.0
 
@@ -204,7 +196,7 @@ def arbeitsl_geld_2_erwachsenensatz_m_bis_2010(
     mehrbedarf_alleinerziehend_m: float,
     kindersatz_m: float,
     p_id_einstandspartner: int,
-    regelsatz_anteilsbasiert: SGBIIRegelsatzAnteilsbasiert,
+    regelsatz_anteilsbasiert: RegelsatzAnteilsbasiert,
 ) -> float:
     """Basic monthly subsistence / SGB II needs for adults without dwelling."""
     # BG has 2 adults
@@ -229,7 +221,7 @@ def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
     mehrbedarf_alleinerziehend_m: float,
     kindersatz_m: float,
     p_id_einstandspartner: int,
-    regelsatz_nach_regelbedarfsstufen: SGBIIRegelsatzNachRegelbedarfsstufen,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
 ) -> float:
     """Basic monthly subsistence / SGB II needs for adults without dwelling since 2011.
 
@@ -237,10 +229,10 @@ def arbeitsl_geld_2_erwachsenensatz_m_ab_2011(
     """
     # BG has 2 adults
     if p_id_einstandspartner >= 0:
-        out = regelsatz_nach_regelbedarfsstufen.rbs_2
+        out = grundsicherung__regelbedarfsstufen.rbs_2
     # This observation is not a child, so BG has 1 adult
     elif kindersatz_m == 0.0:
-        out = regelsatz_nach_regelbedarfsstufen.rbs_1
+        out = grundsicherung__regelbedarfsstufen.rbs_1
     else:
         out = 0.0
 
@@ -384,30 +376,57 @@ def wohnfläche(
     return wohnen__wohnfläche_hh / anzahl_personen_hh
 
 
+@dataclass(frozen=True)
+class RegelsatzAnteilErwachsen:
+    je_erwachsener_bei_zwei_erwachsenen: float
+    je_erwachsener_ab_drei_erwachsene: float
+
+
+@dataclass(frozen=True)
+class RegelsatzAnteilKind:
+    anteil: float
+    min_alter: int
+    max_alter: int
+
+
+@dataclass(frozen=True)
+class RegelsatzAnteilKindNachAlter:
+    kleinkind: RegelsatzAnteilKind
+    schulkind: RegelsatzAnteilKind
+    jugendliche_und_junge_erwachsene: RegelsatzAnteilKind
+
+
+@dataclass(frozen=True)
+class RegelsatzAnteilsbasiert:
+    basissatz: float
+    erwachsen: RegelsatzAnteilErwachsen
+    kind: RegelsatzAnteilKindNachAlter
+
+
 @param_function(start_date="2005-01-01", end_date="2010-12-31")
 def regelsatz_anteilsbasiert(
     parameter_regelsatz_anteilsbasiert: RawParam,
-) -> SGBIIRegelsatzAnteilsbasiert:
+) -> RegelsatzAnteilsbasiert:
     """Regelsatz as a fraction of the Basissatz."""
     anteilssätze_kinder = parameter_regelsatz_anteilsbasiert[
         "anteil_vom_basissatz_für_kinder"
     ]
-    kind_kleinkind = SGBIIRegelsatzAnteilKind(
+    kind_kleinkind = RegelsatzAnteilKind(
         anteil=anteilssätze_kinder["kleinkind"]["anteil"],
         min_alter=anteilssätze_kinder["kleinkind"]["min_alter"],
         max_alter=anteilssätze_kinder["kleinkind"]["max_alter"],
     )
-    kind_schulkind = SGBIIRegelsatzAnteilKind(
+    kind_schulkind = RegelsatzAnteilKind(
         anteil=anteilssätze_kinder["schulkind"]["anteil"],
         min_alter=anteilssätze_kinder["schulkind"]["min_alter"],
         max_alter=anteilssätze_kinder["schulkind"]["max_alter"],
     )
-    kind_jugendliche_und_junge_erwachsene = SGBIIRegelsatzAnteilKind(
+    kind_jugendliche_und_junge_erwachsene = RegelsatzAnteilKind(
         anteil=anteilssätze_kinder["jugendliche_und_junge_erwachsene"]["anteil"],
         min_alter=anteilssätze_kinder["jugendliche_und_junge_erwachsene"]["min_alter"],
         max_alter=anteilssätze_kinder["jugendliche_und_junge_erwachsene"]["max_alter"],
     )
-    erwachsen = SGBIIRegelsatzAnteilErwachsen(
+    erwachsen = RegelsatzAnteilErwachsen(
         je_erwachsener_bei_zwei_erwachsenen=parameter_regelsatz_anteilsbasiert[
             "anteil_vom_basissatz_bei_zwei_erwachsenen"
         ],
@@ -415,10 +434,10 @@ def regelsatz_anteilsbasiert(
             "anteil_vom_basissatz_bei_weiteren_erwachsenen"
         ],
     )
-    return SGBIIRegelsatzAnteilsbasiert(
+    return RegelsatzAnteilsbasiert(
         basissatz=parameter_regelsatz_anteilsbasiert["basissatz"],
         erwachsen=erwachsen,
-        kind=SGBIIRegelsatzAnteilKindNachAlter(
+        kind=RegelsatzAnteilKindNachAlter(
             kleinkind=kind_kleinkind,
             schulkind=kind_schulkind,
             jugendliche_und_junge_erwachsene=kind_jugendliche_und_junge_erwachsene,
@@ -426,40 +445,11 @@ def regelsatz_anteilsbasiert(
     )
 
 
-@param_function(start_date="2011-01-01")
-def regelsatz_nach_regelbedarfsstufen(
-    parameter_regelsatz_nach_regelbedarfsstufen: RawParam,
-) -> SGBIIRegelsatzNachRegelbedarfsstufen:
-    """Regelsatz nach Regelbedarfsstufen."""
-    rbs_4 = SatzMitAltersgrenzen(
-        satz=parameter_regelsatz_nach_regelbedarfsstufen[4]["betrag"],
-        altersgrenzen=Altersgrenzen(
-            min_alter=parameter_regelsatz_nach_regelbedarfsstufen[4]["min_alter"],
-            max_alter=parameter_regelsatz_nach_regelbedarfsstufen[4]["max_alter"],
-        ),
-    )
-    rbs_5 = SatzMitAltersgrenzen(
-        satz=parameter_regelsatz_nach_regelbedarfsstufen[5]["betrag"],
-        altersgrenzen=Altersgrenzen(
-            min_alter=parameter_regelsatz_nach_regelbedarfsstufen[5]["min_alter"],
-            max_alter=parameter_regelsatz_nach_regelbedarfsstufen[5]["max_alter"],
-        ),
-    )
-    rbs_6 = SatzMitAltersgrenzen(
-        satz=parameter_regelsatz_nach_regelbedarfsstufen[6]["betrag"],
-        altersgrenzen=Altersgrenzen(
-            min_alter=parameter_regelsatz_nach_regelbedarfsstufen[6]["min_alter"],
-            max_alter=parameter_regelsatz_nach_regelbedarfsstufen[6]["max_alter"],
-        ),
-    )
-    return SGBIIRegelsatzNachRegelbedarfsstufen(
-        rbs_1=parameter_regelsatz_nach_regelbedarfsstufen[1],
-        rbs_2=parameter_regelsatz_nach_regelbedarfsstufen[2],
-        rbs_3=parameter_regelsatz_nach_regelbedarfsstufen[3],
-        rbs_4=rbs_4,
-        rbs_5=rbs_5,
-        rbs_6=rbs_6,
-    )
+@dataclass(frozen=True)
+class BerechtigteWohnflächeEigentum:
+    anzahl_personen_zu_fläche: dict[int, float]
+    je_weitere_person: float
+    max_anzahl_direkt: int
 
 
 @param_function(start_date="2005-01-01")

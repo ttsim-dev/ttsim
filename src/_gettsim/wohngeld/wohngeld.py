@@ -16,7 +16,11 @@ priority check, but cannot cover their needs with the Wohngeld calculated in poi
 3. In this sense, this implementation is an approximation of the actual Wohngeld.
 """
 
-from _gettsim.param_types import WohngeldBasisformelParamValues
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
 from ttsim import (
     AggType,
     RoundingSpec,
@@ -25,6 +29,18 @@ from ttsim import (
     param_function,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    from _gettsim.param_types import ConsecutiveInt1dLookupTableParamValue
+
+
+@dataclass(frozen=True)
+class BasisformelParamValues:
+    skalierungsfaktor: float
+    a: ConsecutiveInt1dLookupTableParamValue
+    b: ConsecutiveInt1dLookupTableParamValue
+    c: ConsecutiveInt1dLookupTableParamValue
+    zusatzbetrag_nach_haushaltsgröße: ConsecutiveInt1dLookupTableParamValue
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
@@ -75,7 +91,7 @@ def anspruchshöhe_m_wthh(
     einkommen_m_wthh: float,
     miete_m_wthh: float,
     grundsätzlich_anspruchsberechtigt_wthh: bool,
-    basisformel_params: WohngeldBasisformelParamValues,
+    basisformel_params: BasisformelParamValues,
 ) -> float:
     """Housing benefit after wealth and income check.
 
@@ -110,7 +126,7 @@ def anspruchshöhe_m_bg(
     einkommen_m_bg: float,
     miete_m_bg: float,
     grundsätzlich_anspruchsberechtigt_bg: bool,
-    basisformel_params: WohngeldBasisformelParamValues,
+    basisformel_params: BasisformelParamValues,
 ) -> float:
     """Housing benefit after wealth and income check.
 
@@ -136,7 +152,7 @@ def basisformel_params(
     koeffizienten_berechnungsformel: dict[int, dict[str, float]],
     max_anzahl_personen: dict[str, int],
     zusatzbetrag_pro_person_in_großen_haushalten: float,
-) -> WohngeldBasisformelParamValues:
+) -> BasisformelParamValues:
     """Convert the parameters of the Wohngeld basis formula to a format that can be
     used by Numpy and Jax.
     """
@@ -159,7 +175,7 @@ def basisformel_params(
             i - max_normal
         ) * zusatzbetrag_pro_person_in_großen_haushalten
 
-    return WohngeldBasisformelParamValues(
+    return BasisformelParamValues(
         skalierungsfaktor=skalierungsfaktor,
         a=get_consecutive_int_1d_lookup_table_param_value(a),
         b=get_consecutive_int_1d_lookup_table_param_value(b),
@@ -174,7 +190,7 @@ def basisformel(
     anzahl_personen: int,
     einkommen_m: float,
     miete_m: float,
-    params: WohngeldBasisformelParamValues,
+    params: BasisformelParamValues,
 ) -> float:
     """Basic formula for housing benefit calculation.
 
