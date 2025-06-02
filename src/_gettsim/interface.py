@@ -119,8 +119,11 @@ def oss(
         debug=False,
         jit=False,
     )
+    nested_data_with_p_id = {
+        "p_id": data_tree["p_id"],
+        **taxes_and_transfers_result,
+    }
     return nested_data_to_dataframe(
-        nested_data=taxes_and_transfers_result,
-        targets_tree_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
-        index_column=data_tree["p_id"],
+        nested_data_with_p_id=nested_data_with_p_id,
+        nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
     )
