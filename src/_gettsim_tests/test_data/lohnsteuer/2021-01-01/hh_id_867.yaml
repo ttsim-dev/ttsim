@@ -5,8 +5,10 @@ info:
   source: ''
 inputs:
   assumed:
-    familie__p_id_elternteil_1: -1
-    familie__p_id_elternteil_2: -1
+    familie__p_id_elternteil_1:
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
   provided:
     alter:
       - 25
