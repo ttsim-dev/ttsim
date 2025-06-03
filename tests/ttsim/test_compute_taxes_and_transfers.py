@@ -569,10 +569,6 @@ def test_dont_warn_if_functions_and_columns_dont_overlap():
 
 
 def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
-    policy_environment = {
-        "some_func": some_func,
-        "unique": another_func,
-    }
     with warnings.catch_warnings(
         category=FunctionsAndDataColumnsOverlapWarning, record=True
     ) as warning_list:
@@ -585,7 +581,10 @@ def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
                     "p_id": pd.Series([0]),
                     "x": pd.Series([1]),
                 },
-                "policy_environment": {"some_func": some_func},
+                "policy_environment": {
+                    "some_func": some_func,
+                    "unique": another_func,
+                },
                 "targets_tree": {"some_func": None},
                 "rounding": False,
                 # "jit": jit,

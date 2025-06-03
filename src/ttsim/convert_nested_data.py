@@ -7,7 +7,7 @@ import numpy as np
 import optree
 import pandas as pd
 
-from ttsim.shared import format_errors_and_warnings, format_list_linewise
+from ttsim.failures_and_warnings import format_errors_and_warnings, format_list_linewise
 
 if TYPE_CHECKING:
     from ttsim.typing import NestedData, NestedStrings, QualNameData

@@ -19,10 +19,8 @@ from ttsim.compute_taxes_and_transfers import (
     _add_derived_functions,
     required_column_functions,
 )
-from ttsim.shared import (
-    format_list_linewise,
-    partition_tree_by_reference_tree,
-)
+from ttsim.failures_and_warnings import format_list_linewise
+from ttsim.shared import partition_tree_by_reference_tree
 
 if TYPE_CHECKING:
     from ttsim.typing import NestedPolicyEnvironment

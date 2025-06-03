@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import datetime
 import functools
-import warnings
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import networkx as nx
-import pandas as pd
 from dags import concatenate_functions, create_dag, get_free_arguments
 
 from ttsim.automatically_added_functions import (
@@ -18,20 +16,16 @@ from ttsim.automatically_added_functions import (
 from ttsim.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
-    FKType,
     ParamFunction,
-    PolicyInput,
 )
 from ttsim.config import numpy_or_jax as np
+from ttsim.failures_and_warnings import (
+    fail_if_multiple_time_units_for_same_base_name_and_group,
+)
 from ttsim.param_objects import ParamObject, RawParam
 from ttsim.policy_environment import grouping_levels
 from ttsim.shared import (
-    assert_valid_ttsim_pytree,
-    fail_if_multiple_time_units_for_same_base_name_and_group,
-    format_errors_and_warnings,
-    format_list_linewise,
     get_base_name_and_grouping_suffix,
-    get_name_of_group_by_id,
     get_re_pattern_for_all_time_units_and_groupings,
     group_pattern,
     merge_trees,
@@ -69,21 +63,6 @@ def column_results(
 
 def qual_name_data(data_tree: NestedData) -> QualNameData:
     return dt.flatten_to_qual_names(data_tree)
-
-
-def fail_if_any_paths_are_invalid(
-    policy_environment: NestedPolicyEnvironment,
-    data_tree: NestedData,
-    targets_tree: NestedTargetDict,
-    top_level_namespace: set[str],
-) -> None:
-    """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
-    return dt.fail_if_paths_are_invalid(
-        functions=policy_environment,
-        data_tree=data_tree,
-        targets=targets_tree,
-        top_level_namespace=top_level_namespace,
-    )
 
 
 def qual_name_data_columns(qual_name_data: QualNameData) -> set[str]:
@@ -379,42 +358,6 @@ def _add_derived_functions(
     return out
 
 
-def fail_if_targets_are_not_in_policy_environment_or_data(
-    policy_environment: QualNamePolicyEnvironment,
-    qual_name_data_columns: QualNameDataColumns,
-    qual_name_targets: QualNameTargetList,
-) -> None:
-    """Fail if some target is not among functions.
-
-    Parameters
-    ----------
-    functions
-        Dictionary containing functions to build the DAG.
-    qual_name_data_columns
-        The columns which are available in the data tree.
-    targets
-        The targets which should be computed. They limit the DAG in the way that only
-        ancestors of these nodes need to be considered.
-
-    Raises
-    ------
-    ValueError
-        Raised if any member of `targets` is not among functions.
-
-    """
-    targets_not_in_policy_environment_or_data = [
-        str(dt.tree_path_from_qual_name(n))
-        for n in qual_name_targets
-        if n not in policy_environment and n not in qual_name_data_columns
-    ]
-    if targets_not_in_policy_environment_or_data:
-        formatted = format_list_linewise(targets_not_in_policy_environment_or_data)
-        msg = format_errors_and_warnings(
-            f"The following targets have no corresponding function:\n\n{formatted}"
-        )
-        raise ValueError(msg)
-
-
 def qual_name_input_data(
     tax_transfer_dag: nx.DiGraph,
     qual_name_data: QualNameData,
@@ -548,270 +491,3 @@ def required_column_functions(
                 processed_functions[name] = func
 
     return processed_functions
-
-
-def fail_if_targets_tree_is_invalid(targets_tree: NestedTargetDict) -> None:
-    """
-    Validate that the targets tree is a dictionary with string keys and None leaves.
-    """
-    assert_valid_ttsim_pytree(
-        tree=targets_tree,
-        leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
-        tree_name="targets_tree",
-    )
-
-
-def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
-    """
-    Validate the basic structure of the data tree.
-
-    1. It must be is a dictionary with string keys and Series or Array leaves.
-    2. It must contain the `p_id` column.
-    3. Each element of `p_id` must uniquely identify a row.
-
-    Parameters
-    ----------
-    data_tree
-        The data tree.
-
-    Raises
-    ------
-    ValueError
-        If any of the above conditions is not met.
-    """
-    assert_valid_ttsim_pytree(
-        tree=data_tree,
-        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
-        tree_name="data_tree",
-    )
-    p_id = data_tree.get("p_id", None)
-    if p_id is None:
-        raise ValueError("The input data must contain the `p_id` column.")
-
-    # Check for non-unique p_ids
-    p_id_counts: dict[int, int] = {}
-    # Need the map because Jax loop items are 1-element arrays.
-    for i in map(int, p_id):
-        if i in p_id_counts:
-            p_id_counts[i] += 1
-        else:
-            p_id_counts[i] = 1
-
-    non_unique_p_ids = [i for i, count in p_id_counts.items() if count > 1]
-
-    if non_unique_p_ids:
-        message = (
-            "The following `p_id`s are not unique in the input data:\n\n"
-            f"{non_unique_p_ids}\n\n"
-        )
-        raise ValueError(message)
-
-
-def fail_if_group_variables_are_not_constant_within_groups(
-    qual_name_input_data: QualNameData,
-    grouping_levels: tuple[str, ...],
-) -> None:
-    """
-    Check that group variables are constant within each group.
-
-    Parameters
-    ----------
-    data
-        Dictionary of data.
-    groupings
-        The groupings available in the policy environment.
-    """
-    faulty_data_columns = []
-
-    for name, data_column in qual_name_input_data.items():
-        group_by_id = get_name_of_group_by_id(
-            target_name=name,
-            groupings=grouping_levels,
-        )
-        if group_by_id in qual_name_input_data:
-            group_by_id_series = pd.Series(qual_name_input_data[group_by_id])
-            leaf_series = pd.Series(data_column)
-            unique_counts = leaf_series.groupby(group_by_id_series).nunique(
-                dropna=False
-            )
-            if not (unique_counts == 1).all():
-                faulty_data_columns.append(name)
-
-    if faulty_data_columns:
-        formatted = format_list_linewise(faulty_data_columns)
-        msg = format_errors_and_warnings(
-            f"""The following data inputs do not have a unique value within
-                each group defined by the provided grouping IDs:
-
-                {formatted}
-
-                To fix this error, assign the same value to each group.
-                """
-        )
-        raise ValueError(msg)
-
-
-def fail_if_foreign_keys_are_invalid_in_data(
-    qual_name_input_data: QualNameData,
-    qual_name_data: QualNameData,
-    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
-) -> None:
-    """
-    Check that all foreign keys are valid.
-
-    Foreign keys must point to an existing `p_id` in the input data and must not refer
-    to the `p_id` of the same row.
-
-    We need qual_name_data because we cannot guarantee that `p_id` is present in the
-    input data.
-    """
-
-    valid_ids = set(qual_name_data["p_id"].tolist()) | {-1}
-    relevant_objects = {
-        k: v
-        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
-        if isinstance(v, PolicyInput | ColumnFunction)
-    }
-
-    for fk_name, fk in relevant_objects.items():
-        if fk.foreign_key_type == FKType.IRRELEVANT:
-            continue
-        elif fk_name in qual_name_input_data:
-            path = dt.tree_path_from_qual_name(fk_name)
-            # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in qual_name_input_data[fk_name].tolist()):
-                message = format_errors_and_warnings(
-                    f"""
-                    For {path}, the following are not a valid p_id in the input
-                    data: {[i for i in qual_name_input_data[fk_name] if i not in valid_ids]}.
-                    """
-                )
-                raise ValueError(message)
-
-            if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
-                equal_to_pid_in_same_row = [
-                    i
-                    for i, j in zip(
-                        qual_name_input_data[fk_name].tolist(),
-                        qual_name_data["p_id"].tolist(),
-                    )
-                    if i == j
-                ]
-                if any(equal_to_pid_in_same_row):
-                    message = format_errors_and_warnings(
-                        f"""
-                        For {path}, the following are equal to the p_id in the same
-                        row: {equal_to_pid_in_same_row}.
-                        """
-                    )
-                    raise ValueError(message)
-
-
-def warn_if_functions_and_data_columns_overlap(
-    policy_environment: NestedPolicyEnvironment,
-    qual_name_data_columns: QualNameDataColumns,
-) -> None:
-    """Warn if functions are overridden by data."""
-    overridden_elements = sorted(
-        {
-            col
-            for col in qual_name_data_columns
-            if col in dt.flatten_to_qual_names(policy_environment)
-        }
-    )
-    if len(overridden_elements) > 0:
-        warnings.warn(
-            FunctionsAndDataColumnsOverlapWarning(overridden_elements),
-            stacklevel=3,
-        )
-
-
-class FunctionsAndDataColumnsOverlapWarning(UserWarning):
-    """
-    Warning that functions which compute columns overlap with existing columns.
-
-    Parameters
-    ----------
-    columns_overriding_functions : set[str]
-        Names of columns in the data that override hard-coded functions.
-    """
-
-    def __init__(self, columns_overriding_functions: list[str]) -> None:
-        n_cols = len(columns_overriding_functions)
-        if n_cols == 1:
-            first_part = format_errors_and_warnings("Your data provides the column:")
-            second_part = format_errors_and_warnings(
-                """
-                This is already present among the hard-coded functions of the taxes and
-                transfers system. If you want this data column to be used instead of
-                calculating it within TTSIM you need not do anything. If you want this
-                data column to be calculated by hard-coded functions, remove it from the
-                *data* you pass to TTSIM. You need to pick one option for each column
-                that appears in the list above.
-                """
-            )
-        else:
-            first_part = format_errors_and_warnings("Your data provides the columns:")
-            second_part = format_errors_and_warnings(
-                """
-                These are already present among the hard-coded functions of the taxes
-                and transfers system. If you want a data column to be used instead of
-                calculating it within TTSIM you do not need to do anything. If you
-                want data columns to be calculated by hard-coded functions, remove them
-                from the *data* you pass to TTSIM. You need to pick one option for
-                each column that appears in the list above.
-                """
-            )
-        formatted = format_list_linewise(columns_overriding_functions)
-        how_to_ignore = format_errors_and_warnings(
-            """
-            If you want to ignore this warning, add the following code to your script
-            before calling TTSIM:
-
-                import warnings
-                from ttsim import FunctionsAndDataColumnsOverlapWarning
-
-                warnings.filterwarnings(
-                    "ignore",
-                    category=FunctionsAndDataColumnsOverlapWarning
-                )
-            """
-        )
-        super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
-
-
-def fail_if_root_nodes_are_missing(
-    tax_transfer_dag: nx.DiGraph,
-    qual_name_data: QualNameData,
-) -> None:
-    """Fail if root nodes are missing.
-
-    Parameters
-    ----------
-    tax_transfer_dag
-        The DAG of taxes and transfers functions.
-    qual_name_data
-        The data tree in qualified name representation.
-
-    Raises
-    ------
-    ValueError
-        If root nodes are missing.
-    """
-
-    # Obtain root nodes
-    root_nodes = nx.subgraph_view(
-        tax_transfer_dag, filter_node=lambda n: tax_transfer_dag.in_degree(n) == 0
-    ).nodes
-
-    missing_nodes = [
-        node
-        for node in root_nodes
-        if node not in qual_name_data and not node.endswith("_num_segments")
-    ]
-
-    if missing_nodes:
-        formatted = format_list_linewise(
-            [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes]
-        )
-        raise ValueError(f"The following data columns are missing.\n{formatted}")

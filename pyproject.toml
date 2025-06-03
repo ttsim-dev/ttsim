@@ -247,6 +247,7 @@ extend-ignore = [
     "INP001", # implicit namespace packages without init.
     "E721", # Use `is` and `is not` for type comparisons
     "TD003", # Missing issue link -- remove again once we got rid of ad-hoc TODOs.
+    "ERA001", # Commented out code.
 
     # Things ignored to avoid conflicts with ruff-format
     # ==================================================
@@ -255,8 +256,8 @@ extend-ignore = [
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
-"src/ttsim/compute_taxes_and_transfers.py" = ["E501", "ERA001"]
-"src/ttsim/functions/all_functions_for_docs.py" = ["F401", "E501", "F403"]
+"src/ttsim/compute_taxes_and_transfers.py" = ["E501"]
+"src/ttsim/failures_and_warnings.py" = ["E501"]
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
@@ -308,7 +309,7 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
-    "tests.ttsim.test_policy_environment",
+    "tests.ttsim.test_failures_and_warnings",
 ]
 disable_error_code = [
     "misc",  # Happens when constructing param dictionaries on the fly.
@@ -356,7 +357,7 @@ filterwarnings = [
     "ignore:The TerminalReporter.writer attribute is",
     "ignore:Repeated execution of the test suite",
     "ignore:Using or importing the ABCs from 'collections'",
-    "ignore::ttsim.compute_taxes_and_transfers.FunctionsAndDataColumnsOverlapWarning"
+    "ignore::ttsim.failures_and_warnings.FunctionsAndDataColumnsOverlapWarning"
 ]
 markers = [
     "wip: Tests that are work-in-progress.",
