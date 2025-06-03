@@ -6,7 +6,7 @@ from _gettsim.config import GETTSIM_ROOT
 from ttsim import (
     dataframe_to_nested_data,
     main,
-    nested_data_to_dataframe,
+    nested_data_to_dataframe_with_column_map,
     to_datetime,
 )
 
@@ -117,7 +117,7 @@ def oss(
         },
         targets=["nested_results"],
     )["nested_results"]
-    return nested_data_to_dataframe(
+    return nested_data_to_dataframe_with_column_map(
         nested_data_to_convert=nested_result,
         nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
         data_with_p_id=data_tree,

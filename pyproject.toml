@@ -262,7 +262,8 @@ exclude = []
 "src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
 "docs/**/*.ipynb" = ["T201"]
-"tests/ttsim/test_plot_dag.py" = ["PGH004"]
+"src/ttsim/__init__.py" = ["PGH004"]  # remove once ported nicely
+"tests/ttsim/test_plot_dag.py" = ["PGH004"]  # remove once ported nicely
 
 # Files which should be ignored until we have rewritten them
 # =========================================================

@@ -17,10 +17,6 @@ from ttsim.column_objects_param_function import (
     policy_function,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.loader import (
-    orig_tree_with_column_objects_and_param_functions,
-    orig_tree_with_params,
-)
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
@@ -40,8 +36,6 @@ from ttsim.shared import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from ttsim.typing import (
         DashedISOString,
         FlatColumnObjectsParamFunctions,
@@ -88,7 +82,7 @@ def upsert_tree_into_policy_environment(
     The policy environment with the upserted functions.
     """
 
-    tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
+    tree_to_upsert_with_correct_types = _convert_plain_functions_to_policy_functions(
         tree_to_upsert
     )
     fail_if_name_of_last_branch_element_not_leaf_name_of_function(
@@ -106,28 +100,8 @@ def upsert_tree_into_policy_environment(
     return new_environment
 
 
-@dataclass(frozen=True)
-class OrigTreesWithFileNames:
-    """
-    A container for the original trees of policy functions, policy inputs,
-    param functions and parameters.
-    """
-
-    column_objects_and_param_functions: FlatColumnObjectsParamFunctions
-    params: FlatOrigParamSpecs
-
-
-def orig_trees(root: Path) -> OrigTreesWithFileNames:
-    return OrigTreesWithFileNames(
-        column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions(
-            root
-        ),
-        params=orig_tree_with_params(root),
-    )
-
-
 def policy_environment(
-    active_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    active_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,  # noqa: E501
     active_tree_with_params: FlatOrigParamSpecs,
     date: datetime.date | DashedISOString,
 ) -> NestedPolicyEnvironment:
@@ -171,7 +145,7 @@ def policy_environment(
     return a_tree
 
 
-def convert_plain_functions_to_policy_functions(
+def _convert_plain_functions_to_policy_functions(
     tree: NestedAny,
 ) -> NestedAnyTTSIMObject:
     """Convert all plain functions in a tree to PolicyFunctions.

@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import functools
 import warnings
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -25,7 +24,7 @@ from ttsim.column_objects_param_function import (
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.param_objects import ParamObject, RawParam
-from ttsim.policy_environment import fail_if_environment_is_invalid, grouping_levels
+from ttsim.policy_environment import grouping_levels
 from ttsim.shared import (
     assert_valid_ttsim_pytree,
     fail_if_multiple_time_units_for_same_base_name_and_group,
@@ -39,6 +38,8 @@ from ttsim.shared import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ttsim.typing import (
         NestedData,
         NestedPolicyEnvironment,
@@ -59,139 +60,6 @@ _DUMMY_COLUMN_OBJECT = ColumnObject(
 )
 
 
-def compute_taxes_and_transfers(
-    data_tree: NestedData,
-    policy_environment: NestedPolicyEnvironment,
-    targets_tree: NestedTargetDict,
-    rounding: bool = True,
-    debug: bool = False,
-    jit: bool = False,
-) -> NestedData:
-    """Compute taxes and transfers.
-
-    Parameters
-    ----------
-    data_tree : NestedData
-        Data provided by the user.
-    environment: NestedPolicyEnvironment
-        The policy environment which contains all necessary functions and parameters.
-    targets_tree : NestedTargetDict | None
-        The targets tree.
-    rounding : bool, default True
-        Indicator for whether rounding should be applied as specified in the law.
-    debug : bool
-        If debug is 'True', `compute_taxes_and_transfers` returns the input data tree
-        along with the computed targets.
-    jit : bool
-        If jit is 'True', the function is compiled using JAX's JIT compilation. To use
-        this feature, JAX must be installed.
-
-    Returns
-    -------
-    results : NestedData
-        The computed variables as a tree.
-
-    """
-
-    # Check user inputs
-    fail_if_targets_tree_is_invalid(targets_tree)
-    fail_if_data_tree_is_invalid(data_tree)
-    fail_if_environment_is_invalid(policy_environment)
-
-    top_level_namespace = top_level_namespace(
-        policy_environment=policy_environment,
-    )
-    # Check that all paths in the params tree are valid
-
-    qual_name_data = qual_name_data(data_tree)
-    qual_name_data_columns = qual_name_data_columns(qual_name_data)
-    warn_if_functions_and_data_columns_overlap(
-        policy_environment=policy_environment,
-        qual_name_data_columns=qual_name_data_columns,
-    )
-
-    flat_policy_environment_with_derived_functions_and_without_overridden_functions = (
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions(
-            qual_name_data=qual_name_data,
-            policy_environment=policy_environment,
-            targets_tree=targets_tree,
-            top_level_namespace=top_level_namespace,
-        )
-    )
-    column_functions_with_processed_params_and_scalars = column_functions_with_processed_params_and_scalars(
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_policy_environment_with_derived_functions_and_without_overridden_functions,
-    )
-    required_column_functions = required_column_functions(
-        column_functions_with_processed_params_and_scalars=column_functions_with_processed_params_and_scalars,
-        rounding=rounding,
-    )
-    # Super-ugly, will be refactored
-    qual_name_targets = qual_name_targets(targets_tree)
-    qual_name_column_targets = qual_name_column_targets(
-        required_column_functions, qual_name_targets
-    )
-    qual_name_param_targets = qual_name_param_targets(
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions,
-        qual_name_targets,
-        qual_name_column_targets,
-    )
-    # Will just return these.
-    qual_name_own_targets = qual_name_own_targets(
-        qual_name_targets, qual_name_column_targets, qual_name_param_targets
-    )
-
-    tax_transfer_dag = tax_transfer_dag(
-        required_column_functions=required_column_functions,
-        qual_name_column_targets=qual_name_column_targets,
-    )
-
-    fail_if_root_nodes_are_missing(
-        tax_transfer_dag=tax_transfer_dag,
-        qual_name_data=qual_name_data,
-        required_column_functions=required_column_functions,
-        qual_name_column_targets=qual_name_column_targets,
-    )
-
-    # Remove unnecessary elements from user-provided data.
-    qual_name_input_data = qual_name_input_data(
-        tax_transfer_dag=tax_transfer_dag,
-        qual_name_data=qual_name_data,
-        required_column_functions=required_column_functions,
-        qual_name_column_targets=qual_name_column_targets,
-    )
-
-    fail_if_group_variables_are_not_constant_within_groups(
-        qual_name_input_data=qual_name_input_data,
-        grouping_levels=grouping_levels(policy_environment),
-    )
-    fail_if_foreign_keys_are_invalid_in_data(
-        qual_name_input_data=qual_name_input_data,
-        qual_name_data=qual_name_data,
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_policy_environment_with_derived_functions_and_without_overridden_functions,
-    )
-
-    tax_transfer_function = tax_transfer_function(
-        tax_transfer_dag=tax_transfer_dag,
-        required_column_functions=required_column_functions,
-        qual_name_column_targets=qual_name_column_targets,
-        # backend=backend
-    )
-
-    column_results = column_results(qual_name_input_data, tax_transfer_function)
-
-    qual_name_results = qual_name_results(
-        column_results=column_results,
-        qual_name_param_targets=qual_name_param_targets,
-        column_functions_with_processed_params_and_scalars=column_functions_with_processed_params_and_scalars,
-        qual_name_own_targets=qual_name_own_targets,
-        qual_name_data=qual_name_data,
-        qual_name_targets=qual_name_targets,
-    )
-    nested_results = nested_results(qual_name_results)
-
-    return nested_results
-
-
 def column_results(
     qual_name_input_data: QualNameData,
     tax_transfer_function: Callable[[QualNameData], QualNameData],
@@ -199,7 +67,7 @@ def column_results(
     return tax_transfer_function(qual_name_input_data)
 
 
-def qual_name_data(data_tree):
+def qual_name_data(data_tree: NestedData) -> QualNameData:
     return dt.flatten_to_qual_names(data_tree)
 
 
@@ -218,7 +86,7 @@ def fail_if_any_paths_are_invalid(
     )
 
 
-def qual_name_data_columns(qual_name_data):
+def qual_name_data_columns(qual_name_data: QualNameData) -> set[str]:
     return set(qual_name_data.keys())
 
 
@@ -233,7 +101,7 @@ def qual_name_results(
     qual_name_own_targets: QualNameTargetList,
     qual_name_data: QualNameData,
     qual_name_targets: QualNameTargetList,
-):
+) -> QualNameData:
     unordered = {
         **column_results,
         **{
@@ -300,7 +168,10 @@ def qual_name_targets(targets_tree: NestedTargetDict) -> QualNameTargetList:
     return dt.qual_names(targets_tree)
 
 
-def qual_name_column_targets(required_column_functions, qual_name_targets):
+def qual_name_column_targets(
+    required_column_functions: QualNameColumnFunctions,
+    qual_name_targets: QualNameTargetList,
+) -> QualNameTargetList:
     """All targets that are column functions."""
     return [t for t in qual_name_targets if t in required_column_functions]
 
@@ -911,7 +782,6 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
 
 def fail_if_root_nodes_are_missing(
     tax_transfer_dag: nx.DiGraph,
-    required_column_functions: QualNameColumnFunctions,
     qual_name_data: QualNameData,
 ) -> None:
     """Fail if root nodes are missing.
@@ -920,8 +790,6 @@ def fail_if_root_nodes_are_missing(
     ----------
     tax_transfer_dag
         The DAG of taxes and transfers functions.
-    required_column_functions
-        The functions operating on columns that make up the DAG.
     qual_name_data
         The data tree in qualified name representation.
 
@@ -939,9 +807,7 @@ def fail_if_root_nodes_are_missing(
     missing_nodes = [
         node
         for node in root_nodes
-        if node not in required_column_functions  # TODO: Check whether still needed.
-        and node not in qual_name_data
-        and not node.endswith("_num_segments")
+        if node not in qual_name_data and not node.endswith("_num_segments")
     ]
 
     if missing_nodes:

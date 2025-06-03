@@ -1,3 +1,5 @@
+# ruff: noqa
+# type: ignore
 from __future__ import annotations
 
 from typing import Any
@@ -29,7 +31,6 @@ from ttsim.compute_taxes_and_transfers import (
     _add_derived_functions,
     column_functions_with_processed_params_and_scalars,
     column_results,
-    compute_taxes_and_transfers,
     fail_if_any_paths_are_invalid,
     fail_if_data_tree_is_invalid,
     fail_if_foreign_keys_are_invalid_in_data,
@@ -53,7 +54,10 @@ from ttsim.compute_taxes_and_transfers import (
     top_level_namespace,
     warn_if_functions_and_data_columns_overlap,
 )
-from ttsim.convert_nested_data import dataframe_to_nested_data, nested_data_to_dataframe
+from ttsim.convert_nested_data import (
+    dataframe_to_nested_data,
+    nested_data_to_dataframe_with_column_map,
+)
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
@@ -70,8 +74,11 @@ from ttsim.piecewise_polynomial import (
     piecewise_polynomial,
 )
 from ttsim.plot_dag import plot_dag
+from ttsim.loader import (
+    orig_tree_with_column_objects_and_param_functions,
+    orig_tree_with_params,
+)
 from ttsim.policy_environment import (
-    OrigTreesWithFileNames,
     active_tree_with_column_objects_and_param_functions,
     active_tree_with_params,
     fail_if_active_periods_overlap,
@@ -82,8 +89,6 @@ from ttsim.policy_environment import (
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
     grouping_levels,
-    orig_tree_with_column_objects_and_param_functions,
-    orig_tree_with_params,
     policy_environment,
 )
 from ttsim.rounding import RoundingSpec
@@ -327,7 +332,6 @@ __all__ = [
     "FKType",
     "FunctionsAndDataColumnsOverlapWarning",
     "GroupCreationFunction",
-    "OrigTreesWithFileNames",
     "ParamFunction",
     "ParamObject",
     "PiecewisePolynomialParam",
@@ -341,7 +345,6 @@ __all__ = [
     "_add_derived_functions",
     "agg_by_group_function",
     "agg_by_p_id_function",
-    "compute_taxes_and_transfers",
     "create_time_conversion_functions",
     "dataframe_to_nested_data",
     "get_consecutive_int_1d_lookup_table_param_value",
@@ -353,7 +356,7 @@ __all__ = [
     "insert_path_and_value",
     "join",
     "merge_trees",
-    "nested_data_to_dataframe",
+    "nested_data_to_dataframe_with_column_map",
     "param_function",
     "piecewise_polynomial",
     "plot_dag",
