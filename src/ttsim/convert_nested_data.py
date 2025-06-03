@@ -20,10 +20,10 @@ def nested_data_to_df_with_nested_columns(
     """Convert a nested data structure to a DataFrame.
 
     Args:
-        nested_data_with_p_id:
+        nested_data_to_convert:
             A nested data structure.
-        nested_data_paths_to_outputs_df_columns:
-            A tree that maps paths (sequence of keys) to data columns names.
+        data_with_p_id:
+            Some data structure with a "p_id" column.
 
     Returns:
         A DataFrame.

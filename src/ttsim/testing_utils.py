@@ -149,7 +149,7 @@ def load_policy_test_data(test_dir: Path, policy_name: str) -> dict[str, PolicyT
         with path_to_yaml.open("r", encoding="utf-8") as file:
             raw_test_data: NestedData = yaml.safe_load(file)
 
-            this_test = _get_policy_tests_from_raw_test_data(
+            this_test = _get_policy_test_from_raw_test_data(
                 test_dir=test_dir,
                 raw_test_data=raw_test_data,
                 path_to_yaml=path_to_yaml,
@@ -163,11 +163,11 @@ def _is_skipped(test_file: Path) -> bool:
     return "skip" in test_file.stem or "skip" in test_file.parent.name
 
 
-def _get_policy_tests_from_raw_test_data(
+def _get_policy_test_from_raw_test_data(
     test_dir: Path,
     path_to_yaml: Path,
     raw_test_data: NestedData,
-) -> list[PolicyTest]:
+) -> PolicyTest:
     """Get a list of PolicyTest objects from raw test data.
 
     Args:
@@ -181,7 +181,7 @@ def _get_policy_tests_from_raw_test_data(
     inputs: NestedData = raw_test_data.get("inputs", {})
     input_tree: NestedData = dt.unflatten_from_qual_names(
         {
-            k: np.array(v)
+            k: np.asarray(pd.Series(v))
             for k, v in dt.flatten_to_qual_names(
                 merge_trees(inputs.get("provided", {}), inputs.get("assumed", {}))
             ).items()
@@ -189,7 +189,7 @@ def _get_policy_tests_from_raw_test_data(
     )
     expected_output_tree: NestedData = dt.unflatten_from_qual_names(
         {
-            k: np.array(v)
+            k: np.asarray(pd.Series(v))
             for k, v in dt.flatten_to_qual_names(
                 raw_test_data.get("outputs", {})
             ).items()
