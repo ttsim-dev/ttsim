@@ -14,8 +14,9 @@ if TYPE_CHECKING:
 
 
 def nested_data_to_dataframe(
-    nested_data_with_p_id: NestedData,
-    nested_data_paths_to_outputs_df_columns: NestedStrings,
+    nested_data_to_convert: NestedData,
+    nested_outputs_df_column_names: NestedStrings,
+    data_with_p_id: NestedData | QualNameData,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
 
@@ -28,21 +29,18 @@ def nested_data_to_dataframe(
     Returns:
         A DataFrame.
     """
-    paths_to_data = dt.flatten_to_tree_paths(nested_data_with_p_id)
-    paths_to_column_names = dt.flatten_to_tree_paths(
-        nested_data_paths_to_outputs_df_columns
-    )
+    flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
+    flat_df_columns = dt.flatten_to_tree_paths(nested_outputs_df_column_names)
 
     _fail_if_data_paths_are_missing_in_paths_to_column_names(
-        available_paths=list(paths_to_column_names.keys()),
-        required_paths=list(paths_to_data.keys()),
+        available_paths=list(flat_df_columns.keys()),
+        required_paths=list(flat_data_to_convert.keys()),
     )
-    _fail_if_incompatible_objects_in_nested_data(paths_to_data)
+    _fail_if_incompatible_objects_in_nested_data(flat_data_to_convert)
 
-    p_id_array = paths_to_data.pop(("p_id",))
     return pd.DataFrame(
-        {paths_to_column_names[path]: data for path, data in paths_to_data.items()},
-        index=pd.Index(p_id_array, name="p_id"),
+        {flat_df_columns[path]: data for path, data in flat_data_to_convert.items()},
+        index=pd.Index(data_with_p_id["p_id"], name="p_id"),
     )
 
 
