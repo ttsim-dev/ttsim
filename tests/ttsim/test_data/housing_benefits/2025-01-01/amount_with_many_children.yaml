@@ -4,19 +4,26 @@ info:
   precision_atol: 0.01
   source: ''
 inputs:
+  assumed: {}
   provided:
-    p_id:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
+    age:
+      - 30
+      - 30
+      - 10
+      - 10
+      - 10
     kin_id:
       - 0
       - 0
       - 0
       - 0
       - 0
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
     p_id_parent_1:
       - -1
       - -1
@@ -35,30 +42,27 @@ inputs:
       - -1
       - -1
       - -1
-    payroll_tax__income__gross_wage_y:
-      - 10000
-      - 0
-      - 0
-      - 0
-      - 0
-    payroll_tax__child_tax_credit__p_id_recipient:
-      - -1
-      - -1
-      - 0
-      - 0
-      - 0
-    age:
-      - 30
-      - 30
-      - 10
-      - 10
-      - 10
     parent_is_noble:
       - false
       - false
       - false
       - false
       - false
+    payroll_tax:
+      child_tax_credit:
+        p_id_recipient:
+          - -1
+          - -1
+          - 0
+          - 0
+          - 0
+      income:
+        gross_wage_y:
+          - 10000
+          - 0
+          - 0
+          - 0
+          - 0
     wealth:
       - 0.0
       - 0.0
@@ -66,33 +70,36 @@ inputs:
       - 0.0
       - 0.0
 outputs:
-  housing_benefits__amount_m_fam:
-    - 297.5
-    - 297.5
-    - 297.5
-    - 297.5
-    - 297.5
-  housing_benefits__income__amount_m:
-    - 595.0
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-  housing_benefits__eligibility__requirement_fulfilled_fam:
-    - true
-    - true
-    - true
-    - true
-    - true
-  housing_benefits__eligibility__number_of_family_members_considered_fam:
-    - 4
-    - 4
-    - 4
-    - 4
-    - 4
-  housing_benefits__eligibility__number_of_individuals_fam:
-    - 5
-    - 5
-    - 5
-    - 5
-    - 5
+  housing_benefits:
+    amount_m_fam:
+      - 297.5
+      - 297.5
+      - 297.5
+      - 297.5
+      - 297.5
+    eligibility:
+      number_of_family_members_considered_fam:
+        - 4
+        - 4
+        - 4
+        - 4
+        - 4
+      number_of_individuals_fam:
+        - 5
+        - 5
+        - 5
+        - 5
+        - 5
+      requirement_fulfilled_fam:
+        - true
+        - true
+        - true
+        - true
+        - true
+    income:
+      amount_m:
+        - 595.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0

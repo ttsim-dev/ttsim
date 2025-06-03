@@ -4,7 +4,17 @@ info:
   precision_atol: 0.01
   source: ''
 inputs:
+  assumed: {}
   provided:
+    orc_hunting_bounty:
+      large_orcs_hunted:
+        - 0
+        - 2
+        - 1
+      small_orcs_hunted:
+        - 2
+        - 0
+        - 0
     p_id:
       - 0
       - 1
@@ -13,16 +23,9 @@ inputs:
       - false
       - false
       - true
-    orc_hunting_bounty__small_orcs_hunted:
-      - 2
-      - 0
-      - 0
-    orc_hunting_bounty__large_orcs_hunted:
-      - 0
-      - 2
-      - 1
 outputs:
-  orc_hunting_bounty__amount:
-    - 200.0
-    - 400.0
-    - 100.0
+  orc_hunting_bounty:
+    amount:
+      - 200.0
+      - 400.0
+      - 100.0

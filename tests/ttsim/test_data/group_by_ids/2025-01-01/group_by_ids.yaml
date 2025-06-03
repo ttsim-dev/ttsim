@@ -4,15 +4,24 @@ info:
   precision_atol: 0.01
   source: ''
 inputs:
+  assumed: {}
   provided:
-    p_id:
+    age:
+      - 30
+      - 30
+      - 10
+    gross_wage_y:
+      - 10000
       - 0
-      - 1
-      - 2
+      - 0
     kin_id:
       - 0
       - 0
       - 0
+    p_id:
+      - 0
+      - 1
+      - 2
     p_id_parent_1:
       - -1
       - -1
@@ -25,20 +34,12 @@ inputs:
       - 1
       - 0
       - -1
-    age:
-      - 30
-      - 30
-      - 10
-    gross_wage_y:
-      - 10000
-      - 0
-      - 0
 outputs:
-  sp_id:
-    - 0
-    - 0
-    - 1
   fam_id:
     - 0
     - 0
     - 0
+  sp_id:
+    - 0
+    - 0
+    - 1
