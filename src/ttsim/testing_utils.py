@@ -94,6 +94,9 @@ def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
             nested_data_to_convert=test.expected_output_tree,
             data_with_p_id=test.input_tree,
         )
+        for col in expected_df.columns:
+            expected_df[col] = expected_df[col].astype(float)
+
         result_df = nested_data_to_df_with_nested_columns(
             nested_data_to_convert=nested_result, data_with_p_id=test.input_tree
         )
@@ -178,22 +181,14 @@ def _get_policy_test_from_raw_test_data(
         A list of PolicyTest objects.
     """
     test_info: NestedData = raw_test_data.get("info", {})
-    inputs: NestedData = raw_test_data.get("inputs", {})
-    input_tree: NestedData = dt.unflatten_from_qual_names(
-        {
-            k: np.asarray(v)
-            for k, v in dt.flatten_to_qual_names(
-                merge_trees(inputs.get("provided", {}), inputs.get("assumed", {}))
-            ).items()
-        }
+    raw_inputs: NestedData = raw_test_data.get("inputs", {})
+    input_tree: NestedData = optree.tree_map(
+        np.array,
+        merge_trees(raw_inputs.get("provided", {}), raw_inputs.get("assumed", {})),
     )
-    expected_output_tree: NestedData = dt.unflatten_from_qual_names(
-        {
-            k: np.asarray(np.array(v))
-            for k, v in dt.flatten_to_qual_names(
-                raw_test_data.get("outputs", {})
-            ).items()
-        }
+    expected_output_tree: NestedData = optree.tree_map(
+        np.array,
+        raw_test_data.get("outputs", {}),
     )
 
     date: datetime.date = to_datetime(path_to_yaml.parent.name)
