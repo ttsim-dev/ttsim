@@ -181,7 +181,7 @@ def _get_policy_test_from_raw_test_data(
     inputs: NestedData = raw_test_data.get("inputs", {})
     input_tree: NestedData = dt.unflatten_from_qual_names(
         {
-            k: np.asarray(pd.Series(v))
+            k: np.asarray(v)
             for k, v in dt.flatten_to_qual_names(
                 merge_trees(inputs.get("provided", {}), inputs.get("assumed", {}))
             ).items()
@@ -189,7 +189,7 @@ def _get_policy_test_from_raw_test_data(
     )
     expected_output_tree: NestedData = dt.unflatten_from_qual_names(
         {
-            k: np.asarray(pd.Series(v))
+            k: np.asarray(np.array(v))
             for k, v in dt.flatten_to_qual_names(
                 raw_test_data.get("outputs", {})
             ).items()
