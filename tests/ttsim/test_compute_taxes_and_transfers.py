@@ -74,6 +74,11 @@ def identity(x: int) -> int:
 
 
 @policy_function()
+def identity_plus_one(identity: int) -> int:
+    return identity + 1
+
+
+@policy_function()
 def some_func(p_id: int) -> int:
     return p_id
 
@@ -86,6 +91,13 @@ def another_func(some_func: int) -> int:
 @param_function()
 def some_scalar_params_func(some_int_param: int) -> int:
     return some_int_param
+
+
+@policy_function()
+def some_policy_func_taking_scalar_params_func(
+    some_scalar_params_func: int,
+) -> int:
+    return some_scalar_params_func
 
 
 @dataclass(frozen=True)
@@ -105,10 +117,15 @@ def some_converting_params_func(
 
 
 @param_function()
-def some_function_taking_scalar(
+def some_param_function_taking_scalar(
     some_int_scalar: int, some_float_scalar: float, some_bool_scalar: bool
 ) -> float:
     return some_int_scalar + some_float_scalar + int(some_bool_scalar)
+
+
+@policy_function()
+def some_policy_function_taking_int_param(some_int_param: int) -> float:
+    return some_int_param
 
 
 SOME_RAW_PARAM = RawParam(
@@ -1010,7 +1027,7 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_bool_scalar": True,
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
-        "some_function_taking_scalar": some_function_taking_scalar,
+        "some_param_function_taking_scalar": some_param_function_taking_scalar,
     }
     processed_tree_with_params = column_functions_with_processed_params_and_scalars(
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=policy_environment,
@@ -1027,6 +1044,81 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_int_scalar": 1,
         "some_float_scalar": 2.0,
         "some_bool_scalar": True,
-        "some_function_taking_scalar": 4.0,
+        "some_param_function_taking_scalar": 4.0,
     }
     assert processed_tree_with_params == expected
+
+
+@pytest.mark.parametrize(
+    (
+        "nested_policy_environment",
+        "overriding_data",
+        "targets_tree",
+        "expected_output",
+    ),
+    [
+        # Overwriting policy function
+        (
+            {
+                "identity": identity,
+                "identity_plus_one": identity_plus_one,
+            },
+            {
+                "identity": np.array([1, 2, 3, 4, 5]),
+            },
+            {"identity_plus_one": None},
+            {"identity_plus_one": np.array([2, 3, 4, 5, 6])},
+        ),
+        # Overwriting parameter
+        (
+            {
+                "some_int_param": SOME_INT_PARAM,
+                "some_policy_function_taking_int_param": some_policy_function_taking_int_param,  # noqa: E501
+            },
+            {
+                "some_int_param": np.array([1, 2, 3, 4, 5]),
+            },
+            {"some_policy_function_taking_int_param": None},
+            {"some_policy_function_taking_int_param": np.array([1, 2, 3, 4, 5])},
+        ),
+        # Overwriting parameter function
+        (
+            {
+                "some_int_param": SOME_INT_PARAM,
+                "some_scalar_params_func": some_policy_function_taking_int_param,
+                "some_policy_func_taking_scalar_params_func": some_policy_func_taking_scalar_params_func,  # noqa: E501
+            },
+            {
+                "some_scalar_params_func": np.array([1, 2, 3, 4, 5]),
+            },
+            {"some_policy_func_taking_scalar_params_func": None},
+            {"some_policy_func_taking_scalar_params_func": np.array([1, 2, 3, 4, 5])},
+        ),
+    ],
+)
+def test_can_override_ttsim_objects_with_data(
+    nested_policy_environment,
+    overriding_data,
+    targets_tree,
+    expected_output,
+    minimal_input_data,
+):
+    actual = main(
+        inputs={
+            "data_tree": {
+                **minimal_input_data,
+                **overriding_data,
+            },
+            "policy_environment": nested_policy_environment,
+            "targets_tree": targets_tree,
+            "rounding": False,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
+
+    flat_actual = dt.flatten_to_tree_paths(actual)
+    flat_expected = dt.flatten_to_tree_paths(expected_output)
+
+    assert flat_actual.keys() == flat_expected.keys()
+    for key in flat_expected:
+        numpy.testing.assert_array_almost_equal(flat_actual[key], flat_expected[key])
