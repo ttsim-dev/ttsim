@@ -167,7 +167,7 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
     [
         (
             [],
-            "The input tree to column mapping must be a \\(nested\\) dictionary.",
+            "The inputs tree to column mapping must be a \\(nested\\) dictionary.",
         ),
         (
             {
@@ -307,9 +307,11 @@ def test_nested_data_to_dataframe(
         targets_tree=targets_tree_to_outputs_df_columns,
     )
     result_df = nested_data_to_dataframe(
-        nested_data=result_nested_data,
-        targets_tree_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
-        index_column=minimal_data_tree["p_id"],
+        nested_data_with_p_id={
+            "p_id": minimal_data_tree["p_id"],
+            **result_nested_data,
+        },
+        nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
     )
     pd.testing.assert_frame_equal(result_df, expected_output, check_like=True)
 
@@ -347,12 +349,14 @@ def test_nested_data_to_dataframe_fails_if_noncompatible_objects_are_returned(
         targets_tree=targets_tree_to_outputs_df_columns,
     )
     with pytest.raises(
-        TypeError, match=r"The\nfollowing paths contain non-scalar objects"
+        TypeError, match=r"The following paths contain non-scalar\nobjects"
     ):
         nested_data_to_dataframe(
-            nested_data=result_nested_data,
-            targets_tree_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
-            index_column=minimal_data_tree["p_id"],
+            nested_data_with_p_id={
+                "p_id": minimal_data_tree["p_id"],
+                **result_nested_data,
+            },
+            nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
         )
 
 
@@ -385,7 +389,9 @@ def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
         match="failed because the following paths\nare not mapped to a column name",
     ):
         nested_data_to_dataframe(
-            nested_data=result_nested_data,
-            targets_tree_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
-            index_column=minimal_data_tree["p_id"],
+            nested_data_with_p_id={
+                "p_id": minimal_data_tree["p_id"],
+                **result_nested_data,
+            },
+            nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
         )

@@ -14,33 +14,35 @@ if TYPE_CHECKING:
 
 
 def nested_data_to_dataframe(
-    nested_data: NestedData,
-    targets_tree_to_outputs_df_columns: NestedStrings,
-    index_column: pd.Series,
+    nested_data_with_p_id: NestedData,
+    nested_data_paths_to_outputs_df_columns: NestedStrings,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
 
     Args:
-        nested_data:
+        nested_data_with_p_id:
             A nested data structure.
-        targets_tree_to_outputs_df_columns:
+        nested_data_paths_to_outputs_df_columns:
             A tree that maps paths (sequence of keys) to data columns names.
 
     Returns:
         A DataFrame.
     """
-    paths_to_data = dt.flatten_to_tree_paths(nested_data)
-    paths_to_column_names = dt.flatten_to_tree_paths(targets_tree_to_outputs_df_columns)
+    paths_to_data = dt.flatten_to_tree_paths(nested_data_with_p_id)
+    paths_to_column_names = dt.flatten_to_tree_paths(
+        nested_data_paths_to_outputs_df_columns
+    )
 
     _fail_if_data_paths_are_missing_in_paths_to_column_names(
         available_paths=list(paths_to_column_names.keys()),
         required_paths=list(paths_to_data.keys()),
     )
-    _fail_if_noncompatible_objects_in_nested_data(paths_to_data)
+    _fail_if_incompatible_objects_in_nested_data(paths_to_data)
 
+    p_id_array = paths_to_data.pop(("p_id",))
     return pd.DataFrame(
         {paths_to_column_names[path]: data for path, data in paths_to_data.items()},
-        index=pd.Index(index_column, name="p_id"),
+        index=pd.Index(p_id_array, name="p_id"),
     )
 
 
@@ -119,26 +121,28 @@ def dataframe_to_nested_data(
     return dt.unflatten_from_qual_names(name_to_input_series)
 
 
-def _fail_if_noncompatible_objects_in_nested_data(
+def _fail_if_incompatible_objects_in_nested_data(
     paths_to_data: QualNameData,
 ) -> None:
-    """Fail if the nested data contains non-compatible objects."""
+    """Fail if the nested data contains incompatible objects."""
+    _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
+
     faulty_paths = []
     for path, data in paths_to_data.items():
         if isinstance(data, (pd.Series, np.ndarray, list)):
-            if all(isinstance(item, (int, float, bool)) for item in data):
+            if all(isinstance(item, _numeric_types) for item in data):
                 continue
             else:
                 faulty_paths.append(str(path))
-        elif isinstance(data, (int, float, bool)):
+        elif isinstance(data, _numeric_types):
             continue
         else:
             faulty_paths.append(str(path))
     if faulty_paths:
         msg = format_errors_and_warnings(
-            "The data returned contains objects that cannot be casted to "
-            "a pandas.DataFrame. Make sure that the requested targets return scalars "
-            "(int, bool, float) only."
+            "The data returned contains objects that cannot be cast to "
+            "a pandas.DataFrame column. Make sure that the requested targets return "
+            "scalars (int, bool, float - or their numpy equivalents) only."
             "The following paths contain non-scalar objects: "
             f"{format_list_linewise(faulty_paths)}"
         )
@@ -151,7 +155,9 @@ def _fail_if_data_paths_are_missing_in_paths_to_column_names(
 ) -> None:
     """Fail if the data paths are missing in the paths to column names."""
     missing_paths = [
-        str(path) for path in required_paths if path not in available_paths
+        str(path)
+        for path in required_paths
+        if path not in available_paths and path != ("p_id",)
     ]
     if missing_paths:
         msg = format_errors_and_warnings(
@@ -168,7 +174,7 @@ def _fail_if_mapper_has_incorrect_format(
     """Fail if the input tree to column name mapping has an incorrect format."""
     if not isinstance(inputs_tree_to_df_columns, dict):
         msg = format_errors_and_warnings(
-            """The input tree to column mapping must be a (nested) dictionary. Call
+            """The inputs tree to column mapping must be a (nested) dictionary. Call
             `dags.tree.create_tree_with_input_types` to create a template."""
         )
         raise TypeError(msg)
