@@ -1,4 +1,8 @@
 ---
+info:
+  note: Result from source including kinderBetreuungskosten
+  precision_atol: 0.01
+  source: https://www.bmf-steuerrechner.de/bdj/eingabeformbdj.xhtml?jahr=l_k_bdj_2020
 inputs:
   assumed: {}
   provided:
@@ -17,107 +21,96 @@ inputs:
       - 0
       - 0
       - 0
-    einkommensteuer:
-      abzüge:
-        beitrag_private_rentenversicherung_m:
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
-        kinderbetreuungskosten_m:
-          - 0.0
-          - 0.0
-          - 80.0
-          - 45.0
-        p_id_kinderbetreuungskostenträger:
-          - -1
-          - -1
-          - 27
-          - 27
-        vorsorgeaufwendungen_y_sn:
-          - 10901.0
-          - 10901.0
-          - 10901.0
-          - 10901.0
-      einkünfte:
-        aus_forst_und_landwirtschaft:
-          betrag_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-        aus_gewerbebetrieb:
-          betrag_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-        aus_kapitalvermögen:
-          kapitalerträge_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-        aus_nichtselbstständiger_arbeit:
-          bruttolohn_m:
-            - 3500.0
-            - 2000.0
-            - 0.0
-            - 0.0
-        aus_selbstständiger_arbeit:
-          betrag_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-        aus_vermietung_und_verpachtung:
-          betrag_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-        ist_selbstständig:
-          - false
-          - false
-          - false
-          - false
-        sonstige:
-          ohne_renten_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-      gemeinsam_veranlagt:
-        - true
-        - true
-        - false
-        - false
-    familie:
-      alleinerziehend:
-        - false
-        - false
-        - false
-        - false
-      kind:
-        - false
-        - false
-        - true
-        - true
-      p_id_ehepartner:
-        - 28
-        - 27
-        - -1
-        - -1
-      p_id_elternteil_1:
-        - -1
-        - -1
-        - 27
-        - 27
-      p_id_elternteil_2:
-        - -1
-        - -1
-        - 28
-        - 28
+    einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__abzüge__kinderbetreuungskosten_m:
+      - 0.0
+      - 0.0
+      - 80.0
+      - 45.0
+    einkommensteuer__abzüge__p_id_kinderbetreuungskostenträger:
+      - -1
+      - -1
+      - 27
+      - 27
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_gewerbebetrieb__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_forst_und_landwirtschaft__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__abzüge__vorsorgeaufwendungen_y_sn:
+      - 10901.0
+      - 10901.0
+      - 10901.0
+      - 10901.0
+    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 3500.0
+      - 2000.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__ist_selbstständig:
+      - false
+      - false
+      - false
+      - false
+    einkommensteuer__gemeinsam_veranlagt:
+      - true
+      - true
+      - false
+      - false
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - false
+    familie__kind:
+      - false
+      - false
+      - true
+      - true
+    familie__p_id_ehepartner:
+      - 28
+      - 27
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 27
+      - 27
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - 28
+      - 28
     geburtsjahr:
       - 1975
       - 1976
@@ -128,95 +121,84 @@ inputs:
       - 19
       - 19
       - 19
-    kindergeld:
-      in_ausbildung:
-        - false
-        - false
-        - false
-        - false
-      p_id_empfänger:
-        - -1
-        - -1
-        - 27
-        - 27
+    kindergeld__in_ausbildung:
+      - false
+      - false
+      - false
+      - false
+    kindergeld__p_id_empfänger:
+      - -1
+      - -1
+      - 27
+      - 27
     p_id:
       - 27
       - 28
       - 29
       - 30
-    sozialversicherung:
-      kranken:
-        beitrag:
-          privat_versichert:
-            - false
-            - false
-            - false
-            - false
-      pflege:
-        beitrag:
-          hat_kinder:
-            - true
-            - true
-            - false
-            - false
-      rente:
-        altersrente:
-          betrag_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-        jahr_renteneintritt:
-          - 2037
-          - 2038
-          - 2074
-          - 2072
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
+    sozialversicherung__kranken__beitrag__privat_versichert:
+      - false
+      - false
+      - false
+      - false
+    sozialversicherung__pflege__beitrag__hat_kinder:
+      - true
+      - true
+      - false
+      - false
+    sozialversicherung__rente__altersrente__betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sozialversicherung__rente__jahr_renteneintritt:
+      - 2037
+      - 2038
+      - 2074
+      - 2072
+    sozialversicherung__rente__private_rente_betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
     wohnort_ost:
       - false
       - false
       - false
       - false
 outputs:
-  einkommensteuer:
-    abzüge:
-      alleinerziehend_betrag_y:
-        - 0
-        - 0
-        - 0
-        - 0
-      altersfreibetrag_y:
-        - 0
-        - 0
-        - 0
-        - 0
-      pauschbetrag_behinderung_y:
-        - 0
-        - 0
-        - 0
-        - 0
-    einkünfte:
-      gesamtbetrag_der_einkünfte_y:
-        - 41000
-        - 23000
-        - 0
-        - 0
-    gesamteinkommen_y:
-      - 52099.0
-      - 52099.0
-      - 0.0
-      - 0.0
-    kinderfreibetrag_y_sn:
-      - 15624
-      - 15624
-      - 0
-      - 0
-    zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn:
-      - 36475.0
-      - 36475.0
-      - 0.0
-      - 0.0
+  einkommensteuer__abzüge__alleinerziehend_betrag_y:
+    - 0
+    - 0
+    - 0
+    - 0
+  einkommensteuer__abzüge__altersfreibetrag_y:
+    - 0
+    - 0
+    - 0
+    - 0
+  einkommensteuer__abzüge__pauschbetrag_behinderung_y:
+    - 0
+    - 0
+    - 0
+    - 0
+  einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y:
+    - 41000
+    - 23000
+    - 0
+    - 0
+  einkommensteuer__gesamteinkommen_y:
+    - 52099.0
+    - 52099.0
+    - 0.0
+    - 0.0
+  einkommensteuer__kinderfreibetrag_y_sn:
+    - 15624
+    - 15624
+    - 0
+    - 0
+  einkommensteuer__zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn:
+    - 36475.0
+    - 36475.0
+    - 0.0
+    - 0.0

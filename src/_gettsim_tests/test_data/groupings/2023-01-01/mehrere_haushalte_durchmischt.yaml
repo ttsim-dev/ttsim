@@ -1,4 +1,8 @@
 ---
+info:
+  note: A later implementation may rely on the order of p_id or hh_id.
+  precision_atol: 0.01
+  source: ''
 inputs:
   assumed: {}
   provided:
@@ -9,51 +13,48 @@ inputs:
       - 39
       - 13
       - 13
-    arbeitslosengeld_2:
-      eigenbedarf_gedeckt:
-        - false
-        - false
-        - false
-        - false
-        - false
-        - false
-      p_id_einstandspartner:
-        - -1
-        - -1
-        - -1
-        - -1
-        - -1
-        - -1
-    einkommensteuer:
-      gemeinsam_veranlagt:
-        - false
-        - false
-        - false
-        - false
-        - false
-        - false
-    familie:
-      p_id_ehepartner:
-        - -1
-        - -1
-        - -1
-        - -1
-        - -1
-        - -1
-      p_id_elternteil_1:
-        - -1
-        - -1
-        - 0
-        - -1
-        - 2
-        - 1
-      p_id_elternteil_2:
-        - -1
-        - -1
-        - -1
-        - -1
-        - -1
-        - -1
+    arbeitslosengeld_2__eigenbedarf_gedeckt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
+      - false
+      - false
+      - false
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - -1
+      - -1
+      - 0
+      - -1
+      - 2
+      - 1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
+      - -1
     geburtsjahr:
       - 1984
       - 1984
@@ -90,6 +91,13 @@ inputs:
       - 3
       - 5
 outputs:
+  fg_id:
+    - 0
+    - 1
+    - 0
+    - 2
+    - 2
+    - 1
   bg_id:
     - 0
     - 1
@@ -104,21 +112,14 @@ outputs:
     - 2
     - 3
     - 5
-  ehe_id:
+  sn_id:
     - 0
     - 1
     - 4
     - 2
     - 3
     - 5
-  fg_id:
-    - 0
-    - 1
-    - 0
-    - 2
-    - 2
-    - 1
-  sn_id:
+  ehe_id:
     - 0
     - 1
     - 4

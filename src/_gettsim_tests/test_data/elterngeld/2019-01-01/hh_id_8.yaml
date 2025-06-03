@@ -1,4 +1,8 @@
 ---
+info:
+  note: ''
+  precision_atol: 0.01
+  source: Regression test.
 inputs:
   assumed: {}
   provided:
@@ -12,77 +16,71 @@ inputs:
       - 0
       - 0
       - 516
-    arbeitslosengeld_2:
-      p_id_einstandspartner:
-        - -1
-        - -1
-        - -1
-        - -1
+    arbeitslosengeld_2__p_id_einstandspartner:
+      - -1
+      - -1
+      - -1
+      - -1
     arbeitsstunden_w:
       - 0.0
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer:
-      einkünfte:
-        aus_nichtselbstständiger_arbeit:
-          bruttolohn_m:
-            - 0.0
-            - 0.0
-            - 0.0
-            - 0.0
-      gemeinsam_veranlagt:
-        - false
-        - false
-        - false
-        - false
-    elterngeld:
-      bisherige_bezugsmonate:
-        - 0
-        - 0
-        - 0
-        - 2
-      claimed:
-        - false
-        - false
-        - false
-        - true
-      nettoeinkommen_vorjahr_m:
-        - 0.0
-        - 0.0
-        - 0.0
-        - 900.0
-      zu_versteuerndes_einkommen_vorjahr_y_sn:
-        - 0.0
-        - 0.0
-        - 0.0
-        - 5760.0
-    familie:
-      alleinerziehend:
-        - false
-        - false
-        - false
-        - true
-      kind:
-        - true
-        - true
-        - true
-        - false
-      p_id_ehepartner:
-        - -1
-        - -1
-        - -1
-        - -1
-      p_id_elternteil_1:
-        - 28
-        - 28
-        - 28
-        - -1
-      p_id_elternteil_2:
-        - -1
-        - -1
-        - -1
-        - -1
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    einkommensteuer__gemeinsam_veranlagt:
+      - false
+      - false
+      - false
+      - false
+    elterngeld__bisherige_bezugsmonate:
+      - 0
+      - 0
+      - 0
+      - 2
+    elterngeld__claimed:
+      - false
+      - false
+      - false
+      - true
+    elterngeld__nettoeinkommen_vorjahr_m:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 900.0
+    elterngeld__zu_versteuerndes_einkommen_vorjahr_y_sn:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 5760.0
+    familie__alleinerziehend:
+      - false
+      - false
+      - false
+      - true
+    familie__kind:
+      - true
+      - true
+      - true
+      - false
+    familie__p_id_ehepartner:
+      - -1
+      - -1
+      - -1
+      - -1
+    familie__p_id_elternteil_1:
+      - 28
+      - 28
+      - 28
+      - -1
+    familie__p_id_elternteil_2:
+      - -1
+      - -1
+      - -1
+      - -1
     geburtsjahr:
       - 2017
       - 2018
@@ -103,55 +101,49 @@ inputs:
       - 8
       - 8
       - 8
-    kindergeld:
-      in_ausbildung:
-        - false
-        - false
-        - false
-        - false
-    lohnsteuer:
-      steuerklasse:
-        - 1
-        - 1
-        - 1
-        - 1
+    kindergeld__in_ausbildung:
+      - false
+      - false
+      - false
+      - false
+    lohnsteuer__steuerklasse:
+      - 1
+      - 1
+      - 1
+      - 1
     p_id:
       - 25
       - 26
       - 27
       - 28
-    sozialversicherung:
-      pflege:
-        beitrag:
-          hat_kinder:
-            - false
-            - false
-            - false
-            - true
+    sozialversicherung__pflege__beitrag__hat_kinder:
+      - false
+      - false
+      - false
+      - true
     wohnort_ost:
       - false
       - false
       - false
       - false
 outputs:
-  elterngeld:
-    anzahl_mehrlinge_fg:
-      - 1
-      - 1
-      - 1
-      - 1
-    betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 1023.0
-    geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg:
-      - true
-      - true
-      - true
-      - true
-    grundsätzlich_anspruchsberechtigt:
-      - false
-      - false
-      - false
-      - true
+  elterngeld__anzahl_mehrlinge_fg:
+    - 1
+    - 1
+    - 1
+    - 1
+  elterngeld__betrag_m:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1023.0
+  elterngeld__geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg:
+    - true
+    - true
+    - true
+    - true
+  elterngeld__grundsätzlich_anspruchsberechtigt:
+    - false
+    - false
+    - false
+    - true

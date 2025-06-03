@@ -1,21 +1,21 @@
 ---
+info:
+  note: ''
+  precision_atol: 0.01
+  source: ''
 inputs:
-  assumed: {}
   provided:
     hh_id:
       - 0
     p_id:
       - 0
-    sozialversicherung:
-      pflege:
-        beitrag:
-          hat_kinder:
-            - false
+    sozialversicherung__pflege__beitrag__hat_kinder:
+      - false
 outputs:
-  sozialversicherung:
-    minijobgrenze:
-      - 538.0
-    pflege:
-      beitrag:
-        hat_kinder_hh:
-          - false
+  sozialversicherung__minijobgrenze:
+    - 538.0
+  # TODO(@MImmesberger): Remove this target once testing infrastructure can handle
+  # single-row expected outputs.
+  # https://github.com/iza-institute-of-labor-economics/gettsim/issues/918
+  sozialversicherung__pflege__beitrag__hat_kinder_hh:
+    - false
