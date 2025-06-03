@@ -6,20 +6,24 @@ info:
 inputs:
   assumed: {}
   provided:
-    einkommensteuer__abgeltungssteuer__betrag_y_sn:
-      - 0.0
-    einkommensteuer__betrag_mit_kinderfreibetrag_y_sn:
-      - 3000.0
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-    familie__kind:
-      - false
-    familie__p_id_ehepartner:
-      - -1
+    einkommensteuer:
+      abgeltungssteuer:
+        betrag_y_sn:
+          - 0.0
+      betrag_mit_kinderfreibetrag_y_sn:
+        - 3000.0
+      gemeinsam_veranlagt:
+        - false
+    familie:
+      kind:
+        - false
+      p_id_ehepartner:
+        - -1
     hh_id:
       - 5
     p_id:
       - 5
 outputs:
-  solidaritätszuschlag__betrag_y_sn:
-    - 0.0
+  solidaritätszuschlag:
+    betrag_y_sn:
+      - 0.0
