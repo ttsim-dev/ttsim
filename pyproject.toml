@@ -256,13 +256,14 @@ extend-ignore = [
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
+"docs/**/*.ipynb" = ["T201"]
 "src/ttsim/compute_taxes_and_transfers.py" = ["E501"]
 "src/ttsim/failures_and_warnings.py" = ["E501"]
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
 "src/_gettsim/*" = ["E501"]
-"docs/**/*.ipynb" = ["T201"]
+"tests/ttsim/test_failures_and_warnings.py" = ["E501"]
 "src/ttsim/__init__.py" = ["PGH004"]  # remove once ported nicely
 "tests/ttsim/test_plot_dag.py" = ["PGH004"]  # remove once ported nicely
 

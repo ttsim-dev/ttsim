@@ -499,7 +499,7 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
         raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
-def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+def fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
     functions_tree: NestedColumnObjectsParamFunctions,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last

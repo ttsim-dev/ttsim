@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import copy
 import datetime
 import re
+import warnings
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
+import numpy
+import pandas as pd
 import pytest
+from mettsim.config import METTSIM_ROOT
 
+from ttsim import main
 from ttsim.column_objects_param_function import (
     DEFAULT_END_DATE,
     group_creation_function,
@@ -13,12 +20,17 @@ from ttsim.column_objects_param_function import (
 )
 from ttsim.failures_and_warnings import (
     ConflictingActivePeriodsError,
+    FunctionsAndDataColumnsOverlapWarning,
     _param_with_active_periods,
     _ParamWithActivePeriod,
     assert_valid_ttsim_pytree,
     fail_if_active_periods_overlap,
+    fail_if_data_tree_is_invalid,
+    fail_if_foreign_keys_are_invalid_in_data,
     fail_if_group_ids_are_outside_top_level_namespace,
-    fail_if_name_of_last_branch_element_not_leaf_name_of_function,
+    fail_if_group_variables_are_not_constant_within_groups,
+    fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name,
+    fail_if_targets_are_not_in_policy_environment_or_data,
 )
 
 if TYPE_CHECKING:
@@ -26,6 +38,7 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,
+        NestedPolicyEnvironment,
         OrigParamSpec,
     )
 
@@ -53,9 +66,44 @@ def return_three() -> int:
     return 3
 
 
+@policy_function()
+def some_func(p_id: int) -> int:
+    return p_id
+
+
+@policy_function()
+def another_func(some_func: int) -> int:
+    return some_func
+
+
 @group_creation_function()
 def fam_id() -> int:
     pass
+
+
+@pytest.fixture(scope="module")
+def minimal_input_data():
+    n_individuals = 5
+    out = {
+        "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
+        "fam_id": pd.Series(numpy.arange(n_individuals), name="fam_id"),
+    }
+    return out
+
+
+@pytest.fixture(scope="module")
+def mettsim_environment() -> NestedPolicyEnvironment:
+    return main(
+        inputs={
+            "root": METTSIM_ROOT,
+            "date": datetime.date(2025, 1, 1),
+        },
+        targets=["policy_environment"],
+    )["policy_environment"]
+
+
+def some_x(x):
+    return x
 
 
 @pytest.mark.parametrize(
@@ -421,11 +469,141 @@ def test_fail_because_active_periods_overlap_raises(
         )
 
 
+def test_fail_if_data_tree_is_invalid():
+    data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
+
+    with pytest.raises(
+        ValueError, match="The input data must contain the `p_id` column."
+    ):
+        fail_if_data_tree_is_invalid(data_tree=data)
+
+
+def test_fail_if_data_tree_is_invalid_via_main():
+    data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
+    with pytest.raises(
+        ValueError,
+        match="The input data must contain the `p_id` column.",
+    ):
+        main(
+            inputs={
+                "data_tree": data,
+                "policy_environment": {},
+                "targets_tree": {},
+                "rounding": False,
+            },
+            targets=["fail_if_data_tree_is_invalid"],
+        )["fail_if_data_tree_is_invalid"]
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "p_id_spouse": pd.Series([-1, 1, 2]),
+    }
+
+    fail_if_foreign_keys_are_invalid_in_data(
+        qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+        qual_name_data=data,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+    )
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non_existing_p_id(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "p_id_spouse": pd.Series([0, 1, 2]),
+    }
+
+    with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
+        fail_if_foreign_keys_are_invalid_in_data(
+            qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+            qual_name_data=data,
+            flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+        )
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_allowed(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "p_id_child_": pd.Series([1, 3, 3]),
+    }
+
+    fail_if_foreign_keys_are_invalid_in_data(
+        qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+        qual_name_data=data,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+    )
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_not_allowed(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
+    }
+
+    fail_if_foreign_keys_are_invalid_in_data(
+        qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+        qual_name_data=data,
+        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+    )
+
+
 def test_fail_if_group_ids_are_outside_top_level_namespace():
     with pytest.raises(
         ValueError, match="Group identifiers must live in the top-level namespace. Got:"
     ):
         fail_if_group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
+
+
+def test_fail_if_group_variables_are_not_constant_within_groups():
+    data = {
+        "foo_kin": pd.Series([1, 2, 2], name="foo_kin"),
+        "kin_id": pd.Series([1, 1, 2], name="kin_id"),
+    }
+    with pytest.raises(ValueError):
+        fail_if_group_variables_are_not_constant_within_groups(
+            qual_name_input_data=data,
+            grouping_levels=("kin",),
+        )
+
+
+def test_fail_if_p_id_does_not_exist():
+    data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
+
+    with pytest.raises(
+        ValueError, match="The input data must contain the `p_id` column."
+    ):
+        fail_if_data_tree_is_invalid(data_tree=data)
+
+
+def test_fail_if_p_id_does_not_exist_via_main():
+    data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
+    with pytest.raises(
+        ValueError,
+        match="The input data must contain the `p_id` column.",
+    ):
+        main(
+            inputs={
+                "data_tree": data,
+                "policy_environment": {},
+                "targets_tree": {},
+                "rounding": False,
+                # "jit": jit,
+            },
+            targets=["fail_if_data_tree_is_invalid"],
+        )["fail_if_data_tree_is_invalid"]
 
 
 @pytest.mark.parametrize(
@@ -434,11 +612,110 @@ def test_fail_if_group_ids_are_outside_top_level_namespace():
         {"foo": policy_function(leaf_name="bar")(return_one)},
     ],
 )
-def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
     functions_tree: NestedColumnObjectsParamFunctions,
 ):
     with pytest.raises(KeyError):
-        fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
+        fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
+            functions_tree
+        )
+
+
+def test_fail_if_p_id_is_not_unique():
+    data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
+
+    with pytest.raises(
+        ValueError, match="The following `p_id`s are not unique in the input data"
+    ):
+        fail_if_data_tree_is_invalid(data_tree=data)
+
+
+def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
+    data = copy.deepcopy(minimal_input_data)
+    data["p_id"][:] = 1
+
+    with pytest.raises(
+        ValueError,
+        match="The following `p_id`s are not unique in the input data",
+    ):
+        main(
+            inputs={
+                "data_tree": data,
+                "policy_environment": {},
+                "targets_tree": {},
+                "rounding": False,
+            },
+            targets=["fail_if_data_tree_is_invalid"],
+        )["fail_if_data_tree_is_invalid"]
+
+
+def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
+    def b(a):
+        return a
+
+    def c(b):
+        return b
+
+    policy_environment = {
+        "b": policy_function(leaf_name="b")(b),
+        "c": policy_function(leaf_name="c")(c),
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="The following data columns are missing",
+    ):
+        main(
+            inputs={
+                "data_tree": minimal_input_data,
+                "policy_environment": policy_environment,
+                "targets_tree": {"c": None},
+                "rounding": False,
+                # "jit": jit,
+            },
+            targets=["nested_results", "fail_if_root_nodes_are_missing"],
+        )
+
+
+@pytest.mark.parametrize(
+    "policy_environment, targets, qual_name_data_columns, expected_error_match",
+    [
+        ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
+        ({"foo": some_x}, {"bar": None}, {"spam"}, "('bar',)"),
+        ({"foo__baz": some_x}, {"foo__bar": None}, {"spam"}, "('foo', 'bar')"),
+    ],
+)
+def test_fail_if_targets_are_not_in_policy_environment_or_data(
+    policy_environment, targets, qual_name_data_columns, expected_error_match
+):
+    with pytest.raises(
+        ValueError, match="The following targets have no corresponding function"
+    ) as e:
+        fail_if_targets_are_not_in_policy_environment_or_data(
+            policy_environment=policy_environment,
+            qual_name_targets=targets,
+            qual_name_data_columns=qual_name_data_columns,
+        )
+    assert expected_error_match in str(e.value)
+
+
+def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
+    minimal_input_data,
+):
+    with pytest.raises(
+        ValueError,
+        match="The following targets have no corresponding function",
+    ):
+        main(
+            inputs={
+                "data_tree": minimal_input_data,
+                "policy_environment": {},
+                "targets_tree": {"unknown_target": None},
+                "rounding": False,
+            },
+            targets=["fail_if_targets_are_not_in_policy_environment_or_data"],
+        )
 
 
 @pytest.mark.parametrize(
@@ -564,3 +841,41 @@ def test_ttsim_param_with_active_periods(
         leaf_name=leaf_name,
     )
     assert actual == expected
+
+
+def test_warn_if_functions_and_data_columns_overlap():
+    with pytest.warns(FunctionsAndDataColumnsOverlapWarning):
+        main(
+            inputs={
+                "data_tree": {
+                    "p_id": pd.Series([0]),
+                    "some_func": pd.Series([1]),
+                },
+                "policy_environment": {
+                    "some_func": some_func,
+                    "some_target": another_func,
+                },
+                "targets_tree": {"some_target": None},
+                "rounding": False,
+                # "jit": jit,
+            },
+            targets=["warn_if_functions_and_data_columns_overlap"],
+        )
+
+
+def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap():
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=FunctionsAndDataColumnsOverlapWarning)
+        main(
+            inputs={
+                "data_tree": {
+                    "p_id": pd.Series([0]),
+                    "x": pd.Series([1]),
+                },
+                "policy_environment": {"some_func": some_func},
+                "targets_tree": {"some_func": None},
+                "rounding": False,
+                # "jit": jit,
+            },
+            targets=["warn_if_functions_and_data_columns_overlap"],
+        )
