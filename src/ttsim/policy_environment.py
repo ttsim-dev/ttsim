@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal
 import dags.tree as dt
 import numpy
 import optree
-import yaml
 
 from ttsim.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -19,12 +18,13 @@ from ttsim.column_objects_param_function import (
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.loader import (
-    orig_params_tree,
-    orig_tree_with_column_objects_param_functions,
+    orig_tree_with_column_objects_and_param_functions,
+    orig_tree_with_params,
 )
 from ttsim.param_objects import (
-    ConsecutiveIntLookupTableParam,
-    ConsecutiveIntLookupTableParamValue,
+    ConsecutiveInt1dLookupTableParam,
+    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveInt2dLookupTableParamValue,
     DictParam,
     ParamObject,
     PiecewisePolynomialParam,
@@ -36,7 +36,6 @@ from ttsim.shared import (
     assert_valid_ttsim_pytree,
     merge_trees,
     to_datetime,
-    upsert_path_and_value,
     upsert_tree,
 )
 
@@ -48,153 +47,90 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,
+        NestedAny,
         NestedAnyTTSIMObject,
         NestedColumnObjectsParamFunctions,
         NestedParamObjects,
+        NestedPolicyEnvironment,
         OrigParamSpec,
+        QualNamePolicyEnvironment,
     )
 
 
-class PolicyEnvironment:
-    """
-    A container for policy functions and parameters.
+def grouping_levels(policy_environment: QualNamePolicyEnvironment) -> tuple[str, ...]:
+    """The grouping levels of the policy environment."""
+    return tuple(
+        name.rsplit("_", 1)[0]
+        for name in policy_environment
+        if name.endswith("_id") and name != "p_id"
+    )
 
-    Almost always, instances are created with `set_up_policy_environment()`.
+
+def upsert_tree_into_policy_environment(
+    policy_environment: NestedPolicyEnvironment, tree_to_upsert: NestedAny
+) -> NestedPolicyEnvironment:
+    """Update and insert *tree_to_upsert* into the existing objects tree.
+
+    Adds to or overwrites elements of the policy environment. Note that this
+    method does not modify the current policy environment but returns a new one.
 
     Parameters
     ----------
-    raw_objects_tree
-        The pytree of policy inputs, policy functions, agg functions, param functions.
-    params_tree
-        The pytree of policy parameters.
+    policy_environment
+        The policy environment to update.
+    tree_to_upsert
+        The functions to add or overwrite. Plain functions are converted to
+        PolicyFunctions. If you need `param_functions`, you will need to
+        decorate them with `@param_function`.
+
+    Returns
+    -------
+    The policy environment with the upserted functions.
     """
 
-    def __init__(
-        self,
-        raw_objects_tree: NestedColumnObjectsParamFunctions,
-        params: dict[str, Any] | None = None,
-        params_tree: NestedParamObjects | None = None,
-    ):
-        # Check tree with policy inputs / functions, params functions.
-        assert_valid_ttsim_pytree(
-            tree=raw_objects_tree,
-            leaf_checker=lambda leaf: isinstance(leaf, ColumnObject | ParamFunction),
-            tree_name="raw_objects_tree",
-        )
-        self._raw_objects_tree = optree.tree_map(
-            lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
-            raw_objects_tree,
-        )
-        _fail_if_group_ids_are_outside_top_level_namespace(raw_objects_tree)
-
-        # TODO: Delete
-        params_tree = params_tree if params_tree is not None else {}
-        self._params = params if params is not None else {}
-
-        # Check tree with params
-        assert_valid_ttsim_pytree(
-            tree=params_tree,
-            leaf_checker=lambda leaf: isinstance(leaf, ParamObject),
-            tree_name="raw_objects_tree",
-        )
-        self._params_tree = params_tree
-
-    @property
-    def raw_objects_tree(self) -> NestedColumnObjectsParamFunctions:
-        """The raw column objects and params functions including policy_inputs.
-
-        Does not include automatically added aggregations / time conversions.
-        """
-        return self._raw_objects_tree
-
-    @property
-    def params(self) -> dict[str, Any]:
-        """The parameters of the policy environment."""
-        return self._params
-
-    @property
-    def params_tree(self) -> NestedParamObjects:
-        """The parameters of the policy environment."""
-        return self._params_tree
-
-    @property
-    def combined_tree(self) -> NestedAnyTTSIMObject:
-        """The combined tree of raw objects and params."""
-        return merge_trees(self._raw_objects_tree, self._params_tree)
-
-    @property
-    def grouping_levels(self) -> tuple[str, ...]:
-        """The grouping levels of the policy environment."""
-        return tuple(
-            name.rsplit("_", 1)[0]
-            for name in self._raw_objects_tree.keys()  # noqa: SIM118
-            if name.endswith("_id") and name != "p_id"
-        )
-
-    def upsert_objects(
-        self, tree_to_upsert: NestedColumnObjectsParamFunctions
-    ) -> PolicyEnvironment:
-        """Update and insert *tree_to_upsert* into the existing objects tree.
-
-        Adds to or overwrites elements of the policy environment. Note that this
-        method does not modify the current policy environment but returns a new one.
-
-        Parameters
-        ----------
+    tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
         tree_to_upsert
-            The functions to add or overwrite.
+    )
+    fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+        tree_to_upsert_with_correct_types
+    )
 
-        Returns
-        -------
-        The policy environment with the upserted functions.
-        """
+    # Add functions tree to upsert to new functions tree
+    new_environment = upsert_tree(
+        base=policy_environment,
+        to_upsert=tree_to_upsert_with_correct_types,
+    )
 
-        tree_to_upsert_with_correct_types = optree.tree_map(
-            lambda leaf: _convert_to_policy_function_if_not_ttsim_object(leaf),
-            tree_to_upsert,
-        )
-        _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-            tree_to_upsert_with_correct_types
-        )
+    fail_if_group_ids_are_outside_top_level_namespace(new_environment)
 
-        # Add functions tree to upsert to new functions tree
-        new_tree = upsert_tree(
-            base={**self._raw_objects_tree},
-            to_upsert=tree_to_upsert_with_correct_types,
-        )
-
-        _fail_if_group_ids_are_outside_top_level_namespace(new_tree)
-
-        result = object.__new__(PolicyEnvironment)
-        result._raw_objects_tree = new_tree  # noqa: SLF001
-        result._params = self._params  # noqa: SLF001
-
-        return result
-
-    def replace_all_parameters(self, params: dict[str, Any]) -> PolicyEnvironment:
-        """
-        Replace all parameters of the policy environment. Note that this
-        method does not modify the current policy environment but returns a new one.
-
-        Parameters
-        ----------
-        params:
-            The new parameters.
-
-        Returns
-        -------
-        The policy environment with the new parameters.
-        """
-        result = object.__new__(PolicyEnvironment)
-        result._raw_objects_tree = self._raw_objects_tree  # noqa: SLF001
-        result._params = params  # noqa: SLF001
-
-        return result
+    return new_environment
 
 
-def set_up_policy_environment(
-    root: Path, date: datetime.date | DashedISOString
-) -> PolicyEnvironment:
+@dataclass(frozen=True)
+class OrigTreesWithFileNames:
+    """
+    A container for the original trees of policy functions, policy inputs,
+    param functions and parameters.
+    """
+
+    column_objects_and_param_functions: FlatColumnObjectsParamFunctions
+    params: FlatOrigParamSpecs
+
+
+def orig_trees(root: Path) -> OrigTreesWithFileNames:
+    return OrigTreesWithFileNames(
+        column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions(
+            root
+        ),
+        params=orig_tree_with_params(root),
+    )
+
+
+def policy_environment(
+    active_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    active_tree_with_params: FlatOrigParamSpecs,
+    date: datetime.date | DashedISOString,
+) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
 
@@ -213,42 +149,13 @@ def set_up_policy_environment(
     # Check policy date for correct format and convert to datetime.date
     date = to_datetime(date)
 
-    _orig_tree_with_column_objects_param_functions = (
-        orig_tree_with_column_objects_param_functions(root)
-    )
-    _orig_params_tree = orig_params_tree(root)
-    # Will move this line out eventually. Just include in tests, do not run every time.
-    fail_because_active_periods_overlap(
-        orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
-        orig_params_tree=_orig_params_tree,
+    a_tree = merge_trees(
+        left=active_tree_with_column_objects_and_param_functions,
+        right=active_tree_with_params,
     )
 
-    params = {}
-    if "_gettsim" in root.name:
-        from _gettsim.config import (
-            INTERNAL_PARAMS_GROUPS as internal_params_groups,  # noqa: N811
-        )
-
-        for group in internal_params_groups:
-            raw_group_data = yaml.load(
-                (root / "parameters" / f"{group}.yaml").read_text(encoding="utf-8"),
-                Loader=yaml.CLoader,  # noqa: S506
-            )
-            params_one_group = _parse_raw_parameter_group(
-                raw_group_data=raw_group_data,
-                date=date,
-                group=group,
-                parameters=None,
-            )
-
-            # Align parameters for piecewise polynomial functions
-            params[group] = _parse_piecewise_parameters(params_one_group)
-        params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
-    else:
-        params = {}
-        params_tree = active_params_tree(orig_params_tree=_orig_params_tree, date=date)
-    assert "evaluationsjahr" not in params_tree, "evaluationsjahr must not be specified"
-    params_tree["evaluationsjahr"] = ScalarParam(
+    assert "evaluationsjahr" not in a_tree, "evaluationsjahr must not be specified"
+    a_tree["evaluationsjahr"] = ScalarParam(
         leaf_name="evaluationsjahr",
         start_date=date,
         end_date=date,
@@ -260,19 +167,64 @@ def set_up_policy_environment(
         note=None,
         reference=None,
     )
-    return PolicyEnvironment(
-        raw_objects_tree=active_tree_with_column_objects_param_functions(
-            orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
-            date=date,
-        ),
-        params=params,
-        params_tree=params_tree,
+    fail_if_group_ids_are_outside_top_level_namespace(a_tree)
+    return a_tree
+
+
+def convert_plain_functions_to_policy_functions(
+    tree: NestedAny,
+) -> NestedAnyTTSIMObject:
+    """Convert all plain functions in a tree to PolicyFunctions.
+
+    Convenience function if users do not want to apply decorators in modifications of
+    the taxes and transfers system.
+
+    Parameters
+    ----------
+    tree
+        The tree of functions to convert.
+
+    Returns
+    -------
+    converted_tree
+        The converted tree.
+
+    """
+    converted = optree.tree_map(
+        lambda leaf: _convert_to_policy_function_if_callable(leaf),
+        tree,
     )
+    return converted
 
 
-def fail_because_active_periods_overlap(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
-    orig_params_tree: FlatOrigParamSpecs,
+def _convert_to_policy_function_if_callable(
+    obj: ColumnObject | ParamFunction | GenericCallable | Any,
+) -> ColumnObject:
+    """Convert a Callable to a PolicyFunction if it is not already a ColumnObject or
+    ParamFunction. If it is not a Callable, return it unchanged.
+
+    Parameters
+    ----------
+    obj
+        The object to convert.
+
+    Returns
+    -------
+    converted_object
+        The converted object.
+
+    """
+    if isinstance(obj, (ColumnObject, ParamFunction)) or not callable(obj):
+        converted_object = obj
+    else:
+        converted_object = policy_function(leaf_name=obj.__name__)(obj)
+
+    return converted_object
+
+
+def fail_if_active_periods_overlap(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
 ) -> None:
     """Fail because active periods of objects / parameters overlap.
 
@@ -289,14 +241,14 @@ def fail_because_active_periods_overlap(
     overlap_checker: dict[
         tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
     ] = {}
-    for orig_path, obj in orig_tree_with_column_objects_param_functions.items():
+    for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:
             overlap_checker[path].append(obj)
         else:
             overlap_checker[path] = [obj]
 
-    for orig_path, obj in orig_params_tree.items():
+    for orig_path, obj in orig_tree_with_params.items():
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
@@ -318,6 +270,34 @@ def fail_because_active_periods_overlap(
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
                 )
+
+
+def active_tree_with_column_objects_and_param_functions(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    date: datetime.date,
+) -> NestedColumnObjectsParamFunctions:
+    """
+    Traverse `root` and return all ColumnObjectParamFunctions for a given date.
+
+    Parameters
+    ----------
+    root:
+        The directory to traverse.
+    date:
+        The date for which policy objects should be loaded.
+
+    Returns
+    -------
+    A tree of active ColumnObjectParamFunctions.
+    """
+
+    flat_objects_tree = {
+        (*orig_path[:-2], obj.leaf_name): obj
+        for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items()
+        if obj.is_active(date)
+    }
+
+    return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
 @dataclass(frozen=True)
@@ -388,6 +368,337 @@ def _param_with_active_periods(
     return out
 
 
+def active_tree_with_params(
+    orig_tree_with_params: FlatOrigParamSpecs,
+    date: datetime.date,
+) -> NestedParamObjects:
+    """Parse the original yaml tree."""
+    flat_tree_with_params = {}
+    for orig_path, orig_params_spec in orig_tree_with_params.items():
+        path_to_keep = orig_path[:-2]
+        leaf_name = orig_path[-1]
+        param = _get_one_param(
+            leaf_name=leaf_name,
+            spec=orig_params_spec,
+            date=date,
+        )
+        if param is not None:
+            flat_tree_with_params[(*path_to_keep, leaf_name)] = param
+        if orig_params_spec.get("add_jahresanfang", False):
+            date_jan1 = date.replace(month=1, day=1)
+            leaf_name_jan1 = f"{leaf_name}_jahresanfang"
+            param = _get_one_param(
+                leaf_name=leaf_name_jan1,
+                spec=orig_params_spec,
+                date=date_jan1,
+            )
+            if param is not None:
+                flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
+    return dt.unflatten_from_tree_paths(flat_tree_with_params)
+
+
+def _get_one_param(  # noqa: PLR0911
+    leaf_name: str,
+    spec: OrigParamSpec,
+    date: datetime.date,
+) -> ParamObject:
+    """Parse the original specification found in the yaml tree to a ParamObject."""
+    cleaned_spec = _clean_one_param_spec(leaf_name=leaf_name, spec=spec, date=date)
+
+    if cleaned_spec is None:
+        return None
+    elif spec["type"] == "scalar":
+        return ScalarParam(**cleaned_spec)
+    elif spec["type"] == "dict":
+        return DictParam(**cleaned_spec)
+    elif spec["type"].startswith("piecewise_"):
+        cleaned_spec["value"] = get_piecewise_parameters(
+            leaf_name=leaf_name,
+            func_type=spec["type"],
+            parameter_dict=cleaned_spec["value"],
+        )
+        return PiecewisePolynomialParam(**cleaned_spec)
+    elif spec["type"] == "consecutive_int_1d_lookup_table":
+        cleaned_spec["value"] = get_consecutive_int_1d_lookup_table_param_value(
+            cleaned_spec["value"]
+        )
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+    elif spec["type"] == "consecutive_int_2d_lookup_table":
+        cleaned_spec["value"] = get_consecutive_int_2d_lookup_table_param_value(
+            cleaned_spec["value"]
+        )
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+    elif spec["type"] == "month_based_phase_inout_of_age_thresholds":
+        cleaned_spec["value"] = (
+            get_month_based_phase_inout_of_age_thresholds_param_value(
+                cleaned_spec["value"]
+            )
+        )
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+    elif spec["type"] == "year_based_phase_inout_of_age_thresholds":
+        cleaned_spec["value"] = (
+            get_year_based_phase_inout_of_age_thresholds_param_value(
+                cleaned_spec["value"]
+            )
+        )
+        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+    elif spec["type"] == "require_converter":
+        return RawParam(**cleaned_spec)
+    else:
+        raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
+
+
+def _clean_one_param_spec(
+    leaf_name: str, spec: OrigParamSpec, date: datetime.date
+) -> dict[str, Any] | None:
+    """Prepare the specification of one parameter for creating a ParamObject."""
+    policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
+    idx = numpy.searchsorted(policy_dates, date, side="right")  # type: ignore[call-overload]
+    if idx == 0:
+        return None
+
+    out: dict[str, Any] = {}
+    out["leaf_name"] = leaf_name
+    out["start_date"] = policy_dates[idx - 1]
+    out["end_date"] = (
+        policy_dates[idx] - datetime.timedelta(days=1)
+        if len(policy_dates) > idx
+        else DEFAULT_END_DATE
+    )
+    out["unit"] = spec.get("unit", None)
+    out["reference_period"] = spec.get("reference_period", None)
+    out["name"] = spec["name"]
+    out["description"] = spec["description"]
+    current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
+    out["note"] = current_spec.pop("note", None)
+    out["reference"] = current_spec.pop("reference", None)
+    if len(current_spec) == 0:
+        return None
+    elif len(current_spec) == 1 and "updates_previous" in current_spec:
+        raise ValueError(
+            f"'updates_previous' cannot be specified as the only element, found{spec}"
+        )
+        # Parameter ceased to exist
+    elif spec["type"] == "scalar":
+        assert "updates_previous" not in current_spec, (
+            "'updates_previous' cannot be specified for scalar parameters"
+        )
+        out["value"] = current_spec["value"]
+    else:
+        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
+    return out
+
+
+def _get_param_value(
+    relevant_specs: list[dict[str | int, Any]],
+) -> dict[str | int, Any]:
+    """Get the value of a parameter.
+
+    Implementation is a recursion in order to handle the 'updates_previous' machinery.
+
+    """
+    current_spec = relevant_specs[-1].copy()
+    updates_previous = current_spec.pop("updates_previous", False)
+    current_spec.pop("note", None)
+    current_spec.pop("reference", None)
+    if updates_previous:
+        assert len(relevant_specs) > 1, (
+            "'updates_previous' cannot be missing in the initial spec, found "
+            f"{relevant_specs}"
+        )
+        return upsert_tree(
+            base=_get_param_value(relevant_specs=relevant_specs[:-1]),
+            to_upsert=current_spec,
+        )
+    else:
+        return current_spec
+
+
+def get_consecutive_int_1d_lookup_table_param_value(
+    raw: dict[int, float | int | bool],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Get the parameters for a 1-dimensional lookup table."""
+    lookup_keys = numpy.asarray(sorted(raw))
+    assert (lookup_keys - min(lookup_keys) == np.arange(len(lookup_keys))).all(), (
+        "Dictionary keys must be consecutive integers."
+    )
+
+    return ConsecutiveInt1dLookupTableParamValue(
+        base_to_subtract=min(lookup_keys),
+        values_to_look_up=np.asarray([raw[k] for k in lookup_keys]),
+    )
+
+
+def get_consecutive_int_2d_lookup_table_param_value(
+    raw: dict[int, dict[int, float | int | bool]],
+) -> ConsecutiveInt2dLookupTableParamValue:
+    """Get the parameters for a 2-dimensional lookup table."""
+    lookup_keys_rows = numpy.asarray(sorted(raw.keys()))
+    lookup_keys_cols = numpy.asarray(sorted(raw[lookup_keys_rows[0]].keys()))
+    for col_value in raw.values():
+        lookup_keys_this_col = numpy.asarray(sorted(col_value.keys()))
+        assert (lookup_keys_cols == lookup_keys_this_col).all(), (
+            "Column keys must be the same in each column, got:"
+            f"{lookup_keys_cols} and {lookup_keys_this_col}"
+        )
+    for lookup_keys in lookup_keys_rows, lookup_keys_cols:
+        assert (lookup_keys - min(lookup_keys) == np.arange(len(lookup_keys))).all(), (
+            f"Dictionary keys must be consecutive integers, got: {lookup_keys}"
+        )
+    return ConsecutiveInt2dLookupTableParamValue(
+        base_to_subtract_rows=min(lookup_keys_rows),
+        base_to_subtract_cols=min(lookup_keys_cols),
+        values_to_look_up=np.array(
+            [
+                raw[row][col]
+                for row, col in itertools.product(lookup_keys_rows, lookup_keys_cols)
+            ]
+        ).reshape(len(lookup_keys_rows), len(lookup_keys_cols)),
+    )
+
+
+def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
+    return r["years"] + r["months"] / 12
+
+
+def get_month_based_phase_inout_of_age_thresholds_param_value(
+    raw: dict[str | int, Any],
+) -> dict[int, float]:
+    """Get the parameters for month-based phase-in/phase-out of age thresholds.
+
+    Fills up months for which no parameters are given with the last given value.
+    """
+
+    def _m_since_ad(y: int, m: int) -> int:
+        return y * 12 + (m - 1)
+
+    def _fill_phase_inout(
+        raw: dict[int, dict[int, dict[Literal["years", "months"], int]]],
+        first_m_since_ad_phase_inout: int,
+        last_m_since_ad_phase_inout: int,
+    ) -> dict[int, float]:
+        lookup_table = {}
+        for y, m_dict in raw.items():
+            for m, v in m_dict.items():
+                lookup_table[_m_since_ad(y=y, m=m)] = _year_fraction(v)
+        for m in range(first_m_since_ad_phase_inout, last_m_since_ad_phase_inout):
+            if m not in lookup_table:
+                lookup_table[m] = lookup_table[m - 1]
+        return lookup_table
+
+    first_m_since_ad_to_consider = _m_since_ad(y=raw.pop("first_year_to_consider"), m=1)
+    last_m_since_ad_to_consider = _m_since_ad(y=raw.pop("last_year_to_consider"), m=12)
+    assert all(isinstance(k, int) for k in raw)
+    first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
+    first_month_phase_inout: int = min(raw[first_year_phase_inout].keys())
+    first_m_since_ad_phase_inout = _m_since_ad(
+        y=first_year_phase_inout, m=first_month_phase_inout
+    )
+    last_year_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
+    last_month_phase_inout: int = max(raw[last_year_phase_inout].keys())
+    last_m_since_ad_phase_inout = _m_since_ad(
+        y=last_year_phase_inout, m=last_month_phase_inout
+    )
+    assert first_m_since_ad_to_consider <= first_m_since_ad_phase_inout
+    assert last_m_since_ad_to_consider >= last_m_since_ad_phase_inout
+    before_phase_inout: dict[int, float] = {
+        b_m: _year_fraction(raw[first_year_phase_inout][first_month_phase_inout])
+        for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_inout)
+    }
+    during_phase_inout: dict[int, float] = _fill_phase_inout(
+        raw=raw,  # type: ignore[arg-type]
+        first_m_since_ad_phase_inout=first_m_since_ad_phase_inout,
+        last_m_since_ad_phase_inout=last_m_since_ad_phase_inout,
+    )
+    after_phase_inout: dict[int, float] = {
+        b_m: _year_fraction(raw[last_year_phase_inout][last_month_phase_inout])
+        for b_m in range(
+            last_m_since_ad_phase_inout + 1, last_m_since_ad_to_consider + 1
+        )
+    }
+    return get_consecutive_int_1d_lookup_table_param_value(
+        {**before_phase_inout, **during_phase_inout, **after_phase_inout}
+    )
+
+
+def get_year_based_phase_inout_of_age_thresholds_param_value(
+    raw: dict[str | int, Any],
+) -> dict[int, float]:
+    """Get the parameters for year-based phase-in/phase-out of age thresholds.
+
+    Requires all years to be given.
+    """
+
+    first_year_to_consider = raw.pop("first_year_to_consider")
+    last_year_to_consider = raw.pop("last_year_to_consider")
+    assert all(isinstance(k, int) for k in raw)
+    first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
+    last_year_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
+    assert first_year_to_consider <= first_year_phase_inout
+    assert last_year_to_consider >= last_year_phase_inout
+    before_phase_inout: dict[int, float] = {
+        b_y: _year_fraction(raw[first_year_phase_inout])
+        for b_y in range(first_year_to_consider, first_year_phase_inout)
+    }
+    during_phase_inout: dict[int, float] = {
+        b_y: _year_fraction(raw[b_y])  # type: ignore[misc]
+        for b_y in raw
+    }
+    after_phase_inout: dict[int, float] = {
+        b_y: _year_fraction(raw[last_year_phase_inout])
+        for b_y in range(last_year_phase_inout + 1, last_year_to_consider + 1)
+    }
+    return get_consecutive_int_1d_lookup_table_param_value(
+        {**before_phase_inout, **during_phase_inout, **after_phase_inout}
+    )
+
+
+def fail_if_group_ids_are_outside_top_level_namespace(
+    policy_environment: NestedPolicyEnvironment,
+) -> None:
+    """Fail if group ids are outside the top level namespace."""
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(policy_environment)
+        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
+        )
+
+
+def fail_if_environment_is_invalid(policy_environment: NestedPolicyEnvironment) -> None:
+    """Validate that the environment is a pytree with supported types."""
+    assert_valid_ttsim_pytree(
+        tree=policy_environment,
+        leaf_checker=lambda leaf: isinstance(
+            leaf, ColumnObject | ParamFunction | ParamObject
+        ),
+        tree_name="policy_environment",
+    )
+
+
+def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+    functions_tree: NestedColumnObjectsParamFunctions,
+) -> None:
+    """Raise error if a PolicyFunction does not have the same leaf name as the last
+    branch element of the tree path.
+    """
+
+    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
+        if tree_path[-1] != function.leaf_name:
+            raise KeyError(
+                f"""
+                The name of the last branch element of the functions tree must be the
+                same as the leaf name of the PolicyFunction. The tree path {tree_path}
+                is not compatible with the PolicyFunction {function.leaf_name}.
+                """
+            )
+
+
 class ConflictingActivePeriodsError(Exception):
     def __init__(
         self,
@@ -420,565 +731,3 @@ class ConflictingActivePeriodsError(Exception):
         }
 
         Overlap from {self.overlap_start} to {self.overlap_end}."""
-
-
-def active_tree_with_column_objects_param_functions(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
-    date: datetime.date,
-) -> NestedColumnObjectsParamFunctions:
-    """
-    Traverse `root` and return all ColumnObjectParamFunctions for a given date.
-
-    Parameters
-    ----------
-    root:
-        The directory to traverse.
-    date:
-        The date for which policy objects should be loaded.
-
-    Returns
-    -------
-    A tree of active ColumnObjectParamFunctions.
-    """
-
-    flat_objects_tree = {
-        (*orig_path[:-2], obj.leaf_name): obj
-        for orig_path, obj in orig_tree_with_column_objects_param_functions.items()
-        if obj.is_active(date)
-    }
-
-    return dt.unflatten_from_tree_paths(flat_objects_tree)
-
-
-def _convert_to_policy_function_if_not_ttsim_object(
-    input_object: GenericCallable | ColumnObject | ParamFunction,
-) -> ColumnObject:
-    """Convert an object to a PolicyFunction if it is not already a ColumnObject.
-
-    Parameters
-    ----------
-    input_object
-        The object to convert.
-
-    Returns
-    -------
-    converted_object
-        The converted object.
-
-    """
-    if isinstance(input_object, ColumnObject | ParamFunction):
-        converted_object = input_object
-    else:
-        converted_object = policy_function(leaf_name=input_object.__name__)(
-            input_object
-        )
-
-    return converted_object
-
-
-def _fail_if_group_ids_are_outside_top_level_namespace(
-    raw_objects_tree: NestedColumnObjectsParamFunctions,
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(raw_objects_tree)
-        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
-
-
-def active_params_tree(
-    orig_params_tree: FlatOrigParamSpecs,
-    date: datetime.date,
-) -> NestedParamObjects:
-    """Parse the original yaml tree."""
-    flat_params_tree = {}
-    for orig_path, orig_params_spec in orig_params_tree.items():
-        path_to_keep = orig_path[:-2]
-        leaf_name = orig_path[-1]
-        param = get_one_param(
-            leaf_name=leaf_name,
-            spec=orig_params_spec,
-            date=date,
-        )
-        if param is not None:
-            flat_params_tree[(*path_to_keep, leaf_name)] = param
-        if orig_params_spec.get("add_jahresanfang", False):
-            date_jan1 = date.replace(month=1, day=1)
-            leaf_name_jan1 = f"{leaf_name}_jahresanfang"
-            param = get_one_param(
-                leaf_name=leaf_name_jan1,
-                spec=orig_params_spec,
-                date=date_jan1,
-            )
-            if param is not None:
-                flat_params_tree[(*path_to_keep, leaf_name_jan1)] = param
-    return dt.unflatten_from_tree_paths(flat_params_tree)
-
-
-def get_one_param(  # noqa: PLR0911
-    leaf_name: str,
-    spec: OrigParamSpec,
-    date: datetime.date,
-) -> ParamObject:
-    """Parse the original specification found in the yaml tree."""
-    cleaned_spec = prep_one_params_spec(leaf_name=leaf_name, spec=spec, date=date)
-
-    if cleaned_spec is None:
-        return None
-    elif spec["type"] == "scalar":
-        return ScalarParam(**cleaned_spec)
-    elif spec["type"] == "dict":
-        return DictParam(**cleaned_spec)
-    elif spec["type"].startswith("piecewise_"):
-        cleaned_spec["value"] = get_piecewise_parameters(
-            leaf_name=leaf_name,
-            func_type=spec["type"],
-            parameter_dict=cleaned_spec["value"],
-        )
-        return PiecewisePolynomialParam(**cleaned_spec)
-    elif spec["type"] == "consecutive_int_lookup_table":
-        cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
-            cleaned_spec["value"]
-        )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "birth_month_based_phase_inout":
-        cleaned_spec["value"] = get_birth_month_based_phase_inout_param_value(
-            cleaned_spec["value"]
-        )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "birth_year_based_phase_inout":
-        cleaned_spec["value"] = get_birth_year_based_phase_inout_param_value(
-            cleaned_spec["value"]
-        )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "require_converter":
-        return RawParam(**cleaned_spec)
-    else:
-        raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
-
-
-def prep_one_params_spec(
-    leaf_name: str, spec: OrigParamSpec, date: datetime.date
-) -> dict[str, Any] | None:
-    """Prepare the specification of one parameter for creating a ParamObject."""
-    policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
-    idx = numpy.searchsorted(policy_dates, date, side="right")  # type: ignore[call-overload]
-    if idx == 0:
-        return None
-
-    out: dict[str, Any] = {}
-    out["leaf_name"] = leaf_name
-    out["start_date"] = policy_dates[idx - 1]
-    out["end_date"] = (
-        policy_dates[idx] - datetime.timedelta(days=1)
-        if len(policy_dates) > idx
-        else DEFAULT_END_DATE
-    )
-    out["unit"] = spec.get("unit", None)
-    out["reference_period"] = spec.get("reference_period", None)
-    out["name"] = spec["name"]
-    out["description"] = spec["description"]
-    current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
-    out["note"] = current_spec.pop("note", None)
-    out["reference"] = current_spec.pop("reference", None)
-    # TODO: Remove this again once we have transferred all files.
-    assert "deviation_from" not in current_spec, (
-        f"'updates_previous' replaces 'deviation_from', {leaf_name}"
-    )
-    if len(current_spec) == 0:
-        return None
-    elif len(current_spec) == 1 and "updates_previous" in current_spec:
-        raise ValueError(
-            f"'updates_previous' cannot be specified as the only element, found{spec}"
-        )
-        # Parameter ceased to exist
-    elif spec["type"] == "scalar":
-        assert "updates_previous" not in current_spec, (
-            "'updates_previous' cannot be specified for scalar parameters"
-        )
-        out["value"] = current_spec["value"]
-    else:
-        out["value"] = _get_params_contents([spec[d] for d in policy_dates[:idx]])
-        # TODO: Remove this again once we have transferred all files.
-        assert "reference" not in out["value"], leaf_name
-        assert "note" not in out["value"], leaf_name
-    return out
-
-
-def _get_params_contents(
-    relevant_specs: list[dict[str | int, Any]],
-) -> dict[str | int, Any]:
-    """Get the contents of the parameters.
-
-    Implementation is a recursion in order to handle the 'updates_previous' machinery.
-
-    """
-    current_spec = relevant_specs[-1].copy()
-    updates_previous = current_spec.pop("updates_previous", False)
-    current_spec.pop("note", None)
-    current_spec.pop("reference", None)
-    if updates_previous:
-        assert len(relevant_specs) > 1, (
-            "'updates_previous' cannot be missing in the initial spec, found "
-            f"{relevant_specs}"
-        )
-        return upsert_tree(
-            base=_get_params_contents(relevant_specs=relevant_specs[:-1]),
-            to_upsert=current_spec,
-        )
-    else:
-        return current_spec
-
-
-def get_consecutive_int_lookup_table_param_value(
-    raw: dict[int, float | int | bool],
-) -> ConsecutiveIntLookupTableParamValue:
-    """Get the parameters for a look-up table."""
-    look_up_keys = numpy.asarray(sorted(raw))
-    assert (look_up_keys - min(look_up_keys) == np.arange(len(look_up_keys))).all(), (
-        "Dictionary keys must be consecutive integers."
-    )
-
-    return ConsecutiveIntLookupTableParamValue(
-        base_value_to_subtract=min(look_up_keys),
-        values_to_look_up=np.asarray([raw[k] for k in look_up_keys]),
-    )
-
-
-def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
-    return r["years"] + r["months"] / 12
-
-
-def get_birth_month_based_phase_inout_param_value(
-    raw: dict[str | int, Any],
-) -> dict[int, float]:
-    """Get the parameters for birth month-based phase-in.
-
-    Fills up months for which no parameters are given with the last given value.
-    """
-
-    def _m_since_ad(y: int, m: int) -> int:
-        return y * 12 + (m - 1)
-
-    def _fill_phase_inout(
-        raw: dict[int, dict[int, dict[Literal["years", "months"], int]]],
-        first_m_since_ad_phase_inout: int,
-        last_m_since_ad_phase_inout: int,
-    ) -> dict[int, float]:
-        lookup_table = {}
-        for y, m_dict in raw.items():
-            for m, v in m_dict.items():
-                lookup_table[_m_since_ad(y=y, m=m)] = _year_fraction(v)
-        for m in range(first_m_since_ad_phase_inout, last_m_since_ad_phase_inout):
-            if m not in lookup_table:
-                lookup_table[m] = lookup_table[m - 1]
-        return lookup_table
-
-    first_m_since_ad_to_consider = _m_since_ad(
-        y=raw.pop("first_birthyear_to_consider"), m=1
-    )
-    last_m_since_ad_to_consider = _m_since_ad(
-        y=raw.pop("last_birthyear_to_consider"), m=12
-    )
-    assert all(isinstance(k, int) for k in raw)
-    first_birthyear_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
-    first_birthmonth_phase_inout: int = min(raw[first_birthyear_phase_inout].keys())
-    first_m_since_ad_phase_inout = _m_since_ad(
-        y=first_birthyear_phase_inout, m=first_birthmonth_phase_inout
-    )
-    last_birthyear_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
-    last_birthmonth_phase_inout: int = max(raw[last_birthyear_phase_inout].keys())
-    last_m_since_ad_phase_inout = _m_since_ad(
-        y=last_birthyear_phase_inout, m=last_birthmonth_phase_inout
-    )
-    assert first_m_since_ad_to_consider <= first_m_since_ad_phase_inout
-    assert last_m_since_ad_to_consider >= last_m_since_ad_phase_inout
-    before_phase_inout: dict[int, float] = {
-        b_m: _year_fraction(
-            raw[first_birthyear_phase_inout][first_birthmonth_phase_inout]
-        )
-        for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_inout)
-    }
-    during_phase_inout: dict[int, float] = _fill_phase_inout(
-        raw=raw,  # type: ignore[arg-type]
-        first_m_since_ad_phase_inout=first_m_since_ad_phase_inout,
-        last_m_since_ad_phase_inout=last_m_since_ad_phase_inout,
-    )
-    after_phase_inout: dict[int, float] = {
-        b_m: _year_fraction(
-            raw[last_birthyear_phase_inout][last_birthmonth_phase_inout]
-        )
-        for b_m in range(
-            last_m_since_ad_phase_inout + 1, last_m_since_ad_to_consider + 1
-        )
-    }
-    return get_consecutive_int_lookup_table_param_value(
-        {**before_phase_inout, **during_phase_inout, **after_phase_inout}
-    )
-
-
-def get_birth_year_based_phase_inout_param_value(
-    raw: dict[str | int, Any],
-) -> dict[int, float]:
-    """Get the parameters for birth year-based phase-in.
-
-    Requires all birth years to be given.
-    """
-
-    first_birthyear_to_consider = raw.pop("first_birthyear_to_consider")
-    last_birthyear_to_consider = raw.pop("last_birthyear_to_consider")
-    assert all(isinstance(k, int) for k in raw)
-    first_birthyear_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
-    last_birthyear_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
-    assert first_birthyear_to_consider <= first_birthyear_phase_inout
-    assert last_birthyear_to_consider >= last_birthyear_phase_inout
-    before_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[first_birthyear_phase_inout])
-        for b_y in range(first_birthyear_to_consider, first_birthyear_phase_inout)
-    }
-    during_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[b_y])  # type: ignore[misc]
-        for b_y in raw
-    }
-    after_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[last_birthyear_phase_inout])
-        for b_y in range(last_birthyear_phase_inout + 1, last_birthyear_to_consider + 1)
-    }
-    return get_consecutive_int_lookup_table_param_value(
-        {**before_phase_inout, **during_phase_inout, **after_phase_inout}
-    )
-
-
-def _parse_piecewise_parameters(tax_data: dict[str, Any]) -> dict[str, Any]:
-    """Check if parameters are stored in implicit structures and align to general
-    structure.
-
-    Parameters
-    ----------
-    tax_data
-        Loaded raw tax data.
-
-    Returns
-    -------
-    Parsed parameters ready to use in gettsim.
-
-    """
-    for param in tax_data:  # noqa: PLC0206
-        if isinstance(tax_data[param], dict):
-            if "type" in tax_data[param]:
-                if tax_data[param]["type"].startswith("piecewise"):
-                    tax_data[param] = get_piecewise_parameters(
-                        leaf_name=param,
-                        func_type=tax_data[param]["type"],
-                        parameter_dict=tax_data[param],
-                    )
-
-    return tax_data
-
-
-def _parse_raw_parameter_group(  # noqa: PLR0912, PLR0915
-    raw_group_data: dict[str, Any],
-    date: datetime.date,
-    group: str,
-    parameters: list[str] | None = None,
-) -> dict[str, Any]:
-    """Load data from raw yaml group file.
-
-    Parameters
-    ----------
-    date
-        The date for which the policy system is set up.
-    group
-        Policy system compartment.
-    parameters
-        List of parameters to be loaded. Only relevant for in function calls.
-    yaml_path
-        Path to directory of yaml_file. (Used for testing of this function).
-
-    Returns
-    -------
-    Dictionary of parameters loaded from raw yaml file and striped of unnecessary keys.
-
-    """
-
-    def subtract_years_from_date(date: datetime.date, years: int) -> datetime.date:
-        """Subtract one or more years from a date object."""
-        try:
-            date = date.replace(year=date.year - years)
-
-        # Take care of leap years
-        except ValueError:
-            date = date.replace(year=date.year - years, day=date.day - 1)
-        return date
-
-    def set_date_to_beginning_of_year(date: datetime.date) -> datetime.date:
-        """Set date to the beginning of the year."""
-
-        date = date.replace(month=1, day=1)
-
-        return date
-
-    # Load parameters (exclude 'rounding' parameters which are handled at the
-    # end of this function)
-    not_trans_keys = ["note", "reference", "deviation_from", "access_different_date"]
-    out_params: dict[str, Any] = {}
-    if not parameters:
-        parameters = list(raw_group_data.keys())
-
-    # Load values of all parameters at the specified date
-    for param in parameters:
-        policy_dates = sorted(
-            key for key in raw_group_data[param] if isinstance(key, datetime.date)
-        )
-        past_policies = [d for d in policy_dates if d <= date]
-
-        if not past_policies:
-            # If no policy exists, then we check if the policy maybe agrees right now
-            # with another one.
-            # Otherwise, do not create an entry for this parameter.
-            pass
-        else:
-            max_past_policy_date = numpy.array(past_policies).max()
-            policy_in_place = raw_group_data[param][max_past_policy_date]
-            if "scalar" in policy_in_place:
-                raise ValueError(f"{raw_group_data[param]}")
-            elif "value" in policy_in_place:
-                if policy_in_place["value"] == "inf":
-                    out_params[param] = numpy.inf
-                else:
-                    out_params[param] = policy_in_place["value"]
-            else:
-                out_params[param] = {}
-                # Keys which if given are transferred
-                add_trans_keys = ["type", "progressionsfaktor"]
-                for key in add_trans_keys:
-                    if key in raw_group_data[param]:
-                        out_params[param][key] = raw_group_data[param][key]
-                value_keys = (
-                    key for key in policy_in_place if key not in not_trans_keys
-                )
-                if "deviation_from" in policy_in_place:
-                    if policy_in_place["deviation_from"] == "previous":
-                        new_date = max_past_policy_date - datetime.timedelta(days=1)
-                        out_params[param] = _parse_raw_parameter_group(
-                            raw_group_data=raw_group_data,
-                            date=new_date,
-                            group=group,
-                            parameters=[param],
-                        )[param]
-                    elif "." in policy_in_place["deviation_from"]:
-                        assert (  # noqa: PT018
-                            group == "arbeitsl_geld_2"
-                            and param
-                            == "parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg"
-                        )
-                        path_list = policy_in_place["deviation_from"].split(".")
-                        out_params[param] = _parse_raw_parameter_group(
-                            raw_group_data=raw_group_data,
-                            date=date,
-                            group=path_list[0],
-                            parameters=[path_list[1]],
-                        )[path_list[1]]
-                    for key in value_keys:
-                        key_list: list[str] = []
-                        out_params[param][key] = transfer_dictionary(
-                            policy_in_place[key],
-                            copy.deepcopy(out_params[param][key]),
-                            key_list,
-                        )
-                else:
-                    for key in value_keys:
-                        out_params[param][key] = policy_in_place[key]
-
-            # Also load earlier parameter values if this is specified in yaml
-            if "access_different_date" in raw_group_data[param]:
-                if raw_group_data[param]["access_different_date"] == "vorjahr":
-                    date_last_year = subtract_years_from_date(date, years=1)
-                    params_last_year = _parse_raw_parameter_group(
-                        raw_group_data=raw_group_data,
-                        date=date_last_year,
-                        group=group,
-                        parameters=[param],
-                    )
-                    if param in params_last_year:
-                        out_params[f"{param}_vorjahr"] = params_last_year[param]
-                elif raw_group_data[param]["access_different_date"] == "jahresanfang":
-                    date_beginning_of_year = set_date_to_beginning_of_year(date)
-                    if date_beginning_of_year == date:
-                        out_params[f"{param}_jahresanfang"] = out_params[param]
-                    else:
-                        params_beginning_of_year = _parse_raw_parameter_group(
-                            raw_group_data=raw_group_data,
-                            date=date_beginning_of_year,
-                            group=group,
-                            parameters=[param],
-                        )
-                        if param in params_beginning_of_year:
-                            out_params[f"{param}_jahresanfang"] = (
-                                params_beginning_of_year[param]
-                            )
-                else:
-                    raise ValueError(
-                        "Currently, access_different_date is only implemented for "
-                        "'vorjahr' (last year) and "
-                        "'jahresanfang' (beginning of the year). "
-                        f"For parameter {param} a different string is specified."
-                    )
-
-    for p in out_params.values():
-        if isinstance(p, dict) and "type" in p:
-            if p["type"] == "dict":
-                for k, v in p.items():
-                    if v in {"inf", "-inf"}:
-                        p[k] = float(v)
-            if not p["type"].startswith("piecewise"):
-                p.pop("type", None)
-
-    out_params["datum"] = numpy.datetime64(date)
-
-    return out_params
-
-
-def transfer_dictionary(
-    remaining_dict: dict[str, Any] | Any, new_dict: dict[str, Any], key_list: list[str]
-) -> dict[str, Any]:
-    # To call recursive, always check if object is a dict
-    if isinstance(remaining_dict, dict):
-        for key in remaining_dict:
-            key_list_updated: list[str] = [*key_list, key]
-            new_dict = transfer_dictionary(
-                remaining_dict[key], new_dict, key_list_updated
-            )
-    elif len(key_list) == 0:
-        return remaining_dict
-    else:
-        # Now remaining dict is just a scalar
-        new_dict = upsert_path_and_value(
-            base=new_dict, path_to_upsert=key_list, value_to_upsert=remaining_dict
-        )
-    return new_dict
-
-
-def _fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedColumnObjectsParamFunctions,
-) -> None:
-    """Raise error if a PolicyFunction does not have the same leaf name as the last
-    branch element of the tree path.
-    """
-
-    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
-        if tree_path[-1] != function.leaf_name:
-            raise KeyError(
-                f"""
-                The name of the last branch element of the functions tree must be the
-                same as the leaf name of the PolicyFunction. The tree path {tree_path}
-                is not compatible with the PolicyFunction {function.leaf_name}.
-                """
-            )

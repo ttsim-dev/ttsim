@@ -14,17 +14,14 @@ def betrag_m(
     einkommen_y: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     steuerklasse: int,
-    lohnst_params: dict,
+    einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
 ) -> float:
-    """
-    Withholding tax on earnings (Lohnsteuer).
-
-    """
+    """Withholding tax on earnings (Lohnsteuer)"""
     return lohnsteuerformel(
-        einkommen_y,
-        einkommensteuer__parameter_einkommensteuertarif,
-        lohnst_params,
-        steuerklasse,
+        einkommen_y=einkommen_y,
+        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+        einkommensgrenzwerte_steuerklassen_5_6=einkommensgrenzwerte_steuerklassen_5_6,
+        steuerklasse=steuerklasse,
     )
 
 
@@ -34,22 +31,22 @@ def betrag_mit_kinderfreibetrag_m(
     kinderfreibetrag_soli_y: float,
     steuerklasse: int,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
-    lohnst_params: dict,
+    einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
 ) -> float:
     """Withholding tax taking child allowances into account.
 
     Same as betrag_m, but with an alternative income definition that
     takes child allowance into account. Important only for calculation
-    of soli on Lohnsteuer!
+    of Solidaritätszuschlag on Lohnsteuer!
     """
-
-    eink = max(einkommen_y - kinderfreibetrag_soli_y, 0)
-
+    einkommen_abzüglich_kinderfreibetrag_soli = max(
+        einkommen_y - kinderfreibetrag_soli_y, 0
+    )
     return lohnsteuerformel(
-        eink,
-        einkommensteuer__parameter_einkommensteuertarif,
-        lohnst_params,
-        steuerklasse,
+        einkommen_y=einkommen_abzüglich_kinderfreibetrag_soli,
+        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+        einkommensgrenzwerte_steuerklassen_5_6=einkommensgrenzwerte_steuerklassen_5_6,
+        steuerklasse=steuerklasse,
     )
 
 
@@ -89,8 +86,8 @@ def kinderfreibetrag_soli_y(
 
 def lohnsteuerformel(
     einkommen_y: float,
-    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
-    lohnst_params: dict,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
+    einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
     steuerklasse: int,
 ) -> float:
     """
@@ -107,63 +104,64 @@ def lohnsteuerformel(
     """
 
     lohnsteuer_basistarif = einkommensteuertarif(
-        einkommen_y, einkommensteuer__parameter_einkommensteuertarif
+        einkommen_y, parameter_einkommensteuertarif
     )
     lohnsteuer_splittingtarif = 2 * einkommensteuertarif(
-        einkommen_y / 2, einkommensteuer__parameter_einkommensteuertarif
+        einkommen_y / 2, parameter_einkommensteuertarif
     )
     lohnsteuer_5_6_basis = basis_für_klassen_5_6(
         einkommen_y=einkommen_y,
-        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+        parameter_einkommensteuertarif=parameter_einkommensteuertarif,
     )
 
     lohnsteuer_grenze_1 = basis_für_klassen_5_6(
-        einkommen_y=lohnst_params["einkommensgrenzen"][1],
-        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+        einkommen_y=einkommensgrenzwerte_steuerklassen_5_6[1],
+        parameter_einkommensteuertarif=parameter_einkommensteuertarif,
     )
     max_lohnsteuer = (
         lohnsteuer_grenze_1
-        + (einkommen_y - lohnst_params["einkommensgrenzen"][1])
-        * einkommensteuer__parameter_einkommensteuertarif.rates[0, 3]
+        + (einkommen_y - einkommensgrenzwerte_steuerklassen_5_6[1])
+        * parameter_einkommensteuertarif.rates[0, 3]
     )
     lohnsteuer_grenze_2 = basis_für_klassen_5_6(
-        einkommen_y=lohnst_params["einkommensgrenzen"][2],
-        parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+        einkommen_y=einkommensgrenzwerte_steuerklassen_5_6[2],
+        parameter_einkommensteuertarif=parameter_einkommensteuertarif,
     )
     lohnsteuer_zw_grenze_2_3 = (
-        lohnst_params["einkommensgrenzen"][3] - lohnst_params["einkommensgrenzen"][2]
-    ) * einkommensteuer__parameter_einkommensteuertarif.rates[0, 3]
+        einkommensgrenzwerte_steuerklassen_5_6[3]
+        - einkommensgrenzwerte_steuerklassen_5_6[2]
+    ) * parameter_einkommensteuertarif.rates[0, 3]
     lohnsteuer_klasse5_6_tmp = lohnsteuer_grenze_2 + lohnsteuer_zw_grenze_2_3
 
-    if einkommen_y < lohnst_params["einkommensgrenzen"][1]:
+    if einkommen_y < einkommensgrenzwerte_steuerklassen_5_6[1]:
         lohnsteuer_klasse5_6 = lohnsteuer_5_6_basis
     elif (
-        lohnst_params["einkommensgrenzen"][1]
+        einkommensgrenzwerte_steuerklassen_5_6[1]
         <= einkommen_y
-        < lohnst_params["einkommensgrenzen"][2]
+        < einkommensgrenzwerte_steuerklassen_5_6[2]
     ):
         lohnsteuer_klasse5_6 = min(
             max_lohnsteuer,
             basis_für_klassen_5_6(
                 einkommen_y=einkommen_y,
-                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+                parameter_einkommensteuertarif=parameter_einkommensteuertarif,
             ),
         )
     elif (
-        lohnst_params["einkommensgrenzen"][2]
+        einkommensgrenzwerte_steuerklassen_5_6[2]
         <= einkommen_y
-        < lohnst_params["einkommensgrenzen"][3]
+        < einkommensgrenzwerte_steuerklassen_5_6[3]
     ):
         lohnsteuer_klasse5_6 = (
             lohnsteuer_grenze_2
-            + (einkommen_y - lohnst_params["einkommensgrenzen"][2])
-            * einkommensteuer__parameter_einkommensteuertarif.rates[0, 3]
+            + (einkommen_y - einkommensgrenzwerte_steuerklassen_5_6[2])
+            * parameter_einkommensteuertarif.rates[0, 3]
         )
     else:
         lohnsteuer_klasse5_6 = (
             lohnsteuer_klasse5_6_tmp
-            + (einkommen_y - lohnst_params["einkommensgrenzen"][3])
-            * einkommensteuer__parameter_einkommensteuertarif.rates[0, 4]
+            + (einkommen_y - einkommensgrenzwerte_steuerklassen_5_6[3])
+            * parameter_einkommensteuertarif.rates[0, 4]
         )
 
     if steuerklasse in {1, 2, 4}:

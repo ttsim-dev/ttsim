@@ -7,6 +7,7 @@ import pytest
 from ttsim import policy_function
 from ttsim.automatically_added_functions import (
     _create_function_for_time_unit,
+    create_agg_by_group_functions,
     create_time_conversion_functions,
     d_to_m,
     d_to_q,
@@ -33,6 +34,14 @@ from ttsim.automatically_added_functions import (
 
 def return_one() -> int:
     return 1
+
+
+def return_x_kin(x_kin: int) -> int:
+    return x_kin
+
+
+def return_n1__x_kin(n1__x_kin: int) -> int:
+    return n1__x_kin
 
 
 @pytest.mark.parametrize(
@@ -280,8 +289,10 @@ class TestCreateFunctionsForTimeUnits:
         self, name: str, expected: list[str]
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            column_objects={name: policy_function(leaf_name=name)(return_one)},
-            data={},
+            qual_name_policy_environment={
+                name: policy_function(leaf_name=name)(return_one)
+            },
+            qual_name_data_columns=set(),
             groupings=("sn", "kin"),
         )
 
@@ -290,10 +301,10 @@ class TestCreateFunctionsForTimeUnits:
 
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            column_objects={
+            qual_name_policy_environment={
                 "test1_d": policy_function(leaf_name="test1_d")(return_one)
             },
-            data={"test2_y": None},
+            qual_name_data_columns={"test2_y"},
             groupings=("sn", "kin"),
         )
 
@@ -304,8 +315,10 @@ class TestCreateFunctionsForTimeUnits:
         self,
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            column_objects={"test_d": policy_function(leaf_name="test_d")(return_one)},
-            data={"test_y": None},
+            qual_name_policy_environment={
+                "test_d": policy_function(leaf_name="test_d")(return_one)
+            },
+            qual_name_data_columns={"test_y"},
             groupings=("sn", "kin"),
         )
 
@@ -337,9 +350,57 @@ def test_should_not_create_cycle():
         return test_m
 
     time_conversion_functions = create_time_conversion_functions(
-        column_objects={"test_d": policy_function(leaf_name="test_d")(x)},
-        data={},
+        qual_name_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
+        qual_name_data_columns=set(),
         groupings=(),
     )
 
     assert "test_m" not in time_conversion_functions
+
+
+@pytest.mark.parametrize(
+    (
+        "column_functions",
+        "targets",
+        "qual_name_data_columns",
+        "expected",
+    ),
+    [
+        (
+            {"foo": policy_function(leaf_name="foo")(return_x_kin)},
+            {},
+            {"x"},
+            ("x_kin"),
+        ),
+        (
+            {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
+            {},
+            {"n1__x"},
+            ("n1__x_kin"),
+        ),
+        (
+            {},
+            {"x_kin": None},
+            {"x"},
+            ("x_kin"),
+        ),
+    ],
+)
+def test_derived_aggregation_functions_are_in_correct_namespace(
+    column_functions,
+    targets,
+    qual_name_data_columns,
+    expected,
+):
+    """Test that the derived aggregation functions are in the correct namespace.
+
+    The namespace of the derived aggregation functions should be the same as the
+    namespace of the function that is being aggregated.
+    """
+    result = create_agg_by_group_functions(
+        column_functions=column_functions,
+        qual_name_data_columns=qual_name_data_columns,
+        targets=targets,
+        groupings=("kin",),
+    )
+    assert expected in result

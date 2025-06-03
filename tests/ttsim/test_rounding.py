@@ -5,9 +5,9 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import (
-    PolicyEnvironment,
     RoundingSpec,
-    compute_taxes_and_transfers,
+    main,
+    policy_environment,
     policy_function,
     policy_input,
 )
@@ -96,7 +96,11 @@ def test_malformed_rounding_specs():
         def test_func():
             return 0
 
-        PolicyEnvironment({"test_func": test_func})
+        policy_environment(
+            active_tree_with_column_objects_and_param_functions={
+                "x.py": {"test_func": test_func}
+            },
+        )
 
 
 @pytest.mark.parametrize(
@@ -115,18 +119,19 @@ def test_rounding(rounding_spec, input_values, exp_output):
         "p_id": np.array([1, 2]),
         "namespace": {"x": np.array(input_values)},
     }
+    policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
-    environment = PolicyEnvironment(
-        {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
-    )
-
-    calc_result = compute_taxes_and_transfers(
-        data_tree=data_tree,
-        environment=environment,
-        targets_tree={"namespace": {"test_func": None}},
-    )
+    nested_results = main(
+        inputs={
+            "data_tree": data_tree,
+            "policy_environment": policy_environment,
+            "targets_tree": {"namespace": {"test_func": None}},
+            "rounding": True,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
     assert_series_equal(
-        pd.Series(calc_result["namespace"]["test_func"]),
+        pd.Series(nested_results["namespace"]["test_func"]),
         pd.Series(exp_output, dtype=DTYPE),
         check_names=False,
     )
@@ -145,21 +150,23 @@ def test_rounding_with_time_conversion():
         "x": np.array([1.2, 1.5]),
     }
 
-    environment = PolicyEnvironment(
-        {
-            "test_func_m": test_func_m,
-            "x": x,
-            "p_id": p_id,
-        }
-    )
+    policy_environment = {
+        "test_func_m": test_func_m,
+        "x": x,
+        "p_id": p_id,
+    }
 
-    calc_result = compute_taxes_and_transfers(
-        data_tree=data,
-        environment=environment,
-        targets_tree={"test_func_y": None},
-    )
+    nested_results = main(
+        inputs={
+            "data_tree": data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"test_func_y": None},
+            "rounding": True,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
     assert_series_equal(
-        pd.Series(calc_result["test_func_y"]),
+        pd.Series(nested_results["test_func_y"]),
         pd.Series([12.0, 12.0], dtype=DTYPE),
         check_names=False,
     )
@@ -181,22 +188,23 @@ def test_no_rounding(
 
     data = {"p_id": np.array([1, 2])}
     data["x"] = np.array(input_values_exp_output)
-    environment = PolicyEnvironment(
-        {
-            "test_func": test_func,
-            "x": x,
-            "p_id": p_id,
-        }
-    )
+    policy_environment = {
+        "test_func": test_func,
+        "x": x,
+        "p_id": p_id,
+    }
 
-    calc_result = compute_taxes_and_transfers(
-        data_tree=data,
-        environment=environment,
-        targets_tree={"test_func": None},
-        rounding=False,
-    )
+    nested_results = main(
+        inputs={
+            "data_tree": data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"test_func": None},
+            "rounding": False,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
     assert_series_equal(
-        pd.Series(calc_result["test_func"]),
+        pd.Series(nested_results["test_func"]),
         pd.Series(input_values_exp_output, dtype=DTYPE),
         check_names=False,
     )

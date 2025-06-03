@@ -18,7 +18,7 @@ altersentlastungsbetrag_altersgrenze:
   type: scalar
   1984-01-01:
     value: 64
-maximaler_altersentlastungsbetrag_einheitlich:
+maximaler_altersentlastungsbetrag:
   name:
     de: Höchstbetrag des Altersentlastungsbetrags
     en: Maximum Amount of Tax Credit for older employees.
@@ -39,8 +39,8 @@ maximaler_altersentlastungsbetrag_einheitlich:
   2002-01-01:
     value: 1908
   2005-01-01:
-    note: Ausschleichung per maximaler_altersentlastungsbetrag_gestaffelt
-maximaler_altersentlastungsbetrag_gestaffelt:
+    note: Ausschleichung per `raw_maximaler_altersentlastungsbetrag_gestaffelt`
+raw_maximaler_altersentlastungsbetrag_gestaffelt:
   name:
     de: Höchstbetrag des Altersentlastungsbetrags
     en: Maximum Amount of Tax Credit for older employees.
@@ -49,9 +49,11 @@ maximaler_altersentlastungsbetrag_gestaffelt:
     en: null
   unit: Euros
   reference_period: Year
-  type: dict
+  type: require_converter
   2005-01-01:
     reference: Artikel 1 G. v. 05.07.2004 BGBl. I S. 1427.
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2100
     1940: 1900
     1941: 1824
     1942: 1748
@@ -88,7 +90,7 @@ maximaler_altersentlastungsbetrag_gestaffelt:
     1973: 76
     1974: 38
     1975: 0
-altersentlastungsquote_einheitlich:
+altersentlastungsquote:
   name:
     de: Anteil des Altersentlastungsbetrags
     en: Income share deducted for older employees.
@@ -107,8 +109,8 @@ altersentlastungsquote_einheitlich:
   1984-01-01:
     value: 0.4
   2005-01-01:
-    note: Ausschleichung per altersentlastungsquote_gestaffelt
-altersentlastungsquote_gestaffelt:
+    note: Ausschleichung per `raw_altersentlastungsquote_gestaffelt`
+raw_altersentlastungsquote_gestaffelt:
   name:
     de: Anteil des Altersentlastungsbetrags
     en: Income share deducted for older employees.
@@ -123,9 +125,11 @@ altersentlastungsquote_gestaffelt:
       deducted. Since 2005, this share additionally depends on the birth year.
   unit: Share
   reference_period: null
-  type: dict
+  type: require_converter
   2005-01-01:
     reference: Artikel 1 G. v. 05.07.2004 BGBl. I S. 1427.
+    first_birthyear_to_consider: 1900
+    last_birthyear_to_consider: 2100
     1940: 0.4
     1941: 0.384
     1942: 0.368

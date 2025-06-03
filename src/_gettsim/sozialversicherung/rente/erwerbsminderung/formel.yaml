@@ -1,127 +1,255 @@
 ---
 zurechnungszeitgrenze:
   name:
-    de: Zurechnungszeitgrenze
-    en: Supplementary time limit
+    de: Alter bis zu dem Zurechnungszeiten angerechnet werden
+    en: Age limit for the supplementary period of the public disability insurance
   description:
     de: >-
-      § 59 SGB VI
-      Altersgrenze für die Zurechnungszeit der Erwerbsminderungsrente.
-      Anhebung von 2020 bis 2027 um 1 Monat pro Kalendarjahr und ab 2028
-      jeweils 2 Monate bis 67 erreicht ist.
-      https://sozialversicherung-kompetent.de/rentenversicherung/leistungsrecht/295-erwerbsminderungsrente-und-rentenabschlaege.html
-      For 2014 reform see: Artikel 1 Nr. 4 des RV-Leistungsverbesserungsgesetz vom
-      23. Juni 2014, BGBl. I, Seite 787
-      For the time before 2004 see (Anlage 23, p.1837):
-      https://www.bgbl.de/xaver/bgbl/text.xav?SID=&tf=xaver.component.Text_0&tocf=&qmf=&hlf=xaver.component.Hitlist_0&bk=bgbl&start=%2F%2F*%5B%40node_id%3D%27955873%27%5D&skin=pdf&tlevel=-2&nohist=1&sinst=23CF02AC
+      § 59 SGB VI (after July 2014)
+      Zurechnungszeiten werden bis zu dieser Altersgrenze gewährt.
     en: >-
-      § 59 SGB VI
-      Age limit for the supplementary period of the public disability insurance.
-      Increase from 2020 to 2027 by 1 month per year, and from 2028
-      by 2 months each year until 67 is reached.
+      § 59 SGB VI (after July 2014)
+      Supplementary periods are granted up to this age limit.
   unit: Years
   reference_period: null
   type: scalar
-  2001-01-01:
-    value: 62.916666
-  2001-02-01:
-    value: 62.833333
-  2001-03-01:
-    value: 62.75
-  2001-04-01:
-    value: 62.666666
-  2001-05-01:
-    value: 62.583333
-  2001-06-01:
-    value: 62.5
-  2001-07-01:
-    value: 62.416666
-  2001-08-01:
-    value: 62.333333
-  2001-09-01:
-    value: 62.25
-  2001-10-01:
-    value: 62.166666
-  2001-11-01:
-    value: 62.083333
-  2001-12-01:
-    value: 62
-  2002-01-01:
-    value: 61.916666
-  2002-02-01:
-    value: 61.833333
-  2002-03-01:
-    value: 61.75
-  2002-04-01:
-    value: 61.666666
-  2002-05-01:
-    value: 61.583333
-  2002-06-01:
-    value: 61.5
-  2002-07-01:
-    value: 61.416666
-  2002-08-01:
-    value: 61.333333
-  2002-09-01:
-    value: 61.25
-  2002-10-01:
-    value: 61.166666
-  2002-11-01:
-    value: 61.083333
-  2002-12-01:
-    value: 61
-  2003-01-01:
-    value: 60.916666
-  2003-02-01:
-    value: 60.833333
-  2003-03-01:
-    value: 60.75
-  2003-04-01:
-    value: 60.666666
-  2003-05-01:
-    value: 60.583333
-  2003-06-01:
-    value: 60.5
-  2003-07-01:
-    value: 60.416666
-  2003-08-01:
-    value: 60.333333
-  2003-09-01:
-    value: 60.25
-  2003-10-01:
-    value: 60.166666
-  2003-11-01:
-    value: 60.083333
-  2003-12-01:
-    value: 60
   2014-07-01:
     value: 62
-  2019-01-01:
-    value: 65.666666
-  2020-01-01:
-    value: 65.75
-  2021-01-01:
-    value: 65.833333
-  2022-01-01:
-    value: 65.916666
-  2023-01-01:
-    value: 66
-  2024-01-01:
-    value: 66.083333
-  2025-01-01:
-    value: 66.166666
-  2026-01-01:
-    value: 66.25
-  2027-01-01:
-    value: 66.333333
-  2028-01-01:
-    value: 66.5
-  2029-01-01:
-    value: 66.666666
-  2030-01-01:
-    value: 66.833333
-  2031-01-01:
-    value: 67
+  2017-07-17:
+    note: Claiming year and month based limit. See `zurechnungszeitgrenze`.
+    reference: G. v. 17.07.2017 BGBl. I S. 2509
+zurechnungszeitgrenze_gestaffelt:
+  name:
+    de: Alter bis zu dem Zurechnungszeiten angerechnet werden
+    en: Age limit for the supplementary period of the public disability insurance
+  description:
+    de: >-
+      § 253a (Anlage 23 bis 2014)
+      Zurechnungszeiten werden bis zu dieser Altersgrenze gewährt.
+    en: >-
+      § 253a (Anlage 23 until 2014)
+      Supplementary periods are granted up to this age limit.
+  unit: Years
+  reference_period: null
+  type: month_based_phase_inout_of_age_thresholds
+  2000-12-23:
+    reference: Anlage 23, G. v. 20.12.2000 BGBl. I S. 1827
+    first_year_to_consider: 1990
+    last_year_to_consider: 2030
+    2000:
+      12:
+        years: 63
+        months: 0
+    2001:
+      1:
+        years: 62
+        months: 11
+      2:
+        years: 62
+        months: 10
+      3:
+        years: 62
+        months: 9
+      4:
+        years: 62
+        months: 8
+      5:
+        years: 62
+        months: 7
+      6:
+        years: 62
+        months: 6
+      7:
+        years: 62
+        months: 5
+      8:
+        years: 62
+        months: 4
+      9:
+        years: 62
+        months: 3
+      10:
+        years: 62
+        months: 2
+      11:
+        years: 62
+        months: 1
+      12:
+        years: 62
+        months: 0
+    2002:
+      1:
+        years: 61
+        months: 11
+      2:
+        years: 61
+        months: 10
+      3:
+        years: 61
+        months: 9
+      4:
+        years: 61
+        months: 8
+      5:
+        years: 61
+        months: 7
+      6:
+        years: 61
+        months: 6
+      7:
+        years: 61
+        months: 5
+      8:
+        years: 61
+        months: 4
+      9:
+        years: 61
+        months: 3
+      10:
+        years: 61
+        months: 2
+      11:
+        years: 61
+        months: 1
+      12:
+        years: 61
+        months: 0
+    2003:
+      1:
+        years: 60
+        months: 11
+      2:
+        years: 60
+        months: 10
+      3:
+        years: 60
+        months: 9
+      4:
+        years: 60
+        months: 8
+      5:
+        years: 60
+        months: 7
+      6:
+        years: 60
+        months: 6
+      7:
+        years: 60
+        months: 5
+      8:
+        years: 60
+        months: 4
+      9:
+        years: 60
+        months: 3
+      10:
+        years: 60
+        months: 2
+      11:
+        years: 60
+        months: 1
+      12:
+        years: 60
+        months: 0
+  2014-07-01:
+    reference: Art. 1 Nr. 4 G. v. 23.06.2014 BGBl. I S. 787
+    note: Uniform age threshold of 62 years. See `zurechnungszeitgrenze`.
+  2017-07-17:
+    reference: G. v. 17.07.2017 BGBl. I S. 2509
+    first_year_to_consider: 1990
+    last_year_to_consider: 2030
+    2017:
+      12:
+        years: 62
+        months: 0
+    2018:
+      1:
+        years: 62
+        months: 3
+    2019:
+      1:
+        years: 62
+        months: 6
+    2020:
+      1:
+        years: 63
+        months: 0
+    2021:
+      1:
+        years: 63
+        months: 6
+    2022:
+      1:
+        years: 64
+        months: 0
+    2023:
+      1:
+        years: 64
+        months: 6
+    2024:
+      1:
+        years: 65
+        months: 0
+  2018-11-28:
+    reference: Art. 1 G. v. 28.11.2018 BGBl. I S. 2016
+    first_year_to_consider: 1990
+    last_year_to_consider: 2040
+    2018:
+      12:
+        years: 62
+        months: 3
+    2019:
+      1:
+        years: 65
+        months: 8
+    2020:
+      1:
+        years: 65
+        months: 9
+    2021:
+      1:
+        years: 65
+        months: 10
+    2022:
+      1:
+        years: 65
+        months: 11
+    2023:
+      1:
+        years: 66
+        months: 0
+    2024:
+      1:
+        years: 66
+        months: 1
+    2025:
+      1:
+        years: 66
+        months: 2
+    2026:
+      1:
+        years: 66
+        months: 3
+    2027:
+      1:
+        years: 66
+        months: 4
+    2028:
+      1:
+        years: 66
+        months: 6
+    2029:
+      1:
+        years: 66
+        months: 8
+    2030:
+      1:
+        years: 66
+        months: 10
+    2031:
+      1:
+        years: 67
+        months: 0
 min_zugangsfaktor:
   name:
     de: Kleinster möglicher Zugangsfaktor bei der Erwerbsminderungsrente

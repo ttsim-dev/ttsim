@@ -1,51 +1,52 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import dags.tree as dt
 import pytest
 
-from _gettsim_tests.utils import (
-    PolicyTest,
-    cached_set_up_policy_environment,
-    load_policy_test_data,
-)
-from ttsim import compute_taxes_and_transfers
+from _gettsim.config import GETTSIM_ROOT
+from ttsim import main
 from ttsim.column_objects_param_function import (
     PolicyInput,
     check_series_has_expected_type,
 )
+from ttsim.testing_utils import (
+    PolicyTest,
+    cached_policy_environment,
+    load_policy_test_data,
+)
 
-test_data = load_policy_test_data("full_taxes_and_transfers")
-
-
-@pytest.mark.parametrize("test", test_data, ids=lambda x: x.name)
-def test_full_taxes_transfers(test: PolicyTest):
-    environment = cached_set_up_policy_environment(date=test.date)
-
-    compute_taxes_and_transfers(
-        data_tree=test.input_tree,
-        environment=environment,
-        targets_tree=test.target_structure,
-    )
+TEST_DIR = Path(__file__).parent
+POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
+    test_dir=TEST_DIR, policy_name="full_taxes_and_transfers"
+)
 
 
-@pytest.mark.parametrize("test", test_data, ids=lambda x: x.name)
+@pytest.mark.parametrize(
+    "test", POLICY_TEST_IDS_AND_CASES.values(), ids=POLICY_TEST_IDS_AND_CASES.keys()
+)
 def test_data_types(test: PolicyTest):
-    environment = cached_set_up_policy_environment(date=test.date)
+    policy_environment = cached_policy_environment(date=test.date, root=GETTSIM_ROOT)
 
-    result = compute_taxes_and_transfers(
-        data_tree=test.input_tree,
-        environment=environment,
-        targets_tree=test.target_structure,
-    )
+    qual_name_results = main(
+        inputs={
+            "data_tree": test.input_tree,
+            "policy_environment": policy_environment,
+            "targets_tree": test.target_structure,
+            "rounding": True,
+        },
+        targets=["qual_name_results"],
+    )["qual_name_results"]
 
+    flat_functions = dt.flatten_to_qual_names(policy_environment)
     flat_types_input_variables = {
         n: pi.data_type
-        for n, pi in dt.flatten_to_qual_names(environment.raw_objects_tree).items()
+        for n, pi in flat_functions.items()
         if isinstance(pi, PolicyInput)
     }
-    flat_functions = dt.flatten_to_qual_names(environment.raw_objects_tree)
 
-    for column_name, result_array in dt.flatten_to_qual_names(result).items():
+    for column_name, result_array in qual_name_results.items():
         if column_name in flat_types_input_variables:
             internal_type = flat_types_input_variables[column_name]
         elif column_name in flat_functions:
@@ -60,17 +61,3 @@ def test_data_types(test: PolicyTest):
                 raise ValueError(f"Column name {column_name} unknown.")
         if internal_type:
             assert check_series_has_expected_type(result_array, internal_type)
-
-
-@pytest.mark.skip(
-    reason="Got rid of DEFAULT_TARGETS, there might not be a replacement."
-)
-@pytest.mark.parametrize("test", test_data, ids=lambda x: x.name)
-def test_allow_none_as_target_tree(test: PolicyTest):
-    environment = cached_set_up_policy_environment(date=test.date)
-
-    compute_taxes_and_transfers(
-        data_tree=test.input_tree,
-        environment=environment,
-        targets_tree=None,
-    )

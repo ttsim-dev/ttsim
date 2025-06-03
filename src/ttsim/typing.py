@@ -25,41 +25,13 @@ if TYPE_CHECKING:
         ColumnFunction,
         ColumnObject,
         ParamFunction,
-        ParamObject,
     )
+    from ttsim.param_objects import ParamObject
 
-    NestedInputs = Mapping[str, str | bool | int | float | "NestedInputs"]
-    """Tree mapping TTSIM paths to df columns or constants."""
-    NestedStrings = Mapping[str, str | "NestedStrings"]
-    """Tree mapping TTSIM paths to df columns or type hints."""
-    NestedData = Mapping[str, TTSIMArray | "NestedData"]
-    """Tree mapping TTSIM paths to data (1-d arrays)."""
-    QualNameData = Mapping[str, TTSIMArray]
-    """Mapping of qualified name paths to data (1-d arrays)."""
-    NestedAnyTTSIMObject = Mapping[
-        str, ColumnObject | ParamFunction | ParamObject | "NestedAnyTTSIMObject"
-    ]
-    """Tree mapping TTSIM paths to any type of TTSIM object."""
-    NestedColumnObjectsParamFunctions = Mapping[
-        str, ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions"
-    ]
-    """Tree mapping TTSIM paths to column objects or param functions."""
     FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...], ColumnObject | ParamFunction
     ]
     """Mapping of flat paths to column objects or param functions."""
-    QualNameColumnObjectsParamFunctions = Mapping[str, ColumnObject | ParamFunction]
-    """Mapping of qualified name paths to column objects or param functions."""
-    NestedColumnObjects = Mapping[str, ColumnObject | "NestedColumnObjects"]
-    """Tree mapping TTSIM paths to column objects."""
-    FlatColumnObjects = Mapping[tuple[str, ...], ColumnObject]
-    """Mapping of flat paths to column objects."""
-    QualNameColumnObjects = Mapping[str, ColumnObject]
-    """Mapping of qualified name paths to column objects."""
-    NestedColumnFunctions = Mapping[str, ColumnFunction | "NestedColumnFunctions"]
-    """Tree mapping TTSIM paths to functions operating on columns of data."""
-    QualNameColumnFunctions = Mapping[str, ColumnFunction]
-    """Mapping of qualified name paths to functions operating on columns of data."""
     OrigParamSpec = (
         dict[str, str | None | dict[Literal["de", "en"], str | None]]  # Header
         | dict[
@@ -71,7 +43,44 @@ if TYPE_CHECKING:
     """Flat tree of yaml contents; the last element of the key is the leaf name."""
     NestedParamObjects = Mapping[str, ParamObject | "NestedParamObjects"]
     """Tree mapping TTSIM paths to parameters."""
-    QualNameProcessedParams = Mapping[str, Any]
+    NestedInputs = Mapping[str, str | bool | int | float | "NestedInputs"]
+    """Tree mapping TTSIM paths to df columns or constants."""
+    NestedStrings = Mapping[str, str | "NestedStrings"]
+    """Tree mapping TTSIM paths to df columns or type hints."""
+    NestedData = Mapping[str, TTSIMArray | "NestedData"]
+    """Tree mapping TTSIM paths to data (1-d arrays)."""
+    QualNameData = Mapping[str, TTSIMArray]
+    """Mapping of qualified name paths to data (1-d arrays)."""
+    QualNameDataColumns = set[str]
+    """The set of data columns, represented by qualified names."""
+    NestedAnyTTSIMObject = Mapping[
+        str,
+        ColumnObject
+        | ParamFunction
+        | ParamObject
+        | int
+        | float
+        | bool
+        | TTSIMArray
+        | "NestedAnyTTSIMObject",
+    ]
+    NestedAny = Mapping[str, Any | "NestedAnyTTSIMObject"]
+    """Tree mapping TTSIM paths to any type of TTSIM object."""
+    NestedColumnObjectsParamFunctions = Mapping[
+        str, ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions"
+    ]
+    NestedPolicyEnvironment = Mapping[
+        str,
+        ColumnObject | ParamFunction | ParamObject | "NestedPolicyEnvironment",
+    ]
+    """Tree mapping TTSIM paths to column objects, param functions, param objects."""
+    QualNamePolicyEnvironment = Mapping[str, ColumnObject | ParamFunction | ParamObject]
+    """Tree mapping TTSIM paths to column objects, param functions, param objects."""
+    QualNameColumnObjectsParamFunctions = Mapping[str, ColumnObject | ParamFunction]
+    """Mapping of qualified name paths to column objects or param functions."""
+    QualNameColumnFunctionsWithProcessedParamsAndScalars = Mapping[str, Any]
     """A mapping of qualified names to fully processed parameters."""
+    QualNameColumnFunctions = Mapping[str, ColumnFunction]
+    """Mapping of qualified name paths to functions operating on columns of data."""
     DashedISOString = NewType("DashedISOString", str)
     """A string representing a date in the format 'YYYY-MM-DD'."""

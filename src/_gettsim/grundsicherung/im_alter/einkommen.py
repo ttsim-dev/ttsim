@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING
 from ttsim import piecewise_polynomial, policy_function
 
 if TYPE_CHECKING:
-    from _gettsim.arbeitslosengeld_2.regelbedarf import RegelsatzNachRegelbedarfsstufen
+    from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
+    from ttsim import PiecewisePolynomialParam
 
 
 @policy_function()
@@ -53,8 +54,8 @@ def einkommen_m(
 def erwerbseinkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
-    grunds_im_alter_params: dict,
-    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
+    anrechnungsfreier_anteil_erwerbseinkünfte: float,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
 ) -> float:
     """Calculate individual earnings considered in the calculation of Grundsicherung im
     Alter.
@@ -64,7 +65,7 @@ def erwerbseinkommen_m(
     Notes:
 
     - Freibeträge for income are currently not considered
-    - Start date is 2011 because of the reference to regelsatz_nach_regelbedarfsstufen,
+    - Start date is 2011 because of the reference to regelbedarfsstufen,
       which was introduced in 2011.
     - The cap at 1/2 of Regelbedarf was only introduced in 2006 (which is currently
       not implemented): https://www.buzer.de/gesetz/3415/al3764-0.htm
@@ -74,43 +75,44 @@ def erwerbseinkommen_m(
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
     )
 
-    # Can deduct 30% of earnings (but no more than 1/2 of regelbedarf)
     earnings_after_max_deduction = (
-        earnings
-        - arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz / 2
+        earnings - grundsicherung__regelbedarfsstufen.rbs_1 / 2
     )
-    earnings = (
-        1 - grunds_im_alter_params["anrechnungsfreier_anteil_erwerbseinkünfte"]
-    ) * earnings
+    earnings = (1 - anrechnungsfreier_anteil_erwerbseinkünfte) * earnings
 
     return max(earnings, earnings_after_max_deduction)
 
 
-@policy_function()
-def kapitaleinkommen_brutto_m(
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y: float,
-    grunds_im_alter_params: dict,
+@policy_function(end_date="2015-12-31", leaf_name="kapitaleinkommen_brutto_m")
+def kapitaleinkommen_brutto_m_ohne_freibetrag(
+    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
 ) -> float:
-    """Calculate individual capital income considered in the calculation of
-    Grundsicherung im Alter.
+    """Capital income."""
+    return max(0.0, einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m)
 
-    Legal reference: § 82 SGB XII Abs. 2
+
+@policy_function(start_date="2016-01-01", leaf_name="kapitaleinkommen_brutto_m")
+def kapitaleinkommen_brutto_m_mit_freibetrag(
+    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y: float,
+    freibetrag_kapitaleinkünfte: float,
+) -> float:
+    """Capital income minus the capital income exemption.
+
+    Legal reference: § 43 SGB XII Abs. 2
     """
-    # Can deduct allowance from yearly capital income
     capital_income_y = (
         einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y
-        - grunds_im_alter_params["anrechnungsfreie_kapitaleinkünfte"]
+        - freibetrag_kapitaleinkünfte
     )
 
-    # Calculate and return monthly capital income (after deduction)
     return max(0.0, capital_income_y / 12)
 
 
 @policy_function(start_date="2011-01-01")
 def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m: float,
-    grunds_im_alter_params: dict,
-    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
+    anrechnungsfreier_anteil_private_renteneinkünfte: PiecewisePolynomialParam,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
 ) -> float:
     """Calculate individual private pension benefits considered in the calculation of
     Grundsicherung im Alter.
@@ -120,12 +122,10 @@ def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m_amount_exempt = (
         piecewise_polynomial(
             x=sozialversicherung__rente__private_rente_betrag_m,
-            parameters=grunds_im_alter_params[
-                "anrechnungsfreier_anteil_private_renteneinkünfte"
-            ],
+            parameters=anrechnungsfreier_anteil_private_renteneinkünfte,
         )
     )
-    upper = arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz / 2
+    upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
 
     return sozialversicherung__rente__private_rente_betrag_m - min(
         sozialversicherung__rente__private_rente_betrag_m_amount_exempt, upper
@@ -148,8 +148,8 @@ def gesetzliche_rente_m_bis_2020(
 def gesetzliche_rente_m_ab_2021(
     sozialversicherung__rente__altersrente__betrag_m: float,
     sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt: bool,
-    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
-    grunds_im_alter_params: dict,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
+    anrechnungsfreier_anteil_gesetzliche_rente: PiecewisePolynomialParam,
 ) -> float:
     """Calculate individual public pension benefits which are considered in the
     calculation of Grundsicherung im Alter since 2021.
@@ -160,10 +160,10 @@ def gesetzliche_rente_m_ab_2021(
 
     angerechnete_rente = piecewise_polynomial(
         x=sozialversicherung__rente__altersrente__betrag_m,
-        parameters=grunds_im_alter_params["anrechnungsfreier_anteil_gesetzliche_rente"],
+        parameters=anrechnungsfreier_anteil_gesetzliche_rente,
     )
 
-    upper = arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz / 2
+    upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
     if sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt:
         angerechnete_rente = min(angerechnete_rente, upper)
     else:

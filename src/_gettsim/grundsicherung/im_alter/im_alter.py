@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _gettsim.arbeitslosengeld_2.regelbedarf import RegelsatzNachRegelbedarfsstufen
+    from _gettsim.arbeitslosengeld_2.regelbedarf import (
+        Regelbedarfsstufen,
+    )
 
 from ttsim import policy_function
 
@@ -74,17 +76,17 @@ def betrag_m_eg(
 def mehrbedarf_schwerbehinderung_g_m(
     schwerbehindert_grad_g: bool,
     arbeitslosengeld_2__anzahl_erwachsene_eg: int,
-    grunds_im_alter_params: dict,
-    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
+    mehrbedarf_bei_schwerbehinderungsgrad_g: float,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
 ) -> float:
     """Calculate additional allowance for individuals with disabled person's pass G."""
 
     mehrbedarf_single = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz
-    ) * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
+        grundsicherung__regelbedarfsstufen.rbs_1
+    ) * mehrbedarf_bei_schwerbehinderungsgrad_g
     mehrbedarf_in_couple = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_2.regelsatz
-    ) * (grunds_im_alter_params["mehrbedarf_bei_schwerbehinderungsgrad_g"])
+        grundsicherung__regelbedarfsstufen.rbs_2
+    ) * mehrbedarf_bei_schwerbehinderungsgrad_g
 
     if (schwerbehindert_grad_g) and (arbeitslosengeld_2__anzahl_erwachsene_eg == 1):
         out = mehrbedarf_single
@@ -96,16 +98,15 @@ def mehrbedarf_schwerbehinderung_g_m(
     return out
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def vermögensfreibetrag_eg(
     arbeitslosengeld_2__anzahl_erwachsene_fg: int,
     arbeitslosengeld_2__anzahl_kinder_fg: int,
-    grunds_im_alter_params: dict,
+    parameter_vermögensfreibetrag: dict[str, float],
 ) -> float:
     """Calculate wealth not considered for Grundsicherung im Alter on household level."""
     return (
-        grunds_im_alter_params["parameter_vermögensfreibetrag"]["adult"]
+        parameter_vermögensfreibetrag["erwachsene"]
         * arbeitslosengeld_2__anzahl_erwachsene_fg
-        + grunds_im_alter_params["parameter_vermögensfreibetrag"]["child"]
-        * arbeitslosengeld_2__anzahl_kinder_fg
+        + parameter_vermögensfreibetrag["kinder"] * arbeitslosengeld_2__anzahl_kinder_fg
     )

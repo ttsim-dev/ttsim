@@ -88,12 +88,11 @@ def vermögensfreibetrag_bg_bis_2022(
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
-    out = (
+    return (
         grundfreibetrag_vermögen_bg
         + anzahl_kinder_bis_17_bg * vermögensgrundfreibetrag_je_kind
         + anzahl_personen_bg * vermögensfreibetrag_austattung
     )
-    return out
 
 
 @policy_function(start_date="2023-01-01", leaf_name="vermögensfreibetrag_bg")

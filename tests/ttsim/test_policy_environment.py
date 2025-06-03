@@ -9,29 +9,30 @@ from typing import TYPE_CHECKING
 import optree
 import pandas as pd
 import pytest
-import yaml
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
-    GroupCreationFunction,
-    PolicyEnvironment,
     ScalarParam,
     group_creation_function,
+    main,
     policy_function,
-    set_up_policy_environment,
 )
 from ttsim.column_objects_param_function import DEFAULT_END_DATE
-from ttsim.loader import orig_params_tree, orig_tree_with_column_objects_param_functions
+from ttsim.loader import (
+    orig_tree_with_column_objects_and_param_functions,
+    orig_tree_with_params,
+)
 from ttsim.policy_environment import (
     ConflictingActivePeriodsError,
-    _fail_if_name_of_last_branch_element_not_leaf_name_of_function,
-    _get_params_contents,
+    _get_param_value,
     _param_with_active_periods,
     _ParamWithActivePeriod,
-    _parse_raw_parameter_group,
-    active_params_tree,
-    active_tree_with_column_objects_param_functions,
-    fail_because_active_periods_overlap,
+    active_tree_with_column_objects_and_param_functions,
+    active_tree_with_params,
+    fail_if_active_periods_overlap,
+    fail_if_group_ids_are_outside_top_level_namespace,
+    fail_if_name_of_last_branch_element_not_leaf_name_of_function,
+    upsert_tree_into_policy_environment,
 )
 
 if TYPE_CHECKING:
@@ -39,6 +40,7 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,
+        NestedPolicyEnvironment,
         OrigParamSpec,
     )
 
@@ -97,122 +99,17 @@ def some_int_param():
     )
 
 
-class TestPolicyEnvironment:
-    def test_func_exists_in_tree(self):
-        function = policy_function(leaf_name="foo")(return_one)
-        environment = PolicyEnvironment({"foo": function})
-
-        assert environment.raw_objects_tree["foo"] == function
-
-    def test_func_does_not_exist_in_tree(self):
-        environment = PolicyEnvironment({}, {})
-
-        assert "foo" not in environment.raw_objects_tree
-
-    @pytest.mark.parametrize(
-        "environment",
-        [
-            PolicyEnvironment({}, {}),
-            PolicyEnvironment({"foo": policy_function(leaf_name="foo")(return_one)}),
-            PolicyEnvironment(
-                {
-                    "foo": policy_function(leaf_name="foo")(return_one),
-                    "bar": policy_function(leaf_name="bar")(return_two),
-                }
-            ),
-        ],
-    )
-    def test_upsert_functions(self, environment: PolicyEnvironment):
-        new_function = policy_function(leaf_name="foo")(return_three)
-        new_environment = environment.upsert_objects({"foo": new_function})
-
-        assert new_environment.raw_objects_tree["foo"] == new_function
-
-    @pytest.mark.parametrize(
-        "environment",
-        [
-            PolicyEnvironment({}, {}),
-            PolicyEnvironment({}, {"foo": {"bar": 1}}),
-        ],
-    )
-    def test_replace_all_parameters(self, environment: PolicyEnvironment):
-        new_params = {"foo": {"bar": 2}}
-        new_environment = environment.replace_all_parameters(new_params)
-
-        assert new_environment.params == new_params
-
-
-def test_leap_year_correctly_handled():
-    set_up_policy_environment(date="2020-02-29", root=METTSIM_ROOT)
-
-
-def test_fail_if_invalid_date():
-    with pytest.raises(ValueError):
-        set_up_policy_environment(date="2020-02-30", root=METTSIM_ROOT)
-
-
 def test_add_jahresanfang():
-    _orig_params_tree = orig_params_tree(root=Path(__file__).parent / "test_parameters")
+    _orig_tree_with_params = orig_tree_with_params(
+        root=Path(__file__).parent / "test_parameters"
+    )
     k = ("test_add_jahresanfang.yaml", "foo")
-    _active_ttsim_params_tree = active_params_tree(
-        orig_params_tree={k: _orig_params_tree[k]},
+    _active_ttsim_tree_with_params = active_tree_with_params(
+        orig_tree_with_params={k: _orig_tree_with_params[k]},
         date=pd.to_datetime("2020-07-01").date(),
     )
-    assert _active_ttsim_params_tree["foo"].value == 2
-    assert _active_ttsim_params_tree["foo_jahresanfang"].value == 1
-
-
-def test_fail_if_invalid_access_different_date_old():
-    with pytest.raises(ValueError):
-        group = "invalid_access_diff_date"
-        raw_group_data = yaml.load(
-            (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
-                encoding="utf-8"
-            ),
-            Loader=yaml.CLoader,  # noqa: S506
-        )
-        _parse_raw_parameter_group(
-            raw_group_data=raw_group_data,
-            date=pd.to_datetime("2020-01-01").date(),
-            group=group,
-            parameters=None,
-        )
-
-
-def test_access_different_date_vorjahr_old():
-    group = "test_access_diff_date_vorjahr"
-    raw_group_data = yaml.load(
-        (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
-            encoding="utf-8"
-        ),
-        Loader=yaml.CLoader,  # noqa: S506
-    )
-    params = _parse_raw_parameter_group(
-        raw_group_data=raw_group_data,
-        date=pd.to_datetime("2020-01-01").date(),
-        group=group,
-        parameters=None,
-    )
-    assert params["foo"] == 2020
-    assert params["foo_vorjahr"] == 2019
-
-
-def test_access_different_date_jahresanfang_old():
-    group = "test_access_diff_date_jahresanfang"
-    raw_group_data = yaml.load(
-        (Path(__file__).parent / "test_parameters_old" / f"{group}.yaml").read_text(
-            encoding="utf-8"
-        ),
-        Loader=yaml.CLoader,  # noqa: S506
-    )
-    params = _parse_raw_parameter_group(
-        raw_group_data=raw_group_data,
-        date=pd.to_datetime("2020-07-01").date(),
-        group=group,
-        parameters=None,
-    )
-    assert params["foo"] == 2021
-    assert params["foo_jahresanfang"] == 2020
+    assert _active_ttsim_tree_with_params["foo"].value == 2
+    assert _active_ttsim_tree_with_params["foo_jahresanfang"].value == 1
 
 
 @pytest.mark.parametrize(
@@ -225,39 +122,68 @@ def test_fail_if_name_of_last_branch_element_not_leaf_name_of_function(
     functions_tree: NestedColumnObjectsParamFunctions,
 ):
     with pytest.raises(KeyError):
-        _fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
+        fail_if_name_of_last_branch_element_not_leaf_name_of_function(functions_tree)
 
 
-def test_dont_destroy_group_by_functions():
-    functions_tree = {
-        "foo": group_creation_function()(return_one),
-    }
-    environment = PolicyEnvironment(functions_tree)
-    assert isinstance(environment.raw_objects_tree["foo"], GroupCreationFunction)
-
-
-def test_creating_environment_fails_when_group_ids_are_outside_top_level_namespace():
+def test_fail_if_group_ids_are_outside_top_level_namespace():
     with pytest.raises(
         ValueError, match="Group identifiers must live in the top-level namespace. Got:"
     ):
-        PolicyEnvironment({"n1": {"fam_id": fam_id}})
+        fail_if_group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
 
 
-def test_upserting_group_ids_outside_top_level_namespace_fails():
+def test_upsert_tree_into_policy_environment_fail_with_group_ids_outside_top_level_namespace():  # noqa: E501
     with pytest.raises(
         ValueError, match="Group identifiers must live in the top-level namespace. Got:"
     ):
-        PolicyEnvironment({}).upsert_objects({"n1": {"fam_id": fam_id}})
+        upsert_tree_into_policy_environment(
+            policy_environment={},
+            tree_to_upsert={"n1": {"fam_id": fam_id}},
+        )
+
+
+@pytest.mark.parametrize(
+    "policy_environment",
+    [
+        {},
+        {"foo": policy_function(leaf_name="foo")(return_one)},
+        {
+            "foo": policy_function(leaf_name="foo")(return_one),
+            "bar": policy_function(leaf_name="bar")(return_two),
+        },
+    ],
+)
+def test_upsert_tree_into_policy_environment(
+    policy_environment: NestedPolicyEnvironment,
+):
+    new_function = policy_function(leaf_name="foo")(return_three)
+    new_environment = upsert_tree_into_policy_environment(
+        policy_environment=policy_environment, tree_to_upsert={"foo": new_function}
+    )
+
+    assert new_environment["foo"] == new_function
 
 
 def test_input_is_recognized_as_potential_group_id():
-    environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
-    assert "kin" in environment.grouping_levels
+    grouping_levels = main(
+        inputs={
+            "root": METTSIM_ROOT,
+            "date": datetime.date(2020, 1, 1),
+        },
+        targets=["grouping_levels"],
+    )["grouping_levels"]
+    assert "kin" in grouping_levels
 
 
 def test_p_id_not_recognized_as_potential_group_id():
-    environment = set_up_policy_environment(root=METTSIM_ROOT, date="2020-01-01")
-    assert "p" not in environment.grouping_levels
+    grouping_levels = main(
+        inputs={
+            "root": METTSIM_ROOT,
+            "date": datetime.date(2020, 1, 1),
+        },
+        targets=["grouping_levels"],
+    )["grouping_levels"]
+    assert "p" not in grouping_levels
 
 
 @pytest.mark.parametrize(
@@ -349,7 +275,7 @@ def identity(x):
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_param_functions, orig_params_tree",
+    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
     [
         # Same global module, no overlapping periods, no name clashes.
         (
@@ -450,96 +376,96 @@ def identity(x):
     ],
 )
 def test_fail_because_active_periods_overlap_passes(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
-    orig_params_tree: FlatOrigParamSpecs,
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
 ):
-    fail_because_active_periods_overlap(
-        orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
-        orig_params_tree=orig_params_tree,
+    fail_if_active_periods_overlap(
+        orig_tree_with_column_objects_and_param_functions,
+        orig_tree_with_params,
     )
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_param_functions",
+    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
     [
         # Exact overlap.
-        {
-            ("a",): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-            ("b",): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("a",): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("b",): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Active period for "a" is subset of "b".
-        {
-            ("a"): policy_function(
-                start_date="2023-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-            ("b"): policy_function(
-                start_date="2021-01-02",
-                end_date="2023-02-01",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("a"): policy_function(
+                    start_date="2023-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+                ("b"): policy_function(
+                    start_date="2021-01-02",
+                    end_date="2023-02-01",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Some overlap.
-        {
-            ("a",): policy_function(
-                start_date="2023-01-02",
-                end_date="2023-02-01",
-                leaf_name="f",
-            )(identity),
-            ("b",): policy_function(
-                start_date="2022-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("a",): policy_function(
+                    start_date="2023-01-02",
+                    end_date="2023-02-01",
+                    leaf_name="f",
+                )(identity),
+                ("b",): policy_function(
+                    start_date="2022-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Same as before, but defined in different modules.
-        {
-            ("c", "a"): policy_function(
-                start_date="2023-01-02",
-                end_date="2023-02-01",
-                leaf_name="f",
-            )(identity),
-            ("d", "b"): policy_function(
-                start_date="2022-01-01",
-                end_date="2023-01-31",
-                leaf_name="f",
-            )(identity),
-        },
+        (
+            {
+                ("c", "a"): policy_function(
+                    start_date="2023-01-02",
+                    end_date="2023-02-01",
+                    leaf_name="f",
+                )(identity),
+                ("d", "b"): policy_function(
+                    start_date="2022-01-01",
+                    end_date="2023-01-31",
+                    leaf_name="f",
+                )(identity),
+            },
+            {},
+        ),
         # Same as before, but defined in different modules without leaf name.
-        {
-            ("c", "f"): policy_function(
-                start_date="2023-01-02",
-                end_date="2023-02-01",
-            )(identity),
-            ("d", "f"): policy_function(
-                start_date="2022-01-01",
-                end_date="2023-01-31",
-            )(identity),
-        },
-    ],
-)
-def test_fail_because_of_conflicting_active_periods(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
-):
-    with pytest.raises(ConflictingActivePeriodsError):
-        fail_because_active_periods_overlap(
-            orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
-            orig_params_tree={},
-        )
-
-
-@pytest.mark.parametrize(
-    "orig_tree_with_column_objects_param_functions, orig_params_tree",
-    [
+        (
+            {
+                ("c", "f"): policy_function(
+                    start_date="2023-01-02",
+                    end_date="2023-02-01",
+                )(identity),
+                ("d", "f"): policy_function(
+                    start_date="2022-01-01",
+                    end_date="2023-01-31",
+                )(identity),
+            },
+            {},
+        ),
         # Same global module, no overlap in functions, name clashes leaf name / yaml.
         (
             {
@@ -598,19 +524,19 @@ def test_fail_because_of_conflicting_active_periods(
         ),
     ],
 )
-def test_fail_because_of_conflicting_names(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
-    orig_params_tree: FlatOrigParamSpecs,
+def test_fail_because_active_periods_overlap_raises(
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
 ):
     with pytest.raises(ConflictingActivePeriodsError):
-        fail_because_active_periods_overlap(
-            orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
-            orig_params_tree=orig_params_tree,
+        fail_if_active_periods_overlap(
+            orig_tree_with_column_objects_and_param_functions,
+            orig_tree_with_params,
         )
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_param_functions, orig_params_tree",
+    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
     [
         # Same leaf names across functions / parameters, but no overlapping periods.
         (
@@ -685,12 +611,12 @@ def test_fail_because_of_conflicting_names(
     ],
 )
 def test_pass_because_no_overlap_functions_params(
-    orig_tree_with_column_objects_param_functions: FlatColumnObjectsParamFunctions,
-    orig_params_tree: FlatOrigParamSpecs,
+    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_tree_with_params: FlatOrigParamSpecs,
 ):
-    fail_because_active_periods_overlap(
-        orig_tree_with_column_objects_param_functions=orig_tree_with_column_objects_param_functions,
-        orig_params_tree=orig_params_tree,
+    fail_if_active_periods_overlap(
+        orig_tree_with_column_objects_and_param_functions,
+        orig_tree_with_params,
     )
 
 
@@ -830,21 +756,21 @@ def test_ttsim_param_with_active_periods(
         ),
     ],
 )
-def test_active_tree_with_column_objects_param_functions(
+def test_active_tree_with_column_objects_and_param_functions(
     tree: NestedColumnObjectsParamFunctions,
     last_day: datetime.date,
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    _orig_tree_with_column_objects_param_functions = (
-        orig_tree_with_column_objects_param_functions(root=METTSIM_ROOT)
+    _orig_tree_with_column_objects_and_param_functions = (
+        orig_tree_with_column_objects_and_param_functions(root=METTSIM_ROOT)
     )
-    functions_last_day = active_tree_with_column_objects_param_functions(
-        orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
+    functions_last_day = active_tree_with_column_objects_and_param_functions(
+        orig_tree_with_column_objects_and_param_functions=_orig_tree_with_column_objects_and_param_functions,
         date=last_day,
     )
-    functions_next_day = active_tree_with_column_objects_param_functions(
-        orig_tree_with_column_objects_param_functions=_orig_tree_with_column_objects_param_functions,
+    functions_next_day = active_tree_with_column_objects_and_param_functions(
+        orig_tree_with_column_objects_and_param_functions=_orig_tree_with_column_objects_and_param_functions,
         date=last_day + datetime.timedelta(days=1),
     )
 
@@ -857,24 +783,9 @@ def test_active_tree_with_column_objects_param_functions(
 def test_get_params_contents_with_updated_previous(
     some_params_spec_with_updates_previous,
 ):
-    params_contents = _get_params_contents(some_params_spec_with_updates_previous)
+    params_contents = _get_param_value(some_params_spec_with_updates_previous)
     expected = {
         "a": 1,
         "b": 4,
     }
     assert params_contents == expected
-
-
-def test_combining_trees_works_with_overlapping_keys(some_int_param):
-    policy_environment = PolicyEnvironment(
-        raw_objects_tree={
-            "a": {"b": policy_function(leaf_name="a")(return_one)},
-        },
-        params_tree={"a": {"c": some_int_param}},
-    )
-    expected: NestedColumnObjectsParamFunctions = {
-        "a": {"b": policy_function(leaf_name="a")(return_one), "c": some_int_param},
-    }
-    assert optree.tree_paths(policy_environment.combined_tree) == optree.tree_paths(
-        expected
-    )

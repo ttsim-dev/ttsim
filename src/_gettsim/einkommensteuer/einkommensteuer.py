@@ -22,6 +22,7 @@ from ttsim.piecewise_polynomial import (
 )
 
 if TYPE_CHECKING:
+    from ttsim import ConsecutiveInt1dLookupTableParamValue
     from ttsim.typing import RawParam
 
 
@@ -65,15 +66,6 @@ def betrag_y_sn_kindergeld_kinderfreibetrag_parallel(
 ) -> float:
     """Income tax calculation on Steuernummer level allowing for claiming
     Kinderfreibetrag and receiving Kindergeld at the same time.
-
-    Parameters
-    ----------
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-
-    Returns
-    -------
-
     """
     return betrag_mit_kinderfreibetrag_y_sn
 
@@ -91,23 +83,7 @@ def betrag_y_sn_kindergeld_oder_kinderfreibetrag(
     kinderfreibetrag_günstiger_sn: bool,
     relevantes_kindergeld_y_sn: float,
 ) -> float:
-    """Income tax calculation on Steuernummer level since 1997.
-
-    Parameters
-    ----------
-    betrag_ohne_kinderfreibetrag_y_sn
-        See :func:`betrag_ohne_kinderfreibetrag_y_sn`.
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-    kinderfreibetrag_günstiger_sn
-        See :func:`kinderfreibetrag_günstiger_sn`.
-    relevantes_kindergeld_y_sn
-        See :func:`relevantes_kindergeld_y_sn`.
-
-    Returns
-    -------
-
-    """
+    """Income tax calculation on Steuernummer level since 1997."""
     if kinderfreibetrag_günstiger_sn:
         out = betrag_mit_kinderfreibetrag_y_sn + relevantes_kindergeld_y_sn
     else:
@@ -122,20 +98,7 @@ def kinderfreibetrag_günstiger_sn(
     betrag_mit_kinderfreibetrag_y_sn: float,
     relevantes_kindergeld_y_sn: float,
 ) -> bool:
-    """Kinderfreibetrag more favorable than Kindergeld.
-
-    Parameters
-    ----------
-    betrag_ohne_kinderfreibetrag_y_sn
-        See :func:`betrag_ohne_kinderfreibetrag_y_sn`.
-    betrag_mit_kinderfreibetrag_y_sn
-        See :func:`betrag_mit_kinderfreibetrag_y_sn`.
-    relevantes_kindergeld_y_sn
-        See :func:`relevantes_kindergeld_y_sn`.
-    Returns
-    -------
-
-    """
+    """Kinderfreibetrag more favorable than Kindergeld."""
     unterschiedsbeitrag = (
         betrag_ohne_kinderfreibetrag_y_sn - betrag_mit_kinderfreibetrag_y_sn
     )
@@ -196,25 +159,22 @@ def betrag_ohne_kinderfreibetrag_y_sn(
 
     """
     zu_verst_eink_per_indiv = gesamteinkommen_y / anzahl_personen_sn
-    out = anzahl_personen_sn * einkommensteuertarif(
+    return anzahl_personen_sn * einkommensteuertarif(
         x=zu_verst_eink_per_indiv, params=parameter_einkommensteuertarif
     )
 
-    return out
 
-
-@policy_function(
-    end_date="2022-12-31",
-    leaf_name="relevantes_kindergeld_m",
-    vectorization_strategy="loop",
-)
+@policy_function(end_date="2022-12-31", leaf_name="relevantes_kindergeld_m")
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld__satz_gestaffelt: dict[int, float],
+    kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
+
+    Note: It doesn't matter which parent actually receives the Kindergeld. For income
+    tax purposes, only the eligibility to claim Kindergeld is relevant.
 
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."
@@ -222,15 +182,12 @@ def relevantes_kindergeld_mit_staffelung_m(
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
 
-    if kindergeld_ansprüche == 0:
-        relevantes_kindergeld = 0.0
-    else:
-        relevantes_kindergeld = sum(
-            kindergeld__satz_gestaffelt[(min(i, max(kindergeld__satz_gestaffelt)))]
-            for i in range(1, kindergeld_ansprüche + 1)
-        )
-
-    return relevantes_kindergeld / 2
+    return (
+        kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
+            kindergeld_ansprüche - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
+        ]
+        / 2
+    )
 
 
 @policy_function(
@@ -245,6 +202,9 @@ def relevantes_kindergeld_ohne_staffelung_m(
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
 
+    Note: It doesn't matter which parent actually receives the Kindergeld. For income
+    tax purposes, only the eligibility to claim Kindergeld is relevant.
+
     Source: § 31 Satz 4 EStG: "Bei nicht zusammenveranlagten Eltern wird der
     Kindergeldanspruch im Umfang des Kinderfreibetrags angesetzt."
 
@@ -253,20 +213,8 @@ def relevantes_kindergeld_ohne_staffelung_m(
     return kindergeld__satz * kindergeld_ansprüche / 2
 
 
-def einkommensteuertarif(x: float, params: dict) -> float:
-    """The German income tax tariff.
-
-    Parameters
-    ----------
-    x : float
-        The series of floats which the income tax schedule is applied to.
-    params : dict
-        Dictionary created in respy.piecewise_functions.
-
-    Returns
-    -------
-
-    """
+def einkommensteuertarif(x: float, params: PiecewisePolynomialParamValue) -> float:
+    """The German income tax tariff."""
     return piecewise_polynomial(
         x=x,
         parameters=params,

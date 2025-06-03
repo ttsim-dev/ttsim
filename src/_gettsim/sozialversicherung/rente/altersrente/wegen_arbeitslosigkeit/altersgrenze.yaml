@@ -38,12 +38,12 @@ altersgrenze_gestaffelt:
       https://www.gesetze-im-internet.de/sgb_6/__237.html
   unit: Years
   reference_period: null
-  type: birth_month_based_phase_inout
+  type: month_based_phase_inout_of_age_thresholds
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
     note: Increase of full retirement age from 60 to 65 for birth cohort 1941-1952.
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 2029
+    first_year_to_consider: 1900
+    last_year_to_consider: 2029
     1940:
       12:
         years: 60
@@ -240,8 +240,8 @@ altersgrenze_gestaffelt:
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     note: Increase of full retirement age from 60 to 65 for birth cohort 1937-1952.
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 2029
+    first_year_to_consider: 1900
+    last_year_to_consider: 2029
     1936:
       12:
         years: 60
@@ -440,8 +440,8 @@ altersgrenze_gestaffelt:
   1996-09-27:
     reference: Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461 1996
     note: Increase of full retirement age from 60 to 65 for birth cohort 1937-1941.
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 2029
+    first_year_to_consider: 1900
+    last_year_to_consider: 2029
     1936:
       12:
         years: 60
@@ -650,7 +650,7 @@ altersgrenze_gestaffelt_vertrauensschutz:
       the age threshold.
   unit: Years
   reference_period: null
-  type: birth_month_based_phase_inout
+  type: month_based_phase_inout_of_age_thresholds
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     note: >-
@@ -658,8 +658,8 @@ altersgrenze_gestaffelt_vertrauensschutz:
       covered under Vertrauensschutz. The Vertrauensschutzregel was not revoked under
       the subsequent Wachstums- und Beschäftigungsförderungsgesetz 1996. BGBl. I S. 1461
       1996.
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 2029
+    first_year_to_consider: 1900
+    last_year_to_consider: 2029
     1940:
       12:
         years: 60
@@ -758,12 +758,12 @@ altersgrenze_vorzeitig_gestaffelt:
       https://www.buzer.de/Anlage_19_SGB_VI.htm
   unit: Years
   reference_period: null
-  type: birth_month_based_phase_inout
+  type: month_based_phase_inout_of_age_thresholds
   1989-12-18:
     reference: Rentenreformgesetz 1992. BGBl. I S. 2261 1989 § 41
     note: Increase of early retirement age from 60 to 62 for birth cohort 1949-1952.
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 2029
+    first_year_to_consider: 1900
+    last_year_to_consider: 2029
     1948:
       12:
         years: 60
@@ -847,8 +847,8 @@ altersgrenze_vorzeitig_gestaffelt:
   1996-07-29:
     reference: Ruhestandsförderungsgesetz 1996. BGBl. I S. 1078 1996.
     note: Increase of early retirement age as before. (§ 237 SGB VI  Abs.5).
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 2029
+    first_year_to_consider: 1900
+    last_year_to_consider: 2029
     1948:
       12:
         years: 60
@@ -935,8 +935,8 @@ altersgrenze_vorzeitig_gestaffelt:
   2004-07-26:
     reference: RV-Nachhaltigkeitsgesetz 2004. BGBl. I S. 1791 2004
     note: Increase of the early retirement age from 60 to 63 for birth cohort 1946-1948.
-    first_birthyear_to_consider: 1900
-    last_birthyear_to_consider: 1951
+    first_year_to_consider: 1900
+    last_year_to_consider: 1951
     1945:
       12:
         years: 60

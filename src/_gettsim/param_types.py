@@ -2,6 +2,18 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class Altersgrenzen:
+    min_alter: int
+    max_alter: int
+
+
+@dataclass(frozen=True)
+class SatzMitAltersgrenzen:
+    satz: float
+    altersgrenzen: Altersgrenzen
+
+
+@dataclass(frozen=True)
 class ElementExistenzminimum:
     single: float
     paar: float

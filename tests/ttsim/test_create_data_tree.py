@@ -4,7 +4,7 @@ import dags.tree as dt
 import pandas as pd
 import pytest
 
-from ttsim import create_data_tree_from_df
+from ttsim import dataframe_to_nested_data
 
 
 @pytest.mark.parametrize(
@@ -45,12 +45,12 @@ from ttsim import create_data_tree_from_df
         ),
     ],
 )
-def test_create_data_tree_from_df(
+def test_dataframe_to_nested_data(
     inputs_tree_to_df_columns,
     df,
     expected_output,
 ):
-    result = create_data_tree_from_df(
+    result = dataframe_to_nested_data(
         inputs_tree_to_df_columns=inputs_tree_to_df_columns,
         df=df,
     )
@@ -75,7 +75,7 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
         ValueError, match="DataFrame column names cannot be booleans or numbers."
     ):
-        create_data_tree_from_df(inputs_tree_to_df_columns={}, df=df)
+        dataframe_to_nested_data(inputs_tree_to_df_columns={}, df=df)
 
 
 @pytest.mark.parametrize(
@@ -86,7 +86,7 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
     [
         (
             [],
-            "The input tree to column mapping must be a \\(nested\\) dictionary.",
+            "The inputs tree to column mapping must be a \\(nested\\) dictionary.",
         ),
         (
             {
@@ -118,6 +118,6 @@ def test_create_data_tree_fails_if_mapper_has_incorrect_format(
     inputs_tree_to_df_columns, expected_error_message
 ):
     with pytest.raises(TypeError, match=expected_error_message):
-        create_data_tree_from_df(
+        dataframe_to_nested_data(
             inputs_tree_to_df_columns=inputs_tree_to_df_columns, df=pd.DataFrame()
         )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import param_function, policy_function
+from ttsim import param_function
 
 
 @param_function(end_date="2005-06-30")
@@ -155,15 +155,6 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     """Employee's health insurance contribution rate.
 
     Since 2019. Zusatzbeitrag is split equally between employers and employees.
-
-    Parameters
-    ----------
-    sozialv_beitr_params
-        See params documentation :ref:`sozialv_beitr_params <sozialv_beitr_params>`.
-
-    Returns
-    -------
-
     """
     return (
         parameter_beitragssatz["allgemein"]
@@ -312,34 +303,26 @@ def beitragssatz_arbeitgeber_jahresanfang_paritätischer_zusatzbeitrag(
     return beitragssatz_arbeitnehmer_jahresanfang
 
 
-@policy_function(
+@param_function(
     start_date="2005-07-01",
     end_date="2014-12-31",
     leaf_name="zusatzbeitragssatz",
-    vectorization_strategy="not_required",
 )
 def zusatzbeitragssatz_von_sonderbeitrag(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
-    """Health insurance top-up (Zusatzbeitrag) rate until December 2014.
-
-    Note: Leave as policy function because it is overridden by Lohnsteuer tests.
-    """
+    """Health insurance top-up (Zusatzbeitrag) rate until December 2014."""
 
     return parameter_beitragssatz["sonderbeitrag"]
 
 
-@policy_function(
+@param_function(
     start_date="2015-01-01",
     leaf_name="zusatzbeitragssatz",
-    vectorization_strategy="not_required",
 )
 def zusatzbeitragssatz_von_mean_zusatzbeitrag(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
-    """Health insurance top-up rate (Zusatzbeitrag) since January 2015.
-
-    Note: Leave as policy function because it is overridden by Lohnsteuer tests.
-    """
+    """Health insurance top-up rate (Zusatzbeitrag) since January 2015."""
 
     return parameter_beitragssatz["mean_zusatzbeitrag"]
