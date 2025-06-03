@@ -17,7 +17,7 @@ ErziehungsgeldSätze = Literal["regelsatz", "budgetsatz"]
 
 
 @dataclass(frozen=True)
-class EinkommensgrenzeErziehungsgeld:
+class Einkommensgrenze:
     regulär_alleinerziehend: dict[ErziehungsgeldSätze, float]
     regulär_paar: dict[ErziehungsgeldSätze, float]
     reduziert_alleinerziehend: dict[ErziehungsgeldSätze, float]
@@ -30,9 +30,9 @@ class EinkommensgrenzeErziehungsgeld:
 )
 def einkommensgrenze(
     parameter_einkommensgrenze: dict[str, Any],
-) -> EinkommensgrenzeErziehungsgeld:
+) -> Einkommensgrenze:
     """Parameter der Einkommensgrenze des Erziehungsgelds."""
-    return EinkommensgrenzeErziehungsgeld(
+    return Einkommensgrenze(
         regulär_alleinerziehend=parameter_einkommensgrenze["regulär_alleinerziehend"],
         regulär_paar=parameter_einkommensgrenze["regulär_paar"],
         reduziert_alleinerziehend=parameter_einkommensgrenze[
@@ -296,7 +296,7 @@ def einkommensgrenze_ohne_geschwisterbonus(
 def einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze(
     familie__alleinerziehend_fg: bool,
     budgetsatz: bool,
-    einkommensgrenze: EinkommensgrenzeErziehungsgeld,
+    einkommensgrenze: Einkommensgrenze,
 ) -> float:
     """Base income threshold for parents of children younger than the age threshold.
 
@@ -316,7 +316,7 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze(
 def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
     familie__alleinerziehend_fg: bool,
     budgetsatz: bool,
-    einkommensgrenze: EinkommensgrenzeErziehungsgeld,
+    einkommensgrenze: Einkommensgrenze,
 ) -> float:
     """Base income threshold for parents of children older than age threshold.
 

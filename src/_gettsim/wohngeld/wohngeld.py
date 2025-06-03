@@ -31,7 +31,7 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.param_objects import ConsecutiveInt1dLookupTableParamValue
+    from _gettsim.param_types import ConsecutiveInt1dLookupTableParamValue
 
 
 @dataclass(frozen=True)
