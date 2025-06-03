@@ -56,7 +56,7 @@ from ttsim.compute_taxes_and_transfers import (
 )
 from ttsim.convert_nested_data import (
     dataframe_to_nested_data,
-    nested_data_to_dataframe_with_column_map,
+    nested_data_to_df_with_mapped_columns,
 )
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParam,
@@ -356,7 +356,7 @@ __all__ = [
     "insert_path_and_value",
     "join",
     "merge_trees",
-    "nested_data_to_dataframe_with_column_map",
+    "nested_data_to_df_with_mapped_columns",
     "param_function",
     "piecewise_polynomial",
     "plot_dag",

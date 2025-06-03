@@ -14,6 +14,7 @@ from ttsim import (
     policy_input,
 )
 from ttsim.column_objects_param_function import ParamFunction, param_function
+from ttsim.config import numpy_or_jax as np
 
 # ======================================================================================
 # PolicyFunction and policy_function
@@ -280,3 +281,9 @@ def test_agg_by_p_id_multiple_other_p_ids_present():
             p_id, p_id_specifier_one, p_id_specifier_two
         ):
             pass
+
+
+def test_agg_by_p_id_sum_with_all_missing_p_ids():
+    aggregate_by_p_id_sum(
+        p_id=np.array([180]), p_id_specifier=np.array([-1]), source=np.array([False])
+    )

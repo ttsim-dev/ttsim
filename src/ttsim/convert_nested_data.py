@@ -13,9 +13,8 @@ if TYPE_CHECKING:
     from ttsim.typing import NestedData, NestedStrings, QualNameData
 
 
-def nested_data_to_dataframe(
+def nested_data_to_df_with_nested_columns(
     nested_data_to_convert: NestedData,
-    nested_outputs_df_column_names: NestedStrings,
     data_with_p_id: NestedData | QualNameData,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
@@ -30,13 +29,38 @@ def nested_data_to_dataframe(
         A DataFrame.
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
+
+    return pd.DataFrame(
+        flat_data_to_convert, index=pd.Index(data_with_p_id["p_id"], name="p_id")
+    )
+
+
+def nested_data_to_df_with_mapped_columns(
+    nested_data_to_convert: NestedData,
+    nested_outputs_df_column_names: NestedStrings,
+    data_with_p_id: NestedData | QualNameData,
+) -> pd.DataFrame:
+    """Convert a nested data structure to a DataFrame.
+
+    Args:
+        nested_data_to_convert:
+            A nested data structure.
+        nested_data_paths_to_outputs_df_columns:
+            A tree that maps paths (sequence of keys) to data columns names.
+        data_with_p_id:
+            Some data structure with a "p_id" column.
+
+    Returns:
+        A DataFrame.
+    """
+    flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
     flat_df_columns = dt.flatten_to_tree_paths(nested_outputs_df_column_names)
 
-    _fail_if_data_paths_are_missing_in_paths_to_column_names(
+    fail_if_data_paths_are_missing_in_paths_to_column_names(
         available_paths=list(flat_df_columns.keys()),
         required_paths=list(flat_data_to_convert.keys()),
     )
-    _fail_if_incompatible_objects_in_nested_data(flat_data_to_convert)
+    fail_if_incompatible_objects_in_nested_data(flat_data_to_convert)
 
     return pd.DataFrame(
         {flat_df_columns[path]: data for path, data in flat_data_to_convert.items()},
@@ -53,8 +77,8 @@ def dataframe_to_nested_data(
         Args
         ----
             inputs_tree_to_df_columns:
-                A nested dictionary that defines the structure of the output tree. Keys
-                are strings that define the nested structure. Values can be:
+                A nested dictionary that defines the structure of the inputs tree. The
+                elements of the tree paths are strings. Leaves can be:
 
                 - Strings that reference column names in the DataFrame.
                 - Numeric or boolean values (which will be broadcasted to match the
@@ -119,7 +143,7 @@ def dataframe_to_nested_data(
     return dt.unflatten_from_qual_names(name_to_input_series)
 
 
-def _fail_if_incompatible_objects_in_nested_data(
+def fail_if_incompatible_objects_in_nested_data(
     paths_to_data: QualNameData,
 ) -> None:
     """Fail if the nested data contains incompatible objects."""
@@ -147,7 +171,7 @@ def _fail_if_incompatible_objects_in_nested_data(
         raise TypeError(msg)
 
 
-def _fail_if_data_paths_are_missing_in_paths_to_column_names(
+def fail_if_data_paths_are_missing_in_paths_to_column_names(
     available_paths: list[str],
     required_paths: list[str],
 ) -> None:

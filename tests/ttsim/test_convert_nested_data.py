@@ -14,7 +14,7 @@ from ttsim import (
     ScalarParam,
     dataframe_to_nested_data,
     main,
-    nested_data_to_dataframe,
+    nested_data_to_df_with_mapped_columns,
     param_function,
     policy_function,
 )
@@ -310,7 +310,7 @@ def test_nested_data_to_dataframe(
         },
         targets=["nested_results"],
     )["nested_results"]
-    result_df = nested_data_to_dataframe(
+    result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=nested_results,
         nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
         data_with_p_id=minimal_data_tree,
@@ -357,7 +357,7 @@ def test_nested_data_to_dataframe_fails_if_noncompatible_objects_are_returned(
     with pytest.raises(
         TypeError, match=r"The following paths contain non-scalar\nobjects"
     ):
-        nested_data_to_dataframe(
+        nested_data_to_df_with_mapped_columns(
             nested_data_to_convert=nested_results,
             nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
             data_with_p_id=minimal_data_tree,
@@ -396,7 +396,7 @@ def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
         ValueError,
         match="failed because the following paths\nare not mapped to a column name",
     ):
-        nested_data_to_dataframe(
+        nested_data_to_df_with_mapped_columns(
             nested_data_to_convert=nested_results,
             nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
             data_with_p_id=minimal_data_tree,

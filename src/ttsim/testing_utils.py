@@ -10,6 +10,7 @@ import yaml
 
 from ttsim import main, merge_trees
 from ttsim.config import numpy_or_jax as np
+from ttsim.convert_nested_data import nested_data_to_df_with_nested_columns
 from ttsim.shared import to_datetime
 
 # Set display options to show all columns without truncation
@@ -74,29 +75,28 @@ class PolicyTest:
 def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
     environment = cached_policy_environment(date=test.date, root=root)
 
-    data_tree = test.input_tree
-    targets_tree = test.target_structure
-
-    if targets_tree:
-        result = main(
+    if test.target_structure:
+        nested_result = main(
             inputs={
-                "data_tree": data_tree,
+                "data_tree": test.input_tree,
                 "policy_environment": environment,
-                "targets_tree": targets_tree,
+                "targets_tree": test.target_structure,
                 "rounding": True,
                 # "jit": jit,
             },
             targets=["nested_results"],
         )["nested_results"]
     else:
-        result = {}
+        nested_result = {}
 
-    flat_result = dt.flatten_to_qual_names(result)
-    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
-
-    if flat_expected_output_tree:
-        expected_df = pd.DataFrame(flat_expected_output_tree)
-        result_df = pd.DataFrame(flat_result)
+    if test.expected_output_tree:
+        expected_df = nested_data_to_df_with_nested_columns(
+            nested_data_to_convert=test.expected_output_tree,
+            data_with_p_id=test.input_tree,
+        )
+        result_df = nested_data_to_df_with_nested_columns(
+            nested_data_to_convert=nested_result, data_with_p_id=test.input_tree
+        )
         try:
             pd.testing.assert_frame_equal(
                 result_df.sort_index(axis="columns"),
@@ -179,19 +179,18 @@ def _get_policy_tests_from_raw_test_data(
     """
     test_info: NestedData = raw_test_data.get("info", {})
     inputs: NestedData = raw_test_data.get("inputs", {})
-    input_tree: NestedData = dt.unflatten_from_tree_paths(
+    input_tree: NestedData = dt.unflatten_from_qual_names(
         {
-            k: pd.Series(v)
-            for k, v in dt.flatten_to_tree_paths(
+            k: np.array(v)
+            for k, v in dt.flatten_to_qual_names(
                 merge_trees(inputs.get("provided", {}), inputs.get("assumed", {}))
             ).items()
         }
     )
-
-    expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
+    expected_output_tree: NestedData = dt.unflatten_from_qual_names(
         {
-            k: pd.Series(v)
-            for k, v in dt.flatten_to_tree_paths(
+            k: np.array(v)
+            for k, v in dt.flatten_to_qual_names(
                 raw_test_data.get("outputs", {})
             ).items()
         }
