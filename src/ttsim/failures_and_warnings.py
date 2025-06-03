@@ -49,45 +49,102 @@ class KeyErrorMessage(str):
         return str(self)
 
 
-def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
-    formatted_list = '",\n    "'.join(some_list)
-    return textwrap.dedent(
-        """
-        [
-            "{formatted_list}",
+class ConflictingActivePeriodsError(Exception):
+    def __init__(
+        self,
+        affected_column_objects: list[ColumnObject],
+        path: tuple[str, ...],
+        overlap_start: datetime.date,
+        overlap_end: datetime.date,
+    ) -> None:
+        self.affected_column_objects = affected_column_objects
+        self.path = path
+        self.overlap_start = overlap_start
+        self.overlap_end = overlap_end
+
+    def __str__(self) -> str:
+        overlapping_objects = [
+            obj.__getattribute__("original_function_name")
+            for obj in self.affected_column_objects
+            if obj
         ]
-        """
-    ).format(formatted_list=formatted_list)
+        return f"""
+        Functions with path
+
+          {self.path}
+
+        have overlapping start and end dates. The following functions are affected:
+
+          {
+            '''
+          '''.join(overlapping_objects)
+        }
+
+        Overlap from {self.overlap_start} to {self.overlap_end}."""
 
 
-def format_errors_and_warnings(text: str, width: int = 79) -> str:
-    """Format our own exception messages and warnings by dedenting paragraphs and
-    wrapping at the specified width. Mainly required because of messages are written as
-    part of indented blocks in our source code.
+class FunctionsAndDataColumnsOverlapWarning(UserWarning):
+    """
+    Warning that functions which compute columns overlap with existing columns.
 
     Parameters
     ----------
-    text : str
-        The text which can include multiple paragraphs separated by two newlines.
-    width : int
-        The text will be wrapped by `width` characters.
-
-    Returns
-    -------
-    Correctly dedented, wrapped text.
-
+    columns_overriding_functions : set[str]
+        Names of columns in the data that override hard-coded functions.
     """
-    text = text.lstrip("\n")
-    paragraphs = text.split("\n\n")
-    wrapped_paragraphs = []
-    for paragraph in paragraphs:
-        dedented_paragraph = textwrap.dedent(paragraph)
-        wrapped_paragraph = textwrap.fill(dedented_paragraph, width=width)
-        wrapped_paragraphs.append(wrapped_paragraph)
 
-    formatted_text = "\n\n".join(wrapped_paragraphs)
+    def __init__(self, columns_overriding_functions: list[str]) -> None:
+        n_cols = len(columns_overriding_functions)
+        if n_cols == 1:
+            first_part = format_errors_and_warnings("Your data provides the column:")
+            second_part = format_errors_and_warnings(
+                """
+                This is already present among the hard-coded functions of the taxes and
+                transfers system. If you want this data column to be used instead of
+                calculating it within TTSIM you need not do anything. If you want this
+                data column to be calculated by hard-coded functions, remove it from the
+                *data* you pass to TTSIM. You need to pick one option for each column
+                that appears in the list above.
+                """
+            )
+        else:
+            first_part = format_errors_and_warnings("Your data provides the columns:")
+            second_part = format_errors_and_warnings(
+                """
+                These are already present among the hard-coded functions of the taxes
+                and transfers system. If you want a data column to be used instead of
+                calculating it within TTSIM you do not need to do anything. If you
+                want data columns to be calculated by hard-coded functions, remove them
+                from the *data* you pass to TTSIM. You need to pick one option for
+                each column that appears in the list above.
+                """
+            )
+        formatted = format_list_linewise(columns_overriding_functions)
+        how_to_ignore = format_errors_and_warnings(
+            """
+            If you want to ignore this warning, add the following code to your script
+            before calling TTSIM:
 
-    return formatted_text
+                import warnings
+                from ttsim import FunctionsAndDataColumnsOverlapWarning
+
+                warnings.filterfilters(
+                    "ignore",
+                    category=FunctionsAndDataColumnsOverlapWarning
+                )
+            """
+        )
+        super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
+
+
+@dataclass(frozen=True)
+class _ParamWithActivePeriod(ParamObject):
+    """A ParamObject object which mimics a ColumnObject regarding active periods.
+
+    Only used here for checking overlap.
+    """
+
+    original_function_name: str
 
 
 def assert_valid_ttsim_pytree(
@@ -196,164 +253,6 @@ def fail_if_active_periods_overlap(
                 )
 
 
-@dataclass(frozen=True)
-class _ParamWithActivePeriod(ParamObject):
-    """A ParamObject object which mimics a ColumnObject regarding active periods.
-
-    Only used here for checking overlap.
-    """
-
-    original_function_name: str
-
-
-def _param_with_active_periods(
-    param_spec: OrigParamSpec,
-    leaf_name: str,
-) -> list[_ParamWithActivePeriod]:
-    """Return parameter with active periods."""
-
-    def _remove_note_and_reference(entry: dict[str | int, Any]) -> dict[str | int, Any]:
-        """Remove note and reference from a parameter specification."""
-        entry.pop("note", None)
-        entry.pop("reference", None)
-        return entry
-
-    relevant = sorted(
-        [key for key in param_spec if isinstance(key, datetime.date)],
-        reverse=True,
-    )
-    if not relevant:
-        raise ValueError(f"No relevant dates found for {param_spec}")
-
-    params_header = {
-        "name": param_spec["name"],
-        "description": param_spec["description"],
-        "unit": param_spec["unit"],
-        "reference_period": param_spec["reference_period"],
-    }
-    out = []
-    start_date: datetime.date | None = None
-    end_date = DEFAULT_END_DATE
-    for date in relevant:
-        if _remove_note_and_reference(param_spec[date]):
-            start_date = date
-        else:
-            if start_date:
-                out.append(
-                    _ParamWithActivePeriod(
-                        leaf_name=leaf_name,
-                        start_date=start_date,
-                        end_date=end_date,
-                        original_function_name=leaf_name,
-                        **params_header,
-                    )
-                )
-            start_date = None
-            end_date = date - datetime.timedelta(days=1)
-    if start_date:
-        out.append(
-            _ParamWithActivePeriod(
-                leaf_name=leaf_name,
-                original_function_name=leaf_name,
-                start_date=start_date,
-                end_date=end_date,
-                **params_header,
-            )
-        )
-
-    return out
-
-
-def fail_if_group_ids_are_outside_top_level_namespace(
-    policy_environment: NestedPolicyEnvironment,
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(policy_environment)
-        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
-
-
-def fail_if_environment_is_invalid(policy_environment: NestedPolicyEnvironment) -> None:
-    """Validate that the environment is a pytree with supported types."""
-    assert_valid_ttsim_pytree(
-        tree=policy_environment,
-        leaf_checker=lambda leaf: isinstance(
-            leaf, ColumnObject | ParamFunction | ParamObject
-        ),
-        tree_name="policy_environment",
-    )
-
-
-def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedColumnObjectsParamFunctions,
-) -> None:
-    """Raise error if a PolicyFunction does not have the same leaf name as the last
-    branch element of the tree path.
-    """
-
-    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
-        if tree_path[-1] != function.leaf_name:
-            raise KeyError(
-                f"""
-                The name of the last branch element of the functions tree must be the
-                same as the leaf name of the PolicyFunction. The tree path {tree_path}
-                is not compatible with the PolicyFunction {function.leaf_name}.
-                """
-            )
-
-
-class ConflictingActivePeriodsError(Exception):
-    def __init__(
-        self,
-        affected_column_objects: list[ColumnObject],
-        path: tuple[str, ...],
-        overlap_start: datetime.date,
-        overlap_end: datetime.date,
-    ) -> None:
-        self.affected_column_objects = affected_column_objects
-        self.path = path
-        self.overlap_start = overlap_start
-        self.overlap_end = overlap_end
-
-    def __str__(self) -> str:
-        overlapping_objects = [
-            obj.__getattribute__("original_function_name")
-            for obj in self.affected_column_objects
-            if obj
-        ]
-        return f"""
-        Functions with path
-
-          {self.path}
-
-        have overlapping start and end dates. The following functions are affected:
-
-          {
-            '''
-          '''.join(overlapping_objects)
-        }
-
-        Overlap from {self.overlap_start} to {self.overlap_end}."""
-
-
-def fail_if_multiple_time_units_for_same_base_name_and_group(
-    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
-) -> None:
-    invalid = {
-        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
-    }
-    if invalid:
-        raise ValueError(f"Multiple time units for base names: {invalid}")
-
-
 def fail_if_any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     data_tree: NestedData,
@@ -369,51 +268,23 @@ def fail_if_any_paths_are_invalid(
     )
 
 
-def fail_if_targets_are_not_in_policy_environment_or_data(
-    policy_environment: QualNamePolicyEnvironment,
-    qual_name_data_columns: QualNameDataColumns,
-    qual_name_targets: QualNameTargetList,
+def fail_if_data_paths_are_missing_in_paths_to_column_names(
+    available_paths: list[str],
+    required_paths: list[str],
 ) -> None:
-    """Fail if some target is not among functions.
-
-    Parameters
-    ----------
-    functions
-        Dictionary containing functions to build the DAG.
-    qual_name_data_columns
-        The columns which are available in the data tree.
-    targets
-        The targets which should be computed. They limit the DAG in the way that only
-        ancestors of these nodes need to be considered.
-
-    Raises
-    ------
-    ValueError
-        Raised if any member of `targets` is not among functions.
-
-    """
-    targets_not_in_policy_environment_or_data = [
-        str(dt.tree_path_from_qual_name(n))
-        for n in qual_name_targets
-        if n not in policy_environment and n not in qual_name_data_columns
+    """Fail if the data paths are missing in the paths to column names."""
+    missing_paths = [
+        str(path)
+        for path in required_paths
+        if path not in available_paths and path != ("p_id",)
     ]
-    if targets_not_in_policy_environment_or_data:
-        formatted = format_list_linewise(targets_not_in_policy_environment_or_data)
+    if missing_paths:
         msg = format_errors_and_warnings(
-            f"The following targets have no corresponding function:\n\n{formatted}"
+            "Converting the nested data to a DataFrame failed because the following "
+            "paths are not mapped to a column name: "
+            f"{format_list_linewise(list(missing_paths))}"
         )
         raise ValueError(msg)
-
-
-def fail_if_targets_tree_is_invalid(targets_tree: NestedTargetDict) -> None:
-    """
-    Validate that the targets tree is a dictionary with string keys and None leaves.
-    """
-    assert_valid_ttsim_pytree(
-        tree=targets_tree,
-        leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
-        tree_name="targets_tree",
-    )
 
 
 def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
@@ -462,48 +333,15 @@ def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
         raise ValueError(message)
 
 
-def fail_if_group_variables_are_not_constant_within_groups(
-    qual_name_input_data: QualNameData,
-    grouping_levels: tuple[str, ...],
-) -> None:
-    """
-    Check that group variables are constant within each group.
-
-    Parameters
-    ----------
-    data
-        Dictionary of data.
-    groupings
-        The groupings available in the policy environment.
-    """
-    faulty_data_columns = []
-
-    for name, data_column in qual_name_input_data.items():
-        group_by_id = get_name_of_group_by_id(
-            target_name=name,
-            groupings=grouping_levels,
-        )
-        if group_by_id in qual_name_input_data:
-            group_by_id_series = pd.Series(qual_name_input_data[group_by_id])
-            leaf_series = pd.Series(data_column)
-            unique_counts = leaf_series.groupby(group_by_id_series).nunique(
-                dropna=False
-            )
-            if not (unique_counts == 1).all():
-                faulty_data_columns.append(name)
-
-    if faulty_data_columns:
-        formatted = format_list_linewise(faulty_data_columns)
-        msg = format_errors_and_warnings(
-            f"""The following data inputs do not have a unique value within
-                each group defined by the provided grouping IDs:
-
-                {formatted}
-
-                To fix this error, assign the same value to each group.
-                """
-        )
-        raise ValueError(msg)
+def fail_if_environment_is_invalid(policy_environment: NestedPolicyEnvironment) -> None:
+    """Validate that the environment is a pytree with supported types."""
+    assert_valid_ttsim_pytree(
+        tree=policy_environment,
+        leaf_checker=lambda leaf: isinstance(
+            leaf, ColumnObject | ParamFunction | ParamObject
+        ),
+        tree_name="policy_environment",
+    )
 
 
 def fail_if_foreign_keys_are_invalid_in_data(
@@ -562,77 +400,121 @@ def fail_if_foreign_keys_are_invalid_in_data(
                     raise ValueError(message)
 
 
-def warn_if_functions_and_data_columns_overlap(
+def fail_if_group_ids_are_outside_top_level_namespace(
     policy_environment: NestedPolicyEnvironment,
-    qual_name_data_columns: QualNameDataColumns,
 ) -> None:
-    """Warn if functions are overridden by data."""
-    overridden_elements = sorted(
-        {
-            col
-            for col in qual_name_data_columns
-            if col in dt.flatten_to_qual_names(policy_environment)
-        }
-    )
-    if len(overridden_elements) > 0:
-        warnings.warn(
-            FunctionsAndDataColumnsOverlapWarning(overridden_elements),
-            stacklevel=3,
+    """Fail if group ids are outside the top level namespace."""
+    group_ids_outside_top_level_namespace = {
+        tree_path
+        for tree_path in dt.flatten_to_tree_paths(policy_environment)
+        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
+    }
+    if group_ids_outside_top_level_namespace:
+        raise ValueError(
+            "Group identifiers must live in the top-level namespace. Got:\n\n"
+            f"{group_ids_outside_top_level_namespace}\n\n"
+            "To fix this error, move the group identifiers to the top-level namespace."
         )
 
 
-class FunctionsAndDataColumnsOverlapWarning(UserWarning):
+def fail_if_group_variables_are_not_constant_within_groups(
+    qual_name_input_data: QualNameData,
+    grouping_levels: tuple[str, ...],
+) -> None:
     """
-    Warning that functions which compute columns overlap with existing columns.
+    Check that group variables are constant within each group.
 
     Parameters
     ----------
-    columns_overriding_functions : set[str]
-        Names of columns in the data that override hard-coded functions.
+    data
+        Dictionary of data.
+    groupings
+        The groupings available in the policy environment.
+    """
+    faulty_data_columns = []
+
+    for name, data_column in qual_name_input_data.items():
+        group_by_id = get_name_of_group_by_id(
+            target_name=name,
+            groupings=grouping_levels,
+        )
+        if group_by_id in qual_name_input_data:
+            group_by_id_series = pd.Series(qual_name_input_data[group_by_id])
+            leaf_series = pd.Series(data_column)
+            unique_counts = leaf_series.groupby(group_by_id_series).nunique(
+                dropna=False
+            )
+            if not (unique_counts == 1).all():
+                faulty_data_columns.append(name)
+
+    if faulty_data_columns:
+        formatted = format_list_linewise(faulty_data_columns)
+        msg = format_errors_and_warnings(
+            f"""The following data inputs do not have a unique value within
+                each group defined by the provided grouping IDs:
+
+                {formatted}
+
+                To fix this error, assign the same value to each group.
+                """
+        )
+        raise ValueError(msg)
+
+
+def fail_if_incompatible_objects_in_nested_data(
+    paths_to_data: QualNameData,
+) -> None:
+    """Fail if the nested data contains incompatible objects."""
+    _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
+
+    faulty_paths = []
+    for path, data in paths_to_data.items():
+        if isinstance(data, (pd.Series, np.ndarray, list)):
+            if all(isinstance(item, _numeric_types) for item in data):
+                continue
+            else:
+                faulty_paths.append(str(path))
+        elif isinstance(data, _numeric_types):
+            continue
+        else:
+            faulty_paths.append(str(path))
+    if faulty_paths:
+        msg = format_errors_and_warnings(
+            "The data returned contains objects that cannot be cast to "
+            "a pandas.DataFrame column. Make sure that the requested targets return "
+            "scalars (int, bool, float - or their numpy equivalents) only."
+            "The following paths contain non-scalar objects: "
+            f"{format_list_linewise(faulty_paths)}"
+        )
+        raise TypeError(msg)
+
+
+def fail_if_multiple_time_units_for_same_base_name_and_group(
+    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
+) -> None:
+    invalid = {
+        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
+    }
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
+
+
+def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
+    functions_tree: NestedColumnObjectsParamFunctions,
+) -> None:
+    """Raise error if a PolicyFunction does not have the same leaf name as the last
+    branch element of the tree path.
     """
 
-    def __init__(self, columns_overriding_functions: list[str]) -> None:
-        n_cols = len(columns_overriding_functions)
-        if n_cols == 1:
-            first_part = format_errors_and_warnings("Your data provides the column:")
-            second_part = format_errors_and_warnings(
-                """
-                This is already present among the hard-coded functions of the taxes and
-                transfers system. If you want this data column to be used instead of
-                calculating it within TTSIM you need not do anything. If you want this
-                data column to be calculated by hard-coded functions, remove it from the
-                *data* you pass to TTSIM. You need to pick one option for each column
-                that appears in the list above.
+    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
+        if tree_path[-1] != function.leaf_name:
+            raise KeyError(
+                f"""
+                The name of the last branch element of the functions tree must be the
+                same as the leaf name of the PolicyFunction. The tree path {tree_path}
+                is not compatible with the PolicyFunction {function.leaf_name}.
                 """
             )
-        else:
-            first_part = format_errors_and_warnings("Your data provides the columns:")
-            second_part = format_errors_and_warnings(
-                """
-                These are already present among the hard-coded functions of the taxes
-                and transfers system. If you want a data column to be used instead of
-                calculating it within TTSIM you do not need to do anything. If you
-                want data columns to be calculated by hard-coded functions, remove them
-                from the *data* you pass to TTSIM. You need to pick one option for
-                each column that appears in the list above.
-                """
-            )
-        formatted = format_list_linewise(columns_overriding_functions)
-        how_to_ignore = format_errors_and_warnings(
-            """
-            If you want to ignore this warning, add the following code to your script
-            before calling TTSIM:
-
-                import warnings
-                from ttsim import FunctionsAndDataColumnsOverlapWarning
-
-                warnings.filterwarnings(
-                    "ignore",
-                    category=FunctionsAndDataColumnsOverlapWarning
-                )
-            """
-        )
-        super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
 
 
 def fail_if_root_nodes_are_missing(
@@ -670,3 +552,168 @@ def fail_if_root_nodes_are_missing(
             [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes]
         )
         raise ValueError(f"The following data columns are missing.\n{formatted}")
+
+
+def fail_if_targets_are_not_in_policy_environment_or_data(
+    policy_environment: QualNamePolicyEnvironment,
+    qual_name_data_columns: QualNameDataColumns,
+    qual_name_targets: QualNameTargetList,
+) -> None:
+    """Fail if some target is not among functions.
+
+    Parameters
+    ----------
+    functions
+        Dictionary containing functions to build the DAG.
+    qual_name_data_columns
+        The columns which are available in the data tree.
+    targets
+        The targets which should be computed. They limit the DAG in the way that only
+        ancestors of these nodes need to be considered.
+
+    Raises
+    ------
+    ValueError
+        Raised if any member of `targets` is not among functions.
+
+    """
+    targets_not_in_policy_environment_or_data = [
+        str(dt.tree_path_from_qual_name(n))
+        for n in qual_name_targets
+        if n not in policy_environment and n not in qual_name_data_columns
+    ]
+    if targets_not_in_policy_environment_or_data:
+        formatted = format_list_linewise(targets_not_in_policy_environment_or_data)
+        msg = format_errors_and_warnings(
+            f"The following targets have no corresponding function:\n\n{formatted}"
+        )
+        raise ValueError(msg)
+
+
+def fail_if_targets_tree_is_invalid(targets_tree: NestedTargetDict) -> None:
+    """
+    Validate that the targets tree is a dictionary with string keys and None leaves.
+    """
+    assert_valid_ttsim_pytree(
+        tree=targets_tree,
+        leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
+        tree_name="targets_tree",
+    )
+
+
+def format_errors_and_warnings(text: str, width: int = 79) -> str:
+    """Format our own exception messages and warnings by dedenting paragraphs and
+    wrapping at the specified width. Mainly required because of messages are written as
+    part of indented blocks in our source code.
+
+    Parameters
+    ----------
+    text : str
+        The text which can include multiple paragraphs separated by two newlines.
+    width : int
+        The text will be wrapped by `width` characters.
+
+    Returns
+    -------
+    Correctly dedented, wrapped text.
+
+    """
+    text = text.lstrip("\n")
+    paragraphs = text.split("\n\n")
+    wrapped_paragraphs = []
+    for paragraph in paragraphs:
+        dedented_paragraph = textwrap.dedent(paragraph)
+        wrapped_paragraph = textwrap.fill(dedented_paragraph, width=width)
+        wrapped_paragraphs.append(wrapped_paragraph)
+
+    formatted_text = "\n\n".join(wrapped_paragraphs)
+
+    return formatted_text
+
+
+def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
+    formatted_list = '",\n    "'.join(some_list)
+    return textwrap.dedent(
+        """
+        [
+            "{formatted_list}",
+        ]
+        """
+    ).format(formatted_list=formatted_list)
+
+
+def warn_if_functions_and_data_columns_overlap(
+    policy_environment: NestedPolicyEnvironment,
+    qual_name_data_columns: QualNameDataColumns,
+) -> None:
+    """Warn if functions are overridden by data."""
+    overridden_elements = sorted(
+        {
+            col
+            for col in qual_name_data_columns
+            if col in dt.flatten_to_qual_names(policy_environment)
+        }
+    )
+    if len(overridden_elements) > 0:
+        warnings.warn(
+            FunctionsAndDataColumnsOverlapWarning(overridden_elements),
+            stacklevel=3,
+        )
+
+
+def _param_with_active_periods(
+    param_spec: OrigParamSpec,
+    leaf_name: str,
+) -> list[_ParamWithActivePeriod]:
+    """Return parameter with active periods."""
+
+    def _remove_note_and_reference(entry: dict[str | int, Any]) -> dict[str | int, Any]:
+        """Remove note and reference from a parameter specification."""
+        entry.pop("note", None)
+        entry.pop("reference", None)
+        return entry
+
+    relevant = sorted(
+        [key for key in param_spec if isinstance(key, datetime.date)],
+        reverse=True,
+    )
+    if not relevant:
+        raise ValueError(f"No relevant dates found for {param_spec}")
+
+    params_header = {
+        "name": param_spec["name"],
+        "description": param_spec["description"],
+        "unit": param_spec["unit"],
+        "reference_period": param_spec["reference_period"],
+    }
+    out = []
+    start_date: datetime.date | None = None
+    end_date = DEFAULT_END_DATE
+    for date in relevant:
+        if _remove_note_and_reference(param_spec[date]):
+            start_date = date
+        else:
+            if start_date:
+                out.append(
+                    _ParamWithActivePeriod(
+                        leaf_name=leaf_name,
+                        start_date=start_date,
+                        end_date=end_date,
+                        original_function_name=leaf_name,
+                        **params_header,
+                    )
+                )
+            start_date = None
+            end_date = date - datetime.timedelta(days=1)
+    if start_date:
+        out.append(
+            _ParamWithActivePeriod(
+                leaf_name=leaf_name,
+                original_function_name=leaf_name,
+                start_date=start_date,
+                end_date=end_date,
+                **params_header,
+            )
+        )
+
+    return out
