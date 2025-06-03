@@ -1,17 +1,7 @@
 ---
-info:
-  note: ''
-  source: ''
-  precision_atol: 0.01
 inputs:
+  assumed: {}
   provided:
-    p_id:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
     alter:
       - 12
       - 39
@@ -19,6 +9,36 @@ inputs:
       - 12
       - 22
       - 42
+    arbeitslosengeld_2:
+      eigenbedarf_gedeckt:
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+      p_id_einstandspartner:
+        - -1
+        - 5
+        - -1
+        - -1
+        - -1
+        - 1
+    familie:
+      p_id_elternteil_1:
+        - 1
+        - -1
+        - 1
+        - 1
+        - 5
+        - -1
+      p_id_elternteil_2:
+        - -1
+        - -1
+        - -1
+        - 5
+        - -1
+        - -1
     hh_id:
       - 0
       - 0
@@ -26,42 +46,14 @@ inputs:
       - 0
       - 0
       - 0
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
+    p_id:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
       - 5
-      - -1
-      - -1
-      - -1
-      - 1
-    familie__p_id_elternteil_1:
-      - 1
-      - -1
-      - 1
-      - 1
-      - 5
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - 5
-      - -1
-      - -1
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
 outputs:
-  fg_id:
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
   bg_id:
     - 0
     - 0
@@ -76,3 +68,10 @@ outputs:
     - 3
     - 4
     - 1
+  fg_id:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0

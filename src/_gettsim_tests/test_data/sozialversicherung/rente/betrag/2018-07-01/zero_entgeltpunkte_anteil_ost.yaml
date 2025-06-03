@@ -1,7 +1,4 @@
 ---
-info:
-  note: ''
-  precision_atol: 0.1
 inputs:
   assumed: {}
   provided:
@@ -9,10 +6,15 @@ inputs:
       - 0
     p_id:
       - 0
-    sozialversicherung__rente__entgeltpunkte_ost:
-      - 0.0
-    sozialversicherung__rente__entgeltpunkte_west:
-      - 0.0
+    sozialversicherung:
+      rente:
+        entgeltpunkte_ost:
+          - 0.0
+        entgeltpunkte_west:
+          - 0.0
 outputs:
-  sozialversicherung__rente__erwerbsminderung__anteil_entgeltpunkte_ost:
-    - 0.0
+  sozialversicherung:
+    rente:
+      erwerbsminderung:
+        anteil_entgeltpunkte_ost:
+          - 0.0

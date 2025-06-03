@@ -1,8 +1,4 @@
 ---
-info:
-  note: null
-  precision_atol: 0.1
-  source: ''
 inputs:
   assumed:
     geburtsjahr:
@@ -29,23 +25,27 @@ inputs:
       - 2
       - 3
       - 4
-    sozialversicherung__rente__jahr_renteneintritt:
-      - 2018
-      - 2018
-      - 2018
-      - 2018
-      - 2018
-    sozialversicherung__rente__monat_renteneintritt:
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
+    sozialversicherung:
+      rente:
+        jahr_renteneintritt:
+          - 2018
+          - 2018
+          - 2018
+          - 2018
+          - 2018
+        monat_renteneintritt:
+          - 1
+          - 1
+          - 1
+          - 1
+          - 1
   provided: {}
 outputs:
-  sozialversicherung__rente__alter_bei_renteneintritt:
-    - 65.916667
-    - 65.833333
-    - 64.916667
-    - 64.75
-    - 63.916667
+  sozialversicherung:
+    rente:
+      alter_bei_renteneintritt:
+        - 65.916667
+        - 65.833333
+        - 64.916667
+        - 64.75
+        - 63.916667

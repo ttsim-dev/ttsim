@@ -1,8 +1,4 @@
 ---
-info:
-  note: ''
-  precision_atol: 0.01
-  source: https://www.n-heydorn.de/steuer.html
 inputs:
   assumed: {}
   provided:
@@ -15,112 +11,134 @@ inputs:
     behinderungsgrad:
       - 0
       - 0
-    einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__abzüge__kinderbetreuungskosten_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__abzüge__p_id_kinderbetreuungskostenträger:
-      - -1
-      - -1
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__aus_gewerbebetrieb__betrag_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__aus_forst_und_landwirtschaft__betrag_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__abzüge__vorsorgeaufwendungen_y_sn:
-      - 10359.0
-      - 10359.0
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 3000.0
-      - 2500.0
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__ist_selbstständig:
-      - false
-      - false
-    einkommensteuer__gemeinsam_veranlagt:
-      - true
-      - true
-    familie__alleinerziehend:
-      - false
-      - false
-    familie__kind:
-      - false
-      - false
-    familie__p_id_ehepartner:
-      - 26
-      - 25
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
+    einkommensteuer:
+      abzüge:
+        beitrag_private_rentenversicherung_m:
+          - 0.0
+          - 0.0
+        kinderbetreuungskosten_m:
+          - 0.0
+          - 0.0
+        p_id_kinderbetreuungskostenträger:
+          - -1
+          - -1
+        vorsorgeaufwendungen_y_sn:
+          - 10359.0
+          - 10359.0
+      einkünfte:
+        aus_forst_und_landwirtschaft:
+          betrag_m:
+            - 0.0
+            - 0.0
+        aus_gewerbebetrieb:
+          betrag_m:
+            - 0.0
+            - 0.0
+        aus_kapitalvermögen:
+          kapitalerträge_m:
+            - 0.0
+            - 0.0
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 3000.0
+            - 2500.0
+        aus_selbstständiger_arbeit:
+          betrag_m:
+            - 0.0
+            - 0.0
+        aus_vermietung_und_verpachtung:
+          betrag_m:
+            - 0.0
+            - 0.0
+        ist_selbstständig:
+          - false
+          - false
+        sonstige:
+          ohne_renten_m:
+            - 0.0
+            - 0.0
+      gemeinsam_veranlagt:
+        - true
+        - true
+    familie:
+      alleinerziehend:
+        - false
+        - false
+      kind:
+        - false
+        - false
+      p_id_ehepartner:
+        - 26
+        - 25
+      p_id_elternteil_1:
+        - -1
+        - -1
+      p_id_elternteil_2:
+        - -1
+        - -1
     geburtsjahr:
       - 1980
       - 1982
     hh_id:
       - 18
       - 18
-    kindergeld__in_ausbildung:
-      - false
-      - false
-    kindergeld__p_id_empfänger:
-      - -1
-      - -1
+    kindergeld:
+      in_ausbildung:
+        - false
+        - false
+      p_id_empfänger:
+        - -1
+        - -1
     p_id:
       - 25
       - 26
-    sozialversicherung__kranken__beitrag__privat_versichert:
-      - false
-      - false
-    sozialversicherung__pflege__beitrag__hat_kinder:
-      - true
-      - true
-    sozialversicherung__rente__altersrente__betrag_m:
-      - 0.0
-      - 0.0
-    sozialversicherung__rente__jahr_renteneintritt:
-      - 2045
-      - 2047
-    sozialversicherung__rente__private_rente_betrag_m:
-      - 0.0
-      - 0.0
+    sozialversicherung:
+      kranken:
+        beitrag:
+          privat_versichert:
+            - false
+            - false
+      pflege:
+        beitrag:
+          hat_kinder:
+            - true
+            - true
+      rente:
+        altersrente:
+          betrag_m:
+            - 0.0
+            - 0.0
+        jahr_renteneintritt:
+          - 2045
+          - 2047
+        private_rente_betrag_m:
+          - 0.0
+          - 0.0
     wohnort_ost:
       - false
       - false
 outputs:
-  einkommensteuer__abzüge__alleinerziehend_betrag_y:
-    - 0
-    - 0
-  einkommensteuer__abzüge__altersfreibetrag_y:
-    - 0
-    - 0
-  einkommensteuer__abzüge__pauschbetrag_behinderung_y:
-    - 0
-    - 0
-  einkommensteuer__einkünfte__gesamtbetrag_der_einkünfte_y:
-    - 35000
-    - 29000
-  einkommensteuer__gesamteinkommen_y:
-    - 53569.0
-    - 53569.0
-  einkommensteuer__kinderfreibetrag_y_sn:
-    - 0
-    - 0
-  einkommensteuer__zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn:
-    - 53569.0
-    - 53569.0
+  einkommensteuer:
+    abzüge:
+      alleinerziehend_betrag_y:
+        - 0
+        - 0
+      altersfreibetrag_y:
+        - 0
+        - 0
+      pauschbetrag_behinderung_y:
+        - 0
+        - 0
+    einkünfte:
+      gesamtbetrag_der_einkünfte_y:
+        - 35000
+        - 29000
+    gesamteinkommen_y:
+      - 53569.0
+      - 53569.0
+    kinderfreibetrag_y_sn:
+      - 0
+      - 0
+    zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn:
+      - 53569.0
+      - 53569.0

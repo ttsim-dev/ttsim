@@ -1,8 +1,4 @@
 ---
-info:
-  note: ''
-  precision_atol: 0.01
-  source: ''
 inputs:
   assumed: {}
   provided:
@@ -20,27 +16,31 @@ inputs:
       - 0.0
       - 2.0
       - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 3000.0
-      - 0.0
-      - 700.0
-      - 200.0
-      - 0.0
-      - 0.0
-    einkommensteuer__gesamteinkommen_y:
-      - 3000.0
-      - 3000.0
-      - 3000.0
-      - 3000.0
-      - 3000.0
-      - 3000.0
-    familie__kind:
-      - false
-      - false
-      - false
-      - false
-      - true
-      - true
+    einkommensteuer:
+      einkünfte:
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 3000.0
+            - 0.0
+            - 700.0
+            - 200.0
+            - 0.0
+            - 0.0
+      gesamteinkommen_y:
+        - 3000.0
+        - 3000.0
+        - 3000.0
+        - 3000.0
+        - 3000.0
+        - 3000.0
+    familie:
+      kind:
+        - false
+        - false
+        - false
+        - false
+        - true
+        - true
     hh_id:
       - 2
       - 2
@@ -48,20 +48,21 @@ inputs:
       - 2
       - 2
       - 2
-    kindergeld__in_ausbildung:
-      - false
-      - false
-      - true
-      - true
-      - true
-      - true
-    kindergeld__p_id_empfänger:
-      - -1
-      - -1
-      - 12
-      - 12
-      - 12
-      - 12
+    kindergeld:
+      in_ausbildung:
+        - false
+        - false
+        - true
+        - true
+        - true
+        - true
+      p_id_empfänger:
+        - -1
+        - -1
+        - 12
+        - 12
+        - 12
+        - 12
     p_id:
       - 12
       - 13
@@ -70,17 +71,18 @@ inputs:
       - 16
       - 17
 outputs:
-  kindergeld__betrag_m:
-    - 462
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-  kindergeld__betrag_m_hh:
-    - 462
-    - 462
-    - 462
-    - 462
-    - 462
-    - 462
+  kindergeld:
+    betrag_m:
+      - 462
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    betrag_m_hh:
+      - 462
+      - 462
+      - 462
+      - 462
+      - 462
+      - 462

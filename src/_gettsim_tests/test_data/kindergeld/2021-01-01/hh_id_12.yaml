@@ -1,8 +1,4 @@
 ---
-info:
-  note: ''
-  precision_atol: 0.01
-  source: ''
 inputs:
   assumed: {}
   provided:
@@ -10,26 +6,33 @@ inputs:
       - 35
     arbeitsstunden_w:
       - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 0.0
-    einkommensteuer__gesamteinkommen_y:
-      - 0.0
-    familie__kind:
-      - false
+    einkommensteuer:
+      einkünfte:
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 0.0
+      gesamteinkommen_y:
+        - 0.0
+    familie:
+      kind:
+        - false
     hh_id:
       - 12
-    kindergeld__in_ausbildung:
-      - false
-    kindergeld__p_id_empfänger:
-      - -1
+    kindergeld:
+      in_ausbildung:
+        - false
+      p_id_empfänger:
+        - -1
     p_id:
       - 39
 outputs:
-  kinderbonus__betrag_m:
-    - 0.0
-  kinderbonus__betrag_m_hh:
-    - 0.0
-  kindergeld__betrag_m:
-    - 0
-  kindergeld__betrag_m_hh:
-    - 0
+  kinderbonus:
+    betrag_m:
+      - 0.0
+    betrag_m_hh:
+      - 0.0
+  kindergeld:
+    betrag_m:
+      - 0
+    betrag_m_hh:
+      - 0

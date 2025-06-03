@@ -1,67 +1,76 @@
 ---
-info:
-  note: ''
-  precision_atol: 0.01
-  source: ''
 inputs:
   assumed: {}
   provided:
     alter:
       - 60
-    arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
-      - false
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
+    arbeitslosengeld_2:
+      arbeitslosengeld_2_bezug_im_vorjahr:
+        - false
+      eigenbedarf_gedeckt:
+        - false
+      p_id_einstandspartner:
+        - -1
     arbeitsstunden_w:
       - 0.0
     behinderungsgrad:
       - 0
-    einkommensteuer__abzüge__beitrag_private_rentenversicherung_m:
-      - 0.0
-    einkommensteuer__abzüge__kinderbetreuungskosten_m:
-      - 0.0
-    einkommensteuer__abzüge__p_id_kinderbetreuungskostenträger:
-      - -1
-    einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m:
-      - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m:
-      - 2300.0
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
-      - 2500.0
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
-      - 13.0
-    einkommensteuer__einkünfte__ist_selbstständig:
-      - true
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
-      - 50.0
-    einkommensteuer__einkünfte__aus_forst_und_landwirtschaft__betrag_m:
-      - 0.0
-    einkommensteuer__einkünfte__aus_gewerbebetrieb__betrag_m:
-      - 0.0
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-    elterngeld__bisherige_bezugsmonate:
-      - 0
-    elterngeld__claimed:
-      - true
-    elterngeld__nettoeinkommen_vorjahr_m:
-      - 2300.0
-    elterngeld__zu_versteuerndes_einkommen_vorjahr_y_sn:
-      - 25962.0
-    familie__alleinerziehend:
-      - false
-    familie__kind:
-      - false
-    familie__p_id_ehepartner:
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
+    einkommensteuer:
+      abzüge:
+        beitrag_private_rentenversicherung_m:
+          - 0.0
+        kinderbetreuungskosten_m:
+          - 0.0
+        p_id_kinderbetreuungskostenträger:
+          - -1
+      einkünfte:
+        aus_forst_und_landwirtschaft:
+          betrag_m:
+            - 0.0
+        aus_gewerbebetrieb:
+          betrag_m:
+            - 0.0
+        aus_kapitalvermögen:
+          kapitalerträge_m:
+            - 0.0
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 0.0
+          bruttolohn_vorjahr_m:
+            - 2300.0
+        aus_selbstständiger_arbeit:
+          betrag_m:
+            - 2500.0
+        aus_vermietung_und_verpachtung:
+          betrag_m:
+            - 13.0
+        ist_selbstständig:
+          - true
+        sonstige:
+          ohne_renten_m:
+            - 50.0
+      gemeinsam_veranlagt:
+        - false
+    elterngeld:
+      bisherige_bezugsmonate:
+        - 0
+      claimed:
+        - true
+      nettoeinkommen_vorjahr_m:
+        - 2300.0
+      zu_versteuerndes_einkommen_vorjahr_y_sn:
+        - 25962.0
+    familie:
+      alleinerziehend:
+        - false
+      kind:
+        - false
+      p_id_ehepartner:
+        - -1
+      p_id_elternteil_1:
+        - -1
+      p_id_elternteil_2:
+        - -1
     geburtsjahr:
       - 1959
     geburtsmonat:
@@ -70,100 +79,116 @@ inputs:
       - 1
     hh_id:
       - 8
-    kindergeld__in_ausbildung:
-      - false
-    kindergeld__p_id_empfänger:
-      - -1
-    lohnsteuer__steuerklasse:
-      - 1
+    kindergeld:
+      in_ausbildung:
+        - false
+      p_id_empfänger:
+        - -1
+    lohnsteuer:
+      steuerklasse:
+        - 1
     p_id:
       - 14
     schwerbehindert_grad_g:
       - false
-    sozialversicherung__arbeitslosen__anwartschaftszeit:
-      - true
-    sozialversicherung__arbeitslosen__arbeitssuchend:
-      - false
-    sozialversicherung__arbeitslosen__monate_durchgängigen_bezugs_von_arbeitslosengeld:
-      - 0.0
-    sozialversicherung__arbeitslosen__monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren:
-      - 60.0
-    sozialversicherung__kranken__beitrag__privat_versichert:
-      - false
-    sozialversicherung__pflege__beitrag__hat_kinder:
-      - true
-    sozialversicherung__rente__altersrente__für_frauen__pflichtsbeitragsjahre_ab_alter_40:
-      - 2.0
-    sozialversicherung__rente__altersrente__höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
-      - 0.0
-    sozialversicherung__rente__bezieht_rente:
-      - false
-    sozialversicherung__rente__entgeltpunkte_ost:
-      - 0.0
-    sozialversicherung__rente__entgeltpunkte_west:
-      - 19.7296
-    sozialversicherung__rente__ersatzzeiten_monate:
-      - 0.0
-    sozialversicherung__rente__erwerbsminderung__teilweise_erwerbsgemindert:
-      - true
-    sozialversicherung__rente__erwerbsminderung__voll_erwerbsgemindert:
-      - false
-    sozialversicherung__rente__freiwillige_beitragsmonate:
-      - 5.0
-    sozialversicherung__rente__grundrente__bewertungszeiten_monate:
-      - 42
-    sozialversicherung__rente__grundrente__grundrentenzeiten_monate:
-      - 42
-    sozialversicherung__rente__grundrente__mean_entgeltpunkte:
-      - 19.7296
-    sozialversicherung__rente__jahr_renteneintritt:
-      - 2074
-    sozialversicherung__rente__kinderberücksichtigungszeiten_monate:
-      - 0.0
-    sozialversicherung__rente__krankheitszeiten_ab_16_bis_24_monate:
-      - 0.0
-    sozialversicherung__rente__monat_renteneintritt:
-      - 1
-    sozialversicherung__rente__monate_geringfügiger_beschäftigung:
-      - 0.0
-    sozialversicherung__rente__monate_in_arbeitslosigkeit:
-      - 0.0
-    sozialversicherung__rente__monate_in_arbeitsunfähigkeit:
-      - 0.0
-    sozialversicherung__rente__monate_in_ausbildungssuche:
-      - 0.0
-    sozialversicherung__rente__monate_in_mutterschutz:
-      - 0.0
-    sozialversicherung__rente__monate_in_schulausbildung:
-      - 12.0
-    sozialversicherung__rente__monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit:
-      - 0.0
-    sozialversicherung__rente__pflegeberücksichtigungszeiten_monate:
-      - 0.0
-    sozialversicherung__rente__pflichtbeitragsmonate:
-      - 444.0
-    sozialversicherung__rente__private_rente_betrag_m:
-      - 0.0
-    unterhalt__anspruch_m:
-      - 0.0
-    unterhalt__tatsächlich_erhaltener_betrag_m:
-      - 0.0
+    sozialversicherung:
+      arbeitslosen:
+        anwartschaftszeit:
+          - true
+        arbeitssuchend:
+          - false
+        monate_durchgängigen_bezugs_von_arbeitslosengeld:
+          - 0.0
+        monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren:
+          - 60.0
+      kranken:
+        beitrag:
+          privat_versichert:
+            - false
+      pflege:
+        beitrag:
+          hat_kinder:
+            - true
+      rente:
+        altersrente:
+          für_frauen:
+            pflichtsbeitragsjahre_ab_alter_40:
+              - 2.0
+          höchster_bruttolohn_letzte_15_jahre_vor_rente_y:
+            - 0.0
+        bezieht_rente:
+          - false
+        entgeltpunkte_ost:
+          - 0.0
+        entgeltpunkte_west:
+          - 19.7296
+        ersatzzeiten_monate:
+          - 0.0
+        erwerbsminderung:
+          teilweise_erwerbsgemindert:
+            - true
+          voll_erwerbsgemindert:
+            - false
+        freiwillige_beitragsmonate:
+          - 5.0
+        grundrente:
+          bewertungszeiten_monate:
+            - 42
+          grundrentenzeiten_monate:
+            - 42
+          mean_entgeltpunkte:
+            - 19.7296
+        jahr_renteneintritt:
+          - 2074
+        kinderberücksichtigungszeiten_monate:
+          - 0.0
+        krankheitszeiten_ab_16_bis_24_monate:
+          - 0.0
+        monat_renteneintritt:
+          - 1
+        monate_geringfügiger_beschäftigung:
+          - 0.0
+        monate_in_arbeitslosigkeit:
+          - 0.0
+        monate_in_arbeitsunfähigkeit:
+          - 0.0
+        monate_in_ausbildungssuche:
+          - 0.0
+        monate_in_mutterschutz:
+          - 0.0
+        monate_in_schulausbildung:
+          - 12.0
+        monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit:
+          - 0.0
+        pflegeberücksichtigungszeiten_monate:
+          - 0.0
+        pflichtbeitragsmonate:
+          - 444.0
+        private_rente_betrag_m:
+          - 0.0
+    unterhalt:
+      anspruch_m:
+        - 0.0
+      tatsächlich_erhaltener_betrag_m:
+        - 0.0
     vermögen:
       - 0.0
     weiblich:
       - false
-    wohnen__baujahr_immobilie_hh:
-      - 3
-    wohnen__bewohnt_eigentum_hh:
-      - false
-    wohnen__bruttokaltmiete_m_hh:
-      - 400.0
-    wohnen__heizkosten_m_hh:
-      - 80.0
-    wohnen__wohnfläche_hh:
-      - 50.0
-    wohngeld__mietstufe:
-      - 3
+    wohnen:
+      baujahr_immobilie_hh:
+        - 3
+      bewohnt_eigentum_hh:
+        - false
+      bruttokaltmiete_m_hh:
+        - 400.0
+      heizkosten_m_hh:
+        - 80.0
+      wohnfläche_hh:
+        - 50.0
+    wohngeld:
+      mietstufe:
+        - 3
     wohnort_ost:
       - false
 outputs: {}

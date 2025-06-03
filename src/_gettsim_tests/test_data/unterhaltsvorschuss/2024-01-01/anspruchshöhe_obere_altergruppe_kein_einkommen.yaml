@@ -1,39 +1,40 @@
 ---
-info:
-  note: One child in the upper age group (12-17).
-  precision_atol: 0.01
-  source: https://www.bmfsfj.de/bmfsfj/themen/familie/familienleistungen/unterhaltsvorschuss/unterhaltsvorschuss-73558
 inputs:
   assumed: {}
   provided:
     alter:
       - 45
       - 15
-    familie__alleinerziehend:
-      - true
-      - false
-    familie__p_id_elternteil_1:
-      - -1
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
+    familie:
+      alleinerziehend:
+        - true
+        - false
+      p_id_elternteil_1:
+        - -1
+        - 0
+      p_id_elternteil_2:
+        - -1
+        - -1
     hh_id:
       - 0
       - 0
-    kindergeld__p_id_empfänger:
-      - -1
-      - 0
+    kindergeld:
+      p_id_empfänger:
+        - -1
+        - 0
     p_id:
       - 0
       - 1
-    unterhalt__tatsächlich_erhaltener_betrag_m:
-      - 0.0
-      - 0.0
-    unterhaltsvorschuss__einkommen_m:
-      - 0.0
-      - 0.0
+    unterhalt:
+      tatsächlich_erhaltener_betrag_m:
+        - 0.0
+        - 0.0
+    unterhaltsvorschuss:
+      einkommen_m:
+        - 0.0
+        - 0.0
 outputs:
-  unterhaltsvorschuss__betrag_m:
-    - 0.0
-    - 0.0
+  unterhaltsvorschuss:
+    betrag_m:
+      - 0.0
+      - 0.0

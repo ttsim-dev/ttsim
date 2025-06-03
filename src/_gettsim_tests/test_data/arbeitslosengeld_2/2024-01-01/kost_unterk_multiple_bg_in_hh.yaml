@@ -1,8 +1,4 @@
 ---
-info:
-  note: ''
-  precision_atol: 0.01
-  source: Made up.
 inputs:
   assumed:
     alter:
@@ -15,76 +11,79 @@ inputs:
       - 10
       - 30
       - 30
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 1
-      - 0
-      - 3
-      - 2
-      - -1
-      - -1
-      - -1
-      - 8
-      - 7
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-    familie__kind:
-      - false
-      - false
-      - false
-      - false
-      - true
-      - true
-      - true
-      - false
-      - false
-    familie__p_id_ehepartner:
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - -1
-      - -1
-      - 0
-      - 0
-      - 0
-      - -1
-      - -1
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - -1
-      - 1
-      - 1
-      - 1
-      - -1
-      - -1
+    arbeitslosengeld_2:
+      eigenbedarf_gedeckt:
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+      p_id_einstandspartner:
+        - 1
+        - 0
+        - 3
+        - 2
+        - -1
+        - -1
+        - -1
+        - 8
+        - 7
+    einkommensteuer:
+      gemeinsam_veranlagt:
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+    familie:
+      kind:
+        - false
+        - false
+        - false
+        - false
+        - true
+        - true
+        - true
+        - false
+        - false
+      p_id_ehepartner:
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+      p_id_elternteil_1:
+        - -1
+        - -1
+        - -1
+        - -1
+        - 0
+        - 0
+        - 0
+        - -1
+        - -1
+      p_id_elternteil_2:
+        - -1
+        - -1
+        - -1
+        - -1
+        - 1
+        - 1
+        - 1
+        - -1
+        - -1
     hh_id:
       - 0
       - 0
@@ -105,38 +104,60 @@ inputs:
       - 6
       - 7
       - 8
-    wohnen__bruttokaltmiete_m_hh:
-      - 1000.0
-      - 1000.0
-      - 1000.0
-      - 1000.0
-      - 1000.0
-      - 1000.0
-      - 1000.0
-      - 1000.0
-      - 1000.0
-    wohnen__heizkosten_m_hh:
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-    wohnen__wohnfläche_hh:
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
-      - 100.0
+    wohnen:
+      bruttokaltmiete_m_hh:
+        - 1000.0
+        - 1000.0
+        - 1000.0
+        - 1000.0
+        - 1000.0
+        - 1000.0
+        - 1000.0
+        - 1000.0
+        - 1000.0
+      heizkosten_m_hh:
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+      wohnfläche_hh:
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
+        - 100.0
   provided: {}
 outputs:
+  arbeitslosengeld_2:
+    bruttokaltmiete_m_bg:
+      - 555.56
+      - 555.56
+      - 222.22
+      - 222.22
+      - 555.56
+      - 555.56
+      - 555.56
+      - 222.22
+      - 222.22
+    heizkosten_m_bg:
+      - 55.56
+      - 55.56
+      - 22.22
+      - 22.22
+      - 55.56
+      - 55.56
+      - 55.56
+      - 22.22
+      - 22.22
   bg_id:
     - 0
     - 0
@@ -147,23 +168,3 @@ outputs:
     - 0
     - 2
     - 2
-  arbeitslosengeld_2__bruttokaltmiete_m_bg:
-    - 555.56
-    - 555.56
-    - 222.22
-    - 222.22
-    - 555.56
-    - 555.56
-    - 555.56
-    - 222.22
-    - 222.22
-  arbeitslosengeld_2__heizkosten_m_bg:
-    - 55.56
-    - 55.56
-    - 22.22
-    - 22.22
-    - 55.56
-    - 55.56
-    - 55.56
-    - 22.22
-    - 22.22

@@ -1,8 +1,4 @@
 ---
-info:
-  note: ''
-  precision_atol: 0.01
-  source: ''
 inputs:
   assumed: {}
   provided:
@@ -11,61 +7,67 @@ inputs:
       - 38
       - 15
       - 13
-    arbeitslosengeld_2__arbeitslosengeld_2_bezug_im_vorjahr:
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__mehrbedarf_alleinerziehend_m_bg:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 24
-      - 23
-      - -1
-      - -1
+    arbeitslosengeld_2:
+      arbeitslosengeld_2_bezug_im_vorjahr:
+        - false
+        - false
+        - false
+        - false
+      eigenbedarf_gedeckt:
+        - false
+        - false
+        - false
+        - false
+      mehrbedarf_alleinerziehend_m_bg:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+      p_id_einstandspartner:
+        - 24
+        - 23
+        - -1
+        - -1
     arbeitsstunden_w:
       - 0.0
       - 0.0
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 1300.0
-      - 0.0
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-    familie__kind:
-      - false
-      - false
-      - true
-      - true
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 23
-      - 23
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 24
-      - 24
+    einkommensteuer:
+      einkünfte:
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 1300.0
+            - 0.0
+            - 0.0
+            - 0.0
+        aus_selbstständiger_arbeit:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+    familie:
+      alleinerziehend:
+        - false
+        - false
+        - false
+        - false
+      kind:
+        - false
+        - false
+        - true
+        - true
+      p_id_elternteil_1:
+        - -1
+        - -1
+        - 23
+        - 23
+      p_id_elternteil_2:
+        - -1
+        - -1
+        - 24
+        - 24
     geburtsjahr:
       - 1977
       - 1979
@@ -76,74 +78,80 @@ inputs:
       - 9
       - 9
       - 9
-    kindergeld__betrag_m_hh:
-      - 384.0
-      - 384.0
-      - 384.0
-      - 384.0
-    kindergeld__grundsätzlich_anspruchsberechtigt:
-      - false
-      - false
-      - true
-      - true
-    kindergeld__in_ausbildung:
-      - false
-      - false
-      - true
-      - true
-    kindergeld__p_id_empfänger:
-      - -1
-      - -1
-      - 23
-      - 23
-    kinderzuschlag__bruttoeinkommen_eltern_m:
-      - 1300.0
-      - 0.0
-      - 0.0
-      - 0.0
-    kinderzuschlag__nettoeinkommen_eltern_m:
-      - 900.0
-      - 0.0
-      - 0.0
-      - 0.0
+    kindergeld:
+      betrag_m_hh:
+        - 384.0
+        - 384.0
+        - 384.0
+        - 384.0
+      grundsätzlich_anspruchsberechtigt:
+        - false
+        - false
+        - true
+        - true
+      in_ausbildung:
+        - false
+        - false
+        - true
+        - true
+      p_id_empfänger:
+        - -1
+        - -1
+        - 23
+        - 23
+    kinderzuschlag:
+      bruttoeinkommen_eltern_m:
+        - 1300.0
+        - 0.0
+        - 0.0
+        - 0.0
+      nettoeinkommen_eltern_m:
+        - 900.0
+        - 0.0
+        - 0.0
+        - 0.0
     p_id:
       - 23
       - 24
       - 25
       - 26
-    unterhalt__tatsächlich_erhaltener_betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
-    unterhaltsvorschuss__betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
-      - 0.0
+    unterhalt:
+      tatsächlich_erhaltener_betrag_m:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+    unterhaltsvorschuss:
+      betrag_m:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
     vermögen:
       - 0.0
       - 0.0
       - 0.0
       - 0.0
-    wohnen__bruttokaltmiete_m_hh:
-      - 800.0
-      - 800.0
-      - 800.0
-      - 800.0
-    wohnen__heizkosten_m_hh:
-      - 90.0
-      - 90.0
-      - 90.0
-      - 90.0
+    wohnen:
+      bruttokaltmiete_m_hh:
+        - 800.0
+        - 800.0
+        - 800.0
+        - 800.0
+      heizkosten_m_hh:
+        - 90.0
+        - 90.0
+        - 90.0
+        - 90.0
 outputs:
-  kinderzuschlag__anspruchshöhe_m_bg:
-    - 340.0
-    - 340.0
-    - 340.0
-    - 340.0
-  kinderzuschlag__basisbetrag_m_bg:
-    - 340.0
-    - 340.0
-    - 340.0
-    - 340.0
+  kinderzuschlag:
+    anspruchshöhe_m_bg:
+      - 340.0
+      - 340.0
+      - 340.0
+      - 340.0
+    basisbetrag_m_bg:
+      - 340.0
+      - 340.0
+      - 340.0
+      - 340.0
