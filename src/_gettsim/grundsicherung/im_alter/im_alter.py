@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _gettsim.arbeitslosengeld_2.regelbedarf import RegelsatzNachRegelbedarfsstufen
+    from _gettsim.arbeitslosengeld_2.regelbedarf import (
+        Regelbedarfsstufen,
+    )
 
 from ttsim import policy_function
 
@@ -75,15 +77,15 @@ def mehrbedarf_schwerbehinderung_g_m(
     schwerbehindert_grad_g: bool,
     arbeitslosengeld_2__anzahl_erwachsene_eg: int,
     mehrbedarf_bei_schwerbehinderungsgrad_g: float,
-    arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen: RegelsatzNachRegelbedarfsstufen,
+    grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
 ) -> float:
     """Calculate additional allowance for individuals with disabled person's pass G."""
 
     mehrbedarf_single = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_1.regelsatz
+        grundsicherung__regelbedarfsstufen.rbs_1
     ) * mehrbedarf_bei_schwerbehinderungsgrad_g
     mehrbedarf_in_couple = (
-        arbeitslosengeld_2__regelsatz_nach_regelbedarfsstufen.rbs_2.regelsatz
+        grundsicherung__regelbedarfsstufen.rbs_2
     ) * mehrbedarf_bei_schwerbehinderungsgrad_g
 
     if (schwerbehindert_grad_g) and (arbeitslosengeld_2__anzahl_erwachsene_eg == 1):
