@@ -25,7 +25,6 @@ if TYPE_CHECKING:
         NestedData,
         NestedInputStructureDict,
         NestedPolicyEnvironment,
-        QualNameData,
     )
 
 
@@ -179,14 +178,16 @@ def _get_policy_test_from_raw_test_data(
         A list of PolicyTest objects.
     """
     test_info: NestedData = raw_test_data.get("info", {})
-    flat_raw_inputs: QualNameData = dt.flatten_to_tree_paths(
-        merge_trees(
-            left=raw_test_data["inputs"].get("provided", {}),
-            right=raw_test_data["inputs"].get("assumed", {}),
-        )
-    )
     input_tree: NestedData = dt.unflatten_from_tree_paths(
-        {k: np.array(v) for k, v in flat_raw_inputs.items()}
+        {
+            k: np.array(v)
+            for k, v in dt.flatten_to_tree_paths(
+                merge_trees(
+                    left=raw_test_data["inputs"].get("provided", {}),
+                    right=raw_test_data["inputs"].get("assumed", {}),
+                )
+            ).items()
+        }
     )
     expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
