@@ -74,7 +74,7 @@ def parameter_max_lohnsteuer_klasse_5_6(
         einkommensteuer__parameter_einkommensteuertarif.rates[0][[3, 3, 3, 4]], axis=0
     )
     parameter_max_lohnsteuer_klasse_5_6 = PiecewisePolynomialParamValue(
-        thresholds, intercepts, rates
+        thresholds=thresholds, intercepts=intercepts, rates=rates
     )
 
     return parameter_max_lohnsteuer_klasse_5_6

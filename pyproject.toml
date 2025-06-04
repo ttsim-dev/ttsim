@@ -261,8 +261,7 @@ exclude = []
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
-"src/_gettsim/*" = ["E501"]
-"src/_gettsim/unterhaltsvorschuss/unterhaltsvorschuss.py" = ["PLR1716"]
+"src/_gettsim/*" = ["E501", "PLR1714", "PLR1716"] # Vectorization can't handle x <= y <= z or x in {x,y}
 "docs/**/*.ipynb" = ["T201"]
 
 # Files which should be ignored until we have rewritten them

@@ -15,6 +15,14 @@ from ttsim import (
 from ttsim.config import numpy_or_jax as np
 
 
+@dataclass(frozen=True)
+class LookupTableBaujahr:
+    baujahre: list[int]
+    lookup_table: np.ndarray
+    lookup_base_to_subtract_cols: np.ndarray
+    lookup_base_to_subtract_rows: np.ndarray
+
+
 @param_function(
     start_date="1984-01-01", end_date="2008-12-31", leaf_name="max_miete_m_lookup"
 )
@@ -45,23 +53,15 @@ def max_miete_m_lookup_mit_baujahr(
         subtract_rows.append(lookup_table.base_to_subtract_rows)
 
     full_lookup_table = np.stack(values, axis=0)
-    full_lookup_col_substract = np.asarray(subtract_cols)
-    full_lookup_row_substract = np.asarray(subtract_rows)
-    # TODO(@mj023): Use N-dimensional Lookup Table once available
+    full_lookup_base_to_subtract_cols = np.asarray(subtract_cols)
+    full_lookup_base_to_subtract_rows = np.asarray(subtract_rows)
+
     return LookupTableBaujahr(
-        baujahre,
-        full_lookup_table,
-        full_lookup_col_substract,
-        full_lookup_row_substract,
+        baujahre=np.asarray(baujahre),
+        lookup_table=full_lookup_table,
+        lookup_base_to_subtract_cols=full_lookup_base_to_subtract_cols,
+        lookup_base_to_subtract_rows=full_lookup_base_to_subtract_rows,
     )
-
-
-@dataclass(frozen=True)
-class LookupTableBaujahr:
-    baujahre: list[int]
-    lookup_table: np.ndarray
-    lookup_col_substract: np.ndarray
-    lookup_row_substract: np.ndarray
 
 
 @param_function(start_date="2009-01-01", leaf_name="max_miete_m_lookup")
@@ -209,15 +209,15 @@ def miete_m_hh_mit_baujahr(
     """Rent considered in housing benefit calculation on household level until 2008."""
 
     selected_bin_index = np.searchsorted(
-        np.asarray(max_miete_m_lookup.baujahre),
+        max_miete_m_lookup.baujahre,
         wohnen__baujahr_immobilie_hh,
         side="left",
     )
     max_miete_m = max_miete_m_lookup.lookup_table[
         selected_bin_index,
         anzahl_personen_hh
-        - max_miete_m_lookup.lookup_row_substract[selected_bin_index],
-        mietstufe - max_miete_m_lookup.lookup_col_substract[selected_bin_index],
+        - max_miete_m_lookup.lookup_base_to_subtract_rows[selected_bin_index],
+        mietstufe - max_miete_m_lookup.lookup_base_to_subtract_cols[selected_bin_index],
     ]
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 

@@ -63,15 +63,3 @@ def betrag_y_sn_mit_abgelt_st(
         + parameter_solidaritätszuschlag.rates[0, -1]
         * einkommensteuer__abgeltungssteuer__betrag_y_sn
     )
-
-
-def solidaritätszuschlagstarif(
-    steuer_pro_person: float,
-    parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
-) -> float:
-    """The isolated function for Solidaritätszuschlag."""
-
-    return piecewise_polynomial(
-        x=steuer_pro_person,
-        parameters=parameter_solidaritätszuschlag,
-    )

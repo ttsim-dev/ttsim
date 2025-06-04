@@ -54,13 +54,11 @@ def monate_verbleibender_anspruchsdauer(
         monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
         parameters=anspruchsdauer_nach_versicherungspflichtigen_monaten,
     )
-    anspruchsdauer_gesamt = 0
-    if anwartschaftszeit:
-        anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
 
     if anwartschaftszeit:
         out = max(
-            anspruchsdauer_gesamt - monate_durchgängigen_bezugs_von_arbeitslosengeld,
+            min(nach_alter, nach_versich_pfl)
+            - monate_durchgängigen_bezugs_von_arbeitslosengeld,
             0,
         )
     else:
