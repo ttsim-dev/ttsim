@@ -59,6 +59,18 @@ def einkommen_m(
     )
 
 
+def _anzurechnendes_einkommen_m(
+    einkommen_m_ehe: float,
+    rentenwert: float,
+    parameter_anzurechnendes_einkommen: PiecewisePolynomialParamValue,
+) -> float:
+    """The isolated function for the relevant income for the Grundrentezuschlag."""
+    return rentenwert * piecewise_polynomial(
+        x=einkommen_m_ehe / rentenwert,
+        parameters=parameter_anzurechnendes_einkommen,
+    )
+
+
 @policy_function(
     rounding_spec=RoundingSpec(
         base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
@@ -87,14 +99,16 @@ def anzurechnendes_einkommen_m(
     # Note: Thresholds are defined relativ to rentenwert which is implemented by
     # dividing the income by rentenwert and multiply rentenwert to the result.
     if familie__anzahl_personen_ehe == 2:
-        out = sozialversicherung__rente__altersrente__rentenwert * piecewise_polynomial(
-            x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
-            parameters=anzurechnendes_einkommen_mit_partner,
+        out = _anzurechnendes_einkommen_m(
+            einkommen_m_ehe=einkommen_m_ehe,
+            rentenwert=sozialversicherung__rente__altersrente__rentenwert,
+            parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_mit_partner,
         )
     else:
-        out = sozialversicherung__rente__altersrente__rentenwert * piecewise_polynomial(
-            x=einkommen_m_ehe / sozialversicherung__rente__altersrente__rentenwert,
-            parameters=anzurechnendes_einkommen_ohne_partner,
+        out = _anzurechnendes_einkommen_m(
+            einkommen_m_ehe=einkommen_m_ehe,
+            rentenwert=sozialversicherung__rente__altersrente__rentenwert,
+            parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_ohne_partner,
         )
     return out
 
