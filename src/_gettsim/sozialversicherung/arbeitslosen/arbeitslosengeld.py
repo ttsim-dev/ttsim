@@ -47,11 +47,11 @@ def monate_verbleibender_anspruchsdauer(
 
     """
     nach_alter = piecewise_polynomial(
-        alter,
+        x=alter,
         parameters=anspruchsdauer_nach_alter,
     )
     nach_versich_pfl = piecewise_polynomial(
-        monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
+        x=monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
         parameters=anspruchsdauer_nach_versicherungspflichtigen_monaten,
     )
 
@@ -114,9 +114,9 @@ def einkommen_vorjahr_proxy_m(
     # the same as zu versteuerndes einkommen
     # waiting for PR Lohnsteuer #150 to be merged to correct this problem
     prox_tax = piecewise_polynomial(
-        12 * max_wage
+        x=12 * max_wage
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
-        einkommensteuer__parameter_einkommensteuertarif,
+        parameters=einkommensteuer__parameter_einkommensteuertarif,
     )
     prox_soli = piecewise_polynomial(
         x=prox_tax,

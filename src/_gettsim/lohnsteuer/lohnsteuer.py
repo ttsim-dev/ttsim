@@ -29,8 +29,12 @@ def basis_für_klassen_5_6(
     """
 
     return 2 * (
-        piecewise_polynomial(einkommen_y * 1.25, parameter_einkommensteuertarif)
-        - piecewise_polynomial(einkommen_y * 0.75, parameter_einkommensteuertarif)
+        piecewise_polynomial(
+            x=einkommen_y * 1.25, parameters=parameter_einkommensteuertarif
+        )
+        - piecewise_polynomial(
+            x=einkommen_y * 0.75, parameters=parameter_einkommensteuertarif
+        )
     )
 
 
@@ -39,7 +43,7 @@ def parameter_max_lohnsteuer_klasse_5_6(
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
 ) -> PiecewisePolynomialParamValue:
-    """Create Paramter Values for the piecewise polynomial that represents the maximum amount of Lohnsteuer
+    """Create paramter values for the piecewise polynomial that represents the maximum amount of Lohnsteuer
     that can be paid on incomes higher than the income thresholds for Steuerklasse 5 and 6.
     """
     lohnsteuer_bis_erste_grenze = basis_für_klassen_5_6(
@@ -87,7 +91,7 @@ def basistarif(
 ) -> float:
     """Lohnsteuer in the Basistarif."""
     return piecewise_polynomial(
-        einkommen_y, einkommensteuer__parameter_einkommensteuertarif
+        x=einkommen_y, parameters=einkommensteuer__parameter_einkommensteuertarif
     )
 
 
@@ -98,7 +102,7 @@ def splittingtarif(
 ) -> float:
     """Lohnsteuer in the Splittingtarif."""
     return 2 * piecewise_polynomial(
-        einkommen_y / 2, einkommensteuer__parameter_einkommensteuertarif
+        x=einkommen_y / 2, parameters=einkommensteuer__parameter_einkommensteuertarif
     )
 
 
@@ -110,20 +114,20 @@ def tarif_klassen_5_und_6(
 ) -> float:
     """Lohnsteuer for Lohnsteuerklassen 5 and 6."""
 
-    lohnsteuer_klasse_5_6 = basis_für_klassen_5_6(
+    basis = basis_für_klassen_5_6(
         einkommen_y, einkommensteuer__parameter_einkommensteuertarif
     )
     max_lohnsteuer = piecewise_polynomial(
-        einkommen_y, parameter_max_lohnsteuer_klasse_5_6
+        x=einkommen_y, parameters=parameter_max_lohnsteuer_klasse_5_6
     )
     min_lohnsteuer = (
         einkommensteuer__parameter_einkommensteuertarif.rates[0, 1] * einkommen_y
     )
-    return np.minimum(np.maximum(min_lohnsteuer, lohnsteuer_klasse_5_6), max_lohnsteuer)
+    return np.minimum(np.maximum(min_lohnsteuer, basis), max_lohnsteuer)
 
 
 @policy_function(start_date="2015-01-01")
-def betrag_m(
+def betrag_y(
     steuerklasse: int,
     basistarif: float,
     splittingtarif: float,
@@ -137,7 +141,7 @@ def betrag_m(
         out = splittingtarif
     else:
         out = tarif_klassen_5_und_6
-    out = out / 12
+
     return max(out, 0.0)
 
 
@@ -152,8 +156,8 @@ def basistarif_mit_kinderfreibetrag(
         einkommen_y - kinderfreibetrag_soli_y, 0
     )
     return piecewise_polynomial(
-        einkommen_abzüglich_kinderfreibetrag_soli,
-        einkommensteuer__parameter_einkommensteuertarif,
+        x=einkommen_abzüglich_kinderfreibetrag_soli,
+        parameters=einkommensteuer__parameter_einkommensteuertarif,
     )
 
 
@@ -168,8 +172,8 @@ def splittingtarif_mit_kinderfreibetrag(
         einkommen_y - kinderfreibetrag_soli_y, 0
     )
     return 2 * piecewise_polynomial(
-        einkommen_abzüglich_kinderfreibetrag_soli / 2,
-        einkommensteuer__parameter_einkommensteuertarif,
+        x=einkommen_abzüglich_kinderfreibetrag_soli / 2,
+        parameters=einkommensteuer__parameter_einkommensteuertarif,
     )
 
 
@@ -185,22 +189,23 @@ def tarif_klassen_5_und_6_mit_kinderfreibetrag(
         einkommen_y - kinderfreibetrag_soli_y, 0
     )
 
-    lohnsteuer_klasse_5_6 = basis_für_klassen_5_6(
+    basis = basis_für_klassen_5_6(
         einkommen_abzüglich_kinderfreibetrag_soli,
         einkommensteuer__parameter_einkommensteuertarif,
     )
     max_lohnsteuer = piecewise_polynomial(
-        einkommen_abzüglich_kinderfreibetrag_soli, parameter_max_lohnsteuer_klasse_5_6
+        x=einkommen_abzüglich_kinderfreibetrag_soli,
+        parameters=parameter_max_lohnsteuer_klasse_5_6,
     )
     min_lohnsteuer = (
         einkommensteuer__parameter_einkommensteuertarif.rates[0, 1]
         * einkommen_abzüglich_kinderfreibetrag_soli
     )
-    return np.minimum(np.maximum(min_lohnsteuer, lohnsteuer_klasse_5_6), max_lohnsteuer)
+    return np.minimum(np.maximum(min_lohnsteuer, basis), max_lohnsteuer)
 
 
 @policy_function(start_date="2015-01-01")
-def betrag_mit_kinderfreibetrag_m(
+def betrag_mit_kinderfreibetrag_y(
     steuerklasse: int,
     basistarif_mit_kinderfreibetrag: float,
     splittingtarif_mit_kinderfreibetrag: float,
@@ -218,7 +223,6 @@ def betrag_mit_kinderfreibetrag_m(
         out = splittingtarif_mit_kinderfreibetrag
     else:
         out = tarif_klassen_5_und_6_mit_kinderfreibetrag
-    out = out / 12
     return max(out, 0.0)
 
 
