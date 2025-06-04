@@ -447,11 +447,9 @@ def berechtigte_wohnfläche_eigentum(
     wohngeld__max_anzahl_personen: dict[str, int],
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Berechtigte Wohnfläche für Eigenheim."""
-    je_weitere_person = parameter_berechtigte_wohnfläche_eigentum["je_weitere_person"]
     tmp = parameter_berechtigte_wohnfläche_eigentum.copy()
-    tmp.pop("je_weitere_person")
-    tmp.pop("max_anzahl_direkt")
-    loop_start = max(tmp)
-    for i in range(wohngeld__max_anzahl_personen["indizierung"] - loop_start):
-        tmp[i] = tmp[loop_start] + i * je_weitere_person
+    je_weitere_person = tmp.pop("je_weitere_person")
+    max_anzahl_direkt = tmp.pop("max_anzahl_direkt")
+    for i in range(wohngeld__max_anzahl_personen["indizierung"] - max_anzahl_direkt):
+        tmp[i] = tmp[max_anzahl_direkt] + i * je_weitere_person
     return get_consecutive_int_1d_lookup_table_param_value(raw=tmp)
