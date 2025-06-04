@@ -17,7 +17,7 @@ from ttsim.config import numpy_or_jax as np
 
 @dataclass(frozen=True)
 class LookupTableBaujahr:
-    baujahre: list[int]
+    baujahre: np.ndarray
     lookup_table: np.ndarray
     lookup_base_to_subtract_cols: np.ndarray
     lookup_base_to_subtract_rows: np.ndarray
@@ -215,10 +215,9 @@ def miete_m_hh_mit_baujahr(
     )
     max_miete_m = max_miete_m_lookup.lookup_table[
         selected_bin_index,
-        anzahl_personen_hh
-        - max_miete_m_lookup.lookup_base_to_subtract_rows[selected_bin_index],
+        anzahl_personen_hh - max_miete_m_lookup.lookup_base_to_subtract_rows[selected_bin_index],
         mietstufe - max_miete_m_lookup.lookup_base_to_subtract_cols[selected_bin_index],
-    ]
+    ]  # fmt: skip
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
 
