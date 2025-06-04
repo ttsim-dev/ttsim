@@ -11,56 +11,60 @@ inputs:
       - 37
       - 3
       - 3
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 1
-      - 0
-      - -1
-      - -1
-    einkommensteuer__gemeinsam_veranlagt:
-      - true
-      - true
-      - false
-      - false
-    erziehungsgeld__anspruchshöhe_kind_m:
-      - 0.0
-      - 0.0
-      - 150.0
-      - 150.0
-    erziehungsgeld__grundsätzlich_anspruchsberechtigt:
-      - true
-      - true
-      - true
-      - true
-    erziehungsgeld__p_id_empfänger:
-      - -1
-      - -1
-      - 0
-      - 1
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-      - false
-    familie__p_id_ehepartner:
-      - 1
-      - 0
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
-      - -1
+    arbeitslosengeld_2:
+      eigenbedarf_gedeckt:
+        - false
+        - false
+        - false
+        - false
+      p_id_einstandspartner:
+        - 1
+        - 0
+        - -1
+        - -1
+    einkommensteuer:
+      gemeinsam_veranlagt:
+        - true
+        - true
+        - false
+        - false
+    erziehungsgeld:
+      anspruchshöhe_kind_m:
+        - 0.0
+        - 0.0
+        - 150.0
+        - 150.0
+      grundsätzlich_anspruchsberechtigt:
+        - true
+        - true
+        - true
+        - true
+      p_id_empfänger:
+        - -1
+        - -1
+        - 0
+        - 1
+    familie:
+      alleinerziehend:
+        - false
+        - false
+        - false
+        - false
+      p_id_ehepartner:
+        - 1
+        - 0
+        - -1
+        - -1
+      p_id_elternteil_1:
+        - -1
+        - -1
+        - 0
+        - 0
+      p_id_elternteil_2:
+        - -1
+        - -1
+        - 1
+        - -1
     geburtsjahr:
       - 1970
       - 1970
@@ -81,54 +85,58 @@ inputs:
       - 0
       - 0
       - 0
-    kindergeld__grundsätzlich_anspruchsberechtigt:
-      - false
-      - false
-      - true
-      - true
-    kindergeld__p_id_empfänger:
-      - -1
-      - -1
-      - 0
-      - 1
+    kindergeld:
+      grundsätzlich_anspruchsberechtigt:
+        - false
+        - false
+        - true
+        - true
+      p_id_empfänger:
+        - -1
+        - -1
+        - 0
+        - 1
     p_id:
       - 0
       - 1
       - 2
       - 3
 outputs:
-  einkommensteuer__anzahl_kinderfreibeträge:
-    - 2
-    - 1
-    - 0
-    - 0
-  einkommensteuer__kinderfreibetrag_y:
-    - 5808.0
-    - 2904.0
-    - 0.0
-    - 0.0
-  einkommensteuer__p_id_kinderfreibetragsempfänger_1:
-    - -1
-    - -1
-    - 0
-    - 0
-  einkommensteuer__p_id_kinderfreibetragsempfänger_2:
-    - -1
-    - -1
-    - 1
-    - -1
-  erziehungsgeld__betrag_m:
-    - 150.0
-    - 150.0
-    - 0.0
-    - 0.0
-  kindergeld__anzahl_ansprüche:
-    - 1
-    - 1
-    - 0
-    - 0
-  kindergeld__betrag_m:
-    - 154.0
-    - 154.0
-    - 0.0
-    - 0.0
+  einkommensteuer:
+    anzahl_kinderfreibeträge:
+      - 2
+      - 1
+      - 0
+      - 0
+    kinderfreibetrag_y:
+      - 5808.0
+      - 2904.0
+      - 0.0
+      - 0.0
+    p_id_kinderfreibetragsempfänger_1:
+      - -1
+      - -1
+      - 0
+      - 0
+    p_id_kinderfreibetragsempfänger_2:
+      - -1
+      - -1
+      - 1
+      - -1
+  erziehungsgeld:
+    betrag_m:
+      - 150.0
+      - 150.0
+      - 0.0
+      - 0.0
+  kindergeld:
+    anzahl_ansprüche:
+      - 1
+      - 1
+      - 0
+      - 0
+    betrag_m:
+      - 154.0
+      - 154.0
+      - 0.0
+      - 0.0

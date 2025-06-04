@@ -178,19 +178,21 @@ def _get_policy_test_from_raw_test_data(
         A list of PolicyTest objects.
     """
     test_info: NestedData = raw_test_data.get("info", {})
-    inputs: NestedData = raw_test_data.get("inputs", {})
-    input_tree: NestedData = dt.unflatten_from_qual_names(
+    input_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: np.asarray(v)
-            for k, v in dt.flatten_to_qual_names(
-                merge_trees(inputs.get("provided", {}), inputs.get("assumed", {}))
+            k: np.array(v)
+            for k, v in dt.flatten_to_tree_paths(
+                merge_trees(
+                    left=raw_test_data["inputs"].get("provided", {}),
+                    right=raw_test_data["inputs"].get("assumed", {}),
+                )
             ).items()
         }
     )
-    expected_output_tree: NestedData = dt.unflatten_from_qual_names(
+    expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: np.asarray(np.array(v))
-            for k, v in dt.flatten_to_qual_names(
+            k: np.array(v)
+            for k, v in dt.flatten_to_tree_paths(
                 raw_test_data.get("outputs", {})
             ).items()
         }

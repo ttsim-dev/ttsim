@@ -13,60 +13,63 @@ inputs:
       - 10
       - 14
       - 19
+    arbeitslosengeld_2:
+      eigenbedarf_gedeckt:
+        - false
+        - false
+        - false
+        - false
+        - false
+      p_id_einstandspartner:
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
     bg_id:
       - 0
       - 0
       - 0
       - 0
       - 0
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__alleinerziehend:
-      - true
-      - false
-      - false
-      - false
-      - false
-    familie__kind:
-      - false
-      - true
-      - true
-      - true
-      - true
-    familie__p_id_elternteil_1:
-      - -1
-      - 0
-      - 0
-      - 0
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
+    familie:
+      alleinerziehend:
+        - true
+        - false
+        - false
+        - false
+        - false
+      kind:
+        - false
+        - true
+        - true
+        - true
+        - true
+      p_id_elternteil_1:
+        - -1
+        - 0
+        - 0
+        - 0
+        - 0
+      p_id_elternteil_2:
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
     hh_id:
       - 0
       - 0
       - 0
       - 0
       - 0
-    kindergeld__p_id_empfänger:
-      - -1
-      - 0
-      - 0
-      - 0
-      - 0
+    kindergeld:
+      p_id_empfänger:
+        - -1
+        - 0
+        - 0
+        - 0
+        - 0
     p_id:
       - 0
       - 1
@@ -75,21 +78,22 @@ inputs:
       - 4
   provided: {}
 outputs:
-  arbeitslosengeld_2__erwachsenensatz_m:
-    - 833.24
-    - 0.0
-    - 0.0
-    - 0.0
-    - 0.0
-  arbeitslosengeld_2__kindersatz_m:
-    - 0.0
-    - 377.0
-    - 410.0
-    - 491.0
-    - 471.0
-  arbeitslosengeld_2__regelsatz_m:
-    - 833.24
-    - 377.0
-    - 410.0
-    - 491.0
-    - 471.0
+  arbeitslosengeld_2:
+    erwachsenensatz_m:
+      - 833.24
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    kindersatz_m:
+      - 0.0
+      - 377.0
+      - 410.0
+      - 491.0
+      - 471.0
+    regelsatz_m:
+      - 833.24
+      - 377.0
+      - 410.0
+      - 491.0
+      - 471.0
