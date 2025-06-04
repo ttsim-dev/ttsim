@@ -46,6 +46,8 @@ from ttsim.compute_taxes_and_transfers import (
     top_level_namespace,
 )
 from ttsim.convert_nested_data import (
+    results_df,
+    data_tree,
     dataframe_to_nested_data,
     nested_data_to_df_with_mapped_columns,
 )
@@ -123,6 +125,7 @@ def function_collection():
         "fail_if_targets_tree_is_invalid": fail_if_targets_tree_is_invalid,
         "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
         "grouping_levels": grouping_levels,
+        "data_tree": data_tree,
         "nested_results": nested_results,
         "orig_tree_with_column_objects_and_param_functions": orig_tree_with_column_objects_and_param_functions,
         "orig_tree_with_params": orig_tree_with_params,
@@ -135,6 +138,7 @@ def function_collection():
         "qual_name_param_targets": qual_name_param_targets,
         "qual_name_results": qual_name_results,
         "qual_name_targets": qual_name_targets,
+        "results_df": results_df,
         "required_column_functions": required_column_functions,
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
