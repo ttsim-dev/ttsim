@@ -25,15 +25,19 @@ if TYPE_CHECKING:
 
 
 def names__target_columns(
-    required_column_functions: QualNameColumnFunctions,
+    combined_environment__with_partialled_params_and_scalars: QualNameColumnFunctions,
     targets__qname: QualNameTargetList,
 ) -> QualNameTargetList:
     """All targets that are column functions."""
-    return [t for t in targets__qname if t in required_column_functions]
+    return [
+        t
+        for t in targets__qname
+        if t in combined_environment__with_partialled_params_and_scalars
+    ]
 
 
 def names__target_params(
-    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,  # noqa: E501
+    combined_environment__with_derived_functions_and_input_nodes: QualNamePolicyEnvironment,  # noqa: E501
     targets__qname: QualNameTargetList,
     names__target_columns: QualNameTargetList,
 ) -> QualNameTargetList:
@@ -42,8 +46,7 @@ def names__target_params(
         t
         for t in targets__qname
         if t in possible_targets
-        and t
-        in flat_policy_environment_with_derived_functions_and_without_overridden_functions  # noqa: E501
+        and t in combined_environment__with_derived_functions_and_input_nodes
     ]
 
 

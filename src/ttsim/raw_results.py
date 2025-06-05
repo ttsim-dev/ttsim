@@ -33,10 +33,10 @@ def raw_results__columns(
 
 def raw_results__params(
     names__target_params: QualNameTargetList,
-    column_functions_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,  # noqa: E501
+    combined_environment__with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,  # noqa: E501
 ) -> QualNameData:
     return {
-        pt: column_functions_with_processed_params_and_scalars[pt]
+        pt: combined_environment__with_processed_params_and_scalars[pt]
         for pt in names__target_params
     }
 

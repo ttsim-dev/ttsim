@@ -495,7 +495,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
     fail_if__foreign_keys_are_invalid_in_data(
         qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
         processed_data=data,
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+        combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
     )
 
 
@@ -512,7 +512,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
         fail_if__foreign_keys_are_invalid_in_data(
             qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
             processed_data=data,
-            flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+            combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
         )
 
 
@@ -528,7 +528,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     fail_if__foreign_keys_are_invalid_in_data(
         qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
         processed_data=data,
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+        combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
     )
 
 
@@ -544,7 +544,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     fail_if__foreign_keys_are_invalid_in_data(
         qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
         processed_data=data,
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
+        combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
     )
 
 

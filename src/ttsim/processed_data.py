@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
+from ttsim.config import numpy_or_jax as np
+
 if TYPE_CHECKING:
     from ttsim.tt_dag_elements.typing import NestedData, QualNameData
 
@@ -22,4 +24,6 @@ def processed_data(
     Returns:
         A DataFrame.
     """
-    return dt.flatten_to_qual_names(input_data__tree)
+    return {
+        k: np.asarray(v) for k, v in dt.flatten_to_qual_names(input_data__tree).items()
+    }

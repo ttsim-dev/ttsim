@@ -45,57 +45,7 @@ _DUMMY_COLUMN_OBJECT = ColumnObject(
 )
 
 
-def tax_transfer_dag(
-    required_column_functions: QualNameColumnFunctions,
-    names__target_columns: QualNameTargetList,
-) -> nx.DiGraph:
-    """Thin wrapper around `create_dag`."""
-    return create_dag(
-        functions=required_column_functions,
-        targets=names__target_columns,
-    )
-
-
-def tax_transfer_function(
-    tax_transfer_dag: nx.DiGraph,
-    required_column_functions: QualNameColumnFunctions,
-    names__target_columns: QualNameTargetList,
-    # backend: numpy | jax,
-) -> Callable[[QualNameData], QualNameData]:
-    """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
-
-    ttf_with_keyword_args = concatenate_functions(
-        dag=tax_transfer_dag,
-        functions=required_column_functions,
-        targets=list(names__target_columns),
-        return_type="dict",
-        aggregator=None,
-        enforce_signature=True,
-        set_annotations=False,
-    )
-
-    # if backend == jax:
-    #     if not IS_JAX_INSTALLED:
-    #         raise ImportError(
-    #             "JAX is not installed. Please install JAX to use JIT compilation."
-    #         )
-    #     import jax
-
-    #     static_args = {
-    #         argname: input_data__tree["p_id"].max() + 1
-    #         for argname in inspect.signature(ttf_with_keyword_args).parameters
-    #         if argname.endswith("_num_segments")
-    #     }
-    #     ttf_with_keyword_args=functools.partial(ttf_with_keyword_args, **static_args)
-    #     ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
-
-    def wrapper(processed_data: QualNameData) -> QualNameData:
-        return ttf_with_keyword_args(**processed_data)
-
-    return wrapper
-
-
-def flat_policy_environment_with_derived_functions_and_without_overridden_functions(
+def combined_environment__with_derived_functions_and_input_nodes(
     policy_environment: NestedPolicyEnvironment,
     processed_data: QualNameData,
     names__processed_data_columns: QualNameDataColumns,
@@ -258,23 +208,23 @@ def _apply_rounding(element: Any) -> Any:
     )
 
 
-def column_functions_with_processed_params_and_scalars(
-    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
+def combined_environment__with_processed_params_and_scalars(
+    combined_environment__with_derived_functions_and_input_nodes: QualNamePolicyEnvironment,
 ) -> QualNameColumnFunctionsWithProcessedParamsAndScalars:
     """Process the parameters and param functions, remove RawParams from the tree."""
     params = {
         k: v
-        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
+        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
         if isinstance(v, ParamObject)
     }
     scalars = {
         k: v
-        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
+        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
         if isinstance(v, float | int | bool)
     }
     param_functions = {
         k: v
-        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
+        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
         if isinstance(v, ParamFunction)
     }
     # Construct a function for the processing of all params.
@@ -298,15 +248,15 @@ def column_functions_with_processed_params_and_scalars(
     return {
         **{
             k: v
-            for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
+            for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
             if not isinstance(v, RawParam)
         },
         **processed_params,
     }
 
 
-def required_column_functions(
-    column_functions_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
+def combined_environment__with_partialled_params_and_scalars(
+    combined_environment__with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
     rounding: bool,
 ) -> QualNameColumnFunctions:
     """Partial parameters to functions such that they disappear from the DAG.
@@ -325,7 +275,7 @@ def required_column_functions(
 
     """
     processed_functions = {}
-    for name, _func in column_functions_with_processed_params_and_scalars.items():
+    for name, _func in combined_environment__with_processed_params_and_scalars.items():
         if isinstance(_func, ColumnFunction):
             func = _apply_rounding(_func) if rounding else _func
             partial_params = {}
@@ -333,14 +283,14 @@ def required_column_functions(
                 a
                 for a in get_free_arguments(func)
                 if not isinstance(
-                    column_functions_with_processed_params_and_scalars.get(
+                    combined_environment__with_processed_params_and_scalars.get(
                         a, _DUMMY_COLUMN_OBJECT
                     ),
                     ColumnObject,
                 )
             ]:
                 partial_params[arg] = (
-                    column_functions_with_processed_params_and_scalars[arg]
+                    combined_environment__with_processed_params_and_scalars[arg]
                 )
             if partial_params:
                 processed_functions[name] = functools.partial(func, **partial_params)
@@ -348,3 +298,53 @@ def required_column_functions(
                 processed_functions[name] = func
 
     return processed_functions
+
+
+def tax_transfer_dag(
+    combined_environment__with_partialled_params_and_scalars: QualNameColumnFunctions,
+    names__target_columns: QualNameTargetList,
+) -> nx.DiGraph:
+    """Thin wrapper around `create_dag`."""
+    return create_dag(
+        functions=combined_environment__with_partialled_params_and_scalars,
+        targets=names__target_columns,
+    )
+
+
+def tax_transfer_function(
+    tax_transfer_dag: nx.DiGraph,
+    combined_environment__with_partialled_params_and_scalars: QualNameColumnFunctions,
+    names__target_columns: QualNameTargetList,
+    # backend: numpy | jax,
+) -> Callable[[QualNameData], QualNameData]:
+    """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
+
+    ttf_with_keyword_args = concatenate_functions(
+        dag=tax_transfer_dag,
+        functions=combined_environment__with_partialled_params_and_scalars,
+        targets=list(names__target_columns),
+        return_type="dict",
+        aggregator=None,
+        enforce_signature=True,
+        set_annotations=False,
+    )
+
+    # if backend == jax:
+    #     if not IS_JAX_INSTALLED:
+    #         raise ImportError(
+    #             "JAX is not installed. Please install JAX to use JIT compilation."
+    #         )
+    #     import jax
+
+    #     static_args = {
+    #         argname: input_data__tree["p_id"].max() + 1
+    #         for argname in inspect.signature(ttf_with_keyword_args).parameters
+    #         if argname.endswith("_num_segments")
+    #     }
+    #     ttf_with_keyword_args=functools.partial(ttf_with_keyword_args, **static_args)
+    #     ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
+
+    def wrapper(processed_data: QualNameData) -> QualNameData:
+        return ttf_with_keyword_args(**processed_data)
+
+    return wrapper

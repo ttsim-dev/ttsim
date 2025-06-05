@@ -351,7 +351,7 @@ def fail_if__environment_is_invalid(
 def fail_if__foreign_keys_are_invalid_in_data(
     qual_name_input_data: QualNameData,
     processed_data: QualNameData,
-    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
+    combined_environment__with_derived_functions_and_input_nodes: QualNamePolicyEnvironment,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -366,7 +366,7 @@ def fail_if__foreign_keys_are_invalid_in_data(
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
-        for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
+        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
         if isinstance(v, PolicyInput | ColumnFunction)
     }
 

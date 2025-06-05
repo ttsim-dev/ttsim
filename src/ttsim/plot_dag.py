@@ -15,9 +15,9 @@ from dags import get_free_arguments
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
-from ttsim.compute_taxes_and_transfers import (
+from ttsim.combined_environment import (
     _add_derived_functions,
-    required_column_functions,
+    combined_environment__with_partialled_params_and_scalars,
 )
 from ttsim.fail_if import format_list_linewise
 from ttsim.shared import partition_tree_by_reference_tree
@@ -113,8 +113,8 @@ def plot_dag(
         },
     )
 
-    processed_functions = required_column_functions(
-        column_functions_with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
+    processed_functions = combined_environment__with_partialled_params_and_scalars(
+        combined_environment__with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
         processed_params=processed_tree_with_params,
     )
 

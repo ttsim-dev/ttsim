@@ -26,11 +26,11 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     policy_function,
     policy_input,
 )
-from ttsim.compute_taxes_and_transfers import (
-    column_functions_with_processed_params_and_scalars,
-    flat_policy_environment_with_derived_functions_and_without_overridden_functions,
+from ttsim.combined_environment import (
+    combined_environment__with_processed_params_and_scalars,
+    combined_environment__with_derived_functions_and_input_nodes,
     qual_name_input_data,
-    required_column_functions,
+    combined_environment__with_partialled_params_and_scalars,
     tax_transfer_dag,
     tax_transfer_function,
 )
@@ -116,7 +116,7 @@ from ttsim.shared import (
 
 def function_collection():
     return {
-        "column_functions_with_processed_params_and_scalars": column_functions_with_processed_params_and_scalars,
+        "combined_environment__with_processed_params_and_scalars": combined_environment__with_processed_params_and_scalars,
         "raw_results__columns": raw_results__columns,
         "fail_if__active_periods_overlap": fail_if__active_periods_overlap,
         "fail_if__any_paths_are_invalid": fail_if__any_paths_are_invalid,
@@ -128,7 +128,7 @@ def function_collection():
         "fail_if__root_nodes_are_missing": fail_if__root_nodes_are_missing,
         "fail_if__targets_are_not_in_policy_environment_or_data": fail_if__targets_are_not_in_policy_environment_or_data,
         "fail_if__targets_tree_is_invalid": fail_if__targets_tree_is_invalid,
-        "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
+        "combined_environment__with_derived_functions_and_input_nodes": combined_environment__with_derived_functions_and_input_nodes,
         "names__grouping_levels": names__grouping_levels,
         "input_data__tree": input_data__tree,
         "results__tree": results__tree,
@@ -146,7 +146,7 @@ def function_collection():
         "raw_results__from_input_data": raw_results__from_input_data,
         "targets__qname": targets__qname,
         "results__df": results__df,
-        "required_column_functions": required_column_functions,
+        "combined_environment__with_partialled_params_and_scalars": combined_environment__with_partialled_params_and_scalars,
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
         "names__top_level_namespace": names__top_level_namespace,

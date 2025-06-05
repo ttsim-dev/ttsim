@@ -19,13 +19,13 @@ from ttsim import (
     ScalarParam,
     agg_by_group_function,
     agg_by_p_id_function,
-    column_functions_with_processed_params_and_scalars,
+    combined_environment__with_partialled_params_and_scalars,
+    combined_environment__with_processed_params_and_scalars,
     main,
     merge_trees,
     param_function,
     policy_function,
     policy_input,
-    required_column_functions,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
@@ -226,8 +226,8 @@ def func_before_partial(arg_1, some_param):
     return arg_1 + some_param
 
 
-func_after_partial = required_column_functions(
-    column_functions_with_processed_params_and_scalars={
+func_after_partial = combined_environment__with_partialled_params_and_scalars(
+    combined_environment__with_processed_params_and_scalars={
         "some_func": func_before_partial,
         "some_param": SOME_INT_PARAM.value,
     },
@@ -730,8 +730,8 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_converting_params_func": some_converting_params_func,
         "some_param_function_taking_scalar": some_param_function_taking_scalar,
     }
-    processed_tree_with_params = column_functions_with_processed_params_and_scalars(
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=policy_environment,
+    actual = combined_environment__with_processed_params_and_scalars(
+        combined_environment__with_derived_functions_and_input_nodes=policy_environment,
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
@@ -747,7 +747,7 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_bool_scalar": True,
         "some_param_function_taking_scalar": 4.0,
     }
-    assert processed_tree_with_params == expected
+    assert actual == expected
 
 
 @pytest.mark.parametrize(
