@@ -25,10 +25,10 @@ from ttsim.failures_and_warnings import (
     _ParamWithActivePeriod,
     assert_valid_ttsim_pytree,
     fail_if_active_periods_overlap,
-    fail_if_data_tree_is_invalid,
     fail_if_foreign_keys_are_invalid_in_data,
     fail_if_group_ids_are_outside_top_level_namespace,
     fail_if_group_variables_are_not_constant_within_groups,
+    fail_if_input_data_tree_is_invalid,
     fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name,
     fail_if_targets_are_not_in_policy_environment_or_data,
 )
@@ -469,16 +469,16 @@ def test_fail_because_active_periods_overlap_raises(
         )
 
 
-def test_fail_if_data_tree_is_invalid():
+def test_fail_if_input_data_tree_is_invalid():
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(
         ValueError, match="The input data must contain the `p_id` column."
     ):
-        fail_if_data_tree_is_invalid(data_tree=data)
+        fail_if_input_data_tree_is_invalid(input_data__tree=data)
 
 
-def test_fail_if_data_tree_is_invalid_via_main():
+def test_fail_if_input_data_tree_is_invalid_via_main():
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
@@ -486,13 +486,13 @@ def test_fail_if_data_tree_is_invalid_via_main():
     ):
         main(
             inputs={
-                "data_tree": data,
+                "input_data__tree": data,
                 "policy_environment": {},
                 "targets_tree": {},
                 "rounding": False,
             },
-            targets=["fail_if_data_tree_is_invalid"],
-        )["fail_if_data_tree_is_invalid"]
+            targets=["fail_if_input_data_tree_is_invalid"],
+        )["fail_if_input_data_tree_is_invalid"]
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key(
@@ -585,7 +585,7 @@ def test_fail_if_p_id_does_not_exist():
     with pytest.raises(
         ValueError, match="The input data must contain the `p_id` column."
     ):
-        fail_if_data_tree_is_invalid(data_tree=data)
+        fail_if_input_data_tree_is_invalid(input_data__tree=data)
 
 
 def test_fail_if_p_id_does_not_exist_via_main():
@@ -596,14 +596,14 @@ def test_fail_if_p_id_does_not_exist_via_main():
     ):
         main(
             inputs={
-                "data_tree": data,
+                "input_data__tree": data,
                 "policy_environment": {},
                 "targets_tree": {},
                 "rounding": False,
                 # "jit": jit,
             },
-            targets=["fail_if_data_tree_is_invalid"],
-        )["fail_if_data_tree_is_invalid"]
+            targets=["fail_if_input_data_tree_is_invalid"],
+        )["fail_if_input_data_tree_is_invalid"]
 
 
 @pytest.mark.parametrize(
@@ -627,7 +627,7 @@ def test_fail_if_p_id_is_not_unique():
     with pytest.raises(
         ValueError, match="The following `p_id`s are not unique in the input data"
     ):
-        fail_if_data_tree_is_invalid(data_tree=data)
+        fail_if_input_data_tree_is_invalid(input_data__tree=data)
 
 
 def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
@@ -640,13 +640,13 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
     ):
         main(
             inputs={
-                "data_tree": data,
+                "input_data__tree": data,
                 "policy_environment": {},
                 "targets_tree": {},
                 "rounding": False,
             },
-            targets=["fail_if_data_tree_is_invalid"],
-        )["fail_if_data_tree_is_invalid"]
+            targets=["fail_if_input_data_tree_is_invalid"],
+        )["fail_if_input_data_tree_is_invalid"]
 
 
 def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
@@ -667,7 +667,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
     ):
         main(
             inputs={
-                "data_tree": minimal_input_data,
+                "input_data__tree": minimal_input_data,
                 "policy_environment": policy_environment,
                 "targets_tree": {"c": None},
                 "rounding": False,
@@ -709,7 +709,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
     ):
         main(
             inputs={
-                "data_tree": minimal_input_data,
+                "input_data__tree": minimal_input_data,
                 "policy_environment": {},
                 "targets_tree": {"unknown_target": None},
                 "rounding": False,
@@ -847,7 +847,7 @@ def test_warn_if_functions_and_data_columns_overlap():
     with pytest.warns(FunctionsAndDataColumnsOverlapWarning):
         main(
             inputs={
-                "data_tree": {
+                "input_data__tree": {
                     "p_id": pd.Series([0]),
                     "some_func": pd.Series([1]),
                 },
@@ -868,7 +868,7 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap():
         warnings.filterwarnings("error", category=FunctionsAndDataColumnsOverlapWarning)
         main(
             inputs={
-                "data_tree": {
+                "input_data__tree": {
                     "p_id": pd.Series([0]),
                     "x": pd.Series([1]),
                 },

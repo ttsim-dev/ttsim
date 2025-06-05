@@ -132,7 +132,7 @@ def test_dataframe_to_nested_data(
     expected_output,
 ):
     result = dataframe_to_nested_data(
-        inputs_tree_to_df_columns=inputs_tree_to_df_columns,
+        mapper=inputs_tree_to_df_columns,
         df=df,
     )
     flat_result = dt.flatten_to_qual_names(result)
@@ -156,7 +156,7 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
         ValueError, match="DataFrame column names cannot be booleans or numbers."
     ):
-        dataframe_to_nested_data(inputs_tree_to_df_columns={}, df=df)
+        dataframe_to_nested_data(mapper={}, df=df)
 
 
 @pytest.mark.parametrize(
@@ -199,9 +199,7 @@ def test_create_data_tree_fails_if_mapper_has_incorrect_format(
     inputs_tree_to_df_columns, expected_error_message
 ):
     with pytest.raises(TypeError, match=expected_error_message):
-        dataframe_to_nested_data(
-            inputs_tree_to_df_columns=inputs_tree_to_df_columns, df=pd.DataFrame()
-        )
+        dataframe_to_nested_data(mapper=inputs_tree_to_df_columns, df=pd.DataFrame())
 
 
 @pytest.mark.parametrize(
@@ -303,7 +301,7 @@ def test_nested_data_to_dataframe(
 ):
     nested_results = main(
         inputs={
-            "data_tree": minimal_data_tree,
+            "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets_tree": targets_tree_to_outputs_df_columns,
             "rounding": False,
@@ -347,7 +345,7 @@ def test_nested_data_to_dataframe_fails_if_noncompatible_objects_are_returned(
 ):
     nested_results = main(
         inputs={
-            "data_tree": minimal_data_tree,
+            "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets_tree": targets_tree_to_outputs_df_columns,
             "rounding": False,
@@ -385,7 +383,7 @@ def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
 ):
     nested_results = main(
         inputs={
-            "data_tree": minimal_data_tree,
+            "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets_tree": targets_tree_to_outputs_df_columns,
             "rounding": False,

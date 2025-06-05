@@ -45,19 +45,20 @@ from ttsim.compute_taxes_and_transfers import (
     tax_transfer_function,
     top_level_namespace,
 )
-from ttsim.convert_nested_data import (
-    results_df,
-    data_tree,
+from ttsim.data_converters import (
     dataframe_to_nested_data,
     nested_data_to_df_with_mapped_columns,
+    nested_data_to_df_with_nested_columns,
 )
+from ttsim.input_data import tree as input_data__tree
+from ttsim.results import df as results__df
 from ttsim.failures_and_warnings import (
     FunctionsAndDataColumnsOverlapWarning,
     fail_if_active_periods_overlap,
     fail_if_environment_is_invalid,
     fail_if_group_ids_are_outside_top_level_namespace,
     fail_if_any_paths_are_invalid,
-    fail_if_data_tree_is_invalid,
+    fail_if_input_data_tree_is_invalid,
     fail_if_foreign_keys_are_invalid_in_data,
     fail_if_group_variables_are_not_constant_within_groups,
     fail_if_root_nodes_are_missing,
@@ -111,7 +112,7 @@ def function_collection():
         "column_results": column_results,
         "fail_if_active_periods_overlap": fail_if_active_periods_overlap,
         "fail_if_any_paths_are_invalid": fail_if_any_paths_are_invalid,
-        "fail_if_data_tree_is_invalid": fail_if_data_tree_is_invalid,
+        "fail_if_input_data_tree_is_invalid": fail_if_input_data_tree_is_invalid,
         "fail_if_environment_is_invalid": fail_if_environment_is_invalid,
         "fail_if_foreign_keys_are_invalid_in_data": fail_if_foreign_keys_are_invalid_in_data,
         "fail_if_group_ids_are_outside_top_level_namespace": fail_if_group_ids_are_outside_top_level_namespace,
@@ -121,7 +122,7 @@ def function_collection():
         "fail_if_targets_tree_is_invalid": fail_if_targets_tree_is_invalid,
         "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
         "grouping_levels": grouping_levels,
-        "data_tree": data_tree,
+        "input_data__tree": input_data__tree,
         "nested_results": nested_results,
         "orig_policy_objects__column_objects_and_param_functions": column_objects_and_param_functions,
         "orig_policy_objects__param_specs": param_specs,
@@ -134,7 +135,7 @@ def function_collection():
         "qual_name_param_targets": qual_name_param_targets,
         "qual_name_results": qual_name_results,
         "qual_name_targets": qual_name_targets,
-        "results_df": results_df,
+        "results__df": results__df,
         "required_column_functions": required_column_functions,
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,

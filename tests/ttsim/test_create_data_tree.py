@@ -51,7 +51,7 @@ def test_dataframe_to_nested_data(
     expected_output,
 ):
     result = dataframe_to_nested_data(
-        inputs_tree_to_df_columns=inputs_tree_to_df_columns,
+        mapper=inputs_tree_to_df_columns,
         df=df,
     )
     flat_result = dt.flatten_to_qual_names(result)
@@ -75,7 +75,7 @@ def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
         ValueError, match="DataFrame column names cannot be booleans or numbers."
     ):
-        dataframe_to_nested_data(inputs_tree_to_df_columns={}, df=df)
+        dataframe_to_nested_data(mapper={}, df=df)
 
 
 @pytest.mark.parametrize(
@@ -118,6 +118,4 @@ def test_create_data_tree_fails_if_mapper_has_incorrect_format(
     inputs_tree_to_df_columns, expected_error_message
 ):
     with pytest.raises(TypeError, match=expected_error_message):
-        dataframe_to_nested_data(
-            inputs_tree_to_df_columns=inputs_tree_to_df_columns, df=pd.DataFrame()
-        )
+        dataframe_to_nested_data(mapper=inputs_tree_to_df_columns, df=pd.DataFrame())

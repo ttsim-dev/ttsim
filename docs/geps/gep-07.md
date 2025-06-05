@@ -287,7 +287,7 @@ interface while maintaining GETTSIM's computational robustness.
 
    - `policy_environment`
    - `fail_if...`
-   - `data_tree`
+   - `input_data__tree`
    - `processed_params_tree`
    - `function_targets`
    - `taxes_and_transfers_function`

@@ -103,15 +103,15 @@ def oss(
     2          0.00
     3          9.82
     """
-    data_tree = dataframe_to_nested_data(
-        inputs_tree_to_df_columns=inputs_tree_to_inputs_df_columns,
+    input_data__tree = dataframe_to_nested_data(
+        mapper=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
     )
     nested_result = main(
         inputs={
             "date": to_datetime(date),
             "root": GETTSIM_ROOT,
-            "data_tree": data_tree,
+            "input_data__tree": input_data__tree,
             "targets_tree": targets_tree_to_outputs_df_columns,
             "rounding": True,
         },
@@ -120,5 +120,5 @@ def oss(
     return nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=nested_result,
         nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
-        data_with_p_id=data_tree,
+        data_with_p_id=input_data__tree,
     )

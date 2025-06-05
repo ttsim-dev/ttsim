@@ -10,7 +10,7 @@ import yaml
 
 from ttsim import main, merge_trees
 from ttsim.config import numpy_or_jax as np
-from ttsim.convert_nested_data import nested_data_to_df_with_nested_columns
+from ttsim.data_converters import nested_data_to_df_with_nested_columns
 from ttsim.shared import to_datetime
 
 # Set display options to show all columns without truncation
@@ -73,12 +73,15 @@ class PolicyTest:
 
 
 def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
+    if jit:
+        raise NotImplementedError("JIT is not implemented yet.")
+
     environment = cached_policy_environment(date=test.date, root=root)
 
     if test.target_structure:
         nested_result = main(
             inputs={
-                "data_tree": test.input_tree,
+                "input_data__tree": test.input_tree,
                 "policy_environment": environment,
                 "targets_tree": test.target_structure,
                 "rounding": True,

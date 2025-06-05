@@ -61,8 +61,8 @@ def column_results(
     return tax_transfer_function(qual_name_input_data)
 
 
-def qual_name_data(data_tree: NestedData) -> QualNameData:
-    return dt.flatten_to_qual_names(data_tree)
+def qual_name_data(input_data__tree: NestedData) -> QualNameData:
+    return dt.flatten_to_qual_names(input_data__tree)
 
 
 def qual_name_data_columns(qual_name_data: QualNameData) -> set[str]:
@@ -129,7 +129,7 @@ def tax_transfer_function(
     #     import jax
 
     #     static_args = {
-    #         argname: data_tree["p_id"].max() + 1
+    #         argname: input_data__tree["p_id"].max() + 1
     #         for argname in inspect.signature(ttf_with_keyword_args).parameters
     #         if argname.endswith("_num_segments")
     #     }

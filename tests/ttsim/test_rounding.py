@@ -115,7 +115,7 @@ def test_rounding(rounding_spec, input_values, exp_output):
     def test_func(x):
         return x
 
-    data_tree = {
+    input_data__tree = {
         "p_id": np.array([1, 2]),
         "namespace": {"x": np.array(input_values)},
     }
@@ -123,7 +123,7 @@ def test_rounding(rounding_spec, input_values, exp_output):
 
     nested_results = main(
         inputs={
-            "data_tree": data_tree,
+            "input_data__tree": input_data__tree,
             "policy_environment": policy_environment,
             "targets_tree": {"namespace": {"test_func": None}},
             "rounding": True,
@@ -158,7 +158,7 @@ def test_rounding_with_time_conversion():
 
     nested_results = main(
         inputs={
-            "data_tree": data,
+            "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets_tree": {"test_func_y": None},
             "rounding": True,
@@ -196,7 +196,7 @@ def test_no_rounding(
 
     nested_results = main(
         inputs={
-            "data_tree": data,
+            "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets_tree": {"test_func": None},
             "rounding": False,

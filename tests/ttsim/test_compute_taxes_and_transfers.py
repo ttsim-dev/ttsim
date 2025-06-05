@@ -304,7 +304,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
     (
         "policy_environment",
         "targets_tree",
-        "data_tree",
+        "input_data__tree",
     ),
     [
         (
@@ -411,12 +411,12 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
 def test_create_agg_by_group_functions(
     policy_environment,
     targets_tree,
-    data_tree,
+    input_data__tree,
 ):
     main(
         inputs={
             "policy_environment": policy_environment,
-            "data_tree": data_tree,
+            "input_data__tree": input_data__tree,
             "targets_tree": targets_tree,
             "rounding": False,
             # "jit": jit,
@@ -433,7 +433,7 @@ def test_output_is_tree(minimal_input_data):
 
     out = main(
         inputs={
-            "data_tree": minimal_input_data,
+            "input_data__tree": minimal_input_data,
             "policy_environment": policy_environment,
             "targets_tree": {"module": {"some_func": None}},
             "rounding": False,
@@ -467,7 +467,7 @@ def test_params_target_is_allowed(minimal_input_data):
 
     out = main(
         inputs={
-            "data_tree": minimal_input_data,
+            "input_data__tree": minimal_input_data,
             "policy_environment": policy_environment,
             "targets_tree": {"some_param": None, "module": {"some_func": None}},
             "rounding": False,
@@ -496,7 +496,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
     }
     nested_results = main(
         inputs={
-            "data_tree": minimal_input_data,
+            "input_data__tree": minimal_input_data,
             "policy_environment": policy_environment,
             "targets_tree": {"b": None},
             "rounding": False,
@@ -543,7 +543,7 @@ def test_user_provided_aggregate_by_group_specs():
 
     out = main(
         inputs={
-            "data_tree": data,
+            "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets_tree": {"module_name": {"betrag_m_fam": None}},
             "rounding": False,
@@ -586,7 +586,7 @@ def test_user_provided_aggregation():
 
     actual = main(
         inputs={
-            "data_tree": data,
+            "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets_tree": {"module_name": {"betrag_m_double_fam": None}},
             "rounding": False,
@@ -631,7 +631,7 @@ def test_user_provided_aggregation_with_time_conversion():
 
     actual = main(
         inputs={
-            "data_tree": data,
+            "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets_tree": {"module_name": {"max_betrag_double_y_fam": None}},
             "rounding": False,
@@ -706,7 +706,7 @@ def test_user_provided_aggregate_by_p_id_specs(
 
     out = main(
         inputs={
-            "data_tree": minimal_input_data_shared_fam,
+            "input_data__tree": minimal_input_data_shared_fam,
             "policy_environment": policy_environment,
             "targets_tree": target_tree,
             "rounding": False,
@@ -834,7 +834,7 @@ def test_can_override_ttsim_objects_with_data(
 ):
     actual = main(
         inputs={
-            "data_tree": {
+            "input_data__tree": {
                 **minimal_input_data,
                 **overriding_data,
             },

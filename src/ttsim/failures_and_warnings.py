@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import networkx as nx
+import optree
 import pandas as pd
 
 from ttsim.column_objects_param_function import (
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
         NestedColumnObjectsParamFunctions,
         NestedData,
         NestedPolicyEnvironment,
+        NestedStrings,
         NestedTargetDict,
         OrigParamSpec,
         QualNameData,
@@ -255,14 +257,14 @@ def fail_if_active_periods_overlap(
 
 def fail_if_any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
-    data_tree: NestedData,
+    input_data__tree: NestedData,
     targets_tree: NestedTargetDict,
     top_level_namespace: set[str],
 ) -> None:
     """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
     return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
-        data_tree=data_tree,
+        input_data__tree=input_data__tree,
         targets=targets_tree,
         top_level_namespace=top_level_namespace,
     )
@@ -287,7 +289,7 @@ def fail_if_data_paths_are_missing_in_paths_to_column_names(
         raise ValueError(msg)
 
 
-def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
+def fail_if_input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
     """
     Validate the basic structure of the data tree.
 
@@ -297,7 +299,7 @@ def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
 
     Parameters
     ----------
-    data_tree
+    input_data__tree
         The data tree.
 
     Raises
@@ -306,11 +308,11 @@ def fail_if_data_tree_is_invalid(data_tree: NestedData) -> None:
         If any of the above conditions is not met.
     """
     assert_valid_ttsim_pytree(
-        tree=data_tree,
+        tree=input_data__tree,
         leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
-        tree_name="data_tree",
+        tree_name="input_data__tree",
     )
-    p_id = data_tree.get("p_id", None)
+    p_id = input_data__tree.get("p_id", None)
     if p_id is None:
         raise ValueError("The input data must contain the `p_id` column.")
 
@@ -485,6 +487,83 @@ def fail_if_incompatible_objects_in_nested_data(
             "scalars (int, bool, float - or their numpy equivalents) only."
             "The following paths contain non-scalar objects: "
             f"{format_list_linewise(faulty_paths)}"
+        )
+        raise TypeError(msg)
+
+
+def fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(
+    df: pd.DataFrame,
+) -> None:
+    """Fail if the DataFrame has bool or numeric column names."""
+    common_msg = format_errors_and_warnings(
+        """DataFrame column names cannot be booleans or numbers. This restriction
+        prevents ambiguity between actual column references and values intended for
+        broadcasting.
+        """
+    )
+    bool_column_names = [col for col in df.columns if isinstance(col, bool)]
+    numeric_column_names = [
+        col
+        for col in df.columns
+        if isinstance(col, (int, float)) or (isinstance(col, str) and col.isnumeric())
+    ]
+
+    if bool_column_names or numeric_column_names:
+        msg = format_errors_and_warnings(
+            f"""
+            {common_msg}
+
+            Boolean column names: {bool_column_names}.
+            Numeric column names: {numeric_column_names}.
+            """
+        )
+        raise ValueError(msg)
+
+
+def fail_if_mapper_has_incorrect_format(
+    inputs_tree_to_df_columns: NestedStrings,
+) -> None:
+    """Fail if the input tree to column name mapping has an incorrect format."""
+    if not isinstance(inputs_tree_to_df_columns, dict):
+        msg = format_errors_and_warnings(
+            """The inputs tree to column mapping must be a (nested) dictionary. Call
+            `dags.tree.create_tree_with_input_types` to create a template."""
+        )
+        raise TypeError(msg)
+
+    non_string_paths = [
+        str(path)
+        for path in optree.tree_paths(inputs_tree_to_df_columns, none_is_leaf=True)  # type: ignore[arg-type]
+        if not all(isinstance(part, str) for part in path)
+    ]
+    if non_string_paths:
+        msg = format_errors_and_warnings(
+            f"""All path elements of `inputs_tree_to_df_columns` must be strings.
+            Found the following paths that contain non-string elements:
+
+            {format_list_linewise(non_string_paths)}
+
+            Call `dags.tree.create_tree_with_input_types` to create a template.
+            """
+        )
+        raise TypeError(msg)
+
+    incorrect_types = {
+        k: type(v)
+        for k, v in dt.flatten_to_qual_names(inputs_tree_to_df_columns).items()
+        if not isinstance(v, str | int | float | bool)
+    }
+    if incorrect_types:
+        formatted_incorrect_types = "\n".join(
+            f"    - {k}: {v.__name__}" for k, v in incorrect_types.items()
+        )
+        msg = format_errors_and_warnings(
+            f"""Values of the input tree to column mapping must be strings, integers,
+            floats, or Booleans.
+            Found the following incorrect types:
+
+            {formatted_incorrect_types}
+            """
         )
         raise TypeError(msg)
 
