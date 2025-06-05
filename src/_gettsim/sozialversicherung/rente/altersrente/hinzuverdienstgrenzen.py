@@ -10,7 +10,7 @@ from ttsim import RoundingSpec, policy_function
 )
 def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     alter: int,
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    regelaltersrente__altersgrenze: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     bruttorente_basisbetrag_m: float,
     hinzuverdienstgrenze: float,
@@ -21,9 +21,7 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     """
     # TODO (@MImmesberger): Use age with monthly precision.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
-    if (
-        alter >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
-    ) or (
+    if (alter >= regelaltersrente__altersgrenze) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         <= hinzuverdienstgrenze
     ):
@@ -44,7 +42,7 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
 )
 def bruttorente_m_mit_hinzuverdienstdeckel(
     alter: int,
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    regelaltersrente__altersgrenze: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     differenz_bruttolohn_hinzuverdienstdeckel_m: float,
     zahlbetrag_ohne_deckel_m: float,
@@ -58,8 +56,7 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     if (
         differenz_bruttolohn_hinzuverdienstdeckel_m > 0
-        and alter
-        <= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
+        and alter <= regelaltersrente__altersgrenze
         and einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         > 0
     ):
@@ -80,7 +77,7 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
 def zahlbetrag_ohne_deckel_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     alter: int,
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    regelaltersrente__altersgrenze: float,
     bruttorente_basisbetrag_m: float,
     differenz_bruttolohn_hinzuverdienstgrenze_m: float,
     hinzuverdienstgrenze: float,
@@ -92,9 +89,7 @@ def zahlbetrag_ohne_deckel_m(
     # TODO (@MImmesberger): Use age with monthly precision.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     # No deduction because of age or low earnings
-    if (
-        alter >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
-    ) or (
+    if (alter >= regelaltersrente__altersgrenze) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         <= hinzuverdienstgrenze
     ):
