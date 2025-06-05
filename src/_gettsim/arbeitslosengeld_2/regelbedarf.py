@@ -49,7 +49,7 @@ def mehrbedarf_alleinerziehend_m(
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
-    mehrbedarf_base = (
+    basis_mehrbedarf = (
         parameter_mehrbedarf_alleinerziehend["basis_je_kind_bis_17"]
         * anzahl_kinder_bis_17_fg
     )
