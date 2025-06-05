@@ -361,6 +361,7 @@ __all__ = [
     "join",
     "merge_trees",
     "nested_data_to_df_with_mapped_columns",
+    "nested_data_to_df_with_nested_columns",
     "param_function",
     "piecewise_polynomial",
     "plot_dag",

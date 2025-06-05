@@ -338,7 +338,7 @@ def test_nested_data_to_dataframe(
         ),
     ],
 )
-def test_nested_data_to_dataframe_fails_if_noncompatible_objects_are_returned(
+def test_nested_data_to_dataframe_fails_if_incompatible_objects_are_returned(
     environment,
     targets_tree_to_outputs_df_columns,
     minimal_data_tree,
