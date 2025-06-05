@@ -7,7 +7,7 @@ import numpy
 from ttsim import policy_function
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def geburtsdatum(
     geburtsjahr: int,
     geburtsmonat: int,

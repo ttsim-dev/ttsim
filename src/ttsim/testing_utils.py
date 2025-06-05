@@ -10,6 +10,7 @@ import yaml
 
 from ttsim import main, merge_trees
 from ttsim.config import numpy_or_jax as np
+from ttsim.convert_nested_data import nested_data_to_df_with_nested_columns
 from ttsim.shared import to_datetime
 
 # Set display options to show all columns without truncation
@@ -74,29 +75,28 @@ class PolicyTest:
 def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
     environment = cached_policy_environment(date=test.date, root=root)
 
-    data_tree = test.input_tree
-    targets_tree = test.target_structure
-
-    if targets_tree:
-        result = main(
+    if test.target_structure:
+        nested_result = main(
             inputs={
-                "data_tree": data_tree,
+                "data_tree": test.input_tree,
                 "policy_environment": environment,
-                "targets_tree": targets_tree,
+                "targets_tree": test.target_structure,
                 "rounding": True,
                 # "jit": jit,
             },
             targets=["nested_results"],
         )["nested_results"]
     else:
-        result = {}
+        nested_result = {}
 
-    flat_result = dt.flatten_to_qual_names(result)
-    flat_expected_output_tree = dt.flatten_to_qual_names(test.expected_output_tree)
-
-    if flat_expected_output_tree:
-        expected_df = pd.DataFrame(flat_expected_output_tree)
-        result_df = pd.DataFrame(flat_result)
+    if test.expected_output_tree:
+        expected_df = nested_data_to_df_with_nested_columns(
+            nested_data_to_convert=test.expected_output_tree,
+            data_with_p_id=test.input_tree,
+        )
+        result_df = nested_data_to_df_with_nested_columns(
+            nested_data_to_convert=nested_result, data_with_p_id=test.input_tree
+        )
         try:
             pd.testing.assert_frame_equal(
                 result_df.sort_index(axis="columns"),
@@ -149,7 +149,7 @@ def load_policy_test_data(test_dir: Path, policy_name: str) -> dict[str, PolicyT
         with path_to_yaml.open("r", encoding="utf-8") as file:
             raw_test_data: NestedData = yaml.safe_load(file)
 
-            this_test = _get_policy_tests_from_raw_test_data(
+            this_test = _get_policy_test_from_raw_test_data(
                 test_dir=test_dir,
                 raw_test_data=raw_test_data,
                 path_to_yaml=path_to_yaml,
@@ -163,11 +163,11 @@ def _is_skipped(test_file: Path) -> bool:
     return "skip" in test_file.stem or "skip" in test_file.parent.name
 
 
-def _get_policy_tests_from_raw_test_data(
+def _get_policy_test_from_raw_test_data(
     test_dir: Path,
     path_to_yaml: Path,
     raw_test_data: NestedData,
-) -> list[PolicyTest]:
+) -> PolicyTest:
     """Get a list of PolicyTest objects from raw test data.
 
     Args:
@@ -178,19 +178,20 @@ def _get_policy_tests_from_raw_test_data(
         A list of PolicyTest objects.
     """
     test_info: NestedData = raw_test_data.get("info", {})
-    inputs: NestedData = raw_test_data.get("inputs", {})
     input_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: pd.Series(v)
+            k: np.array(v)
             for k, v in dt.flatten_to_tree_paths(
-                merge_trees(inputs.get("provided", {}), inputs.get("assumed", {}))
+                merge_trees(
+                    left=raw_test_data["inputs"].get("provided", {}),
+                    right=raw_test_data["inputs"].get("assumed", {}),
+                )
             ).items()
         }
     )
-
     expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: pd.Series(v)
+            k: np.array(v)
             for k, v in dt.flatten_to_tree_paths(
                 raw_test_data.get("outputs", {})
             ).items()

@@ -1,3 +1,5 @@
+# ruff: noqa
+# type: ignore
 from __future__ import annotations
 
 from typing import Any
@@ -25,18 +27,9 @@ from ttsim.column_objects_param_function import (
     policy_input,
 )
 from ttsim.compute_taxes_and_transfers import (
-    FunctionsAndDataColumnsOverlapWarning,
     _add_derived_functions,
     column_functions_with_processed_params_and_scalars,
     column_results,
-    compute_taxes_and_transfers,
-    fail_if_any_paths_are_invalid,
-    fail_if_data_tree_is_invalid,
-    fail_if_foreign_keys_are_invalid_in_data,
-    fail_if_group_variables_are_not_constant_within_groups,
-    fail_if_root_nodes_are_missing,
-    fail_if_targets_are_not_in_policy_environment_or_data,
-    fail_if_targets_tree_is_invalid,
     flat_policy_environment_with_derived_functions_and_without_overridden_functions,
     nested_results,
     qual_name_column_targets,
@@ -51,9 +44,28 @@ from ttsim.compute_taxes_and_transfers import (
     tax_transfer_dag,
     tax_transfer_function,
     top_level_namespace,
-    warn_if_functions_and_data_columns_overlap,
 )
-from ttsim.convert_nested_data import dataframe_to_nested_data, nested_data_to_dataframe
+from ttsim.convert_nested_data import (
+    results_df,
+    data_tree,
+    dataframe_to_nested_data,
+    nested_data_to_df_with_mapped_columns,
+)
+from ttsim.failures_and_warnings import (
+    FunctionsAndDataColumnsOverlapWarning,
+    fail_if_active_periods_overlap,
+    fail_if_environment_is_invalid,
+    fail_if_group_ids_are_outside_top_level_namespace,
+    fail_if_any_paths_are_invalid,
+    fail_if_data_tree_is_invalid,
+    fail_if_foreign_keys_are_invalid_in_data,
+    fail_if_group_variables_are_not_constant_within_groups,
+    fail_if_root_nodes_are_missing,
+    fail_if_targets_are_not_in_policy_environment_or_data,
+    fail_if_targets_tree_is_invalid,
+    warn_if_functions_and_data_columns_overlap,
+    format_list_linewise,
+)
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
@@ -70,25 +82,22 @@ from ttsim.piecewise_polynomial import (
     piecewise_polynomial,
 )
 from ttsim.plot_dag import plot_dag
+from ttsim.loader import (
+    orig_tree_with_column_objects_and_param_functions,
+    orig_tree_with_params,
+)
 from ttsim.policy_environment import (
-    OrigTreesWithFileNames,
     active_tree_with_column_objects_and_param_functions,
     active_tree_with_params,
-    fail_if_active_periods_overlap,
-    fail_if_environment_is_invalid,
-    fail_if_group_ids_are_outside_top_level_namespace,
     get_consecutive_int_1d_lookup_table_param_value,
     get_consecutive_int_2d_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
     grouping_levels,
-    orig_tree_with_column_objects_and_param_functions,
-    orig_tree_with_params,
     policy_environment,
 )
 from ttsim.rounding import RoundingSpec
 from ttsim.shared import (
-    format_list_linewise,
     insert_path_and_value,
     join,
     merge_trees,
@@ -116,6 +125,7 @@ def function_collection():
         "fail_if_targets_tree_is_invalid": fail_if_targets_tree_is_invalid,
         "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
         "grouping_levels": grouping_levels,
+        "data_tree": data_tree,
         "nested_results": nested_results,
         "orig_tree_with_column_objects_and_param_functions": orig_tree_with_column_objects_and_param_functions,
         "orig_tree_with_params": orig_tree_with_params,
@@ -128,6 +138,7 @@ def function_collection():
         "qual_name_param_targets": qual_name_param_targets,
         "qual_name_results": qual_name_results,
         "qual_name_targets": qual_name_targets,
+        "results_df": results_df,
         "required_column_functions": required_column_functions,
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
@@ -163,6 +174,7 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
         functions=possible_targets,
         targets=targets,
     )
+    draw_dag(dag)
     f = dags.concatenate_functions(
         dag=dag,
         functions=possible_targets,
@@ -327,7 +339,6 @@ __all__ = [
     "FKType",
     "FunctionsAndDataColumnsOverlapWarning",
     "GroupCreationFunction",
-    "OrigTreesWithFileNames",
     "ParamFunction",
     "ParamObject",
     "PiecewisePolynomialParam",
@@ -341,7 +352,6 @@ __all__ = [
     "_add_derived_functions",
     "agg_by_group_function",
     "agg_by_p_id_function",
-    "compute_taxes_and_transfers",
     "create_time_conversion_functions",
     "dataframe_to_nested_data",
     "get_consecutive_int_1d_lookup_table_param_value",
@@ -353,7 +363,7 @@ __all__ = [
     "insert_path_and_value",
     "join",
     "merge_trees",
-    "nested_data_to_dataframe",
+    "nested_data_to_df_with_mapped_columns",
     "param_function",
     "piecewise_polynomial",
     "plot_dag",

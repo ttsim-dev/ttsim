@@ -117,7 +117,6 @@ def kindergeld_erstes_kind_gestaffelt_m(
     start_date="2009-01-01",
     end_date="2014-12-31",
     leaf_name="anspruchshöhe_m",
-    vectorization_strategy="loop",
 )
 def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     alter: int,
@@ -144,18 +143,16 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     ]
 
     if (
-        berechtigte_altersgruppen["kleinkind"].min_alter
-        <= alter
-        <= berechtigte_altersgruppen["kleinkind"].max_alter
+        berechtigte_altersgruppen["kleinkind"].min_alter <= alter
+        and alter <= berechtigte_altersgruppen["kleinkind"].max_alter
     ):
         out = (
             faktor_jüngste_altersgruppe * (2 * sächliches_existenzmininmum / 12)
             - kindergeld_erstes_kind_m
         )
     elif (
-        berechtigte_altersgruppen["schulkind"].min_alter
-        <= alter
-        <= berechtigte_altersgruppen["schulkind"].max_alter
+        berechtigte_altersgruppen["schulkind"].min_alter <= alter
+        and alter <= berechtigte_altersgruppen["schulkind"].max_alter
     ):
         out = 2 * sächliches_existenzmininmum / 12 - kindergeld_erstes_kind_m
     else:
@@ -168,7 +165,6 @@ def unterhaltsvorschuss_anspruch_m_2009_bis_2014(
     start_date="2015-01-01",
     end_date="2015-12-31",
     leaf_name="anspruchshöhe_m",
-    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_anwendungsvors(
     alter: int,
@@ -182,15 +178,13 @@ def anspruchshöhe_m_anwendungsvors(
     Kindergeld changed in July 2015.
     """
     if (
-        berechtigte_altersgruppen["kleinkind"].min_alter
-        <= alter
-        <= berechtigte_altersgruppen["kleinkind"].max_alter
+        berechtigte_altersgruppen["kleinkind"].min_alter <= alter
+        and alter <= berechtigte_altersgruppen["kleinkind"].max_alter
     ):
         out = unterhaltsvorschuss_nach_anwendungsvorschrift["kleinkind"]
     elif (
-        berechtigte_altersgruppen["schulkind"].min_alter
-        <= alter
-        <= berechtigte_altersgruppen["schulkind"].max_alter
+        berechtigte_altersgruppen["schulkind"].min_alter <= alter
+        and alter <= berechtigte_altersgruppen["schulkind"].max_alter
     ):
         out = unterhaltsvorschuss_nach_anwendungsvorschrift["schulkind"]
     else:
@@ -203,7 +197,6 @@ def anspruchshöhe_m_anwendungsvors(
     start_date="2016-01-01",
     end_date="2017-06-30",
     leaf_name="anspruchshöhe_m",
-    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_2016_bis_2017_06(
     alter: int,
@@ -219,15 +212,13 @@ def anspruchshöhe_m_2016_bis_2017_06(
     before.
     """
     if (
-        mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.min_alter
-        <= alter
-        <= mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.max_alter
+        mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.min_alter <= alter
+        and alter <= mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.max_alter
     ):
         out = mindestunterhalt_nach_alter["kleinkind"].satz - kindergeld_erstes_kind_m
     elif (
-        mindestunterhalt_nach_alter["schulkind"].altersgrenzen.min_alter
-        <= alter
-        <= mindestunterhalt_nach_alter["schulkind"].altersgrenzen.max_alter
+        mindestunterhalt_nach_alter["schulkind"].altersgrenzen.min_alter <= alter
+        and alter <= mindestunterhalt_nach_alter["schulkind"].altersgrenzen.max_alter
     ):
         out = mindestunterhalt_nach_alter["schulkind"].satz - kindergeld_erstes_kind_m
     else:
@@ -236,9 +227,7 @@ def anspruchshöhe_m_2016_bis_2017_06(
     return out
 
 
-@policy_function(
-    start_date="2017-07-01", leaf_name="anspruchshöhe_m", vectorization_strategy="loop"
-)
+@policy_function(start_date="2017-07-01", leaf_name="anspruchshöhe_m")
 def anspruchshöhe_m_ab_2017_07(
     alter: int,
     elternteil_mindesteinkommen_erreicht: bool,
@@ -251,21 +240,18 @@ def anspruchshöhe_m_ab_2017_07(
     third age group (12-17) via Artikel 23 G. v. 14.08.2017 BGBl. I S. 3122.
     """
     if (
-        mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.min_alter
-        <= alter
-        <= mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.max_alter
+        mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.min_alter <= alter
+        and alter <= mindestunterhalt_nach_alter["kleinkind"].altersgrenzen.max_alter
     ):
         out = mindestunterhalt_nach_alter["kleinkind"].satz - kindergeld_erstes_kind_m
     elif (
-        mindestunterhalt_nach_alter["schulkind"].altersgrenzen.min_alter
-        <= alter
-        <= mindestunterhalt_nach_alter["schulkind"].altersgrenzen.max_alter
+        mindestunterhalt_nach_alter["schulkind"].altersgrenzen.min_alter <= alter
+        and alter <= mindestunterhalt_nach_alter["schulkind"].altersgrenzen.max_alter
     ):
         out = mindestunterhalt_nach_alter["schulkind"].satz - kindergeld_erstes_kind_m
     elif (
-        mindestunterhalt_nach_alter["jugendliche"].altersgrenzen.min_alter
-        <= alter
-        <= mindestunterhalt_nach_alter["jugendliche"].altersgrenzen.max_alter
+        mindestunterhalt_nach_alter["jugendliche"].altersgrenzen.min_alter <= alter
+        and alter <= mindestunterhalt_nach_alter["jugendliche"].altersgrenzen.max_alter
         and elternteil_mindesteinkommen_erreicht
     ):
         out = mindestunterhalt_nach_alter["jugendliche"].satz - kindergeld_erstes_kind_m

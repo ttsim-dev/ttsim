@@ -17,9 +17,11 @@ from ttsim.column_objects_param_function import (
     TimeConversionFunction,
 )
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.failures_and_warnings import (
+    fail_if_multiple_time_units_for_same_base_name_and_group,
+)
 from ttsim.param_objects import ScalarParam
 from ttsim.shared import (
-    fail_if_multiple_time_units_for_same_base_name_and_group,
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,

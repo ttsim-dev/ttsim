@@ -197,7 +197,7 @@ def anzurechnendes_einkommen_eltern_m_bg(
     return max(out, 0.0)
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(start_date="2005-01-01")
 def kosten_der_unterkunft_m_bg(
     wohnbedarf_anteil_eltern_bg: float,
     arbeitslosengeld_2__bruttokaltmiete_m_bg: float,

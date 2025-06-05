@@ -15,51 +15,53 @@ inputs:
       - 24
       - 24
       - 2
-    arbeitslosengeld_2__eigenbedarf_gedeckt:
-      - false
-      - false
-      - false
-      - false
-      - false
-      - false
-      - true
-      - false
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 1
-      - 0
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_ehepartner:
-      - 1
-      - 0
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 5
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
-      - 1
-      - 1
-      - 1
-      - 1
-      - -1
+    arbeitslosengeld_2:
+      eigenbedarf_gedeckt:
+        - false
+        - false
+        - false
+        - false
+        - false
+        - false
+        - true
+        - false
+      p_id_einstandspartner:
+        - 1
+        - 0
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+    familie:
+      p_id_ehepartner:
+        - 1
+        - 0
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+        - -1
+      p_id_elternteil_1:
+        - -1
+        - -1
+        - 0
+        - 0
+        - 0
+        - 0
+        - 0
+        - 5
+      p_id_elternteil_2:
+        - -1
+        - -1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - -1
     hh_id:
       - 0
       - 0
@@ -97,15 +99,6 @@ outputs:
     - 4
     - 5
     - 6
-  fg_id:
-    - 0
-    - 0
-    - 1
-    - 0
-    - 2
-    - 3
-    - 0
-    - 3
   ehe_id:
     - 0
     - 0
@@ -115,3 +108,12 @@ outputs:
     - 4
     - 5
     - 6
+  fg_id:
+    - 0
+    - 0
+    - 1
+    - 0
+    - 2
+    - 3
+    - 0
+    - 3

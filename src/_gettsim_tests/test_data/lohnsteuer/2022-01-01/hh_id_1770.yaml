@@ -5,35 +5,49 @@ info:
   source: ''
 inputs:
   assumed:
-    familie__p_id_elternteil_1: -1
-    familie__p_id_elternteil_2: -1
+    familie:
+      p_id_elternteil_1:
+        - -1
+      p_id_elternteil_2:
+        - -1
   provided:
     alter:
       - 25
     arbeitsstunden_w:
       - 40.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 1621.95
+    einkommensteuer:
+      einkünfte:
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 1621.95
     hh_id:
       - 1770
-    kindergeld__in_ausbildung:
-      - false
-    lohnsteuer__steuerklasse:
-      - 6
+    kindergeld:
+      in_ausbildung:
+        - false
+    lohnsteuer:
+      steuerklasse:
+        - 6
     p_id:
       - 1770
-    sozialversicherung__kranken__beitrag__zusatzbeitragssatz:
-      - 0.0104
-    sozialversicherung__pflege__beitrag__hat_kinder:
-      - false
-    sozialversicherung__pflege__beitrag__zahlt_zusatzbetrag_kinderlos:
-      - true
-    sozialversicherung__regulär_beschäftigt:
-      - true
+    sozialversicherung:
+      kranken:
+        beitrag:
+          zusatzbeitragssatz:
+            - 0.0104
+      pflege:
+        beitrag:
+          hat_kinder:
+            - false
+          zahlt_zusatzbetrag_kinderlos:
+            - true
+      regulär_beschäftigt:
+        - true
     wohnort_ost:
       - false
 outputs:
-  lohnsteuer__betrag_m:
-    - 283.0
-  lohnsteuer__betrag_soli_m:
-    - 0.0
+  lohnsteuer:
+    betrag_m:
+      - 283.0
+    betrag_soli_m:
+      - 0.0

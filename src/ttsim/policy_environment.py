@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import datetime
 import itertools
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
@@ -17,10 +16,6 @@ from ttsim.column_objects_param_function import (
     policy_function,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.loader import (
-    orig_tree_with_column_objects_and_param_functions,
-    orig_tree_with_params,
-)
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
@@ -33,15 +28,12 @@ from ttsim.param_objects import (
 )
 from ttsim.piecewise_polynomial import get_piecewise_parameters
 from ttsim.shared import (
-    assert_valid_ttsim_pytree,
     merge_trees,
     to_datetime,
     upsert_tree,
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from ttsim.typing import (
         DashedISOString,
         FlatColumnObjectsParamFunctions,
@@ -66,68 +58,8 @@ def grouping_levels(policy_environment: QualNamePolicyEnvironment) -> tuple[str,
     )
 
 
-def upsert_tree_into_policy_environment(
-    policy_environment: NestedPolicyEnvironment, tree_to_upsert: NestedAny
-) -> NestedPolicyEnvironment:
-    """Update and insert *tree_to_upsert* into the existing objects tree.
-
-    Adds to or overwrites elements of the policy environment. Note that this
-    method does not modify the current policy environment but returns a new one.
-
-    Parameters
-    ----------
-    policy_environment
-        The policy environment to update.
-    tree_to_upsert
-        The functions to add or overwrite. Plain functions are converted to
-        PolicyFunctions. If you need `param_functions`, you will need to
-        decorate them with `@param_function`.
-
-    Returns
-    -------
-    The policy environment with the upserted functions.
-    """
-
-    tree_to_upsert_with_correct_types = convert_plain_functions_to_policy_functions(
-        tree_to_upsert
-    )
-    fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-        tree_to_upsert_with_correct_types
-    )
-
-    # Add functions tree to upsert to new functions tree
-    new_environment = upsert_tree(
-        base=policy_environment,
-        to_upsert=tree_to_upsert_with_correct_types,
-    )
-
-    fail_if_group_ids_are_outside_top_level_namespace(new_environment)
-
-    return new_environment
-
-
-@dataclass(frozen=True)
-class OrigTreesWithFileNames:
-    """
-    A container for the original trees of policy functions, policy inputs,
-    param functions and parameters.
-    """
-
-    column_objects_and_param_functions: FlatColumnObjectsParamFunctions
-    params: FlatOrigParamSpecs
-
-
-def orig_trees(root: Path) -> OrigTreesWithFileNames:
-    return OrigTreesWithFileNames(
-        column_objects_and_param_functions=orig_tree_with_column_objects_and_param_functions(
-            root
-        ),
-        params=orig_tree_with_params(root),
-    )
-
-
 def policy_environment(
-    active_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    active_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,  # noqa: E501
     active_tree_with_params: FlatOrigParamSpecs,
     date: datetime.date | DashedISOString,
 ) -> NestedPolicyEnvironment:
@@ -167,11 +99,10 @@ def policy_environment(
         note=None,
         reference=None,
     )
-    fail_if_group_ids_are_outside_top_level_namespace(a_tree)
     return a_tree
 
 
-def convert_plain_functions_to_policy_functions(
+def _convert_plain_functions_to_policy_functions(
     tree: NestedAny,
 ) -> NestedAnyTTSIMObject:
     """Convert all plain functions in a tree to PolicyFunctions.
@@ -222,56 +153,6 @@ def _convert_to_policy_function_if_callable(
     return converted_object
 
 
-def fail_if_active_periods_overlap(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    orig_tree_with_params: FlatOrigParamSpecs,
-) -> None:
-    """Fail because active periods of objects / parameters overlap.
-
-    Checks that objects or parameters with the same tree path / qualified name are not
-    active at the same time.
-
-    Raises
-    ------
-    ConflictingActivePeriodsError
-        If multiple objects and/or parameters with the same leaf name are active at the
-        same time.
-    """
-    # Create mapping from leaf names to objects.
-    overlap_checker: dict[
-        tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
-    ] = {}
-    for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items():
-        path = (*orig_path[:-2], obj.leaf_name)
-        if path in overlap_checker:
-            overlap_checker[path].append(obj)
-        else:
-            overlap_checker[path] = [obj]
-
-    for orig_path, obj in orig_tree_with_params.items():
-        path = (*orig_path[:-2], orig_path[-1])
-        if path in overlap_checker:
-            overlap_checker[path].extend(
-                _param_with_active_periods(param_spec=obj, leaf_name=orig_path[-1])
-            )
-        else:
-            overlap_checker[path] = _param_with_active_periods(
-                param_spec=obj, leaf_name=orig_path[-1]
-            )
-
-    # Check for overlapping start and end dates for time-dependent functions.
-    for path, objects in overlap_checker.items():
-        active_period = [(f.start_date, f.end_date) for f in objects]
-        for (start1, end1), (start2, end2) in itertools.combinations(active_period, 2):
-            if start1 <= end2 and start2 <= end1:
-                raise ConflictingActivePeriodsError(
-                    affected_column_objects=objects,
-                    path=path,
-                    overlap_start=max(start1, start2),
-                    overlap_end=min(end1, end2),
-                )
-
-
 def active_tree_with_column_objects_and_param_functions(
     orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
     date: datetime.date,
@@ -298,74 +179,6 @@ def active_tree_with_column_objects_and_param_functions(
     }
 
     return dt.unflatten_from_tree_paths(flat_objects_tree)
-
-
-@dataclass(frozen=True)
-class _ParamWithActivePeriod(ParamObject):
-    """A ParamObject object which mimics a ColumnObject regarding active periods.
-
-    Only used here for checking overlap.
-    """
-
-    original_function_name: str
-
-
-def _param_with_active_periods(
-    param_spec: OrigParamSpec,
-    leaf_name: str,
-) -> list[_ParamWithActivePeriod]:
-    """Return parameter with active periods."""
-
-    def _remove_note_and_reference(entry: dict[str | int, Any]) -> dict[str | int, Any]:
-        """Remove note and reference from a parameter specification."""
-        entry.pop("note", None)
-        entry.pop("reference", None)
-        return entry
-
-    relevant = sorted(
-        [key for key in param_spec if isinstance(key, datetime.date)],
-        reverse=True,
-    )
-    if not relevant:
-        raise ValueError(f"No relevant dates found for {param_spec}")
-
-    params_header = {
-        "name": param_spec["name"],
-        "description": param_spec["description"],
-        "unit": param_spec["unit"],
-        "reference_period": param_spec["reference_period"],
-    }
-    out = []
-    start_date: datetime.date | None = None
-    end_date = DEFAULT_END_DATE
-    for date in relevant:
-        if _remove_note_and_reference(param_spec[date]):
-            start_date = date
-        else:
-            if start_date:
-                out.append(
-                    _ParamWithActivePeriod(
-                        leaf_name=leaf_name,
-                        start_date=start_date,
-                        end_date=end_date,
-                        original_function_name=leaf_name,
-                        **params_header,
-                    )
-                )
-            start_date = None
-            end_date = date - datetime.timedelta(days=1)
-    if start_date:
-        out.append(
-            _ParamWithActivePeriod(
-                leaf_name=leaf_name,
-                original_function_name=leaf_name,
-                start_date=start_date,
-                end_date=end_date,
-                **params_header,
-            )
-        )
-
-    return out
 
 
 def active_tree_with_params(
@@ -651,83 +464,3 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     return get_consecutive_int_1d_lookup_table_param_value(
         {**before_phase_inout, **during_phase_inout, **after_phase_inout}
     )
-
-
-def fail_if_group_ids_are_outside_top_level_namespace(
-    policy_environment: NestedPolicyEnvironment,
-) -> None:
-    """Fail if group ids are outside the top level namespace."""
-    group_ids_outside_top_level_namespace = {
-        tree_path
-        for tree_path in dt.flatten_to_tree_paths(policy_environment)
-        if len(tree_path) > 1 and tree_path[-1].endswith("_id")
-    }
-    if group_ids_outside_top_level_namespace:
-        raise ValueError(
-            "Group identifiers must live in the top-level namespace. Got:\n\n"
-            f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
-        )
-
-
-def fail_if_environment_is_invalid(policy_environment: NestedPolicyEnvironment) -> None:
-    """Validate that the environment is a pytree with supported types."""
-    assert_valid_ttsim_pytree(
-        tree=policy_environment,
-        leaf_checker=lambda leaf: isinstance(
-            leaf, ColumnObject | ParamFunction | ParamObject
-        ),
-        tree_name="policy_environment",
-    )
-
-
-def fail_if_name_of_last_branch_element_not_leaf_name_of_function(
-    functions_tree: NestedColumnObjectsParamFunctions,
-) -> None:
-    """Raise error if a PolicyFunction does not have the same leaf name as the last
-    branch element of the tree path.
-    """
-
-    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
-        if tree_path[-1] != function.leaf_name:
-            raise KeyError(
-                f"""
-                The name of the last branch element of the functions tree must be the
-                same as the leaf name of the PolicyFunction. The tree path {tree_path}
-                is not compatible with the PolicyFunction {function.leaf_name}.
-                """
-            )
-
-
-class ConflictingActivePeriodsError(Exception):
-    def __init__(
-        self,
-        affected_column_objects: list[ColumnObject],
-        path: tuple[str, ...],
-        overlap_start: datetime.date,
-        overlap_end: datetime.date,
-    ) -> None:
-        self.affected_column_objects = affected_column_objects
-        self.path = path
-        self.overlap_start = overlap_start
-        self.overlap_end = overlap_end
-
-    def __str__(self) -> str:
-        overlapping_objects = [
-            obj.__getattribute__("original_function_name")
-            for obj in self.affected_column_objects
-            if obj
-        ]
-        return f"""
-        Functions with path
-
-          {self.path}
-
-        have overlapping start and end dates. The following functions are affected:
-
-          {
-            '''
-          '''.join(overlapping_objects)
-        }
-
-        Overlap from {self.overlap_start} to {self.overlap_end}."""

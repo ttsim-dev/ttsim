@@ -7,42 +7,110 @@ import numpy as np
 import optree
 import pandas as pd
 
-from ttsim.shared import format_errors_and_warnings, format_list_linewise
+from ttsim.failures_and_warnings import format_errors_and_warnings, format_list_linewise
 
 if TYPE_CHECKING:
     from ttsim.typing import NestedData, NestedStrings, QualNameData
 
 
-def nested_data_to_dataframe(
-    nested_data_with_p_id: NestedData,
-    nested_data_paths_to_outputs_df_columns: NestedStrings,
+def results_df(
+    nested_results: NestedData,
+    data_tree: NestedData,
+    nested_outputs_df_column_names: NestedStrings,
 ) -> pd.DataFrame:
-    """Convert a nested data structure to a DataFrame.
+    """The results DataFrame with mapped column names.
 
     Args:
-        nested_data_with_p_id:
-            A nested data structure.
-        nested_data_paths_to_outputs_df_columns:
+        nested_results:
+            The results of a TTSIM run.
+        data_tree:
+            The data tree of the TTSIM run.
+        nested_outputs_df_column_names:
             A tree that maps paths (sequence of keys) to data columns names.
 
     Returns:
         A DataFrame.
     """
-    paths_to_data = dt.flatten_to_tree_paths(nested_data_with_p_id)
-    paths_to_column_names = dt.flatten_to_tree_paths(
-        nested_data_paths_to_outputs_df_columns
+    return nested_data_to_df_with_mapped_columns(
+        nested_data_to_convert=nested_results,
+        nested_outputs_df_column_names=nested_outputs_df_column_names,
+        data_with_p_id=data_tree,
     )
 
-    _fail_if_data_paths_are_missing_in_paths_to_column_names(
-        available_paths=list(paths_to_column_names.keys()),
-        required_paths=list(paths_to_data.keys()),
-    )
-    _fail_if_incompatible_objects_in_nested_data(paths_to_data)
 
-    p_id_array = paths_to_data.pop(("p_id",))
+def data_tree(
+    data_df: pd.DataFrame,
+    nested_inputs_df_column_names: NestedStrings,
+) -> NestedData:
+    """The input DataFrame as a nested data structure.
+
+    Args:
+        data_df:
+            The input DataFrame.
+        nested_inputs_df_column_names:
+            A tree that maps paths (sequence of keys) to data columns names.
+
+    Returns:
+        A nested data structure.
+    """
+    return dataframe_to_nested_data(
+        df=data_df,
+        inputs_tree_to_df_columns=nested_inputs_df_column_names,
+    )
+
+
+def nested_data_to_df_with_nested_columns(
+    nested_data_to_convert: NestedData,
+    data_with_p_id: NestedData | QualNameData,
+) -> pd.DataFrame:
+    """Convert a nested data structure to a DataFrame.
+
+    Args:
+        nested_data_to_convert:
+            A nested data structure.
+        data_with_p_id:
+            Some data structure with a "p_id" column.
+
+    Returns:
+        A DataFrame.
+    """
+    flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
+
     return pd.DataFrame(
-        {paths_to_column_names[path]: data for path, data in paths_to_data.items()},
-        index=pd.Index(p_id_array, name="p_id"),
+        flat_data_to_convert, index=pd.Index(data_with_p_id["p_id"], name="p_id")
+    )
+
+
+def nested_data_to_df_with_mapped_columns(
+    nested_data_to_convert: NestedData,
+    nested_outputs_df_column_names: NestedStrings,
+    data_with_p_id: NestedData | QualNameData,
+) -> pd.DataFrame:
+    """Convert a nested data structure to a DataFrame.
+
+    Args:
+        nested_data_to_convert:
+            A nested data structure.
+        nested_outputs_df_column_names:
+            A tree that maps paths (sequence of keys) to data columns names.
+        data_with_p_id:
+            Some data structure with a "p_id" column.
+
+    Returns:
+        A DataFrame.
+    """
+    flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
+    flat_df_columns = dt.flatten_to_tree_paths(nested_outputs_df_column_names)
+
+    fail_if_data_paths_are_missing_in_paths_to_column_names(
+        available_paths=list(flat_df_columns.keys()),
+        required_paths=list(flat_data_to_convert.keys()),
+    )
+    fail_if_incompatible_objects_in_nested_data(flat_data_to_convert)
+
+    return pd.DataFrame(
+        {flat_df_columns[path]: data for path, data in flat_data_to_convert.items()},
+        index=pd.Index(data_with_p_id["p_id"], name="p_id"),
     )
 
 
@@ -55,8 +123,8 @@ def dataframe_to_nested_data(
         Args
         ----
             inputs_tree_to_df_columns:
-                A nested dictionary that defines the structure of the output tree. Keys
-                are strings that define the nested structure. Values can be:
+                A nested dictionary that defines the structure of the inputs tree. The
+                elements of the tree paths are strings. Leaves can be:
 
                 - Strings that reference column names in the DataFrame.
                 - Numeric or boolean values (which will be broadcasted to match the
@@ -121,7 +189,7 @@ def dataframe_to_nested_data(
     return dt.unflatten_from_qual_names(name_to_input_series)
 
 
-def _fail_if_incompatible_objects_in_nested_data(
+def fail_if_incompatible_objects_in_nested_data(
     paths_to_data: QualNameData,
 ) -> None:
     """Fail if the nested data contains incompatible objects."""
@@ -149,7 +217,7 @@ def _fail_if_incompatible_objects_in_nested_data(
         raise TypeError(msg)
 
 
-def _fail_if_data_paths_are_missing_in_paths_to_column_names(
+def fail_if_data_paths_are_missing_in_paths_to_column_names(
     available_paths: list[str],
     required_paths: list[str],
 ) -> None:
