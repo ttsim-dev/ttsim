@@ -34,43 +34,42 @@ def regelbedarf_m(
 @policy_function(start_date="2005-01-01")
 def mehrbedarf_alleinerziehend_m(
     familie__alleinerziehend: bool,
-    anzahl_kinder_fg: int,
+    anzahl_kinder_bis_17_fg: int,
     anzahl_kinder_bis_6_fg: int,
     anzahl_kinder_bis_15_fg: int,
     parameter_mehrbedarf_alleinerziehend: dict[str, float],
 ) -> float:
-    """Compute additional SGB II need for single parents.
+    """Mehrbedarf (additional need) for single parents as a share of the Regelsatz.
 
-    Additional need for single parents. Maximum 60% of the standard amount on top if
-    you have at least one kid below 6 or two or three below 15, you get 36%
-    on top alternatively, you get 12% per kid, depending on what's higher.
+    Mehrbedarf for single parents is capped at 60% of the Regelsatz. There are special
+    rules for parents of one child up to 6 years old and two or three children up to 15
+    years old.
+
+    Reference: §21 SGB II
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
-    if familie__alleinerziehend:
-        # Clip value at calculated minimal share and given upper share
-        # Note that upper limit is applied last (for many children lower
-        # could be greater than upper)
-        out = min(
-            max(
-                # Minimal Mehrbedarf share. Minimal rate times number of children
-                parameter_mehrbedarf_alleinerziehend["min_1_kind"] * anzahl_kinder_fg,
-                # Increased rated if children up to 6 and/or 2-3 up to 15 are present.
-                (
-                    parameter_mehrbedarf_alleinerziehend[
-                        "kind_bis_6_oder_mehrere_bis_15"
-                    ]
-                    if (anzahl_kinder_bis_6_fg >= 1)
-                    or anzahl_kinder_bis_15_fg == 2
-                    or anzahl_kinder_bis_15_fg == 3
-                    else 0.0
-                ),
-            ),
-            parameter_mehrbedarf_alleinerziehend["max"],
+    basis_mehrbedarf = (
+        parameter_mehrbedarf_alleinerziehend["basis_je_kind_bis_17"]
+        * anzahl_kinder_bis_17_fg
+    )
+
+    if (
+        anzahl_kinder_bis_6_fg == 1
+        or anzahl_kinder_bis_15_fg == 2
+        or anzahl_kinder_bis_15_fg == 3
+    ):
+        mehrbedarf = max(
+            parameter_mehrbedarf_alleinerziehend["kind_bis_6_oder_2_3_kinder_bis_15"],
+            basis_mehrbedarf,
         )
     else:
-        out = 0.0
-    return out
+        mehrbedarf = basis_mehrbedarf
+
+    if familie__alleinerziehend:
+        return min(mehrbedarf, parameter_mehrbedarf_alleinerziehend["max"])
+    else:
+        return 0.0
 
 
 @policy_function(
