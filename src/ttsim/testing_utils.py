@@ -83,7 +83,7 @@ def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
             inputs={
                 "input_data__tree": test.input_tree,
                 "policy_environment": environment,
-                "targets_tree": test.target_structure,
+                "targets__tree": test.target_structure,
                 "rounding": True,
                 # "jit": jit,
             },

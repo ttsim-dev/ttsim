@@ -125,7 +125,7 @@ def test_rounding(rounding_spec, input_values, exp_output):
         inputs={
             "input_data__tree": input_data__tree,
             "policy_environment": policy_environment,
-            "targets_tree": {"namespace": {"test_func": None}},
+            "targets__tree": {"namespace": {"test_func": None}},
             "rounding": True,
         },
         targets=["nested_results"],
@@ -160,7 +160,7 @@ def test_rounding_with_time_conversion():
         inputs={
             "input_data__tree": data,
             "policy_environment": policy_environment,
-            "targets_tree": {"test_func_y": None},
+            "targets__tree": {"test_func_y": None},
             "rounding": True,
         },
         targets=["nested_results"],
@@ -198,7 +198,7 @@ def test_no_rounding(
         inputs={
             "input_data__tree": data,
             "policy_environment": policy_environment,
-            "targets_tree": {"test_func": None},
+            "targets__tree": {"test_func": None},
             "rounding": False,
         },
         targets=["nested_results"],

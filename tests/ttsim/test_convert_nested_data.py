@@ -205,7 +205,7 @@ def test_create_data_tree_fails_if_mapper_has_incorrect_format(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets_tree_to_outputs_df_columns",
+        "targets__tree_with_map_to_df",
         "expected_output",
     ),
     [
@@ -296,21 +296,21 @@ def test_create_data_tree_fails_if_mapper_has_incorrect_format(
 def test_nested_data_to_dataframe(
     environment,
     minimal_data_tree,
-    targets_tree_to_outputs_df_columns,
+    targets__tree_with_map_to_df,
     expected_output,
 ):
     nested_results = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
-            "targets_tree": targets_tree_to_outputs_df_columns,
+            "targets__tree": targets__tree_with_map_to_df,
             "rounding": False,
         },
         targets=["nested_results"],
     )["nested_results"]
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=nested_results,
-        nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
+        nested_outputs_df_column_names=targets__tree_with_map_to_df,
         data_with_p_id=minimal_data_tree,
     )
     pd.testing.assert_frame_equal(result_df, expected_output, check_like=True)
@@ -319,7 +319,7 @@ def test_nested_data_to_dataframe(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets_tree_to_outputs_df_columns",
+        "targets__tree_with_map_to_df",
     ),
     [
         (
@@ -340,14 +340,14 @@ def test_nested_data_to_dataframe(
 )
 def test_nested_data_to_dataframe_fails_if_incompatible_objects_are_returned(
     environment,
-    targets_tree_to_outputs_df_columns,
+    targets__tree_with_map_to_df,
     minimal_data_tree,
 ):
     nested_results = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
-            "targets_tree": targets_tree_to_outputs_df_columns,
+            "targets__tree": targets__tree_with_map_to_df,
             "rounding": False,
         },
         targets=["nested_results"],
@@ -357,7 +357,7 @@ def test_nested_data_to_dataframe_fails_if_incompatible_objects_are_returned(
     ):
         nested_data_to_df_with_mapped_columns(
             nested_data_to_convert=nested_results,
-            nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
+            nested_outputs_df_column_names=targets__tree_with_map_to_df,
             data_with_p_id=minimal_data_tree,
         )
 
@@ -365,7 +365,7 @@ def test_nested_data_to_dataframe_fails_if_incompatible_objects_are_returned(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets_tree_to_outputs_df_columns",
+        "targets__tree_with_map_to_df",
     ),
     [
         (
@@ -378,14 +378,14 @@ def test_nested_data_to_dataframe_fails_if_incompatible_objects_are_returned(
 )
 def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
     environment,
-    targets_tree_to_outputs_df_columns,
+    targets__tree_with_map_to_df,
     minimal_data_tree,
 ):
     nested_results = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
-            "targets_tree": targets_tree_to_outputs_df_columns,
+            "targets__tree": targets__tree_with_map_to_df,
             "rounding": False,
         },
         targets=["nested_results"],
@@ -396,6 +396,6 @@ def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
     ):
         nested_data_to_df_with_mapped_columns(
             nested_data_to_convert=nested_results,
-            nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
+            nested_outputs_df_column_names=targets__tree_with_map_to_df,
             data_with_p_id=minimal_data_tree,
         )

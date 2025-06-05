@@ -332,6 +332,14 @@ disable_error_code = [
     "no-untyped-def",  # All tests return None, don't clutter source code.
 ]
 
+[[tool.mypy.overrides]]
+module = [
+    "tests.ttsim.tt_dag_elements.test_vectorization", # doing some numpy mixing; vectorization does not like inline comments.
+]
+disable_error_code = [
+    "assignment"
+]
+
 [tool.check-manifest]
 ignore = ["src/_gettsim/_version.py"]
 

@@ -258,14 +258,14 @@ def fail_if__active_periods_overlap(
 def fail_if__any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
-    targets_tree: NestedTargetDict,
+    targets__tree: NestedTargetDict,
     top_level_namespace: set[str],
 ) -> None:
     """Thin wrapper around `dt.fail_if__paths_are_invalid`."""
     return dt.fail_if__paths_are_invalid(
         functions=policy_environment,
         input_data__tree=input_data__tree,
-        targets=targets_tree,
+        targets=targets__tree,
         top_level_namespace=top_level_namespace,
     )
 
@@ -638,7 +638,7 @@ def fail_if__root_nodes_are_missing(
 def fail_if__targets_are_not_in_policy_environment_or_data(
     policy_environment: QualNamePolicyEnvironment,
     qual_name_data_columns: QualNameDataColumns,
-    qual_name_targets: QualNameTargetList,
+    targets__qname: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -660,7 +660,7 @@ def fail_if__targets_are_not_in_policy_environment_or_data(
     """
     targets_not_in_policy_environment_or_data = [
         str(dt.tree_path_from_qual_name(n))
-        for n in qual_name_targets
+        for n in targets__qname
         if n not in policy_environment and n not in qual_name_data_columns
     ]
     if targets_not_in_policy_environment_or_data:
@@ -671,14 +671,14 @@ def fail_if__targets_are_not_in_policy_environment_or_data(
         raise ValueError(msg)
 
 
-def fail_if__targets_tree_is_invalid(targets_tree: NestedTargetDict) -> None:
+def fail_if__targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """
     assert_valid_ttsim_pytree(
-        tree=targets_tree,
+        tree=targets__tree,
         leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
-        tree_name="targets_tree",
+        tree_name="targets__tree",
     )
 
 

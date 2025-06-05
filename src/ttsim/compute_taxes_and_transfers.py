@@ -75,38 +75,38 @@ def nested_results(qual_name_results: QualNameData) -> NestedData:
 
 def qual_name_results(
     column_results: QualNameData,
-    qual_name_param_targets: QualNameTargetList,
+    targets__processed__params: QualNameTargetList,
     column_functions_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
-    qual_name_own_targets: QualNameTargetList,
+    targets__processed__from_input_data: QualNameTargetList,
     qual_name_data: QualNameData,
-    qual_name_targets: QualNameTargetList,
+    targets__qname: QualNameTargetList,
 ) -> QualNameData:
     unordered = {
         **column_results,
         **{
             pt: column_functions_with_processed_params_and_scalars[pt]
-            for pt in qual_name_param_targets
+            for pt in targets__processed__params
         },
-        **{ot: qual_name_data[ot] for ot in qual_name_own_targets},
+        **{ot: qual_name_data[ot] for ot in targets__processed__from_input_data},
     }
-    return {k: unordered[k] for k in qual_name_targets}
+    return {k: unordered[k] for k in targets__qname}
 
 
 def tax_transfer_dag(
     required_column_functions: QualNameColumnFunctions,
-    qual_name_column_targets: QualNameTargetList,
+    targets__processed__columns: QualNameTargetList,
 ) -> nx.DiGraph:
     """Thin wrapper around `create_dag`."""
     return create_dag(
         functions=required_column_functions,
-        targets=qual_name_column_targets,
+        targets=targets__processed__columns,
     )
 
 
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
     required_column_functions: QualNameColumnFunctions,
-    qual_name_column_targets: QualNameTargetList,
+    targets__processed__columns: QualNameTargetList,
     # backend: numpy | jax,
 ) -> Callable[[QualNameData], QualNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
@@ -114,7 +114,7 @@ def tax_transfer_function(
     ttf_with_keyword_args = concatenate_functions(
         dag=tax_transfer_dag,
         functions=required_column_functions,
-        targets=list(qual_name_column_targets),
+        targets=list(targets__processed__columns),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
@@ -142,52 +142,11 @@ def tax_transfer_function(
     return wrapper
 
 
-def qual_name_targets(targets_tree: NestedTargetDict) -> QualNameTargetList:
-    """All targets in their qualified name-representation."""
-    return dt.qual_names(targets_tree)
-
-
-def qual_name_column_targets(
-    required_column_functions: QualNameColumnFunctions,
-    qual_name_targets: QualNameTargetList,
-) -> QualNameTargetList:
-    """All targets that are column functions."""
-    return [t for t in qual_name_targets if t in required_column_functions]
-
-
-def qual_name_param_targets(
-    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
-    qual_name_targets: QualNameTargetList,
-    qual_name_column_targets: QualNameTargetList,
-) -> QualNameTargetList:
-    possible_targets = set(qual_name_targets) - set(qual_name_column_targets)
-    return [
-        t
-        for t in qual_name_targets
-        if t in possible_targets
-        and t
-        in flat_policy_environment_with_derived_functions_and_without_overridden_functions
-    ]
-
-
-def qual_name_own_targets(
-    qual_name_targets: QualNameTargetList,
-    qual_name_column_targets: QualNameTargetList,
-    qual_name_param_targets: QualNameTargetList,
-) -> QualNameTargetList:
-    possible_targets = (
-        set(qual_name_targets)
-        - set(qual_name_column_targets)
-        - set(qual_name_param_targets)
-    )
-    return [t for t in qual_name_targets if t in possible_targets]
-
-
 def flat_policy_environment_with_derived_functions_and_without_overridden_functions(
     policy_environment: NestedPolicyEnvironment,
     qual_name_data: QualNameData,
     qual_name_data_columns: QualNameDataColumns,
-    targets_tree: NestedTargetDict,
+    targets__tree: NestedTargetDict,
     top_level_namespace: set[str],
 ) -> QualNamePolicyEnvironment:
     """Return a flat policy environment with derived functions.
@@ -204,7 +163,7 @@ def flat_policy_environment_with_derived_functions_and_without_overridden_functi
     )
     flat_with_derived = _add_derived_functions(
         qual_name_policy_environment=flat,
-        targets=dt.qual_names(targets_tree),
+        targets=dt.qual_names(targets__tree),
         qual_name_data_columns=qual_name_data_columns,
         groupings=grouping_levels(policy_environment),
     )
