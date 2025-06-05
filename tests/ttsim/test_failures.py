@@ -12,6 +12,7 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
+from ttsim.config import numpy_or_jax as np
 from ttsim.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -493,7 +494,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
     }
 
     fail_if__foreign_keys_are_invalid_in_data(
-        qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+        names__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
     )
@@ -510,7 +511,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         fail_if__foreign_keys_are_invalid_in_data(
-            qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+            names__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
             combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
         )
@@ -526,7 +527,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     }
 
     fail_if__foreign_keys_are_invalid_in_data(
-        qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+        names__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
     )
@@ -542,7 +543,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     }
 
     fail_if__foreign_keys_are_invalid_in_data(
-        qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
+        names__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         combined_environment__with_derived_functions_and_input_nodes=flat_objects_tree,
     )
@@ -557,13 +558,15 @@ def test_fail_if_group_ids_are_outside_top_level_namespace():
 
 def test_fail_if_group_variables_are_not_constant_within_groups():
     data = {
-        "foo_kin": pd.Series([1, 2, 2], name="foo_kin"),
-        "kin_id": pd.Series([1, 1, 2], name="kin_id"),
+        "p_id": np.array([0, 1, 2]),
+        "foo_kin": np.array([1, 2, 2]),
+        "kin_id": np.array([1, 1, 2]),
     }
     with pytest.raises(ValueError):
         fail_if__group_variables_are_not_constant_within_groups(
-            qual_name_input_data=data,
             names__grouping_levels=("kin",),
+            names__root_nodes={n for n in data if n != "p_id"},
+            processed_data=data,
         )
 
 

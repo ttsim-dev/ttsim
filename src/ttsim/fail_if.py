@@ -349,7 +349,7 @@ def fail_if__environment_is_invalid(
 
 
 def fail_if__foreign_keys_are_invalid_in_data(
-    qual_name_input_data: QualNameData,
+    names__root_nodes: set[str],
     processed_data: QualNameData,
     combined_environment__with_derived_functions_and_input_nodes: QualNamePolicyEnvironment,
 ) -> None:
@@ -373,14 +373,14 @@ def fail_if__foreign_keys_are_invalid_in_data(
     for fk_name, fk in relevant_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
-        elif fk_name in qual_name_input_data:
+        elif fk_name in names__root_nodes:
             path = dt.tree_path_from_qual_name(fk_name)
             # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in qual_name_input_data[fk_name].tolist()):
+            if not all(i in valid_ids for i in processed_data[fk_name].tolist()):
                 message = format_errors_and_warnings(
                     f"""
                     For {path}, the following are not a valid p_id in the input
-                    data: {[i for i in qual_name_input_data[fk_name] if i not in valid_ids]}.
+                    data: {[i for i in processed_data[fk_name] if i not in valid_ids]}.
                     """
                 )
                 raise ValueError(message)
@@ -389,7 +389,7 @@ def fail_if__foreign_keys_are_invalid_in_data(
                 equal_to_pid_in_same_row = [
                     i
                     for i, j in zip(
-                        qual_name_input_data[fk_name].tolist(),
+                        processed_data[fk_name].tolist(),
                         processed_data["p_id"].tolist(),
                     )
                     if i == j
@@ -422,8 +422,9 @@ def fail_if__group_ids_are_outside_top_level_namespace(
 
 
 def fail_if__group_variables_are_not_constant_within_groups(
-    qual_name_input_data: QualNameData,
     names__grouping_levels: tuple[str, ...],
+    names__root_nodes: set[str],
+    processed_data: QualNameData,
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -437,14 +438,14 @@ def fail_if__group_variables_are_not_constant_within_groups(
     """
     faulty_data_columns = []
 
-    for name, data_column in qual_name_input_data.items():
+    for name in names__root_nodes:
         group_by_id = get_name_of_group_by_id(
             target_name=name,
             groupings=names__grouping_levels,
         )
-        if group_by_id in qual_name_input_data:
-            group_by_id_series = pd.Series(qual_name_input_data[group_by_id])
-            leaf_series = pd.Series(data_column)
+        if group_by_id in processed_data:
+            group_by_id_series = pd.Series(processed_data[group_by_id])
+            leaf_series = pd.Series(processed_data[name])
             unique_counts = leaf_series.groupby(group_by_id_series).nunique(
                 dropna=False
             )

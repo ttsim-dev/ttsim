@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import networkx as nx
+
 from ttsim.automatically_added_functions import (
     TIME_UNIT_LABELS,
 )
@@ -131,3 +133,31 @@ def names__top_level_namespace(
 
 def names__processed_data_columns(processed_data: QualNameData) -> set[str]:
     return set(processed_data.keys())
+
+
+def names__root_nodes(
+    tax_transfer_dag: nx.DiGraph,
+    processed_data: QualNameData,
+) -> set[str]:
+    """Names of the columns in `processed_data` required for the tax transfer function.
+
+    Parameters
+    ----------
+    tax_transfer_dag:
+        The tax transfer DAG.
+    processed_data:
+        The processed data.
+
+    Returns
+    -------
+    The names of the columns in `processed_data` required for the tax transfer function.
+
+    """
+
+    # Obtain root nodes
+    root_nodes = nx.subgraph_view(
+        tax_transfer_dag, filter_node=lambda n: tax_transfer_dag.in_degree(n) == 0
+    ).nodes
+
+    # Restrict the passed data to the subset that is actually used.
+    return {k for k in processed_data if k in root_nodes}

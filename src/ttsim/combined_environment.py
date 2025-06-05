@@ -5,17 +5,13 @@ import functools
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
-import networkx as nx
 from dags import concatenate_functions, create_dag, get_free_arguments
 
 from ttsim.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
-from ttsim.config import numpy_or_jax as np
-from ttsim.shared import (
-    merge_trees,
-)
+from ttsim.shared import merge_trees
 from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
@@ -25,6 +21,8 @@ from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    import networkx as nx
 
     from ttsim.tt_dag_elements.typing import (
         NestedPolicyEnvironment,
@@ -163,41 +161,6 @@ def _add_derived_functions(
     }
 
     return out
-
-
-def qual_name_input_data(
-    tax_transfer_dag: nx.DiGraph,
-    processed_data: QualNameData,
-) -> QualNameData:
-    """Create input data for the concatenated function.
-
-    1. Check that all root nodes are present in the user-provided data.
-    2. Get only part of the data that is needed for the concatenated function.
-    3. Convert inputs to np.array
-
-    Parameters
-    ----------
-    data
-        Data provided by the user.
-    functions
-        Nested function dictionary.
-    targets
-        Targets provided by the user.
-
-
-    Returns
-    -------
-    Inputs for the concatenated function.
-
-    """
-
-    # Obtain root nodes
-    root_nodes = nx.subgraph_view(
-        tax_transfer_dag, filter_node=lambda n: tax_transfer_dag.in_degree(n) == 0
-    ).nodes
-
-    # Restrict the passed data to the subset that is actually used.
-    return {k: np.array(v) for k, v in processed_data.items() if k in root_nodes}
 
 
 def _apply_rounding(element: Any) -> Any:

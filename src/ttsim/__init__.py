@@ -29,7 +29,6 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.combined_environment import (
     combined_environment__with_processed_params_and_scalars,
     combined_environment__with_derived_functions_and_input_nodes,
-    qual_name_input_data,
     combined_environment__with_partialled_params_and_scalars,
     tax_transfer_dag,
     tax_transfer_function,
@@ -102,6 +101,7 @@ from ttsim.names import (
     names__target_columns,
     names__target_params,
     names__targets_from_input_data,
+    names__root_nodes,
 )
 from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.shared import (
@@ -138,7 +138,7 @@ def function_collection():
         "names__target_columns": names__target_columns,
         "processed_data": processed_data,
         "names__processed_data_columns": names__processed_data_columns,
-        "qual_name_input_data": qual_name_input_data,
+        "names__root_nodes": names__root_nodes,
         "names__targets_from_input_data": names__targets_from_input_data,
         "names__target_params": names__target_params,
         "raw_results__combined": raw_results__combined,

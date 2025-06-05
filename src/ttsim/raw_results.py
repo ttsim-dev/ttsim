@@ -25,10 +25,13 @@ _DUMMY_COLUMN_OBJECT = ColumnObject(
 
 
 def raw_results__columns(
-    qual_name_input_data: QualNameData,
+    names__root_nodes: set[str],
+    processed_data: QualNameData,
     tax_transfer_function: Callable[[QualNameData], QualNameData],
 ) -> QualNameData:
-    return tax_transfer_function(qual_name_input_data)
+    return tax_transfer_function(
+        {k: v for k, v in processed_data.items() if k in names__root_nodes}
+    )
 
 
 def raw_results__params(
