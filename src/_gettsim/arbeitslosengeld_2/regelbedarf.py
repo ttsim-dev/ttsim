@@ -61,10 +61,10 @@ def mehrbedarf_alleinerziehend_m(
     ):
         mehrbedarf = max(
             parameter_mehrbedarf_alleinerziehend["kind_bis_6_oder_2_3_kinder_bis_15"],
-            mehrbedarf_base,
+            basis_mehrbedarf,
         )
     else:
-        mehrbedarf = mehrbedarf_base
+        mehrbedarf = basis_mehrbedarf
 
     if familie__alleinerziehend:
         return min(mehrbedarf, parameter_mehrbedarf_alleinerziehend["max"])
