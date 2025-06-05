@@ -16,14 +16,14 @@ from ttsim import (
     piecewise_polynomial,
     policy_function,
 )
-from ttsim.piecewise_polynomial import (
+from ttsim.tt_dag_elements.piecewise_polynomial import (
     check_and_get_thresholds,
     get_piecewise_parameters,
 )
 
 if TYPE_CHECKING:
     from ttsim import ConsecutiveInt1dLookupTableParamValue
-    from ttsim.typing import RawParam
+    from ttsim.tt_dag_elements.typing import RawParam
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)

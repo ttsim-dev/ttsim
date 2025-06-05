@@ -8,7 +8,7 @@ import numpy
 import pytest
 
 from ttsim.config import numpy_or_jax as np
-from ttsim.piecewise_polynomial import (
+from ttsim.tt_dag_elements.piecewise_polynomial import (
     PiecewisePolynomialParamValue,
     get_piecewise_parameters,
     piecewise_polynomial,

@@ -27,7 +27,7 @@ from ttsim.policy_environment import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         NestedColumnObjectsParamFunctions,
     )
 

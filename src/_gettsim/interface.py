@@ -13,7 +13,7 @@ from ttsim import (
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.typing import NestedInputs, NestedStrings
+    from ttsim.tt_dag_elements.typing import NestedInputs, NestedStrings
 
 
 def oss(

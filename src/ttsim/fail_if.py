@@ -12,7 +12,9 @@ import networkx as nx
 import optree
 import pandas as pd
 
-from ttsim.column_objects_param_function import (
+from ttsim.config import numpy_or_jax as np
+from ttsim.shared import get_name_of_group_by_id
+from ttsim.tt_dag_elements.column_objects_param_function import (
     DEFAULT_END_DATE,
     ColumnFunction,
     ColumnObject,
@@ -20,12 +22,10 @@ from ttsim.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.config import numpy_or_jax as np
-from ttsim.param_objects import ParamObject
-from ttsim.shared import get_name_of_group_by_id
+from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,

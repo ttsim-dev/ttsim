@@ -6,11 +6,11 @@ import pandas as pd
 import pytest
 
 from ttsim import main
-from ttsim.column_objects_param_function import (
-    policy_function,
-)
 from ttsim.fail_if import (
     FunctionsAndDataColumnsOverlapWarning,
+)
+from ttsim.tt_dag_elements.column_objects_param_function import (
+    policy_function,
 )
 
 

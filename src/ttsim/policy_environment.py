@@ -8,11 +8,16 @@ from typing import TYPE_CHECKING, Any, Literal
 import dags.tree as dt
 import numpy
 
-from ttsim.column_objects_param_function import (
+from ttsim.config import numpy_or_jax as np
+from ttsim.shared import (
+    merge_trees,
+    to_datetime,
+    upsert_tree,
+)
+from ttsim.tt_dag_elements.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
-from ttsim.config import numpy_or_jax as np
-from ttsim.param_objects import (
+from ttsim.tt_dag_elements.param_objects import (
     ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
     ConsecutiveInt2dLookupTableParamValue,
@@ -22,15 +27,10 @@ from ttsim.param_objects import (
     RawParam,
     ScalarParam,
 )
-from ttsim.piecewise_polynomial import get_piecewise_parameters
-from ttsim.shared import (
-    merge_trees,
-    to_datetime,
-    upsert_tree,
-)
+from ttsim.tt_dag_elements.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         DashedISOString,
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,

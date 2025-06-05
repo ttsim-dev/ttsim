@@ -7,7 +7,7 @@ from ttsim.data_converters import nested_data_to_df_with_mapped_columns
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.typing import NestedData, NestedStrings
+    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings
 
 
 def df(

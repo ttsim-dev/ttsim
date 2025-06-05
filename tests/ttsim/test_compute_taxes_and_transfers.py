@@ -30,10 +30,10 @@ from ttsim import (
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
-from ttsim.typing import TTSIMArray
+from ttsim.tt_dag_elements.typing import TTSIMArray
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedPolicyEnvironment
+    from ttsim.tt_dag_elements.typing import NestedPolicyEnvironment
 
 if IS_JAX_INSTALLED:
     jit = True

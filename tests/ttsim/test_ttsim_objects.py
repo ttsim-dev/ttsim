@@ -13,8 +13,11 @@ from ttsim import (
     policy_function,
     policy_input,
 )
-from ttsim.column_objects_param_function import ParamFunction, param_function
 from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements.column_objects_param_function import (
+    ParamFunction,
+    param_function,
+)
 
 # ======================================================================================
 # PolicyFunction and policy_function

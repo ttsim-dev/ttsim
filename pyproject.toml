@@ -318,7 +318,7 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
-    "src.ttsim.aggregation_numpy",
+    "src.ttsim.tt_dag_elements.aggregation_numpy",
 ]
 disable_error_code = [
     "type-arg" # ndarray is not typed further.

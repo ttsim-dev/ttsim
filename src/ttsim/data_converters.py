@@ -13,7 +13,7 @@ from ttsim.fail_if import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedData, NestedStrings, QualNameData
+    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings, QualNameData
 
 
 def nested_data_to_df_with_nested_columns(

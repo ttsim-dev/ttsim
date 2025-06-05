@@ -7,13 +7,16 @@ from typing import TYPE_CHECKING, Literal
 
 import yaml
 
-from ttsim.column_objects_param_function import ColumnObject, ParamFunction
+from ttsim.tt_dag_elements.column_objects_param_function import (
+    ColumnObject,
+    ParamFunction,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         OrigParamSpec,

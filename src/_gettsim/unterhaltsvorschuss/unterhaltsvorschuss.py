@@ -16,7 +16,7 @@ from ttsim import (
 
 if TYPE_CHECKING:
     from ttsim import ConsecutiveInt1dLookupTableParamValue, RawParam
-    from ttsim.typing import TTSIMArray
+    from ttsim.tt_dag_elements.typing import TTSIMArray
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

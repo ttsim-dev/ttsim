@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING, Any
 
 import optree
 
-from ttsim.column_objects_param_function import (
+from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
     policy_function,
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         GenericCallable,
         NestedAny,
         NestedAnyTTSIMObject,

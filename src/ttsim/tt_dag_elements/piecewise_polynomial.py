@@ -6,7 +6,7 @@ from typing import Literal, get_args
 import numpy
 
 from ttsim.config import numpy_or_jax as np
-from ttsim.param_objects import PiecewisePolynomialParamValue
+from ttsim.tt_dag_elements.param_objects import PiecewisePolynomialParamValue
 
 FUNC_TYPES = Literal[
     "piecewise_constant",

@@ -7,7 +7,7 @@ from ttsim.data_converters import dataframe_to_nested_data
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.typing import NestedData, NestedStrings
+    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings
 
 
 def tree(

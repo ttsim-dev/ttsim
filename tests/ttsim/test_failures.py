@@ -12,11 +12,6 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
-from ttsim.column_objects_param_function import (
-    DEFAULT_END_DATE,
-    group_creation_function,
-    policy_function,
-)
 from ttsim.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -30,9 +25,14 @@ from ttsim.fail_if import (
     fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name,
     fail_if__targets_are_not_in_policy_environment_or_data,
 )
+from ttsim.tt_dag_elements.column_objects_param_function import (
+    DEFAULT_END_DATE,
+    group_creation_function,
+    policy_function,
+)
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,

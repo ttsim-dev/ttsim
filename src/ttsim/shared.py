@@ -10,7 +10,7 @@ import optree
 from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         DashedISOString,
         NestedColumnObjectsParamFunctions,
         NestedData,

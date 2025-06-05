@@ -13,16 +13,10 @@ from ttsim.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
-from ttsim.column_objects_param_function import (
-    ColumnFunction,
-    ColumnObject,
-    ParamFunction,
-)
 from ttsim.config import numpy_or_jax as np
 from ttsim.fail_if import (
     fail_if__multiple_time_units_for_same_base_name_and_group,
 )
-from ttsim.param_objects import ParamObject, RawParam
 from ttsim.policy_environment import grouping_levels
 from ttsim.shared import (
     get_base_name_and_grouping_suffix,
@@ -30,11 +24,17 @@ from ttsim.shared import (
     group_pattern,
     merge_trees,
 )
+from ttsim.tt_dag_elements.column_objects_param_function import (
+    ColumnFunction,
+    ColumnObject,
+    ParamFunction,
+)
+from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         NestedData,
         NestedPolicyEnvironment,
         NestedTargetDict,

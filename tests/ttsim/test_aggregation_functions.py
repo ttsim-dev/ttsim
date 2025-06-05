@@ -5,7 +5,9 @@ import copy
 import numpy
 import pytest
 
-from ttsim.aggregation import (
+from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements.aggregation import (
     grouped_all,
     grouped_any,
     grouped_count,
@@ -15,8 +17,6 @@ from ttsim.aggregation import (
     grouped_sum,
     sum_by_p_id,
 )
-from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
 
 
 def parameterize_based_on_dict(test_cases, keys_of_test_cases=None):

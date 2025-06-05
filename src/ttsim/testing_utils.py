@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     import datetime
     from pathlib import Path
 
-    from ttsim.typing import (
+    from ttsim.tt_dag_elements.typing import (
         NestedData,
         NestedInputStructureDict,
         NestedPolicyEnvironment,

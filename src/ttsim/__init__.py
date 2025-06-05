@@ -8,9 +8,9 @@ import dags
 import networkx as nx
 import numpy as np
 
-from ttsim.aggregation import AggType
+from ttsim.tt_dag_elements.aggregation import AggType
 from ttsim.automatically_added_functions import create_time_conversion_functions
-from ttsim.column_objects_param_function import (
+from ttsim.tt_dag_elements.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
     FKType,
@@ -69,7 +69,7 @@ from ttsim.fail_if import (
     FunctionsAndDataColumnsOverlapWarning,
     warn_if__functions_and_data_columns_overlap,
 )
-from ttsim.param_objects import (
+from ttsim.tt_dag_elements.param_objects import (
     ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
     ConsecutiveInt2dLookupTableParamValue,
@@ -80,7 +80,7 @@ from ttsim.param_objects import (
     RawParam,
     ScalarParam,
 )
-from ttsim.piecewise_polynomial import (
+from ttsim.tt_dag_elements.piecewise_polynomial import (
     get_piecewise_parameters,
     piecewise_polynomial,
 )
@@ -97,7 +97,7 @@ from ttsim.policy_environment import (
     grouping_levels,
     policy_environment,
 )
-from ttsim.rounding import RoundingSpec
+from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.shared import (
     insert_path_and_value,
     join,

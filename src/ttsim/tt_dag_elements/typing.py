@@ -21,12 +21,12 @@ if TYPE_CHECKING:
         QualNameTargetList,
     )
 
-    from ttsim.column_objects_param_function import (
+    from ttsim.tt_dag_elements.column_objects_param_function import (
         ColumnFunction,
         ColumnObject,
         ParamFunction,
     )
-    from ttsim.param_objects import ParamObject
+    from ttsim.tt_dag_elements.param_objects import ParamObject
 
     FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...], ColumnObject | ParamFunction

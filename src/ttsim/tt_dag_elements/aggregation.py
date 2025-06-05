@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from ttsim import aggregation_jax, aggregation_numpy
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.tt_dag_elements import aggregation_jax, aggregation_numpy
 
 
 class AggType(StrEnum):
