@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import RoundingSpec, param_function, policy_function
-from ttsim.config import numpy_or_jax as np
+from ttsim import RoundingSpec, policy_function
 
 
 @policy_function()
@@ -45,19 +44,21 @@ def minijobgrenze_unterscheidung_ost_west(
     )
 
 
-@param_function(
+@policy_function(
     start_date="2022-10-01",
     leaf_name="minijobgrenze",
+    rounding_spec=RoundingSpec(
+        base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
+    ),
 )
 def minijobgrenze_abgeleitet_von_mindestlohn(
     mindestlohn: float,
     faktoren_minijobformel: dict[str, float],
 ) -> float:
-    """Minijob income threshold, derived from the statutory minimum wage.
-
-    Rounding according to § 8 Abs. 1a Satz 2 SGB IV.
+    """Minijob income threshold since 10/2022. Since then, it is calculated endogenously
+    from the statutory minimum wage.
     """
-    return np.ceil(
+    return (
         mindestlohn
         * faktoren_minijobformel["zähler"]
         / faktoren_minijobformel["nenner"]

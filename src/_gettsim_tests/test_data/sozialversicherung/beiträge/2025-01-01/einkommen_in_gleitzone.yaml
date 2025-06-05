@@ -10,18 +10,22 @@ inputs:
       - 45
       - 45
       - 45
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 950.0
-      - 950.0
-      - 950.0
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
-    einkommensteuer__einkünfte__ist_selbstständig:
-      - false
-      - false
-      - false
+    einkommensteuer:
+      einkünfte:
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 950.0
+            - 950.0
+            - 950.0
+        aus_selbstständiger_arbeit:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
+        ist_selbstständig:
+          - false
+          - false
+          - false
     hh_id:
       - 0
       - 1
@@ -30,68 +34,84 @@ inputs:
       - 0
       - 1
       - 2
-    sozialversicherung__kranken__beitrag__privat_versichert:
-      - false
-      - false
-      - false
-    sozialversicherung__pflege__beitrag__anzahl_kinder_bis_24:
-      - 0
-      - 1
-      - 2
-    sozialversicherung__pflege__beitrag__hat_kinder:
-      - false
-      - true
-      - true
-    sozialversicherung__rente__altersrente__betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
-    sozialversicherung__rente__private_rente_betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
+    sozialversicherung:
+      kranken:
+        beitrag:
+          privat_versichert:
+            - false
+            - false
+            - false
+      pflege:
+        beitrag:
+          anzahl_kinder_bis_24:
+            - 0
+            - 1
+            - 2
+          hat_kinder:
+            - false
+            - true
+            - true
+      rente:
+        altersrente:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
+        private_rente_betrag_m:
+          - 0.0
+          - 0.0
+          - 0.0
     wohnort_ost:
       - false
       - false
       - false
 outputs:
-  sozialversicherung__midijob_bemessungsentgelt_m:
-    - 815.89
-    - 815.89
-    - 815.89
-  sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m:
-    - 7.09
-    - 7.09
-    - 7.09
-  sozialversicherung__arbeitslosen__beitrag__betrag_arbeitgeber_m:
-    - 14.12
-    - 14.12
-    - 14.12
-  sozialversicherung__kranken__beitrag__betrag_versicherter_m:
-    - 46.66
-    - 46.66
-    - 46.66
-  sozialversicherung__kranken__beitrag__betrag_arbeitgeber_m:
-    - 92.86
-    - 92.86
-    - 92.86
-  sozialversicherung__pflege__beitrag__betrag_versicherter_m:
-    - 14.72
-    - 9.82
-    - 8.46
-  sozialversicherung__pflege__beitrag__betrag_arbeitgeber_in_gleitzone_m:
-    - 19.56
-    - 19.56
-    - 19.56
-  sozialversicherung__pflege__beitrag__betrag_gesamt_in_gleitzone_m:
-    - 34.27
-    - 29.37
-    - 27.33
-  sozialversicherung__rente__beitrag__betrag_versicherter_m:
-    - 50.75
-    - 50.75
-    - 50.75
-  sozialversicherung__rente__beitrag__betrag_arbeitgeber_m:
-    - 101.01
-    - 101.01
-    - 101.01
+  sozialversicherung:
+    arbeitslosen:
+      beitrag:
+        betrag_arbeitgeber_m:
+          - 14.12
+          - 14.12
+          - 14.12
+        betrag_versicherter_m:
+          - 7.09
+          - 7.09
+          - 7.09
+    kranken:
+      beitrag:
+        betrag_arbeitgeber_m:
+          - 92.86
+          - 92.86
+          - 92.86
+        betrag_versicherter_m:
+          - 46.66
+          - 46.66
+          - 46.66
+    midijob_bemessungsentgelt_m:
+      - 815.89
+      - 815.89
+      - 815.89
+    pflege:
+      beitrag:
+        betrag_arbeitgeber_in_gleitzone_m:
+          - 19.56
+          - 19.56
+          - 19.56
+        betrag_gesamt_in_gleitzone_m:
+          - 34.27
+          - 29.37
+          - 27.33
+        betrag_versicherter_m:
+          - 14.72
+          - 9.82
+          - 8.46
+    rente:
+      beitrag:
+        betrag_arbeitgeber_m:
+          - 101.01
+          - 101.01
+          - 101.01
+        betrag_versicherter_m:
+          - 50.75
+          - 50.75
+          - 50.75

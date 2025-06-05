@@ -19,10 +19,8 @@ from ttsim.compute_taxes_and_transfers import (
     _add_derived_functions,
     required_column_functions,
 )
-from ttsim.shared import (
-    format_list_linewise,
-    partition_tree_by_reference_tree,
-)
+from ttsim.failures_and_warnings import format_list_linewise
+from ttsim.shared import partition_tree_by_reference_tree
 
 if TYPE_CHECKING:
     from ttsim.typing import NestedPolicyEnvironment
@@ -116,7 +114,7 @@ def plot_dag(
     )
 
     processed_functions = required_column_functions(
-        policy_environment_with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
+        column_functions_with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
         processed_params=processed_tree_with_params,
     )
 

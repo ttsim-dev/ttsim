@@ -111,7 +111,6 @@ numpydoc = "*"
 openpyxl = "*"
 ipywidgets = "*"
 jupyterlab = "*"
-networkx = "*" # Remove once dags is a proper dependency
 plotly = ">=5.24,<6"
 pygments = "*"
 pygraphviz = "*"
@@ -129,7 +128,7 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "allow-passing-dag-to-concatenate_functions"}
 pdbp = "*"
 
 [tool.pixi.target.unix.pypi-dependencies]
@@ -248,6 +247,7 @@ extend-ignore = [
     "INP001", # implicit namespace packages without init.
     "E721", # Use `is` and `is not` for type comparisons
     "TD003", # Missing issue link -- remove again once we got rid of ad-hoc TODOs.
+    "ERA001", # Commented out code.
 
     # Things ignored to avoid conflicts with ruff-format
     # ==================================================
@@ -256,19 +256,20 @@ extend-ignore = [
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
+"docs/**/*.ipynb" = ["T201"]
+"src/_gettsim/*" = ["E501", "PLR1714", "PLR1716"] # Vectorization can't handle x <= y <= z or x in {x,y}
 "src/ttsim/compute_taxes_and_transfers.py" = ["E501"]
-"src/ttsim/functions/all_functions_for_docs.py" = ["F401", "E501", "F403"]
-"src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
+"src/ttsim/failures_and_warnings.py" = ["E501"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
-"src/_gettsim/*" = ["E501", "PLR1714", "PLR1716"] # Vectorization can't handle x <= y <= z or x in {x,y}
+"src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "tests/ttsim/mettsim/*" = ["PLR1714", "PLR1716"] # Vectorization can't handle x <= y <= z or x in {x,y}
-"docs/**/*.ipynb" = ["T201"]
-
-# Files which should be ignored until we have rewritten them
-# =========================================================
+"tests/ttsim/test_failures_and_warnings.py" = ["E501"]
+# TODO: remove once ported nicely
 "outdated_docs/**/*.ipynb" = ["T201"]
 "src/_gettsim_tests/test_docs.py" = ["F821"]
+"src/ttsim/__init__.py" = ["PGH004"]
+"tests/ttsim/test_plot_dag.py" = ["PGH004"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -308,7 +309,7 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
-    "tests.ttsim.test_policy_environment",
+    "tests.ttsim.test_failures_and_warnings",
 ]
 disable_error_code = [
     "misc",  # Happens when constructing param dictionaries on the fly.
@@ -356,7 +357,7 @@ filterwarnings = [
     "ignore:The TerminalReporter.writer attribute is",
     "ignore:Repeated execution of the test suite",
     "ignore:Using or importing the ABCs from 'collections'",
-    "ignore::ttsim.compute_taxes_and_transfers.FunctionsAndDataOverlapWarning"
+    "ignore::ttsim.failures_and_warnings.FunctionsAndDataColumnsOverlapWarning"
 ]
 markers = [
     "wip: Tests that are work-in-progress.",

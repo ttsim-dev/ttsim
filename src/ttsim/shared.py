@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import re
-import textwrap
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -13,7 +12,6 @@ from ttsim.config import numpy_or_jax as np
 if TYPE_CHECKING:
     from ttsim.typing import (
         DashedISOString,
-        GenericCallable,
         NestedColumnObjectsParamFunctions,
         NestedData,
     )
@@ -31,11 +29,6 @@ def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
         raise ValueError(
             f"Date {date} neither matches the format YYYY-MM-DD nor is a datetime.date."
         )
-
-
-def validate_date_range(start: datetime.date, end: datetime.date) -> None:
-    if start > end:
-        raise ValueError(f"The start date {start} must be before the end date {end}.")
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
@@ -119,36 +112,6 @@ def get_base_name_and_grouping_suffix(match: re.Match[str]) -> tuple[str, str]:
         match.group("base_name"),
         f"_{match.group('grouping')}" if match.group("grouping") else "",
     )
-
-
-def fail_if_multiple_time_units_for_same_base_name_and_group(
-    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
-) -> None:
-    invalid = {
-        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
-    }
-    if invalid:
-        raise ValueError(f"Multiple time units for base names: {invalid}")
-
-
-class KeyErrorMessage(str):
-    """Subclass str to allow for line breaks in KeyError messages."""
-
-    __slots__ = ()
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
-    formatted_list = '",\n    "'.join(some_list)
-    return textwrap.dedent(
-        """
-        [
-            "{formatted_list}",
-        ]
-        """
-    ).format(formatted_list=formatted_list)
 
 
 def create_tree_from_path_and_value(
@@ -331,36 +294,6 @@ def partition_by_reference_dict(
     return intersection, difference
 
 
-def format_errors_and_warnings(text: str, width: int = 79) -> str:
-    """Format our own exception messages and warnings by dedenting paragraphs and
-    wrapping at the specified width. Mainly required because of messages are written as
-    part of indented blocks in our source code.
-
-    Parameters
-    ----------
-    text : str
-        The text which can include multiple paragraphs separated by two newlines.
-    width : int
-        The text will be wrapped by `width` characters.
-
-    Returns
-    -------
-    Correctly dedented, wrapped text.
-
-    """
-    text = text.lstrip("\n")
-    paragraphs = text.split("\n\n")
-    wrapped_paragraphs = []
-    for paragraph in paragraphs:
-        dedented_paragraph = textwrap.dedent(paragraph)
-        wrapped_paragraph = textwrap.fill(dedented_paragraph, width=width)
-        wrapped_paragraphs.append(wrapped_paragraph)
-
-    formatted_text = "\n\n".join(wrapped_paragraphs)
-
-    return formatted_text
-
-
 def remove_group_suffix(col: str, groupings: tuple[str, ...]) -> str:
     out = col
     for g in groupings:
@@ -413,62 +346,6 @@ def join(
 
     # Return the target at the index of the first matching primary key
     return padded_targets.take(indices)
-
-
-def assert_valid_ttsim_pytree(
-    tree: Any, leaf_checker: GenericCallable, tree_name: str
-) -> None:
-    """
-    Recursively assert that a pytree meets the following conditions:
-      - The tree is a dictionary.
-      - All keys are strings.
-      - All leaves satisfy a provided condition (leaf_checker).
-
-    Parameters
-    ----------
-    tree : Any
-         The tree to validate.
-    leaf_checker : GenericCallable
-         A function that takes a leaf and returns True if it is valid.
-    tree_name : str
-         The name of the tree (used for error messages).
-
-    Raises
-    ------
-    TypeError
-        If any branch or leaf does not meet the expected requirements.
-    """
-
-    def _assert_valid_ttsim_pytree(subtree: Any, current_key: tuple[str, ...]) -> None:
-        def format_key_path(key_tuple: tuple[str, ...]) -> str:
-            return "".join(f"[{k}]" for k in key_tuple)
-
-        if not isinstance(subtree, dict):
-            path_str = format_key_path(current_key)
-            msg = format_errors_and_warnings(
-                f"{tree_name}{path_str} must be a dict, got {type(subtree)}."
-            )
-            raise TypeError(msg)
-
-        for key, value in subtree.items():
-            new_key_path = (*current_key, key)
-            if not isinstance(key, str):
-                msg = format_errors_and_warnings(
-                    f"Key {key} in {tree_name}{format_key_path(current_key)} must be a "
-                    f"string but got {type(key)}."
-                )
-                raise TypeError(msg)
-            if isinstance(value, dict):
-                _assert_valid_ttsim_pytree(value, new_key_path)
-            else:
-                if not leaf_checker(value):
-                    msg = format_errors_and_warnings(
-                        f"Leaf at {tree_name}{format_key_path(new_key_path)} is "
-                        f"invalid: got {value} of type {type(value)}."
-                    )
-                    raise TypeError(msg)
-
-    _assert_valid_ttsim_pytree(tree, current_key=())
 
 
 def get_name_of_group_by_id(

@@ -14,7 +14,7 @@ from ttsim import (
 from ttsim.shared import upsert_tree
 
 if TYPE_CHECKING:
-    from ttsim import RawParam
+    from ttsim.typing import RawParam
 
 
 @policy_function(start_date="2005-01-01")

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import copy
-import warnings
+import datetime
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -14,28 +13,20 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     AggType,
     DictParam,
-    FunctionsAndDataOverlapWarning,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
     RawParam,
     ScalarParam,
     agg_by_group_function,
     agg_by_p_id_function,
-    compute_taxes_and_transfers,
+    column_functions_with_processed_params_and_scalars,
+    main,
     merge_trees,
     param_function,
     policy_function,
     policy_input,
-    set_up_policy_environment,
-)
-from ttsim.compute_taxes_and_transfers import (
-    _fail_if_foreign_keys_are_invalid_in_data,
-    _fail_if_group_variables_not_constant_within_groups,
-    _fail_if_p_id_is_non_unique,
-    _fail_if_targets_not_in_policy_environment_or_data,
-    _get_top_level_namespace,
-    column_functions_with_processed_params_and_scalars,
     required_column_functions,
+    top_level_namespace,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
@@ -221,10 +212,13 @@ def foo_fam(foo: int, fam_id: int) -> int:
 
 @pytest.fixture(scope="module")
 def mettsim_environment() -> NestedPolicyEnvironment:
-    return set_up_policy_environment(
-        root=METTSIM_ROOT,
-        date="2025-01-01",
-    )
+    return main(
+        inputs={
+            "root": METTSIM_ROOT,
+            "date": datetime.date(2025, 1, 1),
+        },
+        targets=["policy_environment"],
+    )["policy_environment"]
 
 
 # Create a function which is used by some tests below
@@ -234,7 +228,7 @@ def func_before_partial(arg_1, some_param):
 
 
 func_after_partial = required_column_functions(
-    policy_environment_with_processed_params_and_scalars={
+    column_functions_with_processed_params_and_scalars={
         "some_func": func_before_partial,
         "some_param": SOME_INT_PARAM.value,
     },
@@ -419,33 +413,16 @@ def test_create_agg_by_group_functions(
     targets_tree,
     data_tree,
 ):
-    compute_taxes_and_transfers(
-        policy_environment=policy_environment,
-        data_tree=data_tree,
-        targets_tree=targets_tree,
-        jit=jit,
-    )
-
-
-@pytest.mark.parametrize(
-    "policy_environment, targets, data_columns, expected_error_match",
-    [
-        ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
-        ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
-        ({"foo": some_x}, {"bar": None}, {"spam"}, "('bar',)"),
-        ({"foo__baz": some_x}, {"foo__bar": None}, {"spam"}, "('foo', 'bar')"),
-    ],
-)
-def test_fail_if_targets_not_in_policy_environment_or_data(
-    policy_environment, targets, data_columns, expected_error_match
-):
-    with pytest.raises(ValueError) as e:
-        _fail_if_targets_not_in_policy_environment_or_data(
-            policy_environment=policy_environment,
-            targets=targets,
-            data_columns=data_columns,
-        )
-    assert expected_error_match in str(e.value)
+    main(
+        inputs={
+            "policy_environment": policy_environment,
+            "data_tree": data_tree,
+            "targets_tree": targets_tree,
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
 
 
 def test_output_is_tree(minimal_input_data):
@@ -454,12 +431,16 @@ def test_output_is_tree(minimal_input_data):
         "module": {"some_func": some_func},
     }
 
-    out = compute_taxes_and_transfers(
-        data_tree=minimal_input_data,
-        policy_environment=policy_environment,
-        targets_tree={"module": {"some_func": None}},
-        jit=jit,
-    )
+    out = main(
+        inputs={
+            "data_tree": minimal_input_data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"module": {"some_func": None}},
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
 
     assert isinstance(out, dict)
     assert "some_func" in out["module"]
@@ -484,188 +465,26 @@ def test_params_target_is_allowed(minimal_input_data):
         ),
     }
 
-    out = compute_taxes_and_transfers(
-        data_tree=minimal_input_data,
-        policy_environment=policy_environment,
-        targets_tree={"some_param": None, "module": {"some_func": None}},
-        jit=jit,
-    )
+    out = main(
+        inputs={
+            "data_tree": minimal_input_data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"some_param": None, "module": {"some_func": None}},
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
 
     assert isinstance(out, dict)
     assert "some_param" in out
     assert out["some_param"] == 1
 
 
-def test_warn_if_functions_and_columns_overlap():
-    with pytest.warns(FunctionsAndDataOverlapWarning):
-        compute_taxes_and_transfers(
-            data_tree={
-                "p_id": pd.Series([0]),
-                "some_func": pd.Series([1]),
-            },
-            policy_environment={
-                "some_func": some_func,
-                "some_target": another_func,
-            },
-            targets_tree={"some_target": None},
-            jit=jit,
-        )
-
-
-def test_dont_warn_if_functions_and_columns_dont_overlap():
-    with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=FunctionsAndDataOverlapWarning)
-        compute_taxes_and_transfers(
-            data_tree={
-                "p_id": pd.Series([0]),
-                "x": pd.Series([1]),
-            },
-            policy_environment={"some_func": some_func},
-            targets_tree={"some_func": None},
-            jit=jit,
-        )
-
-
-def test_recipe_to_ignore_warning_if_functions_and_columns_overlap():
-    policy_environment = {
-        "some_func": some_func,
-        "unique": another_func,
-    }
-    with warnings.catch_warnings(
-        category=FunctionsAndDataOverlapWarning, record=True
-    ) as warning_list:
-        warnings.filterwarnings("ignore", category=FunctionsAndDataOverlapWarning)
-        compute_taxes_and_transfers(
-            data_tree={
-                "p_id": pd.Series([0]),
-                "some_func": pd.Series([1]),
-                "x": pd.Series([1]),
-            },
-            policy_environment=policy_environment,
-            targets_tree={"unique": None},
-            jit=jit,
-        )
-
-    assert len(warning_list) == 0
-
-
-def test_fail_if_p_id_does_not_exist():
-    data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
-
-    with pytest.raises(ValueError):
-        _fail_if_p_id_is_non_unique(data)
-
-
-def test_fail_if_p_id_is_non_unique():
-    data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
-
-    with pytest.raises(ValueError):
-        _fail_if_p_id_is_non_unique(data)
-
-
-def test_fail_if_foreign_key_points_to_non_existing_p_id(
-    mettsim_environment: NestedPolicyEnvironment,
-):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([0, 1, 2]),
-    }
-
-    with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
-        _fail_if_foreign_keys_are_invalid_in_data(
-            data=data,
-            input_data={k: v for k, v in data.items() if k != "p_id"},
-            flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
-        )
-
-
-def test_allow_minus_one_as_foreign_key(mettsim_environment: NestedPolicyEnvironment):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([-1, 1, 2]),
-    }
-
-    _fail_if_foreign_keys_are_invalid_in_data(
-        data=data,
-        input_data={k: v for k, v in data.items() if k != "p_id"},
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
-    )
-
-
-def test_fail_if_foreign_key_points_to_same_row_if_not_allowed(
-    mettsim_environment: NestedPolicyEnvironment,
-):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
-    }
-
-    _fail_if_foreign_keys_are_invalid_in_data(
-        data=data,
-        input_data={k: v for k, v in data.items() if k != "p_id"},
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
-    )
-
-
-def test_fail_if_foreign_key_points_to_same_row_if_allowed(
-    mettsim_environment: NestedPolicyEnvironment,
-):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_child_": pd.Series([1, 3, 3]),
-    }
-
-    _fail_if_foreign_keys_are_invalid_in_data(
-        data=data,
-        input_data={k: v for k, v in data.items() if k != "p_id"},
-        flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
-    )
-
-
-def test_fail_if_group_variables_not_constant_within_groups():
-    data = {
-        "foo_kin": pd.Series([1, 2, 2], name="foo_kin"),
-        "kin_id": pd.Series([1, 1, 2], name="kin_id"),
-    }
-    with pytest.raises(ValueError):
-        _fail_if_group_variables_not_constant_within_groups(
-            data=data,
-            groupings=("kin",),
-        )
-
-
-def test_missing_root_nodes_raises_error(minimal_input_data):
-    def b(a):
-        return a
-
-    def c(b):
-        return b
-
-    policy_environment = {
-        "b": policy_function(leaf_name="b")(b),
-        "c": policy_function(leaf_name="c")(c),
-    }
-
-    with pytest.raises(
-        ValueError,
-        match="The following data columns are missing",
-    ):
-        compute_taxes_and_transfers(
-            data_tree=minimal_input_data,
-            policy_environment=policy_environment,
-            targets_tree={"c": None},
-            jit=jit,
-        )
-
-
 def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input_data):
     @policy_function(leaf_name="a", vectorization_strategy="not_required")
     def a() -> np.ndarray:
-        return np.array(range(minimal_input_data["p_id"].size))
+        return np.array(minimal_input_data["p_id"])
 
     @policy_function(leaf_name="b")
     def b(a):
@@ -675,57 +494,19 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         "a": a,
         "b": b,
     }
-    compute_taxes_and_transfers(
-        data_tree=minimal_input_data,
-        policy_environment=policy_environment,
-        targets_tree={"b": None},
-        jit=jit,
+    nested_results = main(
+        inputs={
+            "data_tree": minimal_input_data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"b": None},
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
+    numpy.testing.assert_array_almost_equal(
+        nested_results["b"], np.array(minimal_input_data["p_id"])
     )
-
-
-def test_fail_if_targets_are_not_in_functions_or_in_columns_overriding_functions(
-    minimal_input_data,
-):
-    with pytest.raises(
-        ValueError,
-        match="The following targets have no corresponding function",
-    ):
-        compute_taxes_and_transfers(
-            data_tree=minimal_input_data,
-            policy_environment={},
-            targets_tree={"unknown_target": None},
-            jit=jit,
-        )
-
-
-def test_fail_if_missing_p_id():
-    data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
-    with pytest.raises(
-        ValueError,
-        match="The input data must contain the p_id",
-    ):
-        compute_taxes_and_transfers(
-            data_tree=data,
-            policy_environment={},
-            targets_tree={},
-            jit=jit,
-        )
-
-
-def test_fail_if_non_unique_p_id(minimal_input_data):
-    data = copy.deepcopy(minimal_input_data)
-    data["p_id"][:] = 1
-
-    with pytest.raises(
-        ValueError,
-        match="The following p_ids are non-unique",
-    ):
-        compute_taxes_and_transfers(
-            data_tree=data,
-            policy_environment={},
-            targets_tree={},
-            jit=jit,
-        )
 
 
 def test_partial_params_to_functions():
@@ -760,12 +541,16 @@ def test_user_provided_aggregate_by_group_specs():
 
     expected_res = pd.Series([200, 200, 100])
 
-    out = compute_taxes_and_transfers(
-        data_tree=data,
-        policy_environment=policy_environment,
-        targets_tree={"module_name": {"betrag_m_fam": None}},
-        jit=jit,
-    )
+    out = main(
+        inputs={
+            "data_tree": data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"module_name": {"betrag_m_fam": None}},
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
 
     numpy.testing.assert_array_almost_equal(
         out["module_name"]["betrag_m_fam"], expected_res
@@ -799,13 +584,16 @@ def test_user_provided_aggregation():
         },
     }
 
-    actual = compute_taxes_and_transfers(
-        data_tree=data,
-        policy_environment=policy_environment,
-        targets_tree={"module_name": {"betrag_m_double_fam": None}},
-        debug=False,
-        jit=jit,
-    )
+    actual = main(
+        inputs={
+            "data_tree": data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"module_name": {"betrag_m_double_fam": None}},
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
 
     numpy.testing.assert_array_almost_equal(
         actual["module_name"]["betrag_m_double_fam"], expected
@@ -841,13 +629,16 @@ def test_user_provided_aggregation_with_time_conversion():
         },
     }
 
-    actual = compute_taxes_and_transfers(
-        data_tree=data,
-        policy_environment=policy_environment,
-        targets_tree={"module_name": {"max_betrag_double_y_fam": None}},
-        debug=False,
-        jit=jit,
-    )
+    actual = main(
+        inputs={
+            "data_tree": data,
+            "policy_environment": policy_environment,
+            "targets_tree": {"module_name": {"max_betrag_double_y_fam": None}},
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
 
     numpy.testing.assert_array_almost_equal(
         actual["module_name"]["max_betrag_double_y_fam"], expected
@@ -913,12 +704,16 @@ def test_user_provided_aggregate_by_p_id_specs(
         },
     )
 
-    out = compute_taxes_and_transfers(
-        data_tree=minimal_input_data_shared_fam,
-        policy_environment=policy_environment,
-        targets_tree=target_tree,
-        jit=jit,
-    )["module"][next(iter(target_tree["module"].keys()))]
+    out = main(
+        inputs={
+            "data_tree": minimal_input_data_shared_fam,
+            "policy_environment": policy_environment,
+            "targets_tree": target_tree,
+            "rounding": False,
+            # "jit": jit,
+        },
+        targets=["nested_results"],
+    )["nested_results"]["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
 
@@ -926,7 +721,6 @@ def test_user_provided_aggregate_by_p_id_specs(
 @pytest.mark.parametrize(
     (
         "policy_environment",
-        "time_units",
         "expected",
     ),
     [
@@ -935,7 +729,6 @@ def test_user_provided_aggregate_by_p_id_specs(
                 "foo_m": policy_function(leaf_name="foo_m")(identity),
                 "fam_id": fam_id,
             },
-            ["m", "y"],
             {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
         ),
         (
@@ -943,16 +736,12 @@ def test_user_provided_aggregate_by_p_id_specs(
                 "foo": policy_function(leaf_name="foo")(identity),
                 "fam_id": fam_id,
             },
-            ["m", "y"],
             {"foo", "foo_fam"},
         ),
     ],
 )
-def test_get_top_level_namespace(policy_environment, time_units, expected):
-    result = _get_top_level_namespace(
-        policy_environment=policy_environment,
-        time_units=time_units,
-    )
+def test_get_top_level_namespace(policy_environment, expected):
+    result = top_level_namespace(policy_environment=policy_environment)
     assert all(name in result for name in expected)
 
 
@@ -1043,18 +832,22 @@ def test_can_override_ttsim_objects_with_data(
     expected_output,
     minimal_input_data,
 ):
-    result = compute_taxes_and_transfers(
-        data_tree={
-            **minimal_input_data,
-            **overriding_data,
+    actual = main(
+        inputs={
+            "data_tree": {
+                **minimal_input_data,
+                **overriding_data,
+            },
+            "policy_environment": nested_policy_environment,
+            "targets_tree": targets_tree,
+            "rounding": False,
         },
-        policy_environment=nested_policy_environment,
-        targets_tree=targets_tree,
-    )
+        targets=["nested_results"],
+    )["nested_results"]
 
-    flat_results = dt.flatten_to_tree_paths(result)
+    flat_actual = dt.flatten_to_tree_paths(actual)
     flat_expected = dt.flatten_to_tree_paths(expected_output)
 
-    assert flat_results.keys() == flat_expected.keys()
+    assert flat_actual.keys() == flat_expected.keys()
     for key in flat_expected:
-        numpy.testing.assert_array_almost_equal(flat_results[key], flat_expected[key])
+        numpy.testing.assert_array_almost_equal(flat_actual[key], flat_expected[key])

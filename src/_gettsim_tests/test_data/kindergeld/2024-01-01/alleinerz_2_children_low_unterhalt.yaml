@@ -14,32 +14,36 @@ inputs:
       - 40.0
       - 0.0
       - 0.0
-    familie__kind:
-      - false
-      - true
-      - true
+    familie:
+      kind:
+        - false
+        - true
+        - true
     hh_id:
       - 0
       - 0
       - 0
-    kindergeld__in_ausbildung:
-      - false
-      - true
-      - true
-    kindergeld__p_id_empfänger:
-      - -1
-      - 0
-      - 0
+    kindergeld:
+      in_ausbildung:
+        - false
+        - true
+        - true
+      p_id_empfänger:
+        - -1
+        - 0
+        - 0
     p_id:
       - 0
       - 1
       - 2
 outputs:
-  arbeitslosengeld_2__kindergeld_zur_bedarfsdeckung_m:
-    - 0.0
-    - 250.0
-    - 250.0
-  kindergeld__betrag_m:
-    - 500.0
-    - 0.0
-    - 0.0
+  arbeitslosengeld_2:
+    kindergeld_zur_bedarfsdeckung_m:
+      - 0.0
+      - 250.0
+      - 250.0
+  kindergeld:
+    betrag_m:
+      - 500.0
+      - 0.0
+      - 0.0

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import (
-    compute_taxes_and_transfers,
     dataframe_to_nested_data,
-    nested_data_to_dataframe,
-    set_up_policy_environment,
+    main,
+    nested_data_to_df_with_mapped_columns,
+    to_datetime,
 )
 
 if TYPE_CHECKING:
@@ -107,23 +107,18 @@ def oss(
         inputs_tree_to_df_columns=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
     )
-    environment = set_up_policy_environment(
-        date=date,
-        root=GETTSIM_ROOT,
-    )
-    taxes_and_transfers_result = compute_taxes_and_transfers(
-        data_tree=data_tree,
-        policy_environment=environment,
-        targets_tree=targets_tree_to_outputs_df_columns,
-        rounding=True,
-        debug=False,
-        jit=False,
-    )
-    nested_data_with_p_id = {
-        "p_id": data_tree["p_id"],
-        **taxes_and_transfers_result,
-    }
-    return nested_data_to_dataframe(
-        nested_data_with_p_id=nested_data_with_p_id,
-        nested_data_paths_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
+    nested_result = main(
+        inputs={
+            "date": to_datetime(date),
+            "root": GETTSIM_ROOT,
+            "data_tree": data_tree,
+            "targets_tree": targets_tree_to_outputs_df_columns,
+            "rounding": True,
+        },
+        targets=["nested_results"],
+    )["nested_results"]
+    return nested_data_to_df_with_mapped_columns(
+        nested_data_to_convert=nested_result,
+        nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
+        data_with_p_id=data_tree,
     )

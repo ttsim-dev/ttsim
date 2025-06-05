@@ -1,42 +1,29 @@
 from __future__ import annotations
 
-import numpy as np
+from pathlib import Path
+
 import pytest
-from utils import (
-    PolicyTest,
-    execute_test,
-    get_policy_test_ids_and_cases,
-)
+from mettsim.config import METTSIM_ROOT
 
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.testing_utils import (
+    PolicyTest,
+    execute_test,
+    load_policy_test_data,
+)
 
-policy_test_ids_and_cases = get_policy_test_ids_and_cases()
+TEST_DIR = Path(__file__).parent
+
+POLICY_TEST_IDS_AND_CASES = load_policy_test_data(test_dir=TEST_DIR, policy_name="")
 
 
 @pytest.mark.parametrize(
     "test",
-    policy_test_ids_and_cases.values(),
-    ids=policy_test_ids_and_cases.keys(),
+    POLICY_TEST_IDS_AND_CASES.values(),
+    ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
 def test_mettsim(test: PolicyTest):
     if IS_JAX_INSTALLED:
-        execute_test(test, jit=True)
+        execute_test(test, root=METTSIM_ROOT, jit=True)
     else:
-        execute_test(test, jit=False)
-
-
-@pytest.mark.xfail(
-    reason="Testing infrastructure cannot handle single-element expected output"
-)
-def test_mettsim_single_element_expected_output():
-    test = PolicyTest(
-        info={"precision_atol": 0.01},
-        input_tree={
-            "p_id": np.array([0]),
-            "property_tax": {"acre_size_in_hectares": np.array([20])},
-        },
-        expected_output_tree={"property_tax": {"amount_y": np.array([1000.0])}},
-        path=None,
-        date="2020-01-01",
-    )
-    execute_test(test, jit=False)
+        execute_test(test, root=METTSIM_ROOT, jit=False)

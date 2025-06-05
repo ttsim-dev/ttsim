@@ -19,14 +19,13 @@ import pytest
 
 from _gettsim_tests import TEST_DIR
 from ttsim import (
-    FunctionsAndDataOverlapWarning,
+    FunctionsAndDataColumnsOverlapWarning,
     GroupCreationFunction,
     PolicyFunction,
-    compute_taxes_and_transfers,
     group_creation_function,
     plot_dag,
+    policy_environment,
     policy_function,
-    set_up_policy_environment,
 )
 
 COUNTER_TEST_EXECUTIONS = itertools.count()
@@ -47,13 +46,12 @@ def test(*args: Any) -> None:
 
 
 __all__ = [
-    "FunctionsAndDataOverlapWarning",
+    "FunctionsAndDataColumnsOverlapWarning",
     "GroupCreationFunction",
     "PolicyFunction",
     "__version__",
-    "compute_taxes_and_transfers",
     "group_creation_function",
     "plot_dag",
+    "policy_environment",
     "policy_function",
-    "set_up_policy_environment",
 ]

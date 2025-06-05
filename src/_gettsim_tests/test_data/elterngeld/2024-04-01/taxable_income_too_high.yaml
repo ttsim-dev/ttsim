@@ -14,58 +14,64 @@ inputs:
       - 516
       - 516
       - 0
-    arbeitslosengeld_2__p_id_einstandspartner:
-      - 1
-      - 0
-      - -1
+    arbeitslosengeld_2:
+      p_id_einstandspartner:
+        - 1
+        - 0
+        - -1
     arbeitsstunden_w:
       - 0.0
       - 39.83
       - 0.0
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m:
-      - 0.0
-      - 190000.0
-      - 0.0
-    einkommensteuer__gemeinsam_veranlagt:
-      - false
-      - false
-      - false
-    elterngeld__bisherige_bezugsmonate:
-      - 0
-      - 0
-      - 0
-    elterngeld__claimed:
-      - true
-      - false
-      - false
-    elterngeld__nettoeinkommen_vorjahr_m:
-      - 2000.0
-      - 13000.0
-      - 0.0
-    elterngeld__zu_versteuerndes_einkommen_vorjahr_y_sn:
-      - 2000000.0
-      - 2000000.0
-      - 0.0
-    familie__alleinerziehend:
-      - false
-      - false
-      - false
-    familie__kind:
-      - false
-      - false
-      - true
-    familie__p_id_ehepartner:
-      - 1
-      - 0
-      - -1
-    familie__p_id_elternteil_1:
-      - -1
-      - -1
-      - 0
-    familie__p_id_elternteil_2:
-      - -1
-      - -1
-      - 1
+    einkommensteuer:
+      einkünfte:
+        aus_nichtselbstständiger_arbeit:
+          bruttolohn_m:
+            - 0.0
+            - 190000.0
+            - 0.0
+      gemeinsam_veranlagt:
+        - false
+        - false
+        - false
+    elterngeld:
+      bisherige_bezugsmonate:
+        - 0
+        - 0
+        - 0
+      claimed:
+        - true
+        - false
+        - false
+      nettoeinkommen_vorjahr_m:
+        - 2000.0
+        - 13000.0
+        - 0.0
+      zu_versteuerndes_einkommen_vorjahr_y_sn:
+        - 2000000.0
+        - 2000000.0
+        - 0.0
+    familie:
+      alleinerziehend:
+        - false
+        - false
+        - false
+      kind:
+        - false
+        - false
+        - true
+      p_id_ehepartner:
+        - 1
+        - 0
+        - -1
+      p_id_elternteil_1:
+        - -1
+        - -1
+        - 0
+      p_id_elternteil_2:
+        - -1
+        - -1
+        - 1
     geburtsjahr:
       - 1976
       - 1976
@@ -82,18 +88,20 @@ inputs:
       - 0
       - 0
       - 0
-    kindergeld__in_ausbildung:
-      - false
-      - false
-      - false
-    lohnsteuer__betrag_m:
-      - 0.0
-      - 0.0
-      - 0.0
-    lohnsteuer__steuerklasse:
-      - 1
-      - 1
-      - 1
+    kindergeld:
+      in_ausbildung:
+        - false
+        - false
+        - false
+    lohnsteuer:
+      betrag_m:
+        - 0.0
+        - 0.0
+        - 0.0
+      steuerklasse:
+        - 1
+        - 1
+        - 1
     p_id:
       - 0
       - 1
@@ -102,16 +110,20 @@ inputs:
       - 0.0
       - 0.0
       - 0.0
-    sozialversicherung__pflege__beitrag__hat_kinder:
-      - true
-      - true
-      - false
+    sozialversicherung:
+      pflege:
+        beitrag:
+          hat_kinder:
+            - true
+            - true
+            - false
     wohnort_ost:
       - false
       - false
       - false
 outputs:
-  elterngeld__betrag_m:
-    - 0.0
-    - 0.0
-    - 0.0
+  elterngeld:
+    betrag_m:
+      - 0.0
+      - 0.0
+      - 0.0

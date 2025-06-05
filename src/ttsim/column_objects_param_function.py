@@ -36,7 +36,7 @@ from ttsim.aggregation import (
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.rounding import RoundingSpec
-from ttsim.shared import to_datetime, validate_date_range
+from ttsim.shared import to_datetime
 from ttsim.vectorization import vectorize_function
 
 if TYPE_CHECKING:
@@ -171,7 +171,7 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> No
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
     use the `functools.update_wrapper` function or `self.__signature__ = ...`
-    assigments in the `__post_init__` method.
+    assignments in the `__post_init__` method.
 
     Args:
         wrapper: The wrapper dataclass to update.
@@ -732,7 +732,10 @@ def _convert_and_validate_dates(
     start_date = to_datetime(start_date)
     end_date = to_datetime(end_date)
 
-    validate_date_range(start_date, end_date)
+    if start_date > end_date:
+        raise ValueError(
+            f"The start date {start_date} must be before the end date {end_date}."
+        )
 
     return start_date, end_date
 
