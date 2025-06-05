@@ -10,9 +10,9 @@ inputs:
         - false
     sozialversicherung:
       arbeitslosen:
-        min_12_monate_beitragspflichtig_versichert_in_letzten_30_monaten:
-          - false
-          - true
+        monate_beitragspflichtig_versichert_in_letzten_30_monaten:
+          - 10
+          - 12
         arbeitssuchend:
           - false
           - true

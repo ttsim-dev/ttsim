@@ -8,7 +8,7 @@ inputs:
     kindergeld__grundsätzlich_anspruchsberechtigt:
       - false
       - true
-    sozialversicherung__arbeitslosen__min_12_monate_beitragspflichtig_versichert_in_letzten_30_monaten:
+    sozialversicherung__arbeitslosen__mindestversicherungszeit_erreicht:
       - true
       - false
     sozialversicherung__arbeitslosen__arbeitssuchend:

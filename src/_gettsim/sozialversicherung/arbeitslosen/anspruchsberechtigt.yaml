@@ -43,6 +43,7 @@ raw_anspruchsdauer_nach_alter:
     50: 15
     55: 18
     58: 24
+    max_age: 120
 raw_anspruchsdauer_nach_versicherungspflichtigen_monaten:
   name:
     de: Anspruchsdauer für ALG 1 nach versicherungspflichtigen Monaten.
@@ -68,3 +69,20 @@ raw_anspruchsdauer_nach_versicherungspflichtigen_monaten:
     30: 15
     36: 18
     48: 24
+    max_months: 700
+mindestversicherungsmonate:
+  name:
+    de: Mindestanzahl an Beitragsmonaten in den letzten 30 Monaten vor ALG 1 Bezug
+    en: Minimum number of months of insurance in the last 30 months before ALG 1 receipt
+  description:
+    de: >-
+      § 142 Abs. 2 SGB III
+      Mindestanzahl an Beitragsmonaten in den letzten 30 Monaten vor ALG 1 Bezug
+    en: >-
+      § 142 Abs. 2 SGB III
+      Minimum number of months of insurance in the last 30 months before ALG 1 receipt
+  unit: Months
+  reference_period: null
+  type: scalar
+  1997-03-24:
+    value: 12

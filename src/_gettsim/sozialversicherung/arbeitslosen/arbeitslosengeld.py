@@ -50,7 +50,7 @@ def betrag_m(
 def monate_verbleibender_anspruchsdauer(
     alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
-    min_12_monate_beitragspflichtig_versichert_in_letzten_30_monaten: bool,
+    mindestversicherungszeit_erreicht: bool,
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
     anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
     anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
@@ -66,7 +66,7 @@ def monate_verbleibender_anspruchsdauer(
         ]
     )
 
-    if min_12_monate_beitragspflichtig_versichert_in_letzten_30_monaten:
+    if mindestversicherungszeit_erreicht:
         out = max(
             min(auf_altersbasis, auf_basis_versicherungspflichtiger_monate)
             - monate_durchgängigen_bezugs_von_arbeitslosengeld,
@@ -76,6 +76,19 @@ def monate_verbleibender_anspruchsdauer(
         out = 0
 
     return out
+
+
+@policy_function()
+def mindestversicherungszeit_erreicht(
+    monate_beitragspflichtig_versichert_in_letzten_30_monaten: int,
+    mindestversicherungsmonate: int,
+) -> bool:
+    """At least 12 months of unemployment contributions in the 30 months before claiming
+    unemployment insurance."""
+    return (
+        monate_beitragspflichtig_versichert_in_letzten_30_monaten
+        >= mindestversicherungsmonate
+    )
 
 
 @policy_function()
@@ -139,41 +152,37 @@ def einkommen_vorjahr_proxy_m(
 
 @param_function(start_date="1997-03-24")
 def anspruchsdauer_nach_alter(
-    raw_anspruchsdauer_nach_alter: dict[int, int],
+    raw_anspruchsdauer_nach_alter: dict[str | int, int],
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
-    max_age = 120
-    ages_in_spec = sorted(raw_anspruchsdauer_nach_alter.keys())
+    tmp = raw_anspruchsdauer_nach_alter.copy()
+    max_age: int = tmp.pop("max_age")
+    ages_in_spec: list[int] = sorted(tmp.keys())  # type: ignore[arg-type]
 
     full_spec: dict[int, int] = {}
-    for a in range(max_age):
+    for a in range(min(ages_in_spec), max_age):
         if a not in ages_in_spec:
-            # Find the highest age in raw_anspruchsdauer_nach_alter that is less than current age
-            threshold_age_for_this_age = max(age for age in ages_in_spec if age < a)
-            full_spec[a] = full_spec[threshold_age_for_this_age]
+            full_spec[a] = full_spec[a - 1]
         else:
-            full_spec[a] = raw_anspruchsdauer_nach_alter[a]
+            full_spec[a] = tmp[a]
 
     return get_consecutive_int_1d_lookup_table_param_value(full_spec)
 
 
 @param_function(start_date="1997-03-24")
 def anspruchsdauer_nach_versicherungspflichtigen_monaten(
-    raw_anspruchsdauer_nach_versicherungspflichtigen_monaten: dict[int, int],
+    raw_anspruchsdauer_nach_versicherungspflichtigen_monaten: dict[str | int, int],
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
-    max_age = 120
-    ages_in_spec = sorted(
-        raw_anspruchsdauer_nach_versicherungspflichtigen_monaten.keys()
-    )
+    tmp = raw_anspruchsdauer_nach_versicherungspflichtigen_monaten.copy()
+    max_months: int = tmp.pop("max_months")
+    ages_in_spec: list[int] = sorted(tmp.keys())  # type: ignore[arg-type]
 
     full_spec: dict[int, int] = {}
-    for a in range(max_age):
+    for a in range(max_months):
         if a not in ages_in_spec:
-            # Find the highest age in raw_anspruchsdauer_nach_alter that is less than current age
-            threshold_age_for_this_age = max(age for age in ages_in_spec if age < a)
-            full_spec[a] = full_spec[threshold_age_for_this_age]
+            full_spec[a] = full_spec[a - 1]
         else:
-            full_spec[a] = raw_anspruchsdauer_nach_versicherungspflichtigen_monaten[a]
+            full_spec[a] = tmp[a]
 
     return get_consecutive_int_1d_lookup_table_param_value(full_spec)
