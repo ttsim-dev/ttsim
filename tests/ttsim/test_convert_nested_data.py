@@ -299,17 +299,17 @@ def test_nested_data_to_dataframe(
     targets__tree_with_map_to_df,
     expected_output,
 ):
-    nested_results = main(
+    results__tree = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree_with_map_to_df,
             "rounding": False,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     result_df = nested_data_to_df_with_mapped_columns(
-        nested_data_to_convert=nested_results,
+        nested_data_to_convert=results__tree,
         nested_outputs_df_column_names=targets__tree_with_map_to_df,
         data_with_p_id=minimal_data_tree,
     )
@@ -343,20 +343,20 @@ def test_nested_data_to_dataframe_fails_if_incompatible_objects_are_returned(
     targets__tree_with_map_to_df,
     minimal_data_tree,
 ):
-    nested_results = main(
+    results__tree = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree_with_map_to_df,
             "rounding": False,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     with pytest.raises(
         TypeError, match=r"The following paths contain non-scalar\nobjects"
     ):
         nested_data_to_df_with_mapped_columns(
-            nested_data_to_convert=nested_results,
+            nested_data_to_convert=results__tree,
             nested_outputs_df_column_names=targets__tree_with_map_to_df,
             data_with_p_id=minimal_data_tree,
         )
@@ -381,21 +381,21 @@ def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
     targets__tree_with_map_to_df,
     minimal_data_tree,
 ):
-    nested_results = main(
+    results__tree = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree_with_map_to_df,
             "rounding": False,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     with pytest.raises(
         ValueError,
         match="failed because the following paths\nare not mapped to a column name",
     ):
         nested_data_to_df_with_mapped_columns(
-            nested_data_to_convert=nested_results,
+            nested_data_to_convert=results__tree,
             nested_outputs_df_column_names=targets__tree_with_map_to_df,
             data_with_p_id=minimal_data_tree,
         )

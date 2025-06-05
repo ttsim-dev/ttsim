@@ -115,8 +115,8 @@ def oss(
             "targets__tree": targets__tree_with_map_to_df,
             "rounding": True,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     return nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=nested_result,
         nested_outputs_df_column_names=targets__tree_with_map_to_df,

@@ -87,8 +87,8 @@ def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
                 "rounding": True,
                 # "jit": jit,
             },
-            targets=["nested_results"],
-        )["nested_results"]
+            targets=["results__tree"],
+        )["results__tree"]
     else:
         nested_result = {}
 

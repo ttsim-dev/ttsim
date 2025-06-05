@@ -420,8 +420,8 @@ def test_create_agg_by_group_functions(
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
 
 
 def test_output_is_tree(minimal_input_data):
@@ -438,8 +438,8 @@ def test_output_is_tree(minimal_input_data):
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
 
     assert isinstance(out, dict)
     assert "some_func" in out["module"]
@@ -472,8 +472,8 @@ def test_params_target_is_allowed(minimal_input_data):
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
 
     assert isinstance(out, dict)
     assert "some_param" in out
@@ -493,7 +493,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
         "a": a,
         "b": b,
     }
-    nested_results = main(
+    results__tree = main(
         inputs={
             "input_data__tree": minimal_input_data,
             "policy_environment": policy_environment,
@@ -501,10 +501,10 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     numpy.testing.assert_array_almost_equal(
-        nested_results["b"], np.array(minimal_input_data["p_id"])
+        results__tree["b"], np.array(minimal_input_data["p_id"])
     )
 
 
@@ -548,8 +548,8 @@ def test_user_provided_aggregate_by_group_specs():
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
 
     numpy.testing.assert_array_almost_equal(
         out["module_name"]["betrag_m_fam"], expected_res
@@ -591,8 +591,8 @@ def test_user_provided_aggregation():
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
 
     numpy.testing.assert_array_almost_equal(
         actual["module_name"]["betrag_m_double_fam"], expected
@@ -636,8 +636,8 @@ def test_user_provided_aggregation_with_time_conversion():
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
 
     numpy.testing.assert_array_almost_equal(
         actual["module_name"]["max_betrag_double_y_fam"], expected
@@ -711,8 +711,8 @@ def test_user_provided_aggregate_by_p_id_specs(
             "rounding": False,
             # "jit": jit,
         },
-        targets=["nested_results"],
-    )["nested_results"]["module"][next(iter(target_tree["module"].keys()))]
+        targets=["results__tree"],
+    )["results__tree"]["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
 
@@ -814,8 +814,8 @@ def test_can_override_ttsim_objects_with_data(
             "targets__tree": targets__tree,
             "rounding": False,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
 
     flat_actual = dt.flatten_to_tree_paths(actual)
     flat_expected = dt.flatten_to_tree_paths(expected_output)

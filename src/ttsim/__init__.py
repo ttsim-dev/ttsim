@@ -27,26 +27,27 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     policy_input,
 )
 from ttsim.compute_taxes_and_transfers import (
-    _add_derived_functions,
     column_functions_with_processed_params_and_scalars,
-    column_results,
     flat_policy_environment_with_derived_functions_and_without_overridden_functions,
-    nested_results,
-    qual_name_data,
-    qual_name_data_columns,
     qual_name_input_data,
-    qual_name_results,
     required_column_functions,
     tax_transfer_dag,
     tax_transfer_function,
 )
+from ttsim.raw_results import (
+    raw_results__columns,
+    raw_results__params,
+    raw_results__from_input_data,
+    raw_results__combined,
+)
+from ttsim.processed_data import processed_data
 from ttsim.data_converters import (
     dataframe_to_nested_data,
     nested_data_to_df_with_mapped_columns,
     nested_data_to_df_with_nested_columns,
 )
 from ttsim.input_data import tree as input_data__tree
-from ttsim.results import df as results__df
+from ttsim.results import results__df, results__tree
 from ttsim.fail_if import (
     fail_if__active_periods_overlap,
     fail_if__environment_is_invalid,
@@ -65,9 +66,6 @@ from ttsim.fail_if import (
     warn_if__functions_and_data_columns_overlap,
 )
 from ttsim.targets import (
-    targets__processed__columns,
-    targets__processed__from_input_data,
-    targets__processed__params,
     targets__qname,
 )
 from ttsim.tt_dag_elements.param_objects import (
@@ -100,6 +98,10 @@ from ttsim.policy_environment import (
 from ttsim.names import (
     names__grouping_levels,
     names__top_level_namespace,
+    names__processed_data_columns,
+    names__target_columns,
+    names__target_params,
+    names__targets_from_input_data,
 )
 from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.shared import (
@@ -115,7 +117,7 @@ from ttsim.shared import (
 def function_collection():
     return {
         "column_functions_with_processed_params_and_scalars": column_functions_with_processed_params_and_scalars,
-        "column_results": column_results,
+        "raw_results__columns": raw_results__columns,
         "fail_if__active_periods_overlap": fail_if__active_periods_overlap,
         "fail_if__any_paths_are_invalid": fail_if__any_paths_are_invalid,
         "fail_if__input_data_tree_is_invalid": fail_if__input_data_tree_is_invalid,
@@ -129,17 +131,19 @@ def function_collection():
         "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
         "names__grouping_levels": names__grouping_levels,
         "input_data__tree": input_data__tree,
-        "nested_results": nested_results,
+        "results__tree": results__tree,
         "orig_policy_objects__column_objects_and_param_functions": column_objects_and_param_functions,
         "orig_policy_objects__param_specs": param_specs,
         "policy_environment": policy_environment,
-        "targets__processed__columns": targets__processed__columns,
-        "qual_name_data": qual_name_data,
-        "qual_name_data_columns": qual_name_data_columns,
+        "names__target_columns": names__target_columns,
+        "processed_data": processed_data,
+        "names__processed_data_columns": names__processed_data_columns,
         "qual_name_input_data": qual_name_input_data,
-        "targets__processed__from_input_data": targets__processed__from_input_data,
-        "targets__processed__params": targets__processed__params,
-        "qual_name_results": qual_name_results,
+        "names__targets_from_input_data": names__targets_from_input_data,
+        "names__target_params": names__target_params,
+        "raw_results__combined": raw_results__combined,
+        "raw_results__params": raw_results__params,
+        "raw_results__from_input_data": raw_results__from_input_data,
         "targets__qname": targets__qname,
         "results__df": results__df,
         "required_column_functions": required_column_functions,
@@ -352,7 +356,6 @@ __all__ = [
     "RoundingSpec",
     "ScalarParam",
     "TimeConversionFunction",
-    "_add_derived_functions",
     "agg_by_group_function",
     "agg_by_p_id_function",
     "create_time_conversion_functions",

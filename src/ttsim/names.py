@@ -17,8 +17,45 @@ from ttsim.shared import (
 if TYPE_CHECKING:
     from ttsim.tt_dag_elements.typing import (
         NestedPolicyEnvironment,
+        QualNameColumnFunctions,
+        QualNameData,
         QualNamePolicyEnvironment,
+        QualNameTargetList,
     )
+
+
+def names__target_columns(
+    required_column_functions: QualNameColumnFunctions,
+    targets__qname: QualNameTargetList,
+) -> QualNameTargetList:
+    """All targets that are column functions."""
+    return [t for t in targets__qname if t in required_column_functions]
+
+
+def names__target_params(
+    flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,  # noqa: E501
+    targets__qname: QualNameTargetList,
+    names__target_columns: QualNameTargetList,
+) -> QualNameTargetList:
+    possible_targets = set(targets__qname) - set(names__target_columns)
+    return [
+        t
+        for t in targets__qname
+        if t in possible_targets
+        and t
+        in flat_policy_environment_with_derived_functions_and_without_overridden_functions  # noqa: E501
+    ]
+
+
+def names__targets_from_input_data(
+    targets__qname: QualNameTargetList,
+    names__target_columns: QualNameTargetList,
+    names__target_params: QualNameTargetList,
+) -> QualNameTargetList:
+    possible_targets = (
+        set(targets__qname) - set(names__target_columns) - set(names__target_params)
+    )
+    return [t for t in targets__qname if t in possible_targets]
 
 
 def names__grouping_levels(
@@ -87,3 +124,7 @@ def names__top_level_namespace(
     for g in names__grouping_levels:
         all_top_level_names.add(f"{g}_id_num_segments")
     return all_top_level_names
+
+
+def names__processed_data_columns(processed_data: QualNameData) -> set[str]:
+    return set(processed_data.keys())

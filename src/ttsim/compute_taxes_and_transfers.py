@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ttsim.tt_dag_elements.typing import (
-        NestedData,
         NestedPolicyEnvironment,
         NestedTargetDict,
         QualNameColumnFunctions,
@@ -46,59 +45,21 @@ _DUMMY_COLUMN_OBJECT = ColumnObject(
 )
 
 
-def column_results(
-    qual_name_input_data: QualNameData,
-    tax_transfer_function: Callable[[QualNameData], QualNameData],
-) -> QualNameData:
-    return tax_transfer_function(qual_name_input_data)
-
-
-def qual_name_data(input_data__tree: NestedData) -> QualNameData:
-    return dt.flatten_to_qual_names(input_data__tree)
-
-
-def qual_name_data_columns(qual_name_data: QualNameData) -> set[str]:
-    return set(qual_name_data.keys())
-
-
-def nested_results(qual_name_results: QualNameData) -> NestedData:
-    return dt.unflatten_from_qual_names(qual_name_results)
-
-
-def qual_name_results(
-    column_results: QualNameData,
-    targets__processed__params: QualNameTargetList,
-    column_functions_with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
-    targets__processed__from_input_data: QualNameTargetList,
-    qual_name_data: QualNameData,
-    targets__qname: QualNameTargetList,
-) -> QualNameData:
-    unordered = {
-        **column_results,
-        **{
-            pt: column_functions_with_processed_params_and_scalars[pt]
-            for pt in targets__processed__params
-        },
-        **{ot: qual_name_data[ot] for ot in targets__processed__from_input_data},
-    }
-    return {k: unordered[k] for k in targets__qname}
-
-
 def tax_transfer_dag(
     required_column_functions: QualNameColumnFunctions,
-    targets__processed__columns: QualNameTargetList,
+    names__target_columns: QualNameTargetList,
 ) -> nx.DiGraph:
     """Thin wrapper around `create_dag`."""
     return create_dag(
         functions=required_column_functions,
-        targets=targets__processed__columns,
+        targets=names__target_columns,
     )
 
 
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
     required_column_functions: QualNameColumnFunctions,
-    targets__processed__columns: QualNameTargetList,
+    names__target_columns: QualNameTargetList,
     # backend: numpy | jax,
 ) -> Callable[[QualNameData], QualNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
@@ -106,7 +67,7 @@ def tax_transfer_function(
     ttf_with_keyword_args = concatenate_functions(
         dag=tax_transfer_dag,
         functions=required_column_functions,
-        targets=list(targets__processed__columns),
+        targets=list(names__target_columns),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
@@ -128,16 +89,16 @@ def tax_transfer_function(
     #     ttf_with_keyword_args=functools.partial(ttf_with_keyword_args, **static_args)
     #     ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 
-    def wrapper(qual_name_data: QualNameData) -> QualNameData:
-        return ttf_with_keyword_args(**qual_name_data)
+    def wrapper(processed_data: QualNameData) -> QualNameData:
+        return ttf_with_keyword_args(**processed_data)
 
     return wrapper
 
 
 def flat_policy_environment_with_derived_functions_and_without_overridden_functions(
     policy_environment: NestedPolicyEnvironment,
-    qual_name_data: QualNameData,
-    qual_name_data_columns: QualNameDataColumns,
+    processed_data: QualNameData,
+    names__processed_data_columns: QualNameDataColumns,
     targets__tree: NestedTargetDict,
     names__top_level_namespace: set[str],
     names__grouping_levels: tuple[str, ...],
@@ -157,15 +118,15 @@ def flat_policy_environment_with_derived_functions_and_without_overridden_functi
     flat_with_derived = _add_derived_functions(
         qual_name_policy_environment=flat,
         targets=dt.qual_names(targets__tree),
-        qual_name_data_columns=qual_name_data_columns,
+        names__processed_data_columns=names__processed_data_columns,
         groupings=names__grouping_levels,
     )
     out = {}
     for n, f in flat_with_derived.items():
         # Put scalar data into the policy environment, else skip the key
-        if n in qual_name_data:
-            if isinstance(qual_name_data[n], int | float | bool):
-                out[n] = qual_name_data[n]
+        if n in processed_data:
+            if isinstance(processed_data[n], int | float | bool):
+                out[n] = processed_data[n]
         else:
             out[n] = f
 
@@ -192,7 +153,7 @@ def _remove_tree_logic_from_policy_environment(
 def _add_derived_functions(
     qual_name_policy_environment: QualNamePolicyEnvironment,
     targets: QualNameTargetList,
-    qual_name_data_columns: QualNameDataColumns,
+    names__processed_data_columns: QualNameDataColumns,
     groupings: tuple[str, ...],
 ) -> QualNameColumnFunctions:
     """Return a mapping of qualified names to functions operating on columns.
@@ -226,7 +187,7 @@ def _add_derived_functions(
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment=qual_name_policy_environment,
-        qual_name_data_columns=qual_name_data_columns,
+        names__processed_data_columns=names__processed_data_columns,
         groupings=groupings,
     )
     column_functions = {
@@ -241,7 +202,7 @@ def _add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
-        qual_name_data_columns=qual_name_data_columns,
+        names__processed_data_columns=names__processed_data_columns,
         targets=targets,
         groupings=groupings,
     )
@@ -256,7 +217,7 @@ def _add_derived_functions(
 
 def qual_name_input_data(
     tax_transfer_dag: nx.DiGraph,
-    qual_name_data: QualNameData,
+    processed_data: QualNameData,
 ) -> QualNameData:
     """Create input data for the concatenated function.
 
@@ -286,7 +247,7 @@ def qual_name_input_data(
     ).nodes
 
     # Restrict the passed data to the subset that is actually used.
-    return {k: np.array(v) for k, v in qual_name_data.items() if k in root_nodes}
+    return {k: np.array(v) for k, v in processed_data.items() if k in root_nodes}
 
 
 def _apply_rounding(element: Any) -> Any:

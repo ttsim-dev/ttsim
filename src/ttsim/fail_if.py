@@ -350,7 +350,7 @@ def fail_if__environment_is_invalid(
 
 def fail_if__foreign_keys_are_invalid_in_data(
     qual_name_input_data: QualNameData,
-    qual_name_data: QualNameData,
+    processed_data: QualNameData,
     flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
 ) -> None:
     """
@@ -359,11 +359,11 @@ def fail_if__foreign_keys_are_invalid_in_data(
     Foreign keys must point to an existing `p_id` in the input data and must not refer
     to the `p_id` of the same row.
 
-    We need qual_name_data because we cannot guarantee that `p_id` is present in the
+    We need processed_data because we cannot guarantee that `p_id` is present in the
     input data.
     """
 
-    valid_ids = set(qual_name_data["p_id"].tolist()) | {-1}
+    valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
         for k, v in flat_policy_environment_with_derived_functions_and_without_overridden_functions.items()
@@ -390,7 +390,7 @@ def fail_if__foreign_keys_are_invalid_in_data(
                     i
                     for i, j in zip(
                         qual_name_input_data[fk_name].tolist(),
-                        qual_name_data["p_id"].tolist(),
+                        processed_data["p_id"].tolist(),
                     )
                     if i == j
                 ]
@@ -600,7 +600,7 @@ def fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name(
 
 def fail_if__root_nodes_are_missing(
     tax_transfer_dag: nx.DiGraph,
-    qual_name_data: QualNameData,
+    processed_data: QualNameData,
 ) -> None:
     """Fail if root nodes are missing.
 
@@ -608,7 +608,7 @@ def fail_if__root_nodes_are_missing(
     ----------
     tax_transfer_dag
         The DAG of taxes and transfers functions.
-    qual_name_data
+    processed_data
         The data tree in qualified name representation.
 
     Raises
@@ -625,7 +625,7 @@ def fail_if__root_nodes_are_missing(
     missing_nodes = [
         node
         for node in root_nodes
-        if node not in qual_name_data and not node.endswith("_num_segments")
+        if node not in processed_data and not node.endswith("_num_segments")
     ]
 
     if missing_nodes:
@@ -637,7 +637,7 @@ def fail_if__root_nodes_are_missing(
 
 def fail_if__targets_are_not_in_policy_environment_or_data(
     policy_environment: QualNamePolicyEnvironment,
-    qual_name_data_columns: QualNameDataColumns,
+    names__processed_data_columns: QualNameDataColumns,
     targets__qname: QualNameTargetList,
 ) -> None:
     """Fail if some target is not among functions.
@@ -646,7 +646,7 @@ def fail_if__targets_are_not_in_policy_environment_or_data(
     ----------
     functions
         Dictionary containing functions to build the DAG.
-    qual_name_data_columns
+    names__processed_data_columns
         The columns which are available in the data tree.
     targets
         The targets which should be computed. They limit the DAG in the way that only
@@ -661,7 +661,7 @@ def fail_if__targets_are_not_in_policy_environment_or_data(
     targets_not_in_policy_environment_or_data = [
         str(dt.tree_path_from_qual_name(n))
         for n in targets__qname
-        if n not in policy_environment and n not in qual_name_data_columns
+        if n not in policy_environment and n not in names__processed_data_columns
     ]
     if targets_not_in_policy_environment_or_data:
         formatted = format_list_linewise(targets_not_in_policy_environment_or_data)
@@ -725,13 +725,13 @@ def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg,
 
 def warn_if__functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
-    qual_name_data_columns: QualNameDataColumns,
+    names__processed_data_columns: QualNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""
     overridden_elements = sorted(
         {
             col
-            for col in qual_name_data_columns
+            for col in names__processed_data_columns
             if col in dt.flatten_to_qual_names(policy_environment)
         }
     )

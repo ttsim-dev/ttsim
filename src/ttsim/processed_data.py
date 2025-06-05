@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from ttsim.tt_dag_elements.typing import NestedData, QualNameData
 
 
-def processed__data(
+def processed_data(
     input_data__tree: NestedData,
 ) -> QualNameData:
     """Process the data for use in the taxes and transfers function.
@@ -22,4 +22,4 @@ def processed__data(
     Returns:
         A DataFrame.
     """
-    return dt.flatten_to_tree_paths(input_data__tree)
+    return dt.flatten_to_qual_names(input_data__tree)

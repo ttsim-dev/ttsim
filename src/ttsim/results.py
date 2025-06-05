@@ -2,15 +2,28 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
+
 from ttsim.data_converters import nested_data_to_df_with_mapped_columns
 
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings
+    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings, QualNameData
 
 
-def df(
+def results__tree(raw_results__combined: QualNameData) -> NestedData:
+    """The combined results as a tree.
+
+    Note: This is the point where the `p_id`s are converted back to their original
+    values.
+
+    """
+
+    return dt.unflatten_from_qual_names(raw_results__combined)
+
+
+def results__df(
     results__tree: NestedData,
     input_data__tree: NestedData,
     results__df_and_mapper__mapper: NestedStrings,
@@ -18,7 +31,7 @@ def df(
     """The results DataFrame with mapped column names.
 
     Args:
-        nested_results:
+        results__tree:
             The results of a TTSIM run.
         input_data__tree:
             The data tree of the TTSIM run.

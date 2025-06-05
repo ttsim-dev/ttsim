@@ -292,7 +292,7 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 name: policy_function(leaf_name=name)(return_one)
             },
-            qual_name_data_columns=set(),
+            names__processed_data_columns=set(),
             groupings=("sn", "kin"),
         )
 
@@ -304,7 +304,7 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 "test1_d": policy_function(leaf_name="test1_d")(return_one)
             },
-            qual_name_data_columns={"test2_y"},
+            names__processed_data_columns={"test2_y"},
             groupings=("sn", "kin"),
         )
 
@@ -318,7 +318,7 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 "test_d": policy_function(leaf_name="test_d")(return_one)
             },
-            qual_name_data_columns={"test_y"},
+            names__processed_data_columns={"test_y"},
             groupings=("sn", "kin"),
         )
 
@@ -351,7 +351,7 @@ def test_should_not_create_cycle():
 
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
-        qual_name_data_columns=set(),
+        names__processed_data_columns=set(),
         groupings=(),
     )
 
@@ -362,7 +362,7 @@ def test_should_not_create_cycle():
     (
         "column_functions",
         "targets",
-        "qual_name_data_columns",
+        "names__processed_data_columns",
         "expected",
     ),
     [
@@ -389,7 +389,7 @@ def test_should_not_create_cycle():
 def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
     targets,
-    qual_name_data_columns,
+    names__processed_data_columns,
     expected,
 ):
     """Test that the derived aggregation functions are in the correct namespace.
@@ -399,7 +399,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     """
     result = create_agg_by_group_functions(
         column_functions=column_functions,
-        qual_name_data_columns=qual_name_data_columns,
+        names__processed_data_columns=names__processed_data_columns,
         targets=targets,
         groupings=("kin",),
     )

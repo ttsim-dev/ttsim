@@ -494,7 +494,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
 
     fail_if__foreign_keys_are_invalid_in_data(
         qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
-        qual_name_data=data,
+        processed_data=data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -511,7 +511,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         fail_if__foreign_keys_are_invalid_in_data(
             qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
-            qual_name_data=data,
+            processed_data=data,
             flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
         )
 
@@ -527,7 +527,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
 
     fail_if__foreign_keys_are_invalid_in_data(
         qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
-        qual_name_data=data,
+        processed_data=data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -543,7 +543,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
 
     fail_if__foreign_keys_are_invalid_in_data(
         qual_name_input_data={k: v for k, v in data.items() if k != "p_id"},
-        qual_name_data=data,
+        processed_data=data,
         flat_policy_environment_with_derived_functions_and_without_overridden_functions=flat_objects_tree,
     )
 
@@ -661,12 +661,12 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
                 "rounding": False,
                 # "jit": jit,
             },
-            targets=["nested_results", "fail_if__root_nodes_are_missing"],
+            targets=["results__tree", "fail_if__root_nodes_are_missing"],
         )
 
 
 @pytest.mark.parametrize(
-    "policy_environment, targets, qual_name_data_columns, expected_error_match",
+    "policy_environment, targets, names__processed_data_columns, expected_error_match",
     [
         ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
@@ -675,7 +675,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
     ],
 )
 def test_fail_if_targets_are_not_in_policy_environment_or_data(
-    policy_environment, targets, qual_name_data_columns, expected_error_match
+    policy_environment, targets, names__processed_data_columns, expected_error_match
 ):
     with pytest.raises(
         ValueError, match="The following targets have no corresponding function"
@@ -683,7 +683,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data(
         fail_if__targets_are_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
             targets__qname=targets,
-            qual_name_data_columns=qual_name_data_columns,
+            names__processed_data_columns=names__processed_data_columns,
         )
     assert expected_error_match in str(e.value)
 

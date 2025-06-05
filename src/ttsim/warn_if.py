@@ -70,13 +70,13 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
 
 def warn_if__functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
-    qual_name_data_columns: QualNameDataColumns,
+    names__processed_data_columns: QualNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""
     overridden_elements = sorted(
         {
             col
-            for col in qual_name_data_columns
+            for col in names__processed_data_columns
             if col in dt.flatten_to_qual_names(policy_environment)
         }
     )

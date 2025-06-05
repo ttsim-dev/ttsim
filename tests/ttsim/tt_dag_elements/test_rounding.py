@@ -121,17 +121,17 @@ def test_rounding(rounding_spec, input_values, exp_output):
     }
     policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
-    nested_results = main(
+    results__tree = main(
         inputs={
             "input_data__tree": input_data__tree,
             "policy_environment": policy_environment,
             "targets__tree": {"namespace": {"test_func": None}},
             "rounding": True,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     assert_series_equal(
-        pd.Series(nested_results["namespace"]["test_func"]),
+        pd.Series(results__tree["namespace"]["test_func"]),
         pd.Series(exp_output, dtype=DTYPE),
         check_names=False,
     )
@@ -156,17 +156,17 @@ def test_rounding_with_time_conversion():
         "p_id": p_id,
     }
 
-    nested_results = main(
+    results__tree = main(
         inputs={
             "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets__tree": {"test_func_y": None},
             "rounding": True,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     assert_series_equal(
-        pd.Series(nested_results["test_func_y"]),
+        pd.Series(results__tree["test_func_y"]),
         pd.Series([12.0, 12.0], dtype=DTYPE),
         check_names=False,
     )
@@ -194,17 +194,17 @@ def test_no_rounding(
         "p_id": p_id,
     }
 
-    nested_results = main(
+    results__tree = main(
         inputs={
             "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets__tree": {"test_func": None},
             "rounding": False,
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        targets=["results__tree"],
+    )["results__tree"]
     assert_series_equal(
-        pd.Series(nested_results["test_func"]),
+        pd.Series(results__tree["test_func"]),
         pd.Series(input_values_exp_output, dtype=DTYPE),
         check_names=False,
     )
