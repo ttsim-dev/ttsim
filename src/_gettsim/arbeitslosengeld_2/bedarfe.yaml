@@ -114,25 +114,25 @@ parameter_mehrbedarf_alleinerziehend:
   description:
     de: >-
       § 21 (3) Nr. 1 SGB II. Mehrbedarfe für Alleinerziehende sind als Anteile vom
-      maßgebenden Regelbedarf angegeben. ``kind_bis_6_oder_mehrere_bis_15`` gibt den
-      Anteil bei mind. einem Kind bis 6 Jahren oder zwei oder drei Kindern bis 15 Jahre
-      an. ``min_1_kind`` gibt den maßgeblichen Anteil vom Regelbedarf je Kind an, wenn
-      der daraus resultierende Anspruch größer ist als der Anspruch durch
-      ``kind_bis_6_oder_mehrere_bis_15``. ``max`` gibt den Maximalanteil vom Regelbedarf
-      an, der für Alleinerziehende als Mehrbedarf berücksichtigt wird.
+      maßgebenden Regelbedarf angegeben. ``kind_bis_6_oder_2_3_kinder_bis_15`` gibt den
+      Anteil bei einem Kind bis 6 Jahren oder zwei oder drei Kindern bis 15 Jahre an.
+      ``basis_je_kind_bis_17`` gibt den maßgeblichen Anteil vom Regelbedarf je Kind an,
+      wenn der daraus resultierende Anspruch größer ist als der Anspruch durch
+      ``kind_bis_6_oder_2_3_kinder_bis_15``. ``max`` gibt den Maximalanteil vom
+      Regelbedarf an, der für Alleinerziehende als Mehrbedarf berücksichtigt wird.
     en: >-
       § 21 (3) Nr. 1 SGB II. Additional needs for single parents are given as shares of
-      the relevant Regelbedarf. ``kind_bis_6_oder_mehrere_bis_15`` gives the share when
-      there is at least one child up to 6 years or two or three children up to 15 years.
-      ``min_1_kind`` gives the relevant share of the Regelbedarf per child when the
-      resulting claim is greater than the claim through
-      ``kind_bis_6_oder_mehrere_bis_15``. ``max`` gives the maximum share of the
+      the relevant Regelbedarf. ``kind_bis_6_oder_2_3_kinder_bis_15`` gives the share
+      when there is one child up to 6 years or two or three children up to 15 years.
+      ``basis_je_kind_bis_17`` gives the relevant share of the Regelbedarf per child
+      when the resulting claim is greater than the claim through
+      ``kind_bis_6_oder_2_3_kinder_bis_15``. ``max`` gives the maximum share of the
       Regelbedarf that is considered as an additional need for single parents.
   unit: Share
   reference_period: Month
   type: dict
   2005-01-01:
-    min_1_kind: 0.12
-    kind_bis_6_oder_mehrere_bis_15: 0.36
+    basis_je_kind_bis_17: 0.12
+    kind_bis_6_oder_2_3_kinder_bis_15: 0.36
     max: 0.6
     reference: G. v. 24.12.2003 BGBl. I S. 2954.

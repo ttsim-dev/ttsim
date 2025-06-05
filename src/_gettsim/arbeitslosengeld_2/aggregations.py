@@ -28,6 +28,11 @@ def anzahl_kinder_bis_15_fg(familie__kind_bis_15: bool, fg_id: int) -> int:
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bis_17_fg(familie__kind_bis_17: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
 def anzahl_erwachsene_bg(familie__erwachsen: bool, bg_id: int) -> int:
     pass
 
