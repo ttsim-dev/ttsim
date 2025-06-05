@@ -6,7 +6,7 @@ from ttsim import policy_input
 
 
 @policy_input()
-def anwartschaftszeit() -> bool:
+def min_12_monate_beitragspflichtig_versichert_in_letzten_30_monaten() -> bool:
     """At least 12 months of unemployment contributions in the 30 months before claiming unemployment insurance."""
 
 

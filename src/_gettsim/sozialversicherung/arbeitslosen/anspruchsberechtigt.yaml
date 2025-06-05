@@ -22,7 +22,7 @@ stundengrenze:
   2012-04-01:
     value: 15
     reference: Art. 2 G. v. 20.12.2011 BGBl I S. 2854
-anspruchsdauer_nach_alter:
+raw_anspruchsdauer_nach_alter:
   name:
     de: Anspruchsdauer für ALG 1 nach Alter.
     en: Period of ALG 1 eligibility based on age.
@@ -37,25 +37,13 @@ anspruchsdauer_nach_alter:
       person was subject to compulsory insurance
   unit: Months
   reference_period: null
-  type: piecewise_constant
+  type: require_converter
   1997-03-24:
-    0:
-      lower_threshold: -inf
-      intercept_at_lower_threshold: 0
-    1:
-      lower_threshold: 0
-      intercept_at_lower_threshold: 12
-    2:
-      lower_threshold: 50
-      intercept_at_lower_threshold: 15
-    3:
-      lower_threshold: 55
-      intercept_at_lower_threshold: 18
-    4:
-      lower_threshold: 58
-      upper_threshold: inf
-      intercept_at_lower_threshold: 24
-anspruchsdauer_nach_versicherungspflichtigen_monaten:
+    0: 12
+    50: 15
+    55: 18
+    58: 24
+raw_anspruchsdauer_nach_versicherungspflichtigen_monaten:
   name:
     de: Anspruchsdauer für ALG 1 nach versicherungspflichtigen Monaten.
     en: Period of ALG 1 eligibility based on months of compulsory insurance.
@@ -70,30 +58,13 @@ anspruchsdauer_nach_versicherungspflichtigen_monaten:
       person was subject to compulsory insurance
   unit: Months
   reference_period: null
-  type: piecewise_constant
+  type: require_converter
   1997-03-24:
-    0:
-      lower_threshold: -inf
-      intercept_at_lower_threshold: 0
-    1:
-      lower_threshold: 12
-      intercept_at_lower_threshold: 6
-    2:
-      lower_threshold: 18
-      intercept_at_lower_threshold: 8
-    3:
-      lower_threshold: 20
-      intercept_at_lower_threshold: 10
-    4:
-      lower_threshold: 24
-      intercept_at_lower_threshold: 12
-    5:
-      lower_threshold: 30
-      intercept_at_lower_threshold: 15
-    6:
-      lower_threshold: 36
-      intercept_at_lower_threshold: 18
-    7:
-      lower_threshold: 48
-      upper_threshold: inf
-      intercept_at_lower_threshold: 24
+    0: 0
+    12: 6
+    18: 8
+    20: 10
+    24: 12
+    30: 15
+    36: 18
+    48: 24

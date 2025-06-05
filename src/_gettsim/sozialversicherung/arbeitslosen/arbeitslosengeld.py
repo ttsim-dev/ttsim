@@ -2,7 +2,20 @@
 
 from __future__ import annotations
 
-from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
+from typing import TYPE_CHECKING
+
+from ttsim import (
+    get_consecutive_int_1d_lookup_table_param_value,
+    param_function,
+    piecewise_polynomial,
+    policy_function,
+)
+
+if TYPE_CHECKING:
+    from ttsim import (
+        ConsecutiveInt1dLookupTableParamValue,
+        PiecewisePolynomialParamValue,
+    )
 
 
 @policy_function(end_date="1998-07-31", leaf_name="betrag_m")
@@ -37,27 +50,25 @@ def betrag_m(
 def monate_verbleibender_anspruchsdauer(
     alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
-    anwartschaftszeit: bool,
+    min_12_monate_beitragspflichtig_versichert_in_letzten_30_monaten: bool,
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
-    anspruchsdauer_nach_alter: PiecewisePolynomialParamValue,
-    anspruchsdauer_nach_versicherungspflichtigen_monaten: PiecewisePolynomialParamValue,
+    anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
+    anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
-    """Calculate the remaining amount of months a person can receive unemployment
-    benefits.
-
-    """
-    nach_alter = piecewise_polynomial(
-        x=alter,
-        parameters=anspruchsdauer_nach_alter,
-    )
-    nach_versich_pfl = piecewise_polynomial(
-        x=monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        parameters=anspruchsdauer_nach_versicherungspflichtigen_monaten,
+    """Remaining amount of months of potential unemployment benefit claims."""
+    auf_altersbasis = anspruchsdauer_nach_alter.values_to_look_up[
+        alter - anspruchsdauer_nach_alter.base_to_subtract
+    ]
+    auf_basis_versicherungspflichtiger_monate = (
+        anspruchsdauer_nach_versicherungspflichtigen_monaten.values_to_look_up[
+            monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
+            - anspruchsdauer_nach_versicherungspflichtigen_monaten.base_to_subtract
+        ]
     )
 
-    if anwartschaftszeit:
+    if min_12_monate_beitragspflichtig_versichert_in_letzten_30_monaten:
         out = max(
-            min(nach_alter, nach_versich_pfl)
+            min(auf_altersbasis, auf_basis_versicherungspflichtiger_monate)
             - monate_durchgängigen_bezugs_von_arbeitslosengeld,
             0,
         )
@@ -124,3 +135,45 @@ def einkommen_vorjahr_proxy_m(
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     return max(out, 0.0)
+
+
+@param_function(start_date="1997-03-24")
+def anspruchsdauer_nach_alter(
+    raw_anspruchsdauer_nach_alter: dict[int, int],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Amount of potential months of unemployment benefit claims by age."""
+    max_age = 120
+    ages_in_spec = sorted(raw_anspruchsdauer_nach_alter.keys())
+
+    full_spec: dict[int, int] = {}
+    for a in range(max_age):
+        if a not in ages_in_spec:
+            # Find the highest age in raw_anspruchsdauer_nach_alter that is less than current age
+            threshold_age_for_this_age = max(age for age in ages_in_spec if age < a)
+            full_spec[a] = full_spec[threshold_age_for_this_age]
+        else:
+            full_spec[a] = raw_anspruchsdauer_nach_alter[a]
+
+    return get_consecutive_int_1d_lookup_table_param_value(full_spec)
+
+
+@param_function(start_date="1997-03-24")
+def anspruchsdauer_nach_versicherungspflichtigen_monaten(
+    raw_anspruchsdauer_nach_versicherungspflichtigen_monaten: dict[int, int],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Amount of potential months of unemployment benefit claims by age."""
+    max_age = 120
+    ages_in_spec = sorted(
+        raw_anspruchsdauer_nach_versicherungspflichtigen_monaten.keys()
+    )
+
+    full_spec: dict[int, int] = {}
+    for a in range(max_age):
+        if a not in ages_in_spec:
+            # Find the highest age in raw_anspruchsdauer_nach_alter that is less than current age
+            threshold_age_for_this_age = max(age for age in ages_in_spec if age < a)
+            full_spec[a] = full_spec[threshold_age_for_this_age]
+        else:
+            full_spec[a] = raw_anspruchsdauer_nach_versicherungspflichtigen_monaten[a]
+
+    return get_consecutive_int_1d_lookup_table_param_value(full_spec)
