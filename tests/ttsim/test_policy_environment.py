@@ -74,25 +74,25 @@ def test_add_jahresanfang():
 
 
 def test_input_is_recognized_as_potential_group_id():
-    grouping_levels = main(
+    names__grouping_levels = main(
         inputs={
             "root": METTSIM_ROOT,
             "date": datetime.date(2020, 1, 1),
         },
-        targets=["grouping_levels"],
-    )["grouping_levels"]
-    assert "kin" in grouping_levels
+        targets=["names__grouping_levels"],
+    )["names__grouping_levels"]
+    assert "kin" in names__grouping_levels
 
 
 def test_p_id_not_recognized_as_potential_group_id():
-    grouping_levels = main(
+    names__grouping_levels = main(
         inputs={
             "root": METTSIM_ROOT,
             "date": datetime.date(2020, 1, 1),
         },
-        targets=["grouping_levels"],
-    )["grouping_levels"]
-    assert "p" not in grouping_levels
+        targets=["names__grouping_levels"],
+    )["names__grouping_levels"]
+    assert "p" not in names__grouping_levels
 
 
 @pytest.mark.parametrize(

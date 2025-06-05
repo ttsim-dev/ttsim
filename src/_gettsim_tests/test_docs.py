@@ -60,6 +60,7 @@ def test_all_input_vars_documented(
     default_input_variables,
     time_indep_function_names,
     all_function_names,
+    names__grouping_levels,
 ):
     """Test if arguments of all non-internal functions are either the name of another
     function, a documented input variable, or a parameter dictionary."""
@@ -83,7 +84,7 @@ def test_all_input_vars_documented(
         for c in arguments
         if (c not in defined_functions)
         and (
-            remove_group_suffix(c, groupings=grouping_levels(policy_environment))
+            remove_group_suffix(c, names__grouping_levels=names__grouping_levels)
             not in defined_functions
         )
         and (not c.endswith("_params"))

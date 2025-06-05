@@ -89,7 +89,7 @@ class ColumnObject:
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        top_level_namespace: set[str],
+        names__top_level_namespace: set[str],
     ) -> ColumnObject:
         """Remove tree logic from the function and update the function signature."""
         raise NotImplementedError("Subclasses must implement this method.")
@@ -118,7 +118,7 @@ class PolicyInput(ColumnObject):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],  # noqa: ARG002
-        top_level_namespace: set[str],  # noqa: ARG002
+        names__top_level_namespace: set[str],  # noqa: ARG002
     ) -> PolicyInput:
         return self
 
@@ -273,7 +273,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        top_level_namespace: set[str],
+        names__top_level_namespace: set[str],
     ) -> PolicyFunction:
         """Remove tree logic from the function and update the function signature."""
         return PolicyFunction(
@@ -281,7 +281,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=top_level_namespace,
+                top_level_namespace=names__top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -373,7 +373,7 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        top_level_namespace: set[str],
+        names__top_level_namespace: set[str],
     ) -> GroupCreationFunction:
         """Remove tree logic from the function and update the function signature."""
         return GroupCreationFunction(
@@ -381,7 +381,7 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=top_level_namespace,
+                top_level_namespace=names__top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -442,7 +442,7 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        top_level_namespace: set[str],
+        names__top_level_namespace: set[str],
     ) -> AggByGroupFunction:
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
@@ -450,7 +450,7 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=top_level_namespace,
+                top_level_namespace=names__top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -566,7 +566,7 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        top_level_namespace: set[str],
+        names__top_level_namespace: set[str],
     ) -> AggByGroupFunction:
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
@@ -574,7 +574,7 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=top_level_namespace,
+                top_level_namespace=names__top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -693,7 +693,7 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        top_level_namespace: set[str],
+        names__top_level_namespace: set[str],
     ) -> TimeConversionFunction:
         """Remove tree logic from the function and update the function signature."""
         return TimeConversionFunction(
@@ -702,7 +702,7 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=top_level_namespace,
+                top_level_namespace=names__top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -818,7 +818,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        top_level_namespace: set[str],
+        names__top_level_namespace: set[str],
     ) -> ParamFunction:  # type: ignore[type-arg]
         """Remove tree logic from the function and update the function signature."""
         return ParamFunction(
@@ -826,7 +826,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=top_level_namespace,
+                top_level_namespace=names__top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,

@@ -39,7 +39,6 @@ from ttsim.compute_taxes_and_transfers import (
     required_column_functions,
     tax_transfer_dag,
     tax_transfer_function,
-    top_level_namespace,
 )
 from ttsim.data_converters import (
     dataframe_to_nested_data,
@@ -96,8 +95,11 @@ from ttsim.policy_environment import (
     get_consecutive_int_2d_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
-    grouping_levels,
     policy_environment,
+)
+from ttsim.names import (
+    names__grouping_levels,
+    names__top_level_namespace,
 )
 from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.shared import (
@@ -125,7 +127,7 @@ def function_collection():
         "fail_if__targets_are_not_in_policy_environment_or_data": fail_if__targets_are_not_in_policy_environment_or_data,
         "fail_if__targets_tree_is_invalid": fail_if__targets_tree_is_invalid,
         "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
-        "grouping_levels": grouping_levels,
+        "names__grouping_levels": names__grouping_levels,
         "input_data__tree": input_data__tree,
         "nested_results": nested_results,
         "orig_policy_objects__column_objects_and_param_functions": column_objects_and_param_functions,
@@ -143,7 +145,7 @@ def function_collection():
         "required_column_functions": required_column_functions,
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
-        "top_level_namespace": top_level_namespace,
+        "names__top_level_namespace": names__top_level_namespace,
         "warn_if__functions_and_data_columns_overlap": warn_if__functions_and_data_columns_overlap,
     }
 

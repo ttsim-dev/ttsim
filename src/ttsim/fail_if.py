@@ -259,14 +259,14 @@ def fail_if__any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
     targets__tree: NestedTargetDict,
-    top_level_namespace: set[str],
+    names__top_level_namespace: set[str],
 ) -> None:
     """Thin wrapper around `dt.fail_if__paths_are_invalid`."""
     return dt.fail_if__paths_are_invalid(
         functions=policy_environment,
         input_data__tree=input_data__tree,
         targets=targets__tree,
-        top_level_namespace=top_level_namespace,
+        names__top_level_namespace=names__top_level_namespace,
     )
 
 
@@ -423,7 +423,7 @@ def fail_if__group_ids_are_outside_top_level_namespace(
 
 def fail_if__group_variables_are_not_constant_within_groups(
     qual_name_input_data: QualNameData,
-    grouping_levels: tuple[str, ...],
+    names__grouping_levels: tuple[str, ...],
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -440,7 +440,7 @@ def fail_if__group_variables_are_not_constant_within_groups(
     for name, data_column in qual_name_input_data.items():
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            groupings=grouping_levels,
+            groupings=names__grouping_levels,
         )
         if group_by_id in qual_name_input_data:
             group_by_id_series = pd.Series(qual_name_input_data[group_by_id])

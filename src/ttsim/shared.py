@@ -294,9 +294,9 @@ def partition_by_reference_dict(
     return intersection, difference
 
 
-def remove_group_suffix(col: str, groupings: tuple[str, ...]) -> str:
+def remove_group_suffix(col: str, names__grouping_levels: tuple[str, ...]) -> str:
     out = col
-    for g in groupings:
+    for g in names__grouping_levels:
         out = out.removesuffix(f"_{g}")
 
     return out

@@ -26,7 +26,6 @@ from ttsim import (
     policy_function,
     policy_input,
     required_column_functions,
-    top_level_namespace,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
@@ -716,33 +715,6 @@ def test_user_provided_aggregate_by_p_id_specs(
     )["nested_results"]["module"][next(iter(target_tree["module"].keys()))]
 
     numpy.testing.assert_array_almost_equal(out, expected)
-
-
-@pytest.mark.parametrize(
-    (
-        "policy_environment",
-        "expected",
-    ),
-    [
-        (
-            {
-                "foo_m": policy_function(leaf_name="foo_m")(identity),
-                "fam_id": fam_id,
-            },
-            {"foo_m", "foo_y", "foo_m_fam", "foo_y_fam"},
-        ),
-        (
-            {
-                "foo": policy_function(leaf_name="foo")(identity),
-                "fam_id": fam_id,
-            },
-            {"foo", "foo_fam"},
-        ),
-    ],
-)
-def test_get_top_level_namespace(policy_environment, expected):
-    result = top_level_namespace(policy_environment=policy_environment)
-    assert all(name in result for name in expected)
 
 
 def test_policy_environment_with_params_and_scalars_is_processed():

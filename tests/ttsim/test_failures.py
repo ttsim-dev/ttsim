@@ -563,7 +563,7 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
     with pytest.raises(ValueError):
         fail_if__group_variables_are_not_constant_within_groups(
             qual_name_input_data=data,
-            grouping_levels=("kin",),
+            names__grouping_levels=("kin",),
         )
 
 

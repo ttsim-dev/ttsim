@@ -9,19 +9,11 @@ import networkx as nx
 from dags import concatenate_functions, create_dag, get_free_arguments
 
 from ttsim.automatically_added_functions import (
-    TIME_UNIT_LABELS,
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.fail_if import (
-    fail_if__multiple_time_units_for_same_base_name_and_group,
-)
-from ttsim.policy_environment import grouping_levels
 from ttsim.shared import (
-    get_base_name_and_grouping_suffix,
-    get_re_pattern_for_all_time_units_and_groupings,
-    group_pattern,
     merge_trees,
 )
 from ttsim.tt_dag_elements.column_objects_param_function import (
@@ -147,7 +139,8 @@ def flat_policy_environment_with_derived_functions_and_without_overridden_functi
     qual_name_data: QualNameData,
     qual_name_data_columns: QualNameDataColumns,
     targets__tree: NestedTargetDict,
-    top_level_namespace: set[str],
+    names__top_level_namespace: set[str],
+    names__grouping_levels: tuple[str, ...],
 ) -> QualNamePolicyEnvironment:
     """Return a flat policy environment with derived functions.
 
@@ -159,13 +152,13 @@ def flat_policy_environment_with_derived_functions_and_without_overridden_functi
     """
     flat = _remove_tree_logic_from_policy_environment(
         policy_environment=policy_environment,
-        top_level_namespace=top_level_namespace,
+        names__top_level_namespace=names__top_level_namespace,
     )
     flat_with_derived = _add_derived_functions(
         qual_name_policy_environment=flat,
         targets=dt.qual_names(targets__tree),
         qual_name_data_columns=qual_name_data_columns,
-        groupings=grouping_levels(policy_environment),
+        groupings=names__grouping_levels,
     )
     out = {}
     for n, f in flat_with_derived.items():
@@ -179,65 +172,9 @@ def flat_policy_environment_with_derived_functions_and_without_overridden_functi
     return out
 
 
-def top_level_namespace(
-    policy_environment: NestedPolicyEnvironment,
-) -> set[str]:
-    """Get the top level namespace.
-
-    Parameters
-    ----------
-    environment:
-        The policy environment.
-
-    Returns
-    -------
-    top_level_namespace:
-        The top level namespace.
-    """
-
-    time_units = tuple(TIME_UNIT_LABELS.keys())
-    direct_top_level_names = set(policy_environment.keys())
-
-    # Do not create variations for lower-level namespaces.
-    top_level_objects_for_variations = direct_top_level_names - {
-        k for k, v in policy_environment.items() if isinstance(v, dict)
-    }
-
-    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        groupings=grouping_levels(policy_environment),
-        time_units=time_units,
-    )
-    bngs_to_variations = {}
-    all_top_level_names = direct_top_level_names.copy()
-    for name in top_level_objects_for_variations:
-        match = pattern_all.fullmatch(name)
-        # We must not find multiple time units for the same base name and group.
-        bngs = get_base_name_and_grouping_suffix(match)
-        if match.group("time_unit"):
-            if bngs not in bngs_to_variations:
-                bngs_to_variations[bngs] = [name]
-            else:
-                bngs_to_variations[bngs].append(name)
-            for time_unit in time_units:
-                all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
-    fail_if__multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
-
-    gp = group_pattern(grouping_levels(policy_environment))
-    potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
-
-    for name in potential_base_names:
-        for g in grouping_levels(policy_environment):
-            all_top_level_names.add(f"{name}_{g}")
-
-    # Add num_segments to grouping variables
-    for g in grouping_levels(policy_environment):
-        all_top_level_names.add(f"{g}_id_num_segments")
-    return all_top_level_names
-
-
 def _remove_tree_logic_from_policy_environment(
     policy_environment: NestedPolicyEnvironment,
-    top_level_namespace: set[str],
+    names__top_level_namespace: set[str],
 ) -> QualNamePolicyEnvironment:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
@@ -247,7 +184,7 @@ def _remove_tree_logic_from_policy_environment(
         else:
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qual_name(name),
-                top_level_namespace=top_level_namespace,
+                names__top_level_namespace=names__top_level_namespace,
             )
     return out
 
@@ -278,7 +215,7 @@ def _add_derived_functions(
         The list of targets with qualified names.
     data
         Dict with qualified data names as keys and arrays as values.
-    top_level_namespace
+    names__top_level_namespace
         Set of top-level namespaces.
 
     Returns
