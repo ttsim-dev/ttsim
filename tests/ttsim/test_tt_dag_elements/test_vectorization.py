@@ -113,7 +113,7 @@ def f4(x):
 
 def f4_exp(x):
     out = 1
-    out = numpy.where(x < 0, 0, out)
+    out = numpy.where(x < 0, 0, out)  # type: ignore[assignment]
     return out
 
 
@@ -204,7 +204,7 @@ def f12(x):
 
 def f12_exp(x):
     out = 0
-    out += numpy.where(x < 1, 1, out)
+    out += numpy.where(x < 1, 1, out)  # type: ignore[assignment]
     return out
 
 
