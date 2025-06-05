@@ -19,9 +19,13 @@ if IS_JAX_INSTALLED:
 from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
-from ttsim import GroupCreationFunction, PolicyInput, policy_function
-from ttsim.loader import orig_tree_with_column_objects_and_param_functions
-from ttsim.policy_environment import active_tree_with_column_objects_and_param_functions
+from ttsim import (
+    GroupCreationFunction,
+    PolicyInput,
+    orig_policy_objects,
+    policy_function,
+)
+from ttsim.policy_environment import _active_column_objects_and_param_functions
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -47,10 +51,6 @@ if IS_JAX_INSTALLED:
 # ======================================================================================
 # String comparison
 # ======================================================================================
-
-ORIG_METTSIM_OBJECTS_TREE = orig_tree_with_column_objects_and_param_functions(
-    root=METTSIM_ROOT / "mettsim"
-)
 
 
 def string_equal(s1, s2):
@@ -386,8 +386,10 @@ for year in range(1990, 2023):
         [
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
-                active_tree_with_column_objects_and_param_functions(
-                    orig_tree_with_column_objects_and_param_functions=ORIG_METTSIM_OBJECTS_TREE,
+                _active_column_objects_and_param_functions(
+                    orig=orig_policy_objects.column_objects_and_param_functions(
+                        root=METTSIM_ROOT / "mettsim"
+                    ),
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).items()

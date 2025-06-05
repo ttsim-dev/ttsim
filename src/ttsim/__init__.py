@@ -82,13 +82,11 @@ from ttsim.piecewise_polynomial import (
     piecewise_polynomial,
 )
 from ttsim.plot_dag import plot_dag
-from ttsim.loader import (
-    orig_tree_with_column_objects_and_param_functions,
-    orig_tree_with_params,
+from ttsim.orig_policy_objects import (
+    column_objects_and_param_functions,
+    param_specs,
 )
 from ttsim.policy_environment import (
-    active_tree_with_column_objects_and_param_functions,
-    active_tree_with_params,
     get_consecutive_int_1d_lookup_table_param_value,
     get_consecutive_int_2d_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
@@ -109,8 +107,6 @@ from ttsim.shared import (
 
 def function_collection():
     return {
-        "active_tree_with_column_objects_and_param_functions": active_tree_with_column_objects_and_param_functions,
-        "active_tree_with_params": active_tree_with_params,
         "column_functions_with_processed_params_and_scalars": column_functions_with_processed_params_and_scalars,
         "column_results": column_results,
         "fail_if_active_periods_overlap": fail_if_active_periods_overlap,
@@ -127,8 +123,8 @@ def function_collection():
         "grouping_levels": grouping_levels,
         "data_tree": data_tree,
         "nested_results": nested_results,
-        "orig_tree_with_column_objects_and_param_functions": orig_tree_with_column_objects_and_param_functions,
-        "orig_tree_with_params": orig_tree_with_params,
+        "orig_policy_objects__column_objects_and_param_functions": column_objects_and_param_functions,
+        "orig_policy_objects__param_specs": param_specs,
         "policy_environment": policy_environment,
         "qual_name_column_targets": qual_name_column_targets,
         "qual_name_data": qual_name_data,
@@ -174,7 +170,7 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
         functions=possible_targets,
         targets=targets,
     )
-    draw_dag(dag)
+    # draw_dag(dag)
     f = dags.concatenate_functions(
         dag=dag,
         functions=possible_targets,

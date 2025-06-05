@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from mettsim.config import METTSIM_ROOT
 
-from ttsim.loader import (
+from ttsim.orig_policy_objects import (
     _find_files_recursively,
     _load_module,
 )

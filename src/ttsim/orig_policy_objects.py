@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     )
 
 
-def orig_tree_with_column_objects_and_param_functions(
+def column_objects_and_param_functions(
     root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """
@@ -41,6 +41,27 @@ def orig_tree_with_column_objects_and_param_functions(
         for k, v in _tree_path_to_orig_column_objects_params_functions(
             path=path, root=root
         ).items()
+    }
+
+
+def param_specs(root: Path) -> FlatOrigParamSpecs:
+    """
+    Load the original contents of yaml files found in *root*.
+
+    "Original" means:
+    - Module names are not removed from the path.
+    - The outermost key in each yaml file becomes the leaf name of the tree path.
+      Beyond that, the contents of the yaml files are not parsed.
+
+    Parameters
+    ----------
+    root:
+        The resource directory to load the parameter specifications from.
+    """
+    return {
+        k: v
+        for path in _find_files_recursively(root=root, suffix=".yaml")
+        for k, v in _tree_path_to_orig_yaml_object(path=path, root=root).items()
     }
 
 
@@ -103,27 +124,6 @@ def _load_module(path: Path, root: Path) -> ModuleType:
     spec.loader.exec_module(module)
 
     return module
-
-
-def orig_tree_with_params(root: Path) -> FlatOrigParamSpecs:
-    """
-    Load the original contents of yaml files found in *root*.
-
-    "Original" means:
-    - Module names are not removed from the path.
-    - The contents of the yaml files are not parsed, just the outermost key becomes part
-      of the tree path
-
-    Parameters
-    ----------
-    root:
-        The resource directory to load the ColumnObjectParamFunctions tree from.
-    """
-    return {
-        k: v
-        for path in _find_files_recursively(root=root, suffix=".yaml")
-        for k, v in _tree_path_to_orig_yaml_object(path=path, root=root).items()
-    }
 
 
 def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> FlatOrigParamSpecs:

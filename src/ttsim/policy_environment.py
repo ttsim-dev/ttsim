@@ -7,13 +7,9 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
 import numpy
-import optree
 
 from ttsim.column_objects_param_function import (
     DEFAULT_END_DATE,
-    ColumnObject,
-    ParamFunction,
-    policy_function,
 )
 from ttsim.config import numpy_or_jax as np
 from ttsim.param_objects import (
@@ -38,9 +34,6 @@ if TYPE_CHECKING:
         DashedISOString,
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
-        GenericCallable,
-        NestedAny,
-        NestedAnyTTSIMObject,
         NestedColumnObjectsParamFunctions,
         NestedParamObjects,
         NestedPolicyEnvironment,
@@ -59,8 +52,8 @@ def grouping_levels(policy_environment: QualNamePolicyEnvironment) -> tuple[str,
 
 
 def policy_environment(
-    active_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,  # noqa: E501
-    active_tree_with_params: FlatOrigParamSpecs,
+    orig_policy_objects__column_objects_and_param_functions: NestedColumnObjectsParamFunctions,  # noqa: E501
+    orig_policy_objects__param_specs: FlatOrigParamSpecs,
     date: datetime.date | DashedISOString,
 ) -> NestedPolicyEnvironment:
     """
@@ -82,8 +75,14 @@ def policy_environment(
     date = to_datetime(date)
 
     a_tree = merge_trees(
-        left=active_tree_with_column_objects_and_param_functions,
-        right=active_tree_with_params,
+        left=_active_column_objects_and_param_functions(
+            orig=orig_policy_objects__column_objects_and_param_functions,
+            date=date,
+        ),
+        right=_active_param_objects(
+            orig=orig_policy_objects__param_specs,
+            date=date,
+        ),
     )
 
     assert "evaluationsjahr" not in a_tree, "evaluationsjahr must not be specified"
@@ -102,59 +101,8 @@ def policy_environment(
     return a_tree
 
 
-def _convert_plain_functions_to_policy_functions(
-    tree: NestedAny,
-) -> NestedAnyTTSIMObject:
-    """Convert all plain functions in a tree to PolicyFunctions.
-
-    Convenience function if users do not want to apply decorators in modifications of
-    the taxes and transfers system.
-
-    Parameters
-    ----------
-    tree
-        The tree of functions to convert.
-
-    Returns
-    -------
-    converted_tree
-        The converted tree.
-
-    """
-    converted = optree.tree_map(
-        lambda leaf: _convert_to_policy_function_if_callable(leaf),
-        tree,
-    )
-    return converted
-
-
-def _convert_to_policy_function_if_callable(
-    obj: ColumnObject | ParamFunction | GenericCallable | Any,
-) -> ColumnObject:
-    """Convert a Callable to a PolicyFunction if it is not already a ColumnObject or
-    ParamFunction. If it is not a Callable, return it unchanged.
-
-    Parameters
-    ----------
-    obj
-        The object to convert.
-
-    Returns
-    -------
-    converted_object
-        The converted object.
-
-    """
-    if isinstance(obj, (ColumnObject, ParamFunction)) or not callable(obj):
-        converted_object = obj
-    else:
-        converted_object = policy_function(leaf_name=obj.__name__)(obj)
-
-    return converted_object
-
-
-def active_tree_with_column_objects_and_param_functions(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+def _active_column_objects_and_param_functions(
+    orig: FlatColumnObjectsParamFunctions,
     date: datetime.date,
 ) -> NestedColumnObjectsParamFunctions:
     """
@@ -174,20 +122,20 @@ def active_tree_with_column_objects_and_param_functions(
 
     flat_objects_tree = {
         (*orig_path[:-2], obj.leaf_name): obj
-        for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items()
+        for orig_path, obj in orig.items()
         if obj.is_active(date)
     }
 
     return dt.unflatten_from_tree_paths(flat_objects_tree)
 
 
-def active_tree_with_params(
-    orig_tree_with_params: FlatOrigParamSpecs,
+def _active_param_objects(
+    orig: FlatOrigParamSpecs,
     date: datetime.date,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_tree_with_params = {}
-    for orig_path, orig_params_spec in orig_tree_with_params.items():
+    for orig_path, orig_params_spec in orig.items():
         path_to_keep = orig_path[:-2]
         leaf_name = orig_path[-1]
         param = _get_one_param(
