@@ -13,6 +13,52 @@ if TYPE_CHECKING:
     from ttsim.typing import NestedData, NestedStrings, QualNameData
 
 
+def results_df(
+    nested_results: NestedData,
+    data_tree: NestedData,
+    nested_outputs_df_column_names: NestedStrings,
+) -> pd.DataFrame:
+    """The results DataFrame with mapped column names.
+
+    Args:
+        nested_results:
+            The results of a TTSIM run.
+        data_tree:
+            The data tree of the TTSIM run.
+        nested_outputs_df_column_names:
+            A tree that maps paths (sequence of keys) to data columns names.
+
+    Returns:
+        A DataFrame.
+    """
+    return nested_data_to_df_with_mapped_columns(
+        nested_data_to_convert=nested_results,
+        nested_outputs_df_column_names=nested_outputs_df_column_names,
+        data_with_p_id=data_tree,
+    )
+
+
+def data_tree(
+    data_df: pd.DataFrame,
+    nested_inputs_df_column_names: NestedStrings,
+) -> NestedData:
+    """The input DataFrame as a nested data structure.
+
+    Args:
+        data_df:
+            The input DataFrame.
+        nested_inputs_df_column_names:
+            A tree that maps paths (sequence of keys) to data columns names.
+
+    Returns:
+        A nested data structure.
+    """
+    return dataframe_to_nested_data(
+        df=data_df,
+        inputs_tree_to_df_columns=nested_inputs_df_column_names,
+    )
+
+
 def nested_data_to_df_with_nested_columns(
     nested_data_to_convert: NestedData,
     data_with_p_id: NestedData | QualNameData,
@@ -45,7 +91,7 @@ def nested_data_to_df_with_mapped_columns(
     Args:
         nested_data_to_convert:
             A nested data structure.
-        nested_data_paths_to_outputs_df_columns:
+        nested_outputs_df_column_names:
             A tree that maps paths (sequence of keys) to data columns names.
         data_with_p_id:
             Some data structure with a "p_id" column.
