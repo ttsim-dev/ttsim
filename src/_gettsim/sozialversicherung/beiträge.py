@@ -7,33 +7,33 @@ from ttsim import policy_function
 
 @policy_function()
 def beiträge_versicherter_m(
-    sozialversicherung__pflege__beitrag__betrag_versicherter_m: float,
-    sozialversicherung__kranken__beitrag__betrag_versicherter_m: float,
-    sozialversicherung__rente__beitrag__betrag_versicherter_m: float,
-    sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m: float,
+    pflege__beitrag__betrag_versicherter_m: float,
+    kranken__beitrag__betrag_versicherter_m: float,
+    rente__beitrag__betrag_versicherter_m: float,
+    arbeitslosen__beitrag__betrag_versicherter_m: float,
 ) -> float:
     """Sum of social insurance contributions paid by the insured person."""
     return (
-        sozialversicherung__pflege__beitrag__betrag_versicherter_m
-        + sozialversicherung__kranken__beitrag__betrag_versicherter_m
-        + sozialversicherung__rente__beitrag__betrag_versicherter_m
-        + sozialversicherung__arbeitslosen__beitrag__betrag_versicherter_m
+        pflege__beitrag__betrag_versicherter_m
+        + kranken__beitrag__betrag_versicherter_m
+        + rente__beitrag__betrag_versicherter_m
+        + arbeitslosen__beitrag__betrag_versicherter_m
     )
 
 
 @policy_function()
 def beiträge_arbeitgeber_m(
-    sozialversicherung__pflege__beitrag__betrag_arbeitgeber_m: float,
-    sozialversicherung__kranken__beitrag__betrag_arbeitgeber_m: float,
-    sozialversicherung__rente__beitrag__betrag_arbeitgeber_m: float,
-    sozialversicherung__arbeitslosen__beitrag__betrag_arbeitgeber_m: float,
+    pflege__beitrag__betrag_arbeitgeber_m: float,
+    kranken__beitrag__betrag_arbeitgeber_m: float,
+    rente__beitrag__betrag_arbeitgeber_m: float,
+    arbeitslosen__beitrag__betrag_arbeitgeber_m: float,
 ) -> float:
     """Sum of employer's social insurance contributions."""
     return (
-        sozialversicherung__pflege__beitrag__betrag_arbeitgeber_m
-        + sozialversicherung__kranken__beitrag__betrag_arbeitgeber_m
-        + sozialversicherung__rente__beitrag__betrag_arbeitgeber_m
-        + sozialversicherung__arbeitslosen__beitrag__betrag_arbeitgeber_m
+        pflege__beitrag__betrag_arbeitgeber_m
+        + kranken__beitrag__betrag_arbeitgeber_m
+        + rente__beitrag__betrag_arbeitgeber_m
+        + arbeitslosen__beitrag__betrag_arbeitgeber_m
     )
 
 
