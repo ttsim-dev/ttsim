@@ -208,11 +208,11 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __post_init__(self) -> None:
-        self._fail_if_rounding_has_wrong_type(self.rounding_spec)
+        self._fail_if__rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
-    def _fail_if_rounding_has_wrong_type(
+    def _fail_if__rounding_has_wrong_type(
         self, rounding_spec: RoundingSpec | None
     ) -> None:
         """Check if rounding_spec has the correct type.
@@ -483,14 +483,14 @@ def agg_by_group_function(
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
-        _fail_if_group_id_is_invalid(group_ids, orig_location)
+        _fail_if__group_id_is_invalid(group_ids, orig_location)
         group_id = group_ids.pop()
         other_args = args - {group_id}
         if agg_type == AggType.COUNT:
-            _fail_if_other_arg_is_present(other_args, orig_location)
+            _fail_if__other_arg_is_present(other_args, orig_location)
             mapper = {"group_id": group_id}
         else:
-            _fail_if_other_arg_is_invalid(other_args, orig_location)
+            _fail_if__other_arg_is_invalid(other_args, orig_location)
             mapper = {"group_id": group_id, "column": other_args.pop()}
         if IS_JAX_INSTALLED:
             mapper["num_segments"] = f"{group_id}_num_segments"
@@ -511,7 +511,7 @@ def agg_by_group_function(
     return inner
 
 
-def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str) -> None:
+def _fail_if__group_id_is_invalid(group_ids: set[str], orig_location: str) -> None:
     if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
@@ -520,7 +520,7 @@ def _fail_if_group_id_is_invalid(group_ids: set[str], orig_location: str) -> Non
         )
 
 
-def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str) -> None:
+def _fail_if__other_arg_is_present(other_args: set[str], orig_location: str) -> None:
     if other_args:
         raise ValueError(
             "There must be no argument besides identifiers for counting. Got: "
@@ -528,7 +528,7 @@ def _fail_if_other_arg_is_present(other_args: set[str], orig_location: str) -> N
         )
 
 
-def _fail_if_other_arg_is_invalid(other_args: set[str], orig_location: str) -> None:
+def _fail_if__other_arg_is_invalid(other_args: set[str], orig_location: str) -> None:
     if len(other_args) != 1:
         raise ValueError(
             "There must be exactly one argument besides identifiers for aggregations. "
@@ -612,16 +612,16 @@ def agg_by_p_id_function(
             if any(e.startswith("p_id_") for e in dt.tree_path_from_qual_name(p))
         }
         other_args = args - {*other_p_ids, "p_id"}
-        _fail_if_p_id_is_not_present(args, orig_location)
-        _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
+        _fail_if__p_id_is_not_present(args, orig_location)
+        _fail_if__other_p_id_is_invalid(other_p_ids, orig_location)
         if agg_type == AggType.COUNT:
-            _fail_if_other_arg_is_present(other_args, orig_location)
+            _fail_if__other_arg_is_present(other_args, orig_location)
             mapper = {
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
             }
         else:
-            _fail_if_other_arg_is_invalid(other_args, orig_location)
+            _fail_if__other_arg_is_invalid(other_args, orig_location)
             mapper = {
                 "column": other_args.pop(),
                 "p_id_to_aggregate_by": other_p_ids.pop(),
@@ -647,7 +647,7 @@ def agg_by_p_id_function(
     return inner
 
 
-def _fail_if_p_id_is_not_present(args: set[str], orig_location: str) -> None:
+def _fail_if__p_id_is_not_present(args: set[str], orig_location: str) -> None:
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
@@ -655,7 +655,7 @@ def _fail_if_p_id_is_not_present(args: set[str], orig_location: str) -> None:
         )
 
 
-def _fail_if_other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) -> None:
+def _fail_if__other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) -> None:
     if len(other_p_ids) != 1:
         raise ValueError(
             "Require exactly one identifier starting with 'p_id_' for "

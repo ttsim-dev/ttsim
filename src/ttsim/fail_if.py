@@ -205,7 +205,7 @@ def assert_valid_ttsim_pytree(
     _assert_valid_ttsim_pytree(tree, current_key=())
 
 
-def fail_if_active_periods_overlap(
+def fail_if__active_periods_overlap(
     orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
     orig_tree_with_params: FlatOrigParamSpecs,
 ) -> None:
@@ -255,14 +255,14 @@ def fail_if_active_periods_overlap(
                 )
 
 
-def fail_if_any_paths_are_invalid(
+def fail_if__any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
     targets_tree: NestedTargetDict,
     top_level_namespace: set[str],
 ) -> None:
-    """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
-    return dt.fail_if_paths_are_invalid(
+    """Thin wrapper around `dt.fail_if__paths_are_invalid`."""
+    return dt.fail_if__paths_are_invalid(
         functions=policy_environment,
         input_data__tree=input_data__tree,
         targets=targets_tree,
@@ -270,7 +270,7 @@ def fail_if_any_paths_are_invalid(
     )
 
 
-def fail_if_data_paths_are_missing_in_paths_to_column_names(
+def fail_if__data_paths_are_missing_in_paths_to_column_names(
     available_paths: list[str],
     required_paths: list[str],
 ) -> None:
@@ -289,7 +289,7 @@ def fail_if_data_paths_are_missing_in_paths_to_column_names(
         raise ValueError(msg)
 
 
-def fail_if_input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
+def fail_if__input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
     """
     Validate the basic structure of the data tree.
 
@@ -335,7 +335,9 @@ def fail_if_input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
         raise ValueError(message)
 
 
-def fail_if_environment_is_invalid(policy_environment: NestedPolicyEnvironment) -> None:
+def fail_if__environment_is_invalid(
+    policy_environment: NestedPolicyEnvironment,
+) -> None:
     """Validate that the environment is a pytree with supported types."""
     assert_valid_ttsim_pytree(
         tree=policy_environment,
@@ -346,7 +348,7 @@ def fail_if_environment_is_invalid(policy_environment: NestedPolicyEnvironment) 
     )
 
 
-def fail_if_foreign_keys_are_invalid_in_data(
+def fail_if__foreign_keys_are_invalid_in_data(
     qual_name_input_data: QualNameData,
     qual_name_data: QualNameData,
     flat_policy_environment_with_derived_functions_and_without_overridden_functions: QualNamePolicyEnvironment,
@@ -402,7 +404,7 @@ def fail_if_foreign_keys_are_invalid_in_data(
                     raise ValueError(message)
 
 
-def fail_if_group_ids_are_outside_top_level_namespace(
+def fail_if__group_ids_are_outside_top_level_namespace(
     policy_environment: NestedPolicyEnvironment,
 ) -> None:
     """Fail if group ids are outside the top level namespace."""
@@ -419,7 +421,7 @@ def fail_if_group_ids_are_outside_top_level_namespace(
         )
 
 
-def fail_if_group_variables_are_not_constant_within_groups(
+def fail_if__group_variables_are_not_constant_within_groups(
     qual_name_input_data: QualNameData,
     grouping_levels: tuple[str, ...],
 ) -> None:
@@ -463,7 +465,7 @@ def fail_if_group_variables_are_not_constant_within_groups(
         raise ValueError(msg)
 
 
-def fail_if_incompatible_objects_in_nested_data(
+def fail_if__incompatible_objects_in_nested_data(
     paths_to_data: QualNameData,
 ) -> None:
     """Fail if the nested data contains incompatible objects."""
@@ -491,7 +493,7 @@ def fail_if_incompatible_objects_in_nested_data(
         raise TypeError(msg)
 
 
-def fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(
+def fail_if__input_df_with_mapper_has_bool_or_numeric_column_names(
     df: pd.DataFrame,
 ) -> None:
     """Fail if the DataFrame has bool or numeric column names."""
@@ -520,7 +522,7 @@ def fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(
         raise ValueError(msg)
 
 
-def fail_if_mapper_has_incorrect_format(
+def fail_if__mapper_has_incorrect_format(
     inputs_tree_to_df_columns: NestedStrings,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
@@ -568,7 +570,7 @@ def fail_if_mapper_has_incorrect_format(
         raise TypeError(msg)
 
 
-def fail_if_multiple_time_units_for_same_base_name_and_group(
+def fail_if__multiple_time_units_for_same_base_name_and_group(
     base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
 ) -> None:
     invalid = {
@@ -578,7 +580,7 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
         raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
-def fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
+def fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name(
     functions_tree: NestedColumnObjectsParamFunctions,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last
@@ -596,7 +598,7 @@ def fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
             )
 
 
-def fail_if_root_nodes_are_missing(
+def fail_if__root_nodes_are_missing(
     tax_transfer_dag: nx.DiGraph,
     qual_name_data: QualNameData,
 ) -> None:
@@ -633,7 +635,7 @@ def fail_if_root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-def fail_if_targets_are_not_in_policy_environment_or_data(
+def fail_if__targets_are_not_in_policy_environment_or_data(
     policy_environment: QualNamePolicyEnvironment,
     qual_name_data_columns: QualNameDataColumns,
     qual_name_targets: QualNameTargetList,
@@ -669,7 +671,7 @@ def fail_if_targets_are_not_in_policy_environment_or_data(
         raise ValueError(msg)
 
 
-def fail_if_targets_tree_is_invalid(targets_tree: NestedTargetDict) -> None:
+def fail_if__targets_tree_is_invalid(targets_tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """
@@ -721,7 +723,7 @@ def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg,
     ).format(formatted_list=formatted_list)
 
 
-def warn_if_functions_and_data_columns_overlap(
+def warn_if__functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
     qual_name_data_columns: QualNameDataColumns,
 ) -> None:

@@ -19,8 +19,8 @@ from ttsim.column_objects_param_function import (
     ParamFunction,
 )
 from ttsim.config import numpy_or_jax as np
-from ttsim.failures_and_warnings import (
-    fail_if_multiple_time_units_for_same_base_name_and_group,
+from ttsim.fail_if import (
+    fail_if__multiple_time_units_for_same_base_name_and_group,
 )
 from ttsim.param_objects import ParamObject, RawParam
 from ttsim.policy_environment import grouping_levels
@@ -261,7 +261,7 @@ def top_level_namespace(
                 bngs_to_variations[bngs].append(name)
             for time_unit in time_units:
                 all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
-    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
+    fail_if__multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
     gp = group_pattern(grouping_levels(policy_environment))
     potential_base_names = {n for n in all_top_level_names if not gp.match(n)}

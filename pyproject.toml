@@ -259,12 +259,12 @@ exclude = []
 "docs/**/*.ipynb" = ["T201"]
 "src/_gettsim/*" = ["E501", "PLR1714", "PLR1716"] # Vectorization can't handle x <= y <= z or x in {x,y}
 "src/ttsim/compute_taxes_and_transfers.py" = ["E501"]
-"src/ttsim/failures_and_warnings.py" = ["E501"]
+"src/ttsim/fail_if.py" = ["E501"]
 "src/ttsim/piecewise_functions.py" = ["PLR"]
 "src/ttsim/plot_dag.py" = ["PLR"]
 "src/ttsim/typing.py" = ["PGH", "PLR", "SIM114"]
 "tests/ttsim/mettsim/*" = ["PLR1714", "PLR1716"] # Vectorization can't handle x <= y <= z or x in {x,y}
-"tests/ttsim/test_failures_and_warnings.py" = ["E501"]
+"tests/ttsim/test_failures.py" = ["E501"]
 # TODO: remove once ported nicely
 "outdated_docs/**/*.ipynb" = ["T201"]
 "src/_gettsim_tests/test_docs.py" = ["F821"]
@@ -309,7 +309,7 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
-    "tests.ttsim.test_failures_and_warnings",
+    "tests.ttsim.test_failures",
 ]
 disable_error_code = [
     "misc",  # Happens when constructing param dictionaries on the fly.
@@ -357,7 +357,7 @@ filterwarnings = [
     "ignore:The TerminalReporter.writer attribute is",
     "ignore:Repeated execution of the test suite",
     "ignore:Using or importing the ABCs from 'collections'",
-    "ignore::ttsim.failures_and_warnings.FunctionsAndDataColumnsOverlapWarning"
+    "ignore::ttsim.warn_if.FunctionsAndDataColumnsOverlapWarning"
 ]
 markers = [
     "wip: Tests that are work-in-progress.",

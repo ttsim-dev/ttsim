@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 
-from ttsim.failures_and_warnings import (
-    fail_if_data_paths_are_missing_in_paths_to_column_names,
-    fail_if_incompatible_objects_in_nested_data,
-    fail_if_input_df_with_mapper_has_bool_or_numeric_column_names,
-    fail_if_mapper_has_incorrect_format,
+from ttsim.fail_if import (
+    fail_if__data_paths_are_missing_in_paths_to_column_names,
+    fail_if__incompatible_objects_in_nested_data,
+    fail_if__input_df_with_mapper_has_bool_or_numeric_column_names,
+    fail_if__mapper_has_incorrect_format,
 )
 
 if TYPE_CHECKING:
@@ -59,11 +59,11 @@ def nested_data_to_df_with_mapped_columns(
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
     flat_df_columns = dt.flatten_to_tree_paths(nested_outputs_df_column_names)
 
-    fail_if_data_paths_are_missing_in_paths_to_column_names(
+    fail_if__data_paths_are_missing_in_paths_to_column_names(
         available_paths=list(flat_df_columns.keys()),
         required_paths=list(flat_data_to_convert.keys()),
     )
-    fail_if_incompatible_objects_in_nested_data(flat_data_to_convert)
+    fail_if__incompatible_objects_in_nested_data(flat_data_to_convert)
 
     return pd.DataFrame(
         {flat_df_columns[path]: data for path, data in flat_data_to_convert.items()},
@@ -123,8 +123,8 @@ def dataframe_to_nested_data(
 
 
     """
-    fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(df)
-    fail_if_mapper_has_incorrect_format(mapper)
+    fail_if__input_df_with_mapper_has_bool_or_numeric_column_names(df)
+    fail_if__mapper_has_incorrect_format(mapper)
 
     qualified_inputs_tree_to_df_columns = dt.flatten_to_qual_names(mapper)
 

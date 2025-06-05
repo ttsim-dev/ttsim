@@ -17,8 +17,8 @@ from ttsim.column_objects_param_function import (
     TimeConversionFunction,
 )
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.failures_and_warnings import (
-    fail_if_multiple_time_units_for_same_base_name_and_group,
+from ttsim.fail_if import (
+    fail_if__multiple_time_units_for_same_base_name_and_group,
 )
 from ttsim.param_objects import ScalarParam
 from ttsim.shared import (
@@ -484,7 +484,7 @@ def create_time_conversion_functions(
                 "all_time_units": all_time_units,
             }
 
-    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
+    fail_if__multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
     converted_elements: dict[str, ColumnObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():

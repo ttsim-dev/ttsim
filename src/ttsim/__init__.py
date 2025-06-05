@@ -52,20 +52,22 @@ from ttsim.data_converters import (
 )
 from ttsim.input_data import tree as input_data__tree
 from ttsim.results import df as results__df
-from ttsim.failures_and_warnings import (
-    FunctionsAndDataColumnsOverlapWarning,
-    fail_if_active_periods_overlap,
-    fail_if_environment_is_invalid,
-    fail_if_group_ids_are_outside_top_level_namespace,
-    fail_if_any_paths_are_invalid,
-    fail_if_input_data_tree_is_invalid,
-    fail_if_foreign_keys_are_invalid_in_data,
-    fail_if_group_variables_are_not_constant_within_groups,
-    fail_if_root_nodes_are_missing,
-    fail_if_targets_are_not_in_policy_environment_or_data,
-    fail_if_targets_tree_is_invalid,
-    warn_if_functions_and_data_columns_overlap,
+from ttsim.fail_if import (
+    fail_if__active_periods_overlap,
+    fail_if__environment_is_invalid,
+    fail_if__group_ids_are_outside_top_level_namespace,
+    fail_if__any_paths_are_invalid,
+    fail_if__input_data_tree_is_invalid,
+    fail_if__foreign_keys_are_invalid_in_data,
+    fail_if__group_variables_are_not_constant_within_groups,
+    fail_if__root_nodes_are_missing,
+    fail_if__targets_are_not_in_policy_environment_or_data,
+    fail_if__targets_tree_is_invalid,
     format_list_linewise,
+)
+from ttsim.fail_if import (
+    FunctionsAndDataColumnsOverlapWarning,
+    warn_if__functions_and_data_columns_overlap,
 )
 from ttsim.param_objects import (
     ConsecutiveInt1dLookupTableParam,
@@ -110,16 +112,16 @@ def function_collection():
     return {
         "column_functions_with_processed_params_and_scalars": column_functions_with_processed_params_and_scalars,
         "column_results": column_results,
-        "fail_if_active_periods_overlap": fail_if_active_periods_overlap,
-        "fail_if_any_paths_are_invalid": fail_if_any_paths_are_invalid,
-        "fail_if_input_data_tree_is_invalid": fail_if_input_data_tree_is_invalid,
-        "fail_if_environment_is_invalid": fail_if_environment_is_invalid,
-        "fail_if_foreign_keys_are_invalid_in_data": fail_if_foreign_keys_are_invalid_in_data,
-        "fail_if_group_ids_are_outside_top_level_namespace": fail_if_group_ids_are_outside_top_level_namespace,
-        "fail_if_group_variables_are_not_constant_within_groups": fail_if_group_variables_are_not_constant_within_groups,
-        "fail_if_root_nodes_are_missing": fail_if_root_nodes_are_missing,
-        "fail_if_targets_are_not_in_policy_environment_or_data": fail_if_targets_are_not_in_policy_environment_or_data,
-        "fail_if_targets_tree_is_invalid": fail_if_targets_tree_is_invalid,
+        "fail_if__active_periods_overlap": fail_if__active_periods_overlap,
+        "fail_if__any_paths_are_invalid": fail_if__any_paths_are_invalid,
+        "fail_if__input_data_tree_is_invalid": fail_if__input_data_tree_is_invalid,
+        "fail_if__environment_is_invalid": fail_if__environment_is_invalid,
+        "fail_if__foreign_keys_are_invalid_in_data": fail_if__foreign_keys_are_invalid_in_data,
+        "fail_if__group_ids_are_outside_top_level_namespace": fail_if__group_ids_are_outside_top_level_namespace,
+        "fail_if__group_variables_are_not_constant_within_groups": fail_if__group_variables_are_not_constant_within_groups,
+        "fail_if__root_nodes_are_missing": fail_if__root_nodes_are_missing,
+        "fail_if__targets_are_not_in_policy_environment_or_data": fail_if__targets_are_not_in_policy_environment_or_data,
+        "fail_if__targets_tree_is_invalid": fail_if__targets_tree_is_invalid,
         "flat_policy_environment_with_derived_functions_and_without_overridden_functions": flat_policy_environment_with_derived_functions_and_without_overridden_functions,
         "grouping_levels": grouping_levels,
         "input_data__tree": input_data__tree,
@@ -140,7 +142,7 @@ def function_collection():
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
         "top_level_namespace": top_level_namespace,
-        "warn_if_functions_and_data_columns_overlap": warn_if_functions_and_data_columns_overlap,
+        "warn_if__functions_and_data_columns_overlap": warn_if__functions_and_data_columns_overlap,
     }
 
 

@@ -128,7 +128,7 @@ def test_plot_dag():
 
 
 @pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-def test_should_fail_if_target_is_missing():
+def test_should_fail_if__target_is_missing():
     with pytest.raises(
         ValueError, match="The following targets have no corresponding function"
     ):
