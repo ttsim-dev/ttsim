@@ -75,7 +75,10 @@ def parameter_max_lohnsteuer_klasse_5_6(
         ]
     )
     rates = np.expand_dims(
-        einkommensteuer__parameter_einkommensteuertarif.rates[0][[3, 3, 3, 4]], axis=0
+        einkommensteuer__parameter_einkommensteuertarif.rates[0][
+            np.array([3, 3, 3, 4])
+        ],
+        axis=0,
     )
     parameter_max_lohnsteuer_klasse_5_6 = PiecewisePolynomialParamValue(
         thresholds=thresholds, intercepts=intercepts, rates=rates
