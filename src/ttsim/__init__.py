@@ -181,7 +181,7 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
         functions=possible_targets,
         targets=targets,
     )
-    # draw_dag(dag)
+    draw_dag(dag)
     f = dags.concatenate_functions(
         dag=dag,
         functions=possible_targets,

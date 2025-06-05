@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import functools
+import inspect
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -11,6 +12,7 @@ from ttsim.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
 )
+from ttsim.config import IS_JAX_INSTALLED
 from ttsim.shared import merge_trees
 from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
@@ -297,15 +299,16 @@ def tax_transfer_function(
     #         raise ImportError(
     #             "JAX is not installed. Please install JAX to use JIT compilation."
     #         )
-    #     import jax
+    if IS_JAX_INSTALLED:
+        import jax
 
-    #     static_args = {
-    #         argname: input_data__tree["p_id"].max() + 1
-    #         for argname in inspect.signature(ttf_with_keyword_args).parameters
-    #         if argname.endswith("_num_segments")
-    #     }
-    #     ttf_with_keyword_args=functools.partial(ttf_with_keyword_args, **static_args)
-    #     ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
+        static_args = {
+            argname: 1000
+            for argname in inspect.signature(ttf_with_keyword_args).parameters
+            if argname.endswith("_num_segments")
+        }
+        ttf_with_keyword_args = functools.partial(ttf_with_keyword_args, **static_args)
+        ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 
     def wrapper(processed_data: QualNameData) -> QualNameData:
         return ttf_with_keyword_args(**processed_data)

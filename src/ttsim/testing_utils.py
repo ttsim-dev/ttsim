@@ -72,10 +72,7 @@ class PolicyTest:
         return self.path.relative_to(self.test_dir / "test_data").as_posix()
 
 
-def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
-    if jit:
-        raise NotImplementedError("JIT is not implemented yet.")
-
+def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:  # noqa: ARG001
     environment = cached_policy_environment(date=test.date, root=root)
 
     if test.target_structure:
