@@ -122,7 +122,6 @@ def betrag_mit_kinderfreibetrag_y_sn_bis_2001() -> float:
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
-    vectorization_strategy="loop",
 )
 def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
@@ -137,8 +136,8 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_verst_eink_per_indiv = (
         zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn / anzahl_personen_sn
     )
-    return anzahl_personen_sn * einkommensteuertarif(
-        x=zu_verst_eink_per_indiv, params=parameter_einkommensteuertarif
+    return anzahl_personen_sn * piecewise_polynomial(
+        x=zu_verst_eink_per_indiv, parameters=parameter_einkommensteuertarif
     )
 
 
@@ -146,7 +145,6 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     rounding_spec=RoundingSpec(
         base=1, direction="down", reference="§ 32a Abs. 1 S.6 EStG"
     ),
-    vectorization_strategy="loop",
 )
 def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
@@ -158,8 +156,8 @@ def betrag_ohne_kinderfreibetrag_y_sn(
 
     """
     zu_verst_eink_per_indiv = gesamteinkommen_y / anzahl_personen_sn
-    return anzahl_personen_sn * einkommensteuertarif(
-        x=zu_verst_eink_per_indiv, params=parameter_einkommensteuertarif
+    return anzahl_personen_sn * piecewise_polynomial(
+        x=zu_verst_eink_per_indiv, parameters=parameter_einkommensteuertarif
     )
 
 
@@ -210,14 +208,6 @@ def relevantes_kindergeld_ohne_staffelung_m(
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
     return kindergeld__satz * kindergeld_ansprüche / 2
-
-
-def einkommensteuertarif(x: float, params: PiecewisePolynomialParamValue) -> float:
-    """The German income tax tariff."""
-    return piecewise_polynomial(
-        x=x,
-        parameters=params,
-    )
 
 
 @param_function(start_date="2002-01-01")
