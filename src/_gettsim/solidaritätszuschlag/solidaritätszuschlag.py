@@ -5,9 +5,20 @@ from __future__ import annotations
 from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
 
 
-@policy_function(
-    end_date="2008-12-31", leaf_name="betrag_y_sn", vectorization_strategy="loop"
-)
+def solidaritätszuschlagstarif(
+    steuer_pro_person: float,
+    einkommensteuer__anzahl_personen_sn: int,
+    parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+) -> float:
+    """The isolated function for Solidaritätszuschlag."""
+
+    return einkommensteuer__anzahl_personen_sn * piecewise_polynomial(
+        x=steuer_pro_person / einkommensteuer__anzahl_personen_sn,
+        parameters=parameter_solidaritätszuschlag,
+    )
+
+
+@policy_function(end_date="2008-12-31", leaf_name="betrag_y_sn")
 def betrag_y_sn_ohne_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
@@ -27,16 +38,14 @@ def betrag_y_sn_ohne_abgelt_st(
     SolzG 1995.
 
     """
-    return einkommensteuer__anzahl_personen_sn * solidaritätszuschlagstarif(
-        steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
-        / einkommensteuer__anzahl_personen_sn,
+    return solidaritätszuschlagstarif(
+        steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn,
+        einkommensteuer__anzahl_personen_sn=einkommensteuer__anzahl_personen_sn,
         parameter_solidaritätszuschlag=parameter_solidaritätszuschlag,
     )
 
 
-@policy_function(
-    start_date="2009-01-01", leaf_name="betrag_y_sn", vectorization_strategy="loop"
-)
+@policy_function(start_date="2009-01-01", leaf_name="betrag_y_sn")
 def betrag_y_sn_mit_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
@@ -58,24 +67,11 @@ def betrag_y_sn_mit_abgelt_st(
 
     """
     return (
-        einkommensteuer__anzahl_personen_sn
-        * solidaritätszuschlagstarif(
-            steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn
-            / einkommensteuer__anzahl_personen_sn,
+        solidaritätszuschlagstarif(
+            steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn,
+            einkommensteuer__anzahl_personen_sn=einkommensteuer__anzahl_personen_sn,
             parameter_solidaritätszuschlag=parameter_solidaritätszuschlag,
         )
         + parameter_solidaritätszuschlag.rates[0, -1]
         * einkommensteuer__abgeltungssteuer__betrag_y_sn
-    )
-
-
-def solidaritätszuschlagstarif(
-    steuer_pro_person: float,
-    parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
-) -> float:
-    """The isolated function for Solidaritätszuschlag."""
-
-    return piecewise_polynomial(
-        x=steuer_pro_person,
-        parameters=parameter_solidaritätszuschlag,
     )

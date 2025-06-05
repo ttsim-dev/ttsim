@@ -29,6 +29,7 @@ from ttsim import (
     param_function,
     policy_function,
 )
+from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
     from _gettsim.param_types import ConsecutiveInt1dLookupTableParamValue
@@ -78,13 +79,40 @@ def betrag_m_wthh(
     return out
 
 
+def basisformel(
+    anzahl_personen: int,
+    einkommen_m: float,
+    miete_m: float,
+    params: BasisformelParamValues,
+) -> float:
+    """Basic formula for housing benefit calculation.
+
+    Note: This function is not a direct target in the DAG, but a helper function to
+    store the code for Wohngeld calculation.
+
+    """
+    a = params.a.values_to_look_up[anzahl_personen - params.a.base_to_subtract]
+    b = params.b.values_to_look_up[anzahl_personen - params.b.base_to_subtract]
+    c = params.c.values_to_look_up[anzahl_personen - params.c.base_to_subtract]
+    zusatzbetrag_nach_haushaltsgröße = (
+        params.zusatzbetrag_nach_haushaltsgröße.values_to_look_up[
+            anzahl_personen - params.zusatzbetrag_nach_haushaltsgröße.base_to_subtract
+        ]
+    )
+    out = np.maximum(
+        0.0,
+        params.skalierungsfaktor
+        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
+    )
+    return np.minimum(miete_m, out + zusatzbetrag_nach_haushaltsgröße)
+
+
 @policy_function(
     rounding_spec=RoundingSpec(
         base=1,
         direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
     ),
-    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_wthh(
     anzahl_personen_wthh: int,
@@ -119,7 +147,6 @@ def anspruchshöhe_m_wthh(
         direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
     ),
-    vectorization_strategy="loop",
 )
 def anspruchshöhe_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
@@ -184,31 +211,3 @@ def basisformel_params(
             zusatzbetrag_nach_haushaltsgröße
         ),
     )
-
-
-def basisformel(
-    anzahl_personen: int,
-    einkommen_m: float,
-    miete_m: float,
-    params: BasisformelParamValues,
-) -> float:
-    """Basic formula for housing benefit calculation.
-
-    Note: This function is not a direct target in the DAG, but a helper function to
-    store the code for Wohngeld calculation.
-
-    """
-    a = params.a.values_to_look_up[anzahl_personen - params.a.base_to_subtract]
-    b = params.b.values_to_look_up[anzahl_personen - params.b.base_to_subtract]
-    c = params.c.values_to_look_up[anzahl_personen - params.c.base_to_subtract]
-    zusatzbetrag_nach_haushaltsgröße = (
-        params.zusatzbetrag_nach_haushaltsgröße.values_to_look_up[
-            anzahl_personen - params.zusatzbetrag_nach_haushaltsgröße.base_to_subtract
-        ]
-    )
-    out = max(
-        0.0,
-        params.skalierungsfaktor
-        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
-    )
-    return min(miete_m, out + zusatzbetrag_nach_haushaltsgröße)

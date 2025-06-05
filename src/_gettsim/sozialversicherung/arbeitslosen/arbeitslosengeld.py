@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from _gettsim.einkommensteuer.einkommensteuer import einkommensteuertarif
 from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
 
 
@@ -34,7 +33,7 @@ def betrag_m(
     return out
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def monate_verbleibender_anspruchsdauer(
     alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
@@ -42,25 +41,24 @@ def monate_verbleibender_anspruchsdauer(
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
     anspruchsdauer_nach_alter: PiecewisePolynomialParamValue,
     anspruchsdauer_nach_versicherungspflichtigen_monaten: PiecewisePolynomialParamValue,
-) -> int:
+) -> float:
     """Calculate the remaining amount of months a person can receive unemployment
     benefits.
 
     """
     nach_alter = piecewise_polynomial(
-        alter,
+        x=alter,
         parameters=anspruchsdauer_nach_alter,
     )
     nach_versich_pfl = piecewise_polynomial(
-        monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
+        x=monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
         parameters=anspruchsdauer_nach_versicherungspflichtigen_monaten,
     )
-    if anwartschaftszeit:
-        anspruchsdauer_gesamt = min(nach_alter, nach_versich_pfl)
 
     if anwartschaftszeit:
         out = max(
-            anspruchsdauer_gesamt - monate_durchgängigen_bezugs_von_arbeitslosengeld,
+            min(nach_alter, nach_versich_pfl)
+            - monate_durchgängigen_bezugs_von_arbeitslosengeld,
             0,
         )
     else:
@@ -91,7 +89,7 @@ def grundsätzlich_anspruchsberechtigt(
     )
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def einkommen_vorjahr_proxy_m(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
@@ -115,10 +113,10 @@ def einkommen_vorjahr_proxy_m(
     # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale not being
     # the same as zu versteuerndes einkommen
     # waiting for PR Lohnsteuer #150 to be merged to correct this problem
-    prox_tax = einkommensteuertarif(
-        12 * max_wage
+    prox_tax = piecewise_polynomial(
+        x=12 * max_wage
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
-        einkommensteuer__parameter_einkommensteuertarif,
+        parameters=einkommensteuer__parameter_einkommensteuertarif,
     )
     prox_soli = piecewise_polynomial(
         x=prox_tax,

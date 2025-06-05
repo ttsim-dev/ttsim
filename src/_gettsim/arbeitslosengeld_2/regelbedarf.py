@@ -5,7 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import param_function, policy_function
+from ttsim import (
+    ConsecutiveInt1dLookupTableParamValue,
+    get_consecutive_int_1d_lookup_table_param_value,
+    param_function,
+    policy_function,
+)
 
 if TYPE_CHECKING:
     from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
@@ -26,7 +31,7 @@ def regelbedarf_m(
     return regelsatz_m + kosten_der_unterkunft_m
 
 
-@policy_function(start_date="2005-01-01", vectorization_strategy="loop")
+@policy_function(start_date="2005-01-01")
 def mehrbedarf_alleinerziehend_m(
     familie__alleinerziehend: bool,
     anzahl_kinder_fg: int,
@@ -56,7 +61,8 @@ def mehrbedarf_alleinerziehend_m(
                         "kind_bis_6_oder_mehrere_bis_15"
                     ]
                     if (anzahl_kinder_bis_6_fg >= 1)
-                    or (2 <= anzahl_kinder_bis_15_fg <= 3)
+                    or anzahl_kinder_bis_15_fg == 2
+                    or anzahl_kinder_bis_15_fg == 3
                     else 0.0
                 ),
             ),
@@ -304,32 +310,22 @@ def anerkannte_warmmiete_je_qm_m(
     return min(out, mietobergrenze_pro_qm)
 
 
-@policy_function(vectorization_strategy="loop", start_date="2005-01-01")
+@policy_function(start_date="2005-01-01")
 def berechtigte_wohnfläche(
     wohnfläche: float,
     wohnen__bewohnt_eigentum_hh: bool,
     anzahl_personen_hh: int,
     berechtigte_wohnfläche_miete: dict[str, float],
-    berechtigte_wohnfläche_eigentum: BerechtigteWohnflächeEigentum,
+    berechtigte_wohnfläche_eigentum: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Calculate size of dwelling eligible to claim.
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     if wohnen__bewohnt_eigentum_hh:
-        if anzahl_personen_hh <= berechtigte_wohnfläche_eigentum.max_anzahl_direkt:
-            maximum = berechtigte_wohnfläche_eigentum.anzahl_personen_zu_fläche[
-                anzahl_personen_hh
-            ]
-        else:
-            maximum = (
-                berechtigte_wohnfläche_eigentum.max_anzahl_direkt
-                + (
-                    anzahl_personen_hh
-                    - berechtigte_wohnfläche_eigentum.max_anzahl_direkt
-                )
-                * berechtigte_wohnfläche_eigentum.je_weitere_person
-            )
+        maximum = berechtigte_wohnfläche_eigentum.values_to_look_up[
+            anzahl_personen_hh - berechtigte_wohnfläche_eigentum.base_to_subtract
+        ]
     else:
         maximum = (
             berechtigte_wohnfläche_miete["single"]
@@ -445,29 +441,15 @@ def regelsatz_anteilsbasiert(
     )
 
 
-@dataclass(frozen=True)
-class BerechtigteWohnflächeEigentum:
-    anzahl_personen_zu_fläche: dict[int, float]
-    je_weitere_person: float
-    max_anzahl_direkt: int
-
-
 @param_function(start_date="2005-01-01")
 def berechtigte_wohnfläche_eigentum(
     parameter_berechtigte_wohnfläche_eigentum: RawParam,
-) -> BerechtigteWohnflächeEigentum:
+    wohngeld__max_anzahl_personen: dict[str, int],
+) -> ConsecutiveInt1dLookupTableParamValue:
     """Berechtigte Wohnfläche für Eigenheim."""
-    return BerechtigteWohnflächeEigentum(
-        anzahl_personen_zu_fläche={
-            1: parameter_berechtigte_wohnfläche_eigentum[1],
-            2: parameter_berechtigte_wohnfläche_eigentum[2],
-            3: parameter_berechtigte_wohnfläche_eigentum[3],
-            4: parameter_berechtigte_wohnfläche_eigentum[4],
-        },
-        je_weitere_person=parameter_berechtigte_wohnfläche_eigentum[
-            "je_weitere_person"
-        ],
-        max_anzahl_direkt=parameter_berechtigte_wohnfläche_eigentum[
-            "max_anzahl_direkt"
-        ],
-    )
+    tmp = parameter_berechtigte_wohnfläche_eigentum.copy()
+    je_weitere_person = tmp.pop("je_weitere_person")
+    max_anzahl_direkt = tmp.pop("max_anzahl_direkt")
+    for i in range(wohngeld__max_anzahl_personen["indizierung"] - max_anzahl_direkt):
+        tmp[i] = tmp[max_anzahl_direkt] + i * je_weitere_person
+    return get_consecutive_int_1d_lookup_table_param_value(raw=tmp)

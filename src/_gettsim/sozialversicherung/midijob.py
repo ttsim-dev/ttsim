@@ -152,7 +152,6 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     start_date="2022-10-01",
     leaf_name="midijob_faktor_f",
     rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
-    vectorization_strategy="loop",
 )
 def midijob_faktor_f_ohne_minijob_steuerpauschale(
     sozialversicherung__kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,

@@ -121,7 +121,6 @@ def betrag_versicherter_regulär_beschäftigt_m(
 
 
 @policy_function(
-    vectorization_strategy="loop",
     end_date="2005-06-30",
     leaf_name="betrag_selbstständig_m",
 )
@@ -136,7 +135,6 @@ def betrag_selbstständig_m_mit_einheitlichen_beitragssatz(
 
 
 @policy_function(
-    vectorization_strategy="loop",
     start_date="2005-07-01",
     end_date="2008-12-31",
     leaf_name="betrag_selbstständig_m",
@@ -154,7 +152,6 @@ def betrag_selbstständig_m_ohne_ermäßigtem_beitragssatz(
 
 
 @policy_function(
-    vectorization_strategy="loop",
     start_date="2009-01-01",
     end_date="2014-12-31",
     leaf_name="betrag_selbstständig_m",
@@ -170,7 +167,6 @@ def betrag_selbstständig_m_ohne_zusatzbeitrag(
 
 
 @policy_function(
-    vectorization_strategy="loop",
     start_date="2015-01-01",
     leaf_name="betrag_selbstständig_m",
 )

@@ -7,9 +7,12 @@ from ttsim import (
     ConsecutiveInt1dLookupTableParamValue,
     PiecewisePolynomialParamValue,
     agg_by_p_id_function,
+    get_consecutive_int_1d_lookup_table_param_value,
+    param_function,
     piecewise_polynomial,
     policy_function,
 )
+from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -21,12 +24,41 @@ def alleinerziehendenbonus(
     pass
 
 
-@policy_function(vectorization_strategy="loop")
+@param_function()
+def min_einkommen_lookup_table(
+    min_einkommen: dict[int, float],
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Create a LookupTable for the min income thresholds."""
+    return get_consecutive_int_1d_lookup_table_param_value(min_einkommen)
+
+
+def einkommen(
+    einkommen_vor_freibetrag: float,
+    einkommensfreibetrag: float,
+    anzahl_personen: int,
+    min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
+) -> float:
+    """Calculate final income relevant for calculation of housing benefit on household
+    level.
+
+    """
+    eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
+    unteres_eink = min_einkommen_lookup_table.values_to_look_up[
+        np.minimum(
+            anzahl_personen, min_einkommen_lookup_table.values_to_look_up.shape[0]
+        )
+        - min_einkommen_lookup_table.base_to_subtract
+    ]
+
+    return np.maximum(eink_nach_abzug_m_hh, unteres_eink)
+
+
+@policy_function()
 def einkommen_m_wthh(
     anzahl_personen_wthh: int,
     freibetrag_m_wthh: float,
     einkommen_vor_freibetrag_m_wthh: float,
-    min_einkommen: dict[int, float],
+    min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -40,16 +72,16 @@ def einkommen_m_wthh(
         anzahl_personen=anzahl_personen_wthh,
         einkommensfreibetrag=freibetrag_m_wthh,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_wthh,
-        min_einkommen=min_einkommen,
+        min_einkommen_lookup_table=min_einkommen_lookup_table,
     )
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def einkommen_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     freibetrag_m_bg: float,
     einkommen_vor_freibetrag_m_bg: float,
-    min_einkommen: dict[int, float],
+    min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -63,11 +95,11 @@ def einkommen_m_bg(
         anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
         einkommensfreibetrag=freibetrag_m_bg,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_bg,
-        min_einkommen=min_einkommen,
+        min_einkommen_lookup_table=min_einkommen_lookup_table,
     )
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function()
 def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     einkommensteuer__betrag_y_sn: float,
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
@@ -81,11 +113,14 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     on income (as mentioned in § 16 WoGG Satz 1 Nr. 1).
 
     """
-    stufe = (
-        (einkommensteuer__betrag_y_sn > 0)
-        + (sozialversicherung__rente__beitrag__betrag_versicherter_y > 0)
-        + (sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0)
-    )
+    stufe = 0
+
+    if einkommensteuer__betrag_y_sn > 0:
+        stufe = stufe + 1
+    if sozialversicherung__rente__beitrag__betrag_versicherter_y > 0:
+        stufe = stufe + 1
+    if sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0:
+        stufe = stufe + 1
     abzug = abzugsbeträge_steuern_sozialversicherung
     if familie__kind:
         out = 0.0
@@ -176,9 +211,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     return (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
 
 
-@policy_function(
-    end_date="2015-12-31", leaf_name="freibetrag_m", vectorization_strategy="loop"
-)
+@policy_function(end_date="2015-12-31", leaf_name="freibetrag_m")
 def freibetrag_m_bis_2015(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     ist_kind_mit_erwerbseinkommen: bool,
@@ -240,21 +273,6 @@ def freibetrag_m_ab_2016(
         freibetrag_kinder = 0.0
 
     return freibetrag_bei_behinderung + freibetrag_kinder
-
-
-def einkommen(
-    einkommen_vor_freibetrag: float,
-    einkommensfreibetrag: float,
-    anzahl_personen: int,
-    min_einkommen: dict[int, float],
-) -> float:
-    """Calculate final income relevant for calculation of housing benefit on household
-    level.
-
-    """
-    eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
-    unteres_eink = min_einkommen[min(anzahl_personen, max(min_einkommen))]
-    return max(eink_nach_abzug_m_hh, unteres_eink)
 
 
 @policy_function()
