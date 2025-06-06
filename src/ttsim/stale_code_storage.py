@@ -15,7 +15,7 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from ttsim.typing import GenericCallable
+    from ttsim.interface_dag_elements.typing import GenericCallable
 
     NestedAnyTTSIMObject = Mapping[
         str,

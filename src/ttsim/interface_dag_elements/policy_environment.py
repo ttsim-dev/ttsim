@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import numpy
 
-from ttsim.shared import (
+from ttsim.interface_dag_elements.shared import (
     merge_trees,
     to_datetime,
     upsert_tree,
@@ -30,7 +30,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,

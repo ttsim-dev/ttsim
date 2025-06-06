@@ -4,20 +4,20 @@ from typing import TYPE_CHECKING
 
 import networkx as nx
 
-from ttsim.automatically_added_functions import (
+from ttsim.interface_dag_elements.automatically_added_functions import (
     TIME_UNIT_LABELS,
 )
-from ttsim.fail_if import (
+from ttsim.interface_dag_elements.fail_if import (
     fail_if__multiple_time_units_for_same_base_name_and_group,
 )
-from ttsim.shared import (
+from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
     group_pattern,
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         NestedPolicyEnvironment,
         OrderedQNames,
         QNameData,
@@ -27,19 +27,19 @@ if TYPE_CHECKING:
 
 
 def names__target_columns(
-    combined_environment__with_partialled_params_and_scalars: UnorderedQNames,
+    environment_with_data__with_partialled_params_and_scalars: UnorderedQNames,
     targets__qname: OrderedQNames,
 ) -> OrderedQNames:
     """All targets that are column functions."""
     return [
         t
         for t in targets__qname
-        if t in combined_environment__with_partialled_params_and_scalars
+        if t in environment_with_data__with_partialled_params_and_scalars
     ]
 
 
 def names__target_params(
-    combined_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,  # noqa: E501
+    environment_with_data__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,  # noqa: E501
     targets__qname: OrderedQNames,
     names__target_columns: OrderedQNames,
 ) -> OrderedQNames:
@@ -48,7 +48,7 @@ def names__target_params(
         t
         for t in targets__qname
         if t in possible_targets
-        and t in combined_environment__with_derived_functions_and_processed_input_nodes
+        and t in environment_with_data__with_derived_functions_and_processed_input_nodes
     ]
 
 

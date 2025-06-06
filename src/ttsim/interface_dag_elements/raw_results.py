@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         OrderedQNames,
         QNameCombinedEnvironment1,
         QNameData,
@@ -25,10 +25,10 @@ def raw_results__columns(
 
 def raw_results__params(
     names__target_params: OrderedQNames,
-    combined_environment__with_processed_params_and_scalars: QNameCombinedEnvironment1,
+    environment_with_data__with_processed_params_and_scalars: QNameCombinedEnvironment1,
 ) -> QNameData:
     return {
-        pt: combined_environment__with_processed_params_and_scalars[pt]
+        pt: environment_with_data__with_processed_params_and_scalars[pt]
         for pt in names__target_params
     }
 

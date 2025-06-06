@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from mettsim.config import METTSIM_ROOT
 
-from ttsim.orig_policy_objects import (
+from ttsim.interface_dag_elements.orig_policy_objects import (
     _find_files_recursively,
-    _load_module,
+    load_module,
 )
 
 
 def test_load_path():
-    assert _load_module(
+    assert load_module(
         path=METTSIM_ROOT / "payroll_tax" / "amount.py",
         root=METTSIM_ROOT,
     )

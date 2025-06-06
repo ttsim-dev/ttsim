@@ -7,10 +7,10 @@ import dags.tree as dt
 from dags import get_free_arguments, rename_arguments
 
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.fail_if import (
+from ttsim.interface_dag_elements.fail_if import (
     fail_if__multiple_time_units_for_same_base_name_and_group,
 )
-from ttsim.shared import (
+from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     import re
     from collections.abc import Callable
 
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         OrderedQNames,
         QNameDataColumns,
         QNamePolicyEnvironment,

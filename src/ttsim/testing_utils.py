@@ -10,8 +10,10 @@ import yaml
 
 from ttsim import main, merge_trees
 from ttsim.config import numpy_or_jax as np
-from ttsim.data_converters import nested_data_to_df_with_nested_columns
-from ttsim.shared import to_datetime
+from ttsim.interface_dag_elements.data_converters import (
+    nested_data_to_df_with_nested_columns,
+)
+from ttsim.interface_dag_elements.shared import to_datetime
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
@@ -21,7 +23,7 @@ if TYPE_CHECKING:
     import datetime
     from pathlib import Path
 
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         NestedData,
         NestedInputStructureDict,
         NestedPolicyEnvironment,

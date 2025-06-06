@@ -13,7 +13,7 @@ from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
 from ttsim.config import numpy_or_jax as np
-from ttsim.fail_if import (
+from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
     _ParamWithActivePeriod,
@@ -33,7 +33,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,
@@ -496,7 +496,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
     fail_if__foreign_keys_are_invalid_in_data(
         names__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        combined_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
 
 
@@ -513,7 +513,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
         fail_if__foreign_keys_are_invalid_in_data(
             names__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
-            combined_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+            environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
         )
 
 
@@ -529,7 +529,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     fail_if__foreign_keys_are_invalid_in_data(
         names__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        combined_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
 
 
@@ -545,7 +545,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     fail_if__foreign_keys_are_invalid_in_data(
         names__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        combined_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
 
 

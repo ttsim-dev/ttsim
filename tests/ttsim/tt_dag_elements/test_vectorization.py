@@ -22,16 +22,18 @@ if IS_JAX_INSTALLED:
 from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
-from ttsim.orig_policy_objects import (
+from ttsim.interface_dag_elements.orig_policy_objects import (
     orig_policy_objects__column_objects_and_param_functions,
 )
-from ttsim.policy_environment import _active_column_objects_and_param_functions
+from ttsim.interface_dag_elements.policy_environment import (
+    _active_column_objects_and_param_functions,
+)
 from ttsim.tt_dag_elements import (
     GroupCreationFunction,
     PolicyInput,
     policy_function,
 )
-from ttsim.vectorization import (
+from ttsim.tt_dag_elements.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
     _make_vectorizable,

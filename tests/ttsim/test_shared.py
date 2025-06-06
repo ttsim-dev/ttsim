@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from ttsim.shared import (
+from ttsim.interface_dag_elements.shared import (
     create_tree_from_path_and_value,
     get_name_of_group_by_id,
     get_re_pattern_for_all_time_units_and_groupings,

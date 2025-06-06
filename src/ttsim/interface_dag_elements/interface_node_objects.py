@@ -1,0 +1,176 @@
+from __future__ import annotations
+
+import inspect
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Generic, ParamSpec, TypeVar
+
+import dags.tree as dt
+
+if TYPE_CHECKING:
+    from ttsim.interface_dag_elements.typing import GenericCallable, UnorderedQNames
+
+FunArgTypes = ParamSpec("FunArgTypes")
+ReturnType = TypeVar("ReturnType")
+
+
+@dataclass(frozen=True)
+class InterfaceNodeObject:
+    """Base class for all objects operating on columns of data.
+
+    Examples:
+    - PolicyInputs
+    - PolicyFunctions
+    - GroupCreationFunctions
+    - AggByGroupFunctions
+    - AggByPIDFunctions
+    - TimeConversionFunctions
+
+    Parameters are not ColumnObjectParamFunctions.
+
+    """
+
+    leaf_name: str
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        names__top_level_namespace: UnorderedQNames,
+    ) -> InterfaceNodeObject:
+        """Remove tree logic from the function and update the function signature."""
+        raise NotImplementedError("Subclasses must implement this method.")
+
+
+@dataclass(frozen=True)
+class InterfaceInput(InterfaceNodeObject):
+    """A dummy function representing an input node."""
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],  # noqa: ARG002
+        names__top_level_namespace: UnorderedQNames,  # noqa: ARG002
+    ) -> InterfaceInput:
+        return self
+
+
+def interface_input() -> GenericCallable[[GenericCallable], InterfaceInput]:
+    """
+    Decorator that makes a (dummy) function an `InterfaceInput`.
+
+    Returns
+    -------
+    A decorator that returns an InterfaceInput object.
+    """
+
+    def inner(func: GenericCallable) -> InterfaceInput:
+        return InterfaceInput(
+            leaf_name=func.__name__,
+        )
+
+    return inner
+
+
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> None:
+    """Update a frozen wrapper dataclass to look like the wrapped function.
+
+    This is necessary because the wrapper is a frozen dataclass, so we cannot
+    use the `functools.update_wrapper` function or `self.__signature__ = ...`
+    assignments in the `__post_init__` method.
+
+    Args:
+        wrapper: The wrapper dataclass to update.
+        wrapped: The function to update the wrapper to.
+
+    """
+    object.__setattr__(wrapper, "__signature__", inspect.signature(wrapped))
+
+    WRAPPER_ASSIGNMENTS = (  # noqa: N806
+        "__globals__",
+        "__closure__",
+        "__doc__",
+        "__name__",
+        "__QName__",
+        "__module__",
+        "__annotations__",
+        "__type_params__",
+    )
+    for attr in WRAPPER_ASSIGNMENTS:
+        if hasattr(wrapped, attr):
+            object.__setattr__(wrapper, attr, getattr(wrapped, attr))
+
+    getattr(wrapper, "__dict__", {}).update(getattr(wrapped, "__dict__", {}))
+
+
+@dataclass(frozen=True)
+class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
+    """
+    Base class for all functions operating on columns of data.
+    """
+
+    function: GenericCallable[FunArgTypes, ReturnType]
+    in_top_level_namespace: bool
+
+    def __post_init__(self) -> None:
+        # Expose the signature of the wrapped function for dependency resolution
+        _frozen_safe_update_wrapper(self, self.function)
+
+    def __call__(
+        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+    ) -> ReturnType:
+        return self.function(*args, **kwargs)
+
+    @property
+    def dependencies(self) -> UnorderedQNames:
+        """The names of input variables that the function depends on."""
+        return set(inspect.signature(self).parameters)
+
+    @property
+    def original_function_name(self) -> str:
+        """The name of the wrapped function."""
+        return self.function.__name__
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        names__top_level_namespace: UnorderedQNames,
+    ) -> InterfaceFunction:  # type: ignore[type-arg]
+        """Remove tree logic from the function and update the function signature."""
+        return InterfaceFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=names__top_level_namespace,
+            ),
+            in_top_level_namespace=self.in_top_level_namespace,
+        )
+
+
+def interface_function(
+    *,
+    leaf_name: str | None = None,
+    in_top_level_namespace: bool = False,
+) -> GenericCallable[[GenericCallable], InterfaceFunction]:
+    """
+    Decorator that makes an `InterfaceFunction` from a function.
+
+    Parameters
+    ----------
+    leaf_name
+        The name that should be used as the PolicyFunction's leaf name in the DAG. If
+        omitted, we use the name of the function as defined.
+    in_top_level_namespace:
+        Whether the function is in the top-level namespace of the interface-DAG.
+
+    Returns
+    -------
+    A decorator that returns an InterfaceFunction object.
+    """
+
+    def inner(func: GenericCallable) -> InterfaceFunction:  # type: ignore[type-arg]
+        return InterfaceFunction(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
+            in_top_level_namespace=in_top_level_namespace,
+        )
+
+    return inner

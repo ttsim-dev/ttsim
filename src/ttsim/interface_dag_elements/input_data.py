@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim.data_converters import dataframe_to_nested_data
+from ttsim.interface_dag_elements.data_converters import dataframe_to_nested_data
 
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.typing import NestedData, NestedInputsMapper
+    from ttsim.interface_dag_elements.typing import NestedData, NestedInputsMapper
 
 
 def tree(

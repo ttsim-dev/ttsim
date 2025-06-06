@@ -22,8 +22,8 @@ from ttsim.tt_dag_elements.piecewise_polynomial import (
 )
 
 if TYPE_CHECKING:
+    from ttsim.interface_dag_elements.typing import RawParam
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
-    from ttsim.typing import RawParam
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)

@@ -15,12 +15,12 @@ from dags import get_free_arguments
 from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
-from ttsim.combined_environment import (
+from ttsim.interface_dag_elements.environment_with_data import (
     _add_derived_functions,
-    combined_environment__with_partialled_params_and_scalars,
+    environment_with_data__with_partialled_params_and_scalars,
 )
-from ttsim.fail_if import format_list_linewise
-from ttsim.shared import partition_tree_by_reference_tree
+from ttsim.interface_dag_elements.fail_if import format_list_linewise
+from ttsim.interface_dag_elements.shared import partition_tree_by_reference_tree
 
 if TYPE_CHECKING:
     from ttsim.typing import NestedPolicyEnvironment
@@ -113,8 +113,8 @@ def plot_dag(
         },
     )
 
-    processed_functions = combined_environment__with_partialled_params_and_scalars(
-        combined_environment__with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
+    processed_functions = environment_with_data__with_partialled_params_and_scalars(
+        environment_with_data__with_processed_params_and_scalars=functions_with_rounding_specs,  # noqa: F821
         processed_params=processed_tree_with_params,
     )
 

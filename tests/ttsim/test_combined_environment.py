@@ -11,8 +11,8 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import (
-    combined_environment__with_partialled_params_and_scalars,
-    combined_environment__with_processed_params_and_scalars,
+    environment_with_data__with_partialled_params_and_scalars,
+    environment_with_data__with_processed_params_and_scalars,
     main,
     merge_trees,
 )
@@ -34,7 +34,7 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedPolicyEnvironment
+    from ttsim.interface_dag_elements.typing import NestedPolicyEnvironment
 
 if IS_JAX_INSTALLED:
     jit = True
@@ -228,8 +228,8 @@ def func_before_partial(arg_1, some_param):
     return arg_1 + some_param
 
 
-func_after_partial = combined_environment__with_partialled_params_and_scalars(
-    combined_environment__with_processed_params_and_scalars={
+func_after_partial = environment_with_data__with_partialled_params_and_scalars(
+    environment_with_data__with_processed_params_and_scalars={
         "some_func": func_before_partial,
         "some_param": SOME_INT_PARAM.value,
     },
@@ -732,8 +732,8 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_converting_params_func": some_converting_params_func,
         "some_param_function_taking_scalar": some_param_function_taking_scalar,
     }
-    actual = combined_environment__with_processed_params_and_scalars(
-        combined_environment__with_derived_functions_and_processed_input_nodes=policy_environment,
+    actual = environment_with_data__with_processed_params_and_scalars(
+        environment_with_data__with_derived_functions_and_processed_input_nodes=policy_environment,
     )
     expected = {
         "some_converting_params_func": ConvertedParam(

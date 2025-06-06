@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         NestedTargetDict,
         OrderedQNames,
     )

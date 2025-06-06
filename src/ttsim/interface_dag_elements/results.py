@@ -4,12 +4,14 @@ from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
-from ttsim.data_converters import nested_data_to_df_with_mapped_columns
+from ttsim.interface_dag_elements.data_converters import (
+    nested_data_to_df_with_mapped_columns,
+)
 
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.typing import NestedData, NestedStrings, QNameData
+    from ttsim.interface_dag_elements.typing import NestedData, NestedStrings, QNameData
 
 
 def results__tree(raw_results__combined: QNameData) -> NestedData:

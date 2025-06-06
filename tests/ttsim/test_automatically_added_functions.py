@@ -4,7 +4,7 @@ import inspect
 
 import pytest
 
-from ttsim.automatically_added_functions import (
+from ttsim.interface_dag_elements.automatically_added_functions import (
     _create_function_for_time_unit,
     create_agg_by_group_functions,
     create_time_conversion_functions,

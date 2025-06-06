@@ -8,29 +8,29 @@ import dags
 import networkx as nx
 import numpy as np
 
-from ttsim.automatically_added_functions import TIME_UNIT_LABELS
-from ttsim.combined_environment import (
-    combined_environment__with_processed_params_and_scalars,
-    combined_environment__with_derived_functions_and_processed_input_nodes,
-    combined_environment__with_partialled_params_and_scalars,
+from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT_LABELS
+from ttsim.interface_dag_elements.environment_with_data import (
+    environment_with_data__with_processed_params_and_scalars,
+    environment_with_data__with_derived_functions_and_processed_input_nodes,
+    environment_with_data__with_partialled_params_and_scalars,
     tax_transfer_dag,
     tax_transfer_function,
 )
-from ttsim.raw_results import (
+from ttsim.interface_dag_elements.raw_results import (
     raw_results__columns,
     raw_results__params,
     raw_results__from_input_data,
     raw_results__combined,
 )
-from ttsim.processed_data import processed_data
-from ttsim.data_converters import (
+from ttsim.interface_dag_elements.processed_data import processed_data
+from ttsim.interface_dag_elements.data_converters import (
     dataframe_to_nested_data,
     nested_data_to_df_with_mapped_columns,
     nested_data_to_df_with_nested_columns,
 )
-from ttsim.input_data import tree as input_data__tree
-from ttsim.results import results__df, results__tree
-from ttsim.fail_if import (
+from ttsim.interface_dag_elements.input_data import tree as input_data__tree
+from ttsim.interface_dag_elements.results import results__df, results__tree
+from ttsim.interface_dag_elements.fail_if import (
     fail_if__active_periods_overlap,
     fail_if__environment_is_invalid,
     fail_if__group_ids_are_outside_top_level_namespace,
@@ -43,22 +43,22 @@ from ttsim.fail_if import (
     fail_if__targets_tree_is_invalid,
     format_list_linewise,
 )
-from ttsim.warn_if import (
+from ttsim.interface_dag_elements.warn_if import (
     FunctionsAndDataColumnsOverlapWarning,
     warn_if__functions_and_data_columns_overlap,
 )
-from ttsim.targets import (
+from ttsim.interface_dag_elements.targets import (
     targets__qname,
 )
 from ttsim.plot_dag import plot_dag
-from ttsim.orig_policy_objects import (
+from ttsim.interface_dag_elements.orig_policy_objects import (
     orig_policy_objects__column_objects_and_param_functions,
     orig_policy_objects__param_specs,
 )
-from ttsim.policy_environment import (
+from ttsim.interface_dag_elements.policy_environment import (
     policy_environment,
 )
-from ttsim.names import (
+from ttsim.interface_dag_elements.names import (
     names__grouping_levels,
     names__top_level_namespace,
     names__processed_data_columns,
@@ -67,7 +67,7 @@ from ttsim.names import (
     names__targets_from_input_data,
     names__root_nodes,
 )
-from ttsim.shared import (
+from ttsim.interface_dag_elements.shared import (
     insert_path_and_value,
     merge_trees,
     to_datetime,
@@ -78,40 +78,40 @@ from ttsim.shared import (
 
 def function_collection():
     return {
-        "combined_environment__with_processed_params_and_scalars": combined_environment__with_processed_params_and_scalars,
-        "raw_results__columns": raw_results__columns,
+        "environment_with_data__with_derived_functions_and_processed_input_nodes": environment_with_data__with_derived_functions_and_processed_input_nodes,
+        "environment_with_data__with_partialled_params_and_scalars": environment_with_data__with_partialled_params_and_scalars,
+        "environment_with_data__with_processed_params_and_scalars": environment_with_data__with_processed_params_and_scalars,
         "fail_if__active_periods_overlap": fail_if__active_periods_overlap,
         "fail_if__any_paths_are_invalid": fail_if__any_paths_are_invalid,
-        "fail_if__input_data_tree_is_invalid": fail_if__input_data_tree_is_invalid,
         "fail_if__environment_is_invalid": fail_if__environment_is_invalid,
         "fail_if__foreign_keys_are_invalid_in_data": fail_if__foreign_keys_are_invalid_in_data,
         "fail_if__group_ids_are_outside_top_level_namespace": fail_if__group_ids_are_outside_top_level_namespace,
         "fail_if__group_variables_are_not_constant_within_groups": fail_if__group_variables_are_not_constant_within_groups,
+        "fail_if__input_data_tree_is_invalid": fail_if__input_data_tree_is_invalid,
         "fail_if__root_nodes_are_missing": fail_if__root_nodes_are_missing,
         "fail_if__targets_are_not_in_policy_environment_or_data": fail_if__targets_are_not_in_policy_environment_or_data,
         "fail_if__targets_tree_is_invalid": fail_if__targets_tree_is_invalid,
-        "combined_environment__with_derived_functions_and_processed_input_nodes": combined_environment__with_derived_functions_and_processed_input_nodes,
-        "names__grouping_levels": names__grouping_levels,
         "input_data__tree": input_data__tree,
-        "results__tree": results__tree,
+        "names__grouping_levels": names__grouping_levels,
+        "names__processed_data_columns": names__processed_data_columns,
+        "names__root_nodes": names__root_nodes,
+        "names__target_columns": names__target_columns,
+        "names__target_params": names__target_params,
+        "names__targets_from_input_data": names__targets_from_input_data,
+        "names__top_level_namespace": names__top_level_namespace,
         "orig_policy_objects__column_objects_and_param_functions": orig_policy_objects__column_objects_and_param_functions,
         "orig_policy_objects__param_specs": orig_policy_objects__param_specs,
         "policy_environment": policy_environment,
-        "names__target_columns": names__target_columns,
         "processed_data": processed_data,
-        "names__processed_data_columns": names__processed_data_columns,
-        "names__root_nodes": names__root_nodes,
-        "names__targets_from_input_data": names__targets_from_input_data,
-        "names__target_params": names__target_params,
+        "raw_results__columns": raw_results__columns,
         "raw_results__combined": raw_results__combined,
-        "raw_results__params": raw_results__params,
         "raw_results__from_input_data": raw_results__from_input_data,
-        "targets__qname": targets__qname,
+        "raw_results__params": raw_results__params,
         "results__df": results__df,
-        "combined_environment__with_partialled_params_and_scalars": combined_environment__with_partialled_params_and_scalars,
+        "results__tree": results__tree,
+        "targets__qname": targets__qname,
         "tax_transfer_dag": tax_transfer_dag,
         "tax_transfer_function": tax_transfer_function,
-        "names__top_level_namespace": names__top_level_namespace,
         "warn_if__functions_and_data_columns_overlap": warn_if__functions_and_data_columns_overlap,
     }
 

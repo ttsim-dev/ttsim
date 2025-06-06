@@ -12,7 +12,7 @@ import optree
 import pandas as pd
 
 from ttsim.config import numpy_or_jax as np
-from ttsim.shared import get_name_of_group_by_id
+from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
 from ttsim.tt_dag_elements.column_objects_param_function import (
     DEFAULT_END_DATE,
     ColumnFunction,
@@ -24,7 +24,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,
@@ -297,7 +297,7 @@ def fail_if__environment_is_invalid(
 def fail_if__foreign_keys_are_invalid_in_data(
     names__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    combined_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
+    environment_with_data__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -312,7 +312,7 @@ def fail_if__foreign_keys_are_invalid_in_data(
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
-        for k, v in combined_environment__with_derived_functions_and_processed_input_nodes.items()
+        for k, v in environment_with_data__with_derived_functions_and_processed_input_nodes.items()
         if isinstance(v, PolicyInput | ColumnFunction)
     }
 

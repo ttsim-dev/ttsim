@@ -18,7 +18,7 @@ from pandas.api.types import (
 )
 
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.shared import to_datetime
+from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt_dag_elements.aggregation import (
     AggType,
     all_by_p_id,
@@ -37,13 +37,17 @@ from ttsim.tt_dag_elements.aggregation import (
     sum_by_p_id,
 )
 from ttsim.tt_dag_elements.rounding import RoundingSpec
-from ttsim.vectorization import vectorize_function
+from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
     import pandas as pd
 
     from ttsim.config import numpy_or_jax as np
-    from ttsim.typing import DashedISOString, GenericCallable, UnorderedQNames
+    from ttsim.interface_dag_elements.typing import (
+        DashedISOString,
+        GenericCallable,
+        UnorderedQNames,
+    )
 
 FunArgTypes = ParamSpec("FunArgTypes")
 ReturnType = TypeVar("ReturnType")

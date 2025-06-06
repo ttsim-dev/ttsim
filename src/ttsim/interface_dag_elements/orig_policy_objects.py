@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         OrigParamSpec,
@@ -105,7 +105,7 @@ def _tree_path_to_orig_column_objects_params_functions(
     -------
     A flat tree of ColumnObjectParamFunctions.
     """
-    module = _load_module(path=path, root=root)
+    module = load_module(path=path, root=root)
     tree_path = path.relative_to(root).parts
     return {
         (*tree_path, name): obj
@@ -114,7 +114,7 @@ def _tree_path_to_orig_column_objects_params_functions(
     }
 
 
-def _load_module(path: Path, root: Path) -> ModuleType:
+def load_module(path: Path, root: Path) -> ModuleType:
     name = path.relative_to(root).with_suffix("").as_posix().replace("/", ".")
     spec = importlib.util.spec_from_file_location(name=name, location=path)
     # Assert that spec is not None and spec.loader is not None, required for mypy

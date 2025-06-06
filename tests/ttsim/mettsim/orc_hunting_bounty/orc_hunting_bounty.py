@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import param_function, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParam
+    from ttsim.interface_dag_elements.typing import RawParam
 
 
 @dataclass(frozen=True)

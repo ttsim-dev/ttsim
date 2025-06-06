@@ -7,7 +7,7 @@ import dags.tree as dt
 from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedData, QNameData
+    from ttsim.interface_dag_elements.typing import NestedData, QNameData
 
 
 def processed_data(

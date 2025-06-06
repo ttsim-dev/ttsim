@@ -12,11 +12,11 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
-from ttsim.orig_policy_objects import (
+from ttsim.interface_dag_elements.orig_policy_objects import (
     orig_policy_objects__column_objects_and_param_functions,
     orig_policy_objects__param_specs,
 )
-from ttsim.policy_environment import (
+from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
     _active_param_objects,
     _get_param_value,
@@ -24,7 +24,7 @@ from ttsim.policy_environment import (
 from ttsim.tt_dag_elements import ScalarParam, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
         NestedColumnObjectsParamFunctions,
     )
 

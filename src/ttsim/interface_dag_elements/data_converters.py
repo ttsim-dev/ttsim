@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 
-from ttsim.fail_if import (
+from ttsim.interface_dag_elements.fail_if import (
     fail_if__data_paths_are_missing_in_paths_to_column_names,
     fail_if__incompatible_objects_in_nested_data,
     fail_if__input_df_with_mapper_has_bool_or_numeric_column_names,
@@ -13,7 +13,7 @@ from ttsim.fail_if import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import NestedData, NestedStrings, QNameData
+    from ttsim.interface_dag_elements.typing import NestedData, NestedStrings, QNameData
 
 
 def nested_data_to_df_with_nested_columns(

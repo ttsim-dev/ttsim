@@ -14,7 +14,7 @@ from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
-    from ttsim.typing import GenericCallable
+    from ttsim.interface_dag_elements.typing import GenericCallable
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
