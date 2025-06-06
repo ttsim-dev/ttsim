@@ -4,18 +4,32 @@ from typing import TYPE_CHECKING, Any
 
 import optree
 
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt_dag_elements import (
     ColumnObject,
     ParamFunction,
+    ParamObject,
+    TTSIMArray,
     policy_function,
 )
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import (
-        GenericCallable,
-        NestedAny,
-        NestedAnyTTSIMObject,
-    )
+    from collections.abc import Mapping
+
+    from ttsim.typing import GenericCallable
+
+    NestedAnyTTSIMObject = Mapping[
+        str,
+        ColumnObject
+        | ParamFunction
+        | ParamObject
+        | int
+        | float
+        | bool
+        | TTSIMArray
+        | "NestedAnyTTSIMObject",
+    ]
+    NestedAny = Mapping[str, Any | "NestedAnyTTSIMObject"]
+    """Tree mapping TTSIM paths to any type of TTSIM object."""
 
 
 def _convert_plain_functions_to_policy_functions(
@@ -37,10 +51,10 @@ def _convert_plain_functions_to_policy_functions(
         The converted tree.
 
     """
-    converted = optree.tree_map(
+    converted: NestedAnyTTSIMObject = optree.tree_map(
         lambda leaf: _convert_to_policy_function_if_callable(leaf),
-        tree,
-    )
+        tree,  # type: ignore[arg-type]
+    )  # type: ignore[assignment]
     return converted
 
 

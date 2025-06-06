@@ -7,12 +7,12 @@ import dags.tree as dt
 from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import NestedData, QualNameData
+    from ttsim.typing import NestedData, QNameData
 
 
 def processed_data(
     input_data__tree: NestedData,
-) -> QualNameData:
+) -> QNameData:
     """Process the data for use in the taxes and transfers function.
 
     This is where the conversion of p_ids will happen.

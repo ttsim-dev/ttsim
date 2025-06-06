@@ -10,7 +10,7 @@ from _gettsim.param_types import (
     ExistenzminimumNachAufwendungenMitBildungUndTeilhabe,
     ExistenzminimumNachAufwendungenOhneBildungUndTeilhabe,
 )
-from ttsim import (
+from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
     agg_by_group_function,
@@ -19,7 +19,7 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import RawParam
+    from ttsim.tt_dag_elements import RawParam
 
 
 @agg_by_group_function(agg_type=AggType.SUM, start_date="2005-01-01")

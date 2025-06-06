@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import AggType, agg_by_p_id_function, join, policy_function
+from ttsim.tt_dag_elements import AggType, agg_by_p_id_function, join, policy_function
 
 if TYPE_CHECKING:
     from ttsim.config import numpy_or_jax as np

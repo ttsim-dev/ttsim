@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from ttsim import RoundingSpec, piecewise_polynomial, policy_function
+from ttsim.tt_dag_elements import RoundingSpec, piecewise_polynomial, policy_function
 from ttsim.tt_dag_elements.column_objects_param_function import param_function
 
 if TYPE_CHECKING:

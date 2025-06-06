@@ -8,9 +8,10 @@ import dags.tree as dt
 from ttsim.fail_if import format_errors_and_warnings, format_list_linewise
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         NestedPolicyEnvironment,
-        QualNameDataColumns,
+        OrderedQNames,
+        QNameDataColumns,
     )
 
 
@@ -20,11 +21,11 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
 
     Parameters
     ----------
-    columns_overriding_functions : set[str]
+    columns_overriding_functions : UnorderedQNames
         Names of columns in the data that override hard-coded functions.
     """
 
-    def __init__(self, columns_overriding_functions: list[str]) -> None:
+    def __init__(self, columns_overriding_functions: OrderedQNames) -> None:
         n_cols = len(columns_overriding_functions)
         if n_cols == 1:
             first_part = format_errors_and_warnings("Your data provides the column:")
@@ -57,7 +58,7 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
             before calling TTSIM:
 
                 import warnings
-                from ttsim import FunctionsAndDataColumnsOverlapWarning
+                from ttsim.tt_dag_elements import FunctionsAndDataColumnsOverlapWarning
 
                 warnings.filterfilters(
                     "ignore",
@@ -70,7 +71,7 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
 
 def warn_if__functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
-    names__processed_data_columns: QualNameDataColumns,
+    names__processed_data_columns: QNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""
     overridden_elements = sorted(

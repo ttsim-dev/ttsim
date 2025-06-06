@@ -6,15 +6,17 @@ import pandas as pd
 import pytest
 
 from ttsim import (
+    dataframe_to_nested_data,
+    main,
+    nested_data_to_df_with_mapped_columns,
+)
+from ttsim.tt_dag_elements import (
     ConsecutiveInt1dLookupTableParam,
     ConsecutiveInt1dLookupTableParamValue,
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
     ScalarParam,
-    dataframe_to_nested_data,
-    main,
-    nested_data_to_df_with_mapped_columns,
     param_function,
     policy_function,
 )

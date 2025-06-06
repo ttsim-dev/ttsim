@@ -16,14 +16,14 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         OrigParamSpec,
     )
 
 
-def column_objects_and_param_functions(
+def orig_policy_objects__column_objects_and_param_functions(
     root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """
@@ -47,7 +47,7 @@ def column_objects_and_param_functions(
     }
 
 
-def param_specs(root: Path) -> FlatOrigParamSpecs:
+def orig_policy_objects__param_specs(root: Path) -> FlatOrigParamSpecs:
     """
     Load the original contents of yaml files found in *root*.
 

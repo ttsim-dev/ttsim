@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from ttsim import (
+from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import (
     AggType,
     ConsecutiveInt1dLookupTableParamValue,
     PiecewisePolynomialParamValue,
@@ -12,7 +13,6 @@ from ttsim import (
     piecewise_polynomial,
     policy_function,
 )
-from ttsim.config import numpy_or_jax as np
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

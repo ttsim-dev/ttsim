@@ -21,7 +21,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
     agg_by_group_function,
@@ -29,7 +30,6 @@ from ttsim import (
     param_function,
     policy_function,
 )
-from ttsim.config import numpy_or_jax as np
 
 if TYPE_CHECKING:
     from _gettsim.param_types import ConsecutiveInt1dLookupTableParamValue

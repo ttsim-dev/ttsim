@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ttsim import (
+from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import (
     ConsecutiveInt1dLookupTableParamValue,
     ConsecutiveInt2dLookupTableParamValue,
     get_consecutive_int_1d_lookup_table_param_value,
@@ -12,7 +13,6 @@ from ttsim import (
     param_function,
     policy_function,
 )
-from ttsim.config import numpy_or_jax as np
 
 
 @dataclass(frozen=True)

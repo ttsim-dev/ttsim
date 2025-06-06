@@ -4,15 +4,14 @@ import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
-from ttsim import (
+from ttsim import main, policy_environment
+from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import (
     RoundingSpec,
-    main,
-    policy_environment,
     policy_function,
     policy_input,
 )
-from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
 
 if IS_JAX_INSTALLED:
     DTYPE = "float32"

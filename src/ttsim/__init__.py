@@ -8,27 +8,10 @@ import dags
 import networkx as nx
 import numpy as np
 
-from ttsim.tt_dag_elements.aggregation import AggType
-from ttsim.automatically_added_functions import create_time_conversion_functions
-from ttsim.tt_dag_elements.column_objects_param_function import (
-    AggByGroupFunction,
-    AggByPIDFunction,
-    FKType,
-    GroupCreationFunction,
-    ParamFunction,
-    PolicyFunction,
-    PolicyInput,
-    TimeConversionFunction,
-    agg_by_group_function,
-    agg_by_p_id_function,
-    group_creation_function,
-    param_function,
-    policy_function,
-    policy_input,
-)
+from ttsim.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.combined_environment import (
     combined_environment__with_processed_params_and_scalars,
-    combined_environment__with_derived_functions_and_input_nodes,
+    combined_environment__with_derived_functions_and_processed_input_nodes,
     combined_environment__with_partialled_params_and_scalars,
     tax_transfer_dag,
     tax_transfer_function,
@@ -60,38 +43,19 @@ from ttsim.fail_if import (
     fail_if__targets_tree_is_invalid,
     format_list_linewise,
 )
-from ttsim.fail_if import (
+from ttsim.warn_if import (
     FunctionsAndDataColumnsOverlapWarning,
     warn_if__functions_and_data_columns_overlap,
 )
 from ttsim.targets import (
     targets__qname,
 )
-from ttsim.tt_dag_elements.param_objects import (
-    ConsecutiveInt1dLookupTableParam,
-    ConsecutiveInt1dLookupTableParamValue,
-    ConsecutiveInt2dLookupTableParamValue,
-    DictParam,
-    ParamObject,
-    PiecewisePolynomialParam,
-    PiecewisePolynomialParamValue,
-    RawParam,
-    ScalarParam,
-)
-from ttsim.tt_dag_elements.piecewise_polynomial import (
-    get_piecewise_parameters,
-    piecewise_polynomial,
-)
 from ttsim.plot_dag import plot_dag
 from ttsim.orig_policy_objects import (
-    column_objects_and_param_functions,
-    param_specs,
+    orig_policy_objects__column_objects_and_param_functions,
+    orig_policy_objects__param_specs,
 )
 from ttsim.policy_environment import (
-    get_consecutive_int_1d_lookup_table_param_value,
-    get_consecutive_int_2d_lookup_table_param_value,
-    get_month_based_phase_inout_of_age_thresholds_param_value,
-    get_year_based_phase_inout_of_age_thresholds_param_value,
     policy_environment,
 )
 from ttsim.names import (
@@ -103,10 +67,8 @@ from ttsim.names import (
     names__targets_from_input_data,
     names__root_nodes,
 )
-from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.shared import (
     insert_path_and_value,
-    join,
     merge_trees,
     to_datetime,
     upsert_path_and_value,
@@ -128,12 +90,12 @@ def function_collection():
         "fail_if__root_nodes_are_missing": fail_if__root_nodes_are_missing,
         "fail_if__targets_are_not_in_policy_environment_or_data": fail_if__targets_are_not_in_policy_environment_or_data,
         "fail_if__targets_tree_is_invalid": fail_if__targets_tree_is_invalid,
-        "combined_environment__with_derived_functions_and_input_nodes": combined_environment__with_derived_functions_and_input_nodes,
+        "combined_environment__with_derived_functions_and_processed_input_nodes": combined_environment__with_derived_functions_and_processed_input_nodes,
         "names__grouping_levels": names__grouping_levels,
         "input_data__tree": input_data__tree,
         "results__tree": results__tree,
-        "orig_policy_objects__column_objects_and_param_functions": column_objects_and_param_functions,
-        "orig_policy_objects__param_specs": param_specs,
+        "orig_policy_objects__column_objects_and_param_functions": orig_policy_objects__column_objects_and_param_functions,
+        "orig_policy_objects__param_specs": orig_policy_objects__param_specs,
         "policy_environment": policy_environment,
         "names__target_columns": names__target_columns,
         "processed_data": processed_data,
@@ -336,29 +298,7 @@ def draw_dag(
 
 
 __all__ = [
-    "AggByGroupFunction",
-    "AggByPIDFunction",
-    "AggType",
-    "ConsecutiveInt1dLookupTableParam",
-    "ConsecutiveInt1dLookupTableParamValue",
-    "ConsecutiveInt2dLookupTableParamValue",
-    "DictParam",
-    "FKType",
-    "FunctionsAndDataColumnsOverlapWarning",
-    "GroupCreationFunction",
-    "ParamFunction",
-    "ParamObject",
-    "PiecewisePolynomialParam",
-    "PiecewisePolynomialParamValue",
-    "PolicyFunction",
-    "PolicyInput",
-    "RawParam",
-    "RoundingSpec",
-    "ScalarParam",
-    "TimeConversionFunction",
-    "agg_by_group_function",
-    "agg_by_p_id_function",
-    "create_time_conversion_functions",
+    "TIME_UNIT_LABELS",
     "dataframe_to_nested_data",
     "get_consecutive_int_1d_lookup_table_param_value",
     "get_consecutive_int_2d_lookup_table_param_value",
@@ -367,7 +307,6 @@ __all__ = [
     "get_year_based_phase_inout_of_age_thresholds_param_value",
     "group_creation_function",
     "insert_path_and_value",
-    "join",
     "merge_trees",
     "nested_data_to_df_with_mapped_columns",
     "nested_data_to_df_with_nested_columns",
@@ -380,4 +319,5 @@ __all__ = [
     "to_datetime",
     "upsert_path_and_value",
     "upsert_tree",
+    "FunctionsAndDataColumnsOverlapWarning",
 ]

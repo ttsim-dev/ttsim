@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import param_function
+from ttsim.tt_dag_elements import param_function
 
 
 @param_function(end_date="2005-06-30")

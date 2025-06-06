@@ -23,7 +23,7 @@ from ttsim.fail_if import format_list_linewise
 from ttsim.shared import partition_tree_by_reference_tree
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import NestedPolicyEnvironment
+    from ttsim.typing import NestedPolicyEnvironment
 
 
 def plot_dag(

@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     get_consecutive_int_1d_lookup_table_param_value,
     param_function,
     policy_function,
 )
 
 if TYPE_CHECKING:
-    from ttsim import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
 @policy_function(end_date="2004-12-31", leaf_name="altersfreibetrag_y")

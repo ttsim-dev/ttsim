@@ -9,10 +9,10 @@ from ttsim.data_converters import nested_data_to_df_with_mapped_columns
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings, QualNameData
+    from ttsim.typing import NestedData, NestedStrings, QNameData
 
 
-def results__tree(raw_results__combined: QualNameData) -> NestedData:
+def results__tree(raw_results__combined: QNameData) -> NestedData:
     """The combined results as a tree.
 
     Note: This is the point where the `p_id`s are converted back to their original

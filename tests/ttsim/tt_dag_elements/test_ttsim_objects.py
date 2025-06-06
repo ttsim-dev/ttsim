@@ -4,7 +4,8 @@ import inspect
 
 import pytest
 
-from ttsim import (
+from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import (
     AggType,
     PolicyFunction,
     PolicyInput,
@@ -13,7 +14,6 @@ from ttsim import (
     policy_function,
     policy_input,
 )
-from ttsim.config import numpy_or_jax as np
 from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
     param_function,

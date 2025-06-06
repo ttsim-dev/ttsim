@@ -7,13 +7,12 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import optree
 
-from ttsim.config import numpy_or_jax as np
-
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         DashedISOString,
         NestedColumnObjectsParamFunctions,
         NestedData,
+        OrderedQNames,
     )
 
 
@@ -32,9 +31,9 @@ def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
-    groupings: tuple[str, ...], time_units: tuple[str, ...]
+    time_units: OrderedQNames, grouping_levels: OrderedQNames
 ) -> re.Pattern[str]:
-    """Get a regex pattern for time units and groupings.
+    """Get a regex pattern for time units and grouping_levels.
 
     The pattern matches strings in any of these formats:
     - <base_name>  (may contain underscores)
@@ -44,10 +43,10 @@ def get_re_pattern_for_all_time_units_and_groupings(
 
     Parameters
     ----------
-    groupings
-        The supported groupings.
     time_units
         The supported time units.
+    grouping_levels
+        The supported grouping levels.
 
     Returns
     -------
@@ -55,7 +54,7 @@ def get_re_pattern_for_all_time_units_and_groupings(
         The regex pattern.
     """
     re_units = "".join(time_units)
-    re_groupings = "|".join(groupings)
+    re_groupings = "|".join(grouping_levels)
     return re.compile(
         f"(?P<base_name>.*?)"
         f"(?:_(?P<time_unit>[{re_units}]))?"
@@ -64,16 +63,16 @@ def get_re_pattern_for_all_time_units_and_groupings(
     )
 
 
-def group_pattern(groupings: tuple[str, ...]) -> re.Pattern[str]:
+def group_pattern(grouping_levels: OrderedQNames) -> re.Pattern[str]:
     return re.compile(
-        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(groupings)})$"
+        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(grouping_levels)})$"
     )
 
 
 def get_re_pattern_for_specific_time_units_and_groupings(
     base_name: str,
-    all_time_units: tuple[str, ...],
-    groupings: tuple[str, ...],
+    all_time_units: OrderedQNames,
+    grouping_levels: OrderedQNames,
 ) -> re.Pattern[str]:
     """Get a regex for a specific base name with optional time unit and aggregation.
 
@@ -89,8 +88,8 @@ def get_re_pattern_for_specific_time_units_and_groupings(
         The specific base name to match.
     time_units
         The supported time units.
-    groupings
-        The supported groupings.
+    grouping_levels
+        The supported grouping levels.
 
     Returns
     -------
@@ -98,7 +97,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
         The regex pattern.
     """
     re_units = "".join(all_time_units)
-    re_groupings = "|".join(groupings)
+    re_groupings = "|".join(grouping_levels)
     return re.compile(
         f"(?P<base_name>{re.escape(base_name)})"
         f"(?:_(?P<time_unit>[{re_units}]))?"
@@ -294,63 +293,17 @@ def partition_by_reference_dict(
     return intersection, difference
 
 
-def remove_group_suffix(col: str, names__grouping_levels: tuple[str, ...]) -> str:
+def remove_group_suffix(col: str, grouping_levels: OrderedQNames) -> str:
     out = col
-    for g in names__grouping_levels:
+    for g in grouping_levels:
         out = out.removesuffix(f"_{g}")
 
     return out
 
 
-def join(
-    foreign_key: np.ndarray,
-    primary_key: np.ndarray,
-    target: np.ndarray,
-    value_if_foreign_key_is_missing: float | bool,
-) -> np.ndarray:
-    """
-    Given a foreign key, find the corresponding primary key, and return the target at
-    the same index as the primary key. When using Jax, does not work on String Arrays.
-
-    Parameters
-    ----------
-    foreign_key : np.ndarray[Key]
-        The foreign keys.
-    primary_key : np.ndarray[Key]
-        The primary keys.
-    target : np.ndarray[Out]
-        The targets in the same order as the primary keys.
-    value_if_foreign_key_is_missing : Out
-        The value to return if no matching primary key is found.
-
-    Returns
-    -------
-    The joined array.
-    """
-    # For each foreign key and for each primary key, check if they match
-    matches_foreign_key = foreign_key[:, None] == primary_key
-
-    # For each foreign key, add a column with True at the end, to later fall back to
-    # the value for unresolved foreign keys
-    padded_matches_foreign_key = np.pad(
-        matches_foreign_key, ((0, 0), (0, 1)), "constant", constant_values=True
-    )
-
-    # For each foreign key, compute the index of the first matching primary key
-    indices = np.argmax(padded_matches_foreign_key, axis=1)
-
-    # Add the value for unresolved foreign keys at the end of the target array
-    padded_targets = np.pad(
-        target, (0, 1), "constant", constant_values=value_if_foreign_key_is_missing
-    )
-
-    # Return the target at the index of the first matching primary key
-    return padded_targets.take(indices)
-
-
 def get_name_of_group_by_id(
     target_name: str,
-    groupings: tuple[str, ...],
+    grouping_levels: OrderedQNames,
 ) -> str | None:
     """Get the group-by-identifier name for some target.
 
@@ -361,14 +314,14 @@ def get_name_of_group_by_id(
     ----------
     target_name
         The name of the target.
-    groupings
-        The supported groupings.
+    grouping_levels
+        The supported grouping levels.
 
     Returns
     -------
     The group-by-identifier, or an empty tuple if it is an individual-level variable.
     """
-    for g in groupings:
+    for g in grouping_levels:
         if target_name.endswith(f"_{g}"):
             return f"{g}_id"
     return None

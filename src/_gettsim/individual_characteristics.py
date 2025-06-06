@@ -4,7 +4,7 @@ import datetime
 
 import numpy
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function()

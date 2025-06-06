@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from ttsim import (
+from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     param_function,
     piecewise_polynomial,
     policy_function,
 )
-from ttsim.config import numpy_or_jax as np
 
 
 def basis_für_klassen_5_6(

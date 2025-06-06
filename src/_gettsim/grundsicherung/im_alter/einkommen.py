@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import piecewise_polynomial, policy_function
+from ttsim.tt_dag_elements import piecewise_polynomial, policy_function
 
 if TYPE_CHECKING:
     from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
-    from ttsim import PiecewisePolynomialParam
+    from ttsim.tt_dag_elements import PiecewisePolynomialParam
 
 
 @policy_function()

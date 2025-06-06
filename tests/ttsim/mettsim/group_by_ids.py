@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ttsim import group_creation_function
 from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import group_creation_function
 
 
 @group_creation_function()

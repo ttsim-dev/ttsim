@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 if TYPE_CHECKING:
-    from ttsim import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
 @policy_function(start_date="2001-01-01", end_date="2023-06-30", leaf_name="betrag_m")

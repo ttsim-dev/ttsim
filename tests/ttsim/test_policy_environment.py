@@ -11,23 +11,20 @@ import pandas as pd
 import pytest
 from mettsim.config import METTSIM_ROOT
 
-from ttsim import (
-    ScalarParam,
-    main,
-    policy_function,
-)
+from ttsim import main
 from ttsim.orig_policy_objects import (
-    column_objects_and_param_functions,
-    param_specs,
+    orig_policy_objects__column_objects_and_param_functions,
+    orig_policy_objects__param_specs,
 )
 from ttsim.policy_environment import (
     _active_column_objects_and_param_functions,
     _active_param_objects,
     _get_param_value,
 )
+from ttsim.tt_dag_elements import ScalarParam, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         NestedColumnObjectsParamFunctions,
     )
 
@@ -63,10 +60,12 @@ def some_int_param():
 
 
 def test_add_jahresanfang():
-    _orig_tree_with_params = param_specs(root=Path(__file__).parent / "test_parameters")
+    orig = orig_policy_objects__param_specs(
+        root=Path(__file__).parent / "test_parameters"
+    )
     k = ("test_add_jahresanfang.yaml", "foo")
     _active_ttsim_tree_with_params = _active_param_objects(
-        orig={k: _orig_tree_with_params[k]},
+        orig={k: orig[k]},
         date=pd.to_datetime("2020-07-01").date(),
     )
     assert _active_ttsim_tree_with_params["foo"].value == 2
@@ -74,25 +73,29 @@ def test_add_jahresanfang():
 
 
 def test_input_is_recognized_as_potential_group_id():
-    names__grouping_levels = main(
-        inputs={
-            "root": METTSIM_ROOT,
-            "date": datetime.date(2020, 1, 1),
-        },
-        targets=["names__grouping_levels"],
-    )["names__grouping_levels"]
-    assert "kin" in names__grouping_levels
+    assert (
+        "kin"
+        in main(
+            inputs={
+                "root": METTSIM_ROOT,
+                "date": datetime.date(2020, 1, 1),
+            },
+            targets=["names__grouping_levels"],
+        )["names__grouping_levels"]
+    )
 
 
 def test_p_id_not_recognized_as_potential_group_id():
-    names__grouping_levels = main(
-        inputs={
-            "root": METTSIM_ROOT,
-            "date": datetime.date(2020, 1, 1),
-        },
-        targets=["names__grouping_levels"],
-    )["names__grouping_levels"]
-    assert "p" not in names__grouping_levels
+    assert (
+        "p"
+        not in main(
+            inputs={
+                "root": METTSIM_ROOT,
+                "date": datetime.date(2020, 1, 1),
+            },
+            targets=["names__grouping_levels"],
+        )["names__grouping_levels"]
+    )
 
 
 @pytest.mark.parametrize(
@@ -196,15 +199,13 @@ def test_active_tree_with_column_objects_and_param_functions(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    _orig_tree_with_column_objects_and_param_functions = (
-        column_objects_and_param_functions(root=METTSIM_ROOT)
-    )
+    orig = orig_policy_objects__column_objects_and_param_functions(root=METTSIM_ROOT)
     functions_last_day = _active_column_objects_and_param_functions(
-        orig=_orig_tree_with_column_objects_and_param_functions,
+        orig=orig,
         date=last_day,
     )
     functions_next_day = _active_column_objects_and_param_functions(
-        orig=_orig_tree_with_column_objects_and_param_functions,
+        orig=orig,
         date=last_day + datetime.timedelta(days=1),
     )
 

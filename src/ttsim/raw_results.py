@@ -1,43 +1,32 @@
 from __future__ import annotations
 
-import datetime
 from typing import TYPE_CHECKING
-
-from ttsim.tt_dag_elements.column_objects_param_function import (
-    ColumnObject,
-)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from ttsim.tt_dag_elements.typing import (
-        QualNameColumnFunctionsWithProcessedParamsAndScalars,
-        QualNameData,
-        QualNameTargetList,
+    from ttsim.typing import (
+        OrderedQNames,
+        QNameCombinedEnvironment1,
+        QNameData,
+        UnorderedQNames,
     )
 
 
-_DUMMY_COLUMN_OBJECT = ColumnObject(
-    leaf_name="dummy",
-    start_date=datetime.date(1900, 1, 1),
-    end_date=datetime.date(2099, 12, 31),
-)
-
-
 def raw_results__columns(
-    names__root_nodes: set[str],
-    processed_data: QualNameData,
-    tax_transfer_function: Callable[[QualNameData], QualNameData],
-) -> QualNameData:
+    names__root_nodes: UnorderedQNames,
+    processed_data: QNameData,
+    tax_transfer_function: Callable[[QNameData], QNameData],
+) -> QNameData:
     return tax_transfer_function(
         {k: v for k, v in processed_data.items() if k in names__root_nodes}
     )
 
 
 def raw_results__params(
-    names__target_params: QualNameTargetList,
-    combined_environment__with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,  # noqa: E501
-) -> QualNameData:
+    names__target_params: OrderedQNames,
+    combined_environment__with_processed_params_and_scalars: QNameCombinedEnvironment1,
+) -> QNameData:
     return {
         pt: combined_environment__with_processed_params_and_scalars[pt]
         for pt in names__target_params
@@ -45,17 +34,17 @@ def raw_results__params(
 
 
 def raw_results__from_input_data(
-    names__targets_from_input_data: QualNameTargetList,
-    processed_data: QualNameData,
-) -> QualNameData:
+    names__targets_from_input_data: OrderedQNames,
+    processed_data: QNameData,
+) -> QNameData:
     return {ot: processed_data[ot] for ot in names__targets_from_input_data}
 
 
 def raw_results__combined(
-    raw_results__columns: QualNameData,
-    raw_results__params: QualNameData,
-    raw_results__from_input_data: QualNameData,
-) -> QualNameData:
+    raw_results__columns: QNameData,
+    raw_results__params: QNameData,
+    raw_results__from_input_data: QNameData,
+) -> QNameData:
     return {
         **raw_results__columns,
         **raw_results__params,

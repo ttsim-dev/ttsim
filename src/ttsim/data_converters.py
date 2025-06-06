@@ -13,12 +13,12 @@ from ttsim.fail_if import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings, QualNameData
+    from ttsim.typing import NestedData, NestedStrings, QNameData
 
 
 def nested_data_to_df_with_nested_columns(
     nested_data_to_convert: NestedData,
-    data_with_p_id: NestedData | QualNameData,
+    data_with_p_id: NestedData | QNameData,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
 
@@ -41,7 +41,7 @@ def nested_data_to_df_with_nested_columns(
 def nested_data_to_df_with_mapped_columns(
     nested_data_to_convert: NestedData,
     nested_outputs_df_column_names: NestedStrings,
-    data_with_p_id: NestedData | QualNameData,
+    data_with_p_id: NestedData | QNameData,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
 

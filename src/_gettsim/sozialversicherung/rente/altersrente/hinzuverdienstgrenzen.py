@@ -1,4 +1,4 @@
-from ttsim import RoundingSpec, policy_function
+from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 
 @policy_function(

@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import param_function, policy_function
+from ttsim.tt_dag_elements import param_function, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import RawParam
+    from ttsim.typing import RawParam
 
 
 @dataclass(frozen=True)

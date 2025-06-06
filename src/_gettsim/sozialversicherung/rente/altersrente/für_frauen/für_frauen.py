@@ -5,7 +5,7 @@ Revoked for birth cohorts after 1951.
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
+from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(

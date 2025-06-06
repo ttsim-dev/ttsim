@@ -4,7 +4,6 @@ import inspect
 
 import pytest
 
-from ttsim import policy_function
 from ttsim.automatically_added_functions import (
     _create_function_for_time_unit,
     create_agg_by_group_functions,
@@ -30,6 +29,7 @@ from ttsim.automatically_added_functions import (
     y_to_q,
     y_to_w,
 )
+from ttsim.tt_dag_elements import policy_function
 
 
 def return_one() -> int:
@@ -292,8 +292,8 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 name: policy_function(leaf_name=name)(return_one)
             },
-            names__processed_data_columns=set(),
-            groupings=("sn", "kin"),
+            processed_data_columns=set(),
+            grouping_levels=("sn", "kin"),
         )
 
         for expected_name in expected:
@@ -304,8 +304,8 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 "test1_d": policy_function(leaf_name="test1_d")(return_one)
             },
-            names__processed_data_columns={"test2_y"},
-            groupings=("sn", "kin"),
+            processed_data_columns={"test2_y"},
+            grouping_levels=("sn", "kin"),
         )
 
         assert "test1_d" not in time_conversion_functions
@@ -318,8 +318,8 @@ class TestCreateFunctionsForTimeUnits:
             qual_name_policy_environment={
                 "test_d": policy_function(leaf_name="test_d")(return_one)
             },
-            names__processed_data_columns={"test_y"},
-            groupings=("sn", "kin"),
+            processed_data_columns={"test_y"},
+            grouping_levels=("sn", "kin"),
         )
 
         assert "test_d" in time_conversion_functions
@@ -351,8 +351,8 @@ def test_should_not_create_cycle():
 
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
-        names__processed_data_columns=set(),
-        groupings=(),
+        processed_data_columns=set(),
+        grouping_levels=(),
     )
 
     assert "test_m" not in time_conversion_functions
@@ -401,6 +401,6 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         column_functions=column_functions,
         names__processed_data_columns=names__processed_data_columns,
         targets=targets,
-        groupings=("kin",),
+        grouping_levels=("kin",),
     )
     assert expected in result

@@ -1,4 +1,4 @@
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 # TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
 # Germany starting in July 2023.

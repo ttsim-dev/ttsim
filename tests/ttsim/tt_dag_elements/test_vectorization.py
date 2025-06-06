@@ -22,13 +22,15 @@ if IS_JAX_INSTALLED:
 from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
-from ttsim import (
-    GroupCreationFunction,
-    PolicyInput,
-    orig_policy_objects,
-    policy_function,
+from ttsim.orig_policy_objects import (
+    orig_policy_objects__column_objects_and_param_functions,
 )
 from ttsim.policy_environment import _active_column_objects_and_param_functions
+from ttsim.tt_dag_elements import (
+    GroupCreationFunction,
+    PolicyInput,
+    policy_function,
+)
 from ttsim.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -390,7 +392,7 @@ for year in range(1990, 2023):
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
                 _active_column_objects_and_param_functions(
-                    orig=orig_policy_objects.column_objects_and_param_functions(
+                    orig=orig_policy_objects__column_objects_and_param_functions(
                         root=METTSIM_ROOT / "mettsim"
                     ),
                     date=datetime.date(year=year, month=1, day=1),

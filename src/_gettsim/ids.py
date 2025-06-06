@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ttsim import group_creation_function, policy_input
 from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import group_creation_function, policy_input
 
 
 @policy_input()

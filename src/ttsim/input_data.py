@@ -7,12 +7,12 @@ from ttsim.data_converters import dataframe_to_nested_data
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.tt_dag_elements.typing import NestedData, NestedStrings
+    from ttsim.typing import NestedData, NestedInputsMapper
 
 
 def tree(
     input_data__df_and_mapper__df: pd.DataFrame,
-    input_data__df_and_mapper__mapper: NestedStrings,
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> NestedData:
     """The input DataFrame as a nested data structure.
 

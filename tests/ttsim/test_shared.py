@@ -215,7 +215,7 @@ def test_get_name_of_group_by_id(target_name, expected):
     assert (
         get_name_of_group_by_id(
             target_name=target_name,
-            groupings=("kin", "fam"),
+            grouping_levels=("kin", "fam"),
         )
         == expected
     )
@@ -225,7 +225,7 @@ def test_get_name_of_group_by_id(target_name, expected):
     (
         "func_name",
         "time_units",
-        "groupings",
+        "grouping_levels",
         "expected_base_name",
         "expected_time_unit",
         "expected_grouping",
@@ -243,14 +243,14 @@ def test_get_name_of_group_by_id(target_name, expected):
 def test_get_re_pattern_for_time_units_and_groupings(
     func_name,
     time_units,
-    groupings,
+    grouping_levels,
     expected_base_name,
     expected_time_unit,
     expected_grouping,
 ):
     result = get_re_pattern_for_all_time_units_and_groupings(
         time_units=time_units,
-        groupings=groupings,
+        grouping_levels=grouping_levels,
     )
     match = result.fullmatch(func_name)
     assert match.group("base_name") == expected_base_name
@@ -262,7 +262,7 @@ def test_get_re_pattern_for_time_units_and_groupings(
     (
         "base_name",
         "time_units",
-        "groupings",
+        "grouping_levels",
         "expected_match",
     ),
     [
@@ -272,11 +272,11 @@ def test_get_re_pattern_for_time_units_and_groupings(
     ],
 )
 def test_get_re_pattern_for_some_base_name(
-    base_name, time_units, groupings, expected_match
+    base_name, time_units, grouping_levels, expected_match
 ):
     re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
         base_name=base_name,
         all_time_units=time_units,
-        groupings=groupings,
+        grouping_levels=grouping_levels,
     )
     assert re_pattern.fullmatch(expected_match)

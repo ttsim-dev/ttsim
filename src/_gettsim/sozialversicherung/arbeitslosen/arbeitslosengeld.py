@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     get_consecutive_int_1d_lookup_table_param_value,
     param_function,
     piecewise_polynomial,
@@ -12,7 +12,7 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import (
+    from ttsim.tt_dag_elements import (
         ConsecutiveInt1dLookupTableParamValue,
         PiecewisePolynomialParamValue,
     )

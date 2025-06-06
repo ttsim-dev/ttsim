@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     AggType,
     agg_by_p_id_function,
     get_consecutive_int_1d_lookup_table_param_value,
@@ -14,8 +14,8 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import ConsecutiveInt1dLookupTableParamValue
     from ttsim.config import numpy_or_jax as np
+    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

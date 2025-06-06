@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     RoundingSpec,
     piecewise_polynomial,

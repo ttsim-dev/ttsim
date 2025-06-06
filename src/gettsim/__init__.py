@@ -18,15 +18,15 @@ from typing import Any
 import pytest
 
 from _gettsim_tests import TEST_DIR
-from ttsim import (
-    FunctionsAndDataColumnsOverlapWarning,
-    GroupCreationFunction,
-    PolicyFunction,
-    group_creation_function,
-    plot_dag,
-    policy_environment,
-    policy_function,
-)
+
+# from ttsim.tt_dag_elements import (
+#     GroupCreationFunction,
+#     PolicyFunction,
+#     group_creation_function,
+#     plot_dag,
+#     policy_environment,
+#     policy_function,
+# )
 
 COUNTER_TEST_EXECUTIONS = itertools.count()
 
@@ -46,12 +46,11 @@ def test(*args: Any) -> None:
 
 
 __all__ = [
-    "FunctionsAndDataColumnsOverlapWarning",
-    "GroupCreationFunction",
-    "PolicyFunction",
+    # "GroupCreationFunction",
+    # "PolicyFunction",
     "__version__",
-    "group_creation_function",
-    "plot_dag",
-    "policy_environment",
-    "policy_function",
+    # "group_creation_function",
+    # "plot_dag",
+    # "policy_environment",
+    # "policy_function",
 ]

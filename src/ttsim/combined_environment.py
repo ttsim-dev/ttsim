@@ -26,15 +26,17 @@ if TYPE_CHECKING:
 
     import networkx as nx
 
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         NestedPolicyEnvironment,
-        NestedTargetDict,
-        QualNameColumnFunctions,
-        QualNameColumnFunctionsWithProcessedParamsAndScalars,
-        QualNameData,
-        QualNameDataColumns,
-        QualNamePolicyEnvironment,
-        QualNameTargetList,
+        NestedStrings,
+        OrderedQNames,
+        QNameCombinedEnvironment0,
+        QNameCombinedEnvironment1,
+        QNameCombinedEnvironment2,
+        QNameData,
+        QNameDataColumns,
+        QNamePolicyEnvironment,
+        UnorderedQNames,
     )
 
 
@@ -45,14 +47,14 @@ _DUMMY_COLUMN_OBJECT = ColumnObject(
 )
 
 
-def combined_environment__with_derived_functions_and_input_nodes(
+def combined_environment__with_derived_functions_and_processed_input_nodes(
     policy_environment: NestedPolicyEnvironment,
-    processed_data: QualNameData,
-    names__processed_data_columns: QualNameDataColumns,
-    targets__tree: NestedTargetDict,
-    names__top_level_namespace: set[str],
-    names__grouping_levels: tuple[str, ...],
-) -> QualNamePolicyEnvironment:
+    processed_data: QNameData,
+    names__processed_data_columns: QNameDataColumns,
+    targets__tree: NestedStrings,
+    names__top_level_namespace: UnorderedQNames,
+    names__grouping_levels: OrderedQNames,
+) -> QNameCombinedEnvironment0:
     """Return a flat policy environment with derived functions.
 
     Three steps:
@@ -69,11 +71,11 @@ def combined_environment__with_derived_functions_and_input_nodes(
         qual_name_policy_environment=flat,
         targets=dt.qual_names(targets__tree),
         names__processed_data_columns=names__processed_data_columns,
-        groupings=names__grouping_levels,
+        grouping_levels=names__grouping_levels,
     )
     out = {}
     for n, f in flat_with_derived.items():
-        # Put scalar data into the policy environment, else skip the key
+        # Put scalars into the policy environment, else skip the key
         if n in processed_data:
             if isinstance(processed_data[n], int | float | bool):
                 out[n] = processed_data[n]
@@ -85,8 +87,8 @@ def combined_environment__with_derived_functions_and_input_nodes(
 
 def _remove_tree_logic_from_policy_environment(
     policy_environment: NestedPolicyEnvironment,
-    names__top_level_namespace: set[str],
-) -> QualNamePolicyEnvironment:
+    names__top_level_namespace: UnorderedQNames,
+) -> QNamePolicyEnvironment:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
     for name, obj in dt.flatten_to_qual_names(policy_environment).items():
@@ -101,11 +103,11 @@ def _remove_tree_logic_from_policy_environment(
 
 
 def _add_derived_functions(
-    qual_name_policy_environment: QualNamePolicyEnvironment,
-    targets: QualNameTargetList,
-    names__processed_data_columns: QualNameDataColumns,
-    groupings: tuple[str, ...],
-) -> QualNameColumnFunctions:
+    qual_name_policy_environment: QNamePolicyEnvironment,
+    targets: OrderedQNames,
+    names__processed_data_columns: QNameDataColumns,
+    grouping_levels: OrderedQNames,
+) -> UnorderedQNames:
     """Return a mapping of qualified names to functions operating on columns.
 
     Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
@@ -137,8 +139,8 @@ def _add_derived_functions(
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment=qual_name_policy_environment,
-        names__processed_data_columns=names__processed_data_columns,
-        groupings=groupings,
+        processed_data_columns=names__processed_data_columns,
+        grouping_levels=grouping_levels,
     )
     column_functions = {
         k: v
@@ -154,7 +156,7 @@ def _add_derived_functions(
         column_functions=column_functions,
         names__processed_data_columns=names__processed_data_columns,
         targets=targets,
-        groupings=groupings,
+        grouping_levels=grouping_levels,
     )
     out = {
         **qual_name_policy_environment,
@@ -165,31 +167,23 @@ def _add_derived_functions(
     return out
 
 
-def _apply_rounding(element: Any) -> Any:
-    return (
-        element.rounding_spec.apply_rounding(element)
-        if getattr(element, "rounding_spec", False)
-        else element
-    )
-
-
 def combined_environment__with_processed_params_and_scalars(
-    combined_environment__with_derived_functions_and_input_nodes: QualNamePolicyEnvironment,
-) -> QualNameColumnFunctionsWithProcessedParamsAndScalars:
+    combined_environment__with_derived_functions_and_processed_input_nodes: QNameCombinedEnvironment0,
+) -> QNameCombinedEnvironment1:
     """Process the parameters and param functions, remove RawParams from the tree."""
     params = {
         k: v
-        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
+        for k, v in combined_environment__with_derived_functions_and_processed_input_nodes.items()
         if isinstance(v, ParamObject)
     }
     scalars = {
         k: v
-        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
+        for k, v in combined_environment__with_derived_functions_and_processed_input_nodes.items()
         if isinstance(v, float | int | bool)
     }
     param_functions = {
         k: v
-        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
+        for k, v in combined_environment__with_derived_functions_and_processed_input_nodes.items()
         if isinstance(v, ParamFunction)
     }
     # Construct a function for the processing of all params.
@@ -213,7 +207,7 @@ def combined_environment__with_processed_params_and_scalars(
     return {
         **{
             k: v
-            for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
+            for k, v in combined_environment__with_derived_functions_and_processed_input_nodes.items()
             if not isinstance(v, RawParam)
         },
         **processed_params,
@@ -221,22 +215,22 @@ def combined_environment__with_processed_params_and_scalars(
 
 
 def combined_environment__with_partialled_params_and_scalars(
-    combined_environment__with_processed_params_and_scalars: QualNameColumnFunctionsWithProcessedParamsAndScalars,
+    combined_environment__with_processed_params_and_scalars: QNameCombinedEnvironment1,
     rounding: bool,
-) -> QualNameColumnFunctions:
+) -> QNameCombinedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
 
     Parameters
     ----------
-    functions
-        The functions dict with qualified function names as keys and functions as
-        values.
-    params
-        Dictionary of parameters.
+    combined_environment__with_processed_params_and_scalars
+        The tree with qualified names as keys and column objects or processed
+        parameters / scalars as values.
+    rounding
+        Whether to apply rounding to functions.
 
     Returns
     -------
-    Functions tree with parameters partialled.
+    Tree with column functions that depend on columns only.
 
     """
     processed_functions = {}
@@ -265,9 +259,17 @@ def combined_environment__with_partialled_params_and_scalars(
     return processed_functions
 
 
+def _apply_rounding(element: Any) -> Any:
+    return (
+        element.rounding_spec.apply_rounding(element)
+        if getattr(element, "rounding_spec", False)
+        else element
+    )
+
+
 def tax_transfer_dag(
-    combined_environment__with_partialled_params_and_scalars: QualNameColumnFunctions,
-    names__target_columns: QualNameTargetList,
+    combined_environment__with_partialled_params_and_scalars: QNameCombinedEnvironment2,
+    names__target_columns: OrderedQNames,
 ) -> nx.DiGraph:
     """Thin wrapper around `create_dag`."""
     return create_dag(
@@ -278,12 +280,11 @@ def tax_transfer_dag(
 
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
-    combined_environment__with_partialled_params_and_scalars: QualNameColumnFunctions,
-    names__target_columns: QualNameTargetList,
+    combined_environment__with_partialled_params_and_scalars: QNameCombinedEnvironment2,
+    names__target_columns: OrderedQNames,
     # backend: numpy | jax,
-) -> Callable[[QualNameData], QualNameData]:
+) -> Callable[[QNameData], QNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
-
     ttf_with_keyword_args = concatenate_functions(
         dag=tax_transfer_dag,
         functions=combined_environment__with_partialled_params_and_scalars,
@@ -310,7 +311,7 @@ def tax_transfer_function(
         ttf_with_keyword_args = functools.partial(ttf_with_keyword_args, **static_args)
         ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 
-    def wrapper(processed_data: QualNameData) -> QualNameData:
+    def wrapper(processed_data: QNameData) -> QNameData:
         return ttf_with_keyword_args(**processed_data)
 
     return wrapper

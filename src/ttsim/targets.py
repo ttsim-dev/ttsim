@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         NestedTargetDict,
-        QualNameTargetList,
+        OrderedQNames,
     )
 
 
-def targets__qname(targets__tree: NestedTargetDict) -> QualNameTargetList:
+def targets__qname(targets__tree: NestedTargetDict) -> OrderedQNames:
     """All targets in their qualified name-representation."""
     return dt.qual_names(targets__tree)

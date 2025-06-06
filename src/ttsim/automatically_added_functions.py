@@ -32,20 +32,20 @@ if TYPE_CHECKING:
     import re
     from collections.abc import Callable
 
-    from ttsim.tt_dag_elements.typing import (
-        QualNameColumnFunctions,
-        QualNameDataColumns,
-        QualNamePolicyEnvironment,
-        QualNameTargetList,
+    from ttsim.typing import (
+        OrderedQNames,
+        QNameDataColumns,
+        QNamePolicyEnvironment,
+        UnorderedQNames,
     )
 
 
 TIME_UNIT_LABELS = {
-    "y": "year",
-    "q": "quarter",
-    "m": "month",
-    "w": "week",
-    "d": "day",
+    "y": "Year",
+    "q": "Quarter",
+    "m": "Month",
+    "w": "Week",
+    "d": "Day",
 }
 
 _Q_PER_Y = 4
@@ -399,7 +399,7 @@ _time_conversion_functions = {
 
 
 def _convertibles(
-    qual_name_policy_environment: QualNamePolicyEnvironment,
+    qual_name_policy_environment: QNamePolicyEnvironment,
 ) -> dict[str, ColumnObject | ParamFunction | ScalarParam]:
     return {
         qn: e
@@ -413,10 +413,10 @@ def _convertibles(
 
 
 def create_time_conversion_functions(
-    qual_name_policy_environment: QualNamePolicyEnvironment,
-    names__processed_data_columns: QualNameDataColumns,
-    groupings: tuple[str, ...],
-) -> QualNameColumnFunctions:
+    qual_name_policy_environment: QNamePolicyEnvironment,
+    processed_data_columns: QNameDataColumns,
+    grouping_levels: OrderedQNames,
+) -> UnorderedQNames:
     """
     Create functions converting elements of the policy environment to other time units.
 
@@ -450,18 +450,20 @@ def create_time_conversion_functions(
     functions
         The functions dict with qualified function names as keys and functions as
         values.
-    names__processed_data_columns
+    processed_data_columns
         The data columns, represented by qualified names.
+    grouping_levels
+        The grouping levels.
 
     Returns
     -------
     The functions dict with the new time conversion functions.
     """
 
-    all_time_units = tuple(TIME_UNIT_LABELS)
+    time_units = tuple(TIME_UNIT_LABELS)
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        groupings=groupings,
-        time_units=all_time_units,
+        grouping_levels=grouping_levels,
+        time_units=time_units,
     )
     # Map base name and grouping suffix to time conversion inputs.
     bngs_to_time_conversion_inputs = {}
@@ -481,19 +483,19 @@ def create_time_conversion_functions(
                 "element": element,
                 "time_unit": match.group("time_unit"),
                 "grouping_suffix": bngs[1],
-                "all_time_units": all_time_units,
+                "time_units": time_units,
             }
 
     fail_if__multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
     converted_elements: dict[str, ColumnObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
-        for processed_data in names__processed_data_columns:
+        for processed_data in processed_data_columns:
             # If base_name is in provided data, base time conversions on that.
             if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
-                all_time_units=all_time_units,
-                groupings=groupings,
+                all_time_units=time_units,
+                grouping_levels=grouping_levels,
             ).fullmatch(processed_data):
                 inputs["qual_name_source"] = processed_data
                 inputs["time_unit"] = pattern_specific.group("time_unit")
@@ -511,7 +513,7 @@ def _create_one_set_of_time_conversion_functions(
     element: ColumnObject,
     time_unit: str,
     grouping_suffix: str,
-    all_time_units: tuple[str, ...],
+    time_units: OrderedQNames,
 ) -> dict[str, TimeConversionFunction]:
     result: dict[str, TimeConversionFunction] = {}
     dependencies = (
@@ -520,7 +522,7 @@ def _create_one_set_of_time_conversion_functions(
         else set()
     )
 
-    for target_time_unit in [tu for tu in all_time_units if tu != time_unit]:
+    for target_time_unit in [tu for tu in time_units if tu != time_unit]:
         new_name = f"{base_name}_{target_time_unit}{grouping_suffix}"
 
         # Without the following check, we could create cycles in the DAG: Consider a
@@ -562,12 +564,12 @@ def _create_function_for_time_unit(
 
 
 def create_agg_by_group_functions(
-    column_functions: QualNameColumnFunctions,
-    names__processed_data_columns: QualNameDataColumns,
-    targets: QualNameTargetList,
-    groupings: tuple[str, ...],
-) -> QualNameColumnFunctions:
-    gp = group_pattern(groupings)
+    column_functions: UnorderedQNames,
+    names__processed_data_columns: QNameDataColumns,
+    targets: OrderedQNames,
+    grouping_levels: OrderedQNames,
+) -> UnorderedQNames:
+    gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
         **dict.fromkeys(names__processed_data_columns),
@@ -613,9 +615,9 @@ def create_agg_by_group_functions(
 
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(
-    functions: QualNameColumnFunctions,
+    functions: UnorderedQNames,
     group_pattern: re.Pattern[str],
-) -> set[str]:
+) -> UnorderedQNames:
     """Get potential aggregation function names from function arguments.
 
     Parameters

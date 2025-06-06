@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from ttsim import join
 from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements import join
 
 
 @pytest.mark.parametrize(

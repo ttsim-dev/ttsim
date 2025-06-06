@@ -9,7 +9,7 @@ if TYPE_CHECKING:
         Regelbedarfsstufen,
     )
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function()

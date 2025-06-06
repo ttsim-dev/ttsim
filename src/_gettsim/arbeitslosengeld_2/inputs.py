@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import FKType, policy_input
+from ttsim.tt_dag_elements import FKType, policy_input
 
 
 @policy_input(start_date="2023-01-01")

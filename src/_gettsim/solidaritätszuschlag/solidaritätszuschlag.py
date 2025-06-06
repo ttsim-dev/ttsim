@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
+from ttsim.tt_dag_elements import (
+    PiecewisePolynomialParamValue,
+    piecewise_polynomial,
+    policy_function,
+)
 
 
 def solidaritätszuschlagstarif(

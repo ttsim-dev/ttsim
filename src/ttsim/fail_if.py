@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import itertools
 import textwrap
-import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -25,7 +24,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,
@@ -34,11 +33,12 @@ if TYPE_CHECKING:
         NestedPolicyEnvironment,
         NestedStrings,
         NestedTargetDict,
+        OrderedQNames,
         OrigParamSpec,
-        QualNameData,
-        QualNameDataColumns,
-        QualNamePolicyEnvironment,
-        QualNameTargetList,
+        QNameData,
+        QNameDataColumns,
+        QNamePolicyEnvironment,
+        UnorderedQNames,
     )
 
 
@@ -55,7 +55,7 @@ class ConflictingActivePeriodsError(Exception):
     def __init__(
         self,
         affected_column_objects: list[ColumnObject],
-        path: tuple[str, ...],
+        path: OrderedQNames,
         overlap_start: datetime.date,
         overlap_end: datetime.date,
     ) -> None:
@@ -83,60 +83,6 @@ class ConflictingActivePeriodsError(Exception):
         }
 
         Overlap from {self.overlap_start} to {self.overlap_end}."""
-
-
-class FunctionsAndDataColumnsOverlapWarning(UserWarning):
-    """
-    Warning that functions which compute columns overlap with existing columns.
-
-    Parameters
-    ----------
-    columns_overriding_functions : set[str]
-        Names of columns in the data that override hard-coded functions.
-    """
-
-    def __init__(self, columns_overriding_functions: list[str]) -> None:
-        n_cols = len(columns_overriding_functions)
-        if n_cols == 1:
-            first_part = format_errors_and_warnings("Your data provides the column:")
-            second_part = format_errors_and_warnings(
-                """
-                This is already present among the hard-coded functions of the taxes and
-                transfers system. If you want this data column to be used instead of
-                calculating it within TTSIM you need not do anything. If you want this
-                data column to be calculated by hard-coded functions, remove it from the
-                *data* you pass to TTSIM. You need to pick one option for each column
-                that appears in the list above.
-                """
-            )
-        else:
-            first_part = format_errors_and_warnings("Your data provides the columns:")
-            second_part = format_errors_and_warnings(
-                """
-                These are already present among the hard-coded functions of the taxes
-                and transfers system. If you want a data column to be used instead of
-                calculating it within TTSIM you do not need to do anything. If you
-                want data columns to be calculated by hard-coded functions, remove them
-                from the *data* you pass to TTSIM. You need to pick one option for
-                each column that appears in the list above.
-                """
-            )
-        formatted = format_list_linewise(columns_overriding_functions)
-        how_to_ignore = format_errors_and_warnings(
-            """
-            If you want to ignore this warning, add the following code to your script
-            before calling TTSIM:
-
-                import warnings
-                from ttsim import FunctionsAndDataColumnsOverlapWarning
-
-                warnings.filterfilters(
-                    "ignore",
-                    category=FunctionsAndDataColumnsOverlapWarning
-                )
-            """
-        )
-        super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
 
 
 @dataclass(frozen=True)
@@ -259,7 +205,7 @@ def fail_if__any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
     targets__tree: NestedTargetDict,
-    names__top_level_namespace: set[str],
+    names__top_level_namespace: UnorderedQNames,
 ) -> None:
     """Thin wrapper around `dt.fail_if__paths_are_invalid`."""
     return dt.fail_if__paths_are_invalid(
@@ -349,9 +295,9 @@ def fail_if__environment_is_invalid(
 
 
 def fail_if__foreign_keys_are_invalid_in_data(
-    names__root_nodes: set[str],
-    processed_data: QualNameData,
-    combined_environment__with_derived_functions_and_input_nodes: QualNamePolicyEnvironment,
+    names__root_nodes: UnorderedQNames,
+    processed_data: QNameData,
+    combined_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -366,7 +312,7 @@ def fail_if__foreign_keys_are_invalid_in_data(
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
-        for k, v in combined_environment__with_derived_functions_and_input_nodes.items()
+        for k, v in combined_environment__with_derived_functions_and_processed_input_nodes.items()
         if isinstance(v, PolicyInput | ColumnFunction)
     }
 
@@ -422,9 +368,9 @@ def fail_if__group_ids_are_outside_top_level_namespace(
 
 
 def fail_if__group_variables_are_not_constant_within_groups(
-    names__grouping_levels: tuple[str, ...],
-    names__root_nodes: set[str],
-    processed_data: QualNameData,
+    names__grouping_levels: OrderedQNames,
+    names__root_nodes: UnorderedQNames,
+    processed_data: QNameData,
 ) -> None:
     """
     Check that group variables are constant within each group.
@@ -433,15 +379,15 @@ def fail_if__group_variables_are_not_constant_within_groups(
     ----------
     data
         Dictionary of data.
-    groupings
-        The groupings available in the policy environment.
+    grouping_levels
+        The grouping levels available in the policy environment.
     """
     faulty_data_columns = []
 
     for name in names__root_nodes:
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            groupings=names__grouping_levels,
+            grouping_levels=names__grouping_levels,
         )
         if group_by_id in processed_data:
             group_by_id_series = pd.Series(processed_data[group_by_id])
@@ -467,7 +413,7 @@ def fail_if__group_variables_are_not_constant_within_groups(
 
 
 def fail_if__incompatible_objects_in_nested_data(
-    paths_to_data: QualNameData,
+    paths_to_data: QNameData,
 ) -> None:
     """Fail if the nested data contains incompatible objects."""
     _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
@@ -601,7 +547,7 @@ def fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name(
 
 def fail_if__root_nodes_are_missing(
     tax_transfer_dag: nx.DiGraph,
-    processed_data: QualNameData,
+    processed_data: QNameData,
 ) -> None:
     """Fail if root nodes are missing.
 
@@ -637,9 +583,9 @@ def fail_if__root_nodes_are_missing(
 
 
 def fail_if__targets_are_not_in_policy_environment_or_data(
-    policy_environment: QualNamePolicyEnvironment,
-    names__processed_data_columns: QualNameDataColumns,
-    targets__qname: QualNameTargetList,
+    policy_environment: QNamePolicyEnvironment,
+    names__processed_data_columns: QNameDataColumns,
+    targets__qname: OrderedQNames,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -722,25 +668,6 @@ def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg,
         ]
         """
     ).format(formatted_list=formatted_list)
-
-
-def warn_if__functions_and_data_columns_overlap(
-    policy_environment: NestedPolicyEnvironment,
-    names__processed_data_columns: QualNameDataColumns,
-) -> None:
-    """Warn if functions are overridden by data."""
-    overridden_elements = sorted(
-        {
-            col
-            for col in names__processed_data_columns
-            if col in dt.flatten_to_qual_names(policy_environment)
-        }
-    )
-    if len(overridden_elements) > 0:
-        warnings.warn(
-            FunctionsAndDataColumnsOverlapWarning(overridden_elements),
-            stacklevel=3,
-        )
 
 
 def _param_with_active_periods(

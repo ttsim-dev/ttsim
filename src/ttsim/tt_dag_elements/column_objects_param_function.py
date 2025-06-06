@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from ttsim.config import numpy_or_jax as np
-    from ttsim.tt_dag_elements.typing import DashedISOString, GenericCallable
+    from ttsim.typing import DashedISOString, GenericCallable, UnorderedQNames
 
 FunArgTypes = ParamSpec("FunArgTypes")
 ReturnType = TypeVar("ReturnType")
@@ -89,7 +89,7 @@ class ColumnObject:
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: set[str],
+        names__top_level_namespace: UnorderedQNames,
     ) -> ColumnObject:
         """Remove tree logic from the function and update the function signature."""
         raise NotImplementedError("Subclasses must implement this method.")
@@ -118,7 +118,7 @@ class PolicyInput(ColumnObject):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],  # noqa: ARG002
-        names__top_level_namespace: set[str],  # noqa: ARG002
+        names__top_level_namespace: UnorderedQNames,  # noqa: ARG002
     ) -> PolicyInput:
         return self
 
@@ -185,7 +185,7 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> No
         "__closure__",
         "__doc__",
         "__name__",
-        "__qualname__",
+        "__QName__",
         "__module__",
         "__annotations__",
         "__type_params__",
@@ -237,7 +237,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
         return self.function(*args, **kwargs)
 
     @property
-    def dependencies(self) -> set[str]:
+    def dependencies(self) -> UnorderedQNames:
         """The names of input variables that the function depends on."""
         return set(inspect.signature(self).parameters)
 
@@ -273,7 +273,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: set[str],
+        names__top_level_namespace: UnorderedQNames,
     ) -> PolicyFunction:
         """Remove tree logic from the function and update the function signature."""
         return PolicyFunction(
@@ -373,7 +373,7 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: set[str],
+        names__top_level_namespace: UnorderedQNames,
     ) -> GroupCreationFunction:
         """Remove tree logic from the function and update the function signature."""
         return GroupCreationFunction(
@@ -442,7 +442,7 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: set[str],
+        names__top_level_namespace: UnorderedQNames,
     ) -> AggByGroupFunction:
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
@@ -511,7 +511,9 @@ def agg_by_group_function(
     return inner
 
 
-def _fail_if__group_id_is_invalid(group_ids: set[str], orig_location: str) -> None:
+def _fail_if__group_id_is_invalid(
+    group_ids: UnorderedQNames, orig_location: str
+) -> None:
     if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
@@ -520,7 +522,9 @@ def _fail_if__group_id_is_invalid(group_ids: set[str], orig_location: str) -> No
         )
 
 
-def _fail_if__other_arg_is_present(other_args: set[str], orig_location: str) -> None:
+def _fail_if__other_arg_is_present(
+    other_args: UnorderedQNames, orig_location: str
+) -> None:
     if other_args:
         raise ValueError(
             "There must be no argument besides identifiers for counting. Got: "
@@ -528,7 +532,9 @@ def _fail_if__other_arg_is_present(other_args: set[str], orig_location: str) -> 
         )
 
 
-def _fail_if__other_arg_is_invalid(other_args: set[str], orig_location: str) -> None:
+def _fail_if__other_arg_is_invalid(
+    other_args: UnorderedQNames, orig_location: str
+) -> None:
     if len(other_args) != 1:
         raise ValueError(
             "There must be exactly one argument besides identifiers for aggregations. "
@@ -566,7 +572,7 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: set[str],
+        names__top_level_namespace: UnorderedQNames,
     ) -> AggByGroupFunction:
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
@@ -647,7 +653,7 @@ def agg_by_p_id_function(
     return inner
 
 
-def _fail_if__p_id_is_not_present(args: set[str], orig_location: str) -> None:
+def _fail_if__p_id_is_not_present(args: UnorderedQNames, orig_location: str) -> None:
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
@@ -655,7 +661,9 @@ def _fail_if__p_id_is_not_present(args: set[str], orig_location: str) -> None:
         )
 
 
-def _fail_if__other_p_id_is_invalid(other_p_ids: set[str], orig_location: str) -> None:
+def _fail_if__other_p_id_is_invalid(
+    other_p_ids: UnorderedQNames, orig_location: str
+) -> None:
     if len(other_p_ids) != 1:
         raise ValueError(
             "Require exactly one identifier starting with 'p_id_' for "
@@ -693,7 +701,7 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: set[str],
+        names__top_level_namespace: UnorderedQNames,
     ) -> TimeConversionFunction:
         """Remove tree logic from the function and update the function signature."""
         return TimeConversionFunction(
@@ -802,7 +810,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         return self.function(*args, **kwargs)
 
     @property
-    def dependencies(self) -> set[str]:
+    def dependencies(self) -> UnorderedQNames:
         """The names of input variables that the function depends on."""
         return set(inspect.signature(self).parameters)
 
@@ -818,7 +826,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: set[str],
+        names__top_level_namespace: UnorderedQNames,
     ) -> ParamFunction:  # type: ignore[type-arg]
         """Remove tree logic from the function and update the function signature."""
         return ParamFunction(

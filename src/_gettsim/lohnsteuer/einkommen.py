@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     RoundingSpec,
     param_function,

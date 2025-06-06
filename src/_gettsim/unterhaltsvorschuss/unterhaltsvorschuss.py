@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from _gettsim.param_types import Altersgrenzen, SatzMitAltersgrenzen
-from ttsim import (
+from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
     agg_by_p_id_function,
@@ -15,8 +15,8 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import ConsecutiveInt1dLookupTableParamValue, RawParam
-    from ttsim.tt_dag_elements.typing import TTSIMArray
+    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, RawParam
+    from ttsim.typing import TTSIMArray
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

@@ -4,17 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.shared import upsert_tree
+from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     get_piecewise_parameters,
     param_function,
     piecewise_polynomial,
     policy_function,
 )
-from ttsim.shared import upsert_tree
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import RawParam
+    from ttsim.typing import RawParam
 
 
 @policy_function(start_date="2005-01-01")

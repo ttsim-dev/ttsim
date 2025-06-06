@@ -17,19 +17,19 @@ from ttsim.shared import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import (
+    from ttsim.typing import (
         NestedPolicyEnvironment,
-        QualNameColumnFunctions,
-        QualNameData,
-        QualNamePolicyEnvironment,
-        QualNameTargetList,
+        OrderedQNames,
+        QNameData,
+        QNamePolicyEnvironment,
+        UnorderedQNames,
     )
 
 
 def names__target_columns(
-    combined_environment__with_partialled_params_and_scalars: QualNameColumnFunctions,
-    targets__qname: QualNameTargetList,
-) -> QualNameTargetList:
+    combined_environment__with_partialled_params_and_scalars: UnorderedQNames,
+    targets__qname: OrderedQNames,
+) -> OrderedQNames:
     """All targets that are column functions."""
     return [
         t
@@ -39,24 +39,24 @@ def names__target_columns(
 
 
 def names__target_params(
-    combined_environment__with_derived_functions_and_input_nodes: QualNamePolicyEnvironment,  # noqa: E501
-    targets__qname: QualNameTargetList,
-    names__target_columns: QualNameTargetList,
-) -> QualNameTargetList:
+    combined_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,  # noqa: E501
+    targets__qname: OrderedQNames,
+    names__target_columns: OrderedQNames,
+) -> OrderedQNames:
     possible_targets = set(targets__qname) - set(names__target_columns)
     return [
         t
         for t in targets__qname
         if t in possible_targets
-        and t in combined_environment__with_derived_functions_and_input_nodes
+        and t in combined_environment__with_derived_functions_and_processed_input_nodes
     ]
 
 
 def names__targets_from_input_data(
-    targets__qname: QualNameTargetList,
-    names__target_columns: QualNameTargetList,
-    names__target_params: QualNameTargetList,
-) -> QualNameTargetList:
+    targets__qname: OrderedQNames,
+    names__target_columns: OrderedQNames,
+    names__target_params: OrderedQNames,
+) -> OrderedQNames:
     possible_targets = (
         set(targets__qname) - set(names__target_columns) - set(names__target_params)
     )
@@ -64,8 +64,8 @@ def names__targets_from_input_data(
 
 
 def names__grouping_levels(
-    policy_environment: QualNamePolicyEnvironment,
-) -> tuple[str, ...]:
+    policy_environment: QNamePolicyEnvironment,
+) -> OrderedQNames:
     """The grouping levels of the policy environment."""
     return tuple(
         name.rsplit("_", 1)[0]
@@ -76,14 +76,15 @@ def names__grouping_levels(
 
 def names__top_level_namespace(
     policy_environment: NestedPolicyEnvironment,
-    names__grouping_levels: tuple[str, ...],
-) -> set[str]:
+    names__grouping_levels: OrderedQNames,
+) -> UnorderedQNames:
     """Get the top level namespace.
 
     Parameters
     ----------
-    environment:
+    policy_environment:
         The policy environment.
+
 
     Returns
     -------
@@ -91,8 +92,8 @@ def names__top_level_namespace(
         The top level namespace.
     """
 
-    time_units = tuple(TIME_UNIT_LABELS.keys())
-    direct_top_level_names = set(policy_environment.keys())
+    time_units = tuple(TIME_UNIT_LABELS)
+    direct_top_level_names = set(policy_environment)
 
     # Do not create variations for lower-level namespaces.
     top_level_objects_for_variations = direct_top_level_names - {
@@ -100,8 +101,8 @@ def names__top_level_namespace(
     }
 
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        groupings=names__grouping_levels,
         time_units=time_units,
+        grouping_levels=names__grouping_levels,
     )
     bngs_to_variations = {}
     all_top_level_names = direct_top_level_names.copy()
@@ -131,14 +132,14 @@ def names__top_level_namespace(
     return all_top_level_names
 
 
-def names__processed_data_columns(processed_data: QualNameData) -> set[str]:
+def names__processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
     return set(processed_data.keys())
 
 
 def names__root_nodes(
     tax_transfer_dag: nx.DiGraph,
-    processed_data: QualNameData,
-) -> set[str]:
+    processed_data: QNameData,
+) -> UnorderedQNames:
     """Names of the columns in `processed_data` required for the tax transfer function.
 
     Parameters
