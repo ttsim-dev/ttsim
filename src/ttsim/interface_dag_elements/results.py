@@ -6,6 +6,7 @@ import dags.tree as dt
 
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_mapped_columns,
+    nested_data_to_df_with_nested_columns,
 )
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
@@ -28,7 +29,7 @@ def tree(raw_results__combined: QNameData) -> NestedData:
 
 
 @interface_function()
-def df(
+def df_with_mapper(
     tree: NestedData,
     input_data__tree: NestedData,
     targets__tree_with_map_to_df: NestedStrings,
@@ -50,4 +51,24 @@ def df(
         nested_data_to_convert=tree,
         nested_outputs_df_column_names=targets__tree_with_map_to_df,
         data_with_p_id=input_data__tree,
+    )
+
+
+@interface_function()
+def df_with_nested_columns(tree: NestedData) -> pd.DataFrame:
+    """The results DataFrame with mapped column names.
+
+    Args:
+        tree:
+            The results of a TTSIM run.
+        input_data__tree:
+            The data tree of the TTSIM run.
+        nested_outputs_df_column_names:
+            A tree that maps paths (sequence of keys) to data columns names.
+
+    Returns:
+        A DataFrame.
+    """
+    return nested_data_to_df_with_nested_columns(
+        nested_data_to_convert=tree,
     )

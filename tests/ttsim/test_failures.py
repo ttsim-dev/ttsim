@@ -25,7 +25,7 @@ from ttsim.interface_dag_elements.fail_if import (
     group_variables_are_not_constant_within_groups,
     input_data_tree_is_invalid,
     input_df_with_mapper_has_bool_or_numeric_column_names,
-    mapper_has_incorrect_format,
+    input_mapper_has_incorrect_format,
     name_of_last_branch_element_is_not_the_functions_leaf_name,
     non_convertible_objects_in_results_tree,
     targets_are_not_in_policy_environment_or_data,
@@ -705,11 +705,11 @@ def test_fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(df):
         ),
     ],
 )
-def test_fail_if_mapper_has_incorrect_format(
+def test_fail_if_input_mapper_has_incorrect_format(
     input_data__df_with_mapper__mapper, expected_error_message
 ):
     with pytest.raises(TypeError, match=expected_error_message):
-        mapper_has_incorrect_format(input_data__df_with_mapper__mapper)
+        input_mapper_has_incorrect_format(input_data__df_with_mapper__mapper)
 
 
 @pytest.mark.parametrize(

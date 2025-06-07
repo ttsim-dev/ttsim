@@ -484,7 +484,7 @@ def input_df_with_mapper_has_bool_or_numeric_column_names(
 
 
 @interface_function()
-def mapper_has_incorrect_format(
+def input_mapper_has_incorrect_format(
     input_data__df_with_mapper__mapper: NestedStrings,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""

@@ -43,7 +43,7 @@ from ttsim.interface_dag_elements.fail_if import (
     targets_tree_is_invalid,
     format_list_linewise,
     input_df_with_mapper_has_bool_or_numeric_column_names,
-    mapper_has_incorrect_format,
+    input_mapper_has_incorrect_format,
     data_paths_are_missing_in_paths_to_column_names,
     non_convertible_objects_in_results_tree,
 )
