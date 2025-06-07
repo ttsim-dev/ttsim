@@ -7,9 +7,7 @@ import networkx as nx
 from ttsim.interface_dag_elements.automatically_added_functions import (
     TIME_UNIT_LABELS,
 )
-from ttsim.interface_dag_elements.fail_if import (
-    fail_if__multiple_time_units_for_same_base_name_and_group,
-)
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
@@ -26,44 +24,57 @@ if TYPE_CHECKING:
     )
 
 
-def names__target_columns(
-    environment_with_data__with_partialled_params_and_scalars: UnorderedQNames,
+def fail_if_multiple_time_units_for_same_base_name_and_group(
+    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
+) -> None:
+    invalid = {
+        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
+    }
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
+
+
+@interface_function()
+def target_columns(
+    specialized_environment__with_partialled_params_and_scalars: UnorderedQNames,
     targets__qname: OrderedQNames,
 ) -> OrderedQNames:
     """All targets that are column functions."""
     return [
         t
         for t in targets__qname
-        if t in environment_with_data__with_partialled_params_and_scalars
+        if t in specialized_environment__with_partialled_params_and_scalars
     ]
 
 
-def names__target_params(
-    environment_with_data__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,  # noqa: E501
+@interface_function()
+def target_params(
+    specialized_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,  # noqa: E501
     targets__qname: OrderedQNames,
-    names__target_columns: OrderedQNames,
+    target_columns: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(names__target_columns)
+    possible_targets = set(targets__qname) - set(target_columns)
     return [
         t
         for t in targets__qname
         if t in possible_targets
-        and t in environment_with_data__with_derived_functions_and_processed_input_nodes
+        and t
+        in specialized_environment__with_derived_functions_and_processed_input_nodes
     ]
 
 
-def names__targets_from_input_data(
+@interface_function()
+def targets_from_input_data(
     targets__qname: OrderedQNames,
-    names__target_columns: OrderedQNames,
-    names__target_params: OrderedQNames,
+    target_columns: OrderedQNames,
+    target_params: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = (
-        set(targets__qname) - set(names__target_columns) - set(names__target_params)
-    )
+    possible_targets = set(targets__qname) - set(target_columns) - set(target_params)
     return [t for t in targets__qname if t in possible_targets]
 
 
-def names__grouping_levels(
+@interface_function()
+def grouping_levels(
     policy_environment: QNamePolicyEnvironment,
 ) -> OrderedQNames:
     """The grouping levels of the policy environment."""
@@ -74,9 +85,10 @@ def names__grouping_levels(
     )
 
 
-def names__top_level_namespace(
+@interface_function()
+def top_level_namespace(
     policy_environment: NestedPolicyEnvironment,
-    names__grouping_levels: OrderedQNames,
+    grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
     """Get the top level namespace.
 
@@ -88,7 +100,7 @@ def names__top_level_namespace(
 
     Returns
     -------
-    names__top_level_namespace:
+    top_level_namespace:
         The top level namespace.
     """
 
@@ -102,7 +114,7 @@ def names__top_level_namespace(
 
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         time_units=time_units,
-        grouping_levels=names__grouping_levels,
+        grouping_levels=grouping_levels,
     )
     bngs_to_variations = {}
     all_top_level_names = direct_top_level_names.copy()
@@ -117,34 +129,36 @@ def names__top_level_namespace(
                 bngs_to_variations[bngs].append(name)
             for time_unit in time_units:
                 all_top_level_names.add(f"{bngs[0]}_{time_unit}{bngs[1]}")
-    fail_if__multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
+    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
-    gp = group_pattern(names__grouping_levels)
+    gp = group_pattern(grouping_levels)
     potential_base_names = {n for n in all_top_level_names if not gp.match(n)}
 
     for name in potential_base_names:
-        for g in names__grouping_levels:
+        for g in grouping_levels:
             all_top_level_names.add(f"{name}_{g}")
 
     # Add num_segments to grouping variables
-    for g in names__grouping_levels:
+    for g in grouping_levels:
         all_top_level_names.add(f"{g}_id_num_segments")
     return all_top_level_names
 
 
-def names__processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
+@interface_function()
+def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
     return set(processed_data.keys())
 
 
-def names__root_nodes(
-    tax_transfer_dag: nx.DiGraph,
+@interface_function()
+def root_nodes(
+    specialized_environment__tax_transfer_dag: nx.DiGraph,
     processed_data: QNameData,
 ) -> UnorderedQNames:
     """Names of the columns in `processed_data` required for the tax transfer function.
 
     Parameters
     ----------
-    tax_transfer_dag:
+    specialized_environment__tax_transfer_dag:
         The tax transfer DAG.
     processed_data:
         The processed data.
@@ -157,7 +171,9 @@ def names__root_nodes(
 
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
-        tax_transfer_dag, filter_node=lambda n: tax_transfer_dag.in_degree(n) == 0
+        specialized_environment__tax_transfer_dag,
+        filter_node=lambda n: specialized_environment__tax_transfer_dag.in_degree(n)
+        == 0,
     ).nodes
 
     # Restrict the passed data to the subset that is actually used.

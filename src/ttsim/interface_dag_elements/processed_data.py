@@ -5,11 +5,13 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 
 from ttsim.config import numpy_or_jax as np
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import NestedData, QNameData
 
 
+@interface_function(in_top_level_namespace=True)
 def processed_data(
     input_data__tree: NestedData,
 ) -> QNameData:

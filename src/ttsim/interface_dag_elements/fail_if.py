@@ -12,6 +12,7 @@ import optree
 import pandas as pd
 
 from ttsim.config import numpy_or_jax as np
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
 from ttsim.tt_dag_elements.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -151,7 +152,8 @@ def assert_valid_ttsim_pytree(
     _assert_valid_ttsim_pytree(tree, current_key=())
 
 
-def fail_if__active_periods_overlap(
+@interface_function()
+def active_periods_overlap(
     orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
     orig_tree_with_params: FlatOrigParamSpecs,
 ) -> None:
@@ -201,14 +203,15 @@ def fail_if__active_periods_overlap(
                 )
 
 
-def fail_if__any_paths_are_invalid(
+@interface_function()
+def any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
     targets__tree: NestedTargetDict,
     names__top_level_namespace: UnorderedQNames,
 ) -> None:
-    """Thin wrapper around `dt.fail_if__paths_are_invalid`."""
-    return dt.fail_if__paths_are_invalid(
+    """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
+    return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
         input_data__tree=input_data__tree,
         targets=targets__tree,
@@ -216,16 +219,15 @@ def fail_if__any_paths_are_invalid(
     )
 
 
-def fail_if__data_paths_are_missing_in_paths_to_column_names(
-    available_paths: list[str],
-    required_paths: list[str],
+@interface_function()
+def data_paths_are_missing_in_paths_to_column_names(
+    results__tree: NestedData,
+    targets__tree_with_map_to_df: NestedStrings,
 ) -> None:
     """Fail if the data paths are missing in the paths to column names."""
-    missing_paths = [
-        str(path)
-        for path in required_paths
-        if path not in available_paths and path != ("p_id",)
-    ]
+    paths_in_data = dt.flatten_to_tree_paths(results__tree)
+    paths_in_mapper = dt.flatten_to_tree_paths(targets__tree_with_map_to_df)
+    missing_paths = [str(p) for p in paths_in_mapper if p not in paths_in_data]
     if missing_paths:
         msg = format_errors_and_warnings(
             "Converting the nested data to a DataFrame failed because the following "
@@ -235,7 +237,8 @@ def fail_if__data_paths_are_missing_in_paths_to_column_names(
         raise ValueError(msg)
 
 
-def fail_if__input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
+@interface_function()
+def input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
     """
     Validate the basic structure of the data tree.
 
@@ -281,7 +284,8 @@ def fail_if__input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
         raise ValueError(message)
 
 
-def fail_if__environment_is_invalid(
+@interface_function()
+def environment_is_invalid(
     policy_environment: NestedPolicyEnvironment,
 ) -> None:
     """Validate that the environment is a pytree with supported types."""
@@ -294,10 +298,11 @@ def fail_if__environment_is_invalid(
     )
 
 
-def fail_if__foreign_keys_are_invalid_in_data(
+@interface_function()
+def foreign_keys_are_invalid_in_data(
     names__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    environment_with_data__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
+    specialized_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -312,7 +317,7 @@ def fail_if__foreign_keys_are_invalid_in_data(
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
-        for k, v in environment_with_data__with_derived_functions_and_processed_input_nodes.items()
+        for k, v in specialized_environment__with_derived_functions_and_processed_input_nodes.items()
         if isinstance(v, PolicyInput | ColumnFunction)
     }
 
@@ -350,7 +355,8 @@ def fail_if__foreign_keys_are_invalid_in_data(
                     raise ValueError(message)
 
 
-def fail_if__group_ids_are_outside_top_level_namespace(
+@interface_function()
+def group_ids_are_outside_top_level_namespace(
     policy_environment: NestedPolicyEnvironment,
 ) -> None:
     """Fail if group ids are outside the top level namespace."""
@@ -367,7 +373,8 @@ def fail_if__group_ids_are_outside_top_level_namespace(
         )
 
 
-def fail_if__group_variables_are_not_constant_within_groups(
+@interface_function()
+def group_variables_are_not_constant_within_groups(
     names__grouping_levels: OrderedQNames,
     names__root_nodes: UnorderedQNames,
     processed_data: QNameData,
@@ -412,14 +419,18 @@ def fail_if__group_variables_are_not_constant_within_groups(
         raise ValueError(msg)
 
 
-def fail_if__incompatible_objects_in_nested_data(
-    paths_to_data: QNameData,
+@interface_function()
+def non_convertible_objects_in_results_tree(
+    results__tree: NestedData,
 ) -> None:
-    """Fail if the nested data contains incompatible objects."""
+    """Fail if results should be converted to a DataFrame but contain non-convertible
+    objects."""
     _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
 
     faulty_paths = []
-    for path, data in paths_to_data.items():
+    # TODO: HM doesn't think this will work as is, we'll need to check the length of
+    # the data. Someone might request a policy parameter that is a 3-element array.
+    for path, data in dt.flatten_to_tree_paths(results__tree).items():
         if isinstance(data, (pd.Series, np.ndarray, list)):
             if all(isinstance(item, _numeric_types) for item in data):
                 continue
@@ -440,8 +451,9 @@ def fail_if__incompatible_objects_in_nested_data(
         raise TypeError(msg)
 
 
-def fail_if__input_df_with_mapper_has_bool_or_numeric_column_names(
-    df: pd.DataFrame,
+@interface_function()
+def input_df_with_mapper_has_bool_or_numeric_column_names(
+    input_data__df_with_mapper__df: pd.DataFrame,
 ) -> None:
     """Fail if the DataFrame has bool or numeric column names."""
     common_msg = format_errors_and_warnings(
@@ -450,10 +462,12 @@ def fail_if__input_df_with_mapper_has_bool_or_numeric_column_names(
         broadcasting.
         """
     )
-    bool_column_names = [col for col in df.columns if isinstance(col, bool)]
+    bool_column_names = [
+        col for col in input_data__df_with_mapper__df.columns if isinstance(col, bool)
+    ]
     numeric_column_names = [
         col
-        for col in df.columns
+        for col in input_data__df_with_mapper__df.columns
         if isinstance(col, (int, float)) or (isinstance(col, str) and col.isnumeric())
     ]
 
@@ -469,11 +483,12 @@ def fail_if__input_df_with_mapper_has_bool_or_numeric_column_names(
         raise ValueError(msg)
 
 
-def fail_if__mapper_has_incorrect_format(
-    inputs_tree_to_df_columns: NestedStrings,
+@interface_function()
+def mapper_has_incorrect_format(
+    input_data__df_with_mapper__mapper: NestedStrings,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
-    if not isinstance(inputs_tree_to_df_columns, dict):
+    if not isinstance(input_data__df_with_mapper__mapper, dict):
         msg = format_errors_and_warnings(
             """The inputs tree to column mapping must be a (nested) dictionary. Call
             `dags.tree.create_tree_with_input_types` to create a template."""
@@ -482,7 +497,10 @@ def fail_if__mapper_has_incorrect_format(
 
     non_string_paths = [
         str(path)
-        for path in optree.tree_paths(inputs_tree_to_df_columns, none_is_leaf=True)  # type: ignore[arg-type]
+        for path in optree.tree_paths(
+            input_data__df_with_mapper__mapper,  # type: ignore[arg-type]
+            none_is_leaf=True,
+        )
         if not all(isinstance(part, str) for part in path)
     ]
     if non_string_paths:
@@ -499,7 +517,7 @@ def fail_if__mapper_has_incorrect_format(
 
     incorrect_types = {
         k: type(v)
-        for k, v in dt.flatten_to_qual_names(inputs_tree_to_df_columns).items()
+        for k, v in dt.flatten_to_qual_names(input_data__df_with_mapper__mapper).items()
         if not isinstance(v, str | int | float | bool)
     }
     if incorrect_types:
@@ -517,17 +535,8 @@ def fail_if__mapper_has_incorrect_format(
         raise TypeError(msg)
 
 
-def fail_if__multiple_time_units_for_same_base_name_and_group(
-    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
-) -> None:
-    invalid = {
-        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
-    }
-    if invalid:
-        raise ValueError(f"Multiple time units for base names: {invalid}")
-
-
-def fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name(
+@interface_function()
+def name_of_last_branch_element_is_not_the_functions_leaf_name(
     functions_tree: NestedColumnObjectsParamFunctions,
 ) -> None:
     """Raise error if a PolicyFunction does not have the same leaf name as the last
@@ -545,15 +554,16 @@ def fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name(
             )
 
 
-def fail_if__root_nodes_are_missing(
-    tax_transfer_dag: nx.DiGraph,
+@interface_function()
+def root_nodes_are_missing(
+    specialized_environment__tax_transfer_dag: nx.DiGraph,
     processed_data: QNameData,
 ) -> None:
     """Fail if root nodes are missing.
 
     Parameters
     ----------
-    tax_transfer_dag
+    specialized_environment__tax_transfer_dag
         The DAG of taxes and transfers functions.
     processed_data
         The data tree in qualified name representation.
@@ -566,7 +576,9 @@ def fail_if__root_nodes_are_missing(
 
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
-        tax_transfer_dag, filter_node=lambda n: tax_transfer_dag.in_degree(n) == 0
+        specialized_environment__tax_transfer_dag,
+        filter_node=lambda n: specialized_environment__tax_transfer_dag.in_degree(n)
+        == 0,
     ).nodes
 
     missing_nodes = [
@@ -582,7 +594,8 @@ def fail_if__root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-def fail_if__targets_are_not_in_policy_environment_or_data(
+@interface_function()
+def targets_are_not_in_policy_environment_or_data(
     policy_environment: QNamePolicyEnvironment,
     names__processed_data_columns: QNameDataColumns,
     targets__qname: OrderedQNames,
@@ -618,7 +631,8 @@ def fail_if__targets_are_not_in_policy_environment_or_data(
         raise ValueError(msg)
 
 
-def fail_if__targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
+@interface_function()
+def targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """

@@ -11,11 +11,6 @@ from ttsim import (
     nested_data_to_df_with_mapped_columns,
 )
 from ttsim.tt_dag_elements import (
-    ConsecutiveInt1dLookupTableParam,
-    ConsecutiveInt1dLookupTableParamValue,
-    DictParam,
-    PiecewisePolynomialParam,
-    PiecewisePolynomialParamValue,
     ScalarParam,
     param_function,
     policy_function,
@@ -50,34 +45,6 @@ def int_param_function() -> int:
 _SOME_SCALAR_PARAM = ScalarParam(
     leaf_name="some_scalar_param",
     value=1,
-    **_GENERIC_PARAM_SPEC,
-)
-
-
-_SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
-    leaf_name="some_piecewise_polynomial_param",
-    value=PiecewisePolynomialParamValue(
-        thresholds=np.array([1, 2, 3]),
-        intercepts=np.array([1, 2, 3]),
-        rates=np.array([1, 2, 3]),
-    ),
-    **_GENERIC_PARAM_SPEC,
-)
-
-
-_SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM = ConsecutiveInt1dLookupTableParam(
-    leaf_name="some_consecutive_int_1d_lookup_table_param",
-    value=ConsecutiveInt1dLookupTableParamValue(
-        base_to_subtract=1,
-        values_to_look_up=np.array([1, 2, 3]),
-    ),
-    **_GENERIC_PARAM_SPEC,
-)
-
-
-_SOME_DICT_PARAM = DictParam(
-    leaf_name="some_dict_param",
-    value={"a": 1, "b": 2},
     **_GENERIC_PARAM_SPEC,
 )
 
@@ -145,63 +112,6 @@ def test_dataframe_to_nested_data(
         pd.testing.assert_series_equal(
             flat_result[key], flat_expected_output[key], check_names=False
         )
-
-
-@pytest.mark.parametrize(
-    "df",
-    [
-        pd.DataFrame({True: [1, 2]}),
-        pd.DataFrame({1: [1, 2]}),
-    ],
-)
-def test_create_data_tree_fails_if_df_has_bool_or_numeric_column_names(df):
-    with pytest.raises(
-        ValueError, match="DataFrame column names cannot be booleans or numbers."
-    ):
-        dataframe_to_nested_data(mapper={}, df=df)
-
-
-@pytest.mark.parametrize(
-    (
-        "inputs_tree_to_df_columns",
-        "expected_error_message",
-    ),
-    [
-        (
-            [],
-            "The inputs tree to column mapping must be a \\(nested\\) dictionary.",
-        ),
-        (
-            {
-                "n1": {
-                    "n2": pd.Series([1, 2, 3]),
-                },
-            },
-            "n1__n2: Series",
-        ),
-        (
-            {
-                "n1": {
-                    "n2": None,
-                },
-            },
-            "n1__n2: NoneType",
-        ),
-        (
-            {
-                "n1": {
-                    True: 2,
-                },
-            },
-            "All path elements of `inputs_tree_to_df_columns` must be strings.",
-        ),
-    ],
-)
-def test_create_data_tree_fails_if_mapper_has_incorrect_format(
-    inputs_tree_to_df_columns, expected_error_message
-):
-    with pytest.raises(TypeError, match=expected_error_message):
-        dataframe_to_nested_data(mapper=inputs_tree_to_df_columns, df=pd.DataFrame())
 
 
 @pytest.mark.parametrize(
@@ -316,88 +226,3 @@ def test_nested_data_to_dataframe(
         data_with_p_id=minimal_data_tree,
     )
     pd.testing.assert_frame_equal(result_df, expected_output, check_like=True)
-
-
-@pytest.mark.parametrize(
-    (
-        "environment",
-        "targets__tree_with_map_to_df",
-    ),
-    [
-        (
-            {
-                "some_piecewise_polynomial_param": _SOME_PIECEWISE_POLYNOMIAL_PARAM,
-            },
-            {"some_piecewise_polynomial_param": "res1"},
-        ),
-        (
-            {
-                "some_consecutive_int_1d_lookup_table_param": (
-                    _SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM
-                ),
-            },
-            {"some_consecutive_int_1d_lookup_table_param": "res1"},
-        ),
-    ],
-)
-def test_nested_data_to_dataframe_fails_if_incompatible_objects_are_returned(
-    environment,
-    targets__tree_with_map_to_df,
-    minimal_data_tree,
-):
-    results__tree = main(
-        inputs={
-            "input_data__tree": minimal_data_tree,
-            "policy_environment": environment,
-            "targets__tree": targets__tree_with_map_to_df,
-            "rounding": False,
-        },
-        targets=["results__tree"],
-    )["results__tree"]
-    with pytest.raises(
-        TypeError, match=r"The following paths contain non-scalar\nobjects"
-    ):
-        nested_data_to_df_with_mapped_columns(
-            nested_data_to_convert=results__tree,
-            nested_outputs_df_column_names=targets__tree_with_map_to_df,
-            data_with_p_id=minimal_data_tree,
-        )
-
-
-@pytest.mark.parametrize(
-    (
-        "environment",
-        "targets__tree_with_map_to_df",
-    ),
-    [
-        (
-            {
-                "some_dict_param": _SOME_DICT_PARAM,
-            },
-            {"some_dict_param": "res1"},
-        ),
-    ],
-)
-def test_nested_data_to_dataframe_fails_because_raw_param_dict_is_returned(
-    environment,
-    targets__tree_with_map_to_df,
-    minimal_data_tree,
-):
-    results__tree = main(
-        inputs={
-            "input_data__tree": minimal_data_tree,
-            "policy_environment": environment,
-            "targets__tree": targets__tree_with_map_to_df,
-            "rounding": False,
-        },
-        targets=["results__tree"],
-    )["results__tree"]
-    with pytest.raises(
-        ValueError,
-        match="failed because the following paths\nare not mapped to a column name",
-    ):
-        nested_data_to_df_with_mapped_columns(
-            nested_data_to_convert=results__tree,
-            nested_outputs_df_column_names=targets__tree_with_map_to_df,
-            data_with_p_id=minimal_data_tree,
-        )

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from ttsim import names__grouping_levels, names__top_level_namespace
+from ttsim import grouping_levels, top_level_namespace
 from ttsim.tt_dag_elements import policy_function, policy_input
 
 
@@ -38,8 +38,8 @@ def fam_id() -> int:
     ],
 )
 def test_get_top_level_namespace(policy_environment, expected):
-    result = names__top_level_namespace(
+    result = top_level_namespace(
         policy_environment=policy_environment,
-        names__grouping_levels=names__grouping_levels(policy_environment),
+        grouping_levels=grouping_levels(policy_environment),
     )
     assert all(name in result for name in expected)

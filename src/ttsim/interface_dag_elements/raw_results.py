@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -13,40 +15,44 @@ if TYPE_CHECKING:
     )
 
 
-def raw_results__columns(
+@interface_function()
+def columns(
     names__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    tax_transfer_function: Callable[[QNameData], QNameData],
+    specialized_environment__tax_transfer_function: Callable[[QNameData], QNameData],
 ) -> QNameData:
-    return tax_transfer_function(
+    return specialized_environment__tax_transfer_function(
         {k: v for k, v in processed_data.items() if k in names__root_nodes}
     )
 
 
-def raw_results__params(
+@interface_function()
+def params(
     names__target_params: OrderedQNames,
-    environment_with_data__with_processed_params_and_scalars: QNameCombinedEnvironment1,
+    specialized_environment__with_processed_params_and_scalars: QNameCombinedEnvironment1,  # noqa: E501
 ) -> QNameData:
     return {
-        pt: environment_with_data__with_processed_params_and_scalars[pt]
+        pt: specialized_environment__with_processed_params_and_scalars[pt]
         for pt in names__target_params
     }
 
 
-def raw_results__from_input_data(
+@interface_function()
+def from_input_data(
     names__targets_from_input_data: OrderedQNames,
     processed_data: QNameData,
 ) -> QNameData:
     return {ot: processed_data[ot] for ot in names__targets_from_input_data}
 
 
-def raw_results__combined(
-    raw_results__columns: QNameData,
-    raw_results__params: QNameData,
-    raw_results__from_input_data: QNameData,
+@interface_function()
+def combined(
+    columns: QNameData,
+    params: QNameData,
+    from_input_data: QNameData,
 ) -> QNameData:
     return {
-        **raw_results__columns,
-        **raw_results__params,
-        **raw_results__from_input_data,
+        **columns,
+        **params,
+        **from_input_data,
     }

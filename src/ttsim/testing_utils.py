@@ -37,7 +37,7 @@ def cached_policy_environment(
     return main(
         inputs={
             "date": date,
-            "root": root,
+            "orig_policy_objects__root": root,
         },
         targets=["policy_environment"],
     )["policy_environment"]

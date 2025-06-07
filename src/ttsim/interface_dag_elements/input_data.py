@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ttsim.interface_dag_elements.data_converters import dataframe_to_nested_data
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -10,6 +11,7 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import NestedData, NestedInputsMapper
 
 
+@interface_function()
 def tree(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedInputsMapper,

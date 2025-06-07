@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING, Literal
 
 import yaml
 
+from ttsim.interface_dag_elements.interface_node_objects import (
+    interface_function,
+    interface_input,
+)
 from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
@@ -23,7 +27,13 @@ if TYPE_CHECKING:
     )
 
 
-def orig_policy_objects__column_objects_and_param_functions(
+@interface_input()
+def root() -> Path:
+    """The root directory of the policy environment's elements."""
+
+
+@interface_function()
+def column_objects_and_param_functions(
     root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """
@@ -47,7 +57,8 @@ def orig_policy_objects__column_objects_and_param_functions(
     }
 
 
-def orig_policy_objects__param_specs(root: Path) -> FlatOrigParamSpecs:
+@interface_function()
+def param_specs(root: Path) -> FlatOrigParamSpecs:
     """
     Load the original contents of yaml files found in *root*.
 

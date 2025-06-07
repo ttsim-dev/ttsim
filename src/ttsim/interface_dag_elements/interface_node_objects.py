@@ -30,11 +30,12 @@ class InterfaceNodeObject:
     """
 
     leaf_name: str
+    in_top_level_namespace: bool
 
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> InterfaceNodeObject:
         """Remove tree logic from the function and update the function signature."""
         raise NotImplementedError("Subclasses must implement this method.")
@@ -47,12 +48,14 @@ class InterfaceInput(InterfaceNodeObject):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],  # noqa: ARG002
-        names__top_level_namespace: UnorderedQNames,  # noqa: ARG002
+        top_level_namespace: UnorderedQNames,  # noqa: ARG002
     ) -> InterfaceInput:
         return self
 
 
-def interface_input() -> GenericCallable[[GenericCallable], InterfaceInput]:
+def interface_input(
+    in_top_level_namespace: bool = False,
+) -> GenericCallable[[GenericCallable], InterfaceInput]:
     """
     Decorator that makes a (dummy) function an `InterfaceInput`.
 
@@ -64,6 +67,7 @@ def interface_input() -> GenericCallable[[GenericCallable], InterfaceInput]:
     def inner(func: GenericCallable) -> InterfaceInput:
         return InterfaceInput(
             leaf_name=func.__name__,
+            in_top_level_namespace=in_top_level_namespace,
         )
 
     return inner
@@ -107,7 +111,6 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
     """
 
     function: GenericCallable[FunArgTypes, ReturnType]
-    in_top_level_namespace: bool
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -131,7 +134,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> InterfaceFunction:  # type: ignore[type-arg]
         """Remove tree logic from the function and update the function signature."""
         return InterfaceFunction(
@@ -139,7 +142,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=top_level_namespace,
             ),
             in_top_level_namespace=self.in_top_level_namespace,
         )

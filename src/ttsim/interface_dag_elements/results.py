@@ -7,6 +7,7 @@ import dags.tree as dt
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_mapped_columns,
 )
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -14,7 +15,8 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import NestedData, NestedStrings, QNameData
 
 
-def results__tree(raw_results__combined: QNameData) -> NestedData:
+@interface_function()
+def tree(raw_results__combined: QNameData) -> NestedData:
     """The combined results as a tree.
 
     Note: This is the point where the `p_id`s are converted back to their original
@@ -25,15 +27,16 @@ def results__tree(raw_results__combined: QNameData) -> NestedData:
     return dt.unflatten_from_qual_names(raw_results__combined)
 
 
-def results__df(
-    results__tree: NestedData,
+@interface_function()
+def df(
+    tree: NestedData,
     input_data__tree: NestedData,
-    results__df_and_mapper__mapper: NestedStrings,
+    targets__tree_with_map_to_df: NestedStrings,
 ) -> pd.DataFrame:
     """The results DataFrame with mapped column names.
 
     Args:
-        results__tree:
+        tree:
             The results of a TTSIM run.
         input_data__tree:
             The data tree of the TTSIM run.
@@ -44,7 +47,7 @@ def results__df(
         A DataFrame.
     """
     return nested_data_to_df_with_mapped_columns(
-        nested_data_to_convert=results__tree,
-        nested_outputs_df_column_names=results__df_and_mapper__mapper,
+        nested_data_to_convert=tree,
+        nested_outputs_df_column_names=targets__tree_with_map_to_df,
         data_with_p_id=input_data__tree,
     )

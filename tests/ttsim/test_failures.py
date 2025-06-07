@@ -17,17 +17,25 @@ from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
     _ParamWithActivePeriod,
+    active_periods_overlap,
     assert_valid_ttsim_pytree,
-    fail_if__active_periods_overlap,
-    fail_if__foreign_keys_are_invalid_in_data,
-    fail_if__group_ids_are_outside_top_level_namespace,
-    fail_if__group_variables_are_not_constant_within_groups,
-    fail_if__input_data_tree_is_invalid,
-    fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name,
-    fail_if__targets_are_not_in_policy_environment_or_data,
+    data_paths_are_missing_in_paths_to_column_names,
+    foreign_keys_are_invalid_in_data,
+    group_ids_are_outside_top_level_namespace,
+    group_variables_are_not_constant_within_groups,
+    input_data_tree_is_invalid,
+    input_df_with_mapper_has_bool_or_numeric_column_names,
+    mapper_has_incorrect_format,
+    name_of_last_branch_element_is_not_the_functions_leaf_name,
+    non_convertible_objects_in_results_tree,
+    targets_are_not_in_policy_environment_or_data,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import (
-    DEFAULT_END_DATE,
+from ttsim.tt_dag_elements import (
+    ConsecutiveInt1dLookupTableParam,
+    ConsecutiveInt1dLookupTableParamValue,
+    DictParam,
+    PiecewisePolynomialParam,
+    PiecewisePolynomialParamValue,
     group_creation_function,
     policy_function,
 )
@@ -41,12 +49,51 @@ if TYPE_CHECKING:
         OrigParamSpec,
     )
 
-GENERIC_PARAM_HEADER = {
+_GENERIC_PARAM_HEADER = {
     "name": {"de": "foo", "en": "foo"},
     "description": {"de": "foo", "en": "foo"},
     "unit": None,
     "reference_period": None,
 }
+_GENERIC_PARAM_SPEC = {
+    "start_date": "2024-01-01",
+    "end_date": "2024-12-31",
+    **_GENERIC_PARAM_HEADER,
+}
+
+_SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM = ConsecutiveInt1dLookupTableParam(
+    leaf_name="some_consecutive_int_1d_lookup_table_param",
+    value=ConsecutiveInt1dLookupTableParamValue(
+        base_to_subtract=1,
+        values_to_look_up=np.array([1, 2, 3]),
+    ),
+    **_GENERIC_PARAM_SPEC,
+)
+
+_SOME_DICT_PARAM = DictParam(
+    leaf_name="some_dict_param",
+    value={"a": 1, "b": 2},
+    **_GENERIC_PARAM_SPEC,
+)
+
+
+_SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
+    leaf_name="some_piecewise_polynomial_param",
+    value=PiecewisePolynomialParamValue(
+        thresholds=np.array([1, 2, 3]),
+        intercepts=np.array([1, 2, 3]),
+        rates=np.array([1, 2, 3]),
+    ),
+    **_GENERIC_PARAM_SPEC,
+)
+
+
+@pytest.fixture
+def minimal_data_tree():
+    return {
+        "hh_id": np.array([1, 2, 3]),
+        "p_id": np.array([1, 2, 3]),
+    }
 
 
 def identity(x: int) -> int:
@@ -84,7 +131,7 @@ def minimal_input_data():
 def mettsim_environment() -> NestedPolicyEnvironment:
     return main(
         inputs={
-            "root": METTSIM_ROOT,
+            "orig_policy_objects__root": METTSIM_ROOT,
             "date": datetime.date(2025, 1, 1),
         },
         targets=["policy_environment"],
@@ -146,7 +193,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
             },
             {
                 ("c", "g"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
                 }
             },
@@ -167,7 +214,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
             },
             {
                 ("x", "c", "h"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
                 }
             },
@@ -186,7 +233,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
             },
             {
                 ("x", "c", "g"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
                 }
             },
@@ -207,7 +254,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
             },
             {
                 ("z", "a", "f"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
                 }
             },
@@ -217,11 +264,11 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
             {},
             {
                 ("x", "a", "f"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 5},
                 },
                 ("x", "b", "g"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 6},
                 },
             },
@@ -302,7 +349,7 @@ def test_fail_if_active_periods_overlap_passes(
     orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
     orig_tree_with_params: FlatOrigParamSpecs,
 ):
-    fail_if__active_periods_overlap(
+    active_periods_overlap(
         orig_tree_with_column_objects_and_param_functions,
         orig_tree_with_params,
     )
@@ -405,7 +452,7 @@ def test_fail_if_active_periods_overlap_passes(
             },
             {
                 ("c", "f"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
                 }
             },
@@ -426,7 +473,7 @@ def test_fail_if_active_periods_overlap_passes(
             },
             {
                 ("x", "a", "f"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
                 }
             },
@@ -436,11 +483,11 @@ def test_fail_if_active_periods_overlap_passes(
             {},
             {
                 ("x", "a", "f"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
                 },
                 ("x", "b", "f"): {
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
                 },
             },
@@ -452,9 +499,133 @@ def test_fail_if_active_periods_overlap_raises(
     orig_tree_with_params: FlatOrigParamSpecs,
 ):
     with pytest.raises(ConflictingActivePeriodsError):
-        fail_if__active_periods_overlap(
+        active_periods_overlap(
             orig_tree_with_column_objects_and_param_functions,
             orig_tree_with_params,
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "environment",
+        "targets__tree_with_map_to_df",
+    ),
+    [
+        (
+            {
+                "some_dict_param": _SOME_DICT_PARAM,
+            },
+            {"some_dict_param": "res1"},
+        ),
+    ],
+)
+def test_fail_if_data_paths_are_missing_in_paths_to_column_names(
+    environment,
+    targets__tree_with_map_to_df,
+    minimal_data_tree,
+):
+    results__tree = main(
+        inputs={
+            "input_data__tree": minimal_data_tree,
+            "policy_environment": environment,
+            "targets__tree": targets__tree_with_map_to_df,
+            "rounding": False,
+        },
+        targets=["results__tree"],
+    )["results__tree"]
+    with pytest.raises(
+        ValueError,
+        match="failed because the following paths\nare not mapped to a column name",
+    ):
+        data_paths_are_missing_in_paths_to_column_names(
+            results__tree=results__tree,
+            targets__tree_with_map_to_df=targets__tree_with_map_to_df,
+        )
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "p_id_spouse": pd.Series([-1, 1, 2]),
+    }
+
+    foreign_keys_are_invalid_in_data(
+        names__root_nodes={n for n in data if n != "p_id"},
+        processed_data=data,
+        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+    )
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non_existing_p_id(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "p_id_spouse": pd.Series([0, 1, 2]),
+    }
+
+    with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
+        foreign_keys_are_invalid_in_data(
+            names__root_nodes={n for n in data if n != "p_id"},
+            processed_data=data,
+            specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        )
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_allowed(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "p_id_child_": pd.Series([1, 3, 3]),
+    }
+
+    foreign_keys_are_invalid_in_data(
+        names__root_nodes={n for n in data if n != "p_id"},
+        processed_data=data,
+        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+    )
+
+
+def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_not_allowed(
+    mettsim_environment: NestedPolicyEnvironment,
+):
+    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    data = {
+        "p_id": pd.Series([1, 2, 3]),
+        "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
+    }
+
+    foreign_keys_are_invalid_in_data(
+        names__root_nodes={n for n in data if n != "p_id"},
+        processed_data=data,
+        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+    )
+
+
+def test_fail_if_group_ids_are_outside_top_level_namespace():
+    with pytest.raises(
+        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+    ):
+        group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
+
+
+def test_fail_if_group_variables_are_not_constant_within_groups():
+    data = {
+        "p_id": np.array([0, 1, 2]),
+        "foo_kin": np.array([1, 2, 2]),
+        "kin_id": np.array([1, 1, 2]),
+    }
+    with pytest.raises(ValueError):
+        group_variables_are_not_constant_within_groups(
+            names__grouping_levels=("kin",),
+            names__root_nodes={n for n in data if n != "p_id"},
+            processed_data=data,
         )
 
 
@@ -464,7 +635,7 @@ def test_fail_if_input_data_tree_is_invalid():
     with pytest.raises(
         ValueError, match="The input data must contain the `p_id` column."
     ):
-        fail_if__input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data)
 
 
 def test_fail_if_input_data_tree_is_invalid_via_main():
@@ -484,90 +655,116 @@ def test_fail_if_input_data_tree_is_invalid_via_main():
         )["fail_if__input_data_tree_is_invalid"]
 
 
-def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key(
-    mettsim_environment: NestedPolicyEnvironment,
-):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([-1, 1, 2]),
-    }
-
-    fail_if__foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
-        processed_data=data,
-        environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
-    )
-
-
-def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non_existing_p_id(
-    mettsim_environment: NestedPolicyEnvironment,
-):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([0, 1, 2]),
-    }
-
-    with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
-        fail_if__foreign_keys_are_invalid_in_data(
-            names__root_nodes={n for n in data if n != "p_id"},
-            processed_data=data,
-            environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
-        )
-
-
-def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_allowed(
-    mettsim_environment: NestedPolicyEnvironment,
-):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_child_": pd.Series([1, 3, 3]),
-    }
-
-    fail_if__foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
-        processed_data=data,
-        environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
-    )
-
-
-def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_not_allowed(
-    mettsim_environment: NestedPolicyEnvironment,
-):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
-    data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
-    }
-
-    fail_if__foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
-        processed_data=data,
-        environment_with_data__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
-    )
-
-
-def test_fail_if_group_ids_are_outside_top_level_namespace():
+@pytest.mark.parametrize(
+    "df",
+    [
+        pd.DataFrame({True: [1, 2]}),
+        pd.DataFrame({1: [1, 2]}),
+    ],
+)
+def test_fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(df):
     with pytest.raises(
-        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+        ValueError, match="DataFrame column names cannot be booleans or numbers."
     ):
-        fail_if__group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
+        input_df_with_mapper_has_bool_or_numeric_column_names(df)
 
 
-def test_fail_if_group_variables_are_not_constant_within_groups():
-    data = {
-        "p_id": np.array([0, 1, 2]),
-        "foo_kin": np.array([1, 2, 2]),
-        "kin_id": np.array([1, 1, 2]),
-    }
-    with pytest.raises(ValueError):
-        fail_if__group_variables_are_not_constant_within_groups(
-            names__grouping_levels=("kin",),
-            names__root_nodes={n for n in data if n != "p_id"},
-            processed_data=data,
-        )
+@pytest.mark.parametrize(
+    (
+        "input_data__df_with_mapper__mapper",
+        "expected_error_message",
+    ),
+    [
+        (
+            [],
+            "The inputs tree to column mapping must be a \\(nested\\) dictionary.",
+        ),
+        (
+            {
+                "n1": {
+                    "n2": pd.Series([1, 2, 3]),
+                },
+            },
+            "n1__n2: Series",
+        ),
+        (
+            {
+                "n1": {
+                    "n2": None,
+                },
+            },
+            "n1__n2: NoneType",
+        ),
+        (
+            {
+                "n1": {
+                    True: 2,
+                },
+            },
+            "All path elements of `inputs_tree_to_df_columns` must be strings.",
+        ),
+    ],
+)
+def test_fail_if_mapper_has_incorrect_format(
+    input_data__df_with_mapper__mapper, expected_error_message
+):
+    with pytest.raises(TypeError, match=expected_error_message):
+        mapper_has_incorrect_format(input_data__df_with_mapper__mapper)
+
+
+@pytest.mark.parametrize(
+    "functions_tree",
+    [
+        {"foo": policy_function(leaf_name="bar")(return_one)},
+    ],
+)
+def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
+    functions_tree: NestedColumnObjectsParamFunctions,
+):
+    with pytest.raises(KeyError):
+        name_of_last_branch_element_is_not_the_functions_leaf_name(functions_tree)
+
+
+@pytest.mark.parametrize(
+    (
+        "environment",
+        "targets__tree_with_map_to_df",
+    ),
+    [
+        (
+            {
+                "some_piecewise_polynomial_param": _SOME_PIECEWISE_POLYNOMIAL_PARAM,
+            },
+            {"some_piecewise_polynomial_param": "res1"},
+        ),
+        (
+            {
+                "some_consecutive_int_1d_lookup_table_param": (
+                    _SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM
+                ),
+            },
+            {"some_consecutive_int_1d_lookup_table_param": "res1"},
+        ),
+    ],
+)
+def test_fail_if_non_convertible_objects_in_results_tree(
+    environment,
+    targets__tree_with_map_to_df,
+    minimal_data_tree,
+):
+    results__tree = main(
+        inputs={
+            "input_data__tree": minimal_data_tree,
+            "policy_environment": environment,
+            "targets__tree": targets__tree_with_map_to_df,
+            "rounding": False,
+        },
+        targets=["results__tree"],
+    )["results__tree"]
+    with pytest.raises(
+        TypeError, match=r"The following paths contain non-scalar\nobjects"
+    ):
+        non_convertible_objects_in_results_tree(results__tree)
 
 
 def test_fail_if_p_id_does_not_exist():
@@ -576,7 +773,7 @@ def test_fail_if_p_id_does_not_exist():
     with pytest.raises(
         ValueError, match="The input data must contain the `p_id` column."
     ):
-        fail_if__input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data)
 
 
 def test_fail_if_p_id_does_not_exist_via_main():
@@ -597,28 +794,13 @@ def test_fail_if_p_id_does_not_exist_via_main():
         )["fail_if__input_data_tree_is_invalid"]
 
 
-@pytest.mark.parametrize(
-    "functions_tree",
-    [
-        {"foo": policy_function(leaf_name="bar")(return_one)},
-    ],
-)
-def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
-    functions_tree: NestedColumnObjectsParamFunctions,
-):
-    with pytest.raises(KeyError):
-        fail_if__name_of_last_branch_element_is_not_the_functions_leaf_name(
-            functions_tree
-        )
-
-
 def test_fail_if_p_id_is_not_unique():
     data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
 
     with pytest.raises(
         ValueError, match="The following `p_id`s are not unique in the input data"
     ):
-        fail_if__input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data)
 
 
 def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
@@ -683,7 +865,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data(
     with pytest.raises(
         ValueError, match="The following targets have no corresponding function"
     ) as e:
-        fail_if__targets_are_not_in_policy_environment_or_data(
+        targets_are_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
             targets__qname=targets,
             names__processed_data_columns=names__processed_data_columns,
@@ -739,8 +921,8 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                     leaf_name="foo",
                     original_function_name="foo",
                     start_date=datetime.date(1984, 1, 1),
-                    end_date=DEFAULT_END_DATE,
-                    **GENERIC_PARAM_HEADER,
+                    end_date=datetime.date(2099, 12, 31),
+                    **_GENERIC_PARAM_HEADER,
                 )
             ],
         ),
@@ -761,7 +943,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                     original_function_name="foo",
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(1984, 12, 31),
-                    **GENERIC_PARAM_HEADER,
+                    **_GENERIC_PARAM_HEADER,
                 )
             ],
         ),
@@ -792,7 +974,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                     leaf_name="bar",
                     original_function_name="bar",
                     start_date=datetime.date(2023, 3, 1),
-                    end_date=DEFAULT_END_DATE,
+                    end_date=datetime.date(2099, 12, 31),
                     name={"de": "bar", "en": "bar"},
                     description={"de": "bar", "en": "bar"},
                     unit=None,

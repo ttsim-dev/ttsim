@@ -23,7 +23,7 @@ from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
 from ttsim.interface_dag_elements.orig_policy_objects import (
-    orig_policy_objects__column_objects_and_param_functions,
+    column_objects_and_param_functions,
 )
 from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
@@ -394,7 +394,7 @@ for year in range(1990, 2023):
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
                 _active_column_objects_and_param_functions(
-                    orig=orig_policy_objects__column_objects_and_param_functions(
+                    orig=column_objects_and_param_functions(
                         root=METTSIM_ROOT / "mettsim"
                     ),
                     date=datetime.date(year=year, month=1, day=1),

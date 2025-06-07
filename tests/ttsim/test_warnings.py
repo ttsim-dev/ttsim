@@ -3,9 +3,9 @@ from __future__ import annotations
 import warnings
 
 import pandas as pd
-import pytest
 
-from ttsim import FunctionsAndDataColumnsOverlapWarning, main
+from ttsim import main
+from ttsim.interface_dag_elements import warn_if
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
 
 
@@ -19,8 +19,9 @@ def another_func(some_func: int) -> int:
     return some_func
 
 
-def test_warn_if__functions_and_data_columns_overlap():
-    with pytest.warns(FunctionsAndDataColumnsOverlapWarning):
+def test_warn_if_functions_and_data_columns_overlap():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
         main(
             inputs={
                 "input_data__tree": {
@@ -37,11 +38,17 @@ def test_warn_if__functions_and_data_columns_overlap():
             },
             targets=["warn_if__functions_and_data_columns_overlap"],
         )
+        # Check that we got exactly one warning
+        assert len(w) == 1
+        # Check that it's the right type of warning
+        assert w[0].category.__name__ == "FunctionsAndDataColumnsOverlapWarning"
 
 
-def test_warn_if__functions_and_columns_overlap_no_warning_if_no_overlap():
+def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap():
     with warnings.catch_warnings():
-        warnings.filterwarnings("error", category=FunctionsAndDataColumnsOverlapWarning)
+        warnings.filterwarnings(
+            "error", category=warn_if.FunctionsAndDataColumnsOverlapWarning
+        )
         main(
             inputs={
                 "input_data__tree": {

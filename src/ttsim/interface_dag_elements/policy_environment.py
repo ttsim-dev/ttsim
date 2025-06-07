@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import numpy
 
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import (
     merge_trees,
     to_datetime,
@@ -41,6 +42,7 @@ if TYPE_CHECKING:
     )
 
 
+@interface_function(in_top_level_namespace=True)
 def policy_environment(
     orig_policy_objects__column_objects_and_param_functions: NestedColumnObjectsParamFunctions,  # noqa: E501
     orig_policy_objects__param_specs: FlatOrigParamSpecs,

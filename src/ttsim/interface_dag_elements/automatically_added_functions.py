@@ -7,9 +7,6 @@ import dags.tree as dt
 from dags import get_free_arguments, rename_arguments
 
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.interface_dag_elements.fail_if import (
-    fail_if__multiple_time_units_for_same_base_name_and_group,
-)
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
@@ -52,6 +49,16 @@ _Q_PER_Y = 4
 _M_PER_Y = 12
 _W_PER_Y = 365.25 / 7
 _D_PER_Y = 365.25
+
+
+def fail_if_multiple_time_units_for_same_base_name_and_group(
+    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
+) -> None:
+    invalid = {
+        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
+    }
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
 def y_to_q(value: float) -> float:
@@ -486,7 +493,7 @@ def create_time_conversion_functions(
                 "time_units": time_units,
             }
 
-    fail_if__multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
+    fail_if_multiple_time_units_for_same_base_name_and_group(bngs_to_variations)
 
     converted_elements: dict[str, ColumnObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():

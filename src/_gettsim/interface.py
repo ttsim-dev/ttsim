@@ -110,7 +110,7 @@ def oss(
     nested_result = main(
         inputs={
             "date": to_datetime(date),
-            "root": GETTSIM_ROOT,
+            "orig_policy_objects__root": GETTSIM_ROOT,
             "input_data__tree": input_data__tree,
             "targets__tree": targets__tree_with_map_to_df,
             "rounding": True,

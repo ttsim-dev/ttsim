@@ -9,6 +9,7 @@ from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
 )
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
@@ -57,22 +58,14 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
         formatted = format_list_linewise(columns_overriding_functions)
         how_to_ignore = format_errors_and_warnings(
             """
-            If you want to ignore this warning, add the following code to your script
-            before calling TTSIM:
-
-                import warnings
-                from ttsim.tt_dag_elements import FunctionsAndDataColumnsOverlapWarning
-
-                warnings.filterfilters(
-                    "ignore",
-                    category=FunctionsAndDataColumnsOverlapWarning
-                )
+            In order to not perform this check, you can ... TODO
             """
         )
         super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
 
 
-def warn_if__functions_and_data_columns_overlap(
+@interface_function()
+def functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
     names__processed_data_columns: QNameDataColumns,
 ) -> None:
@@ -87,5 +80,5 @@ def warn_if__functions_and_data_columns_overlap(
     if len(overridden_elements) > 0:
         warnings.warn(
             FunctionsAndDataColumnsOverlapWarning(overridden_elements),
-            stacklevel=3,
+            stacklevel=2,
         )

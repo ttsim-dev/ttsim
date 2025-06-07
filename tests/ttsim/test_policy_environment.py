@@ -13,8 +13,8 @@ from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
 from ttsim.interface_dag_elements.orig_policy_objects import (
-    orig_policy_objects__column_objects_and_param_functions,
-    orig_policy_objects__param_specs,
+    column_objects_and_param_functions,
+    param_specs,
 )
 from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
@@ -60,9 +60,7 @@ def some_int_param():
 
 
 def test_add_jahresanfang():
-    orig = orig_policy_objects__param_specs(
-        root=Path(__file__).parent / "test_parameters"
-    )
+    orig = param_specs(root=Path(__file__).parent / "test_parameters")
     k = ("test_add_jahresanfang.yaml", "foo")
     _active_ttsim_tree_with_params = _active_param_objects(
         orig={k: orig[k]},
@@ -77,7 +75,7 @@ def test_input_is_recognized_as_potential_group_id():
         "kin"
         in main(
             inputs={
-                "root": METTSIM_ROOT,
+                "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
             },
             targets=["names__grouping_levels"],
@@ -90,7 +88,7 @@ def test_p_id_not_recognized_as_potential_group_id():
         "p"
         not in main(
             inputs={
-                "root": METTSIM_ROOT,
+                "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
             },
             targets=["names__grouping_levels"],
@@ -199,7 +197,7 @@ def test_active_tree_with_column_objects_and_param_functions(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    orig = orig_policy_objects__column_objects_and_param_functions(root=METTSIM_ROOT)
+    orig = column_objects_and_param_functions(root=METTSIM_ROOT)
     functions_last_day = _active_column_objects_and_param_functions(
         orig=orig,
         date=last_day,
