@@ -154,8 +154,8 @@ def assert_valid_ttsim_pytree(
 
 @interface_function()
 def active_periods_overlap(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    orig_tree_with_params: FlatOrigParamSpecs,
+    orig_policy_objects__column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_policy_objects__param_specs: FlatOrigParamSpecs,
 ) -> None:
     """Fail because active periods of objects / parameters overlap.
 
@@ -172,14 +172,17 @@ def active_periods_overlap(
     overlap_checker: dict[
         tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
     ] = {}
-    for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items():
+    for (
+        orig_path,
+        obj,
+    ) in orig_policy_objects__column_objects_and_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:
             overlap_checker[path].append(obj)
         else:
             overlap_checker[path] = [obj]
 
-    for orig_path, obj in orig_tree_with_params.items():
+    for orig_path, obj in orig_policy_objects__param_specs.items():
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
@@ -453,7 +456,7 @@ def non_convertible_objects_in_results_tree(
 
 @interface_function()
 def input_df_with_mapper_has_bool_or_numeric_column_names(
-    input_data__df_with_mapper__df: pd.DataFrame,
+    input_data__df_and_mapper__df: pd.DataFrame,
 ) -> None:
     """Fail if the DataFrame has bool or numeric column names."""
     common_msg = format_errors_and_warnings(
@@ -463,11 +466,11 @@ def input_df_with_mapper_has_bool_or_numeric_column_names(
         """
     )
     bool_column_names = [
-        col for col in input_data__df_with_mapper__df.columns if isinstance(col, bool)
+        col for col in input_data__df_and_mapper__df.columns if isinstance(col, bool)
     ]
     numeric_column_names = [
         col
-        for col in input_data__df_with_mapper__df.columns
+        for col in input_data__df_and_mapper__df.columns
         if isinstance(col, (int, float)) or (isinstance(col, str) and col.isnumeric())
     ]
 
@@ -485,10 +488,10 @@ def input_df_with_mapper_has_bool_or_numeric_column_names(
 
 @interface_function()
 def input_mapper_has_incorrect_format(
-    input_data__df_with_mapper__mapper: NestedStrings,
+    input_data__df_and_mapper__mapper: NestedStrings,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
-    if not isinstance(input_data__df_with_mapper__mapper, dict):
+    if not isinstance(input_data__df_and_mapper__mapper, dict):
         msg = format_errors_and_warnings(
             """The inputs tree to column mapping must be a (nested) dictionary. Call
             `dags.tree.create_tree_with_input_types` to create a template."""
@@ -498,7 +501,7 @@ def input_mapper_has_incorrect_format(
     non_string_paths = [
         str(path)
         for path in optree.tree_paths(
-            input_data__df_with_mapper__mapper,  # type: ignore[arg-type]
+            input_data__df_and_mapper__mapper,  # type: ignore[arg-type]
             none_is_leaf=True,
         )
         if not all(isinstance(part, str) for part in path)
@@ -517,7 +520,7 @@ def input_mapper_has_incorrect_format(
 
     incorrect_types = {
         k: type(v)
-        for k, v in dt.flatten_to_qual_names(input_data__df_with_mapper__mapper).items()
+        for k, v in dt.flatten_to_qual_names(input_data__df_and_mapper__mapper).items()
         if not isinstance(v, str | int | float | bool)
     }
     if incorrect_types:

@@ -15,6 +15,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceInput,
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
+from ttsim.plot_dag import plot_dag
 
 if TYPE_CHECKING:
     from collections.abc import KeysView
@@ -30,11 +31,7 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
         p: n for p, n in _interface_functions_and_inputs().items() if p not in inputs
     }
 
-    functions = {
-        name: node
-        for name, node in nodes.items()
-        if isinstance(node, InterfaceFunction)
-    }
+    functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
 
     _fail_if_targets_are_not_among_interface_functions(
         targets=targets,
@@ -55,6 +52,20 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
         set_annotations=False,
     )
     return f(**inputs)
+
+
+def plot_full_interface_dag() -> None:
+    """Plot the full interface DAG."""
+
+    nodes = {
+        p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
+        for p, n in _interface_functions_and_inputs().items()
+    }
+
+    dag = dags.create_dag(functions=nodes, targets=None)
+
+    fig = plot_dag(dag)
+    fig.write_html("full_interface_dag.html")
 
 
 def _interface_functions_and_inputs() -> dict[str, InterfaceFunction | InterfaceInput]:
@@ -131,3 +142,7 @@ def _fail_if_targets_are_not_among_interface_functions(
                 f"DAG:\n\n{formatted}"
             )
             raise ValueError(msg)
+
+
+if __name__ == "__main__":
+    plot_full_interface_dag()

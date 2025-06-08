@@ -671,7 +671,7 @@ def test_fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(df):
 
 @pytest.mark.parametrize(
     (
-        "input_data__df_with_mapper__mapper",
+        "input_data__df_and_mapper__mapper",
         "expected_error_message",
     ),
     [
@@ -706,10 +706,10 @@ def test_fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(df):
     ],
 )
 def test_fail_if_input_mapper_has_incorrect_format(
-    input_data__df_with_mapper__mapper, expected_error_message
+    input_data__df_and_mapper__mapper, expected_error_message
 ):
     with pytest.raises(TypeError, match=expected_error_message):
-        input_mapper_has_incorrect_format(input_data__df_with_mapper__mapper)
+        input_mapper_has_incorrect_format(input_data__df_and_mapper__mapper)
 
 
 @pytest.mark.parametrize(
