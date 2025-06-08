@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ttsim.config import numpy_or_jax as np
+from ttsim.interface_dag_elements.shared import reorder_ids
 from ttsim.tt_dag_elements import group_creation_function
 
 
@@ -16,7 +17,7 @@ def sp_id(
     p_id_spouse = np.where(p_id_spouse < 0, p_id, p_id_spouse)
     sp_id = np.maximum(p_id, p_id_spouse) + np.minimum(p_id, p_id_spouse) * n
 
-    return __reorder_ids(sp_id)
+    return reorder_ids(sp_id)
 
 
 @group_creation_function()
@@ -61,14 +62,4 @@ def fam_id(
         fam_id,
     )
 
-    return __reorder_ids(fam_id)
-
-
-def __reorder_ids(ids: np.ndarray) -> np.ndarray:
-    """Make ID's consecutively numbered."""
-    sorting = np.argsort(ids)
-    ids_sorted = ids[sorting]
-    index_after_sort = np.arange(ids.shape[0])[sorting]
-    diff_to_prev = np.where(np.diff(ids_sorted) >= 1, 1, 0)
-    cons_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
-    return cons_ids[np.argsort(index_after_sort)]
+    return reorder_ids(fam_id)

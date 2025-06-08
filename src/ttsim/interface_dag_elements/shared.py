@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import optree
 
+from ttsim.config import numpy_or_jax as np
+
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
@@ -28,6 +30,29 @@ def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
         raise ValueError(
             f"Date {date} neither matches the format YYYY-MM-DD nor is a datetime.date."
         )
+
+
+def reorder_ids(ids: np.ndarray) -> np.ndarray:
+    """Make ID's consecutively numbered.
+
+    Takes the given IDs and replaces them by consecutive numbers
+    starting at 0.
+
+    [43,44,70,50] -> [0,1,3,2]
+
+    """
+
+    sorting = np.argsort(ids)
+    ids_sorted = ids[sorting]
+    index_after_sort = np.arange(ids.shape[0])[sorting]
+
+    # Look for difference from previous entry in sorted array
+    diff_to_prev = np.where(np.diff(ids_sorted) >= 1, 1, 0)
+
+    # Sum up all differences to get new id
+    cons_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
+
+    return cons_ids[np.argsort(index_after_sort)]
 
 
 def get_re_pattern_for_all_time_units_and_groupings(

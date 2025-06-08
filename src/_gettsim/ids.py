@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ttsim.config import numpy_or_jax as np
+from ttsim.interface_dag_elements.shared import reorder_ids
 from ttsim.tt_dag_elements import group_creation_function, policy_input
 
 
@@ -31,7 +32,7 @@ def ehe_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return _reorder_ids(result)
+    return reorder_ids(result)
 
 
 @group_creation_function()
@@ -81,7 +82,7 @@ def fg_id(
         fg_id, p_id, p_id_elternteil_2_loc, hh_id, alter, children, n
     )
 
-    return _reorder_ids(fg_id)
+    return reorder_ids(fg_id)
 
 
 def _assign_parents_fg_id(
@@ -141,7 +142,7 @@ def bg_id(
         fg_id,
     )
 
-    return _reorder_ids(bg_id)
+    return reorder_ids(bg_id)
 
 
 @group_creation_function()
@@ -164,7 +165,7 @@ def eg_id(
         + np.minimum(p_id, p_id_einstandspartner__or_own_p_id) * n
     )
 
-    return _reorder_ids(result)
+    return reorder_ids(result)
 
 
 @group_creation_function()
@@ -185,7 +186,7 @@ def wthh_id(
         hh_id + offset,
         hh_id,
     )
-    return _reorder_ids(wthh_id)
+    return reorder_ids(wthh_id)
 
 
 @group_creation_function()
@@ -212,16 +213,4 @@ def sn_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return _reorder_ids(result)
-
-
-def _reorder_ids(ids: np.ndarray) -> np.ndarray:
-    """Make ID's consecutively numbered."""
-    sorting = np.argsort(ids)
-    ids_sorted = ids[sorting]
-    index_after_sort = np.arange(ids.shape[0])[sorting]
-    # Look for difference from previous entry in sorted array
-    diff_to_prev = np.where(np.diff(ids_sorted) >= 1, 1, 0)
-    # Sum up all differences to get new id
-    cons_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
-    return cons_ids[np.argsort(index_after_sort)]
+    return reorder_ids(result)
