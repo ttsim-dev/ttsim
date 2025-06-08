@@ -29,7 +29,11 @@ from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
 from ttsim.interface_dag_elements.input_data import tree as tree
-from ttsim.interface_dag_elements.results import df, tree
+from ttsim.interface_dag_elements.results import (
+    df_with_mapper,
+    df_with_nested_columns,
+    tree,
+)
 from ttsim.interface_dag_elements.fail_if import (
     active_periods_overlap,
     environment_is_invalid,
@@ -78,53 +82,7 @@ from ttsim.interface_dag_elements.shared import (
     upsert_path_and_value,
     upsert_tree,
 )
-from ttsim.interface_dag import interface_functions_and_inputs
-from ttsim.interface_dag_elements.interface_node_objects import InterfaceFunction
-
-
-def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, Any]:
-    """
-    Main function that processes the inputs and returns the outputs.
-    """
-    nodes = interface_functions_and_inputs()
-    for key in inputs:
-        if key in nodes:
-            del nodes[key]
-
-    functions = {
-        name: node
-        for name, node in nodes.items()
-        if isinstance(node, InterfaceFunction)
-    }
-
-    # Collect all missing targets first
-    missing_targets = []
-    for t in targets:
-        if t not in functions:
-            missing_targets.append(t)
-
-    # Raise error with all missing targets listed nicely
-    if missing_targets:
-        if len(missing_targets) == 1:
-            raise ValueError(f"Target '{missing_targets[0]}' does not exist.")
-        else:
-            targets_str = format_list_linewise(missing_targets)
-            raise ValueError(f"Targets '{targets_str}' do not exist.")
-
-    dag = dags.create_dag(
-        functions=functions,
-        targets=targets,
-    )
-    # draw_dag(dag)
-    f = dags.concatenate_functions(
-        dag=dag,
-        functions=functions,
-        targets=targets,
-        return_type="dict",
-        enforce_signature=False,
-        set_annotations=False,
-    )
-    return f(**inputs)
+from ttsim.interface_dag import main
 
 
 def draw_dag(
