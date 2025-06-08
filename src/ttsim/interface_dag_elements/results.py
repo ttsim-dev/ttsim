@@ -17,15 +17,18 @@ if TYPE_CHECKING:
 
 
 @interface_function()
-def tree(raw_results__combined: QNameData) -> NestedData:
+def tree(raw_results__combined: QNameData, input_data__tree: NestedData) -> NestedData:
     """The combined results as a tree.
 
     Note: This is the point where the `p_id`s are converted back to their original
     values.
 
     """
-
-    return dt.unflatten_from_qual_names(raw_results__combined)
+    raw_results__combined_with_old_ids = raw_results__combined
+    for k in raw_results__combined:
+        if (k.endswith("_id") or "__p_id_" in k) and k in input_data__tree:
+            raw_results__combined_with_old_ids[k] = input_data__tree[k]
+    return dt.unflatten_from_qual_names(raw_results__combined_with_old_ids)
 
 
 @interface_function()
