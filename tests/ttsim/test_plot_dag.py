@@ -6,13 +6,13 @@ import networkx as nx
 import pytest
 
 from ttsim import plot_dag
-from ttsim.plot_dag import (
-    _get_selected_nodes,
-    _kth_order_neighbors,
-    _node_and_ancestors,
-    _node_and_descendants,
-    _select_nodes_in_dag,
-)
+# from ttsim.plot_dag import (
+#     _get_selected_nodes,
+#     _kth_order_neighbors,
+#     _node_and_ancestors,
+#     _node_and_descendants,
+#     _select_nodes_in_dag,
+# )
 
 # environment = policy_environment(date="2020-01-01", root=METTSIM_ROOT)
 

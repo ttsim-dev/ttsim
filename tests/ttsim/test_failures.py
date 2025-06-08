@@ -26,7 +26,6 @@ from ttsim.interface_dag_elements.fail_if import (
     input_data_tree_is_invalid,
     input_df_with_mapper_has_bool_or_numeric_column_names,
     input_mapper_has_incorrect_format,
-    name_of_last_branch_element_is_not_the_functions_leaf_name,
     non_convertible_objects_in_results_tree,
     targets_are_not_in_policy_environment_or_data,
 )
@@ -44,7 +43,6 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
-        NestedColumnObjectsParamFunctions,
         NestedPolicyEnvironment,
         OrigParamSpec,
     )
@@ -508,7 +506,7 @@ def test_fail_if_active_periods_overlap_raises(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree_with_map_to_df",
+        "targets__tree",
     ),
     [
         (
@@ -521,14 +519,14 @@ def test_fail_if_active_periods_overlap_raises(
 )
 def test_fail_if_data_paths_are_missing_in_paths_to_column_names(
     environment,
-    targets__tree_with_map_to_df,
+    targets__tree,
     minimal_data_tree,
 ):
     results__tree = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
-            "targets__tree": targets__tree_with_map_to_df,
+            "targets__tree": targets__tree,
             "rounding": False,
         },
         targets=["results__tree"],
@@ -539,7 +537,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_column_names(
     ):
         data_paths_are_missing_in_paths_to_column_names(
             results__tree=results__tree,
-            targets__tree_with_map_to_df=targets__tree_with_map_to_df,
+            targets__tree=targets__tree,
         )
 
 
@@ -713,22 +711,9 @@ def test_fail_if_input_mapper_has_incorrect_format(
 
 
 @pytest.mark.parametrize(
-    "functions_tree",
-    [
-        {"foo": policy_function(leaf_name="bar")(return_one)},
-    ],
-)
-def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
-    functions_tree: NestedColumnObjectsParamFunctions,
-):
-    with pytest.raises(KeyError):
-        name_of_last_branch_element_is_not_the_functions_leaf_name(functions_tree)
-
-
-@pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree_with_map_to_df",
+        "targets__tree",
     ),
     [
         (
@@ -749,14 +734,14 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
 )
 def test_fail_if_non_convertible_objects_in_results_tree(
     environment,
-    targets__tree_with_map_to_df,
+    targets__tree,
     minimal_data_tree,
 ):
     results__tree = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
-            "targets__tree": targets__tree_with_map_to_df,
+            "targets__tree": targets__tree,
             "rounding": False,
         },
         targets=["results__tree"],

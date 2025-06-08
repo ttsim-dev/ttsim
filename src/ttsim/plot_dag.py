@@ -97,7 +97,7 @@ def plot_dag(dag: nx.DiGraph) -> None:
 
     # Create the figure with specified canvas size (600x900)
     return go.Figure(
-        data=edge_traces + [node_trace],
+        data=[*edge_traces, node_trace],
         layout=go.Layout(
             title="DAG Visualization",
             titlefont_size=16,

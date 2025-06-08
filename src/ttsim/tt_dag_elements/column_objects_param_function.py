@@ -93,7 +93,7 @@ class ColumnObject:
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> ColumnObject:
         """Remove tree logic from the function and update the function signature."""
         raise NotImplementedError("Subclasses must implement this method.")
@@ -122,9 +122,22 @@ class PolicyInput(ColumnObject):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],  # noqa: ARG002
-        names__top_level_namespace: UnorderedQNames,  # noqa: ARG002
+        top_level_namespace: UnorderedQNames,  # noqa: ARG002
     ) -> PolicyInput:
         return self
+
+    def dummy_callable(self):
+        """Dummy callable for the interface input. Just used for plotting."""
+
+        def dummy() -> self.data_type:
+            pass
+
+        return policy_function(
+            leaf_name=self.leaf_name,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            foreign_key_type=self.foreign_key_type,
+        )(dummy)
 
 
 def policy_input(
@@ -277,7 +290,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> PolicyFunction:
         """Remove tree logic from the function and update the function signature."""
         return PolicyFunction(
@@ -285,7 +298,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -377,7 +390,7 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> GroupCreationFunction:
         """Remove tree logic from the function and update the function signature."""
         return GroupCreationFunction(
@@ -385,7 +398,7 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -446,7 +459,7 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> AggByGroupFunction:
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
@@ -454,7 +467,7 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -576,7 +589,7 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> AggByGroupFunction:
         """Remove tree logic from the function and update the function signature."""
         return AggByGroupFunction(
@@ -584,7 +597,7 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -705,7 +718,7 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> TimeConversionFunction:
         """Remove tree logic from the function and update the function signature."""
         return TimeConversionFunction(
@@ -714,7 +727,7 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,
@@ -830,7 +843,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
-        names__top_level_namespace: UnorderedQNames,
+        top_level_namespace: UnorderedQNames,
     ) -> ParamFunction:  # type: ignore[type-arg]
         """Remove tree logic from the function and update the function signature."""
         return ParamFunction(
@@ -838,7 +851,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
             function=dt.one_function_without_tree_logic(
                 function=self.function,
                 tree_path=tree_path,
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=top_level_namespace,
             ),
             start_date=self.start_date,
             end_date=self.end_date,

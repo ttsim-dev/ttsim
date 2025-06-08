@@ -63,7 +63,20 @@ def plot_full_interface_dag() -> None:
     }
 
     dag = dags.create_dag(functions=nodes, targets=None)
-
+    f = dags.concatenate_functions(
+        dag=dag,
+        functions=nodes,
+        targets=None,
+        return_type="dict",
+        enforce_signature=False,
+        set_annotations=False,
+    )
+    args = inspect.signature(f).parameters
+    if args:
+        raise ValueError(
+            "The full interface DAG should include all root nodes but requires inputs:"
+            f"\n\n{format_list_linewise(args.keys())}"
+        )
     fig = plot_dag(dag)
     fig.write_html("full_interface_dag.html")
 

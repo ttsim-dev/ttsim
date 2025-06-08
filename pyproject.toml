@@ -261,14 +261,14 @@ exclude = []
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 "src/ttsim/interface_dag_elements/typing.py" = ["PGH", "PLR", "SIM114"]
-"src/ttsim/plot_dag.py" = ["PLR"]
 "tests/ttsim/mettsim/*" = ["PLR1714", "PLR1716"] # Vectorization can't handle x <= y <= z or x in {x,y}
 "tests/ttsim/test_failures.py" = ["E501"]
 # TODO: remove once ported nicely
-"outdated_docs/**/*.ipynb" = ["T201"]
-"src/_gettsim_tests/test_docs.py" = ["F821"]
-"src/ttsim/__init__.py" = ["PGH004"]
-"tests/ttsim/test_plot_dag.py" = ["PGH004"]
+"src/ttsim/stale_code_storage.py" = ["ALL"]
+"src/ttsim/plot_dag_old.py" = ["ALL"]
+"outdated_docs/**/*.ipynb" = ["ALL"]
+"src/_gettsim_tests/test_docs.py" = ["ALL"]
+"tests/ttsim/test_plot_dag.py" = ["ALL"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -292,7 +292,8 @@ disallow_empty_bodies = false
 
 [[tool.mypy.overrides]]
 module = [
-    "src.ttsim.plot_dag",
+    "src.ttsim.plot_dag_old",
+    "src.ttsim.stale_code_storage",
     "src._gettsim_tests.test_docs",
 ]
 disallow_untyped_defs = false

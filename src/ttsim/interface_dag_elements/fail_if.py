@@ -29,7 +29,6 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,
-        NestedColumnObjectsParamFunctions,
         NestedData,
         NestedPolicyEnvironment,
         NestedStrings,
@@ -225,11 +224,11 @@ def any_paths_are_invalid(
 @interface_function()
 def data_paths_are_missing_in_paths_to_column_names(
     results__tree: NestedData,
-    targets__tree_with_map_to_df: NestedStrings,
+    targets__tree: NestedStrings,
 ) -> None:
     """Fail if the data paths are missing in the paths to column names."""
     paths_in_data = dt.flatten_to_tree_paths(results__tree)
-    paths_in_mapper = dt.flatten_to_tree_paths(targets__tree_with_map_to_df)
+    paths_in_mapper = dt.flatten_to_tree_paths(targets__tree)
     missing_paths = [str(p) for p in paths_in_mapper if p not in paths_in_data]
     if missing_paths:
         msg = format_errors_and_warnings(
@@ -536,25 +535,6 @@ def input_mapper_has_incorrect_format(
             """
         )
         raise TypeError(msg)
-
-
-@interface_function()
-def name_of_last_branch_element_is_not_the_functions_leaf_name(
-    functions_tree: NestedColumnObjectsParamFunctions,
-) -> None:
-    """Raise error if a PolicyFunction does not have the same leaf name as the last
-    branch element of the tree path.
-    """
-
-    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
-        if tree_path[-1] != function.leaf_name:
-            raise KeyError(
-                f"""
-                The name of the last branch element of the functions tree must be the
-                same as the leaf name of the PolicyFunction. The tree path {tree_path}
-                is not compatible with the PolicyFunction {function.leaf_name}.
-                """
-            )
 
 
 @interface_function()
