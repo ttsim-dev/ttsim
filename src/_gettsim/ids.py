@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ttsim.config import numpy_or_jax as np
-from ttsim.interface_dag_elements.shared import reorder_ids
 from ttsim.tt_dag_elements import group_creation_function, policy_input
 
 
@@ -32,7 +31,7 @@ def ehe_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return reorder_ids(result)
+    return result
 
 
 @group_creation_function()
@@ -82,7 +81,7 @@ def fg_id(
         fg_id, p_id, p_id_elternteil_2_loc, hh_id, alter, children, n
     )
 
-    return reorder_ids(fg_id)
+    return fg_id
 
 
 def _assign_parents_fg_id(
@@ -142,7 +141,7 @@ def bg_id(
         fg_id,
     )
 
-    return reorder_ids(bg_id)
+    return bg_id
 
 
 @group_creation_function()
@@ -165,7 +164,7 @@ def eg_id(
         + np.minimum(p_id, p_id_einstandspartner__or_own_p_id) * n
     )
 
-    return reorder_ids(result)
+    return result
 
 
 @group_creation_function()
@@ -186,7 +185,7 @@ def wthh_id(
         hh_id + offset,
         hh_id,
     )
-    return reorder_ids(wthh_id)
+    return wthh_id
 
 
 @group_creation_function()
@@ -213,4 +212,4 @@ def sn_id(
         + np.minimum(p_id, p_id_ehepartner_or_own_p_id) * n
     )
 
-    return reorder_ids(result)
+    return result

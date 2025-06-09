@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from ttsim.config import numpy_or_jax as np
-from ttsim.interface_dag_elements.shared import reorder_ids
 from ttsim.tt_dag_elements import group_creation_function
 
 
@@ -17,7 +16,7 @@ def sp_id(
     p_id_spouse = np.where(p_id_spouse < 0, p_id, p_id_spouse)
     sp_id = np.maximum(p_id, p_id_spouse) + np.minimum(p_id, p_id_spouse) * n
 
-    return reorder_ids(sp_id)
+    return sp_id
 
 
 @group_creation_function()
@@ -62,4 +61,4 @@ def fam_id(
         fam_id,
     )
 
-    return reorder_ids(fam_id)
+    return fam_id
