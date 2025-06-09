@@ -374,8 +374,6 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
         The date until which the function is active (inclusive).
     """
 
-    reorder: bool = True
-
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
@@ -432,7 +430,6 @@ def group_creation_function(
             function=func_with_reorder,
             start_date=start_date,
             end_date=end_date,
-            reorder=reorder,
         )
 
     return decorator
