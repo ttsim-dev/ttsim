@@ -643,6 +643,34 @@ def targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
     )
 
 
+def mapper_columns_missing_in_df(
+    mapper_columns: list[str],
+    df: pd.DataFrame,
+) -> None:
+    missing_columns = [col for col in mapper_columns if col not in df.columns]
+    if missing_columns:
+        msg = format_errors_and_warnings(
+            "All columns in the input mapper must be present in the input dataframe. "
+            f"The following columns are missing: {missing_columns}"
+        )
+        raise ValueError(msg)
+
+
+def result_path_missing_in_mapper(
+    flat_data_to_convert: NestedData,
+    flat_mapper_columns: NestedStrings,
+) -> None:
+    missing_columns = [
+        path for path in flat_data_to_convert if path not in flat_mapper_columns
+    ]
+    if missing_columns:
+        msg = format_errors_and_warnings(
+            "The results mapper must contain all paths of the results data. "
+            f"The following paths are missing: {missing_columns}"
+        )
+        raise ValueError(msg)
+
+
 def format_errors_and_warnings(text: str, width: int = 79) -> str:
     """Format our own exception messages and warnings by dedenting paragraphs and
     wrapping at the specified width. Mainly required because of messages are written as
