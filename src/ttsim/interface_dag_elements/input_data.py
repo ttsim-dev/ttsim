@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
+
 from ttsim.interface_dag_elements.data_converters import dataframe_to_nested_data
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
@@ -11,7 +13,11 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.interface_dag_elements.typing import NestedData, NestedInputsMapper
+    from ttsim.interface_dag_elements.typing import (
+        FlatData,
+        NestedData,
+        NestedInputsMapper,
+    )
 
 
 @interface_input()
@@ -49,3 +55,17 @@ def tree(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
     )
+
+
+@interface_function()
+def flat(tree: NestedData) -> FlatData:
+    """The input DataFrame as a flattened data structure.
+
+    Args:
+        tree:
+            The input tree.
+
+    Returns:
+        Mapping of tree paths to input data.
+    """
+    return dt.flatten_to_tree_paths(tree)
