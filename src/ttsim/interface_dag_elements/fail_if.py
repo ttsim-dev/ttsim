@@ -656,21 +656,6 @@ def mapper_columns_missing_in_df(
         raise ValueError(msg)
 
 
-def result_path_missing_in_mapper(
-    flat_data_to_convert: NestedData,
-    flat_mapper_columns: NestedStrings,
-) -> None:
-    missing_columns = [
-        path for path in flat_data_to_convert if path not in flat_mapper_columns
-    ]
-    if missing_columns:
-        msg = format_errors_and_warnings(
-            "The results mapper must contain all paths of the results data. "
-            f"The following paths are missing: {missing_columns}"
-        )
-        raise ValueError(msg)
-
-
 def format_errors_and_warnings(text: str, width: int = 79) -> str:
     """Format our own exception messages and warnings by dedenting paragraphs and
     wrapping at the specified width. Mainly required because of messages are written as

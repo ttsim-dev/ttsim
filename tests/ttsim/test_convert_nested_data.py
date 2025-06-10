@@ -123,7 +123,7 @@ def test_dataframe_to_nested_data_fails_because_columns_not_in_df():
     df = pd.DataFrame({"b": [1, 2, 3]})
     with pytest.raises(
         ValueError,
-        match="All columns in the input mapper must be present in the input dataframe.",
+        match="The\nfollowing columns are missing: \\['a'\\]",
     ):
         dataframe_to_nested_data(
             mapper=mapper,
@@ -243,26 +243,3 @@ def test_nested_data_to_dataframe(
         data_with_p_id=minimal_data_tree,
     )
     pd.testing.assert_frame_equal(result_df, expected_output, check_like=True)
-
-
-def test_nested_data_to_dataframe_fails_because_result_path_missing_in_mapper():
-    nested_outputs_df_column_names = {
-        "n1": {
-            "n2": "a",
-        },
-    }
-    nested_data_to_convert = {
-        "n1": {
-            "n2": [1, 2, 3],
-            "n3": [4, 5, 6],
-        },
-    }
-    with pytest.raises(
-        ValueError,
-        match="The results mapper must contain all paths of the results data.",
-    ):
-        nested_data_to_df_with_mapped_columns(
-            nested_data_to_convert=nested_data_to_convert,
-            nested_outputs_df_column_names=nested_outputs_df_column_names,
-            data_with_p_id={"p_id": [0, 1, 2]},
-        )

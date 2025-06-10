@@ -39,17 +39,7 @@ INPUT_DF_MAPPER = {
 }
 
 
-TARGETS = {
-    "payroll_tax": {
-        "amount_y": None,
-        "child_tax_credit": {
-            "amount_m": None,
-        },
-    }
-}
-
-
-RESULTS_DF_MAPPER = {
+TARGETS_TREE = {
     "payroll_tax": {
         "amount_y": "payroll_tax_amount_y",
         "child_tax_credit": {
@@ -73,8 +63,7 @@ def test_end_to_end():
         inputs={
             "input_data__df_and_mapper__df": DF_FOR_MAPPER,
             "input_data__df_and_mapper__mapper": INPUT_DF_MAPPER,
-            "targets__tree": TARGETS,
-            "targets__tree_with_map_to_df": RESULTS_DF_MAPPER,
+            "targets__tree": TARGETS_TREE,
             "date": "2025-01-01",
             "rounding": False,
             "orig_policy_objects__root": METTSIM_ROOT,
