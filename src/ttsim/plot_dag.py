@@ -55,7 +55,7 @@ def plot_tt_dag(
         inputs={
             "policy_environment": policy_environment,
             "input_data__tree": dt.unflatten_from_qual_names(
-                dict.fromkeys(policy_inputs, -1),
+                dict.fromkeys(policy_inputs, numpy.array([0])),
             ),
             "targets__tree": dt.unflatten_from_qual_names(
                 dict.fromkeys(targets),

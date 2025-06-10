@@ -13,9 +13,7 @@ if TYPE_CHECKING:
 
 
 @interface_function(in_top_level_namespace=True)
-def processed_data(
-    input_data__flat: FlatData,
-) -> QNameData:
+def processed_data(input_data__flat: FlatData) -> QNameData:
     """Process the data for use in the taxes and transfers function.
 
     This is where the conversion of p_ids will happen.
@@ -45,17 +43,3 @@ def processed_data(
         else:
             processed_input_data[qual_name] = np.asarray(data)
     return processed_input_data
-
-
-@interface_function()
-def flat(tree: FlatData) -> FlatData:
-    """The input DataFrame as a nested data structure.
-
-    Args:
-        tree:
-            The input tree.
-
-    Returns:
-        Mapping of tree paths to input data.
-    """
-    return dt.flatten_to_tree_paths(tree)
