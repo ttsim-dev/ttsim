@@ -133,7 +133,9 @@ def plot_full_interface_dag(output_path: Path) -> None:
 def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
     """Plot the DAG."""
 
-    nice_dag = nx.relabel_nodes(dag, {qn.replace("__", "\n"): qn for qn in dag.nodes()})
+    nice_dag = nx.relabel_nodes(
+        dag, {qn: qn.replace("__", "<br>") for qn in dag.nodes()}
+    )
     pos = nx.nx_agraph.pygraphviz_layout(nice_dag, prog="dot", args="-Grankdir=LR")
     # Create edge traces with arrows
     edge_traces = []
