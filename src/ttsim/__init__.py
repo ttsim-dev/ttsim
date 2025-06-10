@@ -29,7 +29,11 @@ from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
 from ttsim.interface_dag_elements.input_data import tree as tree
-from ttsim.interface_dag_elements.results import df, tree
+from ttsim.interface_dag_elements.results import (
+    df_with_mapper,
+    df_with_nested_columns,
+    tree,
+)
 from ttsim.interface_dag_elements.fail_if import (
     active_periods_overlap,
     environment_is_invalid,
