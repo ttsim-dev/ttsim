@@ -4,9 +4,10 @@ import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
-from ttsim import main, policy_environment
+from ttsim import main
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
+from ttsim.interface_dag_elements.policy_environment import policy_environment
 from ttsim.tt_dag_elements import (
     RoundingSpec,
     policy_function,

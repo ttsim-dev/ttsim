@@ -6,7 +6,12 @@ import dags.tree as dt
 import pandas as pd
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import NestedData, NestedStrings, QNameData
+    from ttsim.interface_dag_elements.typing import (
+        NestedData,
+        NestedInputsMapper,
+        NestedStrings,
+        QNameData,
+    )
 
 
 def nested_data_to_df_with_nested_columns(
@@ -59,7 +64,7 @@ def nested_data_to_df_with_mapped_columns(
 
 
 def dataframe_to_nested_data(
-    mapper: NestedStrings,
+    mapper: NestedInputsMapper,
     df: pd.DataFrame,
 ) -> NestedData:
     """Transform a pandas DataFrame to a nested dictionary expected by TTSIM.
@@ -110,9 +115,7 @@ def dataframe_to_nested_data(
 
 
     """
-
     qualified_inputs_tree_to_df_columns = dt.flatten_to_qual_names(mapper)
-
     name_to_input_series = {}
     for (
         qualified_input_name,

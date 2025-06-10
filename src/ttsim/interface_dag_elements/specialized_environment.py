@@ -107,7 +107,7 @@ def _remove_tree_logic_from_policy_environment(
         else:
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qual_name(name),
-                names__top_level_namespace=names__top_level_namespace,
+                top_level_namespace=names__top_level_namespace,
             )
     return out
 

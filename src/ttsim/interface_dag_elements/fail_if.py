@@ -29,7 +29,6 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         GenericCallable,
-        NestedColumnObjectsParamFunctions,
         NestedData,
         NestedPolicyEnvironment,
         NestedStrings,
@@ -154,8 +153,8 @@ def assert_valid_ttsim_pytree(
 
 @interface_function()
 def active_periods_overlap(
-    orig_tree_with_column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
-    orig_tree_with_params: FlatOrigParamSpecs,
+    orig_policy_objects__column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
+    orig_policy_objects__param_specs: FlatOrigParamSpecs,
 ) -> None:
     """Fail because active periods of objects / parameters overlap.
 
@@ -172,14 +171,17 @@ def active_periods_overlap(
     overlap_checker: dict[
         tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
     ] = {}
-    for orig_path, obj in orig_tree_with_column_objects_and_param_functions.items():
+    for (
+        orig_path,
+        obj,
+    ) in orig_policy_objects__column_objects_and_param_functions.items():
         path = (*orig_path[:-2], obj.leaf_name)
         if path in overlap_checker:
             overlap_checker[path].append(obj)
         else:
             overlap_checker[path] = [obj]
 
-    for orig_path, obj in orig_tree_with_params.items():
+    for orig_path, obj in orig_policy_objects__param_specs.items():
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
@@ -222,11 +224,11 @@ def any_paths_are_invalid(
 @interface_function()
 def data_paths_are_missing_in_paths_to_column_names(
     results__tree: NestedData,
-    targets__tree_with_map_to_df: NestedStrings,
+    targets__tree: NestedStrings,
 ) -> None:
     """Fail if the data paths are missing in the paths to column names."""
     paths_in_data = dt.flatten_to_tree_paths(results__tree)
-    paths_in_mapper = dt.flatten_to_tree_paths(targets__tree_with_map_to_df)
+    paths_in_mapper = dt.flatten_to_tree_paths(targets__tree)
     missing_paths = [str(p) for p in paths_in_mapper if p not in paths_in_data]
     if missing_paths:
         msg = format_errors_and_warnings(
@@ -452,8 +454,8 @@ def non_convertible_objects_in_results_tree(
 
 
 @interface_function()
-def input_df_with_mapper_has_bool_or_numeric_column_names(
-    input_data__df_with_mapper__df: pd.DataFrame,
+def input_df_has_bool_or_numeric_column_names(
+    input_data__df_and_mapper__df: pd.DataFrame,
 ) -> None:
     """Fail if the DataFrame has bool or numeric column names."""
     common_msg = format_errors_and_warnings(
@@ -463,11 +465,11 @@ def input_df_with_mapper_has_bool_or_numeric_column_names(
         """
     )
     bool_column_names = [
-        col for col in input_data__df_with_mapper__df.columns if isinstance(col, bool)
+        col for col in input_data__df_and_mapper__df.columns if isinstance(col, bool)
     ]
     numeric_column_names = [
         col
-        for col in input_data__df_with_mapper__df.columns
+        for col in input_data__df_and_mapper__df.columns
         if isinstance(col, (int, float)) or (isinstance(col, str) and col.isnumeric())
     ]
 
@@ -484,11 +486,29 @@ def input_df_with_mapper_has_bool_or_numeric_column_names(
 
 
 @interface_function()
-def input_mapper_has_incorrect_format(
-    input_data__df_with_mapper__mapper: NestedStrings,
+def input_df_mapper_columns_missing_in_df(
+    input_data__df_and_mapper__df: pd.DataFrame,
+    input_data__df_and_mapper__mapper: NestedStrings,
+) -> None:
+    """Fail if the input mapper has columns that are not in the input dataframe."""
+    mapper_vals = dt.flatten_to_qual_names(input_data__df_and_mapper__mapper).values()
+    missing_columns = [
+        col for col in mapper_vals if col not in input_data__df_and_mapper__df.columns
+    ]
+    if missing_columns:
+        msg = format_errors_and_warnings(
+            "All columns in the input mapper must be present in the input dataframe. "
+            f"The following columns are missing: {missing_columns}"
+        )
+        raise ValueError(msg)
+
+
+@interface_function()
+def input_df_mapper_has_incorrect_format(
+    input_data__df_and_mapper__mapper: NestedStrings,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
-    if not isinstance(input_data__df_with_mapper__mapper, dict):
+    if not isinstance(input_data__df_and_mapper__mapper, dict):
         msg = format_errors_and_warnings(
             """The inputs tree to column mapping must be a (nested) dictionary. Call
             `dags.tree.create_tree_with_input_types` to create a template."""
@@ -498,7 +518,7 @@ def input_mapper_has_incorrect_format(
     non_string_paths = [
         str(path)
         for path in optree.tree_paths(
-            input_data__df_with_mapper__mapper,  # type: ignore[arg-type]
+            input_data__df_and_mapper__mapper,  # type: ignore[arg-type]
             none_is_leaf=True,
         )
         if not all(isinstance(part, str) for part in path)
@@ -517,7 +537,7 @@ def input_mapper_has_incorrect_format(
 
     incorrect_types = {
         k: type(v)
-        for k, v in dt.flatten_to_qual_names(input_data__df_with_mapper__mapper).items()
+        for k, v in dt.flatten_to_qual_names(input_data__df_and_mapper__mapper).items()
         if not isinstance(v, str | int | float | bool)
     }
     if incorrect_types:
@@ -533,25 +553,6 @@ def input_mapper_has_incorrect_format(
             """
         )
         raise TypeError(msg)
-
-
-@interface_function()
-def name_of_last_branch_element_is_not_the_functions_leaf_name(
-    functions_tree: NestedColumnObjectsParamFunctions,
-) -> None:
-    """Raise error if a PolicyFunction does not have the same leaf name as the last
-    branch element of the tree path.
-    """
-
-    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
-        if tree_path[-1] != function.leaf_name:
-            raise KeyError(
-                f"""
-                The name of the last branch element of the functions tree must be the
-                same as the leaf name of the PolicyFunction. The tree path {tree_path}
-                is not compatible with the PolicyFunction {function.leaf_name}.
-                """
-            )
 
 
 @interface_function()

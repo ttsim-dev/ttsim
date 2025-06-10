@@ -81,3 +81,35 @@ def _convert_to_policy_function_if_callable(
         converted_object = policy_function(leaf_name=obj.__name__)(obj)
 
     return converted_object
+
+
+@interface_function()
+def name_of_last_branch_element_is_not_the_functions_leaf_name(
+    functions_tree: NestedColumnObjectsParamFunctions,
+) -> None:
+    """Raise error if a PolicyFunction does not have the same leaf name as the last
+    branch element of the tree path.
+    """
+
+    for tree_path, function in dt.flatten_to_tree_paths(functions_tree).items():
+        if tree_path[-1] != function.leaf_name:
+            raise KeyError(
+                f"""
+                The name of the last branch element of the functions tree must be the
+                same as the leaf name of the PolicyFunction. The tree path {tree_path}
+                is not compatible with the PolicyFunction {function.leaf_name}.
+                """
+            )
+
+
+@pytest.mark.parametrize(
+    "functions_tree",
+    [
+        {"foo": policy_function(leaf_name="bar")(return_one)},
+    ],
+)
+def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
+    functions_tree: NestedColumnObjectsParamFunctions,
+):
+    with pytest.raises(KeyError):
+        name_of_last_branch_element_is_not_the_functions_leaf_name(functions_tree)

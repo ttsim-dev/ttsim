@@ -13,11 +13,13 @@ from mettsim.config import METTSIM_ROOT
 from ttsim import (
     main,
     merge_trees,
-    with_partialled_params_and_scalars,
-    with_processed_params_and_scalars,
 )
 from ttsim.config import IS_JAX_INSTALLED
 from ttsim.config import numpy_or_jax as np
+from ttsim.interface_dag_elements.specialized_environment import (
+    with_partialled_params_and_scalars,
+    with_processed_params_and_scalars,
+)
 from ttsim.tt_dag_elements import (
     AggType,
     DictParam,

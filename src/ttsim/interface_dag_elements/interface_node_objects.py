@@ -45,12 +45,25 @@ class InterfaceNodeObject:
 class InterfaceInput(InterfaceNodeObject):
     """A dummy function representing an input node."""
 
+    return_type: type
+
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],  # noqa: ARG002
         top_level_namespace: UnorderedQNames,  # noqa: ARG002
     ) -> InterfaceInput:
         return self
+
+    def dummy_callable(self):
+        """Dummy callable for the interface input. Just used for plotting."""
+
+        def dummy() -> self.return_type:
+            pass
+
+        return interface_function(
+            leaf_name=self.leaf_name,
+            in_top_level_namespace=self.in_top_level_namespace,
+        )(dummy)
 
 
 def interface_input(
@@ -68,6 +81,7 @@ def interface_input(
         return InterfaceInput(
             leaf_name=func.__name__,
             in_top_level_namespace=in_top_level_namespace,
+            return_type=func.__annotations__["return"],
         )
 
     return inner

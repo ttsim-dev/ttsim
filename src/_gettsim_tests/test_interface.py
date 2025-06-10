@@ -95,7 +95,7 @@ def example_inputs_tree_to_inputs_df_columns():
 
 
 @pytest.mark.parametrize(
-    "targets__tree_with_map_to_df",
+    "targets__tree",
     [
         # Param target and policy target
         {
@@ -119,7 +119,7 @@ def example_inputs_tree_to_inputs_df_columns():
     ],
 )
 def test_oss_with_gettsim_policy_env(
-    targets__tree_with_map_to_df,
+    targets__tree,
     example_inputs_df,
     example_inputs_tree_to_inputs_df_columns,
 ):
@@ -127,11 +127,9 @@ def test_oss_with_gettsim_policy_env(
         date="2024-01-01",
         inputs_df=example_inputs_df,
         inputs_tree_to_inputs_df_columns=example_inputs_tree_to_inputs_df_columns,
-        targets__tree_with_map_to_df=targets__tree_with_map_to_df,
+        targets__tree=targets__tree,
     )
-    expected_columns: list[tuple[str]] = optree.tree_flatten(
-        targets__tree_with_map_to_df
-    )[0]
+    expected_columns: list[tuple[str]] = optree.tree_flatten(targets__tree)[0]
     assert results.shape == (
         example_inputs_df.shape[0],
         len(expected_columns),

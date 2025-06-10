@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from _gettsim.config import GETTSIM_ROOT
-from ttsim import (
+from ttsim import main
+from ttsim.interface_dag_elements.data_converters import (
     dataframe_to_nested_data,
-    main,
     nested_data_to_df_with_mapped_columns,
-    to_datetime,
 )
+from ttsim.interface_dag_elements.shared import to_datetime
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -20,7 +20,7 @@ def oss(
     date: str,
     inputs_df: pd.DataFrame,
     inputs_tree_to_inputs_df_columns: NestedInputs,
-    targets__tree_with_map_to_df: NestedStrings,
+    targets__tree: NestedStrings,
 ) -> pd.DataFrame:
     """One-stop-shop for computing taxes and transfers.
 
@@ -34,7 +34,7 @@ def oss(
             A tree that has the inputs required by GETTSIM as the path (sequence of
             keys) and maps them to the data provided by the user. The leaves of the tree
             are strings that reference column names in *inputs_df* or constants.
-        targets__tree_with_map_to_df:
+        targets__tree:
             A tree that has the desired targets as the path (sequence of keys) and maps
             them to the data columns the user would like to have.
 
@@ -95,7 +95,7 @@ def oss(
     ...     date="2025-01-01",
     ...     inputs_df=inputs_df,
     ...     inputs_tree_to_inputs_df_columns=inputs_map,
-    ...     targets__tree_with_map_to_df=targets_map,
+    ...     targets__tree=targets_map,
     ... )
        ltci_contrib
     0         14.72
@@ -112,13 +112,13 @@ def oss(
             "date": to_datetime(date),
             "orig_policy_objects__root": GETTSIM_ROOT,
             "input_data__tree": input_data__tree,
-            "targets__tree": targets__tree_with_map_to_df,
+            "targets__tree": targets__tree,
             "rounding": True,
         },
         targets=["results__tree"],
     )["results__tree"]
     return nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=nested_result,
-        nested_outputs_df_column_names=targets__tree_with_map_to_df,
+        nested_outputs_df_column_names=targets__tree,
         data_with_p_id=input_data__tree,
     )

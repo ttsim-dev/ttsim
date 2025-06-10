@@ -6,8 +6,10 @@ import pandas as pd
 import pytest
 
 from ttsim import (
-    dataframe_to_nested_data,
     main,
+)
+from ttsim.interface_dag_elements.data_converters import (
+    dataframe_to_nested_data,
     nested_data_to_df_with_mapped_columns,
 )
 from ttsim.tt_dag_elements import (
@@ -117,7 +119,7 @@ def test_dataframe_to_nested_data(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree_with_map_to_df",
+        "targets__tree",
         "expected_output",
     ),
     [
@@ -208,21 +210,21 @@ def test_dataframe_to_nested_data(
 def test_nested_data_to_dataframe(
     environment,
     minimal_data_tree,
-    targets__tree_with_map_to_df,
+    targets__tree,
     expected_output,
 ):
     results__tree = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
-            "targets__tree": targets__tree_with_map_to_df,
+            "targets__tree": targets__tree,
             "rounding": False,
         },
         targets=["results__tree"],
     )["results__tree"]
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,
-        nested_outputs_df_column_names=targets__tree_with_map_to_df,
+        nested_outputs_df_column_names=targets__tree,
         data_with_p_id=minimal_data_tree,
     )
     pd.testing.assert_frame_equal(result_df, expected_output, check_like=True)

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy
 
 from ttsim.config import numpy_or_jax as np
+from ttsim.tt_dag_elements.column_objects_param_function import param_function
 
 if TYPE_CHECKING:
     import datetime
@@ -38,6 +39,18 @@ class ParamObject:
     reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
     name: dict[Literal["de", "en"], str]
     description: dict[Literal["de", "en"], str]
+
+    def dummy_callable(self):
+        """Dummy callable for the policy input. Just used for plotting."""
+
+        def dummy() -> str(type(self).__name__):
+            pass
+
+        return param_function(
+            leaf_name=self.leaf_name,
+            start_date=self.start_date,
+            end_date=self.end_date,
+        )(dummy)
 
 
 @dataclass(frozen=True)
