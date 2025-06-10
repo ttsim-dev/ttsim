@@ -454,7 +454,7 @@ def non_convertible_objects_in_results_tree(
 
 
 @interface_function()
-def input_df_with_mapper_has_bool_or_numeric_column_names(
+def input_df_has_bool_or_numeric_column_names(
     input_data__df_and_mapper__df: pd.DataFrame,
 ) -> None:
     """Fail if the DataFrame has bool or numeric column names."""
@@ -486,7 +486,25 @@ def input_df_with_mapper_has_bool_or_numeric_column_names(
 
 
 @interface_function()
-def input_mapper_has_incorrect_format(
+def input_df_mapper_columns_missing_in_df(
+    input_data__df_and_mapper__df: pd.DataFrame,
+    input_data__df_and_mapper__mapper: NestedStrings,
+) -> None:
+    """Fail if the input mapper has columns that are not in the input dataframe."""
+    mapper_vals = dt.flatten_to_qual_names(input_data__df_and_mapper__mapper).values()
+    missing_columns = [
+        col for col in mapper_vals if col not in input_data__df_and_mapper__df.columns
+    ]
+    if missing_columns:
+        msg = format_errors_and_warnings(
+            "All columns in the input mapper must be present in the input dataframe. "
+            f"The following columns are missing: {missing_columns}"
+        )
+        raise ValueError(msg)
+
+
+@interface_function()
+def input_df_mapper_has_incorrect_format(
     input_data__df_and_mapper__mapper: NestedStrings,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
@@ -624,19 +642,6 @@ def targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
         leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
         tree_name="targets__tree",
     )
-
-
-def mapper_columns_missing_in_df(
-    mapper_columns: list[str],
-    df: pd.DataFrame,
-) -> None:
-    missing_columns = [col for col in mapper_columns if col not in df.columns]
-    if missing_columns:
-        msg = format_errors_and_warnings(
-            "All columns in the input mapper must be present in the input dataframe. "
-            f"The following columns are missing: {missing_columns}"
-        )
-        raise ValueError(msg)
 
 
 def format_errors_and_warnings(text: str, width: int = 79) -> str:

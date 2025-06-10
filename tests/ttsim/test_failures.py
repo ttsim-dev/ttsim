@@ -24,8 +24,8 @@ from ttsim.interface_dag_elements.fail_if import (
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
     input_data_tree_is_invalid,
-    input_df_with_mapper_has_bool_or_numeric_column_names,
-    input_mapper_has_incorrect_format,
+    input_df_has_bool_or_numeric_column_names,
+    input_df_mapper_has_incorrect_format,
     non_convertible_objects_in_results_tree,
     targets_are_not_in_policy_environment_or_data,
 )
@@ -660,11 +660,11 @@ def test_fail_if_input_data_tree_is_invalid_via_main():
         pd.DataFrame({1: [1, 2]}),
     ],
 )
-def test_fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(df):
+def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
         ValueError, match="DataFrame column names cannot be booleans or numbers."
     ):
-        input_df_with_mapper_has_bool_or_numeric_column_names(df)
+        input_df_has_bool_or_numeric_column_names(df)
 
 
 @pytest.mark.parametrize(
@@ -703,11 +703,11 @@ def test_fail_if_input_df_with_mapper_has_bool_or_numeric_column_names(df):
         ),
     ],
 )
-def test_fail_if_input_mapper_has_incorrect_format(
+def test_fail_if_input_df_mapper_has_incorrect_format(
     input_data__df_and_mapper__mapper, expected_error_message
 ):
     with pytest.raises(TypeError, match=expected_error_message):
-        input_mapper_has_incorrect_format(input_data__df_and_mapper__mapper)
+        input_df_mapper_has_incorrect_format(input_data__df_and_mapper__mapper)
 
 
 @pytest.mark.parametrize(

@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 
-from ttsim.interface_dag_elements.fail_if import mapper_columns_missing_in_df
-
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         NestedData,
@@ -118,15 +116,6 @@ def dataframe_to_nested_data(
 
     """
     qualified_inputs_tree_to_df_columns = dt.flatten_to_qual_names(mapper)
-    mapper_columns_missing_in_df(
-        mapper_columns=[
-            v
-            for v in qualified_inputs_tree_to_df_columns.values()
-            if isinstance(v, str)
-        ],
-        df=df,
-    )
-
     name_to_input_series = {}
     for (
         qualified_input_name,

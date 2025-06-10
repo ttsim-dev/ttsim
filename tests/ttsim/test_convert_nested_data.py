@@ -116,23 +116,6 @@ def test_dataframe_to_nested_data(
         )
 
 
-def test_dataframe_to_nested_data_fails_because_columns_not_in_df():
-    mapper = {
-        "n1": {
-            "n2": "a",
-        },
-    }
-    df = pd.DataFrame({"b": [1, 2, 3]})
-    with pytest.raises(
-        ValueError,
-        match="The\nfollowing columns are missing: \\['a'\\]",
-    ):
-        dataframe_to_nested_data(
-            mapper=mapper,
-            df=df,
-        )
-
-
 @pytest.mark.parametrize(
     (
         "environment",
