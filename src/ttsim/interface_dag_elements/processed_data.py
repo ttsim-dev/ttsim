@@ -6,7 +6,7 @@ import dags.tree as dt
 
 from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.interface_dag_elements.shared import reorder_ids
+from ttsim.tt_dag_elements.column_objects_param_function import reorder_ids
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import FlatData, QNameData
@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 def processed_data(input_data__flat: FlatData) -> QNameData:
     """Process the data for use in the taxes and transfers function.
 
-    This is where the conversion of p_ids will happen.
+    Replace id's by consecutive integers starting at zero.
+    The Jax-based backend will work correctly only with these transformed indices.
+    They will be transformed back when converting raw results to results.
 
     Args:
         input_data__tree:

@@ -18,7 +18,8 @@ from pandas.api.types import (
 )
 
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.interface_dag_elements.shared import reorder_ids, to_datetime
+from ttsim.config import numpy_or_jax as np
+from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt_dag_elements.aggregation import (
     AggType,
     all_by_p_id,
@@ -42,7 +43,6 @@ from ttsim.tt_dag_elements.vectorization import vectorize_function
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.config import numpy_or_jax as np
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         GenericCallable,
@@ -368,6 +368,29 @@ def policy_function(
         )
 
     return inner
+
+
+def reorder_ids(ids: np.ndarray) -> np.ndarray:
+    """Make ID's consecutively numbered.
+
+    Takes the given IDs and replaces them by consecutive numbers
+    starting at 0.
+
+    [43,44,70,50] -> [0,1,3,2]
+
+    """
+
+    sorting = np.argsort(ids)
+    ids_sorted = ids[sorting]
+    index_after_sort = np.arange(ids.shape[0])[sorting]
+
+    # Look for difference from previous entry in sorted array
+    diff_to_prev = np.where(np.diff(ids_sorted) >= 1, 1, 0)
+
+    # Sum up all differences to get new id
+    consecutive_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
+
+    return consecutive_ids[np.argsort(index_after_sort)]
 
 
 @dataclass(frozen=True)

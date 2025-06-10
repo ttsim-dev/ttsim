@@ -25,8 +25,7 @@ if TYPE_CHECKING:
 def tree(raw_results__combined: QNameData, input_data__flat: FlatData) -> NestedData:
     """The combined results as a tree.
 
-    Note: This is the point where the `p_id`s are converted back to their original
-    values.
+    The transformed id's are converted back to their original values.
 
     """
     raw_results__combined_with_old_ids = raw_results__combined
