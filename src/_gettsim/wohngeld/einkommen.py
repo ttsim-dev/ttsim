@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from ttsim.config import numpy_or_jax as np
+from typing import TYPE_CHECKING
+
 from ttsim.tt_dag_elements import (
     AggType,
     ConsecutiveInt1dLookupTableParamValue,
@@ -13,6 +14,9 @@ from ttsim.tt_dag_elements import (
     piecewise_polynomial,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    import numpy
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -44,13 +48,13 @@ def einkommen(
     """
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
     unteres_eink = min_einkommen_lookup_table.values_to_look_up[
-        np.minimum(
+        numpy.minimum(
             anzahl_personen, min_einkommen_lookup_table.values_to_look_up.shape[0]
         )
         - min_einkommen_lookup_table.base_to_subtract
     ]
 
-    return np.maximum(eink_nach_abzug_m_hh, unteres_eink)
+    return numpy.maximum(eink_nach_abzug_m_hh, unteres_eink)
 
 
 @policy_function()

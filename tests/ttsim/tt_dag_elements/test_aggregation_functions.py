@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import copy
+from typing import TYPE_CHECKING
 
 import numpy
 import pytest
 
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
+
+if TYPE_CHECKING:
+    import numpy
 from ttsim.tt_dag_elements.aggregation import (
     grouped_all,
     grouped_any,
@@ -44,109 +47,109 @@ def parameterize_based_on_dict(test_cases, keys_of_test_cases=None):
 
 test_grouped_specs = {
     "constant_column": {
-        "column_to_aggregate": np.array([1, 1, 1, 1, 1]),
-        "group_id": np.array([0, 0, 1, 1, 1]),
-        "expected_res_count": np.array([2, 2, 3, 3, 3]),
-        "expected_res_sum": np.array([2, 2, 3, 3, 3]),
-        "expected_res_max": np.array([1, 1, 1, 1, 1]),
-        "expected_res_min": np.array([1, 1, 1, 1, 1]),
-        "expected_res_any": np.array([True, True, True, True, True]),
-        "expected_res_all": np.array([True, True, True, True, True]),
+        "column_to_aggregate": numpy.array([1, 1, 1, 1, 1]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
+        "expected_res_count": numpy.array([2, 2, 3, 3, 3]),
+        "expected_res_sum": numpy.array([2, 2, 3, 3, 3]),
+        "expected_res_max": numpy.array([1, 1, 1, 1, 1]),
+        "expected_res_min": numpy.array([1, 1, 1, 1, 1]),
+        "expected_res_any": numpy.array([True, True, True, True, True]),
+        "expected_res_all": numpy.array([True, True, True, True, True]),
     },
     "constant_column_group_id_unsorted": {
-        "column_to_aggregate": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
-        "group_id": np.array([0, 1, 0, 1, 0]),
-        "expected_res_count": np.array([3, 2, 3, 2, 3]),
-        "expected_res_sum": np.array([3.0, 2.0, 3.0, 2.0, 3.0]),
-        "expected_res_mean": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
-        "expected_res_max": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
-        "expected_res_min": np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
+        "column_to_aggregate": numpy.array([1.0, 1.0, 1.0, 1.0, 1.0]),
+        "group_id": numpy.array([0, 1, 0, 1, 0]),
+        "expected_res_count": numpy.array([3, 2, 3, 2, 3]),
+        "expected_res_sum": numpy.array([3.0, 2.0, 3.0, 2.0, 3.0]),
+        "expected_res_mean": numpy.array([1.0, 1.0, 1.0, 1.0, 1.0]),
+        "expected_res_max": numpy.array([1.0, 1.0, 1.0, 1.0, 1.0]),
+        "expected_res_min": numpy.array([1.0, 1.0, 1.0, 1.0, 1.0]),
     },
     "basic_case": {
-        "column_to_aggregate": np.array([0, 1, 2, 3, 4]),
-        "group_id": np.array([0, 0, 1, 1, 1]),
-        "expected_res_sum": np.array([1, 1, 9, 9, 9]),
-        "expected_res_max": np.array([1, 1, 4, 4, 4]),
-        "expected_res_min": np.array([0, 0, 2, 2, 2]),
-        "expected_res_any": np.array([True, True, True, True, True]),
-        "expected_res_all": np.array([False, False, True, True, True]),
+        "column_to_aggregate": numpy.array([0, 1, 2, 3, 4]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
+        "expected_res_sum": numpy.array([1, 1, 9, 9, 9]),
+        "expected_res_max": numpy.array([1, 1, 4, 4, 4]),
+        "expected_res_min": numpy.array([0, 0, 2, 2, 2]),
+        "expected_res_any": numpy.array([True, True, True, True, True]),
+        "expected_res_all": numpy.array([False, False, True, True, True]),
     },
     "unique_group_ids_with_gaps": {
-        "column_to_aggregate": np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
-        "group_id": np.array([0, 0, 3, 3, 3]),
-        "expected_res_count": np.array([2, 2, 3, 3, 3]),
-        "expected_res_sum": np.array([1.0, 1.0, 9.0, 9.0, 9.0]),
-        "expected_res_mean": np.array([0.5, 0.5, 3.0, 3.0, 3.0]),
-        "expected_res_max": np.array([1.0, 1.0, 4.0, 4.0, 4.0]),
-        "expected_res_min": np.array([0.0, 0.0, 2.0, 2.0, 2.0]),
+        "column_to_aggregate": numpy.array([0.0, 1.0, 2.0, 3.0, 4.0]),
+        "group_id": numpy.array([0, 0, 3, 3, 3]),
+        "expected_res_count": numpy.array([2, 2, 3, 3, 3]),
+        "expected_res_sum": numpy.array([1.0, 1.0, 9.0, 9.0, 9.0]),
+        "expected_res_mean": numpy.array([0.5, 0.5, 3.0, 3.0, 3.0]),
+        "expected_res_max": numpy.array([1.0, 1.0, 4.0, 4.0, 4.0]),
+        "expected_res_min": numpy.array([0.0, 0.0, 2.0, 2.0, 2.0]),
     },
     "float_column": {
-        "column_to_aggregate": np.array([0.0, 1.5, 2.0, 3.0, 4.0]),
-        "group_id": np.array([0, 0, 3, 3, 3]),
-        "expected_res_sum": np.array([1.5, 1.5, 9.0, 9.0, 9.0]),
-        "expected_res_mean": np.array([0.75, 0.75, 3.0, 3.0, 3.0]),
-        "expected_res_max": np.array([1.5, 1.5, 4.0, 4.0, 4.0]),
-        "expected_res_min": np.array([0.0, 0.0, 2.0, 2.0, 2.0]),
+        "column_to_aggregate": numpy.array([0.0, 1.5, 2.0, 3.0, 4.0]),
+        "group_id": numpy.array([0, 0, 3, 3, 3]),
+        "expected_res_sum": numpy.array([1.5, 1.5, 9.0, 9.0, 9.0]),
+        "expected_res_mean": numpy.array([0.75, 0.75, 3.0, 3.0, 3.0]),
+        "expected_res_max": numpy.array([1.5, 1.5, 4.0, 4.0, 4.0]),
+        "expected_res_min": numpy.array([0.0, 0.0, 2.0, 2.0, 2.0]),
     },
     "more_than_two_groups": {
-        "column_to_aggregate": np.array([0.0, 1.0, 2.0, 3.0, 4.0]),
-        "group_id": np.array([1, 0, 1, 1, 3]),
-        "expected_res_count": np.array([3, 1, 3, 3, 1]),
-        "expected_res_sum": np.array([5.0, 1.0, 5.0, 5.0, 4.0]),
-        "expected_res_mean": np.array([5.0 / 3.0, 1.0, 5.0 / 3.0, 5.0 / 3.0, 4.0]),
-        "expected_res_max": np.array([3.0, 1.0, 3.0, 3.0, 4.0]),
-        "expected_res_min": np.array([0.0, 1.0, 0.0, 0.0, 4.0]),
+        "column_to_aggregate": numpy.array([0.0, 1.0, 2.0, 3.0, 4.0]),
+        "group_id": numpy.array([1, 0, 1, 1, 3]),
+        "expected_res_count": numpy.array([3, 1, 3, 3, 1]),
+        "expected_res_sum": numpy.array([5.0, 1.0, 5.0, 5.0, 4.0]),
+        "expected_res_mean": numpy.array([5.0 / 3.0, 1.0, 5.0 / 3.0, 5.0 / 3.0, 4.0]),
+        "expected_res_max": numpy.array([3.0, 1.0, 3.0, 3.0, 4.0]),
+        "expected_res_min": numpy.array([0.0, 1.0, 0.0, 0.0, 4.0]),
     },
     "basic_case_bool": {
-        "column_to_aggregate": np.array([True, False, True, False, False]),
-        "group_id": np.array([0, 0, 1, 1, 1]),
-        "expected_res_any": np.array([True, True, True, True, True]),
-        "expected_res_all": np.array([False, False, False, False, False]),
-        "expected_res_sum": np.array([1, 1, 1, 1, 1]),
+        "column_to_aggregate": numpy.array([True, False, True, False, False]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
+        "expected_res_any": numpy.array([True, True, True, True, True]),
+        "expected_res_all": numpy.array([False, False, False, False, False]),
+        "expected_res_sum": numpy.array([1, 1, 1, 1, 1]),
     },
     "group_id_unsorted_bool": {
-        "column_to_aggregate": np.array([True, False, True, True, True]),
-        "group_id": np.array([0, 1, 0, 1, 0]),
-        "expected_res_any": np.array([True, True, True, True, True]),
-        "expected_res_all": np.array([True, False, True, False, True]),
-        "expected_res_sum": np.array([3, 1, 3, 1, 3]),
+        "column_to_aggregate": numpy.array([True, False, True, True, True]),
+        "group_id": numpy.array([0, 1, 0, 1, 0]),
+        "expected_res_any": numpy.array([True, True, True, True, True]),
+        "expected_res_all": numpy.array([True, False, True, False, True]),
+        "expected_res_sum": numpy.array([3, 1, 3, 1, 3]),
     },
     "unique_group_ids_with_gaps_bool": {
-        "column_to_aggregate": np.array([True, False, False, False, False]),
-        "group_id": np.array([0, 0, 3, 3, 3]),
-        "expected_res_any": np.array([True, True, False, False, False]),
-        "expected_res_all": np.array([False, False, False, False, False]),
-        "expected_res_sum": np.array([1, 1, 0, 0, 0]),
+        "column_to_aggregate": numpy.array([True, False, False, False, False]),
+        "group_id": numpy.array([0, 0, 3, 3, 3]),
+        "expected_res_any": numpy.array([True, True, False, False, False]),
+        "expected_res_all": numpy.array([False, False, False, False, False]),
+        "expected_res_sum": numpy.array([1, 1, 0, 0, 0]),
     },
     "sum_by_p_id_float": {
-        "column_to_aggregate": np.array([10.0, 20.0, 30.0, 40.0, 50.0]),
-        "p_id_to_aggregate_by": np.array([-1, -1, 8, 8, 10]),
-        "p_id_to_store_by": np.array([7, 8, 9, 10, 11]),
-        "expected_res": np.array([0.0, 70.0, 0.0, 50.0, 0.0]),
+        "column_to_aggregate": numpy.array([10.0, 20.0, 30.0, 40.0, 50.0]),
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res": numpy.array([0.0, 70.0, 0.0, 50.0, 0.0]),
         "expected_type": numpy.floating,
     },
     "sum_by_p_id_int": {
-        "column_to_aggregate": np.array([10, 20, 30, 40, 50]),
-        "p_id_to_aggregate_by": np.array([-1, -1, 8, 8, 10]),
-        "p_id_to_store_by": np.array([7, 8, 9, 10, 11]),
-        "expected_res": np.array([0, 70, 0, 50, 0]),
+        "column_to_aggregate": numpy.array([10, 20, 30, 40, 50]),
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res": numpy.array([0, 70, 0, 50, 0]),
         "expected_type": numpy.integer,
     },
 }
 
 test_grouped_raises_specs = {
     "dtype_boolean": {
-        "column_to_aggregate": np.array([True, True, True, False, False]),
-        "group_id": np.array([0, 0, 1, 1, 1]),
+        "column_to_aggregate": numpy.array([True, True, True, False, False]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
         "error_mean": TypeError,
         "error_max": TypeError,
         "error_min": TypeError,
         "exception_match": "grouped_",
     },
     "float_group_id": {
-        "column_to_aggregate": np.array([0, 1, 2, 3, 4]),
-        "group_id": np.array([0, 0, 3.5, 3.5, 3.5]),
-        "p_id_to_store_by": np.array([0, 1, 2, 3, 4]),
+        "column_to_aggregate": numpy.array([0, 1, 2, 3, 4]),
+        "group_id": numpy.array([0, 0, 3.5, 3.5, 3.5]),
+        "p_id_to_store_by": numpy.array([0, 1, 2, 3, 4]),
         "error_sum": TypeError,
         "error_mean": TypeError,
         "error_max": TypeError,
@@ -155,21 +158,21 @@ test_grouped_raises_specs = {
         "exception_match": "The dtype of id columns must be integer.",
     },
     "dtype_float": {
-        "column_to_aggregate": np.array([1.5, 2, 3.5, 4, 5]),
-        "group_id": np.array([0, 0, 1, 1, 1]),
+        "column_to_aggregate": numpy.array([1.5, 2, 3.5, 4, 5]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
         "error_any": TypeError,
         "error_all": TypeError,
         "exception_match": "grouped_",
     },
     "dtype_integer": {
-        "column_to_aggregate": np.array([1, 2, 3, 4, 5]),
-        "group_id": np.array([0, 0, 1, 1, 1]),
+        "column_to_aggregate": numpy.array([1, 2, 3, 4, 5]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
         "error_mean": TypeError,
         "exception_match": "grouped_",
     },
     "float_group_id_bool": {
-        "column_to_aggregate": np.array([True, True, True, False, False]),
-        "group_id": np.array([0, 0, 3.5, 3.5, 3.5]),
+        "column_to_aggregate": numpy.array([True, True, True, False, False]),
+        "group_id": numpy.array([0, 0, 3.5, 3.5, 3.5]),
         "error_any": TypeError,
         "error_all": TypeError,
         "exception_match": "The dtype of id columns must be integer.",
@@ -178,39 +181,39 @@ test_grouped_raises_specs = {
 # We cannot even set up these fixtures in JAX.
 if not IS_JAX_INSTALLED:
     test_grouped_specs["datetime"] = {
-        "column_to_aggregate": np.array(
+        "column_to_aggregate": numpy.array(
             [
-                np.datetime64("2000"),
-                np.datetime64("2001"),
-                np.datetime64("2002"),
-                np.datetime64("2003"),
-                np.datetime64("2004"),
+                numpy.datetime64("2000"),
+                numpy.datetime64("2001"),
+                numpy.datetime64("2002"),
+                numpy.datetime64("2003"),
+                numpy.datetime64("2004"),
             ]
         ),
-        "group_id": np.array([1, 0, 1, 1, 1]),
-        "expected_res_max": np.array(
+        "group_id": numpy.array([1, 0, 1, 1, 1]),
+        "expected_res_max": numpy.array(
             [
-                np.datetime64("2004"),
-                np.datetime64("2001"),
-                np.datetime64("2004"),
-                np.datetime64("2004"),
-                np.datetime64("2004"),
+                numpy.datetime64("2004"),
+                numpy.datetime64("2001"),
+                numpy.datetime64("2004"),
+                numpy.datetime64("2004"),
+                numpy.datetime64("2004"),
             ]
         ),
-        "expected_res_min": np.array(
+        "expected_res_min": numpy.array(
             [
-                np.datetime64("2000"),
-                np.datetime64("2001"),
-                np.datetime64("2000"),
-                np.datetime64("2000"),
-                np.datetime64("2000"),
+                numpy.datetime64("2000"),
+                numpy.datetime64("2001"),
+                numpy.datetime64("2000"),
+                numpy.datetime64("2000"),
+                numpy.datetime64("2000"),
             ]
         ),
     }
 
     test_grouped_raises_specs["dtype_string"] = {
-        "column_to_aggregate": np.array(["0", "1", "2", "3", "4"]),
-        "group_id": np.array([0, 0, 1, 1, 1]),
+        "column_to_aggregate": numpy.array(["0", "1", "2", "3", "4"]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
         "error_sum": TypeError,
         "error_mean": TypeError,
         "error_max": TypeError,
@@ -220,16 +223,16 @@ if not IS_JAX_INSTALLED:
         "exception_match": "grouped_",
     }
     test_grouped_raises_specs["datetime"] = {
-        "column_to_aggregate": np.array(
+        "column_to_aggregate": numpy.array(
             [
-                np.datetime64("2000"),
-                np.datetime64("2001"),
-                np.datetime64("2002"),
-                np.datetime64("2003"),
-                np.datetime64("2004"),
+                numpy.datetime64("2000"),
+                numpy.datetime64("2001"),
+                numpy.datetime64("2002"),
+                numpy.datetime64("2003"),
+                numpy.datetime64("2004"),
             ]
         ),
-        "group_id": np.array([0, 0, 1, 1, 1]),
+        "group_id": numpy.array([0, 0, 1, 1, 1]),
         "error_sum": TypeError,
         "error_mean": TypeError,
         "error_any": TypeError,

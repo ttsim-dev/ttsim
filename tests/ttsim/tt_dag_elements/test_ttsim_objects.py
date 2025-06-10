@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import inspect
 
+import numpy
 import pytest
 
-from ttsim.config import numpy_or_jax as np
 from ttsim.tt_dag_elements import (
     AggType,
     PolicyFunction,
@@ -288,5 +288,7 @@ def test_agg_by_p_id_multiple_other_p_ids_present():
 
 def test_agg_by_p_id_sum_with_all_missing_p_ids():
     aggregate_by_p_id_sum(
-        p_id=np.array([180]), p_id_specifier=np.array([-1]), source=np.array([False])
+        p_id=numpy.array([180]),
+        p_id_specifier=numpy.array([-1]),
+        source=numpy.array([False]),
     )

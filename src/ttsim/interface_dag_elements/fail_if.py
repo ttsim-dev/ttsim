@@ -11,7 +11,6 @@ import networkx as nx
 import optree
 import pandas as pd
 
-from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
 from ttsim.tt_dag_elements.column_objects_param_function import (
@@ -25,6 +24,10 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
+    import numpy
+
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -260,7 +263,7 @@ def input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=input_data__tree,
-        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
+        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | numpy.ndarray),
         tree_name="input_data__tree",
     )
     p_id = input_data__tree.get("p_id", None)
@@ -427,13 +430,13 @@ def non_convertible_objects_in_results_tree(
 ) -> None:
     """Fail if results should be converted to a DataFrame but contain non-convertible
     objects."""
-    _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
+    _numeric_types = (int, float, bool, numpy.integer, numpy.floating, numpy.bool_)
 
     faulty_paths = []
     # TODO: HM doesn't think this will work as is, we'll need to check the length of
     # the data. Someone might request a policy parameter that is a 3-element array.
     for path, data in dt.flatten_to_tree_paths(results__tree).items():
-        if isinstance(data, (pd.Series, np.ndarray, list)):
+        if isinstance(data, (pd.Series, numpy.ndarray, list)):
             if all(isinstance(item, _numeric_types) for item in data):
                 continue
             else:
@@ -741,3 +744,39 @@ def _param_with_active_periods(
         )
 
     return out
+
+
+def fail_if__dtype_not_int(
+    data: numpy.ndarray,
+    agg_func: str,
+    xnp: ModuleType,
+) -> None:
+    """Check if data is of integer type."""
+    if not xnp.issubdtype(data.dtype, xnp.integer):
+        raise TypeError(
+            f"Data in {agg_func} must be of integer type, but is {data.dtype}."
+        )
+
+
+def fail_if__dtype_not_numeric_or_datetime(
+    data: numpy.ndarray,
+    agg_func: str,
+    xnp: ModuleType,
+) -> None:
+    """Check if data is of numeric or datetime type."""
+    if not xnp.issubdtype(data.dtype, (xnp.number, xnp.datetime64)):
+        raise TypeError(
+            f"Data in {agg_func} must be of numeric or datetime type, but is {data.dtype}."
+        )
+
+
+def fail_if__dtype_not_numeric_or_boolean(
+    data: numpy.ndarray,
+    agg_func: str,
+    xnp: ModuleType,
+) -> None:
+    """Check if data is of numeric or boolean type."""
+    if not xnp.issubdtype(data.dtype, (xnp.number, xnp.bool_)):
+        raise TypeError(
+            f"Data in {agg_func} must be of numeric or boolean type, but is {data.dtype}."
+        )

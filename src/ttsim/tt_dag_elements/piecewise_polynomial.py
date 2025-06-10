@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, get_args
+from typing import TYPE_CHECKING, Literal, get_args
 
 import numpy
 
-from ttsim.config import numpy_or_jax as np
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    import numpy
 from ttsim.tt_dag_elements.param_objects import PiecewisePolynomialParamValue
 
 FUNC_TYPES = Literal[
@@ -47,41 +50,44 @@ assert set(OPTIONS_REGISTRY.keys()) == set(get_args(FUNC_TYPES)), (
 
 
 def piecewise_polynomial(
-    x: np.ndarray,
+    x: numpy.ndarray,
     parameters: PiecewisePolynomialParamValue,
-    rates_multiplier: np.ndarray = 1.0,
-) -> np.ndarray:
+    rates_multiplier: numpy.ndarray,
+    xnp: ModuleType,
+) -> numpy.ndarray:
     """Calculate value of the piecewise function at `x`. If the first interval begins
     at -inf the polynomial of that interval can only have slope of 0. Requesting a
     value outside of the provided thresholds will lead to undefined behaviour.
 
     Parameters
     ----------
-    x : np.ndarray
+    x : numpy.ndarray
         Array with values at which the piecewise polynomial is to be calculated.
     thresholds : np.array
                 A one-dimensional array containing the thresholds for all intervals.
-    coefficients : np.ndarray
+    coefficients : numpy.ndarray
             A two-dimensional array where columns are interval sections and rows
             correspond to the coefficient of the nth polynomial.
-    intercepts : np.ndarray
+    intercepts : numpy.ndarray
         The intercepts at the lower threshold of each interval.
-    rates_multiplier : np.ndarray
+    rates_multiplier : numpy.ndarray
                        Multiplier to create individual or scaled rates.
+    xnp : ModuleType
+        The numpy module to use for calculations.
 
     Returns
     -------
-    out : np.ndarray
+    out : numpy.ndarray
         The value of `x` under the piecewise function.
 
     """
     order = parameters.rates.shape[0]
     # Get interval of requested value
-    selected_bin = np.searchsorted(parameters.thresholds, x, side="right") - 1
+    selected_bin = xnp.searchsorted(parameters.thresholds, x, side="right") - 1
     coefficients = parameters.rates[:, selected_bin].T
     # Calculate distance from X to lower threshold
-    increment_to_calc = np.where(
-        parameters.thresholds[selected_bin] == -np.inf,
+    increment_to_calc = xnp.where(
+        parameters.thresholds[selected_bin] == -xnp.inf,
         0,
         x - parameters.thresholds[selected_bin],
     )
@@ -89,11 +95,11 @@ def piecewise_polynomial(
     out = (
         parameters.intercepts[selected_bin]
         + (
-            ((increment_to_calc.reshape(-1, 1)) ** np.arange(1, order + 1, 1))
+            ((increment_to_calc.reshape(-1, 1)) ** xnp.arange(1, order + 1, 1))
             * (coefficients)
         ).sum(axis=1)
     ) * rates_multiplier
-    return np.squeeze(out)
+    return xnp.squeeze(out)
 
 
 def get_piecewise_parameters(
@@ -151,7 +157,8 @@ def get_piecewise_parameters(
 def check_and_get_thresholds(
     leaf_name: str,
     parameter_dict: dict[int, dict[str, float]],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    xnp: ModuleType,
+) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]:
     """Check and transfer raw threshold data.
 
     Transfer and check raw threshold data, which needs to be specified in a
@@ -162,6 +169,8 @@ def check_and_get_thresholds(
     parameter_dict
     leaf_name
     keys
+    xnp : ModuleType
+        The numpy module to use for calculations.
 
     Returns
     -------
@@ -186,7 +195,7 @@ def check_and_get_thresholds(
     upper_thresholds[keys[-1]] = parameter_dict[keys[-1]]["upper_threshold"]
 
     # Check if the function is defined on the complete real line
-    if (upper_thresholds[keys[-1]] != numpy.inf) | (lower_thresholds[0] != -numpy.inf):
+    if (upper_thresholds[keys[-1]] != xnp.inf) | (lower_thresholds[0] != -xnp.inf):
         raise ValueError(f"{leaf_name} needs to be defined on the entire real line.")
 
     for interval in keys[1:]:
@@ -211,19 +220,24 @@ def check_and_get_thresholds(
                 f" threshold in the piece after."
             )
 
-    if not numpy.allclose(lower_thresholds[1:], upper_thresholds[:-1]):
+    if not xnp.allclose(lower_thresholds[1:], upper_thresholds[:-1]):
         raise ValueError(
             f"The lower and upper thresholds of {leaf_name} have to coincide"
         )
     thresholds = sorted([lower_thresholds[0], *upper_thresholds])
-    return np.array(lower_thresholds), np.array(upper_thresholds), np.array(thresholds)
+    return (
+        xnp.array(lower_thresholds),
+        xnp.array(upper_thresholds),
+        xnp.array(thresholds),
+    )
 
 
 def _check_and_get_rates(
     leaf_name: str,
     func_type: FUNC_TYPES,
     parameter_dict: dict[int, dict[str, float]],
-) -> np.ndarray:
+    xnp: ModuleType,
+) -> numpy.ndarray:
     """Check and transfer raw rates data.
 
     Transfer and check raw rates data, which needs to be specified in a
@@ -235,6 +249,8 @@ def _check_and_get_rates(
     leaf_name
     keys
     func_type
+    xnp : ModuleType
+        The numpy module to use for calculations.
 
     Returns
     -------
@@ -250,16 +266,17 @@ def _check_and_get_rates(
                 raise ValueError(
                     f"In interval {interval} of {leaf_name}, {rate_type} is missing."
                 )
-    return np.array(rates)
+    return xnp.array(rates)
 
 
 def _check_and_get_intercepts(
     leaf_name: str,
     parameter_dict: dict[int, dict[str, float]],
-    lower_thresholds: np.ndarray,
-    upper_thresholds: np.ndarray,
-    rates: np.ndarray,
-) -> np.ndarray:
+    lower_thresholds: numpy.ndarray,
+    upper_thresholds: numpy.ndarray,
+    rates: numpy.ndarray,
+    xnp: ModuleType,
+) -> numpy.ndarray:
     """Check and transfer raw intercept data. If necessary create intercepts.
 
     Transfer and check raw rates data, which needs to be specified in a
@@ -273,6 +290,8 @@ def _check_and_get_intercepts(
     upper_thresholds
     rates
     keys
+    xnp : ModuleType
+        The numpy module to use for calculations.
 
     Returns
     -------
@@ -304,17 +323,18 @@ def _check_and_get_intercepts(
 
         else:
             intercepts = _create_intercepts(
-                lower_thresholds, upper_thresholds, rates, intercepts[0]
+                lower_thresholds, upper_thresholds, rates, intercepts[0], xnp=xnp
             )
-    return np.array(intercepts)
+    return xnp.array(intercepts)
 
 
 def _create_intercepts(
-    lower_thresholds: np.ndarray,
-    upper_thresholds: np.ndarray,
-    rates: np.ndarray,
-    intercept_at_lowest_threshold: np.ndarray,
-) -> np.ndarray:
+    lower_thresholds: numpy.ndarray,
+    upper_thresholds: numpy.ndarray,
+    rates: numpy.ndarray,
+    intercept_at_lowest_threshold: numpy.ndarray,
+    xnp: ModuleType,
+) -> numpy.ndarray:
     """Create intercepts from raw data.
 
     Parameters
@@ -335,12 +355,14 @@ def _create_intercepts(
     fun: function handle (currently only piecewise_linear, will need to think about
     whether we can have a generic function with a different interface or make
     it specific )
+    xnp : ModuleType
+        The numpy module to use for calculations.
 
     Returns
     -------
 
     """
-    intercepts = numpy.full_like(upper_thresholds, numpy.nan)
+    intercepts = numpy.full_like(upper_thresholds, xnp.nan)
     intercepts[0] = intercept_at_lowest_threshold
     for i, up_thr in enumerate(upper_thresholds[:-1]):
         intercepts[i + 1] = _calculate_one_intercept(
@@ -349,16 +371,18 @@ def _create_intercepts(
             upper_thresholds=upper_thresholds,
             rates=rates,
             intercepts=intercepts,
+            xnp=xnp,
         )
-    return np.array(intercepts)
+    return xnp.array(intercepts)
 
 
 def _calculate_one_intercept(
     x: float,
-    lower_thresholds: np.ndarray,
-    upper_thresholds: np.ndarray,
-    rates: np.ndarray,
-    intercepts: np.ndarray,
+    lower_thresholds: numpy.ndarray,
+    upper_thresholds: numpy.ndarray,
+    rates: numpy.ndarray,
+    intercepts: numpy.ndarray,
+    xnp: ModuleType,
 ) -> float:
     """Calculate the intercepts from the raw data.
 
@@ -375,6 +399,8 @@ def _calculate_one_intercept(
         to the nth polynomial.
     intercepts : numpy.ndarray
         The intercepts at the lower threshold of each interval.
+    xnp : ModuleType
+        The numpy module to use for calculations.
 
     Returns
     -------
@@ -384,15 +410,15 @@ def _calculate_one_intercept(
     """
 
     # Check if value lies within the defined range.
-    if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or numpy.isnan(x):
-        return numpy.nan
-    index_interval = numpy.searchsorted(upper_thresholds, x, side="left")
+    if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or xnp.isnan(x):
+        return xnp.nan
+    index_interval = xnp.searchsorted(upper_thresholds, x, side="left")
     intercept_interval = intercepts[index_interval]
 
     # Select threshold and calculate corresponding increment into interval
     lower_threshold_interval = lower_thresholds[index_interval]
 
-    if lower_threshold_interval == -numpy.inf:
+    if lower_threshold_interval == -xnp.inf:
         return intercept_interval
 
     increment_to_calc = x - lower_threshold_interval

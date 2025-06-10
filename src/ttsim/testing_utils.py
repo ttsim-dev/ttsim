@@ -9,7 +9,6 @@ import pandas as pd
 import yaml
 
 from ttsim import main, merge_trees
-from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
@@ -22,6 +21,7 @@ pd.set_option("display.width", None)
 if TYPE_CHECKING:
     import datetime
     from pathlib import Path
+    from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
         NestedData,
@@ -54,13 +54,15 @@ class PolicyTest:
         path: Path,
         date: datetime.date,
         test_dir: Path,
+        xnp: ModuleType,
     ) -> None:
         self.info = info
-        self.input_tree = optree.tree_map(np.array, input_tree)
+        self.input_tree = optree.tree_map(xnp.array, input_tree)
         self.expected_output_tree = expected_output_tree
         self.path = path
         self.date = date
         self.test_dir = test_dir
+        self.xnp = xnp
 
     @property
     def target_structure(self) -> NestedInputStructureDict:
@@ -133,7 +135,9 @@ expected[cols_with_differences]:
             ) from e
 
 
-def load_policy_test_data(test_dir: Path, policy_name: str) -> dict[str, PolicyTest]:
+def load_policy_test_data(
+    test_dir: Path, policy_name: str, xnp: ModuleType
+) -> dict[str, PolicyTest]:
     """Load all tests found by recursively searching
 
         test_dir / "test_data" / policy_name
@@ -155,6 +159,7 @@ def load_policy_test_data(test_dir: Path, policy_name: str) -> dict[str, PolicyT
                 test_dir=test_dir,
                 raw_test_data=raw_test_data,
                 path_to_yaml=path_to_yaml,
+                xnp=xnp,
             )
             out[this_test.name] = this_test
 
@@ -169,6 +174,7 @@ def _get_policy_test_from_raw_test_data(
     test_dir: Path,
     path_to_yaml: Path,
     raw_test_data: NestedData,
+    xnp: ModuleType,
 ) -> PolicyTest:
     """Get a list of PolicyTest objects from raw test data.
 
@@ -182,7 +188,7 @@ def _get_policy_test_from_raw_test_data(
     test_info: NestedData = raw_test_data.get("info", {})
     input_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: np.array(v)
+            k: xnp.array(v)
             for k, v in dt.flatten_to_tree_paths(
                 merge_trees(
                     left=raw_test_data["inputs"].get("provided", {}),
@@ -194,7 +200,7 @@ def _get_policy_test_from_raw_test_data(
 
     expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: np.array(v)
+            k: xnp.array(v)
             for k, v in dt.flatten_to_tree_paths(
                 raw_test_data.get("outputs", {})
             ).items()
@@ -210,4 +216,5 @@ def _get_policy_test_from_raw_test_data(
         path=path_to_yaml,
         date=date,
         test_dir=test_dir,
+        xnp=xnp,
     )

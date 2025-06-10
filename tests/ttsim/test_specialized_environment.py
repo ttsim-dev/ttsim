@@ -15,7 +15,9 @@ from ttsim import (
     merge_trees,
 )
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
+
+if TYPE_CHECKING:
+    import numpy
 from ttsim.interface_dag_elements.specialized_environment import (
     with_partialled_params_and_scalars,
     with_processed_params_and_scalars,
@@ -422,7 +424,7 @@ def test_create_agg_by_group_functions(
             "input_data__tree": input_data__tree,
             "targets__tree": targets__tree,
             "rounding": False,
-            # "jit": jit,
+            "backend": "numpy",
         },
         targets=["results__tree"],
     )["results__tree"]
@@ -440,7 +442,7 @@ def test_output_is_tree(minimal_input_data):
             "policy_environment": policy_environment,
             "targets__tree": {"module": {"some_func": None}},
             "rounding": False,
-            # "jit": jit,
+            "backend": "numpy",
         },
         targets=["results__tree"],
     )["results__tree"]
@@ -474,7 +476,7 @@ def test_params_target_is_allowed(minimal_input_data):
             "policy_environment": policy_environment,
             "targets__tree": {"some_param": None, "module": {"some_func": None}},
             "rounding": False,
-            # "jit": jit,
+            "backend": "numpy",
         },
         targets=["results__tree"],
     )["results__tree"]
@@ -486,8 +488,8 @@ def test_params_target_is_allowed(minimal_input_data):
 
 def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input_data):
     @policy_function(leaf_name="a", vectorization_strategy="not_required")
-    def a() -> np.ndarray:
-        return np.array(minimal_input_data["p_id"])
+    def a() -> numpy.ndarray:
+        return numpy.array(minimal_input_data["p_id"])
 
     @policy_function(leaf_name="b")
     def b(a):
@@ -503,12 +505,12 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
             "policy_environment": policy_environment,
             "targets__tree": {"b": None},
             "rounding": False,
-            # "jit": jit,
+            "backend": "numpy",
         },
         targets=["results__tree"],
     )["results__tree"]
     numpy.testing.assert_array_almost_equal(
-        results__tree["b"], np.array(minimal_input_data["p_id"])
+        results__tree["b"], numpy.array(minimal_input_data["p_id"])
     )
 
 
@@ -696,7 +698,7 @@ def test_user_provided_aggregate_by_p_id_specs(
 ):
     @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
     def source() -> int:
-        return np.array([100, 200, 300])
+        return numpy.array([100, 200, 300])
 
     policy_environment = merge_trees(
         agg_functions,
@@ -769,10 +771,10 @@ def test_policy_environment_with_params_and_scalars_is_processed():
                 "identity_plus_one": identity_plus_one,
             },
             {
-                "identity": np.array([1, 2, 3, 4, 5]),
+                "identity": numpy.array([1, 2, 3, 4, 5]),
             },
             {"identity_plus_one": None},
-            {"identity_plus_one": np.array([2, 3, 4, 5, 6])},
+            {"identity_plus_one": numpy.array([2, 3, 4, 5, 6])},
         ),
         # Overwriting parameter
         (
@@ -781,10 +783,10 @@ def test_policy_environment_with_params_and_scalars_is_processed():
                 "some_policy_function_taking_int_param": some_policy_function_taking_int_param,  # noqa: E501
             },
             {
-                "some_int_param": np.array([1, 2, 3, 4, 5]),
+                "some_int_param": numpy.array([1, 2, 3, 4, 5]),
             },
             {"some_policy_function_taking_int_param": None},
-            {"some_policy_function_taking_int_param": np.array([1, 2, 3, 4, 5])},
+            {"some_policy_function_taking_int_param": numpy.array([1, 2, 3, 4, 5])},
         ),
         # Overwriting parameter function
         (
@@ -794,10 +796,14 @@ def test_policy_environment_with_params_and_scalars_is_processed():
                 "some_policy_func_taking_scalar_params_func": some_policy_func_taking_scalar_params_func,  # noqa: E501
             },
             {
-                "some_scalar_params_func": np.array([1, 2, 3, 4, 5]),
+                "some_scalar_params_func": numpy.array([1, 2, 3, 4, 5]),
             },
             {"some_policy_func_taking_scalar_params_func": None},
-            {"some_policy_func_taking_scalar_params_func": np.array([1, 2, 3, 4, 5])},
+            {
+                "some_policy_func_taking_scalar_params_func": numpy.array(
+                    [1, 2, 3, 4, 5]
+                )
+            },
         ),
     ],
 )

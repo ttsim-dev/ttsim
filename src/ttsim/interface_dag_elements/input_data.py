@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 from ttsim.interface_dag_elements.data_converters import dataframe_to_nested_data
@@ -33,6 +34,7 @@ def df_with_nested_columns() -> pd.DataFrame:
 def tree(
     df_and_mapper__df: pd.DataFrame,
     df_and_mapper__mapper: NestedInputsMapper,
+    xnp: ModuleType,
 ) -> NestedData:
     """The input DataFrame as a nested data structure.
 
@@ -48,4 +50,5 @@ def tree(
     return dataframe_to_nested_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
+        xnp=xnp,
     )

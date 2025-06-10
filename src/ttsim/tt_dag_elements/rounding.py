@@ -4,12 +4,12 @@ import functools
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
-from ttsim.config import numpy_or_jax as np
-
-ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
-
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import ModuleType
+
+
+ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 
 P = ParamSpec("P")
 
@@ -35,30 +35,35 @@ class RoundingSpec:
                 f"Additive part must be a number, got {self.to_add_after_rounding!r}"
             )
 
-    def apply_rounding(self, func: Callable[P, np.ndarray]) -> Callable[P, np.ndarray]:
-        """Decorator to round the output of a function.
+    def apply_rounding(
+        self, func: Callable[P, numpy.ndarray]
+    ) -> Callable[P, numpy.ndarray]:
+        """Decorator to round the output of a function. The wrapped function must accept an xnp: ModuleType argument for numpy operations.
 
         Parameters
         ----------
         func
-            Function to be rounded.
+            Function to be rounded. Must accept xnp: ModuleType as a parameter.
 
         Returns
         -------
         Function with rounding applied.
         """
 
-        # Make sure that signature is preserved.
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> np.ndarray:
-            out = func(*args, **kwargs)
+        def wrapper(
+            *args: P.args, xnp: ModuleType, **kwargs: P.kwargs
+        ) -> numpy.ndarray:
+            out = func(*args, xnp=xnp, **kwargs)
 
             if self.direction == "up":
-                rounded_out = self.base * np.ceil(out / self.base)
+                rounded_out = self.base * xnp.ceil(out / self.base)
             elif self.direction == "down":
-                rounded_out = self.base * np.floor(out / self.base)
+                rounded_out = self.base * xnp.floor(out / self.base)
             elif self.direction == "nearest":
-                rounded_out = self.base * (np.asarray(out) / self.base).round()
+                rounded_out = self.base * (xnp.asarray(out) / self.base).round()
+            else:
+                raise ValueError(f"Invalid rounding direction: {self.direction}")
 
             rounded_out += self.to_add_after_rounding
             return rounded_out

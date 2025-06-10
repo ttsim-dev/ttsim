@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from ttsim.config import numpy_or_jax as np
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    import numpy
 from ttsim.tt_dag_elements import (
     ConsecutiveInt1dLookupTableParamValue,
     ConsecutiveInt2dLookupTableParamValue,
@@ -17,10 +21,10 @@ from ttsim.tt_dag_elements import (
 
 @dataclass(frozen=True)
 class LookupTableBaujahr:
-    baujahre: np.ndarray
-    lookup_table: np.ndarray
-    lookup_base_to_subtract_cols: np.ndarray
-    lookup_base_to_subtract_rows: np.ndarray
+    baujahre: numpy.ndarray
+    lookup_table: numpy.ndarray
+    lookup_base_to_subtract_cols: numpy.ndarray
+    lookup_base_to_subtract_rows: numpy.ndarray
 
 
 @param_function(
@@ -29,6 +33,7 @@ class LookupTableBaujahr:
 def max_miete_m_lookup_mit_baujahr(
     raw_max_miete_m_nach_baujahr: dict[int | str, dict[int, dict[int, float]]],
     max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> LookupTableBaujahr:
     """Maximum rent considered in Wohngeld calculation."""
     tmp = raw_max_miete_m_nach_baujahr.copy()
@@ -52,12 +57,12 @@ def max_miete_m_lookup_mit_baujahr(
         subtract_cols.append(lookup_table.base_to_subtract_cols)
         subtract_rows.append(lookup_table.base_to_subtract_rows)
 
-    full_lookup_table = np.stack(values, axis=0)
-    full_lookup_base_to_subtract_cols = np.asarray(subtract_cols)
-    full_lookup_base_to_subtract_rows = np.asarray(subtract_rows)
+    full_lookup_table = xnp.stack(values, axis=0)
+    full_lookup_base_to_subtract_cols = xnp.asarray(subtract_cols)
+    full_lookup_base_to_subtract_rows = xnp.asarray(subtract_rows)
 
     return LookupTableBaujahr(
-        baujahre=np.asarray(baujahre),
+        baujahre=xnp.asarray(baujahre),
         lookup_table=full_lookup_table,
         lookup_base_to_subtract_cols=full_lookup_base_to_subtract_cols,
         lookup_base_to_subtract_rows=full_lookup_base_to_subtract_rows,
@@ -68,6 +73,7 @@ def max_miete_m_lookup_mit_baujahr(
 def max_miete_m_lookup_ohne_baujahr(
     raw_max_miete_m: dict[int | str, dict[int, float]],
     max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt2dLookupTableParamValue:
     """Maximum rent considered in Wohngeld calculation."""
     expanded = raw_max_miete_m.copy()
@@ -87,6 +93,7 @@ def max_miete_m_lookup_ohne_baujahr(
 def min_miete_lookup(
     raw_min_miete_m: dict[int, float],
     max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Minimum rent considered in Wohngeld calculation."""
     max_n_p_normal = max_anzahl_personen["normale_berechnung"]
@@ -107,6 +114,7 @@ def min_miete_lookup(
 def heizkostenentlastung_m_lookup(
     raw_heizkostenentlastung_m: dict[int | str, float],
     max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Heizkostenentlastung as a lookup table."""
     expanded = raw_heizkostenentlastung_m.copy()
@@ -124,6 +132,7 @@ def heizkostenentlastung_m_lookup(
 def dauerhafte_heizkostenkomponente_m_lookup(
     raw_dauerhafte_heizkostenkomponente_m: dict[int | str, float],
     max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Dauerhafte Heizkostenenkomponente as a lookup table."""
     expanded = raw_dauerhafte_heizkostenkomponente_m.copy()
@@ -141,6 +150,7 @@ def dauerhafte_heizkostenkomponente_m_lookup(
 def klimakomponente_m_lookup(
     raw_klimakomponente_m: dict[int | str, float],
     max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Klimakomponente as a lookup table."""
     expanded = raw_klimakomponente_m.copy()
@@ -205,10 +215,11 @@ def miete_m_hh_mit_baujahr(
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
     max_miete_m_lookup: LookupTableBaujahr,
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit calculation on household level until 2008."""
 
-    selected_bin_index = np.searchsorted(
+    selected_bin_index = xnp.searchsorted(
         max_miete_m_lookup.baujahre,
         wohnen__baujahr_immobilie_hh,
         side="left",
@@ -232,6 +243,7 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveInt2dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
 
@@ -255,6 +267,7 @@ def miete_m_hh_mit_heizkostenentlastung(
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveInt2dLookupTableParamValue,
     heizkostenentlastung_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.values_to_look_up[
@@ -285,6 +298,7 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
     heizkostenentlastung_m_lookup: ConsecutiveInt1dLookupTableParamValue,
     dauerhafte_heizkostenkomponente_m_lookup: ConsecutiveInt1dLookupTableParamValue,
     klimakomponente_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.values_to_look_up[

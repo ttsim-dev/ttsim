@@ -22,10 +22,18 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import UnorderedQNames
 
 
-def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, Any]:
+def main(
+    inputs: dict[str, Any],
+    targets: list[str] | None = None,
+    backend: Literal[numpy, jax] = "numpy",
+) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
+
+    if "backend" not in inputs:
+        inputs["backend"] = backend
+
     nodes = {
         p: n
         for p, n in load_interface_functions_and_inputs().items()

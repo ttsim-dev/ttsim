@@ -14,7 +14,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.config import numpy_or_jax as np
+    import numpy
+
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
@@ -120,9 +121,9 @@ def kind_bis_10_mit_kindergeld(
 
 @policy_function(vectorization_strategy="not_required")
 def gleiche_fg_wie_empfänger(
-    p_id: np.ndarray,  # int
-    p_id_empfänger: np.ndarray,  # int
-    fg_id: np.ndarray,  # int
+    p_id: numpy.ndarray,  # int
+    p_id_empfänger: numpy.ndarray,  # int
+    fg_id: numpy.ndarray,  # int
 ) -> np.ndarray:  # bool
     """The child's Kindergeldempfänger is in the same Familiengemeinschaft."""
     fg_id_kindergeldempfänger = join(

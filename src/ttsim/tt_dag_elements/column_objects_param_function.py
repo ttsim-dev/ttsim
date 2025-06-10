@@ -40,9 +40,9 @@ from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
+    import numpy
     import pandas as pd
 
-    from ttsim.config import numpy_or_jax as np
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         GenericCallable,

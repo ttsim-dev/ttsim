@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import numpy
 import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import main
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.policy_environment import policy_environment
 from ttsim.tt_dag_elements import (
     RoundingSpec,
@@ -33,48 +33,48 @@ def p_id() -> int:
 rounding_specs_and_exp_results = [
     (
         RoundingSpec(base=1, direction="up"),
-        np.array([100.24, 100.78]),
-        np.array([101.0, 101.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([101.0, 101.0]),
     ),
     (
         RoundingSpec(base=1, direction="down"),
-        np.array([100.24, 100.78]),
-        np.array([100.0, 100.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.0, 100.0]),
     ),
     (
         RoundingSpec(base=1, direction="nearest"),
-        np.array([100.24, 100.78]),
-        np.array([100.0, 101.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.0, 101.0]),
     ),
     (
         RoundingSpec(base=5, direction="up"),
-        np.array([100.24, 100.78]),
-        np.array([105.0, 105.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([105.0, 105.0]),
     ),
     (
         RoundingSpec(base=0.1, direction="down"),
-        np.array([100.24, 100.78]),
-        np.array([100.2, 100.7]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.2, 100.7]),
     ),
     (
         RoundingSpec(base=0.001, direction="nearest"),
-        np.array([100.24, 100.78]),
-        np.array([100.24, 100.78]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.24, 100.78]),
     ),
     (
         RoundingSpec(base=1, direction="up", to_add_after_rounding=10),
-        np.array([100.24, 100.78]),
-        np.array([111.0, 111.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([111.0, 111.0]),
     ),
     (
         RoundingSpec(base=1, direction="down", to_add_after_rounding=10),
-        np.array([100.24, 100.78]),
-        np.array([110.0, 110.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([110.0, 110.0]),
     ),
     (
         RoundingSpec(base=1, direction="nearest", to_add_after_rounding=10),
-        np.array([100.24, 100.78]),
-        np.array([110.0, 111.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([110.0, 111.0]),
     ),
 ]
 
@@ -116,8 +116,8 @@ def test_rounding(rounding_spec, input_values, exp_output):
         return x
 
     input_data__tree = {
-        "p_id": np.array([1, 2]),
-        "namespace": {"x": np.array(input_values)},
+        "p_id": numpy.array([1, 2]),
+        "namespace": {"x": numpy.array(input_values)},
     }
     policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
@@ -146,8 +146,8 @@ def test_rounding_with_time_conversion():
         return x
 
     data = {
-        "p_id": np.array([1, 2]),
-        "x": np.array([1.2, 1.5]),
+        "p_id": numpy.array([1, 2]),
+        "x": numpy.array([1.2, 1.5]),
     }
 
     policy_environment = {
@@ -186,8 +186,8 @@ def test_no_rounding(
     def test_func(x):
         return x
 
-    data = {"p_id": np.array([1, 2])}
-    data["x"] = np.array(input_values_exp_output)
+    data = {"p_id": numpy.array([1, 2])}
+    data["x"] = numpy.array(input_values_exp_output)
     policy_environment = {
         "test_func": test_func,
         "x": x,

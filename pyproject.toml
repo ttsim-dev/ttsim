@@ -150,6 +150,9 @@ python = "3.12.*"
 jax = ">=0.4.20"
 jaxlib = ">=0.4.20"
 
+[tool.pixi.feature.jax.pypi-dependencies]
+jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+
 [tool.pixi.feature.jax.target.win-64.pypi-dependencies]
 jax = { version = ">=0.4.20", extras = ["cpu"] }
 jaxlib = ">=0.4.20"

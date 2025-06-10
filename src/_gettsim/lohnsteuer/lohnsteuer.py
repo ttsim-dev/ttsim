@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from ttsim.config import numpy_or_jax as np
+from typing import TYPE_CHECKING
+
 from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     param_function,
     piecewise_polynomial,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    import numpy
 
 
 def basis_für_klassen_5_6(
@@ -58,7 +62,7 @@ def parameter_max_lohnsteuer_klasse_5_6(
         einkommensgrenzwerte_steuerklassen_5_6[3],
         einkommensteuer__parameter_einkommensteuertarif,
     )
-    thresholds = np.asarray(
+    thresholds = numpy.asarray(
         [
             0,
             einkommensgrenzwerte_steuerklassen_5_6[1],
@@ -66,7 +70,7 @@ def parameter_max_lohnsteuer_klasse_5_6(
             einkommensgrenzwerte_steuerklassen_5_6[3],
         ]
     )
-    intercepts = np.asarray(
+    intercepts = numpy.asarray(
         [
             0,
             lohnsteuer_bis_erste_grenze,
@@ -74,9 +78,9 @@ def parameter_max_lohnsteuer_klasse_5_6(
             lohnsteuer_bis_dritte_grenze,
         ]
     )
-    rates = np.expand_dims(
+    rates = numpy.expand_dims(
         einkommensteuer__parameter_einkommensteuertarif.rates[0][
-            np.array([3, 3, 3, 4])
+            numpy.array([3, 3, 3, 4])
         ],
         axis=0,
     )
@@ -126,7 +130,7 @@ def tarif_klassen_5_und_6(
     min_lohnsteuer = (
         einkommensteuer__parameter_einkommensteuertarif.rates[0, 1] * einkommen_y
     )
-    return np.minimum(np.maximum(min_lohnsteuer, basis), max_lohnsteuer)
+    return numpy.minimum(numpy.maximum(min_lohnsteuer, basis), max_lohnsteuer)
 
 
 @policy_function(start_date="2015-01-01")
@@ -155,7 +159,7 @@ def basistarif_mit_kinderfreibetrag(
     kinderfreibetrag_soli_y: float,
 ) -> float:
     """Lohnsteuer in the Basistarif deducting the Kindefreibetrag."""
-    einkommen_abzüglich_kinderfreibetrag_soli = np.maximum(
+    einkommen_abzüglich_kinderfreibetrag_soli = numpy.maximum(
         einkommen_y - kinderfreibetrag_soli_y, 0
     )
     return piecewise_polynomial(
@@ -171,7 +175,7 @@ def splittingtarif_mit_kinderfreibetrag(
     kinderfreibetrag_soli_y: float,
 ) -> float:
     """Lohnsteuer in the Splittingtarif deducting the Kindefreibetrag."""
-    einkommen_abzüglich_kinderfreibetrag_soli = np.maximum(
+    einkommen_abzüglich_kinderfreibetrag_soli = numpy.maximum(
         einkommen_y - kinderfreibetrag_soli_y, 0
     )
     return 2 * piecewise_polynomial(
@@ -188,7 +192,7 @@ def tarif_klassen_5_und_6_mit_kinderfreibetrag(
     kinderfreibetrag_soli_y: float,
 ) -> float:
     """Lohnsteuer for Lohnsteuerklassen 5 and 6 deducting the Kindefreibetrag."""
-    einkommen_abzüglich_kinderfreibetrag_soli = np.maximum(
+    einkommen_abzüglich_kinderfreibetrag_soli = numpy.maximum(
         einkommen_y - kinderfreibetrag_soli_y, 0
     )
 
@@ -204,7 +208,7 @@ def tarif_klassen_5_und_6_mit_kinderfreibetrag(
         einkommensteuer__parameter_einkommensteuertarif.rates[0, 1]
         * einkommen_abzüglich_kinderfreibetrag_soli
     )
-    return np.minimum(np.maximum(min_lohnsteuer, basis), max_lohnsteuer)
+    return numpy.minimum(numpy.maximum(min_lohnsteuer, basis), max_lohnsteuer)
 
 
 @policy_function(start_date="2015-01-01")

@@ -6,12 +6,15 @@ import inspect
 import textwrap
 import types
 from importlib import import_module
+from types import ModuleType
 from typing import TYPE_CHECKING, Literal, cast
 
 import numpy
 
-from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    import numpy
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import GenericCallable
@@ -22,6 +25,8 @@ BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 def vectorize_function(
     func: GenericCallable,
     vectorization_strategy: Literal["loop", "vectorize"],
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
 ) -> GenericCallable:
     vectorized: GenericCallable
     if vectorization_strategy == "loop":
@@ -30,8 +35,7 @@ def vectorize_function(
         vectorized.__globals__ = func.__globals__
         vectorized.__closure__ = func.__closure__
     elif vectorization_strategy == "vectorize":
-        backend = "jax" if IS_JAX_INSTALLED else "numpy"
-        vectorized = _make_vectorizable(func, backend=backend)
+        vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)
     else:
         raise ValueError(
             f"Vectorization strategy {vectorization_strategy} is not supported. "
@@ -40,7 +44,9 @@ def vectorize_function(
     return vectorized
 
 
-def _make_vectorizable(func: GenericCallable, backend: str) -> GenericCallable:
+def _make_vectorizable(
+    func: GenericCallable, backend: str, xnp: ModuleType
+) -> GenericCallable:
     """Redefine function to be vectorizable given backend.
 
     Args:
@@ -58,7 +64,7 @@ def _make_vectorizable(func: GenericCallable, backend: str) -> GenericCallable:
         )
 
     module = _module_from_backend(backend)
-    tree = _make_vectorizable_ast(func, module=module)
+    tree = _make_vectorizable_ast(func, module=module, xnp=xnp)
 
     # recreate scope of function, add array library
     scope = dict(func.__globals__)
@@ -101,7 +107,9 @@ def make_vectorizable_source(func: GenericCallable, backend: str) -> str:
     return ast.unparse(tree)
 
 
-def _make_vectorizable_ast(func: GenericCallable, module: str) -> ast.Module:
+def _make_vectorizable_ast(
+    func: GenericCallable, module: str, xnp: ModuleType
+) -> ast.Module:
     """Change if statement to where call in the ast of func and return new ast.
 
     Args:
@@ -117,7 +125,7 @@ def _make_vectorizable_ast(func: GenericCallable, module: str) -> ast.Module:
     func_loc = f"{func.__module__}/{func.__name__}"
 
     # transform tree nodes
-    new_tree = Transformer(module, func_loc).visit(tree)
+    new_tree = Transformer(module, func_loc, xnp).visit(tree)
     return ast.fix_missing_locations(new_tree)
 
 
@@ -142,14 +150,15 @@ def _remove_decorator_lines(source: str) -> str:
 
 
 class Transformer(ast.NodeTransformer):
-    def __init__(self, module: str, func_loc: str) -> None:
+    def __init__(self, module: str, func_loc: str, xnp: ModuleType) -> None:
         self.module = module
         self.func_loc = func_loc
+        self.xnp = xnp
 
     def visit_Call(self, node: ast.Call) -> ast.AST:  # noqa: N802
         self.generic_visit(node)
         return _call_to_call_from_module(
-            node, module=self.module, func_loc=self.func_loc
+            node, module=self.module, func_loc=self.func_loc, xnp=self.xnp
         )
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:  # noqa: N802
@@ -283,7 +292,9 @@ def _boolop_to_call(node: ast.BoolOp, module: str) -> ast.Call:
     return cast("ast.Call", functools.reduce(_constructor, values))
 
 
-def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast.AST:
+def _call_to_call_from_module(
+    node: ast.Call, module: str, func_loc: str, xnp: ModuleType
+) -> ast.AST:
     """Transform built-in Calls to Calls from module."""
     to_transform = ("sum", "any", "all", "max", "min")
 
@@ -297,7 +308,7 @@ def _call_to_call_from_module(node: ast.Call, module: str, func_loc: str) -> ast
     args = node.args
 
     if len(args) == 1:
-        if type(args) not in (list, tuple, np.ndarray):
+        if type(args) not in (list, tuple, xnp.ndarray):
             raise TranslateToVectorizableError(
                 f"Argument of function {func_id} is not a list, tuple, or valid array."
                 f"\n\nFunction: {func_loc}\n\n"

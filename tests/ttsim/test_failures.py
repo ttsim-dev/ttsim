@@ -12,7 +12,9 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
-from ttsim.config import numpy_or_jax as np
+
+if TYPE_CHECKING:
+    import numpy
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -63,7 +65,7 @@ _SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM = ConsecutiveInt1dLookupTableParam(
     leaf_name="some_consecutive_int_1d_lookup_table_param",
     value=ConsecutiveInt1dLookupTableParamValue(
         base_to_subtract=1,
-        values_to_look_up=np.array([1, 2, 3]),
+        values_to_look_up=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,
 )
@@ -78,9 +80,9 @@ _SOME_DICT_PARAM = DictParam(
 _SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
     leaf_name="some_piecewise_polynomial_param",
     value=PiecewisePolynomialParamValue(
-        thresholds=np.array([1, 2, 3]),
-        intercepts=np.array([1, 2, 3]),
-        rates=np.array([1, 2, 3]),
+        thresholds=numpy.array([1, 2, 3]),
+        intercepts=numpy.array([1, 2, 3]),
+        rates=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,
 )
@@ -89,8 +91,8 @@ _SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
 @pytest.fixture
 def minimal_data_tree():
     return {
-        "hh_id": np.array([1, 2, 3]),
-        "p_id": np.array([1, 2, 3]),
+        "hh_id": numpy.array([1, 2, 3]),
+        "p_id": numpy.array([1, 2, 3]),
     }
 
 
@@ -615,9 +617,9 @@ def test_fail_if_group_ids_are_outside_top_level_namespace():
 
 def test_fail_if_group_variables_are_not_constant_within_groups():
     data = {
-        "p_id": np.array([0, 1, 2]),
-        "foo_kin": np.array([1, 2, 2]),
-        "kin_id": np.array([1, 1, 2]),
+        "p_id": numpy.array([0, 1, 2]),
+        "foo_kin": numpy.array([1, 2, 2]),
+        "kin_id": numpy.array([1, 1, 2]),
     }
     with pytest.raises(ValueError):
         group_variables_are_not_constant_within_groups(
