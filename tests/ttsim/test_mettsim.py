@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 from mettsim.config import METTSIM_ROOT
 
-from ttsim import main
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.plot_dag import plot_tt_dag
 from ttsim.testing_utils import (
     PolicyTest,
     execute_test,
@@ -30,14 +30,25 @@ def test_mettsim(test: PolicyTest):
         execute_test(test, root=METTSIM_ROOT, jit=False)
 
 
-def test_mettsim_policy_environment_dag():
-    date_str = "2020-01-01"
-    main(
-        inputs={
-            "date_str": date_str,
+def test_mettsim_policy_environment_dag_with_params():
+    plot_tt_dag(
+        with_params=True,
+        inputs_for_main={
+            "date_str": "2020-01-01",
             "orig_policy_objects__root": METTSIM_ROOT,
-            "plot__full_policy_environment_path": Path()
-            / f"mettsim_policy_environment_{date_str}.html",
         },
-        targets=["plot__full_policy_environment"],
+        title="METTSIM Policy Environment DAG with parameters",
+        output_path=Path("mettsim_dag_with_params.html"),
+    )
+
+
+def test_mettsim_policy_environment_dag_without_params():
+    plot_tt_dag(
+        with_params=False,
+        inputs_for_main={
+            "date_str": "2020-01-01",
+            "orig_policy_objects__root": METTSIM_ROOT,
+        },
+        title="METTSIM Policy Environment DAG without parameters",
+        output_path=Path("mettsim_dag_without_params.html"),
     )

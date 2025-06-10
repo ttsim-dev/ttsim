@@ -10,6 +10,7 @@ from ttsim.tt_dag_elements import (
     get_consecutive_int_1d_lookup_table_param_value,
     param_function,
     policy_function,
+    policy_input,
 )
 
 if TYPE_CHECKING:
@@ -267,6 +268,11 @@ def kosten_der_unterkunft_m_bis_2022(
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     return berechtigte_wohnfläche * anerkannte_warmmiete_je_qm_m
+
+
+@policy_input(start_date="2023-01-01")
+def arbeitslosengeld_2_bezug_im_vorjahr() -> bool:
+    """Whether the person received Arbeitslosengeld 2 / Bürgergeld in the previous year."""
 
 
 @policy_function(

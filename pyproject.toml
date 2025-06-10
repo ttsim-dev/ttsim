@@ -268,7 +268,7 @@ exclude = []
 "src/ttsim/plot_dag_old.py" = ["ALL"]
 "outdated_docs/**/*.ipynb" = ["ALL"]
 "src/_gettsim_tests/test_docs.py" = ["ALL"]
-"tests/ttsim/test_plot_dag.py" = ["ALL"]
+"tests/ttsim/test_plot_dag_old.py" = ["ALL"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

@@ -15,7 +15,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceInput,
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
-from ttsim.plot_dag import plot_dag
 
 if TYPE_CHECKING:
     from collections.abc import KeysView
@@ -28,7 +27,9 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
     Main function that processes the inputs and returns the outputs.
     """
     nodes = {
-        p: n for p, n in _interface_functions_and_inputs().items() if p not in inputs
+        p: n
+        for p, n in load_interface_functions_and_inputs().items()
+        if p not in inputs
     }
 
     functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
@@ -54,34 +55,9 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
     return f(**inputs)
 
 
-def plot_full_interface_dag() -> None:
-    """Plot the full interface DAG."""
-
-    nodes = {
-        p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
-        for p, n in _interface_functions_and_inputs().items()
-    }
-
-    dag = dags.create_dag(functions=nodes, targets=None)
-    f = dags.concatenate_functions(
-        dag=dag,
-        functions=nodes,
-        targets=None,
-        return_type="dict",
-        enforce_signature=False,
-        set_annotations=False,
-    )
-    args = inspect.signature(f).parameters
-    if args:
-        raise ValueError(
-            "The full interface DAG should include all root nodes but requires inputs:"
-            f"\n\n{format_list_linewise(args.keys())}"
-        )
-    fig = plot_dag(dag)
-    fig.write_html("full_interface_dag.html")
-
-
-def _interface_functions_and_inputs() -> dict[str, InterfaceFunction | InterfaceInput]:
+def load_interface_functions_and_inputs() -> dict[
+    str, InterfaceFunction | InterfaceInput
+]:
     """Load the collection of functions and inputs from the current directory."""
     orig_functions = _load_orig_functions()
     return _remove_tree_logic_from_function_collection(
@@ -155,7 +131,3 @@ def _fail_if_targets_are_not_among_interface_functions(
                 f"DAG:\n\n{formatted}"
             )
             raise ValueError(msg)
-
-
-if __name__ == "__main__":
-    plot_full_interface_dag()

@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from _gettsim.config import GETTSIM_ROOT
-from ttsim import (
+from ttsim import main
+from ttsim.interface_dag_elements.data_converters import (
     dataframe_to_nested_data,
-    main,
     nested_data_to_df_with_mapped_columns,
-    to_datetime,
 )
+from ttsim.interface_dag_elements.shared import to_datetime
 
 if TYPE_CHECKING:
     import pandas as pd
