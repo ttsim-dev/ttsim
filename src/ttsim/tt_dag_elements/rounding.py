@@ -64,10 +64,7 @@ class RoundingSpec:
                 rounded_out = self.base * xnp.floor(out / self.base)
             elif self.direction == "nearest":
                 rounded_out = self.base * (xnp.asarray(out) / self.base).round()
-            else:
-                raise ValueError(f"Invalid rounding direction: {self.direction}")
 
-            rounded_out += self.to_add_after_rounding
-            return rounded_out
+            return rounded_out + self.to_add_after_rounding
 
         return wrapper
