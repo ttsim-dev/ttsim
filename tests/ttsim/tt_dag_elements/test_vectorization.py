@@ -10,15 +10,6 @@ import dags.tree as dt
 import numpy
 import pytest
 from dags import concatenate_functions
-
-from ttsim.config import IS_JAX_INSTALLED
-from ttsim.tt_dag_elements.column_objects_param_function import (
-    AggByGroupFunction,
-    AggByPIDFunction,
-)
-
-if IS_JAX_INSTALLED:
-    import jax.numpy
 from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
@@ -33,6 +24,10 @@ from ttsim.tt_dag_elements import (
     PolicyInput,
     policy_function,
 )
+from ttsim.tt_dag_elements.column_objects_param_function import (
+    AggByGroupFunction,
+    AggByPIDFunction,
+)
 from ttsim.tt_dag_elements.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
@@ -44,16 +39,6 @@ from ttsim.tt_dag_elements.vectorization import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-
-# ======================================================================================
-# Backend
-# ======================================================================================
-
-backends = ["jax", "numpy"] if IS_JAX_INSTALLED else ["numpy"]
-
-modules = {"numpy": numpy}
-if IS_JAX_INSTALLED:
-    modules["jax"] = jax.numpy
 
 # ======================================================================================
 # String comparison
@@ -317,13 +302,13 @@ TEST_CASES = [
 def test_change_if_to_where_source(func, expected, args):  # noqa: ARG001
     exp = inspect.getsource(expected)
     exp = exp.replace("_exp", "")
-    got = make_vectorizable_source(func, backend="numpy")
+    got = make_vectorizable_source(func, backend="numpy", xnp=numpy)
     assert string_equal(exp, got)
 
 
 @pytest.mark.parametrize("func, expected, args", TEST_CASES)
 def test_change_if_to_where_wrapper(func, expected, args):
-    got_func = _make_vectorizable(func, backend="numpy")
+    got_func = _make_vectorizable(func, backend="numpy", xnp=numpy)
     got = got_func(*args)
     exp = expected(*args)
     assert_array_equal(got, exp)
@@ -366,19 +351,19 @@ def g4(x):
 
 def test_notimplemented_error():
     with pytest.raises(NotImplementedError):
-        _make_vectorizable(f1, backend="dask")
+        _make_vectorizable(f1, backend="dask", xnp=numpy)
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
 def test_disallowed_operation_source(func):
     with pytest.raises(TranslateToVectorizableError):
-        make_vectorizable_source(func, backend="numpy")
+        make_vectorizable_source(func, backend="numpy", xnp=numpy)
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
 def test_disallowed_operation_wrapper(func):
     with pytest.raises(TranslateToVectorizableError):
-        _make_vectorizable(func, backend="numpy")
+        _make_vectorizable(func, backend="numpy", xnp=numpy)
 
 
 # ======================================================================================
@@ -394,9 +379,7 @@ for year in range(1990, 2023):
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
                 _active_column_objects_and_param_functions(
-                    orig=column_objects_and_param_functions(
-                        root=METTSIM_ROOT / "mettsim"
-                    ),
+                    orig=column_objects_and_param_functions(root=METTSIM_ROOT),
                     date=datetime.date(year=year, month=1, day=1),
                 )
             ).items()
@@ -409,10 +392,10 @@ for year in range(1990, 2023):
             )
         ],
     )
-    @pytest.mark.parametrize("backend", backends)
-    def test_convertible(funcname, func, backend):  # noqa: ARG001
+    def test_convertible(funcname, func, backend_xnp):  # noqa: ARG001
         # Leave funcname for debugging purposes.
-        _make_vectorizable(func, backend=backend)
+        backend, xnp = backend_xnp
+        _make_vectorizable(func, backend=backend, xnp=xnp)
 
 
 # ======================================================================================
@@ -436,12 +419,10 @@ def mock__elterngeld__geschwisterbonus_m(
     return out
 
 
-@pytest.mark.parametrize("backend", backends)
-def test_geschwisterbonus_m(backend):
-    full = modules[backend].full
-
+def test_geschwisterbonus_m(backend_xnp):
+    backend, xnp = backend_xnp
     # Test original METTSIM function on scalar input
-    # ==================================================================================
+    # ==============================================================================
     basisbetrag_m = 3.0
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = True
     geschwisterbonus_aufschlag = 1.0
@@ -456,10 +437,10 @@ def test_geschwisterbonus_m(backend):
     assert exp == 3.0
 
     # Create array inputs and assert that METTSIM functions raises error
-    # ==================================================================================
+    # ==============================================================================
     shape = (10, 2)
-    basisbetrag_m = full(shape, basisbetrag_m)
-    geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = full(
+    basisbetrag_m = xnp.full(shape, basisbetrag_m)
+    geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = xnp.full(
         shape, geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg
     )
 
@@ -472,9 +453,9 @@ def test_geschwisterbonus_m(backend):
         )
 
     # Call converted function on array input and test result
-    # ==================================================================================
+    # ==============================================================================
     converted = _make_vectorizable(
-        mock__elterngeld__geschwisterbonus_m, backend=backend
+        mock__elterngeld__geschwisterbonus_m, backend=backend, xnp=xnp
     )
     got = converted(
         basisbetrag_m=basisbetrag_m,
@@ -482,7 +463,7 @@ def test_geschwisterbonus_m(backend):
         geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
         geschwisterbonus_minimum=geschwisterbonus_minimum,
     )
-    assert_array_equal(got, full(shape, exp))
+    assert_array_equal(got, xnp.full(shape, exp))
 
 
 def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
@@ -502,12 +483,10 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     )
 
 
-@pytest.mark.parametrize("backend", backends)
-def test_grundsätzlich_anspruchsberechtigt(backend):
-    full = modules[backend].full
-
+def test_grundsätzlich_anspruchsberechtigt(backend_xnp):
+    backend, xnp = backend_xnp
     # Test original METTSIM function on scalar input
-    # ==================================================================================
+    # ==============================================================================
     claimed = True
     arbeitsstunden_w = 20.0
     kind_grundsätzlich_anspruchsberechtigt_fg = True
@@ -527,9 +506,9 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
     assert exp is True
 
     # Create array inputs and assert that METTSIM functions raises error
-    # ==================================================================================
+    # ==============================================================================
     shape = (10, 1)
-    arbeitsstunden_w = full(shape, arbeitsstunden_w)
+    arbeitsstunden_w = xnp.full(shape, arbeitsstunden_w)
 
     with pytest.raises(ValueError, match="truth value of an array with more than"):
         mock__elterngeld__grundsätzlich_anspruchsberechtigt(
@@ -542,9 +521,11 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         )
 
     # Call converted function on array input and test result
-    # ==================================================================================
+    # ==============================================================================
     converted = _make_vectorizable(
-        mock__elterngeld__grundsätzlich_anspruchsberechtigt, backend=backend
+        mock__elterngeld__grundsätzlich_anspruchsberechtigt,
+        backend=backend,
+        xnp=xnp,
     )
     got = converted(
         claimed=claimed,
@@ -554,7 +535,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend):
         bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
         max_arbeitsstunden_w=max_arbeitsstunden_w,
     )
-    assert_array_equal(got, full(shape, exp))
+    assert_array_equal(got, xnp.full(shape, exp))
 
 
 # ======================================================================================
@@ -594,12 +575,12 @@ def test_is_lambda_function_non_function_input():
 
 def test_lambda_functions_disallowed_make_vectorizable():
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
-        _make_vectorizable(lambda x: x, backend="numpy")
+        _make_vectorizable(lambda x: x, backend="numpy", xnp=numpy)
 
 
 def test_lambda_functions_disallowed_make_vectorizable_source():
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
-        make_vectorizable_source(lambda x: x, backend="numpy")
+        make_vectorizable_source(lambda x: x, backend="numpy", xnp=numpy)
 
 
 # ======================================================================================
@@ -612,7 +593,7 @@ def test_make_vectorizable_policy_func():
     def alter_bis_24(alter: int) -> bool:
         return alter <= 24
 
-    vectorized = _make_vectorizable(alter_bis_24, backend="numpy")
+    vectorized = alter_bis_24.vectorize(backend="numpy", xnp=numpy)
 
     got = vectorized(numpy.array([20, 25, 30]))
     exp = numpy.array([True, False, False])
@@ -634,7 +615,7 @@ def test_make_vectorizable_concatened_func():
     def f_manual(x: int) -> int:
         return f_b(f_a(x))
 
-    vectorized = _make_vectorizable(f_manual, backend="numpy")
+    vectorized = _make_vectorizable(f_manual, backend="numpy", xnp=numpy)
     got = vectorized(numpy.array([1, 2, 3]))
     exp = numpy.array([3, 4, 5])
     assert_array_equal(got, exp)
@@ -656,7 +637,7 @@ def test_make_vectorizable_dags_concatened_func():
         targets=["b"],
     )
 
-    vectorized = _make_vectorizable(f_dags, backend="numpy")
+    vectorized = _make_vectorizable(f_dags, backend="numpy", xnp=numpy)
     got = vectorized(numpy.array([1, 2, 3]))
     exp = numpy.array([3, 4, 5])
     assert_array_equal(got, exp)
@@ -677,7 +658,9 @@ def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:  # type: ignore[
 @pytest.mark.parametrize(
     "vectorized_function",
     [
-        vectorize_function(scalar_func, vectorization_strategy="loop"),
+        vectorize_function(
+            scalar_func, vectorization_strategy="loop", backend="numpy", xnp=numpy
+        ),
         already_vectorized_func,
     ],
 )

@@ -289,6 +289,8 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
         The rounding specification.
     """
 
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize"
+
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
@@ -306,6 +308,28 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             end_date=self.end_date,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
+            vectorization_strategy=self.vectorization_strategy,
+        )
+
+    def vectorize(self, backend: str, xnp: ModuleType) -> PolicyFunction:
+        func = (
+            self.function
+            if self.vectorization_strategy == "not_required"
+            else vectorize_function(
+                self.function,
+                vectorization_strategy=self.vectorization_strategy,
+                backend=backend,
+                xnp=xnp,
+            )
+        )
+        return PolicyFunction(
+            leaf_name=self.leaf_name,
+            function=func,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+            vectorization_strategy="not_required",
         )
 
 
@@ -355,11 +379,6 @@ def policy_function(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: GenericCallable) -> PolicyFunction:
-        func = (
-            func
-            if vectorization_strategy == "not_required"
-            else vectorize_function(func, vectorization_strategy=vectorization_strategy)
-        )
         return PolicyFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
@@ -367,6 +386,7 @@ def policy_function(
             end_date=end_date,
             rounding_spec=rounding_spec,
             foreign_key_type=foreign_key_type,
+            vectorization_strategy=vectorization_strategy,
         )
 
     return inner

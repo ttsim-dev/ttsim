@@ -84,7 +84,9 @@ def _make_vectorizable(
     return functools.wraps(func)(new_func)
 
 
-def make_vectorizable_source(func: GenericCallable, backend: str) -> str:
+def make_vectorizable_source(
+    func: GenericCallable, backend: str, xnp: ModuleType
+) -> str:
     """Redefine function source to be vectorizable given backend.
 
     Args:
@@ -103,7 +105,7 @@ def make_vectorizable_source(func: GenericCallable, backend: str) -> str:
         )
 
     module = _module_from_backend(backend)
-    tree = _make_vectorizable_ast(func, module=module)
+    tree = _make_vectorizable_ast(func, module=module, xnp=xnp)
     return ast.unparse(tree)
 
 

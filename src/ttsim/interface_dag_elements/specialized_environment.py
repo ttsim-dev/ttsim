@@ -22,11 +22,13 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
+    PolicyFunction,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import ModuleType
 
     import networkx as nx
 
@@ -64,6 +66,8 @@ def with_derived_functions_and_processed_input_nodes(
     targets__tree: NestedStrings,
     names__top_level_namespace: UnorderedQNames,
     names__grouping_levels: OrderedQNames,
+    backend: str,
+    xnp: ModuleType,
 ) -> QNameCombinedEnvironment0:
     """Return a flat policy environment with derived functions.
 
@@ -77,8 +81,17 @@ def with_derived_functions_and_processed_input_nodes(
         policy_environment=policy_environment,
         names__top_level_namespace=names__top_level_namespace,
     )
+    flat_vectorized = {
+        k: f.vectorize(
+            backend=backend,
+            xnp=xnp,
+        )
+        if isinstance(f, PolicyFunction)
+        else f
+        for k, f in flat.items()
+    }
     flat_with_derived = _add_derived_functions(
-        qual_name_policy_environment=flat,
+        qual_name_policy_environment=flat_vectorized,
         targets=dt.qual_names(targets__tree),
         names__processed_data_columns=names__processed_data_columns,
         grouping_levels=names__grouping_levels,
