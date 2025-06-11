@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
@@ -142,6 +145,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
 def einführungsfaktor_rentenversicherungsaufwendungen(
     evaluationsjahr: int,
     parameter_einführungsfaktor_rentenversicherungsaufwendungen: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
     current year as follows:
@@ -156,6 +160,7 @@ def einführungsfaktor_rentenversicherungsaufwendungen(
     return piecewise_polynomial(
         x=evaluationsjahr,
         parameters=parameter_einführungsfaktor_rentenversicherungsaufwendungen,
+        xnp=xnp,
     )
 
 

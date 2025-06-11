@@ -149,12 +149,14 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     nettoquote: float,
     parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Share of income which remains to the individual."""
     return piecewise_polynomial(
         x=einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
         parameters=parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
         rates_multiplier=nettoquote,
+        xnp=xnp,
     )
 
 
@@ -166,6 +168,7 @@ def anrechnungsfreies_einkommen_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: PiecewisePolynomialParamValue,
     parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Calculate share of income, which remains to the individual since 10/2005.
 
@@ -186,11 +189,13 @@ def anrechnungsfreies_einkommen_m(
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
             parameters=parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg,
+            xnp=xnp,
         )
     else:
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
             parameters=parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
+            xnp=xnp,
         )
     return out
 

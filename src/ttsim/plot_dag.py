@@ -30,7 +30,8 @@ def plot_tt_dag(
     with_params: bool, inputs_for_main: dict[str, Any], title: str, output_path: Path
 ) -> None:
     """Plot the taxes & transfers DAG, with or without parameters."""
-
+    if "backend" not in inputs_for_main:
+        inputs_for_main["backend"] = "numpy"
     policy_environment = main(inputs=inputs_for_main, targets=["policy_environment"])[
         "policy_environment"
     ]
@@ -67,6 +68,9 @@ def plot_tt_dag(
     )["specialized_environment__with_derived_functions_and_processed_input_nodes"]
     # Replace input nodes by PolicyInputs again
     env.update(policy_inputs)
+    for element in "backend", "xnp", "dnp":
+        if element in env:
+            del env[element]
     nodes = {
         qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
         for qn, n in env.items()
@@ -92,7 +96,9 @@ def plot_tt_dag(
             enforce_signature=False,
             set_annotations=False,
         )
-        args = inspect.signature(f).parameters
+        args = dict(inspect.signature(f).parameters)
+        args.pop("xnp", None)
+        args.pop("dnp", None)
         if args:
             raise ValueError(
                 "The policy environment DAG should include all root nodes but requires "

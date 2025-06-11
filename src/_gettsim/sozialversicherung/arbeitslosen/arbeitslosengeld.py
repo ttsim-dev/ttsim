@@ -12,6 +12,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.tt_dag_elements import (
         ConsecutiveInt1dLookupTableParamValue,
         PiecewisePolynomialParamValue,
@@ -121,6 +123,7 @@ def einkommen_vorjahr_proxy_m(
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
     solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Approximate last years income for unemployment benefit."""
     # Relevant wage is capped at the contribution thresholds
@@ -141,10 +144,12 @@ def einkommen_vorjahr_proxy_m(
         x=12 * max_wage
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
         parameters=einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
     prox_soli = piecewise_polynomial(
         x=prox_tax,
         parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
+        xnp=xnp,
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     return max(out, 0.0)

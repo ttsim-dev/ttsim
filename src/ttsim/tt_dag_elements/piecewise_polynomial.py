@@ -51,8 +51,8 @@ assert set(OPTIONS_REGISTRY.keys()) == set(get_args(FUNC_TYPES)), (
 def piecewise_polynomial(
     x: numpy.ndarray,
     parameters: PiecewisePolynomialParamValue,
-    rates_multiplier: numpy.ndarray,
     xnp: ModuleType,
+    rates_multiplier: numpy.ndarray | float = 1.0,
 ) -> numpy.ndarray:
     """Calculate value of the piecewise function at `x`. If the first interval begins
     at -inf the polynomial of that interval can only have slope of 0. Requesting a

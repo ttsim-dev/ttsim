@@ -15,8 +15,6 @@ if TYPE_CHECKING:
     import datetime
     from types import ModuleType
 
-    import numpy
-
 
 @dataclass(frozen=True)
 class ParamObject:
@@ -175,13 +173,13 @@ def get_consecutive_int_1d_lookup_table_param_value(
     xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Get the parameters for a 1-dimensional lookup table."""
-    lookup_keys = xnp.asarray(sorted(raw))
-    assert (lookup_keys - xnp.min(lookup_keys) == xnp.arange(len(lookup_keys))).all(), (
+    lookup_keys = numpy.asarray(sorted(raw))
+    assert (lookup_keys - min(lookup_keys) == numpy.arange(len(lookup_keys))).all(), (
         "Dictionary keys must be consecutive integers."
     )
 
     return ConsecutiveInt1dLookupTableParamValue(
-        base_to_subtract=xnp.min(lookup_keys),
+        base_to_subtract=min(lookup_keys),
         values_to_look_up=xnp.asarray([raw[k] for k in lookup_keys]),
     )
 
@@ -200,12 +198,12 @@ def get_consecutive_int_2d_lookup_table_param_value(
             f"{lookup_keys_cols} and {lookup_keys_this_col}"
         )
     for lookup_keys in lookup_keys_rows, lookup_keys_cols:
-        assert (
-            lookup_keys - xnp.min(lookup_keys) == xnp.arange(len(lookup_keys))
-        ).all(), f"Dictionary keys must be consecutive integers, got: {lookup_keys}"
+        assert (lookup_keys - min(lookup_keys) == xnp.arange(len(lookup_keys))).all(), (
+            f"Dictionary keys must be consecutive integers, got: {lookup_keys}"
+        )
     return ConsecutiveInt2dLookupTableParamValue(
-        base_to_subtract_rows=xnp.min(lookup_keys_rows),
-        base_to_subtract_cols=xnp.min(lookup_keys_cols),
+        base_to_subtract_rows=min(lookup_keys_rows),
+        base_to_subtract_cols=min(lookup_keys_cols),
         values_to_look_up=xnp.array(
             [
                 raw[row][col]
@@ -248,13 +246,13 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
     first_m_since_ad_to_consider = _m_since_ad(y=raw.pop("first_year_to_consider"), m=1)
     last_m_since_ad_to_consider = _m_since_ad(y=raw.pop("last_year_to_consider"), m=12)
     assert all(isinstance(k, int) for k in raw)
-    first_year_phase_inout: int = xnp.min(raw.keys())  # type: ignore[assignment]
-    first_month_phase_inout: int = xnp.min(raw[first_year_phase_inout].keys())
+    first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
+    first_month_phase_inout: int = min(raw[first_year_phase_inout].keys())
     first_m_since_ad_phase_inout = _m_since_ad(
         y=first_year_phase_inout, m=first_month_phase_inout
     )
-    last_year_phase_inout: int = xnp.max(raw.keys())  # type: ignore[assignment]
-    last_month_phase_inout: int = xnp.max(raw[last_year_phase_inout].keys())
+    last_year_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
+    last_month_phase_inout: int = max(raw[last_year_phase_inout].keys())
     last_m_since_ad_phase_inout = _m_since_ad(
         y=last_year_phase_inout, m=last_month_phase_inout
     )
@@ -292,8 +290,8 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     first_year_to_consider = raw.pop("first_year_to_consider")
     last_year_to_consider = raw.pop("last_year_to_consider")
     assert all(isinstance(k, int) for k in raw)
-    first_year_phase_inout: int = xnp.min(raw.keys())  # type: ignore[assignment]
-    last_year_phase_inout: int = xnp.max(raw.keys())  # type: ignore[assignment]
+    first_year_phase_inout: int = sorted(raw)[0]  # type: ignore[assignment]
+    last_year_phase_inout: int = sorted(raw)[-1]  # type: ignore[assignment]
     assert first_year_to_consider <= first_year_phase_inout
     assert last_year_to_consider >= last_year_phase_inout
     before_phase_inout: dict[int, float] = {

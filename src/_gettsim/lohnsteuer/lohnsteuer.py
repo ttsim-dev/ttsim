@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy
+
 from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     param_function,
@@ -12,11 +14,13 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    import numpy
+    from types import ModuleType
 
 
 def basis_für_klassen_5_6(
-    einkommen_y: float, parameter_einkommensteuertarif: PiecewisePolynomialParamValue
+    einkommen_y: float,
+    parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Calculate base for Lohnsteuer for steuerklasse 5 and 6, by applying
     obtaining twice the difference between applying the factors 1.25 and 0.75
@@ -34,10 +38,10 @@ def basis_für_klassen_5_6(
 
     return 2 * (
         piecewise_polynomial(
-            x=einkommen_y * 1.25, parameters=parameter_einkommensteuertarif
+            x=einkommen_y * 1.25, parameters=parameter_einkommensteuertarif, xnp=xnp
         )
         - piecewise_polynomial(
-            x=einkommen_y * 0.75, parameters=parameter_einkommensteuertarif
+            x=einkommen_y * 0.75, parameters=parameter_einkommensteuertarif, xnp=xnp
         )
     )
 
@@ -46,6 +50,7 @@ def basis_für_klassen_5_6(
 def parameter_max_lohnsteuer_klasse_5_6(
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
+    xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Create paramter values for the piecewise polynomial that represents the maximum amount of Lohnsteuer
     that can be paid on incomes higher than the income thresholds for Steuerklasse 5 and 6.
@@ -53,14 +58,17 @@ def parameter_max_lohnsteuer_klasse_5_6(
     lohnsteuer_bis_erste_grenze = basis_für_klassen_5_6(
         einkommensgrenzwerte_steuerklassen_5_6[1],
         einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
     lohnsteuer_bis_zweite_grenze = basis_für_klassen_5_6(
         einkommensgrenzwerte_steuerklassen_5_6[2],
         einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
     lohnsteuer_bis_dritte_grenze = basis_für_klassen_5_6(
         einkommensgrenzwerte_steuerklassen_5_6[3],
         einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
     thresholds = numpy.asarray(
         [
@@ -95,10 +103,13 @@ def parameter_max_lohnsteuer_klasse_5_6(
 def basistarif(
     einkommen_y: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Lohnsteuer in the Basistarif."""
     return piecewise_polynomial(
-        x=einkommen_y, parameters=einkommensteuer__parameter_einkommensteuertarif
+        x=einkommen_y,
+        parameters=einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
 
 
@@ -106,10 +117,13 @@ def basistarif(
 def splittingtarif(
     einkommen_y: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Lohnsteuer in the Splittingtarif."""
     return 2 * piecewise_polynomial(
-        x=einkommen_y / 2, parameters=einkommensteuer__parameter_einkommensteuertarif
+        x=einkommen_y / 2,
+        parameters=einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
 
 
@@ -118,14 +132,15 @@ def tarif_klassen_5_und_6(
     einkommen_y: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     parameter_max_lohnsteuer_klasse_5_6: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Lohnsteuer for Lohnsteuerklassen 5 and 6."""
 
     basis = basis_für_klassen_5_6(
-        einkommen_y, einkommensteuer__parameter_einkommensteuertarif
+        einkommen_y, einkommensteuer__parameter_einkommensteuertarif, xnp=xnp
     )
     max_lohnsteuer = piecewise_polynomial(
-        x=einkommen_y, parameters=parameter_max_lohnsteuer_klasse_5_6
+        x=einkommen_y, parameters=parameter_max_lohnsteuer_klasse_5_6, xnp=xnp
     )
     min_lohnsteuer = (
         einkommensteuer__parameter_einkommensteuertarif.rates[0, 1] * einkommen_y
@@ -157,6 +172,7 @@ def basistarif_mit_kinderfreibetrag(
     einkommen_y: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     kinderfreibetrag_soli_y: float,
+    xnp: ModuleType,
 ) -> float:
     """Lohnsteuer in the Basistarif deducting the Kindefreibetrag."""
     einkommen_abzüglich_kinderfreibetrag_soli = numpy.maximum(
@@ -165,6 +181,7 @@ def basistarif_mit_kinderfreibetrag(
     return piecewise_polynomial(
         x=einkommen_abzüglich_kinderfreibetrag_soli,
         parameters=einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
 
 
@@ -173,6 +190,7 @@ def splittingtarif_mit_kinderfreibetrag(
     einkommen_y: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     kinderfreibetrag_soli_y: float,
+    xnp: ModuleType,
 ) -> float:
     """Lohnsteuer in the Splittingtarif deducting the Kindefreibetrag."""
     einkommen_abzüglich_kinderfreibetrag_soli = numpy.maximum(
@@ -181,6 +199,7 @@ def splittingtarif_mit_kinderfreibetrag(
     return 2 * piecewise_polynomial(
         x=einkommen_abzüglich_kinderfreibetrag_soli / 2,
         parameters=einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
 
 
@@ -190,6 +209,7 @@ def tarif_klassen_5_und_6_mit_kinderfreibetrag(
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     parameter_max_lohnsteuer_klasse_5_6: PiecewisePolynomialParamValue,
     kinderfreibetrag_soli_y: float,
+    xnp: ModuleType,
 ) -> float:
     """Lohnsteuer for Lohnsteuerklassen 5 and 6 deducting the Kindefreibetrag."""
     einkommen_abzüglich_kinderfreibetrag_soli = numpy.maximum(
@@ -199,10 +219,12 @@ def tarif_klassen_5_und_6_mit_kinderfreibetrag(
     basis = basis_für_klassen_5_6(
         einkommen_abzüglich_kinderfreibetrag_soli,
         einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
     max_lohnsteuer = piecewise_polynomial(
         x=einkommen_abzüglich_kinderfreibetrag_soli,
         parameters=parameter_max_lohnsteuer_klasse_5_6,
+        xnp=xnp,
     )
     min_lohnsteuer = (
         einkommensteuer__parameter_einkommensteuertarif.rates[0, 1]
@@ -237,12 +259,14 @@ def betrag_mit_kinderfreibetrag_y(
 def betrag_soli_y(
     betrag_mit_kinderfreibetrag_y: float,
     solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Solidarity surcharge on Lohnsteuer (withholding tax on earnings)."""
 
     return piecewise_polynomial(
         x=betrag_mit_kinderfreibetrag_y,
         parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
+        xnp=xnp,
     )
 
 

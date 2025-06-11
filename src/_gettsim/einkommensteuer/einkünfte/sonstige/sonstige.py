@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
 from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     piecewise_polynomial,
@@ -35,9 +40,11 @@ def renteneinkünfte_m(
 def ertragsanteil_an_rente(
     sozialversicherung__rente__jahr_renteneintritt: int,
     parameter_ertragsanteil_an_rente: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Share of pensions subject to income taxation."""
     return piecewise_polynomial(
         x=sozialversicherung__rente__jahr_renteneintritt,
         parameters=parameter_ertragsanteil_an_rente,
+        xnp=xnp,
     )

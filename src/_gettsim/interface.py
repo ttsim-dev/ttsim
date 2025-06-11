@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy
+
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import main
 from ttsim.interface_dag_elements.data_converters import (
@@ -106,6 +108,7 @@ def oss(
     input_data__tree = dataframe_to_nested_data(
         mapper=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
+        xnp=numpy,
     )
     nested_result = main(
         inputs={

@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
 from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     piecewise_polynomial,
@@ -13,12 +18,14 @@ def solidaritätszuschlagstarif(
     steuer_pro_person: float,
     einkommensteuer__anzahl_personen_sn: int,
     parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """The isolated function for Solidaritätszuschlag."""
 
     return einkommensteuer__anzahl_personen_sn * piecewise_polynomial(
         x=steuer_pro_person / einkommensteuer__anzahl_personen_sn,
         parameters=parameter_solidaritätszuschlag,
+        xnp=xnp,
     )
 
 

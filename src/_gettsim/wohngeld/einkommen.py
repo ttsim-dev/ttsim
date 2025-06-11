@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy
+
 from ttsim.tt_dag_elements import (
     AggType,
     ConsecutiveInt1dLookupTableParamValue,
@@ -16,7 +18,7 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    import numpy
+    from types import ModuleType
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -225,6 +227,7 @@ def freibetrag_m_bis_2015(
     alleinerziehendenbonus: int,
     freibetrag_bei_behinderung_gestaffelt_y: PiecewisePolynomialParamValue,
     freibetrag_kinder_m: dict[str, float],
+    xnp: ModuleType,
 ) -> float:
     """Calculate housing benefit subtractions for one individual until 2015."""
 
@@ -232,6 +235,7 @@ def freibetrag_m_bis_2015(
         piecewise_polynomial(
             x=behinderungsgrad,
             parameters=freibetrag_bei_behinderung_gestaffelt_y,
+            xnp=xnp,
         )
         / 12
     )

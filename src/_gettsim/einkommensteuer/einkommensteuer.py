@@ -22,6 +22,8 @@ from ttsim.tt_dag_elements.piecewise_polynomial import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import RawParam
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
@@ -128,6 +130,7 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
     zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn: float,
     anzahl_personen_sn: int,
     parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Taxes with child allowance on Steuernummer level.
 
@@ -138,7 +141,7 @@ def betrag_mit_kinderfreibetrag_y_sn_ab_2002(
         zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn / anzahl_personen_sn
     )
     return anzahl_personen_sn * piecewise_polynomial(
-        x=zu_verst_eink_per_indiv, parameters=parameter_einkommensteuertarif
+        x=zu_verst_eink_per_indiv, parameters=parameter_einkommensteuertarif, xnp=xnp
     )
 
 
@@ -151,6 +154,7 @@ def betrag_ohne_kinderfreibetrag_y_sn(
     gesamteinkommen_y: float,
     anzahl_personen_sn: int,
     parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Taxes without child allowance on Steuernummer level. Also referred to as
     "tarifliche ESt II".
@@ -158,7 +162,7 @@ def betrag_ohne_kinderfreibetrag_y_sn(
     """
     zu_verst_eink_per_indiv = gesamteinkommen_y / anzahl_personen_sn
     return anzahl_personen_sn * piecewise_polynomial(
-        x=zu_verst_eink_per_indiv, parameters=parameter_einkommensteuertarif
+        x=zu_verst_eink_per_indiv, parameters=parameter_einkommensteuertarif, xnp=xnp
     )
 
 

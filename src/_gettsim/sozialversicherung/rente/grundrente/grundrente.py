@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     RoundingSpec,
     piecewise_polynomial,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 @policy_function(
@@ -63,11 +68,13 @@ def _anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
     rentenwert: float,
     parameter_anzurechnendes_einkommen: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """The isolated function for the relevant income for the Grundrentezuschlag."""
     return rentenwert * piecewise_polynomial(
         x=einkommen_m_ehe / rentenwert,
         parameters=parameter_anzurechnendes_einkommen,
+        xnp=xnp,
     )
 
 

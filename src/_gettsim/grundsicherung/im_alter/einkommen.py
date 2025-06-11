@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import piecewise_polynomial, policy_function
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
     from ttsim.tt_dag_elements import PiecewisePolynomialParam
 
@@ -113,6 +115,7 @@ def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m: float,
     anrechnungsfreier_anteil_private_renteneinkünfte: PiecewisePolynomialParam,
     grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
+    xnp: ModuleType,
 ) -> float:
     """Calculate individual private pension benefits considered in the calculation of
     Grundsicherung im Alter.
@@ -123,6 +126,7 @@ def private_rente_betrag_m(
         piecewise_polynomial(
             x=sozialversicherung__rente__private_rente_betrag_m,
             parameters=anrechnungsfreier_anteil_private_renteneinkünfte,
+            xnp=xnp,
         )
     )
     upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
@@ -150,6 +154,7 @@ def gesetzliche_rente_m_ab_2021(
     sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt: bool,
     grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
     anrechnungsfreier_anteil_gesetzliche_rente: PiecewisePolynomialParam,
+    xnp: ModuleType,
 ) -> float:
     """Calculate individual public pension benefits which are considered in the
     calculation of Grundsicherung im Alter since 2021.
@@ -161,6 +166,7 @@ def gesetzliche_rente_m_ab_2021(
     angerechnete_rente = piecewise_polynomial(
         x=sozialversicherung__rente__altersrente__betrag_m,
         parameters=anrechnungsfreier_anteil_gesetzliche_rente,
+        xnp=xnp,
     )
 
     upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
