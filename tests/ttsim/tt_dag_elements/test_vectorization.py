@@ -392,9 +392,8 @@ for year in range(1990, 2023):
             )
         ],
     )
-    def test_convertible(funcname, func, backend_xnp):  # noqa: ARG001
+    def test_convertible(funcname, func, backend, xnp):  # noqa: ARG001
         # Leave funcname for debugging purposes.
-        backend, xnp = backend_xnp
         _make_vectorizable(func, backend=backend, xnp=xnp)
 
 
@@ -419,8 +418,7 @@ def mock__elterngeld__geschwisterbonus_m(
     return out
 
 
-def test_geschwisterbonus_m(backend_xnp):
-    backend, xnp = backend_xnp
+def test_geschwisterbonus_m(backend, xnp):
     # Test original METTSIM function on scalar input
     # ==============================================================================
     basisbetrag_m = 3.0
@@ -483,8 +481,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     )
 
 
-def test_grundsätzlich_anspruchsberechtigt(backend_xnp):
-    backend, xnp = backend_xnp
+def test_grundsätzlich_anspruchsberechtigt(backend, xnp):
     # Test original METTSIM function on scalar input
     # ==============================================================================
     claimed = True

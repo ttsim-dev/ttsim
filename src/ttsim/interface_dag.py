@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 def main(
     inputs: dict[str, Any],
     targets: list[str] | None = None,
-    backend: Literal[numpy, jax] = "numpy",
+    backend: Literal["numpy", "jax"] = "numpy",
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.

@@ -1,14 +1,24 @@
 from __future__ import annotations
 
-from types import ModuleType
+from typing import TYPE_CHECKING, Literal
 
+if TYPE_CHECKING:
+    from types import ModuleType
 import numpy
 
-from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.interface_dag_elements.interface_node_objects import (
+    interface_function,
+    interface_input,
+)
+
+
+@interface_input(in_top_level_namespace=True)
+def backend() -> Literal["numpy", "jax"]:
+    """The computing backend to use for the taxes and transfers function."""
 
 
 @interface_function(in_top_level_namespace=True)
-def xnp(backend: str) -> ModuleType:
+def xnp(backend: Literal["numpy", "jax"]) -> ModuleType:
     """
     Return the backend for numerical operations (either NumPy or jax).
     """
@@ -16,12 +26,8 @@ def xnp(backend: str) -> ModuleType:
     if backend == "numpy":
         xnp = numpy
     elif backend == "jax":
-        try:
-            import jax
-        except ImportError:
-            raise ImportError(
-                "jax is not installed. Please install jax to use the 'jax' backend."
-            )
+        import jax
+
         xnp = jax.numpy
     else:
         raise ValueError(f"Unsupported backend: {backend}. Choose 'numpy' or 'jax'.")
@@ -29,20 +35,14 @@ def xnp(backend: str) -> ModuleType:
 
 
 @interface_function(in_top_level_namespace=True)
-def dnp(backend: str) -> ModuleType:
+def dnp(backend: Literal["numpy", "jax"]) -> ModuleType:
     """
     Return the backend for datetime objects (either NumPy or jax-datetime)
     """
-    global dnp
-
     if backend == "numpy":
         dnp = numpy
     elif backend == "jax":
-        try:
-            import jax_datetime
-        except ImportError:
-            raise ImportError(
-                "jax-datetime is not installed. Please install jax-datetime to use the 'jax' backend."
-            )
+        import jax_datetime
+
         dnp = jax_datetime
     return dnp

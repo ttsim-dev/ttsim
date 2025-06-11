@@ -98,7 +98,8 @@ def with_derived_functions_and_processed_input_nodes(
     )
     out = {}
     for n, f in flat_with_derived.items():
-        # Put scalars into the policy environment, else skip the key
+        # Put scalars into the policy environment, else remove the element because it
+        # will be passed into the `tax_transfer_function` as an input.
         if n in processed_data:
             if isinstance(processed_data[n], int | float | bool):
                 out[n] = processed_data[n]

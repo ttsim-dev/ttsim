@@ -1,5 +1,7 @@
-import numpy
 import pytest
+
+from ttsim.interface_dag_elements.backend import dnp as ttsim_dnp
+from ttsim.interface_dag_elements.backend import xnp as ttsim_xnp
 
 
 # content of conftest.py
@@ -13,12 +15,18 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture
-def backend_xnp(request):
+def backend(request):
     backend = request.config.getoption("--backend")
-    if backend == "numpy":
-        xnp = numpy
-    else:
-        import jax
+    return backend
 
-        xnp = jax.numpy
-    return backend, xnp
+
+@pytest.fixture
+def xnp(request):
+    backend = request.config.getoption("--backend")
+    return ttsim_xnp(backend)
+
+
+@pytest.fixture
+def dnp(request):
+    backend = request.config.getoption("--backend")
+    return ttsim_dnp(backend)
