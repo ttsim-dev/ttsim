@@ -116,13 +116,13 @@ def _remove_tree_logic_from_policy_environment(
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
     for name, obj in policy_environment.items():
-        if isinstance(obj, ParamObject):
-            out[name] = obj
-        else:
+        if hasattr(obj, "remove_tree_logic"):
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qual_name(name),
                 top_level_namespace=names__top_level_namespace,
             )
+        else:
+            out[name] = obj
     return out
 
 

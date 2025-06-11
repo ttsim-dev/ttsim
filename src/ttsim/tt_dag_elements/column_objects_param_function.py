@@ -478,7 +478,9 @@ def group_creation_function(
 
     def decorator(func: GenericCallable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
-        func_with_reorder = lambda **kwargs: reorder_ids(func(**kwargs))
+        func_with_reorder = lambda **kwargs: reorder_ids(
+            ids=func(**kwargs), xnp=kwargs["xnp"]
+        )
         functools.update_wrapper(func_with_reorder, func)
 
         return GroupCreationFunction(

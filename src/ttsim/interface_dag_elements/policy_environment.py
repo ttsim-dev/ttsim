@@ -31,6 +31,8 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         FlatColumnObjectsParamFunctions,
@@ -47,6 +49,7 @@ def policy_environment(
     orig_policy_objects__column_objects_and_param_functions: NestedColumnObjectsParamFunctions,  # noqa: E501
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     date: datetime.date | DashedISOString,
+    xnp: ModuleType,
 ) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -74,6 +77,7 @@ def policy_environment(
         right=_active_param_objects(
             orig=orig_policy_objects__param_specs,
             date=date,
+            xnp=xnp,
         ),
     )
 
@@ -90,6 +94,7 @@ def policy_environment(
         note=None,
         reference=None,
     )
+    a_tree["xnp"] = xnp
     return a_tree
 
 
@@ -124,6 +129,7 @@ def _active_column_objects_and_param_functions(
 def _active_param_objects(
     orig: FlatOrigParamSpecs,
     date: datetime.date,
+    xnp: ModuleType,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_tree_with_params = {}
@@ -134,6 +140,7 @@ def _active_param_objects(
             leaf_name=leaf_name,
             spec=orig_params_spec,
             date=date,
+            xnp=xnp,
         )
         if param is not None:
             flat_tree_with_params[(*path_to_keep, leaf_name)] = param
@@ -144,6 +151,7 @@ def _active_param_objects(
                 leaf_name=leaf_name_jan1,
                 spec=orig_params_spec,
                 date=date_jan1,
+                xnp=xnp,
             )
             if param is not None:
                 flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
@@ -154,6 +162,7 @@ def _get_one_param(  # noqa: PLR0911
     leaf_name: str,
     spec: OrigParamSpec,
     date: datetime.date,
+    xnp: ModuleType,
 ) -> ParamObject:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(leaf_name=leaf_name, spec=spec, date=date)
@@ -169,29 +178,33 @@ def _get_one_param(  # noqa: PLR0911
             leaf_name=leaf_name,
             func_type=spec["type"],
             parameter_dict=cleaned_spec["value"],
+            xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
     elif spec["type"] == "consecutive_int_1d_lookup_table":
         cleaned_spec["value"] = get_consecutive_int_1d_lookup_table_param_value(
-            cleaned_spec["value"]
+            raw=cleaned_spec["value"],
+            xnp=xnp,
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "consecutive_int_2d_lookup_table":
         cleaned_spec["value"] = get_consecutive_int_2d_lookup_table_param_value(
-            cleaned_spec["value"]
+            raw=cleaned_spec["value"],
+            xnp=xnp,
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "month_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_month_based_phase_inout_of_age_thresholds_param_value(
-                cleaned_spec["value"]
+                raw=cleaned_spec["value"], xnp=xnp
             )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
     elif spec["type"] == "year_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_year_based_phase_inout_of_age_thresholds_param_value(
-                cleaned_spec["value"]
+                raw=cleaned_spec["value"],
+                xnp=xnp,
             )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)

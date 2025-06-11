@@ -138,7 +138,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
     )
 
 
-def test_rounding_with_time_conversion():
+def test_rounding_with_time_conversion(backend, xnp):
     """Check if rounding is correct for time-converted functions."""
 
     # Define function that should be rounded
@@ -147,8 +147,8 @@ def test_rounding_with_time_conversion():
         return x
 
     data = {
-        "p_id": numpy.array([1, 2]),
-        "x": numpy.array([1.2, 1.5]),
+        "p_id": xnp.array([1, 2]),
+        "x": xnp.array([1.2, 1.5]),
     }
 
     policy_environment = {
@@ -163,6 +163,7 @@ def test_rounding_with_time_conversion():
             "policy_environment": policy_environment,
             "targets__tree": {"test_func_y": None},
             "rounding": True,
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]
@@ -170,6 +171,7 @@ def test_rounding_with_time_conversion():
         pd.Series(results__tree["test_func_y"]),
         pd.Series([12.0, 12.0], dtype=DTYPE),
         check_names=False,
+        check_dtype=False,
     )
 
 
@@ -208,6 +210,7 @@ def test_no_rounding(
         pd.Series(results__tree["test_func"]),
         pd.Series(input_values_exp_output, dtype=DTYPE),
         check_names=False,
+        check_dtype=False,
     )
 
 
@@ -227,6 +230,7 @@ def test_rounding_callable(rounding_spec, input_values, exp_output, xnp):
         pd.Series(func_with_rounding(input_values)),
         pd.Series(exp_output),
         check_names=False,
+        check_dtype=False,
     )
 
 
@@ -247,6 +251,7 @@ def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
         pd.Series(result),
         pd.Series(exp_output),
         check_names=False,
+        check_dtype=False,
     )
 
 

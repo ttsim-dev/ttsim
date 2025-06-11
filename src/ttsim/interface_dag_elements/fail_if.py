@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import networkx as nx
+import numpy
 import optree
 import pandas as pd
 
@@ -25,8 +26,6 @@ from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
     from types import ModuleType
-
-    import numpy
 
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
@@ -243,7 +242,7 @@ def data_paths_are_missing_in_paths_to_column_names(
 
 
 @interface_function()
-def input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
+def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) -> None:
     """
     Validate the basic structure of the data tree.
 
@@ -263,7 +262,9 @@ def input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=input_data__tree,
-        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | numpy.ndarray),
+        leaf_checker=lambda leaf: isinstance(
+            leaf, int | pd.Series | numpy.ndarray | xnp.ndarray
+        ),
         tree_name="input_data__tree",
     )
     p_id = input_data__tree.get("p_id", None)

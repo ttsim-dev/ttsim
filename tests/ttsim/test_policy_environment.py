@@ -59,12 +59,13 @@ def some_int_param():
     )
 
 
-def test_add_jahresanfang():
+def test_add_jahresanfang(xnp):
     orig = param_specs(root=Path(__file__).parent / "test_parameters")
     k = ("test_add_jahresanfang.yaml", "foo")
     _active_ttsim_tree_with_params = _active_param_objects(
         orig={k: orig[k]},
         date=pd.to_datetime("2020-07-01").date(),
+        xnp=xnp,
     )
     assert _active_ttsim_tree_with_params["foo"].value == 2
     assert _active_ttsim_tree_with_params["foo_jahresanfang"].value == 1

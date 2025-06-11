@@ -232,15 +232,6 @@ def func_before_partial(arg_1, some_param):
     return arg_1 + some_param
 
 
-func_after_partial = with_partialled_params_and_scalars(
-    with_processed_params_and_scalars={
-        "some_func": func_before_partial,
-        "some_param": SOME_INT_PARAM.value,
-    },
-    rounding=False,
-)["some_func"]
-
-
 @pytest.fixture
 @policy_function(leaf_name="foo")
 def function_with_bool_return(x: bool) -> bool:
@@ -514,12 +505,30 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
     )
 
 
-def test_partial_params_to_functions():
+def test_partial_params_to_functions(xnp):
     # Partial function produces correct result
+    func_after_partial = with_partialled_params_and_scalars(
+        with_processed_params_and_scalars={
+            "some_func": func_before_partial,
+            "some_param": SOME_INT_PARAM.value,
+        },
+        rounding=False,
+        xnp=xnp,
+    )["some_func"]
+
     assert func_after_partial(2) == 3
 
 
-def test_partial_params_to_functions_removes_argument():
+def test_partial_params_to_functions_removes_argument(xnp):
+    func_after_partial = with_partialled_params_and_scalars(
+        with_processed_params_and_scalars={
+            "some_func": func_before_partial,
+            "some_param": SOME_INT_PARAM.value,
+        },
+        rounding=False,
+        xnp=xnp,
+    )["some_func"]
+
     # Fails if params is added to partial function
     with pytest.raises(
         TypeError,

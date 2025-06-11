@@ -12,9 +12,6 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
-
-if TYPE_CHECKING:
-    import numpy
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -629,13 +626,13 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         )
 
 
-def test_fail_if_input_data_tree_is_invalid():
+def test_fail_if_input_data_tree_is_invalid(xnp):
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(
         ValueError, match="The input data must contain the `p_id` column."
     ):
-        input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
 
 def test_fail_if_input_data_tree_is_invalid_via_main():
@@ -754,16 +751,16 @@ def test_fail_if_non_convertible_objects_in_results_tree(
         non_convertible_objects_in_results_tree(results__tree)
 
 
-def test_fail_if_p_id_does_not_exist():
+def test_fail_if_p_id_does_not_exist(xnp):
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(
         ValueError, match="The input data must contain the `p_id` column."
     ):
-        input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
 
-def test_fail_if_p_id_does_not_exist_via_main():
+def test_fail_if_p_id_does_not_exist_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
@@ -775,22 +772,22 @@ def test_fail_if_p_id_does_not_exist_via_main():
                 "policy_environment": {},
                 "targets__tree": {},
                 "rounding": False,
-                # "jit": jit,
+                "backend": backend,
             },
             targets=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
-def test_fail_if_p_id_is_not_unique():
+def test_fail_if_p_id_is_not_unique(xnp):
     data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
 
     with pytest.raises(
         ValueError, match="The following `p_id`s are not unique in the input data"
     ):
-        input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
 
-def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
+def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
     data = copy.deepcopy(minimal_input_data)
     data["p_id"][:] = 1
 
@@ -804,6 +801,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
                 "policy_environment": {},
                 "targets__tree": {},
                 "rounding": False,
+                "backend": backend,
             },
             targets=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]

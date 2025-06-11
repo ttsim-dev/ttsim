@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
 import numpy
 import pytest
 
@@ -45,8 +50,15 @@ def test_join(
     target: numpy.ndarray,
     value_if_foreign_key_is_missing: int,
     expected: numpy.ndarray,
+    xnp: ModuleType,
 ):
     assert numpy.array_equal(
-        join(foreign_key, primary_key, target, value_if_foreign_key_is_missing),
+        join(
+            foreign_key=xnp.array(foreign_key),
+            primary_key=xnp.array(primary_key),
+            target=xnp.array(target),
+            value_if_foreign_key_is_missing=value_if_foreign_key_is_missing,
+            xnp=xnp,
+        ),
         expected,
     )
