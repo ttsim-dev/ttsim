@@ -77,10 +77,6 @@ def with_derived_functions_and_processed_input_nodes(
     3. Remove all functions that are overridden by data columns.
 
     """
-    flat = _remove_tree_logic_from_policy_environment(
-        policy_environment=policy_environment,
-        names__top_level_namespace=names__top_level_namespace,
-    )
     flat_vectorized = {
         k: f.vectorize(
             backend=backend,
@@ -88,10 +84,14 @@ def with_derived_functions_and_processed_input_nodes(
         )
         if isinstance(f, PolicyFunction)
         else f
-        for k, f in flat.items()
+        for k, f in dt.flatten_to_qual_names(policy_environment).items()
     }
+    flat_without_tree_logic = _remove_tree_logic_from_policy_environment(
+        policy_environment=flat_vectorized,
+        names__top_level_namespace=names__top_level_namespace,
+    )
     flat_with_derived = _add_derived_functions(
-        qual_name_policy_environment=flat_vectorized,
+        qual_name_policy_environment=flat_without_tree_logic,
         targets=dt.qual_names(targets__tree),
         names__processed_data_columns=names__processed_data_columns,
         grouping_levels=names__grouping_levels,
@@ -110,12 +110,12 @@ def with_derived_functions_and_processed_input_nodes(
 
 
 def _remove_tree_logic_from_policy_environment(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: QNamePolicyEnvironment,
     names__top_level_namespace: UnorderedQNames,
 ) -> QNamePolicyEnvironment:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
-    for name, obj in dt.flatten_to_qual_names(policy_environment).items():
+    for name, obj in policy_environment.items():
         if isinstance(obj, ParamObject):
             out[name] = obj
         else:
@@ -243,6 +243,7 @@ def with_processed_params_and_scalars(
 def with_partialled_params_and_scalars(
     with_processed_params_and_scalars: QNameCombinedEnvironment1,
     rounding: bool,
+    xnp: ModuleType,
 ) -> QNameCombinedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
 
@@ -262,7 +263,7 @@ def with_partialled_params_and_scalars(
     processed_functions = {}
     for name, _func in with_processed_params_and_scalars.items():
         if isinstance(_func, ColumnFunction):
-            func = _apply_rounding(_func) if rounding else _func
+            func = _apply_rounding(_func, xnp) if rounding else _func
             partial_params = {}
             for arg in [
                 a
@@ -281,9 +282,9 @@ def with_partialled_params_and_scalars(
     return processed_functions
 
 
-def _apply_rounding(element: Any) -> Any:
+def _apply_rounding(element: Any, xnp: ModuleType) -> Any:
     return (
-        element.rounding_spec.apply_rounding(element)
+        element.rounding_spec.apply_rounding(element, xnp=xnp)
         if getattr(element, "rounding_spec", False)
         else element
     )

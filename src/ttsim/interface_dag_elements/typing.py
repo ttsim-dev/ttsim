@@ -77,6 +77,11 @@ if TYPE_CHECKING:
         ColumnObject | ParamFunction | ParamObject | "NestedPolicyEnvironment",
     ]
     """Tree of column objects, param functions, and param objects."""
+    QNamePolicyEnvironment = dict[
+        str,
+        ColumnObject | ParamFunction | ParamObject,
+    ]
+    """Tree of column objects, param functions, and param objects."""
     QNameCombinedEnvironment0 = Mapping[
         str, ColumnObject | ParamFunction | ParamObject | int | float | bool
     ]

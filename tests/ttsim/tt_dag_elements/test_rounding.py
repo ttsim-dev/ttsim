@@ -107,7 +107,7 @@ def test_malformed_rounding_specs():
     "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding(rounding_spec, input_values, exp_output):
+def test_rounding(rounding_spec, input_values, exp_output, backend):
     """Check if rounding is correct."""
 
     # Define function that should be rounded
@@ -127,6 +127,7 @@ def test_rounding(rounding_spec, input_values, exp_output):
             "policy_environment": policy_environment,
             "targets__tree": {"namespace": {"test_func": None}},
             "rounding": True,
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]
@@ -214,13 +215,13 @@ def test_no_rounding(
     "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding_callable(rounding_spec, input_values, exp_output):
+def test_rounding_callable(rounding_spec, input_values, exp_output, xnp):
     """Check if callable is rounded correctly."""
 
     def test_func(income):
         return income
 
-    func_with_rounding = rounding_spec.apply_rounding(test_func)
+    func_with_rounding = rounding_spec.apply_rounding(test_func, xnp=xnp)
 
     assert_series_equal(
         pd.Series(func_with_rounding(input_values)),
@@ -233,13 +234,13 @@ def test_rounding_callable(rounding_spec, input_values, exp_output):
     "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding_spec(rounding_spec, input_values, exp_output):
+def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
     """Test RoundingSpec directly."""
 
     def test_func(income):
         return income
 
-    rounded_func = rounding_spec.apply_rounding(test_func)
+    rounded_func = rounding_spec.apply_rounding(test_func, xnp=xnp)
     result = rounded_func(input_values)
 
     assert_series_equal(

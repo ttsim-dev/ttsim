@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
+    import numpy
+
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 
@@ -36,14 +38,16 @@ class RoundingSpec:
             )
 
     def apply_rounding(
-        self, func: Callable[P, numpy.ndarray]
+        self, func: Callable[P, numpy.ndarray], xnp: ModuleType
     ) -> Callable[P, numpy.ndarray]:
-        """Decorator to round the output of a function. The wrapped function must accept an xnp: ModuleType argument for numpy operations.
+        """Decorator to round the output of a function.
 
         Parameters
         ----------
         func
-            Function to be rounded. Must accept xnp: ModuleType as a parameter.
+            Function to be rounded.
+        xnp
+            The computing module to use.
 
         Returns
         -------
@@ -51,10 +55,8 @@ class RoundingSpec:
         """
 
         @functools.wraps(func)
-        def wrapper(
-            *args: P.args, xnp: ModuleType, **kwargs: P.kwargs
-        ) -> numpy.ndarray:
-            out = func(*args, xnp=xnp, **kwargs)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> numpy.ndarray:
+            out = func(*args, **kwargs)
 
             if self.direction == "up":
                 rounded_out = self.base * xnp.ceil(out / self.base)
