@@ -13,19 +13,29 @@ from ttsim.interface_dag_elements.interface_node_objects import interface_functi
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.interface_dag_elements.typing import NestedData, NestedStrings, QNameData
+    from ttsim.interface_dag_elements.typing import (
+        FlatData,
+        NestedData,
+        NestedStrings,
+        QNameData,
+    )
 
 
 @interface_function()
-def tree(raw_results__combined: QNameData) -> NestedData:
+def tree(raw_results__combined: QNameData, input_data__flat: FlatData) -> NestedData:
     """The combined results as a tree.
 
-    Note: This is the point where the `p_id`s are converted back to their original
-    values.
+    The transformed id's are converted back to their original values.
 
     """
-
-    return dt.unflatten_from_qual_names(raw_results__combined)
+    raw_results__combined_with_old_ids = raw_results__combined
+    for k in raw_results__combined:
+        path = dt.tree_path_from_qual_name(k)
+        if (
+            path[-1].endswith("_id") or path[-1].startswith("p_id_")
+        ) and path in input_data__flat:
+            raw_results__combined_with_old_ids[k] = input_data__flat[path]
+    return dt.unflatten_from_qual_names(raw_results__combined_with_old_ids)
 
 
 @interface_function()

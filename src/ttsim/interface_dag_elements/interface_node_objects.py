@@ -54,7 +54,7 @@ class InterfaceInput(InterfaceNodeObject):
     ) -> InterfaceInput:
         return self
 
-    def dummy_callable(self):
+    def dummy_callable(self) -> InterfaceFunction:
         """Dummy callable for the interface input. Just used for plotting."""
 
         def dummy() -> self.return_type:

@@ -40,6 +40,8 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     NestedData = Mapping[str, TTSIMArray | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
+    FlatData = Mapping[str, TTSIMArray | "FlatData"]
+    """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
     QNameData = Mapping[str, TTSIMArray]

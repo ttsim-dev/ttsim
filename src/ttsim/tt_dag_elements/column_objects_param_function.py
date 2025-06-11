@@ -8,7 +8,6 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
 
 import dags.tree as dt
-import numpy
 from dags import rename_arguments
 from pandas.api.types import (
     is_bool_dtype,
@@ -18,6 +17,7 @@ from pandas.api.types import (
 )
 
 from ttsim.config import IS_JAX_INSTALLED
+from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt_dag_elements.aggregation import (
     AggType,
@@ -40,7 +40,9 @@ from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
-    import numpy
+    from types import ModuleType
+
+    import numpy  # noqa: TC004
     import pandas as pd
 
     from ttsim.interface_dag_elements.typing import (
@@ -126,7 +128,7 @@ class PolicyInput(ColumnObject):
     ) -> PolicyInput:
         return self
 
-    def dummy_callable(self):
+    def dummy_callable(self) -> PolicyFunction:
         """Dummy callable for the interface input. Just used for plotting."""
 
         def dummy() -> self.data_type:
@@ -370,6 +372,29 @@ def policy_function(
     return inner
 
 
+def reorder_ids(ids: numpy.ndarray, xnp: ModuleType) -> numpy.ndarray:
+    """Make ID's consecutively numbered.
+
+    Takes the given IDs and replaces them by consecutive numbers
+    starting at 0.
+
+    [43,44,70,50] -> [0,1,3,2]
+
+    """
+
+    sorting = xnp.argsort(ids)
+    ids_sorted = ids[sorting]
+    index_after_sort = xnp.arange(ids.shape[0])[sorting]
+
+    # Look for difference from previous entry in sorted array
+    diff_to_prev = xnp.where(xnp.diff(ids_sorted) >= 1, 1, 0)
+
+    # Sum up all differences to get new id
+    consecutive_ids = xnp.concatenate((xnp.asarray([0]), xnp.cumsum(diff_to_prev)))
+
+    return consecutive_ids[xnp.argsort(index_after_sort)]
+
+
 @dataclass(frozen=True)
 class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
     """
@@ -412,17 +437,33 @@ def group_creation_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
+    reorder: bool = True,
 ) -> GenericCallable[[GenericCallable], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
+
+    Parameters
+    ----------
+    leaf_name:
+        The leaf name of the function in the functions tree.
+    start_date:
+        The date from which the function is active (inclusive).
+    end_date:
+        The date until which the function is active (inclusive).
+    reorder:
+        Whether the created Group ID's should be reordered to be
+        consecutively numbered starting from 0.
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def decorator(func: GenericCallable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
+        func_with_reorder = lambda **kwargs: reorder_ids(func(**kwargs))
+        functools.update_wrapper(func_with_reorder, func)
+
         return GroupCreationFunction(
             leaf_name=_leaf_name,
-            function=func,
+            function=func_with_reorder if reorder else func,
             start_date=start_date,
             end_date=end_date,
         )

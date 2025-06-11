@@ -6,14 +6,16 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
 
-if TYPE_CHECKING:
-    from types import ModuleType
-
-    import numpy
-from ttsim.tt_dag_elements.column_objects_param_function import param_function
+from ttsim.tt_dag_elements.column_objects_param_function import (
+    ParamFunction,
+    param_function,
+)
 
 if TYPE_CHECKING:
     import datetime
+    from types import ModuleType
+
+    import numpy
 
 
 @dataclass(frozen=True)
@@ -43,7 +45,7 @@ class ParamObject:
     name: dict[Literal["de", "en"], str]
     description: dict[Literal["de", "en"], str]
 
-    def dummy_callable(self):
+    def dummy_callable(self) -> ParamFunction:
         """Dummy callable for the policy input. Just used for plotting."""
 
         def dummy() -> str(type(self).__name__):
