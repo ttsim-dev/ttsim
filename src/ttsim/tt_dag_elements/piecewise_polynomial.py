@@ -8,7 +8,6 @@ import numpy
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
 from ttsim.tt_dag_elements.param_objects import PiecewisePolynomialParamValue
 
 FUNC_TYPES = Literal[
@@ -106,6 +105,7 @@ def get_piecewise_parameters(
     leaf_name: str,
     func_type: FUNC_TYPES,
     parameter_dict: dict[int, dict[str, float]],
+    xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Create the objects for piecewise polynomial.
 
@@ -131,6 +131,7 @@ def get_piecewise_parameters(
     lower_thresholds, upper_thresholds, thresholds = check_and_get_thresholds(
         leaf_name=leaf_name,
         parameter_dict=parameter_dict,
+        xnp=xnp,
     )
 
     # Create and fill rates-array
@@ -138,6 +139,7 @@ def get_piecewise_parameters(
         parameter_dict=parameter_dict,
         leaf_name=leaf_name,
         func_type=func_type,
+        xnp=xnp,
     )
     # Create and fill intercept-array
     intercepts = _check_and_get_intercepts(
@@ -146,6 +148,7 @@ def get_piecewise_parameters(
         lower_thresholds=lower_thresholds,
         upper_thresholds=upper_thresholds,
         rates=rates,
+        xnp=xnp,
     )
     return PiecewisePolynomialParamValue(
         thresholds=thresholds,
@@ -195,7 +198,7 @@ def check_and_get_thresholds(
     upper_thresholds[keys[-1]] = parameter_dict[keys[-1]]["upper_threshold"]
 
     # Check if the function is defined on the complete real line
-    if (upper_thresholds[keys[-1]] != xnp.inf) | (lower_thresholds[0] != -xnp.inf):
+    if (upper_thresholds[keys[-1]] != numpy.inf) | (lower_thresholds[0] != -numpy.inf):
         raise ValueError(f"{leaf_name} needs to be defined on the entire real line.")
 
     for interval in keys[1:]:
@@ -220,7 +223,7 @@ def check_and_get_thresholds(
                 f" threshold in the piece after."
             )
 
-    if not xnp.allclose(lower_thresholds[1:], upper_thresholds[:-1]):
+    if not numpy.allclose(lower_thresholds[1:], upper_thresholds[:-1]):
         raise ValueError(
             f"The lower and upper thresholds of {leaf_name} have to coincide"
         )
@@ -339,30 +342,26 @@ def _create_intercepts(
 
     Parameters
     ----------
-    lower_thresholds : numpy.array
-                       The lower thresholds defining the intervals
+    lower_thresholds:
+        The lower thresholds defining the intervals
 
-    upper_thresholds : numpy.array
-                       The upper thresholds defining the intervals
+    upper_thresholds:
+        The upper thresholds defining the intervals
 
-    rates : numpy.array
-           The slope in the interval below the corresponding element of
-           *upper_thresholds*.
+    rates:
+        The slope in the interval below the corresponding element of *upper_thresholds*.
 
-    intercept_at_lowest_threshold : numpy.array
-                                    Intercept at the lowest threshold
+    intercept_at_lowest_threshold:
+        Intercept at the lowest threshold
 
-    fun: function handle (currently only piecewise_linear, will need to think about
-    whether we can have a generic function with a different interface or make
-    it specific )
-    xnp : ModuleType
-        The numpy module to use for calculations.
+    xnp: ModuleType
+        The module to use for calculations.
 
     Returns
     -------
 
     """
-    intercepts = numpy.full_like(upper_thresholds, xnp.nan)
+    intercepts = numpy.full_like(upper_thresholds, numpy.nan)
     intercepts[0] = intercept_at_lowest_threshold
     for i, up_thr in enumerate(upper_thresholds[:-1]):
         intercepts[i + 1] = _calculate_one_intercept(
@@ -371,7 +370,6 @@ def _create_intercepts(
             upper_thresholds=upper_thresholds,
             rates=rates,
             intercepts=intercepts,
-            xnp=xnp,
         )
     return xnp.array(intercepts)
 
@@ -382,7 +380,6 @@ def _calculate_one_intercept(
     upper_thresholds: numpy.ndarray,
     rates: numpy.ndarray,
     intercepts: numpy.ndarray,
-    xnp: ModuleType,
 ) -> float:
     """Calculate the intercepts from the raw data.
 
@@ -410,15 +407,15 @@ def _calculate_one_intercept(
     """
 
     # Check if value lies within the defined range.
-    if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or xnp.isnan(x):
-        return xnp.nan
-    index_interval = xnp.searchsorted(upper_thresholds, x, side="left")
+    if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or numpy.isnan(x):
+        return numpy.nan
+    index_interval = numpy.searchsorted(upper_thresholds, x, side="left")
     intercept_interval = intercepts[index_interval]
 
     # Select threshold and calculate corresponding increment into interval
     lower_threshold_interval = lower_thresholds[index_interval]
 
-    if lower_threshold_interval == -xnp.inf:
+    if lower_threshold_interval == -numpy.inf:
         return intercept_interval
 
     increment_to_calc = x - lower_threshold_interval
