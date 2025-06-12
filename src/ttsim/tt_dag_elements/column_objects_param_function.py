@@ -225,11 +225,11 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __post_init__(self) -> None:
-        self._fail_if__rounding_has_wrong_type(self.rounding_spec)
+        self._fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
-    def _fail_if__rounding_has_wrong_type(
+    def _fail_if_rounding_has_wrong_type(
         self, rounding_spec: RoundingSpec | None
     ) -> None:
         """Check if rounding_spec has the correct type.
@@ -561,20 +561,19 @@ def agg_by_group_function(
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
-        _fail_if__group_id_is_invalid(group_ids, orig_location)
+        _fail_if_group_id_is_invalid(group_ids, orig_location)
         group_id = group_ids.pop()
-        other_args = args - {group_id}
+        other_args = args - {group_id, "num_segments", "backend"}
         if agg_type == AggType.COUNT:
-            _fail_if__other_arg_is_present(other_args, orig_location)
+            _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {"group_id": group_id}
         else:
-            _fail_if__other_arg_is_invalid(other_args, orig_location)
+            _fail_if_other_arg_is_invalid(other_args, orig_location)
             mapper = {"group_id": group_id, "column": other_args.pop()}
         agg_func = rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
-
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=agg_func,
@@ -587,7 +586,7 @@ def agg_by_group_function(
     return inner
 
 
-def _fail_if__group_id_is_invalid(
+def _fail_if_group_id_is_invalid(
     group_ids: UnorderedQNames, orig_location: str
 ) -> None:
     if len(group_ids) != 1:
@@ -598,7 +597,7 @@ def _fail_if__group_id_is_invalid(
         )
 
 
-def _fail_if__other_arg_is_present(
+def _fail_if_other_arg_is_present(
     other_args: UnorderedQNames, orig_location: str
 ) -> None:
     if other_args:
@@ -608,13 +607,13 @@ def _fail_if__other_arg_is_present(
         )
 
 
-def _fail_if__other_arg_is_invalid(
+def _fail_if_other_arg_is_invalid(
     other_args: UnorderedQNames, orig_location: str
 ) -> None:
     if len(other_args) != 1:
         raise ValueError(
-            "There must be exactly one argument besides identifiers for aggregations. "
-            "Got: "
+            "There must be exactly one argument besides identifiers, num_segments, and "
+            "backend for aggregations. Got: "
             f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
         )
 
@@ -693,30 +692,30 @@ def agg_by_p_id_function(
             for p in args
             if any(e.startswith("p_id_") for e in dt.tree_path_from_qual_name(p))
         }
-        other_args = args - {*other_p_ids, "p_id"}
-        _fail_if__p_id_is_not_present(args, orig_location)
-        _fail_if__other_p_id_is_invalid(other_p_ids, orig_location)
+        other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
+        _fail_if_p_id_is_not_present(args, orig_location)
+        _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
         if agg_type == AggType.COUNT:
-            _fail_if__other_arg_is_present(other_args, orig_location)
+            _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
+                "num_segments": "num_segments",
+                "backend": "backend",
             }
         else:
-            _fail_if__other_arg_is_invalid(other_args, orig_location)
+            _fail_if_other_arg_is_invalid(other_args, orig_location)
             mapper = {
                 "column": other_args.pop(),
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
+                "num_segments": "num_segments",
+                "backend": "backend",
             }
         agg_func = rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
-
-        functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
-
         return AggByPIDFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=agg_func,
@@ -729,7 +728,7 @@ def agg_by_p_id_function(
     return inner
 
 
-def _fail_if__p_id_is_not_present(args: UnorderedQNames, orig_location: str) -> None:
+def _fail_if_p_id_is_not_present(args: UnorderedQNames, orig_location: str) -> None:
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
@@ -737,7 +736,7 @@ def _fail_if__p_id_is_not_present(args: UnorderedQNames, orig_location: str) -> 
         )
 
 
-def _fail_if__other_p_id_is_invalid(
+def _fail_if_other_p_id_is_invalid(
     other_p_ids: UnorderedQNames, orig_location: str
 ) -> None:
     if len(other_p_ids) != 1:

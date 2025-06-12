@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 import numpy
@@ -180,8 +180,8 @@ SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
 def minimal_input_data():
     n_individuals = 5
     out = {
-        "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
-        "fam_id": pd.Series(numpy.arange(n_individuals), name="fam_id"),
+        "p_id": numpy.arange(n_individuals),
+        "fam_id": numpy.arange(n_individuals),
     }
     return out
 
@@ -190,9 +190,9 @@ def minimal_input_data():
 def minimal_input_data_shared_fam():
     n_individuals = 3
     out = {
-        "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
-        "fam_id": pd.Series([0, 0, 1], name="fam_id"),
-        "p_id_someone_else": pd.Series([1, 0, -1], name="p_id_someone_else"),
+        "p_id": numpy.arange(n_individuals),
+        "fam_id": numpy.array([0, 0, 1]),
+        "p_id_someone_else": numpy.array([1, 0, -1]),
     }
     return out
 
@@ -395,14 +395,17 @@ def test_create_agg_by_group_functions(
     policy_environment,
     targets__tree,
     input_data__tree,
+    backend,
 ):
+    policy_environment["backend"] = backend
+    policy_environment["num_segments"] = len(input_data__tree["p_id"])
     main(
         inputs={
             "policy_environment": policy_environment,
             "input_data__tree": input_data__tree,
             "targets__tree": targets__tree,
             "rounding": False,
-            "backend": "numpy",
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]
@@ -585,6 +588,8 @@ def test_user_provided_aggregation(backend):
             "betrag_m_double": betrag_m_double,
             "betrag_m_double_fam": betrag_m_double_fam,
         },
+        "backend": backend,
+        "num_segments": len(data["p_id"]),
     }
 
     actual = main(
@@ -635,6 +640,8 @@ def test_user_provided_aggregation_with_time_conversion(backend):
             "betrag_double_m": betrag_double_m,
             "max_betrag_double_m_fam": max_betrag_double_m_fam,
         },
+        "backend": backend,
+        "num_segments": len(data["p_id"]),
     }
 
     actual = main(
@@ -658,14 +665,22 @@ def test_user_provided_aggregation_with_time_conversion(backend):
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def sum_source_by_p_id_someone_else(
-    source: int, p_id: int, p_id_someone_else: int
+    source: int,
+    p_id: int,
+    p_id_someone_else: int,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
 ) -> int:
     pass
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def sum_source_m_by_p_id_someone_else(
-    source_m: int, p_id: int, p_id_someone_else: int
+    source_m: int,
+    p_id: int,
+    p_id_someone_else: int,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
 ) -> int:
     pass
 
@@ -714,6 +729,8 @@ def test_user_provided_aggregate_by_p_id_specs(
             "module": {leaf_name: source},
             "p_id": p_id,
             "p_id_someone_else": p_id_someone_else,
+            "backend": backend,
+            "num_segments": len(minimal_input_data_shared_fam["p_id"]),
         },
     )
 

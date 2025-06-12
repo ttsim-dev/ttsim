@@ -178,7 +178,7 @@ def test_agg_by_group_function_type(function, expected_group_id, expected_other_
 
 
 def test_agg_by_group_count_other_arg_present():
-    match = "There must be no argument besides identifiers for counting."
+    match = "There must be no argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.COUNT)
@@ -187,7 +187,7 @@ def test_agg_by_group_count_other_arg_present():
 
 
 def test_agg_by_group_sum_wrong_amount_of_args():
-    match = "There must be exactly one argument besides identifiers for aggregations."
+    match = "There must be exactly one argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.SUM)
@@ -252,7 +252,7 @@ def test_agg_by_p_id_function_type(function, expected_foreign_p_id, expected_oth
 
 
 def test_agg_by_p_id_count_other_arg_present():
-    match = "There must be no argument besides identifiers for counting."
+    match = "There must be no argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_p_id_function(agg_type=AggType.COUNT)
@@ -261,7 +261,7 @@ def test_agg_by_p_id_count_other_arg_present():
 
 
 def test_agg_by_p_id_sum_wrong_amount_of_args():
-    match = "There must be exactly one argument besides identifiers for aggregations."
+    match = "There must be exactly one argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -286,9 +286,11 @@ def test_agg_by_p_id_multiple_other_p_ids_present():
             pass
 
 
-def test_agg_by_p_id_sum_with_all_missing_p_ids():
+def test_agg_by_p_id_sum_with_all_missing_p_ids(backend):
     aggregate_by_p_id_sum(
         p_id=numpy.array([180]),
         p_id_specifier=numpy.array([-1]),
         source=numpy.array([False]),
+        num_segments=1,
+        backend=backend,
     )

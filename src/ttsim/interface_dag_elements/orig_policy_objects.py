@@ -51,6 +51,10 @@ def column_objects_and_param_functions(
     """
 
     @policy_input()
+    def backend() -> Literal["numpy", "jax"]:
+        """The backend to use for computations."""
+
+    @policy_input()
     def num_segments() -> int:
         """The number of segments for segment sums in jax."""
 
@@ -61,6 +65,10 @@ def column_objects_and_param_functions(
             path=path, root=root
         ).items()
     }
+    # Add backend so we can decide between numpy and jax for aggregation functions
+    assert "backend" not in out
+    out[("backend",)] = backend
+
     # Add num_segments for segment sums in jax.
     assert "num_segments" not in out
     out[("num_segments",)] = num_segments

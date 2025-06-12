@@ -97,6 +97,7 @@ def plot_tt_dag(
             set_annotations=False,
         )
         args = dict(inspect.signature(f).parameters)
+        args.pop("backend", None)
         args.pop("xnp", None)
         args.pop("dnp", None)
         if args:

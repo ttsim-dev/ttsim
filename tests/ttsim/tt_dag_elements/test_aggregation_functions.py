@@ -247,25 +247,21 @@ test_grouped_raises_specs["datetime"] = {
     keys_of_test_cases=["group_id", "expected_res_count"],
 )
 def test_grouped_count(group_id, expected_res_count, backend):
-    if backend == "jax":
-        result = grouped_count(
-            group_id=group_id,
-            num_segments=len(group_id),
-        )
-    else:
-        result = grouped_count(group_id=group_id)
+    result = grouped_count(
+        group_id=group_id,
+        num_segments=len(group_id),
+        backend=backend,
+    )
     numpy.testing.assert_array_almost_equal(result, expected_res_count)
 
 
 def _run_agg_by_group(agg_func, column_to_aggregate, group_id, backend):
-    if backend == "jax":
-        return agg_func(
-            column=column_to_aggregate,
-            group_id=group_id,
-            num_segments=len(group_id),
-        )
-    else:
-        return agg_func(column=column_to_aggregate, group_id=group_id)
+    return agg_func(
+        column=column_to_aggregate,
+        group_id=group_id,
+        num_segments=len(group_id),
+        backend=backend,
+    )
 
 
 @parameterize_based_on_dict(
@@ -424,12 +420,19 @@ def test_grouped_all(column_to_aggregate, group_id, expected_res_all, backend):
     ],
 )
 @pytest.mark.skipif_jax
-def test_grouped_sum_raises(column_to_aggregate, group_id, error_sum, exception_match):
+def test_grouped_sum_raises(
+    column_to_aggregate, group_id, error_sum, exception_match, backend
+):
     with pytest.raises(
         error_sum,
         match=exception_match,
     ):
-        grouped_sum(column_to_aggregate, group_id)
+        grouped_sum(
+            column=column_to_aggregate,
+            group_id=group_id,
+            num_segments=len(group_id),
+            backend=backend,
+        )
 
 
 @parameterize_based_on_dict(
@@ -443,13 +446,18 @@ def test_grouped_sum_raises(column_to_aggregate, group_id, error_sum, exception_
 )
 @pytest.mark.skipif_jax
 def test_grouped_mean_raises(
-    column_to_aggregate, group_id, error_mean, exception_match
+    column_to_aggregate, group_id, error_mean, exception_match, backend
 ):
     with pytest.raises(
         error_mean,
         match=exception_match,
     ):
-        grouped_mean(column_to_aggregate, group_id)
+        grouped_mean(
+            column=column_to_aggregate,
+            group_id=group_id,
+            num_segments=len(group_id),
+            backend=backend,
+        )
 
 
 @parameterize_based_on_dict(
@@ -462,12 +470,19 @@ def test_grouped_mean_raises(
     ],
 )
 @pytest.mark.skipif_jax
-def test_grouped_max_raises(column_to_aggregate, group_id, error_max, exception_match):
+def test_grouped_max_raises(
+    column_to_aggregate, group_id, error_max, exception_match, backend
+):
     with pytest.raises(
         error_max,
         match=exception_match,
     ):
-        grouped_max(column_to_aggregate, group_id)
+        grouped_max(
+            column=column_to_aggregate,
+            group_id=group_id,
+            num_segments=len(group_id),
+            backend=backend,
+        )
 
 
 @parameterize_based_on_dict(
@@ -480,12 +495,19 @@ def test_grouped_max_raises(column_to_aggregate, group_id, error_max, exception_
     ],
 )
 @pytest.mark.skipif_jax
-def test_grouped_min_raises(column_to_aggregate, group_id, error_min, exception_match):
+def test_grouped_min_raises(
+    column_to_aggregate, group_id, error_min, exception_match, backend
+):
     with pytest.raises(
         error_min,
         match=exception_match,
     ):
-        grouped_min(column_to_aggregate, group_id)
+        grouped_min(
+            column=column_to_aggregate,
+            group_id=group_id,
+            num_segments=len(group_id),
+            backend=backend,
+        )
 
 
 @parameterize_based_on_dict(
@@ -498,12 +520,19 @@ def test_grouped_min_raises(column_to_aggregate, group_id, error_min, exception_
     ],
 )
 @pytest.mark.skipif_jax
-def test_grouped_any_raises(column_to_aggregate, group_id, error_any, exception_match):
+def test_grouped_any_raises(
+    column_to_aggregate, group_id, error_any, exception_match, backend
+):
     with pytest.raises(
         error_any,
         match=exception_match,
     ):
-        grouped_any(column_to_aggregate, group_id)
+        grouped_any(
+            column=column_to_aggregate,
+            group_id=group_id,
+            num_segments=len(group_id),
+            backend=backend,
+        )
 
 
 @parameterize_based_on_dict(
@@ -516,12 +545,19 @@ def test_grouped_any_raises(column_to_aggregate, group_id, error_any, exception_
     ],
 )
 @pytest.mark.skipif_jax
-def test_grouped_all_raises(column_to_aggregate, group_id, error_all, exception_match):
+def test_grouped_all_raises(
+    column_to_aggregate, group_id, error_all, exception_match, backend
+):
     with pytest.raises(
         error_all,
         match=exception_match,
     ):
-        grouped_all(column_to_aggregate, group_id)
+        grouped_all(
+            column=column_to_aggregate,
+            group_id=group_id,
+            num_segments=len(group_id),
+            backend=backend,
+        )
 
 
 @parameterize_based_on_dict(
@@ -540,11 +576,14 @@ def test_sum_by_p_id(
     p_id_to_store_by,
     expected_res,
     expected_type,
+    backend,
 ):
     result = sum_by_p_id(
         column=column_to_aggregate,
         p_id_to_aggregate_by=p_id_to_aggregate_by,
         p_id_to_store_by=p_id_to_store_by,
+        num_segments=len(p_id_to_aggregate_by),
+        backend=backend,
     )
     numpy.testing.assert_array_almost_equal(result, expected_res)
     assert numpy.issubdtype(result.dtype.type, expected_type), (
@@ -564,7 +603,12 @@ def test_sum_by_p_id(
 )
 @pytest.mark.skipif_jax
 def test_sum_by_p_id_raises(
-    column_to_aggregate, group_id, p_id_to_store_by, error_sum_by_p_id, exception_match
+    column_to_aggregate,
+    group_id,
+    p_id_to_store_by,
+    error_sum_by_p_id,
+    exception_match,
+    backend,
 ):
     with pytest.raises(
         error_sum_by_p_id,
@@ -574,4 +618,6 @@ def test_sum_by_p_id_raises(
             column=column_to_aggregate,
             p_id_to_aggregate_by=group_id,
             p_id_to_store_by=p_id_to_store_by,
+            num_segments=len(group_id),
+            backend=backend,
         )

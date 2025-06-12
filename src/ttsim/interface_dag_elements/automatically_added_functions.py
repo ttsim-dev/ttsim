@@ -574,6 +574,7 @@ def create_agg_by_group_functions(
     names__processed_data_columns: QNameDataColumns,
     targets: OrderedQNames,
     grouping_levels: OrderedQNames,
+    # backend: Literal["numpy", "jax"],
 ) -> UnorderedQNames:
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
@@ -592,7 +593,8 @@ def create_agg_by_group_functions(
     potential_agg_by_group_sources = {
         qn: o for qn, o in all_functions_and_data.items() if not gp.match(qn)
     }
-    # Exclude objects that have been explicitly provided.
+    # Exclude objects that have been explicitly provided.u
+
     agg_by_group_function_names = {
         t
         for t in potential_agg_by_group_function_names

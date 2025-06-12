@@ -93,7 +93,6 @@ def with_derived_functions_and_processed_input_nodes(
         targets=dt.qual_names(targets__tree),
         names__processed_data_columns=names__processed_data_columns,
         grouping_levels=names__grouping_levels,
-        backend=backend,
     )
     out = {}
     for n, f in flat_with_derived.items():
@@ -107,6 +106,7 @@ def with_derived_functions_and_processed_input_nodes(
     # The number of segments for jax' segment sum. After processing the data, we know
     # that the number of ids is at most the length of the data.
     out["num_segments"] = len(next(iter(processed_data.values())))
+    out["backend"] = backend
     return out
 
 
@@ -132,7 +132,6 @@ def _add_derived_functions(
     targets: OrderedQNames,
     names__processed_data_columns: QNameDataColumns,
     grouping_levels: OrderedQNames,
-    backend: Literal["numpy", "jax"],
 ) -> UnorderedQNames:
     """Return a mapping of qualified names to functions operating on columns.
 
@@ -183,7 +182,6 @@ def _add_derived_functions(
         names__processed_data_columns=names__processed_data_columns,
         targets=targets,
         grouping_levels=grouping_levels,
-        backend=backend,
     )
     out = {
         **qual_name_policy_environment,
@@ -207,7 +205,7 @@ def with_processed_params_and_scalars(
     scalars = {
         k: v
         for k, v in with_derived_functions_and_processed_input_nodes.items()
-        if isinstance(v, float | int | bool)
+        if isinstance(v, float | int | bool) or k == "backend"
     }
     modules = {
         k: v

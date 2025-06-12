@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
 import numpy
@@ -49,6 +49,7 @@ def policy_environment(
     orig_policy_objects__column_objects_and_param_functions: NestedColumnObjectsParamFunctions,  # noqa: E501
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     date: datetime.date | DashedISOString,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
 ) -> NestedPolicyEnvironment:
@@ -95,6 +96,7 @@ def policy_environment(
         note=None,
         reference=None,
     )
+    a_tree["backend"] = backend
     a_tree["xnp"] = xnp
     a_tree["dnp"] = dnp
     return a_tree
