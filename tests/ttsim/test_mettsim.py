@@ -11,8 +11,9 @@ from ttsim.config import IS_JAX_INSTALLED
 from ttsim.interface_dag import main
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.plot_dag import (
+    all_targets_from_namespace,
     plot_tt_dag,
-    specialized_environment_based_on_dummy_inputs,
+    specialized_environment_for_targets,
 )
 from ttsim.testing_utils import (
     PolicyTest,
@@ -59,7 +60,6 @@ def test_mettsim_policy_environment_dag_with_params():
         date_str="2020-01-01",
         root=METTSIM_ROOT,
         include_param_functions=True,
-        namespace="all",
         title="METTSIM Policy Environment DAG with parameters",
         output_path=Path("mettsim_dag_with_params.html"),
     )
@@ -70,7 +70,6 @@ def test_mettsim_policy_environment_dag_without_params():
         date_str="2020-01-01",
         root=METTSIM_ROOT,
         include_param_functions=False,
-        namespace="all",
         title="METTSIM Policy Environment DAG without parameters",
         output_path=Path("mettsim_dag_without_params.html"),
     )
@@ -79,20 +78,22 @@ def test_mettsim_policy_environment_dag_without_params():
 @pytest.mark.parametrize("date", ["2019-01-01", "2021-01-01"])
 def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
     """Test that METTSIM's policy environment contains all root nodes of its DAG."""
-    specialized_env_and_target_qnames = specialized_environment_based_on_dummy_inputs(
-        date_str=date,
-        root=METTSIM_ROOT,
-        include_param_functions=True,
-        namespace="all",
-        orig_policy_objects=orig_mettsim_objects,
-    )
+    inputs_for_main = {
+        "date_str": date,
+        "orig_policy_objects__root": METTSIM_ROOT,
+        "targets__include_param_functions": True,
+        "targets__namespace": "all",
+        "orig_policy_objects__column_objects_and_param_functions": orig_mettsim_objects,
+    }
+    all_targets = all_targets_from_namespace(inputs_for_main)
+    specialized_environment = specialized_environment_for_targets(inputs_for_main)
     functions = {
         qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
-        for qn, n in specialized_env_and_target_qnames.specialized_env.items()
+        for qn, n in specialized_environment.items()
     }
     f = dags.concatenate_functions(
         functions=functions,
-        targets=specialized_env_and_target_qnames.target_qnames,
+        targets=all_targets,
         return_type="dict",
         enforce_signature=False,
         set_annotations=False,

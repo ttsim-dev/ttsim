@@ -11,8 +11,9 @@ from ttsim.config import IS_JAX_INSTALLED
 from ttsim.interface_dag import main
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.plot_dag import (
+    all_targets_from_namespace,
     plot_tt_dag,
-    specialized_environment_based_on_dummy_inputs,
+    specialized_environment_for_targets,
 )
 from ttsim.testing_utils import (
     PolicyTest,
@@ -59,7 +60,6 @@ def test_gettsim_policy_environment_dag_with_params():
         date_str="2020-01-01",
         root=GETTSIM_ROOT,
         include_param_functions=True,
-        namespace="all",
         title="GETTSIM Policy Environment DAG with parameters",
         output_path=Path("gettsim_dag_with_params.html"),
     )
@@ -70,7 +70,6 @@ def test_gettsim_policy_environment_dag_without_params():
         date_str="2020-01-01",
         root=GETTSIM_ROOT,
         include_param_functions=False,
-        namespace="all",
         title="GETTSIM Policy Environment DAG without parameters",
         output_path=Path("gettsim_dag_without_params.html"),
     )
@@ -79,20 +78,22 @@ def test_gettsim_policy_environment_dag_without_params():
 @pytest.mark.parametrize("date", [f"{year}-01-01" for year in range(2015, 2025)])
 def test_gettsim_policy_environment_is_complete(orig_gettsim_objects, date):
     """Test that GETTSIM's policy environment contains all root nodes of its DAG."""
-    specialized_env_and_target_qnames = specialized_environment_based_on_dummy_inputs(
-        date_str=date,
-        root=GETTSIM_ROOT,
-        include_param_functions=True,
-        namespace="all",
-        orig_policy_objects=orig_gettsim_objects,
-    )
+    inputs_for_main = {
+        "date_str": date,
+        "orig_policy_objects__root": GETTSIM_ROOT,
+        "targets__include_param_functions": True,
+        "targets__namespace": "all",
+        "orig_policy_objects__column_objects_and_param_functions": orig_gettsim_objects,
+    }
+    all_targets = all_targets_from_namespace(inputs_for_main)
+    specialized_environment = specialized_environment_for_targets(inputs_for_main)
     functions = {
         qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
-        for qn, n in specialized_env_and_target_qnames.specialized_env.items()
+        for qn, n in specialized_environment.items()
     }
     f = dags.concatenate_functions(
         functions=functions,
-        targets=specialized_env_and_target_qnames.target_qnames,
+        targets=all_targets,
         return_type="dict",
         enforce_signature=False,
         set_annotations=False,
@@ -100,7 +101,7 @@ def test_gettsim_policy_environment_is_complete(orig_gettsim_objects, date):
     args = inspect.signature(f).parameters
     if args:
         raise ValueError(
-            "GETTSIM's full DAG should include all root nodes but the following inputs "
+            "METTSIM's full DAG should include all root nodes but the following inputs "
             "are missing in the specialized policy environment:"
             f"\n\n{format_list_linewise(args.keys())}"
         )
