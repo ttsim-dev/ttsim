@@ -158,6 +158,7 @@ def einkommen_vorjahr_proxy_m(
 @param_function(start_date="1997-03-24")
 def anspruchsdauer_nach_alter(
     raw_anspruchsdauer_nach_alter: dict[str | int, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
     tmp = raw_anspruchsdauer_nach_alter.copy()
@@ -171,12 +172,13 @@ def anspruchsdauer_nach_alter(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_1d_lookup_table_param_value(full_spec)
+    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)
 
 
 @param_function(start_date="1997-03-24")
 def anspruchsdauer_nach_versicherungspflichtigen_monaten(
     raw_anspruchsdauer_nach_versicherungspflichtigen_monaten: dict[str | int, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
     tmp = raw_anspruchsdauer_nach_versicherungspflichtigen_monaten.copy()
@@ -190,4 +192,4 @@ def anspruchsdauer_nach_versicherungspflichtigen_monaten(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_1d_lookup_table_param_value(full_spec)
+    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)

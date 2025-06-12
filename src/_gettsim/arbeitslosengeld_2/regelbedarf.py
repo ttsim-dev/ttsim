@@ -14,6 +14,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
     from ttsim.tt_dag_elements import RawParam
 
@@ -450,6 +452,7 @@ def regelsatz_anteilsbasiert(
 def berechtigte_wohnfläche_eigentum(
     parameter_berechtigte_wohnfläche_eigentum: RawParam,
     wohngeld__max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Berechtigte Wohnfläche für Eigenheim."""
     tmp = parameter_berechtigte_wohnfläche_eigentum.copy()
@@ -457,4 +460,4 @@ def berechtigte_wohnfläche_eigentum(
     max_anzahl_direkt = tmp.pop("max_anzahl_direkt")
     for i in range(wohngeld__max_anzahl_personen["indizierung"] - max_anzahl_direkt):
         tmp[i] = tmp[max_anzahl_direkt] + i * je_weitere_person
-    return get_consecutive_int_1d_lookup_table_param_value(raw=tmp)
+    return get_consecutive_int_1d_lookup_table_param_value(raw=tmp, xnp=xnp)

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ttsim.tt_dag_elements import group_creation_function, policy_input
+
 if TYPE_CHECKING:
     from types import ModuleType
 
     import numpy
-from ttsim.tt_dag_elements import group_creation_function, policy_input
 
 
 @policy_input()
@@ -80,10 +81,24 @@ def fg_id(
     )
 
     out = _assign_parents_fg_id(
-        out, p_id, p_id_elternteil_1_loc, hh_id, alter, children, n
+        fg_id=out,
+        p_id=p_id,
+        p_id_elternteil_loc=p_id_elternteil_1_loc,
+        hh_id=hh_id,
+        alter=alter,
+        children=children,
+        n=n,
+        xnp=xnp,
     )
     out = _assign_parents_fg_id(
-        out, p_id, p_id_elternteil_2_loc, hh_id, alter, children, n
+        fg_id=out,
+        p_id=p_id,
+        p_id_elternteil_loc=p_id_elternteil_2_loc,
+        hh_id=hh_id,
+        alter=alter,
+        children=children,
+        n=n,
+        xnp=xnp,
     )
 
     return out

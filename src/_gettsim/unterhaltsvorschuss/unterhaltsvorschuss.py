@@ -15,6 +15,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import TTSIMArray
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, RawParam
 
@@ -67,6 +69,7 @@ def elternteil_alleinerziehend(
     kindergeld__p_id_empfänger: TTSIMArray,  # int
     p_id: TTSIMArray,  # int
     familie__alleinerziehend: TTSIMArray,  # bool
+    xnp: ModuleType,
 ) -> TTSIMArray:  # bool
     """Check if parent that receives Kindergeld is a single parent.
 
@@ -77,6 +80,7 @@ def elternteil_alleinerziehend(
         primary_key=p_id,
         target=familie__alleinerziehend,
         value_if_foreign_key_is_missing=False,
+        xnp=xnp,
     )
 
 
@@ -266,14 +270,16 @@ def elternteil_mindesteinkommen_erreicht(
     kindergeld__p_id_empfänger: TTSIMArray,  # int
     p_id: TTSIMArray,  # int
     mindesteinkommen_erreicht: TTSIMArray,  # bool
-) -> TTSIMArray:  # bool
+    xnp: ModuleType,
+) -> TTSIMArray:  #     bool
     """Income of Unterhaltsvorschuss recipient above threshold (this variable is
     defined on child level)."""
     return join(
-        kindergeld__p_id_empfänger,
-        p_id,
-        mindesteinkommen_erreicht,
+        foreign_key=kindergeld__p_id_empfänger,
+        primary_key=p_id,
+        target=mindesteinkommen_erreicht,
         value_if_foreign_key_is_missing=False,
+        xnp=xnp,
     )
 
 

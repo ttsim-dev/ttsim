@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import functools
 import inspect
+from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
@@ -28,7 +29,6 @@ from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from types import ModuleType
 
     import networkx as nx
 
@@ -206,6 +206,11 @@ def with_processed_params_and_scalars(
         for k, v in with_derived_functions_and_processed_input_nodes.items()
         if isinstance(v, float | int | bool)
     }
+    modules = {
+        k: v
+        for k, v in with_derived_functions_and_processed_input_nodes.items()
+        if isinstance(v, ModuleType)
+    }
     param_functions = {
         k: v
         for k, v in with_derived_functions_and_processed_input_nodes.items()
@@ -224,6 +229,7 @@ def with_processed_params_and_scalars(
     processed_param_functions = process(
         **{k: v.value for k, v in params.items()},
         **scalars,
+        **modules,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},

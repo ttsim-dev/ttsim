@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import AggType, agg_by_p_id_function, join, policy_function
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     import numpy
 
 
@@ -59,6 +61,7 @@ def kindergeld_zur_bedarfsdeckung_m(
     kindergeld_pro_kind_m: float,
     kindergeld__p_id_empfänger: numpy.ndarray,  # int
     p_id: numpy.ndarray,  # int
+    xnp: ModuleType,
 ) -> numpy.ndarray:  # float
     """Kindergeld that is used to cover the SGB II Regelbedarf of the child.
 
@@ -71,10 +74,11 @@ def kindergeld_zur_bedarfsdeckung_m(
 
     """
     return join(
-        kindergeld__p_id_empfänger,
-        p_id,
-        kindergeld_pro_kind_m,
+        foreign_key=kindergeld__p_id_empfänger,
+        primary_key=p_id,
+        target=kindergeld_pro_kind_m,
         value_if_foreign_key_is_missing=0.0,
+        xnp=xnp,
     )
 
 
@@ -122,6 +126,7 @@ def in_anderer_bg_als_kindergeldempfänger(
     p_id: numpy.ndarray,  # int
     kindergeld__p_id_empfänger: numpy.ndarray,  # int
     bg_id: numpy.ndarray,  # int
+    xnp: ModuleType,  # Will become necessary for Jax.  # noqa: ARG001
 ) -> numpy.ndarray:  # bool
     """True if the person is in a different Bedarfsgemeinschaft than the
     Kindergeldempfänger of that person.

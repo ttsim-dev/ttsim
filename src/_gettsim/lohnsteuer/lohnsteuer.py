@@ -93,7 +93,9 @@ def parameter_max_lohnsteuer_klasse_5_6(
         axis=0,
     )
     parameter_max_lohnsteuer_klasse_5_6 = PiecewisePolynomialParamValue(
-        thresholds=thresholds, intercepts=intercepts, rates=rates
+        thresholds=xnp.asarray(thresholds),
+        intercepts=xnp.asarray(intercepts),
+        rates=xnp.asarray(rates),
     )
 
     return parameter_max_lohnsteuer_klasse_5_6

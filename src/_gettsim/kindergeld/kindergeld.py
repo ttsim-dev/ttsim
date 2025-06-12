@@ -14,6 +14,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     import numpy
 
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
@@ -124,13 +126,15 @@ def gleiche_fg_wie_empfänger(
     p_id: numpy.ndarray,  # int
     p_id_empfänger: numpy.ndarray,  # int
     fg_id: numpy.ndarray,  # int
-) -> np.ndarray:  # bool
+    xnp: ModuleType,
+) -> numpy.ndarray:  # bool
     """The child's Kindergeldempfänger is in the same Familiengemeinschaft."""
     fg_id_kindergeldempfänger = join(
-        p_id_empfänger,
-        p_id,
-        fg_id,
+        foreign_key=p_id_empfänger,
+        primary_key=p_id,
+        target=fg_id,
         value_if_foreign_key_is_missing=-1,
+        xnp=xnp,
     )
 
     return fg_id_kindergeldempfänger == fg_id
@@ -139,6 +143,7 @@ def gleiche_fg_wie_empfänger(
 @param_function(end_date="2022-12-31")
 def satz_nach_anzahl_kinder(
     satz_gestaffelt: dict[int, float],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Convert the Kindergeld-Satz by child to the amount of Kindergeld by number of
     children."""
@@ -154,5 +159,5 @@ def satz_nach_anzahl_kinder(
         for k in range(max_num_children_in_spec + 1, max_num_children)
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        {0: 0.0, **base_spec, **extended_spec}
+        raw={0: 0.0, **base_spec, **extended_spec}, xnp=xnp
     )

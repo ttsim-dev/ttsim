@@ -211,10 +211,10 @@ def basisformel_params(
 
     return BasisformelParamValues(
         skalierungsfaktor=skalierungsfaktor,
-        a=get_consecutive_int_1d_lookup_table_param_value(a),
-        b=get_consecutive_int_1d_lookup_table_param_value(b),
-        c=get_consecutive_int_1d_lookup_table_param_value(c),
+        a=get_consecutive_int_1d_lookup_table_param_value(raw=a, xnp=xnp),
+        b=get_consecutive_int_1d_lookup_table_param_value(raw=b, xnp=xnp),
+        c=get_consecutive_int_1d_lookup_table_param_value(raw=c, xnp=xnp),
         zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_1d_lookup_table_param_value(
-            zusatzbetrag_nach_haushaltsgröße
+            raw=zusatzbetrag_nach_haushaltsgröße, xnp=xnp
         ),
     )

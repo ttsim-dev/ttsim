@@ -90,6 +90,7 @@ def anzurechnendes_einkommen_m(
     sozialversicherung__rente__altersrente__rentenwert: float,
     anzurechnendes_einkommen_ohne_partner: PiecewisePolynomialParamValue,
     anzurechnendes_einkommen_mit_partner: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Income which is deducted from Grundrentenzuschlag.
 
@@ -110,12 +111,14 @@ def anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
             rentenwert=sozialversicherung__rente__altersrente__rentenwert,
             parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_mit_partner,
+            xnp=xnp,
         )
     else:
         out = _anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
             rentenwert=sozialversicherung__rente__altersrente__rentenwert,
             parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_ohne_partner,
+            xnp=xnp,
         )
     return out
 

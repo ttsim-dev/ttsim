@@ -50,6 +50,7 @@ def policy_environment(
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     date: datetime.date | DashedISOString,
     xnp: ModuleType,
+    dnp: ModuleType,
 ) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -95,6 +96,7 @@ def policy_environment(
         reference=None,
     )
     a_tree["xnp"] = xnp
+    a_tree["dnp"] = dnp
     return a_tree
 
 

@@ -274,7 +274,7 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
         )
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        {**before_phase_inout, **during_phase_inout, **after_phase_inout}, xnp
+        raw={**before_phase_inout, **during_phase_inout, **after_phase_inout}, xnp=xnp
     )
 
 
@@ -307,5 +307,5 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
         for b_y in range(last_year_phase_inout + 1, last_year_to_consider + 1)
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        {**before_phase_inout, **during_phase_inout, **after_phase_inout}, xnp
+        raw={**before_phase_inout, **during_phase_inout, **after_phase_inout}, xnp=xnp
     )

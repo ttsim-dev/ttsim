@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy
-
 from ttsim.tt_dag_elements import (
     AggType,
     ConsecutiveInt1dLookupTableParamValue,
@@ -33,9 +31,10 @@ def alleinerziehendenbonus(
 @param_function()
 def min_einkommen_lookup_table(
     min_einkommen: dict[int, float],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Create a LookupTable for the min income thresholds."""
-    return get_consecutive_int_1d_lookup_table_param_value(min_einkommen)
+    return get_consecutive_int_1d_lookup_table_param_value(raw=min_einkommen, xnp=xnp)
 
 
 def einkommen(
@@ -43,6 +42,7 @@ def einkommen(
     einkommensfreibetrag: float,
     anzahl_personen: int,
     min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Calculate final income relevant for calculation of housing benefit on household
     level.
@@ -50,13 +50,13 @@ def einkommen(
     """
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
     unteres_eink = min_einkommen_lookup_table.values_to_look_up[
-        numpy.minimum(
+        xnp.minimum(
             anzahl_personen, min_einkommen_lookup_table.values_to_look_up.shape[0]
         )
         - min_einkommen_lookup_table.base_to_subtract
     ]
 
-    return numpy.maximum(eink_nach_abzug_m_hh, unteres_eink)
+    return xnp.maximum(eink_nach_abzug_m_hh, unteres_eink)
 
 
 @policy_function()
@@ -65,6 +65,7 @@ def einkommen_m_wthh(
     freibetrag_m_wthh: float,
     einkommen_vor_freibetrag_m_wthh: float,
     min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -79,6 +80,7 @@ def einkommen_m_wthh(
         einkommensfreibetrag=freibetrag_m_wthh,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_wthh,
         min_einkommen_lookup_table=min_einkommen_lookup_table,
+        xnp=xnp,
     )
 
 
@@ -88,6 +90,7 @@ def einkommen_m_bg(
     freibetrag_m_bg: float,
     einkommen_vor_freibetrag_m_bg: float,
     min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Income relevant for Wohngeld calculation.
 
@@ -102,6 +105,7 @@ def einkommen_m_bg(
         einkommensfreibetrag=freibetrag_m_bg,
         einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_bg,
         min_einkommen_lookup_table=min_einkommen_lookup_table,
+        xnp=xnp,
     )
 
 

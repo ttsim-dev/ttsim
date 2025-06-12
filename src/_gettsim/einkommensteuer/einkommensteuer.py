@@ -218,6 +218,7 @@ def relevantes_kindergeld_ohne_staffelung_m(
 @param_function(start_date="2002-01-01")
 def parameter_einkommensteuertarif(
     raw_parameter_einkommensteuertarif: RawParam,
+    xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Add the quadratic terms to tax tariff function.
 
@@ -240,6 +241,7 @@ def parameter_einkommensteuertarif(
     lower_thresholds, upper_thresholds = check_and_get_thresholds(
         leaf_name="parameter_einkommensteuertarif",
         parameter_dict=expanded,
+        xnp=xnp,
     )[:2]
     for key in sorted(raw_parameter_einkommensteuertarif.keys()):
         if "rate_quadratic" not in raw_parameter_einkommensteuertarif[key]:
@@ -250,4 +252,5 @@ def parameter_einkommensteuertarif(
         leaf_name="parameter_einkommensteuertarif",
         func_type="piecewise_quadratic",
         parameter_dict=expanded,
+        xnp=xnp,
     )
