@@ -310,13 +310,6 @@ def einkommen_m(
     )
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM)
-def unterhaltsvorschuss_spec_target(
-    unterhaltsvorschuss_source_field: bool, p_id_field: int, p_id: int
-) -> int:
-    pass
-
-
 @param_function(start_date="2008-01-01", end_date="2017-06-30")
 def berechtigte_altersgruppen(
     raw_berechtigte_altersgruppen: RawParam,
