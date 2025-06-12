@@ -423,34 +423,42 @@ def group_variables_are_not_constant_within_groups(
 
 @interface_function()
 def non_convertible_objects_in_results_tree(
+    input_data__tree: NestedData,
     results__tree: NestedData,
 ) -> None:
     """Fail if results should be converted to a DataFrame but contain non-convertible
     objects."""
     _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
+    expected_object_length = len(input_data__tree["p_id"])
 
-    faulty_paths = []
-    # TODO: HM doesn't think this will work as is, we'll need to check the length of
-    # the data. Someone might request a policy parameter that is a 3-element array.
+    paths_with_incorrect_types = []
+    paths_with_incorrect_length = []
     for path, data in dt.flatten_to_tree_paths(results__tree).items():
         if isinstance(data, (pd.Series, np.ndarray, list)):
-            if all(isinstance(item, _numeric_types) for item in data):
-                continue
-            else:
-                faulty_paths.append(str(path))
+            if not all(isinstance(item, _numeric_types) for item in data):
+                paths_with_incorrect_types.append(str(path))
+            if len(data) != expected_object_length:
+                paths_with_incorrect_length.append(str(path))
         elif isinstance(data, _numeric_types):
             continue
         else:
-            faulty_paths.append(str(path))
-    if faulty_paths:
+            paths_with_incorrect_types.append(str(path))
+
+    if paths_with_incorrect_types:
         msg = format_errors_and_warnings(
-            "The data returned contains objects that cannot be cast to "
-            "a pandas.DataFrame column. Make sure that the requested targets return "
-            "scalars (int, bool, float - or their numpy equivalents) only."
-            "The following paths contain non-scalar objects: "
-            f"{format_list_linewise(faulty_paths)}"
+            "The data contains objects that cannot be cast to a pandas.DataFrame "
+            "column. Make sure that the requested targets return scalars or arrays of "
+            "scalars only. The following paths contain incompatible objects: "
+            f"{format_list_linewise(paths_with_incorrect_types)}"
         )
         raise TypeError(msg)
+    if paths_with_incorrect_length:
+        msg = format_errors_and_warnings(
+            "The data contains paths that don't have the same length as the input data "
+            "and are not scalars. The following paths are faulty: "
+            f"{format_list_linewise(paths_with_incorrect_length)}"
+        )
+        raise ValueError(msg)
 
 
 @interface_function()

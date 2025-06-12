@@ -714,6 +714,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
     (
         "environment",
         "targets__tree",
+        "match",
     ),
     [
         (
@@ -721,6 +722,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
                 "some_piecewise_polynomial_param": _SOME_PIECEWISE_POLYNOMIAL_PARAM,
             },
             {"some_piecewise_polynomial_param": "res1"},
+            "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
         (
             {
@@ -729,13 +731,15 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
                 ),
             },
             {"some_consecutive_int_1d_lookup_table_param": "res1"},
+            "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
     ],
 )
-def test_fail_if_non_convertible_objects_in_results_tree(
+def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     environment,
     targets__tree,
     minimal_data_tree,
+    match,
 ):
     results__tree = main(
         inputs={
@@ -746,10 +750,37 @@ def test_fail_if_non_convertible_objects_in_results_tree(
         },
         targets=["results__tree"],
     )["results__tree"]
-    with pytest.raises(
-        TypeError, match=r"The following paths contain non-scalar\nobjects"
-    ):
-        non_convertible_objects_in_results_tree(results__tree)
+    with pytest.raises(TypeError, match=match):
+        non_convertible_objects_in_results_tree(
+            results__tree=results__tree,
+            input_data__tree=minimal_data_tree,
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "results__tree",
+        "match",
+    ),
+    [
+        (
+            {
+                "some_array_param": np.array([1, 2]),
+            },
+            "The data contains paths that don't have the same length",
+        ),
+    ],
+)
+def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_length(
+    results__tree,
+    match,
+    minimal_data_tree,
+):
+    with pytest.raises(ValueError, match=match):
+        non_convertible_objects_in_results_tree(
+            results__tree=results__tree,
+            input_data__tree=minimal_data_tree,
+        )
 
 
 def test_fail_if_p_id_does_not_exist():
