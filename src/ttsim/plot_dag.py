@@ -24,7 +24,10 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ttsim.interface_dag_elements.typing import QNameCombinedEnvironment0
+    from ttsim.interface_dag_elements.typing import (
+        FlatColumnObjectsParamFunctions,
+        QNameCombinedEnvironment0,
+    )
 
 
 @dataclass(frozen=True)
@@ -106,6 +109,7 @@ def specialized_environment_based_on_dummy_inputs(
     root: Path,
     include_param_functions: bool,
     namespace: str,
+    orig_policy_objects: FlatColumnObjectsParamFunctions | None = None,
 ) -> SpecializedEnvironmentAndTargetQNames:
     """Create the DAG including the policy inputs.
 
@@ -118,6 +122,11 @@ def specialized_environment_based_on_dummy_inputs(
         "targets__include_param_functions": include_param_functions,
         "targets__namespace": namespace,
     }
+    if orig_policy_objects:
+        inputs_for_main["orig_policy_objects__column_objects_and_param_functions"] = (
+            orig_policy_objects
+        )
+
     policy_inputs = main(
         inputs=inputs_for_main,
         targets=[
