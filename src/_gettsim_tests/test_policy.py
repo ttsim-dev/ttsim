@@ -47,7 +47,7 @@ def orig_gettsim_objects():
     POLICY_TEST_IDS_AND_CASES.values(),
     ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
-def test_gettsim(test: PolicyTest):
+def test_policy(test: PolicyTest):
     if IS_JAX_INSTALLED:
         execute_test(test, root=GETTSIM_ROOT, jit=True)
     else:

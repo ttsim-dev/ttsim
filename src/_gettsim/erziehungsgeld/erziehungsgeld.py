@@ -42,7 +42,7 @@ def einkommensgrenze(
     )
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM, end_date="2008-12-31")
+@agg_by_p_id_function(end_date="2008-12-31", agg_type=AggType.SUM)
 def anspruchshöhe_m(
     anspruchshöhe_kind_m: float, p_id_empfänger: int, p_id: int
 ) -> float:

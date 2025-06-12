@@ -14,7 +14,7 @@ def ohne_renten_m() -> float:
     """
 
 
-@policy_input()
+@policy_input(start_date="2021-01-01")
 def renteneinkünfte_vorjahr_m() -> float:
     """Income from private and public pensions in the previous year.
 
