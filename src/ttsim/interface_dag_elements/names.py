@@ -138,9 +138,6 @@ def top_level_namespace(
         for g in grouping_levels:
             all_top_level_names.add(f"{name}_{g}")
 
-    # Add num_segments to grouping variables
-    for g in grouping_levels:
-        all_top_level_names.add(f"{g}_id_num_segments")
     return all_top_level_names
 
 

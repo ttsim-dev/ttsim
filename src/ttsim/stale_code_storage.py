@@ -8,7 +8,6 @@ from ttsim.tt_dag_elements import (
     ColumnObject,
     ParamFunction,
     ParamObject,
-    TTSIMArray,
     policy_function,
 )
 
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
         | int
         | float
         | bool
-        | TTSIMArray
+        | numpy.ndarray
         | "NestedAnyTTSIMObject",
     ]
     NestedAny = Mapping[str, Any | "NestedAnyTTSIMObject"]

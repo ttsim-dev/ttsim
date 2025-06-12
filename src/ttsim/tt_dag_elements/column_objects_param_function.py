@@ -16,7 +16,6 @@ from pandas.api.types import (
     is_integer_dtype,
 )
 
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt_dag_elements.aggregation import (
     AggType,
@@ -571,8 +570,6 @@ def agg_by_group_function(
         else:
             _fail_if__other_arg_is_invalid(other_args, orig_location)
             mapper = {"group_id": group_id, "column": other_args.pop()}
-        if IS_JAX_INSTALLED:
-            mapper["num_segments"] = f"{group_id}_num_segments"
         agg_func = rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,

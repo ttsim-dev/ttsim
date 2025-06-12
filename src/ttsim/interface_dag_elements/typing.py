@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     import datetime
     from collections.abc import Mapping
 
+    import numpy
+
     OrigParamSpec = (
         # Header
         dict[str, str | None | dict[Literal["de", "en"], str | None]]
@@ -32,19 +34,18 @@ if TYPE_CHECKING:
         ColumnObject,
         ParamFunction,
         ParamObject,
-        TTSIMArray,
     )
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for input, processing, and output; including metadata.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedData = Mapping[str, TTSIMArray | "NestedData"]
+    NestedData = Mapping[str, numpy.ndarray | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = Mapping[str, TTSIMArray | "FlatData"]
+    FlatData = Mapping[str, numpy.ndarray | "FlatData"]
     """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    QNameData = Mapping[str, TTSIMArray]
+    QNameData = Mapping[str, numpy.ndarray]
     """Mapping of qualified name paths to 1d arrays."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

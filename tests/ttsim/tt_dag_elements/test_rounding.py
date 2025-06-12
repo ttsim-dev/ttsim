@@ -6,18 +6,12 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import main
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.interface_dag_elements.policy_environment import policy_environment
 from ttsim.tt_dag_elements import (
     RoundingSpec,
     policy_function,
     policy_input,
 )
-
-if IS_JAX_INSTALLED:
-    DTYPE = "float32"
-else:
-    DTYPE = "float64"
 
 
 @policy_input()
@@ -133,8 +127,9 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
-        pd.Series(exp_output, dtype=DTYPE),
+        pd.Series(exp_output),
         check_names=False,
+        check_dtype=False,
     )
 
 
@@ -169,7 +164,7 @@ def test_rounding_with_time_conversion(backend, xnp):
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
-        pd.Series([12.0, 12.0], dtype=DTYPE),
+        pd.Series([12.0, 12.0]),
         check_names=False,
         check_dtype=False,
     )
@@ -208,7 +203,7 @@ def test_no_rounding(
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["test_func"]),
-        pd.Series(input_values_exp_output, dtype=DTYPE),
+        pd.Series(input_values_exp_output),
         check_names=False,
         check_dtype=False,
     )

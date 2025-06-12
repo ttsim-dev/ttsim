@@ -586,11 +586,7 @@ def root_nodes_are_missing(
         == 0,
     ).nodes
 
-    missing_nodes = [
-        node
-        for node in root_nodes
-        if node not in processed_data and not node.endswith("_num_segments")
-    ]
+    missing_nodes = [node for node in root_nodes if node not in processed_data]
 
     if missing_nodes:
         formatted = format_list_linewise(

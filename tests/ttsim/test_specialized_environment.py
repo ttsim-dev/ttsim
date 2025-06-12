@@ -10,14 +10,7 @@ import pandas as pd
 import pytest
 from mettsim.config import METTSIM_ROOT
 
-from ttsim import (
-    main,
-    merge_trees,
-)
-from ttsim.config import IS_JAX_INSTALLED
-
-if TYPE_CHECKING:
-    import numpy
+from ttsim import main, merge_trees
 from ttsim.interface_dag_elements.specialized_environment import (
     with_partialled_params_and_scalars,
     with_processed_params_and_scalars,
@@ -29,7 +22,6 @@ from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     RawParam,
     ScalarParam,
-    TTSIMArray,
     agg_by_group_function,
     agg_by_p_id_function,
     param_function,
@@ -39,11 +31,6 @@ from ttsim.tt_dag_elements import (
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import NestedPolicyEnvironment
-
-if IS_JAX_INSTALLED:
-    jit = True
-else:
-    jit = False
 
 
 @policy_input()
@@ -337,7 +324,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 1,
+                "num_segments": 3,
             },
         ),
         (
@@ -357,7 +344,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 1,
+                "num_segments": 3,
             },
         ),
         (
@@ -378,7 +365,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 1,
+                "num_segments": 3,
             },
         ),
         (
@@ -399,7 +386,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "inputs": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 1,
+                "num_segments": 3,
             },
         ),
     ],
@@ -440,7 +427,7 @@ def test_output_is_tree(minimal_input_data):
 
     assert isinstance(out, dict)
     assert "some_func" in out["module"]
-    assert isinstance(out["module"]["some_func"], TTSIMArray)
+    assert isinstance(out["module"]["some_func"], numpy.ndarray)
 
 
 def test_params_target_is_allowed(minimal_input_data):
@@ -540,7 +527,7 @@ def test_partial_params_to_functions_removes_argument(xnp):
     func_before_partial(2, 1)
 
 
-def test_user_provided_aggregate_by_group_specs():
+def test_user_provided_aggregate_by_group_specs(backend):
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
@@ -553,33 +540,35 @@ def test_user_provided_aggregate_by_group_specs():
         "module_name": {"betrag_m": betrag_m},
     }
 
-    expected_res = pd.Series([200, 200, 100])
+    expected = pd.Series([200, 200, 100], index=pd.Index(data["p_id"], name="p_id"))
 
-    out = main(
+    actual = main(
         inputs={
             "input_data__tree": data,
             "policy_environment": policy_environment,
             "targets__tree": {"module_name": {"betrag_m_fam": None}},
             "rounding": False,
-            # "jit": jit,
+            "backend": backend,
         },
-        targets=["results__tree"],
-    )["results__tree"]
+        targets=["results__df_with_nested_columns"],
+    )["results__df_with_nested_columns"]
 
-    numpy.testing.assert_array_almost_equal(
-        out["module_name"]["betrag_m_fam"], expected_res
+    pd.testing.assert_series_equal(
+        actual[("module_name", "betrag_m_fam")],
+        expected,
+        check_names=False,
+        check_dtype=False,
     )
 
 
-def test_user_provided_aggregation():
+def test_user_provided_aggregation(backend):
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
         "module_name": {"betrag_m": pd.Series([200, 100, 100], name="betrag_m")},
     }
-    data["num_segments"] = len(data["fam_id"].unique())
     # Double up, then take max fam_id
-    expected = pd.Series([400, 400, 200])
+    expected = pd.Series([400, 400, 200], index=pd.Index(data["p_id"], name="p_id"))
 
     @policy_function(vectorization_strategy="vectorize")
     def betrag_m_double(betrag_m):
@@ -604,17 +593,20 @@ def test_user_provided_aggregation():
             "policy_environment": policy_environment,
             "targets__tree": {"module_name": {"betrag_m_double_fam": None}},
             "rounding": False,
-            # "jit": jit,
+            "backend": backend,
         },
-        targets=["results__tree"],
-    )["results__tree"]
+        targets=["results__df_with_nested_columns"],
+    )["results__df_with_nested_columns"]
 
-    numpy.testing.assert_array_almost_equal(
-        actual["module_name"]["betrag_m_double_fam"], expected
+    pd.testing.assert_series_equal(
+        actual[("module_name", "betrag_m_double_fam")],
+        expected,
+        check_names=False,
+        check_dtype=False,
     )
 
 
-def test_user_provided_aggregation_with_time_conversion():
+def test_user_provided_aggregation_with_time_conversion(backend):
     data = {
         "p_id": pd.Series([1, 2, 3], name="p_id"),
         "fam_id": pd.Series([1, 1, 2], name="fam_id"),
@@ -624,7 +616,9 @@ def test_user_provided_aggregation_with_time_conversion():
     }
 
     # Double up, convert to quarter, then take max fam_id
-    expected = pd.Series([400 * 12, 400 * 12, 200 * 12])
+    expected = pd.Series(
+        [400 * 12, 400 * 12, 200 * 12], index=pd.Index(data["p_id"], name="p_id")
+    )
 
     @policy_function(vectorization_strategy="vectorize")
     def betrag_double_m(betrag_m):
@@ -649,13 +643,16 @@ def test_user_provided_aggregation_with_time_conversion():
             "policy_environment": policy_environment,
             "targets__tree": {"module_name": {"max_betrag_double_y_fam": None}},
             "rounding": False,
-            # "jit": jit,
+            "backend": backend,
         },
-        targets=["results__tree"],
-    )["results__tree"]
+        targets=["results__df_with_nested_columns"],
+    )["results__df_with_nested_columns"]
 
-    numpy.testing.assert_array_almost_equal(
-        actual["module_name"]["max_betrag_double_y_fam"], expected
+    pd.testing.assert_series_equal(
+        actual[("module_name", "max_betrag_double_y_fam")],
+        expected,
+        check_names=False,
+        check_dtype=False,
     )
 
 
@@ -684,7 +681,7 @@ def sum_source_m_by_p_id_someone_else(
             },
             "source",
             {"module": {"sum_source_by_p_id_someone_else": None}},
-            pd.Series([200, 100, 0]),
+            pd.Series([200, 100, 0], index=pd.Index([0, 1, 2], name="p_id")),
         ),
         (
             {
@@ -694,7 +691,7 @@ def sum_source_m_by_p_id_someone_else(
             },
             "source_m",
             {"module": {"sum_source_m_by_p_id_someone_else": None}},
-            pd.Series([200, 100, 0]),
+            pd.Series([200, 100, 0], index=pd.Index([0, 1, 2], name="p_id")),
         ),
     ],
 )
@@ -704,10 +701,12 @@ def test_user_provided_aggregate_by_p_id_specs(
     target_tree,
     expected,
     minimal_input_data_shared_fam,
+    backend,
+    xnp,
 ):
     @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
     def source() -> int:
-        return numpy.array([100, 200, 300])
+        return xnp.array([100, 200, 300])
 
     policy_environment = merge_trees(
         agg_functions,
@@ -718,18 +717,23 @@ def test_user_provided_aggregate_by_p_id_specs(
         },
     )
 
-    out = main(
+    actual = main(
         inputs={
             "input_data__tree": minimal_input_data_shared_fam,
             "policy_environment": policy_environment,
             "targets__tree": target_tree,
             "rounding": False,
-            # "jit": jit,
+            "backend": backend,
         },
-        targets=["results__tree"],
-    )["results__tree"]["module"][next(iter(target_tree["module"].keys()))]
+        targets=["results__df_with_nested_columns"],
+    )["results__df_with_nested_columns"]
 
-    numpy.testing.assert_array_almost_equal(out, expected)
+    pd.testing.assert_series_equal(
+        actual[("module", next(iter(target_tree["module"].keys())))],
+        expected,
+        check_names=False,
+        check_dtype=False,
+    )
 
 
 def test_policy_environment_with_params_and_scalars_is_processed():

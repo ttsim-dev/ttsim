@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 import optree
@@ -76,53 +76,50 @@ class PolicyTest:
         return self.path.relative_to(self.test_dir / "test_data").as_posix()
 
 
-def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:  # noqa: ARG001
+def execute_test(
+    test: PolicyTest, root: Path, backend: Literal["numpy", "jax"]
+) -> None:
     environment = cached_policy_environment(date=test.date, root=root)
 
     if test.target_structure:
-        nested_result = main(
+        result_df = main(
             inputs={
                 "input_data__tree": test.input_tree,
                 "policy_environment": environment,
                 "targets__tree": test.target_structure,
                 "rounding": True,
-                # "jit": jit,
+                "backend": backend,
             },
-            targets=["results__tree"],
-        )["results__tree"]
-    else:
-        nested_result = {}
+            targets=["results__df_with_nested_columns"],
+        )["results__df_with_nested_columns"]
 
-    if test.expected_output_tree:
-        expected_df = nested_data_to_df_with_nested_columns(
-            nested_data_to_convert=test.expected_output_tree,
-            data_with_p_id=test.input_tree,
-        )
-        result_df = nested_data_to_df_with_nested_columns(
-            nested_data_to_convert=nested_result, data_with_p_id=test.input_tree
-        )
-        try:
-            pd.testing.assert_frame_equal(
-                result_df.sort_index(axis="columns"),
-                expected_df.sort_index(axis="columns"),
-                atol=test.info["precision_atol"],
-                check_dtype=False,
+        if test.expected_output_tree:
+            expected_df = nested_data_to_df_with_nested_columns(
+                nested_data_to_convert=test.expected_output_tree,
+                data_with_p_id=test.input_tree,
             )
-        except AssertionError as e:
-            assert set(result_df.columns) == set(expected_df.columns)
-            cols_with_differences = []
-            for col in expected_df.columns:
-                try:
-                    pd.testing.assert_series_equal(
-                        result_df[col],
-                        expected_df[col],
-                        atol=test.info["precision_atol"],
-                        check_dtype=False,
-                    )
-                except AssertionError:
-                    cols_with_differences.append(col)
-            raise AssertionError(
-                f"""actual != expected in columns: {cols_with_differences}.
+            try:
+                pd.testing.assert_frame_equal(
+                    result_df.sort_index(axis="columns"),
+                    expected_df.sort_index(axis="columns"),
+                    atol=test.info["precision_atol"],
+                    check_dtype=False,
+                )
+            except AssertionError as e:
+                assert set(result_df.columns) == set(expected_df.columns)
+                cols_with_differences = []
+                for col in expected_df.columns:
+                    try:
+                        pd.testing.assert_series_equal(
+                            result_df[col],
+                            expected_df[col],
+                            atol=test.info["precision_atol"],
+                            check_dtype=False,
+                        )
+                    except AssertionError:
+                        cols_with_differences.append(col)
+                raise AssertionError(
+                    f"""actual != expected in columns: {cols_with_differences}.
 
 actual[cols_with_differences]:
 
@@ -132,7 +129,7 @@ expected[cols_with_differences]:
 
 {expected_df[cols_with_differences]}
 """
-            ) from e
+                ) from e
 
 
 def load_policy_test_data(

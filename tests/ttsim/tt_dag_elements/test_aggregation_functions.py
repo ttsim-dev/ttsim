@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING
 
 import numpy
 import pytest
 
-from ttsim.config import IS_JAX_INSTALLED
+try:
+    import jax_datetime
 
-if TYPE_CHECKING:
-    import numpy
+    my_datetime = jax_datetime.to_datetime
+except ImportError:
+    my_datetime = lambda x: x
+
+
 from ttsim.tt_dag_elements.aggregation import (
     grouped_all,
     grouped_any,
@@ -178,90 +181,88 @@ test_grouped_raises_specs = {
         "exception_match": "The dtype of id columns must be integer.",
     },
 }
-# We cannot even set up these fixtures in JAX.
-if not IS_JAX_INSTALLED:
-    test_grouped_specs["datetime"] = {
-        "column_to_aggregate": numpy.array(
-            [
-                numpy.datetime64("2000"),
-                numpy.datetime64("2001"),
-                numpy.datetime64("2002"),
-                numpy.datetime64("2003"),
-                numpy.datetime64("2004"),
-            ]
-        ),
-        "group_id": numpy.array([1, 0, 1, 1, 1]),
-        "expected_res_max": numpy.array(
-            [
-                numpy.datetime64("2004"),
-                numpy.datetime64("2001"),
-                numpy.datetime64("2004"),
-                numpy.datetime64("2004"),
-                numpy.datetime64("2004"),
-            ]
-        ),
-        "expected_res_min": numpy.array(
-            [
-                numpy.datetime64("2000"),
-                numpy.datetime64("2001"),
-                numpy.datetime64("2000"),
-                numpy.datetime64("2000"),
-                numpy.datetime64("2000"),
-            ]
-        ),
-    }
+test_grouped_specs["datetime"] = {
+    "column_to_aggregate": numpy.array(
+        [
+            numpy.datetime64("2000"),
+            numpy.datetime64("2001"),
+            numpy.datetime64("2002"),
+            numpy.datetime64("2003"),
+            numpy.datetime64("2004"),
+        ]
+    ),
+    "group_id": numpy.array([1, 0, 1, 1, 1]),
+    "expected_res_max": numpy.array(
+        [
+            numpy.datetime64("2004"),
+            numpy.datetime64("2001"),
+            numpy.datetime64("2004"),
+            numpy.datetime64("2004"),
+            numpy.datetime64("2004"),
+        ]
+    ),
+    "expected_res_min": numpy.array(
+        [
+            numpy.datetime64("2000"),
+            numpy.datetime64("2001"),
+            numpy.datetime64("2000"),
+            numpy.datetime64("2000"),
+            numpy.datetime64("2000"),
+        ]
+    ),
+}
 
-    test_grouped_raises_specs["dtype_string"] = {
-        "column_to_aggregate": numpy.array(["0", "1", "2", "3", "4"]),
-        "group_id": numpy.array([0, 0, 1, 1, 1]),
-        "error_sum": TypeError,
-        "error_mean": TypeError,
-        "error_max": TypeError,
-        "error_min": TypeError,
-        "error_any": TypeError,
-        "error_all": TypeError,
-        "exception_match": "grouped_",
-    }
-    test_grouped_raises_specs["datetime"] = {
-        "column_to_aggregate": numpy.array(
-            [
-                numpy.datetime64("2000"),
-                numpy.datetime64("2001"),
-                numpy.datetime64("2002"),
-                numpy.datetime64("2003"),
-                numpy.datetime64("2004"),
-            ]
-        ),
-        "group_id": numpy.array([0, 0, 1, 1, 1]),
-        "error_sum": TypeError,
-        "error_mean": TypeError,
-        "error_any": TypeError,
-        "error_all": TypeError,
-        "exception_match": "grouped_",
-    }
+test_grouped_raises_specs["dtype_string"] = {
+    "column_to_aggregate": numpy.array(["0", "1", "2", "3", "4"]),
+    "group_id": numpy.array([0, 0, 1, 1, 1]),
+    "error_sum": TypeError,
+    "error_mean": TypeError,
+    "error_max": TypeError,
+    "error_min": TypeError,
+    "error_any": TypeError,
+    "error_all": TypeError,
+    "exception_match": "grouped_",
+}
+test_grouped_raises_specs["datetime"] = {
+    "column_to_aggregate": numpy.array(
+        [
+            numpy.datetime64("2000"),
+            numpy.datetime64("2001"),
+            numpy.datetime64("2002"),
+            numpy.datetime64("2003"),
+            numpy.datetime64("2004"),
+        ]
+    ),
+    "group_id": numpy.array([0, 0, 1, 1, 1]),
+    "error_sum": TypeError,
+    "error_mean": TypeError,
+    "error_any": TypeError,
+    "error_all": TypeError,
+    "exception_match": "grouped_",
+}
 
 
 @parameterize_based_on_dict(
     test_grouped_specs,
     keys_of_test_cases=["group_id", "expected_res_count"],
 )
-def test_grouped_count(group_id, expected_res_count):
-    if IS_JAX_INSTALLED:
+def test_grouped_count(group_id, expected_res_count, backend):
+    if backend == "jax":
         result = grouped_count(
             group_id=group_id,
-            num_segments=group_id.max() + 1,
+            num_segments=len(group_id),
         )
     else:
         result = grouped_count(group_id=group_id)
     numpy.testing.assert_array_almost_equal(result, expected_res_count)
 
 
-def _run_agg_by_group(agg_func, column_to_aggregate, group_id):
-    if IS_JAX_INSTALLED:
+def _run_agg_by_group(agg_func, column_to_aggregate, group_id, backend):
+    if backend == "jax":
         return agg_func(
             column=column_to_aggregate,
             group_id=group_id,
-            num_segments=group_id.max() + 1,
+            num_segments=len(group_id),
         )
     else:
         return agg_func(column=column_to_aggregate, group_id=group_id)
@@ -275,11 +276,12 @@ def _run_agg_by_group(agg_func, column_to_aggregate, group_id):
         "expected_res_sum",
     ],
 )
-def test_grouped_sum(column_to_aggregate, group_id, expected_res_sum):
+def test_grouped_sum(column_to_aggregate, group_id, expected_res_sum, backend):
     result = _run_agg_by_group(
         agg_func=grouped_sum,
         column_to_aggregate=column_to_aggregate,
         group_id=group_id,
+        backend=backend,
     )
     numpy.testing.assert_array_almost_equal(result, expected_res_sum)
 
@@ -292,45 +294,86 @@ def test_grouped_sum(column_to_aggregate, group_id, expected_res_sum):
         "expected_res_mean",
     ],
 )
-def test_grouped_mean(column_to_aggregate, group_id, expected_res_mean):
+def test_grouped_mean(column_to_aggregate, group_id, expected_res_mean, backend):
     result = _run_agg_by_group(
         agg_func=grouped_mean,
         column_to_aggregate=column_to_aggregate,
         group_id=group_id,
+        backend=backend,
     )
     numpy.testing.assert_array_almost_equal(result, expected_res_mean)
 
 
 @parameterize_based_on_dict(
-    test_grouped_specs,
+    {k: v for k, v in test_grouped_specs.items() if "datetime" not in k},
     keys_of_test_cases=[
         "column_to_aggregate",
         "group_id",
         "expected_res_max",
     ],
 )
-def test_grouped_max(column_to_aggregate, group_id, expected_res_max):
+def test_grouped_max(column_to_aggregate, group_id, expected_res_max, backend):
     result = _run_agg_by_group(
         agg_func=grouped_max,
         column_to_aggregate=column_to_aggregate,
         group_id=group_id,
+        backend=backend,
+    )
+    numpy.testing.assert_array_equal(result, expected_res_max)
+
+
+@pytest.mark.skipif_jax
+@parameterize_based_on_dict(
+    {k: v for k, v in test_grouped_specs.items() if "datetime" in k},
+    keys_of_test_cases=[
+        "column_to_aggregate",
+        "group_id",
+        "expected_res_max",
+    ],
+)
+def test_grouped_max_datetime(column_to_aggregate, group_id, expected_res_max, backend):
+    result = _run_agg_by_group(
+        agg_func=grouped_max,
+        column_to_aggregate=my_datetime(column_to_aggregate),
+        group_id=group_id,
+        backend=backend,
     )
     numpy.testing.assert_array_equal(result, expected_res_max)
 
 
 @parameterize_based_on_dict(
-    test_grouped_specs,
+    {k: v for k, v in test_grouped_specs.items() if "datetime" not in k},
     keys_of_test_cases=[
         "column_to_aggregate",
         "group_id",
         "expected_res_min",
     ],
 )
-def test_grouped_min(column_to_aggregate, group_id, expected_res_min):
+def test_grouped_min(column_to_aggregate, group_id, expected_res_min, backend):
     result = _run_agg_by_group(
         agg_func=grouped_min,
         column_to_aggregate=column_to_aggregate,
         group_id=group_id,
+        backend=backend,
+    )
+    numpy.testing.assert_array_equal(result, expected_res_min)
+
+
+@pytest.mark.skipif_jax
+@parameterize_based_on_dict(
+    {k: v for k, v in test_grouped_specs.items() if "datetime" in k},
+    keys_of_test_cases=[
+        "column_to_aggregate",
+        "group_id",
+        "expected_res_min",
+    ],
+)
+def test_grouped_min_datetime(column_to_aggregate, group_id, expected_res_min, backend):
+    result = _run_agg_by_group(
+        agg_func=grouped_min,
+        column_to_aggregate=my_datetime(column_to_aggregate),
+        group_id=group_id,
+        backend=backend,
     )
     numpy.testing.assert_array_equal(result, expected_res_min)
 
@@ -343,11 +386,12 @@ def test_grouped_min(column_to_aggregate, group_id, expected_res_min):
         "expected_res_any",
     ],
 )
-def test_grouped_any(column_to_aggregate, group_id, expected_res_any):
+def test_grouped_any(column_to_aggregate, group_id, expected_res_any, backend):
     result = _run_agg_by_group(
         agg_func=grouped_any,
         column_to_aggregate=column_to_aggregate,
         group_id=group_id,
+        backend=backend,
     )
     numpy.testing.assert_array_almost_equal(result, expected_res_any)
 
@@ -360,11 +404,12 @@ def test_grouped_any(column_to_aggregate, group_id, expected_res_any):
         "expected_res_all",
     ],
 )
-def test_grouped_all(column_to_aggregate, group_id, expected_res_all):
+def test_grouped_all(column_to_aggregate, group_id, expected_res_all, backend):
     result = _run_agg_by_group(
         agg_func=grouped_all,
         column_to_aggregate=column_to_aggregate,
         group_id=group_id,
+        backend=backend,
     )
     numpy.testing.assert_array_almost_equal(result, expected_res_all)
 
@@ -378,7 +423,7 @@ def test_grouped_all(column_to_aggregate, group_id, expected_res_all):
         "exception_match",
     ],
 )
-@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
+@pytest.mark.skipif_jax
 def test_grouped_sum_raises(column_to_aggregate, group_id, error_sum, exception_match):
     with pytest.raises(
         error_sum,
@@ -396,7 +441,7 @@ def test_grouped_sum_raises(column_to_aggregate, group_id, error_sum, exception_
         "exception_match",
     ],
 )
-@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
+@pytest.mark.skipif_jax
 def test_grouped_mean_raises(
     column_to_aggregate, group_id, error_mean, exception_match
 ):
@@ -416,7 +461,7 @@ def test_grouped_mean_raises(
         "exception_match",
     ],
 )
-@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
+@pytest.mark.skipif_jax
 def test_grouped_max_raises(column_to_aggregate, group_id, error_max, exception_match):
     with pytest.raises(
         error_max,
@@ -434,7 +479,7 @@ def test_grouped_max_raises(column_to_aggregate, group_id, error_max, exception_
         "exception_match",
     ],
 )
-@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
+@pytest.mark.skipif_jax
 def test_grouped_min_raises(column_to_aggregate, group_id, error_min, exception_match):
     with pytest.raises(
         error_min,
@@ -452,7 +497,7 @@ def test_grouped_min_raises(column_to_aggregate, group_id, error_min, exception_
         "exception_match",
     ],
 )
-@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
+@pytest.mark.skipif_jax
 def test_grouped_any_raises(column_to_aggregate, group_id, error_any, exception_match):
     with pytest.raises(
         error_any,
@@ -470,7 +515,7 @@ def test_grouped_any_raises(column_to_aggregate, group_id, error_any, exception_
         "exception_match",
     ],
 )
-@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
+@pytest.mark.skipif_jax
 def test_grouped_all_raises(column_to_aggregate, group_id, error_all, exception_match):
     with pytest.raises(
         error_all,
@@ -517,7 +562,7 @@ def test_sum_by_p_id(
         "exception_match",
     ],
 )
-@pytest.mark.skipif(IS_JAX_INSTALLED, reason="Cannot raise errors in jitted JAX.")
+@pytest.mark.skipif_jax
 def test_sum_by_p_id_raises(
     column_to_aggregate, group_id, p_id_to_store_by, error_sum_by_p_id, exception_match
 ):

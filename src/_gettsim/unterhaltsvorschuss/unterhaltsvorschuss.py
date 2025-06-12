@@ -17,7 +17,8 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import TTSIMArray
+    import numpy
+
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, RawParam
 
 
@@ -66,11 +67,11 @@ def betrag_m(
 
 @policy_function(vectorization_strategy="not_required")
 def elternteil_alleinerziehend(
-    kindergeld__p_id_empfänger: TTSIMArray,  # int
-    p_id: TTSIMArray,  # int
-    familie__alleinerziehend: TTSIMArray,  # bool
+    kindergeld__p_id_empfänger: numpy.ndarray,  # int
+    p_id: numpy.ndarray,  # int
+    familie__alleinerziehend: numpy.ndarray,  # bool
     xnp: ModuleType,
-) -> TTSIMArray:  # bool
+) -> numpy.ndarray:  # bool
     """Check if parent that receives Kindergeld is a single parent.
 
     Only single parents receive Kindergeld.
@@ -267,11 +268,11 @@ def anspruchshöhe_m_ab_2017_07(
 
 @policy_function(start_date="2017-07-01", vectorization_strategy="not_required")
 def elternteil_mindesteinkommen_erreicht(
-    kindergeld__p_id_empfänger: TTSIMArray,  # int
-    p_id: TTSIMArray,  # int
-    mindesteinkommen_erreicht: TTSIMArray,  # bool
+    kindergeld__p_id_empfänger: numpy.ndarray,  # int
+    p_id: numpy.ndarray,  # int
+    mindesteinkommen_erreicht: numpy.ndarray,  # bool
     xnp: ModuleType,
-) -> TTSIMArray:  #     bool
+) -> numpy.ndarray:  #     bool
     """Income of Unterhaltsvorschuss recipient above threshold (this variable is
     defined on child level)."""
     return join(

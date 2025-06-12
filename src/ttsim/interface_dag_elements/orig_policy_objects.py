@@ -14,6 +14,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
+    policy_input,
 )
 
 if TYPE_CHECKING:
@@ -48,13 +49,23 @@ def column_objects_and_param_functions(
     root:
         The resource directory to load the ColumnObjectParamFunctions tree from.
     """
-    return {
+
+    @policy_input()
+    def num_segments() -> int:
+        """The number of segments for segment sums in jax."""
+
+    out = {
         k: v
         for path in _find_files_recursively(root=root, suffix=".py")
         for k, v in _tree_path_to_orig_column_objects_params_functions(
             path=path, root=root
         ).items()
     }
+    # Add num_segments for segment sums in jax.
+    assert "num_segments" not in out
+    out[("num_segments",)] = num_segments
+
+    return out
 
 
 @interface_function()

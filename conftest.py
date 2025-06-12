@@ -14,6 +14,10 @@ def pytest_addoption(parser):
     )
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "skipif_jax: skip test if backend is jax")
+
+
 @pytest.fixture
 def backend(request):
     backend = request.config.getoption("--backend")
@@ -30,3 +34,10 @@ def xnp(request):
 def dnp(request):
     backend = request.config.getoption("--backend")
     return ttsim_dnp(backend)
+
+
+@pytest.fixture(autouse=True)
+def skipif_jax(request, backend):
+    """Automatically skip tests marked with skipif_jax when backend is jax."""
+    if request.node.get_closest_marker("skipif_jax") and backend == "jax":
+        pytest.skip("Cannot run this test with Jax")

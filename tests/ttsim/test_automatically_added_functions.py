@@ -391,6 +391,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     targets,
     names__processed_data_columns,
     expected,
+    backend,
 ):
     """Test that the derived aggregation functions are in the correct namespace.
 
@@ -402,5 +403,6 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
         names__processed_data_columns=names__processed_data_columns,
         targets=targets,
         grouping_levels=("kin",),
+        backend=backend,
     )
     assert expected in result

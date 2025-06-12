@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import datetime
 import functools
-import inspect
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
 from dags import concatenate_functions, create_dag, get_free_arguments
 
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
@@ -95,6 +93,7 @@ def with_derived_functions_and_processed_input_nodes(
         targets=dt.qual_names(targets__tree),
         names__processed_data_columns=names__processed_data_columns,
         grouping_levels=names__grouping_levels,
+        backend=backend,
     )
     out = {}
     for n, f in flat_with_derived.items():
@@ -105,7 +104,9 @@ def with_derived_functions_and_processed_input_nodes(
                 out[n] = processed_data[n]
         else:
             out[n] = f
-
+    # The number of segments for jax' segment sum. After processing the data, we know
+    # that the number of ids is at most the length of the data.
+    out["num_segments"] = len(next(iter(processed_data.values())))
     return out
 
 
@@ -131,6 +132,7 @@ def _add_derived_functions(
     targets: OrderedQNames,
     names__processed_data_columns: QNameDataColumns,
     grouping_levels: OrderedQNames,
+    backend: Literal["numpy", "jax"],
 ) -> UnorderedQNames:
     """Return a mapping of qualified names to functions operating on columns.
 
@@ -181,6 +183,7 @@ def _add_derived_functions(
         names__processed_data_columns=names__processed_data_columns,
         targets=targets,
         grouping_levels=grouping_levels,
+        backend=backend,
     )
     out = {
         **qual_name_policy_environment,
@@ -313,7 +316,7 @@ def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
     with_partialled_params_and_scalars: QNameCombinedEnvironment2,
     names__target_columns: OrderedQNames,
-    # backend: numpy | jax,
+    backend: Literal["numpy", "jax"],
 ) -> Callable[[QNameData], QNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
     ttf_with_keyword_args = concatenate_functions(
@@ -326,20 +329,9 @@ def tax_transfer_function(
         set_annotations=False,
     )
 
-    # if backend == jax:
-    #     if not IS_JAX_INSTALLED:
-    #         raise ImportError(
-    #             "JAX is not installed. Please install JAX to use JIT compilation."
-    #         )
-    if IS_JAX_INSTALLED:
+    if backend == "jax":
         import jax
 
-        static_args = {
-            argname: 1000
-            for argname in inspect.signature(ttf_with_keyword_args).parameters
-            if argname.endswith("_num_segments")
-        }
-        ttf_with_keyword_args = functools.partial(ttf_with_keyword_args, **static_args)
         ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 
     def wrapper(processed_data: QNameData) -> QNameData:
