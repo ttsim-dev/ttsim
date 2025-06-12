@@ -140,6 +140,11 @@ def some_x(x):
     return x
 
 
+@policy_function()
+def some_policy_func_returning_array_of_length_2() -> np.ndarray:
+    return np.array([1, 2])
+
+
 @pytest.mark.parametrize(
     ("tree", "leaf_checker", "err_substr"),
     [
@@ -759,23 +764,35 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
 
 @pytest.mark.parametrize(
     (
-        "results__tree",
+        "environment",
+        "targets__tree",
         "match",
     ),
     [
         (
             {
-                "some_array_param": np.array([1, 2]),
+                "some_policy_func_returning_array_of_length_2": some_policy_func_returning_array_of_length_2,
             },
+            {"some_policy_func_returning_array_of_length_2": "res1"},
             "The data contains paths that don't have the same length",
         ),
     ],
 )
 def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_length(
-    results__tree,
-    match,
+    environment,
+    targets__tree,
     minimal_data_tree,
+    match,
 ):
+    results__tree = main(
+        inputs={
+            "input_data__tree": minimal_data_tree,
+            "policy_environment": environment,
+            "targets__tree": targets__tree,
+            "rounding": False,
+        },
+        targets=["results__tree"],
+    )["results__tree"]
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
             results__tree=results__tree,
