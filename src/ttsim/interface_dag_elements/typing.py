@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         ColumnObject,
         ParamFunction,
         ParamObject,
+        PolicyInput,
         TTSIMArray,
     )
 
@@ -60,6 +61,10 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for policy objects
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    NestedPolicyInputs = Mapping[str, PolicyInput | "NestedPolicyInputs"]
+    """Tree of policy inputs."""
+    FlatColumnObjects = Mapping[str, ColumnObject]
+    """Flat mapping of paths to column objects."""
     FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...], ColumnObject | ParamFunction
     ]

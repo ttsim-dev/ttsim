@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import dags
 import dags.tree as dt
@@ -16,88 +17,58 @@ from ttsim.interface_dag_elements.fail_if import (
 from ttsim.interface_dag_elements.interface_node_objects import InterfaceInput
 from ttsim.tt_dag_elements import (
     ColumnObject,
-    ParamFunction,
     ParamObject,
-    PolicyFunction,
     PolicyInput,
 )
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from ttsim.interface_dag_elements.typing import QNameCombinedEnvironment0
+
+
+@dataclass(frozen=True)
+class SpecializedEnvironmentAndTargetQNames:
+    specialized_env: QNameCombinedEnvironment0
+    target_qnames: list[str]
+
 
 def plot_tt_dag(
-    with_params: bool, inputs_for_main: dict[str, Any], title: str, output_path: Path
+    date_str: str,
+    root: Path,
+    include_param_functions: bool,
+    namespace: str,
+    title: str,
+    output_path: Path,
 ) -> None:
-    """Plot the taxes & transfers DAG, with or without parameters."""
-
-    policy_environment = main(inputs=inputs_for_main, targets=["policy_environment"])[
-        "policy_environment"
-    ]
-    policy_inputs = {
-        qn: n
-        for qn, n in dt.flatten_to_qual_names(policy_environment).items()
-        if isinstance(n, PolicyInput)
-    }
-    if with_params:
-        targets = [
-            qn
-            for qn, n in dt.flatten_to_qual_names(policy_environment).items()
-            if isinstance(n, PolicyFunction | ParamFunction)
-        ]
-    else:
-        targets = [
-            qn
-            for qn, n in dt.flatten_to_qual_names(policy_environment).items()
-            if isinstance(n, PolicyFunction)
-        ]
-    env = main(
-        inputs={
-            "policy_environment": policy_environment,
-            "input_data__tree": dt.unflatten_from_qual_names(
-                dict.fromkeys(policy_inputs, numpy.array([0])),
-            ),
-            "targets__tree": dt.unflatten_from_qual_names(
-                dict.fromkeys(targets),
-            ),
-        },
-        targets=[
-            "specialized_environment__with_derived_functions_and_processed_input_nodes"
-        ],
-    )["specialized_environment__with_derived_functions_and_processed_input_nodes"]
-    # Replace input nodes by PolicyInputs again
-    env.update(policy_inputs)
+    specialized_env_and_target_qnames = specialized_environment_based_on_dummy_inputs(
+        date_str=date_str,
+        root=root,
+        include_param_functions=include_param_functions,
+        namespace=namespace,
+    )
     nodes = {
         qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
-        for qn, n in env.items()
+        for qn, n in specialized_env_and_target_qnames.specialized_env.items()
     }
-    dag = dags.create_dag(functions=nodes, targets=targets)
+    dag = dags.create_dag(
+        functions=nodes,
+        targets=specialized_env_and_target_qnames.target_qnames,
+    )
     # Only keep nodes that are column objects
-    if not with_params:
+    if not include_param_functions:
         dag.remove_nodes_from(
-            [qn for qn, n in env.items() if not isinstance(n, ColumnObject)]
+            [
+                qn
+                for qn, n in specialized_env_and_target_qnames.specialized_env.items()
+                if not isinstance(n, ColumnObject)
+            ]
         )
     fig = _plot_dag(dag=dag, title=title)
     if output_path.suffix == ".html":
         fig.write_html(output_path)
     else:
         raise ValueError(f"Unsupported file extension: {output_path.suffix}")
-
-    if with_params:
-        f = dags.concatenate_functions(
-            dag=dag,
-            functions=nodes,
-            targets=targets,
-            return_type="dict",
-            enforce_signature=False,
-            set_annotations=False,
-        )
-        args = inspect.signature(f).parameters
-        if args:
-            raise ValueError(
-                "The policy environment DAG should include all root nodes but requires "
-                f"inputs:\n\n{format_list_linewise(args.keys())}"
-            )
 
 
 def plot_full_interface_dag(output_path: Path) -> None:
@@ -128,6 +99,52 @@ def plot_full_interface_dag(output_path: Path) -> None:
         fig.write_html(output_path)
     else:
         raise ValueError(f"Output path must end with .html: {output_path}")
+
+
+def specialized_environment_based_on_dummy_inputs(
+    date_str: str,
+    root: Path,
+    include_param_functions: bool,
+    namespace: str,
+) -> SpecializedEnvironmentAndTargetQNames:
+    """Create the DAG including the policy inputs.
+
+    Policy inputs are part of the DAG because they are passed as dummy callables to
+    `dags.create_dag`.
+    """
+    inputs_for_main = {
+        "date_str": date_str,
+        "orig_policy_objects__root": root,
+        "targets__include_param_functions": include_param_functions,
+        "targets__namespace": namespace,
+    }
+    policy_inputs = main(
+        inputs=inputs_for_main,
+        targets=[
+            "policy_environment__policy_inputs",
+        ],
+    )["policy_environment__policy_inputs"]
+    specialized_env_and_target_qnames = main(
+        inputs={
+            "input_data__tree": dt.unflatten_from_tree_paths(
+                {qn: numpy.array([0]) for qn in dt.flatten_to_tree_paths(policy_inputs)}
+            ),
+            **inputs_for_main,
+        },
+        targets=[
+            "specialized_environment__with_derived_functions_and_processed_input_nodes",
+            "targets__qname",
+        ],
+    )
+    specialized_env = specialized_env_and_target_qnames[
+        "specialized_environment__with_derived_functions_and_processed_input_nodes"
+    ]
+    # Replace input nodes by PolicyInputs again
+    specialized_env.update(dt.flatten_to_qual_names(policy_inputs))
+    return SpecializedEnvironmentAndTargetQNames(
+        specialized_env=specialized_env,
+        target_qnames=specialized_env_and_target_qnames["targets__qname"],
+    )
 
 
 def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:

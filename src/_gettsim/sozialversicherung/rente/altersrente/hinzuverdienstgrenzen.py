@@ -2,7 +2,7 @@ from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 
 @policy_function(
-    end_date="2016-12-31",
+    end_date="2017-06-30",
     rounding_spec=RoundingSpec(
         base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
     ),
@@ -33,7 +33,7 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
     leaf_name="bruttorente_m",
     rounding_spec=RoundingSpec(
@@ -71,7 +71,7 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
 )
 def zahlbetrag_ohne_deckel_m(
@@ -106,7 +106,7 @@ def zahlbetrag_ohne_deckel_m(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
 )
 def differenz_bruttolohn_hinzuverdienstgrenze_y(
@@ -122,7 +122,7 @@ def differenz_bruttolohn_hinzuverdienstgrenze_y(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
 )
 def differenz_bruttolohn_hinzuverdienstdeckel_y(

@@ -38,8 +38,6 @@ if TYPE_CHECKING:
         QNameCombinedEnvironment1,
         QNameCombinedEnvironment2,
         QNameData,
-        QNameDataColumns,
-        QNamePolicyEnvironment,
         UnorderedQNames,
     )
 
@@ -60,7 +58,7 @@ def rounding() -> bool:
 def with_derived_functions_and_processed_input_nodes(
     policy_environment: NestedPolicyEnvironment,
     processed_data: QNameData,
-    names__processed_data_columns: QNameDataColumns,
+    names__processed_data_columns: OrderedQNames,
     targets__tree: NestedStrings,
     names__top_level_namespace: UnorderedQNames,
     names__grouping_levels: OrderedQNames,
@@ -98,7 +96,7 @@ def with_derived_functions_and_processed_input_nodes(
 def _remove_tree_logic_from_policy_environment(
     policy_environment: NestedPolicyEnvironment,
     names__top_level_namespace: UnorderedQNames,
-) -> QNamePolicyEnvironment:
+) -> QNameCombinedEnvironment0:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
     for name, obj in dt.flatten_to_qual_names(policy_environment).items():
@@ -113,9 +111,9 @@ def _remove_tree_logic_from_policy_environment(
 
 
 def _add_derived_functions(
-    qual_name_policy_environment: QNamePolicyEnvironment,
+    qual_name_policy_environment: QNameCombinedEnvironment0,
     targets: OrderedQNames,
-    names__processed_data_columns: QNameDataColumns,
+    names__processed_data_columns: OrderedQNames,
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
     """Return a mapping of qualified names to functions operating on columns.
