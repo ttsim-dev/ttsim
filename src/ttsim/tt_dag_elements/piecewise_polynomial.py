@@ -60,23 +60,23 @@ def piecewise_polynomial(
 
     Parameters
     ----------
-    x : numpy.ndarray
+    x:
         Array with values at which the piecewise polynomial is to be calculated.
-    thresholds : np.array
+    thresholds:
                 A one-dimensional array containing the thresholds for all intervals.
-    coefficients : numpy.ndarray
+    coefficients:
             A two-dimensional array where columns are interval sections and rows
             correspond to the coefficient of the nth polynomial.
-    intercepts : numpy.ndarray
+    intercepts:
         The intercepts at the lower threshold of each interval.
-    rates_multiplier : numpy.ndarray
-                       Multiplier to create individual or scaled rates.
-    xnp : ModuleType
-        The numpy module to use for calculations.
+    xnp:
+        The backend module to use for calculations.
+    rates_multiplier:
+        Multiplier to create individual or scaled rates.
 
     Returns
     -------
-    out : numpy.ndarray
+    out:
         The value of `x` under the piecewise function.
 
     """

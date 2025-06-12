@@ -17,7 +17,6 @@ from pandas.api.types import (
 )
 
 from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt_dag_elements.aggregation import (
     AggType,
@@ -42,7 +41,7 @@ from ttsim.tt_dag_elements.vectorization import vectorize_function
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy  # noqa: TC004
+    import numpy
     import pandas as pd
 
     from ttsim.interface_dag_elements.typing import (
@@ -828,7 +827,9 @@ def _convert_and_validate_dates(
     return start_date, end_date
 
 
-def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:
+def check_series_has_expected_type(
+    series: pd.Series, internal_type: numpy.dtype, dnp: ModuleType
+) -> bool:
     """Checks whether used series has already expected internal type.
 
     Currently not used, but might become useful again.
@@ -849,7 +850,7 @@ def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -
         (internal_type == float) & (is_float_dtype(series))
         or (internal_type == int) & (is_integer_dtype(series))
         or (internal_type == bool) & (is_bool_dtype(series))
-        or (internal_type == numpy.datetime64) & (is_datetime64_any_dtype(series))
+        or (internal_type == dnp.datetime64) & (is_datetime64_any_dtype(series))
     ):
         out = True
     else:
