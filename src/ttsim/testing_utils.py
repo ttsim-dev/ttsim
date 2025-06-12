@@ -32,12 +32,13 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=100)
 def cached_policy_environment(
-    date: datetime.date, root: Path
+    date: datetime.date, root: Path, backend: Literal["numpy", "jax"]
 ) -> NestedPolicyEnvironment:
     return main(
         inputs={
             "date": date,
             "orig_policy_objects__root": root,
+            "backend": backend,
         },
         targets=["policy_environment"],
     )["policy_environment"]
@@ -79,7 +80,7 @@ class PolicyTest:
 def execute_test(
     test: PolicyTest, root: Path, backend: Literal["numpy", "jax"]
 ) -> None:
-    environment = cached_policy_environment(date=test.date, root=root)
+    environment = cached_policy_environment(date=test.date, root=root, backend=backend)
 
     if test.target_structure:
         result_df = main(
