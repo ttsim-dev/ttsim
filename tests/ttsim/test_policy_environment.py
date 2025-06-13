@@ -79,8 +79,8 @@ def test_input_is_recognized_as_potential_group_id():
                 "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
             },
-            targets=["names__grouping_levels"],
-        )["names__grouping_levels"]
+            targets=["labels__grouping_levels"],
+        )["labels__grouping_levels"]
     )
 
 
@@ -92,8 +92,8 @@ def test_p_id_not_recognized_as_potential_group_id():
                 "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
             },
-            targets=["names__grouping_levels"],
-        )["names__grouping_levels"]
+            targets=["labels__grouping_levels"],
+        )["labels__grouping_levels"]
     )
 
 

@@ -216,14 +216,14 @@ def any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
     targets__tree: NestedTargetDict,
-    names__top_level_namespace: UnorderedQNames,
+    labels__top_level_namespace: UnorderedQNames,
 ) -> None:
     """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
     return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
         input_data__tree=input_data__tree,
         targets=targets__tree,
-        names__top_level_namespace=names__top_level_namespace,
+        labels__top_level_namespace=labels__top_level_namespace,
     )
 
 
@@ -312,7 +312,7 @@ def environment_is_invalid(
 
 @interface_function()
 def foreign_keys_are_invalid_in_data(
-    names__root_nodes: UnorderedQNames,
+    labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
     specialized_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
 ) -> None:
@@ -335,7 +335,7 @@ def foreign_keys_are_invalid_in_data(
     for fk_name, fk in relevant_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
-        if fk_name in names__root_nodes:
+        if fk_name in labels__root_nodes:
             path = dt.tree_path_from_qual_name(fk_name)
             # Referenced `p_id` must exist in the input data
             if not all(i in valid_ids for i in processed_data[fk_name].tolist()):
@@ -387,8 +387,8 @@ def group_ids_are_outside_top_level_namespace(
 
 @interface_function()
 def group_variables_are_not_constant_within_groups(
-    names__grouping_levels: OrderedQNames,
-    names__root_nodes: UnorderedQNames,
+    labels__grouping_levels: OrderedQNames,
+    labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
 ) -> None:
     """
@@ -403,10 +403,10 @@ def group_variables_are_not_constant_within_groups(
     """
     faulty_data_columns = []
 
-    for name in names__root_nodes:
+    for name in labels__root_nodes:
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            grouping_levels=names__grouping_levels,
+            grouping_levels=labels__grouping_levels,
         )
         if group_by_id in processed_data:
             group_by_id_series = pd.Series(processed_data[group_by_id])
@@ -613,7 +613,7 @@ def root_nodes_are_missing(
 @interface_function()
 def targets_are_not_in_policy_environment_or_data(
     policy_environment: QNamePolicyEnvironment,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
     targets__qname: OrderedQNames,
 ) -> None:
     """Fail if some target is not among functions.
@@ -622,7 +622,7 @@ def targets_are_not_in_policy_environment_or_data(
     ----------
     functions
         Dictionary containing functions to build the DAG.
-    names__processed_data_columns
+    labels__processed_data_columns
         The columns which are available in the data tree.
     targets
         The targets which should be computed. They limit the DAG in the way that only
@@ -637,7 +637,7 @@ def targets_are_not_in_policy_environment_or_data(
     targets_not_in_policy_environment_or_data = [
         str(dt.tree_path_from_qual_name(n))
         for n in targets__qname
-        if n not in policy_environment and n not in names__processed_data_columns
+        if n not in policy_environment and n not in labels__processed_data_columns
     ]
     if targets_not_in_policy_environment_or_data:
         formatted = format_list_linewise(targets_not_in_policy_environment_or_data)

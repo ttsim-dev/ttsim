@@ -571,7 +571,7 @@ def _create_function_for_time_unit(
 
 def create_agg_by_group_functions(
     column_functions: UnorderedQNames,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
     targets: OrderedQNames,
     grouping_levels: OrderedQNames,
     # backend: Literal["numpy", "jax"],
@@ -579,7 +579,7 @@ def create_agg_by_group_functions(
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
-        **dict.fromkeys(names__processed_data_columns),
+        **dict.fromkeys(labels__processed_data_columns),
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.

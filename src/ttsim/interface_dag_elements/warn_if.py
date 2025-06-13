@@ -67,13 +67,13 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
 @interface_function()
 def functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""
     overridden_elements = sorted(
         {
             col
-            for col in names__processed_data_columns
+            for col in labels__processed_data_columns
             if col in dt.flatten_to_qual_names(policy_environment)
         },
     )

@@ -565,7 +565,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
     }
 
     foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
+        labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
@@ -582,7 +582,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         foreign_keys_are_invalid_in_data(
-            names__root_nodes={n for n in data if n != "p_id"},
+            labels__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
             specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
         )
@@ -598,7 +598,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     }
 
     foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
+        labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
@@ -614,7 +614,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     }
 
     foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
+        labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
@@ -639,8 +639,8 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         match="The following data inputs do not have a unique value within",
     ):
         group_variables_are_not_constant_within_groups(
-            names__grouping_levels=("kin",),
-            names__root_nodes={n for n in data if n != "p_id"},
+            labels__grouping_levels=("kin",),
+            labels__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
         )
 
@@ -922,7 +922,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
 
 
 @pytest.mark.parametrize(
-    "policy_environment, targets, names__processed_data_columns, expected_error_match",
+    "policy_environment, targets, labels__processed_data_columns, expected_error_match",
     [
         ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
@@ -933,7 +933,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
 def test_fail_if_targets_are_not_in_policy_environment_or_data(
     policy_environment,
     targets,
-    names__processed_data_columns,
+    labels__processed_data_columns,
     expected_error_match,
 ):
     with pytest.raises(
@@ -943,7 +943,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data(
         targets_are_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
             targets__qname=targets,
-            names__processed_data_columns=names__processed_data_columns,
+            labels__processed_data_columns=labels__processed_data_columns,
         )
     assert expected_error_match in str(e.value)
 

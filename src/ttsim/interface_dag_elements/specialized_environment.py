@@ -60,10 +60,10 @@ def rounding() -> bool:
 def with_derived_functions_and_processed_input_nodes(
     policy_environment: NestedPolicyEnvironment,
     processed_data: QNameData,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
     targets__tree: NestedStrings,
-    names__top_level_namespace: UnorderedQNames,
-    names__grouping_levels: OrderedQNames,
+    labels__top_level_namespace: UnorderedQNames,
+    labels__grouping_levels: OrderedQNames,
     backend: str,
     xnp: ModuleType,
 ) -> QNameCombinedEnvironment0:
@@ -86,13 +86,13 @@ def with_derived_functions_and_processed_input_nodes(
     }
     flat_without_tree_logic = _remove_tree_logic_from_policy_environment(
         policy_environment=flat_vectorized,
-        names__top_level_namespace=names__top_level_namespace,
+        labels__top_level_namespace=labels__top_level_namespace,
     )
     flat_with_derived = _add_derived_functions(
         qual_name_policy_environment=flat_without_tree_logic,
         targets=dt.qual_names(targets__tree),
-        names__processed_data_columns=names__processed_data_columns,
-        grouping_levels=names__grouping_levels,
+        labels__processed_data_columns=labels__processed_data_columns,
+        grouping_levels=labels__grouping_levels,
     )
     out = {}
     for n, f in flat_with_derived.items():
@@ -112,7 +112,7 @@ def with_derived_functions_and_processed_input_nodes(
 
 def _remove_tree_logic_from_policy_environment(
     policy_environment: QNamePolicyEnvironment,
-    names__top_level_namespace: UnorderedQNames,
+    labels__top_level_namespace: UnorderedQNames,
 ) -> QNamePolicyEnvironment:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
@@ -120,7 +120,7 @@ def _remove_tree_logic_from_policy_environment(
         if hasattr(obj, "remove_tree_logic"):
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qual_name(name),
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=labels__top_level_namespace,
             )
         else:
             out[name] = obj
@@ -130,7 +130,7 @@ def _remove_tree_logic_from_policy_environment(
 def _add_derived_functions(
     qual_name_policy_environment: QNamePolicyEnvironment,
     targets: OrderedQNames,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
     """Return a mapping of qualified names to functions operating on columns.
@@ -153,7 +153,7 @@ def _add_derived_functions(
         The list of targets with qualified names.
     data
         Dict with qualified data names as keys and arrays as values.
-    names__top_level_namespace
+    labels__top_level_namespace
         Set of top-level namespaces.
 
     Returns
@@ -164,7 +164,7 @@ def _add_derived_functions(
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment=qual_name_policy_environment,
-        processed_data_columns=names__processed_data_columns,
+        processed_data_columns=labels__processed_data_columns,
         grouping_levels=grouping_levels,
     )
     column_functions = {
@@ -179,7 +179,7 @@ def _add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
-        names__processed_data_columns=names__processed_data_columns,
+        labels__processed_data_columns=labels__processed_data_columns,
         targets=targets,
         grouping_levels=grouping_levels,
     )
@@ -298,12 +298,12 @@ def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
 @interface_function()
 def tax_transfer_dag(
     with_partialled_params_and_scalars: QNameCombinedEnvironment2,
-    names__column_targets: OrderedQNames,
+    labels__column_targets: OrderedQNames,
 ) -> nx.DiGraph:
     """Thin wrapper around `create_dag`."""
     return create_dag(
         functions=with_partialled_params_and_scalars,
-        targets=names__column_targets,
+        targets=labels__column_targets,
     )
 
 
@@ -311,14 +311,14 @@ def tax_transfer_dag(
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
     with_partialled_params_and_scalars: QNameCombinedEnvironment2,
-    names__column_targets: OrderedQNames,
+    labels__column_targets: OrderedQNames,
     backend: Literal["numpy", "jax"],
 ) -> Callable[[QNameData], QNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
     ttf_with_keyword_args = concatenate_functions(
         dag=tax_transfer_dag,
         functions=with_partialled_params_and_scalars,
-        targets=list(names__column_targets),
+        targets=list(labels__column_targets),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,

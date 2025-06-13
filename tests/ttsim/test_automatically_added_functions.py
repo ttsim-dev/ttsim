@@ -364,7 +364,7 @@ def test_should_not_create_cycle():
     (
         "column_functions",
         "targets",
-        "names__processed_data_columns",
+        "labels__processed_data_columns",
         "expected",
     ),
     [
@@ -391,7 +391,7 @@ def test_should_not_create_cycle():
 def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
     targets,
-    names__processed_data_columns,
+    labels__processed_data_columns,
     expected,
 ):
     """Test that the derived aggregation functions are in the correct namespace.
@@ -401,7 +401,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     """
     result = create_agg_by_group_functions(
         column_functions=column_functions,
-        names__processed_data_columns=names__processed_data_columns,
+        labels__processed_data_columns=labels__processed_data_columns,
         targets=targets,
         grouping_levels=("kin",),
     )
