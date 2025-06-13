@@ -39,6 +39,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -137,6 +139,11 @@ def mettsim_environment() -> NestedPolicyEnvironment:
 
 def some_x(x):
     return x
+
+
+@policy_function()
+def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> numpy.ndarray:
+    return xnp.array([1, 2])
 
 
 @pytest.mark.parametrize(
@@ -713,6 +720,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
     (
         "environment",
         "targets__tree",
+        "match",
     ),
     [
         (
@@ -720,6 +728,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
                 "some_piecewise_polynomial_param": _SOME_PIECEWISE_POLYNOMIAL_PARAM,
             },
             {"some_piecewise_polynomial_param": "res1"},
+            "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
         (
             {
@@ -728,27 +737,80 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
                 ),
             },
             {"some_consecutive_int_1d_lookup_table_param": "res1"},
+            "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
     ],
 )
-def test_fail_if_non_convertible_objects_in_results_tree(
+def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     environment,
     targets__tree,
     minimal_data_tree,
+    match,
+    backend,
+    xnp,
 ):
-    results__tree = main(
+    environment["backend"] = backend
+    environment["xnp"] = xnp
+    actual = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": backend,
         },
-        targets=["results__tree"],
-    )["results__tree"]
-    with pytest.raises(
-        TypeError, match=r"The following paths contain non-scalar\nobjects"
-    ):
-        non_convertible_objects_in_results_tree(results__tree)
+        targets=["processed_data", "results__tree"],
+    )
+    with pytest.raises(TypeError, match=match):
+        non_convertible_objects_in_results_tree(
+            processed_data=actual["processed_data"],
+            results__tree=actual["results__tree"],
+            xnp=xnp,
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "environment",
+        "targets__tree",
+        "match",
+    ),
+    [
+        (
+            {
+                "some_policy_func_returning_array_of_length_2": some_policy_func_returning_array_of_length_2,
+            },
+            {"some_policy_func_returning_array_of_length_2": "res1"},
+            "The data contains paths that don't have the same length",
+        ),
+    ],
+)
+def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_length(
+    environment,
+    targets__tree,
+    minimal_data_tree,
+    match,
+    backend,
+    xnp,
+):
+    environment["backend"] = backend
+    environment["xnp"] = xnp
+    actual = main(
+        inputs={
+            "input_data__tree": minimal_data_tree,
+            "policy_environment": environment,
+            "targets__tree": targets__tree,
+            "rounding": False,
+            "backend": backend,
+        },
+        targets=["processed_data", "results__tree"],
+    )
+    with pytest.raises(ValueError, match=match):
+        non_convertible_objects_in_results_tree(
+            processed_data=actual["processed_data"],
+            results__tree=actual["results__tree"],
+            xnp=xnp,
+        )
 
 
 def test_fail_if_p_id_does_not_exist(xnp):
