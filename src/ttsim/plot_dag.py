@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
@@ -8,7 +9,6 @@ import dags
 import dags.tree as dt
 import networkx as nx
 import numpy
-import optree
 import plotly.graph_objects as go
 
 from ttsim.interface_dag import load_interface_functions_and_inputs, main
@@ -71,6 +71,25 @@ def plot_tt_dag(
     -------
     The figure.
     """
+    dag = get_tt_dag_to_plot(
+        date_str=date_str,
+        root=root,
+        node_selector=node_selector,
+        namespace=namespace,
+        include_param_functions=include_param_functions,
+    )
+    return _plot_dag(dag=dag, title=title)
+
+
+def get_tt_dag_to_plot(
+    date_str: str,
+    root: Path,
+    node_selector: NodeSelector | None = None,
+    namespace: str = "all",
+    include_param_functions: bool = True,
+) -> nx.DiGraph:
+    """Get the TT DAG to plot."""
+
     inputs_for_main = {
         "date_str": date_str,
         "orig_policy_objects__root": root,
@@ -78,13 +97,19 @@ def plot_tt_dag(
         "targets__namespace": namespace,
     }
 
-    all_targets = all_targets_from_namespace(inputs_for_main)
+    all_targets = (
+        node_selector.nodes + all_targets_from_namespace(inputs_for_main)
+        if node_selector
+        else all_targets_from_namespace(inputs_for_main)
+    )
+
     specialized_environment = specialized_environment_for_targets(inputs_for_main)
 
     all_nodes = {
         qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
         for qn, n in specialized_environment.items()
     }
+
     complete_dag = dags.create_dag(functions=all_nodes, targets=all_targets)
 
     if node_selector is None:
@@ -104,7 +129,7 @@ def plot_tt_dag(
             ]
         )
 
-    return _plot_dag(dag=selected_dag, title=title)
+    return selected_dag
 
 
 def plot_full_interface_dag() -> go.Figure:
@@ -177,34 +202,27 @@ def create_dag_with_selected_nodes(
     node_selector: NodeSelector,
 ) -> nx.DiGraph:
     """Select nodes based on the node selector."""
+    selected_nodes: set[str] = set()
     if node_selector.type == "nodes":
-        selected_nodes = node_selector.nodes
+        selected_nodes.update(node_selector.nodes)
     elif node_selector.type == "ancestors":
-        selected_nodes = optree.tree_flatten(
-            [
-                _kth_order_predecessors(complete_dag, node, order=node_selector.order)  # type: ignore[arg-type]
+        for node in node_selector.nodes:
+            selected_nodes.update(
+                _kth_order_predecessors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
                 else list(nx.ancestors(complete_dag, node))
-                for node in node_selector.nodes
-            ]
-        )[0]
+            )
     elif node_selector.type == "descendants":
-        selected_nodes = optree.tree_flatten(
-            [
-                _kth_order_successors(complete_dag, node, order=node_selector.order)  # type: ignore[arg-type]
+        for node in node_selector.nodes:
+            selected_nodes.update(
+                _kth_order_successors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
                 else list(nx.descendants(complete_dag, node))
-                for node in node_selector.nodes
-            ]
-        )[0]
+            )
     elif node_selector.type == "neighbors":
         order = node_selector.order or 1
-        selected_nodes = optree.tree_flatten(
-            [
-                _kth_order_neighbors(complete_dag, node, order=order)  # type: ignore[arg-type]
-                for node in node_selector.nodes
-            ]
-        )[0]
+        for node in node_selector.nodes:
+            selected_nodes.update(_kth_order_neighbors(complete_dag, node, order=order))
     else:
         msg = (
             f"Invalid node selector type: {node_selector.type}. "
@@ -212,7 +230,9 @@ def create_dag_with_selected_nodes(
         )
         raise ValueError(msg)
 
-    return complete_dag.remove_nodes_from(set(complete_dag.nodes) - set(selected_nodes))
+    dag_copy = copy.deepcopy(complete_dag)
+    dag_copy.remove_nodes_from(set(complete_dag.nodes) - set(selected_nodes))
+    return dag_copy
 
 
 def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
