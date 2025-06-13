@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from ttsim.interface_dag_elements.typing import (
         QNameCombinedEnvironment0,
+        UnorderedQNames,
     )
 
 
@@ -78,7 +79,42 @@ def plot_tt_dag(
         namespace=namespace,
         include_param_functions=include_param_functions,
     )
-    return _plot_dag(dag=dag, title=title)
+    namespaces_with_distinct_colors = top_level_namespaces(
+        date_str=date_str,
+        root=root,
+        dag=dag,
+    )
+    return _plot_dag(
+        dag=dag,
+        title=title,
+        namespaces_with_distinct_colors=namespaces_with_distinct_colors,
+    )
+
+
+def top_level_namespaces(
+    date_str: str,
+    root: Path,
+    dag: nx.DiGraph,
+) -> UnorderedQNames:
+    """Get the top level namespaces for this DAG.
+
+    Returns the top-level namespaces that
+        - actually appear in the DAG
+        - collect leaf nodes or sub-namespaces (i.e. does not contain single top-level
+          namespace elements)
+    """
+    top_level_namespace = main(
+        inputs={
+            "date_str": date_str,
+            "orig_policy_objects__root": root,
+        },
+        targets=["names__top_level_namespace"],
+    )["names__top_level_namespace"]
+    return {
+        n
+        for n in top_level_namespace
+        if any(node.startswith(f"{n}__") for node in dag.nodes())
+    }
 
 
 def get_tt_dag_to_plot(
@@ -235,8 +271,12 @@ def create_dag_with_selected_nodes(
     return dag_copy
 
 
-def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
+def _plot_dag(
+    dag: nx.DiGraph, title: str, namespaces_with_distinct_colors: UnorderedQNames
+) -> go.Figure:
     """Plot the DAG."""
+
+    namespace_to_color
 
     nice_dag = nx.relabel_nodes(
         dag, {qn: qn.replace("__", "<br>") for qn in dag.nodes()}
