@@ -51,7 +51,6 @@ def main(
         functions=functions,
         targets=targets,
     )
-    # draw_dag(dag)
     f = dags.concatenate_functions(
         dag=dag,
         functions=functions,

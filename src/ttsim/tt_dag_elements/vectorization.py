@@ -14,9 +14,6 @@ import numpy
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
-
-if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import GenericCallable
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}

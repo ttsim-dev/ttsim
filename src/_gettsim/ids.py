@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
     import numpy
 
+    from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
+
 
 @policy_input()
 def p_id() -> int:
@@ -24,8 +26,8 @@ def hh_id() -> int:
 
 @group_creation_function()
 def ehe_id(
-    p_id: numpy.ndarray, familie__p_id_ehepartner: numpy.ndarray, xnp: ModuleType
-) -> numpy.ndarray:
+    p_id: IntColumn, familie__p_id_ehepartner: IntColumn, xnp: ModuleType
+) -> IntColumn:
     """Couples that are either married or in a civil union."""
     n = xnp.max(p_id) + 1
     p_id_ehepartner_or_own_p_id = xnp.where(
@@ -41,14 +43,14 @@ def ehe_id(
 
 @group_creation_function()
 def fg_id(
-    arbeitslosengeld_2__p_id_einstandspartner: numpy.ndarray,
-    p_id: numpy.ndarray,
-    hh_id: numpy.ndarray,
-    alter: numpy.ndarray,
-    familie__p_id_elternteil_1: numpy.ndarray,
-    familie__p_id_elternteil_2: numpy.ndarray,
+    arbeitslosengeld_2__p_id_einstandspartner: IntColumn,
+    p_id: IntColumn,
+    hh_id: IntColumn,
+    alter: IntColumn,
+    familie__p_id_elternteil_1: IntColumn,
+    familie__p_id_elternteil_2: IntColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """Familiengemeinschaft. Base unit for some transfers.
 
     Maximum of two generations, the relevant base unit for Bürgergeld / Arbeitslosengeld
@@ -105,15 +107,15 @@ def fg_id(
 
 
 def _assign_parents_fg_id(
-    fg_id: numpy.ndarray,
-    p_id: numpy.ndarray,
-    p_id_elternteil_loc: numpy.ndarray,
-    hh_id: numpy.ndarray,
-    alter: numpy.ndarray,
-    children: numpy.ndarray,
-    n: numpy.ndarray,
+    fg_id: IntColumn,
+    p_id: IntColumn,
+    p_id_elternteil_loc: IntColumn,
+    hh_id: IntColumn,
+    alter: IntColumn,
+    children: IntColumn,
+    n: IntColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """Return the fg_id of the child's parents."""
 
     # TODO(@MImmesberger): Remove hard-coded number
@@ -132,10 +134,10 @@ def _assign_parents_fg_id(
 
 @group_creation_function()
 def bg_id(
-    fg_id: numpy.ndarray,
-    p_id: numpy.ndarray,
-    arbeitslosengeld_2__eigenbedarf_gedeckt: numpy.ndarray,
-    alter: numpy.ndarray,
+    fg_id: IntColumn,
+    p_id: IntColumn,
+    arbeitslosengeld_2__eigenbedarf_gedeckt: BoolColumn,
+    alter: IntColumn,
     xnp: ModuleType,
 ) -> numpy.ndarray:
     """Bedarfsgemeinschaft. Relevant unit for Bürgergeld / Arbeitslosengeld 2.
@@ -159,10 +161,10 @@ def bg_id(
 
 @group_creation_function()
 def eg_id(
-    arbeitslosengeld_2__p_id_einstandspartner: numpy.ndarray,
-    p_id: numpy.ndarray,
+    arbeitslosengeld_2__p_id_einstandspartner: IntColumn,
+    p_id: IntColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """Einstandsgemeinschaft / Einstandspartner according to SGB II.
 
     A couple whose members are deemed to be responsible for each other.
@@ -182,11 +184,11 @@ def eg_id(
 
 @group_creation_function()
 def wthh_id(
-    hh_id: numpy.ndarray,
-    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: numpy.ndarray,
-    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: numpy.ndarray,
+    hh_id: IntColumn,
+    vorrangprüfungen__wohngeld_vorrang_vor_arbeitslosengeld_2_bg: BoolColumn,
+    vorrangprüfungen__wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: BoolColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """Wohngeldrechtlicher Teilhaushalt.
 
     The relevant unit for Wohngeld. Members of a household for whom the Wohngeld
@@ -204,11 +206,11 @@ def wthh_id(
 
 @group_creation_function()
 def sn_id(
-    p_id: numpy.ndarray,
-    familie__p_id_ehepartner: numpy.ndarray,
-    einkommensteuer__gemeinsam_veranlagt: numpy.ndarray,
+    p_id: IntColumn,
+    familie__p_id_ehepartner: IntColumn,
+    einkommensteuer__gemeinsam_veranlagt: BoolColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """Steuernummer. Spouses filing taxes jointly or individuals."""
 
     n = xnp.max(p_id) + 1

@@ -37,8 +37,9 @@ from ttsim.tt_dag_elements.vectorization import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from types import ModuleType
 
+    from ttsim.interface_dag_elements.typing import IntColumn
 
 # ======================================================================================
 # String comparison
@@ -648,20 +649,25 @@ def scalar_func(x: int) -> int:
 
 
 @policy_function(vectorization_strategy="not_required")
-def already_vectorized_func(x: numpy.ndarray) -> numpy.ndarray:  # type: ignore[type-arg]
-    return numpy.where(x < 0, 0, x * 2)
+def already_vectorized_func(x: IntColumn, xnp: ModuleType) -> IntColumn:
+    return xnp.where(x < 0, 0, x * 2)
 
 
-@pytest.mark.parametrize(
-    "vectorized_function",
-    [
-        vectorize_function(
-            scalar_func, vectorization_strategy="loop", backend="numpy", xnp=numpy
-        ),
-        already_vectorized_func,
-    ],
-)
-def test_vectorize_func(vectorized_function: Callable):  # type: ignore[type-arg]
+def test_loop_vectorize_scalar_func(backend, xnp):
+    fun = vectorize_function(
+        scalar_func, vectorization_strategy="loop", backend=backend, xnp=numpy
+    )
+    assert numpy.array_equal(fun(xnp.array([-1, 0, 2, 3])), xnp.array([0, 0, 4, 6]))
+
+
+def test_vectorize_scalar_func(backend, xnp):
+    fun = vectorize_function(
+        scalar_func, vectorization_strategy="vectorize", backend=backend, xnp=numpy
+    )
+    assert numpy.array_equal(fun(xnp.array([-1, 0, 2, 3])), xnp.array([0, 0, 4, 6]))
+
+
+def test_already_vectorized_func(xnp):
     assert numpy.array_equal(
-        vectorized_function(numpy.array([-1, 0, 2, 3])), numpy.array([0, 0, 4, 6])
+        already_vectorized_func(xnp.array([-1, 0, 2, 3]), xnp), xnp.array([0, 0, 4, 6])
     )

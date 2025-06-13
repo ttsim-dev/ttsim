@@ -17,15 +17,15 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
+    from jaxtyping import Array, Float, Int
 
 
 @dataclass(frozen=True)
 class LookupTableBaujahr:
-    baujahre: numpy.ndarray
-    lookup_table: numpy.ndarray
-    lookup_base_to_subtract_cols: numpy.ndarray
-    lookup_base_to_subtract_rows: numpy.ndarray
+    baujahre: Int[Array, " n_baujahr_categories"]
+    lookup_base_to_subtract_cols: Int[Array, " n_baujahr_categories"]
+    lookup_base_to_subtract_rows: Int[Array, " n_baujahr_categories"]
+    lookup_table: Float[Array, "n_baujahr_categories max_n_p_indizierung_n_mietstufen"]
 
 
 @param_function(

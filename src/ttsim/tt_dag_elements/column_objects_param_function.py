@@ -9,12 +9,6 @@ from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
 
 import dags.tree as dt
 from dags import rename_arguments
-from pandas.api.types import (
-    is_bool_dtype,
-    is_datetime64_any_dtype,
-    is_float_dtype,
-    is_integer_dtype,
-)
 
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt_dag_elements.aggregation import (
@@ -40,12 +34,10 @@ from ttsim.tt_dag_elements.vectorization import vectorize_function
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
-    import pandas as pd
-
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         GenericCallable,
+        IntColumn,
         UnorderedQNames,
     )
 
@@ -129,7 +121,7 @@ class PolicyInput(ColumnObject):
     def dummy_callable(self) -> PolicyFunction:
         """Dummy callable for the interface input. Just used for plotting."""
 
-        def dummy() -> self.data_type:
+        def dummy():  # type: ignore[no-untyped-def]
             pass
 
         return policy_function(
@@ -225,28 +217,9 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __post_init__(self) -> None:
-        self._fail_if_rounding_has_wrong_type(self.rounding_spec)
+        _fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
-
-    def _fail_if_rounding_has_wrong_type(
-        self, rounding_spec: RoundingSpec | None
-    ) -> None:
-        """Check if rounding_spec has the correct type.
-
-        Parameters
-        ----------
-        rounding_spec
-            The rounding specification to check.
-
-        Raises
-        ------
-        AssertionError
-            If rounding_spec is not a RoundingSpec or None.
-        """
-        assert isinstance(rounding_spec, RoundingSpec | None), (
-            f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
-        )
 
     def __call__(
         self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
@@ -266,6 +239,24 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     def is_active(self, date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
         return self.start_date <= date <= self.end_date
+
+
+def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None:
+    """Check if rounding_spec has the correct type.
+
+    Parameters
+    ----------
+    rounding_spec
+        The rounding specification to check.
+
+    Raises
+    ------
+    AssertionError
+        If rounding_spec is not a RoundingSpec or None.
+    """
+    assert isinstance(rounding_spec, RoundingSpec | None), (
+        f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
+    )
 
 
 @dataclass(frozen=True)
@@ -390,7 +381,7 @@ def policy_function(
     return inner
 
 
-def reorder_ids(ids: numpy.ndarray, xnp: ModuleType) -> numpy.ndarray:
+def reorder_ids(ids: IntColumn, xnp: ModuleType) -> IntColumn:
     """Make ID's consecutively numbered.
 
     Takes the given IDs and replaces them by consecutive numbers
@@ -821,38 +812,6 @@ def _convert_and_validate_dates(
         )
 
     return start_date, end_date
-
-
-def check_series_has_expected_type(
-    series: pd.Series, internal_type: numpy.dtype, dnp: ModuleType
-) -> bool:
-    """Checks whether used series has already expected internal type.
-
-    Currently not used, but might become useful again.
-
-    Parameters
-    ----------
-    series: pandas.Series or pandas.DataFrame or dict of pandas.Series
-        Data provided by the user.
-    internal_type: TypeVar
-        One of the types used by TTSIM.
-
-    Returns
-    -------
-    Bool
-
-    """
-    if (
-        (internal_type == float) & (is_float_dtype(series))
-        or (internal_type == int) & (is_integer_dtype(series))
-        or (internal_type == bool) & (is_bool_dtype(series))
-        or (internal_type == dnp.datetime64) & (is_datetime64_any_dtype(series))
-    ):
-        out = True
-    else:
-        out = False
-
-    return out
 
 
 @dataclass(frozen=True)

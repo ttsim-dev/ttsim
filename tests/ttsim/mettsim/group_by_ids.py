@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ttsim.tt_dag_elements import group_creation_function
+
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
-from ttsim.tt_dag_elements import group_creation_function
+    from ttsim.interface_dag_elements.typing import IntColumn
 
 
 @group_creation_function()
-def sp_id(
-    p_id: numpy.ndarray, p_id_spouse: numpy.ndarray, xnp: ModuleType
-) -> numpy.ndarray:
+def sp_id(p_id: IntColumn, p_id_spouse: IntColumn, xnp: ModuleType) -> IntColumn:
     """
     Compute the spouse (sp) group ID for each person.
     """
@@ -23,13 +22,13 @@ def sp_id(
 
 @group_creation_function()
 def fam_id(
-    p_id_spouse: numpy.ndarray,
-    p_id: numpy.ndarray,
-    age: numpy.ndarray,
-    p_id_parent_1: numpy.ndarray,
-    p_id_parent_2: numpy.ndarray,
+    p_id_spouse: IntColumn,
+    p_id: IntColumn,
+    age: IntColumn,
+    p_id_parent_1: IntColumn,
+    p_id_parent_2: IntColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """
     Compute the family ID for each person.
     """
@@ -75,14 +74,14 @@ def fam_id(
 
 
 def _assign_parents_fam_id(
-    fam_id: numpy.ndarray,
-    p_id: numpy.ndarray,
-    p_id_parent_loc: numpy.ndarray,
-    age: numpy.ndarray,
-    children: numpy.ndarray,
-    n: numpy.ndarray,
+    fam_id: IntColumn,
+    p_id: IntColumn,
+    p_id_parent_loc: IntColumn,
+    age: IntColumn,
+    children: IntColumn,
+    n: int,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """Return the fam_id of the child's parents."""
 
     return xnp.where(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar
 
 import dags.tree as dt
 
@@ -54,10 +54,10 @@ class InterfaceInput(InterfaceNodeObject):
     ) -> InterfaceInput:
         return self
 
-    def dummy_callable(self) -> InterfaceFunction:
+    def dummy_callable(self) -> InterfaceFunction:  # type: ignore[type-arg]
         """Dummy callable for the interface input. Just used for plotting."""
 
-        def dummy() -> self.return_type:
+        def dummy() -> Any:
             pass
 
         return interface_function(

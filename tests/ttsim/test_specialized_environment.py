@@ -30,7 +30,7 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import NestedPolicyEnvironment
+    from ttsim.interface_dag_elements.typing import IntColumn, NestedPolicyEnvironment
 
 
 @policy_input()
@@ -411,7 +411,7 @@ def test_create_agg_by_group_functions(
     )["results__tree"]
 
 
-def test_output_is_tree(minimal_input_data):
+def test_output_is_tree(minimal_input_data, backend, xnp):
     policy_environment = {
         "p_id": p_id,
         "module": {"some_func": some_func},
@@ -423,14 +423,14 @@ def test_output_is_tree(minimal_input_data):
             "policy_environment": policy_environment,
             "targets__tree": {"module": {"some_func": None}},
             "rounding": False,
-            "backend": "numpy",
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]
 
     assert isinstance(out, dict)
     assert "some_func" in out["module"]
-    assert isinstance(out["module"]["some_func"], numpy.ndarray)
+    assert isinstance(out["module"]["some_func"], xnp.ndarray)
 
 
 def test_params_target_is_allowed(minimal_input_data):
@@ -467,13 +467,15 @@ def test_params_target_is_allowed(minimal_input_data):
     assert out["some_param"] == 1
 
 
-def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input_data):
+def test_function_without_data_dependency_is_not_mistaken_for_data(
+    minimal_input_data, backend, xnp
+):
     @policy_function(leaf_name="a", vectorization_strategy="not_required")
-    def a() -> numpy.ndarray:
-        return numpy.array(minimal_input_data["p_id"])
+    def a() -> IntColumn:
+        return xnp.array(minimal_input_data["p_id"])
 
     @policy_function(leaf_name="b")
-    def b(a):
+    def b(a: int) -> int:
         return a
 
     policy_environment = {
@@ -486,12 +488,12 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(minimal_input
             "policy_environment": policy_environment,
             "targets__tree": {"b": None},
             "rounding": False,
-            "backend": "numpy",
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]
     numpy.testing.assert_array_almost_equal(
-        results__tree["b"], numpy.array(minimal_input_data["p_id"])
+        results__tree["b"], xnp.array(minimal_input_data["p_id"])
     )
 
 

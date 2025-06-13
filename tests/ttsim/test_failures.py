@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
+        IntColumn,
         NestedPolicyEnvironment,
         OrigParamSpec,
     )
@@ -142,7 +143,7 @@ def some_x(x):
 
 
 @policy_function()
-def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> numpy.ndarray:
+def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> IntColumn:
     return xnp.array([1, 2])
 
 
@@ -869,7 +870,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
         )["fail_if__input_data_tree_is_invalid"]
 
 
-def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
+def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
     def b(a):
         return a
 
@@ -891,7 +892,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
                 "policy_environment": policy_environment,
                 "targets__tree": {"c": None},
                 "rounding": False,
-                # "jit": jit,
+                "backend": backend,
             },
             targets=["results__tree", "fail_if__root_nodes_are_missing"],
         )

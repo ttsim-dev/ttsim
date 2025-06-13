@@ -5,31 +5,31 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
+    from ttsim.interface_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
 
 
 def join(
-    foreign_key: numpy.ndarray,
-    primary_key: numpy.ndarray,
-    target: numpy.ndarray,
+    foreign_key: IntColumn,
+    primary_key: IntColumn,
+    target: BoolColumn | IntColumn | FloatColumn,
     value_if_foreign_key_is_missing: float | bool,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> BoolColumn | IntColumn | FloatColumn:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
     the same index as the primary key. When using Jax, does not work on String Arrays.
 
     Parameters
     ----------
-    foreign_key : numpy.ndarray[Key]
+    foreign_key:
         The foreign keys.
-    primary_key : numpy.ndarray[Key]
+    primary_key:
         The primary keys.
-    target : numpy.ndarray[Out]
-        The targets in the same order as the primary keys.
-    value_if_foreign_key_is_missing : Out
+    target:
+        The targets, in the same order as the primary keys.
+    value_if_foreign_key_is_missing:
         The value to return if no matching primary key is found.
-    xnp : ModuleType
+    xnp:
         The numpy module to use for calculations.
 
     Returns

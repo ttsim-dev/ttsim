@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NewType, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
 
 if TYPE_CHECKING:
     # Make these available for import from other modules.
     import datetime
     from collections.abc import Mapping
 
-    import numpy
+    from jaxtyping import Array, Bool, Float, Int
 
     OrigParamSpec = (
         # Header
@@ -26,6 +26,10 @@ if TYPE_CHECKING:
         NestedTargetDict,
     )
 
+    BoolColumn: TypeAlias = Array[Bool, " n_obs"]  # type: ignore[name-defined]
+    IntColumn: TypeAlias = Array[Int, " n_obs"]  # type: ignore[name-defined]
+    FloatColumn: TypeAlias = Array[Float, " n_obs"]  # type: ignore[name-defined]
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Possible leaves of the various trees.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -39,13 +43,13 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for input, processing, and output; including metadata.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedData = Mapping[str, numpy.ndarray | "NestedData"]
+    NestedData = Mapping[str, BoolColumn | IntColumn | FloatColumn | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = Mapping[str, numpy.ndarray | "FlatData"]
+    FlatData = Mapping[str, BoolColumn | IntColumn | FloatColumn | "FlatData"]
     """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    QNameData = Mapping[str, numpy.ndarray]
+    QNameData = Mapping[str, BoolColumn | IntColumn | FloatColumn]
     """Mapping of qualified name paths to 1d arrays."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

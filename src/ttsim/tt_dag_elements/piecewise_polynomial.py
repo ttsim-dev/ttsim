@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Literal, get_args
 
 import numpy
 
+from ttsim.tt_dag_elements.param_objects import PiecewisePolynomialParamValue
+
 if TYPE_CHECKING:
     from types import ModuleType
 
-from ttsim.tt_dag_elements.param_objects import PiecewisePolynomialParamValue
+    from jaxtyping import Array, Float
 
 FUNC_TYPES = Literal[
     "piecewise_constant",
@@ -49,11 +51,11 @@ assert set(OPTIONS_REGISTRY.keys()) == set(get_args(FUNC_TYPES)), (
 
 
 def piecewise_polynomial(
-    x: numpy.ndarray,
+    x: Float[Array, " n_pp_values"],
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
-    rates_multiplier: numpy.ndarray | float = 1.0,
-) -> numpy.ndarray:
+    rates_multiplier: Float[Array, " n_segments"] | float = 1.0,
+) -> Float[Array, " n_pp_values"]:
     """Calculate value of the piecewise function at `x`. If the first interval begins
     at -inf the polynomial of that interval can only have slope of 0. Requesting a
     value outside of the provided thresholds will lead to undefined behaviour.
@@ -62,13 +64,8 @@ def piecewise_polynomial(
     ----------
     x:
         Array with values at which the piecewise polynomial is to be calculated.
-    thresholds:
-                A one-dimensional array containing the thresholds for all intervals.
-    coefficients:
-            A two-dimensional array where columns are interval sections and rows
-            correspond to the coefficient of the nth polynomial.
-    intercepts:
-        The intercepts at the lower threshold of each interval.
+    parameters:
+        The parameters of the piecewise polynomial.
     xnp:
         The backend module to use for calculations.
     rates_multiplier:
@@ -84,13 +81,13 @@ def piecewise_polynomial(
     # Get interval of requested value
     selected_bin = xnp.searchsorted(parameters.thresholds, x, side="right") - 1
     coefficients = parameters.rates[:, selected_bin].T
-    # Calculate distance from X to lower threshold
+    # Calculate distance from x to lower threshold
     increment_to_calc = xnp.where(
         parameters.thresholds[selected_bin] == -xnp.inf,
         0,
         x - parameters.thresholds[selected_bin],
     )
-    # Evaluate polynomial at X
+    # Evaluate polynomial at x
     out = (
         parameters.intercepts[selected_bin]
         + (
@@ -275,30 +272,15 @@ def _check_and_get_rates(
 def _check_and_get_intercepts(
     leaf_name: str,
     parameter_dict: dict[int, dict[str, float]],
-    lower_thresholds: numpy.ndarray,
-    upper_thresholds: numpy.ndarray,
-    rates: numpy.ndarray,
+    lower_thresholds: Float[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"],
+    rates: Float[Array, " n_segments"],
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> Float[Array, " n_segments"]:
     """Check and transfer raw intercept data. If necessary create intercepts.
 
     Transfer and check raw rates data, which needs to be specified in a
     piecewise_polynomial layout in the yaml file.
-
-    Parameters
-    ----------
-    parameter_dict
-    leaf_name
-    lower_thresholds
-    upper_thresholds
-    rates
-    keys
-    xnp : ModuleType
-        The numpy module to use for calculations.
-
-    Returns
-    -------
-
     """
     keys = sorted(parameter_dict.keys())
     intercepts = numpy.zeros(len(keys))
@@ -332,12 +314,12 @@ def _check_and_get_intercepts(
 
 
 def _create_intercepts(
-    lower_thresholds: numpy.ndarray,
-    upper_thresholds: numpy.ndarray,
-    rates: numpy.ndarray,
-    intercept_at_lowest_threshold: numpy.ndarray,
+    lower_thresholds: Float[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"],
+    rates: Float[Array, " n_segments"],
+    intercept_at_lowest_threshold: float,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> Float[Array, " n_segments"]:
     """Create intercepts from raw data.
 
     Parameters
@@ -376,32 +358,30 @@ def _create_intercepts(
 
 def _calculate_one_intercept(
     x: float,
-    lower_thresholds: numpy.ndarray,
-    upper_thresholds: numpy.ndarray,
-    rates: numpy.ndarray,
-    intercepts: numpy.ndarray,
+    lower_thresholds: Float[Array, " n_segments"],
+    upper_thresholds: Float[Array, " n_segments"],
+    rates: Float[Array, " n_segments"],
+    intercepts: Float[Array, " n_segments"],
 ) -> float:
-    """Calculate the intercepts from the raw data.
+    """Calculate the intercept for the segment `x` lies in.
 
     Parameters
     ----------
-    x : float
+    x
         The value that the function is applied to.
-    lower_thresholds : numpy.ndarray
+    lower_thresholds
         A one-dimensional array containing lower thresholds of each interval.
-    upper_thresholds : numpy.ndarray
+    upper_thresholds
         A one-dimensional array containing upper thresholds each interval.
-    rates : numpy.ndarray
+    rates
         A two-dimensional array where columns are interval sections and rows correspond
         to the nth polynomial.
-    intercepts : numpy.ndarray
+    intercepts
         The intercepts at the lower threshold of each interval.
-    xnp : ModuleType
-        The numpy module to use for calculations.
 
     Returns
     -------
-    out : float
+    out
         The value of `x` under the piecewise function.
 
     """

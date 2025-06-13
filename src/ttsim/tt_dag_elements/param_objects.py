@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     import datetime
     from types import ModuleType
 
+    from jaxtyping import Array, Float
+
 
 @dataclass(frozen=True)
 class ParamObject:
@@ -46,7 +48,7 @@ class ParamObject:
     def dummy_callable(self) -> ParamFunction:
         """Dummy callable for the policy input. Just used for plotting."""
 
-        def dummy() -> str(type(self).__name__):
+        def dummy():  # type: ignore[no-untyped-def]
             pass
 
         return param_function(
@@ -146,9 +148,9 @@ class RawParam(ParamObject):
 class PiecewisePolynomialParamValue:
     """The parameters expected by piecewise_polynomial"""
 
-    thresholds: numpy.ndarray
-    intercepts: numpy.ndarray
-    rates: numpy.ndarray
+    thresholds: Float[Array, " n_segments"]
+    intercepts: Float[Array, " n_segments"]
+    rates: Float[Array, " n_segments"]
 
 
 @dataclass(frozen=True)
@@ -156,7 +158,7 @@ class ConsecutiveInt1dLookupTableParamValue:
     """The parameters expected by lookup_table"""
 
     base_to_subtract: int
-    values_to_look_up: numpy.ndarray
+    values_to_look_up: Float[Array, " n_values_to_look_up"]
 
 
 @dataclass(frozen=True)
@@ -165,7 +167,7 @@ class ConsecutiveInt2dLookupTableParamValue:
 
     base_to_subtract_rows: int
     base_to_subtract_cols: int
-    values_to_look_up: numpy.ndarray
+    values_to_look_up: Float[Array, "n_rows n_cols"]
 
 
 def get_consecutive_int_1d_lookup_table_param_value(

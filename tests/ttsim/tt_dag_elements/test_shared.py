@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from types import ModuleType
-
 import numpy
 import pytest
 
 from ttsim.tt_dag_elements import join
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from ttsim.interface_dag_elements.typing import IntColumn
 
 
 @pytest.mark.parametrize(
@@ -45,18 +47,18 @@ from ttsim.tt_dag_elements import join
     ],
 )
 def test_join(
-    foreign_key: numpy.ndarray,
-    primary_key: numpy.ndarray,
-    target: numpy.ndarray,
+    foreign_key: IntColumn,
+    primary_key: IntColumn,
+    target: IntColumn,
     value_if_foreign_key_is_missing: int,
-    expected: numpy.ndarray,
+    expected: IntColumn,
     xnp: ModuleType,
 ):
     assert numpy.array_equal(
         join(
-            foreign_key=xnp.array(foreign_key),
-            primary_key=xnp.array(primary_key),
-            target=xnp.array(target),
+            foreign_key=xnp.asarray(foreign_key),
+            primary_key=xnp.asarray(primary_key),
+            target=xnp.asarray(target),
             value_if_foreign_key_is_missing=value_if_foreign_key_is_missing,
             xnp=xnp,
         ),

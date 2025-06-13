@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    import numpy
+    from ttsim.interface_dag_elements.typing import FloatColumn
 
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
@@ -38,8 +38,8 @@ class RoundingSpec:
             )
 
     def apply_rounding(
-        self, func: Callable[P, numpy.ndarray], xnp: ModuleType
-    ) -> Callable[P, numpy.ndarray]:
+        self, func: Callable[P, FloatColumn], xnp: ModuleType
+    ) -> Callable[P, FloatColumn]:
         """Decorator to round the output of a function.
 
         Parameters
@@ -55,7 +55,7 @@ class RoundingSpec:
         """
 
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> numpy.ndarray:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
             out = func(*args, **kwargs)
 
             if self.direction == "up":

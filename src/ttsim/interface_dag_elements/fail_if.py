@@ -436,8 +436,8 @@ def non_convertible_objects_in_results_tree(
     _numeric_types = (int, float, bool, xnp.integer, xnp.floating, xnp.bool_)
     expected_object_length = len(next(iter(processed_data.values())))
 
-    paths_with_incorrect_types = []
-    paths_with_incorrect_length = []
+    paths_with_incorrect_types: list[str] = []
+    paths_with_incorrect_length: list[str] = []
     for path, data in dt.flatten_to_tree_paths(results__tree).items():
         if isinstance(data, xnp.ndarray) and len(data) not in {
             1,
@@ -750,39 +750,3 @@ def _param_with_active_periods(
         )
 
     return out
-
-
-def fail_if__dtype_not_int(
-    data: numpy.ndarray,
-    agg_func: str,
-    xnp: ModuleType,
-) -> None:
-    """Check if data is of integer type."""
-    if not xnp.issubdtype(data.dtype, xnp.integer):
-        raise TypeError(
-            f"Data in {agg_func} must be of integer type, but is {data.dtype}."
-        )
-
-
-def fail_if__dtype_not_numeric_or_datetime(
-    data: numpy.ndarray,
-    agg_func: str,
-    xnp: ModuleType,
-) -> None:
-    """Check if data is of numeric or datetime type."""
-    if not xnp.issubdtype(data.dtype, (xnp.number, xnp.datetime64)):
-        raise TypeError(
-            f"Data in {agg_func} must be of numeric or datetime type, but is {data.dtype}."
-        )
-
-
-def fail_if__dtype_not_numeric_or_boolean(
-    data: numpy.ndarray,
-    agg_func: str,
-    xnp: ModuleType,
-) -> None:
-    """Check if data is of numeric or boolean type."""
-    if not xnp.issubdtype(data.dtype, (xnp.number, xnp.bool_)):
-        raise TypeError(
-            f"Data in {agg_func} must be of numeric or boolean type, but is {data.dtype}."
-        )

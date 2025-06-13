@@ -1,7 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
 from ttsim.interface_dag_elements.backend import dnp as ttsim_dnp
 from ttsim.interface_dag_elements.backend import xnp as ttsim_xnp
+
+if TYPE_CHECKING:
+    from types import ModuleType
+    from typing import Literal
 
 
 # content of conftest.py
@@ -14,24 +22,20 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
-    config.addinivalue_line("markers", "skipif_jax: skip test if backend is jax")
-
-
 @pytest.fixture
-def backend(request):
+def backend(request) -> Literal["numpy", "jax"]:
     backend = request.config.getoption("--backend")
     return backend
 
 
 @pytest.fixture
-def xnp(request):
+def xnp(request) -> ModuleType:
     backend = request.config.getoption("--backend")
     return ttsim_xnp(backend)
 
 
 @pytest.fixture
-def dnp(request):
+def dnp(request) -> ModuleType:
     backend = request.config.getoption("--backend")
     return ttsim_dnp(backend)
 

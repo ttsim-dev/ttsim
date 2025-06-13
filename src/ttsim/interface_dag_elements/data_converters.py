@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from types import ModuleType
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import pandas as pd
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import (
         NestedData,
         NestedInputsMapper,

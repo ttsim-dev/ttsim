@@ -16,8 +16,7 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
-
+    from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
@@ -123,11 +122,11 @@ def kind_bis_10_mit_kindergeld(
 
 @policy_function(vectorization_strategy="not_required")
 def gleiche_fg_wie_empfänger(
-    p_id: numpy.ndarray,  # int
-    p_id_empfänger: numpy.ndarray,  # int
-    fg_id: numpy.ndarray,  # int
+    p_id: IntColumn,
+    p_id_empfänger: IntColumn,
+    fg_id: IntColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:  # bool
+) -> BoolColumn:
     """The child's Kindergeldempfänger is in the same Familiengemeinschaft."""
     fg_id_kindergeldempfänger = join(
         foreign_key=p_id_empfänger,
