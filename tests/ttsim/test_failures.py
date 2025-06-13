@@ -35,6 +35,7 @@ from ttsim.tt_dag_elements import (
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
     group_creation_function,
+    param_function,
     policy_function,
 )
 
@@ -142,8 +143,13 @@ def some_x(x):
 
 
 @policy_function()
-def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> numpy.ndarray:
+def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> numpy.ndarray:  # type: ignore[type-arg]
     return xnp.array([1, 2])
+
+
+@param_function()
+def some_param_func_returning_list_of_length_2() -> list[int]:
+    return [1, 2]
 
 
 @pytest.mark.parametrize(
@@ -737,6 +743,13 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
                 ),
             },
             {"some_consecutive_int_1d_lookup_table_param": "res1"},
+            "The data contains objects that cannot be cast to a pandas.DataFrame",
+        ),
+        (
+            {
+                "some_param_func_returning_list_of_length_2": some_param_func_returning_list_of_length_2,
+            },
+            {"some_param_func_returning_list_of_length_2": "res1"},
             "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
     ],
