@@ -746,19 +746,19 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     minimal_data_tree,
     match,
 ):
-    results__tree = main(
+    actual = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
         },
-        targets=["results__tree"],
-    )["results__tree"]
+        targets=["processed_data", "results__tree"],
+    )
     with pytest.raises(TypeError, match=match):
         non_convertible_objects_in_results_tree(
-            results__tree=results__tree,
-            input_data__tree=minimal_data_tree,
+            processed_data=actual["processed_data"],
+            results__tree=actual["results__tree"],
         )
 
 
@@ -784,19 +784,19 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
     minimal_data_tree,
     match,
 ):
-    results__tree = main(
+    actual = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
         },
-        targets=["results__tree"],
-    )["results__tree"]
+        targets=["processed_data", "results__tree"],
+    )
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
-            results__tree=results__tree,
-            input_data__tree=minimal_data_tree,
+            processed_data=actual["processed_data"],
+            results__tree=actual["results__tree"],
         )
 
 

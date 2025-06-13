@@ -423,13 +423,13 @@ def group_variables_are_not_constant_within_groups(
 
 @interface_function()
 def non_convertible_objects_in_results_tree(
-    input_data__tree: NestedData,
+    processed_data: QNameData,
     results__tree: NestedData,
 ) -> None:
     """Fail if results should be converted to a DataFrame but contain non-convertible
     objects."""
     _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
-    expected_object_length = len(input_data__tree["p_id"])
+    expected_object_length = len(next(iter(processed_data.values())))
 
     paths_with_incorrect_types = []
     paths_with_incorrect_length = []
