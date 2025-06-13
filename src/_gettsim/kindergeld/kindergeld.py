@@ -22,7 +22,9 @@ if TYPE_CHECKING:
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_ansprüche(
-    grundsätzlich_anspruchsberechtigt: bool, p_id_empfänger: int, p_id: int
+    grundsätzlich_anspruchsberechtigt: bool,
+    p_id_empfänger: int,
+    p_id: int,
 ) -> int:
     pass
 
@@ -158,5 +160,6 @@ def satz_nach_anzahl_kinder(
         for k in range(max_num_children_in_spec + 1, max_num_children)
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        raw={0: 0.0, **base_spec, **extended_spec}, xnp=xnp
+        raw={0: 0.0, **base_spec, **extended_spec},
+        xnp=xnp,
     )

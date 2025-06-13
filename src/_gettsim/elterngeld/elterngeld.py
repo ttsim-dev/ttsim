@@ -13,7 +13,8 @@ from ttsim.tt_dag_elements import (
 
 @agg_by_group_function(agg_type=AggType.ANY)
 def kind_grundsätzlich_anspruchsberechtigt_fg(
-    kind_grundsätzlich_anspruchsberechtigt: bool, fg_id: int
+    kind_grundsätzlich_anspruchsberechtigt: bool,
+    fg_id: int,
 ) -> bool:
     pass
 
@@ -49,7 +50,8 @@ def anzahl_kinder_bis_5_fg(familie__kind_bis_5: bool, fg_id: int) -> int:
 
 @agg_by_group_function(agg_type=AggType.SUM)
 def anzahl_mehrlinge_jüngstes_kind_fg(
-    jüngstes_kind_oder_mehrling: bool, fg_id: int
+    jüngstes_kind_oder_mehrling: bool,
+    fg_id: int,
 ) -> int:
     pass
 

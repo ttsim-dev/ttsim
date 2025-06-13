@@ -12,7 +12,9 @@ from ttsim.tt_dag_elements import (
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def kinderbetreuungskosten_elternteil_m(
-    kinderbetreuungskosten_m: float, p_id_kinderbetreuungskostenträger: int, p_id: int
+    kinderbetreuungskosten_m: float,
+    p_id_kinderbetreuungskostenträger: int,
+    p_id: int,
 ) -> float:
     pass
 

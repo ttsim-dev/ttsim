@@ -24,20 +24,17 @@ def pytest_addoption(parser):
 
 @pytest.fixture
 def backend(request) -> Literal["numpy", "jax"]:
-    backend = request.config.getoption("--backend")
-    return backend
+    return request.config.getoption("--backend")
 
 
 @pytest.fixture
 def xnp(request) -> ModuleType:
-    backend = request.config.getoption("--backend")
-    return ttsim_xnp(backend)
+    return ttsim_xnp(request.config.getoption("--backend"))
 
 
 @pytest.fixture
 def dnp(request) -> ModuleType:
-    backend = request.config.getoption("--backend")
-    return ttsim_dnp(backend)
+    return ttsim_dnp(request.config.getoption("--backend"))
 
 
 @pytest.fixture(autouse=True)

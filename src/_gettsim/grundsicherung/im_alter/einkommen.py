@@ -131,7 +131,8 @@ def private_rente_betrag_m(
     upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
 
     return sozialversicherung__rente__private_rente_betrag_m - min(
-        sozialversicherung__rente__private_rente_betrag_m_amount_exempt, upper
+        sozialversicherung__rente__private_rente_betrag_m_amount_exempt,
+        upper,
     )
 
 

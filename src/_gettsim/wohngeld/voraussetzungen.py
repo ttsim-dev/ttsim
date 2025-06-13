@@ -23,7 +23,8 @@ def grundsätzlich_anspruchsberechtigt_wthh_ohne_vermögensprüfung(
 
 
 @policy_function(
-    start_date="2009-01-01", leaf_name="grundsätzlich_anspruchsberechtigt_wthh"
+    start_date="2009-01-01",
+    leaf_name="grundsätzlich_anspruchsberechtigt_wthh",
 )
 def grundsätzlich_anspruchsberechtigt_wthh_mit_vermögensprüfung(
     mindesteinkommen_erreicht_wthh: bool,
@@ -56,7 +57,8 @@ def grundsätzlich_anspruchsberechtigt_bg_ohne_vermögensprüfung(
 
 
 @policy_function(
-    start_date="2009-01-01", leaf_name="grundsätzlich_anspruchsberechtigt_bg"
+    start_date="2009-01-01",
+    leaf_name="grundsätzlich_anspruchsberechtigt_bg",
 )
 def grundsätzlich_anspruchsberechtigt_bg_mit_vermögensprüfung(
     mindesteinkommen_erreicht_bg: bool,

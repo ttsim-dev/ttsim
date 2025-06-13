@@ -113,7 +113,9 @@ def test_dataframe_to_nested_data(
     assert set(flat_result.keys()) == set(flat_expected_output.keys())
     for key in flat_result:
         pd.testing.assert_series_equal(
-            pd.Series(flat_result[key]), flat_expected_output[key], check_names=False
+            pd.Series(flat_result[key]),
+            flat_expected_output[key],
+            check_names=False,
         )
 
 

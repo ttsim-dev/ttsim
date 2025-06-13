@@ -27,11 +27,14 @@ def geringfügig_beschäftigt(
     end_date="1999-12-31",
     leaf_name="minijobgrenze",
     rounding_spec=RoundingSpec(
-        base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
+        base=1,
+        direction="up",
+        reference="§ 8 Abs. 1a Satz 2 SGB IV",
     ),
 )
 def minijobgrenze_unterscheidung_ost_west(
-    wohnort_ost: bool, parameter_minijobgrenze_ost_west_unterschied: dict[str, float]
+    wohnort_ost: bool,
+    parameter_minijobgrenze_ost_west_unterschied: dict[str, float],
 ) -> float:
     """Minijob income threshold depending on place of living (East or West Germany).
 
@@ -48,7 +51,9 @@ def minijobgrenze_unterscheidung_ost_west(
     start_date="2022-10-01",
     leaf_name="minijobgrenze",
     rounding_spec=RoundingSpec(
-        base=1, direction="up", reference="§ 8 Abs. 1a Satz 2 SGB IV"
+        base=1,
+        direction="up",
+        reference="§ 8 Abs. 1a Satz 2 SGB IV",
     ),
 )
 def minijobgrenze_abgeleitet_von_mindestlohn(

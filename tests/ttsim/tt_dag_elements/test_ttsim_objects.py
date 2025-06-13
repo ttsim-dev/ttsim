@@ -206,7 +206,8 @@ def test_wrong_number_of_group_ids_present():
 
         @agg_by_group_function(agg_type=AggType.COUNT)
         def aggregate_by_group_count_multiple_group_ids_present(
-            group_id, another_group_id
+            group_id,
+            another_group_id,
         ):
             pass
 
@@ -259,7 +260,7 @@ def test_agg_by_p_id_count_other_arg_present():
             pass
 
 
-def test_agg_by_p_id_sum_wrong_amount_of_args():
+def test_agg_by_p_id_sum_no_arg_present():
     match = "There must be exactly one argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
@@ -267,9 +268,17 @@ def test_agg_by_p_id_sum_wrong_amount_of_args():
         def aggregate_by_p_id_sum_no_arg_present(p_id, p_id_specifier):
             pass
 
+
+def test_agg_by_p_id_sum_multiple_args_present():
+    match = "There must be exactly one argument besides identifiers"
+    with pytest.raises(ValueError, match=match):
+
         @agg_by_p_id_function(agg_type=AggType.SUM)
         def aggregate_by_p_id_sum_multiple_args_present(
-            p_id, p_id_specifier, arg, another_arg
+            p_id,
+            p_id_specifier,
+            arg,
+            another_arg,
         ):
             pass
 
@@ -280,7 +289,9 @@ def test_agg_by_p_id_multiple_other_p_ids_present():
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
         def aggregate_by_p_id_multiple_other_p_ids_present(
-            p_id, p_id_specifier_one, p_id_specifier_two
+            p_id,
+            p_id_specifier_one,
+            p_id_specifier_two,
         ):
             pass
 

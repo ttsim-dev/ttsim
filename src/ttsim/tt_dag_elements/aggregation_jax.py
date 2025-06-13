@@ -14,58 +14,80 @@ if TYPE_CHECKING:
 
 def grouped_count(group_id: IntColumn, num_segments: int) -> jnp.ndarray:
     out_grouped = segment_sum(
-        data=jnp.ones(len(group_id)), segment_ids=group_id, num_segments=num_segments
+        data=jnp.ones(len(group_id)),
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     return out_grouped[group_id]
 
 
 def grouped_sum(
-    column: FloatColumn | IntColumn | BoolColumn, group_id: IntColumn, num_segments: int
+    column: FloatColumn | IntColumn | BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
 ) -> FloatColumn | IntColumn:
     if column.dtype in ["bool"]:
         column = column.astype(int)
 
     out_grouped = segment_sum(
-        data=column, segment_ids=group_id, num_segments=num_segments
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     return out_grouped[group_id]
 
 
 def grouped_mean(
-    column: FloatColumn | IntColumn | BoolColumn, group_id: IntColumn, num_segments: int
+    column: FloatColumn | IntColumn | BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
 ) -> FloatColumn:
     if column.dtype in ["bool"]:
         column = column.astype(int)
     sum_grouped = segment_sum(
-        data=column, segment_ids=group_id, num_segments=num_segments
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     sizes = segment_sum(
-        data=jnp.ones(len(column)), segment_ids=group_id, num_segments=num_segments
+        data=jnp.ones(len(column)),
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     mean_grouped = sum_grouped / sizes
     return mean_grouped[group_id]
 
 
 def grouped_max(
-    column: FloatColumn | IntColumn, group_id: IntColumn, num_segments: int
+    column: FloatColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
 ) -> FloatColumn | IntColumn:
     out_grouped = segment_max(
-        data=column, segment_ids=group_id, num_segments=num_segments
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     return out_grouped[group_id]
 
 
 def grouped_min(
-    column: FloatColumn | IntColumn, group_id: IntColumn, num_segments: int
+    column: FloatColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
 ) -> FloatColumn | IntColumn:
     out_grouped = segment_min(
-        data=column, segment_ids=group_id, num_segments=num_segments
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     return out_grouped[group_id]
 
 
 def grouped_any(
-    column: BoolColumn | IntColumn, group_id: IntColumn, num_segments: int
+    column: BoolColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
 ) -> BoolColumn:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
@@ -74,20 +96,26 @@ def grouped_any(
         my_col = column
 
     out_grouped = segment_max(
-        data=my_col, segment_ids=group_id, num_segments=num_segments
+        data=my_col,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     return out_grouped[group_id]
 
 
 def grouped_all(
-    column: BoolColumn | IntColumn, group_id: IntColumn, num_segments: int
+    column: BoolColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
 ) -> BoolColumn:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
         column = column.astype("bool")
 
     out_grouped = segment_min(
-        data=column, segment_ids=group_id, num_segments=num_segments
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     return out_grouped[group_id]
 

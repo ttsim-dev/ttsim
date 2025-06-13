@@ -132,7 +132,9 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
         _frozen_safe_update_wrapper(self, self.function)
 
     def __call__(
-        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+        self,
+        *args: FunArgTypes.args,
+        **kwargs: FunArgTypes.kwargs,
     ) -> ReturnType:
         return self.function(*args, **kwargs)
 

@@ -15,11 +15,11 @@ def geburtsdatum(
 ) -> numpy.datetime64:
     """Create date of birth datetime variable."""
     return numpy.datetime64(
-        datetime.datetime(
+        datetime.datetime(  # noqa: DTZ001
             geburtsjahr,
             geburtsmonat,
             geburtstag,
-        )
+        ),
     ).astype("datetime64[D]")
 
 

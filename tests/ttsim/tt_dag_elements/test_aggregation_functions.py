@@ -10,7 +10,7 @@ try:
 
     my_datetime = jax_datetime.to_datetime
 except ImportError:
-    my_datetime = lambda x: x
+    my_datetime = lambda x: x  # noqa: E731
 
 
 from ttsim.tt_dag_elements.aggregation import (
@@ -184,7 +184,7 @@ test_grouped_specs["datetime"] = {
             numpy.datetime64("2002"),
             numpy.datetime64("2003"),
             numpy.datetime64("2004"),
-        ]
+        ],
     ),
     "group_id": numpy.array([1, 0, 1, 1, 1]),
     "expected_res_max": numpy.array(
@@ -194,7 +194,7 @@ test_grouped_specs["datetime"] = {
             numpy.datetime64("2004"),
             numpy.datetime64("2004"),
             numpy.datetime64("2004"),
-        ]
+        ],
     ),
     "expected_res_min": numpy.array(
         [
@@ -203,7 +203,7 @@ test_grouped_specs["datetime"] = {
             numpy.datetime64("2000"),
             numpy.datetime64("2000"),
             numpy.datetime64("2000"),
-        ]
+        ],
     ),
 }
 
@@ -226,7 +226,7 @@ test_grouped_raises_specs["datetime"] = {
             numpy.datetime64("2002"),
             numpy.datetime64("2003"),
             numpy.datetime64("2004"),
-        ]
+        ],
     ),
     "group_id": numpy.array([0, 0, 1, 1, 1]),
     "error_sum": TypeError,
@@ -416,7 +416,11 @@ def test_grouped_all(column_to_aggregate, group_id, expected_res_all, backend):
 )
 @pytest.mark.skipif_jax
 def test_grouped_sum_raises(
-    column_to_aggregate, group_id, error_sum, exception_match, backend
+    column_to_aggregate,
+    group_id,
+    error_sum,
+    exception_match,
+    backend,
 ):
     with pytest.raises(
         error_sum,
@@ -441,7 +445,11 @@ def test_grouped_sum_raises(
 )
 @pytest.mark.skipif_jax
 def test_grouped_mean_raises(
-    column_to_aggregate, group_id, error_mean, exception_match, backend
+    column_to_aggregate,
+    group_id,
+    error_mean,
+    exception_match,
+    backend,
 ):
     with pytest.raises(
         error_mean,
@@ -466,7 +474,11 @@ def test_grouped_mean_raises(
 )
 @pytest.mark.skipif_jax
 def test_grouped_max_raises(
-    column_to_aggregate, group_id, error_max, exception_match, backend
+    column_to_aggregate,
+    group_id,
+    error_max,
+    exception_match,
+    backend,
 ):
     with pytest.raises(
         error_max,
@@ -491,7 +503,11 @@ def test_grouped_max_raises(
 )
 @pytest.mark.skipif_jax
 def test_grouped_min_raises(
-    column_to_aggregate, group_id, error_min, exception_match, backend
+    column_to_aggregate,
+    group_id,
+    error_min,
+    exception_match,
+    backend,
 ):
     with pytest.raises(
         error_min,
@@ -516,7 +532,11 @@ def test_grouped_min_raises(
 )
 @pytest.mark.skipif_jax
 def test_grouped_any_raises(
-    column_to_aggregate, group_id, error_any, exception_match, backend
+    column_to_aggregate,
+    group_id,
+    error_any,
+    exception_match,
+    backend,
 ):
     with pytest.raises(
         error_any,
@@ -541,7 +561,11 @@ def test_grouped_any_raises(
 )
 @pytest.mark.skipif_jax
 def test_grouped_all_raises(
-    column_to_aggregate, group_id, error_all, exception_match, backend
+    column_to_aggregate,
+    group_id,
+    error_all,
+    exception_match,
+    backend,
 ):
     with pytest.raises(
         error_all,

@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def an_elternteil_auszuzahlender_betrag_m(
-    betrag_m: float, kindergeld__p_id_empfänger: int, p_id: int
+    betrag_m: float,
+    kindergeld__p_id_empfänger: int,
+    p_id: int,
 ) -> float:
     pass
 
@@ -31,7 +33,9 @@ def an_elternteil_auszuzahlender_betrag_m(
 @policy_function(
     start_date="2009-01-01",
     rounding_spec=RoundingSpec(
-        base=1, direction="up", reference="§ 9 Abs. 3 UhVorschG"
+        base=1,
+        direction="up",
+        reference="§ 9 Abs. 3 UhVorschG",
     ),
 )
 def betrag_m(
@@ -88,14 +92,16 @@ def elternteil_alleinerziehend(
     end_date="2008-12-31",
     leaf_name="betrag_m",
     rounding_spec=RoundingSpec(
-        base=1, direction="down", reference="§ 9 Abs. 3 UhVorschG"
+        base=1,
+        direction="down",
+        reference="§ 9 Abs. 3 UhVorschG",
     ),
 )
 def not_implemented_m() -> float:
     raise NotImplementedError(
         """
         Unterhaltsvorschuss is not implemented prior to 2009.
-    """
+    """,
     )
 
 
@@ -319,7 +325,9 @@ def einkommen_m(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def unterhaltsvorschuss_spec_target(
-    unterhaltsvorschuss_source_field: bool, p_id_field: int, p_id: int
+    unterhaltsvorschuss_source_field: bool,
+    p_id_field: int,
+    p_id: int,
 ) -> int:
     pass
 

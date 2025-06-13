@@ -62,7 +62,8 @@ def beitragssatz_arbeitnehmer_mit_abschlag_nach_kinderzahl(
         add = add + beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
     if anzahl_kinder_bis_24 >= 2:
         add = add - beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"] * min(
-            anzahl_kinder_bis_24 - 1, 4
+            anzahl_kinder_bis_24 - 1,
+            4,
         )
 
     return base + add
@@ -110,7 +111,9 @@ def anzahl_kinder_bis_24(
 
 
 @param_function(
-    start_date="1995-01-01", end_date="2004-12-31", leaf_name="beitragssatz_arbeitgeber"
+    start_date="1995-01-01",
+    end_date="2004-12-31",
+    leaf_name="beitragssatz_arbeitgeber",
 )
 def beitragssatz_arbeitgeber_einheitliche_basis(beitragssatz: float) -> float:
     """Employer's long-term care insurance contribution rate."""

@@ -29,7 +29,9 @@ class LookupTableBaujahr:
 
 
 @param_function(
-    start_date="1984-01-01", end_date="2008-12-31", leaf_name="max_miete_m_lookup"
+    start_date="1984-01-01",
+    end_date="2008-12-31",
+    leaf_name="max_miete_m_lookup",
 )
 def max_miete_m_lookup_mit_baujahr(
     raw_max_miete_m_nach_baujahr: dict[int | str, dict[int, dict[int, float]]],
@@ -54,7 +56,8 @@ def max_miete_m_lookup_mit_baujahr(
                 for ms in this_dict[max_n_p_defined]
             }
         lookup_table = get_consecutive_int_2d_lookup_table_param_value(
-            raw=this_dict, xnp=xnp
+            raw=this_dict,
+            xnp=xnp,
         )
         values.append(lookup_table.values_to_look_up)
         subtract_cols.append(lookup_table.base_to_subtract_cols)
@@ -198,7 +201,8 @@ def miete_m_bg(
 
 @policy_function()
 def min_miete_m_hh(
-    anzahl_personen_hh: int, min_miete_lookup: ConsecutiveInt1dLookupTableParamValue
+    anzahl_personen_hh: int,
+    min_miete_lookup: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """Minimum rent considered in Wohngeld calculation."""
     return min_miete_lookup.values_to_look_up[

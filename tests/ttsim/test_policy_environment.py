@@ -121,7 +121,8 @@ def test_start_date_valid(date_string: str, expected: datetime.date):
 )
 def test_start_date_invalid(date_string: str):
     with pytest.raises(
-        ValueError, match="neither matches the format YYYY-MM-DD nor is a datetime.date"
+        ValueError,
+        match="neither matches the format YYYY-MM-DD nor is a datetime.date",
     ):
 
         @policy_function(start_date=date_string)
@@ -161,7 +162,8 @@ def test_end_date_valid(date_string: str, expected: datetime.date):
 )
 def test_end_date_invalid(date_string: str):
     with pytest.raises(
-        ValueError, match="neither matches the format YYYY-MM-DD nor is a datetime.date"
+        ValueError,
+        match="neither matches the format YYYY-MM-DD nor is a datetime.date",
     ):
 
         @policy_function(end_date=date_string)

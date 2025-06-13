@@ -197,48 +197,28 @@ unsafe-fixes = false
 [tool.ruff.lint]
 select = ["ALL"]
 extend-ignore = [
-    "ICN001", # numpy should be np, but different convention here.
-    # Docstrings
-    "D103", # missing docstring in public function
-    "D107",
-    "D203",
-    "D212",
-    "D213",
-    "D402",
-    "D413",
-    "D415",
-    "D416",
-    "D417",
+    "COM812", # Avoid conflicts with ruff-format
+    "EM101", # Exception must not use a string literal
+    "EM102", # Exception must not use an f-string literal
     "F722", # https://docs.kidger.site/jaxtyping/faq/#flake8-or-ruff-are-throwing-an-error
     "FBT001", # Boolean-typed positional argument in function definition
+    "FIX002", # Line contains TODO -- Use stuff from TD area.
+    "ICN001", # numpy should be np, but different convention here.
     "ISC001", # Avoid conflicts with ruff-format
     "N999", # Allow non-ASCII characters in file names.
     "PLC2401", # Allow non-ASCII characters in variable names.
     "PLC2403", # Allow non-ASCII function names for imports.
     "PLR0913", # Allow too many arguments in function definitions.
-    "FIX002", # Line contains TODO -- Use stuff from TD area.
-    "TRY003", # Avoid specifying long messages outside the exception class
     "PLR5501", # elif not supported by vectorization converter for Jax
-    "EM101", # Exception must not use a string literal
-    "EM102", # Exception must not use an f-string literal
-    # Others.
-
-    "E731", # do not assign a lambda expression, use a def
-    "RET", # unnecessary elif or else statements after return, raise, continue, ...
-    "S324", # Probable use of insecure hash function.
-    "COM812", # trailing comma missing, but black takes care of that
-    "PT007", # wrong type in parametrize, gave false positives
-    "DTZ001", # use of `datetime.datetime()` without `tzinfo` argument is not allowed
-    "DTZ002", # use of `datetime.datetime.today()` is not allowed
-    "PT012", # `pytest.raises()` block should contain a single simple statement
-
+    "TRY003", # Avoid specifying long messages outside the exception class
 
     # Ignored during transition phase
     # ======================================
     "D", # docstrings
-    "PLR2004", # Magic values used in comparison
     "INP001", # implicit namespace packages without init.
+    "PLR2004", # Magic values used in comparison
     "PT006", # Allows only lists of tuples in parametrize, even if single argument
+    "PT007", # wrong type in parametrize
     "S101", # use of asserts outside of tests
 
 ]
@@ -248,17 +228,17 @@ exclude = []
 "conftest.py" = ["ANN"]
 "docs/**/*.ipynb" = ["T201"]
 # Mostly things vectorization can't handle
-"src/_gettsim/*" = ["E501", "PLR1714", "PLR1716", "E721", "SIM108"]
+"src/_gettsim/*" = ["E501", "PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
 "src/_gettsim_tests/**/*.py" = ["ANN", "S101"]
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 "src/ttsim/interface_dag_elements/typing.py" = ["PGH", "PLR", "SIM114"]
 # Mostly things vectorization can't handle
-"tests/ttsim/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108"]
+"tests/ttsim/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
+"tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
 "tests/ttsim/**/*.py" = ["ANN", "S101"]
-"tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108"]
 "tests/ttsim/test_failures.py" = ["E501"]
 # TODO: remove once ported nicely
 "src/ttsim/stale_code_storage.py" = ["ALL"]
@@ -298,20 +278,12 @@ disallow_untyped_defs = false
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = [
-    "tests.*",
-]
-disable_error_code = [
-    "no-untyped-def",  # All tests return None, don't clutter source code.
-]
+module = ["tests.*",]
+disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter source code.
 
 [[tool.mypy.overrides]]
-module = [
-    "src._gettsim_tests.*",
-]
-disable_error_code = [
-    "no-untyped-def",  # All tests return None, don't clutter source code.
-]
+module = ["src._gettsim_tests.*",]
+disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter source code.
 
 [tool.check-manifest]
 ignore = ["src/_gettsim/_version.py"]

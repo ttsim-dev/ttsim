@@ -103,7 +103,9 @@ def some_converting_params_func(
 
 @param_function()
 def some_param_function_taking_scalar(
-    some_int_scalar: int, some_float_scalar: float, some_bool_scalar: bool
+    some_int_scalar: int,
+    some_float_scalar: float,
+    some_bool_scalar: bool,
 ) -> float:
     return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
@@ -179,22 +181,20 @@ SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
 @pytest.fixture(scope="module")
 def minimal_input_data():
     n_individuals = 5
-    out = {
+    return {
         "p_id": numpy.arange(n_individuals),
         "fam_id": numpy.arange(n_individuals),
     }
-    return out
 
 
 @pytest.fixture(scope="module")
 def minimal_input_data_shared_fam():
     n_individuals = 3
-    out = {
+    return {
         "p_id": numpy.arange(n_individuals),
         "fam_id": numpy.array([0, 0, 1]),
         "p_id_someone_else": numpy.array([1, 0, -1]),
     }
-    return out
 
 
 @agg_by_group_function(agg_type=AggType.SUM)
@@ -297,7 +297,8 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
-                        leaf_name="f", vectorization_strategy="vectorize"
+                        leaf_name="f",
+                        vectorization_strategy="vectorize",
                     )(return_n1__x_kin),
                     "x": x,
                 },
@@ -334,7 +335,8 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
-                        leaf_name="f", vectorization_strategy="vectorize"
+                        leaf_name="f",
+                        vectorization_strategy="vectorize",
                     )(some_x),
                     "x": x,
                 },
@@ -354,7 +356,8 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
-                        leaf_name="f", vectorization_strategy="vectorize"
+                        leaf_name="f",
+                        vectorization_strategy="vectorize",
                     )(some_x),
                     "x": x,
                 },
@@ -375,7 +378,8 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "p_id": p_id,
                 "n1": {
                     "f": policy_function(
-                        leaf_name="f", vectorization_strategy="vectorize"
+                        leaf_name="f",
+                        vectorization_strategy="vectorize",
                     )(return_y_kin),
                     "y_kin": y_kin_namespaced_input,
                 },
@@ -468,7 +472,9 @@ def test_params_target_is_allowed(minimal_input_data):
 
 
 def test_function_without_data_dependency_is_not_mistaken_for_data(
-    minimal_input_data, backend, xnp
+    minimal_input_data,
+    backend,
+    xnp,
 ):
     @policy_function(leaf_name="a", vectorization_strategy="not_required")
     def a() -> IntColumn:
@@ -493,7 +499,8 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
         targets=["results__tree"],
     )["results__tree"]
     numpy.testing.assert_array_almost_equal(
-        results__tree["b"], xnp.array(minimal_input_data["p_id"])
+        results__tree["b"],
+        xnp.array(minimal_input_data["p_id"]),
     )
 
 
@@ -624,7 +631,8 @@ def test_user_provided_aggregation_with_time_conversion(backend):
 
     # Double up, convert to quarter, then take max fam_id
     expected = pd.Series(
-        [400 * 12, 400 * 12, 200 * 12], index=pd.Index(data["p_id"], name="p_id")
+        [400 * 12, 400 * 12, 200 * 12],
+        index=pd.Index(data["p_id"], name="p_id"),
     )
 
     @policy_function(vectorization_strategy="vectorize")
@@ -693,8 +701,8 @@ def sum_source_m_by_p_id_someone_else(
         (
             {
                 "module": {
-                    "sum_source_by_p_id_someone_else": sum_source_by_p_id_someone_else
-                }
+                    "sum_source_by_p_id_someone_else": sum_source_by_p_id_someone_else,
+                },
             },
             "source",
             {"module": {"sum_source_by_p_id_someone_else": None}},
@@ -703,8 +711,8 @@ def sum_source_m_by_p_id_someone_else(
         (
             {
                 "module": {
-                    "sum_source_m_by_p_id_someone_else": sum_source_m_by_p_id_someone_else  # noqa: E501
-                }
+                    "sum_source_m_by_p_id_someone_else": sum_source_m_by_p_id_someone_else,  # noqa: E501
+                },
             },
             "source_m",
             {"module": {"sum_source_m_by_p_id_someone_else": None}},
@@ -833,8 +841,8 @@ def test_policy_environment_with_params_and_scalars_is_processed():
             {"some_policy_func_taking_scalar_params_func": None},
             {
                 "some_policy_func_taking_scalar_params_func": numpy.array(
-                    [1, 2, 3, 4, 5]
-                )
+                    [1, 2, 3, 4, 5],
+                ),
             },
         ),
     ],

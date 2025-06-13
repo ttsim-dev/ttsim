@@ -32,7 +32,9 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=100)
 def cached_policy_environment(
-    date: datetime.date, root: Path, backend: Literal["numpy", "jax"]
+    date: datetime.date,
+    root: Path,
+    backend: Literal["numpy", "jax"],
 ) -> NestedPolicyEnvironment:
     return main(
         inputs={
@@ -68,7 +70,7 @@ class PolicyTest:
     @property
     def target_structure(self) -> NestedInputStructureDict:
         flat_target_structure = dict.fromkeys(
-            dt.flatten_to_tree_paths(self.expected_output_tree)
+            dt.flatten_to_tree_paths(self.expected_output_tree),
         )
         return dt.unflatten_from_tree_paths(flat_target_structure)
 
@@ -78,7 +80,9 @@ class PolicyTest:
 
 
 def execute_test(
-    test: PolicyTest, root: Path, backend: Literal["numpy", "jax"]
+    test: PolicyTest,
+    root: Path,
+    backend: Literal["numpy", "jax"],
 ) -> None:
     environment = cached_policy_environment(date=test.date, root=root, backend=backend)
 
@@ -129,12 +133,14 @@ actual[cols_with_differences]:
 expected[cols_with_differences]:
 
 {expected_df[cols_with_differences]}
-"""
+""",
                 ) from e
 
 
 def load_policy_test_data(
-    test_dir: Path, policy_name: str, xnp: ModuleType
+    test_dir: Path,
+    policy_name: str,
+    xnp: ModuleType,
 ) -> dict[str, PolicyTest]:
     """Load all tests found by recursively searching
 
@@ -191,18 +197,18 @@ def _get_policy_test_from_raw_test_data(
                 merge_trees(
                     left=raw_test_data["inputs"].get("provided", {}),
                     right=raw_test_data["inputs"].get("assumed", {}),
-                )
+                ),
             ).items()
-        }
+        },
     )
 
     expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
             k: xnp.array(v)
             for k, v in dt.flatten_to_tree_paths(
-                raw_test_data.get("outputs", {})
+                raw_test_data.get("outputs", {}),
             ).items()
-        }
+        },
     )
 
     date: datetime.date = to_datetime(path_to_yaml.parent.name)

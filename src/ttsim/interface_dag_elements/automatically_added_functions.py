@@ -559,7 +559,8 @@ def _create_one_set_of_time_conversion_functions(
 
 
 def _create_function_for_time_unit(
-    source: str, converter: Callable[[float], float]
+    source: str,
+    converter: Callable[[float], float],
 ) -> Callable[[float], float]:
     @rename_arguments(mapper={"x": source})
     def func(x: float) -> float:

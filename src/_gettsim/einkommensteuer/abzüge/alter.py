@@ -149,10 +149,12 @@ def get_consecutive_int_1d_lookup_table_with_filled_up_tails(
         "Dictionary keys must be consecutive integers."
     )
     consecutive_dict_start = dict.fromkeys(
-        range(left_tail_key, min_key_in_spec), raw[min_key_in_spec]
+        range(left_tail_key, min_key_in_spec),
+        raw[min_key_in_spec],
     )
     consecutive_dict_end = dict.fromkeys(
-        range(max_key_in_spec + 1, right_tail_key + 1), raw[max_key_in_spec]
+        range(max_key_in_spec + 1, right_tail_key + 1),
+        raw[max_key_in_spec],
     )
     return get_consecutive_int_1d_lookup_table_param_value(
         raw={**consecutive_dict_start, **raw, **consecutive_dict_end},

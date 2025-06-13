@@ -76,7 +76,9 @@ def mehrbedarf_alleinerziehend_m(
 
 
 @policy_function(
-    start_date="2005-01-01", end_date="2010-12-31", leaf_name="kindersatz_m"
+    start_date="2005-01-01",
+    end_date="2010-12-31",
+    leaf_name="kindersatz_m",
 )
 def kindersatz_m_anteilsbasiert(
     alter: int,

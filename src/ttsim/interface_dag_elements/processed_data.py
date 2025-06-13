@@ -40,7 +40,9 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
             variable_with_new_ids = xnp.asarray(data)
             for i in range(new_p_ids.shape[0]):
                 variable_with_new_ids = xnp.where(
-                    data == old_p_ids[i], new_p_ids[i], variable_with_new_ids
+                    data == old_p_ids[i],
+                    new_p_ids[i],
+                    variable_with_new_ids,
                 )
             processed_input_data[qname] = variable_with_new_ids
         else:

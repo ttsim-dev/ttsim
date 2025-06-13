@@ -7,14 +7,16 @@ from ttsim.tt_dag_elements import AggType, agg_by_group_function, policy_functio
 
 @agg_by_group_function(agg_type=AggType.ANY)
 def wohngeld_vorrang_wthh(
-    wohngeld_vorrang_vor_arbeitslosengeld_2_bg: bool, wthh_id: int
+    wohngeld_vorrang_vor_arbeitslosengeld_2_bg: bool,
+    wthh_id: int,
 ) -> bool:
     pass
 
 
 @agg_by_group_function(agg_type=AggType.ANY)
 def wohngeld_kinderzuschlag_vorrang_wthh(
-    wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool, wthh_id: int
+    wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg: bool,
+    wthh_id: int,
 ) -> bool:
     pass
 

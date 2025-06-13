@@ -185,7 +185,8 @@ def altersgrenze_vorzeitig_ohne_arbeitslosigkeit_frauen(
 
 
 @policy_function(
-    end_date="2017-12-31", leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt"
+    end_date="2017-12-31",
+    leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt",
 )
 def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_arbeitslosigkeit_frauen(
     für_frauen__grundsätzlich_anspruchsberechtigt: bool,
@@ -207,7 +208,8 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_arbeitslosigkeit_frauen(
 
 
 @policy_function(
-    start_date="2018-01-01", leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt"
+    start_date="2018-01-01",
+    leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt",
 )
 def vorzeitig_grundsätzlich_anspruchsberechtigt_vorzeitig_ohne_arbeitslosigkeit_frauen(
     langjährig__grundsätzlich_anspruchsberechtigt: bool,
@@ -246,7 +248,7 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
                 für_frauen__altersgrenze,
                 langjährig__altersgrenze,
                 wegen_arbeitslosigkeit__altersgrenze,
-            ]
+            ],
         )
     elif (
         langjährig__grundsätzlich_anspruchsberechtigt
@@ -256,7 +258,7 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
             [
                 für_frauen__altersgrenze,
                 langjährig__altersgrenze,
-            ]
+            ],
         )
     elif (
         langjährig__grundsätzlich_anspruchsberechtigt
@@ -266,7 +268,7 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
             [
                 langjährig__altersgrenze,
                 wegen_arbeitslosigkeit__altersgrenze,
-            ]
+            ],
         )
     elif langjährig__grundsätzlich_anspruchsberechtigt:
         out = langjährig__altersgrenze

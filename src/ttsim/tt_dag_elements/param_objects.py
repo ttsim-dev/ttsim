@@ -210,7 +210,7 @@ def get_consecutive_int_2d_lookup_table_param_value(
             [
                 raw[row][col]
                 for row, col in itertools.product(lookup_keys_rows, lookup_keys_cols)
-            ]
+            ],
         ).reshape(len(lookup_keys_rows), len(lookup_keys_cols)),
     )
 
@@ -251,12 +251,14 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
     first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
     first_month_phase_inout: int = min(raw[first_year_phase_inout].keys())
     first_m_since_ad_phase_inout = _m_since_ad(
-        y=first_year_phase_inout, m=first_month_phase_inout
+        y=first_year_phase_inout,
+        m=first_month_phase_inout,
     )
     last_year_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
     last_month_phase_inout: int = max(raw[last_year_phase_inout].keys())
     last_m_since_ad_phase_inout = _m_since_ad(
-        y=last_year_phase_inout, m=last_month_phase_inout
+        y=last_year_phase_inout,
+        m=last_month_phase_inout,
     )
     assert first_m_since_ad_to_consider <= first_m_since_ad_phase_inout
     assert last_m_since_ad_to_consider >= last_m_since_ad_phase_inout
@@ -272,11 +274,13 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
     after_phase_inout: dict[int, float] = {
         b_m: _year_fraction(raw[last_year_phase_inout][last_month_phase_inout])
         for b_m in range(
-            last_m_since_ad_phase_inout + 1, last_m_since_ad_to_consider + 1
+            last_m_since_ad_phase_inout + 1,
+            last_m_since_ad_to_consider + 1,
         )
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        raw={**before_phase_inout, **during_phase_inout, **after_phase_inout}, xnp=xnp
+        raw={**before_phase_inout, **during_phase_inout, **after_phase_inout},
+        xnp=xnp,
     )
 
 
@@ -308,5 +312,6 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
         for b_y in range(last_year_phase_inout + 1, last_year_to_consider + 1)
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        raw={**before_phase_inout, **during_phase_inout, **after_phase_inout}, xnp=xnp
+        raw={**before_phase_inout, **during_phase_inout, **after_phase_inout},
+        xnp=xnp,
     )

@@ -44,7 +44,9 @@ def einkommensgrenze(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anspruchshöhe_m(
-    anspruchshöhe_kind_m: float, p_id_empfänger: int, p_id: int
+    anspruchshöhe_kind_m: float,
+    p_id_empfänger: int,
+    p_id: int,
 ) -> float:
     pass
 
@@ -76,7 +78,7 @@ def erziehungsgeld_kind_ohne_budgetsatz_m() -> NotImplementedError:
         """
     Erziehungsgeld is not implemented yet prior to 2004, see
     https://github.com/iza-institute-of-labor-economics/gettsim/issues/673
-        """
+        """,
     )
 
 
@@ -332,6 +334,8 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def erziehungsgeld_spec_target(
-    erziehungsgeld_source_field: bool, p_id_field: int, p_id: int
+    erziehungsgeld_source_field: bool,
+    p_id_field: int,
+    p_id: int,
 ) -> int:
     pass

@@ -15,7 +15,8 @@ if TYPE_CHECKING:
         |
         # Parameters at one point in time
         dict[
-            datetime.date, dict[Literal["note", "reference"] | str | int, Any]  # noqa: PYI051
+            datetime.date,
+            dict[Literal["note", "reference"] | str | int, Any],  # noqa: PYI051
         ]
     )
     DashedISOString = NewType("DashedISOString", str)
@@ -66,11 +67,13 @@ if TYPE_CHECKING:
     # Tree-like data structures for policy objects
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     FlatColumnObjectsParamFunctions = Mapping[
-        tuple[str, ...], ColumnObject | ParamFunction
+        tuple[str, ...],
+        ColumnObject | ParamFunction,
     ]
     """Flat mapping of paths to column objects or param functions."""
     NestedColumnObjectsParamFunctions = Mapping[
-        str, ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions"
+        str,
+        ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions",
     ]
     """Tree of column objects or param functions."""
     FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
@@ -88,7 +91,8 @@ if TYPE_CHECKING:
     ]
     """Tree of column objects, param functions, and param objects."""
     QNameCombinedEnvironment0 = Mapping[
-        str, ColumnObject | ParamFunction | ParamObject | int | float | bool
+        str,
+        ColumnObject | ParamFunction | ParamObject | int | float | bool,
     ]
     """Map qualified names to column objects, param functions, param objects, or scalars from processed data."""  # noqa: E501
     QNameCombinedEnvironment1 = Mapping[str, ColumnObject | Any]

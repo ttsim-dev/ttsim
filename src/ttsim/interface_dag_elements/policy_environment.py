@@ -172,11 +172,11 @@ def _get_one_param(  # noqa: PLR0911
 
     if cleaned_spec is None:
         return None
-    elif spec["type"] == "scalar":
+    if spec["type"] == "scalar":
         return ScalarParam(**cleaned_spec)
-    elif spec["type"] == "dict":
+    if spec["type"] == "dict":
         return DictParam(**cleaned_spec)
-    elif spec["type"].startswith("piecewise_"):
+    if spec["type"].startswith("piecewise_"):
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
             func_type=spec["type"],
@@ -184,26 +184,27 @@ def _get_one_param(  # noqa: PLR0911
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    elif spec["type"] == "consecutive_int_1d_lookup_table":
+    if spec["type"] == "consecutive_int_1d_lookup_table":
         cleaned_spec["value"] = get_consecutive_int_1d_lookup_table_param_value(
             raw=cleaned_spec["value"],
             xnp=xnp,
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "consecutive_int_2d_lookup_table":
+    if spec["type"] == "consecutive_int_2d_lookup_table":
         cleaned_spec["value"] = get_consecutive_int_2d_lookup_table_param_value(
             raw=cleaned_spec["value"],
             xnp=xnp,
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "month_based_phase_inout_of_age_thresholds":
+    if spec["type"] == "month_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_month_based_phase_inout_of_age_thresholds_param_value(
-                raw=cleaned_spec["value"], xnp=xnp
+                raw=cleaned_spec["value"],
+                xnp=xnp,
             )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "year_based_phase_inout_of_age_thresholds":
+    if spec["type"] == "year_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_year_based_phase_inout_of_age_thresholds_param_value(
                 raw=cleaned_spec["value"],
@@ -211,14 +212,15 @@ def _get_one_param(  # noqa: PLR0911
             )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "require_converter":
+    if spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
-    else:
-        raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
+    raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
 
 def _clean_one_param_spec(
-    leaf_name: str, spec: OrigParamSpec, date: datetime.date
+    leaf_name: str,
+    spec: OrigParamSpec,
+    date: datetime.date,
 ) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a ParamObject."""
     policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
@@ -243,12 +245,12 @@ def _clean_one_param_spec(
     out["reference"] = current_spec.pop("reference", None)
     if len(current_spec) == 0:
         return None
-    elif len(current_spec) == 1 and "updates_previous" in current_spec:
+    if len(current_spec) == 1 and "updates_previous" in current_spec:
         raise ValueError(
-            f"'updates_previous' cannot be specified as the only element, found{spec}"
+            f"'updates_previous' cannot be specified as the only element, found{spec}",
         )
         # Parameter ceased to exist
-    elif spec["type"] == "scalar":
+    if spec["type"] == "scalar":
         assert "updates_previous" not in current_spec, (
             "'updates_previous' cannot be specified for scalar parameters"
         )
@@ -279,5 +281,4 @@ def _get_param_value(
             base=_get_param_value(relevant_specs=relevant_specs[:-1]),
             to_upsert=current_spec,
         )
-    else:
-        return current_spec
+    return current_spec

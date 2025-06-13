@@ -30,15 +30,18 @@ class RoundingSpec:
         valid_directions = get_args(ROUNDING_DIRECTION)
         if self.direction not in valid_directions:
             raise ValueError(
-                f"`direction` must be one of {valid_directions}, got {self.direction!r}"
+                f"`direction` must be one of {valid_directions}, "
+                f"got {self.direction!r}",
             )
         if type(self.to_add_after_rounding) not in [int, float]:
             raise ValueError(
-                f"Additive part must be a number, got {self.to_add_after_rounding!r}"
+                f"Additive part must be a number, got {self.to_add_after_rounding!r}",
             )
 
     def apply_rounding(
-        self, func: Callable[P, FloatColumn], xnp: ModuleType
+        self,
+        func: Callable[P, FloatColumn],
+        xnp: ModuleType,
     ) -> Callable[P, FloatColumn]:
         """Decorator to round the output of a function.
 

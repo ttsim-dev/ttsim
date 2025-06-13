@@ -16,7 +16,9 @@ from ttsim.testing_utils import (
 TEST_DIR = Path(__file__).parent
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
-    test_dir=TEST_DIR, policy_name="", xnp=numpy
+    test_dir=TEST_DIR,
+    policy_name="",
+    xnp=numpy,
 )
 
 

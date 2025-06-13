@@ -26,12 +26,13 @@ class AggType(StrEnum):
 # The signature of the functions must be the same in both modules, except that all JAX
 # functions have the additional `num_segments` argument.
 def grouped_count(
-    group_id: IntColumn, num_segments: int, backend: Literal["numpy", "jax"]
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
 ) -> IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_count(group_id)
-    else:
-        return aggregation_jax.grouped_count(group_id, num_segments)
+    return aggregation_jax.grouped_count(group_id, num_segments)
 
 
 def grouped_sum(
@@ -42,8 +43,7 @@ def grouped_sum(
 ) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_sum(column, group_id)
-    else:
-        return aggregation_jax.grouped_sum(column, group_id, num_segments)
+    return aggregation_jax.grouped_sum(column, group_id, num_segments)
 
 
 def grouped_mean(
@@ -54,8 +54,7 @@ def grouped_mean(
 ) -> FloatColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_mean(column, group_id)
-    else:
-        return aggregation_jax.grouped_mean(column, group_id, num_segments)
+    return aggregation_jax.grouped_mean(column, group_id, num_segments)
 
 
 def grouped_max(
@@ -66,8 +65,7 @@ def grouped_max(
 ) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_max(column, group_id)
-    else:
-        return aggregation_jax.grouped_max(column, group_id, num_segments)
+    return aggregation_jax.grouped_max(column, group_id, num_segments)
 
 
 def grouped_min(
@@ -78,8 +76,7 @@ def grouped_min(
 ) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_min(column, group_id)
-    else:
-        return aggregation_jax.grouped_min(column, group_id, num_segments)
+    return aggregation_jax.grouped_min(column, group_id, num_segments)
 
 
 def grouped_any(
@@ -90,8 +87,7 @@ def grouped_any(
 ) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_any(column, group_id)
-    else:
-        return aggregation_jax.grouped_any(column, group_id, num_segments)
+    return aggregation_jax.grouped_any(column, group_id, num_segments)
 
 
 def grouped_all(
@@ -102,8 +98,7 @@ def grouped_all(
 ) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_all(column, group_id)
-    else:
-        return aggregation_jax.grouped_all(column, group_id, num_segments)
+    return aggregation_jax.grouped_all(column, group_id, num_segments)
 
 
 def count_by_p_id(
@@ -114,10 +109,11 @@ def count_by_p_id(
 ) -> IntColumn:
     if backend == "numpy":
         return aggregation_numpy.count_by_p_id(p_id_to_aggregate_by, p_id_to_store_by)
-    else:
-        return aggregation_jax.count_by_p_id(
-            p_id_to_aggregate_by, p_id_to_store_by, num_segments
-        )
+    return aggregation_jax.count_by_p_id(
+        p_id_to_aggregate_by,
+        p_id_to_store_by,
+        num_segments,
+    )
 
 
 def sum_by_p_id(
@@ -129,12 +125,16 @@ def sum_by_p_id(
 ) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.sum_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by
+            column,
+            p_id_to_aggregate_by,
+            p_id_to_store_by,
         )
-    else:
-        return aggregation_jax.sum_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by, num_segments
-        )
+    return aggregation_jax.sum_by_p_id(
+        column,
+        p_id_to_aggregate_by,
+        p_id_to_store_by,
+        num_segments,
+    )
 
 
 def mean_by_p_id(
@@ -146,12 +146,16 @@ def mean_by_p_id(
 ) -> FloatColumn:
     if backend == "numpy":
         return aggregation_numpy.mean_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by
+            column,
+            p_id_to_aggregate_by,
+            p_id_to_store_by,
         )
-    else:
-        return aggregation_jax.mean_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by, num_segments
-        )
+    return aggregation_jax.mean_by_p_id(
+        column,
+        p_id_to_aggregate_by,
+        p_id_to_store_by,
+        num_segments,
+    )
 
 
 def max_by_p_id(
@@ -163,12 +167,16 @@ def max_by_p_id(
 ) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.max_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by
+            column,
+            p_id_to_aggregate_by,
+            p_id_to_store_by,
         )
-    else:
-        return aggregation_jax.max_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by, num_segments
-        )
+    return aggregation_jax.max_by_p_id(
+        column,
+        p_id_to_aggregate_by,
+        p_id_to_store_by,
+        num_segments,
+    )
 
 
 def min_by_p_id(
@@ -180,12 +188,16 @@ def min_by_p_id(
 ) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.min_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by
+            column,
+            p_id_to_aggregate_by,
+            p_id_to_store_by,
         )
-    else:
-        return aggregation_jax.min_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by, num_segments
-        )
+    return aggregation_jax.min_by_p_id(
+        column,
+        p_id_to_aggregate_by,
+        p_id_to_store_by,
+        num_segments,
+    )
 
 
 def any_by_p_id(
@@ -197,12 +209,16 @@ def any_by_p_id(
 ) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.any_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by
+            column,
+            p_id_to_aggregate_by,
+            p_id_to_store_by,
         )
-    else:
-        return aggregation_jax.any_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by, num_segments
-        )
+    return aggregation_jax.any_by_p_id(
+        column,
+        p_id_to_aggregate_by,
+        p_id_to_store_by,
+        num_segments,
+    )
 
 
 def all_by_p_id(
@@ -214,9 +230,13 @@ def all_by_p_id(
 ) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.all_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by
+            column,
+            p_id_to_aggregate_by,
+            p_id_to_store_by,
         )
-    else:
-        return aggregation_jax.all_by_p_id(
-            column, p_id_to_aggregate_by, p_id_to_store_by, num_segments
-        )
+    return aggregation_jax.all_by_p_id(
+        column,
+        p_id_to_aggregate_by,
+        p_id_to_store_by,
+        num_segments,
+    )

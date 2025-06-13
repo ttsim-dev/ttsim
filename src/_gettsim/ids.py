@@ -24,12 +24,16 @@ def hh_id() -> int:
 
 @group_creation_function()
 def ehe_id(
-    p_id: IntColumn, familie__p_id_ehepartner: IntColumn, xnp: ModuleType
+    p_id: IntColumn,
+    familie__p_id_ehepartner: IntColumn,
+    xnp: ModuleType,
 ) -> IntColumn:
     """Couples that are either married or in a civil union."""
     n = xnp.max(p_id) + 1
     p_id_ehepartner_or_own_p_id = xnp.where(
-        familie__p_id_ehepartner < 0, p_id, familie__p_id_ehepartner
+        familie__p_id_ehepartner < 0,
+        p_id,
+        familie__p_id_ehepartner,
     )
     result = (
         xnp.maximum(p_id, p_id_ehepartner_or_own_p_id)
@@ -61,14 +65,19 @@ def fg_id(
     p_id_elternteil_2_loc = familie__p_id_elternteil_2
     for i in range(p_id.shape[0]):
         p_id_elternteil_1_loc = xnp.where(
-            familie__p_id_elternteil_1 == p_id[i], i, p_id_elternteil_1_loc
+            familie__p_id_elternteil_1 == p_id[i],
+            i,
+            p_id_elternteil_1_loc,
         )
         p_id_elternteil_2_loc = xnp.where(
-            familie__p_id_elternteil_2 == p_id[i], i, p_id_elternteil_2_loc
+            familie__p_id_elternteil_2 == p_id[i],
+            i,
+            p_id_elternteil_2_loc,
         )
 
     children = xnp.isin(p_id, familie__p_id_elternteil_1) | xnp.isin(
-        p_id, familie__p_id_elternteil_2
+        p_id,
+        familie__p_id_elternteil_2,
     )
 
     # Assign the same fg_id to everybody who has an Einstandspartner,

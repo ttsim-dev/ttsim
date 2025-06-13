@@ -24,14 +24,14 @@ def to_datetime(date: datetime.date | DashedISOString) -> datetime.date:
         return date
     if isinstance(date, str) and _DASHED_ISO_DATE_REGEX.fullmatch(date):
         return datetime.date.fromisoformat(date)
-    else:
-        raise ValueError(
-            f"Date {date} neither matches the format YYYY-MM-DD nor is a datetime.date."
-        )
+    raise ValueError(
+        f"Date {date} neither matches the format YYYY-MM-DD nor is a datetime.date.",
+    )
 
 
 def get_re_pattern_for_all_time_units_and_groupings(
-    time_units: OrderedQNames, grouping_levels: OrderedQNames
+    time_units: OrderedQNames,
+    grouping_levels: OrderedQNames,
 ) -> re.Pattern[str]:
     """Get a regex pattern for time units and grouping_levels.
 
@@ -59,13 +59,13 @@ def get_re_pattern_for_all_time_units_and_groupings(
         f"(?P<base_name>.*?)"
         f"(?:_(?P<time_unit>[{re_units}]))?"
         f"(?:_(?P<grouping>{re_groupings}))?"
-        f"$"
+        f"$",
     )
 
 
 def group_pattern(grouping_levels: OrderedQNames) -> re.Pattern[str]:
     return re.compile(
-        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(grouping_levels)})$"
+        f"(?P<base_name_with_time_unit>.*)_(?P<group>{'|'.join(grouping_levels)})$",
     )
 
 
@@ -102,7 +102,7 @@ def get_re_pattern_for_specific_time_units_and_groupings(
         f"(?P<base_name>{re.escape(base_name)})"
         f"(?:_(?P<time_unit>[{re_units}]))?"
         f"(?:_(?P<grouping>{re_groupings}))?"
-        f"$"
+        f"$",
     )
 
 
@@ -215,7 +215,8 @@ def upsert_path_and_value(
     will be updated.
     """
     to_upsert = create_tree_from_path_and_value(
-        path=path_to_upsert, value=value_to_upsert
+        path=path_to_upsert,
+        value=value_to_upsert,
     )
     return upsert_tree(base=base, to_upsert=to_upsert)
 
@@ -231,7 +232,8 @@ def insert_path_and_value(
     path must not exist in base.
     """
     to_insert = create_tree_from_path_and_value(
-        path=path_to_insert, value=value_to_insert
+        path=path_to_insert,
+        value=value_to_insert,
     )
     return merge_trees(left=base, right=to_insert)
 
@@ -262,10 +264,10 @@ def partition_tree_by_reference_tree(
     ref_paths = set(dt.tree_paths(reference_tree))
     flat = dt.flatten_to_tree_paths(tree_to_partition)
     intersection = dt.unflatten_from_tree_paths(
-        {path: leaf for path, leaf in flat.items() if path in ref_paths}
+        {path: leaf for path, leaf in flat.items() if path in ref_paths},
     )
     difference = dt.unflatten_from_tree_paths(
-        {path: leaf for path, leaf in flat.items() if path not in ref_paths}
+        {path: leaf for path, leaf in flat.items() if path not in ref_paths},
     )
 
     return intersection, difference

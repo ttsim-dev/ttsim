@@ -6,7 +6,6 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import main
-from ttsim.interface_dag_elements.policy_environment import policy_environment
 from ttsim.tt_dag_elements import (
     RoundingSpec,
     policy_function,
@@ -89,12 +88,6 @@ def test_malformed_rounding_specs():
         @policy_function(rounding_spec={"base": 1, "direction": "updsf"})
         def test_func():
             return 0
-
-        policy_environment(
-            active_tree_with_column_objects_and_param_functions={
-                "x.py": {"test_func": test_func}
-            },
-        )
 
 
 @pytest.mark.parametrize(

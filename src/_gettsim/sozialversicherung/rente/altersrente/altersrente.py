@@ -8,12 +8,15 @@ from ttsim.tt_dag_elements import RoundingSpec, policy_function
 @policy_function(
     end_date="2020-12-31",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     leaf_name="betrag_m",
 )
 def betrag_m(
-    bruttorente_m: float, sozialversicherung__rente__bezieht_rente: bool
+    bruttorente_m: float,
+    sozialversicherung__rente__bezieht_rente: bool,
 ) -> float:
     return bruttorente_m if sozialversicherung__rente__bezieht_rente else 0.0
 
@@ -21,7 +24,9 @@ def betrag_m(
 @policy_function(
     start_date="2021-01-01",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     leaf_name="betrag_m",
 )

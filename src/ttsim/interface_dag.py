@@ -62,7 +62,8 @@ def main(
 
 
 def load_interface_functions_and_inputs() -> dict[
-    str, InterfaceFunction | InterfaceInput
+    str,
+    InterfaceFunction | InterfaceInput,
 ]:
     """Load the collection of functions and inputs from the current directory."""
     orig_functions = _load_orig_functions()
@@ -134,6 +135,6 @@ def _fail_if_targets_are_not_among_interface_functions(
             formatted = format_list_linewise(sorted(missing_targets))
             msg = format_errors_and_warnings(
                 "The following targets have no corresponding function in the interface "
-                f"DAG:\n\n{formatted}"
+                f"DAG:\n\n{formatted}",
             )
             raise ValueError(msg)

@@ -286,11 +286,13 @@ class TestCreateFunctionsForTimeUnits:
         ],
     )
     def test_should_create_functions_for_other_time_units_for_functions(
-        self, name: str, expected: list[str]
+        self,
+        name: str,
+        expected: list[str],
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
             qual_name_policy_environment={
-                name: policy_function(leaf_name=name)(return_one)
+                name: policy_function(leaf_name=name)(return_one),
             },
             processed_data_columns=set(),
             grouping_levels=("sn", "kin"),
@@ -302,7 +304,7 @@ class TestCreateFunctionsForTimeUnits:
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
         time_conversion_functions = create_time_conversion_functions(
             qual_name_policy_environment={
-                "test1_d": policy_function(leaf_name="test1_d")(return_one)
+                "test1_d": policy_function(leaf_name="test1_d")(return_one),
             },
             processed_data_columns={"test2_y"},
             grouping_levels=("sn", "kin"),
@@ -316,7 +318,7 @@ class TestCreateFunctionsForTimeUnits:
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
             qual_name_policy_environment={
-                "test_d": policy_function(leaf_name="test_d")(return_one)
+                "test_d": policy_function(leaf_name="test_d")(return_one),
             },
             processed_data_columns={"test_y"},
             grouping_levels=("sn", "kin"),

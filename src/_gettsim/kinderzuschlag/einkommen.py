@@ -24,7 +24,8 @@ if TYPE_CHECKING:
 
 @agg_by_group_function(agg_type=AggType.SUM, start_date="2005-01-01")
 def arbeitslosengeld_2__anzahl_kinder_bg(
-    kindergeld__anzahl_ansprüche: int, bg_id: int
+    kindergeld__anzahl_ansprüche: int,
+    bg_id: int,
 ) -> int:
     pass
 
@@ -215,7 +216,9 @@ def kosten_der_unterkunft_m_bg(
 
 
 @param_function(
-    start_date="2005-01-01", end_date="2011-12-31", leaf_name="existenzminimum"
+    start_date="2005-01-01",
+    end_date="2011-12-31",
+    leaf_name="existenzminimum",
 )
 def existenzminimum_ohne_bildung_und_teilhabe(
     parameter_existenzminimum: RawParam,
@@ -268,7 +271,7 @@ def existenzminimum_mit_bildung_und_teilhabe(
         kosten_der_unterkunft=kosten_der_unterkunft,
         heizkosten=heizkosten,
         bildung_und_teilhabe=ElementExistenzminimumNurKind(
-            kind=parameter_existenzminimum["bildung_und_teilhabe"]["kind"]
+            kind=parameter_existenzminimum["bildung_und_teilhabe"]["kind"],
         ),
     )
 
@@ -298,7 +301,8 @@ def wohnbedarf_anteil_eltern_bg(
         )
 
     kinderbetrag = min(
-        arbeitslosengeld_2__anzahl_kinder_bg, wohnbedarf_anteil_berücksichtigte_kinder
+        arbeitslosengeld_2__anzahl_kinder_bg,
+        wohnbedarf_anteil_berücksichtigte_kinder,
     ) * (existenzminimum.kosten_der_unterkunft.kind + existenzminimum.heizkosten.kind)
 
     return elternbetrag / (elternbetrag + kinderbetrag)
@@ -306,7 +310,8 @@ def wohnbedarf_anteil_eltern_bg(
 
 @policy_function(start_date="2005-01-01")
 def erwachsenenbedarf_m_bg(
-    arbeitslosengeld_2__regelsatz_m_bg: float, kosten_der_unterkunft_m_bg: float
+    arbeitslosengeld_2__regelsatz_m_bg: float,
+    kosten_der_unterkunft_m_bg: float,
 ) -> float:
     """Aggregate relevant income and rental costs."""
     return arbeitslosengeld_2__regelsatz_m_bg + kosten_der_unterkunft_m_bg

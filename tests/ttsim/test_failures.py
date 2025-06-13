@@ -121,11 +121,10 @@ def fam_id() -> int:
 @pytest.fixture(scope="module")
 def minimal_input_data():
     n_individuals = 5
-    out = {
+    return {
         "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
         "fam_id": pd.Series(numpy.arange(n_individuals), name="fam_id"),
     }
-    return out
 
 
 @pytest.fixture(scope="module")
@@ -181,7 +180,9 @@ def some_param_func_returning_list_of_length_2() -> list[int]:
 def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     with pytest.raises(TypeError, match=re.escape(err_substr)):
         assert_valid_ttsim_pytree(
-            tree=tree, leaf_checker=leaf_checker, tree_name="tree"
+            tree=tree,
+            leaf_checker=leaf_checker,
+            tree_name="tree",
         )
 
 
@@ -206,7 +207,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("c", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
-                }
+                },
             },
         ),
         # Same submodule, overlapping periods, different leaf names so no name clashes.
@@ -227,7 +228,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("x", "c", "h"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
-                }
+                },
             },
         ),
         # Different submodules, no overlapping periods, no name clashes.
@@ -246,7 +247,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("x", "c", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
-                }
+                },
             },
         ),
         # Different paths, overlapping periods, same names but no clashes.
@@ -267,7 +268,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 ("z", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
-                }
+                },
             },
         ),
         # Different yaml files, no name clashes because of different names.
@@ -318,7 +319,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                         "value": 13,
                         "note": "Complex didn't last long.",
                     },
-                }
+                },
             },
         ),
         # Different periods specified in different files.
@@ -465,7 +466,7 @@ def test_fail_if_active_periods_overlap_passes(
                 ("c", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
-                }
+                },
             },
         ),
         # Same paths, no overlap in functions, name clashes leaf name / yaml.
@@ -486,7 +487,7 @@ def test_fail_if_active_periods_overlap_passes(
                 ("x", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
-                }
+                },
             },
         ),
         # Same paths, name clashes within params from different yaml files.
@@ -621,7 +622,8 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
 
 def test_fail_if_group_ids_are_outside_top_level_namespace():
     with pytest.raises(
-        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+        ValueError,
+        match="Group identifiers must live in the top-level namespace. Got:",
     ):
         group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
 
@@ -633,7 +635,8 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         "kin_id": numpy.array([1, 1, 2]),
     }
     with pytest.raises(
-        ValueError, match="The following data inputs do not have a unique value within"
+        ValueError,
+        match="The following data inputs do not have a unique value within",
     ):
         group_variables_are_not_constant_within_groups(
             names__grouping_levels=("kin",),
@@ -646,7 +649,8 @@ def test_fail_if_input_data_tree_is_invalid(xnp):
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(
-        ValueError, match="The input data must contain the `p_id` column."
+        ValueError,
+        match="The input data must contain the `p_id` column.",
     ):
         input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
@@ -677,7 +681,8 @@ def test_fail_if_input_data_tree_is_invalid_via_main():
 )
 def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
-        ValueError, match="DataFrame column names cannot be booleans or numbers."
+        ValueError,
+        match="DataFrame column names cannot be booleans or numbers.",
     ):
         input_df_has_bool_or_numeric_column_names(df)
 
@@ -719,7 +724,8 @@ def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
     ],
 )
 def test_fail_if_input_df_mapper_has_incorrect_format(
-    input_data__df_and_mapper__mapper, expected_error_message
+    input_data__df_and_mapper__mapper,
+    expected_error_message,
 ):
     with pytest.raises(TypeError, match=expected_error_message):
         input_df_mapper_has_incorrect_format(input_data__df_and_mapper__mapper)
@@ -833,7 +839,8 @@ def test_fail_if_p_id_does_not_exist(xnp):
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(
-        ValueError, match="The input data must contain the `p_id` column."
+        ValueError,
+        match="The input data must contain the `p_id` column.",
     ):
         input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
@@ -860,7 +867,8 @@ def test_fail_if_p_id_is_not_unique(xnp):
     data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
 
     with pytest.raises(
-        ValueError, match="The following `p_id`s are not unique in the input data"
+        ValueError,
+        match="The following `p_id`s are not unique in the input data",
     ):
         input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
@@ -923,10 +931,14 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
     ],
 )
 def test_fail_if_targets_are_not_in_policy_environment_or_data(
-    policy_environment, targets, names__processed_data_columns, expected_error_match
+    policy_environment,
+    targets,
+    names__processed_data_columns,
+    expected_error_match,
 ):
     with pytest.raises(
-        ValueError, match="The following targets have no corresponding function"
+        ValueError,
+        match="The following targets have no corresponding function",
     ) as e:
         targets_are_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
@@ -986,7 +998,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(2099, 12, 31),
                     **_GENERIC_PARAM_HEADER,
-                )
+                ),
             ],
         ),
         (
@@ -1007,7 +1019,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(1984, 12, 31),
                     **_GENERIC_PARAM_HEADER,
-                )
+                ),
             ],
         ),
         (

@@ -120,7 +120,7 @@ def get_piecewise_parameters(
     if sorted(parameter_dict) != list(range(len(parameter_dict))):
         raise ValueError(
             f"The keys of {leaf_name} do not start with 0 or are not consecutive"
-            f" numbers."
+            f" numbers.",
         )
 
     # Extract lower thresholds.
@@ -186,14 +186,14 @@ def check_and_get_thresholds(  # noqa: C901
     # Check if lowest threshold exists.
     if "lower_threshold" not in parameter_dict[0]:
         raise ValueError(
-            f"The first piece of {leaf_name} needs to contain a lower_threshold value."
+            f"The first piece of {leaf_name} needs to contain a lower_threshold value.",
         )
     lower_thresholds[0] = parameter_dict[0]["lower_threshold"]
 
     # Check if highest upper_threshold exists.
     if "upper_threshold" not in parameter_dict[keys[-1]]:
         raise ValueError(
-            f"The last piece of {leaf_name} needs to contain an upper_threshold value."
+            f"The last piece of {leaf_name} needs to contain an upper_threshold value.",
         )
     upper_thresholds[keys[-1]] = parameter_dict[keys[-1]]["upper_threshold"]
 
@@ -209,7 +209,7 @@ def check_and_get_thresholds(  # noqa: C901
         else:
             raise ValueError(
                 f"In {interval} of {leaf_name} is no lower upper threshold or an upper"
-                f" in the piece before."
+                f" in the piece before.",
             )
 
     for interval in keys[:-1]:
@@ -220,12 +220,12 @@ def check_and_get_thresholds(  # noqa: C901
         else:
             raise ValueError(
                 f"In {interval} of {leaf_name} is no upper threshold or a lower"
-                f" threshold in the piece after."
+                f" threshold in the piece after.",
             )
 
     if not numpy.allclose(lower_thresholds[1:], upper_thresholds[:-1]):
         raise ValueError(
-            f"The lower and upper thresholds of {leaf_name} have to coincide"
+            f"The lower and upper thresholds of {leaf_name} have to coincide",
         )
     thresholds = sorted([lower_thresholds[0], *upper_thresholds])
     return (
@@ -267,7 +267,7 @@ def _check_and_get_rates(
                 rates[i, interval] = parameter_dict[interval][rate_type]
             else:
                 raise ValueError(
-                    f"In interval {interval} of {leaf_name}, {rate_type} is missing."
+                    f"In interval {interval} of {leaf_name}, {rate_type} is missing.",
                 )
     return xnp.array(rates)
 
@@ -291,28 +291,31 @@ def _check_and_get_intercepts(
 
     if "intercept_at_lower_threshold" not in parameter_dict[0]:
         raise ValueError(f"The first piece of {leaf_name} needs an intercept.")
-    else:
-        intercepts[0] = parameter_dict[0]["intercept_at_lower_threshold"]
-        # Check if all intercepts are supplied.
-        for interval in keys[1:]:
-            if "intercept_at_lower_threshold" in parameter_dict[interval]:
-                count_intercepts_supplied += 1
-                intercepts[interval] = parameter_dict[interval][
-                    "intercept_at_lower_threshold"
-                ]
-        if (count_intercepts_supplied > 1) & (count_intercepts_supplied != len(keys)):
-            raise ValueError(
-                "More than one, but not all intercepts are supplied. "
-                "The dictionaries should contain either only the lowest intercept "
-                "or all intercepts."
-            )
-        elif count_intercepts_supplied == len(keys):
-            pass
+    intercepts[0] = parameter_dict[0]["intercept_at_lower_threshold"]
+    # Check if all intercepts are supplied.
+    for interval in keys[1:]:
+        if "intercept_at_lower_threshold" in parameter_dict[interval]:
+            count_intercepts_supplied += 1
+            intercepts[interval] = parameter_dict[interval][
+                "intercept_at_lower_threshold"
+            ]
+    if (count_intercepts_supplied > 1) & (count_intercepts_supplied != len(keys)):
+        raise ValueError(
+            "More than one, but not all intercepts are supplied. "
+            "The dictionaries should contain either only the lowest intercept "
+            "or all intercepts.",
+        )
+    if count_intercepts_supplied == len(keys):
+        pass
 
-        else:
-            intercepts = _create_intercepts(
-                lower_thresholds, upper_thresholds, rates, intercepts[0], xnp=xnp
-            )
+    else:
+        intercepts = _create_intercepts(
+            lower_thresholds,
+            upper_thresholds,
+            rates,
+            intercepts[0],
+            xnp=xnp,
+        )
     return xnp.array(intercepts)
 
 

@@ -22,7 +22,7 @@ def columns(
     specialized_environment__tax_transfer_function: Callable[[QNameData], QNameData],
 ) -> QNameData:
     return specialized_environment__tax_transfer_function(
-        {k: v for k, v in processed_data.items() if k in names__root_nodes}
+        {k: v for k, v in processed_data.items() if k in names__root_nodes},
     )
 
 

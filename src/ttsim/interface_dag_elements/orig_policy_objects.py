@@ -62,7 +62,8 @@ def column_objects_and_param_functions(
         k: v
         for path in _find_files_recursively(root=root, suffix=".py")
         for k, v in _tree_path_to_orig_column_objects_params_functions(
-            path=path, root=root
+            path=path,
+            root=root,
         ).items()
     }
     # Add backend so we can decide between numpy and jax for aggregation functions
@@ -120,7 +121,8 @@ def _find_files_recursively(root: Path, suffix: Literal[".py", ".yaml"]) -> list
 
 
 def _tree_path_to_orig_column_objects_params_functions(
-    path: Path, root: Path
+    path: Path,
+    root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """Extract all active PolicyFunctions and GroupByFunctions from a module.
 

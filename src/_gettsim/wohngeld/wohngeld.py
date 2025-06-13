@@ -215,6 +215,7 @@ def basisformel_params(
         b=get_consecutive_int_1d_lookup_table_param_value(raw=b, xnp=xnp),
         c=get_consecutive_int_1d_lookup_table_param_value(raw=c, xnp=xnp),
         zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_1d_lookup_table_param_value(
-            raw=zusatzbetrag_nach_haushaltsgröße, xnp=xnp
+            raw=zusatzbetrag_nach_haushaltsgröße,
+            xnp=xnp,
         ),
     )

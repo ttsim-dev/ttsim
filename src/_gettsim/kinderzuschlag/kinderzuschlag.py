@@ -59,7 +59,8 @@ def satz_mit_einheitlichem_kindergeld_und_kindersofortzuschlag(
     ) / 12 - kindergeld__satz
 
     satz_ohne_kindersofortzuschlag = max(
-        current_formula, satz_vorjahr_ohne_kindersofortzuschlag
+        current_formula,
+        satz_vorjahr_ohne_kindersofortzuschlag,
     )
     return satz_ohne_kindersofortzuschlag + arbeitslosengeld_2__kindersofortzuschlag
 
@@ -112,7 +113,9 @@ def anspruchshöhe_m_bg(
 
 
 @policy_function(
-    start_date="2005-01-01", end_date="2022-12-31", leaf_name="vermögensfreibetrag_bg"
+    start_date="2005-01-01",
+    end_date="2022-12-31",
+    leaf_name="vermögensfreibetrag_bg",
 )
 def vermögensfreibetrag_bg_bis_2022(
     arbeitslosengeld_2__vermögensfreibetrag_bg: float,

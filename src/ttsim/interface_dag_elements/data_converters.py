@@ -35,7 +35,8 @@ def nested_data_to_df_with_nested_columns(
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
 
     return pd.DataFrame(
-        flat_data_to_convert, index=pd.Index(data_with_p_id["p_id"], name="p_id")
+        flat_data_to_convert,
+        index=pd.Index(data_with_p_id["p_id"], name="p_id"),
     )
 
 
@@ -133,7 +134,7 @@ def dataframe_to_nested_data(
                 pd.Series(
                     [input_value] * len(df),
                     index=df.index,
-                )
+                ),
             )
 
     return dt.unflatten_from_qual_names(name_to_input_array)

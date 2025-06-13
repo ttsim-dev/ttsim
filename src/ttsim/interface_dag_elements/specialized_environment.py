@@ -183,13 +183,11 @@ def _add_derived_functions(
         targets=targets,
         grouping_levels=grouping_levels,
     )
-    out = {
+    return {
         **qual_name_policy_environment,
         **time_conversion_functions,
         **aggregate_by_group_functions,
     }
-
-    return out
 
 
 @interface_function()

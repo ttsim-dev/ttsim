@@ -47,7 +47,8 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
 def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend):
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            "error", category=warn_if.FunctionsAndDataColumnsOverlapWarning
+            "error",
+            category=warn_if.FunctionsAndDataColumnsOverlapWarning,
         )
         main(
             inputs={

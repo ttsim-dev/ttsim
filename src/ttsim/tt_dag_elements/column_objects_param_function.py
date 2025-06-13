@@ -223,7 +223,9 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
         _frozen_safe_update_wrapper(self, self.function)
 
     def __call__(
-        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+        self,
+        *args: FunArgTypes.args,
+        **kwargs: FunArgTypes.kwargs,
     ) -> ReturnType:
         return self.function(*args, **kwargs)
 
@@ -466,8 +468,9 @@ def group_creation_function(
 
     def decorator(func: GenericCallable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
-        func_with_reorder = lambda **kwargs: reorder_ids(
-            ids=func(**kwargs), xnp=kwargs["xnp"]
+        func_with_reorder = lambda **kwargs: reorder_ids(  # noqa: E731
+            ids=func(**kwargs),
+            xnp=kwargs["xnp"],
         )
         functools.update_wrapper(func_with_reorder, func)
 
@@ -577,34 +580,37 @@ def agg_by_group_function(
 
 
 def _fail_if_group_id_is_invalid(
-    group_ids: UnorderedQNames, orig_location: str
+    group_ids: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
             "aggregation by group. Got "
-            f"{', '.join(group_ids) if group_ids else 'nothing'} in {orig_location}."
+            f"{', '.join(group_ids) if group_ids else 'nothing'} in {orig_location}.",
         )
 
 
 def _fail_if_other_arg_is_present(
-    other_args: UnorderedQNames, orig_location: str
+    other_args: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if other_args:
         raise ValueError(
             "There must be no argument besides identifiers for counting. Got: "
-            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
+            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}.",
         )
 
 
 def _fail_if_other_arg_is_invalid(
-    other_args: UnorderedQNames, orig_location: str
+    other_args: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if len(other_args) != 1:
         raise ValueError(
             "There must be exactly one argument besides identifiers, num_segments, and "
             "backend for aggregations. Got: "
-            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
+            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}.",
         )
 
 
@@ -722,18 +728,19 @@ def _fail_if_p_id_is_not_present(args: UnorderedQNames, orig_location: str) -> N
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
-            f"Got {', '.join(args) if args else 'nothing'} in {orig_location}."
+            f"Got {', '.join(args) if args else 'nothing'} in {orig_location}.",
         )
 
 
 def _fail_if_other_p_id_is_invalid(
-    other_p_ids: UnorderedQNames, orig_location: str
+    other_p_ids: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if len(other_p_ids) != 1:
         raise ValueError(
             "Require exactly one identifier starting with 'p_id_' for "
             "aggregation by p_id. Got: "
-            f"{', '.join(other_p_ids) if other_p_ids else 'nothing'} in {orig_location}."  # noqa: E501
+            f"{', '.join(other_p_ids) if other_p_ids else 'nothing'} in {orig_location}.",  # noqa: E501
         )
 
 
@@ -807,7 +814,7 @@ def _convert_and_validate_dates(
 
     if start_date > end_date:
         raise ValueError(
-            f"The start date {start_date} must be before the end date {end_date}."
+            f"The start date {start_date} must be before the end date {end_date}.",
         )
 
     return start_date, end_date
@@ -840,7 +847,9 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         _frozen_safe_update_wrapper(self, self.function)
 
     def __call__(
-        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+        self,
+        *args: FunArgTypes.args,
+        **kwargs: FunArgTypes.kwargs,
     ) -> ReturnType:
         return self.function(*args, **kwargs)
 

@@ -18,7 +18,8 @@ def betrag_m_nach_wohnort(
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort: dict[
-        str, float
+        str,
+        float,
     ],
 ) -> float:
     """Erwerbsminderungsrente (public disability insurance).
@@ -140,7 +141,9 @@ def entgeltpunkte_ost(
 
 
 @policy_function(
-    start_date="2000-12-23", end_date="2014-06-30", leaf_name="zurechnungszeit"
+    start_date="2000-12-23",
+    end_date="2014-06-30",
+    leaf_name="zurechnungszeit",
 )
 def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
@@ -171,7 +174,9 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
 
 
 @policy_function(
-    start_date="2014-07-01", end_date="2017-07-16", leaf_name="zurechnungszeit"
+    start_date="2014-07-01",
+    end_date="2017-07-16",
+    leaf_name="zurechnungszeit",
 )
 def zurechnungszeit_mit_einheitlicher_altersgrenze(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
@@ -241,7 +246,8 @@ def zugangsfaktor_ohne_gestaffelte_altersgrenze(
     altersgrenze: float,
     min_zugangsfaktor: float,
     sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
-        str, float
+        str,
+        float,
     ],
 ) -> float:
     """Zugangsfaktor.
@@ -274,7 +280,8 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
     altersgrenze_langjährig_versichert: float,
     min_zugangsfaktor: float,
     sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
-        str, float
+        str,
+        float,
     ],
 ) -> float:
     """Zugangsfaktor.

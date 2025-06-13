@@ -14,13 +14,17 @@ if TYPE_CHECKING:
 
 @agg_by_p_id_function(start_date="2005-01-01", agg_type=AggType.SUM)
 def kindergeldübertrag_m(
-    differenz_kindergeld_kindbedarf_m: float, kindergeld__p_id_empfänger: int, p_id: int
+    differenz_kindergeld_kindbedarf_m: float,
+    kindergeld__p_id_empfänger: int,
+    p_id: int,
 ) -> float:
     pass
 
 
 @policy_function(
-    start_date="2005-01-01", end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m"
+    start_date="2005-01-01",
+    end_date="2022-12-31",
+    leaf_name="kindergeld_pro_kind_m",
 )
 def _mean_kindergeld_per_child_gestaffelt_m(
     kindergeld__betrag_m: float,

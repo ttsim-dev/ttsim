@@ -13,7 +13,8 @@ def betrag_y_mit_sparerfreibetrag_und_werbungskostenpauschbetrag(
 ) -> float:
     """Calculate taxable capital income on Steuernummer level."""
     return max(
-        kapitalerträge_y - sparerfreibetrag + sparer_werbungskostenpauschbetrag, 0.0
+        kapitalerträge_y - sparerfreibetrag + sparer_werbungskostenpauschbetrag,
+        0.0,
     )
 
 

@@ -22,7 +22,7 @@ from ttsim.tt_dag_elements.piecewise_polynomial import (
 
 @pytest.fixture
 def parameters(xnp):
-    params = PiecewisePolynomialParamValue(
+    return PiecewisePolynomialParamValue(
         thresholds=xnp.array([-xnp.inf, 9168.0, 14254.0, 55960.0, 265326.0, xnp.inf]),
         rates=xnp.array(
             [
@@ -40,11 +40,10 @@ def parameters(xnp):
                     0.00000000e00,
                     0.00000000e00,
                 ],
-            ]
+            ],
         ),
         intercepts=xnp.array([0.0, 0.0, 965.5771, 14722.3012, 102656.0212]),
     )
-    return params
 
 
 def test_get_piecewise_parameters_all_intercepts_supplied(xnp):
@@ -87,7 +86,8 @@ def test_get_piecewise_parameters_all_intercepts_supplied(xnp):
 
 
 def test_piecewise_polynomial(
-    parameters: PiecewisePolynomialParamValue, xnp: ModuleType
+    parameters: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ):
     x = xnp.array([-1_000, 1_000, 10_000, 30_000, 100_000, 1_000_000])
     expected = xnp.array([0.0, 0.0, 246.53, 10551.65, 66438.2, 866518.64])

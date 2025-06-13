@@ -36,13 +36,15 @@ def vectorize_function(
     else:
         raise ValueError(
             f"Vectorization strategy {vectorization_strategy} is not supported. "
-            "Use 'loop' or 'vectorize'."
+            "Use 'loop' or 'vectorize'.",
         )
     return vectorized
 
 
 def _make_vectorizable(
-    func: GenericCallable, backend: str, xnp: ModuleType
+    func: GenericCallable,
+    backend: str,
+    xnp: ModuleType,
 ) -> GenericCallable:
     """Redefine function to be vectorizable given backend.
 
@@ -58,7 +60,7 @@ def _make_vectorizable(
     if _is_lambda_function(func):
         raise TranslateToVectorizableError(
             "Lambda functions are not supported for vectorization. Please define a "
-            "named function and use that."
+            "named function and use that.",
         )
 
     module = _module_from_backend(backend)
@@ -83,7 +85,9 @@ def _make_vectorizable(
 
 
 def make_vectorizable_source(
-    func: GenericCallable, backend: str, xnp: ModuleType
+    func: GenericCallable,
+    backend: str,
+    xnp: ModuleType,
 ) -> str:
     """Redefine function source to be vectorizable given backend.
 
@@ -100,7 +104,7 @@ def make_vectorizable_source(
     if _is_lambda_function(func):
         raise TranslateToVectorizableError(
             "Lambda functions are not supported for vectorization. Please define a "
-            "named function and use that."
+            "named function and use that.",
         )
 
     module = _module_from_backend(backend)
@@ -109,7 +113,9 @@ def make_vectorizable_source(
 
 
 def _make_vectorizable_ast(
-    func: GenericCallable, module: str, xnp: ModuleType
+    func: GenericCallable,
+    module: str,
+    xnp: ModuleType,
 ) -> ast.Module:
     """Change if statement to where call in the ast of func and return new ast.
 
@@ -142,8 +148,7 @@ def _remove_decorator_lines(source: str) -> str:
     """Removes leading decorator lines from function source code."""
     if source.startswith("def "):
         return source
-    else:
-        return "def " + source.split("\ndef ")[1]
+    return "def " + source.split("\ndef ")[1]
 
 
 # ======================================================================================
@@ -160,21 +165,24 @@ class Transformer(ast.NodeTransformer):
     def visit_Call(self, node: ast.Call) -> ast.AST:  # noqa: N802
         self.generic_visit(node)
         return _call_to_call_from_module(
-            node, module=self.module, func_loc=self.func_loc, xnp=self.xnp
+            node,
+            module=self.module,
+            func_loc=self.func_loc,
+            xnp=self.xnp,
         )
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:  # noqa: N802
         if isinstance(node.op, ast.Not):
             return _not_to_call(node, module=self.module)
-        else:
-            return node
+        return node
 
     def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:  # noqa: N802
         self.generic_visit(node)
         return _boolop_to_call(node, module=self.module)
 
     def visit_If(  # noqa: N802
-        self, node: ast.If
+        self,
+        node: ast.If,
     ) -> ast.Call | ast.Return | ast.Assign | ast.AugAssign:
         self.generic_visit(node)
         call = _if_to_call(node, module=self.module, func_loc=self.func_loc)
@@ -218,11 +226,11 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     if len(node.orelse) > 1 or len(node.body) > 1:
         msg = _too_many_operations_error_message(node, func_loc=func_loc)
         raise TranslateToVectorizableError(msg)
-    elif node.orelse == []:
+    if node.orelse == []:
         if isinstance(node.body[0], ast.Return):
             msg = _return_and_no_else_error_message(node.body[0], func_loc=func_loc)
             raise TranslateToVectorizableError(msg)
-        elif hasattr(node.body[0], "targets"):
+        if hasattr(node.body[0], "targets"):
             name = ast.Name(id=node.body[0].targets[0].id, ctx=ast.Load())
         else:
             name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # type: ignore[attr-defined]
@@ -244,7 +252,9 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
 
     return ast.Call(
         func=ast.Attribute(
-            value=ast.Name(id=module, ctx=ast.Load()), attr="where", ctx=ast.Load()
+            value=ast.Name(id=module, ctx=ast.Load()),
+            attr="where",
+            ctx=ast.Load(),
         ),
         args=args,
         keywords=[],
@@ -263,7 +273,9 @@ def _ifexp_to_call(node: ast.IfExp, module: str) -> ast.Call:
 
     return ast.Call(
         func=ast.Attribute(
-            value=ast.Name(id=module, ctx=ast.Load()), attr="where", ctx=ast.Load()
+            value=ast.Name(id=module, ctx=ast.Load()),
+            attr="where",
+            ctx=ast.Load(),
         ),
         args=args,
         keywords=[],
@@ -295,7 +307,10 @@ def _boolop_to_call(node: ast.BoolOp, module: str) -> ast.Call:
 
 
 def _call_to_call_from_module(
-    node: ast.Call, module: str, func_loc: str, xnp: ModuleType
+    node: ast.Call,
+    module: str,
+    func_loc: str,
+    xnp: ModuleType,
 ) -> ast.AST:
     """Transform built-in Calls to Calls from module."""
     to_transform = ("sum", "any", "all", "max", "min")
@@ -314,7 +329,7 @@ def _call_to_call_from_module(
             raise TranslateToVectorizableError(
                 f"Argument of function {func_id} is not a list, tuple, or valid array."
                 f"\n\nFunction: {func_loc}\n\n"
-                f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
+                f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n",
             )
 
         call.func = ast.Attribute(
@@ -413,5 +428,5 @@ def _module_from_backend(backend: str) -> str:
         return BACKEND_TO_MODULE[backend]
 
     raise NotImplementedError(
-        f"Argument 'backend' is {backend} but must be in {BACKEND_TO_MODULE.keys()}."
+        f"Argument 'backend' is {backend} but must be in {BACKEND_TO_MODULE.keys()}.",
     )

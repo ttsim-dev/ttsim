@@ -382,7 +382,7 @@ for year in range(1990, 2023):
                 _active_column_objects_and_param_functions(
                     orig=column_objects_and_param_functions(root=METTSIM_ROOT),
                     date=datetime.date(year=year, month=1, day=1),
-                )
+                ),
             ).items()
             if not isinstance(
                 pf,
@@ -440,7 +440,8 @@ def test_geschwisterbonus_m(backend, xnp):
     shape = (10, 2)
     basisbetrag_m = xnp.full(shape, basisbetrag_m)
     geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = xnp.full(
-        shape, geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg
+        shape,
+        geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
     )
 
     with pytest.raises(ValueError, match="truth value of an array with more than"):
@@ -454,7 +455,9 @@ def test_geschwisterbonus_m(backend, xnp):
     # Call converted function on array input and test result
     # ==============================================================================
     converted = _make_vectorizable(
-        mock__elterngeld__geschwisterbonus_m, backend=backend, xnp=xnp
+        mock__elterngeld__geschwisterbonus_m,
+        backend=backend,
+        xnp=xnp,
     )
     got = converted(
         basisbetrag_m=basisbetrag_m,
@@ -655,19 +658,26 @@ def already_vectorized_func(x: IntColumn, xnp: ModuleType) -> IntColumn:
 
 def test_loop_vectorize_scalar_func(backend, xnp):
     fun = vectorize_function(
-        scalar_func, vectorization_strategy="loop", backend=backend, xnp=numpy
+        scalar_func,
+        vectorization_strategy="loop",
+        backend=backend,
+        xnp=numpy,
     )
     assert numpy.array_equal(fun(xnp.array([-1, 0, 2, 3])), xnp.array([0, 0, 4, 6]))
 
 
 def test_vectorize_scalar_func(backend, xnp):
     fun = vectorize_function(
-        scalar_func, vectorization_strategy="vectorize", backend=backend, xnp=numpy
+        scalar_func,
+        vectorization_strategy="vectorize",
+        backend=backend,
+        xnp=numpy,
     )
     assert numpy.array_equal(fun(xnp.array([-1, 0, 2, 3])), xnp.array([0, 0, 4, 6]))
 
 
 def test_already_vectorized_func(xnp):
     assert numpy.array_equal(
-        already_vectorized_func(xnp.array([-1, 0, 2, 3]), xnp), xnp.array([0, 0, 4, 6])
+        already_vectorized_func(xnp.array([-1, 0, 2, 3]), xnp),
+        xnp.array([0, 0, 4, 6]),
     )

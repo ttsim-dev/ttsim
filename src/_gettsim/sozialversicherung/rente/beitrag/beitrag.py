@@ -207,7 +207,8 @@ def betrag_in_gleitzone_arbeitnehmer_m_als_differenz_von_gesamt_und_arbeitgeberb
 
 
 @policy_function(
-    start_date="2022-10-01", leaf_name="betrag_in_gleitzone_arbeitnehmer_m"
+    start_date="2022-10-01",
+    leaf_name="betrag_in_gleitzone_arbeitnehmer_m",
 )
 def betrag_in_gleitzone_arbeitnehmer_m_mit_festem_beitragssatz(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,

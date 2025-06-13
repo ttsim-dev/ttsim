@@ -67,7 +67,8 @@ def df_with_mapper(
 
 @interface_function()
 def df_with_nested_columns(
-    tree: NestedData, input_data__tree: NestedData
+    tree: NestedData,
+    input_data__tree: NestedData,
 ) -> pd.DataFrame:
     """The results DataFrame with mapped column names.
 

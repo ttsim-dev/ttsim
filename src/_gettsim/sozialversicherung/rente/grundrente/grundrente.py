@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
 )
@@ -79,7 +81,9 @@ def _anzurechnendes_einkommen_m(
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
 )
@@ -123,7 +127,9 @@ def anzurechnendes_einkommen_m(
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
 )
@@ -159,7 +165,8 @@ def basisbetrag_m(
 
 @policy_function(start_date="2021-01-01")
 def mean_entgeltpunkte_pro_bewertungsmonat(
-    mean_entgeltpunkte: float, bewertungszeiten_monate: int
+    mean_entgeltpunkte: float,
+    bewertungszeiten_monate: int,
 ) -> float:
     """Average number of Entgeltpunkte earned per month of Grundrentenbewertungszeiten."""
     if bewertungszeiten_monate > 0:

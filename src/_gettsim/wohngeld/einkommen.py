@@ -51,7 +51,8 @@ def einkommen(
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
     unteres_eink = min_einkommen_lookup_table.values_to_look_up[
         xnp.minimum(
-            anzahl_personen, min_einkommen_lookup_table.values_to_look_up.shape[0]
+            anzahl_personen,
+            min_einkommen_lookup_table.values_to_look_up.shape[0],
         )
         - min_einkommen_lookup_table.base_to_subtract
     ]
