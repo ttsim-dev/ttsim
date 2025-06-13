@@ -439,11 +439,11 @@ def non_convertible_objects_in_results_tree(
     paths_with_incorrect_types = []
     paths_with_incorrect_length = []
     for path, data in dt.flatten_to_tree_paths(results__tree).items():
-        if isinstance(data, (xnp.ndarray, list)):
-            if not all(isinstance(item, _numeric_types) for item in data):
-                paths_with_incorrect_types.append(str(path))
-            if len(data) != expected_object_length:
-                paths_with_incorrect_length.append(str(path))
+        if isinstance(data, xnp.ndarray) and len(data) not in {
+            1,
+            expected_object_length,
+        }:
+            paths_with_incorrect_length.append(str(path))
         elif isinstance(data, _numeric_types):
             continue
         else:
