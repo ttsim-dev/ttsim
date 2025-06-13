@@ -376,7 +376,7 @@ for year in range(1990, 2023):
 
     @pytest.mark.parametrize(
         "funcname, func",
-        [
+        (
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
                 _active_column_objects_and_param_functions(
@@ -391,7 +391,7 @@ for year in range(1990, 2023):
                 | AggByPIDFunction
                 | PolicyInput,
             )
-        ],
+        ),
     )
     def test_convertible(funcname, func, backend, xnp):  # noqa: ARG001
         # Leave funcname for debugging purposes.

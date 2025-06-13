@@ -54,7 +54,8 @@ def df_with_mapper(
         nested_outputs_df_column_names:
             A tree that maps paths (sequence of keys) to data columns names.
 
-    Returns:
+    Returns
+    -------
         A DataFrame.
     """
     return nested_data_to_df_with_mapped_columns(
@@ -78,7 +79,8 @@ def df_with_nested_columns(
         nested_outputs_df_column_names:
             A tree that maps paths (sequence of keys) to data columns names.
 
-    Returns:
+    Returns
+    -------
         A DataFrame.
     """
     return nested_data_to_df_with_nested_columns(

@@ -287,7 +287,6 @@ def wohnbedarf_anteil_eltern_bg(
 
     Reference: § 6a Abs. 5 S. 3 BKGG
     """
-
     if familie__alleinerziehend_bg:
         elternbetrag = (
             existenzminimum.kosten_der_unterkunft.single

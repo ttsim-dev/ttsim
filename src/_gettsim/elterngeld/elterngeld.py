@@ -220,7 +220,6 @@ def lohnersatzanteil(
     decreases above the second step until prozent_minimum.
 
     """
-
     # Higher replacement rate if considered income is below a threshold
     if (
         nettoeinkommen_vorjahr_m

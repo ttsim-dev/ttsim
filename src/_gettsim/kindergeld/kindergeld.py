@@ -38,7 +38,6 @@ def betrag_ohne_staffelung_m(
     of children.
 
     """
-
     return satz * anzahl_ansprüche
 
 
@@ -145,7 +144,8 @@ def satz_nach_anzahl_kinder(
     xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Convert the Kindergeld-Satz by child to the amount of Kindergeld by number of
-    children."""
+    children.
+    """
     max_num_children = 30
     max_num_children_in_spec = max(satz_gestaffelt.keys())
     base_spec = {

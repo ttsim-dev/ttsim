@@ -99,7 +99,8 @@ def betrag_gesamt_in_gleitzone_m(
     beitragssatz: float,
 ) -> float:
     """Sum of employee's and employer's unemployment insurance contribution
-    for Midijobs."""
+    for Midijobs.
+    """
     return sozialversicherung__midijob_bemessungsentgelt_m * beitragssatz
 
 
@@ -113,7 +114,8 @@ def betrag_arbeitgeber_in_gleitzone_m_anteil_bruttolohn(
     beitragssatz: float,
 ) -> float:
     """Employers' unemployment insurance contribution for Midijobs until September
-    2022."""
+    2022.
+    """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         * beitragssatz

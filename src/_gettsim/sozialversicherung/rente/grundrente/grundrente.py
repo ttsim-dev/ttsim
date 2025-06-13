@@ -53,7 +53,6 @@ def einkommen_m(
 
     Reference: § 97a Abs. 2 S. 1 SGB VI
     """
-
     # Sum income over different income sources.
     return (
         einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m
@@ -101,7 +100,6 @@ def anzurechnendes_einkommen_m(
 
     Reference: § 97a Abs. 4 S. 2, 4 SGB VI
     """
-
     # Calculate relevant income following the crediting rules using the values for
     # singles and those for married subjects
     # Note: Thresholds are defined relativ to rentenwert which is implemented by
@@ -142,7 +140,6 @@ def basisbetrag_m(
     The Zugangsfaktor is limited to 1 and considered Grundrentezeiten are limited to
     35 years (420 months).
     """
-
     bewertungszeiten = min(
         bewertungszeiten_monate,
         berücksichtigte_wartezeit_monate["max"],

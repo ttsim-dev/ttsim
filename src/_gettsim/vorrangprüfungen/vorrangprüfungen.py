@@ -58,7 +58,6 @@ def wohngeld_und_kinderzuschlag_vorrang_vor_arbeitslosengeld_2_bg(
     wohngeld__anspruchshöhe_m_bg: float,
 ) -> bool:
     """Check if housing and child benefit have priority."""
-
     return (
         arbeitslosengeld_2__anzurechnendes_einkommen_m_bg
         + wohngeld__anspruchshöhe_m_bg

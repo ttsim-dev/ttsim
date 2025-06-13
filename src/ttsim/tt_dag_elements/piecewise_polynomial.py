@@ -116,7 +116,6 @@ def get_piecewise_parameters(
     -------
 
     """
-
     # Check if keys are consecutive numbers and starting at 0.
     if sorted(parameter_dict) != list(range(len(parameter_dict))):
         raise ValueError(
@@ -154,7 +153,7 @@ def get_piecewise_parameters(
     )
 
 
-def check_and_get_thresholds(
+def check_and_get_thresholds(  # noqa: C901
     leaf_name: str,
     parameter_dict: dict[int, dict[str, float]],
     xnp: ModuleType,
@@ -389,7 +388,6 @@ def _calculate_one_intercept(
         The value of `x` under the piecewise function.
 
     """
-
     # Check if value lies within the defined range.
     if (x < lower_thresholds[0]) or (x > upper_thresholds[-1]) or numpy.isnan(x):
         return numpy.nan

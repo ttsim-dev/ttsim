@@ -35,7 +35,6 @@ def basis_für_klassen_5_6(
         Jahresbetrags.
 
     """
-
     return 2 * (
         piecewise_polynomial(
             x=einkommen_y * 1.25, parameters=parameter_einkommensteuertarif, xnp=xnp
@@ -137,7 +136,6 @@ def tarif_klassen_5_und_6(
     xnp: ModuleType,
 ) -> float:
     """Lohnsteuer for Lohnsteuerklassen 5 and 6."""
-
     basis = basis_für_klassen_5_6(
         einkommen_y, einkommensteuer__parameter_einkommensteuertarif, xnp=xnp
     )
@@ -158,7 +156,6 @@ def betrag_y(
     tarif_klassen_5_und_6: float,
 ) -> float:
     """Withholding tax on earnings (Lohnsteuer)"""
-
     if steuerklasse == 1 or steuerklasse == 2 or steuerklasse == 4:
         out = basistarif
     elif steuerklasse == 3:
@@ -264,7 +261,6 @@ def betrag_soli_y(
     xnp: ModuleType,
 ) -> float:
     """Solidarity surcharge on Lohnsteuer (withholding tax on earnings)."""
-
     return piecewise_polynomial(
         x=betrag_mit_kinderfreibetrag_y,
         parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
@@ -283,7 +279,6 @@ def kinderfreibetrag_soli_y(
     benefit, Steuerklasse 4 gets the child benefit once, and Steuerklasse 5/6 gets
     nothing.
     """
-
     if steuerklasse == 1 or steuerklasse == 2 or steuerklasse == 3:
         out = 2 * einkommensteuer__kinderfreibetrag_y
     elif steuerklasse == 4:

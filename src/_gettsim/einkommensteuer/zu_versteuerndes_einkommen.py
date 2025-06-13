@@ -81,6 +81,5 @@ def zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn(
     kinderfreibetrag_y_sn: float,
 ) -> float:
     """Calculate taxable income with child allowance on Steuernummer level."""
-
     out = gesamteinkommen_y - kinderfreibetrag_y_sn
     return max(out, 0.0)

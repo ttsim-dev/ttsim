@@ -109,7 +109,6 @@ def plot_tt_dag(
 
 def plot_full_interface_dag(output_path: Path) -> None:
     """Plot the full interface DAG."""
-
     nodes = {
         p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
         for p, n in load_interface_functions_and_inputs().items()
@@ -139,7 +138,6 @@ def plot_full_interface_dag(output_path: Path) -> None:
 
 def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
     """Plot the DAG."""
-
     nice_dag = nx.relabel_nodes(
         dag, {qn: qn.replace("__", "<br>") for qn in dag.nodes()}
     )

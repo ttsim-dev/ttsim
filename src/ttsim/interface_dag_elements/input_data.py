@@ -51,7 +51,8 @@ def tree(
         df_and_mapper__mapper:
             A tree that maps paths (sequence of keys) to data columns names.
 
-    Returns:
+    Returns
+    -------
         A nested data structure.
     """
     return dataframe_to_nested_data(
@@ -69,7 +70,8 @@ def flat(tree: NestedData) -> FlatData:
         tree:
             The input tree.
 
-    Returns:
+    Returns
+    -------
         Mapping of tree paths to input data.
     """
     return dt.flatten_to_tree_paths(tree)

@@ -34,7 +34,6 @@ def betrag_m(
     satz: dict[str, float],
 ) -> float:
     """Calculate individual unemployment benefit."""
-
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
         arbeitsl_geld_satz = satz["allgemein"]
     else:
@@ -86,7 +85,8 @@ def mindestversicherungszeit_erreicht(
     mindestversicherungsmonate: int,
 ) -> bool:
     """At least 12 months of unemployment contributions in the 30 months before claiming
-    unemployment insurance."""
+    unemployment insurance.
+    """
     return (
         monate_beitragspflichtig_versichert_in_letzten_30_monaten
         >= mindestversicherungsmonate

@@ -60,7 +60,6 @@ def bruttorente_basisbetrag_m_nach_wohnort(
     - https://de.wikipedia.org/wiki/Rentenformel
     - https://de.wikipedia.org/wiki/Rentenanpassungsformel
     """
-
     if sozialversicherung__rente__bezieht_rente:
         out = (
             sozialversicherung__rente__entgeltpunkte_west
@@ -97,7 +96,6 @@ def bruttorente_basisbetrag_m(
     - https://de.wikipedia.org/wiki/Rentenformel
     - https://de.wikipedia.org/wiki/Rentenanpassungsformel
     """
-
     if sozialversicherung__rente__bezieht_rente:
         out = (
             (
@@ -161,7 +159,6 @@ def zugangsfaktor(
     `regelaltersrente__grundsätzlich_anspruchsberechtigt`
     is False.
     """
-
     if regelaltersrente__grundsätzlich_anspruchsberechtigt:
         # Early retirement (before full retirement age): Zugangsfaktor < 1
         if (

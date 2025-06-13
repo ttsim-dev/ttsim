@@ -31,7 +31,6 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_ohne_besonders_langjährig(
     to the normal retirement age (FRA<=NRA) and depends on personal characteristics as
     gender, insurance duration, health/disability, employment status.
     """
-
     out = regelaltersrente__altersgrenze
     if für_frauen__grundsätzlich_anspruchsberechtigt:
         out = xnp.minimum(out, für_frauen__altersgrenze)
@@ -75,7 +74,6 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_besonders_langjährig(
     because then all potential beneficiaries of the Rente wg. Arbeitslosigkeit and
     Rente für Frauen have reached the normal retirement age.
     """
-
     out = regelaltersrente__altersgrenze
     if für_frauen__grundsätzlich_anspruchsberechtigt:
         out = xnp.minimum(out, für_frauen__altersgrenze)
@@ -114,7 +112,6 @@ def altersgrenze_mit_besonders_langjährig_ohne_arbeitslosigkeit_frauen(
     to the normal retirement age (FRA<=NRA) and depends on personal characteristics as
     gender, insurance duration, health/disability, employment status.
     """
-
     out = regelaltersrente__altersgrenze
     if langjährig__grundsätzlich_anspruchsberechtigt:
         out = xnp.minimum(out, langjährig__altersgrenze)
@@ -177,7 +174,6 @@ def altersgrenze_vorzeitig_ohne_arbeitslosigkeit_frauen(
     Early retirement age depends on personal characteristics as gender, insurance
     duration, health/disability, employment status.
     """
-
     out = regelaltersrente__altersgrenze
 
     if langjährig__grundsätzlich_anspruchsberechtigt:
@@ -203,7 +199,6 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_arbeitslosigkeit_frauen(
     becomes inactive in 2018 because then all potential beneficiaries of the Rente wg.
     Arbeitslosigkeit and Rente für Frauen have reached the normal retirement age.
     """
-
     return (
         für_frauen__grundsätzlich_anspruchsberechtigt
         or langjährig__grundsätzlich_anspruchsberechtigt
@@ -221,7 +216,6 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_vorzeitig_ohne_arbeitslosigkeit
 
     Can only be claimed if eligible for "Rente für langjährig Versicherte".
     """
-
     return langjährig__grundsätzlich_anspruchsberechtigt
 
 

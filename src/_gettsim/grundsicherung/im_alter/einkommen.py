@@ -30,7 +30,6 @@ def einkommen_m(
     """Calculate individual income considered in the calculation of Grundsicherung im
     Alter.
     """
-
     # Income
     total_income = (
         erwerbseinkommen_m
@@ -64,8 +63,8 @@ def erwerbseinkommen_m(
 
     Legal reference: § 82 SGB XII Abs. 3
 
-    Notes:
-
+    Notes
+    -----
     - Freibeträge for income are currently not considered
     - Start date is 2011 because of the reference to regelbedarfsstufen,
       which was introduced in 2011.
@@ -162,7 +161,6 @@ def gesetzliche_rente_m_ab_2021(
     Starting from 2021: If eligible for Grundrente, can deduct 100€ completely and 30%
     of private pension above 100 (but no more than 1/2 of regelbedarf)
     """
-
     angerechnete_rente = piecewise_polynomial(
         x=sozialversicherung__rente__altersrente__betrag_m,
         parameters=anrechnungsfreier_anteil_gesetzliche_rente,

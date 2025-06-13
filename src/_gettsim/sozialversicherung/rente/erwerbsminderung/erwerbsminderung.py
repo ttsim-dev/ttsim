@@ -25,7 +25,6 @@ def betrag_m_nach_wohnort(
 
     Legal reference: SGB VI § 64: Rentenformel für Monatsbetrag der Rente
     """
-
     if grundsätzlich_anspruchsberechtigt:
         out = (
             (
@@ -63,7 +62,6 @@ def betrag_m_einheitlich(
 
     Legal reference: SGB VI § 64: Rentenformel für Monatsbetrag der Rente
     """
-
     if grundsätzlich_anspruchsberechtigt:
         out = (
             (entgeltpunkte_ost + entgeltpunkte_west)
@@ -88,7 +86,6 @@ def grundsätzlich_anspruchsberechtigt(
 
     Legal reference: § 43 Abs. 1  SGB VI.
     """
-
     anspruch_erwerbsm_rente = (
         (voll_erwerbsgemindert or teilweise_erwerbsgemindert)
         and sozialversicherung__rente__mindestwartezeit_erfüllt
@@ -114,7 +111,6 @@ def entgeltpunkte_west(
     additional earning points. They receive their average earned income points for each
     year between their age of retirement and the "zurechnungszeitgrenze".
     """
-
     return sozialversicherung__rente__entgeltpunkte_west + (
         zurechnungszeit * (1 - anteil_entgeltpunkte_ost)
     )
@@ -138,7 +134,6 @@ def entgeltpunkte_ost(
     additional earning points. They receive their average earned income points for each
     year between their age of retirement and the "zurechnungszeitgrenze".
     """
-
     return sozialversicherung__rente__entgeltpunkte_ost + (
         zurechnungszeit * anteil_entgeltpunkte_ost
     )
@@ -403,7 +398,6 @@ def mean_entgeltpunkte_pro_bewertungsmonat(
 
     Legal reference: SGB VI § 72: Grundbewertung
     """
-
     belegungsfähiger_gesamtzeitraum = (
         sozialversicherung__rente__alter_bei_renteneintritt
         - altersgrenze_grundbewertung

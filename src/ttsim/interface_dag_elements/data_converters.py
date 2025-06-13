@@ -28,7 +28,8 @@ def nested_data_to_df_with_nested_columns(
         data_with_p_id:
             Some data structure with a "p_id" column.
 
-    Returns:
+    Returns
+    -------
         A DataFrame.
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
@@ -53,7 +54,8 @@ def nested_data_to_df_with_mapped_columns(
         data_with_p_id:
             Some data structure with a "p_id" column.
 
-    Returns:
+    Returns
+    -------
         A DataFrame.
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
@@ -84,13 +86,13 @@ def dataframe_to_nested_data(
             df:
                 The pandas DataFrame containing the source data.
 
-        Returns
-        -------
+    Returns
+    -------
             A nested dictionary structure containing the data organized according to the
             mapping definition.
 
-        Examples
-        --------
+    Examples
+    --------
             >>> df = pd.DataFrame({
             ...     "a": [1, 2, 3],
             ...     "b": [4, 5, 6],

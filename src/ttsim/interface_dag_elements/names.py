@@ -103,7 +103,6 @@ def top_level_namespace(
     top_level_namespace:
         The top level namespace.
     """
-
     time_units = tuple(TIME_UNIT_LABELS)
     direct_top_level_names = set(policy_environment)
 
@@ -165,7 +164,6 @@ def root_nodes(
     The names of the columns in `processed_data` required for the tax transfer function.
 
     """
-
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tax_transfer_dag,

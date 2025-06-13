@@ -40,10 +40,11 @@ def oss(
             A tree that has the desired targets as the path (sequence of keys) and maps
             them to the data columns the user would like to have.
 
-    Returns:
+    Returns
+    -------
         A DataFrame with the results.
 
-    Examples:
+    Examples
     --------
     >>> inputs_df = pd.DataFrame(
     ...     {

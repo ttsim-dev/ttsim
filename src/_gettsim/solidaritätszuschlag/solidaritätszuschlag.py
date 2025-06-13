@@ -21,7 +21,6 @@ def solidaritätszuschlagstarif(
     xnp: ModuleType,
 ) -> float:
     """The isolated function for Solidaritätszuschlag."""
-
     return einkommensteuer__anzahl_personen_sn * piecewise_polynomial(
         x=steuer_pro_person / einkommensteuer__anzahl_personen_sn,
         parameters=parameter_solidaritätszuschlag,

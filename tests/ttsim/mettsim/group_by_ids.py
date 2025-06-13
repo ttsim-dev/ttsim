@@ -83,7 +83,6 @@ def _assign_parents_fam_id(
     xnp: ModuleType,
 ) -> IntColumn:
     """Return the fam_id of the child's parents."""
-
     return xnp.where(
         (fam_id == p_id + p_id * n)
         * (p_id_parent_loc >= 0)

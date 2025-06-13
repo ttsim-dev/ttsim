@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import functools
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 from dags import concatenate_functions, create_dag, get_free_arguments
@@ -289,7 +289,7 @@ def with_partialled_params_and_scalars(
     return processed_functions
 
 
-def _apply_rounding(element: Any, xnp: ModuleType) -> Any:
+def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
     return (
         element.rounding_spec.apply_rounding(element, xnp=xnp)
         if getattr(element, "rounding_spec", False)

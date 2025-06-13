@@ -120,7 +120,9 @@ def test_start_date_valid(date_string: str, expected: datetime.date):
     ],
 )
 def test_start_date_invalid(date_string: str):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="neither matches the format YYYY-MM-DD nor is a datetime.date"
+    ):
 
         @policy_function(start_date=date_string)
         def test_func():
@@ -158,7 +160,9 @@ def test_end_date_valid(date_string: str, expected: datetime.date):
     ],
 )
 def test_end_date_invalid(date_string: str):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="neither matches the format YYYY-MM-DD nor is a datetime.date"
+    ):
 
         @policy_function(end_date=date_string)
         def test_func():
@@ -174,7 +178,7 @@ def test_end_date_missing():
 
 
 def test_active_period_is_empty():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be before the end date"):
 
         @policy_function(start_date="2023-01-20", end_date="2023-01-19")
         def test_func():

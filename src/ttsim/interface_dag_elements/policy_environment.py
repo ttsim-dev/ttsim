@@ -120,7 +120,6 @@ def _active_column_objects_and_param_functions(
     -------
     A tree of active ColumnObjectParamFunctions.
     """
-
     flat_objects_tree = {
         (*orig_path[:-2], obj.leaf_name): obj
         for orig_path, obj in orig.items()

@@ -132,7 +132,7 @@ def in_anderer_bg_als_kindergeldempfänger(
     Kindergeldempfänger of that person.
     """
     # Create a dictionary to map p_id to bg_id
-    p_id_to_bg_id = dict(zip(p_id, bg_id))
+    p_id_to_bg_id = dict(zip(p_id, bg_id, strict=False))
 
     # Map each kindergeld__p_id_empfänger to its corresponding bg_id
     empf_bg_id = [

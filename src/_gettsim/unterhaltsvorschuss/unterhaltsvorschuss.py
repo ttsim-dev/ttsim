@@ -273,7 +273,8 @@ def elternteil_mindesteinkommen_erreicht(
     xnp: ModuleType,
 ) -> BoolColumn:
     """Income of Unterhaltsvorschuss recipient above threshold (this variable is
-    defined on child level)."""
+    defined on child level).
+    """
     return join(
         foreign_key=kindergeld__p_id_empfänger,
         primary_key=p_id,

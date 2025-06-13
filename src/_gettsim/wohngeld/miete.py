@@ -221,7 +221,6 @@ def miete_m_hh_mit_baujahr(
     xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit calculation on household level until 2008."""
-
     selected_bin_index = xnp.searchsorted(
         max_miete_m_lookup.baujahre,
         wohnen__baujahr_immobilie_hh,
@@ -248,7 +247,6 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     max_miete_m_lookup: ConsecutiveInt2dLookupTableParamValue,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-
     max_miete_m = max_miete_m_lookup.values_to_look_up[
         anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows,
         mietstufe - max_miete_m_lookup.base_to_subtract_cols,

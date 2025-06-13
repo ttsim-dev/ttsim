@@ -144,7 +144,6 @@ def load_policy_test_data(
 
     If policy_name is empty, all tests found in test_dir / "test_data" are loaded.
     """
-
     out = {}
     for path_to_yaml in (test_dir / "test_data" / policy_name).glob("**/*.yaml"):
         if _is_skipped(path_to_yaml):
@@ -180,7 +179,8 @@ def _get_policy_test_from_raw_test_data(
         raw_test_data: The raw test data.
         path_to_yaml: The path to the YAML file.
 
-    Returns:
+    Returns
+    -------
         A list of PolicyTest objects.
     """
     test_info: NestedData = raw_test_data.get("info", {})

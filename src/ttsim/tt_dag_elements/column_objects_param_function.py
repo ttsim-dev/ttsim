@@ -62,7 +62,8 @@ class FKType(StrEnum):
 class ColumnObject:
     """Base class for all objects operating on columns of data.
 
-    Examples:
+    Examples
+    --------
     - PolicyInputs
     - PolicyFunctions
     - GroupCreationFunctions
@@ -121,7 +122,7 @@ class PolicyInput(ColumnObject):
     def dummy_callable(self) -> PolicyFunction:
         """Dummy callable for the interface input. Just used for plotting."""
 
-        def dummy():  # type: ignore[no-untyped-def]
+        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
             pass
 
         return policy_function(
@@ -364,7 +365,6 @@ def policy_function(
     -------
     A decorator that returns a PolicyFunction object.
     """
-
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: GenericCallable) -> PolicyFunction:
@@ -390,7 +390,6 @@ def reorder_ids(ids: IntColumn, xnp: ModuleType) -> IntColumn:
     [43,44,70,50] -> [0,1,3,2]
 
     """
-
     sorting = xnp.argsort(ids)
     ids_sorted = ids[sorting]
     index_after_sort = xnp.arange(ids.shape[0])[sorting]

@@ -17,6 +17,7 @@ def test_load_path():
 
 def test_dont_load_init_py():
     """Don't load __init__.py files as sources for PolicyFunctions and
-    AggregationSpecs."""
+    AggregationSpecs.
+    """
     all_files = _find_files_recursively(root=METTSIM_ROOT, suffix=".py")
     assert "__init__.py" not in [file.name for file in all_files]

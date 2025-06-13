@@ -22,7 +22,6 @@ def xnp(backend: Literal["numpy", "jax"]) -> ModuleType:
     """
     Return the backend for numerical operations (either NumPy or jax).
     """
-
     if backend == "numpy":
         xnp = numpy
     elif backend == "jax":

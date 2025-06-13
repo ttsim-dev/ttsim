@@ -114,7 +114,8 @@ def get_base_name_and_grouping_suffix(match: re.Match[str]) -> tuple[str, str]:
 
 
 def create_tree_from_path_and_value(
-    path: tuple[str], value: Any = None
+    path: tuple[str],
+    value: Any = None,  # noqa: ANN401
 ) -> dict[str, Any]:
     """Create a nested dict with 'path' as keys and 'value' as leaf.
 
@@ -139,7 +140,6 @@ def create_tree_from_path_and_value(
     -------
     The tree structure.
     """
-
     nested_dict = value
     for entry in reversed(path):
         nested_dict = {entry: nested_dict}
@@ -161,7 +161,6 @@ def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     -------
     The merged pytree.
     """
-
     if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # type: ignore[arg-type]
         raise ValueError("Conflicting paths in trees to merge.")
 
@@ -205,7 +204,9 @@ def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, An
 
 
 def upsert_path_and_value(
-    base: dict[str, Any], path_to_upsert: tuple[str], value_to_upsert: Any = None
+    base: dict[str, Any],
+    path_to_upsert: tuple[str],
+    value_to_upsert: Any = None,  # noqa: ANN401
 ) -> dict[str, Any]:
     """Update tree with a path and value.
 
@@ -220,7 +221,9 @@ def upsert_path_and_value(
 
 
 def insert_path_and_value(
-    base: dict[str, Any], path_to_insert: tuple[str], value_to_insert: Any = None
+    base: dict[str, Any],
+    path_to_insert: tuple[str],
+    value_to_insert: Any = None,  # noqa: ANN401
 ) -> dict[str, Any]:
     """Insert a path and value into a tree.
 

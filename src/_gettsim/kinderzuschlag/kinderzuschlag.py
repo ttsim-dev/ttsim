@@ -27,7 +27,6 @@ def satz_mit_gestaffeltem_kindergeld(
 
     For 2023 the amount is once again explicitly specified as a parameter.
     """
-
     return max(
         (
             existenzminimum.regelsatz.kind
@@ -53,7 +52,6 @@ def satz_mit_einheitlichem_kindergeld_und_kindersofortzuschlag(
 
     Formula according to § 6a (2) BKGG.
     """
-
     current_formula = (
         existenzminimum.regelsatz.kind
         + existenzminimum.kosten_der_unterkunft.kind
@@ -103,7 +101,6 @@ def anspruchshöhe_m_bg(
     vermögensfreibetrag_bg: float,
 ) -> float:
     """Kinderzuschlag claim at the Bedarfsgemeinschaft level."""
-
     if vermögen_bg > vermögensfreibetrag_bg:
         out = max(
             basisbetrag_m_bg - (vermögen_bg - vermögensfreibetrag_bg),
@@ -121,7 +118,6 @@ def vermögensfreibetrag_bg_bis_2022(
     arbeitslosengeld_2__vermögensfreibetrag_bg: float,
 ) -> float:
     """Wealth exemptions for Kinderzuschlag until 2022."""
-
     return arbeitslosengeld_2__vermögensfreibetrag_bg
 
 
@@ -130,7 +126,6 @@ def vermögensfreibetrag_bg_ab_2023(
     arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg: float,
 ) -> float:
     """Wealth exemptions for Kinderzuschlag since 2023."""
-
     return arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg
 
 
@@ -156,7 +151,6 @@ def basisbetrag_m_bg_check_maximales_netteinkommen(
     (arbeitslosengeld_2__anzahl_personen_bg > 1).
 
     """
-
     if (
         nettoeinkommen_eltern_m_bg <= maximales_nettoeinkommen_m_bg
     ) and arbeitslosengeld_2__anzahl_personen_bg > 1:
@@ -192,7 +186,6 @@ def basisbetrag_m_bg_check_mindestbruttoeinkommen_und_maximales_nettoeinkommen(
     (arbeitslosengeld_2__anzahl_personen_bg > 1).
 
     """
-
     if (
         (bruttoeinkommen_eltern_m_bg >= mindestbruttoeinkommen_m_bg)
         and (nettoeinkommen_eltern_m_bg <= maximales_nettoeinkommen_m_bg)

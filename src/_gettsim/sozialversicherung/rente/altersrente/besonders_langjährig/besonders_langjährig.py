@@ -34,5 +34,4 @@ def grundsätzlich_anspruchsberechtigt(
     """Determining the eligibility for Altersrente für besonders langjährig Versicherte
     (pension for very long-term insured). Wartezeit 45 years. aka "Rente mit 63".
     """
-
     return sozialversicherung__rente__wartezeit_45_jahre_erfüllt

@@ -11,7 +11,6 @@ def beitragssatz_arbeitnehmer(beitragssatz: float) -> float:
 
     Basic split between employees and employers.
     """
-
     return beitragssatz / 2
 
 
@@ -188,7 +187,6 @@ def beitragssatz_arbeitgeber_bis_06_2005(beitragssatz: float) -> float:
 
     Until 2008, the top-up contribution rate (Zusatzbeitrag) was not considered.
     """
-
     return beitragssatz / 2
 
 
@@ -203,7 +201,6 @@ def beitragssatz_arbeitgeber_jahresanfang_bis_06_2005(
 
     Until 2008, the top-up contribution rate (Zusatzbeitrag) was not considered.
     """
-
     return beitragssatz_jahresanfang / 2
 
 
@@ -219,7 +216,6 @@ def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
 
     Until 2008, the top-up contribution rate (Zusatzbeitrag) was not considered.
     """
-
     return parameter_beitragssatz["mean_allgemein"] / 2
 
 
@@ -235,7 +231,6 @@ def beitragssatz_arbeitgeber_jahresanfang_mittlerer_kassenspezifischer(
 
     Until 2008, the top-up contribution rate (Zusatzbeitrag) was not considered.
     """
-
     return parameter_beitragssatz_jahresanfang["mean_allgemein"] / 2
 
 
@@ -252,7 +247,6 @@ def beitragssatz_arbeitgeber_einheitlicher_zusatzbeitrag(
     From 2009 until 2018, the contribution rate was uniform for all health insurers,
     Zusatzbeitrag irrelevant.
     """
-
     return parameter_beitragssatz["allgemein"] / 2
 
 
@@ -269,7 +263,6 @@ def beitragssatz_arbeitgeber_jahresanfang_einheitlicher_zusatzbeitrag(
     From 2009 until 2018, the contribution rate was uniform for all health insurers,
     Zusatzbeitrag irrelevant.
     """
-
     return parameter_beitragssatz_jahresanfang["allgemein"] / 2
 
 
@@ -312,7 +305,6 @@ def zusatzbeitragssatz_von_sonderbeitrag(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance top-up (Zusatzbeitrag) rate until December 2014."""
-
     return parameter_beitragssatz["sonderbeitrag"]
 
 
@@ -324,5 +316,4 @@ def zusatzbeitragssatz_von_mean_zusatzbeitrag(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance top-up rate (Zusatzbeitrag) since January 2015."""
-
     return parameter_beitragssatz["mean_zusatzbeitrag"]

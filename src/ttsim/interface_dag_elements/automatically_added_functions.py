@@ -465,7 +465,6 @@ def create_time_conversion_functions(
     -------
     The functions dict with the new time conversion functions.
     """
-
     time_units = tuple(TIME_UNIT_LABELS)
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         grouping_levels=grouping_levels,

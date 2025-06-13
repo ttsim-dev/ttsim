@@ -29,5 +29,4 @@ def grundsätzlich_anspruchsberechtigt(
     sozialversicherung__rente__mindestwartezeit_erfüllt: bool,
 ) -> bool:
     """Determining the eligibility for the Regelaltersrente."""
-
     return sozialversicherung__rente__mindestwartezeit_erfüllt

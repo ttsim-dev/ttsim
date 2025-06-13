@@ -48,7 +48,7 @@ class ParamObject:
     def dummy_callable(self) -> ParamFunction:
         """Dummy callable for the policy input. Just used for plotting."""
 
-        def dummy():  # type: ignore[no-untyped-def]
+        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
             pass
 
         return param_function(
@@ -288,7 +288,6 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
 
     Requires all years to be given.
     """
-
     first_year_to_consider = raw.pop("first_year_to_consider")
     last_year_to_consider = raw.pop("last_year_to_consider")
     assert all(isinstance(k, int) for k in raw)

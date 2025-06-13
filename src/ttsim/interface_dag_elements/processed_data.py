@@ -25,10 +25,10 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
         input_data__tree:
             The input data provided by the user.
 
-    Returns:
+    Returns
+    -------
         A DataFrame.
     """
-
     processed_input_data = {}
     old_p_ids = xnp.asarray(input_data__flat[("p_id",)])
     new_p_ids = reorder_ids(ids=old_p_ids, xnp=xnp)

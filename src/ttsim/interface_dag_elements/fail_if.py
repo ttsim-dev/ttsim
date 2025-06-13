@@ -98,7 +98,9 @@ class _ParamWithActivePeriod(ParamObject):
 
 
 def assert_valid_ttsim_pytree(
-    tree: Any, leaf_checker: GenericCallable, tree_name: str
+    tree: Any,  # noqa: ANN401
+    leaf_checker: GenericCallable,
+    tree_name: str,
 ) -> None:
     """
     Recursively assert that a pytree meets the following conditions:
@@ -121,7 +123,7 @@ def assert_valid_ttsim_pytree(
         If any branch or leaf does not meet the expected requirements.
     """
 
-    def _assert_valid_ttsim_pytree(subtree: Any, current_key: tuple[str, ...]) -> None:
+    def _assert_valid_ttsim_pytree(subtree: Any, current_key: tuple[str, ...]) -> None:  # noqa: ANN401
         def format_key_path(key_tuple: tuple[str, ...]) -> str:
             return "".join(f"[{k}]" for k in key_tuple)
 
@@ -319,7 +321,6 @@ def foreign_keys_are_invalid_in_data(
     We need processed_data because we cannot guarantee that `p_id` is present in the
     input data.
     """
-
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
@@ -348,6 +349,7 @@ def foreign_keys_are_invalid_in_data(
                     for i, j in zip(
                         processed_data[fk_name].tolist(),
                         processed_data["p_id"].tolist(),
+                        strict=False,
                     )
                     if i == j
                 ]
@@ -432,7 +434,8 @@ def non_convertible_objects_in_results_tree(
     xnp: ModuleType,
 ) -> None:
     """Fail if results should be converted to a DataFrame but contain non-convertible
-    objects."""
+    objects.
+    """
     _numeric_types = (int, float, bool, xnp.integer, xnp.floating, xnp.bool_)
     expected_object_length = len(next(iter(processed_data.values())))
 
@@ -587,7 +590,6 @@ def root_nodes_are_missing(
     ValueError
         If root nodes are missing.
     """
-
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tax_transfer_dag,

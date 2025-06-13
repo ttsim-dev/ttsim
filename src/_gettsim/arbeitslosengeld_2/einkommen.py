@@ -206,7 +206,8 @@ def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
     xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Parameter for calculation of income not subject to transfer withdrawal when
-    children are not in the Bedarfsgemeinschaft."""
+    children are not in the Bedarfsgemeinschaft.
+    """
     return get_piecewise_parameters(
         leaf_name="parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg",
         func_type="piecewise_linear",
@@ -222,7 +223,8 @@ def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
     xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Parameter for calculation of income not subject to transfer withdrawal when
-    children are in the Bedarfsgemeinschaft."""
+    children are in the Bedarfsgemeinschaft.
+    """
     updated_parameters: dict[int, dict[str, float]] = upsert_tree(
         base=raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
         to_upsert=raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg,

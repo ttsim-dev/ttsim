@@ -251,17 +251,17 @@ def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
 
 
 @pytest.mark.parametrize(
-    "base, direction, to_add_after_rounding",
+    "base, direction, to_add_after_rounding, match",
     [
-        (1, "upper", 0),
-        ("0.1", "down", 0),
-        (5, "closest", 0),
-        (5, "up", "0"),
+        (1, "upper", 0, "`direction` must be one of"),
+        (5, "closest", 0, "`direction` must be one of"),
+        ("0.1", "down", 0, "base needs to be a number"),
+        (5, "up", "0", "Additive part must be a number"),
     ],
 )
-def test_rounding_spec_validation(base, direction, to_add_after_rounding):
+def test_rounding_spec_validation(base, direction, to_add_after_rounding, match):
     """Test validation of RoundingSpec parameters."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=match):
         RoundingSpec(
             base=base,
             direction=direction,

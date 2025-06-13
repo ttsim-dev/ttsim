@@ -241,7 +241,6 @@ def anzurechnendes_einkommen_y(
     There is special rule for "Beamte, Soldaten und Richter" which is not
     implemented yet.
     """
-
     if kind_grundsätzlich_anspruchsberechtigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
@@ -264,7 +263,6 @@ def einkommensgrenze_y(
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
     """
-
     out = (
         einkommensgrenze_ohne_geschwisterbonus
         + (arbeitslosengeld_2__anzahl_kinder_fg - 1) * aufschlag_einkommen

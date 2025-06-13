@@ -234,7 +234,6 @@ def freibetrag_m_bis_2015(
     xnp: ModuleType,
 ) -> float:
     """Calculate housing benefit subtractions for one individual until 2015."""
-
     freibetrag_bei_behinderung = (
         piecewise_polynomial(
             x=behinderungsgrad,

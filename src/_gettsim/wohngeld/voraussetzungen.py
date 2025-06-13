@@ -92,7 +92,6 @@ def vermögensgrenze_unterschritten_bg(
     parameter_vermögensfreibetrag: dict[str, float],
 ) -> bool:
     """Wealth is below the eligibility threshold for housing benefits."""
-
     vermögensfreibetrag = parameter_vermögensfreibetrag[
         "grundfreibetrag"
     ] + parameter_vermögensfreibetrag["je_weitere_person"] * (
@@ -160,7 +159,6 @@ def einkommen_für_mindesteinkommen_m(
     Kindergeld count as income for this check.
 
     """
-
     return (
         arbeitslosengeld_2__nettoeinkommen_vor_abzug_freibetrag_m
         + unterhalt__tatsächlich_erhaltener_betrag_m

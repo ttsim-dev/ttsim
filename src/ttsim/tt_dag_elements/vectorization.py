@@ -51,7 +51,8 @@ def _make_vectorizable(
         backend: Backend library. Currently supported backends are 'jax' and 'numpy'.
             Array module must export function `where` that behaves as `numpy.where`.
 
-    Returns:
+    Returns
+    -------
         New function with altered ast.
     """
     if _is_lambda_function(func):
@@ -68,7 +69,7 @@ def _make_vectorizable(
     if func.__closure__:
         closure_vars = func.__code__.co_freevars
         closure_cells = [c.cell_contents for c in func.__closure__]
-        scope.update(dict(zip(closure_vars, closure_cells)))
+        scope.update(dict(zip(closure_vars, closure_cells, strict=False)))
 
     scope[module] = import_module(module)
 
@@ -92,7 +93,8 @@ def make_vectorizable_source(
             backends. Array module must export function `where` that behaves as
             `numpy.where`.
 
-    Returns:
+    Returns
+    -------
         Source code of new function with altered ast.
     """
     if _is_lambda_function(func):
@@ -115,7 +117,8 @@ def _make_vectorizable_ast(
         func: Function.
         module: Module which exports the function `where` that behaves as `numpy.where`.
 
-    Returns:
+    Returns
+    -------
         AST of new function with altered ast.
     """
     tree = _func_to_ast(func)

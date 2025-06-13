@@ -6622,8 +6622,8 @@ packages:
   timestamp: 1694400856979
 - pypi: ./
   name: gettsim
-  version: 0.7.1.dev454+g1e8f5582.d20250613
-  sha256: 1811ce4f8ffd372f6c4510a2c2d43eb3499ed35c31f584814c33d33774ab0b5f
+  version: 0.7.1.dev457+g905f28b1.d20250613
+  sha256: bdcd4b8079d89df7ef67b55be4ee15400ab06021e05e8dfbe3f8817b130725b5
   requires_dist:
   - ipywidgets
   - networkx

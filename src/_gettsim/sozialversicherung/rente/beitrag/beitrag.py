@@ -33,7 +33,6 @@ def betrag_versicherter_m_mit_midijob(
 
     After Midijob introduction in April 2003.
     """
-
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
@@ -68,7 +67,6 @@ def betrag_arbeitgeber_m_ohne_arbeitgeberpauschale(
 
     Before Minijobs were subject to pension contributions.
     """
-
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     else:
@@ -92,7 +90,6 @@ def betrag_arbeitgeber_m_mit_arbeitgeberpauschale(
 
     Before Midijob introduction in April 2003.
     """
-
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
@@ -117,7 +114,6 @@ def betrag_arbeitgeber_m_mit_midijob(
 
     After Midijob introduction in April 2003.
     """
-
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m

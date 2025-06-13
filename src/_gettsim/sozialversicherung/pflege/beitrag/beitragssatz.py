@@ -29,7 +29,6 @@ def beitragssatz_arbeitnehmer_zusatz_kinderlos_dummy(
 
     Since 2005, the contribution rate is increased for childless individuals.
     """
-
     # Add additional contribution for childless individuals
     if zahlt_zusatzbetrag_kinderlos:
         out = (

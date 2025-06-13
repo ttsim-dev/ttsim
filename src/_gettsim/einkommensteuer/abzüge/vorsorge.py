@@ -38,7 +38,6 @@ def vorsorgeaufwendungen_y_sn_ab_2005_bis_2009(
     Günstigerprüfung against the regime until 2004.
 
     """
-
     return max(
         vorsorgeaufwendungen_regime_bis_2004_y_sn,
         vorsorgeaufwendungen_globale_kappung_y_sn,
@@ -60,7 +59,6 @@ def vorsorgeaufwendungen_y_sn_ab_2010_bis_2019(
     Günstigerprüfung against the regime until 2004.
 
     """
-
     return max(
         vorsorgeaufwendungen_regime_bis_2004_y_sn,
         vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn,

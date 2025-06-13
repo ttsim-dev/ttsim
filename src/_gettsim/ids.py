@@ -115,7 +115,6 @@ def _assign_parents_fg_id(
     xnp: ModuleType,
 ) -> IntColumn:
     """Return the fg_id of the child's parents."""
-
     # TODO(@MImmesberger): Remove hard-coded number
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
 
@@ -210,7 +209,6 @@ def sn_id(
     xnp: ModuleType,
 ) -> IntColumn:
     """Steuernummer. Spouses filing taxes jointly or individuals."""
-
     n = xnp.max(p_id) + 1
 
     p_id_ehepartner_or_own_p_id = xnp.where(

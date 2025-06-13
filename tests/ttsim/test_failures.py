@@ -632,7 +632,9 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         "foo_kin": numpy.array([1, 2, 2]),
         "kin_id": numpy.array([1, 1, 2]),
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="The following data inputs do not have a unique value within"
+    ):
         group_variables_are_not_constant_within_groups(
             names__grouping_levels=("kin",),
             names__root_nodes={n for n in data if n != "p_id"},

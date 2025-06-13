@@ -30,7 +30,6 @@ def main(
     """
     Main function that processes the inputs and returns the outputs.
     """
-
     if "backend" not in inputs:
         inputs["backend"] = backend
 

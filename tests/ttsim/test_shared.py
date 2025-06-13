@@ -28,7 +28,7 @@ def test_leap_year_correctly_handled():
 
 
 def test_fail_if_invalid_date():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="day is out of range for month"):
         to_datetime(date="2020-02-30")
 
 

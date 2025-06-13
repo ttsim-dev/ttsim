@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Generic, ParamSpec, TypeVar
 
 import dags.tree as dt
 
@@ -17,7 +17,8 @@ ReturnType = TypeVar("ReturnType")
 class InterfaceNodeObject:
     """Base class for all objects operating on columns of data.
 
-    Examples:
+    Examples
+    --------
     - PolicyInputs
     - PolicyFunctions
     - GroupCreationFunctions
@@ -57,7 +58,7 @@ class InterfaceInput(InterfaceNodeObject):
     def dummy_callable(self) -> InterfaceFunction:  # type: ignore[type-arg]
         """Dummy callable for the interface input. Just used for plotting."""
 
-        def dummy() -> Any:
+        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
             pass
 
         return interface_function(
@@ -67,7 +68,7 @@ class InterfaceInput(InterfaceNodeObject):
 
 
 def interface_input(
-    in_top_level_namespace: bool = False,
+    in_top_level_namespace: bool = False,  # noqa: FBT002
 ) -> GenericCallable[[GenericCallable], InterfaceInput]:
     """
     Decorator that makes a (dummy) function an `InterfaceInput`.
