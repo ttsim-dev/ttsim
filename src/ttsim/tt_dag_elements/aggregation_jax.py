@@ -16,10 +16,10 @@ if TYPE_CHECKING:
 
 
 def grouped_count(group_id: jnp.ndarray, num_segments: int) -> jnp.ndarray:
-    out_on_hh = segment_sum(
+    out_grouped = segment_sum(
         data=jnp.ones(len(group_id)), segment_ids=group_id, num_segments=num_segments
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_sum(
@@ -28,41 +28,41 @@ def grouped_sum(
     if column.dtype in ["bool"]:
         column = column.astype(int)
 
-    out_on_hh = segment_sum(
+    out_grouped = segment_sum(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_mean(
     column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
 ) -> jnp.ndarray:
-    sum_on_hh = segment_sum(
+    sum_grouped = segment_sum(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
     sizes = segment_sum(
         data=jnp.ones(len(column)), segment_ids=group_id, num_segments=num_segments
     )
-    mean_on_hh = sum_on_hh / sizes
-    return mean_on_hh[group_id]
+    mean_grouped = sum_grouped / sizes
+    return mean_grouped[group_id]
 
 
 def grouped_max(
     column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
 ) -> jnp.ndarray:
-    out_on_hh = segment_max(
+    out_grouped = segment_max(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_min(
     column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
 ) -> jnp.ndarray:
-    out_on_hh = segment_min(
+    out_grouped = segment_min(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_any(
@@ -74,10 +74,10 @@ def grouped_any(
     else:
         my_col = column
 
-    out_on_hh = segment_max(
+    out_grouped = segment_max(
         data=my_col, segment_ids=group_id, num_segments=num_segments
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_all(
@@ -87,10 +87,10 @@ def grouped_all(
     if jnp.issubdtype(column.dtype, jnp.integer):
         column = column.astype("bool")
 
-    out_on_hh = segment_min(
+    out_grouped = segment_min(
         data=column, segment_ids=group_id, num_segments=num_segments
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def count_by_p_id(

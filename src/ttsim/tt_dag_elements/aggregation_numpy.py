@@ -6,11 +6,11 @@ import numpy_groupies as npg
 
 def grouped_count(group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if__dtype_not_int(group_id, agg_func="grouped_count")
-    out_on_hh = npg.aggregate(
+    out_grouped = npg.aggregate(
         group_id, numpy.ones(len(group_id), dtype=int), func="sum", fill_value=0
     )
 
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_sum(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
@@ -18,20 +18,20 @@ def grouped_sum(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray
     fail_if__dtype_not_numeric_or_boolean(column, agg_func="grouped_sum")
     if column.dtype == bool:
         column = column.astype(int)
-    out_on_hh = npg.aggregate(group_id, column, func="sum", fill_value=0)
+    out_grouped = npg.aggregate(group_id, column, func="sum", fill_value=0)
 
     # Expand to individual level
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_mean(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if__dtype_not_int(group_id, agg_func="grouped_mean")
     fail_if__dtype_not_float(column, agg_func="grouped_mean")
 
-    out_on_hh = npg.aggregate(group_id, column, func="mean", fill_value=0)
+    out_grouped = npg.aggregate(group_id, column, func="mean", fill_value=0)
 
     # Expand to individual level
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_max(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
@@ -44,18 +44,18 @@ def grouped_max(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray
         dtype = column.dtype
         float_col = column.astype("datetime64[D]").astype(int)
 
-        out_on_hh_float = npg.aggregate(group_id, float_col, func="max")
+        out_grouped_float = npg.aggregate(group_id, float_col, func="max")
 
-        out_on_hh = out_on_hh_float.astype("datetime64[D]").astype(dtype)
+        out_grouped = out_grouped_float.astype("datetime64[D]").astype(dtype)
 
         # Expand to individual level
-        out = out_on_hh[group_id]
+        out = out_grouped[group_id]
 
     else:
-        out_on_hh = npg.aggregate(group_id, column, func="max")
+        out_grouped = npg.aggregate(group_id, column, func="max")
 
         # Expand to individual level
-        out = out_on_hh[group_id]
+        out = out_grouped[group_id]
     return out
 
 
@@ -72,18 +72,18 @@ def grouped_min(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray
         dtype = column.dtype
         float_col = column.astype("datetime64[D]").astype(int)
 
-        out_on_hh_float = npg.aggregate(group_id, float_col, func="min")
+        out_grouped_float = npg.aggregate(group_id, float_col, func="min")
 
-        out_on_hh = out_on_hh_float.astype("datetime64[D]").astype(dtype)
+        out_grouped = out_grouped_float.astype("datetime64[D]").astype(dtype)
 
         # Expand to individual level
-        out = out_on_hh[group_id]
+        out = out_grouped[group_id]
 
     else:
-        out_on_hh = npg.aggregate(group_id, column, func="min")
+        out_grouped = npg.aggregate(group_id, column, func="min")
 
         # Expand to individual level
-        out = out_on_hh[group_id]
+        out = out_grouped[group_id]
     return out
 
 
@@ -91,20 +91,20 @@ def grouped_any(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray
     fail_if__dtype_not_int(group_id, agg_func="grouped_any")
     fail_if__dtype_not_boolean_or_int(column, agg_func="grouped_any")
 
-    out_on_hh = npg.aggregate(group_id, column, func="any", fill_value=0)
+    out_grouped = npg.aggregate(group_id, column, func="any", fill_value=0)
 
     # Expand to individual level
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_all(column: numpy.ndarray, group_id: numpy.ndarray) -> numpy.ndarray:
     fail_if__dtype_not_int(group_id, agg_func="grouped_all")
     fail_if__dtype_not_boolean_or_int(column, agg_func="grouped_all")
 
-    out_on_hh = npg.aggregate(group_id, column, func="all", fill_value=0)
+    out_grouped = npg.aggregate(group_id, column, func="all", fill_value=0)
 
     # Expand to individual level
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def count_by_p_id(
