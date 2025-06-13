@@ -153,19 +153,23 @@ def specialized_environment_for_targets(
         targets=["policy_environment__policy_inputs"],
     )["policy_environment__policy_inputs"]
 
-    policy_inputs = dt.unflatten_from_tree_paths(
+    dummy_inputs = dt.unflatten_from_tree_paths(
         {qn: numpy.array([0]) for qn in dt.flatten_to_tree_paths(policy_inputs)}
     )
 
-    return main(
+    environment_with_overridden_policy_inputs = main(
         inputs={
             **inputs_for_main,
-            "input_data__tree": policy_inputs,
+            "input_data__tree": dummy_inputs,
         },
         targets=[
             "specialized_environment__with_derived_functions_and_processed_input_nodes"
         ],
     )["specialized_environment__with_derived_functions_and_processed_input_nodes"]
+    return {
+        **environment_with_overridden_policy_inputs,
+        **dt.flatten_to_qual_names(policy_inputs),
+    }
 
 
 def create_dag_with_selected_nodes(
