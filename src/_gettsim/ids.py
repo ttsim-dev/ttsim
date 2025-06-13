@@ -9,8 +9,6 @@ from ttsim.tt_dag_elements import group_creation_function, policy_input
 if TYPE_CHECKING:
     from types import ModuleType
 
-    import numpy
-
     from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
 
 
@@ -139,7 +137,7 @@ def bg_id(
     arbeitslosengeld_2__eigenbedarf_gedeckt: BoolColumn,
     alter: IntColumn,
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> IntColumn:
     """Bedarfsgemeinschaft. Relevant unit for Bürgergeld / Arbeitslosengeld 2.
 
     Familiengemeinschaft except for children who have enough income to fend for

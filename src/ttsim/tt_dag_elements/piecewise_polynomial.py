@@ -158,7 +158,11 @@ def check_and_get_thresholds(
     leaf_name: str,
     parameter_dict: dict[int, dict[str, float]],
     xnp: ModuleType,
-) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]:
+) -> tuple[
+    Float[Array, " n_segments"],
+    Float[Array, " n_segments"],
+    Float[Array, " n_segments"],
+]:
     """Check and transfer raw threshold data.
 
     Transfer and check raw threshold data, which needs to be specified in a
@@ -237,7 +241,7 @@ def _check_and_get_rates(
     func_type: FUNC_TYPES,
     parameter_dict: dict[int, dict[str, float]],
     xnp: ModuleType,
-) -> numpy.ndarray:
+) -> Float[Array, " n_segments"]:
     """Check and transfer raw rates data.
 
     Transfer and check raw rates data, which needs to be specified in a

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 
-import numpy
 import pytest
 
 from ttsim.tt_dag_elements import (
@@ -229,7 +228,7 @@ def aggregate_by_p_id_count(p_id, p_id_specifier):
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
-def aggregate_by_p_id_sum(p_id, p_id_specifier, source):
+def aggregate_by_p_id_sum(p_id, p_id_specifier, column):
     pass
 
 
@@ -241,7 +240,7 @@ def aggregate_by_p_id_sum(p_id, p_id_specifier, source):
     ),
     [
         (aggregate_by_p_id_count, "p_id", None),
-        (aggregate_by_p_id_sum, "p_id", "source"),
+        (aggregate_by_p_id_sum, "p_id", "column"),
     ],
 )
 def test_agg_by_p_id_function_type(function, expected_foreign_p_id, expected_other_arg):
@@ -286,11 +285,11 @@ def test_agg_by_p_id_multiple_other_p_ids_present():
             pass
 
 
-def test_agg_by_p_id_sum_with_all_missing_p_ids(backend):
+def test_agg_by_p_id_sum_with_all_missing_p_ids(backend, xnp):
     aggregate_by_p_id_sum(
-        p_id=numpy.array([180]),
-        p_id_specifier=numpy.array([-1]),
-        source=numpy.array([False]),
+        p_id=xnp.array([180]),
+        p_id_specifier=xnp.array([-1]),
+        column=xnp.array([0]),
         num_segments=1,
         backend=backend,
     )

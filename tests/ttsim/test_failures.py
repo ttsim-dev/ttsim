@@ -197,7 +197,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("c", "g"): {
+                ("c", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
                 }
@@ -218,7 +218,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("x", "c", "h"): {
+                ("x", "c", "h"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
                 }
@@ -237,7 +237,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("x", "c", "g"): {
+                ("x", "c", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
                 }
@@ -258,7 +258,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("z", "a", "f"): {
+                ("z", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
                 }
@@ -268,11 +268,11 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
         (
             {},
             {
-                ("x", "a", "f"): {
+                ("x", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 5},
                 },
-                ("x", "b", "g"): {
+                ("x", "b", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 6},
                 },
@@ -456,7 +456,7 @@ def test_fail_if_active_periods_overlap_passes(
                 )(identity),
             },
             {
-                ("c", "f"): {
+                ("c", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
                 }
@@ -477,7 +477,7 @@ def test_fail_if_active_periods_overlap_passes(
                 )(identity),
             },
             {
-                ("x", "a", "f"): {
+                ("x", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
                 }
@@ -487,11 +487,11 @@ def test_fail_if_active_periods_overlap_passes(
         (
             {},
             {
-                ("x", "a", "f"): {
+                ("x", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
                 },
-                ("x", "b", "f"): {
+                ("x", "b", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
                 },

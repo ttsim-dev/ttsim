@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 from ttsim.tt_dag_elements import aggregation_jax, aggregation_numpy
 
 if TYPE_CHECKING:
-    import numpy
+    from ttsim.tt_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
 
 
 class AggType(StrEnum):
@@ -26,8 +26,8 @@ class AggType(StrEnum):
 # The signature of the functions must be the same in both modules, except that all JAX
 # functions have the additional `num_segments` argument.
 def grouped_count(
-    group_id: numpy.ndarray, num_segments: int, backend: Literal["numpy", "jax"]
-) -> numpy.ndarray:
+    group_id: IntColumn, num_segments: int, backend: Literal["numpy", "jax"]
+) -> IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_count(group_id)
     else:
@@ -35,11 +35,11 @@ def grouped_count(
 
 
 def grouped_sum(
-    column: numpy.ndarray,
-    group_id: numpy.ndarray,
+    column: FloatColumn | IntColumn | BoolColumn,
+    group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_sum(column, group_id)
     else:
@@ -47,11 +47,11 @@ def grouped_sum(
 
 
 def grouped_mean(
-    column: numpy.ndarray,
-    group_id: numpy.ndarray,
+    column: FloatColumn | IntColumn | BoolColumn,
+    group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_mean(column, group_id)
     else:
@@ -59,11 +59,11 @@ def grouped_mean(
 
 
 def grouped_max(
-    column: numpy.ndarray,
-    group_id: numpy.ndarray,
+    column: FloatColumn | IntColumn,
+    group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_max(column, group_id)
     else:
@@ -71,11 +71,11 @@ def grouped_max(
 
 
 def grouped_min(
-    column: numpy.ndarray,
-    group_id: numpy.ndarray,
+    column: FloatColumn | IntColumn,
+    group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_min(column, group_id)
     else:
@@ -83,11 +83,11 @@ def grouped_min(
 
 
 def grouped_any(
-    column: numpy.ndarray,
-    group_id: numpy.ndarray,
+    column: BoolColumn | IntColumn,
+    group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_any(column, group_id)
     else:
@@ -95,11 +95,11 @@ def grouped_any(
 
 
 def grouped_all(
-    column: numpy.ndarray,
-    group_id: numpy.ndarray,
+    column: BoolColumn | IntColumn,
+    group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.grouped_all(column, group_id)
     else:
@@ -107,11 +107,11 @@ def grouped_all(
 
 
 def count_by_p_id(
-    p_id_to_aggregate_by: numpy.ndarray,
-    p_id_to_store_by: numpy.ndarray,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> IntColumn:
     if backend == "numpy":
         return aggregation_numpy.count_by_p_id(p_id_to_aggregate_by, p_id_to_store_by)
     else:
@@ -121,12 +121,12 @@ def count_by_p_id(
 
 
 def sum_by_p_id(
-    column: numpy.ndarray,
-    p_id_to_aggregate_by: numpy.ndarray,
-    p_id_to_store_by: numpy.ndarray,
+    column: FloatColumn | IntColumn | BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.sum_by_p_id(
             column, p_id_to_aggregate_by, p_id_to_store_by
@@ -138,12 +138,12 @@ def sum_by_p_id(
 
 
 def mean_by_p_id(
-    column: numpy.ndarray,
-    p_id_to_aggregate_by: numpy.ndarray,
-    p_id_to_store_by: numpy.ndarray,
+    column: FloatColumn | IntColumn | BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn:
     if backend == "numpy":
         return aggregation_numpy.mean_by_p_id(
             column, p_id_to_aggregate_by, p_id_to_store_by
@@ -155,12 +155,12 @@ def mean_by_p_id(
 
 
 def max_by_p_id(
-    column: numpy.ndarray,
-    p_id_to_aggregate_by: numpy.ndarray,
-    p_id_to_store_by: numpy.ndarray,
+    column: FloatColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.max_by_p_id(
             column, p_id_to_aggregate_by, p_id_to_store_by
@@ -172,12 +172,12 @@ def max_by_p_id(
 
 
 def min_by_p_id(
-    column: numpy.ndarray,
-    p_id_to_aggregate_by: numpy.ndarray,
-    p_id_to_store_by: numpy.ndarray,
+    column: FloatColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> FloatColumn | IntColumn:
     if backend == "numpy":
         return aggregation_numpy.min_by_p_id(
             column, p_id_to_aggregate_by, p_id_to_store_by
@@ -189,12 +189,12 @@ def min_by_p_id(
 
 
 def any_by_p_id(
-    column: numpy.ndarray,
-    p_id_to_aggregate_by: numpy.ndarray,
-    p_id_to_store_by: numpy.ndarray,
+    column: BoolColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.any_by_p_id(
             column, p_id_to_aggregate_by, p_id_to_store_by
@@ -206,12 +206,12 @@ def any_by_p_id(
 
 
 def all_by_p_id(
-    column: numpy.ndarray,
-    p_id_to_aggregate_by: numpy.ndarray,
-    p_id_to_store_by: numpy.ndarray,
+    column: BoolColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
-) -> numpy.ndarray:
+) -> BoolColumn:
     if backend == "numpy":
         return aggregation_numpy.all_by_p_id(
             column, p_id_to_aggregate_by, p_id_to_store_by

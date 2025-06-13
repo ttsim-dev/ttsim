@@ -316,15 +316,6 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
-    "tests.ttsim.test_failures",
-]
-disable_error_code = [
-    "misc",  # Happens when constructing param dictionaries on the fly.
-]
-
-
-[[tool.mypy.overrides]]
-module = [
     "src.ttsim.tt_dag_elements.aggregation_numpy",
 ]
 disable_error_code = [

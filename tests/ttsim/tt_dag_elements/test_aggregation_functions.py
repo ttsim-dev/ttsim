@@ -68,10 +68,11 @@ test_grouped_specs = {
         "expected_res_max": numpy.array([1.0, 1.0, 1.0, 1.0, 1.0]),
         "expected_res_min": numpy.array([1.0, 1.0, 1.0, 1.0, 1.0]),
     },
-    "basic_case": {
+    "int_column": {
         "column_to_aggregate": numpy.array([0, 1, 2, 3, 4]),
         "group_id": numpy.array([0, 0, 1, 1, 1]),
         "expected_res_sum": numpy.array([1, 1, 9, 9, 9]),
+        "expected_res_mean": numpy.array([0.5, 0.5, 3, 3, 3]),
         "expected_res_max": numpy.array([1, 1, 4, 4, 4]),
         "expected_res_min": numpy.array([0, 0, 2, 2, 2]),
         "expected_res_any": numpy.array([True, True, True, True, True]),
@@ -103,12 +104,13 @@ test_grouped_specs = {
         "expected_res_max": numpy.array([3.0, 1.0, 3.0, 3.0, 4.0]),
         "expected_res_min": numpy.array([0.0, 1.0, 0.0, 0.0, 4.0]),
     },
-    "basic_case_bool": {
+    "bool_column": {
         "column_to_aggregate": numpy.array([True, False, True, False, False]),
         "group_id": numpy.array([0, 0, 1, 1, 1]),
         "expected_res_any": numpy.array([True, True, True, True, True]),
         "expected_res_all": numpy.array([False, False, False, False, False]),
         "expected_res_sum": numpy.array([1, 1, 1, 1, 1]),
+        "expected_res_mean": numpy.array([0.5, 0.5, 1 / 3, 1 / 3, 1 / 3]),
     },
     "group_id_unsorted_bool": {
         "column_to_aggregate": numpy.array([True, False, True, True, True]),
@@ -144,7 +146,6 @@ test_grouped_raises_specs = {
     "dtype_boolean": {
         "column_to_aggregate": numpy.array([True, True, True, False, False]),
         "group_id": numpy.array([0, 0, 1, 1, 1]),
-        "error_mean": TypeError,
         "error_max": TypeError,
         "error_min": TypeError,
         "exception_match": "grouped_",
@@ -165,12 +166,6 @@ test_grouped_raises_specs = {
         "group_id": numpy.array([0, 0, 1, 1, 1]),
         "error_any": TypeError,
         "error_all": TypeError,
-        "exception_match": "grouped_",
-    },
-    "dtype_integer": {
-        "column_to_aggregate": numpy.array([1, 2, 3, 4, 5]),
-        "group_id": numpy.array([0, 0, 1, 1, 1]),
-        "error_mean": TypeError,
         "exception_match": "grouped_",
     },
     "float_group_id_bool": {

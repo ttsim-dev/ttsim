@@ -24,7 +24,10 @@ if TYPE_CHECKING:
         | int
         | float
         | bool
-        | numpy.ndarray
+        | BoolColumn
+        | IntColumn
+        | FloatColumn
+        | DatetimeColumn
         | "NestedAnyTTSIMObject",
     ]
     NestedAny = Mapping[str, Any | "NestedAnyTTSIMObject"]
@@ -144,39 +147,3 @@ def check_series_has_expected_type(
         out = False
 
     return out
-
-
-def fail_if__dtype_not_int(
-    data: IntColumn,
-    agg_func: str,
-    xnp: ModuleType,
-) -> None:
-    """Check if data is of integer type."""
-    if not xnp.issubdtype(data.dtype, xnp.integer):
-        raise TypeError(
-            f"Data in {agg_func} must be of integer type, but is {data.dtype}."
-        )
-
-
-def fail_if__dtype_not_numeric_or_datetime(
-    data: FloatColumn | IntColumn,  # | DatetimeColumn,
-    agg_func: str,
-    xnp: ModuleType,
-) -> None:
-    """Check if data is of numeric or datetime type."""
-    if not xnp.issubdtype(data.dtype, (xnp.number, xnp.datetime64)):
-        raise TypeError(
-            f"Data in {agg_func} must be of numeric or datetime type, but is {data.dtype}."
-        )
-
-
-def fail_if__dtype_not_numeric_or_boolean(
-    data: FloatColumn | IntColumn | BoolColumn,
-    agg_func: str,
-    xnp: ModuleType,
-) -> None:
-    """Check if data is of numeric or boolean type."""
-    if not xnp.issubdtype(data.dtype, (xnp.number, xnp.bool_)):
-        raise TypeError(
-            f"Data in {agg_func} must be of numeric or boolean type, but is {data.dtype}."
-        )
