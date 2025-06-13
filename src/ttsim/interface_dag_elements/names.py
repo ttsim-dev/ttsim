@@ -35,7 +35,7 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
 
 
 @interface_function()
-def target_columns(
+def column_targets(
     specialized_environment__with_partialled_params_and_scalars: UnorderedQNames,
     targets__qname: OrderedQNames,
 ) -> OrderedQNames:
@@ -48,12 +48,12 @@ def target_columns(
 
 
 @interface_function()
-def target_params(
+def param_targets(
     specialized_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,  # noqa: E501
     targets__qname: OrderedQNames,
-    target_columns: OrderedQNames,
+    column_targets: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(target_columns)
+    possible_targets = set(targets__qname) - set(column_targets)
     return [
         t
         for t in targets__qname
@@ -64,12 +64,12 @@ def target_params(
 
 
 @interface_function()
-def targets_from_input_data(
+def input_data_targets(
     targets__qname: OrderedQNames,
-    target_columns: OrderedQNames,
-    target_params: OrderedQNames,
+    column_targets: OrderedQNames,
+    param_targets: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(target_columns) - set(target_params)
+    possible_targets = set(targets__qname) - set(column_targets) - set(param_targets)
     return [t for t in targets__qname if t in possible_targets]
 
 

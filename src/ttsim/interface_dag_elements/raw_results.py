@@ -28,21 +28,21 @@ def columns(
 
 @interface_function()
 def params(
-    names__target_params: OrderedQNames,
+    names__param_targets: OrderedQNames,
     specialized_environment__with_processed_params_and_scalars: QNameCombinedEnvironment1,  # noqa: E501
 ) -> QNameData:
     return {
         pt: specialized_environment__with_processed_params_and_scalars[pt]
-        for pt in names__target_params
+        for pt in names__param_targets
     }
 
 
 @interface_function()
 def from_input_data(
-    names__targets_from_input_data: OrderedQNames,
+    names__input_data_targets: OrderedQNames,
     processed_data: QNameData,
 ) -> QNameData:
-    return {ot: processed_data[ot] for ot in names__targets_from_input_data}
+    return {ot: processed_data[ot] for ot in names__input_data_targets}
 
 
 @interface_function()
