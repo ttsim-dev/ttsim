@@ -146,7 +146,15 @@ class RawParam(ParamObject):
 
 @dataclass(frozen=True)
 class PiecewisePolynomialParamValue:
-    """The parameters expected by piecewise_polynomial"""
+    """The parameters expected by `piecewise_polynomial`.
+
+    thresholds:
+        Thresholds defining the pieces / different segments on the real line.
+    intercepts:
+        Intercepts of the polynomial on each segment.
+    rates:
+        Slope and higher-order coefficients of the polynomial on each segment.
+    """
 
     thresholds: Float[Array, " n_segments"]
     intercepts: Float[Array, " n_segments"]

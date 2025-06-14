@@ -65,7 +65,7 @@ def piecewise_polynomial(
     x:
         Array with values at which the piecewise polynomial is to be calculated.
     parameters:
-        The parameters of the piecewise polynomial.
+        Thresholds defining the pieces and coefficients on each piece.
     xnp:
         The backend module to use for calculations.
     rates_multiplier:
