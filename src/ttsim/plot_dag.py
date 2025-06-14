@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import colorsys
 import copy
 import inspect
 from dataclasses import dataclass
@@ -45,7 +46,7 @@ def plot_tt_dag(
     namespace: str = "all",
     title: str = "",
     include_param_functions: bool = True,
-    show_node_metadata: bool = False,  # noqa: ARG001
+    show_node_metadata: bool = False,
 ) -> go.Figure:
     """Plot the TT DAG.
 
@@ -79,7 +80,7 @@ def plot_tt_dag(
         namespace=namespace,
         include_param_functions=include_param_functions,
     )
-    namespaces_with_distinct_colors = top_level_namespaces(
+    tln = top_level_namespaces(
         date_str=date_str,
         root=root,
         dag=dag,
@@ -87,34 +88,9 @@ def plot_tt_dag(
     return _plot_dag(
         dag=dag,
         title=title,
-        namespaces_with_distinct_colors=namespaces_with_distinct_colors,
+        top_level_namespaces=tln,
+        show_node_metadata=show_node_metadata,
     )
-
-
-def top_level_namespaces(
-    date_str: str,
-    root: Path,
-    dag: nx.DiGraph,
-) -> UnorderedQNames:
-    """Get the top level namespaces for this DAG.
-
-    Returns the top-level namespaces that
-        - actually appear in the DAG
-        - collect leaf nodes or sub-namespaces (i.e. does not contain single top-level
-          namespace elements)
-    """
-    top_level_namespace = main(
-        inputs={
-            "date_str": date_str,
-            "orig_policy_objects__root": root,
-        },
-        targets=["names__top_level_namespace"],
-    )["names__top_level_namespace"]
-    return {
-        n
-        for n in top_level_namespace
-        if any(node.startswith(f"{n}__") for node in dag.nodes())
-    }
 
 
 def get_tt_dag_to_plot(
@@ -168,13 +144,41 @@ def get_tt_dag_to_plot(
     return selected_dag
 
 
-def plot_full_interface_dag() -> go.Figure:
+def top_level_namespaces(
+    date_str: str,
+    root: Path,
+    dag: nx.DiGraph,
+) -> UnorderedQNames:
+    """Get the top level namespaces for this DAG.
+
+    Returns the top-level namespaces that
+        - actually appear in the DAG
+        - collect leaf nodes or sub-namespaces (i.e. does not contain single top-level
+          namespace elements)
+    """
+    top_level_namespace = main(
+        inputs={
+            "date_str": date_str,
+            "orig_policy_objects__root": root,
+        },
+        targets=["names__top_level_namespace"],
+    )["names__top_level_namespace"]
+    return {
+        n
+        for n in top_level_namespace
+        if any(node.startswith(f"{n}__") for node in dag.nodes())
+    }
+
+
+def plot_full_interface_dag(show_node_metadata: bool = False) -> go.Figure:
     """Plot the full interface DAG."""
 
     nodes = {
         p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
         for p, n in load_interface_functions_and_inputs().items()
     }
+
+    top_level_namespaces = {n.split("__")[0] for n in nodes if "__" in n}
 
     dag = dags.create_dag(functions=nodes, targets=None)
     f = dags.concatenate_functions(
@@ -191,7 +195,12 @@ def plot_full_interface_dag() -> go.Figure:
             "The full interface DAG should include all root nodes but requires inputs:"
             f"\n\n{format_list_linewise(args.keys())}"
         )
-    return _plot_dag(dag=dag, title="Full Interface DAG")
+    return _plot_dag(
+        dag=dag,
+        title="Full Interface DAG",
+        top_level_namespaces=top_level_namespaces,
+        show_node_metadata=show_node_metadata,
+    )
 
 
 def all_targets_from_namespace(
@@ -272,11 +281,15 @@ def create_dag_with_selected_nodes(
 
 
 def _plot_dag(
-    dag: nx.DiGraph, title: str, namespaces_with_distinct_colors: UnorderedQNames
+    dag: nx.DiGraph,
+    title: str,
+    top_level_namespaces: UnorderedQNames,
+    show_node_metadata: bool,
 ) -> go.Figure:
     """Plot the DAG."""
 
-    namespace_to_color
+    if show_node_metadata:
+        raise NotImplementedError("Showing node metadata is not implemented yet.")
 
     nice_dag = nx.relabel_nodes(
         dag, {qn: qn.replace("__", "<br>") for qn in dag.nodes()}
@@ -343,17 +356,25 @@ def _plot_dag(
     node_text = []
     node_colors = []
 
+    # Create namespace to color mapping with unique colors
+    n_namespaces = len(top_level_namespaces)
+    namespace_colors = {
+        namespace: hsl_to_hex(hue=i / n_namespaces, saturation=0.7, lightness=0.5)
+        for i, namespace in enumerate(sorted(top_level_namespaces))
+    }
+
     for node in nice_dag.nodes():
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
         node_text.append(node)
 
-        # Color nodes that start with "fail_" in pale red
-        if node.startswith("fail_"):
-            node_colors.append("#ffb3b3")  # Pale red
-        else:
-            node_colors.append("#1f77b4")  # Blue
+        node_color = "#1f77b4"  # Default blue
+        for namespace, color in namespace_colors.items():
+            if node.startswith(f"{namespace}<br>"):
+                node_color = color
+                break
+        node_colors.append(node_color)
 
     node_trace = go.Scatter(
         x=node_x,
@@ -436,3 +457,28 @@ def _kth_order_successors(
                 _kth_order_successors(dag, successor, order=order - 1, base=base)
             )
     return base
+
+
+def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:
+    """Convert HSL color values to hexadecimal color code.
+
+    Parameters
+    ----------
+    hue : float
+        Hue value between 0 and 1, representing the position on the color wheel
+        (0 = red, 0.33 = green, 0.66 = blue, 1 = red again)
+    saturation : float
+        Saturation value between 0 and 1, representing color intensity
+        (0 = grayscale, 1 = fully saturated)
+    lightness : float
+        Lightness value between 0 and 1, representing brightness
+        (0 = black, 0.5 = normal, 1 = white)
+
+    Returns
+    -------
+    str
+        Hexadecimal color code in the format '#RRGGBB'
+    """
+
+    rgb = colorsys.hls_to_rgb(h=hue, l=lightness, s=saturation)
+    return f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"
