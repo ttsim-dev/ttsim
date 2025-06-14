@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import colorsys
 import copy
-import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -13,9 +12,6 @@ import numpy
 import plotly.graph_objects as go
 
 from ttsim.interface_dag import load_interface_functions_and_inputs, main
-from ttsim.interface_dag_elements.fail_if import (
-    format_list_linewise,
-)
 from ttsim.interface_dag_elements.interface_node_objects import InterfaceInput
 from ttsim.tt_dag_elements import (
     ColumnObject,
@@ -172,29 +168,12 @@ def top_level_namespaces(
 
 def plot_full_interface_dag(show_node_metadata: bool = False) -> go.Figure:
     """Plot the full interface DAG."""
-
     nodes = {
         p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
         for p, n in load_interface_functions_and_inputs().items()
     }
-
-    top_level_namespaces = {n.split("__")[0] for n in nodes if "__" in n}
-
     dag = dags.create_dag(functions=nodes, targets=None)
-    f = dags.concatenate_functions(
-        dag=dag,
-        functions=nodes,
-        targets=None,
-        return_type="dict",
-        enforce_signature=False,
-        set_annotations=False,
-    )
-    args = inspect.signature(f).parameters
-    if args:
-        raise ValueError(
-            "The full interface DAG should include all root nodes but requires inputs:"
-            f"\n\n{format_list_linewise(args.keys())}"
-        )
+    top_level_namespaces = {n.split("__")[0] for n in dag.nodes() if "__" in n}
     return _plot_dag(
         dag=dag,
         title="Full Interface DAG",
