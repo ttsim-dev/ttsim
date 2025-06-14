@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 from mettsim.config import METTSIM_ROOT
 
-from ttsim.plot_dag import NodeSelector, get_tt_dag_to_plot, plot_full_interface_dag
+from ttsim.plot_dag import (
+    NodeSelector,
+    get_tt_dag_with_node_metadata,
+    plot_full_interface_dag,
+)
 
 
 def test_plot_full_interface_dag():
@@ -192,7 +196,7 @@ def test_plot_full_interface_dag():
     ],
 )
 def test_node_selector(node_selector, expected_nodes):
-    dag = get_tt_dag_to_plot(
+    dag = get_tt_dag_with_node_metadata(
         date_str="2019-01-01",
         root=METTSIM_ROOT,
         node_selector=node_selector,

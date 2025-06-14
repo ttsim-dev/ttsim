@@ -12,6 +12,7 @@ def test_gettsim_policy_environment_dag_with_params():
         root=GETTSIM_ROOT,
         include_param_functions=True,
         title="GETTSIM Policy Environment DAG with parameters",
+        show_node_description=True,
     ).write_html(Path("gettsim_dag_with_params.html"))
 
 
@@ -21,4 +22,5 @@ def test_gettsim_policy_environment_dag_without_params():
         root=GETTSIM_ROOT,
         include_param_functions=False,
         title="GETTSIM Policy Environment DAG without parameters",
+        show_node_description=True,
     ).write_html(Path("gettsim_dag_without_params.html"))

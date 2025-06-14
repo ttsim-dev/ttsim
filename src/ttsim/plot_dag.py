@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import colorsys
 import copy
+import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -22,10 +23,7 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ttsim.interface_dag_elements.typing import (
-        QNameCombinedEnvironment0,
-        UnorderedQNames,
-    )
+    from ttsim.interface_dag_elements.typing import QNameCombinedEnvironment0
 
 
 @dataclass(frozen=True)
@@ -35,6 +33,12 @@ class NodeSelector:
     order: int | None = None
 
 
+@dataclass(frozen=True)
+class NodeMetaData:
+    description: str
+    namespace: str
+
+
 def plot_tt_dag(
     date_str: str,
     root: Path,
@@ -42,7 +46,7 @@ def plot_tt_dag(
     namespace: str = "all",
     title: str = "",
     include_param_functions: bool = True,
-    show_node_metadata: bool = False,
+    show_node_description: bool = False,
 ) -> go.Figure:
     """Plot the TT DAG.
 
@@ -62,34 +66,53 @@ def plot_tt_dag(
         The title of the plot.
     include_param_functions
         Whether to include param functions.
-    show_node_metadata
-        Whether to show node metadata.
+    show_node_description
+        Whether to show node source code when hovering over a node.
 
     Returns
     -------
     The figure.
     """
-    dag = get_tt_dag_to_plot(
+    dag_with_node_metadata = get_tt_dag_with_node_metadata(
         date_str=date_str,
         root=root,
         node_selector=node_selector,
         namespace=namespace,
         include_param_functions=include_param_functions,
     )
-    tln = top_level_namespaces(
-        date_str=date_str,
-        root=root,
-        dag=dag,
+    return _plot_dag(
+        dag=dag_with_node_metadata,
+        title=title,
+        show_node_description=show_node_description,
     )
+
+
+def plot_full_interface_dag(show_node_description: bool = False) -> go.Figure:
+    """Plot the full interface DAG."""
+    nodes = {
+        p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
+        for p, n in load_interface_functions_and_inputs().items()
+    }
+    dag = dags.create_dag(functions=nodes, targets=None)
+
+    for name, node_object in nodes.items():
+        description = (
+            inspect.getdoc(node_object.function) or "No description available."
+        )
+        namespace = name.split("__")[0] if "__" in name else "top-level"
+        dag.nodes[name]["node_metadata"] = NodeMetaData(
+            description=description,
+            namespace=namespace,
+        )
+
     return _plot_dag(
         dag=dag,
-        title=title,
-        top_level_namespaces=tln,
-        show_node_metadata=show_node_metadata,
+        title="Full Interface DAG",
+        show_node_description=show_node_description,
     )
 
 
-def get_tt_dag_to_plot(
+def get_tt_dag_with_node_metadata(
     date_str: str,
     root: Path,
     node_selector: NodeSelector | None = None,
@@ -137,49 +160,21 @@ def get_tt_dag_to_plot(
             ]
         )
 
+    # Add Node Metadata to DAG
+    for name, node_object in all_nodes.items():
+        if name not in selected_dag.nodes():
+            continue
+
+        description = (
+            inspect.getdoc(node_object.function) or "No description available."
+        )
+        node_namespace = name.split("__")[0] if "__" in name else "top-level"
+        selected_dag.nodes[name]["node_metadata"] = NodeMetaData(
+            description=description,
+            namespace=node_namespace,
+        )
+
     return selected_dag
-
-
-def top_level_namespaces(
-    date_str: str,
-    root: Path,
-    dag: nx.DiGraph,
-) -> UnorderedQNames:
-    """Get the top level namespaces for this DAG.
-
-    Returns the top-level namespaces that
-        - actually appear in the DAG
-        - collect leaf nodes or sub-namespaces (i.e. does not contain single top-level
-          namespace elements)
-    """
-    top_level_namespace = main(
-        inputs={
-            "date_str": date_str,
-            "orig_policy_objects__root": root,
-        },
-        targets=["names__top_level_namespace"],
-    )["names__top_level_namespace"]
-    return {
-        n
-        for n in top_level_namespace
-        if any(node.startswith(f"{n}__") for node in dag.nodes())
-    }
-
-
-def plot_full_interface_dag(show_node_metadata: bool = False) -> go.Figure:
-    """Plot the full interface DAG."""
-    nodes = {
-        p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
-        for p, n in load_interface_functions_and_inputs().items()
-    }
-    dag = dags.create_dag(functions=nodes, targets=None)
-    top_level_namespaces = {n.split("__")[0] for n in dag.nodes() if "__" in n}
-    return _plot_dag(
-        dag=dag,
-        title="Full Interface DAG",
-        top_level_namespaces=top_level_namespaces,
-        show_node_metadata=show_node_metadata,
-    )
 
 
 def all_targets_from_namespace(
@@ -262,17 +257,13 @@ def create_dag_with_selected_nodes(
 def _plot_dag(
     dag: nx.DiGraph,
     title: str,
-    top_level_namespaces: UnorderedQNames,
-    show_node_metadata: bool,
+    show_node_description: bool,
 ) -> go.Figure:
     """Plot the DAG."""
-
-    if show_node_metadata:
-        raise NotImplementedError("Showing node metadata is not implemented yet.")
-
     nice_dag = nx.relabel_nodes(
         dag, {qn: qn.replace("__", "<br>") for qn in dag.nodes()}
     )
+
     pos = nx.nx_agraph.pygraphviz_layout(nice_dag, prog="dot", args="-Grankdir=LR")
     # Create edge traces with arrows
     edge_traces = []
@@ -336,6 +327,11 @@ def _plot_dag(
     node_colors = []
 
     # Create namespace to color mapping with unique colors
+    top_level_namespaces = {
+        dag.nodes[node]["node_metadata"].namespace
+        for node in dag.nodes()
+        if "node_metadata" in dag.nodes[node]
+    }
     n_namespaces = len(top_level_namespaces)
     namespace_colors = {
         namespace: hsl_to_hex(hue=i / n_namespaces, saturation=0.7, lightness=0.5)
@@ -343,16 +339,22 @@ def _plot_dag(
     }
 
     for node in nice_dag.nodes():
+        metadata: NodeMetaData = nice_dag.nodes[node]["node_metadata"]
+
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
-        node_text.append(node)
+        node_text.append(
+            node + "<br><br>" + metadata.description.replace("\n", "<br>")
+            if show_node_description
+            else node
+        )
 
-        node_color = "#1f77b4"  # Default blue
-        for namespace, color in namespace_colors.items():
-            if node.startswith(f"{namespace}<br>"):
-                node_color = color
-                break
+        node_color = (
+            "#1f77b4"  # blue
+            if metadata.namespace == "top-level"
+            else namespace_colors[metadata.namespace]
+        )
         node_colors.append(node_color)
 
     node_trace = go.Scatter(
@@ -361,6 +363,11 @@ def _plot_dag(
         mode="markers",
         hoverinfo="text",
         text=node_text,
+        hoverlabel={
+            "bgcolor": "white",
+            "font": {"color": "black"},
+            "bordercolor": "lightgray",
+        },
         marker={
             "showscale": False,
             "color": node_colors,

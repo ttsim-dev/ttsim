@@ -61,6 +61,7 @@ def test_mettsim_policy_environment_dag_with_params():
         root=METTSIM_ROOT,
         include_param_functions=True,
         title="METTSIM Policy Environment DAG with parameters",
+        show_node_description=True,
     ).write_html(Path("mettsim_dag_with_params.html"))
 
 
@@ -70,6 +71,7 @@ def test_mettsim_policy_environment_dag_without_params():
         root=METTSIM_ROOT,
         include_param_functions=False,
         title="METTSIM Policy Environment DAG without parameters",
+        show_node_description=True,
     ).write_html(Path("mettsim_dag_without_params.html"))
 
 
