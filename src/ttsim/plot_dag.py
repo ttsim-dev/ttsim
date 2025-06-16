@@ -87,7 +87,7 @@ def plot_tt_dag(
     )
 
 
-def plot_full_interface_dag(show_node_description: bool = False) -> go.Figure:
+def plot_interface_dag(show_node_description: bool = False) -> go.Figure:
     """Plot the full interface DAG."""
     nodes = {
         p: n.dummy_callable() if isinstance(n, InterfaceInput) else n

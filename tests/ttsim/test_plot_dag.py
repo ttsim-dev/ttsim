@@ -8,12 +8,12 @@ from mettsim.config import METTSIM_ROOT
 from ttsim.plot_dag import (
     NodeSelector,
     get_tt_dag_with_node_metadata,
-    plot_full_interface_dag,
+    plot_interface_dag,
 )
 
 
 def test_plot_full_interface_dag():
-    plot_full_interface_dag().write_html(Path("full_interface_dag.html"))
+    plot_interface_dag().write_html(Path("full_interface_dag.html"))
 
 
 @pytest.mark.parametrize(
