@@ -4,11 +4,7 @@ import colorsys
 import copy
 import inspect
 from dataclasses import dataclass
-<<<<<<< HEAD
-from typing import TYPE_CHECKING, Literal
-=======
 from typing import TYPE_CHECKING, Any, Literal, overload
->>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
 
 import dags
 import dags.tree as dt
@@ -40,8 +36,6 @@ if TYPE_CHECKING:
 
     from ttsim.interface_dag_elements.typing import (
         NestedPolicyEnvironment,
-        NestedStrings,
-        QNameSpecializedEnvironment0,
     )
 
 
@@ -74,7 +68,7 @@ def plot_tt_dag(
     root: Path,
     node_selector: NodeSelector | None = None,
     title: str = "",
-    include_param_functions: bool = True,
+    include_params: bool = True,
     show_node_description: bool = False,
 ) -> go.Figure:
     """Plot the TT DAG.
@@ -89,7 +83,7 @@ def plot_tt_dag(
         The node selector. Default is None, i.e. the entire DAG is plotted.
     title
         The title of the plot.
-    include_param_functions
+    include_params
         Whether to include param functions.
     show_node_description
         Whether to show node source code when hovering over a node.
@@ -98,7 +92,6 @@ def plot_tt_dag(
     -------
     The figure.
     """
-<<<<<<< HEAD
     environment = main(
         inputs={
             "date_str": date_str,
@@ -116,17 +109,10 @@ def plot_tt_dag(
     else:
         qname_node_selector = None
 
-    dag_with_node_metadata = get_tt_dag_with_node_metadata(
+    dag_with_node_metadata = _get_tt_dag_with_node_metadata(
         environment=environment,
         node_selector=qname_node_selector,
-=======
-    dag_with_node_metadata = _get_tt_dag_with_node_metadata(
-        date_str=date_str,
-        root=root,
-        node_selector=node_selector,
-        namespace=namespace,
->>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
-        include_param_functions=include_param_functions,
+        include_params=include_params,
     )
     return _plot_dag(
         dag=dag_with_node_metadata,
@@ -159,69 +145,49 @@ def plot_interface_dag(show_node_description: bool = False) -> go.Figure:
     )
 
 
-<<<<<<< HEAD
-def get_tt_dag_with_node_metadata(
+def _get_tt_dag_with_node_metadata(
     environment: NestedPolicyEnvironment,
     node_selector: _QNameNodeSelector | None = None,
-=======
-def _get_tt_dag_with_node_metadata(
-    date_str: str,
-    root: Path,
-    node_selector: NodeSelector | None = None,
-    namespace: str = "all",
-    # Merge the two arguments above into one argument "target_nodes"
->>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
-    include_param_functions: bool = True,
+    include_params: bool = True,
+    include_other_objects: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
-    qnames_nodes_to_plot = [
-        qn
-        for qn, v in dt.flatten_to_qnames(environment).items()
-        if isinstance(v, (ColumnObject, ParamFunction))
-        if include_param_functions
-    ]
+    qname_environment = dt.flatten_to_qnames(environment)
+    qnames_to_plot = list(qname_environment)
+    if not include_params:
+        qnames_to_plot = [
+            qn
+            for qn, v in qname_environment.items()
+            if not isinstance(v, (ParamObject, ParamFunction))
+        ]
+    if not include_other_objects:
+        qnames_to_plot = [
+            qn for qn, v in qname_environment.items() if isinstance(v, ColumnObject)
+        ]
+    # TODO: Pls explain why and when this is used.
     if node_selector:
-        qnames_nodes_to_plot.extend(node_selector.qnames)
+        qnames_to_plot.extend(node_selector.qnames)
 
-<<<<<<< HEAD
-    specialized_environment = specialized_environment_using_dummy_inputs(
-        environment=environment,
-        targets_tree=dt.unflatten_from_qnames(dict.fromkeys(qnames_nodes_to_plot)),
-=======
-    inputs_for_main = {
-        "date_str": date_str,
-        "orig_policy_objects__root": root,
-        "targets__include_param_functions": include_param_functions,
-        "targets__namespace": namespace,
-    }
+    qnames_policy_inputs = [
+        k
+        for k, v in qname_environment.items()
+        if isinstance(v, PolicyInput) and k in qnames_to_plot
+    ]
+    tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
+    env = main(
+        inputs={
+            "policy_environment": environment,
+            "labels__processed_data_columns": qnames_policy_inputs,
+            "targets__qname": qnames_to_plot,
+        },
+        targets=[tgt],
+    )[tgt]
 
-    all_plottable_nodes = (
-        node_selector.nodes + all_targets_from_namespace(inputs_for_main)
-        if node_selector
-        else all_targets_from_namespace(inputs_for_main)
->>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
-    )
-    # all_plottable_nodes = [
-    #     n
-    #     for n in targets
-    #     if isinstance(n, ColumnObject | ParamFunction | ParamObject)
-    # ]
-
-<<<<<<< HEAD
-=======
-    specialized_environment = specialized_environment_for_plotting(inputs_for_main)
-
->>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
     all_nodes = {
-        qn: dummy_callable(n) if not callable(n) else n
-        for qn, n in specialized_environment.items()
+        qn: dummy_callable(n) if not callable(n) else n for qn, n in env.items()
     }
 
-<<<<<<< HEAD
-    complete_dag = dags.create_dag(functions=all_nodes, targets=qnames_nodes_to_plot)
-=======
-    complete_dag = dags.create_dag(functions=all_nodes, targets=all_plottable_nodes)
->>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
+    complete_dag = dags.create_dag(functions=all_nodes, targets=qnames_to_plot)
 
     if node_selector is None:
         selected_dag = complete_dag
@@ -231,14 +197,15 @@ def _get_tt_dag_with_node_metadata(
             node_selector=node_selector,
         )
 
-    if not include_param_functions:
-        selected_dag.remove_nodes_from(
-            [
-                qn
-                for qn, n in specialized_environment.items()
-                if not isinstance(n, ColumnObject)
-            ]
-        )
+    # HM: Shouldn't be necessary; these should just show up as input nodes, right?
+    # if not include_params:
+    #     selected_dag.remove_nodes_from(
+    #         [
+    #             qn
+    #             for qn, n in specialized_environment.items()
+    #             if not isinstance(n, ColumnObject)
+    #         ]
+    #     )
 
     # Add Node Metadata to DAG
     for name, node_object in all_nodes.items():
@@ -257,11 +224,6 @@ def _get_tt_dag_with_node_metadata(
     return selected_dag
 
 
-<<<<<<< HEAD
-def specialized_environment_using_dummy_inputs(
-    environment: NestedPolicyEnvironment,
-    targets_tree: NestedStrings,
-=======
 @overload
 def dummy_callable(obj: PolicyInput) -> PolicyFunction: ...
 
@@ -299,46 +261,6 @@ def dummy_callable(obj: ModuleType | str | float | bool) -> Callable[[], Any]:
             in_top_level_namespace=obj.in_top_level_namespace,
         )(dummy)
     return dummy
-
-
-def all_targets_from_namespace(
-    inputs_for_main: dict[str, Any],
-) -> list[str]:
-    """Get all targets from the original policy objects / params functions."""
-    return main(
-        inputs=inputs_for_main,
-        targets=["targets__qname"],
-    )["targets__qname"]
-
-
-def specialized_environment_for_plotting(
-    inputs_for_main: dict[str, Any],
->>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
-) -> QNameSpecializedEnvironment0:
-    """Specialized environment using dummy data as policy inputs."""
-    qname_policy_inputs = {
-        k: v
-        for k, v in dt.flatten_to_qnames(environment).items()
-        if isinstance(v, PolicyInput)
-    }
-    dummy_inputs_tree = dt.unflatten_from_qnames(
-        {qn: numpy.array([0]) for qn in qname_policy_inputs}
-    )
-
-    environment_with_overridden_policy_inputs = main(
-        inputs={
-            "policy_environment": environment,
-            "input_data__tree": dummy_inputs_tree,
-            "targets__tree": targets_tree,
-        },
-        targets=[
-            "specialized_environment__without_tree_logic_and_with_derived_functions"
-        ],
-    )["specialized_environment__without_tree_logic_and_with_derived_functions"]
-    return {
-        **environment_with_overridden_policy_inputs,
-        **qname_policy_inputs,
-    }
 
 
 def create_dag_with_selected_nodes(

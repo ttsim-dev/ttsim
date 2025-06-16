@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 
     from ttsim.interface_dag_elements.typing import (
         NestedPolicyEnvironment,
-        NestedStrings,
         OrderedQNames,
         QNameData,
         QNamePolicyEnvironment,
@@ -58,7 +57,7 @@ def rounding() -> bool:
 @interface_function()
 def without_tree_logic_and_with_derived_functions(
     policy_environment: NestedPolicyEnvironment,
-    targets__tree: NestedStrings,
+    targets__qname: OrderedQNames,
     labels__processed_data_columns: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -88,7 +87,7 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        targets=dt.qnames(targets__tree),
+        targets=targets__qname,
         labels__processed_data_columns=labels__processed_data_columns,
         grouping_levels=labels__grouping_levels,
     )
