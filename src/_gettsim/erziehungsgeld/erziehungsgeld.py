@@ -44,7 +44,9 @@ def einkommensgrenze(
 
 @agg_by_p_id_function(end_date="2008-12-31", agg_type=AggType.SUM)
 def anspruchshöhe_m(
-    anspruchshöhe_kind_m: float, p_id_empfänger: int, p_id: int
+    anspruchshöhe_kind_m: float,
+    p_id_empfänger: int,
+    p_id: int,
 ) -> float:
     pass
 
@@ -76,7 +78,7 @@ def erziehungsgeld_kind_ohne_budgetsatz_m() -> NotImplementedError:
         """
     Erziehungsgeld is not implemented yet prior to 2004, see
     https://github.com/iza-institute-of-labor-economics/gettsim/issues/673
-        """
+        """,
     )
 
 
@@ -241,7 +243,6 @@ def anzurechnendes_einkommen_y(
     There is special rule for "Beamte, Soldaten und Richter" which is not
     implemented yet.
     """
-
     if kind_grundsätzlich_anspruchsberechtigt:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
@@ -264,7 +265,6 @@ def einkommensgrenze_y(
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
     """
-
     out = (
         einkommensgrenze_ohne_geschwisterbonus
         + (arbeitslosengeld_2__anzahl_kinder_fg - 1) * aufschlag_einkommen

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy
+
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import main
 from ttsim.interface_dag_elements.data_converters import (
@@ -38,10 +40,11 @@ def oss(
             A tree that has the desired targets as the path (sequence of keys) and maps
             them to the data columns the user would like to have.
 
-    Returns:
+    Returns
+    -------
         A DataFrame with the results.
 
-    Examples:
+    Examples
     --------
     >>> inputs_df = pd.DataFrame(
     ...     {
@@ -106,6 +109,7 @@ def oss(
     input_data__tree = dataframe_to_nested_data(
         mapper=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
+        xnp=numpy,
     )
     nested_result = main(
         inputs={

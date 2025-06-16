@@ -11,6 +11,8 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     import pandas as pd
 
     from ttsim.interface_dag_elements.typing import (
@@ -39,6 +41,7 @@ def df_with_nested_columns() -> pd.DataFrame:
 def tree(
     df_and_mapper__df: pd.DataFrame,
     df_and_mapper__mapper: NestedInputsMapper,
+    xnp: ModuleType,
 ) -> NestedData:
     """The input DataFrame as a nested data structure.
 
@@ -48,12 +51,14 @@ def tree(
         df_and_mapper__mapper:
             A tree that maps paths (sequence of keys) to data columns names.
 
-    Returns:
+    Returns
+    -------
         A nested data structure.
     """
     return dataframe_to_nested_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
+        xnp=xnp,
     )
 
 
@@ -65,7 +70,8 @@ def flat(tree: NestedData) -> FlatData:
         tree:
             The input tree.
 
-    Returns:
+    Returns
+    -------
         Mapping of tree paths to input data.
     """
     return dt.flatten_to_tree_paths(tree)

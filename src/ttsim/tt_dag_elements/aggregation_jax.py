@@ -9,101 +9,131 @@ except ImportError:
     pass
 
 if TYPE_CHECKING:
-    try:
-        import jax.numpy as jnp
-    except ImportError:
-        import numpy as jnp  # noqa: TC004
+    from ttsim.tt_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
 
 
-def grouped_count(group_id: jnp.ndarray, num_segments: int) -> jnp.ndarray:
-    out_on_hh = segment_sum(
-        data=jnp.ones(len(group_id)), segment_ids=group_id, num_segments=num_segments
+def grouped_count(group_id: IntColumn, num_segments: int) -> jnp.ndarray:
+    out_grouped = segment_sum(
+        data=jnp.ones(len(group_id)),
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_sum(
-    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
-) -> jnp.ndarray:
+    column: FloatColumn | IntColumn | BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
+) -> FloatColumn | IntColumn:
     if column.dtype in ["bool"]:
         column = column.astype(int)
 
-    out_on_hh = segment_sum(
-        data=column, segment_ids=group_id, num_segments=num_segments
+    out_grouped = segment_sum(
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_mean(
-    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
-) -> jnp.ndarray:
-    sum_on_hh = segment_sum(
-        data=column, segment_ids=group_id, num_segments=num_segments
+    column: FloatColumn | IntColumn | BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
+) -> FloatColumn:
+    if column.dtype in ["bool"]:
+        column = column.astype(int)
+    sum_grouped = segment_sum(
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
     sizes = segment_sum(
-        data=jnp.ones(len(column)), segment_ids=group_id, num_segments=num_segments
+        data=jnp.ones(len(column)),
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
-    mean_on_hh = sum_on_hh / sizes
-    return mean_on_hh[group_id]
+    mean_grouped = sum_grouped / sizes
+    return mean_grouped[group_id]
 
 
 def grouped_max(
-    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
-) -> jnp.ndarray:
-    out_on_hh = segment_max(
-        data=column, segment_ids=group_id, num_segments=num_segments
+    column: FloatColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+) -> FloatColumn | IntColumn:
+    out_grouped = segment_max(
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_min(
-    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
-) -> jnp.ndarray:
-    out_on_hh = segment_min(
-        data=column, segment_ids=group_id, num_segments=num_segments
+    column: FloatColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+) -> FloatColumn | IntColumn:
+    out_grouped = segment_min(
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_any(
-    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
-) -> jnp.ndarray:
+    column: BoolColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+) -> BoolColumn:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
         my_col = column.astype("bool")
     else:
         my_col = column
 
-    out_on_hh = segment_max(
-        data=my_col, segment_ids=group_id, num_segments=num_segments
+    out_grouped = segment_max(
+        data=my_col,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def grouped_all(
-    column: jnp.ndarray, group_id: jnp.ndarray, num_segments: int
-) -> jnp.ndarray:
+    column: BoolColumn | IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+) -> BoolColumn:
     # Convert to boolean if necessary
     if jnp.issubdtype(column.dtype, jnp.integer):
         column = column.astype("bool")
 
-    out_on_hh = segment_min(
-        data=column, segment_ids=group_id, num_segments=num_segments
+    out_grouped = segment_min(
+        data=column,
+        segment_ids=group_id,
+        num_segments=num_segments,
     )
-    return out_on_hh[group_id]
+    return out_grouped[group_id]
 
 
 def count_by_p_id(
-    p_id_to_aggregate_by: jnp.ndarray, p_id_to_store_by: jnp.ndarray
-) -> jnp.ndarray:
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+) -> IntColumn:
     raise NotImplementedError
 
 
 def sum_by_p_id(
-    column: jnp.ndarray,
-    p_id_to_aggregate_by: jnp.ndarray,
-    p_id_to_store_by: jnp.ndarray,
-) -> jnp.ndarray:
+    column: FloatColumn | IntColumn | BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,  # noqa: ARG001
+) -> FloatColumn | IntColumn:
     if column.dtype == bool:
         column = column.astype(int)
 
@@ -128,40 +158,45 @@ def sum_by_p_id(
 
 
 def mean_by_p_id(
-    column: jnp.ndarray,
-    p_id_to_aggregate_by: jnp.ndarray,
-    p_id_to_store_by: jnp.ndarray,
-) -> jnp.ndarray:
+    column: FloatColumn | IntColumn | BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+) -> FloatColumn:
     raise NotImplementedError
 
 
 def max_by_p_id(
-    column: jnp.ndarray,
-    p_id_to_aggregate_by: jnp.ndarray,
-    p_id_to_store_by: jnp.ndarray,
-) -> jnp.ndarray:
+    column: FloatColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+) -> FloatColumn | IntColumn:
     raise NotImplementedError
 
 
 def min_by_p_id(
-    column: jnp.ndarray,
-    p_id_to_aggregate_by: jnp.ndarray,
-    p_id_to_store_by: jnp.ndarray,
-) -> jnp.ndarray:
+    column: FloatColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+) -> FloatColumn | IntColumn:
     raise NotImplementedError
 
 
 def any_by_p_id(
-    column: jnp.ndarray,
-    p_id_to_aggregate_by: jnp.ndarray,
-    p_id_to_store_by: jnp.ndarray,
-) -> jnp.ndarray:
+    column: BoolColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+) -> BoolColumn:
     raise NotImplementedError
 
 
 def all_by_p_id(
-    column: jnp.ndarray,
-    p_id_to_aggregate_by: jnp.ndarray,
-    p_id_to_store_by: jnp.ndarray,
-) -> jnp.ndarray:
+    column: BoolColumn | IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+) -> BoolColumn:
     raise NotImplementedError

@@ -239,7 +239,6 @@ def midijob_bemessungsentgelt_m_ab_10_2022(
     Legal reference: Changes in § 20 SGB IV from 01.10.2022
 
     """
-
     quotient1 = (midijobgrenze) / (midijobgrenze - minijobgrenze)
     quotient2 = (minijobgrenze) / (midijobgrenze - minijobgrenze)
     einkommen_diff = (

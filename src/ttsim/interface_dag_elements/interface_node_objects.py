@@ -17,7 +17,8 @@ ReturnType = TypeVar("ReturnType")
 class InterfaceNodeObject:
     """Base class for all objects operating on columns of data.
 
-    Examples:
+    Examples
+    --------
     - PolicyInputs
     - PolicyFunctions
     - GroupCreationFunctions
@@ -54,10 +55,10 @@ class InterfaceInput(InterfaceNodeObject):
     ) -> InterfaceInput:
         return self
 
-    def dummy_callable(self):
+    def dummy_callable(self) -> InterfaceFunction:  # type: ignore[type-arg]
         """Dummy callable for the interface input. Just used for plotting."""
 
-        def dummy() -> self.return_type:
+        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
             pass
 
         return interface_function(
@@ -67,7 +68,7 @@ class InterfaceInput(InterfaceNodeObject):
 
 
 def interface_input(
-    in_top_level_namespace: bool = False,
+    in_top_level_namespace: bool = False,  # noqa: FBT002
 ) -> GenericCallable[[GenericCallable], InterfaceInput]:
     """
     Decorator that makes a (dummy) function an `InterfaceInput`.
@@ -131,7 +132,9 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
         _frozen_safe_update_wrapper(self, self.function)
 
     def __call__(
-        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+        self,
+        *args: FunArgTypes.args,
+        **kwargs: FunArgTypes.kwargs,
     ) -> ReturnType:
         return self.function(*args, **kwargs)
 

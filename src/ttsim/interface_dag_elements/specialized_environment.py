@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import datetime
 import functools
-import inspect
-from typing import TYPE_CHECKING, Any
+from types import ModuleType
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 from dags import concatenate_functions, create_dag, get_free_arguments
 
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.interface_dag_elements.automatically_added_functions import (
     create_agg_by_group_functions,
     create_time_conversion_functions,
@@ -22,6 +21,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
+    PolicyFunction,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         QNameCombinedEnvironment1,
         QNameCombinedEnvironment2,
         QNameData,
+        QNamePolicyEnvironment,
         UnorderedQNames,
     )
 
@@ -57,65 +58,81 @@ def rounding() -> bool:
 @interface_function()
 def with_derived_functions_and_processed_input_nodes(
     policy_environment: NestedPolicyEnvironment,
-    processed_data: QNameData,
-    names__processed_data_columns: OrderedQNames,
     targets__tree: NestedStrings,
-    names__top_level_namespace: UnorderedQNames,
-    names__grouping_levels: OrderedQNames,
+    processed_data: QNameData,
+    labels__processed_data_columns: OrderedQNames,
+    labels__top_level_namespace: UnorderedQNames,
+    labels__grouping_levels: OrderedQNames,
+    backend: str,
+    xnp: ModuleType,
 ) -> QNameCombinedEnvironment0:
     """Return a flat policy environment with derived functions.
 
-    Three steps:
-    1. Remove all tree logic from the policy environment.
-    2. Add derived functions to the policy environment.
-    3. Remove all functions that are overridden by data columns.
+    Four steps:
+    1. Vectorize policy functions.
+    2. Remove all tree logic from the policy environment.
+    3. Add derived functions to the policy environment.
+    4. Remove all functions that are overridden by data columns.
 
     """
-    flat = _remove_tree_logic_from_policy_environment(
-        policy_environment=policy_environment,
-        names__top_level_namespace=names__top_level_namespace,
+    qname_vectorized = {
+        k: f.vectorize(
+            backend=backend,
+            xnp=xnp,
+        )
+        if isinstance(f, PolicyFunction)
+        else f
+        for k, f in dt.flatten_to_qual_names(policy_environment).items()
+    }
+    qname_without_tree_logic = _remove_tree_logic_from_policy_environment(
+        policy_environment=qname_vectorized,
+        labels__top_level_namespace=labels__top_level_namespace,
     )
-    flat_with_derived = _add_derived_functions(
-        qual_name_policy_environment=flat,
+    qname_with_derived = _add_derived_functions(
+        qual_name_policy_environment=qname_without_tree_logic,
         targets=dt.qual_names(targets__tree),
-        names__processed_data_columns=names__processed_data_columns,
-        grouping_levels=names__grouping_levels,
+        labels__processed_data_columns=labels__processed_data_columns,
+        grouping_levels=labels__grouping_levels,
     )
     out = {}
-    for n, f in flat_with_derived.items():
-        # Put scalars into the policy environment, else skip the key
+    for n, f in qname_with_derived.items():
         if n in processed_data:
+            # Put scalars into the policy environment.
             if isinstance(processed_data[n], int | float | bool):
                 out[n] = processed_data[n]
+            # Else, remove the node. Will be an input of the taxes-transfers function.
         else:
+            # Leave nodes not in the data what they are.
             out[n] = f
-
+    # The number of segments for jax' segment sum. After processing the data, we know that the number of ids is at most the length of the data.
+    out["num_segments"] = len(next(iter(processed_data.values())))
+    out["backend"] = backend
     return out
 
 
 def _remove_tree_logic_from_policy_environment(
-    policy_environment: NestedPolicyEnvironment,
-    names__top_level_namespace: UnorderedQNames,
+    policy_environment: QNamePolicyEnvironment,
+    labels__top_level_namespace: UnorderedQNames,
 ) -> QNameCombinedEnvironment0:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
-    for name, obj in dt.flatten_to_qual_names(policy_environment).items():
-        if isinstance(obj, ParamObject):
-            out[name] = obj
-        else:
+    for name, obj in policy_environment.items():
+        if hasattr(obj, "remove_tree_logic"):
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qual_name(name),
-                top_level_namespace=names__top_level_namespace,
+                top_level_namespace=labels__top_level_namespace,
             )
+        else:
+            out[name] = obj
     return out
 
 
 def _add_derived_functions(
     qual_name_policy_environment: QNameCombinedEnvironment0,
     targets: OrderedQNames,
-    names__processed_data_columns: OrderedQNames,
+    labels__processed_data_columns: OrderedQNames,
     grouping_levels: OrderedQNames,
-) -> UnorderedQNames:
+) -> QNameCombinedEnvironment0:
     """Return a mapping of qualified names to functions operating on columns.
 
     Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
@@ -136,7 +153,7 @@ def _add_derived_functions(
         The list of targets with qualified names.
     data
         Dict with qualified data names as keys and arrays as values.
-    names__top_level_namespace
+    labels__top_level_namespace
         Set of top-level namespaces.
 
     Returns
@@ -147,7 +164,7 @@ def _add_derived_functions(
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         qual_name_policy_environment=qual_name_policy_environment,
-        processed_data_columns=names__processed_data_columns,
+        processed_data_columns=labels__processed_data_columns,
         grouping_levels=grouping_levels,
     )
     column_functions = {
@@ -162,17 +179,15 @@ def _add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
-        names__processed_data_columns=names__processed_data_columns,
+        labels__processed_data_columns=labels__processed_data_columns,
         targets=targets,
         grouping_levels=grouping_levels,
     )
-    out = {
+    return {
         **qual_name_policy_environment,
         **time_conversion_functions,
         **aggregate_by_group_functions,
     }
-
-    return out
 
 
 @interface_function()
@@ -188,7 +203,12 @@ def with_processed_params_and_scalars(
     scalars = {
         k: v
         for k, v in with_derived_functions_and_processed_input_nodes.items()
-        if isinstance(v, float | int | bool)
+        if isinstance(v, float | int | bool) or k == "backend"
+    }
+    modules = {
+        k: v
+        for k, v in with_derived_functions_and_processed_input_nodes.items()
+        if isinstance(v, ModuleType)
     }
     param_functions = {
         k: v
@@ -208,6 +228,7 @@ def with_processed_params_and_scalars(
     processed_param_functions = process(
         **{k: v.value for k, v in params.items()},
         **scalars,
+        **modules,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},
@@ -227,6 +248,7 @@ def with_processed_params_and_scalars(
 def with_partialled_params_and_scalars(
     with_processed_params_and_scalars: QNameCombinedEnvironment1,
     rounding: bool,
+    xnp: ModuleType,
 ) -> QNameCombinedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
 
@@ -246,7 +268,7 @@ def with_partialled_params_and_scalars(
     processed_functions = {}
     for name, _func in with_processed_params_and_scalars.items():
         if isinstance(_func, ColumnFunction):
-            func = _apply_rounding(_func) if rounding else _func
+            func = _apply_rounding(_func, xnp) if rounding else _func
             partial_params = {}
             for arg in [
                 a
@@ -265,9 +287,9 @@ def with_partialled_params_and_scalars(
     return processed_functions
 
 
-def _apply_rounding(element: Any) -> Any:
+def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
     return (
-        element.rounding_spec.apply_rounding(element)
+        element.rounding_spec.apply_rounding(element, xnp=xnp)
         if getattr(element, "rounding_spec", False)
         else element
     )
@@ -276,12 +298,12 @@ def _apply_rounding(element: Any) -> Any:
 @interface_function()
 def tax_transfer_dag(
     with_partialled_params_and_scalars: QNameCombinedEnvironment2,
-    names__target_columns: OrderedQNames,
+    labels__column_targets: OrderedQNames,
 ) -> nx.DiGraph:
     """Thin wrapper around `create_dag`."""
     return create_dag(
         functions=with_partialled_params_and_scalars,
-        targets=names__target_columns,
+        targets=labels__column_targets,
     )
 
 
@@ -289,34 +311,23 @@ def tax_transfer_dag(
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
     with_partialled_params_and_scalars: QNameCombinedEnvironment2,
-    names__target_columns: OrderedQNames,
-    # backend: numpy | jax,
+    labels__column_targets: OrderedQNames,
+    backend: Literal["numpy", "jax"],
 ) -> Callable[[QNameData], QNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
     ttf_with_keyword_args = concatenate_functions(
         dag=tax_transfer_dag,
         functions=with_partialled_params_and_scalars,
-        targets=list(names__target_columns),
+        targets=list(labels__column_targets),
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
         set_annotations=False,
     )
 
-    # if backend == jax:
-    #     if not IS_JAX_INSTALLED:
-    #         raise ImportError(
-    #             "JAX is not installed. Please install JAX to use JIT compilation."
-    #         )
-    if IS_JAX_INSTALLED:
+    if backend == "jax":
         import jax
 
-        static_args = {
-            argname: 1000
-            for argname in inspect.signature(ttf_with_keyword_args).parameters
-            if argname.endswith("_num_segments")
-        }
-        ttf_with_keyword_args = functools.partial(ttf_with_keyword_args, **static_args)
         ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 
     def wrapper(processed_data: QNameData) -> QNameData:

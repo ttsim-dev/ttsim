@@ -15,7 +15,7 @@ DF_FOR_MAPPER = pd.DataFrame(
         "child_tax_credit_recipient": [-1, -1, 0],
         "gross_wage_y": [10000, 0, 0],
         "wealth": [0.0, 0.0, 0.0],
-    }
+    },
 )
 
 
@@ -45,7 +45,7 @@ TARGETS_TREE = {
         "child_tax_credit": {
             "amount_m": "payroll_tax_child_tax_credit_amount_m",
         },
-    }
+    },
 }
 
 

@@ -11,6 +11,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
@@ -94,6 +96,7 @@ def altersfreibetrag_y_ab_2005(
 @param_function(start_date="2005-01-01")
 def altersentlastungsquote_gestaffelt(
     raw_altersentlastungsquote_gestaffelt: dict[str | int, int | float],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Convert the raw parameters for the age-based tax deduction allowance to a dict."""
     spec = raw_altersentlastungsquote_gestaffelt.copy()
@@ -104,12 +107,14 @@ def altersentlastungsquote_gestaffelt(
         raw=spec_int_float,
         left_tail_key=first_birthyear_to_consider,
         right_tail_key=last_birthyear_to_consider,
+        xnp=xnp,
     )
 
 
 @param_function(start_date="2005-01-01")
 def maximaler_altersentlastungsbetrag_gestaffelt(
     raw_maximaler_altersentlastungsbetrag_gestaffelt: dict[str | int, int | float],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Convert the raw parameters for the age-based tax deduction allowance to a dict."""
     spec = raw_maximaler_altersentlastungsbetrag_gestaffelt.copy()
@@ -120,6 +125,7 @@ def maximaler_altersentlastungsbetrag_gestaffelt(
         raw=spec_int_float,
         left_tail_key=first_birthyear_to_consider,
         right_tail_key=last_birthyear_to_consider,
+        xnp=xnp,
     )
 
 
@@ -127,6 +133,7 @@ def get_consecutive_int_1d_lookup_table_with_filled_up_tails(
     raw: dict[int, float],
     left_tail_key: int,
     right_tail_key: int,
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Create a consecutive integer lookup table with filled tails.
 
@@ -142,11 +149,14 @@ def get_consecutive_int_1d_lookup_table_with_filled_up_tails(
         "Dictionary keys must be consecutive integers."
     )
     consecutive_dict_start = dict.fromkeys(
-        range(left_tail_key, min_key_in_spec), raw[min_key_in_spec]
+        range(left_tail_key, min_key_in_spec),
+        raw[min_key_in_spec],
     )
     consecutive_dict_end = dict.fromkeys(
-        range(max_key_in_spec + 1, right_tail_key + 1), raw[max_key_in_spec]
+        range(max_key_in_spec + 1, right_tail_key + 1),
+        raw[max_key_in_spec],
     )
     return get_consecutive_int_1d_lookup_table_param_value(
-        {**consecutive_dict_start, **raw, **consecutive_dict_end}
+        raw={**consecutive_dict_start, **raw, **consecutive_dict_end},
+        xnp=xnp,
     )

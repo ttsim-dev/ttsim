@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
+from typing import Literal
 
 import dags
+import numpy
 import pytest
 
 from _gettsim.config import GETTSIM_ROOT
-from ttsim.config import IS_JAX_INSTALLED
-from ttsim.interface_dag import main
+from ttsim import main
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.plot_dag import (
     all_targets_from_namespace,
@@ -26,7 +27,11 @@ from ttsim.tt_dag_elements import (
 
 TEST_DIR = Path(__file__).parent
 
-POLICY_TEST_IDS_AND_CASES = load_policy_test_data(test_dir=TEST_DIR, policy_name="")
+POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
+    test_dir=TEST_DIR,
+    policy_name="",
+    xnp=numpy,
+)
 
 
 @pytest.fixture
@@ -47,11 +52,8 @@ def orig_gettsim_objects():
     POLICY_TEST_IDS_AND_CASES.values(),
     ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
-def test_policy(test: PolicyTest):
-    if IS_JAX_INSTALLED:
-        execute_test(test, root=GETTSIM_ROOT, jit=True)
-    else:
-        execute_test(test, root=GETTSIM_ROOT, jit=False)
+def test_policy(test: PolicyTest, backend: Literal["numpy", "jax"]):
+    execute_test(test=test, root=GETTSIM_ROOT, backend=backend)
 
 
 @pytest.mark.parametrize("date", [f"{year}-01-01" for year in range(2015, 2025)])

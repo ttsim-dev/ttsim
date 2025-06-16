@@ -52,7 +52,6 @@ def neue_entgeltpunkte(
     umrechnung_entgeltpunkte_beitrittsgebiet: float,
 ) -> float:
     """Return earning points for the wages earned in the last year."""
-
     # Scale bruttolohn up if earned in eastern Germany
     if wohnort_ost:
         bruttolohn_scaled_east = (

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from ttsim.interface_dag_elements.names import grouping_levels, top_level_namespace
+from ttsim.interface_dag_elements.labels import grouping_levels, top_level_namespace
 from ttsim.tt_dag_elements import policy_function, policy_input
 
 

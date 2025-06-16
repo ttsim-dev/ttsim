@@ -8,17 +8,8 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
 
 import dags.tree as dt
-import numpy
 from dags import rename_arguments
-from pandas.api.types import (
-    is_bool_dtype,
-    is_datetime64_any_dtype,
-    is_float_dtype,
-    is_integer_dtype,
-)
 
-from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.tt_dag_elements.aggregation import (
     AggType,
@@ -41,11 +32,12 @@ from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
-    import pandas as pd
+    from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         GenericCallable,
+        IntColumn,
         UnorderedQNames,
     )
 
@@ -70,7 +62,8 @@ class FKType(StrEnum):
 class ColumnObject:
     """Base class for all objects operating on columns of data.
 
-    Examples:
+    Examples
+    --------
     - PolicyInputs
     - PolicyFunctions
     - GroupCreationFunctions
@@ -126,10 +119,10 @@ class PolicyInput(ColumnObject):
     ) -> PolicyInput:
         return self
 
-    def dummy_callable(self):
+    def dummy_callable(self) -> PolicyFunction:
         """Dummy callable for the interface input. Just used for plotting."""
 
-        def dummy() -> self.data_type:
+        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
             pass
 
         return policy_function(
@@ -225,31 +218,14 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     foreign_key_type: FKType = FKType.IRRELEVANT
 
     def __post_init__(self) -> None:
-        self._fail_if__rounding_has_wrong_type(self.rounding_spec)
+        _fail_if_rounding_has_wrong_type(self.rounding_spec)
         # Expose the signature of the wrapped function for dependency resolution
         _frozen_safe_update_wrapper(self, self.function)
 
-    def _fail_if__rounding_has_wrong_type(
-        self, rounding_spec: RoundingSpec | None
-    ) -> None:
-        """Check if rounding_spec has the correct type.
-
-        Parameters
-        ----------
-        rounding_spec
-            The rounding specification to check.
-
-        Raises
-        ------
-        AssertionError
-            If rounding_spec is not a RoundingSpec or None.
-        """
-        assert isinstance(rounding_spec, RoundingSpec | None), (
-            f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
-        )
-
     def __call__(
-        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+        self,
+        *args: FunArgTypes.args,
+        **kwargs: FunArgTypes.kwargs,
     ) -> ReturnType:
         return self.function(*args, **kwargs)
 
@@ -266,6 +242,24 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     def is_active(self, date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
         return self.start_date <= date <= self.end_date
+
+
+def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None:
+    """Check if rounding_spec has the correct type.
+
+    Parameters
+    ----------
+    rounding_spec
+        The rounding specification to check.
+
+    Raises
+    ------
+    AssertionError
+        If rounding_spec is not a RoundingSpec or None.
+    """
+    assert isinstance(rounding_spec, RoundingSpec | None), (
+        f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
+    )
 
 
 @dataclass(frozen=True)
@@ -287,6 +281,8 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
         The rounding specification.
     """
 
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize"
+
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
@@ -304,6 +300,28 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             end_date=self.end_date,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
+            vectorization_strategy=self.vectorization_strategy,
+        )
+
+    def vectorize(self, backend: str, xnp: ModuleType) -> PolicyFunction:
+        func = (
+            self.function
+            if self.vectorization_strategy == "not_required"
+            else vectorize_function(
+                self.function,
+                vectorization_strategy=self.vectorization_strategy,
+                backend=backend,
+                xnp=xnp,
+            )
+        )
+        return PolicyFunction(
+            leaf_name=self.leaf_name,
+            function=func,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+            vectorization_strategy="not_required",
         )
 
 
@@ -349,15 +367,9 @@ def policy_function(
     -------
     A decorator that returns a PolicyFunction object.
     """
-
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: GenericCallable) -> PolicyFunction:
-        func = (
-            func
-            if vectorization_strategy == "not_required"
-            else vectorize_function(func, vectorization_strategy=vectorization_strategy)
-        )
         return PolicyFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
@@ -365,12 +377,13 @@ def policy_function(
             end_date=end_date,
             rounding_spec=rounding_spec,
             foreign_key_type=foreign_key_type,
+            vectorization_strategy=vectorization_strategy,
         )
 
     return inner
 
 
-def reorder_ids(ids: np.ndarray) -> np.ndarray:
+def reorder_ids(ids: IntColumn, xnp: ModuleType) -> IntColumn:
     """Make ID's consecutively numbered.
 
     Takes the given IDs and replaces them by consecutive numbers
@@ -379,18 +392,17 @@ def reorder_ids(ids: np.ndarray) -> np.ndarray:
     [43,44,70,50] -> [0,1,3,2]
 
     """
-
-    sorting = np.argsort(ids)
+    sorting = xnp.argsort(ids)
     ids_sorted = ids[sorting]
-    index_after_sort = np.arange(ids.shape[0])[sorting]
+    index_after_sort = xnp.arange(ids.shape[0])[sorting]
 
     # Look for difference from previous entry in sorted array
-    diff_to_prev = np.where(np.diff(ids_sorted) >= 1, 1, 0)
+    diff_to_prev = xnp.where(xnp.diff(ids_sorted) >= 1, 1, 0)
 
     # Sum up all differences to get new id
-    consecutive_ids = np.concatenate((np.asarray([0]), np.cumsum(diff_to_prev)))
+    consecutive_ids = xnp.concatenate((xnp.asarray([0]), xnp.cumsum(diff_to_prev)))
 
-    return consecutive_ids[np.argsort(index_after_sort)]
+    return consecutive_ids[xnp.argsort(index_after_sort)]
 
 
 @dataclass(frozen=True)
@@ -456,7 +468,10 @@ def group_creation_function(
 
     def decorator(func: GenericCallable) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
-        func_with_reorder = lambda **kwargs: reorder_ids(func(**kwargs))
+        func_with_reorder = lambda **kwargs: reorder_ids(  # noqa: E731
+            ids=func(**kwargs),
+            xnp=kwargs["xnp"],
+        )
         functools.update_wrapper(func_with_reorder, func)
 
         return GroupCreationFunction(
@@ -539,22 +554,19 @@ def agg_by_group_function(
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
-        _fail_if__group_id_is_invalid(group_ids, orig_location)
+        _fail_if_group_id_is_invalid(group_ids, orig_location)
         group_id = group_ids.pop()
-        other_args = args - {group_id}
+        other_args = args - {group_id, "num_segments", "backend"}
         if agg_type == AggType.COUNT:
-            _fail_if__other_arg_is_present(other_args, orig_location)
+            _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {"group_id": group_id}
         else:
-            _fail_if__other_arg_is_invalid(other_args, orig_location)
+            _fail_if_other_arg_is_invalid(other_args, orig_location)
             mapper = {"group_id": group_id, "column": other_args.pop()}
-        if IS_JAX_INSTALLED:
-            mapper["num_segments"] = f"{group_id}_num_segments"
         agg_func = rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
-
         return AggByGroupFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=agg_func,
@@ -567,35 +579,38 @@ def agg_by_group_function(
     return inner
 
 
-def _fail_if__group_id_is_invalid(
-    group_ids: UnorderedQNames, orig_location: str
+def _fail_if_group_id_is_invalid(
+    group_ids: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if len(group_ids) != 1:
         raise ValueError(
             "Require exactly one group identifier ending with '_id' for "
             "aggregation by group. Got "
-            f"{', '.join(group_ids) if group_ids else 'nothing'} in {orig_location}."
+            f"{', '.join(group_ids) if group_ids else 'nothing'} in {orig_location}.",
         )
 
 
-def _fail_if__other_arg_is_present(
-    other_args: UnorderedQNames, orig_location: str
+def _fail_if_other_arg_is_present(
+    other_args: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if other_args:
         raise ValueError(
             "There must be no argument besides identifiers for counting. Got: "
-            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
+            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}.",
         )
 
 
-def _fail_if__other_arg_is_invalid(
-    other_args: UnorderedQNames, orig_location: str
+def _fail_if_other_arg_is_invalid(
+    other_args: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if len(other_args) != 1:
         raise ValueError(
-            "There must be exactly one argument besides identifiers for aggregations. "
-            "Got: "
-            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}."
+            "There must be exactly one argument besides identifiers, num_segments, and "
+            "backend for aggregations. Got: "
+            f"{', '.join(other_args) if other_args else 'nothing'} in {orig_location}.",
         )
 
 
@@ -673,30 +688,30 @@ def agg_by_p_id_function(
             for p in args
             if any(e.startswith("p_id_") for e in dt.tree_path_from_qual_name(p))
         }
-        other_args = args - {*other_p_ids, "p_id"}
-        _fail_if__p_id_is_not_present(args, orig_location)
-        _fail_if__other_p_id_is_invalid(other_p_ids, orig_location)
+        other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
+        _fail_if_p_id_is_not_present(args, orig_location)
+        _fail_if_other_p_id_is_invalid(other_p_ids, orig_location)
         if agg_type == AggType.COUNT:
-            _fail_if__other_arg_is_present(other_args, orig_location)
+            _fail_if_other_arg_is_present(other_args, orig_location)
             mapper = {
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
+                "num_segments": "num_segments",
+                "backend": "backend",
             }
         else:
-            _fail_if__other_arg_is_invalid(other_args, orig_location)
+            _fail_if_other_arg_is_invalid(other_args, orig_location)
             mapper = {
                 "column": other_args.pop(),
                 "p_id_to_aggregate_by": other_p_ids.pop(),
                 "p_id_to_store_by": "p_id",
+                "num_segments": "num_segments",
+                "backend": "backend",
             }
         agg_func = rename_arguments(
             func=agg_registry[agg_type],
             mapper=mapper,
         )
-
-        functools.update_wrapper(agg_func, func)
-        agg_func.__signature__ = inspect.signature(func)
-
         return AggByPIDFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=agg_func,
@@ -709,22 +724,23 @@ def agg_by_p_id_function(
     return inner
 
 
-def _fail_if__p_id_is_not_present(args: UnorderedQNames, orig_location: str) -> None:
+def _fail_if_p_id_is_not_present(args: UnorderedQNames, orig_location: str) -> None:
     if "p_id" not in args:
         raise ValueError(
             "The function must have the argument named 'p_id' for aggregation by p_id. "
-            f"Got {', '.join(args) if args else 'nothing'} in {orig_location}."
+            f"Got {', '.join(args) if args else 'nothing'} in {orig_location}.",
         )
 
 
-def _fail_if__other_p_id_is_invalid(
-    other_p_ids: UnorderedQNames, orig_location: str
+def _fail_if_other_p_id_is_invalid(
+    other_p_ids: UnorderedQNames,
+    orig_location: str,
 ) -> None:
     if len(other_p_ids) != 1:
         raise ValueError(
             "Require exactly one identifier starting with 'p_id_' for "
             "aggregation by p_id. Got: "
-            f"{', '.join(other_p_ids) if other_p_ids else 'nothing'} in {orig_location}."  # noqa: E501
+            f"{', '.join(other_p_ids) if other_p_ids else 'nothing'} in {orig_location}.",  # noqa: E501
         )
 
 
@@ -798,40 +814,10 @@ def _convert_and_validate_dates(
 
     if start_date > end_date:
         raise ValueError(
-            f"The start date {start_date} must be before the end date {end_date}."
+            f"The start date {start_date} must be before the end date {end_date}.",
         )
 
     return start_date, end_date
-
-
-def check_series_has_expected_type(series: pd.Series, internal_type: np.dtype) -> bool:
-    """Checks whether used series has already expected internal type.
-
-    Currently not used, but might become useful again.
-
-    Parameters
-    ----------
-    series: pandas.Series or pandas.DataFrame or dict of pandas.Series
-        Data provided by the user.
-    internal_type: TypeVar
-        One of the types used by TTSIM.
-
-    Returns
-    -------
-    Bool
-
-    """
-    if (
-        (internal_type == float) & (is_float_dtype(series))
-        or (internal_type == int) & (is_integer_dtype(series))
-        or (internal_type == bool) & (is_bool_dtype(series))
-        or (internal_type == numpy.datetime64) & (is_datetime64_any_dtype(series))
-    ):
-        out = True
-    else:
-        out = False
-
-    return out
 
 
 @dataclass(frozen=True)
@@ -861,7 +847,9 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         _frozen_safe_update_wrapper(self, self.function)
 
     def __call__(
-        self, *args: FunArgTypes.args, **kwargs: FunArgTypes.kwargs
+        self,
+        *args: FunArgTypes.args,
+        **kwargs: FunArgTypes.kwargs,
     ) -> ReturnType:
         return self.function(*args, **kwargs)
 

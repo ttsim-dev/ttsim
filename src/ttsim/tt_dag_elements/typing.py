@@ -11,7 +11,8 @@ if TYPE_CHECKING:
         |
         # Parameters at one point in time
         dict[
-            datetime.date, dict[Literal["note", "reference"] | str | int, Any]  # noqa: PYI051
+            datetime.date,
+            dict[Literal["note", "reference"] | str | int, Any],  # noqa: PYI051
         ]
     )
     DashedISOString = NewType("DashedISOString", str)

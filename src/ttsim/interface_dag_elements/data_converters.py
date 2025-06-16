@@ -6,6 +6,8 @@ import dags.tree as dt
 import pandas as pd
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import (
         NestedData,
         NestedInputsMapper,
@@ -26,13 +28,15 @@ def nested_data_to_df_with_nested_columns(
         data_with_p_id:
             Some data structure with a "p_id" column.
 
-    Returns:
+    Returns
+    -------
         A DataFrame.
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
 
     return pd.DataFrame(
-        flat_data_to_convert, index=pd.Index(data_with_p_id["p_id"], name="p_id")
+        flat_data_to_convert,
+        index=pd.Index(data_with_p_id["p_id"], name="p_id"),
     )
 
 
@@ -51,7 +55,8 @@ def nested_data_to_df_with_mapped_columns(
         data_with_p_id:
             Some data structure with a "p_id" column.
 
-    Returns:
+    Returns
+    -------
         A DataFrame.
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
@@ -66,6 +71,7 @@ def nested_data_to_df_with_mapped_columns(
 def dataframe_to_nested_data(
     mapper: NestedInputsMapper,
     df: pd.DataFrame,
+    xnp: ModuleType,
 ) -> NestedData:
     """Transform a pandas DataFrame to a nested dictionary expected by TTSIM.
     `
@@ -81,13 +87,13 @@ def dataframe_to_nested_data(
             df:
                 The pandas DataFrame containing the source data.
 
-        Returns
-        -------
+    Returns
+    -------
             A nested dictionary structure containing the data organized according to the
             mapping definition.
 
-        Examples
-        --------
+    Examples
+    --------
             >>> df = pd.DataFrame({
             ...     "a": [1, 2, 3],
             ...     "b": [4, 5, 6],
@@ -107,26 +113,28 @@ def dataframe_to_nested_data(
             >>> result
             {
                 "n1": {
-                    "n2": pd.Series([1, 2, 3]),
-                    "n3": pd.Series([4, 5, 6]),
+                    "n2": np.array([1, 2, 3]),
+                    "n3": np.array([4, 5, 6]),
                 },
-                "n4": pd.Series([3, 3, 3]),
+                "n4": np.array([3, 3, 3]),
             }
 
 
     """
     qualified_inputs_tree_to_df_columns = dt.flatten_to_qual_names(mapper)
-    name_to_input_series = {}
+    name_to_input_array = {}
     for (
         qualified_input_name,
         input_value,
     ) in qualified_inputs_tree_to_df_columns.items():
         if input_value in df.columns:
-            name_to_input_series[qualified_input_name] = df[input_value]
+            name_to_input_array[qualified_input_name] = xnp.asarray(df[input_value])
         else:
-            name_to_input_series[qualified_input_name] = pd.Series(
-                [input_value] * len(df),
-                index=df.index,
+            name_to_input_array[qualified_input_name] = xnp.asarray(
+                pd.Series(
+                    [input_value] * len(df),
+                    index=df.index,
+                ),
             )
 
-    return dt.unflatten_from_qual_names(name_to_input_series)
+    return dt.unflatten_from_qual_names(name_to_input_array)

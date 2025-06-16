@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags
 
@@ -22,10 +22,17 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import UnorderedQNames
 
 
-def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, Any]:
+def main(
+    inputs: dict[str, Any],
+    targets: list[str] | None = None,
+    backend: Literal["numpy", "jax"] = "numpy",
+) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
+    if "backend" not in inputs:
+        inputs["backend"] = backend
+
     nodes = {
         p: n
         for p, n in load_interface_functions_and_inputs().items()
@@ -43,7 +50,6 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
         functions=functions,
         targets=targets,
     )
-    # draw_dag(dag)
     f = dags.concatenate_functions(
         dag=dag,
         functions=functions,
@@ -56,7 +62,8 @@ def main(inputs: dict[str, Any], targets: list[str] | None = None) -> dict[str, 
 
 
 def load_interface_functions_and_inputs() -> dict[
-    str, InterfaceFunction | InterfaceInput
+    str,
+    InterfaceFunction | InterfaceInput,
 ]:
     """Load the collection of functions and inputs from the current directory."""
     orig_functions = _load_orig_functions()
@@ -128,6 +135,6 @@ def _fail_if_targets_are_not_among_interface_functions(
             formatted = format_list_linewise(sorted(missing_targets))
             msg = format_errors_and_warnings(
                 "The following targets have no corresponding function in the interface "
-                f"DAG:\n\n{formatted}"
+                f"DAG:\n\n{formatted}",
             )
             raise ValueError(msg)

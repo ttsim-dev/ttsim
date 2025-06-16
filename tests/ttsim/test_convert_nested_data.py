@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dags.tree as dt
-import numpy as np
+import numpy
 import pandas as pd
 import pytest
 
@@ -54,8 +54,8 @@ _SOME_SCALAR_PARAM = ScalarParam(
 @pytest.fixture
 def minimal_data_tree():
     return {
-        "hh_id": np.array([1, 2, 3]),
-        "p_id": np.array([1, 2, 3]),
+        "hh_id": numpy.array([1, 2, 3]),
+        "p_id": numpy.array([1, 2, 3]),
     }
 
 
@@ -105,6 +105,7 @@ def test_dataframe_to_nested_data(
     result = dataframe_to_nested_data(
         mapper=inputs_tree_to_df_columns,
         df=df,
+        xnp=numpy,
     )
     flat_result = dt.flatten_to_qual_names(result)
     flat_expected_output = dt.flatten_to_qual_names(expected_output)
@@ -112,7 +113,9 @@ def test_dataframe_to_nested_data(
     assert set(flat_result.keys()) == set(flat_expected_output.keys())
     for key in flat_result:
         pd.testing.assert_series_equal(
-            flat_result[key], flat_expected_output[key], check_names=False
+            pd.Series(flat_result[key]),
+            flat_expected_output[key],
+            check_names=False,
         )
 
 
@@ -134,7 +137,7 @@ def test_dataframe_to_nested_data(
                 "another_policy_function": "res2",
             },
             pd.DataFrame(
-                {"res1": np.array([1, 1, 1]), "res2": np.array([1, 1, 1])},
+                {"res1": numpy.array([1, 1, 1]), "res2": numpy.array([1, 1, 1])},
                 index=pd.Index([1, 2, 3], name="p_id"),
             ),
         ),
@@ -147,7 +150,7 @@ def test_dataframe_to_nested_data(
                 "some_policy_function": "res1",
             },
             pd.DataFrame(
-                {"res1": np.array([1, 1, 1])},
+                {"res1": numpy.array([1, 1, 1])},
                 index=pd.Index([1, 2, 3], name="p_id"),
             ),
         ),
@@ -160,7 +163,7 @@ def test_dataframe_to_nested_data(
                 "some_param_function": "res1",
             },
             pd.DataFrame(
-                {"res1": np.array([1, 1, 1])},
+                {"res1": numpy.array([1, 1, 1])},
                 index=pd.Index([1, 2, 3], name="p_id"),
             ),
         ),
@@ -175,7 +178,7 @@ def test_dataframe_to_nested_data(
                 "some_policy_function": "res2",
             },
             pd.DataFrame(
-                {"res1": np.array([1, 1, 1]), "res2": np.array([1, 1, 1])},
+                {"res1": numpy.array([1, 1, 1]), "res2": numpy.array([1, 1, 1])},
                 index=pd.Index([1, 2, 3], name="p_id"),
             ),
         ),
@@ -186,7 +189,7 @@ def test_dataframe_to_nested_data(
             },
             {"some_scalar_param": "res1"},
             pd.DataFrame(
-                {"res1": np.array([1, 1, 1])},
+                {"res1": numpy.array([1, 1, 1])},
                 index=pd.Index([1, 2, 3], name="p_id"),
             ),
         ),
@@ -201,7 +204,7 @@ def test_dataframe_to_nested_data(
                 "some_policy_function": "res2",
             },
             pd.DataFrame(
-                {"res1": np.array([1, 1, 1]), "res2": np.array([1, 1, 1])},
+                {"res1": numpy.array([1, 1, 1]), "res2": numpy.array([1, 1, 1])},
                 index=pd.Index([1, 2, 3], name="p_id"),
             ),
         ),

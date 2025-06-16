@@ -19,7 +19,7 @@ def another_func(some_func: int) -> int:
     return some_func
 
 
-def test_warn_if_functions_and_data_columns_overlap():
+def test_warn_if_functions_and_data_columns_overlap(backend):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         main(
@@ -34,7 +34,7 @@ def test_warn_if_functions_and_data_columns_overlap():
                 },
                 "targets__tree": {"some_target": None},
                 "rounding": False,
-                # "jit": jit,
+                "backend": backend,
             },
             targets=["warn_if__functions_and_data_columns_overlap"],
         )
@@ -44,10 +44,11 @@ def test_warn_if_functions_and_data_columns_overlap():
         assert w[0].category.__name__ == "FunctionsAndDataColumnsOverlapWarning"
 
 
-def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap():
+def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend):
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            "error", category=warn_if.FunctionsAndDataColumnsOverlapWarning
+            "error",
+            category=warn_if.FunctionsAndDataColumnsOverlapWarning,
         )
         main(
             inputs={
@@ -58,7 +59,7 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap():
                 "policy_environment": {"some_func": some_func},
                 "targets__tree": {"some_func": None},
                 "rounding": False,
-                # "jit": jit,
+                "backend": backend,
             },
             targets=["warn_if__functions_and_data_columns_overlap"],
         )

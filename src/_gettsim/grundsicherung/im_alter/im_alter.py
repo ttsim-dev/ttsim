@@ -32,7 +32,6 @@ def betrag_m_eg(
     # ToDo: currently not implemented for retirees.
 
     """
-
     # TODO(@ChristianZimpelmann): Treatment of Bedarfsgemeinschaften with both retirees
     # and unemployed job seekers probably incorrect
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/703
@@ -80,7 +79,6 @@ def mehrbedarf_schwerbehinderung_g_m(
     grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
 ) -> float:
     """Calculate additional allowance for individuals with disabled person's pass G."""
-
     mehrbedarf_single = (
         grundsicherung__regelbedarfsstufen.rbs_1
     ) * mehrbedarf_bei_schwerbehinderungsgrad_g

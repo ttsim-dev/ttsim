@@ -4,7 +4,6 @@ import inspect
 
 import pytest
 
-from ttsim.config import numpy_or_jax as np
 from ttsim.tt_dag_elements import (
     AggType,
     PolicyFunction,
@@ -178,7 +177,7 @@ def test_agg_by_group_function_type(function, expected_group_id, expected_other_
 
 
 def test_agg_by_group_count_other_arg_present():
-    match = "There must be no argument besides identifiers for counting."
+    match = "There must be no argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.COUNT)
@@ -187,7 +186,7 @@ def test_agg_by_group_count_other_arg_present():
 
 
 def test_agg_by_group_sum_wrong_amount_of_args():
-    match = "There must be exactly one argument besides identifiers for aggregations."
+    match = "There must be exactly one argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_group_function(agg_type=AggType.SUM)
@@ -207,7 +206,8 @@ def test_wrong_number_of_group_ids_present():
 
         @agg_by_group_function(agg_type=AggType.COUNT)
         def aggregate_by_group_count_multiple_group_ids_present(
-            group_id, another_group_id
+            group_id,
+            another_group_id,
         ):
             pass
 
@@ -229,7 +229,7 @@ def aggregate_by_p_id_count(p_id, p_id_specifier):
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
-def aggregate_by_p_id_sum(p_id, p_id_specifier, source):
+def aggregate_by_p_id_sum(p_id, p_id_specifier, column):
     pass
 
 
@@ -241,7 +241,7 @@ def aggregate_by_p_id_sum(p_id, p_id_specifier, source):
     ),
     [
         (aggregate_by_p_id_count, "p_id", None),
-        (aggregate_by_p_id_sum, "p_id", "source"),
+        (aggregate_by_p_id_sum, "p_id", "column"),
     ],
 )
 def test_agg_by_p_id_function_type(function, expected_foreign_p_id, expected_other_arg):
@@ -252,7 +252,7 @@ def test_agg_by_p_id_function_type(function, expected_foreign_p_id, expected_oth
 
 
 def test_agg_by_p_id_count_other_arg_present():
-    match = "There must be no argument besides identifiers for counting."
+    match = "There must be no argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_p_id_function(agg_type=AggType.COUNT)
@@ -260,17 +260,25 @@ def test_agg_by_p_id_count_other_arg_present():
             pass
 
 
-def test_agg_by_p_id_sum_wrong_amount_of_args():
-    match = "There must be exactly one argument besides identifiers for aggregations."
+def test_agg_by_p_id_sum_no_arg_present():
+    match = "There must be exactly one argument besides identifiers"
     with pytest.raises(ValueError, match=match):
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
         def aggregate_by_p_id_sum_no_arg_present(p_id, p_id_specifier):
             pass
 
+
+def test_agg_by_p_id_sum_multiple_args_present():
+    match = "There must be exactly one argument besides identifiers"
+    with pytest.raises(ValueError, match=match):
+
         @agg_by_p_id_function(agg_type=AggType.SUM)
         def aggregate_by_p_id_sum_multiple_args_present(
-            p_id, p_id_specifier, arg, another_arg
+            p_id,
+            p_id_specifier,
+            arg,
+            another_arg,
         ):
             pass
 
@@ -281,12 +289,18 @@ def test_agg_by_p_id_multiple_other_p_ids_present():
 
         @agg_by_p_id_function(agg_type=AggType.SUM)
         def aggregate_by_p_id_multiple_other_p_ids_present(
-            p_id, p_id_specifier_one, p_id_specifier_two
+            p_id,
+            p_id_specifier_one,
+            p_id_specifier_two,
         ):
             pass
 
 
-def test_agg_by_p_id_sum_with_all_missing_p_ids():
+def test_agg_by_p_id_sum_with_all_missing_p_ids(backend, xnp):
     aggregate_by_p_id_sum(
-        p_id=np.array([180]), p_id_specifier=np.array([-1]), source=np.array([False])
+        p_id=xnp.array([180]),
+        p_id_specifier=xnp.array([-1]),
+        column=xnp.array([0]),
+        num_segments=1,
+        backend=backend,
     )

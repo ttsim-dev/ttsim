@@ -17,32 +17,32 @@ if TYPE_CHECKING:
 
 @interface_function()
 def columns(
-    names__root_nodes: UnorderedQNames,
+    labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
     specialized_environment__tax_transfer_function: Callable[[QNameData], QNameData],
 ) -> QNameData:
     return specialized_environment__tax_transfer_function(
-        {k: v for k, v in processed_data.items() if k in names__root_nodes}
+        {k: v for k, v in processed_data.items() if k in labels__root_nodes},
     )
 
 
 @interface_function()
 def params(
-    names__target_params: OrderedQNames,
+    labels__param_targets: OrderedQNames,
     specialized_environment__with_processed_params_and_scalars: QNameCombinedEnvironment1,  # noqa: E501
 ) -> QNameData:
     return {
         pt: specialized_environment__with_processed_params_and_scalars[pt]
-        for pt in names__target_params
+        for pt in labels__param_targets
     }
 
 
 @interface_function()
 def from_input_data(
-    names__targets_from_input_data: OrderedQNames,
+    labels__input_data_targets: OrderedQNames,
     processed_data: QNameData,
 ) -> QNameData:
-    return {ot: processed_data[ot] for ot in names__targets_from_input_data}
+    return {ot: processed_data[ot] for ot in labels__input_data_targets}
 
 
 @interface_function()

@@ -234,7 +234,6 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     regarding voluntary unemployment this requirement may be viewed as always satisfied
     and is therefore not included when checking for eligibility.
     """
-
     return (
         arbeitslos_für_1_jahr_nach_alter_58_ein_halb
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
@@ -264,7 +263,6 @@ def grundsätzlich_anspruchsberechtigt_mit_prüfung_geburtsjahr(
     becomes inactive in 2018 because then all potential beneficiaries have reached the
     Regelaltersgrenze.
     """
-
     return (
         arbeitslos_für_1_jahr_nach_alter_58_ein_halb
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt

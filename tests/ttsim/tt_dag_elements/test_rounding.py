@@ -1,23 +1,16 @@
 from __future__ import annotations
 
+import numpy
 import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import main
-from ttsim.config import IS_JAX_INSTALLED
-from ttsim.config import numpy_or_jax as np
-from ttsim.interface_dag_elements.policy_environment import policy_environment
 from ttsim.tt_dag_elements import (
     RoundingSpec,
     policy_function,
     policy_input,
 )
-
-if IS_JAX_INSTALLED:
-    DTYPE = "float32"
-else:
-    DTYPE = "float64"
 
 
 @policy_input()
@@ -33,48 +26,48 @@ def p_id() -> int:
 rounding_specs_and_exp_results = [
     (
         RoundingSpec(base=1, direction="up"),
-        np.array([100.24, 100.78]),
-        np.array([101.0, 101.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([101.0, 101.0]),
     ),
     (
         RoundingSpec(base=1, direction="down"),
-        np.array([100.24, 100.78]),
-        np.array([100.0, 100.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.0, 100.0]),
     ),
     (
         RoundingSpec(base=1, direction="nearest"),
-        np.array([100.24, 100.78]),
-        np.array([100.0, 101.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.0, 101.0]),
     ),
     (
         RoundingSpec(base=5, direction="up"),
-        np.array([100.24, 100.78]),
-        np.array([105.0, 105.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([105.0, 105.0]),
     ),
     (
         RoundingSpec(base=0.1, direction="down"),
-        np.array([100.24, 100.78]),
-        np.array([100.2, 100.7]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.2, 100.7]),
     ),
     (
         RoundingSpec(base=0.001, direction="nearest"),
-        np.array([100.24, 100.78]),
-        np.array([100.24, 100.78]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([100.24, 100.78]),
     ),
     (
         RoundingSpec(base=1, direction="up", to_add_after_rounding=10),
-        np.array([100.24, 100.78]),
-        np.array([111.0, 111.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([111.0, 111.0]),
     ),
     (
         RoundingSpec(base=1, direction="down", to_add_after_rounding=10),
-        np.array([100.24, 100.78]),
-        np.array([110.0, 110.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([110.0, 110.0]),
     ),
     (
         RoundingSpec(base=1, direction="nearest", to_add_after_rounding=10),
-        np.array([100.24, 100.78]),
-        np.array([110.0, 111.0]),
+        numpy.array([100.24, 100.78]),
+        numpy.array([110.0, 111.0]),
     ),
 ]
 
@@ -96,18 +89,12 @@ def test_malformed_rounding_specs():
         def test_func():
             return 0
 
-        policy_environment(
-            active_tree_with_column_objects_and_param_functions={
-                "x.py": {"test_func": test_func}
-            },
-        )
-
 
 @pytest.mark.parametrize(
     "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding(rounding_spec, input_values, exp_output):
+def test_rounding(rounding_spec, input_values, exp_output, backend):
     """Check if rounding is correct."""
 
     # Define function that should be rounded
@@ -116,8 +103,8 @@ def test_rounding(rounding_spec, input_values, exp_output):
         return x
 
     input_data__tree = {
-        "p_id": np.array([1, 2]),
-        "namespace": {"x": np.array(input_values)},
+        "p_id": numpy.array([1, 2]),
+        "namespace": {"x": numpy.array(input_values)},
     }
     policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
@@ -127,17 +114,19 @@ def test_rounding(rounding_spec, input_values, exp_output):
             "policy_environment": policy_environment,
             "targets__tree": {"namespace": {"test_func": None}},
             "rounding": True,
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
-        pd.Series(exp_output, dtype=DTYPE),
+        pd.Series(exp_output),
         check_names=False,
+        check_dtype=False,
     )
 
 
-def test_rounding_with_time_conversion():
+def test_rounding_with_time_conversion(backend, xnp):
     """Check if rounding is correct for time-converted functions."""
 
     # Define function that should be rounded
@@ -146,8 +135,8 @@ def test_rounding_with_time_conversion():
         return x
 
     data = {
-        "p_id": np.array([1, 2]),
-        "x": np.array([1.2, 1.5]),
+        "p_id": xnp.array([1, 2]),
+        "x": xnp.array([1.2, 1.5]),
     }
 
     policy_environment = {
@@ -162,13 +151,15 @@ def test_rounding_with_time_conversion():
             "policy_environment": policy_environment,
             "targets__tree": {"test_func_y": None},
             "rounding": True,
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
-        pd.Series([12.0, 12.0], dtype=DTYPE),
+        pd.Series([12.0, 12.0]),
         check_names=False,
+        check_dtype=False,
     )
 
 
@@ -186,8 +177,8 @@ def test_no_rounding(
     def test_func(x):
         return x
 
-    data = {"p_id": np.array([1, 2])}
-    data["x"] = np.array(input_values_exp_output)
+    data = {"p_id": numpy.array([1, 2])}
+    data["x"] = numpy.array(input_values_exp_output)
     policy_environment = {
         "test_func": test_func,
         "x": x,
@@ -205,8 +196,9 @@ def test_no_rounding(
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["test_func"]),
-        pd.Series(input_values_exp_output, dtype=DTYPE),
+        pd.Series(input_values_exp_output),
         check_names=False,
+        check_dtype=False,
     )
 
 
@@ -214,18 +206,19 @@ def test_no_rounding(
     "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding_callable(rounding_spec, input_values, exp_output):
+def test_rounding_callable(rounding_spec, input_values, exp_output, xnp):
     """Check if callable is rounded correctly."""
 
     def test_func(income):
         return income
 
-    func_with_rounding = rounding_spec.apply_rounding(test_func)
+    func_with_rounding = rounding_spec.apply_rounding(test_func, xnp=xnp)
 
     assert_series_equal(
         pd.Series(func_with_rounding(input_values)),
         pd.Series(exp_output),
         check_names=False,
+        check_dtype=False,
     )
 
 
@@ -233,34 +226,35 @@ def test_rounding_callable(rounding_spec, input_values, exp_output):
     "rounding_spec, input_values, exp_output",
     rounding_specs_and_exp_results,
 )
-def test_rounding_spec(rounding_spec, input_values, exp_output):
+def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
     """Test RoundingSpec directly."""
 
     def test_func(income):
         return income
 
-    rounded_func = rounding_spec.apply_rounding(test_func)
+    rounded_func = rounding_spec.apply_rounding(test_func, xnp=xnp)
     result = rounded_func(input_values)
 
     assert_series_equal(
         pd.Series(result),
         pd.Series(exp_output),
         check_names=False,
+        check_dtype=False,
     )
 
 
 @pytest.mark.parametrize(
-    "base, direction, to_add_after_rounding",
+    "base, direction, to_add_after_rounding, match",
     [
-        (1, "upper", 0),
-        ("0.1", "down", 0),
-        (5, "closest", 0),
-        (5, "up", "0"),
+        (1, "upper", 0, "`direction` must be one of"),
+        (5, "closest", 0, "`direction` must be one of"),
+        ("0.1", "down", 0, "base needs to be a number"),
+        (5, "up", "0", "Additive part must be a number"),
     ],
 )
-def test_rounding_spec_validation(base, direction, to_add_after_rounding):
+def test_rounding_spec_validation(base, direction, to_add_after_rounding, match):
     """Test validation of RoundingSpec parameters."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=match):
         RoundingSpec(
             base=base,
             direction=direction,

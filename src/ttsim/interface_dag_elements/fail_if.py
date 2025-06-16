@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import networkx as nx
+import numpy
 import optree
 import pandas as pd
 
-from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
 from ttsim.tt_dag_elements.column_objects_param_function import (
@@ -25,6 +25,8 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -96,7 +98,9 @@ class _ParamWithActivePeriod(ParamObject):
 
 
 def assert_valid_ttsim_pytree(
-    tree: Any, leaf_checker: GenericCallable, tree_name: str
+    tree: Any,  # noqa: ANN401
+    leaf_checker: GenericCallable,
+    tree_name: str,
 ) -> None:
     """
     Recursively assert that a pytree meets the following conditions:
@@ -119,14 +123,14 @@ def assert_valid_ttsim_pytree(
         If any branch or leaf does not meet the expected requirements.
     """
 
-    def _assert_valid_ttsim_pytree(subtree: Any, current_key: tuple[str, ...]) -> None:
+    def _assert_valid_ttsim_pytree(subtree: Any, current_key: tuple[str, ...]) -> None:  # noqa: ANN401
         def format_key_path(key_tuple: tuple[str, ...]) -> str:
             return "".join(f"[{k}]" for k in key_tuple)
 
         if not isinstance(subtree, dict):
             path_str = format_key_path(current_key)
             msg = format_errors_and_warnings(
-                f"{tree_name}{path_str} must be a dict, got {type(subtree)}."
+                f"{tree_name}{path_str} must be a dict, got {type(subtree)}.",
             )
             raise TypeError(msg)
 
@@ -135,7 +139,7 @@ def assert_valid_ttsim_pytree(
             if not isinstance(key, str):
                 msg = format_errors_and_warnings(
                     f"Key {key} in {tree_name}{format_key_path(current_key)} must be a "
-                    f"string but got {type(key)}."
+                    f"string but got {type(key)}.",
                 )
                 raise TypeError(msg)
             if isinstance(value, dict):
@@ -144,7 +148,7 @@ def assert_valid_ttsim_pytree(
                 if not leaf_checker(value):
                     msg = format_errors_and_warnings(
                         f"Leaf at {tree_name}{format_key_path(new_key_path)} is "
-                        f"invalid: got {value} of type {type(value)}."
+                        f"invalid: got {value} of type {type(value)}.",
                     )
                     raise TypeError(msg)
 
@@ -169,7 +173,8 @@ def active_periods_overlap(
     """
     # Create mapping from leaf names to objects.
     overlap_checker: dict[
-        tuple[str, ...], list[ColumnObject | ParamFunction | _ParamWithActivePeriod]
+        tuple[str, ...],
+        list[ColumnObject | ParamFunction | _ParamWithActivePeriod],
     ] = {}
     for (
         orig_path,
@@ -185,11 +190,12 @@ def active_periods_overlap(
         path = (*orig_path[:-2], orig_path[-1])
         if path in overlap_checker:
             overlap_checker[path].extend(
-                _param_with_active_periods(param_spec=obj, leaf_name=orig_path[-1])
+                _param_with_active_periods(param_spec=obj, leaf_name=orig_path[-1]),
             )
         else:
             overlap_checker[path] = _param_with_active_periods(
-                param_spec=obj, leaf_name=orig_path[-1]
+                param_spec=obj,
+                leaf_name=orig_path[-1],
             )
 
     # Check for overlapping start and end dates for time-dependent functions.
@@ -210,14 +216,14 @@ def any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
     targets__tree: NestedTargetDict,
-    names__top_level_namespace: UnorderedQNames,
+    labels__top_level_namespace: UnorderedQNames,
 ) -> None:
     """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
     return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
         input_data__tree=input_data__tree,
         targets=targets__tree,
-        names__top_level_namespace=names__top_level_namespace,
+        labels__top_level_namespace=labels__top_level_namespace,
     )
 
 
@@ -234,13 +240,13 @@ def data_paths_are_missing_in_paths_to_column_names(
         msg = format_errors_and_warnings(
             "Converting the nested data to a DataFrame failed because the following "
             "paths are not mapped to a column name: "
-            f"{format_list_linewise(list(missing_paths))}"
+            f"{format_list_linewise(list(missing_paths))}",
         )
         raise ValueError(msg)
 
 
 @interface_function()
-def input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
+def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) -> None:
     """
     Validate the basic structure of the data tree.
 
@@ -260,7 +266,10 @@ def input_data_tree_is_invalid(input_data__tree: NestedData) -> None:
     """
     assert_valid_ttsim_pytree(
         tree=input_data__tree,
-        leaf_checker=lambda leaf: isinstance(leaf, int | pd.Series | np.ndarray),
+        leaf_checker=lambda leaf: isinstance(
+            leaf,
+            int | pd.Series | numpy.ndarray | xnp.ndarray,
+        ),
         tree_name="input_data__tree",
     )
     p_id = input_data__tree.get("p_id", None)
@@ -294,7 +303,8 @@ def environment_is_invalid(
     assert_valid_ttsim_pytree(
         tree=policy_environment,
         leaf_checker=lambda leaf: isinstance(
-            leaf, ColumnObject | ParamFunction | ParamObject
+            leaf,
+            ColumnObject | ParamFunction | ParamObject,
         ),
         tree_name="policy_environment",
     )
@@ -302,7 +312,7 @@ def environment_is_invalid(
 
 @interface_function()
 def foreign_keys_are_invalid_in_data(
-    names__root_nodes: UnorderedQNames,
+    labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
     specialized_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
 ) -> None:
@@ -315,7 +325,6 @@ def foreign_keys_are_invalid_in_data(
     We need processed_data because we cannot guarantee that `p_id` is present in the
     input data.
     """
-
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
@@ -326,7 +335,7 @@ def foreign_keys_are_invalid_in_data(
     for fk_name, fk in relevant_objects.items():
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
-        elif fk_name in names__root_nodes:
+        if fk_name in labels__root_nodes:
             path = dt.tree_path_from_qual_name(fk_name)
             # Referenced `p_id` must exist in the input data
             if not all(i in valid_ids for i in processed_data[fk_name].tolist()):
@@ -334,7 +343,7 @@ def foreign_keys_are_invalid_in_data(
                     f"""
                     For {path}, the following are not a valid p_id in the input
                     data: {[i for i in processed_data[fk_name] if i not in valid_ids]}.
-                    """
+                    """,
                 )
                 raise ValueError(message)
 
@@ -344,6 +353,7 @@ def foreign_keys_are_invalid_in_data(
                     for i, j in zip(
                         processed_data[fk_name].tolist(),
                         processed_data["p_id"].tolist(),
+                        strict=False,
                     )
                     if i == j
                 ]
@@ -352,7 +362,7 @@ def foreign_keys_are_invalid_in_data(
                         f"""
                         For {path}, the following are equal to the p_id in the same
                         row: {equal_to_pid_in_same_row}.
-                        """
+                        """,
                     )
                     raise ValueError(message)
 
@@ -371,14 +381,14 @@ def group_ids_are_outside_top_level_namespace(
         raise ValueError(
             "Group identifiers must live in the top-level namespace. Got:\n\n"
             f"{group_ids_outside_top_level_namespace}\n\n"
-            "To fix this error, move the group identifiers to the top-level namespace."
+            "To fix this error, move the group identifiers to the top-level namespace.",
         )
 
 
 @interface_function()
 def group_variables_are_not_constant_within_groups(
-    names__grouping_levels: OrderedQNames,
-    names__root_nodes: UnorderedQNames,
+    labels__grouping_levels: OrderedQNames,
+    labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
 ) -> None:
     """
@@ -393,16 +403,16 @@ def group_variables_are_not_constant_within_groups(
     """
     faulty_data_columns = []
 
-    for name in names__root_nodes:
+    for name in labels__root_nodes:
         group_by_id = get_name_of_group_by_id(
             target_name=name,
-            grouping_levels=names__grouping_levels,
+            grouping_levels=labels__grouping_levels,
         )
         if group_by_id in processed_data:
             group_by_id_series = pd.Series(processed_data[group_by_id])
             leaf_series = pd.Series(processed_data[name])
             unique_counts = leaf_series.groupby(group_by_id_series).nunique(
-                dropna=False
+                dropna=False,
             )
             if not (unique_counts == 1).all():
                 faulty_data_columns.append(name)
@@ -416,41 +426,51 @@ def group_variables_are_not_constant_within_groups(
                 {formatted}
 
                 To fix this error, assign the same value to each group.
-                """
+                """,
         )
         raise ValueError(msg)
 
 
 @interface_function()
 def non_convertible_objects_in_results_tree(
+    processed_data: QNameData,
     results__tree: NestedData,
+    xnp: ModuleType,
 ) -> None:
     """Fail if results should be converted to a DataFrame but contain non-convertible
-    objects."""
-    _numeric_types = (int, float, bool, np.integer, np.floating, np.bool_)
+    objects.
+    """
+    _numeric_types = (int, float, bool, xnp.integer, xnp.floating, xnp.bool_)
+    expected_object_length = len(next(iter(processed_data.values())))
 
-    faulty_paths = []
-    # TODO: HM doesn't think this will work as is, we'll need to check the length of
-    # the data. Someone might request a policy parameter that is a 3-element array.
+    paths_with_incorrect_types: list[str] = []
+    paths_with_incorrect_length: list[str] = []
     for path, data in dt.flatten_to_tree_paths(results__tree).items():
-        if isinstance(data, (pd.Series, np.ndarray, list)):
-            if all(isinstance(item, _numeric_types) for item in data):
-                continue
-            else:
-                faulty_paths.append(str(path))
+        if isinstance(data, xnp.ndarray) and len(data) not in {
+            1,
+            expected_object_length,
+        }:
+            paths_with_incorrect_length.append(str(path))
         elif isinstance(data, _numeric_types):
             continue
         else:
-            faulty_paths.append(str(path))
-    if faulty_paths:
+            paths_with_incorrect_types.append(str(path))
+
+    if paths_with_incorrect_types:
         msg = format_errors_and_warnings(
-            "The data returned contains objects that cannot be cast to "
-            "a pandas.DataFrame column. Make sure that the requested targets return "
-            "scalars (int, bool, float - or their numpy equivalents) only."
-            "The following paths contain non-scalar objects: "
-            f"{format_list_linewise(faulty_paths)}"
+            "The data contains objects that cannot be cast to a pandas.DataFrame "
+            "column. Make sure that the requested targets return scalars or arrays of "
+            "scalars only. The following paths contain incompatible objects: "
+            f"{format_list_linewise(paths_with_incorrect_types)}",
         )
         raise TypeError(msg)
+    if paths_with_incorrect_length:
+        msg = format_errors_and_warnings(
+            "The data contains paths that don't have the same length as the input data "
+            "and are not scalars. The following paths are faulty: "
+            f"{format_list_linewise(paths_with_incorrect_length)}",
+        )
+        raise ValueError(msg)
 
 
 @interface_function()
@@ -462,7 +482,7 @@ def input_df_has_bool_or_numeric_column_names(
         """DataFrame column names cannot be booleans or numbers. This restriction
         prevents ambiguity between actual column references and values intended for
         broadcasting.
-        """
+        """,
     )
     bool_column_names = [
         col for col in input_data__df_and_mapper__df.columns if isinstance(col, bool)
@@ -480,7 +500,7 @@ def input_df_has_bool_or_numeric_column_names(
 
             Boolean column names: {bool_column_names}.
             Numeric column names: {numeric_column_names}.
-            """
+            """,
         )
         raise ValueError(msg)
 
@@ -498,7 +518,7 @@ def input_df_mapper_columns_missing_in_df(
     if missing_columns:
         msg = format_errors_and_warnings(
             "All columns in the input mapper must be present in the input dataframe. "
-            f"The following columns are missing: {missing_columns}"
+            f"The following columns are missing: {missing_columns}",
         )
         raise ValueError(msg)
 
@@ -511,7 +531,7 @@ def input_df_mapper_has_incorrect_format(
     if not isinstance(input_data__df_and_mapper__mapper, dict):
         msg = format_errors_and_warnings(
             """The inputs tree to column mapping must be a (nested) dictionary. Call
-            `dags.tree.create_tree_with_input_types` to create a template."""
+            `dags.tree.create_tree_with_input_types` to create a template.""",
         )
         raise TypeError(msg)
 
@@ -531,7 +551,7 @@ def input_df_mapper_has_incorrect_format(
             {format_list_linewise(non_string_paths)}
 
             Call `dags.tree.create_tree_with_input_types` to create a template.
-            """
+            """,
         )
         raise TypeError(msg)
 
@@ -550,7 +570,7 @@ def input_df_mapper_has_incorrect_format(
             Found the following incorrect types:
 
             {formatted_incorrect_types}
-            """
+            """,
         )
         raise TypeError(msg)
 
@@ -574,7 +594,6 @@ def root_nodes_are_missing(
     ValueError
         If root nodes are missing.
     """
-
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tax_transfer_dag,
@@ -582,15 +601,11 @@ def root_nodes_are_missing(
         == 0,
     ).nodes
 
-    missing_nodes = [
-        node
-        for node in root_nodes
-        if node not in processed_data and not node.endswith("_num_segments")
-    ]
+    missing_nodes = [node for node in root_nodes if node not in processed_data]
 
     if missing_nodes:
         formatted = format_list_linewise(
-            [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes]
+            [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes],
         )
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
@@ -598,7 +613,7 @@ def root_nodes_are_missing(
 @interface_function()
 def targets_are_not_in_policy_environment_or_data(
     policy_environment: QNamePolicyEnvironment,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
     targets__qname: OrderedQNames,
 ) -> None:
     """Fail if some target is not among functions.
@@ -607,7 +622,7 @@ def targets_are_not_in_policy_environment_or_data(
     ----------
     functions
         Dictionary containing functions to build the DAG.
-    names__processed_data_columns
+    labels__processed_data_columns
         The columns which are available in the data tree.
     targets
         The targets which should be computed. They limit the DAG in the way that only
@@ -622,12 +637,12 @@ def targets_are_not_in_policy_environment_or_data(
     targets_not_in_policy_environment_or_data = [
         str(dt.tree_path_from_qual_name(n))
         for n in targets__qname
-        if n not in policy_environment and n not in names__processed_data_columns
+        if n not in policy_environment and n not in labels__processed_data_columns
     ]
     if targets_not_in_policy_environment_or_data:
         formatted = format_list_linewise(targets_not_in_policy_environment_or_data)
         msg = format_errors_and_warnings(
-            f"The following targets have no corresponding function:\n\n{formatted}"
+            f"The following targets have no corresponding function:\n\n{formatted}",
         )
         raise ValueError(msg)
 
@@ -669,9 +684,7 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
         wrapped_paragraph = textwrap.fill(dedented_paragraph, width=width)
         wrapped_paragraphs.append(wrapped_paragraph)
 
-    formatted_text = "\n\n".join(wrapped_paragraphs)
-
-    return formatted_text
+    return "\n\n".join(wrapped_paragraphs)
 
 
 def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
@@ -681,7 +694,7 @@ def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg,
         [
             "{formatted_list}",
         ]
-        """
+        """,
     ).format(formatted_list=formatted_list)
 
 
@@ -725,7 +738,7 @@ def _param_with_active_periods(
                         end_date=end_date,
                         original_function_name=leaf_name,
                         **params_header,
-                    )
+                    ),
                 )
             start_date = None
             end_date = date - datetime.timedelta(days=1)
@@ -737,7 +750,7 @@ def _param_with_active_periods(
                 start_date=start_date,
                 end_date=end_date,
                 **params_header,
-            )
+            ),
         )
 
     return out

@@ -24,5 +24,4 @@ def betrag_y(
 @policy_function()
 def betrag_ohne_minijob_y(bruttolohn_y: float, werbungskostenpauschale: float) -> float:
     """Take gross wage and deduct Werbungskostenpauschale."""
-
     return max(bruttolohn_y - werbungskostenpauschale, 0.0)
