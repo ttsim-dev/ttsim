@@ -23,7 +23,7 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ttsim.interface_dag_elements.typing import QNameCombinedEnvironment0
+    from ttsim.interface_dag_elements.typing import QNameSpecializedEnvironment0
 
 
 @dataclass(frozen=True)
@@ -189,7 +189,7 @@ def all_targets_from_namespace(
 
 def specialized_environment_for_targets(
     inputs_for_main: dict[str, Any],
-) -> QNameCombinedEnvironment0:
+) -> QNameSpecializedEnvironment0:
     """Get the specialized environment for the targets."""
     # Replace policy inputs with dummy data
     policy_inputs = main(

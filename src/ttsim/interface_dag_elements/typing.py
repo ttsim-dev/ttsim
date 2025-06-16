@@ -95,12 +95,12 @@ if TYPE_CHECKING:
         ColumnObject | ParamFunction | ParamObject,
     ]
     """Tree of column objects, param functions, and param objects."""
-    QNameCombinedEnvironment0 = Mapping[
+    QNameSpecializedEnvironment0 = Mapping[
         str,
         ColumnObject | ParamFunction | ParamObject | int | float | bool,
     ]
     """Map qualified names to column objects, param functions, param objects, or scalars from processed data."""  # noqa: E501
-    QNameCombinedEnvironment1 = Mapping[str, ColumnObject | Any]
+    QNameSpecializedEnvironment1 = Mapping[str, ColumnObject | Any]
     """Map qualified names to column objects and anything that comes out of processing the params."""  # noqa: E501
-    QNameCombinedEnvironment2 = Mapping[str, ColumnFunction]
+    QNameSpecializedEnvironment2 = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""

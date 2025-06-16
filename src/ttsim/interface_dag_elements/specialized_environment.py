@@ -34,11 +34,11 @@ if TYPE_CHECKING:
         NestedPolicyEnvironment,
         NestedStrings,
         OrderedQNames,
-        QNameCombinedEnvironment0,
-        QNameCombinedEnvironment1,
-        QNameCombinedEnvironment2,
         QNameData,
         QNamePolicyEnvironment,
+        QNameSpecializedEnvironment0,
+        QNameSpecializedEnvironment1,
+        QNameSpecializedEnvironment2,
         UnorderedQNames,
     )
 
@@ -65,7 +65,7 @@ def with_derived_functions_and_processed_input_nodes(
     labels__grouping_levels: OrderedQNames,
     backend: str,
     xnp: ModuleType,
-) -> QNameCombinedEnvironment0:
+) -> QNameSpecializedEnvironment0:
     """Return a flat policy environment with derived functions.
 
     Four steps:
@@ -113,7 +113,7 @@ def with_derived_functions_and_processed_input_nodes(
 def _remove_tree_logic_from_policy_environment(
     policy_environment: QNamePolicyEnvironment,
     labels__top_level_namespace: UnorderedQNames,
-) -> QNameCombinedEnvironment0:
+) -> QNameSpecializedEnvironment0:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
     for name, obj in policy_environment.items():
@@ -128,11 +128,11 @@ def _remove_tree_logic_from_policy_environment(
 
 
 def _add_derived_functions(
-    qual_name_policy_environment: QNameCombinedEnvironment0,
+    qual_name_policy_environment: QNameSpecializedEnvironment0,
     targets: OrderedQNames,
     labels__processed_data_columns: OrderedQNames,
     grouping_levels: OrderedQNames,
-) -> QNameCombinedEnvironment0:
+) -> QNameSpecializedEnvironment0:
     """Return a mapping of qualified names to functions operating on columns.
 
     Anything that is not a ColumnFunction is filtered out (e.g., ParamFunctions,
@@ -192,8 +192,8 @@ def _add_derived_functions(
 
 @interface_function()
 def with_processed_params_and_scalars(
-    with_derived_functions_and_processed_input_nodes: QNameCombinedEnvironment0,
-) -> QNameCombinedEnvironment1:
+    with_derived_functions_and_processed_input_nodes: QNameSpecializedEnvironment0,
+) -> QNameSpecializedEnvironment1:
     """Process the parameters and param functions, remove RawParams from the tree."""
     params = {
         k: v
@@ -246,10 +246,10 @@ def with_processed_params_and_scalars(
 
 @interface_function()
 def with_partialled_params_and_scalars(
-    with_processed_params_and_scalars: QNameCombinedEnvironment1,
+    with_processed_params_and_scalars: QNameSpecializedEnvironment1,
     rounding: bool,
     xnp: ModuleType,
-) -> QNameCombinedEnvironment2:
+) -> QNameSpecializedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
 
     Parameters
@@ -297,7 +297,7 @@ def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
 
 @interface_function()
 def tax_transfer_dag(
-    with_partialled_params_and_scalars: QNameCombinedEnvironment2,
+    with_partialled_params_and_scalars: QNameSpecializedEnvironment2,
     labels__column_targets: OrderedQNames,
 ) -> nx.DiGraph:
     """Thin wrapper around `create_dag`."""
@@ -310,7 +310,7 @@ def tax_transfer_dag(
 @interface_function()
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
-    with_partialled_params_and_scalars: QNameCombinedEnvironment2,
+    with_partialled_params_and_scalars: QNameSpecializedEnvironment2,
     labels__column_targets: OrderedQNames,
     backend: Literal["numpy", "jax"],
 ) -> Callable[[QNameData], QNameData]:
