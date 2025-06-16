@@ -69,6 +69,7 @@ def plot_tt_dag(
     node_selector: NodeSelector | None = None,
     title: str = "",
     include_params: bool = True,
+    include_other_objects: bool = False,
     show_node_description: bool = False,
 ) -> go.Figure:
     """Plot the TT DAG.
@@ -84,9 +85,12 @@ def plot_tt_dag(
     title
         The title of the plot.
     include_params
-        Whether to include param functions.
+        Include param functions when plotting the DAG.
+    include_other_objects
+        Include backend policy inputs when plotting the DAG. Most users will not want
+        this.
     show_node_description
-        Whether to show node source code when hovering over a node.
+        Show a description of the node when hovering over it.
 
     Returns
     -------
@@ -113,6 +117,7 @@ def plot_tt_dag(
         environment=environment,
         node_selector=qname_node_selector,
         include_params=include_params,
+        include_other_objects=include_other_objects,
     )
     return _plot_dag(
         dag=dag_with_node_metadata,
@@ -149,7 +154,7 @@ def _get_tt_dag_with_node_metadata(
     environment: NestedPolicyEnvironment,
     node_selector: _QNameNodeSelector | None = None,
     include_params: bool = True,
-    include_other_objects: bool = True,
+    include_other_objects: bool = False,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
     qname_environment = dt.flatten_to_qnames(environment)
