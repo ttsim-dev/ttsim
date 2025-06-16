@@ -164,8 +164,8 @@ def _get_tt_dag_with_node_metadata(
         qnames_to_plot = [
             qn for qn, v in qname_environment.items() if isinstance(v, ColumnObject)
         ]
-    # TODO: Pls explain why and when this is used.
     if node_selector:
+        # Node selector might contain derived functions that are not in qnames_to_plot
         qnames_to_plot.extend(node_selector.qnames)
 
     qnames_policy_inputs = [

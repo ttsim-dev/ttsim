@@ -252,7 +252,7 @@ def check_env_completeness(
         k for k, v in qname_environment.items() if isinstance(v, PolicyInput)
     ]
     tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
-    env = main(
+    qname_env_with_derived_functions = main(
         inputs={
             "policy_environment": environment,
             "labels__processed_data_columns": qnames_policy_inputs,
@@ -261,7 +261,8 @@ def check_env_completeness(
         targets=[tgt],
     )[tgt]
     all_nodes = {
-        qn: dummy_callable(n) if not callable(n) else n for qn, n in env.items()
+        qn: dummy_callable(n) if not callable(n) else n
+        for qn, n in qname_env_with_derived_functions.items()
     }
     f = dags.concatenate_functions(
         functions=all_nodes,
