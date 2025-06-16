@@ -212,7 +212,7 @@ def specialized_environment_for_targets(
     )["specialized_environment__with_derived_functions_and_processed_input_nodes"]
     return {
         **environment_with_overridden_policy_inputs,
-        **dt.flatten_to_qual_names(policy_inputs),
+        **dt.flatten_to_qnames(policy_inputs),
     }
 
 

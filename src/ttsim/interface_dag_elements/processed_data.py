@@ -33,7 +33,7 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
     old_p_ids = xnp.asarray(input_data__flat[("p_id",)])
     new_p_ids = reorder_ids(ids=old_p_ids, xnp=xnp)
     for path, data in input_data__flat.items():
-        qname = dt.qual_name_from_tree_path(path)
+        qname = dt.qname_from_tree_path(path)
         if path[-1].endswith("_id"):
             processed_input_data[qname] = reorder_ids(ids=xnp.asarray(data), xnp=xnp)
         elif path[-1].startswith("p_id_"):

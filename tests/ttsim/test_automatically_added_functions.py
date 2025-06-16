@@ -291,7 +291,7 @@ class TestCreateFunctionsForTimeUnits:
         expected: list[str],
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            qual_name_policy_environment={
+            qname_policy_environment={
                 name: policy_function(leaf_name=name)(return_one),
             },
             processed_data_columns=set(),
@@ -303,7 +303,7 @@ class TestCreateFunctionsForTimeUnits:
 
     def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            qual_name_policy_environment={
+            qname_policy_environment={
                 "test1_d": policy_function(leaf_name="test1_d")(return_one),
             },
             processed_data_columns={"test2_y"},
@@ -317,7 +317,7 @@ class TestCreateFunctionsForTimeUnits:
         self,
     ) -> None:
         time_conversion_functions = create_time_conversion_functions(
-            qual_name_policy_environment={
+            qname_policy_environment={
                 "test_d": policy_function(leaf_name="test_d")(return_one),
             },
             processed_data_columns={"test_y"},
@@ -352,7 +352,7 @@ def test_should_not_create_cycle():
         return test_m
 
     time_conversion_functions = create_time_conversion_functions(
-        qual_name_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
+        qname_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
         processed_data_columns=set(),
         grouping_levels=(),
     )

@@ -336,7 +336,7 @@ def foreign_keys_are_invalid_in_data(
         if fk.foreign_key_type == FKType.IRRELEVANT:
             continue
         if fk_name in labels__root_nodes:
-            path = dt.tree_path_from_qual_name(fk_name)
+            path = dt.tree_path_from_qname(fk_name)
             # Referenced `p_id` must exist in the input data
             if not all(i in valid_ids for i in processed_data[fk_name].tolist()):
                 message = format_errors_and_warnings(
@@ -511,7 +511,7 @@ def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__mapper: NestedStrings,
 ) -> None:
     """Fail if the input mapper has columns that are not in the input dataframe."""
-    mapper_vals = dt.flatten_to_qual_names(input_data__df_and_mapper__mapper).values()
+    mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
     missing_columns = [
         col for col in mapper_vals if col not in input_data__df_and_mapper__df.columns
     ]
@@ -557,7 +557,7 @@ def input_df_mapper_has_incorrect_format(
 
     incorrect_types = {
         k: type(v)
-        for k, v in dt.flatten_to_qual_names(input_data__df_and_mapper__mapper).items()
+        for k, v in dt.flatten_to_qnames(input_data__df_and_mapper__mapper).items()
         if not isinstance(v, str | int | float | bool)
     }
     if incorrect_types:
@@ -587,7 +587,7 @@ def root_nodes_are_missing(
     specialized_environment__tax_transfer_dag
         The DAG of taxes and transfers functions.
     processed_data
-        The data tree in qualified name representation.
+        The processed data to be used as an input to the taxes & transfers function.
 
     Raises
     ------
@@ -605,7 +605,7 @@ def root_nodes_are_missing(
 
     if missing_nodes:
         formatted = format_list_linewise(
-            [str(dt.tree_path_from_qual_name(mn)) for mn in missing_nodes],
+            [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
         )
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
@@ -635,7 +635,7 @@ def targets_are_not_in_policy_environment_or_data(
 
     """
     targets_not_in_policy_environment_or_data = [
-        str(dt.tree_path_from_qual_name(n))
+        str(dt.tree_path_from_qname(n))
         for n in targets__qname
         if n not in policy_environment and n not in labels__processed_data_columns
     ]

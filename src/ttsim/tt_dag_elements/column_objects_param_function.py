@@ -686,7 +686,7 @@ def agg_by_p_id_function(
         other_p_ids = {
             p
             for p in args
-            if any(e.startswith("p_id_") for e in dt.tree_path_from_qual_name(p))
+            if any(e.startswith("p_id_") for e in dt.tree_path_from_qname(p))
         }
         other_args = args - {*other_p_ids, "p_id", "num_segments", "backend"}
         _fail_if_p_id_is_not_present(args, orig_location)

@@ -74,7 +74,7 @@ def functions_and_data_columns_overlap(
         {
             col
             for col in labels__processed_data_columns
-            if col in dt.flatten_to_qual_names(policy_environment)
+            if col in dt.flatten_to_qnames(policy_environment)
         },
     )
     if len(overridden_elements) > 0:

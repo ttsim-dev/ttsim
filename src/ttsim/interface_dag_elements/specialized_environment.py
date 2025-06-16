@@ -82,15 +82,15 @@ def with_derived_functions_and_processed_input_nodes(
         )
         if isinstance(f, PolicyFunction)
         else f
-        for k, f in dt.flatten_to_qual_names(policy_environment).items()
+        for k, f in dt.flatten_to_qnames(policy_environment).items()
     }
     qname_without_tree_logic = _remove_tree_logic_from_policy_environment(
-        policy_environment=qname_vectorized,
+        qname_vectorized=qname_vectorized,
         labels__top_level_namespace=labels__top_level_namespace,
     )
     qname_with_derived = _add_derived_functions(
-        qual_name_policy_environment=qname_without_tree_logic,
-        targets=dt.qual_names(targets__tree),
+        qname_without_tree_logic=qname_without_tree_logic,
+        targets=dt.qnames(targets__tree),
         labels__processed_data_columns=labels__processed_data_columns,
         grouping_levels=labels__grouping_levels,
     )
@@ -111,15 +111,15 @@ def with_derived_functions_and_processed_input_nodes(
 
 
 def _remove_tree_logic_from_policy_environment(
-    policy_environment: QNamePolicyEnvironment,
+    qname_vectorized: QNamePolicyEnvironment,
     labels__top_level_namespace: UnorderedQNames,
 ) -> QNameSpecializedEnvironment0:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
-    for name, obj in policy_environment.items():
+    for name, obj in qname_vectorized.items():
         if hasattr(obj, "remove_tree_logic"):
             out[name] = obj.remove_tree_logic(
-                tree_path=dt.tree_path_from_qual_name(name),
+                tree_path=dt.tree_path_from_qname(name),
                 top_level_namespace=labels__top_level_namespace,
             )
         else:
@@ -128,7 +128,7 @@ def _remove_tree_logic_from_policy_environment(
 
 
 def _add_derived_functions(
-    qual_name_policy_environment: QNameSpecializedEnvironment0,
+    qname_without_tree_logic: QNameSpecializedEnvironment0,
     targets: OrderedQNames,
     labels__processed_data_columns: OrderedQNames,
     grouping_levels: OrderedQNames,
@@ -163,14 +163,14 @@ def _add_derived_functions(
     """
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
-        qual_name_policy_environment=qual_name_policy_environment,
+        qname_policy_environment=qname_without_tree_logic,
         processed_data_columns=labels__processed_data_columns,
         grouping_levels=grouping_levels,
     )
     column_functions = {
         k: v
         for k, v in {
-            **qual_name_policy_environment,
+            **qname_without_tree_logic,
             **time_conversion_functions,
         }.items()
         if isinstance(v, ColumnFunction)
@@ -184,7 +184,7 @@ def _add_derived_functions(
         grouping_levels=grouping_levels,
     )
     return {
-        **qual_name_policy_environment,
+        **qname_without_tree_logic,
         **time_conversion_functions,
         **aggregate_by_group_functions,
     }

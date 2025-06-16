@@ -107,8 +107,8 @@ def test_dataframe_to_nested_data(
         df=df,
         xnp=numpy,
     )
-    flat_result = dt.flatten_to_qual_names(result)
-    flat_expected_output = dt.flatten_to_qual_names(expected_output)
+    flat_result = dt.flatten_to_qnames(result)
+    flat_expected_output = dt.flatten_to_qnames(expected_output)
 
     assert set(flat_result.keys()) == set(flat_expected_output.keys())
     for key in flat_result:
