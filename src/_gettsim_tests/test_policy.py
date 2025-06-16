@@ -48,16 +48,16 @@ def get_orig_gettsim_objects() -> dict[
 
 
 def dates_in_orig_gettsim_objects() -> list[datetime.date]:
-    objects = get_orig_gettsim_objects()
+    orig_objects = get_orig_gettsim_objects()
     start_dates = {
         v.start_date
-        for v in objects[
+        for v in orig_objects[
             "orig_policy_objects__column_objects_and_param_functions"
         ].values()
     }
     end_dates = {
         v.end_date + timedelta(days=1)
-        for v in objects[
+        for v in orig_objects[
             "orig_policy_objects__column_objects_and_param_functions"
         ].values()
     }
@@ -92,6 +92,6 @@ def test_gettsim_policy_environment_is_complete(orig_gettsim_objects, date):
 
     check_env_completeness(
         name="GETTSIM",
-        date_str=date.isoformat(),
+        date=date,
         orig_policy_objects=orig_gettsim_objects,
     )

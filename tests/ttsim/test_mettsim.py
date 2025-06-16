@@ -51,16 +51,16 @@ def get_orig_mettsim_objects() -> dict[
 
 
 def dates_in_orig_mettsim_objects() -> list[datetime.date]:
-    objects = get_orig_mettsim_objects()
+    orig_objects = get_orig_mettsim_objects()
     start_dates = {
         v.start_date
-        for v in objects[
+        for v in orig_objects[
             "orig_policy_objects__column_objects_and_param_functions"
         ].values()
     }
     end_dates = {
         v.end_date + timedelta(days=1)
-        for v in objects[
+        for v in orig_objects[
             "orig_policy_objects__column_objects_and_param_functions"
         ].values()
     }
@@ -110,6 +110,6 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
     """Test that METTSIM's policy environment contains all root nodes of its DAG."""
     check_env_completeness(
         name="METTSIM",
-        date_str=date.isoformat(),
+        date=date,
         orig_policy_objects=orig_mettsim_objects,
     )

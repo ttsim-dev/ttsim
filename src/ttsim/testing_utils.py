@@ -29,7 +29,6 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
-        DashedISOString,
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedData,
@@ -234,13 +233,13 @@ def _get_policy_test_from_raw_test_data(
 
 def check_env_completeness(
     name: str,
-    date_str: DashedISOString,
+    date: datetime.date,
     orig_policy_objects: dict[
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
 ) -> None:
     inputs_for_main = {
-        "date_str": date_str,
+        "date": date,
         **orig_policy_objects,
     }
     environment = main(
