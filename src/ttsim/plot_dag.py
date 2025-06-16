@@ -3,6 +3,7 @@ from __future__ import annotations
 import colorsys
 import copy
 import inspect
+import textwrap
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
 
     from ttsim.interface_dag_elements.typing import (
         NestedPolicyEnvironment,
+        QNameSpecializedEnvironment0,
     )
 
 
@@ -220,21 +222,41 @@ def _get_tt_dag_with_node_metadata(
             ]
         )
 
+    node_descriptions = _get_node_descriptions(env)
     # Add Node Metadata to DAG
-    for name, node_object in all_nodes.items():
-        if name not in selected_dag.nodes():
+    for qn in all_nodes:
+        if qn not in selected_dag.nodes():
             continue
-
-        f = node_object.function if hasattr(node_object, "function") else node_object
-
-        description = inspect.getdoc(f) or "No description available."
-        node_namespace = name.split("__")[0] if "__" in name else "top-level"
-        selected_dag.nodes[name]["node_metadata"] = NodeMetaData(
+        description = node_descriptions[qn]
+        node_namespace = qn.split("__")[0] if "__" in qn else "top-level"
+        selected_dag.nodes[qn]["node_metadata"] = NodeMetaData(
             description=description,
             namespace=node_namespace,
         )
 
     return selected_dag
+
+
+def _get_node_descriptions(env: QNameSpecializedEnvironment0) -> dict[str, str]:
+    """Get the descriptions of the nodes in the environment."""
+    out = {}
+    for qn, n in env.items():
+        descr = None
+        if hasattr(n, "description"):
+            if isinstance(n.description, str):
+                descr = n.description
+            elif (
+                isinstance(n.description, dict)
+                and "en" in n.description
+                and n.description["en"] is not None
+            ):
+                descr = n.description["en"]
+        if not descr:
+            descr = "No description available."
+        # Wrap description at 79 characters
+        descr = textwrap.fill(descr, width=79)
+        out[qn] = descr
+    return out
 
 
 @overload

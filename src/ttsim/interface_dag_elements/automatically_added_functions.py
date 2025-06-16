@@ -553,6 +553,10 @@ def _create_one_set_of_time_conversion_functions(
             source=qname_source,
             start_date=element.start_date,
             end_date=element.end_date,
+            description=(
+                f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
+                f"from {time_unit} to {target_time_unit}"
+            ),
         )
 
     return result
@@ -616,6 +620,11 @@ def create_agg_by_group_functions(
                 function=agg_func,
                 start_date=DEFAULT_START_DATE,
                 end_date=DEFAULT_END_DATE,
+                description=(
+                    f"Automatic sum aggregation of "
+                    f"{dt.tree_path_from_qname(base_name_with_time_unit)} by "
+                    f"{match.group('group')} ID."
+                ),
             )
     return out
 

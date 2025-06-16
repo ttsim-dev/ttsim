@@ -46,6 +46,7 @@ _DUMMY_COLUMN_OBJECT = ColumnObject(
     leaf_name="dummy",
     start_date=datetime.date(1900, 1, 1),
     end_date=datetime.date(2099, 12, 31),
+    description="Dummy column object",
 )
 
 

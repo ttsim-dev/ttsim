@@ -78,6 +78,7 @@ class ColumnObject:
     leaf_name: str
     start_date: datetime.date
     end_date: datetime.date
+    description: str
 
     def is_active(self, date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
@@ -158,6 +159,7 @@ def policy_input(
             start_date=start_date,
             end_date=end_date,
             foreign_key_type=foreign_key_type,
+            description=str(inspect.getdoc(func)),
         )
 
     return inner
@@ -285,6 +287,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             ),
             start_date=self.start_date,
             end_date=self.end_date,
+            description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             vectorization_strategy=self.vectorization_strategy,
@@ -306,6 +309,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             function=func,
             start_date=self.start_date,
             end_date=self.end_date,
+            description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             vectorization_strategy="not_required",
@@ -362,6 +366,7 @@ def policy_function(
             function=func,
             start_date=start_date,
             end_date=end_date,
+            description=str(inspect.getdoc(func)),
             rounding_spec=rounding_spec,
             foreign_key_type=foreign_key_type,
             vectorization_strategy=vectorization_strategy,
@@ -424,6 +429,7 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
             ),
             start_date=self.start_date,
             end_date=self.end_date,
+            description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
         )
@@ -466,6 +472,7 @@ def group_creation_function(
             function=func_with_reorder if reorder else func,
             start_date=start_date,
             end_date=end_date,
+            description=str(inspect.getdoc(func)),
         )
 
     return decorator
@@ -512,6 +519,7 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
             ),
             start_date=self.start_date,
             end_date=self.end_date,
+            description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             orig_location=self.orig_location,
@@ -559,6 +567,7 @@ def agg_by_group_function(
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
+            description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
         )
@@ -642,6 +651,7 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
             ),
             start_date=self.start_date,
             end_date=self.end_date,
+            description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             orig_location=self.orig_location,
@@ -704,6 +714,7 @@ def agg_by_p_id_function(
             function=agg_func,
             start_date=start_date,
             end_date=end_date,
+            description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
         )
@@ -773,6 +784,7 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
             ),
             start_date=self.start_date,
             end_date=self.end_date,
+            description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
         )
@@ -828,6 +840,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     start_date: datetime.date
     end_date: datetime.date
     function: GenericCallable[FunArgTypes, ReturnType]
+    description: str
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -869,6 +882,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
             ),
             start_date=self.start_date,
             end_date=self.end_date,
+            description=self.description,
         )
 
 
@@ -914,6 +928,7 @@ def param_function(
             function=func,
             start_date=start_date,
             end_date=end_date,
+            description=str(inspect.getdoc(func)),
         )
 
     return inner
