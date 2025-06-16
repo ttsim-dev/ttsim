@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy
 import pytest
@@ -18,6 +19,14 @@ from ttsim.testing_utils import (
     load_policy_test_data,
 )
 
+if TYPE_CHECKING:
+    import datetime
+
+    from ttsim.interface_dag_elements.typing import (
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
+    )
+
 TEST_DIR = Path(__file__).parent
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
@@ -27,8 +36,9 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 )
 
 
-@pytest.fixture
-def orig_mettsim_objects():
+def get_orig_mettsim_objects() -> dict[
+    str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+]:
     return main(
         inputs={
             "orig_policy_objects__root": METTSIM_ROOT,
@@ -38,6 +48,28 @@ def orig_mettsim_objects():
             "orig_policy_objects__param_specs",
         ],
     )
+
+
+def dates_in_orig_mettsim_objects() -> list[datetime.date]:
+    objects = get_orig_mettsim_objects()
+    start_dates = {
+        v.start_date
+        for v in objects[
+            "orig_policy_objects__column_objects_and_param_functions"
+        ].values()
+    }
+    end_dates = {
+        v.end_date + timedelta(days=1)
+        for v in objects[
+            "orig_policy_objects__column_objects_and_param_functions"
+        ].values()
+    }
+    return sorted(start_dates | end_dates)
+
+
+@pytest.fixture
+def orig_mettsim_objects():
+    return get_orig_mettsim_objects()
 
 
 @pytest.mark.parametrize(
@@ -69,11 +101,15 @@ def test_mettsim_policy_environment_dag_without_params():
     )
 
 
-@pytest.mark.parametrize("date_str", ["2019-01-01", "2021-01-01"])
-def test_mettsim_policy_environment_is_complete(date_str, orig_mettsim_objects):
+@pytest.mark.parametrize(
+    "date",
+    dates_in_orig_mettsim_objects(),
+    ids=lambda x: x.isoformat(),
+)
+def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
     """Test that METTSIM's policy environment contains all root nodes of its DAG."""
     check_env_completeness(
         name="METTSIM",
-        date_str=date_str,
+        date_str=date.isoformat(),
         orig_policy_objects=orig_mettsim_objects,
     )
