@@ -567,7 +567,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
     foreign_keys_are_invalid_in_data(
         labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
 
@@ -584,7 +584,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
         foreign_keys_are_invalid_in_data(
             labels__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
-            specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+            specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
         )
 
 
@@ -600,7 +600,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     foreign_keys_are_invalid_in_data(
         labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
 
@@ -616,7 +616,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     foreign_keys_are_invalid_in_data(
         labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
 

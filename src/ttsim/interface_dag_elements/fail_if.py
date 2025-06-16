@@ -314,7 +314,7 @@ def environment_is_invalid(
 def foreign_keys_are_invalid_in_data(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    specialized_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,
+    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -328,7 +328,7 @@ def foreign_keys_are_invalid_in_data(
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
         k: v
-        for k, v in specialized_environment__with_derived_functions_and_processed_input_nodes.items()
+        for k, v in specialized_environment__without_tree_logic_and_with_derived_functions.items()
         if isinstance(v, PolicyInput | ColumnFunction)
     }
 

@@ -49,7 +49,7 @@ def column_targets(
 
 @interface_function()
 def param_targets(
-    specialized_environment__with_derived_functions_and_processed_input_nodes: QNamePolicyEnvironment,  # noqa: E501
+    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,  # noqa: E501
     targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
 ) -> OrderedQNames:
@@ -58,8 +58,7 @@ def param_targets(
         t
         for t in targets__qname
         if t in possible_targets
-        and t
-        in specialized_environment__with_derived_functions_and_processed_input_nodes
+        and t in specialized_environment__without_tree_logic_and_with_derived_functions
     ]
 
 

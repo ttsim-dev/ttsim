@@ -56,10 +56,9 @@ def rounding() -> bool:
 
 
 @interface_function()
-def with_derived_functions_and_processed_input_nodes(
+def without_tree_logic_and_with_derived_functions(
     policy_environment: NestedPolicyEnvironment,
     targets__tree: NestedStrings,
-    processed_data: QNameData,
     labels__processed_data_columns: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -68,14 +67,13 @@ def with_derived_functions_and_processed_input_nodes(
 ) -> QNameSpecializedEnvironment0:
     """Return a flat policy environment with derived functions.
 
-    Four steps:
+    Three steps:
     1. Vectorize policy functions.
     2. Remove all tree logic from the policy environment.
     3. Add derived functions to the policy environment.
-    4. Remove all functions that are overridden by data columns.
 
     """
-    qname_vectorized = {
+    qname_env_vectorized = {
         k: f.vectorize(
             backend=backend,
             xnp=xnp,
@@ -84,38 +82,25 @@ def with_derived_functions_and_processed_input_nodes(
         else f
         for k, f in dt.flatten_to_qnames(policy_environment).items()
     }
-    qname_without_tree_logic = _remove_tree_logic_from_policy_environment(
-        qname_vectorized=qname_vectorized,
+    qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
+        qname_env_vectorized=qname_env_vectorized,
         labels__top_level_namespace=labels__top_level_namespace,
     )
-    qname_with_derived = _add_derived_functions(
-        qname_without_tree_logic=qname_without_tree_logic,
+    return _add_derived_functions(
+        qname_env_without_tree_logic=qname_env_without_tree_logic,
         targets=dt.qnames(targets__tree),
         labels__processed_data_columns=labels__processed_data_columns,
         grouping_levels=labels__grouping_levels,
     )
-    out = {}
-    for n, f in qname_with_derived.items():
-        if n in processed_data:
-            # Put scalars into the policy environment.
-            if isinstance(processed_data[n], int | float | bool):
-                out[n] = processed_data[n]
-            # Else, remove the node. Will be an input of the taxes-transfers function.
-        else:
-            # Leave nodes not in the data what they are.
-            out[n] = f
-    # The number of segments for jax' segment sum. After processing the data, we know that the number of ids is at most the length of the data.
-    out["num_segments"] = len(next(iter(processed_data.values())))
-    return out
 
 
 def _remove_tree_logic_from_policy_environment(
-    qname_vectorized: QNamePolicyEnvironment,
+    qname_env_vectorized: QNamePolicyEnvironment,
     labels__top_level_namespace: UnorderedQNames,
 ) -> QNameSpecializedEnvironment0:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
-    for name, obj in qname_vectorized.items():
+    for name, obj in qname_env_vectorized.items():
         if hasattr(obj, "remove_tree_logic"):
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qname(name),
@@ -127,7 +112,7 @@ def _remove_tree_logic_from_policy_environment(
 
 
 def _add_derived_functions(
-    qname_without_tree_logic: QNameSpecializedEnvironment0,
+    qname_env_without_tree_logic: QNameSpecializedEnvironment0,
     targets: OrderedQNames,
     labels__processed_data_columns: OrderedQNames,
     grouping_levels: OrderedQNames,
@@ -157,19 +142,21 @@ def _add_derived_functions(
 
     Returns
     -------
-    The qualified functions dict with derived functions.
+    The specialized environment with vectorized column functions, derived functions
+    (aggregations and time conversions), and without tree logic, i.e. absolute
+    qualified names in all keys and function arguments.
 
     """
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
-        qname_policy_environment=qname_without_tree_logic,
+        qname_policy_environment=qname_env_without_tree_logic,
         processed_data_columns=labels__processed_data_columns,
         grouping_levels=grouping_levels,
     )
     column_functions = {
         k: v
         for k, v in {
-            **qname_without_tree_logic,
+            **qname_env_without_tree_logic,
             **time_conversion_functions,
         }.items()
         if isinstance(v, ColumnFunction)
@@ -183,7 +170,7 @@ def _add_derived_functions(
         grouping_levels=grouping_levels,
     )
     return {
-        **qname_without_tree_logic,
+        **qname_env_without_tree_logic,
         **time_conversion_functions,
         **aggregate_by_group_functions,
     }
@@ -191,28 +178,49 @@ def _add_derived_functions(
 
 @interface_function()
 def with_processed_params_and_scalars(
-    with_derived_functions_and_processed_input_nodes: QNameSpecializedEnvironment0,
+    without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,
+    processed_data: QNameData,
 ) -> QNameSpecializedEnvironment1:
-    """Process the parameters and param functions, remove RawParams from the tree."""
-    params = {
-        k: v
-        for k, v in with_derived_functions_and_processed_input_nodes.items()
-        if isinstance(v, ParamObject)
-    }
+    """Process the parameters and param functions, remove RawParams from the tree.
+
+    Parameters
+    ----------
+    without_tree_logic_and_with_derived_functions
+        The specialized environment with vectorized column functions, derived functions
+        (aggregations and time conversions), and without tree logic, i.e. absolute
+        qualified names in all keys and function arguments.
+    processed_data
+        The processed data.
+
+    Returns
+    -------
+    The specialized environment with processed parameters and scalars. Input nodes
+    that come in via the processed data are removed from the environment.
+    """
+
+    all_nodes = {}
+    for n, f in without_tree_logic_and_with_derived_functions.items():
+        if n in processed_data:
+            # Put scalars into the policy environment.
+            if isinstance(processed_data[n], int | float | bool):
+                all_nodes[n] = processed_data[n]
+            # Else, remove the node. Will be an input of the taxes-transfers function.
+        else:
+            # Leave nodes not in the data what they are.
+            all_nodes[n] = f
+    # The number of segments for jax' segment sum. After processing the data, we know
+    # that the number of ids is at most the length of the data.
+    all_nodes["num_segments"] = len(next(iter(processed_data.values())))
+
+    params = {k: v for k, v in all_nodes.items() if isinstance(v, ParamObject)}
     scalars = {
         k: v
-        for k, v in with_derived_functions_and_processed_input_nodes.items()
+        for k, v in all_nodes.items()
         if isinstance(v, float | int | bool) or k == "backend"
     }
-    modules = {
-        k: v
-        for k, v in with_derived_functions_and_processed_input_nodes.items()
-        if isinstance(v, ModuleType)
-    }
+    modules = {k: v for k, v in all_nodes.items() if isinstance(v, ModuleType)}
     param_functions = {
-        k: v
-        for k, v in with_derived_functions_and_processed_input_nodes.items()
-        if isinstance(v, ParamFunction)
+        k: v for k, v in all_nodes.items() if isinstance(v, ParamFunction)
     }
     # Construct a function for the processing of all params.
     process = concatenate_functions(
@@ -234,11 +242,7 @@ def with_processed_params_and_scalars(
         right=processed_param_functions,
     )
     return {
-        **{
-            k: v
-            for k, v in with_derived_functions_and_processed_input_nodes.items()
-            if not isinstance(v, RawParam)
-        },
+        **{k: v for k, v in all_nodes.items() if not isinstance(v, RawParam)},
         **processed_params,
     }
 
