@@ -550,6 +550,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
         "p_id": p_id,
         "fam_id": fam_id,
         "module_name": {"betrag_m": betrag_m},
+        "backend": backend,
     }
 
     expected = pd.Series([200, 200, 100], index=pd.Index(data["p_id"], name="p_id"))

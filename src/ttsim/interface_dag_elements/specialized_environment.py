@@ -106,7 +106,6 @@ def with_derived_functions_and_processed_input_nodes(
             out[n] = f
     # The number of segments for jax' segment sum. After processing the data, we know that the number of ids is at most the length of the data.
     out["num_segments"] = len(next(iter(processed_data.values())))
-    out["backend"] = backend
     return out
 
 
