@@ -59,12 +59,13 @@ def some_int_param():
     )
 
 
-def test_add_jahresanfang():
+def test_add_jahresanfang(xnp):
     orig = param_specs(root=Path(__file__).parent / "test_parameters")
     k = ("test_add_jahresanfang.yaml", "foo")
     _active_ttsim_tree_with_params = _active_param_objects(
         orig={k: orig[k]},
         date=pd.to_datetime("2020-07-01").date(),
+        xnp=xnp,
     )
     assert _active_ttsim_tree_with_params["foo"].value == 2
     assert _active_ttsim_tree_with_params["foo_jahresanfang"].value == 1
@@ -78,8 +79,8 @@ def test_input_is_recognized_as_potential_group_id():
                 "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
             },
-            targets=["names__grouping_levels"],
-        )["names__grouping_levels"]
+            targets=["labels__grouping_levels"],
+        )["labels__grouping_levels"]
     )
 
 
@@ -91,8 +92,8 @@ def test_p_id_not_recognized_as_potential_group_id():
                 "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
             },
-            targets=["names__grouping_levels"],
-        )["names__grouping_levels"]
+            targets=["labels__grouping_levels"],
+        )["labels__grouping_levels"]
     )
 
 
@@ -119,7 +120,10 @@ def test_start_date_valid(date_string: str, expected: datetime.date):
     ],
 )
 def test_start_date_invalid(date_string: str):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="neither matches the format YYYY-MM-DD nor is a datetime.date",
+    ):
 
         @policy_function(start_date=date_string)
         def test_func():
@@ -157,7 +161,10 @@ def test_end_date_valid(date_string: str, expected: datetime.date):
     ],
 )
 def test_end_date_invalid(date_string: str):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="neither matches the format YYYY-MM-DD nor is a datetime.date",
+    ):
 
         @policy_function(end_date=date_string)
         def test_func():
@@ -173,7 +180,7 @@ def test_end_date_missing():
 
 
 def test_active_period_is_empty():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be before the end date"):
 
         @policy_function(start_date="2023-01-20", end_date="2023-01-19")
         def test_func():

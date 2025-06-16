@@ -1,10 +1,3 @@
-from ttsim.config import IS_JAX_INSTALLED
-
-if IS_JAX_INSTALLED:
-    from jax import Array as TTSIMArray
-else:
-    from numpy import ndarray as TTSIMArray  # noqa: N812
-
 from ttsim.tt_dag_elements.aggregation import AggType
 from ttsim.tt_dag_elements.column_objects_param_function import (
     AggByGroupFunction,
@@ -69,7 +62,6 @@ __all__ = [
     "RawParam",
     "RoundingSpec",
     "ScalarParam",
-    "TTSIMArray",
     "TimeConversionFunction",
     "agg_by_group_function",
     "agg_by_p_id_function",

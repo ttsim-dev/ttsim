@@ -12,7 +12,6 @@ def betrag_y(kindergeld__betrag_y: float, satz: float) -> float:
     (one-time payment, non-allowable against transfer payments)
 
     """
-
     if kindergeld__betrag_y > 0:
         out = satz
     else:

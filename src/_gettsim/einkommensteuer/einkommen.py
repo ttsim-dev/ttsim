@@ -1,7 +1,8 @@
 """Einkommen.
 
 Einkommen are Einkünfte minus Sonderausgaben, Vorsorgeaufwendungen, außergewöhnliche
-Belastungen and sonstige Abzüge."""
+Belastungen and sonstige Abzüge.
+"""
 
 from __future__ import annotations
 

@@ -17,7 +17,7 @@ def example_inputs_df():
             "recipient_child_benefits_id": [-1, 0, 0],
             "is_single_parent": [True, False, False],
             "has_children": [True, False, False],
-        }
+        },
     )
 
 
@@ -87,7 +87,7 @@ def example_inputs_tree_to_inputs_df_columns():
             "kranken": {
                 "beitrag": {
                     "privat_versichert": False,
-                }
+                },
             },
         },
         "wohnort_ost": False,

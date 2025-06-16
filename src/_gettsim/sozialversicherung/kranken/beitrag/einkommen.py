@@ -32,7 +32,6 @@ def einkommen_bis_beitragsbemessungsgrenze_m(
     This does not consider reduced contributions for Mini- and Midijobs. Relevant for
     the computation of payroll taxes.
     """
-
     return min(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
         beitragsbemessungsgrenze_m,

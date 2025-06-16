@@ -193,7 +193,6 @@ def betrag_rentner_m(
     beitragssatz_arbeitnehmer: float,
 ) -> float:
     """Health insurance contributions for pension incomes."""
-
     return beitragssatz_arbeitnehmer * bemessungsgrundlage_rente_m
 
 

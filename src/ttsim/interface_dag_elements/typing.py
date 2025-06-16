@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NewType, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
 
 if TYPE_CHECKING:
     # Make these available for import from other modules.
     import datetime
     from collections.abc import Mapping
+
+    from jaxtyping import Array, Bool, Float, Int
 
     OrigParamSpec = (
         # Header
@@ -13,7 +15,8 @@ if TYPE_CHECKING:
         |
         # Parameters at one point in time
         dict[
-            datetime.date, dict[Literal["note", "reference"] | str | int, Any]  # noqa: PYI051
+            datetime.date,
+            dict[Literal["note", "reference"] | str | int, Any],  # noqa: PYI051
         ]
     )
     DashedISOString = NewType("DashedISOString", str)
@@ -24,6 +27,10 @@ if TYPE_CHECKING:
         NestedTargetDict,
     )
 
+    BoolColumn: TypeAlias = Array[Bool, " n_obs"]  # type: ignore[name-defined]
+    IntColumn: TypeAlias = Array[Int, " n_obs"]  # type: ignore[name-defined]
+    FloatColumn: TypeAlias = Array[Float, " n_obs"]  # type: ignore[name-defined]
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Possible leaves of the various trees.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -32,19 +39,18 @@ if TYPE_CHECKING:
         ColumnObject,
         ParamFunction,
         ParamObject,
-        TTSIMArray,
     )
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for input, processing, and output; including metadata.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedData = Mapping[str, TTSIMArray | "NestedData"]
+    NestedData = Mapping[str, BoolColumn | IntColumn | FloatColumn | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = Mapping[str, TTSIMArray | "FlatData"]
+    FlatData = Mapping[str, BoolColumn | IntColumn | FloatColumn | "FlatData"]
     """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    QNameData = Mapping[str, TTSIMArray]
+    QNameData = Mapping[str, BoolColumn | IntColumn | FloatColumn]
     """Mapping of qualified name paths to 1d arrays."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -61,11 +67,13 @@ if TYPE_CHECKING:
     # Tree-like data structures for policy objects
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     FlatColumnObjectsParamFunctions = Mapping[
-        tuple[str, ...], ColumnObject | ParamFunction
+        tuple[str, ...],
+        ColumnObject | ParamFunction,
     ]
     """Flat mapping of paths to column objects or param functions."""
     NestedColumnObjectsParamFunctions = Mapping[
-        str, ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions"
+        str,
+        ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions",
     ]
     """Tree of column objects or param functions."""
     FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
@@ -77,8 +85,14 @@ if TYPE_CHECKING:
         ColumnObject | ParamFunction | ParamObject | "NestedPolicyEnvironment",
     ]
     """Tree of column objects, param functions, and param objects."""
+    QNamePolicyEnvironment = dict[
+        str,
+        ColumnObject | ParamFunction | ParamObject,
+    ]
+    """Tree of column objects, param functions, and param objects."""
     QNameCombinedEnvironment0 = Mapping[
-        str, ColumnObject | ParamFunction | ParamObject | int | float | bool
+        str,
+        ColumnObject | ParamFunction | ParamObject | int | float | bool,
     ]
     """Map qualified names to column objects, param functions, param objects, or scalars from processed data."""  # noqa: E501
     QNameCombinedEnvironment1 = Mapping[str, ColumnObject | Any]

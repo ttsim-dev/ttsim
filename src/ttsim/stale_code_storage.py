@@ -8,7 +8,6 @@ from ttsim.tt_dag_elements import (
     ColumnObject,
     ParamFunction,
     ParamObject,
-    TTSIMArray,
     policy_function,
 )
 
@@ -25,7 +24,10 @@ if TYPE_CHECKING:
         | int
         | float
         | bool
-        | TTSIMArray
+        | BoolColumn
+        | IntColumn
+        | FloatColumn
+        | DatetimeColumn
         | "NestedAnyTTSIMObject",
     ]
     NestedAny = Mapping[str, Any | "NestedAnyTTSIMObject"]
@@ -113,3 +115,35 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
 ):
     with pytest.raises(KeyError):
         name_of_last_branch_element_is_not_the_functions_leaf_name(functions_tree)
+
+
+def check_series_has_expected_type(
+    series: pd.Series, internal_type: numpy.dtype, dnp: ModuleType
+) -> bool:
+    """Checks whether used series has already expected internal type.
+
+    Currently not used, but might become useful again.
+
+    Parameters
+    ----------
+    series: pandas.Series or pandas.DataFrame or dict of pandas.Series
+        Data provided by the user.
+    internal_type: TypeVar
+        One of the types used by TTSIM.
+
+    Returns
+    -------
+    Bool
+
+    """
+    if (
+        (internal_type == float) & (is_float_dtype(series))
+        or (internal_type == int) & (is_integer_dtype(series))
+        or (internal_type == bool) & (is_bool_dtype(series))
+        or (internal_type == dnp.datetime64) & (is_datetime64_any_dtype(series))
+    ):
+        out = True
+    else:
+        out = False
+
+    return out

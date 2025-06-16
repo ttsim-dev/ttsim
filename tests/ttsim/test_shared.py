@@ -28,7 +28,7 @@ def test_leap_year_correctly_handled():
 
 
 def test_fail_if_invalid_date():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="day is out of range for month"):
         to_datetime(date="2020-02-30")
 
 
@@ -43,7 +43,9 @@ def test_fail_if_invalid_date():
 )
 def test_upsert_path_and_value(base, path_to_upsert, value_to_upsert, expected):
     result = upsert_path_and_value(
-        base=base, path_to_upsert=path_to_upsert, value_to_upsert=value_to_upsert
+        base=base,
+        path_to_upsert=path_to_upsert,
+        value_to_upsert=value_to_upsert,
     )
     assert result == expected
 
@@ -57,7 +59,9 @@ def test_upsert_path_and_value(base, path_to_upsert, value_to_upsert, expected):
 )
 def test_insert_path_and_value(base, path_to_insert, value_to_insert, expected):
     result = insert_path_and_value(
-        base=base, path_to_insert=path_to_insert, value_to_insert=value_to_insert
+        base=base,
+        path_to_insert=path_to_insert,
+        value_to_insert=value_to_insert,
     )
     assert result == expected
 
@@ -71,7 +75,9 @@ def test_insert_path_and_value(base, path_to_insert, value_to_insert, expected):
 def test_insert_path_and_value_invalid(base, path_to_insert, value_to_insert):
     with pytest.raises(ValueError, match="Conflicting paths in trees to merge."):
         insert_path_and_value(
-            base=base, path_to_insert=path_to_insert, value_to_insert=value_to_insert
+            base=base,
+            path_to_insert=path_to_insert,
+            value_to_insert=value_to_insert,
         )
 
 
@@ -195,7 +201,8 @@ def test_upsert_tree(base_dict, update_dict, expected):
 )
 def test_partition_tree_by_reference_tree(tree_to_partition, reference_tree, expected):
     in_reference_tree, not_in_reference_tree = partition_tree_by_reference_tree(
-        tree_to_partition=tree_to_partition, reference_tree=reference_tree
+        tree_to_partition=tree_to_partition,
+        reference_tree=reference_tree,
     )
 
     assert in_reference_tree == expected[0]
@@ -272,7 +279,10 @@ def test_get_re_pattern_for_time_units_and_groupings(
     ],
 )
 def test_get_re_pattern_for_some_base_name(
-    base_name, time_units, grouping_levels, expected_match
+    base_name,
+    time_units,
+    grouping_levels,
+    expected_match,
 ):
     re_pattern = get_re_pattern_for_specific_time_units_and_groupings(
         base_name=base_name,

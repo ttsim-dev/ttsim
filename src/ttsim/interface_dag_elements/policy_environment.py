@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
 import numpy
@@ -31,6 +31,8 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         FlatColumnObjectsParamFunctions,
@@ -47,6 +49,9 @@ def policy_environment(
     orig_policy_objects__column_objects_and_param_functions: NestedColumnObjectsParamFunctions,  # noqa: E501
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     date: datetime.date | DashedISOString,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+    dnp: ModuleType,
 ) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -74,6 +79,7 @@ def policy_environment(
         right=_active_param_objects(
             orig=orig_policy_objects__param_specs,
             date=date,
+            xnp=xnp,
         ),
     )
 
@@ -90,6 +96,9 @@ def policy_environment(
         note=None,
         reference=None,
     )
+    a_tree["backend"] = backend
+    a_tree["xnp"] = xnp
+    a_tree["dnp"] = dnp
     return a_tree
 
 
@@ -111,7 +120,6 @@ def _active_column_objects_and_param_functions(
     -------
     A tree of active ColumnObjectParamFunctions.
     """
-
     flat_objects_tree = {
         (*orig_path[:-2], obj.leaf_name): obj
         for orig_path, obj in orig.items()
@@ -124,6 +132,7 @@ def _active_column_objects_and_param_functions(
 def _active_param_objects(
     orig: FlatOrigParamSpecs,
     date: datetime.date,
+    xnp: ModuleType,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_tree_with_params = {}
@@ -134,6 +143,7 @@ def _active_param_objects(
             leaf_name=leaf_name,
             spec=orig_params_spec,
             date=date,
+            xnp=xnp,
         )
         if param is not None:
             flat_tree_with_params[(*path_to_keep, leaf_name)] = param
@@ -144,6 +154,7 @@ def _active_param_objects(
                 leaf_name=leaf_name_jan1,
                 spec=orig_params_spec,
                 date=date_jan1,
+                xnp=xnp,
             )
             if param is not None:
                 flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
@@ -154,55 +165,62 @@ def _get_one_param(  # noqa: PLR0911
     leaf_name: str,
     spec: OrigParamSpec,
     date: datetime.date,
+    xnp: ModuleType,
 ) -> ParamObject:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(leaf_name=leaf_name, spec=spec, date=date)
 
     if cleaned_spec is None:
         return None
-    elif spec["type"] == "scalar":
+    if spec["type"] == "scalar":
         return ScalarParam(**cleaned_spec)
-    elif spec["type"] == "dict":
+    if spec["type"] == "dict":
         return DictParam(**cleaned_spec)
-    elif spec["type"].startswith("piecewise_"):
+    if spec["type"].startswith("piecewise_"):
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
             func_type=spec["type"],
             parameter_dict=cleaned_spec["value"],
+            xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    elif spec["type"] == "consecutive_int_1d_lookup_table":
+    if spec["type"] == "consecutive_int_1d_lookup_table":
         cleaned_spec["value"] = get_consecutive_int_1d_lookup_table_param_value(
-            cleaned_spec["value"]
+            raw=cleaned_spec["value"],
+            xnp=xnp,
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "consecutive_int_2d_lookup_table":
+    if spec["type"] == "consecutive_int_2d_lookup_table":
         cleaned_spec["value"] = get_consecutive_int_2d_lookup_table_param_value(
-            cleaned_spec["value"]
+            raw=cleaned_spec["value"],
+            xnp=xnp,
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "month_based_phase_inout_of_age_thresholds":
+    if spec["type"] == "month_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_month_based_phase_inout_of_age_thresholds_param_value(
-                cleaned_spec["value"]
+                raw=cleaned_spec["value"],
+                xnp=xnp,
             )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "year_based_phase_inout_of_age_thresholds":
+    if spec["type"] == "year_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_year_based_phase_inout_of_age_thresholds_param_value(
-                cleaned_spec["value"]
+                raw=cleaned_spec["value"],
+                xnp=xnp,
             )
         )
         return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
-    elif spec["type"] == "require_converter":
+    if spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
-    else:
-        raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
+    raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
 
 def _clean_one_param_spec(
-    leaf_name: str, spec: OrigParamSpec, date: datetime.date
+    leaf_name: str,
+    spec: OrigParamSpec,
+    date: datetime.date,
 ) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a ParamObject."""
     policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
@@ -227,12 +245,12 @@ def _clean_one_param_spec(
     out["reference"] = current_spec.pop("reference", None)
     if len(current_spec) == 0:
         return None
-    elif len(current_spec) == 1 and "updates_previous" in current_spec:
+    if len(current_spec) == 1 and "updates_previous" in current_spec:
         raise ValueError(
-            f"'updates_previous' cannot be specified as the only element, found{spec}"
+            f"'updates_previous' cannot be specified as the only element, found{spec}",
         )
         # Parameter ceased to exist
-    elif spec["type"] == "scalar":
+    if spec["type"] == "scalar":
         assert "updates_previous" not in current_spec, (
             "'updates_previous' cannot be specified for scalar parameters"
         )
@@ -263,5 +281,4 @@ def _get_param_value(
             base=_get_param_value(relevant_specs=relevant_specs[:-1]),
             to_upsert=current_spec,
         )
-    else:
-        return current_spec
+    return current_spec

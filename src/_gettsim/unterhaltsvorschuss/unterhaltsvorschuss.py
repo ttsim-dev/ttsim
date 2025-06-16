@@ -15,13 +15,17 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import TTSIMArray
+    from types import ModuleType
+
+    from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, RawParam
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def an_elternteil_auszuzahlender_betrag_m(
-    betrag_m: float, kindergeld__p_id_empfänger: int, p_id: int
+    betrag_m: float,
+    kindergeld__p_id_empfänger: int,
+    p_id: int,
 ) -> float:
     pass
 
@@ -29,7 +33,9 @@ def an_elternteil_auszuzahlender_betrag_m(
 @policy_function(
     start_date="2009-01-01",
     rounding_spec=RoundingSpec(
-        base=1, direction="up", reference="§ 9 Abs. 3 UhVorschG"
+        base=1,
+        direction="up",
+        reference="§ 9 Abs. 3 UhVorschG",
     ),
 )
 def betrag_m(
@@ -64,10 +70,11 @@ def betrag_m(
 
 @policy_function(vectorization_strategy="not_required")
 def elternteil_alleinerziehend(
-    kindergeld__p_id_empfänger: TTSIMArray,  # int
-    p_id: TTSIMArray,  # int
-    familie__alleinerziehend: TTSIMArray,  # bool
-) -> TTSIMArray:  # bool
+    kindergeld__p_id_empfänger: IntColumn,
+    p_id: IntColumn,
+    familie__alleinerziehend: BoolColumn,
+    xnp: ModuleType,
+) -> BoolColumn:
     """Check if parent that receives Kindergeld is a single parent.
 
     Only single parents receive Kindergeld.
@@ -77,6 +84,7 @@ def elternteil_alleinerziehend(
         primary_key=p_id,
         target=familie__alleinerziehend,
         value_if_foreign_key_is_missing=False,
+        xnp=xnp,
     )
 
 
@@ -84,14 +92,16 @@ def elternteil_alleinerziehend(
     end_date="2008-12-31",
     leaf_name="betrag_m",
     rounding_spec=RoundingSpec(
-        base=1, direction="down", reference="§ 9 Abs. 3 UhVorschG"
+        base=1,
+        direction="down",
+        reference="§ 9 Abs. 3 UhVorschG",
     ),
 )
 def not_implemented_m() -> float:
     raise NotImplementedError(
         """
         Unterhaltsvorschuss is not implemented prior to 2009.
-    """
+    """,
     )
 
 
@@ -263,17 +273,20 @@ def anspruchshöhe_m_ab_2017_07(
 
 @policy_function(start_date="2017-07-01", vectorization_strategy="not_required")
 def elternteil_mindesteinkommen_erreicht(
-    kindergeld__p_id_empfänger: TTSIMArray,  # int
-    p_id: TTSIMArray,  # int
-    mindesteinkommen_erreicht: TTSIMArray,  # bool
-) -> TTSIMArray:  # bool
+    kindergeld__p_id_empfänger: IntColumn,
+    p_id: IntColumn,
+    mindesteinkommen_erreicht: BoolColumn,
+    xnp: ModuleType,
+) -> BoolColumn:
     """Income of Unterhaltsvorschuss recipient above threshold (this variable is
-    defined on child level)."""
+    defined on child level).
+    """
     return join(
-        kindergeld__p_id_empfänger,
-        p_id,
-        mindesteinkommen_erreicht,
+        foreign_key=kindergeld__p_id_empfänger,
+        primary_key=p_id,
+        target=mindesteinkommen_erreicht,
         value_if_foreign_key_is_missing=False,
+        xnp=xnp,
     )
 
 
@@ -312,7 +325,9 @@ def einkommen_m(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def unterhaltsvorschuss_spec_target(
-    unterhaltsvorschuss_source_field: bool, p_id_field: int, p_id: int
+    unterhaltsvorschuss_source_field: bool,
+    p_id_field: int,
+    p_id: int,
 ) -> int:
     pass
 

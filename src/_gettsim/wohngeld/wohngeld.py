@@ -21,7 +21,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim.config import numpy_or_jax as np
 from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
@@ -32,6 +31,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from _gettsim.param_types import ConsecutiveInt1dLookupTableParamValue
 
 
@@ -84,6 +85,7 @@ def basisformel(
     einkommen_m: float,
     miete_m: float,
     params: BasisformelParamValues,
+    xnp: ModuleType,
 ) -> float:
     """Basic formula for housing benefit calculation.
 
@@ -99,12 +101,12 @@ def basisformel(
             anzahl_personen - params.zusatzbetrag_nach_haushaltsgröße.base_to_subtract
         ]
     )
-    out = np.maximum(
+    out = xnp.maximum(
         0.0,
         params.skalierungsfaktor
         * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
     )
-    return np.minimum(miete_m, out + zusatzbetrag_nach_haushaltsgröße)
+    return xnp.minimum(miete_m, out + zusatzbetrag_nach_haushaltsgröße)
 
 
 @policy_function(
@@ -120,6 +122,7 @@ def anspruchshöhe_m_wthh(
     miete_m_wthh: float,
     grundsätzlich_anspruchsberechtigt_wthh: bool,
     basisformel_params: BasisformelParamValues,
+    xnp: ModuleType,
 ) -> float:
     """Housing benefit after wealth and income check.
 
@@ -134,6 +137,7 @@ def anspruchshöhe_m_wthh(
             einkommen_m=einkommen_m_wthh,
             miete_m=miete_m_wthh,
             params=basisformel_params,
+            xnp=xnp,
         )
     else:
         out = 0.0
@@ -154,6 +158,7 @@ def anspruchshöhe_m_bg(
     miete_m_bg: float,
     grundsätzlich_anspruchsberechtigt_bg: bool,
     basisformel_params: BasisformelParamValues,
+    xnp: ModuleType,
 ) -> float:
     """Housing benefit after wealth and income check.
 
@@ -166,6 +171,7 @@ def anspruchshöhe_m_bg(
             einkommen_m=einkommen_m_bg,
             miete_m=miete_m_bg,
             params=basisformel_params,
+            xnp=xnp,
         )
     else:
         out = 0.0
@@ -179,6 +185,7 @@ def basisformel_params(
     koeffizienten_berechnungsformel: dict[int, dict[str, float]],
     max_anzahl_personen: dict[str, int],
     zusatzbetrag_pro_person_in_großen_haushalten: float,
+    xnp: ModuleType,
 ) -> BasisformelParamValues:
     """Convert the parameters of the Wohngeld basis formula to a format that can be
     used by Numpy and Jax.
@@ -204,10 +211,11 @@ def basisformel_params(
 
     return BasisformelParamValues(
         skalierungsfaktor=skalierungsfaktor,
-        a=get_consecutive_int_1d_lookup_table_param_value(a),
-        b=get_consecutive_int_1d_lookup_table_param_value(b),
-        c=get_consecutive_int_1d_lookup_table_param_value(c),
+        a=get_consecutive_int_1d_lookup_table_param_value(raw=a, xnp=xnp),
+        b=get_consecutive_int_1d_lookup_table_param_value(raw=b, xnp=xnp),
+        c=get_consecutive_int_1d_lookup_table_param_value(raw=c, xnp=xnp),
         zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_1d_lookup_table_param_value(
-            zusatzbetrag_nach_haushaltsgröße
+            raw=zusatzbetrag_nach_haushaltsgröße,
+            xnp=xnp,
         ),
     )

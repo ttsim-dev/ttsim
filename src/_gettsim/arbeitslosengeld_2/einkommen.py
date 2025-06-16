@@ -14,6 +14,8 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import RawParam
 
 
@@ -147,12 +149,14 @@ def anrechnungsfreies_einkommen_m_basierend_auf_nettoquote(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     nettoquote: float,
     parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Share of income which remains to the individual."""
     return piecewise_polynomial(
         x=einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m,
         parameters=parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
         rates_multiplier=nettoquote,
+        xnp=xnp,
     )
 
 
@@ -164,6 +168,7 @@ def anrechnungsfreies_einkommen_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: PiecewisePolynomialParamValue,
     parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Calculate share of income, which remains to the individual since 10/2005.
 
@@ -184,11 +189,13 @@ def anrechnungsfreies_einkommen_m(
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
             parameters=parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg,
+            xnp=xnp,
         )
     else:
         out = piecewise_polynomial(
             x=eink_erwerbstätigkeit,
             parameters=parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
+            xnp=xnp,
         )
     return out
 
@@ -196,13 +203,16 @@ def anrechnungsfreies_einkommen_m(
 @param_function(start_date="2005-01-01")
 def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
     raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParam,
+    xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Parameter for calculation of income not subject to transfer withdrawal when
-    children are not in the Bedarfsgemeinschaft."""
+    children are not in the Bedarfsgemeinschaft.
+    """
     return get_piecewise_parameters(
         leaf_name="parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg",
         func_type="piecewise_linear",
         parameter_dict=raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
+        xnp=xnp,
     )
 
 
@@ -210,9 +220,11 @@ def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
 def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
     raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg: RawParam,
     raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParam,
+    xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Parameter for calculation of income not subject to transfer withdrawal when
-    children are in the Bedarfsgemeinschaft."""
+    children are in the Bedarfsgemeinschaft.
+    """
     updated_parameters: dict[int, dict[str, float]] = upsert_tree(
         base=raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
         to_upsert=raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg,
@@ -221,4 +233,5 @@ def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
         leaf_name="parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg",
         func_type="piecewise_linear",
         parameter_dict=updated_parameters,
+        xnp=xnp,
     )

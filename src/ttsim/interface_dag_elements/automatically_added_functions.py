@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 from dags import get_free_arguments, rename_arguments
 
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
@@ -466,7 +465,6 @@ def create_time_conversion_functions(
     -------
     The functions dict with the new time conversion functions.
     """
-
     time_units = tuple(TIME_UNIT_LABELS)
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         grouping_levels=grouping_levels,
@@ -561,7 +559,8 @@ def _create_one_set_of_time_conversion_functions(
 
 
 def _create_function_for_time_unit(
-    source: str, converter: Callable[[float], float]
+    source: str,
+    converter: Callable[[float], float],
 ) -> Callable[[float], float]:
     @rename_arguments(mapper={"x": source})
     def func(x: float) -> float:
@@ -572,14 +571,15 @@ def _create_function_for_time_unit(
 
 def create_agg_by_group_functions(
     column_functions: UnorderedQNames,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
     targets: OrderedQNames,
     grouping_levels: OrderedQNames,
+    # backend: Literal["numpy", "jax"],
 ) -> UnorderedQNames:
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
-        **dict.fromkeys(names__processed_data_columns),
+        **dict.fromkeys(labels__processed_data_columns),
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.
@@ -593,7 +593,8 @@ def create_agg_by_group_functions(
     potential_agg_by_group_sources = {
         qn: o for qn, o in all_functions_and_data.items() if not gp.match(qn)
     }
-    # Exclude objects that have been explicitly provided.
+    # Exclude objects that have been explicitly provided.u
+
     agg_by_group_function_names = {
         t
         for t in potential_agg_by_group_function_names
@@ -606,8 +607,6 @@ def create_agg_by_group_functions(
         if base_name_with_time_unit in potential_agg_by_group_sources:
             group_id = f"{match.group('group')}_id"
             mapper = {"group_id": group_id, "column": base_name_with_time_unit}
-            if IS_JAX_INSTALLED:
-                mapper["num_segments"] = f"{group_id}_num_segments"
             agg_func = rename_arguments(
                 func=grouped_sum,
                 mapper=mapper,

@@ -18,10 +18,12 @@ def pflichtbeitragsjahre_8_von_10() -> bool:
 @policy_input()
 def vertrauensschutz_1997() -> bool:
     """Is covered by Vertrauensschutz rules for the Altersrente wegen Arbeitslosigkeit
-    implemented in 1997 (§ 237 SGB VI Abs. 4)."""
+    implemented in 1997 (§ 237 SGB VI Abs. 4).
+    """
 
 
 @policy_input()
 def vertrauensschutz_2004() -> bool:
     """Is covered by Vertrauensschutz rules for the Altersrente wegen Arbeitslosigkeit
-    enacted in July 2004 (§ 237 SGB VI Abs. 5)."""
+    enacted in July 2004 (§ 237 SGB VI Abs. 5).
+    """

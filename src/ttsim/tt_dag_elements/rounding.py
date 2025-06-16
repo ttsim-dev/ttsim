@@ -4,12 +4,14 @@ import functools
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
-from ttsim.config import numpy_or_jax as np
-
-ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
-
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from types import ModuleType
+
+    from ttsim.interface_dag_elements.typing import FloatColumn
+
+
+ROUNDING_DIRECTION = Literal["up", "down", "nearest"]
 
 P = ParamSpec("P")
 
@@ -28,39 +30,44 @@ class RoundingSpec:
         valid_directions = get_args(ROUNDING_DIRECTION)
         if self.direction not in valid_directions:
             raise ValueError(
-                f"`direction` must be one of {valid_directions}, got {self.direction!r}"
+                f"`direction` must be one of {valid_directions}, "
+                f"got {self.direction!r}",
             )
         if type(self.to_add_after_rounding) not in [int, float]:
             raise ValueError(
-                f"Additive part must be a number, got {self.to_add_after_rounding!r}"
+                f"Additive part must be a number, got {self.to_add_after_rounding!r}",
             )
 
-    def apply_rounding(self, func: Callable[P, np.ndarray]) -> Callable[P, np.ndarray]:
+    def apply_rounding(
+        self,
+        func: Callable[P, FloatColumn],
+        xnp: ModuleType,
+    ) -> Callable[P, FloatColumn]:
         """Decorator to round the output of a function.
 
         Parameters
         ----------
         func
             Function to be rounded.
+        xnp
+            The computing module to use.
 
         Returns
         -------
         Function with rounding applied.
         """
 
-        # Make sure that signature is preserved.
         @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> np.ndarray:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> FloatColumn:
             out = func(*args, **kwargs)
 
             if self.direction == "up":
-                rounded_out = self.base * np.ceil(out / self.base)
+                rounded_out = self.base * xnp.ceil(out / self.base)
             elif self.direction == "down":
-                rounded_out = self.base * np.floor(out / self.base)
+                rounded_out = self.base * xnp.floor(out / self.base)
             elif self.direction == "nearest":
-                rounded_out = self.base * (np.asarray(out) / self.base).round()
+                rounded_out = self.base * (xnp.asarray(out) / self.base).round()
 
-            rounded_out += self.to_add_after_rounding
-            return rounded_out
+            return rounded_out + self.to_add_after_rounding
 
         return wrapper

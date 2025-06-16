@@ -27,10 +27,14 @@ if TYPE_CHECKING:
 
 
 def plot_tt_dag(
-    with_params: bool, inputs_for_main: dict[str, Any], title: str, output_path: Path
+    with_params: bool,
+    inputs_for_main: dict[str, Any],
+    title: str,
+    output_path: Path,
 ) -> None:
     """Plot the taxes & transfers DAG, with or without parameters."""
-
+    if "backend" not in inputs_for_main:
+        inputs_for_main["backend"] = "numpy"
     policy_environment = main(inputs=inputs_for_main, targets=["policy_environment"])[
         "policy_environment"
     ]
@@ -62,11 +66,14 @@ def plot_tt_dag(
             ),
         },
         targets=[
-            "specialized_environment__with_derived_functions_and_processed_input_nodes"
+            "specialized_environment__with_derived_functions_and_processed_input_nodes",
         ],
     )["specialized_environment__with_derived_functions_and_processed_input_nodes"]
     # Replace input nodes by PolicyInputs again
     env.update(policy_inputs)
+    for element in "backend", "xnp", "dnp":
+        if element in env:
+            del env[element]
     nodes = {
         qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
         for qn, n in env.items()
@@ -75,7 +82,7 @@ def plot_tt_dag(
     # Only keep nodes that are column objects
     if not with_params:
         dag.remove_nodes_from(
-            [qn for qn, n in env.items() if not isinstance(n, ColumnObject)]
+            [qn for qn, n in env.items() if not isinstance(n, ColumnObject)],
         )
     fig = _plot_dag(dag=dag, title=title)
     if output_path.suffix == ".html":
@@ -92,17 +99,19 @@ def plot_tt_dag(
             enforce_signature=False,
             set_annotations=False,
         )
-        args = inspect.signature(f).parameters
+        args = dict(inspect.signature(f).parameters)
+        args.pop("backend", None)
+        args.pop("xnp", None)
+        args.pop("dnp", None)
         if args:
             raise ValueError(
                 "The policy environment DAG should include all root nodes but requires "
-                f"inputs:\n\n{format_list_linewise(args.keys())}"
+                f"inputs:\n\n{format_list_linewise(args.keys())}",
             )
 
 
 def plot_full_interface_dag(output_path: Path) -> None:
     """Plot the full interface DAG."""
-
     nodes = {
         p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
         for p, n in load_interface_functions_and_inputs().items()
@@ -121,7 +130,7 @@ def plot_full_interface_dag(output_path: Path) -> None:
     if args:
         raise ValueError(
             "The full interface DAG should include all root nodes but requires inputs:"
-            f"\n\n{format_list_linewise(args.keys())}"
+            f"\n\n{format_list_linewise(args.keys())}",
         )
     fig = _plot_dag(dag=dag, title="Full Interface DAG")
     if output_path.suffix == ".html":
@@ -132,9 +141,9 @@ def plot_full_interface_dag(output_path: Path) -> None:
 
 def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
     """Plot the DAG."""
-
     nice_dag = nx.relabel_nodes(
-        dag, {qn: qn.replace("__", "<br>") for qn in dag.nodes()}
+        dag,
+        {qn: qn.replace("__", "<br>") for qn in dag.nodes()},
     )
     pos = nx.nx_agraph.pygraphviz_layout(nice_dag, prog="dot", args="-Grankdir=LR")
     # Create edge traces with arrows
@@ -189,7 +198,7 @@ def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
                     "arrowcolor": "#888",
                     "showarrow": True,
                     "text": "",
-                }
+                },
             )
 
     # Create node trace

@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
 from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     piecewise_polynomial,
@@ -27,11 +32,13 @@ def amount_y(
 def amount_standard_y(
     income__amount_y: float,
     tax_schedule_standard: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Payroll tax amount for the standard tax schedule."""
     return piecewise_polynomial(
         x=income__amount_y,
         parameters=tax_schedule_standard,
+        xnp=xnp,
     )
 
 
@@ -39,9 +46,11 @@ def amount_standard_y(
 def amount_reduced_y(
     income__amount_y: float,
     tax_schedule_reduced: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Payroll tax amount for the reduced tax schedule."""
     return piecewise_polynomial(
         x=income__amount_y,
         parameters=tax_schedule_reduced,
+        xnp=xnp,
     )

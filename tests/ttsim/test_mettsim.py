@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
+import numpy
 import pytest
 from mettsim.config import METTSIM_ROOT
 
-from ttsim.config import IS_JAX_INSTALLED
 from ttsim.plot_dag import plot_tt_dag
 from ttsim.testing_utils import (
     PolicyTest,
@@ -15,7 +16,11 @@ from ttsim.testing_utils import (
 
 TEST_DIR = Path(__file__).parent
 
-POLICY_TEST_IDS_AND_CASES = load_policy_test_data(test_dir=TEST_DIR, policy_name="")
+POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
+    test_dir=TEST_DIR,
+    policy_name="",
+    xnp=numpy,
+)
 
 
 @pytest.mark.parametrize(
@@ -23,11 +28,8 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(test_dir=TEST_DIR, policy_name
     POLICY_TEST_IDS_AND_CASES.values(),
     ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
-def test_mettsim(test: PolicyTest):
-    if IS_JAX_INSTALLED:
-        execute_test(test, root=METTSIM_ROOT, jit=True)
-    else:
-        execute_test(test, root=METTSIM_ROOT, jit=False)
+def test_mettsim(test: PolicyTest, backend: Literal["numpy", "jax"]):
+    execute_test(test=test, root=METTSIM_ROOT, backend=backend)
 
 
 def test_mettsim_policy_environment_dag_with_params():

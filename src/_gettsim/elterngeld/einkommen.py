@@ -61,7 +61,8 @@ def einkommen_vorjahr_unter_bezugsgrenze_mit_unterscheidung_single_paar(
     familie__alleinerziehend: bool,
     zu_versteuerndes_einkommen_vorjahr_y_sn: float,
     max_zu_versteuerndes_einkommen_vorjahr_nach_alleinerziehendenstatus: dict[
-        str, float
+        str,
+        float,
     ],
 ) -> bool:
     """Income before birth is below income threshold for Elterngeld."""
@@ -83,7 +84,8 @@ def einkommen_vorjahr_unter_bezugsgrenze_mit_unterscheidung_single_paar(
 
 
 @policy_function(
-    start_date="2024-04-01", leaf_name="einkommen_vorjahr_unter_bezugsgrenze"
+    start_date="2024-04-01",
+    leaf_name="einkommen_vorjahr_unter_bezugsgrenze",
 )
 def einkommen_vorjahr_unter_bezugsgrenze_ohne_unterscheidung_single_paar(
     zu_versteuerndes_einkommen_vorjahr_y_sn: float,

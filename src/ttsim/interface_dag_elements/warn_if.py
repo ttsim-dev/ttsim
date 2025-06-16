@@ -41,7 +41,7 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
                 data column to be calculated by hard-coded functions, remove it from the
                 *data* you pass to TTSIM. You need to pick one option for each column
                 that appears in the list above.
-                """
+                """,
             )
         else:
             first_part = format_errors_and_warnings("Your data provides the columns:")
@@ -53,13 +53,13 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
                 want data columns to be calculated by hard-coded functions, remove them
                 from the *data* you pass to TTSIM. You need to pick one option for
                 each column that appears in the list above.
-                """
+                """,
             )
         formatted = format_list_linewise(columns_overriding_functions)
         how_to_ignore = format_errors_and_warnings(
             """
             In order to not perform this check, you can ... TODO
-            """
+            """,
         )
         super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
 
@@ -67,15 +67,15 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
 @interface_function()
 def functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
-    names__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: QNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""
     overridden_elements = sorted(
         {
             col
-            for col in names__processed_data_columns
+            for col in labels__processed_data_columns
             if col in dt.flatten_to_qual_names(policy_environment)
-        }
+        },
     )
     if len(overridden_elements) > 0:
         warnings.warn(

@@ -7,7 +7,9 @@ from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=1, direction="down", reference="§ 32a Abs. 1 S.1 EStG"
+        base=1,
+        direction="down",
+        reference="§ 32a Abs. 1 S.1 EStG",
     ),
     start_date="2004-01-01",
     leaf_name="zu_versteuerndes_einkommen_y_sn",
@@ -81,6 +83,5 @@ def zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn(
     kinderfreibetrag_y_sn: float,
 ) -> float:
     """Calculate taxable income with child allowance on Steuernummer level."""
-
     out = gesamteinkommen_y - kinderfreibetrag_y_sn
     return max(out, 0.0)

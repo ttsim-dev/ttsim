@@ -6,6 +6,8 @@ from ttsim.tt_dag_elements import RoundingSpec, piecewise_polynomial, policy_fun
 from ttsim.tt_dag_elements.column_objects_param_function import param_function
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.tt_dag_elements.param_objects import PiecewisePolynomialParamValue
 
 
@@ -36,7 +38,6 @@ def vorsorgeaufwendungen_y_sn_ab_2005_bis_2009(
     Günstigerprüfung against the regime until 2004.
 
     """
-
     return max(
         vorsorgeaufwendungen_regime_bis_2004_y_sn,
         vorsorgeaufwendungen_globale_kappung_y_sn,
@@ -58,7 +59,6 @@ def vorsorgeaufwendungen_y_sn_ab_2010_bis_2019(
     Günstigerprüfung against the regime until 2004.
 
     """
-
     return max(
         vorsorgeaufwendungen_regime_bis_2004_y_sn,
         vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn,
@@ -201,6 +201,7 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
 def rate_abzugsfähige_altersvorsorgeaufwendungen(
     evaluationsjahr: int,
     parameter_einführungsfaktor_altersvorsorgeaufwendungen: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
     current year as follows:
@@ -215,6 +216,7 @@ def rate_abzugsfähige_altersvorsorgeaufwendungen(
     return piecewise_polynomial(
         x=evaluationsjahr,
         parameters=parameter_einführungsfaktor_altersvorsorgeaufwendungen,
+        xnp=xnp,
     )
 
 

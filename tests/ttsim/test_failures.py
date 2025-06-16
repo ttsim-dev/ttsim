@@ -12,7 +12,6 @@ import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
-from ttsim.config import numpy_or_jax as np
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -36,13 +35,17 @@ from ttsim.tt_dag_elements import (
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
     group_creation_function,
+    param_function,
     policy_function,
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
+        IntColumn,
         NestedPolicyEnvironment,
         OrigParamSpec,
     )
@@ -63,7 +66,7 @@ _SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM = ConsecutiveInt1dLookupTableParam(
     leaf_name="some_consecutive_int_1d_lookup_table_param",
     value=ConsecutiveInt1dLookupTableParamValue(
         base_to_subtract=1,
-        values_to_look_up=np.array([1, 2, 3]),
+        values_to_look_up=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,
 )
@@ -78,9 +81,9 @@ _SOME_DICT_PARAM = DictParam(
 _SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
     leaf_name="some_piecewise_polynomial_param",
     value=PiecewisePolynomialParamValue(
-        thresholds=np.array([1, 2, 3]),
-        intercepts=np.array([1, 2, 3]),
-        rates=np.array([1, 2, 3]),
+        thresholds=numpy.array([1, 2, 3]),
+        intercepts=numpy.array([1, 2, 3]),
+        rates=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,
 )
@@ -89,8 +92,8 @@ _SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
 @pytest.fixture
 def minimal_data_tree():
     return {
-        "hh_id": np.array([1, 2, 3]),
-        "p_id": np.array([1, 2, 3]),
+        "hh_id": numpy.array([1, 2, 3]),
+        "p_id": numpy.array([1, 2, 3]),
     }
 
 
@@ -118,11 +121,10 @@ def fam_id() -> int:
 @pytest.fixture(scope="module")
 def minimal_input_data():
     n_individuals = 5
-    out = {
+    return {
         "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
         "fam_id": pd.Series(numpy.arange(n_individuals), name="fam_id"),
     }
-    return out
 
 
 @pytest.fixture(scope="module")
@@ -141,8 +143,13 @@ def some_x(x):
 
 
 @policy_function()
-def some_policy_func_returning_array_of_length_2() -> np.ndarray:
-    return np.array([1, 2])
+def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> IntColumn:
+    return xnp.array([1, 2])
+
+
+@param_function()
+def some_param_func_returning_list_of_length_2() -> list[int]:
+    return [1, 2]
 
 
 @pytest.mark.parametrize(
@@ -173,7 +180,9 @@ def some_policy_func_returning_array_of_length_2() -> np.ndarray:
 def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
     with pytest.raises(TypeError, match=re.escape(err_substr)):
         assert_valid_ttsim_pytree(
-            tree=tree, leaf_checker=leaf_checker, tree_name="tree"
+            tree=tree,
+            leaf_checker=leaf_checker,
+            tree_name="tree",
         )
 
 
@@ -195,10 +204,10 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("c", "g"): {
+                ("c", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
-                }
+                },
             },
         ),
         # Same submodule, overlapping periods, different leaf names so no name clashes.
@@ -216,10 +225,10 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("x", "c", "h"): {
+                ("x", "c", "h"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
-                }
+                },
             },
         ),
         # Different submodules, no overlapping periods, no name clashes.
@@ -235,10 +244,10 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("x", "c", "g"): {
+                ("x", "c", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
-                }
+                },
             },
         ),
         # Different paths, overlapping periods, same names but no clashes.
@@ -256,21 +265,21 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                 )(identity),
             },
             {
-                ("z", "a", "f"): {
+                ("z", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
-                }
+                },
             },
         ),
         # Different yaml files, no name clashes because of different names.
         (
             {},
             {
-                ("x", "a", "f"): {
+                ("x", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 5},
                 },
-                ("x", "b", "g"): {
+                ("x", "b", "g"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 6},
                 },
@@ -310,7 +319,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
                         "value": 13,
                         "note": "Complex didn't last long.",
                     },
-                }
+                },
             },
         ),
         # Different periods specified in different files.
@@ -454,10 +463,10 @@ def test_fail_if_active_periods_overlap_passes(
                 )(identity),
             },
             {
-                ("c", "f"): {
+                ("c", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 1},
-                }
+                },
             },
         ),
         # Same paths, no overlap in functions, name clashes leaf name / yaml.
@@ -475,21 +484,21 @@ def test_fail_if_active_periods_overlap_passes(
                 )(identity),
             },
             {
-                ("x", "a", "f"): {
+                ("x", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 2},
-                }
+                },
             },
         ),
         # Same paths, name clashes within params from different yaml files.
         (
             {},
             {
-                ("x", "a", "f"): {
+                ("x", "a", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 3},
                 },
-                ("x", "b", "f"): {
+                ("x", "b", "f"): {  # type: ignore[misc]
                     **_GENERIC_PARAM_HEADER,
                     datetime.date(2023, 1, 1): {"value": 4},
                 },
@@ -556,7 +565,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
     }
 
     foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
+        labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
@@ -573,7 +582,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         foreign_keys_are_invalid_in_data(
-            names__root_nodes={n for n in data if n != "p_id"},
+            labels__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
             specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
         )
@@ -589,7 +598,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     }
 
     foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
+        labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
@@ -605,7 +614,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     }
 
     foreign_keys_are_invalid_in_data(
-        names__root_nodes={n for n in data if n != "p_id"},
+        labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
         specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
     )
@@ -613,32 +622,37 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
 
 def test_fail_if_group_ids_are_outside_top_level_namespace():
     with pytest.raises(
-        ValueError, match="Group identifiers must live in the top-level namespace. Got:"
+        ValueError,
+        match="Group identifiers must live in the top-level namespace. Got:",
     ):
         group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
 
 
 def test_fail_if_group_variables_are_not_constant_within_groups():
     data = {
-        "p_id": np.array([0, 1, 2]),
-        "foo_kin": np.array([1, 2, 2]),
-        "kin_id": np.array([1, 1, 2]),
+        "p_id": numpy.array([0, 1, 2]),
+        "foo_kin": numpy.array([1, 2, 2]),
+        "kin_id": numpy.array([1, 1, 2]),
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="The following data inputs do not have a unique value within",
+    ):
         group_variables_are_not_constant_within_groups(
-            names__grouping_levels=("kin",),
-            names__root_nodes={n for n in data if n != "p_id"},
+            labels__grouping_levels=("kin",),
+            labels__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
         )
 
 
-def test_fail_if_input_data_tree_is_invalid():
+def test_fail_if_input_data_tree_is_invalid(xnp):
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(
-        ValueError, match="The input data must contain the `p_id` column."
+        ValueError,
+        match="The input data must contain the `p_id` column.",
     ):
-        input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
 
 def test_fail_if_input_data_tree_is_invalid_via_main():
@@ -667,7 +681,8 @@ def test_fail_if_input_data_tree_is_invalid_via_main():
 )
 def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
-        ValueError, match="DataFrame column names cannot be booleans or numbers."
+        ValueError,
+        match="DataFrame column names cannot be booleans or numbers.",
     ):
         input_df_has_bool_or_numeric_column_names(df)
 
@@ -709,7 +724,8 @@ def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
     ],
 )
 def test_fail_if_input_df_mapper_has_incorrect_format(
-    input_data__df_and_mapper__mapper, expected_error_message
+    input_data__df_and_mapper__mapper,
+    expected_error_message,
 ):
     with pytest.raises(TypeError, match=expected_error_message):
         input_df_mapper_has_incorrect_format(input_data__df_and_mapper__mapper)
@@ -738,6 +754,13 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
             {"some_consecutive_int_1d_lookup_table_param": "res1"},
             "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
+        (
+            {
+                "some_param_func_returning_list_of_length_2": some_param_func_returning_list_of_length_2,
+            },
+            {"some_param_func_returning_list_of_length_2": "res1"},
+            "The data contains objects that cannot be cast to a pandas.DataFrame",
+        ),
     ],
 )
 def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
@@ -745,13 +768,18 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     targets__tree,
     minimal_data_tree,
     match,
+    backend,
+    xnp,
 ):
+    environment["backend"] = backend
+    environment["xnp"] = xnp
     actual = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": backend,
         },
         targets=["processed_data", "results__tree"],
     )
@@ -759,6 +787,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
         non_convertible_objects_in_results_tree(
             processed_data=actual["processed_data"],
             results__tree=actual["results__tree"],
+            xnp=xnp,
         )
 
 
@@ -783,13 +812,18 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
     targets__tree,
     minimal_data_tree,
     match,
+    backend,
+    xnp,
 ):
+    environment["backend"] = backend
+    environment["xnp"] = xnp
     actual = main(
         inputs={
             "input_data__tree": minimal_data_tree,
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": backend,
         },
         targets=["processed_data", "results__tree"],
     )
@@ -797,19 +831,21 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
         non_convertible_objects_in_results_tree(
             processed_data=actual["processed_data"],
             results__tree=actual["results__tree"],
+            xnp=xnp,
         )
 
 
-def test_fail_if_p_id_does_not_exist():
+def test_fail_if_p_id_does_not_exist(xnp):
     data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
 
     with pytest.raises(
-        ValueError, match="The input data must contain the `p_id` column."
+        ValueError,
+        match="The input data must contain the `p_id` column.",
     ):
-        input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
 
-def test_fail_if_p_id_does_not_exist_via_main():
+def test_fail_if_p_id_does_not_exist_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
@@ -821,22 +857,23 @@ def test_fail_if_p_id_does_not_exist_via_main():
                 "policy_environment": {},
                 "targets__tree": {},
                 "rounding": False,
-                # "jit": jit,
+                "backend": backend,
             },
             targets=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
-def test_fail_if_p_id_is_not_unique():
+def test_fail_if_p_id_is_not_unique(xnp):
     data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
 
     with pytest.raises(
-        ValueError, match="The following `p_id`s are not unique in the input data"
+        ValueError,
+        match="The following `p_id`s are not unique in the input data",
     ):
-        input_data_tree_is_invalid(input_data__tree=data)
+        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
 
-def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
+def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
     data = copy.deepcopy(minimal_input_data)
     data["p_id"][:] = 1
 
@@ -850,12 +887,13 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data):
                 "policy_environment": {},
                 "targets__tree": {},
                 "rounding": False,
+                "backend": backend,
             },
             targets=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
-def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
+def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
     def b(a):
         return a
 
@@ -877,14 +915,14 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
                 "policy_environment": policy_environment,
                 "targets__tree": {"c": None},
                 "rounding": False,
-                # "jit": jit,
+                "backend": backend,
             },
             targets=["results__tree", "fail_if__root_nodes_are_missing"],
         )
 
 
 @pytest.mark.parametrize(
-    "policy_environment, targets, names__processed_data_columns, expected_error_match",
+    "policy_environment, targets, labels__processed_data_columns, expected_error_match",
     [
         ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
@@ -893,15 +931,19 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data):
     ],
 )
 def test_fail_if_targets_are_not_in_policy_environment_or_data(
-    policy_environment, targets, names__processed_data_columns, expected_error_match
+    policy_environment,
+    targets,
+    labels__processed_data_columns,
+    expected_error_match,
 ):
     with pytest.raises(
-        ValueError, match="The following targets have no corresponding function"
+        ValueError,
+        match="The following targets have no corresponding function",
     ) as e:
         targets_are_not_in_policy_environment_or_data(
             policy_environment=policy_environment,
             targets__qname=targets,
-            names__processed_data_columns=names__processed_data_columns,
+            labels__processed_data_columns=labels__processed_data_columns,
         )
     assert expected_error_match in str(e.value)
 
@@ -956,7 +998,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(2099, 12, 31),
                     **_GENERIC_PARAM_HEADER,
-                )
+                ),
             ],
         ),
         (
@@ -977,7 +1019,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(1984, 12, 31),
                     **_GENERIC_PARAM_HEADER,
-                )
+                ),
             ],
         ),
         (

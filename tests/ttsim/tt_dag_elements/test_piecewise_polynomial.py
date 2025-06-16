@@ -4,10 +4,15 @@ Tests for `piecewise_polynomial`
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy
 import pytest
 
-from ttsim.config import numpy_or_jax as np
+if TYPE_CHECKING:
+    from types import ModuleType
+
+
 from ttsim.tt_dag_elements.piecewise_polynomial import (
     PiecewisePolynomialParamValue,
     get_piecewise_parameters,
@@ -16,10 +21,10 @@ from ttsim.tt_dag_elements.piecewise_polynomial import (
 
 
 @pytest.fixture
-def parameters():
-    params = PiecewisePolynomialParamValue(
-        thresholds=np.array([-np.inf, 9168.0, 14254.0, 55960.0, 265326.0, np.inf]),
-        rates=np.array(
+def parameters(xnp):
+    return PiecewisePolynomialParamValue(
+        thresholds=xnp.array([-xnp.inf, 9168.0, 14254.0, 55960.0, 265326.0, xnp.inf]),
+        rates=xnp.array(
             [
                 [
                     0.00000000e00,
@@ -35,14 +40,13 @@ def parameters():
                     0.00000000e00,
                     0.00000000e00,
                 ],
-            ]
+            ],
         ),
-        intercepts=np.array([0.0, 0.0, 965.5771, 14722.3012, 102656.0212]),
+        intercepts=xnp.array([0.0, 0.0, 965.5771, 14722.3012, 102656.0212]),
     )
-    return params
 
 
-def test_get_piecewise_parameters_all_intercepts_supplied():
+def test_get_piecewise_parameters_all_intercepts_supplied(xnp):
     parameter_dict = {
         0: {
             "lower_threshold": "-inf",
@@ -74,19 +78,24 @@ def test_get_piecewise_parameters_all_intercepts_supplied():
         leaf_name="test",
         func_type="piecewise_linear",
         parameter_dict=parameter_dict,
+        xnp=xnp,
     )
-    expected = numpy.array([0.27, 0.5, 0.8, 1])
+    expected = xnp.array([0.27, 0.5, 0.8, 1])
 
     numpy.testing.assert_allclose(actual.intercepts, expected, atol=1e-7)
 
 
-def test_piecewise_polynomial(parameters: PiecewisePolynomialParamValue):
-    x = np.array([-1_000, 1_000, 10_000, 30_000, 100_000, 1_000_000])
-    expected = np.array([0.0, 0.0, 246.53, 10551.65, 66438.2, 866518.64])
+def test_piecewise_polynomial(
+    parameters: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
+):
+    x = xnp.array([-1_000, 1_000, 10_000, 30_000, 100_000, 1_000_000])
+    expected = xnp.array([0.0, 0.0, 246.53, 10551.65, 66438.2, 866518.64])
 
     actual = piecewise_polynomial(
         x=x,
         parameters=parameters,
         rates_multiplier=2,
+        xnp=xnp,
     )
-    numpy.testing.assert_allclose(numpy.array(actual), expected, atol=0.01)
+    numpy.testing.assert_allclose(xnp.array(actual), expected, atol=0.01)

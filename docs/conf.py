@@ -14,7 +14,7 @@ sys.path.insert(0, str(pathlib.Path("../src").resolve()))
 # -- Project information -----------------------------------------------------
 
 project = "GETTSIM"
-copyright = f"2019-{datetime.today().year}, GETTSIM team"  # noqa: A001
+copyright = f"2019-{datetime.today().year}, GETTSIM team"  # noqa: A001, DTZ002
 author = "GETTSIM team"
 release = "0.7.0"
 version = ".".join(release.split(".")[:2])
@@ -122,7 +122,7 @@ html_sidebars = {
     "**": [
         "relations.html",  # needs 'show_related': True theme option to display
         "searchbox.html",
-    ]
+    ],
 }
 
 # Napoleon settings
