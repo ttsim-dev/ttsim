@@ -41,14 +41,9 @@ def tree(
 
     if namespace == "all":
         return dt.unflatten_from_tree_paths(dict.fromkeys(base))
-    else:
-        return dt.unflatten_from_tree_paths(
-            {
-                k: None
-                for k in base
-                if dt.qual_name_from_tree_path(k).startswith(namespace)
-            }
-        )
+    return dt.unflatten_from_tree_paths(
+        {k: None for k in base if dt.qual_name_from_tree_path(k).startswith(namespace)}
+    )
 
 
 @interface_function()
