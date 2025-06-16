@@ -14,13 +14,10 @@ from ttsim.interface_dag_elements.shared import (
     upsert_tree,
 )
 from ttsim.tt_dag_elements import (
-    ColumnObject,
     ConsecutiveInt1dLookupTableParam,
     DictParam,
-    ParamFunction,
     ParamObject,
     PiecewisePolynomialParam,
-    PolicyInput,
     RawParam,
     ScalarParam,
     get_consecutive_int_1d_lookup_table_param_value,
@@ -38,13 +35,11 @@ if TYPE_CHECKING:
 
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
-        FlatColumnObjects,
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,
         NestedParamObjects,
         NestedPolicyEnvironment,
-        NestedPolicyInputs,
         OrigParamSpec,
     )
 
@@ -105,50 +100,6 @@ def policy_environment(
     a_tree["xnp"] = xnp
     a_tree["dnp"] = dnp
     return a_tree
-
-
-@interface_function()
-def flat_column_objects(
-    policy_environment: NestedPolicyEnvironment,
-) -> FlatColumnObjects:
-    """
-    All column objects as a tree.
-    """
-    return {
-        k: v
-        for k, v in dt.flatten_to_tree_paths(policy_environment).items()
-        if isinstance(v, ColumnObject)
-    }
-
-
-@interface_function()
-def flat_column_objects_and_param_functions(
-    policy_environment: NestedPolicyEnvironment,
-) -> FlatColumnObjectsParamFunctions:
-    """
-    All column objects and param functions as a tree.
-    """
-    return {
-        k: v
-        for k, v in dt.flatten_to_tree_paths(policy_environment).items()
-        if isinstance(v, (ColumnObject, ParamFunction))
-    }
-
-
-@interface_function()
-def policy_inputs(
-    policy_environment: NestedPolicyEnvironment,
-) -> NestedPolicyInputs:
-    """
-    All policy inputs as a tree.
-    """
-    return dt.unflatten_from_tree_paths(
-        {
-            k: v
-            for k, v in dt.flatten_to_tree_paths(policy_environment).items()
-            if isinstance(v, PolicyInput)
-        }
-    )
 
 
 def _active_column_objects_and_param_functions(

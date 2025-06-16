@@ -5,9 +5,15 @@ from pathlib import Path
 import pytest
 from mettsim.config import METTSIM_ROOT
 
+from ttsim.interface_dag import main
 from ttsim.plot_dag import (
+<<<<<<< HEAD
+    _QNameNodeSelector,
+    get_tt_dag_with_node_metadata,
+=======
     NodeSelector,
     _get_tt_dag_with_node_metadata,
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
     plot_interface_dag,
 )
 
@@ -23,8 +29,8 @@ def test_plot_full_interface_dag():
     ),
     [
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_y"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_y"],
                 type="ancestors",
                 order=1,
             ),
@@ -38,8 +44,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
                 type="ancestors",
                 order=1,
             ),
@@ -49,8 +55,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
                 type="ancestors",
                 order=2,
             ),
@@ -65,8 +71,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m", "property_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
                 type="ancestors",
                 order=1,
             ),
@@ -78,8 +84,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_y"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_y"],
                 type="neighbors",
                 order=1,
             ),
@@ -94,8 +100,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
                 type="neighbors",
                 order=1,
             ),
@@ -106,8 +112,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
                 type="neighbors",
                 order=2,
             ),
@@ -124,8 +130,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m", "property_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
                 type="neighbors",
                 order=1,
             ),
@@ -138,8 +144,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_y"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_y"],
                 type="descendants",
                 order=1,
             ),
@@ -149,8 +155,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
                 type="descendants",
                 order=1,
             ),
@@ -160,8 +166,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
                 type="descendants",
                 order=2,
             ),
@@ -172,8 +178,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m", "property_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
                 type="descendants",
                 order=1,
             ),
@@ -184,8 +190,8 @@ def test_plot_full_interface_dag():
             ],
         ),
         (
-            NodeSelector(
-                nodes=["payroll_tax__amount_m", "property_tax__amount_m"],
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
                 type="nodes",
             ),
             [
@@ -196,9 +202,22 @@ def test_plot_full_interface_dag():
     ],
 )
 def test_node_selector(node_selector, expected_nodes):
+<<<<<<< HEAD
+    environment = main(
+        inputs={
+            "date_str": "2025-01-01",
+            "orig_policy_objects__root": METTSIM_ROOT,
+        },
+        targets=["policy_environment"],
+    )["policy_environment"]
+    dag = get_tt_dag_with_node_metadata(
+        environment=environment,
+=======
     dag = _get_tt_dag_with_node_metadata(
         date_str="2019-01-01",
         root=METTSIM_ROOT,
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
         node_selector=node_selector,
+        include_param_functions=True,
     )
     assert set(dag.nodes()) == set(expected_nodes)

@@ -4,7 +4,11 @@ import colorsys
 import copy
 import inspect
 from dataclasses import dataclass
+<<<<<<< HEAD
+from typing import TYPE_CHECKING, Literal
+=======
 from typing import TYPE_CHECKING, Any, Literal, overload
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
 
 import dags
 import dags.tree as dt
@@ -34,12 +38,27 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import QNameSpecializedEnvironment0
+    from ttsim.interface_dag_elements.typing import (
+        NestedPolicyEnvironment,
+        NestedStrings,
+        QNameSpecializedEnvironment0,
+    )
 
 
 @dataclass(frozen=True)
 class NodeSelector:
-    nodes: list[str]
+    """Select nodes from the DAG."""
+
+    node_paths: list[tuple[str, ...]]
+    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    order: int | None = None
+
+
+@dataclass(frozen=True)
+class _QNameNodeSelector:
+    """Select nodes from the DAG."""
+
+    qnames: list[str]
     type: Literal["neighbors", "descendants", "ancestors", "nodes"]
     order: int | None = None
 
@@ -54,7 +73,6 @@ def plot_tt_dag(
     date_str: str,
     root: Path,
     node_selector: NodeSelector | None = None,
-    namespace: str = "all",
     title: str = "",
     include_param_functions: bool = True,
     show_node_description: bool = False,
@@ -68,11 +86,7 @@ def plot_tt_dag(
     root
         The root path.
     node_selector
-        The node selector. Default is None, i.e. the entire DAG of the namespace is
-        plotted.
-    namespace
-        The namespace for which the plot should be created. Default is "all", i.e. the
-        entire policy environment.
+        The node selector. Default is None, i.e. the entire DAG is plotted.
     title
         The title of the plot.
     include_param_functions
@@ -84,11 +98,34 @@ def plot_tt_dag(
     -------
     The figure.
     """
+<<<<<<< HEAD
+    environment = main(
+        inputs={
+            "date_str": date_str,
+            "orig_policy_objects__root": root,
+        },
+        targets=["policy_environment"],
+    )["policy_environment"]
+
+    if node_selector:
+        qname_node_selector = _QNameNodeSelector(
+            qnames=[dt.qname_from_tree_path(qn) for qn in node_selector.node_paths],
+            type=node_selector.type,
+            order=node_selector.order,
+        )
+    else:
+        qname_node_selector = None
+
+    dag_with_node_metadata = get_tt_dag_with_node_metadata(
+        environment=environment,
+        node_selector=qname_node_selector,
+=======
     dag_with_node_metadata = _get_tt_dag_with_node_metadata(
         date_str=date_str,
         root=root,
         node_selector=node_selector,
         namespace=namespace,
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
         include_param_functions=include_param_functions,
     )
     return _plot_dag(
@@ -122,16 +159,35 @@ def plot_interface_dag(show_node_description: bool = False) -> go.Figure:
     )
 
 
+<<<<<<< HEAD
+def get_tt_dag_with_node_metadata(
+    environment: NestedPolicyEnvironment,
+    node_selector: _QNameNodeSelector | None = None,
+=======
 def _get_tt_dag_with_node_metadata(
     date_str: str,
     root: Path,
     node_selector: NodeSelector | None = None,
     namespace: str = "all",
     # Merge the two arguments above into one argument "target_nodes"
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
     include_param_functions: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
+    qnames_nodes_to_plot = [
+        qn
+        for qn, v in dt.flatten_to_qnames(environment).items()
+        if isinstance(v, (ColumnObject, ParamFunction))
+        if include_param_functions
+    ]
+    if node_selector:
+        qnames_nodes_to_plot.extend(node_selector.qnames)
 
+<<<<<<< HEAD
+    specialized_environment = specialized_environment_using_dummy_inputs(
+        environment=environment,
+        targets_tree=dt.unflatten_from_qnames(dict.fromkeys(qnames_nodes_to_plot)),
+=======
     inputs_for_main = {
         "date_str": date_str,
         "orig_policy_objects__root": root,
@@ -143,6 +199,7 @@ def _get_tt_dag_with_node_metadata(
         node_selector.nodes + all_targets_from_namespace(inputs_for_main)
         if node_selector
         else all_targets_from_namespace(inputs_for_main)
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
     )
     # all_plottable_nodes = [
     #     n
@@ -150,14 +207,21 @@ def _get_tt_dag_with_node_metadata(
     #     if isinstance(n, ColumnObject | ParamFunction | ParamObject)
     # ]
 
+<<<<<<< HEAD
+=======
     specialized_environment = specialized_environment_for_plotting(inputs_for_main)
 
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
     all_nodes = {
         qn: dummy_callable(n) if not callable(n) else n
         for qn, n in specialized_environment.items()
     }
 
+<<<<<<< HEAD
+    complete_dag = dags.create_dag(functions=all_nodes, targets=qnames_nodes_to_plot)
+=======
     complete_dag = dags.create_dag(functions=all_nodes, targets=all_plottable_nodes)
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
 
     if node_selector is None:
         selected_dag = complete_dag
@@ -193,6 +257,11 @@ def _get_tt_dag_with_node_metadata(
     return selected_dag
 
 
+<<<<<<< HEAD
+def specialized_environment_using_dummy_inputs(
+    environment: NestedPolicyEnvironment,
+    targets_tree: NestedStrings,
+=======
 @overload
 def dummy_callable(obj: PolicyInput) -> PolicyFunction: ...
 
@@ -244,22 +313,23 @@ def all_targets_from_namespace(
 
 def specialized_environment_for_plotting(
     inputs_for_main: dict[str, Any],
+>>>>>>> ae9ccfa0f6a9c080c7f58fe84a01383763f303b8
 ) -> QNameSpecializedEnvironment0:
-    """Get the specialized environment for the targets."""
-    # Replace policy inputs with dummy data
-    policy_inputs = main(
-        inputs=inputs_for_main,
-        targets=["policy_environment__policy_inputs"],
-    )["policy_environment__policy_inputs"]
-
-    dummy_inputs = dt.unflatten_from_tree_paths(
-        {qn: numpy.array([0]) for qn in dt.flatten_to_tree_paths(policy_inputs)}
+    """Specialized environment using dummy data as policy inputs."""
+    qname_policy_inputs = {
+        k: v
+        for k, v in dt.flatten_to_qnames(environment).items()
+        if isinstance(v, PolicyInput)
+    }
+    dummy_inputs_tree = dt.unflatten_from_qnames(
+        {qn: numpy.array([0]) for qn in qname_policy_inputs}
     )
 
     environment_with_overridden_policy_inputs = main(
         inputs={
-            **inputs_for_main,
-            "input_data__tree": dummy_inputs,
+            "policy_environment": environment,
+            "input_data__tree": dummy_inputs_tree,
+            "targets__tree": targets_tree,
         },
         targets=[
             "specialized_environment__without_tree_logic_and_with_derived_functions"
@@ -267,27 +337,27 @@ def specialized_environment_for_plotting(
     )["specialized_environment__without_tree_logic_and_with_derived_functions"]
     return {
         **environment_with_overridden_policy_inputs,
-        **dt.flatten_to_qnames(policy_inputs),
+        **qname_policy_inputs,
     }
 
 
 def create_dag_with_selected_nodes(
     complete_dag: nx.DiGraph,
-    node_selector: NodeSelector,
+    node_selector: _QNameNodeSelector,
 ) -> nx.DiGraph:
     """Select nodes based on the node selector."""
     selected_nodes: set[str] = set()
     if node_selector.type == "nodes":
-        selected_nodes.update(node_selector.nodes)
+        selected_nodes.update(node_selector.qnames)
     elif node_selector.type == "ancestors":
-        for node in node_selector.nodes:
+        for node in node_selector.qnames:
             selected_nodes.update(
                 _kth_order_predecessors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
                 else list(nx.ancestors(complete_dag, node))
             )
     elif node_selector.type == "descendants":
-        for node in node_selector.nodes:
+        for node in node_selector.qnames:
             selected_nodes.update(
                 _kth_order_successors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
@@ -295,7 +365,7 @@ def create_dag_with_selected_nodes(
             )
     elif node_selector.type == "neighbors":
         order = node_selector.order or 1
-        for node in node_selector.nodes:
+        for node in node_selector.qnames:
             selected_nodes.update(_kth_order_neighbors(complete_dag, node, order=order))
     else:
         msg = (
