@@ -20,7 +20,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
 )
 from ttsim.tt_dag_elements import (
-    ColumnObject,
+    ColumnFunction,
     ParamFunction,
     ParamObject,
     PolicyFunction,
@@ -71,6 +71,7 @@ def plot_tt_dag(
     include_params: bool = True,
     include_other_objects: bool = False,
     show_node_description: bool = False,
+    output_path: Path | None = None,
 ) -> go.Figure:
     """Plot the TT DAG.
 
@@ -91,6 +92,8 @@ def plot_tt_dag(
         this.
     show_node_description
         Show a description of the node when hovering over it.
+    output_path
+        If provided, the figure is written to the path.
 
     Returns
     -------
@@ -119,14 +122,21 @@ def plot_tt_dag(
         include_params=include_params,
         include_other_objects=include_other_objects,
     )
-    return _plot_dag(
+    fig = _plot_dag(
         dag=dag_with_node_metadata,
         title=title,
         show_node_description=show_node_description,
     )
+    if output_path:
+        fig.write_html(output_path)
+
+    return fig
 
 
-def plot_interface_dag(show_node_description: bool = False) -> go.Figure:
+def plot_interface_dag(
+    show_node_description: bool = False,
+    output_path: Path | None = None,
+) -> go.Figure:
     """Plot the full interface DAG."""
     nodes = {
         p: dummy_callable(n) if not callable(n) else n
@@ -143,11 +153,16 @@ def plot_interface_dag(show_node_description: bool = False) -> go.Figure:
             namespace=namespace,
         )
 
-    return _plot_dag(
+    fig = _plot_dag(
         dag=dag,
         title="Full Interface DAG",
         show_node_description=show_node_description,
     )
+
+    if output_path:
+        fig.write_html(output_path)
+
+    return fig
 
 
 def _get_tt_dag_with_node_metadata(
@@ -159,16 +174,6 @@ def _get_tt_dag_with_node_metadata(
     """Get the TT DAG to plot."""
     qname_environment = dt.flatten_to_qnames(environment)
     qnames_to_plot = list(qname_environment)
-    if not include_params:
-        qnames_to_plot = [
-            qn
-            for qn, v in qname_environment.items()
-            if not isinstance(v, (ParamObject, ParamFunction))
-        ]
-    if not include_other_objects:
-        qnames_to_plot = [
-            qn for qn, v in qname_environment.items() if isinstance(v, ColumnObject)
-        ]
     if node_selector:
         # Node selector might contain derived functions that are not in qnames_to_plot
         qnames_to_plot.extend(node_selector.qnames)
@@ -197,20 +202,23 @@ def _get_tt_dag_with_node_metadata(
     if node_selector is None:
         selected_dag = complete_dag
     else:
-        selected_dag = create_dag_with_selected_nodes(
+        selected_dag = _create_dag_with_selected_nodes(
             complete_dag=complete_dag,
             node_selector=node_selector,
         )
 
-    # HM: Shouldn't be necessary; these should just show up as input nodes, right?
-    # if not include_params:
-    #     selected_dag.remove_nodes_from(
-    #         [
-    #             qn
-    #             for qn, n in specialized_environment.items()
-    #             if not isinstance(n, ColumnObject)
-    #         ]
-    #     )
+    if not include_params:
+        selected_dag.remove_nodes_from(
+            [qn for qn, v in env.items() if isinstance(v, (ParamObject, ParamFunction))]
+        )
+    if not include_other_objects:
+        selected_dag.remove_nodes_from(
+            [
+                qn
+                for qn, n in env.items()
+                if not isinstance(n, (ColumnFunction, ParamFunction, ParamObject))
+            ]
+        )
 
     # Add Node Metadata to DAG
     for name, node_object in all_nodes.items():
@@ -268,7 +276,7 @@ def dummy_callable(obj: ModuleType | str | float | bool) -> Callable[[], Any]:
     return dummy
 
 
-def create_dag_with_selected_nodes(
+def _create_dag_with_selected_nodes(
     complete_dag: nx.DiGraph,
     node_selector: _QNameNodeSelector,
 ) -> nx.DiGraph:

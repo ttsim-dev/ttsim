@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
@@ -15,8 +15,6 @@ if TYPE_CHECKING:
         OrderedQNames,
     )
 
-NamespaceSelector = Literal["all"] | str  # noqa: PYI051
-
 
 @interface_input()
 def tree() -> NestedTargetDict:
@@ -30,4 +28,4 @@ def tree() -> NestedTargetDict:
 @interface_function()
 def qname(tree: NestedTargetDict) -> OrderedQNames:
     """Targets in their qualified name-representation."""
-    return dt.qnames(tree)
+    return dt.flatten_to_qnames(tree)

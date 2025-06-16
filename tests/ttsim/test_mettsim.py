@@ -56,7 +56,7 @@ def test_mettsim_policy_environment_dag_with_params():
         include_params=True,
         title="METTSIM Policy Environment DAG with parameters",
         show_node_description=True,
-    ).write_html(Path("mettsim_dag_with_params.html"))
+    )
 
 
 def test_mettsim_policy_environment_dag_without_params():
@@ -66,7 +66,7 @@ def test_mettsim_policy_environment_dag_without_params():
         include_params=False,
         title="METTSIM Policy Environment DAG without parameters",
         show_node_description=True,
-    ).write_html(Path("mettsim_dag_without_params.html"))
+    )
 
 
 @pytest.mark.parametrize("date_str", ["2019-01-01", "2021-01-01"])

@@ -266,7 +266,7 @@ def check_env_completeness(
     }
     f = dags.concatenate_functions(
         functions=all_nodes,
-        targets=qnames_policy_inputs,
+        targets=list(qname_env_with_derived_functions.keys()),
         return_type="dict",
         enforce_signature=False,
         set_annotations=False,

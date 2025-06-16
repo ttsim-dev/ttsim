@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from mettsim.config import METTSIM_ROOT
 
@@ -11,10 +9,45 @@ from ttsim.plot_dag import (
     _QNameNodeSelector,
     plot_interface_dag,
 )
+from ttsim.tt_dag_elements import (
+    ParamObject,
+    param_function,
+    policy_function,
+)
+
+SOME_PARAM_OBJECT = ParamObject(
+    leaf_name="some_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    unit=None,
+    reference_period="",
+    name="",
+    description="",
+)
+
+
+@param_function(
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+)
+def some_param_function():
+    return 1
+
+
+def some_other_object():
+    return 1
+
+
+@policy_function(
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+)
+def some_policy_function():
+    return 1
 
 
 def test_plot_full_interface_dag():
-    plot_interface_dag().write_html(Path("full_interface_dag.html"))
+    plot_interface_dag()
 
 
 @pytest.mark.parametrize(
@@ -208,5 +241,80 @@ def test_node_selector(node_selector, expected_nodes):
         environment=environment,
         node_selector=node_selector,
         include_params=True,
+    )
+    assert set(dag.nodes()) == set(expected_nodes)
+
+
+@pytest.mark.parametrize(
+    (
+        "include_params",
+        "expected_nodes",
+    ),
+    [
+        (
+            True,
+            [
+                "some_param",
+                "some_param_function",
+                "some_policy_function",
+            ],
+        ),
+        (
+            False,
+            [
+                "some_policy_function",
+            ],
+        ),
+    ],
+)
+def test_params_are_removed_from_dag(include_params, expected_nodes):
+    environment = {
+        "some_param": SOME_PARAM_OBJECT,
+        "some_param_function": some_param_function,
+        "some_policy_function": some_policy_function,
+    }
+    dag = _get_tt_dag_with_node_metadata(
+        environment=environment,
+        include_params=include_params,
+    )
+    assert set(dag.nodes()) == set(expected_nodes)
+
+
+@pytest.mark.parametrize(
+    (
+        "include_other_objects",
+        "expected_nodes",
+    ),
+    [
+        (
+            True,
+            [
+                "some_param",
+                "some_param_function",
+                "some_policy_function",
+                "other_object",
+            ],
+        ),
+        (
+            False,
+            [
+                "some_param",
+                "some_param_function",
+                "some_policy_function",
+            ],
+        ),
+    ],
+)
+def test_other_objects_are_removed_from_dag(include_other_objects, expected_nodes):
+    environment = {
+        "some_param": SOME_PARAM_OBJECT,
+        "some_param_function": some_param_function,
+        "some_policy_function": some_policy_function,
+        "other_object": some_other_object,
+    }
+    dag = _get_tt_dag_with_node_metadata(
+        environment=environment,
+        include_params=True,
+        include_other_objects=include_other_objects,
     )
     assert set(dag.nodes()) == set(expected_nodes)
