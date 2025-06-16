@@ -128,7 +128,7 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "rename-to-qname"}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
 jaxtyping = "*"
 pdbp = "*"
 
