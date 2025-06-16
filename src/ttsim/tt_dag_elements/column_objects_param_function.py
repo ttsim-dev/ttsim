@@ -119,19 +119,6 @@ class PolicyInput(ColumnObject):
     ) -> PolicyInput:
         return self
 
-    def dummy_callable(self) -> PolicyFunction:
-        """Dummy callable for the interface input. Just used for plotting."""
-
-        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
-            pass
-
-        return policy_function(
-            leaf_name=self.leaf_name,
-            start_date=self.start_date,
-            end_date=self.end_date,
-            foreign_key_type=self.foreign_key_type,
-        )(dummy)
-
 
 def policy_input(
     *,

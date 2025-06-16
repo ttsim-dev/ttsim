@@ -13,17 +13,14 @@ from ttsim import main
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.plot_dag import (
     all_targets_from_namespace,
+    dummy_callable,
     plot_tt_dag,
-    specialized_environment_for_targets,
+    specialized_environment_for_plotting,
 )
 from ttsim.testing_utils import (
     PolicyTest,
     execute_test,
     load_policy_test_data,
-)
-from ttsim.tt_dag_elements import (
-    ParamObject,
-    PolicyInput,
 )
 
 TEST_DIR = Path(__file__).parent
@@ -88,9 +85,9 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
         "orig_policy_objects__column_objects_and_param_functions": orig_mettsim_objects,
     }
     all_targets = all_targets_from_namespace(inputs_for_main)
-    specialized_environment = specialized_environment_for_targets(inputs_for_main)
+    specialized_environment = specialized_environment_for_plotting(inputs_for_main)
     functions = {
-        qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
+        qn: dummy_callable(n) if not callable(n) else n
         for qn, n in specialized_environment.items()
     }
     f = dags.concatenate_functions(

@@ -4,8 +4,9 @@ import inspect
 
 import dags
 
-from ttsim.interface_dag import InterfaceInput, load_interface_functions_and_inputs
+from ttsim.interface_dag import load_interface_functions_and_inputs
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
+from ttsim.plot_dag import dummy_callable
 
 
 def test_function_collection() -> None:
@@ -14,7 +15,7 @@ def test_function_collection() -> None:
 
 def test_interface_dag_is_complete() -> None:
     nodes = {
-        p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
+        p: dummy_callable(n) if not callable(n) else n
         for p, n in load_interface_functions_and_inputs().items()
     }
 

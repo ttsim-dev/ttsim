@@ -4,7 +4,7 @@ import colorsys
 import copy
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import dags
 import dags.tree as dt
@@ -12,16 +12,27 @@ import networkx as nx
 import numpy
 import plotly.graph_objects as go
 
-from ttsim.interface_dag import load_interface_functions_and_inputs, main
-from ttsim.interface_dag_elements.interface_node_objects import InterfaceInput
+from ttsim import main
+from ttsim.interface_dag import load_interface_functions_and_inputs
+from ttsim.interface_dag_elements.interface_node_objects import (
+    InterfaceFunction,
+    InterfaceInput,
+    interface_function,
+)
 from ttsim.tt_dag_elements import (
     ColumnObject,
+    ParamFunction,
     ParamObject,
+    PolicyFunction,
     PolicyInput,
+    param_function,
+    policy_function,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
+    from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import QNameSpecializedEnvironment0
 
@@ -73,7 +84,7 @@ def plot_tt_dag(
     -------
     The figure.
     """
-    dag_with_node_metadata = get_tt_dag_with_node_metadata(
+    dag_with_node_metadata = _get_tt_dag_with_node_metadata(
         date_str=date_str,
         root=root,
         node_selector=node_selector,
@@ -90,15 +101,14 @@ def plot_tt_dag(
 def plot_interface_dag(show_node_description: bool = False) -> go.Figure:
     """Plot the full interface DAG."""
     nodes = {
-        p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
+        p: dummy_callable(n) if not callable(n) else n
         for p, n in load_interface_functions_and_inputs().items()
     }
     dag = dags.create_dag(functions=nodes, targets=None)
 
     for name, node_object in nodes.items():
-        description = (
-            inspect.getdoc(node_object.function) or "No description available."
-        )
+        f = node_object.function if hasattr(node_object, "function") else node_object
+        description = inspect.getdoc(f) or "No description available."
         namespace = name.split("__")[0] if "__" in name else "top-level"
         dag.nodes[name]["node_metadata"] = NodeMetaData(
             description=description,
@@ -112,11 +122,12 @@ def plot_interface_dag(show_node_description: bool = False) -> go.Figure:
     )
 
 
-def get_tt_dag_with_node_metadata(
+def _get_tt_dag_with_node_metadata(
     date_str: str,
     root: Path,
     node_selector: NodeSelector | None = None,
     namespace: str = "all",
+    # Merge the two arguments above into one argument "target_nodes"
     include_param_functions: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
@@ -128,20 +139,25 @@ def get_tt_dag_with_node_metadata(
         "targets__namespace": namespace,
     }
 
-    all_targets = (
+    all_plottable_nodes = (
         node_selector.nodes + all_targets_from_namespace(inputs_for_main)
         if node_selector
         else all_targets_from_namespace(inputs_for_main)
     )
+    # all_plottable_nodes = [
+    #     n
+    #     for n in targets
+    #     if isinstance(n, ColumnObject | ParamFunction | ParamObject)
+    # ]
 
-    specialized_environment = specialized_environment_for_targets(inputs_for_main)
+    specialized_environment = specialized_environment_for_plotting(inputs_for_main)
 
     all_nodes = {
-        qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
+        qn: dummy_callable(n) if not callable(n) else n
         for qn, n in specialized_environment.items()
     }
 
-    complete_dag = dags.create_dag(functions=all_nodes, targets=all_targets)
+    complete_dag = dags.create_dag(functions=all_nodes, targets=all_plottable_nodes)
 
     if node_selector is None:
         selected_dag = complete_dag
@@ -165,9 +181,9 @@ def get_tt_dag_with_node_metadata(
         if name not in selected_dag.nodes():
             continue
 
-        description = (
-            inspect.getdoc(node_object.function) or "No description available."
-        )
+        f = node_object.function if hasattr(node_object, "function") else node_object
+
+        description = inspect.getdoc(f) or "No description available."
         node_namespace = name.split("__")[0] if "__" in name else "top-level"
         selected_dag.nodes[name]["node_metadata"] = NodeMetaData(
             description=description,
@@ -175,6 +191,45 @@ def get_tt_dag_with_node_metadata(
         )
 
     return selected_dag
+
+
+@overload
+def dummy_callable(obj: PolicyInput) -> PolicyFunction: ...
+
+
+@overload
+def dummy_callable(obj: ParamObject) -> ParamFunction: ...  # type: ignore[overload-cannot-match]
+
+
+@overload
+def dummy_callable(obj: InterfaceInput) -> InterfaceFunction: ...  # type: ignore[overload-cannot-match]
+
+
+def dummy_callable(obj: ModuleType | str | float | bool) -> Callable[[], Any]:
+    """Dummy callable, for plotting and checking DAG completeness."""
+
+    def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
+        pass
+
+    if isinstance(obj, PolicyInput):
+        return policy_function(
+            leaf_name=obj.leaf_name,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+            foreign_key_type=obj.foreign_key_type,
+        )(dummy)
+    if isinstance(obj, ParamObject):
+        return param_function(
+            leaf_name=obj.leaf_name,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+        )(dummy)
+    if isinstance(obj, InterfaceInput):
+        return interface_function(
+            leaf_name=obj.leaf_name,
+            in_top_level_namespace=obj.in_top_level_namespace,
+        )(dummy)
+    return dummy
 
 
 def all_targets_from_namespace(
@@ -187,7 +242,7 @@ def all_targets_from_namespace(
     )["targets__qname"]
 
 
-def specialized_environment_for_targets(
+def specialized_environment_for_plotting(
     inputs_for_main: dict[str, Any],
 ) -> QNameSpecializedEnvironment0:
     """Get the specialized environment for the targets."""
@@ -207,9 +262,9 @@ def specialized_environment_for_targets(
             "input_data__tree": dummy_inputs,
         },
         targets=[
-            "specialized_environment__with_derived_functions_and_processed_input_nodes"
+            "specialized_environment__without_tree_logic_and_with_derived_functions"
         ],
-    )["specialized_environment__with_derived_functions_and_processed_input_nodes"]
+    )["specialized_environment__without_tree_logic_and_with_derived_functions"]
     return {
         **environment_with_overridden_policy_inputs,
         **dt.flatten_to_qnames(policy_inputs),

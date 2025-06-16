@@ -7,7 +7,7 @@ from mettsim.config import METTSIM_ROOT
 
 from ttsim.plot_dag import (
     NodeSelector,
-    get_tt_dag_with_node_metadata,
+    _get_tt_dag_with_node_metadata,
     plot_interface_dag,
 )
 
@@ -196,7 +196,7 @@ def test_plot_full_interface_dag():
     ],
 )
 def test_node_selector(node_selector, expected_nodes):
-    dag = get_tt_dag_with_node_metadata(
+    dag = _get_tt_dag_with_node_metadata(
         date_str="2019-01-01",
         root=METTSIM_ROOT,
         node_selector=node_selector,
