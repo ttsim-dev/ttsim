@@ -30,18 +30,18 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
         A DataFrame.
     """
     processed_input_data = {}
-    old_p_ids = xnp.asarray(input_data__flat[("p_id",)])
-    new_p_ids = reorder_ids(ids=old_p_ids, xnp=xnp)
+    orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])
+    internal_p_ids = reorder_ids(ids=orig_p_ids, xnp=xnp)
     for path, data in input_data__flat.items():
         qname = dt.qname_from_tree_path(path)
         if path[-1].endswith("_id"):
             processed_input_data[qname] = reorder_ids(ids=xnp.asarray(data), xnp=xnp)
         elif path[-1].startswith("p_id_"):
             variable_with_new_ids = xnp.asarray(data)
-            for i in range(new_p_ids.shape[0]):
+            for i in range(internal_p_ids.shape[0]):
                 variable_with_new_ids = xnp.where(
-                    data == old_p_ids[i],
-                    new_p_ids[i],
+                    data == orig_p_ids[i],
+                    internal_p_ids[i],
                     variable_with_new_ids,
                 )
             processed_input_data[qname] = variable_with_new_ids
