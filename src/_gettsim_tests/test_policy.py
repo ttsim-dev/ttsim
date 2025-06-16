@@ -1,22 +1,16 @@
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 from typing import Literal
 
-import dags
 import numpy
 import pytest
 
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import main
-from ttsim.interface_dag_elements.fail_if import format_list_linewise
-from ttsim.plot_dag import (
-    dummy_callable,
-    specialized_environment_for_plotting,
-)
 from ttsim.testing_utils import (
     PolicyTest,
+    check_env_completeness,
     execute_test,
     load_policy_test_data,
 )
@@ -55,30 +49,8 @@ def test_policy(test: PolicyTest, backend: Literal["numpy", "jax"]):
 @pytest.mark.parametrize("date", [f"{year}-01-01" for year in range(2015, 2025)])
 def test_gettsim_policy_environment_is_complete(orig_gettsim_objects, date):
     """Test that GETTSIM's policy environment contains all root nodes of its DAG."""
-    inputs_for_main = {
-        "date_str": date,
-        **orig_gettsim_objects,
-    }
-    all_targets = main(
-        inputs=inputs_for_main,
-        targets=["targets__qname"],
-    )["targets__qname"]
-    specialized_environment = specialized_environment_for_plotting(inputs_for_main)
-    functions = {
-        qn: dummy_callable(n) if not callable(n) else n
-        for qn, n in specialized_environment.items()
-    }
-    f = dags.concatenate_functions(
-        functions=functions,
-        targets=all_targets,
-        return_type="dict",
-        enforce_signature=False,
-        set_annotations=False,
+    check_env_completeness(
+        name="GETTSIM",
+        date_str=date,
+        orig_policy_objects=orig_gettsim_objects,
     )
-    args = inspect.signature(f).parameters
-    if args:
-        raise ValueError(
-            "METTSIM's full DAG should include all root nodes but the following inputs "
-            "are missing in the specialized policy environment:"
-            f"\n\n{format_list_linewise(args.keys())}"
-        )

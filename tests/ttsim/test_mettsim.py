@@ -1,27 +1,22 @@
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 from typing import Literal
 
-import dags
-import dags.tree as dt
 import numpy
 import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
-from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.plot_dag import (
-    dummy_callable,
     plot_tt_dag,
 )
 from ttsim.testing_utils import (
     PolicyTest,
+    check_env_completeness,
     execute_test,
     load_policy_test_data,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 TEST_DIR = Path(__file__).parent
 
@@ -74,46 +69,11 @@ def test_mettsim_policy_environment_dag_without_params():
     ).write_html(Path("mettsim_dag_without_params.html"))
 
 
-@pytest.mark.parametrize("date", ["2019-01-01", "2021-01-01"])
-def test_mettsim_policy_environment_is_complete(date, orig_mettsim_objects):
+@pytest.mark.parametrize("date_str", ["2019-01-01", "2021-01-01"])
+def test_mettsim_policy_environment_is_complete(date_str, orig_mettsim_objects):
     """Test that METTSIM's policy environment contains all root nodes of its DAG."""
-    inputs_for_main = {
-        "date_str": date,
-        **orig_mettsim_objects,
-    }
-    environment = main(
-        inputs=inputs_for_main,
-        targets=["policy_environment"],
-    )["policy_environment"]
-    qname_environment = dt.flatten_to_qnames(environment)
-    qnames_policy_inputs = [
-        k for k, v in qname_environment.items() if isinstance(v, PolicyInput)
-    ]
-    tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
-    env = main(
-        inputs={
-            "policy_environment": environment,
-            "labels__processed_data_columns": qnames_policy_inputs,
-            "targets__qname": list(qname_environment),
-        },
-        targets=[tgt],
-    )[tgt]
-    all_nodes = {
-        qn: dummy_callable(n) if not callable(n) else n for qn, n in env.items()
-    }
-    f = dags.concatenate_functions(
-        functions=all_nodes,
-        targets=qnames_policy_inputs,
-        return_type="dict",
-        enforce_signature=False,
-        set_annotations=False,
+    check_env_completeness(
+        name="METTSIM",
+        date_str=date_str,
+        orig_policy_objects=orig_mettsim_objects,
     )
-    args = inspect.signature(f).parameters
-    if args:
-        raise ValueError(
-            "METTSIM's full DAG should include all root nodes but the following inputs "
-            "are missing in the specialized policy environment:"
-            f"\n\n{format_list_linewise(args.keys())}\n\n"
-            "Please add corresponding elements. Typically, these will be "
-            "`@policy_input()`s or parameters in the yaml files."
-        )
