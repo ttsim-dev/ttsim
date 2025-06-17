@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 import functools
 from types import ModuleType
 from typing import TYPE_CHECKING, Literal
@@ -40,14 +39,6 @@ if TYPE_CHECKING:
         QNameSpecializedEnvironment2,
         UnorderedQNames,
     )
-
-
-_DUMMY_COLUMN_OBJECT = ColumnObject(
-    leaf_name="dummy",
-    start_date=datetime.date(1900, 1, 1),
-    end_date=datetime.date(2099, 12, 31),
-    description="Dummy column object",
-)
 
 
 @interface_input(in_top_level_namespace=True)
@@ -276,9 +267,11 @@ def with_partialled_params_and_scalars(
             for arg in [
                 a
                 for a in get_free_arguments(func)
-                if not isinstance(
-                    with_processed_params_and_scalars.get(a, _DUMMY_COLUMN_OBJECT),
-                    ColumnObject,
+                if (
+                    a in with_processed_params_and_scalars
+                    and not isinstance(
+                        with_processed_params_and_scalars[a], ColumnObject
+                    )
                 )
             ]:
                 partial_params[arg] = with_processed_params_and_scalars[arg]
