@@ -31,6 +31,7 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
         GenericCallable,
         NestedData,
+        NestedInputsMapper,
         NestedPolicyEnvironment,
         NestedStrings,
         NestedTargetDict,
@@ -586,6 +587,52 @@ def input_df_mapper_has_incorrect_format(
         raise TypeError(msg)
 
 
+@fail_or_warn_function(include_if_all_elements_present=["input_data__flat"])
+def not_exactly_one_input_data_provided(
+    input_data__tree: NestedData = None,
+    input_data__df_with_nested_columns: pd.DataFrame = None,
+    input_data__df_and_mapper__df: pd.DataFrame = None,
+    input_data__df_and_mapper__mapper: NestedInputsMapper = None,
+) -> None:
+    """Fail if no input data is provided or if more than one input data is provided."""
+    input_data_provided: list[str] = []
+    if input_data__tree:
+        input_data_provided.append("input_data__tree")
+    if input_data__df_with_nested_columns:
+        input_data_provided.append("input_data__df_with_nested_columns")
+    if input_data__df_and_mapper__df:
+        input_data_provided.append("input_data__df_and_mapper__df")
+
+    if len(input_data_provided) == 0:
+        msg = format_errors_and_warnings(
+            """
+            No input data provided. Please provide input data either as a tree, a
+            DataFrame with nested columns, or a DataFrame and a mapper.
+            """,
+        )
+        raise ValueError(msg)
+    if len(input_data_provided) > 1:
+        msg = format_errors_and_warnings(
+            f"""
+            Input data was provided in more than one way. Please provide input data
+            either as a tree, a DataFrame with nested columns, or a DataFrame and a
+            mapper. The following input data was provided:
+
+            {format_list_linewise(input_data_provided)}
+            """,
+        )
+        raise ValueError(msg)
+
+    if input_data__df_and_mapper__df and not input_data__df_and_mapper__mapper:
+        msg = format_errors_and_warnings(
+            """
+            A DataFrame with columns to be mapped was provided but no mapper. Please
+            provide a mapper via `df_and_mapper__mapper`.
+            """,
+        )
+        raise ValueError(msg)
+
+
 @fail_or_warn_function()
 def root_nodes_are_missing(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
@@ -598,6 +645,8 @@ def root_nodes_are_missing(
     ----------
     specialized_environment__tax_transfer_dag
         The DAG of taxes and transfers functions.
+    specialized_environment__with_partialled_params_and_scalars
+        Specialized environment with partialled parameters and scalars.
     processed_data
         The processed data to be used as an input to the taxes & transfers function.
 

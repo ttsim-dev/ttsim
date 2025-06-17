@@ -1,7 +1,24 @@
 import pandas as pd
+import pytest
 from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
+
+DF_WITH_NESTED_COLUMNS = pd.DataFrame(
+    {
+        ("age",): [30, 30, 10],
+        ("kin_id",): [0, 0, 0],
+        ("p_id",): [0, 1, 2],
+        ("p_id_parent_1",): [-1, -1, 0],
+        ("p_id_parent_2",): [-1, -1, 1],
+        ("p_id_spouse",): [1, 0, -1],
+        ("parent_is_noble",): [False, False, False],
+        ("wealth",): [0.0, 0.0, 0.0],
+        ("payroll_tax", "child_tax_credit", "p_id_recipient"): [-1, -1, 0],
+        ("payroll_tax", "income", "gross_wage_y"): [10000, 0, 0],
+    },
+)
+
 
 DF_FOR_MAPPER = pd.DataFrame(
     {
@@ -58,15 +75,26 @@ EXPECTED_RESULTS = pd.DataFrame(
 )
 
 
-def test_end_to_end():
-    result = main(
-        inputs={
+@pytest.mark.parametrize(
+    "input_spec",
+    [
+        {
             "input_data__df_and_mapper__df": DF_FOR_MAPPER,
             "input_data__df_and_mapper__mapper": INPUT_DF_MAPPER,
+        },
+        {
+            "input_data__df_with_nested_columns": DF_WITH_NESTED_COLUMNS,
+        },
+    ],
+)
+def test_end_to_end(input_spec):
+    result = main(
+        inputs={
             "targets__tree": TARGETS_TREE,
             "date": "2025-01-01",
             "rounding": False,
             "orig_policy_objects__root": METTSIM_ROOT,
+            **input_spec,
         },
         targets=["results__df_with_mapper"],
     )

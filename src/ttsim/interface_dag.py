@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import functools
 import inspect
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import dags
+import dags.tree as dt
 
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
@@ -43,20 +45,29 @@ def main(
 
     functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
 
+    functions_with_partial_defaults = {
+        p: partial_in_default_if_node_missing(
+            func=f,
+            all_functions=functions,
+            inputs=inputs,
+        )
+        for p, f in functions.items()
+    }
+
     _fail_if_targets_are_not_among_interface_functions(
         targets=targets,
-        interface_function_names=functions.keys(),
+        interface_function_names=functions_with_partial_defaults.keys(),
     )
 
     # If targets are None, all failures and warnings are included, anyhow.
     if fail_and_warn and targets is not None:
         targets = include_fail_and_warn_nodes(
-            functions=functions,
+            functions=functions_with_partial_defaults,
             targets=targets,
         )
 
     f = dags.concatenate_functions(
-        functions=functions,
+        functions=functions_with_partial_defaults,
         targets=targets,
         return_type="dict",
         enforce_signature=False,
@@ -185,3 +196,20 @@ def _fail_if_targets_are_not_among_interface_functions(
                 f"DAG:\n\n{formatted}",
             )
             raise ValueError(msg)
+
+
+def partial_in_default_if_node_missing(
+    func: InterfaceFunction,
+    all_functions: dict[str, InterfaceFunction],
+    inputs: dict[str, Any],
+) -> InterfaceFunction:
+    """Partial a function in the default if the node is missing in the inputs."""
+    result = func
+    for param_name, param in inspect.signature(func).parameters.items():
+        if (
+            param.default is not inspect.Parameter.empty
+            and param_name not in all_functions
+            and param_name not in dt.flatten_to_tree_paths(inputs)
+        ):
+            result = functools.partial(result, **{param_name: param.default})
+    return result
