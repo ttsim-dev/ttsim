@@ -2,12 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
 
+try:
+    from jaxtyping import Array, Bool, Float, Int
+
+    BoolColumn: TypeAlias = Bool[Array, " n_obs"]  # type: ignore[name-defined]
+    IntColumn: TypeAlias = Int[Array, " n_obs"]  # type: ignore[name-defined]
+    FloatColumn: TypeAlias = Float[Array, " n_obs"]  # type: ignore[name-defined]
+except ImportError:
+    pass
+
 if TYPE_CHECKING:
     # Make these available for import from other modules.
     import datetime
     from collections.abc import Mapping
-
-    from jaxtyping import Array, Bool, Float, Int
 
     OrigParamSpec = (
         # Header
@@ -26,10 +33,6 @@ if TYPE_CHECKING:
         NestedInputStructureDict,
         NestedTargetDict,
     )
-
-    BoolColumn: TypeAlias = Array[Bool, " n_obs"]  # type: ignore[name-defined]
-    IntColumn: TypeAlias = Array[Int, " n_obs"]  # type: ignore[name-defined]
-    FloatColumn: TypeAlias = Array[Float, " n_obs"]  # type: ignore[name-defined]
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Possible leaves of the various trees.

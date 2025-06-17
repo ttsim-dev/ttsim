@@ -27,10 +27,13 @@ def vectorize_function(
 ) -> Callable[..., Any]:
     vectorized: Callable[..., Any]
     if vectorization_strategy == "loop":
-        vectorized = functools.wraps(func)(numpy.vectorize(func))
-        vectorized.__signature__ = inspect.signature(func)
-        vectorized.__globals__ = func.__globals__
-        vectorized.__closure__ = func.__closure__
+        assigned = (
+            "__signature__",
+            "__globals__",
+            "__closure__",
+            *functools.WRAPPER_ASSIGNMENTS,
+        )
+        vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
     elif vectorization_strategy == "vectorize":
         vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)
     else:
@@ -38,6 +41,12 @@ def vectorize_function(
             f"Vectorization strategy {vectorization_strategy} is not supported. "
             "Use 'loop' or 'vectorize'.",
         )
+
+    # Update annotations and signature to reflect that the inputs are now expected to be
+    # arrays.
+    vectorized.__signature__ = _create_vectorized_signature(func, backend=backend)  # type: ignore[attr-defined]
+    vectorized.__annotations__ = _create_vectorized_annotations(func, backend=backend)
+
     return vectorized
 
 
@@ -430,3 +439,83 @@ def _module_from_backend(backend: str) -> str:
     raise NotImplementedError(
         f"Argument 'backend' is {backend} but must be in {BACKEND_TO_MODULE.keys()}.",
     )
+
+
+# ======================================================================================
+# Signature and annotations
+# ======================================================================================
+
+
+def _create_vectorized_signature(
+    func: Callable[..., Any],
+    backend: Literal["numpy", "jax"],
+) -> inspect.Signature:
+    """Create a signature for the vectorized function."""
+    parameters = [
+        inspect.Parameter(
+            name=param.name,
+            kind=param.kind,
+            default=param.default,
+            annotation=_scalar_type_to_array_type(
+                param.annotation,
+                backend=backend,
+            ),
+        )
+        for param in inspect.signature(func).parameters.values()
+    ]
+    return_annotation = _scalar_type_to_array_type(
+        inspect.signature(func).return_annotation,
+        backend=backend,
+    )
+    return inspect.Signature(parameters=parameters, return_annotation=return_annotation)
+
+
+def _create_vectorized_annotations(
+    func: Callable[..., Any],
+    backend: Literal["numpy", "jax"],
+) -> dict[str, Any]:
+    """Create annotations for the vectorized function."""
+    parameters_and_return = ["return", *inspect.signature(func).parameters]
+    annotations = inspect.get_annotations(func)
+    return {
+        name: _scalar_type_to_array_type(
+            # If no annotation is available, we assume it is a numerical scalar type,
+            # which is converted to an array type.
+            annotations.get(name, "xnp.ndarray"),
+            backend=backend,
+        )
+        for name in parameters_and_return
+    }
+
+
+def _scalar_type_to_array_type(
+    scalar_type: str,
+    backend: Literal["numpy", "jax"],
+) -> str:
+    """Convert a scalar type to the corresponding array type."""
+    if scalar_type in ("int", "float", "bool"):
+        return _scalar_numerical_type_to_array_type(scalar_type, backend=backend)
+    return scalar_type
+
+
+def _scalar_numerical_type_to_array_type(
+    scalar_type: str,
+    backend: Literal["numpy", "jax"],
+) -> str:
+    """Convert a scalar numerical type to the corresponding array type."""
+    scalar_type_to_array_type = {
+        "jax": {
+            "int": "IntColumn",
+            "float": "FloatColumn",
+            "bool": "BoolColumn",
+        },
+        "numpy": {
+            "int": "numpy.typing.NDArray[numpy.int64]",
+            "float": "numpy.typing.NDArray[numpy.float64]",
+            "bool": "numpy.typing.NDArray[numpy.bool_]",
+        },
+    }
+    if scalar_type not in scalar_type_to_array_type[backend]:
+        raise TypeError(f"Unsupported scalar numerical type: {scalar_type}")
+
+    return scalar_type_to_array_type[backend][scalar_type]

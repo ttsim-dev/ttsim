@@ -681,3 +681,54 @@ def test_already_vectorized_func(xnp):
         already_vectorized_func(xnp.array([-1, 0, 2, 3]), xnp),
         xnp.array([0, 0, 4, 6]),
     )
+
+
+def test_vectorize_function_annotations_numpy():
+    def f(a, x: int, y: float, z: bool, p1: str, p2: dict[str, float]) -> float:  # noqa: ARG001
+        return 1.0
+
+    vectorized = vectorize_function(
+        f,
+        vectorization_strategy="vectorize",
+        backend="numpy",
+        xnp=numpy,
+    )
+
+    expected_annotations = {
+        "a": "xnp.ndarray",
+        "x": "numpy.typing.NDArray[numpy.int64]",
+        "y": "numpy.typing.NDArray[numpy.float64]",
+        "z": "numpy.typing.NDArray[numpy.bool_]",
+        "p1": "str",
+        "p2": "dict[str, float]",
+        "return": "numpy.typing.NDArray[numpy.float64]",
+    }
+    assert inspect.get_annotations(vectorized) == expected_annotations
+
+
+def test_vectorize_function_annotations_jax():
+    def f(a, x: int, y: float, z: bool, p1: str, p2: dict[str, float]) -> float:  # noqa: ARG001
+        return 1.0
+
+    try:
+        import jax.numpy as jnp
+    except ImportError:
+        pytest.skip("JAX is not installed, skipping JAX-specific tests.")
+
+    vectorized = vectorize_function(
+        f,
+        vectorization_strategy="vectorize",
+        backend="jax",
+        xnp=jnp,
+    )
+
+    expected_annotations = {
+        "a": "xnp.ndarray",
+        "x": "IntColumn",
+        "y": "FloatColumn",
+        "z": "BoolColumn",
+        "p1": "str",
+        "p2": "dict[str, float]",
+        "return": "FloatColumn",
+    }
+    assert inspect.get_annotations(vectorized) == expected_annotations
