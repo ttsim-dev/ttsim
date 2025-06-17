@@ -126,7 +126,7 @@ def policy_input(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> Callable[..., Any][[Callable[..., Any]], PolicyInput]:
+) -> Callable[[Callable[..., Any]], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
 
@@ -202,7 +202,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     Base class for all functions operating on columns of data.
     """
 
-    function: Callable[..., Any][FunArgTypes, ReturnType]
+    function: Callable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
@@ -324,7 +324,7 @@ def policy_function(
     rounding_spec: RoundingSpec | None = None,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize",
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> Callable[..., Any][[Callable[..., Any]], PolicyFunction]:
+) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
 
@@ -441,7 +441,7 @@ def group_creation_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     reorder: bool = True,
-) -> Callable[..., Any][[Callable[..., Any]], GroupCreationFunction]:
+) -> Callable[[Callable[..., Any]], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
 
@@ -532,7 +532,7 @@ def agg_by_group_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> Callable[..., Any][[Callable[..., Any]], AggByGroupFunction]:
+) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -664,7 +664,7 @@ def agg_by_p_id_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> Callable[..., Any][[Callable[..., Any]], AggByPIDFunction]:
+) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -839,7 +839,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     leaf_name: str
     start_date: datetime.date
     end_date: datetime.date
-    function: Callable[..., Any][FunArgTypes, ReturnType]
+    function: Callable[FunArgTypes, ReturnType]
     description: str
 
     def __post_init__(self) -> None:
@@ -892,7 +892,7 @@ def param_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> Callable[..., Any][[Callable[..., Any]], ParamFunction]:
+) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """
     Decorator that makes a `ParamFunction` from a function.
 

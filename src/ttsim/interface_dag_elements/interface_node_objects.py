@@ -60,7 +60,7 @@ class InterfaceInput(InterfaceNodeObject):
 
 def interface_input(
     in_top_level_namespace: bool = False,  # noqa: FBT002
-) -> Callable[..., Any][[Callable[..., Any]], InterfaceInput]:
+) -> Callable[[Callable[..., Any]], InterfaceInput]:
     """
     Decorator that makes a (dummy) function an `InterfaceInput`.
 
@@ -116,7 +116,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
     Base class for all functions operating on columns of data.
     """
 
-    function: Callable[..., Any][FunArgTypes, ReturnType]
+    function: Callable[FunArgTypes, ReturnType]
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -160,7 +160,7 @@ def interface_function(
     *,
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> Callable[..., Any][[Callable[..., Any]], InterfaceFunction]:
+) -> Callable[[Callable[..., Any]], InterfaceFunction[..., Any]]:
     """
     Decorator that makes an `InterfaceFunction` from a function.
 
