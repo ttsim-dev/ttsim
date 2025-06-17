@@ -12,7 +12,7 @@ import numpy
 import optree
 import pandas as pd
 
-from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.interface_dag_elements.interface_node_objects import fail_or_warn_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
 from ttsim.tt_dag_elements.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -155,7 +155,7 @@ def assert_valid_ttsim_pytree(
     _assert_valid_ttsim_pytree(tree, current_key=())
 
 
-@interface_function()
+@fail_or_warn_function()
 def active_periods_overlap(
     orig_policy_objects__column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
@@ -211,7 +211,7 @@ def active_periods_overlap(
                 )
 
 
-@interface_function()
+@fail_or_warn_function()
 def any_paths_are_invalid(
     policy_environment: NestedPolicyEnvironment,
     input_data__tree: NestedData,
@@ -227,7 +227,7 @@ def any_paths_are_invalid(
     )
 
 
-@interface_function()
+@fail_or_warn_function()
 def data_paths_are_missing_in_paths_to_column_names(
     results__tree: NestedData,
     targets__tree: NestedStrings,
@@ -245,7 +245,7 @@ def data_paths_are_missing_in_paths_to_column_names(
         raise ValueError(msg)
 
 
-@interface_function()
+@fail_or_warn_function()
 def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) -> None:
     """
     Validate the basic structure of the data tree.
@@ -295,7 +295,7 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
         raise ValueError(message)
 
 
-@interface_function()
+@fail_or_warn_function()
 def environment_is_invalid(
     policy_environment: NestedPolicyEnvironment,
 ) -> None:
@@ -310,7 +310,7 @@ def environment_is_invalid(
     )
 
 
-@interface_function()
+@fail_or_warn_function()
 def foreign_keys_are_invalid_in_data(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
@@ -367,7 +367,7 @@ def foreign_keys_are_invalid_in_data(
                     raise ValueError(message)
 
 
-@interface_function()
+@fail_or_warn_function()
 def group_ids_are_outside_top_level_namespace(
     policy_environment: NestedPolicyEnvironment,
 ) -> None:
@@ -385,7 +385,7 @@ def group_ids_are_outside_top_level_namespace(
         )
 
 
-@interface_function()
+@fail_or_warn_function()
 def group_variables_are_not_constant_within_groups(
     labels__grouping_levels: OrderedQNames,
     labels__root_nodes: UnorderedQNames,
@@ -431,7 +431,7 @@ def group_variables_are_not_constant_within_groups(
         raise ValueError(msg)
 
 
-@interface_function()
+@fail_or_warn_function()
 def non_convertible_objects_in_results_tree(
     processed_data: QNameData,
     results__tree: NestedData,
@@ -473,7 +473,7 @@ def non_convertible_objects_in_results_tree(
         raise ValueError(msg)
 
 
-@interface_function()
+@fail_or_warn_function()
 def input_df_has_bool_or_numeric_column_names(
     input_data__df_and_mapper__df: pd.DataFrame,
 ) -> None:
@@ -505,7 +505,7 @@ def input_df_has_bool_or_numeric_column_names(
         raise ValueError(msg)
 
 
-@interface_function()
+@fail_or_warn_function()
 def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedStrings,
@@ -523,7 +523,7 @@ def input_df_mapper_columns_missing_in_df(
         raise ValueError(msg)
 
 
-@interface_function()
+@fail_or_warn_function()
 def input_df_mapper_has_incorrect_format(
     input_data__df_and_mapper__mapper: NestedStrings,
 ) -> None:
@@ -575,7 +575,7 @@ def input_df_mapper_has_incorrect_format(
         raise TypeError(msg)
 
 
-@interface_function()
+@fail_or_warn_function()
 def root_nodes_are_missing(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
     processed_data: QNameData,
@@ -610,7 +610,7 @@ def root_nodes_are_missing(
         raise ValueError(f"The following data columns are missing.\n{formatted}")
 
 
-@interface_function()
+@fail_or_warn_function()
 def targets_are_not_in_policy_environment_or_data(
     policy_environment: QNamePolicyEnvironment,
     labels__processed_data_columns: QNameDataColumns,
@@ -647,7 +647,7 @@ def targets_are_not_in_policy_environment_or_data(
         raise ValueError(msg)
 
 
-@interface_function()
+@fail_or_warn_function()
 def targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.

@@ -136,6 +136,7 @@ def plot_tt_dag(
 
 
 def plot_interface_dag(
+    include_fail_and_warn_nodes: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
 ) -> go.Figure:

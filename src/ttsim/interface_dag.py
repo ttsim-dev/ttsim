@@ -26,6 +26,7 @@ def main(
     inputs: dict[str, Any],
     targets: list[str] | None = None,
     backend: Literal["numpy", "jax"] = "numpy",
+    fail_and_warn: bool = True,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.

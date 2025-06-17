@@ -9,7 +9,7 @@ from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
 )
-from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.interface_dag_elements.interface_node_objects import fail_or_warn_function
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
@@ -64,7 +64,7 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
         super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
 
 
-@interface_function()
+@fail_or_warn_function()
 def functions_and_data_columns_overlap(
     policy_environment: NestedPolicyEnvironment,
     labels__processed_data_columns: QNameDataColumns,

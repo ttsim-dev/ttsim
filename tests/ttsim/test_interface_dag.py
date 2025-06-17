@@ -9,7 +9,7 @@ from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.plot_dag import dummy_callable
 
 
-def test_function_collection() -> None:
+def test_load_interface_functions_and_inputs() -> None:
     load_interface_functions_and_inputs()
 
 
