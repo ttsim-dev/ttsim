@@ -5,7 +5,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar
 
 import dags.tree as dt
 from dags import rename_arguments
@@ -32,11 +32,11 @@ from ttsim.tt_dag_elements.rounding import RoundingSpec
 from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
-        GenericCallable,
         IntColumn,
         UnorderedQNames,
     )
@@ -126,7 +126,7 @@ def policy_input(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> GenericCallable[[GenericCallable], PolicyInput]:
+) -> Callable[..., Any][[Callable[..., Any]], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
 
@@ -151,7 +151,7 @@ def policy_input(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: GenericCallable) -> PolicyInput:
+    def inner(func: Callable[..., Any]) -> PolicyInput:
         data_type = func.__annotations__["return"]
         return PolicyInput(
             leaf_name=func.__name__,
@@ -165,7 +165,7 @@ def policy_input(
     return inner
 
 
-def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> None:
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) -> None:
     """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
@@ -202,7 +202,7 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     Base class for all functions operating on columns of data.
     """
 
-    function: GenericCallable[FunArgTypes, ReturnType]
+    function: Callable[..., Any][FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
 
@@ -324,7 +324,7 @@ def policy_function(
     rounding_spec: RoundingSpec | None = None,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize",
     foreign_key_type: FKType = FKType.IRRELEVANT,
-) -> GenericCallable[[GenericCallable], PolicyFunction]:
+) -> Callable[..., Any][[Callable[..., Any]], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
 
@@ -360,7 +360,7 @@ def policy_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: GenericCallable) -> PolicyFunction:
+    def inner(func: Callable[..., Any]) -> PolicyFunction:
         return PolicyFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
@@ -441,7 +441,7 @@ def group_creation_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     reorder: bool = True,
-) -> GenericCallable[[GenericCallable], GroupCreationFunction]:
+) -> Callable[..., Any][[Callable[..., Any]], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
 
@@ -459,7 +459,7 @@ def group_creation_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def decorator(func: GenericCallable) -> GroupCreationFunction:
+    def decorator(func: Callable[..., Any]) -> GroupCreationFunction:
         _leaf_name = func.__name__ if leaf_name is None else leaf_name
         func_with_reorder = lambda **kwargs: reorder_ids(  # noqa: E731
             ids=func(**kwargs),
@@ -532,7 +532,7 @@ def agg_by_group_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> GenericCallable[[GenericCallable], AggByGroupFunction]:
+) -> Callable[..., Any][[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -545,7 +545,7 @@ def agg_by_group_function(
         AggType.COUNT: grouped_count,
     }
 
-    def inner(func: GenericCallable) -> AggByGroupFunction:
+    def inner(func: Callable[..., Any]) -> AggByGroupFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         group_ids = {p for p in args if p.endswith("_id")}
@@ -664,7 +664,7 @@ def agg_by_p_id_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
-) -> GenericCallable[[GenericCallable], AggByPIDFunction]:
+) -> Callable[..., Any][[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -677,7 +677,7 @@ def agg_by_p_id_function(
         AggType.COUNT: count_by_p_id,
     }
 
-    def inner(func: GenericCallable) -> AggByPIDFunction:
+    def inner(func: Callable[..., Any]) -> AggByPIDFunction:
         orig_location = f"{func.__module__}.{func.__name__}"
         args = set(inspect.signature(func).parameters)
         other_p_ids = {
@@ -839,7 +839,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     leaf_name: str
     start_date: datetime.date
     end_date: datetime.date
-    function: GenericCallable[FunArgTypes, ReturnType]
+    function: Callable[..., Any][FunArgTypes, ReturnType]
     description: str
 
     def __post_init__(self) -> None:
@@ -892,7 +892,7 @@ def param_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
-) -> GenericCallable[[GenericCallable], ParamFunction]:
+) -> Callable[..., Any][[Callable[..., Any]], ParamFunction]:
     """
     Decorator that makes a `ParamFunction` from a function.
 
@@ -922,7 +922,7 @@ def param_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: GenericCallable) -> ParamFunction:  # type: ignore[type-arg]
+    def inner(func: Callable[..., Any]) -> ParamFunction:  # type: ignore[type-arg]
         return ParamFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,

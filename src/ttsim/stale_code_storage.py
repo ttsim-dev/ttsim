@@ -12,9 +12,7 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from ttsim.interface_dag_elements.typing import GenericCallable
+    from collections.abc import Callable, Mapping
 
     NestedAnyTTSIMObject = Mapping[
         str,
@@ -61,7 +59,7 @@ def _convert_plain_functions_to_policy_functions(
 
 
 def _convert_to_policy_function_if_callable(
-    obj: ColumnObject | ParamFunction | GenericCallable | Any,
+    obj: ColumnObject | ParamFunction | Callable[..., Any] | Any,
 ) -> ColumnObject:
     """Convert a Callable to a PolicyFunction if it is not already a ColumnObject or
     ParamFunction. If it is not a Callable, return it unchanged.

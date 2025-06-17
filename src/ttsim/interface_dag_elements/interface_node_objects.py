@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar
 
 import dags.tree as dt
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import GenericCallable, UnorderedQNames
+    from collections.abc import Callable
+
+    from ttsim.interface_dag_elements.typing import UnorderedQNames
 
 FunArgTypes = ParamSpec("FunArgTypes")
 ReturnType = TypeVar("ReturnType")
@@ -58,7 +60,7 @@ class InterfaceInput(InterfaceNodeObject):
 
 def interface_input(
     in_top_level_namespace: bool = False,  # noqa: FBT002
-) -> GenericCallable[[GenericCallable], InterfaceInput]:
+) -> Callable[..., Any][[Callable[..., Any]], InterfaceInput]:
     """
     Decorator that makes a (dummy) function an `InterfaceInput`.
 
@@ -67,7 +69,7 @@ def interface_input(
     A decorator that returns an InterfaceInput object.
     """
 
-    def inner(func: GenericCallable) -> InterfaceInput:
+    def inner(func: Callable[..., Any]) -> InterfaceInput:
         return InterfaceInput(
             leaf_name=func.__name__,
             in_top_level_namespace=in_top_level_namespace,
@@ -77,7 +79,7 @@ def interface_input(
     return inner
 
 
-def _frozen_safe_update_wrapper(wrapper: object, wrapped: GenericCallable) -> None:
+def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) -> None:
     """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
@@ -114,7 +116,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
     Base class for all functions operating on columns of data.
     """
 
-    function: GenericCallable[FunArgTypes, ReturnType]
+    function: Callable[..., Any][FunArgTypes, ReturnType]
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -158,7 +160,7 @@ def interface_function(
     *,
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> GenericCallable[[GenericCallable], InterfaceFunction]:
+) -> Callable[..., Any][[Callable[..., Any]], InterfaceFunction]:
     """
     Decorator that makes an `InterfaceFunction` from a function.
 
@@ -175,7 +177,7 @@ def interface_function(
     A decorator that returns an InterfaceFunction object.
     """
 
-    def inner(func: GenericCallable) -> InterfaceFunction:  # type: ignore[type-arg]
+    def inner(func: Callable[..., Any]) -> InterfaceFunction:  # type: ignore[type-arg]
         return InterfaceFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,

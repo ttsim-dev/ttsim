@@ -7,25 +7,25 @@ import textwrap
 import types
 from importlib import import_module
 from types import ModuleType
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import GenericCallable
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
 def vectorize_function(
-    func: GenericCallable,
+    func: Callable[..., Any],
     vectorization_strategy: Literal["loop", "vectorize"],
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
-) -> GenericCallable:
-    vectorized: GenericCallable
+) -> Callable[..., Any]:
+    vectorized: Callable[..., Any]
     if vectorization_strategy == "loop":
         vectorized = functools.wraps(func)(numpy.vectorize(func))
         vectorized.__signature__ = inspect.signature(func)
@@ -42,10 +42,10 @@ def vectorize_function(
 
 
 def _make_vectorizable(
-    func: GenericCallable,
+    func: Callable[..., Any],
     backend: str,
     xnp: ModuleType,
-) -> GenericCallable:
+) -> Callable[..., Any]:
     """Redefine function to be vectorizable given backend.
 
     Args:
@@ -85,7 +85,7 @@ def _make_vectorizable(
 
 
 def make_vectorizable_source(
-    func: GenericCallable,
+    func: Callable[..., Any],
     backend: str,
     xnp: ModuleType,
 ) -> str:
@@ -113,7 +113,7 @@ def make_vectorizable_source(
 
 
 def _make_vectorizable_ast(
-    func: GenericCallable,
+    func: Callable[..., Any],
     module: str,
     xnp: ModuleType,
 ) -> ast.Module:
@@ -137,7 +137,7 @@ def _make_vectorizable_ast(
     return ast.fix_missing_locations(new_tree)
 
 
-def _func_to_ast(func: GenericCallable) -> ast.Module:
+def _func_to_ast(func: Callable[..., Any]) -> ast.Module:
     source = inspect.getsource(func)
     source_dedented = textwrap.dedent(source)
     source_without_decorators = _remove_decorator_lines(source_dedented)
