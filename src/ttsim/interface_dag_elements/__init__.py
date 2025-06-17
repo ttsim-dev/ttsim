@@ -41,9 +41,7 @@ class WarnIf(NestedInit):
 class FailIf(NestedInit):
     active_periods_overlap: FailOrWarnFunction | None = None
     any_paths_are_invalid: FailOrWarnFunction | None = None
-    data_paths_are_missing_in_paths_to_mapped_df_column_names: (
-        FailOrWarnFunction | None
-    ) = None
+    paths_are_missing_in_targets_tree_mapper: FailOrWarnFunction | None = None
     environment_is_invalid: FailOrWarnFunction | None = None
     foreign_keys_are_invalid_in_data: FailOrWarnFunction | None = None
     group_ids_are_outside_top_level_namespace: FailOrWarnFunction | None = None

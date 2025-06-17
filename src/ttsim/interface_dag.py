@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 def main(
     inputs: InterfaceDAGElements | dict[str, Any],
-    targets: QNameTargetList | NestedTargetDict | None = None,
+    output_names: QNameTargetList | NestedTargetDict | None = None,
     fail_and_warn: bool = True,
 ) -> dict[str, Any]:
     """
@@ -36,6 +36,7 @@ def main(
     """
 
     flat_inputs = harmonize_inputs(inputs)
+    flat_output_names = dt.qnames(output_names)
 
     nodes = {
         p: n
@@ -46,20 +47,20 @@ def main(
     functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
 
     _fail_if_targets_are_not_among_interface_functions(
-        targets=targets,
+        targets=flat_output_names,
         interface_function_names=functions.keys(),
     )
 
     # If targets are None, all failures and warnings are included, anyhow.
-    if fail_and_warn and targets is not None:
-        targets = include_fail_and_warn_nodes(
+    if fail_and_warn and flat_output_names is not None:
+        flat_output_names = include_fail_and_warn_nodes(
             functions=functions,
-            targets=targets,
+            flat_output_names=flat_output_names,
         )
 
     f = dags.concatenate_functions(
         functions=functions,
-        targets=targets,
+        targets=flat_output_names,
         return_type="dict",
         enforce_signature=False,
         set_annotations=False,
@@ -84,7 +85,7 @@ def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str,
 
 def include_fail_and_warn_nodes(
     functions: dict[str, InterfaceFunction],
-    targets: list[str],
+    flat_output_names: list[str],
 ) -> list[str]:
     """Extend targets with failures and warnings that can be computed within the graph.
 
@@ -95,17 +96,17 @@ def include_fail_and_warn_nodes(
     fail_or_warn_functions = {
         p: n
         for p, n in functions.items()
-        if isinstance(n, FailOrWarnFunction) and p not in targets
+        if isinstance(n, FailOrWarnFunction) and p not in flat_output_names
     }
     workers_and_their_inputs = dags.create_dag(
         functions={
             p: n
             for p, n in functions.items()
-            if not isinstance(n, FailOrWarnFunction) or p in targets
+            if not isinstance(n, FailOrWarnFunction) or p in flat_output_names
         },
-        targets=targets,
+        targets=flat_output_names,
     )
-    out = targets.copy()
+    out = flat_output_names.copy()
     for p, n in fail_or_warn_functions.items():
         args = inspect.signature(n).parameters
         if all(a in workers_and_their_inputs for a in args) and (

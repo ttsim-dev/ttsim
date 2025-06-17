@@ -18,7 +18,6 @@ from ttsim.interface_dag_elements.fail_if import (
     _ParamWithActivePeriod,
     active_periods_overlap,
     assert_valid_ttsim_pytree,
-    data_paths_are_missing_in_paths_to_mapped_df_column_names,
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
@@ -26,6 +25,7 @@ from ttsim.interface_dag_elements.fail_if import (
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_has_incorrect_format,
     non_convertible_objects_in_results_tree,
+    paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt_dag_elements import (
@@ -551,7 +551,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
         ValueError,
         match="are not mapped to a column name",
     ):
-        data_paths_are_missing_in_paths_to_mapped_df_column_names(
+        paths_are_missing_in_targets_tree_mapper(
             results__tree=results__tree,
             targets__tree=targets__tree,
         )
