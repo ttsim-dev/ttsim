@@ -7,7 +7,7 @@ import numpy
 from _gettsim.config import GETTSIM_ROOT
 from ttsim import main
 from ttsim.interface_dag_elements.data_converters import (
-    mapped_dataframe_to_nested_data,
+    dataframe_to_nested_data,
     nested_data_to_df_with_mapped_columns,
 )
 from ttsim.interface_dag_elements.shared import to_datetime
@@ -106,7 +106,7 @@ def oss(
     2          0.00
     3          9.82
     """
-    input_data__tree = mapped_dataframe_to_nested_data(
+    input_data__tree = dataframe_to_nested_data(
         mapper=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
         xnp=numpy,
