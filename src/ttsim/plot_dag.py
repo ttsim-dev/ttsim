@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 from ttsim import main
 from ttsim.interface_dag import load_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
+    FailOrWarnFunction,
     InterfaceFunction,
     InterfaceInput,
     interface_function,
@@ -145,6 +146,10 @@ def plot_interface_dag(
         p: dummy_callable(n) if not callable(n) else n
         for p, n in load_interface_functions_and_inputs().items()
     }
+    if not include_fail_and_warn_nodes:
+        nodes = {
+            p: n for p, n in nodes.items() if not isinstance(n, FailOrWarnFunction)
+        }
     dag = dags.create_dag(functions=nodes, targets=None)
 
     for name, node_object in nodes.items():

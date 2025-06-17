@@ -196,6 +196,24 @@ class FailOrWarnFunction(InterfaceFunction):  # type: ignore[type-arg]
     include_if_any_element_present: Iterable[str]
     include_if_all_elements_present: Iterable[str]
 
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],
+        top_level_namespace: UnorderedQNames,
+    ) -> FailOrWarnFunction:
+        """Remove tree logic from the function and update the function signature."""
+        return FailOrWarnFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            in_top_level_namespace=self.in_top_level_namespace,
+            include_if_any_element_present=self.include_if_any_element_present,
+            include_if_all_elements_present=self.include_if_all_elements_present,
+        )
+
 
 def fail_or_warn_function(
     *,

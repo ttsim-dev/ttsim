@@ -46,8 +46,15 @@ def some_policy_function():
     return 1
 
 
-def test_plot_full_interface_dag():
-    plot_interface_dag()
+@pytest.mark.parametrize(
+    ("include_fail_and_warn_nodes",),
+    [
+        (True,),
+        (False,),
+    ],
+)
+def test_plot_full_interface_dag(include_fail_and_warn_nodes):
+    plot_interface_dag(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
 
 
 @pytest.mark.parametrize(

@@ -18,7 +18,7 @@ from ttsim.interface_dag_elements.fail_if import (
     _ParamWithActivePeriod,
     active_periods_overlap,
     assert_valid_ttsim_pytree,
-    data_paths_are_missing_in_paths_to_column_names,
+    data_paths_are_missing_in_paths_to_mapped_df_column_names,
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
@@ -26,7 +26,7 @@ from ttsim.interface_dag_elements.fail_if import (
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_has_incorrect_format,
     non_convertible_objects_in_results_tree,
-    targets_are_not_in_policy_environment_or_data,
+    targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt_dag_elements import (
     ConsecutiveInt1dLookupTableParam,
@@ -531,7 +531,7 @@ def test_fail_if_active_periods_overlap_raises(
         ),
     ],
 )
-def test_fail_if_data_paths_are_missing_in_paths_to_column_names(
+def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
     environment,
     targets__tree,
     minimal_data_tree,
@@ -547,9 +547,9 @@ def test_fail_if_data_paths_are_missing_in_paths_to_column_names(
     )["results__tree"]
     with pytest.raises(
         ValueError,
-        match="failed because the following paths\nare not mapped to a column name",
+        match="are not mapped to a column name",
     ):
-        data_paths_are_missing_in_paths_to_column_names(
+        data_paths_are_missing_in_paths_to_mapped_df_column_names(
             results__tree=results__tree,
             targets__tree=targets__tree,
         )
@@ -930,7 +930,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         ({"foo__baz": some_x}, {"foo__bar": None}, {"spam"}, "('foo', 'bar')"),
     ],
 )
-def test_fail_if_targets_are_not_in_policy_environment_or_data(
+def test_fail_if_targets_are_not_in_specialized_environment_or_data(
     policy_environment,
     targets,
     labels__processed_data_columns,
@@ -940,15 +940,17 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data(
         ValueError,
         match="The following targets have no corresponding function",
     ) as e:
-        targets_are_not_in_policy_environment_or_data(
-            policy_environment=policy_environment,
+        targets_are_not_in_specialized_environment_or_data(
+            specialized_environment__without_tree_logic_and_with_derived_functions=dt.flatten_to_qnames(
+                policy_environment
+            ),
             targets__qname=targets,
             labels__processed_data_columns=labels__processed_data_columns,
         )
     assert expected_error_match in str(e.value)
 
 
-def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
+def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
     minimal_input_data,
 ):
     with pytest.raises(
@@ -962,7 +964,7 @@ def test_fail_if_targets_are_not_in_policy_environment_or_data_via_main(
                 "targets__tree": {"unknown_target": None},
                 "rounding": False,
             },
-            targets=["fail_if__targets_are_not_in_policy_environment_or_data"],
+            targets=["fail_if__targets_are_not_in_specialized_environment_or_data"],
         )
 
 
