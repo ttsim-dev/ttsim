@@ -594,7 +594,12 @@ def test_make_vectorizable_policy_func():
     def alter_bis_24(alter: int) -> bool:
         return alter <= 24
 
-    vectorized = alter_bis_24.vectorize(backend="numpy", xnp=numpy)
+    vectorized = vectorize_function(
+        alter_bis_24,
+        vectorization_strategy=alter_bis_24.vectorization_strategy,
+        backend="numpy",
+        xnp=numpy,
+    )
 
     got = vectorized(numpy.array([20, 25, 30]))
     exp = numpy.array([True, False, False])

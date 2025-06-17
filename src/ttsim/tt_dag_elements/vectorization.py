@@ -21,7 +21,7 @@ BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 def vectorize_function(
     func: Callable[..., Any],
-    vectorization_strategy: Literal["loop", "vectorize"],
+    vectorization_strategy: Literal["loop", "vectorize", "not_required"],
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> Callable[..., Any]:
@@ -36,6 +36,8 @@ def vectorize_function(
         vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
     elif vectorization_strategy == "vectorize":
         vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)
+    elif vectorization_strategy == "not_required":
+        vectorized = func
     else:
         raise ValueError(
             f"Vectorization strategy {vectorization_strategy} is not supported. "

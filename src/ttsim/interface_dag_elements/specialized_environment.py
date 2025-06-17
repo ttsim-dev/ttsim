@@ -20,9 +20,9 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
-    PolicyFunction,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
+from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -64,17 +64,8 @@ def without_tree_logic_and_with_derived_functions(
     3. Add derived functions to the policy environment.
 
     """
-    qname_env_vectorized = {
-        k: f.vectorize(
-            backend=backend,
-            xnp=xnp,
-        )
-        if isinstance(f, PolicyFunction)
-        else f
-        for k, f in dt.flatten_to_qnames(policy_environment).items()
-    }
     qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
-        qname_env_vectorized=qname_env_vectorized,
+        qname_env=dt.flatten_to_qnames(policy_environment),
         labels__top_level_namespace=labels__top_level_namespace,
     )
     return _add_derived_functions(
@@ -86,12 +77,12 @@ def without_tree_logic_and_with_derived_functions(
 
 
 def _remove_tree_logic_from_policy_environment(
-    qname_env_vectorized: QNamePolicyEnvironment,
+    qname_env: QNamePolicyEnvironment,
     labels__top_level_namespace: UnorderedQNames,
 ) -> QNameSpecializedEnvironment0:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
-    for name, obj in qname_env_vectorized.items():
+    for name, obj in qname_env.items():
         if hasattr(obj, "remove_tree_logic"):
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qname(name),
@@ -242,6 +233,7 @@ def with_processed_params_and_scalars(
 def with_partialled_params_and_scalars(
     with_processed_params_and_scalars: QNameSpecializedEnvironment1,
     rounding: bool,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> QNameSpecializedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
@@ -259,26 +251,34 @@ def with_partialled_params_and_scalars(
     Tree with column functions that depend on columns only.
 
     """
+    column_functions = {
+        k: v
+        for k, v in with_processed_params_and_scalars.items()
+        if isinstance(v, ColumnFunction)
+    }
     processed_functions = {}
-    for name, _func in with_processed_params_and_scalars.items():
-        if isinstance(_func, ColumnFunction):
-            func = _apply_rounding(_func, xnp) if rounding else _func
-            partial_params = {}
-            for arg in [
-                a
-                for a in get_free_arguments(func)
-                if (
-                    a in with_processed_params_and_scalars
-                    and not isinstance(
-                        with_processed_params_and_scalars[a], ColumnObject
-                    )
-                )
-            ]:
-                partial_params[arg] = with_processed_params_and_scalars[arg]
-            if partial_params:
-                processed_functions[name] = functools.partial(func, **partial_params)
-            else:
-                processed_functions[name] = func
+    for name, col_func in column_functions.items():
+        rounded_col_func = _apply_rounding(col_func, xnp) if rounding else col_func
+        partial_params = {}
+        for arg in [
+            a
+            for a in get_free_arguments(rounded_col_func)
+            if (
+                a in with_processed_params_and_scalars
+                and not isinstance(with_processed_params_and_scalars[a], ColumnObject)
+            )
+        ]:
+            partial_params[arg] = with_processed_params_and_scalars[arg]
+        if partial_params:
+            partialed_func = functools.partial(rounded_col_func, **partial_params)
+        else:
+            partialed_func = rounded_col_func
+        processed_functions[name] = vectorize_function(
+            func=partialed_func,
+            vectorization_strategy=col_func.vectorization_strategy,
+            backend=backend,
+            xnp=xnp,
+        )
 
     return processed_functions
 

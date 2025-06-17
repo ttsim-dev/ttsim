@@ -414,6 +414,8 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
         The date until which the function is active (inclusive).
     """
 
+    vectorization_strategy: Literal["not_required"] = "not_required"
+
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
@@ -503,6 +505,7 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
 
     # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
+    vectorization_strategy: Literal["not_required"] = "not_required"
 
     def remove_tree_logic(
         self,
@@ -635,6 +638,7 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
 
     # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
+    vectorization_strategy: Literal["not_required"] = "not_required"
 
     def remove_tree_logic(
         self,
@@ -762,6 +766,7 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
     """
 
     source: str | None = None
+    vectorization_strategy: Literal["not_required"] = "not_required"
 
     def __post_init__(self) -> None:
         if self.source is None:
