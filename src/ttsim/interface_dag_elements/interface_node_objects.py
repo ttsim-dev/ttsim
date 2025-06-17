@@ -55,17 +55,6 @@ class InterfaceInput(InterfaceNodeObject):
     ) -> InterfaceInput:
         return self
 
-    def dummy_callable(self) -> InterfaceFunction:  # type: ignore[type-arg]
-        """Dummy callable for the interface input. Just used for plotting."""
-
-        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
-            pass
-
-        return interface_function(
-            leaf_name=self.leaf_name,
-            in_top_level_namespace=self.in_top_level_namespace,
-        )(dummy)
-
 
 def interface_input(
     in_top_level_namespace: bool = False,  # noqa: FBT002

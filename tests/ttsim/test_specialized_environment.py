@@ -550,6 +550,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
         "p_id": p_id,
         "fam_id": fam_id,
         "module_name": {"betrag_m": betrag_m},
+        "backend": backend,
     }
 
     expected = pd.Series([200, 200, 100], index=pd.Index(data["p_id"], name="p_id"))
@@ -763,7 +764,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     )
 
 
-def test_policy_environment_with_params_and_scalars_is_processed():
+def test_policy_environment_with_params_and_scalars_is_processed(backend, xnp):
     policy_environment = {
         "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
@@ -775,9 +776,11 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
         "some_param_function_taking_scalar": some_param_function_taking_scalar,
+        "backend": backend,
     }
     actual = with_processed_params_and_scalars(
-        with_derived_functions_and_processed_input_nodes=policy_environment,
+        without_tree_logic_and_with_derived_functions=policy_environment,
+        processed_data={"x": xnp.array([1, 2, 3])},
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
@@ -792,6 +795,8 @@ def test_policy_environment_with_params_and_scalars_is_processed():
         "some_float_scalar": 2.0,
         "some_bool_scalar": True,
         "some_param_function_taking_scalar": 4.0,
+        "num_segments": 3,
+        "backend": backend,
     }
     assert actual == expected
 

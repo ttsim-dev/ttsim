@@ -128,7 +128,7 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "allow-passing-dag-to-concatenate_functions"}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
 jaxtyping = "*"
 pdbp = "*"
 
@@ -234,6 +234,7 @@ exclude = []
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 "src/ttsim/interface_dag_elements/typing.py" = ["PGH", "PLR", "SIM114"]
+"src/ttsim/plot_dag.py" = ["FBT002"]
 # Mostly things vectorization can't handle
 "tests/ttsim/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 "tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
@@ -242,10 +243,8 @@ exclude = []
 "tests/ttsim/test_failures.py" = ["E501"]
 # TODO: remove once ported nicely
 "src/ttsim/stale_code_storage.py" = ["ALL"]
-"src/ttsim/plot_dag_old.py" = ["ALL"]
 "outdated_docs/**/*.ipynb" = ["ALL"]
 "src/_gettsim_tests/test_docs.py" = ["ALL"]
-"tests/ttsim/test_plot_dag_old.py" = ["ALL"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -270,7 +269,6 @@ disallow_empty_bodies = false
 [[tool.mypy.overrides]]
 module = [
     "conftest",
-    "src.ttsim.plot_dag_old",
     "src.ttsim.stale_code_storage",
     "src._gettsim_tests.test_docs",
 ]

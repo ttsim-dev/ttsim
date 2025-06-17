@@ -558,7 +558,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_column_names(
 def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key(
     mettsim_environment: NestedPolicyEnvironment,
 ):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([-1, 1, 2]),
@@ -567,14 +567,14 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
     foreign_keys_are_invalid_in_data(
         labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non_existing_p_id(
     mettsim_environment: NestedPolicyEnvironment,
 ):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([0, 1, 2]),
@@ -584,14 +584,14 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
         foreign_keys_are_invalid_in_data(
             labels__root_nodes={n for n in data if n != "p_id"},
             processed_data=data,
-            specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+            specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
         )
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_allowed(
     mettsim_environment: NestedPolicyEnvironment,
 ):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_child_": pd.Series([1, 3, 3]),
@@ -600,14 +600,14 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     foreign_keys_are_invalid_in_data(
         labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_not_allowed(
     mettsim_environment: NestedPolicyEnvironment,
 ):
-    flat_objects_tree = dt.flatten_to_qual_names(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
@@ -616,7 +616,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     foreign_keys_are_invalid_in_data(
         labels__root_nodes={n for n in data if n != "p_id"},
         processed_data=data,
-        specialized_environment__with_derived_functions_and_processed_input_nodes=flat_objects_tree,
+        specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
 

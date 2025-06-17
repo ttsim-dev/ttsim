@@ -405,11 +405,11 @@ _time_conversion_functions = {
 
 
 def _convertibles(
-    qual_name_policy_environment: QNamePolicyEnvironment,
+    qname_policy_environment: QNamePolicyEnvironment,
 ) -> dict[str, ColumnObject | ParamFunction | ScalarParam]:
     return {
         qn: e
-        for qn, e in qual_name_policy_environment.items()
+        for qn, e in qname_policy_environment.items()
         if isinstance(e, (ColumnObject, ScalarParam))
         or (
             isinstance(e, ParamFunction)
@@ -419,7 +419,7 @@ def _convertibles(
 
 
 def create_time_conversion_functions(
-    qual_name_policy_environment: QNamePolicyEnvironment,
+    qname_policy_environment: QNamePolicyEnvironment,
     processed_data_columns: QNameDataColumns,
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
@@ -473,18 +473,18 @@ def create_time_conversion_functions(
     # Map base name and grouping suffix to time conversion inputs.
     bngs_to_time_conversion_inputs = {}
     bngs_to_variations = {}
-    for qual_name, element in _convertibles(qual_name_policy_environment).items():
-        match = pattern_all.fullmatch(qual_name)
+    for qname, element in _convertibles(qname_policy_environment).items():
+        match = pattern_all.fullmatch(qname)
         # We must not find multiple time units for the same base name and group.
         bngs = get_base_name_and_grouping_suffix(match)
         if match.group("time_unit"):
             if bngs not in bngs_to_variations:
-                bngs_to_variations[bngs] = [qual_name]
+                bngs_to_variations[bngs] = [qname]
             else:
-                bngs_to_variations[bngs].append(qual_name)
+                bngs_to_variations[bngs].append(qname)
             bngs_to_time_conversion_inputs[bngs] = {
                 "base_name": bngs[0],
-                "qual_name_source": qual_name,
+                "qname_source": qname,
                 "element": element,
                 "time_unit": match.group("time_unit"),
                 "grouping_suffix": bngs[1],
@@ -502,7 +502,7 @@ def create_time_conversion_functions(
                 all_time_units=time_units,
                 grouping_levels=grouping_levels,
             ).fullmatch(processed_data):
-                inputs["qual_name_source"] = processed_data
+                inputs["qname_source"] = processed_data
                 inputs["time_unit"] = pattern_specific.group("time_unit")
                 break
 
@@ -514,7 +514,7 @@ def create_time_conversion_functions(
 
 def _create_one_set_of_time_conversion_functions(
     base_name: str,
-    qual_name_source: str,
+    qname_source: str,
     element: ColumnObject,
     time_unit: str,
     grouping_suffix: str,
@@ -543,16 +543,20 @@ def _create_one_set_of_time_conversion_functions(
             continue
 
         result[new_name] = TimeConversionFunction(
-            leaf_name=dt.tree_path_from_qual_name(new_name)[-1],
+            leaf_name=dt.tree_path_from_qname(new_name)[-1],
             function=_create_function_for_time_unit(
-                source=qual_name_source,
+                source=qname_source,
                 converter=_time_conversion_functions[
                     f"{time_unit}_to_{target_time_unit}"
                 ],
             ),
-            source=qual_name_source,
+            source=qname_source,
             start_date=element.start_date,
             end_date=element.end_date,
+            description=(
+                f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
+                f"from {time_unit} to {target_time_unit}"
+            ),
         )
 
     return result
@@ -612,10 +616,15 @@ def create_agg_by_group_functions(
                 mapper=mapper,
             )
             out[abgfn] = AggByGroupFunction(
-                leaf_name=dt.tree_path_from_qual_name(abgfn)[-1],
+                leaf_name=dt.tree_path_from_qname(abgfn)[-1],
                 function=agg_func,
                 start_date=DEFAULT_START_DATE,
                 end_date=DEFAULT_END_DATE,
+                description=(
+                    f"Automatic sum aggregation of "
+                    f"{dt.tree_path_from_qname(base_name_with_time_unit)} by "
+                    f"{match.group('group')} ID."
+                ),
             )
     return out
 

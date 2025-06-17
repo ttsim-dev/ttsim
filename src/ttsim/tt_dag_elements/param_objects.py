@@ -6,11 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
 
-from ttsim.tt_dag_elements.column_objects_param_function import (
-    ParamFunction,
-    param_function,
-)
-
 if TYPE_CHECKING:
     import datetime
     from types import ModuleType
@@ -44,18 +39,6 @@ class ParamObject:
     reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
     name: dict[Literal["de", "en"], str]
     description: dict[Literal["de", "en"], str]
-
-    def dummy_callable(self) -> ParamFunction:
-        """Dummy callable for the policy input. Just used for plotting."""
-
-        def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
-            pass
-
-        return param_function(
-            leaf_name=self.leaf_name,
-            start_date=self.start_date,
-            end_date=self.end_date,
-        )(dummy)
 
 
 @dataclass(frozen=True)

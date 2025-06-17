@@ -101,7 +101,7 @@ def _remove_tree_logic_from_function_collection(
 ) -> dict[str, InterfaceFunction | InterfaceInput]:
     """Map qualified names to column objects / param functions without tree logic."""
     return {
-        dags.tree.qual_name_from_tree_path(path): obj.remove_tree_logic(
+        dags.tree.qname_from_tree_path(path): obj.remove_tree_logic(
             tree_path=path,
             top_level_namespace=top_level_namespace,
         )

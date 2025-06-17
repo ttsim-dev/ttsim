@@ -28,14 +28,16 @@ def tree(raw_results__combined: QNameData, input_data__flat: FlatData) -> Nested
     The transformed id's are converted back to their original values.
 
     """
-    raw_results__combined_with_old_ids = raw_results__combined
+    out = {}
     for k in raw_results__combined:
-        path = dt.tree_path_from_qual_name(k)
-        if (
+        path = dt.tree_path_from_qname(k)
+        if path in input_data__flat and (
             path[-1].endswith("_id") or path[-1].startswith("p_id_")
-        ) and path in input_data__flat:
-            raw_results__combined_with_old_ids[k] = input_data__flat[path]
-    return dt.unflatten_from_qual_names(raw_results__combined_with_old_ids)
+        ):
+            out[k] = input_data__flat[path]
+        else:
+            out[k] = raw_results__combined[k]
+    return dt.unflatten_from_qnames(out)
 
 
 @interface_function()

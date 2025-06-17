@@ -99,7 +99,7 @@ def einkommen_vorjahr_unter_bezugsgrenze_ohne_unterscheidung_single_paar(
 
 
 @policy_function(
-    start_date="2006-01-01",
+    start_date="2012-09-18",
     rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
 def nettoeinkommen_approximation_m(

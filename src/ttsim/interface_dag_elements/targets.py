@@ -18,10 +18,14 @@ if TYPE_CHECKING:
 
 @interface_input()
 def tree() -> NestedTargetDict:
-    """All targets as a tree. If requesting `df_with_mapper` as the targets, the leaves must be the desired column names."""  # noqa: E501
+    """Targets as a tree.
+
+    If requesting `df_with_mapper` as the targets, the leaves must be the desired
+    column names.
+    """
 
 
 @interface_function()
 def qname(tree: NestedTargetDict) -> OrderedQNames:
-    """All targets in their qualified name-representation."""
-    return dt.qual_names(tree)
+    """Targets in their qualified name-representation."""
+    return dt.flatten_to_qnames(tree)

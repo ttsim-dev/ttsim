@@ -121,20 +121,16 @@ def dataframe_to_nested_data(
 
 
     """
-    qualified_inputs_tree_to_df_columns = dt.flatten_to_qual_names(mapper)
-    name_to_input_array = {}
-    for (
-        qualified_input_name,
-        input_value,
-    ) in qualified_inputs_tree_to_df_columns.items():
-        if input_value in df.columns:
-            name_to_input_array[qualified_input_name] = xnp.asarray(df[input_value])
+    qname_to_array = {}
+    for qname, df_col_name in dt.flatten_to_qnames(mapper).items():
+        if df_col_name in df.columns:
+            qname_to_array[qname] = xnp.asarray(df[df_col_name])
         else:
-            name_to_input_array[qualified_input_name] = xnp.asarray(
+            qname_to_array[qname] = xnp.asarray(
                 pd.Series(
-                    [input_value] * len(df),
+                    [df_col_name] * len(df),
                     index=df.index,
                 ),
             )
 
-    return dt.unflatten_from_qual_names(name_to_input_array)
+    return dt.unflatten_from_qnames(qname_to_array)

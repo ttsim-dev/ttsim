@@ -52,7 +52,7 @@ def vermögen() -> float:
     """Assets for means testing on individual level. {ref}`See this page for more details. <means_testing>`"""
 
 
-@policy_input()
+@policy_input(end_date="2017-12-31")
 def weiblich() -> bool:
     """Female."""
 

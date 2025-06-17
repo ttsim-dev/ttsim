@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import colorsys
+import copy
 import inspect
-from typing import TYPE_CHECKING, Any
+import textwrap
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import dags
 import dags.tree as dt
@@ -9,142 +13,339 @@ import networkx as nx
 import numpy
 import plotly.graph_objects as go
 
-from ttsim.interface_dag import load_interface_functions_and_inputs, main
-from ttsim.interface_dag_elements.fail_if import (
-    format_list_linewise,
+from ttsim import main
+from ttsim.interface_dag import load_interface_functions_and_inputs
+from ttsim.interface_dag_elements.interface_node_objects import (
+    InterfaceFunction,
+    InterfaceInput,
+    interface_function,
 )
-from ttsim.interface_dag_elements.interface_node_objects import InterfaceInput
 from ttsim.tt_dag_elements import (
-    ColumnObject,
+    ColumnFunction,
     ParamFunction,
     ParamObject,
     PolicyFunction,
     PolicyInput,
+    param_function,
+    policy_function,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
+    from types import ModuleType
+
+    from ttsim.interface_dag_elements.typing import (
+        NestedPolicyEnvironment,
+        QNameSpecializedEnvironment0,
+    )
+
+
+@dataclass(frozen=True)
+class NodeSelector:
+    """Select nodes from the DAG."""
+
+    node_paths: list[tuple[str, ...]]
+    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    order: int | None = None
+
+
+@dataclass(frozen=True)
+class _QNameNodeSelector:
+    """Select nodes from the DAG."""
+
+    qnames: list[str]
+    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    order: int | None = None
+
+
+@dataclass(frozen=True)
+class NodeMetaData:
+    description: str
+    namespace: str
 
 
 def plot_tt_dag(
-    with_params: bool,
-    inputs_for_main: dict[str, Any],
-    title: str,
-    output_path: Path,
-) -> None:
-    """Plot the taxes & transfers DAG, with or without parameters."""
-    if "backend" not in inputs_for_main:
-        inputs_for_main["backend"] = "numpy"
-    policy_environment = main(inputs=inputs_for_main, targets=["policy_environment"])[
-        "policy_environment"
-    ]
-    policy_inputs = {
-        qn: n
-        for qn, n in dt.flatten_to_qual_names(policy_environment).items()
-        if isinstance(n, PolicyInput)
-    }
-    if with_params:
-        targets = [
-            qn
-            for qn, n in dt.flatten_to_qual_names(policy_environment).items()
-            if isinstance(n, PolicyFunction | ParamFunction)
-        ]
-    else:
-        targets = [
-            qn
-            for qn, n in dt.flatten_to_qual_names(policy_environment).items()
-            if isinstance(n, PolicyFunction)
-        ]
-    env = main(
+    date_str: str,
+    root: Path,
+    node_selector: NodeSelector | None = None,
+    title: str = "",
+    include_params: bool = True,
+    include_other_objects: bool = False,
+    show_node_description: bool = False,
+    output_path: Path | None = None,
+) -> go.Figure:
+    """Plot the TT DAG.
+
+    Parameters
+    ----------
+    date_str
+        The date string.
+    root
+        The root path.
+    node_selector
+        The node selector. Default is None, i.e. the entire DAG is plotted.
+    title
+        The title of the plot.
+    include_params
+        Include param functions when plotting the DAG.
+    include_other_objects
+        Include backend policy inputs when plotting the DAG. Most users will not want
+        this.
+    show_node_description
+        Show a description of the node when hovering over it.
+    output_path
+        If provided, the figure is written to the path.
+
+    Returns
+    -------
+    The figure.
+    """
+    environment = main(
         inputs={
-            "policy_environment": policy_environment,
-            "input_data__tree": dt.unflatten_from_qual_names(
-                dict.fromkeys(policy_inputs, numpy.array([0])),
-            ),
-            "targets__tree": dt.unflatten_from_qual_names(
-                dict.fromkeys(targets),
-            ),
+            "date_str": date_str,
+            "orig_policy_objects__root": root,
         },
-        targets=[
-            "specialized_environment__with_derived_functions_and_processed_input_nodes",
-        ],
-    )["specialized_environment__with_derived_functions_and_processed_input_nodes"]
-    # Replace input nodes by PolicyInputs again
-    env.update(policy_inputs)
-    for element in "backend", "xnp", "dnp":
-        if element in env:
-            del env[element]
-    nodes = {
-        qn: n.dummy_callable() if isinstance(n, PolicyInput | ParamObject) else n
-        for qn, n in env.items()
-    }
-    dag = dags.create_dag(functions=nodes, targets=targets)
-    # Only keep nodes that are column objects
-    if not with_params:
-        dag.remove_nodes_from(
-            [qn for qn, n in env.items() if not isinstance(n, ColumnObject)],
+        targets=["policy_environment"],
+    )["policy_environment"]
+
+    if node_selector:
+        qname_node_selector = _QNameNodeSelector(
+            qnames=[dt.qname_from_tree_path(qn) for qn in node_selector.node_paths],
+            type=node_selector.type,
+            order=node_selector.order,
         )
-    fig = _plot_dag(dag=dag, title=title)
-    if output_path.suffix == ".html":
-        fig.write_html(output_path)
     else:
-        raise ValueError(f"Unsupported file extension: {output_path.suffix}")
+        qname_node_selector = None
 
-    if with_params:
-        f = dags.concatenate_functions(
-            dag=dag,
-            functions=nodes,
-            targets=targets,
-            return_type="dict",
-            enforce_signature=False,
-            set_annotations=False,
-        )
-        args = dict(inspect.signature(f).parameters)
-        args.pop("backend", None)
-        args.pop("xnp", None)
-        args.pop("dnp", None)
-        if args:
-            raise ValueError(
-                "The policy environment DAG should include all root nodes but requires "
-                f"inputs:\n\n{format_list_linewise(args.keys())}",
-            )
+    dag_with_node_metadata = _get_tt_dag_with_node_metadata(
+        environment=environment,
+        node_selector=qname_node_selector,
+        include_params=include_params,
+        include_other_objects=include_other_objects,
+    )
+    fig = _plot_dag(
+        dag=dag_with_node_metadata,
+        title=title,
+        show_node_description=show_node_description,
+    )
+    if output_path:
+        fig.write_html(output_path)
+
+    return fig
 
 
-def plot_full_interface_dag(output_path: Path) -> None:
+def plot_interface_dag(
+    show_node_description: bool = False,
+    output_path: Path | None = None,
+) -> go.Figure:
     """Plot the full interface DAG."""
     nodes = {
-        p: n.dummy_callable() if isinstance(n, InterfaceInput) else n
+        p: dummy_callable(n) if not callable(n) else n
         for p, n in load_interface_functions_and_inputs().items()
     }
-
     dag = dags.create_dag(functions=nodes, targets=None)
-    f = dags.concatenate_functions(
-        dag=dag,
-        functions=nodes,
-        targets=None,
-        return_type="dict",
-        enforce_signature=False,
-        set_annotations=False,
-    )
-    args = inspect.signature(f).parameters
-    if args:
-        raise ValueError(
-            "The full interface DAG should include all root nodes but requires inputs:"
-            f"\n\n{format_list_linewise(args.keys())}",
+
+    for name, node_object in nodes.items():
+        f = node_object.function if hasattr(node_object, "function") else node_object
+        description = inspect.getdoc(f) or "No description available."
+        namespace = name.split("__")[0] if "__" in name else "top-level"
+        dag.nodes[name]["node_metadata"] = NodeMetaData(
+            description=description,
+            namespace=namespace,
         )
-    fig = _plot_dag(dag=dag, title="Full Interface DAG")
-    if output_path.suffix == ".html":
+
+    fig = _plot_dag(
+        dag=dag,
+        title="Full Interface DAG",
+        show_node_description=show_node_description,
+    )
+
+    if output_path:
         fig.write_html(output_path)
+
+    return fig
+
+
+def _get_tt_dag_with_node_metadata(
+    environment: NestedPolicyEnvironment,
+    node_selector: _QNameNodeSelector | None = None,
+    include_params: bool = True,
+    include_other_objects: bool = False,
+) -> nx.DiGraph:
+    """Get the TT DAG to plot."""
+    qname_environment = dt.flatten_to_qnames(environment)
+    qnames_to_plot = list(qname_environment)
+    if node_selector:
+        # Node selector might contain derived functions that are not in qnames_to_plot
+        qnames_to_plot.extend(node_selector.qnames)
+
+    qnames_policy_inputs = [
+        k
+        for k, v in qname_environment.items()
+        if isinstance(v, PolicyInput) and k in qnames_to_plot
+    ]
+    tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
+    env = main(
+        inputs={
+            "policy_environment": environment,
+            "labels__processed_data_columns": qnames_policy_inputs,
+            "targets__qname": qnames_to_plot,
+        },
+        targets=[tgt],
+    )[tgt]
+
+    all_nodes = {
+        qn: dummy_callable(n) if not callable(n) else n for qn, n in env.items()
+    }
+
+    complete_dag = dags.create_dag(functions=all_nodes, targets=qnames_to_plot)
+
+    if node_selector is None:
+        selected_dag = complete_dag
     else:
-        raise ValueError(f"Output path must end with .html: {output_path}")
+        selected_dag = _create_dag_with_selected_nodes(
+            complete_dag=complete_dag,
+            node_selector=node_selector,
+        )
+
+    if not include_params:
+        selected_dag.remove_nodes_from(
+            [qn for qn, v in env.items() if isinstance(v, (ParamObject, ParamFunction))]
+        )
+    if not include_other_objects:
+        selected_dag.remove_nodes_from(
+            [
+                qn
+                for qn, n in env.items()
+                if not isinstance(n, (ColumnFunction, ParamFunction, ParamObject))
+            ]
+        )
+
+    node_descriptions = _get_node_descriptions(env)
+    # Add Node Metadata to DAG
+    for qn in all_nodes:
+        if qn not in selected_dag.nodes():
+            continue
+        description = node_descriptions[qn]
+        node_namespace = qn.split("__")[0] if "__" in qn else "top-level"
+        selected_dag.nodes[qn]["node_metadata"] = NodeMetaData(
+            description=description,
+            namespace=node_namespace,
+        )
+
+    return selected_dag
 
 
-def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
+def _get_node_descriptions(env: QNameSpecializedEnvironment0) -> dict[str, str]:
+    """Get the descriptions of the nodes in the environment."""
+    out = {}
+    for qn, n in env.items():
+        descr = None
+        if hasattr(n, "description"):
+            if isinstance(n.description, str):
+                descr = n.description
+            elif (
+                isinstance(n.description, dict)
+                and "en" in n.description
+                and n.description["en"] is not None
+            ):
+                descr = n.description["en"]
+        if not descr:
+            descr = "No description available."
+        # Wrap description at 79 characters
+        descr = textwrap.fill(descr, width=79)
+        out[qn] = descr
+    return out
+
+
+@overload
+def dummy_callable(obj: PolicyInput) -> PolicyFunction: ...
+
+
+@overload
+def dummy_callable(obj: ParamObject) -> ParamFunction: ...  # type: ignore[overload-cannot-match]
+
+
+@overload
+def dummy_callable(obj: InterfaceInput) -> InterfaceFunction: ...  # type: ignore[overload-cannot-match]
+
+
+def dummy_callable(obj: ModuleType | str | float | bool) -> Callable[[], Any]:
+    """Dummy callable, for plotting and checking DAG completeness."""
+
+    def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
+        pass
+
+    if isinstance(obj, PolicyInput):
+        return policy_function(
+            leaf_name=obj.leaf_name,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+            foreign_key_type=obj.foreign_key_type,
+        )(dummy)
+    if isinstance(obj, ParamObject):
+        return param_function(
+            leaf_name=obj.leaf_name,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+        )(dummy)
+    if isinstance(obj, InterfaceInput):
+        return interface_function(
+            leaf_name=obj.leaf_name,
+            in_top_level_namespace=obj.in_top_level_namespace,
+        )(dummy)
+    return dummy
+
+
+def _create_dag_with_selected_nodes(
+    complete_dag: nx.DiGraph,
+    node_selector: _QNameNodeSelector,
+) -> nx.DiGraph:
+    """Select nodes based on the node selector."""
+    selected_nodes: set[str] = set()
+    if node_selector.type == "nodes":
+        selected_nodes.update(node_selector.qnames)
+    elif node_selector.type == "ancestors":
+        for node in node_selector.qnames:
+            selected_nodes.update(
+                _kth_order_predecessors(complete_dag, node, order=node_selector.order)
+                if node_selector.order
+                else list(nx.ancestors(complete_dag, node))
+            )
+    elif node_selector.type == "descendants":
+        for node in node_selector.qnames:
+            selected_nodes.update(
+                _kth_order_successors(complete_dag, node, order=node_selector.order)
+                if node_selector.order
+                else list(nx.descendants(complete_dag, node))
+            )
+    elif node_selector.type == "neighbors":
+        order = node_selector.order or 1
+        for node in node_selector.qnames:
+            selected_nodes.update(_kth_order_neighbors(complete_dag, node, order=order))
+    else:
+        msg = (
+            f"Invalid node selector type: {node_selector.type}. "
+            "Choose one of 'nodes', 'ancestors', 'descendants', or 'neighbors'."
+        )
+        raise ValueError(msg)
+
+    dag_copy = copy.deepcopy(complete_dag)
+    dag_copy.remove_nodes_from(set(complete_dag.nodes) - set(selected_nodes))
+    return dag_copy
+
+
+def _plot_dag(
+    dag: nx.DiGraph,
+    title: str,
+    show_node_description: bool,
+) -> go.Figure:
     """Plot the DAG."""
     nice_dag = nx.relabel_nodes(
-        dag,
-        {qn: qn.replace("__", "<br>") for qn in dag.nodes()},
+        dag, {qn: qn.replace("__", "<br>") for qn in dag.nodes()}
     )
+
     pos = nx.nx_agraph.pygraphviz_layout(nice_dag, prog="dot", args="-Grankdir=LR")
     # Create edge traces with arrows
     edge_traces = []
@@ -198,7 +399,7 @@ def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
                     "arrowcolor": "#888",
                     "showarrow": True,
                     "text": "",
-                },
+                }
             )
 
     # Create node trace
@@ -207,17 +408,36 @@ def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
     node_text = []
     node_colors = []
 
+    # Create namespace to color mapping with unique colors
+    top_level_namespaces = {
+        dag.nodes[node]["node_metadata"].namespace
+        for node in dag.nodes()
+        if "node_metadata" in dag.nodes[node]
+    }
+    n_namespaces = len(top_level_namespaces)
+    namespace_colors = {
+        namespace: hsl_to_hex(hue=i / n_namespaces, saturation=0.7, lightness=0.5)
+        for i, namespace in enumerate(sorted(top_level_namespaces))
+    }
+
     for node in nice_dag.nodes():
+        metadata: NodeMetaData = nice_dag.nodes[node]["node_metadata"]
+
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
-        node_text.append(node)
+        node_text.append(
+            node + "<br><br>" + metadata.description.replace("\n", "<br>")
+            if show_node_description
+            else node
+        )
 
-        # Color nodes that start with "fail_" in pale red
-        if node.startswith("fail_"):
-            node_colors.append("#ffb3b3")  # Pale red
-        else:
-            node_colors.append("#1f77b4")  # Blue
+        node_color = (
+            "#1f77b4"  # blue
+            if metadata.namespace == "top-level"
+            else namespace_colors[metadata.namespace]
+        )
+        node_colors.append(node_color)
 
     node_trace = go.Scatter(
         x=node_x,
@@ -225,6 +445,11 @@ def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
         mode="markers",
         hoverinfo="text",
         text=node_text,
+        hoverlabel={
+            "bgcolor": "white",
+            "font": {"color": "black"},
+            "bordercolor": "lightgray",
+        },
         marker={
             "showscale": False,
             "color": node_colors,
@@ -257,3 +482,71 @@ def _plot_dag(dag: nx.DiGraph, title: str) -> go.Figure:
             },
         ),
     )
+
+
+def _kth_order_neighbors(
+    dag: nx.DiGraph, node: str, order: int, base: set[str] | None = None
+) -> set[str]:
+    base = base or set()
+    base.add(node)
+    if order >= 1:
+        for predecessor in dag.predecessors(node):
+            base.update(
+                _kth_order_predecessors(dag, predecessor, order=order - 1, base=base)
+            )
+        for successor in dag.successors(node):
+            base.update(
+                _kth_order_successors(dag, successor, order=order - 1, base=base)
+            )
+    return base
+
+
+def _kth_order_predecessors(
+    dag: nx.DiGraph, node: str, order: int, base: set[str] | None = None
+) -> set[str]:
+    base = base or set()
+    base.add(node)
+    if order >= 1:
+        for predecessor in dag.predecessors(node):
+            base.update(
+                _kth_order_predecessors(dag, predecessor, order=order - 1, base=base)
+            )
+    return base
+
+
+def _kth_order_successors(
+    dag: nx.DiGraph, node: str, order: int, base: set[str] | None = None
+) -> set[str]:
+    base = base or set()
+    base.add(node)
+    if order >= 1:
+        for successor in dag.successors(node):
+            base.update(
+                _kth_order_successors(dag, successor, order=order - 1, base=base)
+            )
+    return base
+
+
+def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:
+    """Convert HSL color values to hexadecimal color code.
+
+    Parameters
+    ----------
+    hue : float
+        Hue value between 0 and 1, representing the position on the color wheel
+        (0 = red, 0.33 = green, 0.66 = blue, 1 = red again)
+    saturation : float
+        Saturation value between 0 and 1, representing color intensity
+        (0 = grayscale, 1 = fully saturated)
+    lightness : float
+        Lightness value between 0 and 1, representing brightness
+        (0 = black, 0.5 = normal, 1 = white)
+
+    Returns
+    -------
+    str
+        Hexadecimal color code in the format '#RRGGBB'
+    """
+
+    rgb = colorsys.hls_to_rgb(h=hue, l=lightness, s=saturation)
+    return f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import inspect
 from functools import lru_cache
 from typing import TYPE_CHECKING, Literal
 
+import dags
 import dags.tree as dt
 import optree
 import pandas as pd
@@ -12,7 +14,10 @@ from ttsim import main, merge_trees
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
+from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.shared import to_datetime
+from ttsim.plot_dag import dummy_callable
+from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
@@ -24,6 +29,8 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
         NestedData,
         NestedInputStructureDict,
         NestedPolicyEnvironment,
@@ -222,3 +229,53 @@ def _get_policy_test_from_raw_test_data(
         test_dir=test_dir,
         xnp=xnp,
     )
+
+
+def check_env_completeness(
+    name: str,
+    date: datetime.date,
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+) -> None:
+    inputs_for_main = {
+        "date": date,
+        **orig_policy_objects,
+    }
+    environment = main(
+        inputs=inputs_for_main,
+        targets=["policy_environment"],
+    )["policy_environment"]
+    qname_environment = dt.flatten_to_qnames(environment)
+    qnames_policy_inputs = [
+        k for k, v in qname_environment.items() if isinstance(v, PolicyInput)
+    ]
+    tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
+    qname_env_with_derived_functions = main(
+        inputs={
+            "policy_environment": environment,
+            "labels__processed_data_columns": qnames_policy_inputs,
+            "targets__qname": list(qname_environment),
+        },
+        targets=[tgt],
+    )[tgt]
+    all_nodes = {
+        qn: dummy_callable(n) if not callable(n) else n
+        for qn, n in qname_env_with_derived_functions.items()
+    }
+    f = dags.concatenate_functions(
+        functions=all_nodes,
+        targets=list(qname_env_with_derived_functions.keys()),
+        return_type="dict",
+        enforce_signature=False,
+        set_annotations=False,
+    )
+    args = inspect.signature(f).parameters
+    if args:
+        raise ValueError(
+            f"{name}'s full DAG should include all root nodes but the following inputs "
+            "are missing in the specialized policy environment:"
+            f"\n\n{format_list_linewise(args.keys())}\n\n"
+            "Please add corresponding elements. Typically, these will be "
+            "`@policy_input()`s or parameters in the yaml files."
+        )

@@ -42,7 +42,7 @@ def einkommensgrenze(
     )
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM)
+@agg_by_p_id_function(end_date="2008-12-31", agg_type=AggType.SUM)
 def anspruchshöhe_m(
     anspruchshöhe_kind_m: float,
     p_id_empfänger: int,
@@ -330,12 +330,3 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
         return einkommensgrenze.reduziert_alleinerziehend["regelsatz"]
     else:
         return einkommensgrenze.reduziert_paar["regelsatz"]
-
-
-@agg_by_p_id_function(agg_type=AggType.SUM)
-def erziehungsgeld_spec_target(
-    erziehungsgeld_source_field: bool,
-    p_id_field: int,
-    p_id: int,
-) -> int:
-    pass

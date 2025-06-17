@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
     from ttsim.interface_dag_elements.typing import (
         OrderedQNames,
-        QNameCombinedEnvironment1,
         QNameData,
+        QNameSpecializedEnvironment1,
         UnorderedQNames,
     )
 
@@ -29,7 +29,7 @@ def columns(
 @interface_function()
 def params(
     labels__param_targets: OrderedQNames,
-    specialized_environment__with_processed_params_and_scalars: QNameCombinedEnvironment1,  # noqa: E501
+    specialized_environment__with_processed_params_and_scalars: QNameSpecializedEnvironment1,  # noqa: E501
 ) -> QNameData:
     return {
         pt: specialized_environment__with_processed_params_and_scalars[pt]
