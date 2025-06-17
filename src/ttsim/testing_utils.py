@@ -48,6 +48,7 @@ def cached_policy_environment(
             "date": date,
             "orig_policy_objects__root": root,
             "backend": backend,
+            "include_fail_and_warn_nodes": False,
         },
         targets=["policy_environment"],
     )["policy_environment"]
@@ -101,6 +102,7 @@ def execute_test(
                 "targets__tree": test.target_structure,
                 "rounding": True,
                 "backend": backend,
+                "include_fail_and_warn_nodes": False,
             },
             targets=["results__df_with_nested_columns"],
         )["results__df_with_nested_columns"]
