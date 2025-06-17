@@ -617,6 +617,7 @@ def root_nodes_are_missing(
         node
         for node in root_nodes
         if node not in processed_data
+        # Catches policy functions which do not take arguments.
         and node not in specialized_environment__with_partialled_params_and_scalars
     ]
 
