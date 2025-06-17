@@ -146,6 +146,8 @@ def plot_interface_dag(
     }
     dag = dags.create_dag(functions=nodes, targets=None)
 
+    breakpoint()
+
     for name, node_object in nodes.items():
         f = node_object.function if hasattr(node_object, "function") else node_object
         description = inspect.getdoc(f) or "No description available."

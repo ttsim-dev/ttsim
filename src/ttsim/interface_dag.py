@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import dags
+import dags.tree as dt
 
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
+    FailOrWarnFunction,
     InterfaceFunction,
     InterfaceInput,
 )
@@ -23,20 +25,22 @@ if TYPE_CHECKING:
 
 
 def main(
-    inputs: dict[str, Any],
-    targets: list[str] | None = None,
-    backend: Literal["numpy", "jax"] = "numpy",
+    inputs: InterfaceDAGElements | dict[str, Any],
+    targets: QNameTargetList | NestedTargetDict | None = None,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
-    if "backend" not in inputs:
+
+    flat_inputs = harmonize_inputs(inputs)
+
+    if "backend" not in flat_inputs:
         inputs["backend"] = backend
 
     nodes = {
         p: n
         for p, n in load_interface_functions_and_inputs().items()
-        if p not in inputs
+        if p not in flat_inputs
     }
 
     functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
@@ -58,7 +62,19 @@ def main(
         enforce_signature=False,
         set_annotations=False,
     )
-    return f(**inputs)
+    return f(**flat_inputs)
+
+
+def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str, Any]:
+    return inputs
+
+    flat_inputs = {}
+    # if isinstance(inputs, InterfaceDAGElements):
+    #     inputs = inputs.to_dict()
+    if any(isinstance(v, dict) for v in inputs.values()):
+        flat_inputs = dt.flatten_to_qnames(inputs)
+    else:
+        flat_inputs = inputs
 
 
 def load_interface_functions_and_inputs() -> dict[
@@ -82,7 +98,9 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
     paths = [
         p for p in root.rglob("*.py") if p.name not in ["__init__.py", "typing.py"]
     ]
-    flat_functions: dict[tuple[str, ...], InterfaceFunction | InterfaceInput] = {}
+    flat_functions: dict[
+        tuple[str, ...], InterfaceFunction | InterfaceInput | FailOrWarnFunction
+    ] = {}
     for path in paths:
         module = load_module(path=path, root=root)
         for name, obj in inspect.getmembers(module):
