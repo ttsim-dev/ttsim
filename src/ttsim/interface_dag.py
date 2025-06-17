@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import inspect
+from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import dags
 import dags.tree as dt
 
+from ttsim.interface_dag_elements import InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -66,8 +68,9 @@ def main(
 
 
 def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str, Any]:
-    return inputs
-
+    skeleton = dt.tree_paths(asdict(InterfaceDAGElements()))
+    # Iterate over the skeleton and see whether we need to convert anything to
+    # qualified names.
     flat_inputs = {}
     # if isinstance(inputs, InterfaceDAGElements):
     #     inputs = inputs.to_dict()
@@ -75,6 +78,8 @@ def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str,
         flat_inputs = dt.flatten_to_qnames(inputs)
     else:
         flat_inputs = inputs
+
+    return inputs
 
 
 def include_fail_and_warn_nodes(
