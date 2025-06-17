@@ -16,6 +16,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
     InterfaceFunction,
     InterfaceInput,
+    InterfaceFunctionFromUserInputs,
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
@@ -43,37 +44,58 @@ def main(
         if p not in inputs
     }
 
-    functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
+    explicit_functions = {
+        p: n
+        for p, n in nodes.items()
+        if isinstance(n, InterfaceFunction) and not isinstance(n, InterfaceFunctionFromUserInputs)
+    }
 
-    functions_with_partial_defaults = {
-        p: partial_in_default_if_node_missing(
-            func=f,
-            all_functions=functions,
-            inputs=inputs,
-        )
-        for p, f in functions.items()
+    user_input_dependant_functions = generate_user_input_dependant_functions(
+        inputs=inputs,
+        functions={
+            p: n
+            for p, n in nodes.items()
+            if isinstance(n, InterfaceFunctionFromUserInputs)
+        },
+    )
+
+    all_functions = {
+        **explicit_functions,
+        **user_input_dependant_functions,
     }
 
     _fail_if_targets_are_not_among_interface_functions(
         targets=targets,
-        interface_function_names=functions_with_partial_defaults.keys(),
+        interface_function_names=all_functions.keys(),
     )
 
     # If targets are None, all failures and warnings are included, anyhow.
     if fail_and_warn and targets is not None:
         targets = include_fail_and_warn_nodes(
-            functions=functions_with_partial_defaults,
+            functions=all_functions,
             targets=targets,
         )
 
     f = dags.concatenate_functions(
-        functions=functions_with_partial_defaults,
+        functions=all_functions,
         targets=targets,
         return_type="dict",
         enforce_signature=False,
         set_annotations=False,
     )
     return f(**inputs)
+
+
+def generate_user_input_dependant_functions(
+    inputs: dict[str, Any],
+    functions: dict[str, InterfaceFunctionFromUserInputs],
+) -> dict[str, InterfaceFunction]:
+    flat_inputs = dt.flatten_to_qnames(inputs)
+    generated_functions = {}
+    for func in functions.values():
+        # Pick spec that matches the inputs; fail if no or too many matches
+        # Generate function
+    return generated_functions
 
 
 def include_fail_and_warn_nodes(
@@ -196,20 +218,3 @@ def _fail_if_targets_are_not_among_interface_functions(
                 f"DAG:\n\n{formatted}",
             )
             raise ValueError(msg)
-
-
-def partial_in_default_if_node_missing(
-    func: InterfaceFunction,
-    all_functions: dict[str, InterfaceFunction],
-    inputs: dict[str, Any],
-) -> InterfaceFunction:
-    """Partial a function in the default if the node is missing in the inputs."""
-    result = func
-    for param_name, param in inspect.signature(func).parameters.items():
-        if (
-            param.default is not inspect.Parameter.empty
-            and param_name not in all_functions
-            and param_name not in dt.flatten_to_tree_paths(inputs)
-        ):
-            result = functools.partial(result, **{param_name: param.default})
-    return result

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 
@@ -11,6 +11,8 @@ from ttsim.interface_dag_elements.data_converters import (
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
+    interface_function_from_user_inputs,
+    InterfaceFunctionFromUserInputsSpec,
 )
 
 if TYPE_CHECKING:
@@ -22,6 +24,28 @@ if TYPE_CHECKING:
         FlatData,
         NestedData,
         NestedInputsMapper,
+    )
+
+
+def _mapped_df_to_nested_data(
+    input_data__df: pd.DataFrame,
+    input_data__mapper: NestedInputsMapper,
+    xnp: ModuleType,
+) -> NestedData:
+    return mapped_dataframe_to_nested_data(
+        df=input_data__df,
+        mapper=input_data__mapper,
+        xnp=xnp,
+    )
+
+
+def _df_with_nested_columns_to_nested_data(
+    input_data__df: pd.DataFrame,
+    xnp: ModuleType,
+) -> NestedData:
+    return dataframe_with_nested_columns_to_nested_data(
+        df=input_data__df,
+        xnp=xnp,
     )
 
 
@@ -40,49 +64,34 @@ def df_with_nested_columns() -> pd.DataFrame:
     pass
 
 
-@interface_input()
+@interface_function_from_user_inputs(
+    [
+        InterfaceFunctionFromUserInputsSpec(
+            inputs=["input_data__df_with_nested_columns"],
+            function=_df_with_nested_columns_to_nested_data,
+        ),
+        InterfaceFunctionFromUserInputsSpec(
+            inputs=["input_data__df_and_mapper_df", "input_data__df_and_mapper_mapper"],
+            function=_mapped_df_to_nested_data,
+        ),
+    ]
+)
 def tree() -> NestedData:
     pass
 
 
 @interface_function()
 def flat(
-    xnp: ModuleType,
-    tree: NestedData = None,
-    df_with_nested_columns: pd.DataFrame = None,
-    df_and_mapper__df: pd.DataFrame = None,
-    df_and_mapper__mapper: NestedInputsMapper = None,
+    tree: NestedData,
 ) -> FlatData:
     """The input DataFrame as a flattened data structure.
 
     Args:
-        xnp:
-            The NumPy module to use.
         tree:
-            The input tree.
-        df_with_nested_columns:
-            The input DataFrame with nested columns.
-        df_and_mapper__df:
-            The input DataFrame.
-        df_and_mapper__mapper:
-            A tree that maps paths (sequence of keys) to data columns names.
+            The input data as a tree.
 
     Returns
     -------
         Mapping of tree paths to input data.
     """
-    if tree:
-        base = tree
-    elif df_with_nested_columns:
-        base = dataframe_with_nested_columns_to_nested_data(
-            df=df_with_nested_columns,
-            xnp=xnp,
-        )
-    else:
-        base = mapped_dataframe_to_nested_data(
-            df=df_and_mapper__df,
-            mapper=df_and_mapper__mapper,
-            xnp=xnp,
-        )
-
-    return dt.flatten_to_tree_paths(base)
+    return dt.flatten_to_tree_paths(tree)

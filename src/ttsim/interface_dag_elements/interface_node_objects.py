@@ -188,6 +188,56 @@ def interface_function(
 
 
 @dataclass(frozen=True)
+class InterfaceFunctionFromUserInputs(InterfaceNodeObject):
+    """A function that is created from user inputs."""
+    
+    specs: list[InterfaceFunctionFromUserInputsSpec]
+    
+    #...
+
+
+def interface_function_from_user_inputs(
+    *,
+    leaf_name: str | None = None,
+    in_top_level_namespace: bool = False,
+    function_generation_specs: list[InterfaceFunctionFromUserInputsSpec],
+) -> InterfaceFunctionFromUserInputs:
+    """
+    Decorator that makes an `InterfaceFunctionFromUserInputs` from a function.
+
+    Parameters
+    ----------
+    leaf_name
+        The name that should be used as the PolicyFunction's leaf name in the DAG. If
+        omitted, we use the name of the function as defined.
+    in_top_level_namespace:
+        Whether the function is in the top-level namespace of the interface-DAG.
+    function_generation_specs:
+        A list of `InterfaceFunctionFromUserInputsSpec` objects that define the
+        function generation specs.
+
+    Returns
+    -------
+    A decorator that returns an InterfaceFunctionFromUserInputs object.
+    """
+
+    def inner(func: GenericCallable) -> InterfaceFunctionFromUserInputs:
+        return InterfaceFunctionFromUserInputs(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            in_top_level_namespace=in_top_level_namespace,
+            function_generation_specs=function_generation_specs,
+        )
+
+    return inner
+
+
+@dataclass(frozen=True)
+class InterfaceFunctionFromUserInputsSpec:
+    inputs: list[str]
+    function: GenericCallable
+
+
+@dataclass(frozen=True)
 class FailOrWarnFunction(InterfaceFunction):  # type: ignore[type-arg]
     """
     Base class for all functions operating on columns of data.
