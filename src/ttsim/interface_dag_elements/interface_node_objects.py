@@ -190,10 +190,10 @@ def interface_function(
 @dataclass(frozen=True)
 class InterfaceFunctionFromUserInputs(InterfaceNodeObject):
     """A function that is created from user inputs."""
-    
+
     specs: list[InterfaceFunctionFromUserInputsSpec]
-    
-    #...
+
+    # ...
 
 
 def interface_function_from_user_inputs(

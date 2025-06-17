@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
@@ -9,10 +9,10 @@ from ttsim.interface_dag_elements.data_converters import (
     mapped_dataframe_to_nested_data,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
-    interface_function,
-    interface_input,
-    interface_function_from_user_inputs,
     InterfaceFunctionFromUserInputsSpec,
+    interface_function,
+    interface_function_from_user_inputs,
+    interface_input,
 )
 
 if TYPE_CHECKING:
