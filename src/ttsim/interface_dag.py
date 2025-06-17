@@ -27,15 +27,13 @@ if TYPE_CHECKING:
 def main(
     inputs: InterfaceDAGElements | dict[str, Any],
     targets: QNameTargetList | NestedTargetDict | None = None,
+    fail_and_warn: bool = True,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
 
     flat_inputs = harmonize_inputs(inputs)
-
-    if "backend" not in flat_inputs:
-        inputs["backend"] = backend
 
     nodes = {
         p: n
@@ -50,12 +48,14 @@ def main(
         interface_function_names=functions.keys(),
     )
 
-    dag = dags.create_dag(
-        functions=functions,
-        targets=targets,
-    )
+    # If targets are None, all failures and warnings are included, anyhow.
+    if fail_and_warn and targets is not None:
+        targets = include_fail_and_warn_nodes(
+            functions=functions,
+            targets=targets,
+        )
+
     f = dags.concatenate_functions(
-        dag=dag,
         functions=functions,
         targets=targets,
         return_type="dict",
@@ -75,6 +75,49 @@ def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str,
         flat_inputs = dt.flatten_to_qnames(inputs)
     else:
         flat_inputs = inputs
+
+
+def include_fail_and_warn_nodes(
+    functions: dict[str, InterfaceFunction],
+    targets: list[str],
+) -> list[str]:
+    """Extend targets with failures and warnings that can be computed within the graph.
+
+    FailOrWarnFunctions which are included in the targets are treated like regular
+    functions.
+
+    """
+    fail_or_warn_functions = {
+        p: n
+        for p, n in functions.items()
+        if isinstance(n, FailOrWarnFunction) and p not in targets
+    }
+    workers_and_their_inputs = dags.create_dag(
+        functions={
+            p: n
+            for p, n in functions.items()
+            if not isinstance(n, FailOrWarnFunction) or p in targets
+        },
+        targets=targets,
+    )
+    out = targets.copy()
+    for p, n in fail_or_warn_functions.items():
+        args = inspect.signature(n).parameters
+        if all(a in workers_and_their_inputs for a in args) and (
+            # all([]) evaluates to True.
+            (
+                n.include_if_all_elements_present
+                and all(
+                    a in workers_and_their_inputs
+                    for a in n.include_if_all_elements_present
+                )
+            )
+            or any(
+                a in workers_and_their_inputs for a in n.include_if_any_element_present
+            )
+        ):
+            out.append(p)
+    return out
 
 
 def load_interface_functions_and_inputs() -> dict[

@@ -858,6 +858,7 @@ def test_can_override_ttsim_objects_with_data(
     targets__tree,
     expected_output,
     minimal_input_data,
+    backend,
 ):
     actual = main(
         inputs={
@@ -868,6 +869,7 @@ def test_can_override_ttsim_objects_with_data(
             "policy_environment": nested_policy_environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]

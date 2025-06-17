@@ -1,3 +1,5 @@
+from typing import Literal
+
 import pandas as pd
 from mettsim.config import METTSIM_ROOT
 
@@ -58,7 +60,7 @@ EXPECTED_RESULTS = pd.DataFrame(
 )
 
 
-def test_end_to_end():
+def test_end_to_end(backend: Literal["numpy", "jax"]):
     result = main(
         inputs={
             "input_data__df_and_mapper__df": DF_FOR_MAPPER,
@@ -67,7 +69,13 @@ def test_end_to_end():
             "date": "2025-01-01",
             "rounding": False,
             "orig_policy_objects__root": METTSIM_ROOT,
+            "backend": backend,
         },
         targets=["results__df_with_mapper"],
     )
-    pd.testing.assert_frame_equal(EXPECTED_RESULTS, result["results__df_with_mapper"])
+    pd.testing.assert_frame_equal(
+        EXPECTED_RESULTS,
+        result["results__df_with_mapper"],
+        check_dtype=False,
+        check_index_type=False,
+    )

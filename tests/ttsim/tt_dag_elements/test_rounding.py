@@ -171,6 +171,7 @@ def test_no_rounding(
     rounding_spec,
     input_values_exp_output,
     ignore_since_no_rounding,  # noqa: ARG001
+    backend,
 ):
     # Define function that should be rounded
     @policy_function(rounding_spec=rounding_spec)
@@ -191,6 +192,7 @@ def test_no_rounding(
             "policy_environment": policy_environment,
             "targets__tree": {"test_func": None},
             "rounding": False,
+            "backend": backend,
         },
         targets=["results__tree"],
     )["results__tree"]

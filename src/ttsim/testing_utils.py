@@ -48,6 +48,7 @@ def cached_policy_environment(
             "date": date,
             "orig_policy_objects__root": root,
             "backend": backend,
+            "include_fail_and_warn_nodes": False,
         },
         targets=["policy_environment"],
     )["policy_environment"]
@@ -101,6 +102,7 @@ def execute_test(
                 "targets__tree": test.target_structure,
                 "rounding": True,
                 "backend": backend,
+                "include_fail_and_warn_nodes": False,
             },
             targets=["results__df_with_nested_columns"],
         )["results__df_with_nested_columns"]
@@ -238,12 +240,12 @@ def check_env_completeness(
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
 ) -> None:
-    inputs_for_main = {
-        "date": date,
-        **orig_policy_objects,
-    }
     environment = main(
-        inputs=inputs_for_main,
+        inputs={
+            "date": date,
+            "backend": "numpy",
+            **orig_policy_objects,
+        },
         targets=["policy_environment"],
     )["policy_environment"]
     qname_environment = dt.flatten_to_qnames(environment)
@@ -256,6 +258,7 @@ def check_env_completeness(
             "policy_environment": environment,
             "labels__processed_data_columns": qnames_policy_inputs,
             "targets__qname": list(qname_environment),
+            "backend": "numpy",
         },
         targets=[tgt],
     )[tgt]
