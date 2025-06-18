@@ -17,6 +17,7 @@ from ttsim.interface_dag_elements import InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import fail_or_warn_function
 from ttsim.plot_dag import dummy_callable
+from ttsim.tt_dag_elements.column_objects_param_function import policy_function
 
 
 @fail_or_warn_function(
@@ -91,13 +92,18 @@ def test_interface_elements_class_is_complete():
     assert from_class.symmetric_difference(loaded) == set()
 
 
+@policy_function()
+def e(c: int, d: float) -> float:
+    return c + d
+
+
 def test_harmonize_inputs():
     x = InterfaceDAGElements()
-    x.input_data.df_and_mapper.df = pd.DataFrame([], columns=["a", "d"])
-    x.input_data.df_and_mapper.mapper = {"a": "b", "c": "d"}
-    x.targets.tree = {"c": "d"}
+    x.input_data.df_and_mapper.df = pd.DataFrame([], columns=["a", "b", "p_id"])
+    x.input_data.df_and_mapper.mapper = {"c": "a", "d": "b", "p_id": "p_id"}
+    x.targets.tree = {"e": "f"}
     x.date = "2025-01-01"
-    x.orig_policy_objects.column_objects_and_param_functions = {}
+    x.orig_policy_objects.column_objects_and_param_functions = {("x.py", "e"): e}
     x.orig_policy_objects.param_specs = {}
 
     main(inputs=x)
