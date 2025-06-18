@@ -71,7 +71,7 @@ def test_end_to_end(backend: Literal["numpy", "jax"]):
             "orig_policy_objects__root": METTSIM_ROOT,
             "backend": backend,
         },
-        targets=["results__df_with_mapper"],
+        output_names=["results__df_with_mapper"],
     )
     pd.testing.assert_frame_equal(
         EXPECTED_RESULTS,

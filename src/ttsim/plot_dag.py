@@ -108,7 +108,7 @@ def plot_tt_dag(
             "orig_policy_objects__root": root,
             "backend": "numpy",
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
 
     if node_selector:
@@ -199,7 +199,7 @@ def _get_tt_dag_with_node_metadata(
             "targets__qname": qnames_to_plot,
             "backend": "numpy",
         },
-        targets=[tgt],
+        output_names=[tgt],
     )[tgt]
 
     all_nodes = {

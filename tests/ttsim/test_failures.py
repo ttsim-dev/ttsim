@@ -134,7 +134,7 @@ def mettsim_environment(backend) -> NestedPolicyEnvironment:
             "date": datetime.date(2025, 1, 1),
             "backend": backend,
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
 
 
@@ -545,7 +545,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     with pytest.raises(
         ValueError,
@@ -671,7 +671,7 @@ def test_fail_if_input_data_tree_is_invalid_via_main(backend):
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["fail_if__input_data_tree_is_invalid"],
+            output_names=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
@@ -784,7 +784,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
             "rounding": False,
             "backend": backend,
         },
-        targets=["processed_data", "results__tree"],
+        output_names=["processed_data", "results__tree"],
     )
     with pytest.raises(TypeError, match=match):
         non_convertible_objects_in_results_tree(
@@ -828,7 +828,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
             "rounding": False,
             "backend": backend,
         },
-        targets=["processed_data", "results__tree"],
+        output_names=["processed_data", "results__tree"],
     )
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
@@ -862,7 +862,7 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["fail_if__input_data_tree_is_invalid"],
+            output_names=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
@@ -892,7 +892,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["fail_if__input_data_tree_is_invalid"],
+            output_names=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
@@ -920,7 +920,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["results__tree", "fail_if__root_nodes_are_missing"],
+            output_names=["results__tree", "fail_if__root_nodes_are_missing"],
         )
 
 
@@ -969,7 +969,9 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["fail_if__targets_are_not_in_specialized_environment_or_data"],
+            output_names=[
+                "fail_if__targets_are_not_in_specialized_environment_or_data"
+            ],
         )
 
 

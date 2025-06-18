@@ -243,7 +243,7 @@ def test_node_selector(node_selector, expected_nodes):
             "orig_policy_objects__root": METTSIM_ROOT,
             "backend": "numpy",
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
     dag = _get_tt_dag_with_node_metadata(
         environment=environment,

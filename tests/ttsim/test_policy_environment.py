@@ -80,7 +80,7 @@ def test_input_is_recognized_as_potential_group_id(backend):
                 "date": datetime.date(2020, 1, 1),
                 "backend": backend,
             },
-            targets=["labels__grouping_levels"],
+            output_names=["labels__grouping_levels"],
         )["labels__grouping_levels"]
     )
 
@@ -94,7 +94,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
                 "date": datetime.date(2020, 1, 1),
                 "backend": backend,
             },
-            targets=["labels__grouping_levels"],
+            output_names=["labels__grouping_levels"],
         )["labels__grouping_levels"]
     )
 

@@ -116,7 +116,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
             "rounding": True,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
@@ -153,7 +153,7 @@ def test_rounding_with_time_conversion(backend, xnp):
             "rounding": True,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
@@ -194,7 +194,7 @@ def test_no_rounding(
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     assert_series_equal(
         pd.Series(results__tree["test_func"]),

@@ -50,7 +50,7 @@ def cached_policy_environment(
             "backend": backend,
             "include_fail_and_warn_nodes": False,
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
 
 
@@ -104,7 +104,7 @@ def execute_test(
                 "backend": backend,
                 "include_fail_and_warn_nodes": False,
             },
-            targets=["results__df_with_nested_columns"],
+            output_names=["results__df_with_nested_columns"],
         )["results__df_with_nested_columns"]
 
         if test.expected_output_tree:
@@ -246,7 +246,7 @@ def check_env_completeness(
             "backend": "numpy",
             **orig_policy_objects,
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
     qname_environment = dt.flatten_to_qnames(environment)
     qnames_policy_inputs = [
@@ -260,7 +260,7 @@ def check_env_completeness(
             "targets__qname": list(qname_environment),
             "backend": "numpy",
         },
-        targets=[tgt],
+        output_names=[tgt],
     )[tgt]
     all_nodes = {
         qn: dummy_callable(n) if not callable(n) else n

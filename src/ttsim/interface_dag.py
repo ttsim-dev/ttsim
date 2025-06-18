@@ -23,12 +23,16 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 if TYPE_CHECKING:
     from collections.abc import KeysView
 
-    from ttsim.interface_dag_elements.typing import UnorderedQNames
+    from ttsim.interface_dag_elements.typing import (
+        NestedTargetDict,
+        QNameStrings,
+        UnorderedQNames,
+    )
 
 
 def main(
     inputs: InterfaceDAGElements | dict[str, Any],
-    output_names: QNameTargetList | NestedTargetDict | None = None,
+    output_names: QNameStrings | NestedTargetDict | None = None,
     fail_and_warn: bool = True,
 ) -> dict[str, Any]:
     """
@@ -36,7 +40,7 @@ def main(
     """
 
     flat_inputs = harmonize_inputs(inputs)
-    flat_output_names = dt.qnames(output_names)
+    output_qnames = _harmonize_output_qnames(output_names)
 
     nodes = {
         p: n
@@ -46,21 +50,21 @@ def main(
 
     functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
 
-    _fail_if_targets_are_not_among_interface_functions(
-        targets=flat_output_names,
+    _fail_if_output_qnames_are_not_among_interface_functions(
+        output_qnames=output_qnames,
         interface_function_names=functions.keys(),
     )
 
     # If targets are None, all failures and warnings are included, anyhow.
-    if fail_and_warn and flat_output_names is not None:
-        flat_output_names = include_fail_and_warn_nodes(
+    if fail_and_warn and output_qnames is not None:
+        output_qnames = include_fail_and_warn_nodes(
             functions=functions,
-            flat_output_names=flat_output_names,
+            output_qnames=output_qnames,
         )
 
     f = dags.concatenate_functions(
         functions=functions,
-        targets=flat_output_names,
+        targets=output_qnames,
         return_type="dict",
         enforce_signature=False,
         set_annotations=False,
@@ -83,9 +87,19 @@ def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str,
     return inputs
 
 
+def _harmonize_output_qnames(
+    output_names: QNameStrings | NestedTargetDict | None,
+) -> list[str] | None:
+    if output_names is None:
+        return None
+    if isinstance(output_names, dict):
+        return dt.qnames(output_names)
+    return output_names
+
+
 def include_fail_and_warn_nodes(
     functions: dict[str, InterfaceFunction],
-    flat_output_names: list[str],
+    output_qnames: QNameStrings,
 ) -> list[str]:
     """Extend targets with failures and warnings that can be computed within the graph.
 
@@ -96,17 +110,17 @@ def include_fail_and_warn_nodes(
     fail_or_warn_functions = {
         p: n
         for p, n in functions.items()
-        if isinstance(n, FailOrWarnFunction) and p not in flat_output_names
+        if isinstance(n, FailOrWarnFunction) and p not in output_qnames
     }
     workers_and_their_inputs = dags.create_dag(
         functions={
             p: n
             for p, n in functions.items()
-            if not isinstance(n, FailOrWarnFunction) or p in flat_output_names
+            if not isinstance(n, FailOrWarnFunction) or p in output_qnames
         },
-        targets=flat_output_names,
+        targets=output_qnames,
     )
-    out = flat_output_names.copy()
+    out = output_qnames.copy()
     for p, n in fail_or_warn_functions.items():
         args = inspect.signature(n).parameters
         if all(a in workers_and_their_inputs for a in args) and (
@@ -176,8 +190,8 @@ def _remove_tree_logic_from_function_collection(
     }
 
 
-def _fail_if_targets_are_not_among_interface_functions(
-    targets: list[str] | None,
+def _fail_if_output_qnames_are_not_among_interface_functions(
+    output_qnames: list[str] | None,
     interface_function_names: KeysView[str],
 ) -> None:
     """Fail if some target is not among functions.
@@ -195,8 +209,8 @@ def _fail_if_targets_are_not_among_interface_functions(
         Raised if any member of `targets` is not among functions.
 
     """
-    if targets is not None:
-        missing_targets = set(targets) - set(interface_function_names)
+    if output_qnames is not None:
+        missing_targets = set(output_qnames) - set(interface_function_names)
 
         if missing_targets:
             formatted = format_list_linewise(sorted(missing_targets))

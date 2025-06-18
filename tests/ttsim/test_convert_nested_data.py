@@ -225,7 +225,7 @@ def test_nested_data_to_dataframe(
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,
