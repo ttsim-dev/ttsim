@@ -13,7 +13,6 @@ import pytest
 from ttsim import main
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
-    param_specs,
 )
 from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
@@ -61,10 +60,16 @@ def some_int_param():
 
 
 def test_add_jahresanfang(xnp):
-    orig = param_specs(root=Path(__file__).parent.parent / "test_parameters")
-    k = ("test_add_jahresanfang.yaml", "foo")
+    spec = {
+        "name": {"de": "Test", "en": "Check"},
+        "description": {"de": "Nichts zu sehen", "en": "Nothing to do"},
+        "type": "scalar",
+        "add_jahresanfang": True,
+        datetime.date(2020, 1, 1): {"value": 1},
+        datetime.date(2020, 7, 1): {"value": 2},
+    }
     _active_ttsim_tree_with_params = _active_param_objects(
-        orig={k: orig[k]},
+        orig={("spam.yaml", "foo"): spec},
         date=pd.to_datetime("2020-07-01").date(),
         xnp=xnp,
     )
