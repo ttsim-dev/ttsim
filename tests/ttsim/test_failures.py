@@ -18,7 +18,6 @@ from ttsim.interface_dag_elements.fail_if import (
     _ParamWithActivePeriod,
     active_periods_overlap,
     assert_valid_ttsim_pytree,
-    data_paths_are_missing_in_paths_to_mapped_df_column_names,
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
@@ -26,6 +25,7 @@ from ttsim.interface_dag_elements.fail_if import (
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_has_incorrect_format,
     non_convertible_objects_in_results_tree,
+    paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt_dag_elements import (
@@ -127,14 +127,14 @@ def minimal_input_data():
     }
 
 
-@pytest.fixture(scope="module")
-def mettsim_environment() -> NestedPolicyEnvironment:
+def mettsim_environment(backend) -> NestedPolicyEnvironment:
     return main(
         inputs={
             "orig_policy_objects__root": METTSIM_ROOT,
             "date": datetime.date(2025, 1, 1),
+            "backend": backend,
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
 
 
@@ -535,6 +535,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
     environment,
     targets__tree,
     minimal_data_tree,
+    backend,
 ):
     results__tree = main(
         inputs={
@@ -542,23 +543,24 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     with pytest.raises(
         ValueError,
         match="are not mapped to a column name",
     ):
-        data_paths_are_missing_in_paths_to_mapped_df_column_names(
+        paths_are_missing_in_targets_tree_mapper(
             results__tree=results__tree,
             targets__tree=targets__tree,
         )
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key(
-    mettsim_environment: NestedPolicyEnvironment,
+    backend,
 ):
-    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([-1, 1, 2]),
@@ -572,9 +574,9 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non_existing_p_id(
-    mettsim_environment: NestedPolicyEnvironment,
+    backend,
 ):
-    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_spouse": pd.Series([0, 1, 2]),
@@ -589,9 +591,9 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_allowed(
-    mettsim_environment: NestedPolicyEnvironment,
+    backend,
 ):
-    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "p_id_child_": pd.Series([1, 3, 3]),
@@ -605,9 +607,9 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
 
 
 def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_same_row_if_not_allowed(
-    mettsim_environment: NestedPolicyEnvironment,
+    backend,
 ):
-    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment)
+    flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
         "p_id": pd.Series([1, 2, 3]),
         "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
@@ -655,7 +657,7 @@ def test_fail_if_input_data_tree_is_invalid(xnp):
         input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
 
 
-def test_fail_if_input_data_tree_is_invalid_via_main():
+def test_fail_if_input_data_tree_is_invalid_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
@@ -667,8 +669,9 @@ def test_fail_if_input_data_tree_is_invalid_via_main():
                 "policy_environment": {},
                 "targets__tree": {},
                 "rounding": False,
+                "backend": backend,
             },
-            targets=["fail_if__input_data_tree_is_invalid"],
+            output_names=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
@@ -781,7 +784,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
             "rounding": False,
             "backend": backend,
         },
-        targets=["processed_data", "results__tree"],
+        output_names=["processed_data", "results__tree"],
     )
     with pytest.raises(TypeError, match=match):
         non_convertible_objects_in_results_tree(
@@ -825,7 +828,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
             "rounding": False,
             "backend": backend,
         },
-        targets=["processed_data", "results__tree"],
+        output_names=["processed_data", "results__tree"],
     )
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
@@ -859,7 +862,7 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["fail_if__input_data_tree_is_invalid"],
+            output_names=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
@@ -889,7 +892,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["fail_if__input_data_tree_is_invalid"],
+            output_names=["fail_if__input_data_tree_is_invalid"],
         )["fail_if__input_data_tree_is_invalid"]
 
 
@@ -917,7 +920,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
                 "rounding": False,
                 "backend": backend,
             },
-            targets=["results__tree", "fail_if__root_nodes_are_missing"],
+            output_names=["results__tree", "fail_if__root_nodes_are_missing"],
         )
 
 
@@ -952,6 +955,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data(
 
 def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
     minimal_input_data,
+    backend,
 ):
     with pytest.raises(
         ValueError,
@@ -963,8 +967,11 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                 "policy_environment": {},
                 "targets__tree": {"unknown_target": None},
                 "rounding": False,
+                "backend": backend,
             },
-            targets=["fail_if__targets_are_not_in_specialized_environment_or_data"],
+            output_names=[
+                "fail_if__targets_are_not_in_specialized_environment_or_data"
+            ],
         )
 
 

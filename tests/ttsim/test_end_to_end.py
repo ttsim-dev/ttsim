@@ -87,7 +87,7 @@ EXPECTED_RESULTS = pd.DataFrame(
         },
     ],
 )
-def test_end_to_end(input_spec):
+def test_end_to_end(input_spec, backend):
     result = main(
         inputs={
             "targets__tree": TARGETS_TREE,
@@ -95,7 +95,13 @@ def test_end_to_end(input_spec):
             "rounding": False,
             "orig_policy_objects__root": METTSIM_ROOT,
             **input_spec,
+            "backend": backend,
         },
-        targets=["results__df_with_mapper"],
+        output_names=["results__df_with_mapper"],
     )
-    pd.testing.assert_frame_equal(EXPECTED_RESULTS, result["results__df_with_mapper"])
+    pd.testing.assert_frame_equal(
+        EXPECTED_RESULTS,
+        result["results__df_with_mapper"],
+        check_dtype=False,
+        check_index_type=False,
+    )

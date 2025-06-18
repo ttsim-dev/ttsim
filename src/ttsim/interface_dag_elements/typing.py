@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
 if TYPE_CHECKING:
     # Make these available for import from other modules.
     import datetime
-    from collections.abc import Mapping
+    from collections.abc import Iterable, Mapping
 
     from jaxtyping import Array, Bool, Float, Int
 
@@ -53,6 +53,8 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to df columns or constants."""
     QNameData = Mapping[str, BoolColumn | IntColumn | FloatColumn]
     """Mapping of qualified name paths to 1d arrays."""
+    QNameStrings = Iterable[str]
+    """A list, tuple, or set of qualified names."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Collections of names etc.
