@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from _gettsim.config import GETTSIM_ROOT
+from pathlib import Path
+
 from ttsim.plot_dag import plot_tt_dag
+
+GETTSIM_ROOT = Path(__file__).parent.parent / "_gettsim"
 
 
 def test_gettsim_policy_environment_dag_with_params():

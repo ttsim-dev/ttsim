@@ -3,13 +3,13 @@ from __future__ import annotations
 import copy
 import datetime
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
 from ttsim.interface_dag_elements.fail_if import (
@@ -130,7 +130,7 @@ def minimal_input_data():
 def mettsim_environment(backend) -> NestedPolicyEnvironment:
     return main(
         inputs={
-            "orig_policy_objects__root": METTSIM_ROOT,
+            "orig_policy_objects__root": Path(__file__).parent.parent / "mettsim",
             "date": datetime.date(2025, 1, 1),
             "backend": backend,
         },

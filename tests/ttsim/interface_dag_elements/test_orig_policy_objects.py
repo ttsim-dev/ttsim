@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from mettsim.config import METTSIM_ROOT
+from pathlib import Path
 
 from ttsim.interface_dag_elements.orig_policy_objects import (
     _find_files_recursively,
     load_module,
 )
+
+METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 
 
 def test_load_path():

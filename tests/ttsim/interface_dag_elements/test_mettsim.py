@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy
 import pytest
-from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
 from ttsim.plot_dag import (
@@ -26,6 +25,8 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
     )
+
+METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 
 TEST_DIR = Path(__file__).parent
 
