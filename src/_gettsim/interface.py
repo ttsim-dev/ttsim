@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy
 
-from _gettsim.config import GETTSIM_ROOT
 from ttsim import main
 from ttsim.interface_dag_elements.data_converters import (
     dataframe_to_nested_data,
@@ -114,12 +114,13 @@ def oss(
     nested_result = main(
         inputs={
             "date": to_datetime(date),
-            "orig_policy_objects__root": GETTSIM_ROOT,
+            "orig_policy_objects__root": Path(__file__).parent,
             "input_data__tree": input_data__tree,
             "targets__tree": targets__tree,
             "rounding": True,
+            "backend": "numpy",
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     return nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=nested_result,

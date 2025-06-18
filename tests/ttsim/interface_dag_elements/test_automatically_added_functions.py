@@ -294,7 +294,7 @@ class TestCreateFunctionsForTimeUnits:
             qname_policy_environment={
                 name: policy_function(leaf_name=name)(return_one),
             },
-            processed_data_columns=set(),
+            input_columns=set(),
             grouping_levels=("sn", "kin"),
         )
 
@@ -306,7 +306,7 @@ class TestCreateFunctionsForTimeUnits:
             qname_policy_environment={
                 "test1_d": policy_function(leaf_name="test1_d")(return_one),
             },
-            processed_data_columns={"test2_y"},
+            input_columns={"test2_y"},
             grouping_levels=("sn", "kin"),
         )
 
@@ -320,7 +320,7 @@ class TestCreateFunctionsForTimeUnits:
             qname_policy_environment={
                 "test_d": policy_function(leaf_name="test_d")(return_one),
             },
-            processed_data_columns={"test_y"},
+            input_columns={"test_y"},
             grouping_levels=("sn", "kin"),
         )
 
@@ -353,7 +353,7 @@ def test_should_not_create_cycle():
 
     time_conversion_functions = create_time_conversion_functions(
         qname_policy_environment={"test_d": policy_function(leaf_name="test_d")(x)},
-        processed_data_columns=set(),
+        input_columns=set(),
         grouping_levels=(),
     )
 
@@ -364,7 +364,7 @@ def test_should_not_create_cycle():
     (
         "column_functions",
         "targets",
-        "labels__processed_data_columns",
+        "input_columns",
         "expected",
     ),
     [
@@ -391,7 +391,7 @@ def test_should_not_create_cycle():
 def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
     targets,
-    labels__processed_data_columns,
+    input_columns,
     expected,
 ):
     """Test that the derived aggregation functions are in the correct namespace.
@@ -401,7 +401,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     """
     result = create_agg_by_group_functions(
         column_functions=column_functions,
-        labels__processed_data_columns=labels__processed_data_columns,
+        input_columns=input_columns,
         targets=targets,
         grouping_levels=("kin",),
     )

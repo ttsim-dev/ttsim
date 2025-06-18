@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Literal
 import numpy
 import pytest
 
-from _gettsim.config import GETTSIM_ROOT
 from ttsim import main
 from ttsim.testing_utils import (
     PolicyTest,
@@ -24,6 +23,7 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
     )
 
+GETTSIM_ROOT = Path(__file__).parent.parent / "_gettsim"
 TEST_DIR = Path(__file__).parent
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
@@ -40,7 +40,7 @@ def get_orig_gettsim_objects() -> dict[
         inputs={
             "orig_policy_objects__root": GETTSIM_ROOT,
         },
-        targets=[
+        output_names=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],

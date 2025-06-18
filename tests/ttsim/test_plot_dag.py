@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
-from mettsim.config import METTSIM_ROOT
 
 from ttsim.interface_dag import main
 from ttsim.plot_dag import (
@@ -46,8 +47,15 @@ def some_policy_function():
     return 1
 
 
-def test_plot_full_interface_dag():
-    plot_interface_dag()
+@pytest.mark.parametrize(
+    ("include_fail_and_warn_nodes",),
+    [
+        (True,),
+        (False,),
+    ],
+)
+def test_plot_full_interface_dag(include_fail_and_warn_nodes):
+    fig = plot_interface_dag(include_fail_and_warn_nodes=include_fail_and_warn_nodes)  # noqa: F841
 
 
 @pytest.mark.parametrize(
@@ -233,9 +241,10 @@ def test_node_selector(node_selector, expected_nodes):
     environment = main(
         inputs={
             "date_str": "2025-01-01",
-            "orig_policy_objects__root": METTSIM_ROOT,
+            "orig_policy_objects__root": Path(__file__).parent / "mettsim",
+            "backend": "numpy",
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
     dag = _get_tt_dag_with_node_metadata(
         environment=environment,

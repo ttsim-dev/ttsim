@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy
 import pytest
-from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
 from ttsim.plot_dag import (
@@ -27,10 +26,11 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
     )
 
-TEST_DIR = Path(__file__).parent
+METTSIM_ROOT = Path(__file__).parent / "mettsim"
+
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
-    test_dir=TEST_DIR,
+    test_dir=Path(__file__).parent / "mettsim_test_data",
     policy_name="",
     xnp=numpy,
 )
@@ -43,7 +43,7 @@ def get_orig_mettsim_objects() -> dict[
         inputs={
             "orig_policy_objects__root": METTSIM_ROOT,
         },
-        targets=[
+        output_names=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
