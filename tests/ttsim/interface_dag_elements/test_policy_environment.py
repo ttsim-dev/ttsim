@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import optree
 import pandas as pd
 import pytest
-from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
 from ttsim.interface_dag_elements.orig_policy_objects import (
@@ -27,6 +26,8 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         NestedColumnObjectsParamFunctions,
     )
+
+METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 
 
 @pytest.fixture(scope="module")
@@ -60,7 +61,7 @@ def some_int_param():
 
 
 def test_add_jahresanfang(xnp):
-    orig = param_specs(root=Path(__file__).parent / "test_parameters")
+    orig = param_specs(root=Path(__file__).parent.parent / "test_parameters")
     k = ("test_add_jahresanfang.yaml", "foo")
     _active_ttsim_tree_with_params = _active_param_objects(
         orig={k: orig[k]},

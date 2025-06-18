@@ -1,7 +1,7 @@
+from pathlib import Path
 from typing import Literal
 
 import pandas as pd
-from mettsim.config import METTSIM_ROOT
 
 from ttsim import main
 
@@ -68,7 +68,7 @@ def test_end_to_end(backend: Literal["numpy", "jax"]):
             "targets__tree": TARGETS_TREE,
             "date": "2025-01-01",
             "rounding": False,
-            "orig_policy_objects__root": METTSIM_ROOT,
+            "orig_policy_objects__root": Path(__file__).parent / "mettsim",
             "backend": backend,
         },
         output_names=["results__df_with_mapper"],

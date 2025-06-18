@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
-from mettsim.config import METTSIM_ROOT
 
 from ttsim.interface_dag import main
 from ttsim.plot_dag import (
@@ -240,7 +241,7 @@ def test_node_selector(node_selector, expected_nodes):
     environment = main(
         inputs={
             "date_str": "2025-01-01",
-            "orig_policy_objects__root": METTSIM_ROOT,
+            "orig_policy_objects__root": Path(__file__).parent / "mettsim",
             "backend": "numpy",
         },
         output_names=["policy_environment"],
