@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 from ttsim import main
 from ttsim.interface_dag import load_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
+    FailOrWarnFunction,
     InterfaceFunction,
     InterfaceInput,
     interface_function,
@@ -105,8 +106,9 @@ def plot_tt_dag(
         inputs={
             "date_str": date_str,
             "orig_policy_objects__root": root,
+            "backend": "numpy",
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
 
     if node_selector:
@@ -136,6 +138,7 @@ def plot_tt_dag(
 
 
 def plot_interface_dag(
+    include_fail_and_warn_nodes: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
 ) -> go.Figure:
@@ -144,8 +147,11 @@ def plot_interface_dag(
         p: dummy_callable(n) if not callable(n) else n
         for p, n in load_interface_functions_and_inputs().items()
     }
+    if not include_fail_and_warn_nodes:
+        nodes = {
+            p: n for p, n in nodes.items() if not isinstance(n, FailOrWarnFunction)
+        }
     dag = dags.create_dag(functions=nodes, targets=None)
-
     for name, node_object in nodes.items():
         f = node_object.function if hasattr(node_object, "function") else node_object
         description = inspect.getdoc(f) or "No description available."
@@ -191,8 +197,9 @@ def _get_tt_dag_with_node_metadata(
             "policy_environment": environment,
             "labels__processed_data_columns": qnames_policy_inputs,
             "targets__qname": qnames_to_plot,
+            "backend": "numpy",
         },
-        targets=[tgt],
+        output_names=[tgt],
     )[tgt]
 
     all_nodes = {

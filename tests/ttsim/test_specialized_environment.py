@@ -209,7 +209,7 @@ def mettsim_environment() -> NestedPolicyEnvironment:
             "orig_policy_objects__root": METTSIM_ROOT,
             "date": datetime.date(2025, 1, 1),
         },
-        targets=["policy_environment"],
+        output_names=["policy_environment"],
     )["policy_environment"]
 
 
@@ -411,7 +411,7 @@ def test_create_agg_by_group_functions(
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
 
 
@@ -429,7 +429,7 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
 
     assert isinstance(out, dict)
@@ -463,7 +463,7 @@ def test_params_target_is_allowed(minimal_input_data):
             "rounding": False,
             "backend": "numpy",
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
 
     assert isinstance(out, dict)
@@ -496,7 +496,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     numpy.testing.assert_array_almost_equal(
         results__tree["b"],
@@ -563,7 +563,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__df_with_nested_columns"],
+        output_names=["results__df_with_nested_columns"],
     )["results__df_with_nested_columns"]
 
     pd.testing.assert_series_equal(
@@ -610,7 +610,7 @@ def test_user_provided_aggregation(backend):
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__df_with_nested_columns"],
+        output_names=["results__df_with_nested_columns"],
     )["results__df_with_nested_columns"]
 
     pd.testing.assert_series_equal(
@@ -663,7 +663,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__df_with_nested_columns"],
+        output_names=["results__df_with_nested_columns"],
     )["results__df_with_nested_columns"]
 
     pd.testing.assert_series_equal(
@@ -753,7 +753,7 @@ def test_user_provided_aggregate_by_p_id_specs(
             "rounding": False,
             "backend": backend,
         },
-        targets=["results__df_with_nested_columns"],
+        output_names=["results__df_with_nested_columns"],
     )["results__df_with_nested_columns"]
 
     pd.testing.assert_series_equal(
@@ -858,6 +858,7 @@ def test_can_override_ttsim_objects_with_data(
     targets__tree,
     expected_output,
     minimal_input_data,
+    backend,
 ):
     actual = main(
         inputs={
@@ -868,8 +869,9 @@ def test_can_override_ttsim_objects_with_data(
             "policy_environment": nested_policy_environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
 
     flat_actual = dt.flatten_to_tree_paths(actual)

@@ -215,6 +215,7 @@ def test_nested_data_to_dataframe(
     minimal_data_tree,
     targets__tree,
     expected_output,
+    backend,
 ):
     results__tree = main(
         inputs={
@@ -222,12 +223,19 @@ def test_nested_data_to_dataframe(
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": backend,
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,
         nested_outputs_df_column_names=targets__tree,
         data_with_p_id=minimal_data_tree,
     )
-    pd.testing.assert_frame_equal(result_df, expected_output, check_like=True)
+    pd.testing.assert_frame_equal(
+        result_df,
+        expected_output,
+        check_like=True,
+        check_dtype=False,
+        check_index_type=False,
+    )

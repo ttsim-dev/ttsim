@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import dags
+import dags.tree as dt
 
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
+    FailOrWarnFunction,
     InterfaceFunction,
     InterfaceInput,
 )
@@ -19,19 +21,23 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 if TYPE_CHECKING:
     from collections.abc import KeysView
 
-    from ttsim.interface_dag_elements.typing import UnorderedQNames
+    from ttsim.interface_dag_elements.typing import (
+        NestedTargetDict,
+        QNameStrings,
+        UnorderedQNames,
+    )
 
 
 def main(
     inputs: dict[str, Any],
-    targets: list[str] | None = None,
-    backend: Literal["numpy", "jax"] = "numpy",
+    output_names: QNameStrings | NestedTargetDict | None = None,
+    fail_and_warn: bool = True,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
-    if "backend" not in inputs:
-        inputs["backend"] = backend
+
+    output_qnames = _harmonize_output_qnames(output_names)
 
     nodes = {
         p: n
@@ -41,24 +47,79 @@ def main(
 
     functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
 
-    _fail_if_targets_are_not_among_interface_functions(
-        targets=targets,
+    _fail_if_output_qnames_are_not_among_interface_functions(
+        output_qnames=output_qnames,
         interface_function_names=functions.keys(),
     )
 
-    dag = dags.create_dag(
-        functions=functions,
-        targets=targets,
-    )
+    # If targets are None, all failures and warnings are included, anyhow.
+    if fail_and_warn and output_qnames is not None:
+        output_qnames = include_fail_and_warn_nodes(
+            functions=functions,
+            output_qnames=output_qnames,
+        )
+
     f = dags.concatenate_functions(
-        dag=dag,
         functions=functions,
-        targets=targets,
+        targets=output_qnames,
         return_type="dict",
         enforce_signature=False,
         set_annotations=False,
     )
     return f(**inputs)
+
+
+def _harmonize_output_qnames(
+    output_names: QNameStrings | NestedTargetDict | None,
+) -> list[str] | None:
+    if output_names is None:
+        return None
+    if isinstance(output_names, dict):
+        return dt.qnames(output_names)
+    return output_names
+
+
+def include_fail_and_warn_nodes(
+    functions: dict[str, InterfaceFunction],
+    output_qnames: QNameStrings,
+) -> list[str]:
+    """Extend targets with failures and warnings that can be computed within the graph.
+
+    FailOrWarnFunctions which are included in the targets are treated like regular
+    functions.
+
+    """
+    fail_or_warn_functions = {
+        p: n
+        for p, n in functions.items()
+        if isinstance(n, FailOrWarnFunction) and p not in output_qnames
+    }
+    workers_and_their_inputs = dags.create_dag(
+        functions={
+            p: n
+            for p, n in functions.items()
+            if not isinstance(n, FailOrWarnFunction) or p in output_qnames
+        },
+        targets=output_qnames,
+    )
+    out = output_qnames.copy()
+    for p, n in fail_or_warn_functions.items():
+        args = inspect.signature(n).parameters
+        if all(a in workers_and_their_inputs for a in args) and (
+            # all([]) evaluates to True.
+            (
+                n.include_if_all_elements_present
+                and all(
+                    a in workers_and_their_inputs
+                    for a in n.include_if_all_elements_present
+                )
+            )
+            or any(
+                a in workers_and_their_inputs for a in n.include_if_any_element_present
+            )
+        ):
+            out.append(p)
+    return out
 
 
 def load_interface_functions_and_inputs() -> dict[
@@ -82,7 +143,9 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
     paths = [
         p for p in root.rglob("*.py") if p.name not in ["__init__.py", "typing.py"]
     ]
-    flat_functions: dict[tuple[str, ...], InterfaceFunction | InterfaceInput] = {}
+    flat_functions: dict[
+        tuple[str, ...], InterfaceFunction | InterfaceInput | FailOrWarnFunction
+    ] = {}
     for path in paths:
         module = load_module(path=path, root=root)
         for name, obj in inspect.getmembers(module):
@@ -109,8 +172,8 @@ def _remove_tree_logic_from_function_collection(
     }
 
 
-def _fail_if_targets_are_not_among_interface_functions(
-    targets: list[str] | None,
+def _fail_if_output_qnames_are_not_among_interface_functions(
+    output_qnames: list[str] | None,
     interface_function_names: KeysView[str],
 ) -> None:
     """Fail if some target is not among functions.
@@ -128,8 +191,8 @@ def _fail_if_targets_are_not_among_interface_functions(
         Raised if any member of `targets` is not among functions.
 
     """
-    if targets is not None:
-        missing_targets = set(targets) - set(interface_function_names)
+    if output_qnames is not None:
+        missing_targets = set(output_qnames) - set(interface_function_names)
 
         if missing_targets:
             formatted = format_list_linewise(sorted(missing_targets))

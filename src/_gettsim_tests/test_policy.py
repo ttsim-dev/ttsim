@@ -40,7 +40,7 @@ def get_orig_gettsim_objects() -> dict[
         inputs={
             "orig_policy_objects__root": GETTSIM_ROOT,
         },
-        targets=[
+        output_names=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
