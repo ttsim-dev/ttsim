@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+from dataclasses import replace
 from types import ModuleType
 from typing import TYPE_CHECKING, Literal
 
@@ -270,11 +271,14 @@ def with_partialled_params_and_scalars(
         ]:
             partial_params[arg] = with_processed_params_and_scalars[arg]
         if partial_params:
-            partialed_func = functools.partial(rounded_col_func, **partial_params)
+            partialed_policy_func = replace(
+                rounded_col_func,
+                function=functools.partial(rounded_col_func.function, **partial_params),
+            )
         else:
-            partialed_func = rounded_col_func
+            partialed_policy_func = rounded_col_func
         processed_functions[name] = vectorize_policy_function(
-            policy_function=partialed_func,
+            policy_function=partialed_policy_func,
             vectorization_strategy=col_func.vectorization_strategy,
             backend=backend,
             xnp=xnp,

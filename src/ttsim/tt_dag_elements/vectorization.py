@@ -47,6 +47,8 @@ def vectorize_policy_function(
 
     """
     func = policy_function.function
+    if isinstance(func, functools.partial):
+        func = func.func
 
     vectorized: Callable[..., Any]
     if vectorization_strategy == "loop":
@@ -71,6 +73,9 @@ def vectorize_policy_function(
     # arrays.
     vectorized.__signature__ = _create_vectorized_signature(func, backend=backend)  # type: ignore[attr-defined]
     vectorized.__annotations__ = _create_vectorized_annotations(func, backend=backend)
+
+    if isinstance(policy_function.function, functools.partial):
+        vectorized = functools.partial(vectorized, **policy_function.function.keywords)
 
     return replace(policy_function, function=vectorized)
 
