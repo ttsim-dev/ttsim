@@ -191,6 +191,8 @@ def _fail_if_requested_nodes_cannot_be_found(
     # Output qnames not in interface functions
     if output_qnames is not None:
         missing_output_qnames = set(output_qnames) - set(interface_function_names)
+    else:
+        missing_output_qnames = set()
 
     # Qnames from include condtions of fail_or_warn functions not in nodes
     for n in fail_or_warn_functions.values():
