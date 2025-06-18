@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -36,6 +37,10 @@ def main(
     """
 
     output_qnames = _harmonize_output_qnames(output_names)
+
+    if not any(re.match("(input|processed)_data", s) for s in inputs):
+        inputs["processed_data"] = {}
+        inputs["processed_data_columns"] = None
 
     nodes = {
         p: n
