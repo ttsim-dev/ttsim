@@ -93,6 +93,7 @@ class Labels(NestedInit):
     input_data_targets: InterfaceFunction | None = None
     param_targets: InterfaceFunction | None = None
     processed_data_columns: InterfaceFunction | None = None
+    input_columns: InterfaceFunction | None = None
     root_nodes: InterfaceFunction | None = None
     top_level_namespace: InterfaceFunction | None = None
 
@@ -119,6 +120,11 @@ class OrigPolicyObjects(NestedInit):
 
 
 @dataclass
+class Templates(NestedInit):
+    input_data_dtypes: InterfaceFunction | None = None
+
+
+@dataclass
 class InterfaceDAGElements:
     backend: Literal["numpy", "jax"] = "numpy"
     """The backend to use for computations."""
@@ -138,6 +144,7 @@ class InterfaceDAGElements:
     date: datetime.date | None = None
     labels: Labels = field(default_factory=Labels)
     rounding: bool = True
+    templates: Templates = field(default_factory=Templates)
     warn_if: WarnIf = field(default_factory=WarnIf)
     fail_if: FailIf = field(default_factory=FailIf)
 

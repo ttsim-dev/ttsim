@@ -50,7 +50,7 @@ def rounding() -> bool:
 def without_tree_logic_and_with_derived_functions(
     policy_environment: NestedPolicyEnvironment,
     targets__qname: OrderedQNames,
-    labels__processed_data_columns: OrderedQNames,
+    labels__input_columns: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
     backend: str,
@@ -80,7 +80,7 @@ def without_tree_logic_and_with_derived_functions(
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
         targets=targets__qname,
-        labels__processed_data_columns=labels__processed_data_columns,
+        input_columns=labels__input_columns,
         grouping_levels=labels__grouping_levels,
     )
 
@@ -105,7 +105,7 @@ def _remove_tree_logic_from_policy_environment(
 def _add_derived_functions(
     qname_env_without_tree_logic: QNameSpecializedEnvironment0,
     targets: OrderedQNames,
-    labels__processed_data_columns: OrderedQNames,
+    input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> QNameSpecializedEnvironment0:
     """Return a mapping of qualified names to functions operating on columns.
@@ -141,7 +141,7 @@ def _add_derived_functions(
     # Create functions for different time units
     time_conversion_functions = create_time_conversion_functions(
         qname_policy_environment=qname_env_without_tree_logic,
-        processed_data_columns=labels__processed_data_columns,
+        input_columns=input_columns,
         grouping_levels=grouping_levels,
     )
     column_functions = {
@@ -156,7 +156,7 @@ def _add_derived_functions(
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
-        labels__processed_data_columns=labels__processed_data_columns,
+        input_columns=input_columns,
         targets=targets,
         grouping_levels=grouping_levels,
     )
@@ -201,7 +201,10 @@ def with_processed_params_and_scalars(
             all_nodes[n] = f
     # The number of segments for jax' segment sum. After processing the data, we know
     # that the number of ids is at most the length of the data.
-    all_nodes["num_segments"] = len(next(iter(processed_data.values())))
+    if processed_data:
+        all_nodes["num_segments"] = len(next(iter(processed_data.values())))
+    else:
+        all_nodes["num_segments"] = 0
 
     params = {k: v for k, v in all_nodes.items() if isinstance(v, ParamObject)}
     scalars = {

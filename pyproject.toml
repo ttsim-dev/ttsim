@@ -241,7 +241,7 @@ exclude = []
 "tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
 "tests/ttsim/**/*.py" = ["ANN", "S101"]
-"tests/ttsim/test_failures.py" = ["E501"]
+"tests/ttsim/interface_dag_elements/test_failures.py" = ["E501"]
 # TODO: remove once ported nicely
 "src/ttsim/stale_code_storage.py" = ["ALL"]
 "outdated_docs/**/*.ipynb" = ["ALL"]
