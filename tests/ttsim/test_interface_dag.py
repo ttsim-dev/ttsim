@@ -6,7 +6,7 @@ import dags
 import pytest
 
 from ttsim.interface_dag import (
-    _fail_if_qnames_are_not_among_nodes,
+    _fail_if_requested_nodes_cannot_be_found,
     load_interface_functions_and_inputs,
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
@@ -53,12 +53,12 @@ def test_interface_dag_is_complete() -> None:
         (
             ["a"],
             load_interface_functions_and_inputs(),
-            r'not among the interface functions or inputs:  \[\n"a", \]',
+            r'output\snames[\s\S]+interface\sfunctions\sor\sinputs:[\s\S]+"a"',
         ),
         (
             ["input_data"],
             load_interface_functions_and_inputs(),
-            r'not among the interface functions or inputs:  \[\n"input_data", \]',
+            r'output\snames[\s\S]+interface\sfunctions\sor\sinputs:[\s\S]+"input_data"',
         ),
         (
             [],
@@ -66,13 +66,15 @@ def test_interface_dag_is_complete() -> None:
                 **load_interface_functions_and_inputs(),
                 "some_fail_or_warn_function": some_fail_or_warn_function,
             },
-            r'not among the interface functions or inputs:  \[\n"a",     "b", \]',
+            r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
         ),
     ],
 )
-def test_fail_if_qnames_are_not_among_nodes(output_qnames, nodes, error_match) -> None:
+def test_fail_if_requested_nodes_cannot_be_found(
+    output_qnames, nodes, error_match
+) -> None:
     with pytest.raises(ValueError, match=error_match):
-        _fail_if_qnames_are_not_among_nodes(
+        _fail_if_requested_nodes_cannot_be_found(
             output_qnames=output_qnames,
             nodes=nodes,
         )

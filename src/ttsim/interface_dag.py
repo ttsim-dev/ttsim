@@ -48,7 +48,7 @@ def main(
         if p not in inputs
     }
 
-    _fail_if_qnames_are_not_among_nodes(
+    _fail_if_requested_nodes_cannot_be_found(
         output_qnames=output_qnames,
         nodes=nodes,
     )
@@ -175,7 +175,7 @@ def _remove_tree_logic_from_function_collection(
     }
 
 
-def _fail_if_qnames_are_not_among_nodes(
+def _fail_if_requested_nodes_cannot_be_found(
     output_qnames: list[str] | None,
     nodes: dict[str, InterfaceFunction | InterfaceInput],
 ) -> None:
@@ -194,17 +194,21 @@ def _fail_if_qnames_are_not_among_nodes(
 
     # Qnames from include condtions of fail_or_warn functions not in nodes
     for n in fail_or_warn_functions.values():
-        qns = list(n.include_if_all_elements_present) + list(
-            n.include_if_any_element_present
-        )
-        missing_qnames_from_include_conditions = set(qns) - all_qnames
+        qns = {*n.include_if_all_elements_present, *n.include_if_any_element_present}
+        missing_qnames_from_include_conditions = qns - all_qnames
 
-    missing_qnames = missing_output_qnames or missing_qnames_from_include_conditions
-
-    if missing_qnames:
-        formatted = format_list_linewise(sorted(missing_qnames))
-        msg = format_errors_and_warnings(
-            "The following qnames are not among the interface functions or inputs: "
-            f"{formatted}"
-        )
+    if missing_output_qnames or missing_qnames_from_include_conditions:
+        if missing_output_qnames:
+            msg = format_errors_and_warnings(
+                "The following output names for the interface DAG are not among the "
+                "interface functions or inputs:\n"
+            ) + format_list_linewise(sorted(missing_output_qnames))
+        else:
+            msg = ""
+        if missing_qnames_from_include_conditions:
+            msg += format_errors_and_warnings(
+                "\n\nThe following elements specified in some include condition of "
+                "`fail_or_warn_function`s are not among the interface functions or "
+                "inputs:\n"
+            ) + format_list_linewise(sorted(missing_qnames_from_include_conditions))
         raise ValueError(msg)
