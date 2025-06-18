@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -39,6 +40,10 @@ def main(
 
     output_qnames = _harmonize_output_qnames(output_names)
 
+    if not any(re.match("(input|processed)_data", s) for s in inputs):
+        inputs["processed_data"] = {}
+        inputs["processed_data_columns"] = None
+
     nodes = {
         p: n
         for p, n in load_interface_functions_and_inputs().items()
@@ -52,7 +57,7 @@ def main(
         interface_function_names=functions.keys(),
     )
 
-    # If targets are None, all failures and warnings are included, anyhow.
+    # If desired outputs are None, all failures and warnings are included, anyhow.
     if fail_and_warn and output_qnames is not None:
         output_qnames = include_fail_and_warn_nodes(
             functions=functions,

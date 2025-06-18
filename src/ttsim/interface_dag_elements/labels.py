@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
 import networkx as nx
 
 from ttsim.interface_dag_elements.automatically_added_functions import (
@@ -13,6 +14,7 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
     group_pattern,
 )
+from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
@@ -93,7 +95,37 @@ def top_level_namespace(
 
 @interface_function()
 def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
+    """The (qualified) column names in the processed data."""
     return set(processed_data.keys())
+
+
+@interface_function()
+def input_columns(
+    processed_data_columns: UnorderedQNames | None,
+    policy_environment: NestedPolicyEnvironment,
+) -> UnorderedQNames:
+    """The (qualified) column names in the processed data or policy environment.
+
+    Parameters
+    ----------
+    processed_data_columns:
+        The column names in the processed data or None. Will be returned if not None.
+    policy_environment:
+        The policy environment. The qualified names of the PolicyInput elements will
+        be returned if the processed_data_columns are None.
+
+    Returns
+    -------
+    input_columns:
+        The (qualified) column names in the processed data or policy environment.
+    """
+    if processed_data_columns is None:
+        return {
+            k
+            for k, v in dt.flatten_to_qnames(policy_environment).items()
+            if isinstance(v, PolicyInput)
+        }
+    return processed_data_columns
 
 
 @interface_function()
