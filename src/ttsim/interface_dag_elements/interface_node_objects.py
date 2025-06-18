@@ -6,11 +6,6 @@ from typing import TYPE_CHECKING, Generic, ParamSpec, TypeVar
 
 import dags.tree as dt
 
-from ttsim.interface_dag_elements.fail_if import (
-    format_errors_and_warnings,
-    format_list_linewise,
-)
-
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -278,19 +273,19 @@ def _fail_if_not_exactly_one_function_variant_matches_inputs(
         if set(spec.required_input_qnames) <= set(user_input_qnames)
     ]
 
-    base_msg = format_errors_and_warnings(
+    base_msg = (
         "Exactly one of the following sets of inputs is required:\n\n"
-        f"{format_list_linewise([f'[{", ".join(s)}]' for s in potential_qnames])}"
+        f"{'\n'.join([f'[{", ".join(s)}]' for s in potential_qnames])}"
     )
 
     if len(qnames_from_user_satisfying_specs) > 1:
         msg = (
             base_msg
             + "\n\n"
-            + format_errors_and_warnings(
+            + (
                 "Multiple sets of inputs were found that satisfy the requirements:\n\n"
                 f"{
-                    format_list_linewise(
+                    '\n'.join(
                         [f'[{", ".join(s)}]' for s in qnames_from_user_satisfying_specs]
                     )
                 }\n\n"
@@ -302,7 +297,7 @@ def _fail_if_not_exactly_one_function_variant_matches_inputs(
         msg = (
             base_msg
             + "\n\n"
-            + format_errors_and_warnings(
+            + (
                 "None of the required input sets were found in the provided inputs.\n"
                 "Please provide one of the sets of inputs listed above."
             )

@@ -224,8 +224,9 @@ def test_nested_data_to_dataframe(
             "policy_environment": environment,
             "targets__tree": targets__tree,
             "rounding": False,
+            "backend": "numpy",
         },
-        targets=["results__tree"],
+        output_names=["results__tree"],
     )["results__tree"]
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,

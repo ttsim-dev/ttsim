@@ -26,6 +26,9 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
+    from ttsim.interface_dag_elements.interface_node_objects import (
+        InterfaceFunctionVariant,
+    )
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -772,3 +775,51 @@ def _param_with_active_periods(
         )
 
     return out
+
+
+def _fail_if_not_exactly_one_function_variant_matches_inputs(
+    specs: list[InterfaceFunctionVariant],
+    user_input_qnames: list[str],
+) -> None:
+    """Validate that exactly one function variant matches the provided user inputs.
+
+    This function ensures that the user has provided the correct combination of inputs
+    to uniquely determine which function variant should be used.
+    """
+    potential_qnames = [spec.required_input_qnames for spec in specs]
+    qnames_from_user_satisfying_specs = [
+        spec.required_input_qnames
+        for spec in specs
+        if set(spec.required_input_qnames) <= set(user_input_qnames)
+    ]
+
+    base_msg = format_errors_and_warnings(
+        "Exactly one of the following sets of inputs is required:\n\n"
+        f"{format_list_linewise([f'[{", ".join(s)}]' for s in potential_qnames])}"
+    )
+
+    if len(qnames_from_user_satisfying_specs) > 1:
+        msg = (
+            base_msg
+            + "\n\n"
+            + format_errors_and_warnings(
+                "Multiple sets of inputs were found that satisfy the requirements:\n\n"
+                f"{
+                    format_list_linewise(
+                        [f'[{", ".join(s)}]' for s in qnames_from_user_satisfying_specs]
+                    )
+                }\n\n"
+                "Please provide only one of these."
+            )
+        )
+        raise ValueError(msg)
+    if len(qnames_from_user_satisfying_specs) == 0:
+        msg = (
+            base_msg
+            + "\n\n"
+            + format_errors_and_warnings(
+                "None of the required input sets were found in the provided inputs.\n"
+                "Please provide one of the sets of inputs listed above."
+            )
+        )
+        raise ValueError(msg)

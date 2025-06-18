@@ -94,8 +94,9 @@ def test_end_to_end(input_spec):
             "date": "2025-01-01",
             "rounding": False,
             "orig_policy_objects__root": METTSIM_ROOT,
+            "backend": "numpy",
             **input_spec,
         },
-        targets=["results__df_with_mapper"],
+        output_names=["results__df_with_mapper"],
     )
     pd.testing.assert_frame_equal(EXPECTED_RESULTS, result["results__df_with_mapper"])

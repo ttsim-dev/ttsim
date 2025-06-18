@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
-from ttsim.interface_dag_elements.data_converters import dataframe_to_nested_data
+from ttsim.interface_dag_elements.data_converters import mapped_dataframe_to_nested_data
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
@@ -55,7 +55,7 @@ def tree(
     -------
         A nested data structure.
     """
-    return dataframe_to_nested_data(
+    return mapped_dataframe_to_nested_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
         xnp=xnp,

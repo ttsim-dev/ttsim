@@ -14,6 +14,7 @@ from ttsim.interface_dag_elements.fail_if import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
+    InputDependentInterfaceFunction,
     InterfaceFunction,
     InterfaceInput,
 )
@@ -47,6 +48,11 @@ def main(
         for p, n in load_interface_functions_and_inputs().items()
         if p not in inputs
     }
+
+    # Replace InputDependentInterfaceFunction with InterfaceFunction
+    for p, n in nodes.items():
+        if isinstance(n, InputDependentInterfaceFunction):
+            nodes[p] = n.resolve_to_static_interface_function(inputs)
 
     _fail_if_requested_nodes_cannot_be_found(
         output_qnames=output_qnames,
