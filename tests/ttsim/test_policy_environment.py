@@ -71,28 +71,30 @@ def test_add_jahresanfang(xnp):
     assert _active_ttsim_tree_with_params["foo_jahresanfang"].value == 1
 
 
-def test_input_is_recognized_as_potential_group_id():
+def test_input_is_recognized_as_potential_group_id(backend):
     assert (
         "kin"
         in main(
             inputs={
                 "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
+                "backend": backend,
             },
-            targets=["labels__grouping_levels"],
+            output_names=["labels__grouping_levels"],
         )["labels__grouping_levels"]
     )
 
 
-def test_p_id_not_recognized_as_potential_group_id():
+def test_p_id_not_recognized_as_potential_group_id(backend):
     assert (
         "p"
         not in main(
             inputs={
                 "orig_policy_objects__root": METTSIM_ROOT,
                 "date": datetime.date(2020, 1, 1),
+                "backend": backend,
             },
-            targets=["labels__grouping_levels"],
+            output_names=["labels__grouping_levels"],
         )["labels__grouping_levels"]
     )
 
