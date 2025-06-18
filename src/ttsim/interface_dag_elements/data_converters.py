@@ -150,7 +150,4 @@ def dataframe_with_nested_columns_to_nested_data(
 
 def _remove_nan_from_keys(path: tuple[str | Any, ...]) -> tuple[str, ...]:
     """Remove nan string from string tuples."""
-    # Fail if nan is somewhere else than the last element of the path
-    if any(pd.isna(el) for el in path[:-1]):
-        raise ValueError(f"Invalid nesting level in path: {path}")
     return tuple(el for el in path if not pd.isna(el))

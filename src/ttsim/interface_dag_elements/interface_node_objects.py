@@ -212,6 +212,13 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
                 break
         return func
 
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],  # noqa: ARG002
+        top_level_namespace: UnorderedQNames,  # noqa: ARG002
+    ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
+        return self
+
 
 def input_dependent_interface_function(
     *,

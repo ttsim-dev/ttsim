@@ -49,11 +49,6 @@ def main(
         if p not in inputs
     }
 
-    # Replace InputDependentInterfaceFunction with InterfaceFunction
-    for p, n in nodes.items():
-        if isinstance(n, InputDependentInterfaceFunction):
-            nodes[p] = n.resolve_to_static_interface_function(inputs)
-
     _fail_if_requested_nodes_cannot_be_found(
         output_qnames=output_qnames,
         nodes=nodes,
@@ -68,6 +63,34 @@ def main(
             output_qnames=output_qnames,
         )
 
+    # Replace InputDependentInterfaceFunction with InterfaceFunction
+    if input_dependent_functions_are_part_of_dag(
+        functions=functions,
+        output_qnames=output_qnames,
+    ):
+        # Remove this block eventually.
+        ##############
+        flattened_inputs = dt.flatten_to_qnames(inputs)
+        q_names_of_inputs = []
+        if any(
+            str(s).startswith("input_data__df_and_mapper__df") for s in flattened_inputs
+        ):
+            q_names_of_inputs.append("input_data__df_and_mapper__df")
+        if any(
+            str(s).startswith("input_data__df_with_nested_columns")
+            for s in flattened_inputs
+        ):
+            q_names_of_inputs.append("input_data__df_with_nested_columns")
+        if any(
+            str(s).startswith("input_data__df_and_mapper__mapper")
+            for s in flattened_inputs
+        ):
+            q_names_of_inputs.append("input_data__df_and_mapper__mapper")
+        ##############
+        for p, n in functions.items():
+            if isinstance(n, InputDependentInterfaceFunction):
+                functions[p] = n.resolve_to_static_interface_function(q_names_of_inputs)
+
     f = dags.concatenate_functions(
         functions=functions,
         targets=output_qnames,
@@ -76,6 +99,22 @@ def main(
         set_annotations=False,
     )
     return f(**inputs)
+
+
+def input_dependent_functions_are_part_of_dag(
+    functions: dict[str, InterfaceFunction],
+    output_qnames: QNameStrings,
+) -> bool:
+    names_of_input_dependent_functions = [
+        p
+        for p, n in functions.items()
+        if isinstance(n, InputDependentInterfaceFunction)
+    ]
+    dag = dags.create_dag(
+        functions=functions,
+        targets=output_qnames,
+    )
+    return any(n in dag.nodes() for n in names_of_input_dependent_functions)
 
 
 def _harmonize_output_qnames(
