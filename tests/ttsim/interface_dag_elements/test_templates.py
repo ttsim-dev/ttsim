@@ -92,8 +92,8 @@ def test_template_all_outputs_no_inputs(backend):
             "date_str": "2025-01-01",
             "backend": backend,
         },
-        output_names=["templates__inputs"],
-    )["templates__inputs"]
+        output_names=["templates__input_data_dtypes"],
+    )["templates__input_data_dtypes"]
     assert actual == {"a": {"inp2": "float"}, "inp1": "int"}
 
 
@@ -119,8 +119,8 @@ def test_template_all_outputs_with_inputs(backend):
             "date_str": "2025-01-01",
             "backend": backend,
         },
-        output_names=["templates__inputs"],
-    )["templates__inputs"]
+        output_names=["templates__input_data_dtypes"],
+    )["templates__input_data_dtypes"]
     assert actual == {"a": {"inp2": "float"}, "inp1": "int"}
 
 
@@ -140,8 +140,8 @@ def test_template_output_y_no_inputs(backend):
             "date_str": "2025-01-01",
             "backend": backend,
         },
-        output_names=["templates__inputs"],
-    )["templates__inputs"]
+        output_names=["templates__input_data_dtypes"],
+    )["templates__input_data_dtypes"]
     assert actual == {"a": {"inp2": "float"}}
 
 
@@ -168,6 +168,6 @@ def test_template_output_x_with_inputs(backend):
             "date_str": "2025-01-01",
             "backend": backend,
         },
-        output_names=["templates__inputs"],
-    )["templates__inputs"]
+        output_names=["templates__input_data_dtypes"],
+    )["templates__input_data_dtypes"]
     assert actual == {"inp1": "int"}

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 @interface_function()
-def inputs(
+def input_data_dtypes(
     specialized_environment__with_partialled_params_and_scalars: QNameSpecializedEnvironment0,  # noqa: E501
     targets__qname: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
