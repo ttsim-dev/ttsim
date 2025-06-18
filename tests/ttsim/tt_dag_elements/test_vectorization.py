@@ -33,7 +33,7 @@ from ttsim.tt_dag_elements.vectorization import (
     _is_lambda_function,
     _make_vectorizable,
     make_vectorizable_source,
-    vectorize_function,
+    vectorize_policy_function,
 )
 
 if TYPE_CHECKING:
@@ -596,7 +596,7 @@ def test_make_vectorizable_policy_func():
     def alter_bis_24(alter: int) -> bool:
         return alter <= 24
 
-    vectorized = vectorize_function(
+    vectorized = vectorize_policy_function(
         alter_bis_24,
         vectorization_strategy=alter_bis_24.vectorization_strategy,
         backend="numpy",
@@ -651,6 +651,7 @@ def test_make_vectorizable_dags_concatened_func():
     assert_array_equal(got, exp)
 
 
+@policy_function()
 def scalar_func(x: int) -> int:
     if x < 0:
         return 0
@@ -664,7 +665,7 @@ def already_vectorized_func(x: IntColumn, xnp: ModuleType) -> IntColumn:
 
 
 def test_loop_vectorize_scalar_func(backend, xnp):
-    fun = vectorize_function(
+    fun = vectorize_policy_function(
         scalar_func,
         vectorization_strategy="loop",
         backend=backend,
@@ -674,7 +675,7 @@ def test_loop_vectorize_scalar_func(backend, xnp):
 
 
 def test_vectorize_scalar_func(backend, xnp):
-    fun = vectorize_function(
+    fun = vectorize_policy_function(
         scalar_func,
         vectorization_strategy="vectorize",
         backend=backend,
@@ -691,10 +692,11 @@ def test_already_vectorized_func(xnp):
 
 
 def test_vectorize_function_annotations_numpy():
+    @policy_function()
     def f(a, x: int, y: float, z: bool, p1: str, p2: dict[str, float]) -> float:  # noqa: ARG001
         return 1.0
 
-    vectorized = vectorize_function(
+    vectorized = vectorize_policy_function(
         f,
         vectorization_strategy="vectorize",
         backend="numpy",
@@ -714,6 +716,7 @@ def test_vectorize_function_annotations_numpy():
 
 
 def test_vectorize_function_annotations_jax():
+    @policy_function()
     def f(a, x: int, y: float, z: bool, p1: str, p2: dict[str, float]) -> float:  # noqa: ARG001
         return 1.0
 
@@ -722,7 +725,7 @@ def test_vectorize_function_annotations_jax():
     except ImportError:
         pytest.skip("JAX is not installed, skipping JAX-specific tests.")
 
-    vectorized = vectorize_function(
+    vectorized = vectorize_policy_function(
         f,
         vectorization_strategy="vectorize",
         backend="jax",

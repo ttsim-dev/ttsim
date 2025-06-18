@@ -22,7 +22,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
-from ttsim.tt_dag_elements.vectorization import vectorize_function
+from ttsim.tt_dag_elements.vectorization import vectorize_policy_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -273,8 +273,8 @@ def with_partialled_params_and_scalars(
             partialed_func = functools.partial(rounded_col_func, **partial_params)
         else:
             partialed_func = rounded_col_func
-        processed_functions[name] = vectorize_function(
-            func=partialed_func,
+        processed_functions[name] = vectorize_policy_function(
+            policy_function=partialed_func,
             vectorization_strategy=col_func.vectorization_strategy,
             backend=backend,
             xnp=xnp,

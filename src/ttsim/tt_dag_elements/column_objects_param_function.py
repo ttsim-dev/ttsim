@@ -29,7 +29,6 @@ from ttsim.tt_dag_elements.aggregation import (
     sum_by_p_id,
 )
 from ttsim.tt_dag_elements.rounding import RoundingSpec
-from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -182,6 +181,7 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) ->
     WRAPPER_ASSIGNMENTS = (  # noqa: N806
         "__globals__",
         "__closure__",
+        "__code__",
         "__doc__",
         "__name__",
         "__QName__",
@@ -291,28 +291,6 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             vectorization_strategy=self.vectorization_strategy,
-        )
-
-    def vectorize(self, backend: str, xnp: ModuleType) -> PolicyFunction:
-        func = (
-            self.function
-            if self.vectorization_strategy == "not_required"
-            else vectorize_function(
-                self.function,
-                vectorization_strategy=self.vectorization_strategy,
-                backend=backend,
-                xnp=xnp,
-            )
-        )
-        return PolicyFunction(
-            leaf_name=self.leaf_name,
-            function=func,
-            start_date=self.start_date,
-            end_date=self.end_date,
-            description=self.description,
-            rounding_spec=self.rounding_spec,
-            foreign_key_type=self.foreign_key_type,
-            vectorization_strategy="not_required",
         )
 
 

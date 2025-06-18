@@ -5,6 +5,7 @@ import functools
 import inspect
 import textwrap
 import types
+from dataclasses import replace
 from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -15,16 +16,38 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
+    from ttsim.tt_dag_elements.column_objects_param_function import PolicyFunction
+
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
-def vectorize_function(
-    func: Callable[..., Any],
+def vectorize_policy_function(
+    policy_function: PolicyFunction,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"],
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
-) -> Callable[..., Any]:
+) -> PolicyFunction:
+    """Returns a new PolicyFunction with the function attribute vectorized.
+
+    Args:
+        policy_function: PolicyFunction to vectorize.
+        vectorization_strategy: Strategy to use for vectorization.
+        backend: Backend to use for vectorization.
+        xnp: Module to use for vectorization.
+
+    Returns
+    -------
+        New PolicyFunction with the function attribute vectorized.
+
+    Raises
+    ------
+        ValueError: If the vectorization strategy is not supported.
+        TranslateToVectorizableError: If the function cannot be vectorized.
+
+    """
+    func = policy_function.function
+
     vectorized: Callable[..., Any]
     if vectorization_strategy == "loop":
         assigned = (
@@ -49,7 +72,7 @@ def vectorize_function(
     vectorized.__signature__ = _create_vectorized_signature(func, backend=backend)  # type: ignore[attr-defined]
     vectorized.__annotations__ = _create_vectorized_annotations(func, backend=backend)
 
-    return vectorized
+    return replace(policy_function, function=vectorized)
 
 
 def _make_vectorizable(
