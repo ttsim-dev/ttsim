@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-from mettsim.config import METTSIM_ROOT
 
 from ttsim import main, merge_trees
 from ttsim.interface_dag_elements.specialized_environment import (
@@ -206,7 +206,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 def mettsim_environment() -> NestedPolicyEnvironment:
     return main(
         inputs={
-            "orig_policy_objects__root": METTSIM_ROOT,
+            "orig_policy_objects__root": Path(__file__).parent.parent / "mettsim",
             "date": datetime.date(2025, 1, 1),
         },
         output_names=["policy_environment"],

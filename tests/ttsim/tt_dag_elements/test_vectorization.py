@@ -4,13 +4,13 @@ import datetime
 import functools
 import inspect
 import string
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import numpy
 import pytest
 from dags import concatenate_functions
-from mettsim.config import METTSIM_ROOT
 from numpy.testing import assert_array_equal
 
 from ttsim.interface_dag_elements.orig_policy_objects import (
@@ -380,7 +380,9 @@ for year in range(1990, 2023):
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(
                 _active_column_objects_and_param_functions(
-                    orig=column_objects_and_param_functions(root=METTSIM_ROOT),
+                    orig=column_objects_and_param_functions(
+                        root=Path(__file__).parent.parent / "mettsim"
+                    ),
                     date=datetime.date(year=year, month=1, day=1),
                 ),
             ).items()
