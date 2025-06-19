@@ -71,28 +71,11 @@ def main(
         functions=functions,
         output_qnames=output_qnames,
     ):
-        # Remove this block eventually.
-        ##############
-        flattened_inputs = dt.flatten_to_qnames(inputs)
-        q_names_of_inputs = []
-        if any(
-            str(s).startswith("input_data__df_and_mapper__df") for s in flattened_inputs
-        ):
-            q_names_of_inputs.append("input_data__df_and_mapper__df")
-        if any(
-            str(s).startswith("input_data__df_with_nested_columns")
-            for s in flattened_inputs
-        ):
-            q_names_of_inputs.append("input_data__df_with_nested_columns")
-        if any(
-            str(s).startswith("input_data__df_and_mapper__mapper")
-            for s in flattened_inputs
-        ):
-            q_names_of_inputs.append("input_data__df_and_mapper__mapper")
-        ##############
         for p, n in functions.items():
             if isinstance(n, InputDependentInterfaceFunction):
-                functions[p] = n.resolve_to_static_interface_function(q_names_of_inputs)
+                functions[p] = n.resolve_to_static_interface_function(
+                    list(flat_inputs.keys())
+                )
 
     f = dags.concatenate_functions(
         functions=functions,
