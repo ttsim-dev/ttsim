@@ -4,7 +4,7 @@ import inspect
 import re
 from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags
 import dags.tree as dt
@@ -23,6 +23,8 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
 if TYPE_CHECKING:
+    import datetime
+
     from ttsim.interface_dag_elements.typing import (
         NestedTargetDict,
         QNameStrings,
@@ -31,14 +33,29 @@ if TYPE_CHECKING:
 
 
 def main(
-    inputs: InterfaceDAGElements | dict[str, Any],
     output_names: QNameStrings | NestedTargetDict | None = None,
+    input_data: dict[str, Any] | None = None,
+    date_str: str | None = None,
+    targets: dict[str, Any] | None = None,
+    backend: Literal["numpy", "jax"] | None = None,
+    rounding: bool = True,
     fail_and_warn: bool = True,
+    orig_policy_objects: dict[str, Any] | None = None,
+    raw_results: dict[str, Any] | None = None,
+    results: dict[str, Any] | None = None,
+    specialized_environment: dict[str, Any] | None = None,
+    policy_environment: dict[str, Any] | None = None,
+    processed_data: dict[str, Any] | None = None,
+    dnp: dict[str, Any] | None = None,
+    xnp: dict[str, Any] | None = None,
+    date: datetime.date | None = None,
+    labels: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
-    flat_inputs = _harmonize_inputs(inputs)
+
+    flat_inputs = _harmonize_inputs(locals())
     output_qnames = _harmonize_output_names(output_names)
 
     if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
@@ -91,7 +108,7 @@ def _harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str
         else:
             try:
                 flat_inputs[qname] = acc(inputs)
-            except KeyError:
+            except (KeyError, TypeError):
                 flat_inputs[qname] = val
     return {k: v for k, v in flat_inputs.items() if v is not None}
 

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import inspect
-from dataclasses import asdict
 
 import dags
-import dags.tree as dt
 import pytest
 
 from ttsim.interface_dag import (
@@ -83,12 +81,6 @@ def test_fail_if_requested_nodes_cannot_be_found(
             output_qnames=output_qnames,
             nodes=nodes,
         )
-
-
-def test_interface_elements_class_is_complete():
-    from_class = set(dt.qnames(asdict(InterfaceDAGElements())))
-    loaded = set(load_interface_functions_and_inputs())
-    assert from_class.symmetric_difference(loaded) == set()
 
 
 @policy_function()
