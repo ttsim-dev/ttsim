@@ -291,12 +291,11 @@ def _fail_if_not_exactly_one_function_variant_matches_inputs(
             + "\n\n"
             + (
                 "Multiple sets of inputs were found that satisfy the requirements:\n\n"
-                f"{
-                    '\n'.join(
-                        [f'[{", ".join(s)}]' for s in qnames_from_user_satisfying_specs]
-                    )
-                }\n\n"
-                "Please provide only one of these."
+                + "\n".join(
+                    [f"[{', '.join(s)}]" for s in qnames_from_user_satisfying_specs]
+                )
+                + "\n\n"
+                + "Please provide only one of these."
             )
         )
         raise ValueError(msg)
