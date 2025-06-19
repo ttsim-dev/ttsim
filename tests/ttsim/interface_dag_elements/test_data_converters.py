@@ -4,12 +4,14 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal
 
 from ttsim import (
     main,
 )
 from ttsim.interface_dag_elements.data_converters import (
-    dataframe_to_nested_data,
+    dataframe_with_nested_columns_to_nested_data,
+    mapped_dataframe_to_nested_data,
     nested_data_to_df_with_mapped_columns,
 )
 from ttsim.tt_dag_elements import (
@@ -97,12 +99,12 @@ def minimal_data_tree():
         ),
     ],
 )
-def test_dataframe_to_nested_data(
+def test_mapped_dataframe_to_nested_data(
     inputs_tree_to_df_columns,
     df,
     expected_output,
 ):
-    result = dataframe_to_nested_data(
+    result = mapped_dataframe_to_nested_data(
         mapper=inputs_tree_to_df_columns,
         df=df,
         xnp=numpy,
@@ -239,3 +241,32 @@ def test_nested_data_to_dataframe(
         check_dtype=False,
         check_index_type=False,
     )
+
+
+@pytest.mark.parametrize(
+    (
+        "df",
+        "expected",
+    ),
+    [
+        (
+            pd.DataFrame({("a", "b"): [1, 2, 3], ("c",): [4, 5, 6]}),
+            {"a": {"b": numpy.array([1, 2, 3])}, "c": numpy.array([4, 5, 6])},
+        ),
+        (
+            pd.DataFrame({("a", "b"): [1, 2, 3], ("b",): [4, 5, 6]}),
+            {"a": {"b": numpy.array([1, 2, 3])}, "b": numpy.array([4, 5, 6])},
+        ),
+    ],
+)
+def test_dataframe_with_nested_columns_to_nested_data(df, expected):
+    result = dataframe_with_nested_columns_to_nested_data(
+        df=df,
+        xnp=numpy,
+    )
+    flat_result = dt.flatten_to_tree_paths(result)
+    flat_expected = dt.flatten_to_tree_paths(expected)
+
+    assert set(flat_result.keys()) == set(flat_expected.keys())
+    for key in flat_result:
+        assert_array_equal(flat_result[key], flat_expected[key])

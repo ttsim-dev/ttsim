@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import pandas as pd
@@ -68,7 +68,7 @@ def nested_data_to_df_with_mapped_columns(
     )
 
 
-def dataframe_to_nested_data(
+def mapped_dataframe_to_nested_data(
     mapper: NestedInputsMapper,
     df: pd.DataFrame,
     xnp: ModuleType,
@@ -134,3 +134,20 @@ def dataframe_to_nested_data(
             )
 
     return dt.unflatten_from_qnames(qname_to_array)
+
+
+def dataframe_with_nested_columns_to_nested_data(
+    df: pd.DataFrame,
+    xnp: ModuleType,
+) -> NestedData:
+    """Convert a DataFrame with nested columns to a nested data structure."""
+    flat_dict_with_correct_leaf_types = {
+        _remove_nan_from_keys(key): xnp.asarray(value)
+        for key, value in df.to_dict(orient="list").items()
+    }
+    return dt.unflatten_from_tree_paths(flat_dict_with_correct_leaf_types)
+
+
+def _remove_nan_from_keys(path: tuple[str | Any, ...]) -> tuple[str, ...]:
+    """Remove nan string from string tuples."""
+    return tuple(el for el in path if not pd.isna(el))
