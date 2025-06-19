@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal, get_type_hints
 
+import dags.tree as dt
 import pandas as pd
 
 __all__ = []  # type: ignore[var-annotated]
@@ -149,9 +150,19 @@ class InterfaceDAGElements:
     fail_if: FailIf = field(default_factory=FailIf)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in self.__dataclass_fields__:
-            object.__setattr__(self, name, value)
-        else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' has no attribute '{name}'"
-            )
+        object.__setattr__(self, name, value)
+
+    def to_dict(self) -> dict[str, Any]:
+        # Skeleton comes from having all leaves equal to None.
+        flat = {
+            p: getattr(path=p, obj=self)
+            for p in dt.tree_paths(asdict(InterfaceDAGElements()))
+        }
+        return dt.unflatten_from_tree_paths(flat)
+
+
+def getattr(path: tuple[str, ...], obj: Any) -> Any:
+    val = obj.__getattribute__(path[0])
+    if len(path) == 1:
+        return val
+    return getattr(path[1:], val)

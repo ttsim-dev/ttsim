@@ -38,13 +38,12 @@ def main(
     """
     Main function that processes the inputs and returns the outputs.
     """
-
-    flat_inputs = harmonize_inputs(inputs)
-    output_qnames = _harmonize_output_qnames(output_names)
+    flat_inputs = _harmonize_inputs(inputs)
+    output_qnames = _harmonize_output_names(output_names)
 
     if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
-        inputs["processed_data"] = {}
-        inputs["processed_data_columns"] = None
+        flat_inputs["processed_data"] = {}
+        flat_inputs["processed_data_columns"] = None
 
     nodes = {
         p: n
@@ -76,9 +75,9 @@ def main(
     return f(**flat_inputs)
 
 
-def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str, Any]:
+def _harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str, Any]:
     if isinstance(inputs, InterfaceDAGElements):
-        inputs = asdict(inputs)
+        inputs = inputs.to_dict()
     # Iterate over the skeleton and see whether we need to convert anything to
     # qualified names.
     flat_inputs = {}
@@ -97,7 +96,7 @@ def harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str,
     return {k: v for k, v in flat_inputs.items() if v is not None}
 
 
-def _harmonize_output_qnames(
+def _harmonize_output_names(
     output_names: QNameStrings | NestedTargetDict | None,
 ) -> list[str] | None:
     if output_names is None:

@@ -5,13 +5,12 @@ from dataclasses import asdict
 
 import dags
 import dags.tree as dt
-import pandas as pd
 import pytest
 
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
+    _harmonize_inputs,
     load_interface_functions_and_inputs,
-    main,
 )
 from ttsim.interface_dag_elements import InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
@@ -97,13 +96,69 @@ def e(c: int, d: float) -> float:
     return c + d
 
 
-def test_harmonize_inputs():
+def test_harmonize_inputs_interface_dag_elements_input():
     x = InterfaceDAGElements()
-    x.input_data.df_and_mapper.df = pd.DataFrame([], columns=["a", "b", "p_id"])
+    x.input_data.df_and_mapper.df = {"cannot use df because comparison fails"}
     x.input_data.df_and_mapper.mapper = {"c": "a", "d": "b", "p_id": "p_id"}
     x.targets.tree = {"e": "f"}
     x.date = "2025-01-01"
     x.orig_policy_objects.column_objects_and_param_functions = {("x.py", "e"): e}
     x.orig_policy_objects.param_specs = {}
 
-    main(inputs=x)
+    harmonized = _harmonize_inputs(inputs=x)
+
+    assert harmonized == {
+        "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
+        "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
+        "targets__tree": {"e": "f"},
+        "date": "2025-01-01",
+        "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
+        "orig_policy_objects__param_specs": {},
+        "backend": "numpy",
+        "rounding": True,
+    }
+
+
+def test_harmonize_inputs_qname_input():
+    x = {
+        "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
+        "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
+        "targets__tree": {"e": "f"},
+        "date": "2025-01-01",
+        "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
+        "orig_policy_objects__param_specs": {},
+    }
+    harmonized = _harmonize_inputs(inputs=x)
+
+    assert harmonized == {**x, "backend": "numpy", "rounding": True}
+
+
+def test_harmonize_inputs_tree_input():
+    x = {
+        "input_data": {
+            "df_and_mapper": {
+                "df": {"cannot use df because comparison fails"},
+                "mapper": {"c": "a", "d": "b", "p_id": "p_id"},
+            }
+        },
+        "targets": {"tree": {"e": "f"}},
+        "date": "2025-01-01",
+        "orig_policy_objects": {
+            "column_objects_and_param_functions": {("x.py", "e"): e},
+            "param_specs": {},
+        },
+        "backend": "numpy",
+        "rounding": True,
+    }
+    harmonized = _harmonize_inputs(inputs=x)
+
+    assert harmonized == {
+        "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
+        "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
+        "targets__tree": {"e": "f"},
+        "date": "2025-01-01",
+        "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
+        "orig_policy_objects__param_specs": {},
+        "backend": "numpy",
+        "rounding": True,
+    }
