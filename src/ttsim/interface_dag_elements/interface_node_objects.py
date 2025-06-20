@@ -196,21 +196,28 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
 
     def resolve_to_static_interface_function(
         self, user_input_qnames: list[str]
-    ) -> InterfaceFunction[FunArgTypes, ReturnType]:
+    ) -> (
+        InterfaceFunction[FunArgTypes, ReturnType]
+        | InputDependentInterfaceFunction[FunArgTypes, ReturnType]
+    ):
         """Generate a static function based on the user inputs."""
-        _fail_if_not_exactly_one_function_variant_matches_inputs(
+        _fail_if_more_than_one_function_variant_matches_inputs(
             specs=self.specs,
             user_input_qnames=user_input_qnames,
         )
+        matching_variant = None
         for spec in self.specs:
             if set(spec.required_input_qnames) <= set(user_input_qnames):
-                func: InterfaceFunction[FunArgTypes, ReturnType] = InterfaceFunction(
-                    leaf_name=self.leaf_name,
-                    function=spec.function,
-                    in_top_level_namespace=self.in_top_level_namespace,
-                )
+                matching_variant = spec
                 break
-        return func
+
+        if matching_variant:
+            return InterfaceFunction(
+                leaf_name=self.leaf_name,
+                function=matching_variant.function,
+                in_top_level_namespace=self.in_top_level_namespace,
+            )
+        return self
 
     def remove_tree_logic(
         self,
@@ -264,11 +271,12 @@ class InterfaceFunctionVariant:
     function: GenericCallable
 
 
-def _fail_if_not_exactly_one_function_variant_matches_inputs(
+def _fail_if_more_than_one_function_variant_matches_inputs(
     specs: list[InterfaceFunctionVariant],
     user_input_qnames: list[str],
 ) -> None:
-    """Validate that exactly one function variant matches the provided user inputs.
+    """Validate that not more than one function variant matches the provided user
+    inputs.
 
     This function ensures that the user has provided the correct combination of inputs
     to uniquely determine which function variant should be used.
@@ -280,33 +288,19 @@ def _fail_if_not_exactly_one_function_variant_matches_inputs(
         if set(spec.required_input_qnames) <= set(user_input_qnames)
     ]
 
-    base_msg = (
-        "Exactly one of the following sets of inputs is required:\n\n"
-        f"{'\n'.join([f'[{", ".join(s)}]' for s in potential_qnames])}"
-    )
-
     if len(qnames_from_user_satisfying_specs) > 1:
         msg = (
-            base_msg
-            + "\n\n"
-            + (
-                "Multiple sets of inputs were found that satisfy the requirements:\n\n"
-                + "\n".join(
-                    [f"[{', '.join(s)}]" for s in qnames_from_user_satisfying_specs]
+            "Exactly one of the following sets of inputs is required:\n\n"
+            f"{'\n'.join([f'[{", ".join(s)}]' for s in potential_qnames])}"
+            "\n\n"
+            "Multiple sets of inputs were found that satisfy the requirements:\n\n"
+            f"{
+                '\n'.join(
+                    [f'[{", ".join(s)}]' for s in qnames_from_user_satisfying_specs]
                 )
-                + "\n\n"
-                + "Please provide only one of these."
-            )
-        )
-        raise ValueError(msg)
-    if len(qnames_from_user_satisfying_specs) == 0:
-        msg = (
-            base_msg
-            + "\n\n"
-            + (
-                "None of the required input sets were found in the provided inputs.\n"
-                "Please provide one of the sets of inputs listed above."
-            )
+            }"
+            "\n\n"
+            "Please provide only one of these."
         )
         raise ValueError(msg)
 

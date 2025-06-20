@@ -57,7 +57,17 @@ def main(
         nodes=nodes,
     )
 
-    functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
+    # Replace InputDependentInterfaceFunction with InterfaceFunction
+    for p, n in nodes.items():
+        if isinstance(n, InputDependentInterfaceFunction):
+            nodes[p] = n.resolve_to_static_interface_function(list(flat_inputs.keys()))
+
+    functions = {
+        p: n
+        for p, n in nodes.items()
+        if isinstance(n, InterfaceFunction)
+        and not isinstance(n, InputDependentInterfaceFunction)
+    }
 
     # If targets are None, all failures and warnings are included, anyhow.
     if fail_and_warn and output_qnames is not None:
@@ -65,17 +75,6 @@ def main(
             functions=functions,
             output_qnames=output_qnames,
         )
-
-    # Replace InputDependentInterfaceFunction with InterfaceFunction
-    if _input_dependent_functions_are_part_of_dag(
-        functions=functions,
-        output_qnames=output_qnames,
-    ):
-        for p, n in functions.items():
-            if isinstance(n, InputDependentInterfaceFunction):
-                functions[p] = n.resolve_to_static_interface_function(
-                    list(flat_inputs.keys())
-                )
 
     f = dags.concatenate_functions(
         functions=functions,
@@ -85,22 +84,6 @@ def main(
         set_annotations=False,
     )
     return f(**flat_inputs)
-
-
-def _input_dependent_functions_are_part_of_dag(
-    functions: dict[str, InterfaceFunction],
-    output_qnames: QNameStrings,
-) -> bool:
-    names_of_input_dependent_functions = [
-        p
-        for p, n in functions.items()
-        if isinstance(n, InputDependentInterfaceFunction)
-    ]
-    dag = dags.create_dag(
-        functions=functions,
-        targets=output_qnames,
-    )
-    return any(n in dag.nodes() for n in names_of_input_dependent_functions)
 
 
 def _harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str, Any]:
