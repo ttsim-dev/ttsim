@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 
 from ttsim.interface_dag_elements.data_converters import (
-    dataframe_with_nested_columns_to_nested_data,
-    mapped_dataframe_to_nested_data,
+    df_with_mapped_columns_to_nested_data,
+    df_with_nested_columns_to_nested_data,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceFunctionVariant,
@@ -32,7 +32,7 @@ def _mapped_df_to_nested_data(
     input_data__df_and_mapper__mapper: NestedInputsMapper,
     xnp: ModuleType,
 ) -> NestedData:
-    return mapped_dataframe_to_nested_data(
+    return df_with_mapped_columns_to_nested_data(
         df=input_data__df_and_mapper__df,
         mapper=input_data__df_and_mapper__mapper,
         xnp=xnp,
@@ -43,7 +43,7 @@ def _df_with_nested_columns_to_nested_data(
     input_data__df_with_nested_columns: pd.DataFrame,
     xnp: ModuleType,
 ) -> NestedData:
-    return dataframe_with_nested_columns_to_nested_data(
+    return df_with_nested_columns_to_nested_data(
         df=input_data__df_with_nested_columns,
         xnp=xnp,
     )
