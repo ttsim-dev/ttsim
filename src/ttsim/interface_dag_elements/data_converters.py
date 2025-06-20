@@ -68,7 +68,7 @@ def nested_data_to_df_with_mapped_columns(
     )
 
 
-def mapped_dataframe_to_nested_data(
+def df_with_mapped_columns_to_nested_data(
     mapper: NestedInputsMapper,
     df: pd.DataFrame,
     xnp: ModuleType,
@@ -136,7 +136,7 @@ def mapped_dataframe_to_nested_data(
     return dt.unflatten_from_qnames(qname_to_array)
 
 
-def dataframe_with_nested_columns_to_nested_data(
+def df_with_nested_columns_to_nested_data(
     df: pd.DataFrame,
     xnp: ModuleType,
 ) -> NestedData:

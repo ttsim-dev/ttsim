@@ -10,8 +10,8 @@ from ttsim import (
     main,
 )
 from ttsim.interface_dag_elements.data_converters import (
-    dataframe_with_nested_columns_to_nested_data,
-    mapped_dataframe_to_nested_data,
+    df_with_mapped_columns_to_nested_data,
+    df_with_nested_columns_to_nested_data,
     nested_data_to_df_with_mapped_columns,
 )
 from ttsim.tt_dag_elements import (
@@ -99,12 +99,12 @@ def minimal_data_tree():
         ),
     ],
 )
-def test_mapped_dataframe_to_nested_data(
+def test_df_with_mapped_columns_to_nested_data(
     inputs_tree_to_df_columns,
     df,
     expected_output,
 ):
-    result = mapped_dataframe_to_nested_data(
+    result = df_with_mapped_columns_to_nested_data(
         mapper=inputs_tree_to_df_columns,
         df=df,
         xnp=numpy,
@@ -259,8 +259,8 @@ def test_nested_data_to_dataframe(
         ),
     ],
 )
-def test_dataframe_with_nested_columns_to_nested_data(df, expected):
-    result = dataframe_with_nested_columns_to_nested_data(
+def test_df_with_nested_columns_to_nested_data(df, expected):
+    result = df_with_nested_columns_to_nested_data(
         df=df,
         xnp=numpy,
     )
