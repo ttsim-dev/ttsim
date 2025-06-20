@@ -188,6 +188,126 @@ def interface_function(
 
 
 @dataclass(frozen=True)
+class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]):
+    """A function that dynamically changes its behavior based on which InterfaceInput
+    nodes are given by the user."""
+
+    specs: list[InterfaceFunctionVariant]
+
+    def resolve_to_static_interface_function(
+        self, user_input_qnames: list[str]
+    ) -> (
+        InterfaceFunction[FunArgTypes, ReturnType]
+        | InputDependentInterfaceFunction[FunArgTypes, ReturnType]
+    ):
+        """Generate a static function based on the user inputs."""
+        _fail_if_more_than_one_function_variant_matches_inputs(
+            specs=self.specs,
+            user_input_qnames=user_input_qnames,
+        )
+        matching_variant = None
+        for spec in self.specs:
+            if set(spec.required_input_qnames) <= set(user_input_qnames):
+                matching_variant = spec
+                break
+
+        if matching_variant:
+            return InterfaceFunction(
+                leaf_name=self.leaf_name,
+                function=matching_variant.function,
+                in_top_level_namespace=self.in_top_level_namespace,
+            )
+        return self
+
+    def remove_tree_logic(
+        self,
+        tree_path: tuple[str, ...],  # noqa: ARG002
+        top_level_namespace: UnorderedQNames,  # noqa: ARG002
+    ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
+        return self
+
+
+def input_dependent_interface_function(
+    *,
+    variants: list[InterfaceFunctionVariant],
+    leaf_name: str | None = None,
+    in_top_level_namespace: bool = False,
+) -> GenericCallable[[GenericCallable], InputDependentInterfaceFunction]:
+    """
+    Decorator that makes an `InputDependentInterfaceFunction` from a function.
+
+    Parameters
+    ----------
+    variants
+        List of function variants that define different behaviors based on input
+        availability.
+    leaf_name
+        The name that should be used as the function's leaf name in the DAG. If omitted,
+        we use the name of the function as defined.
+    in_top_level_namespace
+        Whether the function is in the top-level namespace of the interface-DAG.
+
+    Returns
+    -------
+    A decorator that returns an InputDependentInterfaceFunction object.
+    """
+
+    def inner(
+        func: GenericCallable,
+    ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
+        return InputDependentInterfaceFunction(
+            leaf_name=leaf_name if leaf_name else func.__name__,
+            function=func,
+            in_top_level_namespace=in_top_level_namespace,
+            specs=variants,
+        )
+
+    return inner
+
+
+@dataclass(frozen=True)
+class InterfaceFunctionVariant:
+    required_input_qnames: list[str]
+    function: GenericCallable
+
+
+def _fail_if_more_than_one_function_variant_matches_inputs(
+    specs: list[InterfaceFunctionVariant],
+    user_input_qnames: list[str],
+) -> None:
+    """Validate that not more than one function variant matches the provided user
+    inputs.
+
+    This function ensures that the user has provided the correct combination of inputs
+    to uniquely determine which function variant should be used.
+    """
+    potential_qnames = [spec.required_input_qnames for spec in specs]
+    qnames_from_user_satisfying_specs = [
+        spec.required_input_qnames
+        for spec in specs
+        if set(spec.required_input_qnames) <= set(user_input_qnames)
+    ]
+
+    if len(qnames_from_user_satisfying_specs) > 1:
+        potential_qnames_str = "\n".join(
+            [f"[{', '.join(s)}]" for s in potential_qnames]
+        )
+        qnames_from_user_str = "\n".join(
+            [f"[{', '.join(s)}]" for s in qnames_from_user_satisfying_specs]
+        )
+        msg = (
+            "Exactly one of the following sets of inputs is required:\n\n"
+            f"{potential_qnames_str}"
+            "\n\n"
+            "Multiple sets of inputs were found that satisfy the requirements:\n\n"
+            f"{qnames_from_user_str}"
+            "\n\n"
+            "Please provide only one of these."
+        )
+        raise ValueError(msg)
+
+
+@dataclass(frozen=True)
 class FailOrWarnFunction(InterfaceFunction):  # type: ignore[type-arg]
     """
     Base class for all functions operating on columns of data.

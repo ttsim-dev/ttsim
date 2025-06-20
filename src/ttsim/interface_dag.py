@@ -17,6 +17,7 @@ from ttsim.interface_dag_elements.fail_if import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
+    InputDependentInterfaceFunction,
     InterfaceFunction,
     InterfaceInput,
 )
@@ -73,7 +74,17 @@ def main(
         nodes=nodes,
     )
 
-    functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
+    # Replace InputDependentInterfaceFunction with InterfaceFunction
+    for p, n in nodes.items():
+        if isinstance(n, InputDependentInterfaceFunction):
+            nodes[p] = n.resolve_to_static_interface_function(list(flat_inputs.keys()))
+
+    functions = {
+        p: n
+        for p, n in nodes.items()
+        if isinstance(n, InterfaceFunction)
+        and not isinstance(n, InputDependentInterfaceFunction)
+    }
 
     # If targets are None, all failures and warnings are included, anyhow.
     if fail_and_warn and output_qnames is not None:

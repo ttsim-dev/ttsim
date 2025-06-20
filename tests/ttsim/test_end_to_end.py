@@ -2,8 +2,25 @@ from pathlib import Path
 from typing import Literal
 
 import pandas as pd
+import pytest
 
 from ttsim import main
+
+DF_WITH_NESTED_COLUMNS = pd.DataFrame(
+    {
+        ("age",): [30, 30, 10],
+        ("kin_id",): [0, 0, 0],
+        ("p_id",): [0, 1, 2],
+        ("p_id_parent_1",): [-1, -1, 0],
+        ("p_id_parent_2",): [-1, -1, 1],
+        ("p_id_spouse",): [1, 0, -1],
+        ("parent_is_noble",): [False, False, False],
+        ("wealth",): [0.0, 0.0, 0.0],
+        ("payroll_tax", "child_tax_credit", "p_id_recipient"): [-1, -1, 0],
+        ("payroll_tax", "income", "gross_wage_y"): [10000, 0, 0],
+    },
+)
+
 
 DF_FOR_MAPPER = pd.DataFrame(
     {
@@ -60,14 +77,16 @@ EXPECTED_RESULTS = pd.DataFrame(
 )
 
 
-def test_end_to_end(backend: Literal["numpy", "jax"]):
+@pytest.mark.parametrize(
+    "input_data",
+    [
+        {"df_and_mapper": {"df": DF_FOR_MAPPER, "mapper": INPUT_DF_MAPPER}},
+        {"df_with_nested_columns": DF_WITH_NESTED_COLUMNS},
+    ],
+)
+def test_end_to_end(input_data, backend: Literal["numpy", "jax"]):
     result = main(
-        input_data={
-            "df_and_mapper": {
-                "df": DF_FOR_MAPPER,
-                "mapper": INPUT_DF_MAPPER,
-            },
-        },
+        input_data=input_data,
         targets={"tree": TARGETS_TREE},
         date_str="2025-01-01",
         rounding=False,
