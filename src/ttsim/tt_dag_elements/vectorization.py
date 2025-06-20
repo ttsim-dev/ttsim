@@ -25,6 +25,25 @@ def vectorize_function(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> Callable[..., Any]:
+    """Returns a new PolicyFunction with the function attribute vectorized.
+
+    Args:
+        policy_function: PolicyFunction to vectorize.
+        vectorization_strategy: Strategy to use for vectorization.
+        backend: Backend to use for vectorization.
+        xnp: Module to use for vectorization.
+
+    Returns
+    -------
+        New PolicyFunction with the function attribute vectorized.
+
+    Raises
+    ------
+        ValueError: If the vectorization strategy is not supported.
+        TranslateToVectorizableError: If the function cannot be vectorized.
+
+    """
+
     vectorized: Callable[..., Any]
     if vectorization_strategy == "loop":
         assigned = (
@@ -44,8 +63,8 @@ def vectorize_function(
 
     # Update annotations and signature to reflect that the inputs are now expected to be
     # arrays.
-    vectorized.__signature__ = _create_vectorized_signature(func, backend=backend)  # type: ignore[attr-defined]
-    vectorized.__annotations__ = _create_vectorized_annotations(func, backend=backend)
+    vectorized.__signature__ = _create_vectorized_signature(func)  # type: ignore[attr-defined]
+    vectorized.__annotations__ = _create_vectorized_annotations(func)
 
     return vectorized
 
@@ -446,34 +465,24 @@ def _module_from_backend(backend: str) -> str:
 # ======================================================================================
 
 
-def _create_vectorized_signature(
-    func: Callable[..., Any],
-    backend: Literal["numpy", "jax"],
-) -> inspect.Signature:
+def _create_vectorized_signature(func: Callable[..., Any]) -> inspect.Signature:
     """Create a signature for the vectorized function."""
     parameters = [
         inspect.Parameter(
             name=param.name,
             kind=param.kind,
             default=param.default,
-            annotation=_scalar_type_to_array_type(
-                param.annotation,
-                backend=backend,
-            ),
+            annotation=_scalar_type_to_array_type(param.annotation),
         )
         for param in inspect.signature(func).parameters.values()
     ]
     return_annotation = _scalar_type_to_array_type(
-        inspect.signature(func).return_annotation,
-        backend=backend,
+        inspect.signature(func).return_annotation
     )
     return inspect.Signature(parameters=parameters, return_annotation=return_annotation)
 
 
-def _create_vectorized_annotations(
-    func: Callable[..., Any],
-    backend: Literal["numpy", "jax"],
-) -> dict[str, Any]:
+def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
     """Create annotations for the vectorized function."""
     parameters_and_return = ["return", *inspect.signature(func).parameters]
     annotations = inspect.get_annotations(func)
@@ -481,41 +490,19 @@ def _create_vectorized_annotations(
         name: _scalar_type_to_array_type(
             # If no annotation is available, we assume it is a numerical scalar type,
             # which is converted to an array type.
-            annotations.get(name, "xnp.ndarray"),
-            backend=backend,
+            annotations.get(name, "IntColumn | FloatColumn | BoolColumn"),
         )
         for name in parameters_and_return
     }
 
 
-def _scalar_type_to_array_type(
-    scalar_type: str,
-    backend: Literal["numpy", "jax"],
-) -> str:
+def _scalar_type_to_array_type(orig_type: Literal["int", "float", "bool"]) -> str:
     """Convert a scalar type to the corresponding array type."""
-    if scalar_type in ("int", "float", "bool"):
-        return _scalar_numerical_type_to_array_type(scalar_type, backend=backend)
-    return scalar_type
-
-
-def _scalar_numerical_type_to_array_type(
-    scalar_type: str,
-    backend: Literal["numpy", "jax"],
-) -> str:
-    """Convert a scalar numerical type to the corresponding array type."""
-    scalar_type_to_array_type = {
-        "jax": {
-            "int": "IntColumn",
-            "float": "FloatColumn",
-            "bool": "BoolColumn",
-        },
-        "numpy": {
-            "int": "numpy.typing.NDArray[numpy.int64]",
-            "float": "numpy.typing.NDArray[numpy.float64]",
-            "bool": "numpy.typing.NDArray[numpy.bool_]",
-        },
+    registry = {
+        "int": "IntColumn",
+        "float": "FloatColumn",
+        "bool": "BoolColumn",
     }
-    if scalar_type not in scalar_type_to_array_type[backend]:
-        raise TypeError(f"Unsupported scalar numerical type: {scalar_type}")
-
-    return scalar_type_to_array_type[backend][scalar_type]
+    if orig_type in registry:
+        return registry[orig_type]
+    return orig_type

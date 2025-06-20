@@ -591,15 +591,15 @@ def test_lambda_functions_disallowed_make_vectorizable_source():
 # ======================================================================================
 
 
-def test_make_vectorizable_policy_func():
+def test_make_vectorizable_policy_func(backend, xnp):
     @policy_function()
     def alter_bis_24(alter: int) -> bool:
         return alter <= 24
 
-    vectorized = alter_bis_24.vectorize(backend="numpy", xnp=numpy)
+    vectorized = alter_bis_24.vectorize(backend=backend, xnp=xnp)
 
-    got = vectorized(numpy.array([20, 25, 30]))
-    exp = numpy.array([True, False, False])
+    got = vectorized(xnp.array([20, 25, 30]))
+    exp = xnp.array([True, False, False])
     assert_array_equal(got, exp)
 
 
@@ -646,6 +646,7 @@ def test_make_vectorizable_dags_concatened_func():
     assert_array_equal(got, exp)
 
 
+@policy_function()
 def scalar_func(x: int) -> int:
     if x < 0:
         return 0
@@ -660,7 +661,7 @@ def already_vectorized_func(x: IntColumn, xnp: ModuleType) -> IntColumn:
 
 def test_loop_vectorize_scalar_func(backend, xnp):
     fun = vectorize_function(
-        scalar_func,
+        scalar_func.function,
         vectorization_strategy="loop",
         backend=backend,
         xnp=numpy,
@@ -670,7 +671,7 @@ def test_loop_vectorize_scalar_func(backend, xnp):
 
 def test_vectorize_scalar_func(backend, xnp):
     fun = vectorize_function(
-        scalar_func,
+        scalar_func.function,
         vectorization_strategy="vectorize",
         backend=backend,
         xnp=numpy,
@@ -685,47 +686,19 @@ def test_already_vectorized_func(xnp):
     )
 
 
-def test_vectorize_function_annotations_numpy():
+def test_vectorize_function_annotations(backend, xnp):
     def f(a, x: int, y: float, z: bool, p1: str, p2: dict[str, float]) -> float:  # noqa: ARG001
         return 1.0
 
     vectorized = vectorize_function(
         f,
         vectorization_strategy="vectorize",
-        backend="numpy",
-        xnp=numpy,
+        backend=backend,
+        xnp=xnp,
     )
 
     expected_annotations = {
-        "a": "xnp.ndarray",
-        "x": "numpy.typing.NDArray[numpy.int64]",
-        "y": "numpy.typing.NDArray[numpy.float64]",
-        "z": "numpy.typing.NDArray[numpy.bool_]",
-        "p1": "str",
-        "p2": "dict[str, float]",
-        "return": "numpy.typing.NDArray[numpy.float64]",
-    }
-    assert inspect.get_annotations(vectorized) == expected_annotations
-
-
-def test_vectorize_function_annotations_jax():
-    def f(a, x: int, y: float, z: bool, p1: str, p2: dict[str, float]) -> float:  # noqa: ARG001
-        return 1.0
-
-    try:
-        import jax.numpy as jnp
-    except ImportError:
-        pytest.skip("JAX is not installed, skipping JAX-specific tests.")
-
-    vectorized = vectorize_function(
-        f,
-        vectorization_strategy="vectorize",
-        backend="jax",
-        xnp=jnp,
-    )
-
-    expected_annotations = {
-        "a": "xnp.ndarray",
+        "a": "IntColumn | FloatColumn | BoolColumn",
         "x": "IntColumn",
         "y": "FloatColumn",
         "z": "BoolColumn",

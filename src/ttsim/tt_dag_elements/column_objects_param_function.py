@@ -182,6 +182,7 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) ->
     WRAPPER_ASSIGNMENTS = (  # noqa: N806
         "__globals__",
         "__closure__",
+        "__code__",
         "__doc__",
         "__name__",
         "__QName__",

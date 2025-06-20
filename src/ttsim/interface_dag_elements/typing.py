@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
 try:
     from jaxtyping import Array, Bool, Float, Int
 
-    BoolColumn: TypeAlias = Bool[Array, " n_obs"]  # type: ignore[name-defined]
-    IntColumn: TypeAlias = Int[Array, " n_obs"]  # type: ignore[name-defined]
-    FloatColumn: TypeAlias = Float[Array, " n_obs"]  # type: ignore[name-defined]
+    BoolColumn: TypeAlias = Bool[Array, " n_obs"]
+    IntColumn: TypeAlias = Int[Array, " n_obs"]
+    FloatColumn: TypeAlias = Float[Array, " n_obs"]
 except ImportError:
     pass
 
