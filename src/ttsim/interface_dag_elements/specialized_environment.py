@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-from dataclasses import replace
 from types import ModuleType
 from typing import TYPE_CHECKING, Literal
 
@@ -23,7 +22,6 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
-from ttsim.tt_dag_elements.vectorization import vectorize_policy_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -54,15 +52,12 @@ def without_tree_logic_and_with_derived_functions(
     labels__processed_data_columns: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
-    backend: str,
-    xnp: ModuleType,
 ) -> QNameSpecializedEnvironment0:
     """Return a flat policy environment with derived functions.
 
-    Three steps:
-    1. Vectorize policy functions.
-    2. Remove all tree logic from the policy environment.
-    3. Add derived functions to the policy environment.
+    Two steps:
+    1. Remove all tree logic from the policy environment.
+    2. Add derived functions to the policy environment.
 
     """
     qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
@@ -125,9 +120,9 @@ def _add_derived_functions(
 
     Returns
     -------
-    The specialized environment with vectorized column functions, derived functions
-    (aggregations and time conversions), and without tree logic, i.e. absolute
-    qualified names in all keys and function arguments.
+    The specialized environment with derived functions (aggregations and time
+    conversions), and without tree logic, i.e. absolute qualified names in all keys
+    and function arguments.
 
     """
     # Create functions for different time units
@@ -259,30 +254,28 @@ def with_partialled_params_and_scalars(
     }
     processed_functions = {}
     for name, col_func in column_functions.items():
-        rounded_col_func = _apply_rounding(col_func, xnp) if rounding else col_func
-        partial_params = {}
-        for arg in [
-            a
-            for a in get_free_arguments(rounded_col_func)
+        vect_col_func = (
+            col_func.vectorize(backend=backend, xnp=xnp)
+            if hasattr(col_func, "vectorize")
+            else col_func
+        )
+        rounded_col_func = (
+            _apply_rounding(vect_col_func, xnp) if rounding else vect_col_func
+        )
+        partial_params = {
+            arg: with_processed_params_and_scalars[arg]
+            for arg in get_free_arguments(rounded_col_func)
             if (
-                a in with_processed_params_and_scalars
-                and not isinstance(with_processed_params_and_scalars[a], ColumnObject)
+                arg in with_processed_params_and_scalars
+                and not isinstance(with_processed_params_and_scalars[arg], ColumnObject)
             )
-        ]:
-            partial_params[arg] = with_processed_params_and_scalars[arg]
+        }
         if partial_params:
-            partialed_policy_func = replace(
-                rounded_col_func,
-                function=functools.partial(rounded_col_func.function, **partial_params),
+            processed_functions[name] = functools.partial(
+                rounded_col_func, **partial_params
             )
         else:
-            partialed_policy_func = rounded_col_func
-        processed_functions[name] = vectorize_policy_function(
-            policy_function=partialed_policy_func,
-            vectorization_strategy=col_func.vectorization_strategy,
-            backend=backend,
-            xnp=xnp,
-        )
+            processed_functions[name] = rounded_col_func
 
     return processed_functions
 

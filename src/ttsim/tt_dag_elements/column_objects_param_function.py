@@ -29,6 +29,7 @@ from ttsim.tt_dag_elements.aggregation import (
     sum_by_p_id,
 )
 from ttsim.tt_dag_elements.rounding import RoundingSpec
+from ttsim.tt_dag_elements.vectorization import vectorize_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -293,6 +294,28 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             vectorization_strategy=self.vectorization_strategy,
         )
 
+    def vectorize(self, backend: str, xnp: ModuleType) -> PolicyFunction:
+        func = (
+            self.function
+            if self.vectorization_strategy == "not_required"
+            else vectorize_function(
+                self.function,
+                vectorization_strategy=self.vectorization_strategy,
+                backend=backend,
+                xnp=xnp,
+            )
+        )
+        return PolicyFunction(
+            leaf_name=self.leaf_name,
+            function=func,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            description=self.description,
+            rounding_spec=self.rounding_spec,
+            foreign_key_type=self.foreign_key_type,
+            vectorization_strategy="not_required",
+        )
+
 
 def policy_function(
     *,
@@ -392,8 +415,6 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
         The date until which the function is active (inclusive).
     """
 
-    vectorization_strategy: Literal["not_required"] = "not_required"
-
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],
@@ -483,7 +504,6 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
 
     # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
-    vectorization_strategy: Literal["not_required"] = "not_required"
 
     def remove_tree_logic(
         self,
@@ -616,7 +636,6 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
 
     # Default value is necessary because we have defaults in the superclass.
     orig_location: str = "automatically generated"
-    vectorization_strategy: Literal["not_required"] = "not_required"
 
     def remove_tree_logic(
         self,
@@ -744,7 +763,6 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
     """
 
     source: str | None = None
-    vectorization_strategy: Literal["not_required"] = "not_required"
 
     def __post_init__(self) -> None:
         if self.source is None:
