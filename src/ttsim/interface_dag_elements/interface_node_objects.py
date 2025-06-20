@@ -289,12 +289,18 @@ def _fail_if_more_than_one_function_variant_matches_inputs(
     ]
 
     if len(qnames_from_user_satisfying_specs) > 1:
+        potential_qnames_str = "\n".join(
+            [f"[{', '.join(s)}]" for s in potential_qnames]
+        )
+        qnames_from_user_str = "\n".join(
+            [f"[{', '.join(s)}]" for s in qnames_from_user_satisfying_specs]
+        )
         msg = (
             "Exactly one of the following sets of inputs is required:\n\n"
-            f"{'\n'.join([f'[{", ".join(s)}]' for s in potential_qnames])}"
+            f"{potential_qnames_str}"
             "\n\n"
             "Multiple sets of inputs were found that satisfy the requirements:\n\n"
-            f"{'\n'.join([f'[{", ".join(s)}]' for s in qnames_from_user_satisfying_specs])}"  # noqa: E501
+            f"{qnames_from_user_str}"
             "\n\n"
             "Please provide only one of these."
         )
