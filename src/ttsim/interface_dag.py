@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import inspect
+import re
+from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import dags
 import dags.tree as dt
+import optree
 
+from ttsim.interface_dag_elements import InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -19,8 +23,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
 if TYPE_CHECKING:
-    from collections.abc import KeysView
-
     from ttsim.interface_dag_elements.typing import (
         NestedTargetDict,
         QNameStrings,
@@ -29,28 +31,32 @@ if TYPE_CHECKING:
 
 
 def main(
-    inputs: dict[str, Any],
+    inputs: InterfaceDAGElements | dict[str, Any],
     output_names: QNameStrings | NestedTargetDict | None = None,
     fail_and_warn: bool = True,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
+    flat_inputs = _harmonize_inputs(inputs)
+    output_qnames = _harmonize_output_names(output_names)
 
-    output_qnames = _harmonize_output_qnames(output_names)
+    if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
+        flat_inputs["processed_data"] = {}
+        flat_inputs["processed_data_columns"] = None
 
     nodes = {
         p: n
         for p, n in load_interface_functions_and_inputs().items()
-        if p not in inputs
+        if p not in flat_inputs
     }
 
-    functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
-
-    _fail_if_output_qnames_are_not_among_interface_functions(
+    _fail_if_requested_nodes_cannot_be_found(
         output_qnames=output_qnames,
-        interface_function_names=functions.keys(),
+        nodes=nodes,
     )
+
+    functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
 
     # If targets are None, all failures and warnings are included, anyhow.
     if fail_and_warn and output_qnames is not None:
@@ -66,10 +72,31 @@ def main(
         enforce_signature=False,
         set_annotations=False,
     )
-    return f(**inputs)
+    return f(**flat_inputs)
 
 
-def _harmonize_output_qnames(
+def _harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str, Any]:
+    if isinstance(inputs, InterfaceDAGElements):
+        inputs = inputs.to_dict()
+    # Iterate over the skeleton and see whether we need to convert anything to
+    # qualified names.
+    flat_inputs = {}
+    accs, vals = optree.tree_flatten_with_accessor(
+        asdict(InterfaceDAGElements()), none_is_leaf=True
+    )[:2]
+    for acc, val in zip(accs, vals, strict=False):
+        qname = dt.qname_from_tree_path(acc.path)
+        if qname in inputs:
+            flat_inputs[qname] = inputs[qname]
+        else:
+            try:
+                flat_inputs[qname] = acc(inputs)
+            except KeyError:
+                flat_inputs[qname] = val
+    return {k: v for k, v in flat_inputs.items() if v is not None}
+
+
+def _harmonize_output_names(
     output_names: QNameStrings | NestedTargetDict | None,
 ) -> list[str] | None:
     if output_names is None:
@@ -172,32 +199,42 @@ def _remove_tree_logic_from_function_collection(
     }
 
 
-def _fail_if_output_qnames_are_not_among_interface_functions(
+def _fail_if_requested_nodes_cannot_be_found(
     output_qnames: list[str] | None,
-    interface_function_names: KeysView[str],
+    nodes: dict[str, InterfaceFunction | InterfaceInput],
 ) -> None:
-    """Fail if some target is not among functions.
+    """Fail if some qname is not among nodes."""
+    all_qnames = set(nodes.keys())
+    interface_function_names = {
+        p for p, n in nodes.items() if isinstance(n, InterfaceFunction)
+    }
+    fail_or_warn_functions = {
+        p: n for p, n in nodes.items() if isinstance(n, FailOrWarnFunction)
+    }
 
-    Parameters
-    ----------
-    targets
-        The targets which should be computed.
-    interface_function_names
-        The names of the interface functions.
-
-    Raises
-    ------
-    ValueError
-        Raised if any member of `targets` is not among functions.
-
-    """
+    # Output qnames not in interface functions
     if output_qnames is not None:
-        missing_targets = set(output_qnames) - set(interface_function_names)
+        missing_output_qnames = set(output_qnames) - set(interface_function_names)
+    else:
+        missing_output_qnames = set()
 
-        if missing_targets:
-            formatted = format_list_linewise(sorted(missing_targets))
+    # Qnames from include condtions of fail_or_warn functions not in nodes
+    for n in fail_or_warn_functions.values():
+        qns = {*n.include_if_all_elements_present, *n.include_if_any_element_present}
+        missing_qnames_from_include_conditions = qns - all_qnames
+
+    if missing_output_qnames or missing_qnames_from_include_conditions:
+        if missing_output_qnames:
             msg = format_errors_and_warnings(
-                "The following targets have no corresponding function in the interface "
-                f"DAG:\n\n{formatted}",
-            )
-            raise ValueError(msg)
+                "The following output names for the interface DAG are not among the "
+                "interface functions or inputs:\n"
+            ) + format_list_linewise(sorted(missing_output_qnames))
+        else:
+            msg = ""
+        if missing_qnames_from_include_conditions:
+            msg += format_errors_and_warnings(
+                "\n\nThe following elements specified in some include condition of "
+                "`fail_or_warn_function`s are not among the interface functions or "
+                "inputs:\n"
+            ) + format_list_linewise(sorted(missing_qnames_from_include_conditions))
+        raise ValueError(msg)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
 import networkx as nx
 
 from ttsim.interface_dag_elements.automatically_added_functions import (
@@ -13,6 +14,7 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
     group_pattern,
 )
+from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
@@ -22,54 +24,6 @@ if TYPE_CHECKING:
         QNamePolicyEnvironment,
         UnorderedQNames,
     )
-
-
-def fail_if_multiple_time_units_for_same_base_name_and_group(
-    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
-) -> None:
-    invalid = {
-        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
-    }
-    if invalid:
-        raise ValueError(f"Multiple time units for base names: {invalid}")
-
-
-@interface_function()
-def column_targets(
-    specialized_environment__with_partialled_params_and_scalars: UnorderedQNames,
-    targets__qname: OrderedQNames,
-) -> OrderedQNames:
-    """All targets that are column functions."""
-    return [
-        t
-        for t in targets__qname
-        if t in specialized_environment__with_partialled_params_and_scalars
-    ]
-
-
-@interface_function()
-def param_targets(
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,  # noqa: E501
-    targets__qname: OrderedQNames,
-    column_targets: OrderedQNames,
-) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(column_targets)
-    return [
-        t
-        for t in targets__qname
-        if t in possible_targets
-        and t in specialized_environment__without_tree_logic_and_with_derived_functions
-    ]
-
-
-@interface_function()
-def input_data_targets(
-    targets__qname: OrderedQNames,
-    column_targets: OrderedQNames,
-    param_targets: OrderedQNames,
-) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(column_targets) - set(param_targets)
-    return [t for t in targets__qname if t in possible_targets]
 
 
 @interface_function()
@@ -141,13 +95,43 @@ def top_level_namespace(
 
 @interface_function()
 def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
+    """The (qualified) column names in the processed data."""
     return set(processed_data.keys())
+
+
+@interface_function()
+def input_columns(
+    processed_data_columns: UnorderedQNames | None,
+    policy_environment: NestedPolicyEnvironment,
+) -> UnorderedQNames:
+    """The (qualified) column names in the processed data or policy environment.
+
+    Parameters
+    ----------
+    processed_data_columns:
+        The column names in the processed data or None. Will be returned if not None.
+    policy_environment:
+        The policy environment. The qualified names of the PolicyInput elements will
+        be returned if the processed_data_columns are None.
+
+    Returns
+    -------
+    input_columns:
+        The (qualified) column names in the processed data or policy environment.
+    """
+    if processed_data_columns is None:
+        return {
+            k
+            for k, v in dt.flatten_to_qnames(policy_environment).items()
+            if isinstance(v, PolicyInput)
+        }
+    return processed_data_columns
 
 
 @interface_function()
 def root_nodes(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
-    processed_data: QNameData,
+    processed_data_columns: UnorderedQNames,
 ) -> UnorderedQNames:
     """Names of the columns in `processed_data` required for the tax transfer function.
 
@@ -171,4 +155,52 @@ def root_nodes(
     ).nodes
 
     # Restrict the passed data to the subset that is actually used.
-    return {k for k in processed_data if k in root_nodes}
+    return {k for k in processed_data_columns if k in root_nodes}
+
+
+def fail_if_multiple_time_units_for_same_base_name_and_group(
+    base_names_and_groups_to_variations: dict[tuple[str, str], list[str]],
+) -> None:
+    invalid = {
+        b: q for b, q in base_names_and_groups_to_variations.items() if len(q) > 1
+    }
+    if invalid:
+        raise ValueError(f"Multiple time units for base names: {invalid}")
+
+
+@interface_function()
+def column_targets(
+    specialized_environment__with_partialled_params_and_scalars: UnorderedQNames,
+    targets__qname: OrderedQNames,
+) -> OrderedQNames:
+    """All targets that are column functions."""
+    return [
+        t
+        for t in targets__qname
+        if t in specialized_environment__with_partialled_params_and_scalars
+    ]
+
+
+@interface_function()
+def param_targets(
+    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,  # noqa: E501
+    targets__qname: OrderedQNames,
+    column_targets: OrderedQNames,
+) -> OrderedQNames:
+    possible_targets = set(targets__qname) - set(column_targets)
+    return [
+        t
+        for t in targets__qname
+        if t in possible_targets
+        and t in specialized_environment__without_tree_logic_and_with_derived_functions
+    ]
+
+
+@interface_function()
+def input_data_targets(
+    targets__qname: OrderedQNames,
+    column_targets: OrderedQNames,
+    param_targets: OrderedQNames,
+) -> OrderedQNames:
+    possible_targets = set(targets__qname) - set(column_targets) - set(param_targets)
+    return [t for t in targets__qname if t in possible_targets]

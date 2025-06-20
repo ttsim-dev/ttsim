@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 
     from ttsim.interface_dag_elements.typing import (
         OrderedQNames,
-        QNameDataColumns,
         QNamePolicyEnvironment,
         UnorderedQNames,
     )
@@ -420,7 +419,7 @@ def _convertibles(
 
 def create_time_conversion_functions(
     qname_policy_environment: QNamePolicyEnvironment,
-    processed_data_columns: QNameDataColumns,
+    input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
     """
@@ -456,8 +455,8 @@ def create_time_conversion_functions(
     functions
         The functions dict with qualified function names as keys and functions as
         values.
-    processed_data_columns
-        The data columns, represented by qualified names.
+    input_columns
+        The names of the input columns, represented by qualified names.
     grouping_levels
         The grouping levels.
 
@@ -495,14 +494,14 @@ def create_time_conversion_functions(
 
     converted_elements: dict[str, ColumnObject] = {}
     for bngs, inputs in bngs_to_time_conversion_inputs.items():
-        for processed_data in processed_data_columns:
+        for col_name in input_columns:
             # If base_name is in provided data, base time conversions on that.
             if pattern_specific := get_re_pattern_for_specific_time_units_and_groupings(
                 base_name=bngs[0],
                 all_time_units=time_units,
                 grouping_levels=grouping_levels,
-            ).fullmatch(processed_data):
-                inputs["qname_source"] = processed_data
+            ).fullmatch(col_name):
+                inputs["qname_source"] = col_name
                 inputs["time_unit"] = pattern_specific.group("time_unit")
                 break
 
@@ -575,7 +574,7 @@ def _create_function_for_time_unit(
 
 def create_agg_by_group_functions(
     column_functions: UnorderedQNames,
-    labels__processed_data_columns: QNameDataColumns,
+    input_columns: UnorderedQNames,
     targets: OrderedQNames,
     grouping_levels: OrderedQNames,
     # backend: Literal["numpy", "jax"],
@@ -583,7 +582,7 @@ def create_agg_by_group_functions(
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
-        **dict.fromkeys(labels__processed_data_columns),
+        **dict.fromkeys(input_columns),
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.

@@ -63,12 +63,13 @@ EXPECTED_RESULTS = pd.DataFrame(
 def test_end_to_end(backend: Literal["numpy", "jax"]):
     result = main(
         inputs={
-            "input_data__df_and_mapper__df": DF_FOR_MAPPER,
-            "input_data__df_and_mapper__mapper": INPUT_DF_MAPPER,
-            "targets__tree": TARGETS_TREE,
+            "input_data": {
+                "df_and_mapper": {"df": DF_FOR_MAPPER, "mapper": INPUT_DF_MAPPER},
+            },
+            "targets": {"tree": TARGETS_TREE},
             "date": "2025-01-01",
             "rounding": False,
-            "orig_policy_objects__root": Path(__file__).parent / "mettsim",
+            "orig_policy_objects": {"root": Path(__file__).parent / "mettsim"},
             "backend": backend,
         },
         output_names=["results__df_with_mapper"],

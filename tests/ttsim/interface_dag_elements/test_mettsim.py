@@ -26,12 +26,11 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
     )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
+METTSIM_ROOT = Path(__file__).parent / "mettsim"
 
-TEST_DIR = Path(__file__).parent
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
-    test_dir=TEST_DIR,
+    test_dir=Path(__file__).parent / "mettsim_test_data",
     policy_name="",
     xnp=numpy,
 )
