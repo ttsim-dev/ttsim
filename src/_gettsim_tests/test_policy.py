@@ -4,6 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+import dags.tree as dt
 import numpy
 import pytest
 
@@ -92,4 +93,44 @@ def test_gettsim_policy_environment_is_complete(orig_gettsim_objects, date):
         name="GETTSIM",
         date=date,
         orig_policy_objects=orig_gettsim_objects,
+    )
+
+
+@pytest.mark.parametrize(
+    "date",
+    dates_in_orig_gettsim_objects(),
+    ids=lambda x: x.isoformat(),
+)
+def test_top_level_elements_not_repeated_in_paths(
+    date, backend: Literal["numpy", "jax"]
+):
+    try:
+        gettsim_objects = main(
+            inputs={
+                "orig_policy_objects__root": GETTSIM_ROOT,
+                "backend": backend,
+                "date_str": date.isoformat(),
+                "rounding": False,
+            },
+            output_names=[
+                "specialized_environment__with_partialled_params_and_scalars",
+                "labels__top_level_namespace",
+            ],
+        )
+    except Exception:  # noqa: BLE001
+        msg = (
+            "Skipped because environment cannot be created for date "
+            f"{date.isoformat()}."
+        )
+        pytest.skip(msg)
+
+    dt.fail_if_top_level_elements_repeated_in_paths(
+        all_tree_paths=dt.flatten_to_tree_paths(
+            dt.unflatten_from_qnames(
+                gettsim_objects[
+                    "specialized_environment__with_partialled_params_and_scalars"
+                ]
+            )
+        ),
+        top_level_namespace=gettsim_objects["labels__top_level_namespace"],
     )
