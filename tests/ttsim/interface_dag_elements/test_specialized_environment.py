@@ -315,7 +315,9 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="loop")(return_x_kin),
+                    "f": policy_function(vectorization_strategy="vectorize")(
+                        return_x_kin
+                    ),
                     "x": x,
                 },
             },
@@ -333,7 +335,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="loop")(some_x),
+                    "f": policy_function(vectorization_strategy="vectorize")(some_x),
                     "x": x,
                 },
             },
@@ -351,7 +353,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="loop")(some_x),
+                    "f": policy_function(vectorization_strategy="vectorize")(some_x),
                     "x": x,
                 },
                 "y_kin": y_kin,
@@ -372,7 +374,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {
                     "f": policy_function(
                         leaf_name="f",
-                        vectorization_strategy="loop",
+                        vectorization_strategy="vectorize",
                     )(return_y_kin),
                     "y_kin": y_kin_namespaced_input,
                 },
@@ -578,7 +580,7 @@ def test_user_provided_aggregation(backend):
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200], index=pd.Index(data["p_id"], name="p_id"))
 
-    @policy_function(vectorization_strategy="loop")
+    @policy_function(vectorization_strategy="vectorize")
     def betrag_m_double(betrag_m):
         return 2 * betrag_m
 
@@ -631,7 +633,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
         index=pd.Index(data["p_id"], name="p_id"),
     )
 
-    @policy_function(vectorization_strategy="loop")
+    @policy_function(vectorization_strategy="vectorize")
     def betrag_double_m(betrag_m):
         return 2 * betrag_m
 

@@ -10,6 +10,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy
+from dags.signature import rename_arguments
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -109,7 +110,20 @@ def _make_vectorizable(
 
     # assign created function
     new_func = scope[func.__name__]
-    return functools.wraps(func)(new_func)
+    _vectorized = functools.wraps(func)(new_func)
+
+    # For functions whose argument names are renamed dynamically, we need to match the
+    # argument names, since the vectorization works on the AST level, which is not
+    # affected by the original renaming.
+    _original_args = _args_from_func_ast(_func_to_ast(func))
+    _args_name_mapper = dict(
+        zip(
+            _original_args,
+            list(inspect.signature(func).parameters),
+            strict=False,
+        )
+    )
+    return rename_arguments(_vectorized, mapper=_args_name_mapper)
 
 
 def make_vectorizable_source(
@@ -170,6 +184,11 @@ def _func_to_ast(func: Callable[..., Any]) -> ast.Module:
     source_dedented = textwrap.dedent(source)
     source_without_decorators = _remove_decorator_lines(source_dedented)
     return ast.parse(source_without_decorators)
+
+
+def _args_from_func_ast(func_ast: ast.Module) -> list[str]:
+    """Get function arguments from function ast."""
+    return [arg.arg for arg in func_ast.body[0].args.args]  # type: ignore[attr-defined]
 
 
 def _remove_decorator_lines(source: str) -> str:
