@@ -53,22 +53,22 @@ def betrag_m() -> float:
     pass
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def identity(x: int) -> int:
     return x
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def identity_plus_one(identity: int) -> int:
     return identity + 1
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def some_func(p_id: int) -> int:
     return p_id
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def another_func(some_func: int) -> int:
     return some_func
 
@@ -78,7 +78,7 @@ def some_scalar_params_func(some_int_param: int) -> int:
     return some_int_param
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def some_policy_func_taking_scalar_params_func(
     some_scalar_params_func: int,
 ) -> int:
@@ -110,7 +110,7 @@ def some_param_function_taking_scalar(
     return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
 
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def some_policy_function_taking_int_param(some_int_param: int) -> float:
     return some_int_param
 
@@ -214,7 +214,7 @@ def mettsim_environment() -> NestedPolicyEnvironment:
 
 
 # Create a function which is used by some tests below
-@policy_function()
+@policy_function(vectorization_strategy="loop")
 def func_before_partial(arg_1, some_param):
     return arg_1 + some_param
 
@@ -296,7 +296,9 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function()(return_n1__x_kin),
+                    "f": policy_function(vectorization_strategy="loop")(
+                        return_n1__x_kin
+                    ),
                     "x": x,
                 },
             },
@@ -313,7 +315,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function()(return_x_kin),
+                    "f": policy_function(vectorization_strategy="loop")(return_x_kin),
                     "x": x,
                 },
             },
@@ -331,7 +333,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function()(some_x),
+                    "f": policy_function(vectorization_strategy="loop")(some_x),
                     "x": x,
                 },
             },
@@ -349,7 +351,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function()(some_x),
+                    "f": policy_function(vectorization_strategy="loop")(some_x),
                     "x": x,
                 },
                 "y_kin": y_kin,
@@ -370,7 +372,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {
                     "f": policy_function(
                         leaf_name="f",
-                        vectorization_strategy="vectorize",
+                        vectorization_strategy="loop",
                     )(return_y_kin),
                     "y_kin": y_kin_namespaced_input,
                 },
@@ -495,7 +497,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     )
 
 
-def test_partial_params_to_functions(xnp):
+def test_partial_params_to_functions(xnp, backend):
     # Partial function produces correct result
     func_after_partial = with_partialled_params_and_scalars(
         with_processed_params_and_scalars={
@@ -504,12 +506,13 @@ def test_partial_params_to_functions(xnp):
         },
         rounding=False,
         xnp=xnp,
+        backend=backend,
     )["some_func"]
 
     assert func_after_partial(2) == 3
 
 
-def test_partial_params_to_functions_removes_argument(xnp):
+def test_partial_params_to_functions_removes_argument(xnp, backend):
     func_after_partial = with_partialled_params_and_scalars(
         with_processed_params_and_scalars={
             "some_func": func_before_partial,
@@ -517,6 +520,7 @@ def test_partial_params_to_functions_removes_argument(xnp):
         },
         rounding=False,
         xnp=xnp,
+        backend=backend,
     )["some_func"]
 
     # Fails if params is added to partial function
@@ -574,7 +578,7 @@ def test_user_provided_aggregation(backend):
     # Double up, then take max fam_id
     expected = pd.Series([400, 400, 200], index=pd.Index(data["p_id"], name="p_id"))
 
-    @policy_function(vectorization_strategy="vectorize")
+    @policy_function(vectorization_strategy="loop")
     def betrag_m_double(betrag_m):
         return 2 * betrag_m
 
@@ -627,7 +631,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
         index=pd.Index(data["p_id"], name="p_id"),
     )
 
-    @policy_function(vectorization_strategy="vectorize")
+    @policy_function(vectorization_strategy="loop")
     def betrag_double_m(betrag_m):
         return 2 * betrag_m
 
