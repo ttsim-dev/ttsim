@@ -279,13 +279,21 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
         top_level_namespace: UnorderedQNames,
     ) -> PolicyFunction:
         """Remove tree logic from the function and update the function signature."""
+
+        function_without_tree_logic = dt.one_function_without_tree_logic(
+            function=self.function,
+            tree_path=tree_path,
+            top_level_namespace=top_level_namespace,
+        )
+        # All functions that will be vectorized require the globals attribute to be
+        # the same as for the initially defined function, since otherwise global
+        # variables or imported functions cannot be found after vectorization.
+        # This is not done by dt.one_function_without_tree_logic, so we do it here.
+        function_without_tree_logic.__globals__.update(self.function.__globals__)
+
         return PolicyFunction(
             leaf_name=self.leaf_name,
-            function=dt.one_function_without_tree_logic(
-                function=self.function,
-                tree_path=tree_path,
-                top_level_namespace=top_level_namespace,
-            ),
+            function=function_without_tree_logic,
             start_date=self.start_date,
             end_date=self.end_date,
             description=self.description,
