@@ -114,7 +114,8 @@ def _make_vectorizable(
 
     # For functions whose argument names are renamed dynamically, we need to match the
     # argument names, since the vectorization works on the AST level, which is not
-    # affected by the original renaming.
+    # affected by the original renaming. This assumes that the argument ordering is
+    # the same in the function and its AST.
     _original_args = _args_from_func_ast(_func_to_ast(func))
     _args_name_mapper = dict(
         zip(
