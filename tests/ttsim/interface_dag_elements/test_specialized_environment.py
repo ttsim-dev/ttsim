@@ -53,22 +53,22 @@ def betrag_m() -> float:
     pass
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(vectorization_strategy="vectorize")
 def identity(x: int) -> int:
     return x
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(vectorization_strategy="vectorize")
 def identity_plus_one(identity: int) -> int:
     return identity + 1
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(vectorization_strategy="vectorize")
 def some_func(p_id: int) -> int:
     return p_id
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(vectorization_strategy="vectorize")
 def another_func(some_func: int) -> int:
     return some_func
 
@@ -78,7 +78,7 @@ def some_scalar_params_func(some_int_param: int) -> int:
     return some_int_param
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(vectorization_strategy="vectorize")
 def some_policy_func_taking_scalar_params_func(
     some_scalar_params_func: int,
 ) -> int:
@@ -110,7 +110,7 @@ def some_param_function_taking_scalar(
     return some_int_scalar + some_float_scalar + int(some_bool_scalar)
 
 
-@policy_function(vectorization_strategy="loop")
+@policy_function(vectorization_strategy="vectorize")
 def some_policy_function_taking_int_param(some_int_param: int) -> float:
     return some_int_param
 
@@ -214,13 +214,13 @@ def mettsim_environment() -> NestedPolicyEnvironment:
 
 
 # Create a function which is used by some tests below
-@policy_function(vectorization_strategy="loop")
+@policy_function(vectorization_strategy="vectorize")
 def func_before_partial(arg_1, some_param):
     return arg_1 + some_param
 
 
 @pytest.fixture
-@policy_function(leaf_name="foo")
+@policy_function(leaf_name="foo", vectorization_strategy="vectorize")
 def function_with_bool_return(x: bool) -> bool:
     return x
 
@@ -256,13 +256,13 @@ def y_kin_namespaced_input(kin_id: int, inputs__x: int) -> int:
 
 
 @pytest.fixture
-@policy_function(leaf_name="bar")
+@policy_function(leaf_name="bar", vectorization_strategy="vectorize")
 def function_with_int_return(x: int) -> int:
     return x
 
 
 @pytest.fixture
-@policy_function(leaf_name="baz")
+@policy_function(leaf_name="baz", vectorization_strategy="vectorize")
 def function_with_float_return(x: int) -> float:
     return x
 
@@ -296,7 +296,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="loop")(
+                    "f": policy_function(vectorization_strategy="vectorize")(
                         return_n1__x_kin
                     ),
                     "x": x,
