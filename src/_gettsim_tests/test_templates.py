@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import dags.tree as dt
 import numpy
 
 from ttsim import main
+from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT_LABELS
+from ttsim.interface_dag_elements.shared import (
+    get_re_pattern_for_all_time_units_and_groupings,
+)
 from ttsim.testing_utils import (
     load_policy_test_data,
 )
@@ -78,89 +83,33 @@ def z(a__x: int, a__y: float) -> float:
 
 
 def test_template_all_outputs_no_inputs(backend):
-    actual = main(
+    res = main(
         inputs={
             "orig_policy_objects__root": GETTSIM_ROOT,
             "rounding": True,
             "date_str": "2025-01-01",
             "backend": backend,
         },
-        output_names=["templates__input_data_dtypes"],
-    )["templates__input_data_dtypes"]
-    # assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
-
-
-# def test_template_all_outputs_with_inputs(backend):
-#     actual = main(
-#         inputs={
-#             "input_data__tree": {
-#                 "p_id": [4, 5, 6],
-#                 "a": {
-#                     "inp2": [1, 2, 3],
-#                 },
-#                 "inp1": [0, 1, 2],
-#             },
-#             "policy_environment": {
-#                 "inp1": inp1,
-#                 "p1": p1,
-#                 "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
-#                 "b": {
-#                     "z": z,
-#                 },
-#             },
-#             "rounding": True,
-#             "date_str": "2025-01-01",
-#             "backend": backend,
-#         },
-#         output_names=["templates__input_data_dtypes"],
-#     )["templates__input_data_dtypes"]
-#     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
-
-
-# def test_template_output_y_no_inputs(backend):
-#     actual = main(
-#         inputs={
-#             "targets__tree": {"a": {"y": None}},
-#             "policy_environment": {
-#                 "inp1": inp1,
-#                 "p1": p1,
-#                 "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
-#                 "b": {
-#                     "z": z,
-#                 },
-#             },
-#             "rounding": True,
-#             "date_str": "2025-01-01",
-#             "backend": backend,
-#         },
-#         output_names=["templates__input_data_dtypes"],
-#     )["templates__input_data_dtypes"]
-#     assert actual == {"a": {"inp2": "FloatColumn"}}
-
-
-# def test_template_output_x_with_inputs(backend):
-#     actual = main(
-#         inputs={
-#             "input_data__tree": {
-#                 "p_id": [4, 5, 6],
-#                 "a": {
-#                     "inp2": [1, 2, 3],
-#                 },
-#                 "inp1": [0, 1, 2],
-#             },
-#             "targets__tree": {"a": {"x": None}},
-#             "policy_environment": {
-#                 "inp1": inp1,
-#                 "p1": p1,
-#                 "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
-#                 "b": {
-#                     "z": z,
-#                 },
-#             },
-#             "rounding": True,
-#             "date_str": "2025-01-01",
-#             "backend": backend,
-#         },
-#         output_names=["templates__input_data_dtypes"],
-#     )["templates__input_data_dtypes"]
-#     assert actual == {"inp1": "IntColumn"}
+        output_names=["labels__grouping_levels", "templates__input_data_dtypes"],
+    )
+    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=list(TIME_UNIT_LABELS),
+        grouping_levels=res["labels__grouping_levels"],
+    )
+    bn_to_variations = {}
+    for qname in dt.qnames(res["templates__input_data_dtypes"]):
+        match = pattern_all.fullmatch(qname)
+        # We must not find multiple time units for the same base name and group.
+        base_name = match.group("base_name")
+        if base_name not in bn_to_variations:
+            bn_to_variations[base_name] = [qname]
+        else:
+            bn_to_variations[base_name].append(qname)
+    dups = {bn: v for bn, v in bn_to_variations.items() if len(v) > 1}
+    if dups:
+        formatted = ""
+        for base_name, variations in dups.items():
+            formatted += f"\n{base_name}:\n    "
+            formatted += "\n    ".join(variations)
+            formatted += "\n"
+        raise AssertionError(f"More than one variation for base names:\n{formatted}")

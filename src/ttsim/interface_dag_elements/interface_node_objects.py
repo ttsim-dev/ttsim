@@ -233,7 +233,9 @@ def input_dependent_interface_function(
     variants: list[InterfaceFunctionVariant],
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> GenericCallable[[GenericCallable], InputDependentInterfaceFunction]:
+) -> Callable[
+    [Callable[..., Any]], InputDependentInterfaceFunction[FunArgTypes, ReturnType]
+]:
     """
     Decorator that makes an `InputDependentInterfaceFunction` from a function.
 
@@ -254,7 +256,7 @@ def input_dependent_interface_function(
     """
 
     def inner(
-        func: GenericCallable,
+        func: Callable[..., Any],
     ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
         return InputDependentInterfaceFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -269,7 +271,7 @@ def input_dependent_interface_function(
 @dataclass(frozen=True)
 class InterfaceFunctionVariant:
     required_input_qnames: list[str]
-    function: GenericCallable
+    function: Callable[..., Any]
 
 
 def _fail_if_more_than_one_function_variant_matches_inputs(
