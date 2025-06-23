@@ -55,7 +55,7 @@ def monate_verbleibender_anspruchsdauer(
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
     anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
     anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
-) -> float:
+) -> int:
     """Remaining amount of months of potential unemployment benefit claims."""
     auf_altersbasis = anspruchsdauer_nach_alter.values_to_look_up[
         alter - anspruchsdauer_nach_alter.base_to_subtract
@@ -97,7 +97,7 @@ def mindestversicherungszeit_erreicht(
 def grundsätzlich_anspruchsberechtigt(
     alter: int,
     arbeitssuchend: bool,
-    monate_verbleibender_anspruchsdauer: float,
+    monate_verbleibender_anspruchsdauer: int,
     arbeitsstunden_w: float,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     stundengrenze: float,
