@@ -128,7 +128,7 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "update-type-hints"}
 jaxtyping = "*"
 pdbp = "*"
 
@@ -266,6 +266,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 explicit_package_bases = true
 disallow_empty_bodies = false
+disable_error_code = ["overload-cannot-match"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -275,6 +276,7 @@ module = [
 ]
 disallow_untyped_defs = false
 ignore_errors = true
+
 
 [[tool.mypy.overrides]]
 module = ["tests.*",]

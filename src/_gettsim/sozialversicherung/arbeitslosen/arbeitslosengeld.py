@@ -97,7 +97,7 @@ def mindestversicherungszeit_erreicht(
 def grundsätzlich_anspruchsberechtigt(
     alter: int,
     arbeitssuchend: bool,
-    monate_verbleibender_anspruchsdauer: int,
+    monate_verbleibender_anspruchsdauer: float,
     arbeitsstunden_w: float,
     sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
     stundengrenze: float,

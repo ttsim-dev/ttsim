@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim.tt_dag_elements import policy_function
 
 # TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
