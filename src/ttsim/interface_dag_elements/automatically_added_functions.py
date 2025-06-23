@@ -20,6 +20,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
+    PolicyInput,
     TimeConversionFunction,
 )
 from ttsim.tt_dag_elements.param_objects import ScalarParam
@@ -589,15 +590,17 @@ def _create_function_for_time_unit(
 
 def create_agg_by_group_functions(
     column_functions: dict[str, ColumnFunction],
+    policy_inputs: dict[str, PolicyInput],
     input_columns: UnorderedQNames,
     targets: OrderedQNames,
     grouping_levels: OrderedQNames,
     # backend: Literal["numpy", "jax"],
 ) -> UnorderedQNames:
     gp = group_pattern(grouping_levels)
-    all_functions_and_data = {
+    all_column_objects_and_input_data = {
         **column_functions,
         **dict.fromkeys(input_columns),
+        **policy_inputs,
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.
@@ -609,14 +612,13 @@ def create_agg_by_group_functions(
     }
     # We will only aggregate from individual-level objects.
     potential_agg_by_group_sources = {
-        qn: o for qn, o in all_functions_and_data.items() if not gp.match(qn)
+        qn: o for qn, o in all_column_objects_and_input_data.items() if not gp.match(qn)
     }
-    # Exclude objects that have been explicitly provided.u
-
+    # Exclude objects that have been explicitly provided.
     agg_by_group_function_names = {
         t
         for t in potential_agg_by_group_function_names
-        if t not in all_functions_and_data
+        if t not in all_column_objects_and_input_data
     }
     out = {}
     for abgfn in agg_by_group_function_names:
