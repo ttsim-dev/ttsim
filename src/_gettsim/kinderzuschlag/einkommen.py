@@ -159,7 +159,7 @@ def maximales_nettoeinkommen_m_bg_ab_01_2023(
 @policy_function(start_date="2008-10-01")
 def mindestbruttoeinkommen_m_bg(
     anzahl_kinder_bg: int,
-    arbeitslosengeld_2__alleinerziehend_bg: bool,
+    familie__alleinerziehend_bg: bool,
     mindesteinkommen: dict[str, float],
 ) -> float:
     """Calculate minimal claim of child benefit (kinderzuschlag).
@@ -169,7 +169,7 @@ def mindestbruttoeinkommen_m_bg(
     """
     if anzahl_kinder_bg == 0:
         out = 0.0
-    elif arbeitslosengeld_2__alleinerziehend_bg:
+    elif familie__alleinerziehend_bg:
         out = mindesteinkommen["single"]
     else:
         out = mindesteinkommen["paar"]
@@ -275,7 +275,7 @@ def existenzminimum_mit_bildung_und_teilhabe(
 @policy_function(start_date="2005-01-01")
 def wohnbedarf_anteil_eltern_bg(
     anzahl_kinder_bg: int,
-    arbeitslosengeld_2__alleinerziehend_bg: bool,
+    familie__alleinerziehend_bg: bool,
     existenzminimum: ExistenzminimumNachAufwendungenOhneBildungUndTeilhabe
     | ExistenzminimumNachAufwendungenMitBildungUndTeilhabe,
     wohnbedarf_anteil_berücksichtigte_kinder: int,
@@ -286,7 +286,7 @@ def wohnbedarf_anteil_eltern_bg(
 
     Reference: § 6a Abs. 5 S. 3 BKGG
     """
-    if arbeitslosengeld_2__alleinerziehend_bg:
+    if familie__alleinerziehend_bg:
         elternbetrag = (
             existenzminimum.kosten_der_unterkunft.single
             + existenzminimum.heizkosten.single

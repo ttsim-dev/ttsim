@@ -20,7 +20,6 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
-    PolicyInput,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
@@ -140,16 +139,10 @@ def _add_derived_functions(
         }.items()
         if isinstance(v, ColumnFunction)
     }
-    policy_inputs = {
-        k: v
-        for k, v in qname_env_without_tree_logic.items()
-        if isinstance(v, PolicyInput)
-    }
 
     # Create aggregation functions by group.
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
-        policy_inputs=policy_inputs,
         input_columns=input_columns,
         targets=targets,
         grouping_levels=grouping_levels,

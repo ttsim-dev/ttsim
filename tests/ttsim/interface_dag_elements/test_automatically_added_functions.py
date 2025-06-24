@@ -29,12 +29,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     y_to_q,
     y_to_w,
 )
-from ttsim.tt_dag_elements import policy_function, policy_input
-
-
-@policy_input()
-def some_policy_input() -> int:
-    pass
+from ttsim.tt_dag_elements import policy_function
 
 
 def return_one() -> int:
@@ -368,7 +363,6 @@ def test_should_not_create_cycle():
 @pytest.mark.parametrize(
     (
         "column_functions",
-        "policy_inputs",
         "targets",
         "input_columns",
         "expected",
@@ -377,36 +371,25 @@ def test_should_not_create_cycle():
         (
             {"foo": policy_function(leaf_name="foo")(return_x_kin)},
             {},
-            {},
             {"x"},
             ("x_kin"),
         ),
         (
             {"n2__foo": policy_function(leaf_name="foo")(return_n1__x_kin)},
             {},
-            {},
             {"n1__x"},
             ("n1__x_kin"),
         ),
         (
             {},
-            {},
             {"x_kin": None},
             {"x"},
-            ("x_kin"),
-        ),
-        (
-            {},
-            {"x": some_policy_input},
-            {"x_kin"},
-            {},
             ("x_kin"),
         ),
     ],
 )
 def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
-    policy_inputs,
     targets,
     input_columns,
     expected,
@@ -418,7 +401,6 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     """
     result = create_agg_by_group_functions(
         column_functions=column_functions,
-        policy_inputs=policy_inputs,
         input_columns=input_columns,
         targets=targets,
         grouping_levels=("kin",),
