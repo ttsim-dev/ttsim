@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function(end_date="2014-12-31", leaf_name="alleinerziehend_betrag_y")
 def alleinerziehend_betrag_y_pauschal(
-    einkommensteuer__alleinerziehend_sn: bool, alleinerziehendenfreibetrag_basis: float
+    einkommensteuer__alleinerziehend_sn: bool,
+    alleinerziehendenfreibetrag_basis: float,
 ) -> float:
     """Calculate tax deduction allowance for single parents until 2014"""
     if einkommensteuer__alleinerziehend_sn:

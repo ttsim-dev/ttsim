@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")
@@ -99,7 +99,8 @@ def betrag_gesamt_in_gleitzone_m(
     beitragssatz: float,
 ) -> float:
     """Sum of employee's and employer's unemployment insurance contribution
-    for Midijobs."""
+    for Midijobs.
+    """
     return sozialversicherung__midijob_bemessungsentgelt_m * beitragssatz
 
 
@@ -113,7 +114,8 @@ def betrag_arbeitgeber_in_gleitzone_m_anteil_bruttolohn(
     beitragssatz: float,
 ) -> float:
     """Employers' unemployment insurance contribution for Midijobs until September
-    2022."""
+    2022.
+    """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         * beitragssatz
@@ -146,7 +148,8 @@ def betrag_versicherter_in_gleitzone_m_als_differenz_von_gesamt_und_arbeitgeberb
 
 
 @policy_function(
-    start_date="2022-10-01", leaf_name="betrag_versicherter_in_gleitzone_m"
+    start_date="2022-10-01",
+    leaf_name="betrag_versicherter_in_gleitzone_m",
 )
 def betrag_versicherter_in_gleitzone_m_mit_festem_beitragssatz(
     sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m: float,

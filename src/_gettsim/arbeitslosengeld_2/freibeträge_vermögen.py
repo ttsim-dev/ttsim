@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function(start_date="2005-01-01", end_date="2022-12-31")
@@ -75,7 +75,9 @@ def vermögensfreibetrag_in_karenzzeit_bg(
 
 
 @policy_function(
-    start_date="2005-01-01", end_date="2022-12-31", leaf_name="vermögensfreibetrag_bg"
+    start_date="2005-01-01",
+    end_date="2022-12-31",
+    leaf_name="vermögensfreibetrag_bg",
 )
 def vermögensfreibetrag_bg_bis_2022(
     grundfreibetrag_vermögen_bg: float,

@@ -17,7 +17,7 @@ def example_inputs_df():
             "recipient_child_benefits_id": [-1, 0, 0],
             "is_single_parent": [True, False, False],
             "has_children": [True, False, False],
-        }
+        },
     )
 
 
@@ -87,23 +87,15 @@ def example_inputs_tree_to_inputs_df_columns():
             "kranken": {
                 "beitrag": {
                     "privat_versichert": False,
-                }
+                },
             },
         },
         "wohnort_ost": False,
     }
 
 
-_EXAMPLE_TARGETS_TREE_TO_DF_COLUMNS = {
-    "einkommensteuer": {
-        "betrag_y_sn": "income_tax",  # policy target
-        "kinderfreibetrag_pro_kind_y": "child_tax_credit_per_child",  # param target
-    },
-}
-
-
 @pytest.mark.parametrize(
-    "targets_tree_to_outputs_df_columns",
+    "targets__tree",
     [
         # Param target and policy target
         {
@@ -127,7 +119,7 @@ _EXAMPLE_TARGETS_TREE_TO_DF_COLUMNS = {
     ],
 )
 def test_oss_with_gettsim_policy_env(
-    targets_tree_to_outputs_df_columns,
+    targets__tree,
     example_inputs_df,
     example_inputs_tree_to_inputs_df_columns,
 ):
@@ -135,11 +127,9 @@ def test_oss_with_gettsim_policy_env(
         date="2024-01-01",
         inputs_df=example_inputs_df,
         inputs_tree_to_inputs_df_columns=example_inputs_tree_to_inputs_df_columns,
-        targets_tree_to_outputs_df_columns=targets_tree_to_outputs_df_columns,
+        targets__tree=targets__tree,
     )
-    expected_columns: list[tuple[str]] = optree.tree_flatten(
-        targets_tree_to_outputs_df_columns
-    )[0]
+    expected_columns: list[tuple[str]] = optree.tree_flatten(targets__tree)[0]
     assert results.shape == (
         example_inputs_df.shape[0],
         len(expected_columns),

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function(start_date="2009-01-01")
@@ -13,7 +13,7 @@ def betrag_y_sn(zu_versteuerndes_kapitaleinkommen_y_sn: float, satz: float) -> f
 
 @policy_function(start_date="2009-01-01")
 def zu_versteuerndes_kapitaleinkommen_y_sn(
-    einkommensteuer__anzahl_personen_sn: float,
+    einkommensteuer__anzahl_personen_sn: int,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y_sn: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__sparerpauschbetrag: float,
 ) -> float:

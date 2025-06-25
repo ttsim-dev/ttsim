@@ -5,7 +5,7 @@ Revoked for birth cohorts after 1951.
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
+from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(
@@ -68,7 +68,6 @@ def grundsätzlich_anspruchsberechtigt_ohne_prüfung_geburtsjahr(
     Policy becomes inactive in 2018 because then all potential beneficiaries have
     reached the normal retirement age.
     """
-
     return (
         weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt
@@ -97,7 +96,6 @@ def grundsätzlich_anspruchsberechtigt_mit_prüfung_geburtsjahr(
     becomes inactive in 2018 because then all potential beneficiaries have reached the
     normal retirement age.
     """
-
     return (
         weiblich
         and sozialversicherung__rente__wartezeit_15_jahre_erfüllt

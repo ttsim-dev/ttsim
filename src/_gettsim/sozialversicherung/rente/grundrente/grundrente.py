@@ -1,16 +1,23 @@
 from __future__ import annotations
 
-from ttsim import (
+from typing import TYPE_CHECKING
+
+from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     RoundingSpec,
     piecewise_polynomial,
     policy_function,
 )
 
+if TYPE_CHECKING:
+    from types import ModuleType
+
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
 )
@@ -48,7 +55,6 @@ def einkommen_m(
 
     Reference: § 97a Abs. 2 S. 1 SGB VI
     """
-
     # Sum income over different income sources.
     return (
         einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m
@@ -63,17 +69,21 @@ def _anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
     rentenwert: float,
     parameter_anzurechnendes_einkommen: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """The isolated function for the relevant income for the Grundrentezuschlag."""
     return rentenwert * piecewise_polynomial(
         x=einkommen_m_ehe / rentenwert,
         parameters=parameter_anzurechnendes_einkommen,
+        xnp=xnp,
     )
 
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
 )
@@ -83,6 +93,7 @@ def anzurechnendes_einkommen_m(
     sozialversicherung__rente__altersrente__rentenwert: float,
     anzurechnendes_einkommen_ohne_partner: PiecewisePolynomialParamValue,
     anzurechnendes_einkommen_mit_partner: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Income which is deducted from Grundrentenzuschlag.
 
@@ -93,7 +104,6 @@ def anzurechnendes_einkommen_m(
 
     Reference: § 97a Abs. 4 S. 2, 4 SGB VI
     """
-
     # Calculate relevant income following the crediting rules using the values for
     # singles and those for married subjects
     # Note: Thresholds are defined relativ to rentenwert which is implemented by
@@ -103,19 +113,23 @@ def anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
             rentenwert=sozialversicherung__rente__altersrente__rentenwert,
             parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_mit_partner,
+            xnp=xnp,
         )
     else:
         out = _anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
             rentenwert=sozialversicherung__rente__altersrente__rentenwert,
             parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_ohne_partner,
+            xnp=xnp,
         )
     return out
 
 
 @policy_function(
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     start_date="2021-01-01",
 )
@@ -132,7 +146,6 @@ def basisbetrag_m(
     The Zugangsfaktor is limited to 1 and considered Grundrentezeiten are limited to
     35 years (420 months).
     """
-
     bewertungszeiten = min(
         bewertungszeiten_monate,
         berücksichtigte_wartezeit_monate["max"],
@@ -152,7 +165,8 @@ def basisbetrag_m(
 
 @policy_function(start_date="2021-01-01")
 def mean_entgeltpunkte_pro_bewertungsmonat(
-    mean_entgeltpunkte: float, bewertungszeiten_monate: int
+    mean_entgeltpunkte: float,
+    bewertungszeiten_monate: int,
 ) -> float:
     """Average number of Entgeltpunkte earned per month of Grundrentenbewertungszeiten."""
     if bewertungszeiten_monate > 0:

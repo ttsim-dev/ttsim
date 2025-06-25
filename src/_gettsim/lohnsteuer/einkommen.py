@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ttsim import (
+if TYPE_CHECKING:
+    from types import ModuleType
+
+from ttsim.tt_dag_elements import (
     PiecewisePolynomialParamValue,
     RoundingSpec,
     param_function,
@@ -63,7 +66,6 @@ def vorsorge_krankenversicherungsbeiträge_option_a(
     but only up to a certain threshold.
 
     """
-
     vorsorge_krankenversicherungsbeiträge_option_a_basis = (
         vorsorgepauschale_mindestanteil
         * sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y
@@ -127,7 +129,6 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
     a" and "Option b". This function calculates option b where the actual contributions
     are used.
     """
-
     return (
         sozialversicherung__kranken__beitrag__einkommen_bis_beitragsbemessungsgrenze_y
         * (
@@ -142,6 +143,7 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
 def einführungsfaktor_rentenversicherungsaufwendungen(
     evaluationsjahr: int,
     parameter_einführungsfaktor_rentenversicherungsaufwendungen: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
     current year as follows:
@@ -156,6 +158,7 @@ def einführungsfaktor_rentenversicherungsaufwendungen(
     return piecewise_polynomial(
         x=evaluationsjahr,
         parameters=parameter_einführungsfaktor_rentenversicherungsaufwendungen,
+        xnp=xnp,
     )
 
 
@@ -177,7 +180,6 @@ def vorsorgepauschale_y_ab_2010_bis_2022(
     used when calculating Einkommensteuer.
 
     """
-
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
         * sozialversicherung__rente__beitrag__beitragssatz
@@ -208,7 +210,6 @@ def vorsorgepauschale_y_ab_2023(
     used when calculating Einkommensteuer.
 
     """
-
     rente = (
         sozialversicherung__rente__beitrag__einkommen_y
         * sozialversicherung__rente__beitrag__beitragssatz

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     get_consecutive_int_1d_lookup_table_param_value,
     param_function,
     piecewise_polynomial,
@@ -12,7 +12,9 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import (
+    from types import ModuleType
+
+    from ttsim.tt_dag_elements import (
         ConsecutiveInt1dLookupTableParamValue,
         PiecewisePolynomialParamValue,
     )
@@ -32,7 +34,6 @@ def betrag_m(
     satz: dict[str, float],
 ) -> float:
     """Calculate individual unemployment benefit."""
-
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
         arbeitsl_geld_satz = satz["allgemein"]
     else:
@@ -54,7 +55,7 @@ def monate_verbleibender_anspruchsdauer(
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
     anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
     anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
-) -> float:
+) -> int:
     """Remaining amount of months of potential unemployment benefit claims."""
     auf_altersbasis = anspruchsdauer_nach_alter.values_to_look_up[
         alter - anspruchsdauer_nach_alter.base_to_subtract
@@ -84,7 +85,8 @@ def mindestversicherungszeit_erreicht(
     mindestversicherungsmonate: int,
 ) -> bool:
     """At least 12 months of unemployment contributions in the 30 months before claiming
-    unemployment insurance."""
+    unemployment insurance.
+    """
     return (
         monate_beitragspflichtig_versichert_in_letzten_30_monaten
         >= mindestversicherungsmonate
@@ -121,6 +123,7 @@ def einkommen_vorjahr_proxy_m(
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
     solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Approximate last years income for unemployment benefit."""
     # Relevant wage is capped at the contribution thresholds
@@ -141,10 +144,12 @@ def einkommen_vorjahr_proxy_m(
         x=12 * max_wage
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
         parameters=einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
     prox_soli = piecewise_polynomial(
         x=prox_tax,
         parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
+        xnp=xnp,
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     return max(out, 0.0)
@@ -153,6 +158,7 @@ def einkommen_vorjahr_proxy_m(
 @param_function(start_date="1997-03-24")
 def anspruchsdauer_nach_alter(
     raw_anspruchsdauer_nach_alter: dict[str | int, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
     tmp = raw_anspruchsdauer_nach_alter.copy()
@@ -166,12 +172,13 @@ def anspruchsdauer_nach_alter(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_1d_lookup_table_param_value(full_spec)
+    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)
 
 
 @param_function(start_date="1997-03-24")
 def anspruchsdauer_nach_versicherungspflichtigen_monaten(
     raw_anspruchsdauer_nach_versicherungspflichtigen_monaten: dict[str | int, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
     tmp = raw_anspruchsdauer_nach_versicherungspflichtigen_monaten.copy()
@@ -185,4 +192,4 @@ def anspruchsdauer_nach_versicherungspflichtigen_monaten(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_1d_lookup_table_param_value(full_spec)
+    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)

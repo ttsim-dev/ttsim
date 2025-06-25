@@ -1,26 +1,28 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from _gettsim.config import GETTSIM_ROOT
-from ttsim import (
-    dataframe_to_nested_data,
-    main,
+import numpy
+
+from ttsim import main
+from ttsim.interface_dag_elements.data_converters import (
+    df_with_mapped_columns_to_nested_data,
     nested_data_to_df_with_mapped_columns,
-    to_datetime,
 )
+from ttsim.interface_dag_elements.shared import to_datetime
 
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.typing import NestedInputs, NestedStrings
+    from ttsim.interface_dag_elements.typing import NestedInputs, NestedStrings
 
 
 def oss(
     date: str,
     inputs_df: pd.DataFrame,
     inputs_tree_to_inputs_df_columns: NestedInputs,
-    targets_tree_to_outputs_df_columns: NestedStrings,
+    targets__tree: NestedStrings,
 ) -> pd.DataFrame:
     """One-stop-shop for computing taxes and transfers.
 
@@ -34,14 +36,15 @@ def oss(
             A tree that has the inputs required by GETTSIM as the path (sequence of
             keys) and maps them to the data provided by the user. The leaves of the tree
             are strings that reference column names in *inputs_df* or constants.
-        targets_tree_to_outputs_df_columns:
+        targets__tree:
             A tree that has the desired targets as the path (sequence of keys) and maps
             them to the data columns the user would like to have.
 
-    Returns:
+    Returns
+    -------
         A DataFrame with the results.
 
-    Examples:
+    Examples
     --------
     >>> inputs_df = pd.DataFrame(
     ...     {
@@ -95,7 +98,7 @@ def oss(
     ...     date="2025-01-01",
     ...     inputs_df=inputs_df,
     ...     inputs_tree_to_inputs_df_columns=inputs_map,
-    ...     targets_tree_to_outputs_df_columns=targets_map,
+    ...     targets__tree=targets_map,
     ... )
        ltci_contrib
     0         14.72
@@ -103,22 +106,24 @@ def oss(
     2          0.00
     3          9.82
     """
-    data_tree = dataframe_to_nested_data(
-        inputs_tree_to_df_columns=inputs_tree_to_inputs_df_columns,
+    input_data__tree = df_with_mapped_columns_to_nested_data(
+        mapper=inputs_tree_to_inputs_df_columns,
         df=inputs_df,
+        xnp=numpy,
     )
     nested_result = main(
         inputs={
             "date": to_datetime(date),
-            "root": GETTSIM_ROOT,
-            "data_tree": data_tree,
-            "targets_tree": targets_tree_to_outputs_df_columns,
+            "orig_policy_objects__root": Path(__file__).parent,
+            "input_data__tree": input_data__tree,
+            "targets__tree": targets__tree,
             "rounding": True,
+            "backend": "numpy",
         },
-        targets=["nested_results"],
-    )["nested_results"]
+        output_names=["results__tree"],
+    )["results__tree"]
     return nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=nested_result,
-        nested_outputs_df_column_names=targets_tree_to_outputs_df_columns,
-        data_with_p_id=data_tree,
+        nested_outputs_df_column_names=targets__tree,
+        data_with_p_id=input_data__tree,
     )

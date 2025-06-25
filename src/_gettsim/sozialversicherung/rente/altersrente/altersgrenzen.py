@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
-from ttsim.config import numpy_or_jax as np
+from typing import TYPE_CHECKING
+
+from ttsim.tt_dag_elements import policy_function
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 @policy_function(
@@ -18,6 +22,7 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_ohne_besonders_langjährig(
     langjährig__grundsätzlich_anspruchsberechtigt: bool,
     langjährig__altersgrenze: float,
     regelaltersrente__altersgrenze: float,
+    xnp: ModuleType,
 ) -> float:
     """Full retirement age after eligibility checks, assuming eligibility for
     Regelaltersrente.
@@ -26,17 +31,16 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_ohne_besonders_langjährig(
     to the normal retirement age (FRA<=NRA) and depends on personal characteristics as
     gender, insurance duration, health/disability, employment status.
     """
-
     out = regelaltersrente__altersgrenze
     if für_frauen__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(out, für_frauen__altersgrenze)
+        out = xnp.minimum(out, für_frauen__altersgrenze)
     if wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(
+        out = xnp.minimum(
             out,
             wegen_arbeitslosigkeit__altersgrenze,
         )
     if langjährig__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(out, langjährig__altersgrenze)
+        out = xnp.minimum(out, langjährig__altersgrenze)
 
     return out
 
@@ -56,6 +60,7 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_besonders_langjährig(
     langjährig__grundsätzlich_anspruchsberechtigt: bool,
     langjährig__altersgrenze: float,
     regelaltersrente__altersgrenze: float,
+    xnp: ModuleType,
 ) -> float:
     """Full retirement age after eligibility checks, assuming eligibility for
     Regelaltersrente.
@@ -69,19 +74,18 @@ def altersgrenze_mit_arbeitslosigkeit_frauen_besonders_langjährig(
     because then all potential beneficiaries of the Rente wg. Arbeitslosigkeit and
     Rente für Frauen have reached the normal retirement age.
     """
-
     out = regelaltersrente__altersgrenze
     if für_frauen__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(out, für_frauen__altersgrenze)
+        out = xnp.minimum(out, für_frauen__altersgrenze)
     if wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(
+        out = xnp.minimum(
             out,
             wegen_arbeitslosigkeit__altersgrenze,
         )
     if langjährig__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(out, langjährig__altersgrenze)
+        out = xnp.minimum(out, langjährig__altersgrenze)
     if besonders_langjährig__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(
+        out = xnp.minimum(
             out,
             besonders_langjährig__altersgrenze,
         )
@@ -99,6 +103,7 @@ def altersgrenze_mit_besonders_langjährig_ohne_arbeitslosigkeit_frauen(
     langjährig__grundsätzlich_anspruchsberechtigt: bool,
     langjährig__altersgrenze: float,
     regelaltersrente__altersgrenze: float,
+    xnp: ModuleType,
 ) -> float:
     """Full retirement age after eligibility checks, assuming eligibility for
     Regelaltersrente.
@@ -107,12 +112,11 @@ def altersgrenze_mit_besonders_langjährig_ohne_arbeitslosigkeit_frauen(
     to the normal retirement age (FRA<=NRA) and depends on personal characteristics as
     gender, insurance duration, health/disability, employment status.
     """
-
     out = regelaltersrente__altersgrenze
     if langjährig__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(out, langjährig__altersgrenze)
+        out = xnp.minimum(out, langjährig__altersgrenze)
     if besonders_langjährig__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(
+        out = xnp.minimum(
             out,
             besonders_langjährig__altersgrenze,
         )
@@ -132,6 +136,7 @@ def altersgrenze_vorzeitig_mit_arbeitslosigkeit_frauen(
     langjährig__grundsätzlich_anspruchsberechtigt: bool,
     langjährig__altersgrenze_vorzeitig: float,
     regelaltersrente__altersgrenze: float,
+    xnp: ModuleType,
 ) -> float:
     """Earliest possible retirement age after checking for eligibility.
 
@@ -151,9 +156,9 @@ def altersgrenze_vorzeitig_mit_arbeitslosigkeit_frauen(
     if langjährig__grundsätzlich_anspruchsberechtigt:
         out = langjährig_vorzeitig
     if für_frauen__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(out, frauen_vorzeitig)
+        out = xnp.minimum(out, frauen_vorzeitig)
     if wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt:
-        out = np.minimum(out, arbeitsl_vorzeitig)
+        out = xnp.minimum(out, arbeitsl_vorzeitig)
 
     return out
 
@@ -169,7 +174,6 @@ def altersgrenze_vorzeitig_ohne_arbeitslosigkeit_frauen(
     Early retirement age depends on personal characteristics as gender, insurance
     duration, health/disability, employment status.
     """
-
     out = regelaltersrente__altersgrenze
 
     if langjährig__grundsätzlich_anspruchsberechtigt:
@@ -181,7 +185,8 @@ def altersgrenze_vorzeitig_ohne_arbeitslosigkeit_frauen(
 
 
 @policy_function(
-    end_date="2017-12-31", leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt"
+    end_date="2017-12-31",
+    leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt",
 )
 def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_arbeitslosigkeit_frauen(
     für_frauen__grundsätzlich_anspruchsberechtigt: bool,
@@ -195,7 +200,6 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_arbeitslosigkeit_frauen(
     becomes inactive in 2018 because then all potential beneficiaries of the Rente wg.
     Arbeitslosigkeit and Rente für Frauen have reached the normal retirement age.
     """
-
     return (
         für_frauen__grundsätzlich_anspruchsberechtigt
         or langjährig__grundsätzlich_anspruchsberechtigt
@@ -204,7 +208,8 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_mit_arbeitslosigkeit_frauen(
 
 
 @policy_function(
-    start_date="2018-01-01", leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt"
+    start_date="2018-01-01",
+    leaf_name="vorzeitig_grundsätzlich_anspruchsberechtigt",
 )
 def vorzeitig_grundsätzlich_anspruchsberechtigt_vorzeitig_ohne_arbeitslosigkeit_frauen(
     langjährig__grundsätzlich_anspruchsberechtigt: bool,
@@ -213,7 +218,6 @@ def vorzeitig_grundsätzlich_anspruchsberechtigt_vorzeitig_ohne_arbeitslosigkeit
 
     Can only be claimed if eligible for "Rente für langjährig Versicherte".
     """
-
     return langjährig__grundsätzlich_anspruchsberechtigt
 
 
@@ -244,7 +248,7 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
                 für_frauen__altersgrenze,
                 langjährig__altersgrenze,
                 wegen_arbeitslosigkeit__altersgrenze,
-            ]
+            ],
         )
     elif (
         langjährig__grundsätzlich_anspruchsberechtigt
@@ -254,7 +258,7 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
             [
                 für_frauen__altersgrenze,
                 langjährig__altersgrenze,
-            ]
+            ],
         )
     elif (
         langjährig__grundsätzlich_anspruchsberechtigt
@@ -264,7 +268,7 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
             [
                 langjährig__altersgrenze,
                 wegen_arbeitslosigkeit__altersgrenze,
-            ]
+            ],
         )
     elif langjährig__grundsätzlich_anspruchsberechtigt:
         out = langjährig__altersgrenze

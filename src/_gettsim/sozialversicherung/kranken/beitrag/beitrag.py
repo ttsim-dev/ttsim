@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import policy_function
+from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")
@@ -193,7 +193,6 @@ def betrag_rentner_m(
     beitragssatz_arbeitnehmer: float,
 ) -> float:
     """Health insurance contributions for pension incomes."""
-
     return beitragssatz_arbeitnehmer * bemessungsgrundlage_rente_m
 
 

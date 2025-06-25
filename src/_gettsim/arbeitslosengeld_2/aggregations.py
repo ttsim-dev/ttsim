@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import AggType, agg_by_group_function
+from ttsim.tt_dag_elements import AggType, agg_by_group_function
 
 
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.

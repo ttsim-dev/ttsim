@@ -10,7 +10,7 @@ from _gettsim.param_types import (
     ExistenzminimumNachAufwendungenMitBildungUndTeilhabe,
     ExistenzminimumNachAufwendungenOhneBildungUndTeilhabe,
 )
-from ttsim import (
+from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
     agg_by_group_function,
@@ -19,13 +19,11 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import RawParam
+    from ttsim.tt_dag_elements import RawParam
 
 
-@agg_by_group_function(agg_type=AggType.SUM, start_date="2005-01-01")
-def arbeitslosengeld_2__anzahl_kinder_bg(
-    kindergeld__anzahl_ansprüche: int, bg_id: int
-) -> int:
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bg(kindergeld__anzahl_ansprüche: int, bg_id: int) -> int:
     pass
 
 
@@ -105,7 +103,7 @@ def nettoeinkommen_eltern_m_mit_genauer_rundung(
 )
 def maximales_nettoeinkommen_m_bg_vor_06_2022(
     erwachsenenbedarf_m_bg: float,
-    arbeitslosengeld_2__anzahl_kinder_bg: int,
+    anzahl_kinder_bg: int,
     satz: float,
 ) -> float:
     """Calculate maximum income to be eligible for additional child benefit
@@ -114,7 +112,7 @@ def maximales_nettoeinkommen_m_bg_vor_06_2022(
     There is a maximum income threshold, depending on the need, plus the potential kiz
     receipt (§6a (1) Nr. 3 BKGG).
     """
-    return erwachsenenbedarf_m_bg + satz * arbeitslosengeld_2__anzahl_kinder_bg
+    return erwachsenenbedarf_m_bg + satz * anzahl_kinder_bg
 
 
 @policy_function(
@@ -124,7 +122,7 @@ def maximales_nettoeinkommen_m_bg_vor_06_2022(
 )
 def maximales_nettoeinkommen_m_bg_ab_06_2022_bis_12_2022(
     erwachsenenbedarf_m_bg: float,
-    arbeitslosengeld_2__anzahl_kinder_bg: int,
+    anzahl_kinder_bg: int,
     arbeitslosengeld_2__kindersofortzuschlag: float,
     satz: float,
 ) -> float:
@@ -136,16 +134,15 @@ def maximales_nettoeinkommen_m_bg_ab_06_2022_bis_12_2022(
     """
     return (
         erwachsenenbedarf_m_bg
-        + satz * arbeitslosengeld_2__anzahl_kinder_bg
-        + arbeitslosengeld_2__kindersofortzuschlag
-        * arbeitslosengeld_2__anzahl_kinder_bg
+        + satz * anzahl_kinder_bg
+        + arbeitslosengeld_2__kindersofortzuschlag * anzahl_kinder_bg
     )
 
 
 @policy_function(start_date="2023-01-01", leaf_name="maximales_nettoeinkommen_m_bg")
 def maximales_nettoeinkommen_m_bg_ab_01_2023(
     erwachsenenbedarf_m_bg: float,
-    arbeitslosengeld_2__anzahl_kinder_bg: int,
+    anzahl_kinder_bg: int,
     satz: float,
 ) -> float:
     """Calculate maximum income to be eligible for additional child benefit
@@ -156,13 +153,13 @@ def maximales_nettoeinkommen_m_bg_ab_01_2023(
     There is a maximum income threshold, depending on the need, plus the potential kiz
     receipt (§6a (1) Nr. 3 BKGG).
     """
-    return erwachsenenbedarf_m_bg + satz * arbeitslosengeld_2__anzahl_kinder_bg
+    return erwachsenenbedarf_m_bg + satz * anzahl_kinder_bg
 
 
 @policy_function(start_date="2008-10-01")
 def mindestbruttoeinkommen_m_bg(
-    arbeitslosengeld_2__anzahl_kinder_bg: int,
-    familie__alleinerziehend_bg: bool,
+    anzahl_kinder_bg: int,
+    arbeitslosengeld_2__alleinerziehend_bg: bool,
     mindesteinkommen: dict[str, float],
 ) -> float:
     """Calculate minimal claim of child benefit (kinderzuschlag).
@@ -170,9 +167,9 @@ def mindestbruttoeinkommen_m_bg(
     Min income to be eligible for KIZ (different for singles and couples) (§6a (1) Nr. 2
     BKGG).
     """
-    if arbeitslosengeld_2__anzahl_kinder_bg == 0:
+    if anzahl_kinder_bg == 0:
         out = 0.0
-    elif familie__alleinerziehend_bg:
+    elif arbeitslosengeld_2__alleinerziehend_bg:
         out = mindesteinkommen["single"]
     else:
         out = mindesteinkommen["paar"]
@@ -215,7 +212,9 @@ def kosten_der_unterkunft_m_bg(
 
 
 @param_function(
-    start_date="2005-01-01", end_date="2011-12-31", leaf_name="existenzminimum"
+    start_date="2005-01-01",
+    end_date="2011-12-31",
+    leaf_name="existenzminimum",
 )
 def existenzminimum_ohne_bildung_und_teilhabe(
     parameter_existenzminimum: RawParam,
@@ -268,15 +267,15 @@ def existenzminimum_mit_bildung_und_teilhabe(
         kosten_der_unterkunft=kosten_der_unterkunft,
         heizkosten=heizkosten,
         bildung_und_teilhabe=ElementExistenzminimumNurKind(
-            kind=parameter_existenzminimum["bildung_und_teilhabe"]["kind"]
+            kind=parameter_existenzminimum["bildung_und_teilhabe"]["kind"],
         ),
     )
 
 
 @policy_function(start_date="2005-01-01")
 def wohnbedarf_anteil_eltern_bg(
-    arbeitslosengeld_2__anzahl_kinder_bg: int,
-    familie__alleinerziehend_bg: bool,
+    anzahl_kinder_bg: int,
+    arbeitslosengeld_2__alleinerziehend_bg: bool,
     existenzminimum: ExistenzminimumNachAufwendungenOhneBildungUndTeilhabe
     | ExistenzminimumNachAufwendungenMitBildungUndTeilhabe,
     wohnbedarf_anteil_berücksichtigte_kinder: int,
@@ -287,8 +286,7 @@ def wohnbedarf_anteil_eltern_bg(
 
     Reference: § 6a Abs. 5 S. 3 BKGG
     """
-
-    if familie__alleinerziehend_bg:
+    if arbeitslosengeld_2__alleinerziehend_bg:
         elternbetrag = (
             existenzminimum.kosten_der_unterkunft.single
             + existenzminimum.heizkosten.single
@@ -299,7 +297,8 @@ def wohnbedarf_anteil_eltern_bg(
         )
 
     kinderbetrag = min(
-        arbeitslosengeld_2__anzahl_kinder_bg, wohnbedarf_anteil_berücksichtigte_kinder
+        anzahl_kinder_bg,
+        wohnbedarf_anteil_berücksichtigte_kinder,
     ) * (existenzminimum.kosten_der_unterkunft.kind + existenzminimum.heizkosten.kind)
 
     return elternbetrag / (elternbetrag + kinderbetrag)
@@ -307,7 +306,8 @@ def wohnbedarf_anteil_eltern_bg(
 
 @policy_function(start_date="2005-01-01")
 def erwachsenenbedarf_m_bg(
-    arbeitslosengeld_2__regelsatz_m_bg: float, kosten_der_unterkunft_m_bg: float
+    arbeitslosengeld_2__regelsatz_m_bg: float,
+    kosten_der_unterkunft_m_bg: float,
 ) -> float:
     """Aggregate relevant income and rental costs."""
     return arbeitslosengeld_2__regelsatz_m_bg + kosten_der_unterkunft_m_bg

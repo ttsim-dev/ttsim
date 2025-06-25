@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     AggType,
     agg_by_p_id_function,
     get_consecutive_int_1d_lookup_table_param_value,
@@ -14,13 +14,17 @@ from ttsim import (
 )
 
 if TYPE_CHECKING:
-    from ttsim import ConsecutiveInt1dLookupTableParamValue
-    from ttsim.config import numpy_or_jax as np
+    from types import ModuleType
+
+    from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
+    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_ansprüche(
-    grundsätzlich_anspruchsberechtigt: bool, p_id_empfänger: int, p_id: int
+    grundsätzlich_anspruchsberechtigt: bool,
+    p_id_empfänger: int,
+    p_id: int,
 ) -> int:
     pass
 
@@ -36,7 +40,6 @@ def betrag_ohne_staffelung_m(
     of children.
 
     """
-
     return satz * anzahl_ansprüche
 
 
@@ -120,16 +123,18 @@ def kind_bis_10_mit_kindergeld(
 
 @policy_function(vectorization_strategy="not_required")
 def gleiche_fg_wie_empfänger(
-    p_id: np.ndarray,  # int
-    p_id_empfänger: np.ndarray,  # int
-    fg_id: np.ndarray,  # int
-) -> np.ndarray:  # bool
+    p_id: IntColumn,
+    p_id_empfänger: IntColumn,
+    fg_id: IntColumn,
+    xnp: ModuleType,
+) -> BoolColumn:
     """The child's Kindergeldempfänger is in the same Familiengemeinschaft."""
     fg_id_kindergeldempfänger = join(
-        p_id_empfänger,
-        p_id,
-        fg_id,
+        foreign_key=p_id_empfänger,
+        primary_key=p_id,
+        target=fg_id,
         value_if_foreign_key_is_missing=-1,
+        xnp=xnp,
     )
 
     return fg_id_kindergeldempfänger == fg_id
@@ -138,9 +143,11 @@ def gleiche_fg_wie_empfänger(
 @param_function(end_date="2022-12-31")
 def satz_nach_anzahl_kinder(
     satz_gestaffelt: dict[int, float],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Convert the Kindergeld-Satz by child to the amount of Kindergeld by number of
-    children."""
+    children.
+    """
     max_num_children = 30
     max_num_children_in_spec = max(satz_gestaffelt.keys())
     base_spec = {
@@ -153,5 +160,6 @@ def satz_nach_anzahl_kinder(
         for k in range(max_num_children_in_spec + 1, max_num_children)
     }
     return get_consecutive_int_1d_lookup_table_param_value(
-        {0: 0.0, **base_spec, **extended_spec}
+        raw={0: 0.0, **base_spec, **extended_spec},
+        xnp=xnp,
     )

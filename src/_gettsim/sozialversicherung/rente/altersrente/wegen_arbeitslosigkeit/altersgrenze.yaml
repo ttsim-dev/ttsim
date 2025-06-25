@@ -631,6 +631,8 @@ altersgrenze_gestaffelt:
       12:
         years: 65
         months: 0
+  2018-01-01:
+    note: Irrelevant because last cohort has passed the normal retirement age.
 altersgrenze_gestaffelt_vertrauensschutz:
   name:
     de: >-

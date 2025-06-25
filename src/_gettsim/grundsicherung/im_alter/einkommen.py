@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import piecewise_polynomial, policy_function
+from ttsim.tt_dag_elements import piecewise_polynomial, policy_function
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
-    from ttsim import PiecewisePolynomialParam
+    from ttsim.tt_dag_elements import PiecewisePolynomialParam
 
 
 @policy_function()
@@ -28,7 +30,6 @@ def einkommen_m(
     """Calculate individual income considered in the calculation of Grundsicherung im
     Alter.
     """
-
     # Income
     total_income = (
         erwerbseinkommen_m
@@ -62,8 +63,8 @@ def erwerbseinkommen_m(
 
     Legal reference: § 82 SGB XII Abs. 3
 
-    Notes:
-
+    Notes
+    -----
     - Freibeträge for income are currently not considered
     - Start date is 2011 because of the reference to regelbedarfsstufen,
       which was introduced in 2011.
@@ -113,6 +114,7 @@ def private_rente_betrag_m(
     sozialversicherung__rente__private_rente_betrag_m: float,
     anrechnungsfreier_anteil_private_renteneinkünfte: PiecewisePolynomialParam,
     grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
+    xnp: ModuleType,
 ) -> float:
     """Calculate individual private pension benefits considered in the calculation of
     Grundsicherung im Alter.
@@ -123,12 +125,14 @@ def private_rente_betrag_m(
         piecewise_polynomial(
             x=sozialversicherung__rente__private_rente_betrag_m,
             parameters=anrechnungsfreier_anteil_private_renteneinkünfte,
+            xnp=xnp,
         )
     )
     upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
 
     return sozialversicherung__rente__private_rente_betrag_m - min(
-        sozialversicherung__rente__private_rente_betrag_m_amount_exempt, upper
+        sozialversicherung__rente__private_rente_betrag_m_amount_exempt,
+        upper,
     )
 
 
@@ -150,6 +154,7 @@ def gesetzliche_rente_m_ab_2021(
     sozialversicherung__rente__grundrente__grundsätzlich_anspruchsberechtigt: bool,
     grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
     anrechnungsfreier_anteil_gesetzliche_rente: PiecewisePolynomialParam,
+    xnp: ModuleType,
 ) -> float:
     """Calculate individual public pension benefits which are considered in the
     calculation of Grundsicherung im Alter since 2021.
@@ -157,10 +162,10 @@ def gesetzliche_rente_m_ab_2021(
     Starting from 2021: If eligible for Grundrente, can deduct 100€ completely and 30%
     of private pension above 100 (but no more than 1/2 of regelbedarf)
     """
-
     angerechnete_rente = piecewise_polynomial(
         x=sozialversicherung__rente__altersrente__betrag_m,
         parameters=anrechnungsfreier_anteil_gesetzliche_rente,
+        xnp=xnp,
     )
 
     upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
     agg_by_p_id_function,
@@ -12,7 +12,9 @@ from ttsim import (
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def kinderbetreuungskosten_elternteil_m(
-    kinderbetreuungskosten_m: float, p_id_kinderbetreuungskostenträger: int, p_id: int
+    kinderbetreuungskosten_m: float,
+    p_id_kinderbetreuungskostenträger: int,
+    p_id: int,
 ) -> float:
     pass
 
@@ -28,7 +30,6 @@ def sonderausgaben_y_sn_nur_pauschale(
 
 
     """
-
     return sonderausgabenpauschbetrag * einkommensteuer__anzahl_personen_sn
 
 
@@ -44,7 +45,6 @@ def sonderausgaben_y_sn_mit_kinderbetreuung(
     details here https://www.buzer.de/s1.htm?a=10&g=estg.
 
     """
-
     return max(
         absetzbare_kinderbetreuungskosten_y_sn,
         sonderausgabenpauschbetrag * einkommensteuer__anzahl_personen_sn,
@@ -76,7 +76,6 @@ def absetzbare_kinderbetreuungskosten_y_sn(
 
 
     """
-
     return (
         gedeckelte_kinderbetreuungskosten_y_sn
         * parameter_absetzbare_kinderbetreuungskosten["anteil"]

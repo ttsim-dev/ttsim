@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from ttsim import (
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+from ttsim.tt_dag_elements import (
     AggType,
     agg_by_p_id_function,
     join,
@@ -42,6 +47,7 @@ def in_same_household_as_recipient(
     p_id: int,
     kin_id: int,
     p_id_recipient: int,
+    xnp: ModuleType,
 ) -> bool:
     return (
         join(
@@ -49,6 +55,7 @@ def in_same_household_as_recipient(
             primary_key=p_id,
             target=kin_id,
             value_if_foreign_key_is_missing=-1,
+            xnp=xnp,
         )
         == kin_id
     )
