@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, overload
 
 from ttsim.tt_dag_elements import aggregation_jax, aggregation_numpy
 
@@ -35,6 +35,33 @@ def grouped_count(
     return aggregation_jax.grouped_count(group_id, num_segments)
 
 
+@overload
+def grouped_sum(
+    column: FloatColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+
+
+@overload
+def grouped_sum(
+    column: IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
+@overload
+def grouped_sum(
+    column: BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
 def grouped_sum(
     column: FloatColumn | IntColumn | BoolColumn,
     group_id: IntColumn,
@@ -46,6 +73,27 @@ def grouped_sum(
     return aggregation_jax.grouped_sum(column, group_id, num_segments)
 
 
+@overload
+def grouped_mean(
+    column: FloatColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+@overload
+def grouped_mean(
+    column: IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+@overload
+def grouped_mean(
+    column: BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
 def grouped_mean(
     column: FloatColumn | IntColumn | BoolColumn,
     group_id: IntColumn,
@@ -55,6 +103,24 @@ def grouped_mean(
     if backend == "numpy":
         return aggregation_numpy.grouped_mean(column, group_id)
     return aggregation_jax.grouped_mean(column, group_id, num_segments)
+
+
+@overload
+def grouped_max(
+    column: FloatColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+
+
+@overload
+def grouped_max(
+    column: IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
 
 
 def grouped_max(
@@ -68,6 +134,24 @@ def grouped_max(
     return aggregation_jax.grouped_max(column, group_id, num_segments)
 
 
+@overload
+def grouped_min(
+    column: FloatColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+
+
+@overload
+def grouped_min(
+    column: IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
 def grouped_min(
     column: FloatColumn | IntColumn,
     group_id: IntColumn,
@@ -79,8 +163,26 @@ def grouped_min(
     return aggregation_jax.grouped_min(column, group_id, num_segments)
 
 
+@overload
 def grouped_any(
-    column: BoolColumn | IntColumn,
+    column: IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> BoolColumn: ...
+
+
+@overload
+def grouped_any(
+    column: BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> BoolColumn: ...
+
+
+def grouped_any(
+    column: IntColumn | BoolColumn,
     group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
@@ -90,8 +192,26 @@ def grouped_any(
     return aggregation_jax.grouped_any(column, group_id, num_segments)
 
 
+@overload
 def grouped_all(
-    column: BoolColumn | IntColumn,
+    column: IntColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> BoolColumn: ...
+
+
+@overload
+def grouped_all(
+    column: BoolColumn,
+    group_id: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> BoolColumn: ...
+
+
+def grouped_all(
+    column: IntColumn | BoolColumn,
     group_id: IntColumn,
     num_segments: int,
     backend: Literal["numpy", "jax"],
@@ -116,6 +236,34 @@ def count_by_p_id(
     )
 
 
+@overload
+def sum_by_p_id(
+    column: FloatColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+@overload
+def sum_by_p_id(
+    column: IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
+@overload
+def sum_by_p_id(
+    column: BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
 def sum_by_p_id(
     column: FloatColumn | IntColumn | BoolColumn,
     p_id_to_aggregate_by: IntColumn,
@@ -135,6 +283,36 @@ def sum_by_p_id(
         p_id_to_store_by,
         num_segments,
     )
+
+
+@overload
+def mean_by_p_id(
+    column: FloatColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+
+
+@overload
+def mean_by_p_id(
+    column: IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+
+
+@overload
+def mean_by_p_id(
+    column: BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
 
 
 def mean_by_p_id(
@@ -158,6 +336,26 @@ def mean_by_p_id(
     )
 
 
+@overload
+def max_by_p_id(
+    column: FloatColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+
+
+@overload
+def max_by_p_id(
+    column: IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
 def max_by_p_id(
     column: FloatColumn | IntColumn,
     p_id_to_aggregate_by: IntColumn,
@@ -177,6 +375,26 @@ def max_by_p_id(
         p_id_to_store_by,
         num_segments,
     )
+
+
+@overload
+def min_by_p_id(
+    column: FloatColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> FloatColumn: ...
+
+
+@overload
+def min_by_p_id(
+    column: IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
 
 
 def min_by_p_id(
@@ -200,8 +418,28 @@ def min_by_p_id(
     )
 
 
+@overload
 def any_by_p_id(
-    column: BoolColumn | IntColumn,
+    column: IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
+@overload
+def any_by_p_id(
+    column: BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> BoolColumn: ...
+
+
+def any_by_p_id(
+    column: IntColumn | BoolColumn,
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
     num_segments: int,
@@ -221,8 +459,28 @@ def any_by_p_id(
     )
 
 
+@overload
 def all_by_p_id(
-    column: BoolColumn | IntColumn,
+    column: IntColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> IntColumn: ...
+
+
+@overload
+def all_by_p_id(
+    column: BoolColumn,
+    p_id_to_aggregate_by: IntColumn,
+    p_id_to_store_by: IntColumn,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+) -> BoolColumn: ...
+
+
+def all_by_p_id(
+    column: IntColumn | BoolColumn,
     p_id_to_aggregate_by: IntColumn,
     p_id_to_store_by: IntColumn,
     num_segments: int,

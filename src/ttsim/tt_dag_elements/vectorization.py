@@ -7,30 +7,53 @@ import textwrap
 import types
 from importlib import import_module
 from types import ModuleType
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy
+from dags.signature import rename_arguments
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import GenericCallable
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
 def vectorize_function(
-    func: GenericCallable,
+    func: Callable[..., Any],
     vectorization_strategy: Literal["loop", "vectorize"],
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
-) -> GenericCallable:
-    vectorized: GenericCallable
+) -> Callable[..., Any]:
+    """Returns a new PolicyFunction with the function attribute vectorized.
+
+    Args:
+        policy_function: PolicyFunction to vectorize.
+        vectorization_strategy: Strategy to use for vectorization.
+        backend: Backend to use for vectorization.
+        xnp: Module to use for vectorization.
+
+    Returns
+    -------
+        New PolicyFunction with the function attribute vectorized.
+
+    Raises
+    ------
+        ValueError: If the vectorization strategy is not supported.
+        TranslateToVectorizableError: If the function cannot be vectorized.
+
+    """
+
+    vectorized: Callable[..., Any]
     if vectorization_strategy == "loop":
-        vectorized = functools.wraps(func)(numpy.vectorize(func))
-        vectorized.__signature__ = inspect.signature(func)
-        vectorized.__globals__ = func.__globals__
-        vectorized.__closure__ = func.__closure__
+        assigned = (
+            "__signature__",
+            "__globals__",
+            "__closure__",
+            *functools.WRAPPER_ASSIGNMENTS,
+        )
+        vectorized = functools.wraps(func, assigned=assigned)(numpy.vectorize(func))
     elif vectorization_strategy == "vectorize":
         vectorized = _make_vectorizable(func, backend=backend, xnp=xnp)
     else:
@@ -38,14 +61,20 @@ def vectorize_function(
             f"Vectorization strategy {vectorization_strategy} is not supported. "
             "Use 'loop' or 'vectorize'.",
         )
+
+    # Update annotations and signature to reflect that the inputs are now expected to be
+    # arrays.
+    vectorized.__signature__ = _create_vectorized_signature(func)  # type: ignore[attr-defined]
+    vectorized.__annotations__ = _create_vectorized_annotations(func)
+
     return vectorized
 
 
 def _make_vectorizable(
-    func: GenericCallable,
+    func: Callable[..., Any],
     backend: str,
     xnp: ModuleType,
-) -> GenericCallable:
+) -> Callable[..., Any]:
     """Redefine function to be vectorizable given backend.
 
     Args:
@@ -81,11 +110,25 @@ def _make_vectorizable(
 
     # assign created function
     new_func = scope[func.__name__]
-    return functools.wraps(func)(new_func)
+    _vectorized = functools.wraps(func)(new_func)
+
+    # For functions whose argument names are renamed dynamically, we need to match the
+    # argument names, since the vectorization works on the AST level, which is not
+    # affected by the original renaming. This assumes that the argument ordering is
+    # the same in the function and its AST.
+    _original_args = _args_from_func_ast(_func_to_ast(func))
+    _args_name_mapper = dict(
+        zip(
+            _original_args,
+            list(inspect.signature(func).parameters),
+            strict=False,
+        )
+    )
+    return rename_arguments(_vectorized, mapper=_args_name_mapper)
 
 
 def make_vectorizable_source(
-    func: GenericCallable,
+    func: Callable[..., Any],
     backend: str,
     xnp: ModuleType,
 ) -> str:
@@ -113,7 +156,7 @@ def make_vectorizable_source(
 
 
 def _make_vectorizable_ast(
-    func: GenericCallable,
+    func: Callable[..., Any],
     module: str,
     xnp: ModuleType,
 ) -> ast.Module:
@@ -137,11 +180,16 @@ def _make_vectorizable_ast(
     return ast.fix_missing_locations(new_tree)
 
 
-def _func_to_ast(func: GenericCallable) -> ast.Module:
+def _func_to_ast(func: Callable[..., Any]) -> ast.Module:
     source = inspect.getsource(func)
     source_dedented = textwrap.dedent(source)
     source_without_decorators = _remove_decorator_lines(source_dedented)
     return ast.parse(source_without_decorators)
+
+
+def _args_from_func_ast(func_ast: ast.Module) -> list[str]:
+    """Get function arguments from function ast."""
+    return [arg.arg for arg in func_ast.body[0].args.args]  # type: ignore[attr-defined]
 
 
 def _remove_decorator_lines(source: str) -> str:
@@ -430,3 +478,51 @@ def _module_from_backend(backend: str) -> str:
     raise NotImplementedError(
         f"Argument 'backend' is {backend} but must be in {BACKEND_TO_MODULE.keys()}.",
     )
+
+
+# ======================================================================================
+# Signature and annotations
+# ======================================================================================
+
+
+def _create_vectorized_signature(func: Callable[..., Any]) -> inspect.Signature:
+    """Create a signature for the vectorized function."""
+    parameters = [
+        inspect.Parameter(
+            name=param.name,
+            kind=param.kind,
+            default=param.default,
+            annotation=_scalar_type_to_array_type(param.annotation),
+        )
+        for param in inspect.signature(func).parameters.values()
+    ]
+    return_annotation = _scalar_type_to_array_type(
+        inspect.signature(func).return_annotation
+    )
+    return inspect.Signature(parameters=parameters, return_annotation=return_annotation)
+
+
+def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
+    """Create annotations for the vectorized function."""
+    parameters_and_return = ["return", *inspect.signature(func).parameters]
+    annotations = inspect.get_annotations(func)
+    return {
+        name: _scalar_type_to_array_type(
+            # If no annotation is available, we assume it is a numerical scalar type,
+            # which is converted to an array type.
+            annotations.get(name, "IntColumn | FloatColumn | BoolColumn"),
+        )
+        for name in parameters_and_return
+    }
+
+
+def _scalar_type_to_array_type(orig_type: Literal["int", "float", "bool"]) -> str:
+    """Convert a scalar type to the corresponding array type."""
+    registry = {
+        "int": "IntColumn",
+        "float": "FloatColumn",
+        "bool": "BoolColumn",
+    }
+    if orig_type in registry:
+        return registry[orig_type]
+    return orig_type

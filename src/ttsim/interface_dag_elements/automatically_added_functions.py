@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 import dags.tree as dt
 from dags import get_free_arguments, rename_arguments
@@ -29,6 +29,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ttsim.interface_dag_elements.typing import (
+        BoolColumn,
+        FloatColumn,
+        IntColumn,
         OrderedQNames,
         QNamePolicyEnvironment,
         UnorderedQNames,
@@ -564,16 +567,28 @@ def _create_one_set_of_time_conversion_functions(
 def _create_function_for_time_unit(
     source: str,
     converter: Callable[[float], float],
-) -> Callable[[float], float]:
+) -> Callable[[BoolColumn | FloatColumn | IntColumn], FloatColumn]:
+    @overload
     @rename_arguments(mapper={"x": source})
-    def func(x: float) -> float:
+    def func(x: FloatColumn) -> FloatColumn: ...
+
+    @overload
+    @rename_arguments(mapper={"x": source})
+    def func(x: IntColumn) -> FloatColumn: ...
+
+    @overload
+    @rename_arguments(mapper={"x": source})
+    def func(x: BoolColumn) -> FloatColumn: ...
+
+    @rename_arguments(mapper={"x": source})
+    def func(x: FloatColumn | IntColumn | BoolColumn) -> FloatColumn:
         return converter(x)
 
-    return func
+    return func  # type: ignore[has-type]
 
 
 def create_agg_by_group_functions(
-    column_functions: UnorderedQNames,
+    column_functions: dict[str, ColumnFunction],
     input_columns: UnorderedQNames,
     targets: OrderedQNames,
     grouping_levels: OrderedQNames,

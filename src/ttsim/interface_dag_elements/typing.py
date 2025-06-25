@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
 
+from jaxtyping import Array, Bool, Float, Int
+
+BoolColumn: TypeAlias = Bool[Array, " n_obs"]
+IntColumn: TypeAlias = Int[Array, " n_obs"]
+FloatColumn: TypeAlias = Float[Array, " n_obs"]
+
+
 if TYPE_CHECKING:
     # Make these available for import from other modules.
     import datetime
     from collections.abc import Iterable, Mapping
-
-    from jaxtyping import Array, Bool, Float, Int
 
     OrigParamSpec = (
         # Header
@@ -27,10 +32,6 @@ if TYPE_CHECKING:
         NestedTargetDict,
     )
 
-    BoolColumn: TypeAlias = Array[Bool, " n_obs"]  # type: ignore[name-defined]
-    IntColumn: TypeAlias = Array[Int, " n_obs"]  # type: ignore[name-defined]
-    FloatColumn: TypeAlias = Array[Float, " n_obs"]  # type: ignore[name-defined]
-
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Possible leaves of the various trees.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -45,13 +46,13 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for input, processing, and output; including metadata.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedData = Mapping[str, BoolColumn | IntColumn | FloatColumn | "NestedData"]
+    NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = Mapping[str, BoolColumn | IntColumn | FloatColumn | "FlatData"]
+    FlatData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "FlatData"]
     """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    QNameData = Mapping[str, BoolColumn | IntColumn | FloatColumn]
+    QNameData = Mapping[str, FloatColumn | IntColumn | BoolColumn]
     """Mapping of qualified name paths to 1d arrays."""
     QNameStrings = Iterable[str]
     """A list, tuple, or set of qualified names."""
