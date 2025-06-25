@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 
 
 def main(
+    *,
     date_str: str | None = None,
     output_names: NestedTargetDict | QNameStrings | None = None,
     input_data: input_data.DfAndMapper
