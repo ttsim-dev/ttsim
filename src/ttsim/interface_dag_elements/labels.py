@@ -33,7 +33,7 @@ def grouping_levels(
     """The grouping levels of the policy environment."""
     return tuple(
         name.rsplit("_", 1)[0]
-        for name in dt.flatten_to_qnames(policy_environment)
+        for name in policy_environment
         if name.endswith("_id") and name != "p_id"
     )
 
