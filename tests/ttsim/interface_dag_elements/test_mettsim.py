@@ -40,9 +40,7 @@ def get_orig_mettsim_objects() -> dict[
     str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
 ]:
     return main(
-        inputs={
-            "orig_policy_objects__root": METTSIM_ROOT,
-        },
+        orig_policy_objects={"root": METTSIM_ROOT},
         output_names=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",

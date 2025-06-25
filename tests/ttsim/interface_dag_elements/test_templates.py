@@ -94,7 +94,7 @@ def test_template_all_outputs_no_inputs(backend):
         },
         output_names=["templates__input_data_dtypes"],
     )["templates__input_data_dtypes"]
-    assert actual == {"a": {"inp2": "float"}, "inp1": "int"}
+    assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
 def test_template_all_outputs_with_inputs(backend):
@@ -121,7 +121,7 @@ def test_template_all_outputs_with_inputs(backend):
         },
         output_names=["templates__input_data_dtypes"],
     )["templates__input_data_dtypes"]
-    assert actual == {"a": {"inp2": "float"}, "inp1": "int"}
+    assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
 def test_template_output_y_no_inputs(backend):
@@ -142,7 +142,7 @@ def test_template_output_y_no_inputs(backend):
         },
         output_names=["templates__input_data_dtypes"],
     )["templates__input_data_dtypes"]
-    assert actual == {"a": {"inp2": "float"}}
+    assert actual == {"a": {"inp2": "FloatColumn"}}
 
 
 def test_template_output_x_with_inputs(backend):
@@ -170,4 +170,4 @@ def test_template_output_x_with_inputs(backend):
         },
         output_names=["templates__input_data_dtypes"],
     )["templates__input_data_dtypes"]
-    assert actual == {"inp1": "int"}
+    assert actual == {"inp1": "IntColumn"}

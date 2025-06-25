@@ -2,24 +2,31 @@ from __future__ import annotations
 
 import inspect
 import re
+from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags
 import dags.tree as dt
+import optree
 
+from ttsim.argument_templates import input_data
+from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
+    InputDependentInterfaceFunction,
     InterfaceFunction,
     InterfaceInput,
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
 if TYPE_CHECKING:
+    import datetime
+
     from ttsim.interface_dag_elements.typing import (
         NestedTargetDict,
         QNameStrings,
@@ -28,24 +35,44 @@ if TYPE_CHECKING:
 
 
 def main(
-    inputs: dict[str, Any],
-    output_names: QNameStrings | NestedTargetDict | None = None,
+    *,
+    date_str: str | None = None,
+    output_names: NestedTargetDict | QNameStrings | None = None,
+    input_data: input_data.DfAndMapper
+    | input_data.DfWithNestedColumns
+    | input_data.Flat
+    | input_data.QName
+    | None = None,
+    targets: dict[str, Any] | None = None,
+    backend: Literal["numpy", "jax"] | None = None,
+    rounding: bool = True,
     fail_and_warn: bool = True,
+    orig_policy_objects: dict[str, Any] | None = None,
+    raw_results: dict[str, Any] | None = None,
+    results: dict[str, Any] | None = None,
+    specialized_environment: dict[str, Any] | None = None,
+    policy_environment: dict[str, Any] | None = None,
+    processed_data: dict[str, Any] | None = None,
+    dnp: dict[str, Any] | None = None,
+    xnp: dict[str, Any] | None = None,
+    date: datetime.date | None = None,
+    labels: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
 
-    output_qnames = _harmonize_output_qnames(output_names)
+    flat_inputs = _harmonize_inputs(locals())
+    output_qnames = _harmonize_output_names(output_names)
 
-    if not any(re.match("(input|processed)_data", s) for s in inputs):
-        inputs["processed_data"] = {}
-        inputs["processed_data_columns"] = None
+    if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
+        flat_inputs["processed_data"] = {}
+        flat_inputs["processed_data_columns"] = None
 
     nodes = {
         p: n
         for p, n in load_interface_functions_and_inputs().items()
-        if p not in inputs
+        if p not in flat_inputs
     }
 
     _fail_if_requested_nodes_cannot_be_found(
@@ -53,7 +80,17 @@ def main(
         nodes=nodes,
     )
 
-    functions = {p: n for p, n in nodes.items() if isinstance(n, InterfaceFunction)}
+    # Replace InputDependentInterfaceFunction with InterfaceFunction
+    for p, n in nodes.items():
+        if isinstance(n, InputDependentInterfaceFunction):
+            nodes[p] = n.resolve_to_static_interface_function(list(flat_inputs.keys()))
+
+    functions = {
+        p: n
+        for p, n in nodes.items()
+        if isinstance(n, InterfaceFunction)
+        and not isinstance(n, InputDependentInterfaceFunction)
+    }
 
     # If targets are None, all failures and warnings are included, anyhow.
     if fail_and_warn and output_qnames is not None:
@@ -69,10 +106,32 @@ def main(
         enforce_signature=False,
         set_annotations=False,
     )
-    return f(**inputs)
+    return f(**flat_inputs)
 
 
-def _harmonize_output_qnames(
+def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    # Iterate over the skeleton and see whether we need to convert anything to
+    # qualified names.
+    flat_inputs = {}
+    accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
+        asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
+        none_is_leaf=True,
+    )[:2]
+    if "input_data" in inputs and isinstance(inputs["input_data"], input_data.ABC):
+        inputs["input_data"] = inputs["input_data"].to_dict()
+    for acc, val in zip(accs, vals, strict=False):
+        qname = dt.qname_from_tree_path(acc.path)
+        if qname in inputs:
+            flat_inputs[qname] = inputs[qname]
+        else:
+            try:
+                flat_inputs[qname] = acc(inputs)
+            except (KeyError, TypeError):
+                flat_inputs[qname] = val
+    return {k: v for k, v in flat_inputs.items() if v is not None}
+
+
+def _harmonize_output_names(
     output_names: QNameStrings | NestedTargetDict | None,
 ) -> list[str] | None:
     if output_names is None:

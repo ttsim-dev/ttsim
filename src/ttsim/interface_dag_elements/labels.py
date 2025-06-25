@@ -21,14 +21,14 @@ if TYPE_CHECKING:
         NestedPolicyEnvironment,
         OrderedQNames,
         QNameData,
-        QNamePolicyEnvironment,
+        QNameSpecializedEnvironment0,
         UnorderedQNames,
     )
 
 
 @interface_function()
 def grouping_levels(
-    policy_environment: QNamePolicyEnvironment,
+    policy_environment: NestedPolicyEnvironment,
 ) -> OrderedQNames:
     """The grouping levels of the policy environment."""
     return tuple(
@@ -101,7 +101,7 @@ def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
 
 @interface_function()
 def input_columns(
-    processed_data_columns: UnorderedQNames | None,
+    processed_data_columns: UnorderedQNames,
     policy_environment: NestedPolicyEnvironment,
 ) -> UnorderedQNames:
     """The (qualified) column names in the processed data or policy environment.
@@ -109,17 +109,17 @@ def input_columns(
     Parameters
     ----------
     processed_data_columns:
-        The column names in the processed data or None. Will be returned if not None.
+        The column names in the processed data.
     policy_environment:
         The policy environment. The qualified names of the PolicyInput elements will
-        be returned if the processed_data_columns are None.
+        be returned if the processed_data_columns are empty.
 
     Returns
     -------
     input_columns:
         The (qualified) column names in the processed data or policy environment.
     """
-    if processed_data_columns is None:
+    if not processed_data_columns:
         return {
             k
             for k, v in dt.flatten_to_qnames(policy_environment).items()
@@ -183,7 +183,7 @@ def column_targets(
 
 @interface_function()
 def param_targets(
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,  # noqa: E501
+    specialized_environment__without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,  # noqa: E501
     targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
 ) -> OrderedQNames:
