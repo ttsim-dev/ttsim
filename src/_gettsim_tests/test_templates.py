@@ -23,6 +23,23 @@ def test_template_all_outputs_no_inputs(backend):
         },
         output_names=["labels__grouping_levels", "templates__input_data_dtypes"],
     )
+
+    paths_with_unspecified_dtypes = []
+    flat_res = dt.flatten_to_tree_paths(res["templates__input_data_dtypes"])
+    for p, dtype in flat_res.items():
+        if "|" in dtype:
+            paths_with_unspecified_dtypes.append(p)
+    if paths_with_unspecified_dtypes:
+        formatted = "\n".join([str(p) for p in paths_with_unspecified_dtypes])
+        msg = (
+            "The following paths have a generic union type (indicated by '|' in dtype):"
+            f"\n{formatted}"
+            "\n\n"
+            "To fix this, make sure you specified all input variables as PolicyInput "
+            "with the correct type hints."
+        )
+        raise AssertionError(msg)
+
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         time_units=list(TIME_UNIT_LABELS),
         grouping_levels=res["labels__grouping_levels"],

@@ -492,11 +492,11 @@ def _create_vectorized_signature(func: Callable[..., Any]) -> inspect.Signature:
             name=param.name,
             kind=param.kind,
             default=param.default,
-            annotation=_scalar_type_to_array_type(param.annotation),
+            annotation=scalar_type_to_array_type(param.annotation),
         )
         for param in inspect.signature(func).parameters.values()
     ]
-    return_annotation = _scalar_type_to_array_type(
+    return_annotation = scalar_type_to_array_type(
         inspect.signature(func).return_annotation
     )
     return inspect.Signature(parameters=parameters, return_annotation=return_annotation)
@@ -507,7 +507,7 @@ def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
     parameters_and_return = ["return", *inspect.signature(func).parameters]
     annotations = inspect.get_annotations(func)
     return {
-        name: _scalar_type_to_array_type(
+        name: scalar_type_to_array_type(
             # If no annotation is available, we assume it is a numerical scalar type,
             # which is converted to an array type.
             annotations.get(name, "IntColumn | FloatColumn | BoolColumn"),
@@ -516,7 +516,7 @@ def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
     }
 
 
-def _scalar_type_to_array_type(orig_type: Literal["int", "float", "bool"]) -> str:
+def scalar_type_to_array_type(orig_type: Literal["int", "float", "bool"]) -> str:
     """Convert a scalar type to the corresponding array type."""
     registry = {
         "int": "IntColumn",
