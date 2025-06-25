@@ -21,19 +21,19 @@ if TYPE_CHECKING:
         NestedPolicyEnvironment,
         OrderedQNames,
         QNameData,
-        QNamePolicyEnvironment,
+        QNameSpecializedEnvironment0,
         UnorderedQNames,
     )
 
 
 @interface_function()
 def grouping_levels(
-    policy_environment: QNamePolicyEnvironment,
+    policy_environment: NestedPolicyEnvironment,
 ) -> OrderedQNames:
     """The grouping levels of the policy environment."""
     return tuple(
         name.rsplit("_", 1)[0]
-        for name in policy_environment
+        for name in dt.flatten_to_qnames(policy_environment)
         if name.endswith("_id") and name != "p_id"
     )
 
@@ -183,7 +183,7 @@ def column_targets(
 
 @interface_function()
 def param_targets(
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,  # noqa: E501
+    specialized_environment__without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,  # noqa: E501
     targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
 ) -> OrderedQNames:
