@@ -26,10 +26,11 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
-        GenericCallable,
         NestedData,
         NestedPolicyEnvironment,
         NestedStrings,
@@ -100,7 +101,7 @@ class _ParamWithActivePeriod(ParamObject):
 
 def assert_valid_ttsim_pytree(
     tree: Any,  # noqa: ANN401
-    leaf_checker: GenericCallable,
+    leaf_checker: Callable[..., Any],
     tree_name: str,
 ) -> None:
     """
@@ -113,7 +114,7 @@ def assert_valid_ttsim_pytree(
     ----------
     tree : Any
          The tree to validate.
-    leaf_checker : GenericCallable
+    leaf_checker : Callable[..., Any]
          A function that takes a leaf and returns True if it is valid.
     tree_name : str
          The name of the tree (used for error messages).

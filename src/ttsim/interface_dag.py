@@ -92,8 +92,9 @@ def _harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str
     # Iterate over the skeleton and see whether we need to convert anything to
     # qualified names.
     flat_inputs = {}
-    accs, vals = optree.tree_flatten_with_accessor(
-        asdict(InterfaceDAGElements()), none_is_leaf=True
+    accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
+        asdict(InterfaceDAGElements()),  # type: ignore[arg-type]
+        none_is_leaf=True,
     )[:2]
     for acc, val in zip(accs, vals, strict=False):
         qname = dt.qname_from_tree_path(acc.path)

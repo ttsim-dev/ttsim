@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -8,13 +8,43 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
 
 
+@overload
 def join(
     foreign_key: IntColumn,
     primary_key: IntColumn,
-    target: BoolColumn | IntColumn | FloatColumn,
+    target: FloatColumn,
     value_if_foreign_key_is_missing: float | bool,
     xnp: ModuleType,
-) -> BoolColumn | IntColumn | FloatColumn:
+) -> FloatColumn: ...
+
+
+@overload
+def join(
+    foreign_key: IntColumn,
+    primary_key: IntColumn,
+    target: IntColumn,
+    value_if_foreign_key_is_missing: float | bool,
+    xnp: ModuleType,
+) -> IntColumn: ...
+
+
+@overload
+def join(
+    foreign_key: IntColumn,
+    primary_key: IntColumn,
+    target: BoolColumn,
+    value_if_foreign_key_is_missing: float | bool,
+    xnp: ModuleType,
+) -> BoolColumn: ...
+
+
+def join(
+    foreign_key: IntColumn,
+    primary_key: IntColumn,
+    target: FloatColumn | IntColumn | BoolColumn,
+    value_if_foreign_key_is_missing: float | bool,
+    xnp: ModuleType,
+) -> FloatColumn | IntColumn | BoolColumn:
     """
     Given a foreign key, find the corresponding primary key, and return the target at
     the same index as the primary key. When using Jax, does not work on String Arrays.

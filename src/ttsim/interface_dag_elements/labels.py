@@ -101,7 +101,7 @@ def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
 
 @interface_function()
 def input_columns(
-    processed_data_columns: UnorderedQNames | None,
+    processed_data_columns: UnorderedQNames,
     policy_environment: NestedPolicyEnvironment,
 ) -> UnorderedQNames:
     """The (qualified) column names in the processed data or policy environment.
@@ -109,17 +109,17 @@ def input_columns(
     Parameters
     ----------
     processed_data_columns:
-        The column names in the processed data or None. Will be returned if not None.
+        The column names in the processed data.
     policy_environment:
         The policy environment. The qualified names of the PolicyInput elements will
-        be returned if the processed_data_columns are None.
+        be returned if the processed_data_columns are empty.
 
     Returns
     -------
     input_columns:
         The (qualified) column names in the processed data or policy environment.
     """
-    if processed_data_columns is None:
+    if not processed_data_columns:
         return {
             k
             for k, v in dt.flatten_to_qnames(policy_environment).items()

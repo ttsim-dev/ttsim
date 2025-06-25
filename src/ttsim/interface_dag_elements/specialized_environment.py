@@ -20,7 +20,6 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
-    PolicyFunction,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
@@ -53,28 +52,16 @@ def without_tree_logic_and_with_derived_functions(
     labels__input_columns: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
-    backend: str,
-    xnp: ModuleType,
 ) -> QNameSpecializedEnvironment0:
     """Return a flat policy environment with derived functions.
 
-    Three steps:
-    1. Vectorize policy functions.
-    2. Remove all tree logic from the policy environment.
-    3. Add derived functions to the policy environment.
+    Two steps:
+    1. Remove all tree logic from the policy environment.
+    2. Add derived functions to the policy environment.
 
     """
-    qname_env_vectorized = {
-        k: f.vectorize(
-            backend=backend,
-            xnp=xnp,
-        )
-        if isinstance(f, PolicyFunction)
-        else f
-        for k, f in dt.flatten_to_qnames(policy_environment).items()
-    }
     qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
-        qname_env_vectorized=qname_env_vectorized,
+        qname_env=dt.flatten_to_qnames(policy_environment),
         labels__top_level_namespace=labels__top_level_namespace,
     )
     return _add_derived_functions(
@@ -86,12 +73,12 @@ def without_tree_logic_and_with_derived_functions(
 
 
 def _remove_tree_logic_from_policy_environment(
-    qname_env_vectorized: QNamePolicyEnvironment,
+    qname_env: QNamePolicyEnvironment,
     labels__top_level_namespace: UnorderedQNames,
 ) -> QNameSpecializedEnvironment0:
     """Map qualified names to column objects / param functions without tree logic."""
     out = {}
-    for name, obj in qname_env_vectorized.items():
+    for name, obj in qname_env.items():
         if hasattr(obj, "remove_tree_logic"):
             out[name] = obj.remove_tree_logic(
                 tree_path=dt.tree_path_from_qname(name),
@@ -133,9 +120,9 @@ def _add_derived_functions(
 
     Returns
     -------
-    The specialized environment with vectorized column functions, derived functions
-    (aggregations and time conversions), and without tree logic, i.e. absolute
-    qualified names in all keys and function arguments.
+    The specialized environment with derived functions (aggregations and time
+    conversions), and without tree logic, i.e. absolute qualified names in all keys
+    and function arguments.
 
     """
     # Create functions for different time units
@@ -245,6 +232,7 @@ def with_processed_params_and_scalars(
 def with_partialled_params_and_scalars(
     with_processed_params_and_scalars: QNameSpecializedEnvironment1,
     rounding: bool,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> QNameSpecializedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
@@ -262,26 +250,35 @@ def with_partialled_params_and_scalars(
     Tree with column functions that depend on columns only.
 
     """
+    column_functions = {
+        k: v
+        for k, v in with_processed_params_and_scalars.items()
+        if isinstance(v, ColumnFunction)
+    }
     processed_functions = {}
-    for name, _func in with_processed_params_and_scalars.items():
-        if isinstance(_func, ColumnFunction):
-            func = _apply_rounding(_func, xnp) if rounding else _func
-            partial_params = {}
-            for arg in [
-                a
-                for a in get_free_arguments(func)
-                if (
-                    a in with_processed_params_and_scalars
-                    and not isinstance(
-                        with_processed_params_and_scalars[a], ColumnObject
-                    )
-                )
-            ]:
-                partial_params[arg] = with_processed_params_and_scalars[arg]
-            if partial_params:
-                processed_functions[name] = functools.partial(func, **partial_params)
-            else:
-                processed_functions[name] = func
+    for name, col_func in column_functions.items():
+        vect_col_func = (
+            col_func.vectorize(backend=backend, xnp=xnp)
+            if hasattr(col_func, "vectorize")
+            else col_func
+        )
+        rounded_col_func = (
+            _apply_rounding(vect_col_func, xnp) if rounding else vect_col_func
+        )
+        partial_params = {
+            arg: with_processed_params_and_scalars[arg]
+            for arg in get_free_arguments(rounded_col_func)
+            if (
+                arg in with_processed_params_and_scalars
+                and not isinstance(with_processed_params_and_scalars[arg], ColumnObject)
+            )
+        }
+        if partial_params:
+            processed_functions[name] = functools.partial(
+                rounded_col_func, **partial_params
+            )
+        else:
+            processed_functions[name] = rounded_col_func
 
     return processed_functions
 

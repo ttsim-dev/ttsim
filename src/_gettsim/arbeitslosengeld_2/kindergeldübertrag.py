@@ -62,7 +62,7 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
 
 @policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def kindergeld_zur_bedarfsdeckung_m(
-    kindergeld_pro_kind_m: float,
+    kindergeld_pro_kind_m: FloatColumn,
     kindergeld__p_id_empfänger: IntColumn,
     p_id: IntColumn,
     xnp: ModuleType,

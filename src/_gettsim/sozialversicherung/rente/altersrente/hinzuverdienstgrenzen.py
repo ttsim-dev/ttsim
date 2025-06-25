@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 

@@ -271,11 +271,11 @@ def dummy_callable(obj: PolicyInput) -> PolicyFunction: ...
 
 
 @overload
-def dummy_callable(obj: ParamObject) -> ParamFunction: ...  # type: ignore[overload-cannot-match]
+def dummy_callable(obj: ParamObject) -> ParamFunction: ...
 
 
 @overload
-def dummy_callable(obj: InterfaceInput) -> InterfaceFunction: ...  # type: ignore[overload-cannot-match]
+def dummy_callable(obj: InterfaceInput) -> InterfaceFunction: ...
 
 
 def dummy_callable(obj: ModuleType | str | float | bool) -> Callable[[], Any]:
