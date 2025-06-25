@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from ttsim import main
+from ttsim.interface_dag import InputDataDfAndMapper, InputDataDfWithNestedColumns
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
@@ -80,6 +81,10 @@ EXPECTED_RESULTS = pd.DataFrame(
 @pytest.mark.parametrize(
     "input_data",
     [
+        # Correct way to do it
+        InputDataDfAndMapper(df=DF_FOR_MAPPER, mapper=INPUT_DF_MAPPER),
+        InputDataDfWithNestedColumns(data=DF_WITH_NESTED_COLUMNS),
+        # May or may not continue to work.
         {"df_and_mapper": {"df": DF_FOR_MAPPER, "mapper": INPUT_DF_MAPPER}},
         {"df_with_nested_columns": DF_WITH_NESTED_COLUMNS},
     ],

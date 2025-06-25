@@ -10,7 +10,7 @@ from ttsim.interface_dag import (
     _harmonize_inputs,
     load_interface_functions_and_inputs,
 )
-from ttsim.interface_dag_elements import InterfaceDAGElements
+from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceFunctionVariant,
@@ -125,7 +125,7 @@ def e(c: int, d: float) -> float:
 
 
 def test_harmonize_inputs_interface_dag_elements_input():
-    x = InterfaceDAGElements()
+    x = _InterfaceDAGElements()
     x.input_data.df_and_mapper.df = {"cannot use df because comparison fails"}
     x.input_data.df_and_mapper.mapper = {"c": "a", "d": "b", "p_id": "p_id"}
     x.targets.tree = {"e": "f"}

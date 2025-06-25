@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import inspect
 import re
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import dags
 import dags.tree as dt
 import optree
+import pandas as pd
 
-from ttsim.interface_dag_elements import InterfaceDAGElements
+from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -27,16 +28,73 @@ if TYPE_CHECKING:
     import datetime
 
     from ttsim.interface_dag_elements.typing import (
+        FlatData,
+        NestedData,
         NestedTargetDict,
+        QNameData,
         QNameStrings,
         UnorderedQNames,
     )
 
 
+def _camel_to_snake(name: str) -> str:
+    # Insert underscore before each uppercase letter preceded by a lowercase letter or digit
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    # Insert underscore before uppercase letters preceded by lowercase letters or digits
+    s2 = re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1)
+    # Convert the entire string to lowercase
+    return s2.lower()
+
+
+@dataclass(frozen=True)
+class InputDataABC:
+    def to_dict(self) -> dict[str, Any]:
+        name = _camel_to_snake(self.__class__.__name__[9:])
+        if len(self.__dict__) == 1:
+            return {name: self.data}  # type: ignore[attr-defined]
+        return {name: {k: v for k, v in self.__dict__.items()}}
+
+
+@dataclass(frozen=True)
+class InputDataDfAndMapper(InputDataABC):
+    df: pd.DataFrame
+    """A dataframe with arbitrary columns."""
+    mapper: dict[str, Any]
+    """A nested dictionary mapping expected inputs to column names in df."""
+
+
+@dataclass(frozen=True)
+class InputDataDfWithNestedColumns(InputDataABC):
+    data: pd.DataFrame
+    """A df with a MultiIndex in the column dimension, elements correspond to expected tree paths."""  # noqa: E501
+
+
+@dataclass(frozen=True)
+class InputDataTree(InputDataABC):
+    data: NestedData
+    """A nested dictionary mapping expected input names to vectors of data."""
+
+
+@dataclass(frozen=True)
+class InputDataFlat(InputDataABC):
+    data: FlatData
+    """A dictionary mapping tree paths to vectors of data."""
+
+
+@dataclass(frozen=True)
+class InputDataQName(InputDataABC):
+    data: QNameData
+    """A dictionary mapping qualified names to vectors of data."""
+
+
 def main(
-    output_names: QNameStrings | NestedTargetDict | None = None,
-    input_data: dict[str, Any] | None = None,
     date_str: str | None = None,
+    output_names: NestedTargetDict | QNameStrings | None = None,
+    input_data: InputDataDfAndMapper
+    | InputDataDfWithNestedColumns
+    | InputDataFlat
+    | InputDataQName
+    | None = None,
     targets: dict[str, Any] | None = None,
     backend: Literal["numpy", "jax"] | None = None,
     rounding: bool = True,
@@ -103,16 +161,16 @@ def main(
     return f(**flat_inputs)
 
 
-def _harmonize_inputs(inputs: InterfaceDAGElements | dict[str, Any]) -> dict[str, Any]:
-    if isinstance(inputs, InterfaceDAGElements):
-        inputs = inputs.to_dict()
+def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     # Iterate over the skeleton and see whether we need to convert anything to
     # qualified names.
     flat_inputs = {}
     accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
-        asdict(InterfaceDAGElements()),  # type: ignore[arg-type]
+        asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
         none_is_leaf=True,
     )[:2]
+    if "input_data" in inputs and isinstance(inputs["input_data"], InputDataABC):
+        inputs["input_data"] = inputs["input_data"].to_dict()
     for acc, val in zip(accs, vals, strict=False):
         qname = dt.qname_from_tree_path(acc.path)
         if qname in inputs:
