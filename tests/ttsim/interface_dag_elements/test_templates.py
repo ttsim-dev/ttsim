@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy
 
-from ttsim import main
+from ttsim import main, output
 from ttsim.testing_utils import (
     load_policy_test_data,
 )
@@ -79,95 +79,91 @@ def z(a__x: int, a__y: float) -> float:
 
 def test_template_all_outputs_no_inputs(backend):
     actual = main(
-        inputs={
-            "policy_environment": {
-                "inp1": inp1,
-                "p1": p1,
-                "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
-                "b": {
-                    "z": z,
-                },
+        policy_environment={
+            "inp1": inp1,
+            "p1": p1,
+            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "b": {
+                "z": z,
             },
-            "rounding": True,
-            "date_str": "2025-01-01",
-            "backend": backend,
         },
-        output_names=["templates__input_data_dtypes"],
-    )["templates__input_data_dtypes"]
+        rounding=True,
+        date_str="2025-01-01",
+        backend=backend,
+        output=output.Name("templates__input_data_dtypes"),
+    )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
 def test_template_all_outputs_with_inputs(backend):
     actual = main(
-        inputs={
-            "input_data__tree": {
+        input_data={
+            "tree": {
                 "p_id": [4, 5, 6],
                 "a": {
                     "inp2": [1, 2, 3],
                 },
                 "inp1": [0, 1, 2],
-            },
-            "policy_environment": {
-                "inp1": inp1,
-                "p1": p1,
-                "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
-                "b": {
-                    "z": z,
-                },
-            },
-            "rounding": True,
-            "date_str": "2025-01-01",
-            "backend": backend,
+            }
         },
-        output_names=["templates__input_data_dtypes"],
-    )["templates__input_data_dtypes"]
+        policy_environment={
+            "inp1": inp1,
+            "p1": p1,
+            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "b": {
+                "z": z,
+            },
+        },
+        rounding=True,
+        date_str="2025-01-01",
+        backend=backend,
+        output=output.Name("templates__input_data_dtypes"),
+    )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
 def test_template_output_y_no_inputs(backend):
     actual = main(
-        inputs={
-            "targets__tree": {"a": {"y": None}},
-            "policy_environment": {
-                "inp1": inp1,
-                "p1": p1,
-                "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
-                "b": {
-                    "z": z,
-                },
+        targets={"tree": {"a": {"y": None}}},
+        policy_environment={
+            "inp1": inp1,
+            "p1": p1,
+            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "b": {
+                "z": z,
             },
-            "rounding": True,
-            "date_str": "2025-01-01",
-            "backend": backend,
         },
-        output_names=["templates__input_data_dtypes"],
-    )["templates__input_data_dtypes"]
+        rounding=True,
+        date_str="2025-01-01",
+        backend=backend,
+        output=output.Name("templates__input_data_dtypes"),
+    )
     assert actual == {"a": {"inp2": "FloatColumn"}}
 
 
 def test_template_output_x_with_inputs(backend):
     actual = main(
-        inputs={
-            "input_data__tree": {
+        input_data={
+            "tree": {
                 "p_id": [4, 5, 6],
                 "a": {
                     "inp2": [1, 2, 3],
                 },
                 "inp1": [0, 1, 2],
-            },
-            "targets__tree": {"a": {"x": None}},
-            "policy_environment": {
-                "inp1": inp1,
-                "p1": p1,
-                "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
-                "b": {
-                    "z": z,
-                },
-            },
-            "rounding": True,
-            "date_str": "2025-01-01",
-            "backend": backend,
+            }
         },
-        output_names=["templates__input_data_dtypes"],
-    )["templates__input_data_dtypes"]
+        targets={"tree": {"a": {"x": None}}},
+        policy_environment={
+            "inp1": inp1,
+            "p1": p1,
+            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "b": {
+                "z": z,
+            },
+        },
+        rounding=True,
+        date_str="2025-01-01",
+        backend=backend,
+        output=output.Name("templates__input_data_dtypes"),
+    )
     assert actual == {"inp1": "IntColumn"}

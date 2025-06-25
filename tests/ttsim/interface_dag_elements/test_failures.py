@@ -11,7 +11,7 @@ import numpy
 import pandas as pd
 import pytest
 
-from ttsim import main
+from ttsim import main, output
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -129,13 +129,11 @@ def minimal_input_data():
 
 def mettsim_environment(backend) -> NestedPolicyEnvironment:
     return main(
-        inputs={
-            "orig_policy_objects__root": Path(__file__).parent.parent / "mettsim",
-            "date": datetime.date(2025, 1, 1),
-            "backend": backend,
-        },
-        output_names=["policy_environment"],
-    )["policy_environment"]
+        orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
+        date=datetime.date(2025, 1, 1),
+        backend=backend,
+        output=output.Name("policy_environment"),
+    )
 
 
 def some_x(x):
@@ -538,15 +536,13 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
     backend,
 ):
     results__tree = main(
-        inputs={
-            "input_data__tree": minimal_data_tree,
-            "policy_environment": environment,
-            "targets__tree": targets__tree,
-            "rounding": False,
-            "backend": backend,
-        },
-        output_names=["results__tree"],
-    )["results__tree"]
+        input_data={"tree": minimal_data_tree},
+        policy_environment=environment,
+        targets={"tree": targets__tree},
+        rounding=False,
+        backend=backend,
+        output=output.Name("results__tree"),
+    )
     with pytest.raises(
         ValueError,
         match="are not mapped to a column name",
@@ -664,15 +660,13 @@ def test_fail_if_input_data_tree_is_invalid_via_main(backend):
         match="The input data must contain the `p_id` column.",
     ):
         main(
-            inputs={
-                "input_data__tree": data,
-                "policy_environment": {},
-                "targets__tree": {},
-                "rounding": False,
-                "backend": backend,
-            },
-            output_names=["fail_if__input_data_tree_is_invalid"],
-        )["fail_if__input_data_tree_is_invalid"]
+            input_data={"tree": data},
+            policy_environment={},
+            targets={"tree": {}},
+            rounding=False,
+            backend=backend,
+            output=output.Name("fail_if__input_data_tree_is_invalid"),
+        )
 
 
 @pytest.mark.parametrize(
@@ -777,14 +771,12 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     environment["backend"] = backend
     environment["xnp"] = xnp
     actual = main(
-        inputs={
-            "input_data__tree": minimal_data_tree,
-            "policy_environment": environment,
-            "targets__tree": targets__tree,
-            "rounding": False,
-            "backend": backend,
-        },
-        output_names=["processed_data", "results__tree"],
+        input_data={"tree": minimal_data_tree},
+        policy_environment=environment,
+        targets={"tree": targets__tree},
+        rounding=False,
+        backend=backend,
+        output=output.Names(["processed_data", "results__tree"]),
     )
     with pytest.raises(TypeError, match=match):
         non_convertible_objects_in_results_tree(
@@ -821,14 +813,12 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
     environment["backend"] = backend
     environment["xnp"] = xnp
     actual = main(
-        inputs={
-            "input_data__tree": minimal_data_tree,
-            "policy_environment": environment,
-            "targets__tree": targets__tree,
-            "rounding": False,
-            "backend": backend,
-        },
-        output_names=["processed_data", "results__tree"],
+        input_data={"tree": minimal_data_tree},
+        policy_environment=environment,
+        targets={"tree": targets__tree},
+        rounding=False,
+        backend=backend,
+        output=output.Names(["processed_data", "results__tree"]),
     )
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
@@ -855,15 +845,13 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
         match="The input data must contain the `p_id` column.",
     ):
         main(
-            inputs={
-                "input_data__tree": data,
-                "policy_environment": {},
-                "targets__tree": {},
-                "rounding": False,
-                "backend": backend,
-            },
-            output_names=["fail_if__input_data_tree_is_invalid"],
-        )["fail_if__input_data_tree_is_invalid"]
+            input_data={"tree": data},
+            policy_environment={},
+            targets={"tree": {}},
+            rounding=False,
+            backend=backend,
+            output=output.Name("fail_if__input_data_tree_is_invalid"),
+        )
 
 
 def test_fail_if_p_id_is_not_unique(xnp):
@@ -885,15 +873,13 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
         match="The following `p_id`s are not unique in the input data",
     ):
         main(
-            inputs={
-                "input_data__tree": data,
-                "policy_environment": {},
-                "targets__tree": {},
-                "rounding": False,
-                "backend": backend,
-            },
-            output_names=["fail_if__input_data_tree_is_invalid"],
-        )["fail_if__input_data_tree_is_invalid"]
+            input_data={"tree": data},
+            policy_environment={},
+            targets={"tree": {}},
+            rounding=False,
+            backend=backend,
+            output=output.Name("fail_if__input_data_tree_is_invalid"),
+        )
 
 
 def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
@@ -913,14 +899,12 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         match="The following data columns are missing",
     ):
         main(
-            inputs={
-                "input_data__tree": minimal_input_data,
-                "policy_environment": policy_environment,
-                "targets__tree": {"c": None},
-                "rounding": False,
-                "backend": backend,
-            },
-            output_names=["results__tree", "fail_if__root_nodes_are_missing"],
+            input_data={"tree": minimal_input_data},
+            policy_environment=policy_environment,
+            targets={"tree": {"c": None}},
+            rounding=False,
+            backend=backend,
+            output=output.Names(["results__tree", "fail_if__root_nodes_are_missing"]),
         )
 
 
@@ -962,16 +946,14 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
         match="The following targets have no corresponding function",
     ):
         main(
-            inputs={
-                "input_data__tree": minimal_input_data,
-                "policy_environment": {},
-                "targets__tree": {"unknown_target": None},
-                "rounding": False,
-                "backend": backend,
-            },
-            output_names=[
+            input_data={"tree": minimal_input_data},
+            policy_environment={},
+            targets={"tree": {"unknown_target": None}},
+            rounding=False,
+            backend=backend,
+            output=output.Name(
                 "fail_if__targets_are_not_in_specialized_environment_or_data"
-            ],
+            ),
         )
 
 
