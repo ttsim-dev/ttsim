@@ -15,12 +15,10 @@ GETTSIM_ROOT = Path(__file__).parent.parent / "_gettsim"
 
 def test_template_all_outputs_no_inputs(backend):
     res = main(
-        inputs={
-            "orig_policy_objects__root": GETTSIM_ROOT,
-            "rounding": True,
-            "date_str": "2025-01-01",
-            "backend": backend,
-        },
+        orig_policy_objects={"root": GETTSIM_ROOT},
+        rounding=True,
+        date_str="2025-01-01",
+        backend=backend,
         output_names=["labels__grouping_levels", "templates__input_data_dtypes"],
     )
 

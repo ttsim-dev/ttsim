@@ -126,7 +126,7 @@ class Templates(NestedInit):
 
 
 @dataclass
-class InterfaceDAGElements:
+class _InterfaceDAGElements:
     backend: Literal["numpy", "jax"] = "numpy"
     """The backend to use for computations."""
     date_str: str | None = None
@@ -156,7 +156,7 @@ class InterfaceDAGElements:
         # Skeleton comes from having all leaves equal to None.
         flat = {
             p: getattr(path=p, obj=self)
-            for p in dt.tree_paths(asdict(InterfaceDAGElements()))
+            for p in dt.tree_paths(asdict(_InterfaceDAGElements()))
         }
         return dt.unflatten_from_tree_paths(flat)
 

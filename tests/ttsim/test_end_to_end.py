@@ -4,7 +4,7 @@ from typing import Literal
 import pandas as pd
 import pytest
 
-from ttsim import main
+from ttsim import input_data, main
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
@@ -78,30 +78,24 @@ EXPECTED_RESULTS = pd.DataFrame(
 
 
 @pytest.mark.parametrize(
-    "input_spec",
+    "input_data_arg",
     [
-        {
-            "input_data": {
-                "df_and_mapper": {"df": DF_FOR_MAPPER, "mapper": INPUT_DF_MAPPER},
-            },
-        },
-        {
-            "input_data": {
-                "df_with_nested_columns": DF_WITH_NESTED_COLUMNS,
-            },
-        },
+        # Correct way to do it
+        input_data.DfAndMapper(df=DF_FOR_MAPPER, mapper=INPUT_DF_MAPPER),
+        input_data.DfWithNestedColumns(data=DF_WITH_NESTED_COLUMNS),
+        # May or may not continue to work.
+        {"df_and_mapper": {"df": DF_FOR_MAPPER, "mapper": INPUT_DF_MAPPER}},
+        {"df_with_nested_columns": DF_WITH_NESTED_COLUMNS},
     ],
 )
-def test_end_to_end(input_spec, backend: Literal["numpy", "jax"]):
+def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
     result = main(
-        inputs={
-            **input_spec,
-            "targets": {"tree": TARGETS_TREE},
-            "date": "2025-01-01",
-            "rounding": False,
-            "orig_policy_objects": {"root": Path(__file__).parent / "mettsim"},
-            "backend": backend,
-        },
+        input_data=input_data_arg,
+        targets={"tree": TARGETS_TREE},
+        date_str="2025-01-01",
+        rounding=False,
+        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        backend=backend,
         output_names=["results__df_with_mapper"],
     )
     pd.testing.assert_frame_equal(
