@@ -1,20 +1,17 @@
 from __future__ import annotations
 
+import datetime
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, get_type_hints
+from pathlib import Path
+from typing import Any, Literal, get_type_hints
 
 import dags.tree as dt
+import pandas as pd
 
-if TYPE_CHECKING:
-    import datetime
-    from pathlib import Path
-
-    import pandas as pd
-
-    from ttsim.interface_dag_elements.interface_node_objects import (
-        FailOrWarnFunction,
-        InterfaceFunction,
-    )
+from ttsim.interface_dag_elements.interface_node_objects import (
+    FailOrWarnFunction,
+    InterfaceFunction,
+)
 
 
 class NestedInit:
@@ -166,6 +163,3 @@ def _getattr(path: tuple[str, ...], obj: Any) -> Any:  # noqa: ANN401
     if len(path) == 1:
         return val
     return _getattr(path[1:], val)
-
-
-__all__ = []  # type: ignore[var-annotated]
