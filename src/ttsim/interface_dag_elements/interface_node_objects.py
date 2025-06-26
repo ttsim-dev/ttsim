@@ -196,7 +196,7 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
     include_if_any_input_present: Iterable[str]
     include_if_all_inputs_present: Iterable[str]
 
-    def input_names_match_include_condition(self, input_names: Iterable[str]) -> bool:
+    def include_condition_satisfied(self, input_names: Iterable[str]) -> bool:
         """Check if the input names match the include condition."""
         if self.include_if_any_input_present:
             return any(i in input_names for i in self.include_if_any_input_present)

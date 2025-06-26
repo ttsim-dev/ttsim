@@ -42,7 +42,10 @@ def df_with_nested_columns() -> pd.DataFrame:
 
 
 @input_dependent_interface_function(
-    include_if_all_inputs_present=["df_and_mapper__df", "df_and_mapper__mapper"],
+    include_if_all_inputs_present=[
+        "input_data__df_and_mapper__df",
+        "input_data__df_and_mapper__mapper",
+    ],
     leaf_name="tree",
 )
 def tree_from_df_and_mapper(
@@ -58,7 +61,7 @@ def tree_from_df_and_mapper(
 
 
 @input_dependent_interface_function(
-    include_if_all_inputs_present=["df_with_nested_columns"],
+    include_if_all_inputs_present=["input_data__df_with_nested_columns"],
     leaf_name="tree",
 )
 def tree_from_df_with_nested_columns(

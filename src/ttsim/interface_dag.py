@@ -176,8 +176,8 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
     A dictionary of static interface objects.
 
     """
-    path_to_idif: dict[tuple[str, ...], list[InputDependentInterfaceFunction]] = {}
     static_nodes: dict[str, InterfaceFunction | InterfaceInput] = {}
+    path_to_idif: dict[tuple[str, ...], list[InputDependentInterfaceFunction]] = {}
     for orig_p, orig_object in flat_interface_objects.items():
         if isinstance(orig_object, InputDependentInterfaceFunction):
             new_path = orig_p[:-1] + (orig_object.leaf_name,)
@@ -189,7 +189,7 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
 
     for p, funcs in path_to_idif.items():
         funcs_satisfying_include_condition = [
-            f for f in funcs if f.input_names_match_include_condition(input_qnames)
+            f for f in funcs if f.include_condition_satisfied(input_qnames)
         ]
         _fail_if_multiple_functions_satisfy_include_condition(
             funcs=funcs_satisfying_include_condition,
@@ -199,9 +199,9 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
             static_nodes[dt.qname_from_tree_path(p)] = (
                 funcs_satisfying_include_condition[0]
             )
-        # Remove the following, if possible. Currently requires some node even if it
-        # can't be computed.
         else:
+            # Default to the first function if no function satisfies the include
+            # condition.
             static_nodes[dt.qname_from_tree_path(p)] = funcs[0]
 
     return static_nodes
@@ -216,7 +216,7 @@ def _fail_if_multiple_functions_satisfy_include_condition(
         msg = (
             f"Multiple InputDependentInterfaceFunctions with the path {path} "
             "satisfy their include conditions:\n\n"
-            f"{format_list_linewise(funcs)}\n\n"
+            f"{'\n'.join(f.original_function_name for f in funcs)}\n\n"
             "Make sure the input data you provide satisfies only one of the include "
             "conditions."
         )

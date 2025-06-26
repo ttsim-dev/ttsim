@@ -38,10 +38,11 @@ def some_idif_require_input_1(input_1: int) -> int:
 
 
 @input_dependent_interface_function(
-    include_if_all_inputs_present=["input_1", "n1__input_2"],
+    leaf_name="some_idif",
+    include_if_all_inputs_present=["input_2", "n1__input_2"],
 )
-def some_idif_require_input_1_and_n1__input_2(input_1: int, n1__input_2: int) -> int:
-    return input_1 + n1__input_2
+def some_idif_require_input_2_and_n1__input_2(input_2: int, n1__input_2: int) -> int:
+    return input_2 + n1__input_2
 
 
 @input_dependent_interface_function(
@@ -53,6 +54,7 @@ def some_idif_with_conflicting_conditions_require_input_1(input_1: int) -> int:
 
 
 @input_dependent_interface_function(
+    leaf_name="some_idif_with_conflicting_conditions",
     include_if_any_input_present=["input_1", "n1__input_2"],
 )
 def some_idif_with_conflicting_conditions_require_input_1_or_n1__input_2(
@@ -66,17 +68,15 @@ def test_load_flat_interface_functions_and_inputs() -> None:
 
 
 def test_interface_dag_is_complete() -> None:
-    qn_interface_functions_and_inputs = {
-        dt.qname_from_tree_path(p): n
-        for p, n in load_flat_interface_functions_and_inputs().items()
+    nodes = _resolve_dynamic_interface_objects_to_static_nodes(
+        flat_interface_objects=load_flat_interface_functions_and_inputs(),
+        input_qnames=[],
+    )
+    nodes_with_dummy_callables = {
+        qn: dummy_callable(n) if not callable(n) else n for qn, n in nodes.items()
     }
-    nodes = {
-        p: dummy_callable(n) if not callable(n) else n
-        for p, n in qn_interface_functions_and_inputs.items()
-    }
-
     f = dags.concatenate_functions(
-        functions=nodes,
+        functions=nodes_with_dummy_callables,
         targets=None,
         return_type="dict",
         enforce_signature=False,
@@ -191,20 +191,20 @@ def test_harmonize_inputs_tree_input():
     [
         (
             {
-                ("some_idif_require_input_1"): some_idif_require_input_1,
+                ("some_idif_require_input_1",): some_idif_require_input_1,
                 (
-                    "some_idif_require_input_1_and_n1__input_2",
-                ): some_idif_require_input_1_and_n1__input_2,
+                    "some_idif_require_input_2_and_n1__input_2",
+                ): some_idif_require_input_2_and_n1__input_2,
             },
-            ["input_1", "n1__input_2"],
-            "some_idif_require_input_1_and_n1__input_2",
+            ["input_2", "n1__input_2"],
+            "some_idif_require_input_2_and_n1__input_2",
         ),
         (
             {
                 ("some_idif_require_input_1",): some_idif_require_input_1,
                 (
-                    "some_idif_require_input_1_and_n1__input_2",
-                ): some_idif_require_input_1_and_n1__input_2,
+                    "some_idif_require_input_2_and_n1__input_2",
+                ): some_idif_require_input_2_and_n1__input_2,
             },
             ["input_1"],
             "some_idif_require_input_1",
@@ -213,11 +213,11 @@ def test_harmonize_inputs_tree_input():
             {
                 ("some_idif_require_input_1",): some_idif_require_input_1,
                 (
-                    "some_idif_require_input_1_and_n1__input_2",
-                ): some_idif_require_input_1_and_n1__input_2,
+                    "some_idif_require_input_2_and_n1__input_2",
+                ): some_idif_require_input_2_and_n1__input_2,
             },
-            ["input_1", "n1__input_2", "input_3"],
-            "some_idif_require_input_1_and_n1__input_2",
+            ["input_2", "n1__input_2", "input_3"],
+            "some_idif_require_input_2_and_n1__input_2",
         ),
     ],
 )
@@ -225,16 +225,18 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_returns_correct_funct
     flat_interface_objects, input_qnames, expected_function_name
 ):
     static_func = next(
-        _resolve_dynamic_interface_objects_to_static_nodes(
-            flat_interface_objects=flat_interface_objects,
-            input_qnames=input_qnames,
-        ).values()
+        iter(
+            _resolve_dynamic_interface_objects_to_static_nodes(
+                flat_interface_objects=flat_interface_objects,
+                input_qnames=input_qnames,
+            ).values()
+        )
     )
     assert static_func.original_function_name == expected_function_name
 
 
-def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_conditions():
-    match = r"Multiple sets of inputs were found that satisfy the requirements:"
+def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_conditions():  # noqa: E501
+    match = r"Multiple InputDependentInterfaceFunctions"
     with pytest.raises(ValueError, match=match):
         _resolve_dynamic_interface_objects_to_static_nodes(
             flat_interface_objects={

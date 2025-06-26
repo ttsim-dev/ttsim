@@ -18,6 +18,7 @@ from ttsim.arg_templates import output
 from ttsim.interface_dag import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
+    InputDependentInterfaceFunction,
     InterfaceFunction,
     InterfaceInput,
     interface_function,
@@ -142,9 +143,7 @@ def plot_interface_dag(
     output_path: Path | None = None,
 ) -> go.Figure:
     """Plot the full interface DAG."""
-    qn_interface_functions_and_inputs: dict[
-        tuple[str, ...], InterfaceFunction | InterfaceInput
-    ] = {
+    qn_interface_functions_and_inputs: dict[str, InterfaceFunction | InterfaceInput] = {
         dt.qname_from_tree_path(p): n
         for p, n in load_flat_interface_functions_and_inputs().items()
     }
@@ -158,6 +157,16 @@ def plot_interface_dag(
         }
 
     dag = dags.create_dag(functions=nodes, targets=None)
+
+    # Add edges manually for InputDependentInterfaceFunction
+    for name, node_object in nodes.items():
+        if isinstance(node_object, InputDependentInterfaceFunction):
+            if node_object.include_if_all_inputs_present:
+                for input_name in node_object.include_if_all_inputs_present:
+                    dag.add_edge(input_name, name)
+            elif node_object.include_if_any_input_present:
+                for input_name in node_object.include_if_any_input_present:
+                    dag.add_edge(input_name, name)
 
     for name, node_object in nodes.items():
         f = node_object.function if hasattr(node_object, "function") else node_object
