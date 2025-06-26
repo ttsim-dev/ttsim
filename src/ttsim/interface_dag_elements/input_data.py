@@ -9,7 +9,6 @@ from ttsim.interface_dag_elements.data_converters import (
     df_with_nested_columns_to_nested_data,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
-    InterfaceFunctionVariant,
     input_dependent_interface_function,
     interface_function,
     interface_input,
@@ -24,28 +23,6 @@ if TYPE_CHECKING:
         FlatData,
         NestedData,
         NestedInputsMapper,
-    )
-
-
-def _mapped_df_to_nested_data(
-    input_data__df_and_mapper__df: pd.DataFrame,
-    input_data__df_and_mapper__mapper: NestedInputsMapper,
-    xnp: ModuleType,
-) -> NestedData:
-    return df_with_mapped_columns_to_nested_data(
-        df=input_data__df_and_mapper__df,
-        mapper=input_data__df_and_mapper__mapper,
-        xnp=xnp,
-    )
-
-
-def _df_with_nested_columns_to_nested_data(
-    input_data__df_with_nested_columns: pd.DataFrame,
-    xnp: ModuleType,
-) -> NestedData:
-    return df_with_nested_columns_to_nested_data(
-        df=input_data__df_with_nested_columns,
-        xnp=xnp,
     )
 
 
@@ -65,22 +42,33 @@ def df_with_nested_columns() -> pd.DataFrame:
 
 
 @input_dependent_interface_function(
-    variants=[
-        InterfaceFunctionVariant(
-            required_input_qnames=["input_data__df_with_nested_columns"],
-            function=_df_with_nested_columns_to_nested_data,
-        ),
-        InterfaceFunctionVariant(
-            required_input_qnames=[
-                "input_data__df_and_mapper__df",
-                "input_data__df_and_mapper__mapper",
-            ],
-            function=_mapped_df_to_nested_data,
-        ),
-    ]
+    include_if_all_inputs_present=["df_and_mapper__df", "df_and_mapper__mapper"],
+    leaf_name="tree",
 )
-def tree() -> NestedData:
-    pass
+def tree_from_df_and_mapper(
+    input_data__df_and_mapper__df: pd.DataFrame,
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
+    xnp: ModuleType,
+) -> NestedData:
+    return df_with_mapped_columns_to_nested_data(
+        df=input_data__df_and_mapper__df,
+        mapper=input_data__df_and_mapper__mapper,
+        xnp=xnp,
+    )
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["df_with_nested_columns"],
+    leaf_name="tree",
+)
+def tree_from_df_with_nested_columns(
+    input_data__df_with_nested_columns: pd.DataFrame,
+    xnp: ModuleType,
+) -> NestedData:
+    return df_with_nested_columns_to_nested_data(
+        df=input_data__df_with_nested_columns,
+        xnp=xnp,
+    )
 
 
 @interface_function()

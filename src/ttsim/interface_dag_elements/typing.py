@@ -32,6 +32,16 @@ if TYPE_CHECKING:
         NestedTargetDict,
     )
 
+    from ttsim.interface_dag_elements import (
+        InterfaceFunction,
+        InterfaceInput,
+    )
+
+    FlatInterfaceObjects = Mapping[
+        tuple[str, ...], InterfaceFunction | InterfaceInput | "FlatInterfaceObjects"
+    ]
+    """Flattened tree of interface objects."""
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Possible leaves of the various trees.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

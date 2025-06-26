@@ -3,17 +3,18 @@ from __future__ import annotations
 import inspect
 
 import dags
+import dags.tree as dt
 import pytest
 
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _harmonize_inputs,
-    load_interface_functions_and_inputs,
+    _resolve_dynamic_interface_objects_to_static_nodes,
+    load_flat_interface_functions_and_inputs,
 )
 from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
-    InterfaceFunctionVariant,
     fail_or_warn_function,
     input_dependent_interface_function,
 )
@@ -30,45 +31,49 @@ def some_fail_or_warn_function() -> None:
 
 
 @input_dependent_interface_function(
-    variants=[
-        InterfaceFunctionVariant(
-            required_input_qnames=["input_1"],
-            function=lambda input_1: input_1,
-        ),
-        InterfaceFunctionVariant(
-            required_input_qnames=["input_2", "n1__input_2"],
-            function=lambda input_2, n1__input_2: input_2 + n1__input_2,
-        ),
-    ]
+    leaf_name="some_idif",
+    include_if_all_inputs_present=["input_1"],
 )
-def some_input_dependent_interface_function() -> int:
-    pass
+def some_idif_require_input_1(input_1: int) -> int:
+    return input_1
 
 
 @input_dependent_interface_function(
-    variants=[
-        InterfaceFunctionVariant(
-            required_input_qnames=["input_1"],
-            function=lambda input_1: input_1,
-        ),
-        InterfaceFunctionVariant(
-            required_input_qnames=["input_1", "n1__input_2"],
-            function=lambda input_1, n1__input_2: input_1 + n1__input_2,
-        ),
-    ]
+    include_if_all_inputs_present=["input_1", "n1__input_2"],
 )
-def some_input_dependent_interface_function_with_conflicting_variants() -> int:
-    pass
+def some_idif_require_input_1_and_n1__input_2(input_1: int, n1__input_2: int) -> int:
+    return input_1 + n1__input_2
 
 
-def test_load_interface_functions_and_inputs() -> None:
-    load_interface_functions_and_inputs()
+@input_dependent_interface_function(
+    leaf_name="some_idif_with_conflicting_conditions",
+    include_if_all_inputs_present=["input_1"],
+)
+def some_idif_with_conflicting_conditions_require_input_1(input_1: int) -> int:
+    return input_1
+
+
+@input_dependent_interface_function(
+    include_if_any_input_present=["input_1", "n1__input_2"],
+)
+def some_idif_with_conflicting_conditions_require_input_1_or_n1__input_2(
+    input_1: int, n1__input_2: int
+) -> int:
+    return input_1 + n1__input_2
+
+
+def test_load_flat_interface_functions_and_inputs() -> None:
+    load_flat_interface_functions_and_inputs()
 
 
 def test_interface_dag_is_complete() -> None:
+    qn_interface_functions_and_inputs = {
+        dt.qname_from_tree_path(p): n
+        for p, n in load_flat_interface_functions_and_inputs().items()
+    }
     nodes = {
         p: dummy_callable(n) if not callable(n) else n
-        for p, n in load_interface_functions_and_inputs().items()
+        for p, n in qn_interface_functions_and_inputs.items()
     }
 
     f = dags.concatenate_functions(
@@ -91,18 +96,27 @@ def test_interface_dag_is_complete() -> None:
     [
         (
             ["a"],
-            load_interface_functions_and_inputs(),
+            {
+                dt.qname_from_tree_path(p): n
+                for p, n in load_flat_interface_functions_and_inputs().items()
+            },
             r'output\snames[\s\S]+interface\sfunctions\sor\sinputs:[\s\S]+"a"',
         ),
         (
             ["input_data"],
-            load_interface_functions_and_inputs(),
+            {
+                dt.qname_from_tree_path(p): n
+                for p, n in load_flat_interface_functions_and_inputs().items()
+            },
             r'output\snames[\s\S]+interface\sfunctions\sor\sinputs:[\s\S]+"input_data"',
         ),
         (
             [],
             {
-                **load_interface_functions_and_inputs(),
+                **{
+                    dt.qname_from_tree_path(p): n
+                    for p, n in load_flat_interface_functions_and_inputs().items()
+                },
                 "some_fail_or_warn_function": some_fail_or_warn_function,
             },
             r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
@@ -194,36 +208,66 @@ def test_harmonize_inputs_tree_input():
 
 @pytest.mark.parametrize(
     (
+        "flat_interface_objects",
         "input_qnames",
-        "expected_function_args",
+        "expected_function_name",
     ),
     [
         (
-            ["input_2", "n1__input_2"],
-            ["input_2", "n1__input_2"],
+            {
+                ("some_idif_require_input_1"): some_idif_require_input_1,
+                (
+                    "some_idif_require_input_1_and_n1__input_2",
+                ): some_idif_require_input_1_and_n1__input_2,
+            },
+            ["input_1", "n1__input_2"],
+            "some_idif_require_input_1_and_n1__input_2",
         ),
         (
+            {
+                ("some_idif_require_input_1",): some_idif_require_input_1,
+                (
+                    "some_idif_require_input_1_and_n1__input_2",
+                ): some_idif_require_input_1_and_n1__input_2,
+            },
             ["input_1"],
-            ["input_1"],
+            "some_idif_require_input_1",
         ),
         (
-            ["input_1", "n2__input_2"],
-            ["input_1"],
+            {
+                ("some_idif_require_input_1",): some_idif_require_input_1,
+                (
+                    "some_idif_require_input_1_and_n1__input_2",
+                ): some_idif_require_input_1_and_n1__input_2,
+            },
+            ["input_1", "n1__input_2", "input_3"],
+            "some_idif_require_input_1_and_n1__input_2",
         ),
     ],
 )
-def test_input_dependent_interface_functions_have_correct_args(
-    input_qnames, expected_function_args
+def test_resolve_dynamic_interface_objects_to_static_nodes_returns_correct_function(
+    flat_interface_objects, input_qnames, expected_function_name
 ):
-    func = some_input_dependent_interface_function.resolve_to_static_interface_function(
-        input_qnames
+    static_func = next(
+        _resolve_dynamic_interface_objects_to_static_nodes(
+            flat_interface_objects=flat_interface_objects,
+            input_qnames=input_qnames,
+        ).values()
     )
-    assert list(inspect.signature(func).parameters.keys()) == expected_function_args
+    assert static_func.original_function_name == expected_function_name
 
 
-def test_input_dependent_interface_functions_with_conflicting_variants():
+def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_conditions():
     match = r"Multiple sets of inputs were found that satisfy the requirements:"
     with pytest.raises(ValueError, match=match):
-        some_input_dependent_interface_function_with_conflicting_variants.resolve_to_static_interface_function(
-            ["input_1", "n1__input_2"]
+        _resolve_dynamic_interface_objects_to_static_nodes(
+            flat_interface_objects={
+                (
+                    "some_idif_with_conflicting_conditions_require_input_1",
+                ): some_idif_with_conflicting_conditions_require_input_1,
+                (
+                    "some_idif_with_conflicting_conditions_require_input_1_or_n1__input_2",
+                ): some_idif_with_conflicting_conditions_require_input_1_or_n1__input_2,
+            },
+            input_qnames=["input_1", "n1__input_2"],
         )

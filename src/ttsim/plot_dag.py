@@ -15,10 +15,9 @@ import plotly.graph_objects as go
 
 from ttsim import main
 from ttsim.arg_templates import output
-from ttsim.interface_dag import load_interface_functions_and_inputs
+from ttsim.interface_dag import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
-    InputDependentInterfaceFunction,
     InterfaceFunction,
     InterfaceInput,
     interface_function,
@@ -143,9 +142,15 @@ def plot_interface_dag(
     output_path: Path | None = None,
 ) -> go.Figure:
     """Plot the full interface DAG."""
+    qn_interface_functions_and_inputs: dict[
+        tuple[str, ...], InterfaceFunction | InterfaceInput
+    ] = {
+        dt.qname_from_tree_path(p): n
+        for p, n in load_flat_interface_functions_and_inputs().items()
+    }
     nodes = {
         p: dummy_callable(n) if not callable(n) else n
-        for p, n in load_interface_functions_and_inputs().items()
+        for p, n in qn_interface_functions_and_inputs.items()
     }
     if not include_fail_and_warn_nodes:
         nodes = {
@@ -153,13 +158,6 @@ def plot_interface_dag(
         }
 
     dag = dags.create_dag(functions=nodes, targets=None)
-
-    # Add edges manually for InputDependentInterfaceFunction
-    for name, node_object in nodes.items():
-        if isinstance(node_object, InputDependentInterfaceFunction):
-            for variant in node_object.specs:
-                for required_func in variant.required_input_qnames:
-                    dag.add_edge(required_func, name)
 
     for name, node_object in nodes.items():
         f = node_object.function if hasattr(node_object, "function") else node_object

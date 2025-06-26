@@ -48,7 +48,8 @@ if TYPE_CHECKING:
 def policy_environment(
     orig_policy_objects__column_objects_and_param_functions: NestedColumnObjectsParamFunctions,  # noqa: E501
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
-    date: datetime.date | DashedISOString,
+    policy_date: datetime.date | DashedISOString,
+    evaluation_date: datetime.date | DashedISOString,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
@@ -69,16 +70,17 @@ def policy_environment(
     The policy environment for the specified date.
     """
     # Check policy date for correct format and convert to datetime.date
-    date = to_datetime(date)
+    policy_date = to_datetime(policy_date)
+    evaluation_date = to_datetime(evaluation_date)
 
     a_tree = merge_trees(
         left=_active_column_objects_and_param_functions(
             orig=orig_policy_objects__column_objects_and_param_functions,
-            date=date,
+            date=policy_date,
         ),
         right=_active_param_objects(
             orig=orig_policy_objects__param_specs,
-            date=date,
+            date=policy_date,
             xnp=xnp,
         ),
     )
@@ -86,9 +88,9 @@ def policy_environment(
     assert "evaluationsjahr" not in a_tree, "evaluationsjahr must not be specified"
     a_tree["evaluationsjahr"] = ScalarParam(
         leaf_name="evaluationsjahr",
-        start_date=date,
-        end_date=date,
-        value=date.year,
+        start_date=evaluation_date,
+        end_date=evaluation_date,
+        value=evaluation_date.year,
         name={"de": "Evaluationsjahr. Implementation wird noch verbessert."},
         description={"de": "Der Zeitpunkt, für den die Berechnung durchgeführt wird."},
         unit="Year",
