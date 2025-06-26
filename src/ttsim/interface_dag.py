@@ -141,8 +141,8 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 
 def _harmonize_output(
-    output: arg_templates.output.Name,
-) -> str:
+    output: arg_templates.output.Name | arg_templates.output.Names | None,
+) -> dict[str, Any]:
     if output is None:
         flat_output = {
             "qname": None,

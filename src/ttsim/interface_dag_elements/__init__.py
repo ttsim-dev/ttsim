@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-import datetime
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
-from typing import Any, Literal, get_type_hints
+from typing import TYPE_CHECKING, Any, Literal, get_type_hints
 
 import dags.tree as dt
-import pandas as pd
 
-__all__ = []  # type: ignore[var-annotated]
+if TYPE_CHECKING:
+    import datetime
+    from pathlib import Path
 
-from ttsim.interface_dag_elements.interface_node_objects import (
-    FailOrWarnFunction,
-    InterfaceFunction,
-    InterfaceInput,
-)
+    import pandas as pd
+
+    from ttsim.interface_dag_elements.interface_node_objects import (
+        FailOrWarnFunction,
+        InterfaceFunction,
+    )
 
 
 class NestedInit:
@@ -24,7 +24,7 @@ class NestedInit:
             if hasattr(type_, "__origin__") and type_.__origin__ is type:
                 setattr(cls, name, type_())
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:  # noqa: ANN401
         if name in get_type_hints(self.__class__):
             object.__setattr__(self, name, value)
         else:
@@ -149,20 +149,23 @@ class _InterfaceDAGElements:
     warn_if: WarnIf = field(default_factory=WarnIf)
     fail_if: FailIf = field(default_factory=FailIf)
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:  # noqa: ANN401
         object.__setattr__(self, name, value)
 
     def to_dict(self) -> dict[str, Any]:
         # Skeleton comes from having all leaves equal to None.
         flat = {
-            p: getattr(path=p, obj=self)
+            p: _getattr(path=p, obj=self)
             for p in dt.tree_paths(asdict(_InterfaceDAGElements()))
         }
         return dt.unflatten_from_tree_paths(flat)
 
 
-def getattr(path: tuple[str, ...], obj: Any) -> Any:
+def _getattr(path: tuple[str, ...], obj: Any) -> Any:  # noqa: ANN401
     val = obj.__getattribute__(path[0])
     if len(path) == 1:
         return val
-    return getattr(path[1:], val)
+    return _getattr(path[1:], val)
+
+
+__all__ = []  # type: ignore[var-annotated]
