@@ -150,10 +150,10 @@ def _harmonize_output(
         }
     elif isinstance(output, arg_templates.output.ABC):
         flat_output = output.to_dict()
-    flat_output["name"] = flat_output.get("name")
-    flat_output["names"] = flat_output.get(
-        "names", [flat_output["name"]] if flat_output["name"] is not None else None
-    )
+        flat_output["name"] = flat_output.get("name")
+        flat_output["names"] = flat_output.get(
+            "names", [flat_output["name"]] if flat_output["name"] is not None else None
+        )
     # Still need to harmonize tuples here.
     return flat_output
 
