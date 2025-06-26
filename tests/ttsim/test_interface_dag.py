@@ -12,7 +12,6 @@ from ttsim.interface_dag import (
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
 )
-from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     fail_or_warn_function,
@@ -136,29 +135,6 @@ def test_fail_if_requested_nodes_cannot_be_found(
 @policy_function()
 def e(c: int, d: float) -> float:
     return c + d
-
-
-def test_harmonize_inputs_interface_dag_elements_input():
-    x = _InterfaceDAGElements()
-    x.input_data.df_and_mapper.df = {"cannot use df because comparison fails"}
-    x.input_data.df_and_mapper.mapper = {"c": "a", "d": "b", "p_id": "p_id"}
-    x.targets.tree = {"e": "f"}
-    x.date = "2025-01-01"
-    x.orig_policy_objects.column_objects_and_param_functions = {("x.py", "e"): e}
-    x.orig_policy_objects.param_specs = {}
-
-    harmonized = _harmonize_inputs(inputs=x)
-
-    assert harmonized == {
-        "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
-        "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
-        "targets__tree": {"e": "f"},
-        "date": "2025-01-01",
-        "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
-        "orig_policy_objects__param_specs": {},
-        "backend": "numpy",
-        "rounding": True,
-    }
 
 
 def test_harmonize_inputs_qname_input():

@@ -233,6 +233,7 @@ exclude = []
 # All tests return None and use asserts
 "src/_gettsim_tests/**/*.py" = ["ANN", "S101"]
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
+"src/ttsim/interface_dag_elements/__init__.py" = ["TC"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 "src/ttsim/interface_dag_elements/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/plot_dag.py" = ["FBT002"]

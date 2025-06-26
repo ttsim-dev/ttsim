@@ -135,8 +135,8 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 
 def _harmonize_output(
-    output: arg_templates.output.Name,
-) -> str:
+    output: arg_templates.output.Name | arg_templates.output.Names | None,
+) -> dict[str, Any]:
     if output is None:
         flat_output = {
             "qname": None,
@@ -144,10 +144,10 @@ def _harmonize_output(
         }
     elif isinstance(output, arg_templates.output.ABC):
         flat_output = output.to_dict()
-    flat_output["name"] = flat_output.get("name")
-    flat_output["names"] = flat_output.get(
-        "names", [flat_output["name"]] if flat_output["name"] is not None else None
-    )
+        flat_output["name"] = flat_output.get("name")
+        flat_output["names"] = flat_output.get(
+            "names", [flat_output["name"]] if flat_output["name"] is not None else None
+        )
     # Still need to harmonize tuples here.
     return flat_output
 
