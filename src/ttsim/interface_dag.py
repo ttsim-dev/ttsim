@@ -213,10 +213,11 @@ def _fail_if_multiple_functions_satisfy_include_condition(
 ) -> None:
     """Fail if multiple functions satisfy the include condition."""
     if len(funcs) > 1:
+        func_names = "\n".join(f.original_function_name for f in funcs)
         msg = (
             f"Multiple InputDependentInterfaceFunctions with the path {path} "
             "satisfy their include conditions:\n\n"
-            f"{'\n'.join(f.original_function_name for f in funcs)}\n\n"
+            f"{func_names}\n\n"
             "Make sure the input data you provide satisfies only one of the include "
             "conditions."
         )
