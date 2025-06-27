@@ -92,18 +92,18 @@ def main(
             functions=functions,
             output_qnames=output_qnames["names"],
         )
-    if output_qnames["name"] is None:
+    if output_qnames["name"]:
         f = dags.concatenate_functions(
             functions=functions,
-            targets=output_qnames["names"],
-            return_type="dict",
+            targets=output_qnames["name"],
             enforce_signature=False,
             set_annotations=False,
         )
     else:
         f = dags.concatenate_functions(
             functions=functions,
-            targets=output_qnames["name"],
+            targets=output_qnames["names"],
+            return_type="dict",
             enforce_signature=False,
             set_annotations=False,
         )
