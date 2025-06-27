@@ -98,8 +98,15 @@ def main(
             functions=functions,
             output_qnames=flat_output["names"],
         )
+
+    # Not strictly necessary, but helps with debugging.
+    dag = dags.create_dag(
+        functions=functions,
+        targets=flat_output["names"],
+    )
     if flat_output["name"] is None:
         f = dags.concatenate_functions(
+            dag=dag,
             functions=functions,
             targets=flat_output["names"],
             return_type="dict",
@@ -108,6 +115,7 @@ def main(
         )
     else:
         f = dags.concatenate_functions(
+            dag=dag,
             functions=functions,
             targets=flat_output["name"],
             enforce_signature=False,

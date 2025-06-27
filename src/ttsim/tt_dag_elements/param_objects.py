@@ -183,7 +183,7 @@ def get_consecutive_int_2d_lookup_table_param_value(
 ) -> ConsecutiveInt2dLookupTableParamValue:
     """Get the parameters for a 2-dimensional lookup table."""
     lookup_keys_rows = xnp.asarray(sorted(raw.keys()))
-    lookup_keys_cols = xnp.asarray(sorted(raw[lookup_keys_rows[0]].keys()))
+    lookup_keys_cols = xnp.asarray(sorted(raw[lookup_keys_rows[0].item()].keys()))
     for col_value in raw.values():
         lookup_keys_this_col = xnp.asarray(sorted(col_value.keys()))
         assert (lookup_keys_cols == lookup_keys_this_col).all(), (
@@ -199,7 +199,7 @@ def get_consecutive_int_2d_lookup_table_param_value(
         base_to_subtract_cols=min(lookup_keys_cols),
         values_to_look_up=xnp.array(
             [
-                raw[row][col]
+                raw[row.item()][col.item()]
                 for row, col in itertools.product(lookup_keys_rows, lookup_keys_cols)
             ],
         ).reshape(len(lookup_keys_rows), len(lookup_keys_cols)),

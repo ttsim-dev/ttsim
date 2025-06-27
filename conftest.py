@@ -42,3 +42,10 @@ def skipif_jax(request, backend):
     """Automatically skip tests marked with skipif_jax when backend is jax."""
     if request.node.get_closest_marker("skipif_jax") and backend == "jax":
         pytest.skip("Cannot run this test with Jax")
+
+
+@pytest.fixture(autouse=True)
+def skipif_numpy(request, backend):
+    """Automatically skip tests marked with skipif_numpy when backend is numpy."""
+    if request.node.get_closest_marker("skipif_numpy") and backend == "numpy":
+        pytest.skip("Cannot run this test with Numpy")
