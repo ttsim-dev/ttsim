@@ -16,6 +16,11 @@ if TYPE_CHECKING:
 
 
 @interface_input(in_top_level_namespace=True)
+def date_str() -> DashedISOString:
+    """The date to be used as policy date and evaluation date."""
+
+
+@interface_input(in_top_level_namespace=True)
 def policy_date_str() -> DashedISOString:
     """The date to be used as policy date."""
 
@@ -23,11 +28,6 @@ def policy_date_str() -> DashedISOString:
 @interface_input(in_top_level_namespace=True)
 def evaluation_date_str() -> DashedISOString:
     """The date to be used as evaluation date."""
-
-
-@interface_input(in_top_level_namespace=True)
-def date_str() -> DashedISOString:
-    """The date to be used as policy date and evaluation date."""
 
 
 @interface_function(in_top_level_namespace=True)
