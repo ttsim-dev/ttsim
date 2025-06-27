@@ -206,22 +206,22 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
         else:
             static_nodes[dt.qname_from_tree_path(orig_p)] = orig_object
 
-    for p, funcs in path_to_idif.items():
-        funcs_satisfying_include_condition = [
-            f for f in funcs if f.include_condition_satisfied(input_qnames)
+    for p, functions in path_to_idif.items():
+        functions_satisfying_include_condition = [
+            f for f in functions if f.include_condition_satisfied(input_qnames)
         ]
         _fail_if_multiple_functions_satisfy_include_condition(
-            funcs=funcs_satisfying_include_condition,
+            funcs=functions_satisfying_include_condition,
             path=p,
         )
-        if funcs_satisfying_include_condition:
+        if functions_satisfying_include_condition:
             static_nodes[dt.qname_from_tree_path(p)] = (
-                funcs_satisfying_include_condition[0]
+                functions_satisfying_include_condition[0]
             )
         else:
             # Default to the first function if no function satisfies the include
             # condition.
-            static_nodes[dt.qname_from_tree_path(p)] = funcs[0]
+            static_nodes[dt.qname_from_tree_path(p)] = functions[0]
 
     return static_nodes
 
@@ -237,6 +237,7 @@ def _fail_if_multiple_functions_satisfy_include_condition(
             f"Multiple InputDependentInterfaceFunctions with the path {path} "
             "satisfy their include conditions:\n\n"
             f"{func_names}\n\n"
+            "Put differently, there are multiple ways to build a specific target. "
             "Make sure the input data you provide satisfies only one of the include "
             "conditions."
         )
