@@ -63,39 +63,39 @@ def main(
     Main function that processes the inputs and returns the outputs.
     """
 
-    flat_inputs = _harmonize_inputs(locals())
-    flat_output = _harmonize_outputs(output)
+    input_qnames = _harmonize_inputs(locals())
+    output_qnames = _harmonize_outputs(output)
 
-    if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
-        flat_inputs["processed_data"] = {}
-        flat_inputs["processed_data_columns"] = None
+    if not any(re.match("(input|processed)_data", s) for s in input_qnames):
+        input_qnames["processed_data"] = {}
+        input_qnames["processed_data_columns"] = None
 
     nodes = _resolve_dynamic_interface_objects_to_static_nodes(
         flat_interface_objects=load_flat_interface_functions_and_inputs(),
-        input_qnames=list(flat_inputs.keys()),
+        input_qnames=list(input_qnames),
     )
 
     _fail_if_requested_nodes_cannot_be_found(
-        output_qnames=flat_output["names"],
+        output_qnames=output_qnames["names"],
         nodes=nodes,
     )
 
     functions = {
         qn: n
         for qn, n in nodes.items()
-        if isinstance(n, InterfaceFunction) and qn not in flat_inputs
+        if isinstance(n, InterfaceFunction) and qn not in input_qnames
     }
 
     # If targets are None, all failures and warnings are included, anyhow.
-    if fail_and_warn and flat_output["names"] is not None:
-        flat_output["names"] = include_fail_and_warn_nodes(
+    if fail_and_warn and output_qnames["names"] is not None:
+        output_qnames["names"] = include_fail_and_warn_nodes(
             functions=functions,
-            output_qnames=flat_output["names"],
+            output_qnames=output_qnames["names"],
         )
-    if flat_output["name"] is None:
+    if output_qnames["name"] is None:
         f = dags.concatenate_functions(
             functions=functions,
-            targets=flat_output["names"],
+            targets=output_qnames["names"],
             return_type="dict",
             enforce_signature=False,
             set_annotations=False,
@@ -103,11 +103,11 @@ def main(
     else:
         f = dags.concatenate_functions(
             functions=functions,
-            targets=flat_output["name"],
+            targets=output_qnames["name"],
             enforce_signature=False,
             set_annotations=False,
         )
-    return f(**flat_inputs)
+    return f(**input_qnames)
 
 
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
