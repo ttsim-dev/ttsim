@@ -15,7 +15,7 @@ satz:
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     regelsatz: 300
     budgetsatz: 450
-  2008-12-31:
+  2009-01-01:
     note: Erziehungsgeld revoked and replaced by Elterngeld.
 parameter_einkommensgrenze:
   name:
@@ -50,7 +50,7 @@ parameter_einkommensgrenze:
     reduziert_paar:
       regelsatz: 16500
       budgetsatz: 16500
-  2008-12-31:
+  2009-01-01:
     note: Erziehungsgeld revoked and replaced by Elterngeld.
 aufschlag_einkommen:
   name:
@@ -67,7 +67,7 @@ aufschlag_einkommen:
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     value: 3140
-  2008-12-31:
+  2009-01-01:
     note: Erziehungsgeld revoked and replaced by Elterngeld.
 abschlagsfaktor:
   name:
@@ -92,7 +92,7 @@ abschlagsfaktor:
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     value: 0.052
-  2008-12-31:
+  2009-01-01:
     note: Erziehungsgeld revoked and replaced by Elterngeld.
 pauschaler_abzug_vom_einkommen:
   name:
@@ -113,5 +113,5 @@ pauschaler_abzug_vom_einkommen:
     note: >-
       https://www.bgbl.de/xaver/bgbl/start.xav?startbk=Bundesanzeiger_BGBl&jumpTo=bgbl104s0206.pdf#__bgbl__%2F%2F*%5B%40attr_id%3D%27bgbl104s0206.pdf%27%5D__1685621730529
     value: 0.76
-  2008-12-31:
+  2009-01-01:
     note: Erziehungsgeld revoked and replaced by Elterngeld.
