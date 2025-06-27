@@ -98,6 +98,10 @@ def main(
             functions=functions,
             output_qnames=flat_output["names"],
         )
+
+    def lexsort_key(x: str) -> int:
+        return 0 if x.startswith("fail_if") else 1
+
     if flat_output["name"] is None:
         f = dags.concatenate_functions(
             functions=functions,
@@ -105,6 +109,7 @@ def main(
             return_type="dict",
             enforce_signature=False,
             set_annotations=False,
+            lexsort_key=lexsort_key,
         )
     else:
         f = dags.concatenate_functions(
@@ -112,6 +117,7 @@ def main(
             targets=flat_output["name"],
             enforce_signature=False,
             set_annotations=False,
+            lexsort_key=lexsort_key,
         )
     return f(**flat_inputs)
 
