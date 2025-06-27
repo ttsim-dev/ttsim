@@ -8,6 +8,7 @@ from numpy.testing import assert_array_equal
 
 from ttsim import (
     main,
+    output,
 )
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_nested_data,
@@ -220,15 +221,13 @@ def test_nested_data_to_dataframe(
     backend,
 ):
     results__tree = main(
-        inputs={
-            "input_data__tree": minimal_data_tree,
-            "policy_environment": environment,
-            "targets__tree": targets__tree,
-            "rounding": False,
-            "backend": backend,
-        },
-        output_names=["results__tree"],
-    )["results__tree"]
+        input_data={"tree": minimal_data_tree},
+        policy_environment=environment,
+        targets={"tree": targets__tree},
+        rounding=False,
+        backend=backend,
+        output=output.Name("results__tree"),
+    )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,
         nested_outputs_df_column_names=targets__tree,

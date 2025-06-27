@@ -8,7 +8,7 @@ import dags.tree as dt
 import numpy
 import pytest
 
-from ttsim import main
+from ttsim import main, output
 from ttsim.testing_utils import (
     PolicyTest,
     check_env_completeness,
@@ -37,28 +37,27 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 def get_orig_gettsim_objects() -> dict[
     str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
 ]:
-    return main(
+    out = main(
         orig_policy_objects={"root": GETTSIM_ROOT},
-        output_names=[
-            "orig_policy_objects__column_objects_and_param_functions",
-            "orig_policy_objects__param_specs",
-        ],
+        output=output.Names(
+            [
+                "orig_policy_objects__column_objects_and_param_functions",
+                "orig_policy_objects__param_specs",
+            ]
+        ),
     )
+    return {k.replace("orig_policy_objects__", ""): v for k, v in out.items()}
 
 
 def dates_in_orig_gettsim_objects() -> list[datetime.date]:
     orig_objects = get_orig_gettsim_objects()
     start_dates = {
         v.start_date
-        for v in orig_objects[
-            "orig_policy_objects__column_objects_and_param_functions"
-        ].values()
+        for v in orig_objects["column_objects_and_param_functions"].values()
     }
     end_dates = {
         v.end_date + timedelta(days=1)
-        for v in orig_objects[
-            "orig_policy_objects__column_objects_and_param_functions"
-        ].values()
+        for v in orig_objects["column_objects_and_param_functions"].values()
     }
     return sorted(start_dates | end_dates)
 
@@ -106,16 +105,16 @@ def test_top_level_elements_not_repeated_in_paths(
 ):
     try:
         gettsim_objects = main(
-            inputs={
-                "orig_policy_objects__root": GETTSIM_ROOT,
-                "backend": backend,
-                "date_str": date.isoformat(),
-                "rounding": False,
-            },
-            output_names=[
-                "specialized_environment__with_partialled_params_and_scalars",
-                "labels__top_level_namespace",
-            ],
+            orig_policy_objects={"root": GETTSIM_ROOT},
+            backend=backend,
+            date=date,
+            rounding=False,
+            output=output.Names(
+                [
+                    "specialized_environment__with_partialled_params_and_scalars",
+                    "labels__top_level_namespace",
+                ],
+            ),
         )
     except Exception:  # noqa: BLE001
         msg = (

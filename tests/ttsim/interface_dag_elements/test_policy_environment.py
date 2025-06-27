@@ -10,7 +10,7 @@ import optree
 import pandas as pd
 import pytest
 
-from ttsim import main
+from ttsim import main, output
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
 )
@@ -78,30 +78,20 @@ def test_add_jahresanfang(xnp):
 
 
 def test_input_is_recognized_as_potential_group_id(backend):
-    assert (
-        "kin"
-        in main(
-            inputs={
-                "orig_policy_objects__root": METTSIM_ROOT,
-                "date": datetime.date(2020, 1, 1),
-                "backend": backend,
-            },
-            output_names=["labels__grouping_levels"],
-        )["labels__grouping_levels"]
+    assert "kin" in main(
+        orig_policy_objects={"root": METTSIM_ROOT},
+        date=datetime.date(2020, 1, 1),
+        backend=backend,
+        output=output.Name("labels__grouping_levels"),
     )
 
 
 def test_p_id_not_recognized_as_potential_group_id(backend):
-    assert (
-        "p"
-        not in main(
-            inputs={
-                "orig_policy_objects__root": METTSIM_ROOT,
-                "date": datetime.date(2020, 1, 1),
-                "backend": backend,
-            },
-            output_names=["labels__grouping_levels"],
-        )["labels__grouping_levels"]
+    assert "p" not in main(
+        orig_policy_objects={"root": METTSIM_ROOT},
+        date=datetime.date(2020, 1, 1),
+        backend=backend,
+        output=output.Name("labels__grouping_levels"),
     )
 
 

@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
-from ttsim import main
+from ttsim import main, output
 from ttsim.tt_dag_elements import (
     RoundingSpec,
     policy_function,
@@ -109,15 +109,13 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
     policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
     results__tree = main(
-        inputs={
-            "input_data__tree": input_data__tree,
-            "policy_environment": policy_environment,
-            "targets__tree": {"namespace": {"test_func": None}},
-            "rounding": True,
-            "backend": backend,
-        },
-        output_names=["results__tree"],
-    )["results__tree"]
+        input_data={"tree": input_data__tree},
+        policy_environment=policy_environment,
+        targets={"tree": {"namespace": {"test_func": None}}},
+        rounding=True,
+        backend=backend,
+        output=output.Name("results__tree"),
+    )
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
         pd.Series(exp_output),
@@ -146,15 +144,13 @@ def test_rounding_with_time_conversion(backend, xnp):
     }
 
     results__tree = main(
-        inputs={
-            "input_data__tree": data,
-            "policy_environment": policy_environment,
-            "targets__tree": {"test_func_y": None},
-            "rounding": True,
-            "backend": backend,
-        },
-        output_names=["results__tree"],
-    )["results__tree"]
+        input_data={"tree": data},
+        policy_environment=policy_environment,
+        targets={"tree": {"test_func_y": None}},
+        rounding=True,
+        backend=backend,
+        output=output.Name("results__tree"),
+    )
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
         pd.Series([12.0, 12.0]),
@@ -187,15 +183,13 @@ def test_no_rounding(
     }
 
     results__tree = main(
-        inputs={
-            "input_data__tree": data,
-            "policy_environment": policy_environment,
-            "targets__tree": {"test_func": None},
-            "rounding": False,
-            "backend": backend,
-        },
-        output_names=["results__tree"],
-    )["results__tree"]
+        input_data={"tree": data},
+        policy_environment=policy_environment,
+        targets={"tree": {"test_func": None}},
+        rounding=False,
+        backend=backend,
+        output=output.Name("results__tree"),
+    )
     assert_series_equal(
         pd.Series(results__tree["test_func"]),
         pd.Series(input_values_exp_output),

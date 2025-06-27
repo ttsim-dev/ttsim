@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy
 import pytest
 
-from ttsim import main
+from ttsim import main, output
 from ttsim.plot_dag import (
     plot_tt_dag,
 )
@@ -39,28 +39,27 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 def get_orig_mettsim_objects() -> dict[
     str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
 ]:
-    return main(
+    out = main(
         orig_policy_objects={"root": METTSIM_ROOT},
-        output_names=[
-            "orig_policy_objects__column_objects_and_param_functions",
-            "orig_policy_objects__param_specs",
-        ],
+        output=output.Names(
+            [
+                "orig_policy_objects__column_objects_and_param_functions",
+                "orig_policy_objects__param_specs",
+            ]
+        ),
     )
+    return {k.replace("orig_policy_objects__", ""): v for k, v in out.items()}
 
 
 def dates_in_orig_mettsim_objects() -> list[datetime.date]:
     orig_objects = get_orig_mettsim_objects()
     start_dates = {
         v.start_date
-        for v in orig_objects[
-            "orig_policy_objects__column_objects_and_param_functions"
-        ].values()
+        for v in orig_objects["column_objects_and_param_functions"].values()
     }
     end_dates = {
         v.end_date + timedelta(days=1)
-        for v in orig_objects[
-            "orig_policy_objects__column_objects_and_param_functions"
-        ].values()
+        for v in orig_objects["column_objects_and_param_functions"].values()
     }
     return sorted(start_dates | end_dates)
 

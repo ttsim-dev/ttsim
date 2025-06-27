@@ -14,6 +14,7 @@ import numpy
 import plotly.graph_objects as go
 
 from ttsim import main
+from ttsim.arg_templates import output
 from ttsim.interface_dag import load_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
@@ -104,13 +105,11 @@ def plot_tt_dag(
     The figure.
     """
     environment = main(
-        inputs={
-            "date_str": date_str,
-            "orig_policy_objects__root": root,
-            "backend": "numpy",
-        },
-        output_names=["policy_environment"],
-    )["policy_environment"]
+        date_str=date_str,
+        orig_policy_objects={"root": root},
+        backend="numpy",
+        output=output.Name("policy_environment"),
+    )
 
     if node_selector:
         qname_node_selector = _QNameNodeSelector(
@@ -203,14 +202,12 @@ def _get_tt_dag_with_node_metadata(
     ]
     tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
     env = main(
-        inputs={
-            "policy_environment": environment,
-            "labels__processed_data_columns": qnames_policy_inputs,
-            "targets__qname": qnames_to_plot,
-            "backend": "numpy",
-        },
-        output_names=[tgt],
-    )[tgt]
+        policy_environment=environment,
+        labels={"processed_data_columns": qnames_policy_inputs},
+        targets={"qname": qnames_to_plot},
+        backend="numpy",
+        output=output.Name(tgt),
+    )
 
     all_nodes = {
         qn: dummy_callable(n) if not callable(n) else n for qn, n in env.items()

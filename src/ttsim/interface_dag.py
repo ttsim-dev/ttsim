@@ -10,7 +10,7 @@ import dags
 import dags.tree as dt
 import optree
 
-from ttsim.argument_templates import input_data
+from ttsim import arg_templates
 from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     import datetime
 
     from ttsim.interface_dag_elements.typing import (
-        NestedTargetDict,
         QNameStrings,
         UnorderedQNames,
     )
@@ -37,11 +36,12 @@ if TYPE_CHECKING:
 def main(
     *,
     date_str: str | None = None,
-    output_names: NestedTargetDict | QNameStrings | None = None,
-    input_data: input_data.DfAndMapper
-    | input_data.DfWithNestedColumns
-    | input_data.Flat
-    | input_data.QName
+    output: arg_templates.output.Name | arg_templates.output.Names | None = None,
+    input_data: arg_templates.input_data.DfAndMapper
+    | arg_templates.input_data.DfWithNestedColumns
+    | arg_templates.input_data.Flat
+    | arg_templates.input_data.QName
+    | arg_templates.input_data.Tree
     | None = None,
     targets: dict[str, Any] | None = None,
     backend: Literal["numpy", "jax"] | None = None,
@@ -63,7 +63,7 @@ def main(
     """
 
     flat_inputs = _harmonize_inputs(locals())
-    output_qnames = _harmonize_output_names(output_names)
+    flat_output = _harmonize_outputs(output)
 
     if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
         flat_inputs["processed_data"] = {}
@@ -76,7 +76,7 @@ def main(
     }
 
     _fail_if_requested_nodes_cannot_be_found(
-        output_qnames=output_qnames,
+        output_qnames=flat_output["names"],
         nodes=nodes,
     )
 
@@ -93,19 +93,26 @@ def main(
     }
 
     # If targets are None, all failures and warnings are included, anyhow.
-    if fail_and_warn and output_qnames is not None:
-        output_qnames = include_fail_and_warn_nodes(
+    if fail_and_warn and flat_output["names"] is not None:
+        flat_output["names"] = include_fail_and_warn_nodes(
             functions=functions,
-            output_qnames=output_qnames,
+            output_qnames=flat_output["names"],
         )
-
-    f = dags.concatenate_functions(
-        functions=functions,
-        targets=output_qnames,
-        return_type="dict",
-        enforce_signature=False,
-        set_annotations=False,
-    )
+    if flat_output["name"] is None:
+        f = dags.concatenate_functions(
+            functions=functions,
+            targets=flat_output["names"],
+            return_type="dict",
+            enforce_signature=False,
+            set_annotations=False,
+        )
+    else:
+        f = dags.concatenate_functions(
+            functions=functions,
+            targets=flat_output["name"],
+            enforce_signature=False,
+            set_annotations=False,
+        )
     return f(**flat_inputs)
 
 
@@ -117,7 +124,9 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
         none_is_leaf=True,
     )[:2]
-    if "input_data" in inputs and isinstance(inputs["input_data"], input_data.ABC):
+    if "input_data" in inputs and isinstance(
+        inputs["input_data"], arg_templates.input_data.ABC
+    ):
         inputs["input_data"] = inputs["input_data"].to_dict()
     for acc, val in zip(accs, vals, strict=False):
         qname = dt.qname_from_tree_path(acc.path)
@@ -131,14 +140,41 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in flat_inputs.items() if v is not None}
 
 
-def _harmonize_output_names(
-    output_names: QNameStrings | NestedTargetDict | None,
-) -> list[str] | None:
-    if output_names is None:
-        return None
-    if isinstance(output_names, dict):
-        return dt.qnames(output_names)
-    return output_names
+def _harmonize_outputs(
+    output: arg_templates.output.Name | arg_templates.output.Names | None,
+) -> dict[str, Any]:
+    if output is None:
+        flat_output = {
+            "qname": None,
+            "qnames": None,
+        }
+    elif isinstance(output, arg_templates.output.ABC):
+        flat_output = output.to_dict()
+        flat_output["name"] = flat_output.get("name")
+        if isinstance(flat_output["name"], tuple):
+            flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
+        elif isinstance(flat_output["name"], dict):
+            if len(flat_output["name"]) > 1:
+                raise ValueError(
+                    "The output Name must be a single qualified name, a tuple or a "
+                    "dict with one element. If you want to output multiple elements, "
+                    "use Names."
+                )
+            flat_output["name"] = dt.qnames(flat_output["name"])[0]
+        flat_output["names"] = flat_output.get(
+            "names", [flat_output["name"]] if flat_output["name"] is not None else None
+        )
+        if isinstance(flat_output["names"], dict):
+            flat_output["names"] = dt.qnames(flat_output["names"])
+        elif isinstance(flat_output["names"][0], tuple):
+            flat_output["names"] = [
+                dt.qname_from_tree_path(tp) for tp in flat_output["names"]
+            ]
+        elif isinstance(flat_output["names"][0], dict):
+            # Happens if a dict was passed to Name.
+            flat_output["names"] = dt.qnames(flat_output["names"][0])
+
+    return flat_output
 
 
 def include_fail_and_warn_nodes(
