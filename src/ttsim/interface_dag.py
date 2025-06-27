@@ -63,7 +63,7 @@ def main(
     """
 
     flat_inputs = _harmonize_inputs(locals())
-    flat_output = _harmonize_output(output)
+    flat_output = _harmonize_outputs(output)
 
     if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
         flat_inputs["processed_data"] = {}
@@ -140,7 +140,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in flat_inputs.items() if v is not None}
 
 
-def _harmonize_output(
+def _harmonize_outputs(
     output: arg_templates.output.Name | arg_templates.output.Names | None,
 ) -> dict[str, Any]:
     if output is None:
@@ -151,10 +151,29 @@ def _harmonize_output(
     elif isinstance(output, arg_templates.output.ABC):
         flat_output = output.to_dict()
         flat_output["name"] = flat_output.get("name")
+        if isinstance(flat_output["name"], tuple):
+            flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
+        elif isinstance(flat_output["name"], dict):
+            if len(flat_output["name"]) > 1:
+                raise ValueError(
+                    "The output Name must be a single qualified name, a tuple or a "
+                    "dict with one element. If you want to output multiple elements, "
+                    "use Names."
+                )
+            flat_output["name"] = dt.qnames(flat_output["name"])[0]
         flat_output["names"] = flat_output.get(
             "names", [flat_output["name"]] if flat_output["name"] is not None else None
         )
-    # Still need to harmonize tuples here.
+        if isinstance(flat_output["names"], dict):
+            flat_output["names"] = dt.qnames(flat_output["names"])
+        elif isinstance(flat_output["names"][0], tuple):
+            flat_output["names"] = [
+                dt.qname_from_tree_path(tp) for tp in flat_output["names"]
+            ]
+        elif isinstance(flat_output["names"][0], dict):
+            # Happens if a dict was passed to Name.
+            flat_output["names"] = dt.qnames(flat_output["names"][0])
+
     return flat_output
 
 

@@ -5,9 +5,11 @@ import inspect
 import dags
 import pytest
 
+from ttsim import arg_templates
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _harmonize_inputs,
+    _harmonize_outputs,
     load_interface_functions_and_inputs,
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
@@ -203,3 +205,26 @@ def test_input_dependent_interface_functions_with_conflicting_variants():
         some_input_dependent_interface_function_with_conflicting_variants.resolve_to_static_interface_function(
             ["input_1", "n1__input_2"]
         )
+
+
+@pytest.mark.parametrize(
+    ("output", "expected"),
+    [
+        (arg_templates.output.Name("a__b"), {"name": "a__b", "names": ["a__b"]}),
+        (arg_templates.output.Name(("a", "b")), {"name": "a__b", "names": ["a__b"]}),
+        (
+            arg_templates.output.Name({"a": {"b": None}}),
+            {"name": "a__b", "names": ["a__b"]},
+        ),
+        (arg_templates.output.Names(["a__b"]), {"name": None, "names": ["a__b"]}),
+        (arg_templates.output.Names([("a", "b")]), {"name": None, "names": ["a__b"]}),
+        (
+            arg_templates.output.Names({"a": {"b": None}}),
+            {"name": None, "names": ["a__b"]},
+        ),
+    ],
+)
+def test_harmonize_outputs(output, expected):
+    harmonized = _harmonize_outputs(output=output)
+
+    assert harmonized == expected
