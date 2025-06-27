@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
+        FlatData,
         NestedData,
         NestedInputsMapper,
         NestedStrings,
@@ -16,9 +17,17 @@ if TYPE_CHECKING:
     )
 
 
+def _get_p_id_index(data_with_p_id: NestedData | QNameData | FlatData) -> pd.Index:
+    if "p_id" in data_with_p_id:
+        return pd.Index(data_with_p_id["p_id"], name="p_id")
+    if ("p_id",) in data_with_p_id:
+        return pd.Index(data_with_p_id[("p_id",)], name="p_id")
+    raise ValueError("No p_id found in data_with_p_id")
+
+
 def nested_data_to_df_with_nested_columns(
     nested_data_to_convert: NestedData,
-    data_with_p_id: NestedData | QNameData,
+    data_with_p_id: NestedData | QNameData | FlatData,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
 
@@ -34,16 +43,18 @@ def nested_data_to_df_with_nested_columns(
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
 
+    p_id_index = _get_p_id_index(data_with_p_id)
+
     return pd.DataFrame(
         flat_data_to_convert,
-        index=pd.Index(data_with_p_id["p_id"], name="p_id"),
+        index=p_id_index,
     )
 
 
 def nested_data_to_df_with_mapped_columns(
     nested_data_to_convert: NestedData,
     nested_outputs_df_column_names: NestedStrings,
-    data_with_p_id: NestedData | QNameData,
+    data_with_p_id: NestedData | QNameData | FlatData,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
 
@@ -61,10 +72,11 @@ def nested_data_to_df_with_mapped_columns(
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
     flat_df_columns = dt.flatten_to_tree_paths(nested_outputs_df_column_names)
+    p_id_index = _get_p_id_index(data_with_p_id)
 
     return pd.DataFrame(
         {flat_df_columns[path]: data for path, data in flat_data_to_convert.items()},
-        index=pd.Index(data_with_p_id["p_id"], name="p_id"),
+        index=p_id_index,
     )
 
 
