@@ -74,6 +74,8 @@ parameter_beitragssatz:
   reference_period: null
   type: dict
   add_jahresanfang: true
+  2004-01-01:
+    mean_allgemein: 0.142
   2005-07-01:
     mean_allgemein: 0.133
     sonderbeitrag: 0.009
