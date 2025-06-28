@@ -206,10 +206,21 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
 
     def remove_tree_logic(
         self,
-        tree_path: tuple[str, ...],  # noqa: ARG002
-        top_level_namespace: UnorderedQNames,  # noqa: ARG002
-    ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
-        return self
+        tree_path: tuple[str, ...],
+        top_level_namespace: UnorderedQNames,
+    ) -> InputDependentInterfaceFunction:  # type: ignore[type-arg]
+        """Remove tree logic from the function and update the function signature."""
+        return InputDependentInterfaceFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            in_top_level_namespace=self.in_top_level_namespace,
+            include_if_any_input_present=self.include_if_any_input_present,
+            include_if_all_inputs_present=self.include_if_all_inputs_present,
+        )
 
 
 def input_dependent_interface_function(

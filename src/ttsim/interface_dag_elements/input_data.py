@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 
 from ttsim.interface_dag_elements.data_converters import (
-    df_with_mapped_columns_to_nested_data,
-    df_with_nested_columns_to_nested_data,
+    df_with_mapped_columns_to_flat_data,
+    df_with_nested_columns_to_flat_data,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     input_dependent_interface_function,
-    interface_function,
     interface_input,
 )
 
@@ -41,41 +40,71 @@ def df_with_nested_columns() -> pd.DataFrame:
     pass
 
 
+@interface_input()
+def tree() -> NestedData:
+    pass
+
+
 @input_dependent_interface_function(
     include_if_all_inputs_present=[
         "input_data__df_and_mapper__df",
         "input_data__df_and_mapper__mapper",
     ],
-    leaf_name="tree",
+    leaf_name="flat",
 )
-def tree_from_df_and_mapper(
-    input_data__df_and_mapper__df: pd.DataFrame,
-    input_data__df_and_mapper__mapper: NestedInputsMapper,
+def flat_from_df_and_mapper(
+    df_and_mapper__df: pd.DataFrame,
+    df_and_mapper__mapper: NestedInputsMapper,
     xnp: ModuleType,
-) -> NestedData:
-    return df_with_mapped_columns_to_nested_data(
-        df=input_data__df_and_mapper__df,
-        mapper=input_data__df_and_mapper__mapper,
+) -> FlatData:
+    """The input DataFrame as a flattened data structure.
+
+    Args:
+        df_and_mapper__df:
+            The input DataFrame.
+        df_and_mapper__mapper:
+            Dictionary mapping tree paths to column names.
+
+    Returns
+    -------
+        Flattened data structure.
+    """
+    return df_with_mapped_columns_to_flat_data(
+        df=df_and_mapper__df,
+        mapper=df_and_mapper__mapper,
         xnp=xnp,
     )
 
 
 @input_dependent_interface_function(
     include_if_all_inputs_present=["input_data__df_with_nested_columns"],
-    leaf_name="tree",
+    leaf_name="flat",
 )
-def tree_from_df_with_nested_columns(
-    input_data__df_with_nested_columns: pd.DataFrame,
+def flat_from_df_with_nested_columns(
+    df_with_nested_columns: pd.DataFrame,
     xnp: ModuleType,
-) -> NestedData:
-    return df_with_nested_columns_to_nested_data(
-        df=input_data__df_with_nested_columns,
+) -> FlatData:
+    """The input DataFrame as a flattened data structure.
+
+    Args:
+        df_with_nested_columns:
+            The input DataFrame with nested column names.
+
+    Returns
+    -------
+        Flattened data structure.
+    """
+    return df_with_nested_columns_to_flat_data(
+        df=df_with_nested_columns,
         xnp=xnp,
     )
 
 
-@interface_function()
-def flat(tree: NestedData) -> FlatData:
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["input_data__tree"],
+    leaf_name="flat",
+)
+def flat_from_tree(tree: NestedData) -> FlatData:
     """The input DataFrame as a flattened data structure.
 
     Args:
@@ -84,6 +113,6 @@ def flat(tree: NestedData) -> FlatData:
 
     Returns
     -------
-        Mapping of tree paths to input data.
+        Flattened data structure.
     """
     return dt.flatten_to_tree_paths(tree)
