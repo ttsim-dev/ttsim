@@ -198,11 +198,13 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
 
     def include_condition_satisfied(self, input_names: Iterable[str]) -> bool:
         """Check if the input names match the include condition."""
-        if self.include_if_any_input_present:
-            return any(i in input_names for i in self.include_if_any_input_present)
-        if self.include_if_all_inputs_present:
-            return all(i in input_names for i in self.include_if_all_inputs_present)
-        return True
+        all_condition = bool(self.include_if_all_inputs_present) and all(
+            i in input_names for i in self.include_if_all_inputs_present
+        )
+        any_condition = bool(self.include_if_any_input_present) and any(
+            i in input_names for i in self.include_if_any_input_present
+        )
+        return all_condition or any_condition
 
     def remove_tree_logic(
         self,
