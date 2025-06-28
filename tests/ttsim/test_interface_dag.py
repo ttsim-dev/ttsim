@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import Any
 
 import dags
 import dags.tree as dt
@@ -16,8 +17,11 @@ from ttsim.interface_dag import (
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
+    InputDependentInterfaceFunction,
+    InterfaceInput,
     fail_or_warn_function,
     input_dependent_interface_function,
+    interface_input,
 )
 from ttsim.plot_dag import dummy_callable
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
@@ -70,12 +74,19 @@ def test_load_flat_interface_functions_and_inputs() -> None:
 
 
 def test_interface_dag_is_complete() -> None:
-    nodes = _resolve_dynamic_interface_objects_to_static_nodes(
-        flat_interface_objects=load_flat_interface_functions_and_inputs(),
-        input_qnames=[],
-    )
+    # Convert InputDependentInterfaceFunctions to InterfaceInputs.
+    nodes_without_idifs = {}
+    for p, n in load_flat_interface_functions_and_inputs().items():
+        if isinstance(n, InputDependentInterfaceFunction):
+            interface_input = _replace_idif_with_interface_inputs(n)
+            new_path = p[:-1] + (interface_input.leaf_name,)
+            nodes_without_idifs[dt.qname_from_tree_path(new_path)] = interface_input
+        else:
+            nodes_without_idifs[dt.qname_from_tree_path(p)] = n
+
     nodes_with_dummy_callables = {
-        qn: dummy_callable(n) if not callable(n) else n for qn, n in nodes.items()
+        qn: dummy_callable(n) if not callable(n) else n
+        for qn, n in nodes_without_idifs.items()
     }
     f = dags.concatenate_functions(
         functions=nodes_with_dummy_callables,
@@ -90,6 +101,19 @@ def test_interface_dag_is_complete() -> None:
             "The full interface DAG should include all root nodes but requires inputs:"
             f"\n\n{format_list_linewise(args.keys())}"
         )
+
+
+def _replace_idif_with_interface_inputs(
+    n: InputDependentInterfaceFunction,
+) -> InterfaceInput:
+    @interface_input(
+        in_top_level_namespace=n.in_top_level_namespace,
+        leaf_name=n.leaf_name,
+    )
+    def interface_input_for_idif() -> Any:
+        pass
+
+    return interface_input_for_idif
 
 
 @pytest.mark.parametrize(

@@ -218,11 +218,6 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
             static_nodes[dt.qname_from_tree_path(p)] = (
                 functions_satisfying_include_condition[0]
             )
-        else:
-            # Default to the first function if no function satisfies the include
-            # condition.
-            static_nodes[dt.qname_from_tree_path(p)] = functions[0]
-
     return static_nodes
 
 

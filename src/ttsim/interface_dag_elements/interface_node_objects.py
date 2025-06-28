@@ -60,6 +60,7 @@ class InterfaceInput(InterfaceNodeObject):
 
 
 def interface_input(
+    leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[[Callable[..., Any]], InterfaceInput]:
     """
@@ -72,7 +73,7 @@ def interface_input(
 
     def inner(func: Callable[..., Any]) -> InterfaceInput:
         return InterfaceInput(
-            leaf_name=func.__name__,
+            leaf_name=leaf_name if leaf_name else func.__name__,
             in_top_level_namespace=in_top_level_namespace,
             return_type=func.__annotations__["return"],
         )
