@@ -388,7 +388,7 @@ rentenwert:
       Entgeltpunkt.
   unit: Euros
   reference_period: null
-  type: dict
+  type: scalar
   access_different_date: vorjahr
   2023-07-01:
     value: 37.60

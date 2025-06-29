@@ -50,9 +50,9 @@ def betrag_m(
 @policy_function()
 def monate_verbleibender_anspruchsdauer(
     alter: int,
-    monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
+    monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: int,
     mindestversicherungszeit_erreicht: bool,
-    monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
+    monate_durchgängigen_bezugs_von_arbeitslosengeld: int,
     anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
     anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
 ) -> int:
