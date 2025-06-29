@@ -230,6 +230,7 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
     langjährig__grundsätzlich_anspruchsberechtigt: bool,
     langjährig__altersgrenze: float,
     regelaltersrente__altersgrenze: float,
+    xnp: ModuleType,
 ) -> float:
     """Reference age for deduction calculation in case of early retirement
     (Zugangsfaktor).
@@ -243,32 +244,38 @@ def referenzalter_abschlag_mit_arbeitslosigkeit_frauen(
         and für_frauen__grundsätzlich_anspruchsberechtigt
         and wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt
     ):
-        out = min(
-            [
-                für_frauen__altersgrenze,
-                langjährig__altersgrenze,
-                wegen_arbeitslosigkeit__altersgrenze,
-            ],
+        out = xnp.min(
+            xnp.asarray(
+                [
+                    für_frauen__altersgrenze,
+                    langjährig__altersgrenze,
+                    wegen_arbeitslosigkeit__altersgrenze,
+                ]
+            ),
         )
     elif (
         langjährig__grundsätzlich_anspruchsberechtigt
         and für_frauen__grundsätzlich_anspruchsberechtigt
     ):
-        out = min(
-            [
-                für_frauen__altersgrenze,
-                langjährig__altersgrenze,
-            ],
+        out = xnp.min(
+            xnp.asarray(
+                [
+                    für_frauen__altersgrenze,
+                    langjährig__altersgrenze,
+                ]
+            ),
         )
     elif (
         langjährig__grundsätzlich_anspruchsberechtigt
         and wegen_arbeitslosigkeit__grundsätzlich_anspruchsberechtigt
     ):
-        out = min(
-            [
-                langjährig__altersgrenze,
-                wegen_arbeitslosigkeit__altersgrenze,
-            ],
+        out = xnp.min(
+            xnp.asarray(
+                [
+                    langjährig__altersgrenze,
+                    wegen_arbeitslosigkeit__altersgrenze,
+                ]
+            ),
         )
     elif langjährig__grundsätzlich_anspruchsberechtigt:
         out = langjährig__altersgrenze
