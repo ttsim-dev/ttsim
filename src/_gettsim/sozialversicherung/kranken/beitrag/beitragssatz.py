@@ -218,7 +218,22 @@ def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
 
 
 @param_function(
-    start_date="2005-07-01",
+    start_date="2005-01-01",
+    end_date="2005-12-31",
+    leaf_name="beitragssatz_arbeitgeber_jahresanfang",
+)
+def beitragssatz_arbeitgeber_jahresanfang_2005(
+    beitragssatz_jahresanfang: float,
+) -> float:
+    """Employer's health insurance contribution rate at the begging of the year.
+
+    Until 2008, the top-up contribution rate (Zusatzbeitrag) was not considered.
+    """
+    return beitragssatz_jahresanfang / 2
+
+
+@param_function(
+    start_date="2006-01-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
 )
