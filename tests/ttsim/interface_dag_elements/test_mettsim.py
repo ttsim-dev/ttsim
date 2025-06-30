@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Literal
 import numpy
 import pytest
 
-from ttsim import main, output
+from ttsim import main
+from ttsim.arg_templates import input_data, output
 from ttsim.plot_dag import (
     plot_tt_dag,
 )
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
     )
 
-METTSIM_ROOT = Path(__file__).parent / "mettsim"
+METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
@@ -110,3 +111,19 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
         date=date,
         orig_policy_objects=orig_mettsim_objects,
     )
+
+
+def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "jax"]):
+    data = {("p_id",): numpy.array([0, 1, 2, 3])}
+    with pytest.raises(
+        ValueError,
+        match=r"The following data columns are missing.",
+    ):
+        main(
+            date_str="2020-01-01",
+            input_data=input_data.Flat(data),
+            orig_policy_objects={"root": METTSIM_ROOT},
+            targets={"tree": {"property_tax": {"amount_y": None}}},
+            output=output.Names(["results__tree"]),
+            backend=backend,
+        )

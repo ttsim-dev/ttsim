@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 
 from ttsim import main
 from ttsim.arg_templates import output
-from ttsim.interface_dag import load_interface_functions_and_inputs
+from ttsim.interface_dag import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
     InputDependentInterfaceFunction,
@@ -143,30 +143,46 @@ def plot_interface_dag(
     output_path: Path | None = None,
 ) -> go.Figure:
     """Plot the full interface DAG."""
-    nodes = {
-        p: dummy_callable(n) if not callable(n) else n
-        for p, n in load_interface_functions_and_inputs().items()
+    interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
+    nodes_without_idifs = {
+        dt.qname_from_tree_path(p): dummy_callable(n) if not callable(n) else n
+        for p, n in interface_functions_and_inputs.items()
+        if not isinstance(n, InputDependentInterfaceFunction)
     }
     if not include_fail_and_warn_nodes:
-        nodes = {
-            p: n for p, n in nodes.items() if not isinstance(n, FailOrWarnFunction)
+        nodes_without_idifs = {
+            qn: n
+            for qn, n in nodes_without_idifs.items()
+            if not isinstance(n, FailOrWarnFunction)
         }
 
-    dag = dags.create_dag(functions=nodes, targets=None)
+    dag = dags.create_dag(functions=nodes_without_idifs, targets=None)
 
     # Add edges manually for InputDependentInterfaceFunction
-    for name, node_object in nodes.items():
-        if isinstance(node_object, InputDependentInterfaceFunction):
-            for variant in node_object.specs:
-                for required_func in variant.required_input_qnames:
-                    dag.add_edge(required_func, name)
+    input_dependent_interface_functions = {
+        qn: n
+        for qn, n in interface_functions_and_inputs.items()
+        if isinstance(n, InputDependentInterfaceFunction)
+    }
+    qnames_of_idif_to_their_ancestors = _qnames_of_idif_to_their_ancestors(
+        input_dependent_interface_functions
+    )
+    for qn, ancestors in qnames_of_idif_to_their_ancestors.items():
+        for ancestor in ancestors:
+            dag.add_edge(ancestor, qn)
 
-    for name, node_object in nodes.items():
-        f = node_object.function if hasattr(node_object, "function") else node_object
-        description = inspect.getdoc(f) or "No description available."
-        namespace = name.split("__")[0] if "__" in name else "top-level"
-        dag.nodes[name]["node_metadata"] = NodeMetaData(
-            description=description,
+    for node_name in dag.nodes():
+        interface_object = nodes_without_idifs.get(node_name)
+        if interface_object:
+            f = (
+                interface_object.function
+                if hasattr(interface_object, "function")
+                else interface_object
+            )
+            description = inspect.getdoc(f)
+        namespace = node_name.split("__")[0] if "__" in node_name else "top-level"
+        dag.nodes[node_name]["node_metadata"] = NodeMetaData(
+            description=description or "No description available.",
             namespace=namespace,
         )
 
@@ -180,6 +196,24 @@ def plot_interface_dag(
         fig.write_html(output_path)
 
     return fig
+
+
+def _qnames_of_idif_to_their_ancestors(
+    input_dependent_interface_functions: dict[
+        tuple[str, ...], InputDependentInterfaceFunction
+    ],
+) -> dict[str, list[str]]:
+    """Get the qnames of the input dependent interface functions to their ancestors."""
+    idif_qname_to_idif_inputs: dict[str, list[str]] = {}
+    for orig_p, orig_object in input_dependent_interface_functions.items():
+        qname = dt.qname_from_tree_path(orig_p[:-1] + (orig_object.leaf_name,))
+        if qname not in idif_qname_to_idif_inputs:
+            idif_qname_to_idif_inputs[qname] = []
+        ancestors = set(orig_object.include_if_all_inputs_present) | set(
+            orig_object.include_if_any_input_present
+        )
+        idif_qname_to_idif_inputs[qname].extend(list(ancestors))
+    return idif_qname_to_idif_inputs
 
 
 def _get_tt_dag_with_node_metadata(

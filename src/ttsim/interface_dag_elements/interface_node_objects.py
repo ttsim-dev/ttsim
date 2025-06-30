@@ -60,6 +60,7 @@ class InterfaceInput(InterfaceNodeObject):
 
 
 def interface_input(
+    leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[[Callable[..., Any]], InterfaceInput]:
     """
@@ -72,7 +73,7 @@ def interface_input(
 
     def inner(func: Callable[..., Any]) -> InterfaceInput:
         return InterfaceInput(
-            leaf_name=func.__name__,
+            leaf_name=leaf_name if leaf_name else func.__name__,
             in_top_level_namespace=in_top_level_namespace,
             return_type=func.__annotations__["return"],
         )
@@ -193,44 +194,52 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
     """A function that dynamically changes its behavior based on which InterfaceInput
     nodes are given by the user."""
 
-    specs: list[InterfaceFunctionVariant]
+    include_if_any_input_present: Iterable[str]
+    include_if_all_inputs_present: Iterable[str]
 
-    def resolve_to_static_interface_function(
-        self, user_input_qnames: list[str]
-    ) -> (
-        InterfaceFunction[FunArgTypes, ReturnType]
-        | InputDependentInterfaceFunction[FunArgTypes, ReturnType]
-    ):
-        """Generate a static function based on the user inputs."""
-        _fail_if_more_than_one_function_variant_matches_inputs(
-            specs=self.specs,
-            user_input_qnames=user_input_qnames,
-        )
-        matching_variant = None
-        for spec in self.specs:
-            if set(spec.required_input_qnames) <= set(user_input_qnames):
-                matching_variant = spec
-                break
-
-        if matching_variant:
-            return InterfaceFunction(
-                leaf_name=self.leaf_name,
-                function=matching_variant.function,
-                in_top_level_namespace=self.in_top_level_namespace,
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if (
+            not self.include_if_all_inputs_present
+            and not self.include_if_any_input_present
+        ):
+            raise ValueError(
+                "At least one of `include_if_all_inputs_present` or "
+                "`include_if_any_input_present` must be specified."
             )
-        return self
+
+    def include_condition_satisfied(self, input_names: Iterable[str]) -> bool:
+        """Check if the input names match the include condition."""
+        # all(()) evaluates to True, so include first bit
+        all_cond = self.include_if_all_inputs_present and all(
+            i in input_names for i in self.include_if_all_inputs_present
+        )
+        any_cond = any(i in input_names for i in self.include_if_any_input_present)
+        return all_cond or any_cond
 
     def remove_tree_logic(
         self,
-        tree_path: tuple[str, ...],  # noqa: ARG002
-        top_level_namespace: UnorderedQNames,  # noqa: ARG002
-    ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
-        return self
+        tree_path: tuple[str, ...],
+        top_level_namespace: UnorderedQNames,
+    ) -> InputDependentInterfaceFunction:  # type: ignore[type-arg]
+        """Remove tree logic from the function and update the function signature."""
+        return InputDependentInterfaceFunction(
+            leaf_name=self.leaf_name,
+            function=dt.one_function_without_tree_logic(
+                function=self.function,
+                tree_path=tree_path,
+                top_level_namespace=top_level_namespace,
+            ),
+            in_top_level_namespace=self.in_top_level_namespace,
+            include_if_any_input_present=self.include_if_any_input_present,
+            include_if_all_inputs_present=self.include_if_all_inputs_present,
+        )
 
 
 def input_dependent_interface_function(
     *,
-    variants: list[InterfaceFunctionVariant],
+    include_if_any_input_present: Iterable[str] = (),
+    include_if_all_inputs_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[
@@ -241,9 +250,12 @@ def input_dependent_interface_function(
 
     Parameters
     ----------
-    variants
-        List of function variants that define different behaviors based on input
-        availability.
+    include_if_any_input_present
+        List of input names that must be present for the function to be used if any of
+        the inputs are present.
+    include_if_all_inputs_present
+        List of input names that must be present for the function to be used if all of
+        the inputs are present.
     leaf_name
         The name that should be used as the function's leaf name in the DAG. If omitted,
         we use the name of the function as defined.
@@ -262,52 +274,11 @@ def input_dependent_interface_function(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
             in_top_level_namespace=in_top_level_namespace,
-            specs=variants,
+            include_if_any_input_present=include_if_any_input_present,
+            include_if_all_inputs_present=include_if_all_inputs_present,
         )
 
     return inner
-
-
-@dataclass(frozen=True)
-class InterfaceFunctionVariant:
-    required_input_qnames: list[str]
-    function: Callable[..., Any]
-
-
-def _fail_if_more_than_one_function_variant_matches_inputs(
-    specs: list[InterfaceFunctionVariant],
-    user_input_qnames: list[str],
-) -> None:
-    """Validate that not more than one function variant matches the provided user
-    inputs.
-
-    This function ensures that the user has provided the correct combination of inputs
-    to uniquely determine which function variant should be used.
-    """
-    potential_qnames = [spec.required_input_qnames for spec in specs]
-    qnames_from_user_satisfying_specs = [
-        spec.required_input_qnames
-        for spec in specs
-        if set(spec.required_input_qnames) <= set(user_input_qnames)
-    ]
-
-    if len(qnames_from_user_satisfying_specs) > 1:
-        potential_qnames_str = "\n".join(
-            [f"[{', '.join(s)}]" for s in potential_qnames]
-        )
-        qnames_from_user_str = "\n".join(
-            [f"[{', '.join(s)}]" for s in qnames_from_user_satisfying_specs]
-        )
-        msg = (
-            "Exactly one of the following sets of inputs is required:\n\n"
-            f"{potential_qnames_str}"
-            "\n\n"
-            "Multiple sets of inputs were found that satisfy the requirements:\n\n"
-            f"{qnames_from_user_str}"
-            "\n\n"
-            "Please provide only one of these."
-        )
-        raise ValueError(msg)
 
 
 @dataclass(frozen=True)

@@ -56,7 +56,7 @@ def some_policy_function():
     ],
 )
 def test_plot_full_interface_dag(include_fail_and_warn_nodes):
-    fig = plot_interface_dag(include_fail_and_warn_nodes=include_fail_and_warn_nodes)  # noqa: F841
+    plot_interface_dag(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
 
 
 @pytest.mark.parametrize(

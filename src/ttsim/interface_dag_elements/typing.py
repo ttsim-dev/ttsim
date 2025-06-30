@@ -32,6 +32,16 @@ if TYPE_CHECKING:
         NestedTargetDict,
     )
 
+    from ttsim.interface_dag_elements import (
+        InterfaceFunction,
+        InterfaceInput,
+    )
+
+    FlatInterfaceObjects = Mapping[
+        tuple[str, ...], InterfaceFunction | InterfaceInput | "FlatInterfaceObjects"
+    ]
+    """Flattened tree of interface objects."""
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Possible leaves of the various trees.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -48,7 +58,7 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "FlatData"]
+    FlatData = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
     """Flattened tree mapping TTSIM paths to 1d arrays."""
     NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""

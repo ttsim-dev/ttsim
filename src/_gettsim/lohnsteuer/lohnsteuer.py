@@ -282,7 +282,7 @@ def betrag_soli_y(
 @policy_function(start_date="2015-01-01")
 def kinderfreibetrag_soli_y(
     steuerklasse: int,
-    einkommensteuer__kinderfreibetrag_y: int,
+    einkommensteuer__kinderfreibetrag_y: float,
 ) -> float:
     """Child Allowance (Kinderfreibetrag) for Lohnsteuer-Soli.
 
