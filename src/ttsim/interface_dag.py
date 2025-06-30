@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     import datetime
 
     from ttsim.interface_dag_elements.typing import (
+        FlatInterfaceObjects,
         QNameStrings,
         UnorderedQNames,
     )
@@ -62,58 +63,51 @@ def main(
     Main function that processes the inputs and returns the outputs.
     """
 
-    flat_inputs = _harmonize_inputs(locals())
-    flat_output = _harmonize_outputs(output)
+    input_qnames = _harmonize_inputs(locals())
+    output_qnames = _harmonize_outputs(output)
 
-    if not any(re.match("(input|processed)_data", s) for s in flat_inputs):
-        flat_inputs["processed_data"] = {}
-        flat_inputs["processed_data_columns"] = None
+    if not any(re.match("(input|processed)_data", s) for s in input_qnames):
+        input_qnames["processed_data"] = {}
+        input_qnames["processed_data_columns"] = None
 
-    nodes = {
-        p: n
-        for p, n in load_interface_functions_and_inputs().items()
-        if p not in flat_inputs
-    }
+    nodes = _resolve_dynamic_interface_objects_to_static_nodes(
+        flat_interface_objects=load_flat_interface_functions_and_inputs(),
+        input_qnames=list(input_qnames),
+    )
 
     _fail_if_requested_nodes_cannot_be_found(
-        output_qnames=flat_output["names"],
+        output_qnames=output_qnames["names"],
         nodes=nodes,
     )
 
-    # Replace InputDependentInterfaceFunction with InterfaceFunction
-    for p, n in nodes.items():
-        if isinstance(n, InputDependentInterfaceFunction):
-            nodes[p] = n.resolve_to_static_interface_function(list(flat_inputs.keys()))
-
     functions = {
-        p: n
-        for p, n in nodes.items()
-        if isinstance(n, InterfaceFunction)
-        and not isinstance(n, InputDependentInterfaceFunction)
+        qn: n
+        for qn, n in nodes.items()
+        if isinstance(n, InterfaceFunction) and qn not in input_qnames
     }
 
     # If targets are None, all failures and warnings are included, anyhow.
-    if fail_and_warn and flat_output["names"] is not None:
-        flat_output["names"] = include_fail_and_warn_nodes(
+    if fail_and_warn and output_qnames["names"] is not None:
+        output_qnames["names"] = include_fail_and_warn_nodes(
             functions=functions,
-            output_qnames=flat_output["names"],
+            output_qnames=output_qnames["names"],
         )
-    if flat_output["name"] is None:
+    if output_qnames["name"]:
         f = dags.concatenate_functions(
             functions=functions,
-            targets=flat_output["names"],
-            return_type="dict",
+            targets=output_qnames["name"],
             enforce_signature=False,
             set_annotations=False,
         )
     else:
         f = dags.concatenate_functions(
             functions=functions,
-            targets=flat_output["name"],
+            targets=output_qnames["names"],
+            return_type="dict",
             enforce_signature=False,
             set_annotations=False,
         )
-    return f(**flat_inputs)
+    return f(**input_qnames)
 
 
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
@@ -177,6 +171,74 @@ def _harmonize_outputs(
     return flat_output
 
 
+def _resolve_dynamic_interface_objects_to_static_nodes(
+    flat_interface_objects: FlatInterfaceObjects,
+    input_qnames: list[str],
+) -> dict[str, InterfaceFunction | InterfaceInput]:
+    """Resolve dynamic interface objects to static nodes.
+
+    Make InputDependentInterfaceFunctions static by checking the input data and picking
+    among the functions with the same leaf name the one that satisfies the include
+    condition.
+
+    Fails if multiple functions with the same leaf name satisfy the include condition.
+
+    Parameters
+    ----------
+    flat_interface_objects
+        The interface objects to resolve.
+    input_qnames
+        The input qnames to check the include conditions against.
+
+    Returns
+    -------
+    A dictionary of static interface objects.
+
+    """
+    static_nodes: dict[str, InterfaceFunction | InterfaceInput] = {}
+    path_to_idif: dict[tuple[str, ...], list[InputDependentInterfaceFunction]] = {}
+    for orig_p, orig_object in flat_interface_objects.items():
+        if isinstance(orig_object, InputDependentInterfaceFunction):
+            new_path = orig_p[:-1] + (orig_object.leaf_name,)
+            if new_path not in path_to_idif:
+                path_to_idif[new_path] = []
+            path_to_idif[new_path].append(orig_object)
+        else:
+            static_nodes[dt.qname_from_tree_path(orig_p)] = orig_object
+
+    for p, functions in path_to_idif.items():
+        functions_satisfying_include_condition = [
+            f for f in functions if f.include_condition_satisfied(input_qnames)
+        ]
+        _fail_if_multiple_functions_satisfy_include_condition(
+            funcs=functions_satisfying_include_condition,
+            path=p,
+        )
+        if functions_satisfying_include_condition:
+            static_nodes[dt.qname_from_tree_path(p)] = (
+                functions_satisfying_include_condition[0]
+            )
+    return static_nodes
+
+
+def _fail_if_multiple_functions_satisfy_include_condition(
+    funcs: list[InputDependentInterfaceFunction],
+    path: tuple[str, ...],
+) -> None:
+    """Fail if multiple functions satisfy the include condition."""
+    if len(funcs) > 1:
+        func_names = "\n".join(f.original_function_name for f in funcs)
+        msg = (
+            f"Multiple InputDependentInterfaceFunctions with the path {path} "
+            "satisfy their include conditions:\n\n"
+            f"{func_names}\n\n"
+            "Put differently, there are multiple ways to build a specific target. "
+            "Make sure the input data you provide satisfies only one of the include "
+            "conditions."
+        )
+        raise ValueError(msg)
+
+
 def include_fail_and_warn_nodes(
     functions: dict[str, InterfaceFunction],
     output_qnames: QNameStrings,
@@ -220,13 +282,10 @@ def include_fail_and_warn_nodes(
     return out
 
 
-def load_interface_functions_and_inputs() -> dict[
-    str,
-    InterfaceFunction | InterfaceInput,
-]:
+def load_flat_interface_functions_and_inputs() -> FlatInterfaceObjects:
     """Load the collection of functions and inputs from the current directory."""
     orig_functions = _load_orig_functions()
-    return _remove_tree_logic_from_function_collection(
+    return _remove_tree_logic_from_functions_in_collection(
         orig_functions=orig_functions,
         top_level_namespace={path[0] for path in orig_functions},
     )
@@ -256,13 +315,13 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
     return flat_functions
 
 
-def _remove_tree_logic_from_function_collection(
+def _remove_tree_logic_from_functions_in_collection(
     orig_functions: dict[tuple[str, ...], InterfaceFunction | InterfaceInput],
     top_level_namespace: UnorderedQNames,
-) -> dict[str, InterfaceFunction | InterfaceInput]:
-    """Map qualified names to column objects / param functions without tree logic."""
+) -> FlatInterfaceObjects:
+    """Map paths to column objects / param functions without tree logic."""
     return {
-        dags.tree.qname_from_tree_path(path): obj.remove_tree_logic(
+        path: obj.remove_tree_logic(
             tree_path=path,
             top_level_namespace=top_level_namespace,
         )

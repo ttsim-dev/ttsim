@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
@@ -11,8 +10,8 @@ from ttsim import (
     output,
 )
 from ttsim.interface_dag_elements.data_converters import (
-    df_with_mapped_columns_to_nested_data,
-    df_with_nested_columns_to_nested_data,
+    df_with_mapped_columns_to_flat_data,
+    df_with_nested_columns_to_flat_data,
     nested_data_to_df_with_mapped_columns,
 )
 from ttsim.tt_dag_elements import (
@@ -66,7 +65,7 @@ def minimal_data_tree():
     (
         "inputs_tree_to_df_columns",
         "df",
-        "expected_output",
+        "expected",
     ),
     [
         (
@@ -76,7 +75,7 @@ def minimal_data_tree():
                 },
             },
             pd.DataFrame({"a": [1, 2, 3]}),
-            {"n1": {"n2": pd.Series([1, 2, 3])}},
+            {("n1", "n2"): pd.Series([1, 2, 3])},
         ),
         (
             {
@@ -86,7 +85,7 @@ def minimal_data_tree():
                 "n3": "b",
             },
             pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
-            {"n1": {"n2": pd.Series([1, 2, 3])}, "n3": pd.Series([4, 5, 6])},
+            {("n1", "n2"): pd.Series([1, 2, 3]), ("n3",): pd.Series([4, 5, 6])},
         ),
         (
             {
@@ -96,28 +95,26 @@ def minimal_data_tree():
                 "n3": 3,
             },
             pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
-            {"n1": {"n2": pd.Series([1, 2, 3])}, "n3": pd.Series([3, 3, 3])},
+            {("n1", "n2"): pd.Series([1, 2, 3]), ("n3",): pd.Series([3, 3, 3])},
         ),
     ],
 )
-def test_df_with_mapped_columns_to_nested_data(
+def test_df_with_mapped_columns_to_flat_data(
     inputs_tree_to_df_columns,
     df,
-    expected_output,
+    expected,
 ):
-    result = df_with_mapped_columns_to_nested_data(
+    result = df_with_mapped_columns_to_flat_data(
         mapper=inputs_tree_to_df_columns,
         df=df,
         xnp=numpy,
     )
-    flat_result = dt.flatten_to_qnames(result)
-    flat_expected_output = dt.flatten_to_qnames(expected_output)
 
-    assert set(flat_result.keys()) == set(flat_expected_output.keys())
-    for key in flat_result:
+    assert set(result.keys()) == set(expected.keys())
+    for key in result:
         pd.testing.assert_series_equal(
-            pd.Series(flat_result[key]),
-            flat_expected_output[key],
+            pd.Series(result[key]),
+            expected[key],
             check_names=False,
         )
 
@@ -250,22 +247,20 @@ def test_nested_data_to_dataframe(
     [
         (
             pd.DataFrame({("a", "b"): [1, 2, 3], ("c",): [4, 5, 6]}),
-            {"a": {"b": numpy.array([1, 2, 3])}, "c": numpy.array([4, 5, 6])},
+            {("a", "b"): [1, 2, 3], ("c",): [4, 5, 6]},
         ),
         (
             pd.DataFrame({("a", "b"): [1, 2, 3], ("b",): [4, 5, 6]}),
-            {"a": {"b": numpy.array([1, 2, 3])}, "b": numpy.array([4, 5, 6])},
+            {("a", "b"): [1, 2, 3], ("b",): [4, 5, 6]},
         ),
     ],
 )
-def test_df_with_nested_columns_to_nested_data(df, expected):
-    result = df_with_nested_columns_to_nested_data(
+def test_df_with_nested_columns_to_flat_data(df, expected):
+    result = df_with_nested_columns_to_flat_data(
         df=df,
         xnp=numpy,
     )
-    flat_result = dt.flatten_to_tree_paths(result)
-    flat_expected = dt.flatten_to_tree_paths(expected)
 
-    assert set(flat_result.keys()) == set(flat_expected.keys())
-    for key in flat_result:
-        assert_array_equal(flat_result[key], flat_expected[key])
+    assert set(result.keys()) == set(expected.keys())
+    for key in result:
+        assert_array_equal(result[key], expected[key])
