@@ -5304,7 +5304,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e7/da/38f4a19fadd86416551871fa1cc385df61b0f54656e1def4892c148cfd8f/choreographer-1.0.9-py3-none-any.whl
       - pypi: git+https://github.com/OpenSourceEconomics/dags.git?branch=main#a3c665ee426904f316c3a6d5866c66e514126a12
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
-      - pypi: git+https://github.com/google/jax-datetime.git#e79cec944828e71f9faf790a4725545edff7e3b7
       - pypi: https://files.pythonhosted.org/packages/c9/b9/281e10e2d967ea5e481683eaec99f55ac5a61085ee60551c36942ef32bef/jaxtyping-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/28/0e/853df00cac4823eaa8f35114d0d0ad1e2ec6b8243ce4acf5f8ac5235c517/kaleido-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/df/e51691ab004d74fa25b751527d041ad1b4d84ee86cbcb8630ab0d7d5188e/logistro-1.1.0-py3-none-any.whl
@@ -5558,7 +5557,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e7/da/38f4a19fadd86416551871fa1cc385df61b0f54656e1def4892c148cfd8f/choreographer-1.0.9-py3-none-any.whl
       - pypi: git+https://github.com/OpenSourceEconomics/dags.git?branch=main#a3c665ee426904f316c3a6d5866c66e514126a12
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
-      - pypi: git+https://github.com/google/jax-datetime.git#e79cec944828e71f9faf790a4725545edff7e3b7
       - pypi: https://files.pythonhosted.org/packages/c9/b9/281e10e2d967ea5e481683eaec99f55ac5a61085ee60551c36942ef32bef/jaxtyping-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/28/0e/853df00cac4823eaa8f35114d0d0ad1e2ec6b8243ce4acf5f8ac5235c517/kaleido-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/df/e51691ab004d74fa25b751527d041ad1b4d84ee86cbcb8630ab0d7d5188e/logistro-1.1.0-py3-none-any.whl
@@ -5812,7 +5810,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e7/da/38f4a19fadd86416551871fa1cc385df61b0f54656e1def4892c148cfd8f/choreographer-1.0.9-py3-none-any.whl
       - pypi: git+https://github.com/OpenSourceEconomics/dags.git?branch=main#a3c665ee426904f316c3a6d5866c66e514126a12
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
-      - pypi: git+https://github.com/google/jax-datetime.git#e79cec944828e71f9faf790a4725545edff7e3b7
       - pypi: https://files.pythonhosted.org/packages/c9/b9/281e10e2d967ea5e481683eaec99f55ac5a61085ee60551c36942ef32bef/jaxtyping-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/28/0e/853df00cac4823eaa8f35114d0d0ad1e2ec6b8243ce4acf5f8ac5235c517/kaleido-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/df/e51691ab004d74fa25b751527d041ad1b4d84ee86cbcb8630ab0d7d5188e/logistro-1.1.0-py3-none-any.whl
@@ -6063,7 +6060,6 @@ environments:
       - pypi: git+https://github.com/OpenSourceEconomics/dags.git?branch=main#a3c665ee426904f316c3a6d5866c66e514126a12
       - pypi: https://files.pythonhosted.org/packages/43/f5/ee39c6e92acc742c052f137b47c210cd0a1b72dcd3f98495528bb4d27761/flatten_dict-0.4.2-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/a8/97ef0cbb7a17143ace2643d600a7b80d6705b2266fc31078229e406bdef2/jax-0.6.2-py3-none-any.whl
-      - pypi: git+https://github.com/google/jax-datetime.git#e79cec944828e71f9faf790a4725545edff7e3b7
       - pypi: https://files.pythonhosted.org/packages/06/b9/ea50792ee0333dba764e06c305fe098bce1cb938dcb66fbe2fc47ef5dd02/jaxlib-0.6.2-cp313-cp313-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/b9/281e10e2d967ea5e481683eaec99f55ac5a61085ee60551c36942ef32bef/jaxtyping-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/28/0e/853df00cac4823eaa8f35114d0d0ad1e2ec6b8243ce4acf5f8ac5235c517/kaleido-1.0.0-py3-none-any.whl
@@ -8060,8 +8056,8 @@ packages:
   timestamp: 1694400856979
 - pypi: ./
   name: gettsim
-  version: 0.7.1.dev142+g719ffc28.d20250630
-  sha256: 4f0001473d4cfbb852b682dc0e3c866b85ff4a0a96b49dd23b15a76a03f8d0d1
+  version: 0.7.1.dev145+g5e4db0ce
+  sha256: 6a68b19e5382b9b3f6c52482b0857f5a900c5cab1ee4f6d0bc7bbc539acff12e
   requires_dist:
   - ipywidgets
   - networkx
@@ -9018,16 +9014,6 @@ packages:
   - pkg:pypi/jax?source=hash-mapping
   size: 1538293
   timestamp: 1748688029463
-- pypi: git+https://github.com/google/jax-datetime.git#e79cec944828e71f9faf790a4725545edff7e3b7
-  name: jax-datetime
-  version: 0.1.0
-  requires_dist:
-  - jax
-  - numpy
-  - absl-py ; extra == 'tests'
-  - chex ; extra == 'tests'
-  - pytest ; extra == 'tests'
-  requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/06/b9/ea50792ee0333dba764e06c305fe098bce1cb938dcb66fbe2fc47ef5dd02/jaxlib-0.6.2-cp313-cp313-win_amd64.whl
   name: jaxlib
   version: 0.6.2
