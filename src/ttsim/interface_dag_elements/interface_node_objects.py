@@ -197,15 +197,25 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
     include_if_any_input_present: Iterable[str]
     include_if_all_inputs_present: Iterable[str]
 
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if (
+            not self.include_if_all_inputs_present
+            and not self.include_if_any_input_present
+        ):
+            raise ValueError(
+                "At least one of `include_if_all_inputs_present` or "
+                "`include_if_any_input_present` must be specified."
+            )
+
     def include_condition_satisfied(self, input_names: Iterable[str]) -> bool:
         """Check if the input names match the include condition."""
-        all_condition = bool(self.include_if_all_inputs_present) and all(
+        # all(()) evaluates to True, so include first bit
+        all_cond = self.include_if_all_inputs_present and all(
             i in input_names for i in self.include_if_all_inputs_present
         )
-        any_condition = bool(self.include_if_any_input_present) and any(
-            i in input_names for i in self.include_if_any_input_present
-        )
-        return all_condition or any_condition
+        any_cond = any(i in input_names for i in self.include_if_any_input_present)
+        return all_cond or any_cond
 
     def remove_tree_logic(
         self,
