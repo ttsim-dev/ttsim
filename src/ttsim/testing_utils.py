@@ -1,17 +1,23 @@
 from __future__ import annotations
 
+import inspect
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
+import dags
 import dags.tree as dt
 import optree
 import pandas as pd
 import yaml
 
-from ttsim import main, merge_trees
-from ttsim.config import numpy_or_jax as np
-from ttsim.convert_nested_data import nested_data_to_df_with_nested_columns
-from ttsim.shared import to_datetime
+from ttsim import main, merge_trees, output
+from ttsim.interface_dag_elements.data_converters import (
+    nested_data_to_df_with_nested_columns,
+)
+from ttsim.interface_dag_elements.fail_if import format_list_linewise
+from ttsim.interface_dag_elements.shared import to_datetime
+from ttsim.plot_dag import dummy_callable
+from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
@@ -20,8 +26,11 @@ pd.set_option("display.width", None)
 if TYPE_CHECKING:
     import datetime
     from pathlib import Path
+    from types import ModuleType
 
-    from ttsim.typing import (
+    from ttsim.interface_dag_elements.typing import (
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
         NestedData,
         NestedInputStructureDict,
         NestedPolicyEnvironment,
@@ -30,15 +39,17 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=100)
 def cached_policy_environment(
-    date: datetime.date, root: Path
+    date: datetime.date,
+    root: Path,
+    backend: Literal["numpy", "jax"],
 ) -> NestedPolicyEnvironment:
     return main(
-        inputs={
-            "date": date,
-            "root": root,
-        },
-        targets=["policy_environment"],
-    )["policy_environment"]
+        date=date,
+        orig_policy_objects={"root": root},
+        backend=backend,
+        fail_and_warn=False,
+        output=output.Name("policy_environment"),
+    )
 
 
 class PolicyTest:
@@ -52,18 +63,20 @@ class PolicyTest:
         path: Path,
         date: datetime.date,
         test_dir: Path,
+        xnp: ModuleType,
     ) -> None:
         self.info = info
-        self.input_tree = optree.tree_map(np.array, input_tree)
+        self.input_tree = optree.tree_map(xnp.array, input_tree)
         self.expected_output_tree = expected_output_tree
         self.path = path
         self.date = date
         self.test_dir = test_dir
+        self.xnp = xnp
 
     @property
     def target_structure(self) -> NestedInputStructureDict:
         flat_target_structure = dict.fromkeys(
-            dt.flatten_to_tree_paths(self.expected_output_tree)
+            dt.flatten_to_tree_paths(self.expected_output_tree),
         )
         return dt.unflatten_from_tree_paths(flat_target_structure)
 
@@ -72,53 +85,51 @@ class PolicyTest:
         return self.path.relative_to(self.test_dir / "test_data").as_posix()
 
 
-def execute_test(test: PolicyTest, root: Path, jit: bool = False) -> None:
-    environment = cached_policy_environment(date=test.date, root=root)
+def execute_test(
+    test: PolicyTest,
+    root: Path,
+    backend: Literal["numpy", "jax"],
+) -> None:
+    environment = cached_policy_environment(date=test.date, root=root, backend=backend)
 
     if test.target_structure:
-        nested_result = main(
-            inputs={
-                "data_tree": test.input_tree,
-                "policy_environment": environment,
-                "targets_tree": test.target_structure,
-                "rounding": True,
-                # "jit": jit,
-            },
-            targets=["nested_results"],
-        )["nested_results"]
-    else:
-        nested_result = {}
+        result_df = main(
+            input_data={"tree": test.input_tree},
+            policy_environment=environment,
+            targets={"tree": test.target_structure},
+            rounding=True,
+            backend=backend,
+            fail_and_warn=False,
+            output=output.Name("results__df_with_nested_columns"),
+        )
 
-    if test.expected_output_tree:
-        expected_df = nested_data_to_df_with_nested_columns(
-            nested_data_to_convert=test.expected_output_tree,
-            data_with_p_id=test.input_tree,
-        )
-        result_df = nested_data_to_df_with_nested_columns(
-            nested_data_to_convert=nested_result, data_with_p_id=test.input_tree
-        )
-        try:
-            pd.testing.assert_frame_equal(
-                result_df.sort_index(axis="columns"),
-                expected_df.sort_index(axis="columns"),
-                atol=test.info["precision_atol"],
-                check_dtype=False,
+        if test.expected_output_tree:
+            expected_df = nested_data_to_df_with_nested_columns(
+                nested_data_to_convert=test.expected_output_tree,
+                data_with_p_id=test.input_tree,
             )
-        except AssertionError as e:
-            assert set(result_df.columns) == set(expected_df.columns)
-            cols_with_differences = []
-            for col in expected_df.columns:
-                try:
-                    pd.testing.assert_series_equal(
-                        result_df[col],
-                        expected_df[col],
-                        atol=test.info["precision_atol"],
-                        check_dtype=False,
-                    )
-                except AssertionError:
-                    cols_with_differences.append(col)
-            raise AssertionError(
-                f"""actual != expected in columns: {cols_with_differences}.
+            try:
+                pd.testing.assert_frame_equal(
+                    result_df.sort_index(axis="columns"),
+                    expected_df.sort_index(axis="columns"),
+                    atol=test.info["precision_atol"],
+                    check_dtype=False,
+                )
+            except AssertionError as e:
+                assert set(result_df.columns) == set(expected_df.columns)
+                cols_with_differences = []
+                for col in expected_df.columns:
+                    try:
+                        pd.testing.assert_series_equal(
+                            result_df[col],
+                            expected_df[col],
+                            atol=test.info["precision_atol"],
+                            check_dtype=False,
+                        )
+                    except AssertionError:
+                        cols_with_differences.append(col)
+                raise AssertionError(
+                    f"""actual != expected in columns: {cols_with_differences}.
 
 actual[cols_with_differences]:
 
@@ -127,11 +138,15 @@ actual[cols_with_differences]:
 expected[cols_with_differences]:
 
 {expected_df[cols_with_differences]}
-"""
-            ) from e
+""",
+                ) from e
 
 
-def load_policy_test_data(test_dir: Path, policy_name: str) -> dict[str, PolicyTest]:
+def load_policy_test_data(
+    test_dir: Path,
+    policy_name: str,
+    xnp: ModuleType,
+) -> dict[str, PolicyTest]:
     """Load all tests found by recursively searching
 
         test_dir / "test_data" / policy_name
@@ -140,7 +155,6 @@ def load_policy_test_data(test_dir: Path, policy_name: str) -> dict[str, PolicyT
 
     If policy_name is empty, all tests found in test_dir / "test_data" are loaded.
     """
-
     out = {}
     for path_to_yaml in (test_dir / "test_data" / policy_name).glob("**/*.yaml"):
         if _is_skipped(path_to_yaml):
@@ -153,6 +167,7 @@ def load_policy_test_data(test_dir: Path, policy_name: str) -> dict[str, PolicyT
                 test_dir=test_dir,
                 raw_test_data=raw_test_data,
                 path_to_yaml=path_to_yaml,
+                xnp=xnp,
             )
             out[this_test.name] = this_test
 
@@ -167,6 +182,7 @@ def _get_policy_test_from_raw_test_data(
     test_dir: Path,
     path_to_yaml: Path,
     raw_test_data: NestedData,
+    xnp: ModuleType,
 ) -> PolicyTest:
     """Get a list of PolicyTest objects from raw test data.
 
@@ -174,28 +190,30 @@ def _get_policy_test_from_raw_test_data(
         raw_test_data: The raw test data.
         path_to_yaml: The path to the YAML file.
 
-    Returns:
+    Returns
+    -------
         A list of PolicyTest objects.
     """
     test_info: NestedData = raw_test_data.get("info", {})
     input_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: np.array(v)
+            k: xnp.array(v)
             for k, v in dt.flatten_to_tree_paths(
                 merge_trees(
                     left=raw_test_data["inputs"].get("provided", {}),
                     right=raw_test_data["inputs"].get("assumed", {}),
-                )
+                ),
             ).items()
-        }
+        },
     )
+
     expected_output_tree: NestedData = dt.unflatten_from_tree_paths(
         {
-            k: np.array(v)
+            k: xnp.array(v)
             for k, v in dt.flatten_to_tree_paths(
-                raw_test_data.get("outputs", {})
+                raw_test_data.get("outputs", {}),
             ).items()
-        }
+        },
     )
 
     date: datetime.date = to_datetime(path_to_yaml.parent.name)
@@ -207,4 +225,52 @@ def _get_policy_test_from_raw_test_data(
         path=path_to_yaml,
         date=date,
         test_dir=test_dir,
+        xnp=xnp,
     )
+
+
+def check_env_completeness(
+    name: str,
+    date: datetime.date,
+    orig_policy_objects: dict[
+        str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
+    ],
+) -> None:
+    environment = main(
+        date=date,
+        backend="numpy",
+        output=output.Name("policy_environment"),
+        orig_policy_objects=orig_policy_objects,
+    )
+    qname_environment = dt.flatten_to_qnames(environment)
+    qnames_policy_inputs = [
+        k for k, v in qname_environment.items() if isinstance(v, PolicyInput)
+    ]
+    tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
+    qname_env_with_derived_functions = main(
+        policy_environment=environment,
+        labels={"processed_data_columns": qnames_policy_inputs},
+        targets={"qname": list(qname_environment)},
+        backend="numpy",
+        output=output.Name(tgt),
+    )
+    all_nodes = {
+        qn: dummy_callable(n) if not callable(n) else n
+        for qn, n in qname_env_with_derived_functions.items()
+    }
+    f = dags.concatenate_functions(
+        functions=all_nodes,
+        targets=list(qname_env_with_derived_functions.keys()),
+        return_type="dict",
+        enforce_signature=False,
+        set_annotations=False,
+    )
+    args = inspect.signature(f).parameters
+    if args:
+        raise ValueError(
+            f"{name}'s full DAG should include all root nodes but the following inputs "
+            "are missing in the specialized policy environment:"
+            f"\n\n{format_list_linewise(args.keys())}\n\n"
+            "Please add corresponding elements. Typically, these will be "
+            "`@policy_input()`s or parameters in the yaml files."
+        )

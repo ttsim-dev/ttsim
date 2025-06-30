@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import AggType, agg_by_group_function
+from ttsim.tt_dag_elements import AggType, agg_by_group_function
 
 
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
@@ -24,6 +24,11 @@ def anzahl_kinder_bis_6_fg(familie__kind_bis_6: bool, fg_id: int) -> int:
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
 def anzahl_kinder_bis_15_fg(familie__kind_bis_15: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bis_17_fg(familie__kind_bis_17: bool, fg_id: int) -> int:
     pass
 
 

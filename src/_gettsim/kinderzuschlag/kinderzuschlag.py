@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import param_function, policy_function
+from ttsim.tt_dag_elements import param_function, policy_function
 
 if TYPE_CHECKING:
     from _gettsim.param_types import (
         ExistenzminimumNachAufwendungenMitBildungUndTeilhabe,
     )
-    from ttsim import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
 @param_function(start_date="2021-01-01", end_date="2022-12-31", leaf_name="satz")
@@ -27,7 +27,6 @@ def satz_mit_gestaffeltem_kindergeld(
 
     For 2023 the amount is once again explicitly specified as a parameter.
     """
-
     return max(
         (
             existenzminimum.regelsatz.kind
@@ -53,7 +52,6 @@ def satz_mit_einheitlichem_kindergeld_und_kindersofortzuschlag(
 
     Formula according to § 6a (2) BKGG.
     """
-
     current_formula = (
         existenzminimum.regelsatz.kind
         + existenzminimum.kosten_der_unterkunft.kind
@@ -61,7 +59,8 @@ def satz_mit_einheitlichem_kindergeld_und_kindersofortzuschlag(
     ) / 12 - kindergeld__satz
 
     satz_ohne_kindersofortzuschlag = max(
-        current_formula, satz_vorjahr_ohne_kindersofortzuschlag
+        current_formula,
+        satz_vorjahr_ohne_kindersofortzuschlag,
     )
     return satz_ohne_kindersofortzuschlag + arbeitslosengeld_2__kindersofortzuschlag
 
@@ -103,7 +102,6 @@ def anspruchshöhe_m_bg(
     vermögensfreibetrag_bg: float,
 ) -> float:
     """Kinderzuschlag claim at the Bedarfsgemeinschaft level."""
-
     if vermögen_bg > vermögensfreibetrag_bg:
         out = max(
             basisbetrag_m_bg - (vermögen_bg - vermögensfreibetrag_bg),
@@ -115,13 +113,14 @@ def anspruchshöhe_m_bg(
 
 
 @policy_function(
-    start_date="2005-01-01", end_date="2022-12-31", leaf_name="vermögensfreibetrag_bg"
+    start_date="2005-01-01",
+    end_date="2022-12-31",
+    leaf_name="vermögensfreibetrag_bg",
 )
 def vermögensfreibetrag_bg_bis_2022(
     arbeitslosengeld_2__vermögensfreibetrag_bg: float,
 ) -> float:
     """Wealth exemptions for Kinderzuschlag until 2022."""
-
     return arbeitslosengeld_2__vermögensfreibetrag_bg
 
 
@@ -130,7 +129,6 @@ def vermögensfreibetrag_bg_ab_2023(
     arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg: float,
 ) -> float:
     """Wealth exemptions for Kinderzuschlag since 2023."""
-
     return arbeitslosengeld_2__vermögensfreibetrag_in_karenzzeit_bg
 
 
@@ -156,7 +154,6 @@ def basisbetrag_m_bg_check_maximales_netteinkommen(
     (arbeitslosengeld_2__anzahl_personen_bg > 1).
 
     """
-
     if (
         nettoeinkommen_eltern_m_bg <= maximales_nettoeinkommen_m_bg
     ) and arbeitslosengeld_2__anzahl_personen_bg > 1:
@@ -192,7 +189,6 @@ def basisbetrag_m_bg_check_mindestbruttoeinkommen_und_maximales_nettoeinkommen(
     (arbeitslosengeld_2__anzahl_personen_bg > 1).
 
     """
-
     if (
         (bruttoeinkommen_eltern_m_bg >= mindestbruttoeinkommen_m_bg)
         and (nettoeinkommen_eltern_m_bg <= maximales_nettoeinkommen_m_bg)

@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import param_function, policy_function
+from ttsim.tt_dag_elements import param_function, policy_function, policy_input
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParam
+    from ttsim.interface_dag_elements.typing import RawParam
 
 
 @dataclass(frozen=True)
@@ -30,6 +30,16 @@ def bounty_per_orc(raw_bounties_per_orc: RawParam) -> BountyPerOrc:
             peasant_hunter=raw_bounties_per_orc["large_orc"]["peasant_hunter"],
         ),
     )
+
+
+@policy_input()
+def small_orcs_hunted() -> int:
+    """The number of small orcs hunted."""
+
+
+@policy_input()
+def large_orcs_hunted() -> int:
+    """The number of large orcs hunted."""
 
 
 @policy_function(vectorization_strategy="vectorize")

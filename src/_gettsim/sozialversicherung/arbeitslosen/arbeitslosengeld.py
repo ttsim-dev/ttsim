@@ -2,7 +2,22 @@
 
 from __future__ import annotations
 
-from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
+from typing import TYPE_CHECKING
+
+from ttsim.tt_dag_elements import (
+    get_consecutive_int_1d_lookup_table_param_value,
+    param_function,
+    piecewise_polynomial,
+    policy_function,
+)
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from ttsim.tt_dag_elements import (
+        ConsecutiveInt1dLookupTableParamValue,
+        PiecewisePolynomialParamValue,
+    )
 
 
 @policy_function(end_date="1998-07-31", leaf_name="betrag_m")
@@ -19,7 +34,6 @@ def betrag_m(
     satz: dict[str, float],
 ) -> float:
     """Calculate individual unemployment benefit."""
-
     if einkommensteuer__anzahl_kinderfreibeträge == 0:
         arbeitsl_geld_satz = satz["allgemein"]
     else:
@@ -37,27 +51,25 @@ def betrag_m(
 def monate_verbleibender_anspruchsdauer(
     alter: int,
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: float,
-    anwartschaftszeit: bool,
+    mindestversicherungszeit_erreicht: bool,
     monate_durchgängigen_bezugs_von_arbeitslosengeld: float,
-    anspruchsdauer_nach_alter: PiecewisePolynomialParamValue,
-    anspruchsdauer_nach_versicherungspflichtigen_monaten: PiecewisePolynomialParamValue,
-) -> float:
-    """Calculate the remaining amount of months a person can receive unemployment
-    benefits.
-
-    """
-    nach_alter = piecewise_polynomial(
-        x=alter,
-        parameters=anspruchsdauer_nach_alter,
-    )
-    nach_versich_pfl = piecewise_polynomial(
-        x=monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren,
-        parameters=anspruchsdauer_nach_versicherungspflichtigen_monaten,
+    anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
+    anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
+) -> int:
+    """Remaining amount of months of potential unemployment benefit claims."""
+    auf_altersbasis = anspruchsdauer_nach_alter.values_to_look_up[
+        alter - anspruchsdauer_nach_alter.base_to_subtract
+    ]
+    auf_basis_versicherungspflichtiger_monate = (
+        anspruchsdauer_nach_versicherungspflichtigen_monaten.values_to_look_up[
+            monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
+            - anspruchsdauer_nach_versicherungspflichtigen_monaten.base_to_subtract
+        ]
     )
 
-    if anwartschaftszeit:
+    if mindestversicherungszeit_erreicht:
         out = max(
-            min(nach_alter, nach_versich_pfl)
+            min(auf_altersbasis, auf_basis_versicherungspflichtiger_monate)
             - monate_durchgängigen_bezugs_von_arbeitslosengeld,
             0,
         )
@@ -65,6 +77,20 @@ def monate_verbleibender_anspruchsdauer(
         out = 0
 
     return out
+
+
+@policy_function()
+def mindestversicherungszeit_erreicht(
+    monate_beitragspflichtig_versichert_in_letzten_30_monaten: int,
+    mindestversicherungsmonate: int,
+) -> bool:
+    """At least 12 months of unemployment contributions in the 30 months before claiming
+    unemployment insurance.
+    """
+    return (
+        monate_beitragspflichtig_versichert_in_letzten_30_monaten
+        >= mindestversicherungsmonate
+    )
 
 
 @policy_function()
@@ -97,6 +123,7 @@ def einkommen_vorjahr_proxy_m(
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
     solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Approximate last years income for unemployment benefit."""
     # Relevant wage is capped at the contribution thresholds
@@ -117,10 +144,52 @@ def einkommen_vorjahr_proxy_m(
         x=12 * max_wage
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
         parameters=einkommensteuer__parameter_einkommensteuertarif,
+        xnp=xnp,
     )
     prox_soli = piecewise_polynomial(
         x=prox_tax,
         parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
+        xnp=xnp,
     )
     out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
     return max(out, 0.0)
+
+
+@param_function(start_date="1997-03-24")
+def anspruchsdauer_nach_alter(
+    raw_anspruchsdauer_nach_alter: dict[str | int, int],
+    xnp: ModuleType,
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Amount of potential months of unemployment benefit claims by age."""
+    tmp = raw_anspruchsdauer_nach_alter.copy()
+    max_age: int = tmp.pop("max_age")
+    ages_in_spec: list[int] = sorted(tmp.keys())  # type: ignore[arg-type]
+
+    full_spec: dict[int, int] = {}
+    for a in range(min(ages_in_spec), max_age):
+        if a not in ages_in_spec:
+            full_spec[a] = full_spec[a - 1]
+        else:
+            full_spec[a] = tmp[a]
+
+    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)
+
+
+@param_function(start_date="1997-03-24")
+def anspruchsdauer_nach_versicherungspflichtigen_monaten(
+    raw_anspruchsdauer_nach_versicherungspflichtigen_monaten: dict[str | int, int],
+    xnp: ModuleType,
+) -> ConsecutiveInt1dLookupTableParamValue:
+    """Amount of potential months of unemployment benefit claims by age."""
+    tmp = raw_anspruchsdauer_nach_versicherungspflichtigen_monaten.copy()
+    max_months: int = tmp.pop("max_months")
+    ages_in_spec: list[int] = sorted(tmp.keys())  # type: ignore[arg-type]
+
+    full_spec: dict[int, int] = {}
+    for a in range(max_months):
+        if a not in ages_in_spec:
+            full_spec[a] = full_spec[a - 1]
+        else:
+            full_spec[a] = tmp[a]
+
+    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)

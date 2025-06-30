@@ -1,189 +1,328 @@
-# ruff: noqa
-# type: ignore
 from __future__ import annotations
 
-import networkx as nx
+from pathlib import Path
+
 import pytest
 
-from ttsim import plot_dag
+from ttsim import output
+from ttsim.interface_dag import main
 from ttsim.plot_dag import (
-    _get_selected_nodes,
-    _kth_order_neighbors,
-    _node_and_ancestors,
-    _node_and_descendants,
-    _select_nodes_in_dag,
+    _get_tt_dag_with_node_metadata,
+    _QNameNodeSelector,
+    plot_interface_dag,
+)
+from ttsim.tt_dag_elements import (
+    ParamObject,
+    param_function,
+    policy_function,
 )
 
-# environment = policy_environment(date="2020-01-01", root=METTSIM_ROOT)
-
-
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-@pytest.mark.parametrize(
-    "n_nodes, node, order, expected",
-    [(5, 3, 1, {2, 3, 4}), (5, 1, 2, {0, 1, 2, 3})],
+SOME_PARAM_OBJECT = ParamObject(
+    leaf_name="some_param",
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+    unit=None,
+    reference_period="",
+    name="",
+    description="",
 )
-def test_kth_order_neighbors(n_nodes, node, order, expected):
-    dag = nx.DiGraph([(i, i + 1) for i in range(n_nodes)])
-    nodes = set(_kth_order_neighbors(dag, node, order))
-    assert nodes == expected
 
 
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-@pytest.mark.parametrize(
-    "n_nodes, node, order, expected",
-    [(5, 3, None, {0, 1, 2, 3}), (5, 1, None, {0, 1})],
+@param_function(
+    start_date="2025-01-01",
+    end_date="2025-12-31",
 )
-def test_node_and_ancestors(n_nodes, node, order, expected):
-    dag = nx.DiGraph([(i, i + 1) for i in range(n_nodes)])
-    nodes = set(_node_and_ancestors(dag, node, order))
-    assert nodes == expected
+def some_param_function():
+    return 1
 
 
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-@pytest.mark.parametrize(
-    "n_nodes, node, order, expected",
-    [(5, 3, 1, {2, 3}), (5, 1, 2, {0, 1})],
+def some_other_object():
+    return 1
+
+
+@policy_function(
+    start_date="2025-01-01",
+    end_date="2025-12-31",
 )
-def test_node_and_ancestors_order(n_nodes, node, order, expected):
-    dag = nx.DiGraph([(i, i + 1) for i in range(n_nodes)])
-    nodes = set(_node_and_ancestors(dag, node, order))
-    assert nodes == expected
+def some_policy_function():
+    return 1
 
 
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
 @pytest.mark.parametrize(
-    "n_nodes, node, order, expected",
-    [(5, 3, None, {3, 4, 5}), (5, 1, None, {1, 2, 3, 4, 5})],
-)
-def test_node_and_descendants(n_nodes, node, order, expected):
-    dag = nx.DiGraph([(i, i + 1) for i in range(n_nodes)])
-    nodes = set(_node_and_descendants(dag, node, order))
-    assert nodes == expected
-
-
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-@pytest.mark.parametrize(
-    "n_nodes, node, order, expected",
-    [(5, 3, 1, {3, 4}), (5, 1, 2, {1, 2, 3})],
-)
-def test_node_and_descendants_order(n_nodes, node, order, expected):
-    dag = nx.DiGraph([(i, i + 1) for i in range(n_nodes)])
-    nodes = set(_node_and_descendants(dag, node, order))
-    assert nodes == expected
-
-
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-@pytest.mark.parametrize(
-    "n_nodes, selector, expected",
+    ("include_fail_and_warn_nodes",),
     [
-        (5, {"node": 1, "type": "ancestors"}, {0, 1}),
-        (5, {"node": 2, "type": "descendants"}, {2, 3, 4, 5}),
-        (5, {"node": 1, "type": "ancestors", "order": 2}, {0, 1}),
-        (5, {"node": 2, "type": "descendants", "order": 2}, {2, 3, 4}),
-        (5, {"node": 3, "type": "neighbors", "order": 1}, {2, 3, 4}),
-        (5, {"node": 3, "type": "neighbours", "order": 2}, {1, 2, 3, 4, 5}),
-        (5, {"node": [5, 1, 2], "type": "nodes"}, {1, 2, 5}),
+        (True,),
+        (False,),
     ],
 )
-def test_get_selected_nodes(n_nodes, selector, expected):
-    dag = nx.DiGraph([(i, i + 1) for i in range(n_nodes)])
-    nodes = set(_get_selected_nodes(dag, selector))
-    assert nodes == expected
+def test_plot_full_interface_dag(include_fail_and_warn_nodes):
+    plot_interface_dag(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
 
 
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
 @pytest.mark.parametrize(
-    "n_nodes, selectors, expected",
+    (
+        "node_selector",
+        "expected_nodes",
+    ),
     [
-        (5, [{"node": [1, 2], "type": "nodes"}], {1, 2}),
         (
-            5,
-            [{"node": [0], "type": "nodes"}, {"node": 3, "type": "descendants"}],
-            {0, 3, 4, 5},
-        ),
-        (
-            5,
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_y"],
+                type="ancestors",
+                order=1,
+            ),
             [
-                {"node": [0], "type": "nodes"},
-                {"node": 3, "type": "descendants"},
-                {"node": [4], "type": "nodes", "select": False},
+                "payroll_tax__amount_y",
+                "payroll_tax__amount_standard_y",
+                "payroll_tax__amount_reduced_y",
+                "parent_is_noble_fam",
+                "wealth_fam",
+                "payroll_tax__wealth_threshold_for_reduced_tax_rate",
             ],
-            {0, 3, 5},
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
+                type="ancestors",
+                order=1,
+            ),
+            [
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
+                type="ancestors",
+                order=2,
+            ),
+            [
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+                "payroll_tax__amount_standard_y",
+                "payroll_tax__amount_reduced_y",
+                "parent_is_noble_fam",
+                "wealth_fam",
+                "payroll_tax__wealth_threshold_for_reduced_tax_rate",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                type="ancestors",
+                order=1,
+            ),
+            [
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+                "property_tax__amount_m",
+                "property_tax__amount_y",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_y"],
+                type="neighbors",
+                order=1,
+            ),
+            [
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+                "payroll_tax__amount_standard_y",
+                "payroll_tax__amount_reduced_y",
+                "parent_is_noble_fam",
+                "wealth_fam",
+                "payroll_tax__wealth_threshold_for_reduced_tax_rate",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
+                type="neighbors",
+                order=1,
+            ),
+            [
+                "housing_benefits__income__amount_m",
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
+                type="neighbors",
+                order=2,
+            ),
+            [
+                "housing_benefits__income__amount_m_fam",
+                "housing_benefits__income__amount_m",
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+                "payroll_tax__amount_standard_y",
+                "payroll_tax__amount_reduced_y",
+                "parent_is_noble_fam",
+                "wealth_fam",
+                "payroll_tax__wealth_threshold_for_reduced_tax_rate",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                type="neighbors",
+                order=1,
+            ),
+            [
+                "housing_benefits__income__amount_m",
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+                "property_tax__amount_m",
+                "property_tax__amount_y",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_y"],
+                type="descendants",
+                order=1,
+            ),
+            [
+                "payroll_tax__amount_m",
+                "payroll_tax__amount_y",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
+                type="descendants",
+                order=1,
+            ),
+            [
+                "housing_benefits__income__amount_m",
+                "payroll_tax__amount_m",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m"],
+                type="descendants",
+                order=2,
+            ),
+            [
+                "housing_benefits__income__amount_m_fam",
+                "housing_benefits__income__amount_m",
+                "payroll_tax__amount_m",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                type="descendants",
+                order=1,
+            ),
+            [
+                "housing_benefits__income__amount_m",
+                "payroll_tax__amount_m",
+                "property_tax__amount_m",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
+                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                type="nodes",
+            ),
+            [
+                "payroll_tax__amount_m",
+                "property_tax__amount_m",
+            ],
         ),
     ],
 )
-def test_select_nodes_in_dag(n_nodes, selectors, expected):
-    dag = nx.DiGraph([(i, i + 1) for i in range(n_nodes)])
-    dag = _select_nodes_in_dag(dag, selectors)
-    assert set(dag.nodes) == expected
-
-
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-def test_plot_dag():
-    """Make sure that minimal example doesn't produce an error."""
-    plot_dag(
-        environment=environment,
-        targets=["erwachsene_alle_rentenbezieher_kin"],
+def test_node_selector(node_selector, expected_nodes):
+    environment = main(
+        date_str="2025-01-01",
+        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        backend="numpy",
+        output=output.Name("policy_environment"),
     )
+    dag = _get_tt_dag_with_node_metadata(
+        environment=environment,
+        node_selector=node_selector,
+        include_params=True,
+    )
+    assert set(dag.nodes()) == set(expected_nodes)
 
 
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-def test_should_fail_if_target_is_missing():
-    with pytest.raises(
-        ValueError, match="The following targets have no corresponding function"
-    ):
-        plot_dag(
-            environment={},
-            targets=["erwachsene_alle_rentenbezieher_kin"],
-        )
-
-
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-def test_one_dot_plot_dag():
-    """Make sure that the one dot graph example doesn't produce an error."""
-    selectors = "einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_y_sn"
-    plot_dag(environment=environment, selectors=selectors)
-
-
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-def test_10_dots_plot_dag():
-    """Make sure that when No.of nodes is larger than 10 or show_labels is false, the
-    graph example doesn't produce an error and hover information works properly."""
-    selector = {
-        "type": "descendants",
-        "node": "sozialversicherung__geringfügig_beschäftigt",
+@pytest.mark.parametrize(
+    (
+        "include_params",
+        "expected_nodes",
+    ),
+    [
+        (
+            True,
+            [
+                "some_param",
+                "some_param_function",
+                "some_policy_function",
+            ],
+        ),
+        (
+            False,
+            [
+                "some_policy_function",
+            ],
+        ),
+    ],
+)
+def test_params_are_removed_from_dag(include_params, expected_nodes):
+    environment = {
+        "some_param": SOME_PARAM_OBJECT,
+        "some_param_function": some_param_function,
+        "some_policy_function": some_policy_function,
     }
-    plot_dag(environment=environment, selectors=selector, orientation="h")
-
-
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-def test_horizontal_plot_dag():
-    """Make sure that when we choose horizontal orientation, the graph example doesn't
-    produce an error."""
-    plot_dag(
+    dag = _get_tt_dag_with_node_metadata(
         environment=environment,
-        selectors=[
-            {
-                "node": "einkommensteuer__abgeltungssteuer__zu_versteuernde_kapitaleinkünfte_y_sn",  # noqa: E501
-                "type": "neighbors",
-            }
-        ],
-        orientation="h",
+        include_params=include_params,
     )
+    assert set(dag.nodes()) == set(expected_nodes)
 
 
-@pytest.mark.skip(reason="plot_dag has not been updated to the new interface.")
-def test_hover_source_code_plot_dag():
-    """Make sure that when hover information is source code, the graph example doesn't
-    produce an error and works properly."""
-    plot_dag(
+@pytest.mark.parametrize(
+    (
+        "include_other_objects",
+        "expected_nodes",
+    ),
+    [
+        (
+            True,
+            [
+                "some_param",
+                "some_param_function",
+                "some_policy_function",
+                "other_object",
+            ],
+        ),
+        (
+            False,
+            [
+                "some_param",
+                "some_param_function",
+                "some_policy_function",
+            ],
+        ),
+    ],
+)
+def test_other_objects_are_removed_from_dag(include_other_objects, expected_nodes):
+    environment = {
+        "some_param": SOME_PARAM_OBJECT,
+        "some_param_function": some_param_function,
+        "some_policy_function": some_policy_function,
+        "other_object": some_other_object,
+    }
+    dag = _get_tt_dag_with_node_metadata(
         environment=environment,
-        selectors=[
-            {
-                "node": "einkommensteuer__abgeltungssteuer__zu_versteuernde_kapitaleinkünfte_y_sn",  # noqa: E501
-                "type": "neighbors",
-            }
-        ],
-        orientation="h",
-        hover_source_code=True,
+        include_params=True,
+        include_other_objects=include_other_objects,
     )
+    assert set(dag.nodes()) == set(expected_nodes)

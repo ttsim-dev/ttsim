@@ -1,16 +1,20 @@
-from ttsim import RoundingSpec, policy_function
+from __future__ import annotations
+
+from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 
 @policy_function(
-    end_date="2016-12-31",
+    end_date="2017-06-30",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     leaf_name="bruttorente_m",
 )
 def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     alter: int,
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    regelaltersrente__altersgrenze: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     bruttorente_basisbetrag_m: float,
     hinzuverdienstgrenze: float,
@@ -21,9 +25,7 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     """
     # TODO (@MImmesberger): Use age with monthly precision.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
-    if (
-        alter >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
-    ) or (
+    if (alter >= regelaltersrente__altersgrenze) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         <= hinzuverdienstgrenze
     ):
@@ -35,16 +37,18 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
     leaf_name="bruttorente_m",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
 )
 def bruttorente_m_mit_hinzuverdienstdeckel(
     alter: int,
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    regelaltersrente__altersgrenze: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     differenz_bruttolohn_hinzuverdienstdeckel_m: float,
     zahlbetrag_ohne_deckel_m: float,
@@ -58,8 +62,7 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     if (
         differenz_bruttolohn_hinzuverdienstdeckel_m > 0
-        and alter
-        <= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
+        and alter <= regelaltersrente__altersgrenze
         and einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         > 0
     ):
@@ -74,13 +77,13 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
 )
 def zahlbetrag_ohne_deckel_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     alter: int,
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    regelaltersrente__altersgrenze: float,
     bruttorente_basisbetrag_m: float,
     differenz_bruttolohn_hinzuverdienstgrenze_m: float,
     hinzuverdienstgrenze: float,
@@ -92,9 +95,7 @@ def zahlbetrag_ohne_deckel_m(
     # TODO (@MImmesberger): Use age with monthly precision.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     # No deduction because of age or low earnings
-    if (
-        alter >= sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
-    ) or (
+    if (alter >= regelaltersrente__altersgrenze) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
         <= hinzuverdienstgrenze
     ):
@@ -111,7 +112,7 @@ def zahlbetrag_ohne_deckel_m(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
 )
 def differenz_bruttolohn_hinzuverdienstgrenze_y(
@@ -127,7 +128,7 @@ def differenz_bruttolohn_hinzuverdienstgrenze_y(
 
 
 @policy_function(
-    start_date="2017-01-01",
+    start_date="2017-07-01",
     end_date="2022-12-31",
 )
 def differenz_bruttolohn_hinzuverdienstdeckel_y(
@@ -148,7 +149,9 @@ def differenz_bruttolohn_hinzuverdienstdeckel_y(
     start_date="2023-01-01",
     leaf_name="bruttorente_m",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
 )
 def bruttorente_m_ohne_einkommensanrechnung(

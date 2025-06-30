@@ -2,19 +2,29 @@
 
 from __future__ import annotations
 
-from ttsim import PiecewisePolynomialParamValue, piecewise_polynomial, policy_function
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+from ttsim.tt_dag_elements import (
+    PiecewisePolynomialParamValue,
+    piecewise_polynomial,
+    policy_function,
+)
 
 
 def solidaritätszuschlagstarif(
     steuer_pro_person: float,
     einkommensteuer__anzahl_personen_sn: int,
     parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """The isolated function for Solidaritätszuschlag."""
-
     return einkommensteuer__anzahl_personen_sn * piecewise_polynomial(
         x=steuer_pro_person / einkommensteuer__anzahl_personen_sn,
         parameters=parameter_solidaritätszuschlag,
+        xnp=xnp,
     )
 
 
@@ -23,6 +33,7 @@ def betrag_y_sn_ohne_abgelt_st(
     einkommensteuer__betrag_mit_kinderfreibetrag_y_sn: float,
     einkommensteuer__anzahl_personen_sn: int,
     parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Calculate the Solidarity Surcharge on Steuernummer level.
 
@@ -42,6 +53,7 @@ def betrag_y_sn_ohne_abgelt_st(
         steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn,
         einkommensteuer__anzahl_personen_sn=einkommensteuer__anzahl_personen_sn,
         parameter_solidaritätszuschlag=parameter_solidaritätszuschlag,
+        xnp=xnp,
     )
 
 
@@ -51,6 +63,7 @@ def betrag_y_sn_mit_abgelt_st(
     einkommensteuer__anzahl_personen_sn: int,
     einkommensteuer__abgeltungssteuer__betrag_y_sn: float,
     parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Calculate the Solidarity Surcharge on Steuernummer level.
 
@@ -71,6 +84,7 @@ def betrag_y_sn_mit_abgelt_st(
             steuer_pro_person=einkommensteuer__betrag_mit_kinderfreibetrag_y_sn,
             einkommensteuer__anzahl_personen_sn=einkommensteuer__anzahl_personen_sn,
             parameter_solidaritätszuschlag=parameter_solidaritätszuschlag,
+            xnp=xnp,
         )
         + parameter_solidaritätszuschlag.rates[0, -1]
         * einkommensteuer__abgeltungssteuer__betrag_y_sn

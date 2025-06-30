@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
-from ttsim import RoundingSpec, policy_function
+from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 
 @policy_function(
     end_date="2020-12-31",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     leaf_name="betrag_m",
 )
 def betrag_m(
-    bruttorente_m: float, sozialversicherung__rente__bezieht_rente: bool
+    bruttorente_m: float,
+    sozialversicherung__rente__bezieht_rente: bool,
 ) -> float:
     return bruttorente_m if sozialversicherung__rente__bezieht_rente else 0.0
 
@@ -21,7 +24,9 @@ def betrag_m(
 @policy_function(
     start_date="2021-01-01",
     rounding_spec=RoundingSpec(
-        base=0.01, direction="nearest", reference="§ 123 SGB VI Abs. 1"
+        base=0.01,
+        direction="nearest",
+        reference="§ 123 SGB VI Abs. 1",
     ),
     leaf_name="betrag_m",
 )
@@ -60,7 +65,6 @@ def bruttorente_basisbetrag_m_nach_wohnort(
     - https://de.wikipedia.org/wiki/Rentenformel
     - https://de.wikipedia.org/wiki/Rentenanpassungsformel
     """
-
     if sozialversicherung__rente__bezieht_rente:
         out = (
             sozialversicherung__rente__entgeltpunkte_west
@@ -97,7 +101,6 @@ def bruttorente_basisbetrag_m(
     - https://de.wikipedia.org/wiki/Rentenformel
     - https://de.wikipedia.org/wiki/Rentenanpassungsformel
     """
-
     if sozialversicherung__rente__bezieht_rente:
         out = (
             (
@@ -129,12 +132,12 @@ def rentenwert_nach_wohnort(
 @policy_function()
 def zugangsfaktor(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
-    sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze: float,
+    regelaltersrente__altersgrenze: float,
     referenzalter_abschlag: float,
     altersgrenze: float,
     altersgrenze_vorzeitig: float,
     vorzeitig_grundsätzlich_anspruchsberechtigt: bool,
-    sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt: bool,
+    regelaltersrente__grundsätzlich_anspruchsberechtigt: bool,
     zugangsfaktor_veränderung_pro_jahr: dict[str, float],
 ) -> float:
     """Zugangsfaktor (pension adjustment factor).
@@ -158,11 +161,10 @@ def zugangsfaktor(
     Returns 0 if the person is not eligible for receiving pension benefits because
     either i) the person is younger than the earliest possible retirement age or ii) the
     person is not eligible for pension benefits because
-    `sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt`
+    `regelaltersrente__grundsätzlich_anspruchsberechtigt`
     is False.
     """
-
-    if sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt:
+    if regelaltersrente__grundsätzlich_anspruchsberechtigt:
         # Early retirement (before full retirement age): Zugangsfaktor < 1
         if (
             sozialversicherung__rente__alter_bei_renteneintritt < altersgrenze
@@ -191,13 +193,13 @@ def zugangsfaktor(
         # Zugangsfaktor > 1
         elif (
             sozialversicherung__rente__alter_bei_renteneintritt
-            > sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
+            > regelaltersrente__altersgrenze
         ):
             out = (
                 1
                 + (
                     sozialversicherung__rente__alter_bei_renteneintritt
-                    - sozialversicherung__rente__altersrente__regelaltersrente__altersgrenze
+                    - regelaltersrente__altersgrenze
                 )
                 * zugangsfaktor_veränderung_pro_jahr["späterer_renteneintritt"]
             )
@@ -207,7 +209,7 @@ def zugangsfaktor(
             out = 1.0
 
     # Claiming pension is not possible if
-    # sozialversicherung__rente__altersrente__regelaltersrente__grundsätzlich_anspruchsberechtigt is
+    # regelaltersrente__grundsätzlich_anspruchsberechtigt is
     # 'False'. Return 0 in this case. Then, the pension payment is 0 as well.
     else:
         out = 0.0

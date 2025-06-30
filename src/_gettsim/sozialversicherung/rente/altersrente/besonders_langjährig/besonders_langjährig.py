@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
+from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
 @policy_function(
@@ -10,7 +10,8 @@ from ttsim import ConsecutiveInt1dLookupTableParamValue, policy_function
     end_date="2028-12-31",
 )
 def altersgrenze(
-    geburtsjahr: int, altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue
+    geburtsjahr: int,
+    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
 ) -> float:
     """
     Full retirement age (FRA) for very long term insured.
@@ -34,5 +35,4 @@ def grundsätzlich_anspruchsberechtigt(
     """Determining the eligibility for Altersrente für besonders langjährig Versicherte
     (pension for very long-term insured). Wartezeit 45 years. aka "Rente mit 63".
     """
-
     return sozialversicherung__rente__wartezeit_45_jahre_erfüllt

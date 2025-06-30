@@ -5,16 +5,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim import (
+from ttsim.tt_dag_elements import (
     ConsecutiveInt1dLookupTableParamValue,
     get_consecutive_int_1d_lookup_table_param_value,
     param_function,
     policy_function,
+    policy_input,
 )
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from _gettsim.grundsicherung.bedarfe import Regelbedarfsstufen
-    from ttsim import RawParam
+    from ttsim.tt_dag_elements import RawParam
 
 
 @policy_function(start_date="2005-01-01")
@@ -34,47 +37,48 @@ def regelbedarf_m(
 @policy_function(start_date="2005-01-01")
 def mehrbedarf_alleinerziehend_m(
     familie__alleinerziehend: bool,
-    anzahl_kinder_fg: int,
+    anzahl_kinder_bis_17_fg: int,
     anzahl_kinder_bis_6_fg: int,
     anzahl_kinder_bis_15_fg: int,
     parameter_mehrbedarf_alleinerziehend: dict[str, float],
 ) -> float:
-    """Compute additional SGB II need for single parents.
+    """Mehrbedarf (additional need) for single parents as a share of the Regelsatz.
 
-    Additional need for single parents. Maximum 60% of the standard amount on top if
-    you have at least one kid below 6 or two or three below 15, you get 36%
-    on top alternatively, you get 12% per kid, depending on what's higher.
+    Mehrbedarf for single parents is capped at 60% of the Regelsatz. There are special
+    rules for parents of one child up to 6 years old and two or three children up to 15
+    years old.
+
+    Reference: §21 SGB II
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
-    if familie__alleinerziehend:
-        # Clip value at calculated minimal share and given upper share
-        # Note that upper limit is applied last (for many children lower
-        # could be greater than upper)
-        out = min(
-            max(
-                # Minimal Mehrbedarf share. Minimal rate times number of children
-                parameter_mehrbedarf_alleinerziehend["min_1_kind"] * anzahl_kinder_fg,
-                # Increased rated if children up to 6 and/or 2-3 up to 15 are present.
-                (
-                    parameter_mehrbedarf_alleinerziehend[
-                        "kind_bis_6_oder_mehrere_bis_15"
-                    ]
-                    if (anzahl_kinder_bis_6_fg >= 1)
-                    or anzahl_kinder_bis_15_fg == 2
-                    or anzahl_kinder_bis_15_fg == 3
-                    else 0.0
-                ),
-            ),
-            parameter_mehrbedarf_alleinerziehend["max"],
+    basis_mehrbedarf = (
+        parameter_mehrbedarf_alleinerziehend["basis_je_kind_bis_17"]
+        * anzahl_kinder_bis_17_fg
+    )
+
+    if (
+        anzahl_kinder_bis_6_fg == 1
+        or anzahl_kinder_bis_15_fg == 2
+        or anzahl_kinder_bis_15_fg == 3
+    ):
+        mehrbedarf = max(
+            parameter_mehrbedarf_alleinerziehend["kind_bis_6_oder_2_3_kinder_bis_15"],
+            basis_mehrbedarf,
         )
     else:
-        out = 0.0
-    return out
+        mehrbedarf = basis_mehrbedarf
+
+    if familie__alleinerziehend:
+        return min(mehrbedarf, parameter_mehrbedarf_alleinerziehend["max"])
+    else:
+        return 0.0
 
 
 @policy_function(
-    start_date="2005-01-01", end_date="2010-12-31", leaf_name="kindersatz_m"
+    start_date="2005-01-01",
+    end_date="2010-12-31",
+    leaf_name="kindersatz_m",
 )
 def kindersatz_m_anteilsbasiert(
     alter: int,
@@ -270,6 +274,11 @@ def kosten_der_unterkunft_m_bis_2022(
     return berechtigte_wohnfläche * anerkannte_warmmiete_je_qm_m
 
 
+@policy_input(start_date="2023-01-01")
+def arbeitslosengeld_2_bezug_im_vorjahr() -> bool:
+    """Whether the person received Arbeitslosengeld 2 / Bürgergeld in the previous year."""
+
+
 @policy_function(
     start_date="2023-01-01",
     leaf_name="kosten_der_unterkunft_m",
@@ -445,6 +454,7 @@ def regelsatz_anteilsbasiert(
 def berechtigte_wohnfläche_eigentum(
     parameter_berechtigte_wohnfläche_eigentum: RawParam,
     wohngeld__max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
 ) -> ConsecutiveInt1dLookupTableParamValue:
     """Berechtigte Wohnfläche für Eigenheim."""
     tmp = parameter_berechtigte_wohnfläche_eigentum.copy()
@@ -452,4 +462,4 @@ def berechtigte_wohnfläche_eigentum(
     max_anzahl_direkt = tmp.pop("max_anzahl_direkt")
     for i in range(wohngeld__max_anzahl_personen["indizierung"] - max_anzahl_direkt):
         tmp[i] = tmp[max_anzahl_direkt] + i * je_weitere_person
-    return get_consecutive_int_1d_lookup_table_param_value(raw=tmp)
+    return get_consecutive_int_1d_lookup_table_param_value(raw=tmp, xnp=xnp)

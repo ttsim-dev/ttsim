@@ -4,7 +4,7 @@ info:
     Test Regelsatz when Familiengemeinschaft (1 adult, 1 kid) is the same as
     Bedarfsgemeinschaft.
   precision_atol: 0.01
-  source: Made up.
+  source: Regression test.
 inputs:
   assumed:
     alter:
@@ -80,7 +80,7 @@ inputs:
 outputs:
   arbeitslosengeld_2:
     erwachsenensatz_m:
-      - 833.24
+      - 765.68
       - 0.0
       - 0.0
       - 0.0
@@ -92,7 +92,7 @@ outputs:
       - 491.0
       - 471.0
     regelsatz_m:
-      - 833.24
+      - 765.68
       - 377.0
       - 410.0
       - 491.0

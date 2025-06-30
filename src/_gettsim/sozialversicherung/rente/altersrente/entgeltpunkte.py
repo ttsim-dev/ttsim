@@ -1,4 +1,6 @@
-from ttsim import policy_function
+from __future__ import annotations
+
+from ttsim.tt_dag_elements import policy_function
 
 # TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
 # Germany starting in July 2023.
@@ -52,7 +54,6 @@ def neue_entgeltpunkte(
     umrechnung_entgeltpunkte_beitrittsgebiet: float,
 ) -> float:
     """Return earning points for the wages earned in the last year."""
-
     # Scale bruttolohn up if earned in eastern Germany
     if wohnort_ost:
         bruttolohn_scaled_east = (

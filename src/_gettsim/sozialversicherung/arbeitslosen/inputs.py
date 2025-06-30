@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from ttsim import policy_input
+from ttsim.tt_dag_elements import policy_input
 
 
 @policy_input()
-def anwartschaftszeit() -> bool:
-    """At least 12 months of unemployment contributions in the 30 months before claiming unemployment insurance."""
+def monate_beitragspflichtig_versichert_in_letzten_30_monaten() -> int:
+    """Number of months of compulsory insurance in the 30 months before claiming unemployment."""
 
 
 @policy_input()

@@ -4,21 +4,27 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim import AggType, agg_by_p_id_function, join, policy_function
+from ttsim.tt_dag_elements import AggType, agg_by_p_id_function, join, policy_function
 
 if TYPE_CHECKING:
-    from ttsim.config import numpy_or_jax as np
+    from types import ModuleType
+
+    from ttsim.interface_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
 
 
 @agg_by_p_id_function(start_date="2005-01-01", agg_type=AggType.SUM)
 def kindergeldübertrag_m(
-    differenz_kindergeld_kindbedarf_m: float, kindergeld__p_id_empfänger: int, p_id: int
+    differenz_kindergeld_kindbedarf_m: float,
+    kindergeld__p_id_empfänger: int,
+    p_id: int,
 ) -> float:
     pass
 
 
 @policy_function(
-    start_date="2005-01-01", end_date="2022-12-31", leaf_name="kindergeld_pro_kind_m"
+    start_date="2005-01-01",
+    end_date="2022-12-31",
+    leaf_name="kindergeld_pro_kind_m",
 )
 def _mean_kindergeld_per_child_gestaffelt_m(
     kindergeld__betrag_m: float,
@@ -56,10 +62,11 @@ def _mean_kindergeld_per_child_ohne_staffelung_m(
 
 @policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def kindergeld_zur_bedarfsdeckung_m(
-    kindergeld_pro_kind_m: float,
-    kindergeld__p_id_empfänger: np.ndarray,  # int
-    p_id: np.ndarray,  # int
-) -> np.ndarray:  # float
+    kindergeld_pro_kind_m: FloatColumn,
+    kindergeld__p_id_empfänger: IntColumn,
+    p_id: IntColumn,
+    xnp: ModuleType,
+) -> FloatColumn:
     """Kindergeld that is used to cover the SGB II Regelbedarf of the child.
 
     Even though the Kindergeld is paid to the parent (see function
@@ -71,10 +78,11 @@ def kindergeld_zur_bedarfsdeckung_m(
 
     """
     return join(
-        kindergeld__p_id_empfänger,
-        p_id,
-        kindergeld_pro_kind_m,
+        foreign_key=kindergeld__p_id_empfänger,
+        primary_key=p_id,
+        target=kindergeld_pro_kind_m,
         value_if_foreign_key_is_missing=0.0,
+        xnp=xnp,
     )
 
 
@@ -119,15 +127,16 @@ def differenz_kindergeld_kindbedarf_m(
 
 @policy_function(start_date="2005-01-01", vectorization_strategy="not_required")
 def in_anderer_bg_als_kindergeldempfänger(
-    p_id: np.ndarray,  # int
-    kindergeld__p_id_empfänger: np.ndarray,  # int
-    bg_id: np.ndarray,  # int
-) -> np.ndarray:  # bool
+    p_id: IntColumn,
+    kindergeld__p_id_empfänger: IntColumn,
+    bg_id: IntColumn,
+    xnp: ModuleType,  # Will become necessary for Jax.  # noqa: ARG001
+) -> BoolColumn:
     """True if the person is in a different Bedarfsgemeinschaft than the
     Kindergeldempfänger of that person.
     """
     # Create a dictionary to map p_id to bg_id
-    p_id_to_bg_id = dict(zip(p_id, bg_id))
+    p_id_to_bg_id = dict(zip(p_id, bg_id, strict=False))
 
     # Map each kindergeld__p_id_empfänger to its corresponding bg_id
     empf_bg_id = [

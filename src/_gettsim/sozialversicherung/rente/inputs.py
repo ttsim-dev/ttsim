@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim import policy_input
+from ttsim.tt_dag_elements import policy_input
 
 
 @policy_input()
@@ -29,7 +29,8 @@ def entgeltpunkte_west() -> float:
 @policy_input()
 def ersatzzeiten_monate() -> float:
     """Total months during military, persecution/escape, internment, and consecutive
-    sickness."""
+    sickness.
+    """
 
 
 @policy_input()
@@ -70,7 +71,8 @@ def monate_in_arbeitslosigkeit() -> float:
 @policy_input()
 def monate_in_arbeitsunfähigkeit() -> float:
     """Total months of sickness, rehabilitation, measures for worklife
-    participation(Teilhabe)."""
+    participation(Teilhabe).
+    """
 
 
 @policy_input()
@@ -91,7 +93,8 @@ def monate_in_schulausbildung() -> float:
 @policy_input()
 def monate_mit_bezug_entgeltersatzleistungen_wegen_arbeitslosigkeit() -> float:
     """Total months of unemployment (only time of Entgeltersatzleistungen, not
-    ALGII),i.e. Arbeitslosengeld, Unterhaltsgeld, Übergangsgeld."""
+    ALGII),i.e. Arbeitslosengeld, Unterhaltsgeld, Übergangsgeld.
+    """
 
 
 @policy_input()
