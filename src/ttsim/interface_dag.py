@@ -92,12 +92,17 @@ def main(
             functions=functions,
             output_qnames=output_qnames["names"],
         )
+
+    def lexsort_key(x: str) -> int:
+        return 0 if x.startswith("fail_if") else 1
+
     if output_qnames["name"]:
         f = dags.concatenate_functions(
             functions=functions,
             targets=output_qnames["name"],
             enforce_signature=False,
             set_annotations=False,
+            lexsort_key=lexsort_key,
         )
     else:
         f = dags.concatenate_functions(
@@ -106,6 +111,7 @@ def main(
             return_type="dict",
             enforce_signature=False,
             set_annotations=False,
+            lexsort_key=lexsort_key,
         )
     return f(**input_qnames)
 
@@ -265,20 +271,21 @@ def include_fail_and_warn_nodes(
     out = output_qnames.copy()
     for p, n in fail_or_warn_functions.items():
         args = inspect.signature(n).parameters
-        if all(a in workers_and_their_inputs for a in args) and (
-            # all([]) evaluates to True.
-            (
-                n.include_if_all_elements_present
-                and all(
+        if p == "fail_if__root_nodes_are_missing":
+            check = all(a in workers_and_their_inputs for a in args)
+            if n.include_if_all_elements_present or n.include_if_any_element_present:
+                # all(()) evaluates to True, so include first bit
+                all_cond = n.include_if_all_elements_present and all(
                     a in workers_and_their_inputs
                     for a in n.include_if_all_elements_present
                 )
-            )
-            or any(
-                a in workers_and_their_inputs for a in n.include_if_any_element_present
-            )
-        ):
-            out.append(p)
+                any_cond = any(
+                    a in workers_and_their_inputs
+                    for a in n.include_if_any_element_present
+                )
+                check = check and (all_cond or any_cond)
+            if check:
+                out.append(p)
     return out
 
 
