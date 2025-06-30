@@ -48,7 +48,7 @@ dependencies = [
     "numpy-groupies",
     "pandas",
     "openpyxl",
-    "plotly",
+    "plotly>=6.2",
     "optree",
     "pygments",
     "pygraphviz",
@@ -103,7 +103,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.14"
 pre-commit = "*"
 pandas = ">=2.1"
 numpy_groupies = "*"
@@ -111,7 +111,6 @@ numpydoc = "*"
 openpyxl = "*"
 ipywidgets = "*"
 jupyterlab = "*"
-plotly = ">=5.24,<6"
 pygments = "*"
 pygraphviz = "*"
 pyyaml = "*"
@@ -136,7 +135,7 @@ pdbp = "*"
 kaleido = "*"
 
 [tool.pixi.target.win-64.pypi-dependencies]
-kaleido = ">=0.1.0.post1,<=0.1.0.post1"
+kaleido = ">=1.0"
 
 # Features
 # --------------------------------------------------------------------------------------
@@ -146,6 +145,9 @@ python = "3.11.*"
 
 [tool.pixi.feature.py312.dependencies]
 python = "3.12.*"
+
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
 
 [tool.pixi.feature.jax.target.unix.dependencies]
 jax = ">=0.4.20"
@@ -182,7 +184,8 @@ mypy = "mypy --ignore-missing-imports"
 mypy = ["mypy"]
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
-py312-jax = ["py312", "test", "jax"]
+py313 = ["test", "py313"]
+py313-jax = ["py313", "test", "jax"]
 
 
 # ======================================================================================
