@@ -34,7 +34,7 @@ def altersgrenze_gestaffelt_ab_1989(
 
     return altersgrenze_gestaffelt.values_to_look_up[
         (birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
 
@@ -55,7 +55,7 @@ def altersgrenze_vorzeitig_gestaffelt_ab_1989_bis_1996(
     """
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
         (geburtsjahr - altersgrenze_vorzeitig_gestaffelt.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
 

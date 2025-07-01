@@ -34,7 +34,7 @@ def altersgrenze_mit_staffelung(
 
     return altersgrenze_gestaffelt.values_to_look_up[
         (birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
 
@@ -61,7 +61,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
         (
             birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
 
 

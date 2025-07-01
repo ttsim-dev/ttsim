@@ -36,7 +36,7 @@ def altersgrenze_bis_1996(
 
     return altersgrenze_gestaffelt.values_to_look_up[
         (birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
 
@@ -102,7 +102,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_bis_1996_07(
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
         (
             birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
 
 
@@ -169,7 +169,7 @@ def altersgrenze_ohne_vertrauensschutz(
 
     return altersgrenze_gestaffelt.values_to_look_up[
         (birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
 
@@ -188,7 +188,7 @@ def altersgrenze_mit_vertrauensschutz(
         (
             birth_month_since_ad
             - altersgrenze_gestaffelt_vertrauensschutz.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
 
 
@@ -214,7 +214,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_12_1989_bis_09_1996(
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
         (
             birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
 
 
@@ -240,7 +240,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_07_2004(
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
         (
             birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
 
 

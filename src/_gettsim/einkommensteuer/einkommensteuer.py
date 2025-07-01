@@ -204,7 +204,7 @@ def relevantes_kindergeld_mit_staffelung_m(
             (
                 kindergeld_ansprüche
                 - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
-            ).astype(xnp.int64)
+            ).astype(xnp.int32)
         ]
         / 2
     )

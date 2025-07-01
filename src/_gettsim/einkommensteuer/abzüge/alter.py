@@ -70,7 +70,7 @@ def altersfreibetrag_y_ab_2005(
             (
                 geburtsjahr
                 - maximaler_altersentlastungsbetrag_gestaffelt.base_to_subtract
-            ).astype(xnp.int64)
+            ).astype(xnp.int32)
         ]
     )
 
@@ -87,7 +87,7 @@ def altersfreibetrag_y_ab_2005(
     )
     betrag = altersentlastungsquote_gestaffelt.values_to_look_up[
         (geburtsjahr - altersentlastungsquote_gestaffelt.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ] * (einkommen_lohn + weiteres_einkommen)
 

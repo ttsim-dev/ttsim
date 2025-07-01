@@ -170,7 +170,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
     altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
         (
             claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
     return (
         altersgrenze_zurechnungszeit
@@ -225,7 +225,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
     altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
         (
             claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
     return (
         altersgrenze_zurechnungszeit
@@ -315,7 +315,7 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
     else:
         grenze_abschlagsfrei = altersgrenze_gestaffelt.values_to_look_up[
             (claiming_month_since_ad - altersgrenze_gestaffelt.base_to_subtract).astype(
-                xnp.int64
+                xnp.int32
             )
         ]
 

@@ -56,7 +56,7 @@ def betrag_gestaffelt_m(
 
     """
     return satz_nach_anzahl_kinder.values_to_look_up[
-        (anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract).astype(xnp.int64)
+        (anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract).astype(xnp.int32)
     ]
 
 

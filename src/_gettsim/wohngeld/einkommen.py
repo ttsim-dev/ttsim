@@ -56,7 +56,7 @@ def einkommen(
                 min_einkommen_lookup_table.values_to_look_up.shape[0],
             )
             - min_einkommen_lookup_table.base_to_subtract
-        ).astype(xnp.int64)
+        ).astype(xnp.int32)
     ]
 
     return xnp.maximum(eink_nach_abzug_m_hh, unteres_eink)
@@ -140,7 +140,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
         out = 0.0
     else:
         out = abzug.values_to_look_up[
-            (stufe - abzug.base_to_subtract).astype(xnp.int64)
+            (stufe - abzug.base_to_subtract).astype(xnp.int32)
         ]
     return out
 

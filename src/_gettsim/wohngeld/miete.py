@@ -207,7 +207,7 @@ def min_miete_m_hh(
 ) -> float:
     """Minimum rent considered in Wohngeld calculation."""
     return min_miete_lookup.values_to_look_up[
-        (anzahl_personen_hh - min_miete_lookup.base_to_subtract).astype(xnp.int64)
+        (anzahl_personen_hh - min_miete_lookup.base_to_subtract).astype(xnp.int32)
     ]
 
 
@@ -277,14 +277,14 @@ def miete_m_hh_mit_heizkostenentlastung(
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.values_to_look_up[
         (anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows).astype(
-            xnp.int64
+            xnp.int32
         ),
-        (mietstufe - max_miete_m_lookup.base_to_subtract_cols).astype(xnp.int64),
+        (mietstufe - max_miete_m_lookup.base_to_subtract_cols).astype(xnp.int32),
     ]
 
     heating_allowance_m = heizkostenentlastung_m_lookup.values_to_look_up[
         (anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
 
@@ -312,14 +312,14 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.values_to_look_up[
         (anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows).astype(
-            xnp.int64
+            xnp.int32
         ),
-        (mietstufe - max_miete_m_lookup.base_to_subtract_cols).astype(xnp.int64),
+        (mietstufe - max_miete_m_lookup.base_to_subtract_cols).astype(xnp.int32),
     ]
 
     heizkostenentlastung = heizkostenentlastung_m_lookup.values_to_look_up[
         (anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
     dauerhafte_heizkostenkomponente = (
@@ -327,12 +327,12 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
             (
                 anzahl_personen_hh
                 - dauerhafte_heizkostenkomponente_m_lookup.base_to_subtract
-            ).astype(xnp.int64)
+            ).astype(xnp.int32)
         ]
     )
     klimakomponente = klimakomponente_m_lookup.values_to_look_up[
         (anzahl_personen_hh - klimakomponente_m_lookup.base_to_subtract).astype(
-            xnp.int64
+            xnp.int32
         )
     ]
     return (

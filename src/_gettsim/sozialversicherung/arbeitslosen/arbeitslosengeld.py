@@ -59,14 +59,14 @@ def monate_verbleibender_anspruchsdauer(
 ) -> int:
     """Remaining amount of months of potential unemployment benefit claims."""
     auf_altersbasis = anspruchsdauer_nach_alter.values_to_look_up[
-        (alter - anspruchsdauer_nach_alter.base_to_subtract).astype(xnp.int64)
+        (alter - anspruchsdauer_nach_alter.base_to_subtract).astype(xnp.int32)
     ]
     auf_basis_versicherungspflichtiger_monate = (
         anspruchsdauer_nach_versicherungspflichtigen_monaten.values_to_look_up[
             (
                 monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
                 - anspruchsdauer_nach_versicherungspflichtigen_monaten.base_to_subtract
-            ).astype(xnp.int64)
+            ).astype(xnp.int32)
         ]
     )
 

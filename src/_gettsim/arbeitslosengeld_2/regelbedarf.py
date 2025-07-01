@@ -336,7 +336,7 @@ def berechtigte_wohnfläche(
         maximum = berechtigte_wohnfläche_eigentum.values_to_look_up[
             (
                 anzahl_personen_hh - berechtigte_wohnfläche_eigentum.base_to_subtract
-            ).astype(xnp.int64)
+            ).astype(xnp.int32)
         ]
     else:
         maximum = (
