@@ -50,13 +50,11 @@ def einkommen(
     """
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
     unteres_eink = min_einkommen_lookup_table.values_to_look_up[
-        (
-            xnp.minimum(
-                anzahl_personen,
-                min_einkommen_lookup_table.values_to_look_up.shape[0],
-            )
-            - min_einkommen_lookup_table.base_to_subtract
-        ).astype(xnp.int32)
+        xnp.minimum(
+            anzahl_personen,
+            min_einkommen_lookup_table.values_to_look_up.shape[0],
+        )
+        - min_einkommen_lookup_table.base_to_subtract
     ]
 
     return xnp.maximum(eink_nach_abzug_m_hh, unteres_eink)
@@ -119,7 +117,6 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     sozialversicherung__kranken__beitrag__betrag_versicherter_y: float,
     familie__kind: bool,
     abzugsbeträge_steuern_sozialversicherung: ConsecutiveInt1dLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Calculate housing benefit subtractions on the individual level.
 
@@ -139,9 +136,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     if familie__kind:
         out = 0.0
     else:
-        out = abzug.values_to_look_up[
-            (stufe - abzug.base_to_subtract).astype(xnp.int32)
-        ]
+        out = abzug.values_to_look_up[stufe - abzug.base_to_subtract]
     return out
 
 

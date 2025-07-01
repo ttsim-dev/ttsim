@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import policy_function
 
 if TYPE_CHECKING:
-    from types import ModuleType
-
     from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
 
 
@@ -153,7 +151,6 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
     sozialversicherung__rente__jahr_renteneintritt: int,
     sozialversicherung__rente__monat_renteneintritt: int,
     zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
 
@@ -168,9 +165,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
         + sozialversicherung__rente__monat_renteneintritt
     )
     altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
-        (
-            claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
-        ).astype(xnp.int32)
+        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
     ]
     return (
         altersgrenze_zurechnungszeit
@@ -208,7 +203,6 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
     sozialversicherung__rente__jahr_renteneintritt: int,
     sozialversicherung__rente__monat_renteneintritt: int,
     zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
 
@@ -223,9 +217,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
         + sozialversicherung__rente__monat_renteneintritt
     )
     altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
-        (
-            claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
-        ).astype(xnp.int32)
+        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
     ]
     return (
         altersgrenze_zurechnungszeit
@@ -291,7 +283,6 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
         str,
         float,
     ],
-    xnp: ModuleType,
 ) -> float:
     """Zugangsfaktor.
 
@@ -314,9 +305,7 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
         grenze_abschlagsfrei = altersgrenze_langjährig_versichert
     else:
         grenze_abschlagsfrei = altersgrenze_gestaffelt.values_to_look_up[
-            (claiming_month_since_ad - altersgrenze_gestaffelt.base_to_subtract).astype(
-                xnp.int32
-            )
+            claiming_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
         ]
 
     zugangsfaktor = (

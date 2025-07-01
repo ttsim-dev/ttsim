@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from types import ModuleType
-
 from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
@@ -14,7 +9,6 @@ from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_
 def altersgrenze(
     geburtsjahr: int,
     altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Normal retirement age (NRA) during the phase-in period.
 
@@ -27,7 +21,7 @@ def altersgrenze(
     Does not check for eligibility for this pathway into retirement.
     """
     return altersgrenze_gestaffelt.values_to_look_up[
-        (geburtsjahr - altersgrenze_gestaffelt.base_to_subtract).astype(xnp.int32)
+        geburtsjahr - altersgrenze_gestaffelt.base_to_subtract
     ]
 
 

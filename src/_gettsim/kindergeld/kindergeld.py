@@ -47,7 +47,6 @@ def betrag_ohne_staffelung_m(
 def betrag_gestaffelt_m(
     anzahl_ansprüche: int,
     satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Sum of Kindergeld that parents receive for their children.
 
@@ -56,7 +55,7 @@ def betrag_gestaffelt_m(
 
     """
     return satz_nach_anzahl_kinder.values_to_look_up[
-        (anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract).astype(xnp.int32)
+        anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract
     ]
 
 

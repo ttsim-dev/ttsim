@@ -62,15 +62,11 @@ def altersfreibetrag_y_ab_2005(
     altersentlastungsbetrag_altersgrenze: int,
     maximaler_altersentlastungsbetrag_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
     altersentlastungsquote_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Calculate tax deduction allowance for elderly since 2005."""
     maximaler_altersentlastungsbetrag = (
         maximaler_altersentlastungsbetrag_gestaffelt.values_to_look_up[
-            (
-                geburtsjahr
-                - maximaler_altersentlastungsbetrag_gestaffelt.base_to_subtract
-            ).astype(xnp.int32)
+            geburtsjahr - maximaler_altersentlastungsbetrag_gestaffelt.base_to_subtract
         ]
     )
 
@@ -86,9 +82,7 @@ def altersfreibetrag_y_ab_2005(
         0.0,
     )
     betrag = altersentlastungsquote_gestaffelt.values_to_look_up[
-        (geburtsjahr - altersentlastungsquote_gestaffelt.base_to_subtract).astype(
-            xnp.int32
-        )
+        geburtsjahr - altersentlastungsquote_gestaffelt.base_to_subtract
     ] * (einkommen_lohn + weiteres_einkommen)
 
     if alter > altersentlastungsbetrag_altersgrenze:
