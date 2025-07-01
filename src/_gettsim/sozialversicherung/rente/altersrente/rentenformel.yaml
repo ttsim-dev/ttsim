@@ -389,7 +389,6 @@ rentenwert:
   unit: Euros
   reference_period: null
   type: scalar
-  access_different_date: vorjahr
   2023-07-01:
     value: 37.60
   2024-01-07:
