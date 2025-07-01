@@ -16,12 +16,14 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
+    from ttsim.interface_dag_elements.typing import FloatColumn
+
 
 def basis_für_klassen_5_6(
-    einkommen_y: float,
+    einkommen_y: FloatColumn,
     parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     xnp: ModuleType,
-) -> float:
+) -> FloatColumn:
     """Calculate base for Lohnsteuer for steuerklasse 5 and 6, by applying
     obtaining twice the difference between applying the factors 1.25 and 0.75
     to the lohnsteuer payment.
@@ -84,9 +86,9 @@ def parameter_max_lohnsteuer_klasse_5_6(
     intercepts = numpy.asarray(
         [
             0,
-            lohnsteuer_bis_erste_grenze,
-            lohnsteuer_bis_zweite_grenze,
-            lohnsteuer_bis_dritte_grenze,
+            lohnsteuer_bis_erste_grenze.item(),
+            lohnsteuer_bis_zweite_grenze.item(),
+            lohnsteuer_bis_dritte_grenze.item(),
         ],
     )
     rates = numpy.expand_dims(
@@ -170,7 +172,6 @@ def betrag_y(
         out = splittingtarif
     else:
         out = tarif_klassen_5_und_6
-
     return max(out, 0.0)
 
 
