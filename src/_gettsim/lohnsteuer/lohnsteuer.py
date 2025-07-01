@@ -60,21 +60,6 @@ def parameter_max_lohnsteuer_klasse_5_6(
     """Create paramter values for the piecewise polynomial that represents the maximum amount of Lohnsteuer
     that can be paid on incomes higher than the income thresholds for Steuerklasse 5 and 6.
     """
-    lohnsteuer_bis_erste_grenze = basis_für_klassen_5_6(
-        einkommensgrenzwerte_steuerklassen_5_6[1],
-        einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
-    )
-    lohnsteuer_bis_zweite_grenze = basis_für_klassen_5_6(
-        einkommensgrenzwerte_steuerklassen_5_6[2],
-        einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
-    )
-    lohnsteuer_bis_dritte_grenze = basis_für_klassen_5_6(
-        einkommensgrenzwerte_steuerklassen_5_6[3],
-        einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
-    )
     thresholds = numpy.asarray(
         [
             0,
@@ -86,9 +71,21 @@ def parameter_max_lohnsteuer_klasse_5_6(
     intercepts = numpy.asarray(
         [
             0,
-            lohnsteuer_bis_erste_grenze.item(),
-            lohnsteuer_bis_zweite_grenze.item(),
-            lohnsteuer_bis_dritte_grenze.item(),
+            basis_für_klassen_5_6(
+                einkommensgrenzwerte_steuerklassen_5_6[1],
+                einkommensteuer__parameter_einkommensteuertarif,
+                xnp=xnp,
+            ).item(),
+            basis_für_klassen_5_6(
+                einkommensgrenzwerte_steuerklassen_5_6[2],
+                einkommensteuer__parameter_einkommensteuertarif,
+                xnp=xnp,
+            ).item(),
+            basis_für_klassen_5_6(
+                einkommensgrenzwerte_steuerklassen_5_6[3],
+                einkommensteuer__parameter_einkommensteuertarif,
+                xnp=xnp,
+            ).item(),
         ],
     )
     rates = numpy.expand_dims(
@@ -97,13 +94,11 @@ def parameter_max_lohnsteuer_klasse_5_6(
         ],
         axis=0,
     )
-    parameter_max_lohnsteuer_klasse_5_6 = PiecewisePolynomialParamValue(
+    return PiecewisePolynomialParamValue(
         thresholds=xnp.asarray(thresholds),
         intercepts=xnp.asarray(intercepts),
         rates=xnp.asarray(rates),
     )
-
-    return parameter_max_lohnsteuer_klasse_5_6
 
 
 @policy_function(start_date="2015-01-01")
