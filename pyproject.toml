@@ -105,7 +105,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 [tool.pixi.dependencies]
 python = ">=3.11,<3.14"
 pre-commit = "*"
-pandas = ">=2.1"
+pandas = ">=2.2"
 numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
@@ -129,13 +129,9 @@ snakeviz = ">=2.2.2,<3"
 gettsim = {path = ".", editable = true}
 dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
 jaxtyping = "*"
+kaleido = ">=1.0"
 pdbp = "*"
 
-[tool.pixi.target.unix.pypi-dependencies]
-kaleido = "*"
-
-[tool.pixi.target.win-64.pypi-dependencies]
-kaleido = ">=1.0"
 
 # Features
 # --------------------------------------------------------------------------------------
@@ -150,15 +146,15 @@ python = "3.12.*"
 python = "3.13.*"
 
 [tool.pixi.feature.jax.target.unix.dependencies]
-jax = ">=0.4.20"
-jaxlib = ">=0.4.20"
+jax = ">=0.6"
+jaxlib = ">=0.6"
 
 # [tool.pixi.feature.jax.pypi-dependencies]
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
 
 [tool.pixi.feature.jax.target.win-64.pypi-dependencies]
-jax = { version = ">=0.4.20", extras = ["cpu"] }
-jaxlib = ">=0.4.20"
+jax = { version = ">=0.6", extras = ["cpu"] }
+jaxlib = ">=0.6"
 
 [tool.pixi.feature.mypy.pypi-dependencies]
 mypy = "~=1.16"
