@@ -72,18 +72,18 @@ def parameter_max_lohnsteuer_klasse_5_6(
         [
             0,
             basis_für_klassen_5_6(
-                einkommensgrenzwerte_steuerklassen_5_6[1],
-                einkommensteuer__parameter_einkommensteuertarif,
+                einkommen_y=thresholds[1],
+                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
                 xnp=xnp,
             ).item(),
             basis_für_klassen_5_6(
-                einkommensgrenzwerte_steuerklassen_5_6[2],
-                einkommensteuer__parameter_einkommensteuertarif,
+                einkommen_y=thresholds[2],
+                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
                 xnp=xnp,
             ).item(),
             basis_für_klassen_5_6(
-                einkommensgrenzwerte_steuerklassen_5_6[3],
-                einkommensteuer__parameter_einkommensteuertarif,
+                einkommen_y=thresholds[3],
+                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
                 xnp=xnp,
             ).item(),
         ],
