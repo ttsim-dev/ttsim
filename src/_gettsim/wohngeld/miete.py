@@ -203,10 +203,11 @@ def miete_m_bg(
 def min_miete_m_hh(
     anzahl_personen_hh: int,
     min_miete_lookup: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Minimum rent considered in Wohngeld calculation."""
     return min_miete_lookup.values_to_look_up[
-        anzahl_personen_hh - min_miete_lookup.base_to_subtract
+        (anzahl_personen_hh - min_miete_lookup.base_to_subtract).astype(xnp.int64)
     ]
 
 
@@ -271,15 +272,20 @@ def miete_m_hh_mit_heizkostenentlastung(
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveInt2dLookupTableParamValue,
     heizkostenentlastung_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.values_to_look_up[
-        anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows,
-        mietstufe - max_miete_m_lookup.base_to_subtract_cols,
+        (anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows).astype(
+            xnp.int64
+        ),
+        (mietstufe - max_miete_m_lookup.base_to_subtract_cols).astype(xnp.int64),
     ]
 
     heating_allowance_m = heizkostenentlastung_m_lookup.values_to_look_up[
-        anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract
+        (anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract).astype(
+            xnp.int64
+        )
     ]
 
     return (
@@ -301,24 +307,33 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
     heizkostenentlastung_m_lookup: ConsecutiveInt1dLookupTableParamValue,
     dauerhafte_heizkostenkomponente_m_lookup: ConsecutiveInt1dLookupTableParamValue,
     klimakomponente_m_lookup: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.values_to_look_up[
-        anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows,
-        mietstufe - max_miete_m_lookup.base_to_subtract_cols,
+        (anzahl_personen_hh - max_miete_m_lookup.base_to_subtract_rows).astype(
+            xnp.int64
+        ),
+        (mietstufe - max_miete_m_lookup.base_to_subtract_cols).astype(xnp.int64),
     ]
 
     heizkostenentlastung = heizkostenentlastung_m_lookup.values_to_look_up[
-        anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract
+        (anzahl_personen_hh - heizkostenentlastung_m_lookup.base_to_subtract).astype(
+            xnp.int64
+        )
     ]
     dauerhafte_heizkostenkomponente = (
         dauerhafte_heizkostenkomponente_m_lookup.values_to_look_up[
-            anzahl_personen_hh
-            - dauerhafte_heizkostenkomponente_m_lookup.base_to_subtract
+            (
+                anzahl_personen_hh
+                - dauerhafte_heizkostenkomponente_m_lookup.base_to_subtract
+            ).astype(xnp.int64)
         ]
     )
     klimakomponente = klimakomponente_m_lookup.values_to_look_up[
-        anzahl_personen_hh - klimakomponente_m_lookup.base_to_subtract
+        (anzahl_personen_hh - klimakomponente_m_lookup.base_to_subtract).astype(
+            xnp.int64
+        )
     ]
     return (
         max(

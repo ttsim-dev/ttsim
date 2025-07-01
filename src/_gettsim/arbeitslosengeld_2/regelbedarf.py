@@ -326,6 +326,7 @@ def berechtigte_wohnfläche(
     anzahl_personen_hh: int,
     berechtigte_wohnfläche_miete: dict[str, float],
     berechtigte_wohnfläche_eigentum: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Calculate size of dwelling eligible to claim.
 
@@ -333,7 +334,9 @@ def berechtigte_wohnfläche(
     """
     if wohnen__bewohnt_eigentum_hh:
         maximum = berechtigte_wohnfläche_eigentum.values_to_look_up[
-            anzahl_personen_hh - berechtigte_wohnfläche_eigentum.base_to_subtract
+            (
+                anzahl_personen_hh - berechtigte_wohnfläche_eigentum.base_to_subtract
+            ).astype(xnp.int64)
         ]
     else:
         maximum = (

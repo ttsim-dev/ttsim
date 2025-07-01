@@ -55,15 +55,18 @@ def monate_verbleibender_anspruchsdauer(
     monate_durchgängigen_bezugs_von_arbeitslosengeld: int,
     anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
     anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> int:
     """Remaining amount of months of potential unemployment benefit claims."""
     auf_altersbasis = anspruchsdauer_nach_alter.values_to_look_up[
-        alter - anspruchsdauer_nach_alter.base_to_subtract
+        (alter - anspruchsdauer_nach_alter.base_to_subtract).astype(xnp.int64)
     ]
     auf_basis_versicherungspflichtiger_monate = (
         anspruchsdauer_nach_versicherungspflichtigen_monaten.values_to_look_up[
-            monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
-            - anspruchsdauer_nach_versicherungspflichtigen_monaten.base_to_subtract
+            (
+                monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
+                - anspruchsdauer_nach_versicherungspflichtigen_monaten.base_to_subtract
+            ).astype(xnp.int64)
         ]
     )
 

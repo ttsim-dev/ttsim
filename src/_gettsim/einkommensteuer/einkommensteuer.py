@@ -185,6 +185,7 @@ def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
     kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
@@ -200,7 +201,10 @@ def relevantes_kindergeld_mit_staffelung_m(
 
     return (
         kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
-            kindergeld_ansprüche - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
+            (
+                kindergeld_ansprüche
+                - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
+            ).astype(xnp.int64)
         ]
         / 2
     )

@@ -5,6 +5,11 @@ Revoked for birth cohorts after 1951.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
 from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_function
 
 
@@ -17,6 +22,7 @@ def altersgrenze_mit_staffelung(
     geburtsjahr: int,
     geburtsmonat: int,
     altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Full retirement age (FRA) for women.
 
@@ -27,7 +33,9 @@ def altersgrenze_mit_staffelung(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
+        (birth_month_since_ad - altersgrenze_gestaffelt.base_to_subtract).astype(
+            xnp.int64
+        )
     ]
 
 
@@ -40,6 +48,7 @@ def altersgrenze_vorzeitig_mit_staffelung(
     geburtsjahr: int,
     geburtsmonat: int,
     altersgrenze_vorzeitig_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    xnp: ModuleType,
 ) -> float:
     """Early retirement age (ERA) for Renten für Frauen.
 
@@ -50,7 +59,9 @@ def altersgrenze_vorzeitig_mit_staffelung(
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
     return altersgrenze_vorzeitig_gestaffelt.values_to_look_up[
-        birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
+        (
+            birth_month_since_ad - altersgrenze_vorzeitig_gestaffelt.base_to_subtract
+        ).astype(xnp.int64)
     ]
 
 

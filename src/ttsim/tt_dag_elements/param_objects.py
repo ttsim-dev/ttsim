@@ -172,7 +172,7 @@ def get_consecutive_int_1d_lookup_table_param_value(
     )
 
     return ConsecutiveInt1dLookupTableParamValue(
-        base_to_subtract=min(lookup_keys),
+        base_to_subtract=min(lookup_keys).item(),
         values_to_look_up=xnp.asarray([raw[k] for k in lookup_keys]),
     )
 
@@ -195,8 +195,8 @@ def get_consecutive_int_2d_lookup_table_param_value(
             f"Dictionary keys must be consecutive integers, got: {lookup_keys}"
         )
     return ConsecutiveInt2dLookupTableParamValue(
-        base_to_subtract_rows=min(lookup_keys_rows),
-        base_to_subtract_cols=min(lookup_keys_cols),
+        base_to_subtract_rows=min(lookup_keys_rows).item(),
+        base_to_subtract_cols=min(lookup_keys_cols).item(),
         values_to_look_up=xnp.array(
             [
                 raw[row.item()][col.item()]
