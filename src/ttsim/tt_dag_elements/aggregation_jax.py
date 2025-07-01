@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 def grouped_count(group_id: IntColumn, num_segments: int) -> jnp.ndarray:
     out_grouped = segment_sum(
-        data=jnp.ones(len(group_id)),
+        data=jnp.ones(len(group_id), dtype=jnp.int32),
         segment_ids=group_id,
         num_segments=num_segments,
     )
