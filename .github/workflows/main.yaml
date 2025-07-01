@@ -29,9 +29,9 @@ jobs:
           - py313-jax
         exclude:
           - os: macos-latest
-            environment: py311, py312, py313-jax
+            environment: py311, py312
           - os: windows-latest
-            environment: py311, py312, py313-jax
+            environment: py311, py312
     steps:
       - uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.8
@@ -45,21 +45,19 @@ jobs:
         if: runner.os == 'macOS'
         run: pixi run -e ${{ matrix.environment }} dot -c
       - name: Run tests on Linux (with NumPy backend and without coverage)
-        if: >-
-          runner.os == 'Linux' &&  (matrix.environment == 'py311' || matrix.environment ==
-          'py312')
+        if: matrix.environment == 'py311' || matrix.environment == 'py312'
         run: pixi run -e ${{ matrix.environment }} tests
         shell: bash -el {0}
       - name: Run tests on Linux (with NumPy backend and coverage)
         if: runner.os == 'Linux' && matrix.environment == 'py313'
         run: pixi run -e ${{ matrix.environment }} tests --cov=./ --cov-report=xml
         shell: bash -el {0}
-      - name: Run tests on MacOS and Windows (for now with NumPy backend)
-        if: runner.os != 'Linux' && matrix.environment == 'py313'
+      - name: Run tests on MacOS / Windows (with NumPy backend and without coverage)
+        if: runner.os != 'Linux'
         run: pixi run -e ${{ matrix.environment }} tests
         shell: bash -el {0}
       - name: Run tests with JAX backend
-        if: matrix.environment == 'py313-jax' && runner.os == 'Linux'
+        if: matrix.environment == 'py313-jax'
         run: pixi run -e ${{ matrix.environment }} tests-jax
         shell: bash -el {0}
       - name: Upload coverage reports
