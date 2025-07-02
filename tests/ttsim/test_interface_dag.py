@@ -11,7 +11,7 @@ from ttsim import main_args
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _harmonize_inputs,
-    _harmonize_outputs,
+    _harmonize_output,
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
 )
@@ -295,6 +295,6 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
     ],
 )
 def test_harmonize_outputs(output, expected):
-    harmonized = _harmonize_outputs(output=output)
+    harmonized = _harmonize_output(output=output)
 
     assert harmonized == expected

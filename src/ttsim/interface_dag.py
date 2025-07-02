@@ -64,7 +64,7 @@ def main(
     """
 
     input_qnames = _harmonize_inputs(locals())
-    output_qnames = _harmonize_outputs(output)
+    output_qnames = _harmonize_output(output)
 
     if not any(re.match("(input|processed)_data", s) for s in input_qnames):
         input_qnames["processed_data"] = {}
@@ -150,7 +150,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in flat_inputs.items() if v is not None and k != "output"}
 
 
-def _harmonize_outputs(
+def _harmonize_output(
     output: main_args.output.Name | main_args.output.Names | None,
 ) -> dict[str, Any]:
     if output is None:
