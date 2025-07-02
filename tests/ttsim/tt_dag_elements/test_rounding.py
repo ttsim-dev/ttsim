@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import datetime
+
 import numpy
 import pandas as pd
 import pytest
@@ -111,6 +113,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
     results__tree = main(
         input_data={"tree": input_data__tree},
         policy_environment=policy_environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"namespace": {"test_func": None}}},
         rounding=True,
         backend=backend,
@@ -146,6 +149,7 @@ def test_rounding_with_time_conversion(backend, xnp):
     results__tree = main(
         input_data={"tree": data},
         policy_environment=policy_environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"test_func_y": None}},
         rounding=True,
         backend=backend,
@@ -185,6 +189,7 @@ def test_no_rounding(
     results__tree = main(
         input_data={"tree": data},
         policy_environment=policy_environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"test_func": None}},
         rounding=False,
         backend=backend,

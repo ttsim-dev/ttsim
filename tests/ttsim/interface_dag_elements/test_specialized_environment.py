@@ -395,6 +395,7 @@ def test_create_agg_by_group_functions(
     main(
         policy_environment=policy_environment,
         input_data={"tree": input_data__tree},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
@@ -411,6 +412,7 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
     out = main(
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module": {"some_func": None}}},
         rounding=False,
         backend=backend,
@@ -443,6 +445,7 @@ def test_params_target_is_allowed(minimal_input_data):
     out = main(
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"some_param": None, "module": {"some_func": None}}},
         rounding=False,
         backend="numpy",
@@ -474,6 +477,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     results__tree = main(
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"b": None}},
         rounding=False,
         backend=backend,
@@ -493,6 +497,7 @@ def test_partial_params_to_functions(xnp, dnp, backend):
             "some_param": SOME_INT_PARAM.value,
         },
         num_segments=1,
+        evaluation_date=datetime.date(2024, 1, 1),
         dnp=dnp,
         rounding=False,
         xnp=xnp,
@@ -509,6 +514,7 @@ def test_partial_params_to_functions_removes_argument(xnp, dnp, backend):
             "some_param": SOME_INT_PARAM.value,
         },
         num_segments=1,
+        evaluation_date=datetime.date(2024, 1, 1),
         rounding=False,
         xnp=xnp,
         dnp=dnp,
@@ -544,6 +550,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
     actual = main(
         policy_environment=policy_environment,
         input_data={"tree": data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module_name": {"betrag_m_fam": None}}},
         rounding=False,
         backend=backend,
@@ -587,6 +594,7 @@ def test_user_provided_aggregation(backend):
     actual = main(
         policy_environment=policy_environment,
         input_data={"tree": data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module_name": {"betrag_m_double_fam": None}}},
         rounding=False,
         backend=backend,
@@ -636,6 +644,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
     actual = main(
         policy_environment=policy_environment,
         input_data={"tree": data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module_name": {"max_betrag_double_y_fam": None}}},
         rounding=False,
         backend=backend,
@@ -722,6 +731,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     actual = main(
         input_data={"tree": minimal_input_data_shared_fam},
         policy_environment=policy_environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": target_tree},
         rounding=False,
         backend=backend,
@@ -755,6 +765,7 @@ def test_policy_environment_with_params_and_scalars_is_processed(xnp, dnp, backe
         backend=backend,
         xnp=xnp,
         dnp=dnp,
+        evaluation_date=datetime.date(2024, 1, 1),
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
@@ -835,6 +846,7 @@ def test_can_override_ttsim_objects_with_data(
     actual = main(
         input_data={"tree": {**minimal_input_data, **overriding_data}},
         policy_environment=nested_policy_environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,

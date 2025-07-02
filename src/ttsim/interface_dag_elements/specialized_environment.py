@@ -24,6 +24,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
+    import datetime
     from collections.abc import Callable
 
     import networkx as nx
@@ -161,6 +162,7 @@ def with_processed_params_and_scalars(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
+    evaluation_date: datetime.date,
 ) -> QNameSpecializedEnvironment1:
     """Process the parameters and param functions, remove RawParams from the tree.
 
@@ -178,6 +180,9 @@ def with_processed_params_and_scalars(
         The numpy-like module to use for computations.
     dnp
         The numpy-like module to use for datetime objects.
+    evaluation_date
+        The date for which the policy system is set up. An integer is
+        interpreted as the year.
 
     Returns
     -------
@@ -219,6 +224,9 @@ def with_processed_params_and_scalars(
         xnp=xnp,
         dnp=dnp,
         backend=backend,
+        evaluation_year=evaluation_date.year,
+        evaluation_month=evaluation_date.month,
+        evaluation_day=evaluation_date.day,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},
@@ -238,6 +246,7 @@ def with_partialled_params_and_scalars(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
+    evaluation_date: datetime.date,
 ) -> QNameSpecializedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
 
@@ -256,6 +265,9 @@ def with_partialled_params_and_scalars(
         The numpy-like module to use for computations.
     dnp
         The numpy-like module to use for datetime objects.
+    evaluation_date
+        The date for which the policy system is set up. An integer is
+        interpreted as the year.
 
     Returns
     -------
@@ -277,6 +289,9 @@ def with_partialled_params_and_scalars(
         "backend": backend,
         "xnp": xnp,
         "dnp": dnp,
+        "evaluation_year": evaluation_date.year,
+        "evaluation_month": evaluation_date.month,
+        "evaluation_day": evaluation_date.day,
     }
 
     processed_functions = {}

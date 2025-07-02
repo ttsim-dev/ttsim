@@ -91,7 +91,17 @@ def top_level_namespace(
             all_top_level_names.add(f"{name}_{g}")
 
     # Add config variables that are not part of the policy environment.
-    return all_top_level_names.union({"xnp", "dnp", "num_segments", "backend"})
+    return all_top_level_names.union(
+        {
+            "xnp",
+            "dnp",
+            "num_segments",
+            "backend",
+            "evaluation_year",
+            "evaluation_month",
+            "evaluation_day",
+        }
+    )
 
 
 @interface_function()

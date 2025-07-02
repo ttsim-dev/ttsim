@@ -91,11 +91,11 @@ def execute_test(
     backend: Literal["numpy", "jax"],
 ) -> None:
     environment = cached_policy_environment(date=test.date, root=root, backend=backend)
-
     if test.target_structure:
         result_df = main(
             input_data={"tree": test.input_tree},
             policy_environment=environment,
+            date=test.date,
             targets={"tree": test.target_structure},
             rounding=True,
             backend=backend,
@@ -270,6 +270,9 @@ def check_env_completeness(
         "xnp",
         "dnp",
         "num_segments",
+        "evaluation_year",
+        "evaluation_month",
+        "evaluation_day",
     }
     if args:
         raise ValueError(
