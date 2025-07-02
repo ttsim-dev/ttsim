@@ -48,7 +48,7 @@ dependencies = [
     "numpy-groupies",
     "pandas",
     "openpyxl",
-    "plotly",
+    "plotly>=6.2",
     "optree",
     "pygments",
     "pygraphviz",
@@ -103,15 +103,14 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.14"
 pre-commit = "*"
-pandas = ">=2.1"
+pandas = ">=2.2"
 numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
 ipywidgets = "*"
 jupyterlab = "*"
-plotly = ">=5.24,<6"
 pygments = "*"
 pygraphviz = "*"
 pyyaml = "*"
@@ -128,15 +127,11 @@ snakeviz = ">=2.2.2,<3"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "lexsort"}
+dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
 jaxtyping = "*"
+kaleido = ">=1.0"
 pdbp = "*"
 
-[tool.pixi.target.unix.pypi-dependencies]
-kaleido = "*"
-
-[tool.pixi.target.win-64.pypi-dependencies]
-kaleido = ">=0.1.0.post1,<=0.1.0.post1"
 
 # Features
 # --------------------------------------------------------------------------------------
@@ -147,16 +142,28 @@ python = "3.11.*"
 [tool.pixi.feature.py312.dependencies]
 python = "3.12.*"
 
-[tool.pixi.feature.jax.target.unix.dependencies]
-jax = ">=0.4.20"
-jaxlib = ">=0.4.20"
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
 
-[tool.pixi.feature.jax.pypi-dependencies]
-jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+[tool.pixi.feature.jax.target.unix.dependencies]
+jax = ">=0.6"
+jaxlib = ">=0.6"
+
+# [tool.pixi.feature.jax.pypi-dependencies]
+# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
 
 [tool.pixi.feature.jax.target.win-64.pypi-dependencies]
-jax = { version = ">=0.4.20", extras = ["cpu"] }
-jaxlib = ">=0.4.20"
+jax = { version = ">=0.6", extras = ["cpu"] }
+jaxlib = ">=0.6"
+
+[tool.pixi.feature.cuda]
+platforms = ["linux-64"]
+system-requirements = {cuda = "12"}
+
+[tool.pixi.feature.cuda.target.linux-64.dependencies]
+jax = ">=0.6"
+jaxlib = { version = ">=0.6", build = "cuda12*" }
+cuda-nvcc = "~=12"
 
 [tool.pixi.feature.mypy.pypi-dependencies]
 mypy = "~=1.16"
@@ -172,6 +179,9 @@ tests = "pytest"
 [tool.pixi.feature.jax.tasks]
 tests-jax = "pytest --backend=jax"
 
+[tool.pixi.feature.cuda.tasks]
+tests-cuda = "pytest --backend=jax"
+
 [tool.pixi.feature.mypy.tasks]
 mypy = "mypy --ignore-missing-imports"
 
@@ -182,8 +192,9 @@ mypy = "mypy --ignore-missing-imports"
 mypy = ["mypy"]
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
-py312-jax = ["py312", "test", "jax"]
-
+py313 = ["test", "py313"]
+py313-jax = ["py313", "test", "jax"]
+py313-cuda = ["py313", "test", "cuda"]
 
 # ======================================================================================
 # Ruff configuration
@@ -311,7 +322,8 @@ markers = [
     "unit: Flag for unit tests which target mainly a single function.",
     "integration: Flag for integration tests which may comprise of multiple unit tests.",
     "end_to_end: Flag for tests that cover the whole program.",
-    "skipif_jax: skip test if backend is jax"
+    "skipif_jax: skip test if backend is jax",
+    "skipif_numpy: skip test if backend is numpy"
 ]
 norecursedirs = ["docs"]
 testpaths = [

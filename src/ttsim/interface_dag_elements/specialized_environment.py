@@ -191,7 +191,8 @@ def with_processed_params_and_scalars(
     if processed_data:
         all_nodes["num_segments"] = len(next(iter(processed_data.values())))
     else:
-        all_nodes["num_segments"] = 0
+        # Leave at a recognisable value; just used in jittability tests.
+        all_nodes["num_segments"] = 11111
 
     params = {k: v for k, v in all_nodes.items() if isinstance(v, ParamObject)}
     scalars = {

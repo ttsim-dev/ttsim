@@ -510,8 +510,7 @@ def _plot_dag(
     return go.Figure(
         data=[*edge_traces, node_trace],
         layout=go.Layout(
-            title=title,
-            titlefont_size=16,
+            title={"text": title, "font": {"size": 16}},
             showlegend=False,
             hovermode="closest",
             margin={"b": 40, "l": 40, "r": 40, "t": 60},

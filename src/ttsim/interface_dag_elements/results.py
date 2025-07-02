@@ -72,7 +72,7 @@ def df_with_nested_columns(
     tree: NestedData,
     input_data__flat: FlatData,
 ) -> pd.DataFrame:
-    """The results DataFrame with mapped column names.
+    """The results DataFrame with nested column names corresponding to tree paths..
 
     Args:
         tree:
@@ -84,7 +84,7 @@ def df_with_nested_columns(
 
     Returns
     -------
-        A DataFrame.
+    A DataFrame with a hierarchical index in the column dimension.
     """
     return nested_data_to_df_with_nested_columns(
         nested_data_to_convert=tree,

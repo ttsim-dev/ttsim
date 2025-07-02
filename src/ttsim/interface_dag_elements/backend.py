@@ -41,7 +41,7 @@ def dnp(backend: Literal["numpy", "jax"]) -> ModuleType:
     if backend == "numpy":
         dnp = numpy
     elif backend == "jax":
-        import jax_datetime
+        # import jax_datetime # noqa: ERA001
 
-        dnp = jax_datetime
+        dnp = numpy  # jax_datetime
     return dnp

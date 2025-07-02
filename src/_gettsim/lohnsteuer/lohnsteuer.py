@@ -16,12 +16,14 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
+    from ttsim.interface_dag_elements.typing import FloatColumn
+
 
 def basis_für_klassen_5_6(
-    einkommen_y: float,
+    einkommen_y: FloatColumn,
     parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     xnp: ModuleType,
-) -> float:
+) -> FloatColumn:
     """Calculate base for Lohnsteuer for steuerklasse 5 and 6, by applying
     obtaining twice the difference between applying the factors 1.25 and 0.75
     to the lohnsteuer payment.
@@ -58,21 +60,6 @@ def parameter_max_lohnsteuer_klasse_5_6(
     """Create paramter values for the piecewise polynomial that represents the maximum amount of Lohnsteuer
     that can be paid on incomes higher than the income thresholds for Steuerklasse 5 and 6.
     """
-    lohnsteuer_bis_erste_grenze = basis_für_klassen_5_6(
-        einkommensgrenzwerte_steuerklassen_5_6[1],
-        einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
-    )
-    lohnsteuer_bis_zweite_grenze = basis_für_klassen_5_6(
-        einkommensgrenzwerte_steuerklassen_5_6[2],
-        einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
-    )
-    lohnsteuer_bis_dritte_grenze = basis_für_klassen_5_6(
-        einkommensgrenzwerte_steuerklassen_5_6[3],
-        einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
-    )
     thresholds = numpy.asarray(
         [
             0,
@@ -84,9 +71,21 @@ def parameter_max_lohnsteuer_klasse_5_6(
     intercepts = numpy.asarray(
         [
             0,
-            lohnsteuer_bis_erste_grenze,
-            lohnsteuer_bis_zweite_grenze,
-            lohnsteuer_bis_dritte_grenze,
+            basis_für_klassen_5_6(
+                einkommen_y=thresholds[1],
+                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+                xnp=xnp,
+            ).item(),
+            basis_für_klassen_5_6(
+                einkommen_y=thresholds[2],
+                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+                xnp=xnp,
+            ).item(),
+            basis_für_klassen_5_6(
+                einkommen_y=thresholds[3],
+                parameter_einkommensteuertarif=einkommensteuer__parameter_einkommensteuertarif,
+                xnp=xnp,
+            ).item(),
         ],
     )
     rates = numpy.expand_dims(
@@ -95,13 +94,11 @@ def parameter_max_lohnsteuer_klasse_5_6(
         ],
         axis=0,
     )
-    parameter_max_lohnsteuer_klasse_5_6 = PiecewisePolynomialParamValue(
+    return PiecewisePolynomialParamValue(
         thresholds=xnp.asarray(thresholds),
         intercepts=xnp.asarray(intercepts),
         rates=xnp.asarray(rates),
     )
-
-    return parameter_max_lohnsteuer_klasse_5_6
 
 
 @policy_function(start_date="2015-01-01")
@@ -170,7 +167,6 @@ def betrag_y(
         out = splittingtarif
     else:
         out = tarif_klassen_5_und_6
-
     return max(out, 0.0)
 
 
