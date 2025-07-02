@@ -103,24 +103,23 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.dependencies]
-python = ">=3.11,<3.14"
-pre-commit = "*"
-pandas = ">=2.2"
+ipywidgets = "*"
+jupyterlab = "*"
 numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
-ipywidgets = "*"
-jupyterlab = "*"
+pandas = ">=2.2"
+pre-commit = "*"
 pygments = "*"
 pygraphviz = "*"
-pyyaml = "*"
-toml = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-profiling = "*"
 pytest-xdist = "*"
+python = ">=3.11,<3.14"
+pyyaml = "*"
 snakeviz = ">=2.2.2,<3"
-
+toml = "*"
 
 # Development Dependencies (pypi)
 # --------------------------------------------------------------------------------------
@@ -170,6 +169,14 @@ mypy = "~=1.16"
 types-PyYAML = "*"
 types-pytz = "*"
 
+[tool.pixi.feature.docs.dependencies]
+myst-parser = "*"
+nbsphinx = "*"
+pydata-sphinx-theme = "*"
+sphinx = "*"
+sphinx-automodapi = "<0.17.0"
+sphinx-copybutton = "*"
+
 # Tasks
 # --------------------------------------------------------------------------------------
 
@@ -189,12 +196,13 @@ mypy = "mypy --ignore-missing-imports"
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.environments]
-mypy = ["mypy"]
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
 py313 = ["test", "py313"]
 py313-jax = ["py313", "test", "jax"]
 py313-cuda = ["py313", "test", "cuda"]
+mypy = ["mypy"]
+docs = ["docs", "py313"]
 
 # ======================================================================================
 # Ruff configuration
