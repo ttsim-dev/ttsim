@@ -127,22 +127,24 @@ def main(
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     # Iterate over the skeleton and see whether we need to convert anything to
     # qualified names.
+    dict_inputs = {}
+    for k, v in inputs.items():
+        if isinstance(v, main_args.MainArg):
+            dict_inputs[k] = v.to_dict()
+        else:
+            dict_inputs[k] = v
     flat_inputs = {}
     accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
         asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
         none_is_leaf=True,
     )[:2]
-    if "input_data" in inputs and isinstance(
-        inputs["input_data"], main_args.input_data.ABC
-    ):
-        inputs["input_data"] = inputs["input_data"].to_dict()
     for acc, val in zip(accs, vals, strict=False):
         qname = dt.qname_from_tree_path(acc.path)
-        if qname in inputs:
-            flat_inputs[qname] = inputs[qname]
+        if qname in dict_inputs:
+            flat_inputs[qname] = dict_inputs[qname]
         else:
             try:
-                flat_inputs[qname] = acc(inputs)
+                flat_inputs[qname] = acc(dict_inputs)
             except (KeyError, TypeError):
                 flat_inputs[qname] = val
     return {k: v for k, v in flat_inputs.items() if v is not None and k != "output"}
@@ -156,7 +158,7 @@ def _harmonize_outputs(
             "qname": None,
             "qnames": None,
         }
-    elif isinstance(output, main_args.output.ABC):
+    elif isinstance(output, main_args.MainArg):
         flat_output = output.to_dict()
         flat_output["name"] = flat_output.get("name")
         if isinstance(flat_output["name"], tuple):
