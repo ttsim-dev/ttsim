@@ -491,13 +491,15 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     )
 
 
-def test_partial_params_to_functions(xnp, backend):
+def test_partial_params_to_functions(xnp, dnp, backend):
     # Partial function produces correct result
     func_after_partial = with_partialled_params_and_scalars(
         with_processed_params_and_scalars={
             "some_func": func_before_partial,
             "some_param": SOME_INT_PARAM.value,
         },
+        num_segments=1,
+        dnp=dnp,
         rounding=False,
         xnp=xnp,
         backend=backend,
@@ -506,14 +508,16 @@ def test_partial_params_to_functions(xnp, backend):
     assert func_after_partial(2) == 3
 
 
-def test_partial_params_to_functions_removes_argument(xnp, backend):
+def test_partial_params_to_functions_removes_argument(xnp, dnp, backend):
     func_after_partial = with_partialled_params_and_scalars(
         with_processed_params_and_scalars={
             "some_func": func_before_partial,
             "some_param": SOME_INT_PARAM.value,
         },
+        num_segments=1,
         rounding=False,
         xnp=xnp,
+        dnp=dnp,
         backend=backend,
     )["some_func"]
 
@@ -745,7 +749,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     )
 
 
-def test_policy_environment_with_params_and_scalars_is_processed(backend, xnp):
+def test_policy_environment_with_params_and_scalars_is_processed(xnp):
     policy_environment = {
         "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
@@ -757,7 +761,6 @@ def test_policy_environment_with_params_and_scalars_is_processed(backend, xnp):
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
         "some_param_function_taking_scalar": some_param_function_taking_scalar,
-        "backend": backend,
     }
     actual = with_processed_params_and_scalars(
         without_tree_logic_and_with_derived_functions=policy_environment,
@@ -776,8 +779,6 @@ def test_policy_environment_with_params_and_scalars_is_processed(backend, xnp):
         "some_float_scalar": 2.0,
         "some_bool_scalar": True,
         "some_param_function_taking_scalar": 4.0,
-        "num_segments": 3,
-        "backend": backend,
     }
     assert actual == expected
 
