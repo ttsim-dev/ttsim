@@ -133,6 +133,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
             dict_inputs[k] = v.to_dict()
         else:
             dict_inputs[k] = v
+    breakpoint()
     flat_inputs = {}
     accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
         asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
