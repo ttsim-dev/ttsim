@@ -16,10 +16,10 @@ def arbeitssuchend() -> bool:
 
 
 @policy_input()
-def monate_durchgängigen_bezugs_von_arbeitslosengeld() -> float:
+def monate_durchgängigen_bezugs_von_arbeitslosengeld() -> int:
     """Number of months the individual already receives Arbeitslosengeld without interruption."""
 
 
 @policy_input()
-def monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren() -> float:
+def monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren() -> int:
     """Months of subjection to compulsory insurance in the 5 years before claiming unemployment."""

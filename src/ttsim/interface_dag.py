@@ -93,11 +93,18 @@ def main(
             output_qnames=output_qnames["names"],
         )
 
+    # Not strictly necessary, but helps with debugging.
+    dag = dags.create_dag(
+        functions=functions,
+        targets=output_qnames["names"],
+    )
+
     def lexsort_key(x: str) -> int:
         return 0 if x.startswith("fail_if") else 1
 
     if output_qnames["name"]:
         f = dags.concatenate_functions(
+            dag=dag,
             functions=functions,
             targets=output_qnames["name"],
             enforce_signature=False,
@@ -106,6 +113,7 @@ def main(
         )
     else:
         f = dags.concatenate_functions(
+            dag=dag,
             functions=functions,
             targets=output_qnames["names"],
             return_type="dict",

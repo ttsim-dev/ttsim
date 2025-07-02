@@ -1,26 +1,6 @@
 from __future__ import annotations
 
-import datetime
-
-import numpy
-
 from ttsim.tt_dag_elements import policy_function
-
-
-@policy_function()
-def geburtsdatum(
-    geburtsjahr: int,
-    geburtsmonat: int,
-    geburtstag: int,
-) -> numpy.datetime64:
-    """Create date of birth datetime variable."""
-    return numpy.datetime64(
-        datetime.datetime(  # noqa: DTZ001
-            geburtsjahr,
-            geburtsmonat,
-            geburtstag,
-        ),
-    ).astype("datetime64[D]")
 
 
 @policy_function()

@@ -373,9 +373,8 @@ def anteil_entgeltpunkte_ost(
 ) -> float:
     """Proportion of Entgeltpunkte accumulated in East Germany."""
     if (
-        sozialversicherung__rente__entgeltpunkte_west
-        == sozialversicherung__rente__entgeltpunkte_ost
-        == 0.0
+        sozialversicherung__rente__entgeltpunkte_west == 0
+        and sozialversicherung__rente__entgeltpunkte_ost == 0
     ):
         out = 0.0
     else:

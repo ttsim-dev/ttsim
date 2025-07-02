@@ -130,19 +130,22 @@ def in_anderer_bg_als_kindergeldempfänger(
     p_id: IntColumn,
     kindergeld__p_id_empfänger: IntColumn,
     bg_id: IntColumn,
-    xnp: ModuleType,  # Will become necessary for Jax.  # noqa: ARG001
+    xnp: ModuleType,
 ) -> BoolColumn:
     """True if the person is in a different Bedarfsgemeinschaft than the
     Kindergeldempfänger of that person.
     """
-    # Create a dictionary to map p_id to bg_id
-    p_id_to_bg_id = dict(zip(p_id, bg_id, strict=False))
+    # Get the array index for all p_ids of empfängers
+    p_id_empfänger_loc = kindergeld__p_id_empfänger
+    for i in range(p_id.shape[0]):
+        p_id_empfänger_loc = xnp.where(
+            kindergeld__p_id_empfänger == p_id[i],
+            i,
+            p_id_empfänger_loc,
+        )
 
     # Map each kindergeld__p_id_empfänger to its corresponding bg_id
-    empf_bg_id = [
-        p_id_to_bg_id[empfänger_id] if empfänger_id >= 0 else -1
-        for empfänger_id in kindergeld__p_id_empfänger
-    ]
+    empf_bg_id = bg_id[p_id_empfänger_loc]
 
     # Compare bg_id array with the mapped bg_ids of kindergeld__p_id_empfänger
-    return bg_id != empf_bg_id
+    return empf_bg_id != bg_id

@@ -58,11 +58,7 @@
           "type": ["string", "null"],
           "enum": ["Year", "Quarter", "Month", "Week", "Day", "Hour", null]
         },
-        "add_jahresanfang": {"type": "boolean"},
-        "access_different_date": {
-          "type": "string",
-          "enum": ["vorjahr", "jahresanfang"]
-        }
+        "add_jahresanfang": {"type": "boolean"}
       },
       "patternProperties": {
         "^(19|20)[0-9]{2}-(0[1-9]|1[0-2])-[0-3][0-9]$": {

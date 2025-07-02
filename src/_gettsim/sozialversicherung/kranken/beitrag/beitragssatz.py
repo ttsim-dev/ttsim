@@ -14,7 +14,7 @@ def beitragssatz_arbeitnehmer(beitragssatz: float) -> float:
     return beitragssatz / 2
 
 
-@param_function(end_date="2005-06-30")
+@param_function(end_date="2005-12-31")
 def beitragssatz_arbeitnehmer_jahresanfang(beitragssatz_jahresanfang: float) -> float:
     """Employee's health insurance contribution rate for the beginning of the year until
     June 2005.
@@ -45,7 +45,7 @@ def beitragssatz_arbeitnehmer_mittlerer_kassenspezifischer_zusatzbeitrag(
 
 
 @param_function(
-    start_date="2005-07-01",
+    start_date="2006-01-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
 )
@@ -54,9 +54,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_mittlerer_kassenspezifischer_zusatzbe
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
 
-    From July 2005 until December 2008. The contribution rates consists of a general
-    rate (split equally between employers and employees, differs across sickness funds)
-    and a top-up rate, which is fully paid by employees.
+    Starting in 2006, the "Jahresanfang" contribution rate includes the Sonderbeitrag.
     """
     return (
         parameter_beitragssatz_jahresanfang["mean_allgemein"] / 2
@@ -220,7 +218,22 @@ def beitragssatz_arbeitgeber_mittlerer_kassenspezifischer(
 
 
 @param_function(
-    start_date="2005-07-01",
+    start_date="2005-01-01",
+    end_date="2005-12-31",
+    leaf_name="beitragssatz_arbeitgeber_jahresanfang",
+)
+def beitragssatz_arbeitgeber_jahresanfang_2005(
+    beitragssatz_jahresanfang: float,
+) -> float:
+    """Employer's health insurance contribution rate at the begging of the year.
+
+    Until 2008, the top-up contribution rate (Zusatzbeitrag) was not considered.
+    """
+    return beitragssatz_jahresanfang / 2
+
+
+@param_function(
+    start_date="2006-01-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitgeber_jahresanfang",
 )

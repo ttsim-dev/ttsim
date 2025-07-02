@@ -88,14 +88,13 @@ def piecewise_polynomial(
         x - parameters.thresholds[selected_bin],
     )
     # Evaluate polynomial at x
-    out = (
+    return rates_multiplier * (
         parameters.intercepts[selected_bin]
         + (
             ((increment_to_calc.reshape(-1, 1)) ** xnp.arange(1, order + 1, 1))
             * (coefficients)
         ).sum(axis=1)
-    ) * rates_multiplier
-    return xnp.squeeze(out)
+    )
 
 
 def get_piecewise_parameters(
