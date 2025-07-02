@@ -302,7 +302,9 @@ def load_flat_interface_functions_and_inputs() -> FlatInterfaceObjects:
     orig_functions = _load_orig_functions()
     return _remove_tree_logic_from_functions_in_collection(
         orig_functions=orig_functions,
-        top_level_namespace={path[0] for path in orig_functions},
+        top_level_namespace={
+            (path[:-1] + (func.leaf_name,))[0] for path, func in orig_functions.items()
+        },
     )
 
 
