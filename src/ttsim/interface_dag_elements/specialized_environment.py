@@ -158,6 +158,9 @@ def _add_derived_functions(
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,
     processed_data: QNameData,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+    dnp: ModuleType,
 ) -> QNameSpecializedEnvironment1:
     """Process the parameters and param functions, remove RawParams from the tree.
 
@@ -169,6 +172,12 @@ def with_processed_params_and_scalars(
         qualified names in all keys and function arguments.
     processed_data
         The processed data.
+    backend
+        The backend to use for computations.
+    xnp
+        The numpy-like module to use for computations.
+    dnp
+        The numpy-like module to use for datetime objects.
 
     Returns
     -------
@@ -188,11 +197,7 @@ def with_processed_params_and_scalars(
             all_nodes[n] = f
 
     params = {k: v for k, v in all_nodes.items() if isinstance(v, ParamObject)}
-    scalars = {
-        k: v
-        for k, v in all_nodes.items()
-        if isinstance(v, float | int | bool) or k == "backend"
-    }
+    scalars = {k: v for k, v in all_nodes.items() if isinstance(v, float | int | bool)}
     modules = {k: v for k, v in all_nodes.items() if isinstance(v, ModuleType)}
     param_functions = {
         k: v for k, v in all_nodes.items() if isinstance(v, ParamFunction)
@@ -211,6 +216,9 @@ def with_processed_params_and_scalars(
         **{k: v.value for k, v in params.items()},
         **scalars,
         **modules,
+        xnp=xnp,
+        dnp=dnp,
+        backend=backend,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},
@@ -266,6 +274,7 @@ def with_partialled_params_and_scalars(
             if not isinstance(v, ColumnObject)
         },
         "num_segments": num_segments,
+        "backend": backend,
         "xnp": xnp,
         "dnp": dnp,
     }

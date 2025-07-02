@@ -768,8 +768,6 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     backend,
     xnp,
 ):
-    environment["backend"] = backend
-    environment["xnp"] = xnp
     actual = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
@@ -810,8 +808,6 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
     backend,
     xnp,
 ):
-    environment["backend"] = backend
-    environment["xnp"] = xnp
     actual = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,

@@ -265,12 +265,17 @@ def check_env_completeness(
         enforce_signature=False,
         set_annotations=False,
     )
-    args = inspect.signature(f).parameters
+    args = set(inspect.signature(f).parameters) - {
+        "backend",
+        "xnp",
+        "dnp",
+        "num_segments",
+    }
     if args:
         raise ValueError(
             f"{name}'s full DAG should include all root nodes but the following inputs "
             "are missing in the specialized policy environment:"
-            f"\n\n{format_list_linewise(args.keys())}\n\n"
+            f"\n\n{format_list_linewise(args)}\n\n"
             "Please add corresponding elements. Typically, these will be "
             "`@policy_input()`s or parameters in the yaml files."
         )

@@ -126,6 +126,15 @@ def plot_tt_dag(
         include_params=include_params,
         include_other_objects=include_other_objects,
     )
+    # Remove backend, xnp, dnp, and num_segments from the TT DAG.
+    dag_with_node_metadata.remove_nodes_from(
+        [
+            "backend",
+            "xnp",
+            "dnp",
+            "num_segments",
+        ]
+    )
     fig = _plot_dag(
         dag=dag_with_node_metadata,
         title=title,

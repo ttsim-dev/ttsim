@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
@@ -48,9 +48,7 @@ def policy_environment(
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     policy_date: datetime.date,
     evaluation_date: datetime.date,
-    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
-    dnp: ModuleType,
 ) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -62,6 +60,11 @@ def policy_environment(
     date
         The date for which the policy system is set up. An integer is
         interpreted as the year.
+    evaluation_date
+        The date for which the policy system is set up. An integer is
+        interpreted as the year.
+    xnp
+        The numpy-like module to use for computations.
 
     Returns
     -------
@@ -92,9 +95,6 @@ def policy_environment(
         note=None,
         reference=None,
     )
-    a_tree["backend"] = backend
-    a_tree["xnp"] = xnp
-    a_tree["dnp"] = dnp
     return a_tree
 
 
