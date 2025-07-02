@@ -7,7 +7,7 @@ import dags
 import dags.tree as dt
 import pytest
 
-from ttsim import arg_templates
+from ttsim import main_args
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _harmonize_inputs,
@@ -280,16 +280,16 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
 @pytest.mark.parametrize(
     ("output", "expected"),
     [
-        (arg_templates.output.Name("a__b"), {"name": "a__b", "names": ["a__b"]}),
-        (arg_templates.output.Name(("a", "b")), {"name": "a__b", "names": ["a__b"]}),
+        (main_args.output.Name("a__b"), {"name": "a__b", "names": ["a__b"]}),
+        (main_args.output.Name(("a", "b")), {"name": "a__b", "names": ["a__b"]}),
         (
-            arg_templates.output.Name({"a": {"b": None}}),
+            main_args.output.Name({"a": {"b": None}}),
             {"name": "a__b", "names": ["a__b"]},
         ),
-        (arg_templates.output.Names(["a__b"]), {"name": None, "names": ["a__b"]}),
-        (arg_templates.output.Names([("a", "b")]), {"name": None, "names": ["a__b"]}),
+        (main_args.output.Names(["a__b"]), {"name": None, "names": ["a__b"]}),
+        (main_args.output.Names([("a", "b")]), {"name": None, "names": ["a__b"]}),
         (
-            arg_templates.output.Names({"a": {"b": None}}),
+            main_args.output.Names({"a": {"b": None}}),
             {"name": None, "names": ["a__b"]},
         ),
     ],

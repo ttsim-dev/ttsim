@@ -10,7 +10,7 @@ import dags
 import dags.tree as dt
 import optree
 
-from ttsim import arg_templates
+from ttsim import main_args
 from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
@@ -37,12 +37,12 @@ if TYPE_CHECKING:
 def main(
     *,
     date_str: str | None = None,
-    output: arg_templates.output.Name | arg_templates.output.Names | None = None,
-    input_data: arg_templates.input_data.DfAndMapper
-    | arg_templates.input_data.DfWithNestedColumns
-    | arg_templates.input_data.Flat
-    | arg_templates.input_data.QName
-    | arg_templates.input_data.Tree
+    output: main_args.output.Name | main_args.output.Names | None = None,
+    input_data: main_args.input_data.DfAndMapper
+    | main_args.input_data.DfWithNestedColumns
+    | main_args.input_data.Flat
+    | main_args.input_data.QName
+    | main_args.input_data.Tree
     | None = None,
     targets: dict[str, Any] | None = None,
     backend: Literal["numpy", "jax"] | None = None,
@@ -133,7 +133,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         none_is_leaf=True,
     )[:2]
     if "input_data" in inputs and isinstance(
-        inputs["input_data"], arg_templates.input_data.ABC
+        inputs["input_data"], main_args.input_data.ABC
     ):
         inputs["input_data"] = inputs["input_data"].to_dict()
     for acc, val in zip(accs, vals, strict=False):
@@ -145,18 +145,18 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
                 flat_inputs[qname] = acc(inputs)
             except (KeyError, TypeError):
                 flat_inputs[qname] = val
-    return {k: v for k, v in flat_inputs.items() if v is not None}
+    return {k: v for k, v in flat_inputs.items() if v is not None and k != "output"}
 
 
 def _harmonize_outputs(
-    output: arg_templates.output.Name | arg_templates.output.Names | None,
+    output: main_args.output.Name | main_args.output.Names | None,
 ) -> dict[str, Any]:
     if output is None:
         flat_output = {
             "qname": None,
             "qnames": None,
         }
-    elif isinstance(output, arg_templates.output.ABC):
+    elif isinstance(output, main_args.output.ABC):
         flat_output = output.to_dict()
         flat_output["name"] = flat_output.get("name")
         if isinstance(flat_output["name"], tuple):

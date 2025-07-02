@@ -8,7 +8,7 @@ import numpy
 import pytest
 
 from ttsim import main
-from ttsim.arg_templates import input_data, output
+from ttsim.main_args import input_data, output
 from ttsim.plot_dag import (
     plot_tt_dag,
 )
