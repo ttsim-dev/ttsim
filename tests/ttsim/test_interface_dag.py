@@ -7,7 +7,7 @@ import dags
 import dags.tree as dt
 import pytest
 
-from ttsim import Output
+from ttsim import InputData, Output, Targets
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _harmonize_inputs,
@@ -163,18 +163,24 @@ def e(c: int, d: float) -> float:
     return c + d
 
 
-def test_harmonize_inputs_qname_input():
+def test_harmonize_inputs_main_args_input():
     x = {
-        "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
-        "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
-        "targets__tree": {"e": "f"},
+        "input_data": InputData.df_and_mapper(
+            df={"cannot use df because comparison fails"},
+            mapper={"c": "a", "d": "b", "p_id": "p_id"},
+        ),
+        "targets": Targets.tree({"e": "f"}),
         "date": "2025-01-01",
-        "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
-        "orig_policy_objects__param_specs": {},
+        "backend": "numpy",
+        "rounding": True,
+        "orig_policy_objects": {
+            "column_objects_and_param_functions": {("x.py", "e"): e},
+            "param_specs": {},
+        },
     }
     harmonized = _harmonize_inputs(inputs=x)
 
-    assert harmonized == {**x, "backend": "numpy", "rounding": True}
+    assert harmonized == {**x}
 
 
 def test_harmonize_inputs_tree_input():
@@ -187,12 +193,12 @@ def test_harmonize_inputs_tree_input():
         },
         "targets": {"tree": {"e": "f"}},
         "date": "2025-01-01",
+        "backend": "numpy",
+        "rounding": True,
         "orig_policy_objects": {
             "column_objects_and_param_functions": {("x.py", "e"): e},
             "param_specs": {},
         },
-        "backend": "numpy",
-        "rounding": True,
     }
     harmonized = _harmonize_inputs(inputs=x)
 

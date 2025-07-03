@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import re
-from dataclasses import asdict
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -11,7 +11,6 @@ import dags.tree as dt
 import optree
 
 from ttsim import main_args
-from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -26,7 +25,6 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
 if TYPE_CHECKING:
     import datetime
-    from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
@@ -53,8 +51,6 @@ def main(
     specialized_environment: main_args.SpecializedEnvironment | None = None,
     policy_environment: NestedPolicyEnvironment | None = None,
     processed_data: QNameData | None = None,
-    dnp: ModuleType | None = None,
-    xnp: ModuleType | None = None,
     date: datetime.date | None = None,
     policy_date_str: DashedISOString | None = None,
     evaluation_date_str: DashedISOString | None = None,
@@ -138,19 +134,18 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         else:
             dict_inputs[k] = v
     flat_inputs = {}
-    accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
-        asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
-        none_is_leaf=True,
-    )[:2]
-    for acc, val in zip(accs, vals, strict=False):
+    # We only care about some function with a leaf name, not the precise content.
+    orig_functions = {
+        (*p[:-1], f.leaf_name): f for p, f in _load_orig_functions().items()
+    }
+    for acc in optree.tree_accessors(dt.unflatten_from_tree_paths(orig_functions)):
         qname = dt.qname_from_tree_path(acc.path)
         if qname in dict_inputs:
             flat_inputs[qname] = dict_inputs[qname]
         else:
-            try:
+            # Only use those things that can be found.
+            with suppress(KeyError, TypeError):
                 flat_inputs[qname] = acc(dict_inputs)
-            except (KeyError, TypeError):
-                flat_inputs[qname] = val
     return {k: v for k, v in flat_inputs.items() if v is not None}
 
 
@@ -319,12 +314,14 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
     ] = {}
     for path in paths:
         module = load_module(path=path, root=root)
-        for name, obj in inspect.getmembers(module):
+        for qname, obj in inspect.getmembers(module):
+            # If nesting happens (e.g., df+mapper), we need to be consistent.
+            tree_path = dt.tree_path_from_qname(qname)
             if isinstance(obj, InterfaceFunction | InterfaceInput):
                 if obj.in_top_level_namespace:
-                    flat_functions[(name,)] = obj
+                    flat_functions[tree_path] = obj
                 else:
-                    flat_functions[(str(module.__name__), name)] = obj
+                    flat_functions[(str(module.__name__), *tree_path)] = obj
 
     return flat_functions
 
