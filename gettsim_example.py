@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ttsim import input_data, main, output  # , targets
+from gettsim import InputData, Output, Targets, main
 
 inputs_df = pd.DataFrame(
     {
@@ -40,6 +40,7 @@ inputs_map = {
     },
 }
 
+
 targets_tree = {
     "sozialversicherung": {
         "pflege": {
@@ -51,14 +52,13 @@ targets_tree = {
 }
 
 outputs_df = main(
+    output=Output.name(("results", "df_with_mapper")),
     date_str="2025-01-01",
-    output=output.Name(("results", "df_with_mapper")),
-    input_data=input_data.DfAndMapper(
+    input_data=InputData.df_and_mapper(
         df=inputs_df,
         mapper=inputs_map,
     ),
-    targets={"tree": targets_tree},  # targets.Tree(targets_tree)
-    backend="numpy",
+    targets=Targets(tree=targets_tree),
 )
 
 print(pd.DataFrame(outputs_df).round(2))  # noqa: T201

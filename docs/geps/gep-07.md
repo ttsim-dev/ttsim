@@ -50,17 +50,14 @@ interface while maintaining GETTSIM's computational robustness.
 
 1. **A single entry point**
 
-   The `gettsim` function is the single entry point for all GETTSIM functionality. For
+   The `main` function is the single entry point for all GETTSIM functionality. For
    computing taxes and transfers, the minimal requirements are:
 
+   - The output(s) to compute (various options)
    - The date at which the policy environment is set up and evaluated
-   - Data on individuals / households in standard dataframe format, i.e., a
-     2-dimensional table
-   - A *pytree* mapping GETTSIM's expected input structure to columns in the dataframe
-     or constants (e.g., when there are no pensioners in the data, pension payments can
-     be quickly set to zero for everyone)
-   - A *pytree* mapping the desired targets to columns they should be called in the
-     output dataframe
+   - Data on individuals / households in one of various formats
+   - Typically, the set of targets to compute (could be left out, in which case all
+     targets are computed)
 
    This is how it would look like
 
