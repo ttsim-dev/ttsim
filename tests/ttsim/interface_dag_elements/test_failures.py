@@ -21,9 +21,9 @@ from ttsim.interface_dag_elements.fail_if import (
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
-    input_data_tree_is_invalid,
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_has_incorrect_format,
+    invalid_p_id_values,
     non_convertible_objects_in_results_tree,
     paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
@@ -643,17 +643,17 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         )
 
 
-def test_fail_if_input_data_tree_is_invalid(xnp):
-    data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
+def test_fail_if_invalid_p_id_values():
+    data = {("fam_id",): numpy.array([1, 2, 3])}
 
     with pytest.raises(
         ValueError,
         match="The input data must contain the `p_id` column.",
     ):
-        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
+        invalid_p_id_values(data)
 
 
-def test_fail_if_input_data_tree_is_invalid_via_main(backend):
+def test_fail_if_invalid_p_id_values_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
@@ -665,7 +665,7 @@ def test_fail_if_input_data_tree_is_invalid_via_main(backend):
             targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=output.Name("fail_if__input_data_tree_is_invalid"),
+            output=output.Name("fail_if__invalid_p_id_values"),
         )
 
 
@@ -828,14 +828,14 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
         )
 
 
-def test_fail_if_p_id_does_not_exist(xnp):
-    data = {"fam_id": pd.Series(data=numpy.arange(8), name="fam_id")}
+def test_fail_if_p_id_does_not_exist():
+    data = {("fam_id",): numpy.array([1, 2, 3])}
 
     with pytest.raises(
         ValueError,
         match="The input data must contain the `p_id` column.",
     ):
-        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
+        invalid_p_id_values(data)
 
 
 def test_fail_if_p_id_does_not_exist_via_main(backend):
@@ -850,18 +850,18 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
             targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=output.Name("fail_if__input_data_tree_is_invalid"),
+            output=output.Name("fail_if__invalid_p_id_values"),
         )
 
 
-def test_fail_if_p_id_is_not_unique(xnp):
-    data = {"p_id": pd.Series(data=numpy.arange(4).repeat(2), name="p_id")}
+def test_fail_if_p_id_is_not_unique():
+    data = {("p_id",): numpy.array([1, 1, 3, 4])}
 
     with pytest.raises(
         ValueError,
         match="The following `p_id`s are not unique in the input data",
     ):
-        input_data_tree_is_invalid(input_data__tree=data, xnp=xnp)
+        invalid_p_id_values(data)
 
 
 def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
@@ -878,7 +878,23 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
             targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=output.Name("fail_if__input_data_tree_is_invalid"),
+            output=output.Name("fail_if__invalid_p_id_values"),
+        )
+
+
+def test_fail_if_input_arrays_have_different_lengths(backend):
+    data = {"p_id": numpy.arange(4), "a": numpy.arange(8)}
+    with pytest.raises(
+        ValueError,
+        match="The lengths of the following arrays do not match the length of the",
+    ):
+        main(
+            input_data={"tree": data},
+            policy_environment={},
+            targets={"tree": {}},
+            rounding=False,
+            backend=backend,
+            output=output.Name("fail_if__input_arrays_have_different_lengths"),
         )
 
 

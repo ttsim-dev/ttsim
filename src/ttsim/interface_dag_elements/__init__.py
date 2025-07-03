@@ -45,6 +45,8 @@ class FailIf(NestedInit):
     group_ids_are_outside_top_level_namespace: FailOrWarnFunction | None = None
     group_variables_are_not_constant_within_groups: FailOrWarnFunction | None = None
     input_data_tree_is_invalid: FailOrWarnFunction | None = None
+    input_arrays_have_different_lengths: FailOrWarnFunction | None = None
+    invalid_p_id_values: FailOrWarnFunction | None = None
     input_df_has_bool_or_numeric_column_names: FailOrWarnFunction | None = None
     input_df_mapper_columns_missing_in_df: FailOrWarnFunction | None = None
     input_df_mapper_has_incorrect_format: FailOrWarnFunction | None = None
