@@ -28,6 +28,7 @@ from ttsim.tt_dag_elements.param_objects import ParamObject
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ttsim.interface_dag_elements.input_data import FlatData
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
@@ -252,21 +253,12 @@ def paths_are_missing_in_targets_tree_mapper(
 @fail_or_warn_function()
 def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) -> None:
     """
-    Validate the basic structure of the data tree.
-
-    1. It must be is a dictionary with string keys and Series or Array leaves.
-    2. It must contain the `p_id` column.
-    3. Each element of `p_id` must uniquely identify a row.
+    Validate the basic structure of the input data tree.
 
     Parameters
     ----------
     input_data__tree
         The data tree.
-
-    Raises
-    ------
-    ValueError
-        If any of the above conditions is not met.
     """
     assert_valid_ttsim_pytree(
         tree=input_data__tree,
@@ -276,9 +268,48 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
         ),
         tree_name="input_data__tree",
     )
-    p_id = input_data__tree.get("p_id", None)
+
+
+@fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
+def input_arrays_have_different_lengths(
+    input_data__flat: FlatData,
+) -> None:
+    """Fail if the input arrays have different lengths."""
+    len_p_id_array = len(input_data__flat[("p_id",)])
+    faulty_arrays: list[str] = []
+    for key, arr in input_data__flat.items():
+        if len(arr) != len_p_id_array:
+            faulty_arrays.append(key)
+    if faulty_arrays:
+        formatted_faulty_paths = "\n".join(f"    - {p}" for p in faulty_arrays)
+        msg = format_errors_and_warnings(
+            "The lengths of the following columns do not match the length of the `p_id`"
+            f" column:\n{formatted_faulty_paths}"
+        )
+        raise ValueError(msg)
+
+
+@fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
+def invalid_p_id_values(
+    input_data__flat: FlatData,
+    xnp: ModuleType,
+) -> None:
+    """Fail if the `p_id` column is invalid.
+
+    Fails if:
+        - The `p_id` column is missing.
+        - The `p_id` column has non-unique values.
+    """
+    p_id = input_data__flat.get(("p_id",), None)
     if p_id is None:
         raise ValueError("The input data must contain the `p_id` column.")
+
+    if not all(isinstance(i, (int, xnp.integer)) for i in p_id):
+        types = (type(i) for i in p_id if not isinstance(i, int))
+        msg = format_errors_and_warnings(
+            f"The `p_id` column must contain integers only. Got: {types}."
+        )
+        raise ValueError(msg)
 
     # Check for non-unique p_ids
     p_id_counts: dict[int, int] = {}
