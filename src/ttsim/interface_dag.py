@@ -10,7 +10,6 @@ import dags
 import dags.tree as dt
 import optree
 
-from ttsim import main_args
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -34,21 +33,31 @@ if TYPE_CHECKING:
         QNameStrings,
         UnorderedQNames,
     )
+    from ttsim.main_args import (
+        InputData,
+        Labels,
+        OrigPolicyObjects,
+        Output,
+        RawResults,
+        Results,
+        SpecializedEnvironment,
+        Targets,
+    )
 
 
 def main(
     *,
+    output: Output | None = None,
     date_str: DashedISOString | None = None,
-    output: main_args.Output | None = None,
-    input_data: main_args.InputData | None = None,
-    targets: main_args.Targets | None = None,
+    input_data: InputData | None = None,
+    targets: Targets | None = None,
     backend: Literal["numpy", "jax"] | None = None,
     rounding: bool = True,
     fail_and_warn: bool = True,
-    orig_policy_objects: main_args.OrigPolicyObjects | None = None,
-    raw_results: main_args.RawResults | None = None,
-    results: main_args.Results | None = None,
-    specialized_environment: main_args.SpecializedEnvironment | None = None,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    raw_results: RawResults | None = None,
+    results: Results | None = None,
+    specialized_environment: SpecializedEnvironment | None = None,
     policy_environment: NestedPolicyEnvironment | None = None,
     processed_data: QNameData | None = None,
     date: datetime.date | None = None,
@@ -56,7 +65,7 @@ def main(
     evaluation_date_str: DashedISOString | None = None,
     policy_date: datetime.date | None = None,
     evaluation_date: datetime.date | None = None,
-    labels: dict[str, Any] | None = None,
+    labels: Labels | None = None,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
@@ -129,7 +138,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     # qualified names.
     dict_inputs = {}
     for k, v in inputs.items():
-        if isinstance(v, main_args.MainArg):
+        if hasattr(v, "to_dict"):  # Check if it's a MainArg-like object
             dict_inputs[k] = v.to_dict()
         else:
             dict_inputs[k] = v
@@ -149,13 +158,13 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in flat_inputs.items() if v is not None}
 
 
-def _harmonize_output(output: main_args.Output | None) -> dict[str, Any]:
+def _harmonize_output(output: Output | None) -> dict[str, Any]:
     if output is None:
         flat_output = {
             "qname": None,
             "qnames": None,
         }
-    elif isinstance(output, main_args.MainArg):
+    elif hasattr(output, "to_dict"):  # Check if it's a MainArg-like object
         flat_output = output.to_dict()
         if flat_output["name"] is not None:
             if isinstance(flat_output["name"], tuple):

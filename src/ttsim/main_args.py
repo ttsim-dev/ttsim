@@ -17,11 +17,13 @@ if TYPE_CHECKING:
         NestedData,
         NestedStrings,
         NestedTargetDict,
+        OrderedQNames,
         QNameData,
         QNameSpecializedEnvironment0,
         QNameSpecializedEnvironment1,
         QNameSpecializedEnvironment2,
         QNameStrings,
+        UnorderedQNames,
     )
 
 
@@ -144,6 +146,18 @@ class OrigPolicyObjects(MainArg):
     root: Path | None = None
     column_objects_and_param_functions: FlatColumnObjectsParamFunctions | None = None
     param_specs: FlatOrigParamSpecs | None = None
+
+
+@dataclass(frozen=True)
+class Labels(MainArg):
+    column_targets: OrderedQNames | None = None
+    grouping_levels: OrderedQNames | None = None
+    input_data_targets: OrderedQNames | None = None
+    param_targets: OrderedQNames | None = None
+    processed_data_columns: UnorderedQNames | None = None
+    input_columns: UnorderedQNames | None = None
+    root_nodes: UnorderedQNames | None = None
+    top_level_namespace: UnorderedQNames | None = None
 
 
 @dataclass(frozen=True)
