@@ -643,14 +643,14 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         )
 
 
-def test_fail_if_invalid_p_id_values():
+def test_fail_if_invalid_p_id_values(xnp):
     data = {("fam_id",): numpy.array([1, 2, 3])}
 
     with pytest.raises(
         ValueError,
         match="The input data must contain the `p_id` column.",
     ):
-        invalid_p_id_values(data)
+        invalid_p_id_values(data, xnp)
 
 
 def test_fail_if_invalid_p_id_values_via_main(backend):
@@ -828,14 +828,14 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
         )
 
 
-def test_fail_if_p_id_does_not_exist():
+def test_fail_if_p_id_does_not_exist(xnp):
     data = {("fam_id",): numpy.array([1, 2, 3])}
 
     with pytest.raises(
         ValueError,
         match="The input data must contain the `p_id` column.",
     ):
-        invalid_p_id_values(data)
+        invalid_p_id_values(data, xnp)
 
 
 def test_fail_if_p_id_does_not_exist_via_main(backend):
@@ -854,14 +854,14 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
         )
 
 
-def test_fail_if_p_id_is_not_unique():
+def test_fail_if_p_id_is_not_unique(xnp):
     data = {("p_id",): numpy.array([1, 1, 3, 4])}
 
     with pytest.raises(
         ValueError,
         match="The following `p_id`s are not unique in the input data",
     ):
-        invalid_p_id_values(data)
+        invalid_p_id_values(data, xnp)
 
 
 def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
@@ -882,11 +882,42 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
         )
 
 
+@pytest.mark.parametrize(
+    "data",
+    [
+        {("p_id",): [1, "2", 3]},
+        {("p_id",): [1, "2", 3.0]},
+        {("p_id",): numpy.array([1, "2", 3])},
+        {("p_id",): numpy.array([1, 2, 3.0])},
+        {("p_id",): pd.Series([1, 2, 3.0])},
+        {("p_id",): pd.Series([1, "2", 3.0])},
+    ],
+)
+def test_fail_if_p_id_is_not_int(data, xnp):
+    with pytest.raises(
+        ValueError,
+        match="The `p_id` column must contain integers only.",
+    ):
+        invalid_p_id_values(data, xnp)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {("p_id",): [1, 2, 3]},
+        {("p_id",): numpy.array([1, 2, 3])},
+        {("p_id",): pd.Series([1, 2, 3])},
+    ],
+)
+def test_p_id_can_be_specified_as_list_series_and_array(data, xnp):
+    invalid_p_id_values(data, xnp)
+
+
 def test_fail_if_input_arrays_have_different_lengths(backend):
     data = {"p_id": numpy.arange(4), "a": numpy.arange(8)}
     with pytest.raises(
         ValueError,
-        match="The lengths of the following arrays do not match the length of the",
+        match="The lengths of the following columns do not match the length of the",
     ):
         main(
             input_data={"tree": data},

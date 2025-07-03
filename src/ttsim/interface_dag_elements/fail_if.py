@@ -283,8 +283,8 @@ def input_arrays_have_different_lengths(
     if faulty_arrays:
         formatted_faulty_paths = "\n".join(f"    - {p}" for p in faulty_arrays)
         msg = format_errors_and_warnings(
-            "The lengths of the following arrays do not match the length of the `p_id` "
-            f"array:\n{formatted_faulty_paths}"
+            "The lengths of the following columns do not match the length of the `p_id`"
+            f" column:\n{formatted_faulty_paths}"
         )
         raise ValueError(msg)
 
@@ -292,6 +292,7 @@ def input_arrays_have_different_lengths(
 @fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
 def invalid_p_id_values(
     input_data__flat: FlatData,
+    xnp: ModuleType,
 ) -> None:
     """Fail if the `p_id` column is invalid.
 
@@ -302,6 +303,13 @@ def invalid_p_id_values(
     p_id = input_data__flat.get(("p_id",), None)
     if p_id is None:
         raise ValueError("The input data must contain the `p_id` column.")
+
+    if not all(isinstance(i, (int, xnp.integer)) for i in p_id):
+        types = (type(i) for i in p_id if not isinstance(i, int))
+        msg = format_errors_and_warnings(
+            f"The `p_id` column must contain integers only. Got: {types}."
+        )
+        raise ValueError(msg)
 
     # Check for non-unique p_ids
     p_id_counts: dict[int, int] = {}
