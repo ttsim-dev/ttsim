@@ -60,6 +60,6 @@ outputs_df = main(
     targets=Targets(tree=targets_tree),
 )
 
-print(outputs_df.round(2))  # noqa: T201
+print(outputs_df.round(2).to_html())  # noqa: T201
 
 print(inputs_df.to_html())  # noqa: T201

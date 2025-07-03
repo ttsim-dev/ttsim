@@ -103,158 +103,101 @@ interface while maintaining GETTSIM's computational robustness.
    ```
 
    That is, the call to `main` above will return a DataFrame with one column
-   `ltci_contrib`.
+   `ltci_contrib` and of the same length as the input data.
 
    The second argument, `date_str`, specifies the date at which the policy environment
    is set up and evaluated.
 
-   Say we want to compute the above for three people, one of whom has an underage child
-   living in her household. In this case, we want to compute the "kindergeld" and
-   "einkommensteuer" targets.
+   Say we want to compute the long term care insurance contribution for three people,
+   one of whom has an underage child living in her household. Our data looks as follows:
 
-   The third argument, `input_data`, specifies the data on individuals / households in
-   one of various formats. In this case, we use the "DataFrame and mapper" format, which
-   means that the data is provided as a DataFrame with any column names and a mapper
-   that specifies how GETTSIM's input columns map to the columns of that DataFrame.
+   <table border="1" class="dataframe">
+     <thead>
+       <tr style="text-align: right;">
+         <th></th>
+         <th>age</th>
+         <th>wage</th>
+         <th>id</th>
+         <th>hh_id</th>
+         <th>mother_id</th>
+         <th>has_kids</th>
+       </tr>
+     </thead>
+     <tbody>
+       <tr>
+         <th>0</th>
+         <td>25</td>
+         <td>950</td>
+         <td>0</td>
+         <td>0</td>
+         <td>-1</td>
+         <td>False</td>
+       </tr>
+       <tr>
+         <th>1</th>
+         <td>45</td>
+         <td>950</td>
+         <td>1</td>
+         <td>1</td>
+         <td>-1</td>
+         <td>True</td>
+       </tr>
+       <tr>
+         <th>2</th>
+         <td>3</td>
+         <td>0</td>
+         <td>2</td>
+         <td>1</td>
+         <td>1</td>
+         <td>False</td>
+       </tr>
+       <tr>
+         <th>3</th>
+         <td>65</td>
+         <td>950</td>
+         <td>3</td>
+         <td>2</td>
+         <td>-1</td>
+         <td>True</td>
+       </tr>
+     </tbody>
+   </table>
 
-   The returned value is a DataFrame with two columns: `child_benefit` and `income_tax`.
-
-   Users may then replace the type hints in the template by the column name in a dataset
-   they will provide. The `input_data` argument is a pytree that maps the input data to
-   the columns in the dataframe.
-
-   ```yaml
-   p_id: p_id
-   p_id_kindergeldempfänger: mother_id
-   p_id_ehepartner: married_spouse_id
-   einkommensteuer:
-     gemeinsam_veranlagt: files_jointly
-   einkommen:
-     aus_abhängiger_beschäftigung:
-       bruttolohn_y: earnings
-   ```
-
-   *Note:* The output of `get_input_template` can easily become quite daunting because
-   it shows the root nodes of the graph. E.g., for many static labour supply
-   applications, one does not need to know how to calculate pensions because retirees
-   are excluded from the sample. To simplify the input by just setting all pension
-   payments to zero, it is often easiest to look at a visual representation of the DAG,
-   see below.
-
-   `get_input_template` takes an argument `input_columns`, which can be used to
-   iteratively adjust the template to the user's needs.
-
-1. **One-stop-shop**
-
-   Setting up a policy environment and computing the results used to require two steps.
-   For many applications, this is all a user needs to do; it should be doable in a
-   simpler way. The one-stop-shop (`oss`) will achieve this:
-
-   ```python
-   def oss(
-       date: str,
-       inputs_df: pd.DataFrame,
-       inputs_tree_to_inputs_df_columns: NestedStrings,
-       targets_tree_to_outputs_df_columns: NestedStrings,
-   ) -> pd.DataFrame:
-       """One-stop-shop for computing taxes and transfers.
-
-       Args:
-           date:
-               The date to compute taxes and transfers for. The date determines the
-               policy environment for which the taxes and transfers are computed.
-           inputs_df:
-               The DataFrame containing the data.
-           inputs_tree_to_inputs_df_columns:
-               A tree that has the inputs required by GETTSIM as the path (sequence of
-               keys) and maps them to the data provided by the user. The leaves of the
-               tree are strings that reference column names in *inputs_df* or constants.
-           targets_tree_to_outputs_df_columns:
-               A tree that has the desired targets as the path (sequence of keys) and
-               maps them to the data columns the user would like to have.
-
-       Returns:
-           A nested dictionary that maps the paths of the targets to the columns
-           computed by GETTSIM.
-   ```
-
-   These are the absolute minimal requirements a computation needs:
-
-   - The date at which the policy environment is set up and evaluated
-   - The data on individuals / households in standard dataframe format, i.e., a
-     2-dimensional table
-   - A *pytree* mapping GETTSIM's expected input structure to columns in the dataframe
-     or constants (e.g., when there are no pensioners in the data, pension payments can
-     be quickly set to zero for everyone)
-   - A *pytree* mapping the desired targets to columns they should be called in the
-     output dataframe
-
-   As an example, let us calculate long term care insurance (Pflegeversicherung)
-   contributions for three people, one of whom has an underage child living in her
-   household:
+   We can use this DataFrame directly, however, we need to tell GETTSIM how to map the
+   columns of the DataFrame to the columns it knows about, This is done by a mapper,
+   which is a *pytree* that in our case looks as follows
 
    ```python
-   >>> from gettsim import oss
-   >>> inputs_df = pd.DataFrame(
-   ...     {
-   ...         "age": [25, 45, 3, 65],
-   ...         "wage": [950, 950, 0, 950],
-   ...         "id": [0, 1, 2, 3],
-   ...         "hh_id": [0, 1, 1, 2],
-   ...         "mother_id": [-1, -1, 1, -1],
-   ...         "has_kids": [False, True, False, True],
-   ...     }
-   ... )
-   >>> inputs_map = {
-   ...     "p_id": "id",
-   ...     "hh_id": "hh_id",
-   ...     "alter": "age",
-   ...     "familie":{
-   ...         "p_id_elternteil_1": "mother_id",
-   ...         "p_id_elternteil_2": -1,
-   ...     },
-   ...     "einkommensteuer": {
-   ...         "einkünfte": {
-   ...             "aus_nichtselbstständiger_arbeit": {"bruttolohn_m": "wage"},
-   ...             "ist_selbstständig": False,
-   ...             "aus_selbstständiger_arbeit": {"betrag_m": 0.0},
-   ...         }
-   ...     },
-   ...     "sozialversicherung": {
-   ...         "pflege": {
-   ...             "beitrag": {
-   ...                 "hat_kinder": "has_kids",
-   ...             }
-   ...         },
-   ...         "kranken": {
-   ...             "beitrag":{
-   ...                 "bemessungsgrundlage_rente_m": 0.0,
-   ...                 "privat_versichert": False
-   ...             }
-   ...         }
-   ...     },
-   ... }
-   >>> targets_map={
-   ...        "sozialversicherung": {
-   ...            "pflege": {
-   ...                "beitrag": {
-   ...                    "betrag_versicherter_m": "ltci_contrib",
-   ...                }
-   ...            }
-   ...        }
-   ...    }
-   >>> oss(
-   ...     date="2025-01-01",
-   ...     inputs_df=inputs_df,
-   ...     inputs_tree_to_inputs_df_columns=inputs_map,
-   ...     targets_tree_to_outputs_df_columns=targets_map,
-   ... )
-      ltci_contrib
-   0         14.72
-   1          9.82
-   2          0.00
-   3          9.82
+   inputs_map = {
+       "p_id": "id",
+       "hh_id": "hh_id",
+       "alter": "age",
+       "familie": {
+           "p_id_elternteil_1": "mother_id",
+           "p_id_elternteil_2": -1,
+       },
+       "einkommensteuer": {
+           "einkünfte": {
+               "aus_nichtselbstständiger_arbeit": {"bruttolohn_m": "wage"},
+               "ist_selbstständig": False,
+               "aus_selbstständiger_arbeit": {"betrag_m": 0.0},
+           }
+       },
+       "sozialversicherung": {
+           "pflege": {
+               "beitrag": {
+                   "hat_kinder": "has_kids",
+               }
+           },
+           "kranken": {
+               "beitrag": {"bemessungsgrundlage_rente_m": 0.0, "privat_versichert": False}
+           },
+       },
+   }
    ```
+
+   Note that we set several variables to scalars. E.g., we do not consider self-employed
+   people, pensioners, or people with (substitutive) private health insurance.
 
    *Note:* We picked an example with little, but not zero, complexity. The amount of
    inputs is simply necessary because public long term care insurance contributions
@@ -262,101 +205,47 @@ interface while maintaining GETTSIM's computational robustness.
    pensions), the combination of the insured person's age and her children, and whether
    the insured person is covered by private health insurance.
 
+   Finally, here is the output of our example:
+
+   <table border="1" class="dataframe">
+     <thead>
+       <tr style="text-align: right;">
+         <th></th>
+         <th>ltci_contrib</th>
+       </tr>
+       <tr>
+         <th>p_id</th>
+         <th></th>
+       </tr>
+     </thead>
+     <tbody>
+       <tr>
+         <th>0</th>
+         <td>14.72</td>
+       </tr>
+       <tr>
+         <th>1</th>
+         <td>9.82</td>
+       </tr>
+       <tr>
+         <th>2</th>
+         <td>0.00</td>
+       </tr>
+       <tr>
+         <th>3</th>
+         <td>9.82</td>
+       </tr>
+     </tbody>
+   </table>
+
 1. **DAG-based granular interface**
 
    On the other end of the spectrum, the interface so far was not flexible enough for
    advanced use cases. In particular, many checks were run time and again, slowing down
-   the computation. The new interface will allow users to customize the graph to their
-   needs.
+   the computation. The updated interface will allow users to customize the graph to
+   their needs.
 
-   There will be two basic steps to this:
-
-   1. Create a custom function to run.
-   1. Run this function.
-
-   Once more, this is powered by `dags`, so the custom function can be freely composed
-   from many elements. The big advantages of this approach as opposed to exposing all
-   functions and requiring users to run them themselves (which will also work, but is
-   not encouraged) are safety and flexibility. It is clear which functions are run and
-   on which data this happens. When modifying inputs that affect multiple functions, the
-   user does not need to check that inputs are changed for all functions, this happens
-   automatically.
-
-   The simplest example is to recreate the above by just requesting `outputs_df` as the
-   final target, along with the checks included by default in `oss`:
-
-   ```python
-   get_outputs_df = gettsim.concatenate_functions(
-       targets=["outputs_df", "fail_if_data_is_invalid"],
-   )
-   targets_df = get_outputs_df(
-       policy_date="2025-01-01",
-       evaluation_date="2025-01-01",
-       inputs_df=inputs_df,
-       inputs_tree_to_inputs_df_columns=inputs_map,
-       targets_tree_to_outputs_df_columns=targets_map,
-   )["outputs_df"]
-   ```
-
-   In fact, the `oss` function is just a wrapper around this.
-
-   The flexibility comes because there are many intermediate targets, all of which can
-   be requested. It is also possible to do things one after the other. For example, to
-   increase the contribution rate to long term care insurance of people above 23 who do
-   not have children by 1 percentage point, one could do:
-
-   ```python
-   # Set up the base environment
-   get_policy_environment = gettsim.concatenate_functions(
-       targets=["policy_environment"],
-   )
-   base_environment = get_policy_environment(policy_date="2025-01-01")
-   # Modify
-   modified_environment = copy.deepcopy(base_environment)
-   modified_environment.params_tree["sozialversicherung"]["pflege"]["beitrag"][
-       "beitragssatz_nach_kinderzahl"
-   ].value["zusatz_kinderlos"] += 0.01
-   # Compute the results
-   get_outputs_df = gettsim.concatenate_functions(
-       targets=["outputs_df"],
-       policy_environment=modified_environment,
-   )
-   targets_df = get_outputs_df(
-       evaluation_date="2025-01-01",
-       inputs_df=inputs_df,
-       inputs_tree_to_inputs_df_columns=inputs_map,
-       targets_tree_to_outputs_df_columns=targets_map,
-   )["outputs_df"]
-   ```
-
-   An incomplete and tentative list of nodes *(current names in the code, writing them
-   down shows that they need to change...)*:
-
-   - `policy_environment`
-   - `fail_if...`
-   - `data_tree`
-   - `processed_params_tree`
-   - `function_targets`
-   - `taxes_and_transfers_function`
-   - `warn_if_functions_overridden_by_data`
-   - `targets_tree`
-   - `outputs_df`
-
-   Inputs with default values:
-
-   - `inputs_df`
-   - `inputs_tree_to_inputs_df_columns`
-   - `targets_tree_to_outputs_df_columns`
-   - `rounding=True`
-   - `debug=False`
-   - `jit=False`
-
-1. **Intermediate cases**
-
-   The DAG-based interface is powerful, but it is also complex unless people are used to
-   functional programming and declarative interfaces. Just as `oss` is a wrapper around
-   the DAG-based interface, GETTSIM may add additional wrappers for common use cases.
-   This will be done in an iterative process based on user feedback.
+   ...
 
 1. **Ecosystem**
 
@@ -376,8 +265,7 @@ interface while maintaining GETTSIM's computational robustness.
 ## Backward Compatibility
 
 This interface represents a significant change. Transition should be very smooth,
-however, when specifying the currently used columns as the `inputs_tree_to_df_columns`
-argument in the `oss` function.
+however, when ...
 
 ## Discussion
 
