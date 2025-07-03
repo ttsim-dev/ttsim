@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import itertools
 import textwrap
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
@@ -23,7 +23,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.tt_dag_elements.param_objects import ParamObject
+from ttsim.tt_dag_elements.param_objects import _REQUIRED, ParamObject
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -97,7 +97,13 @@ class _ParamWithActivePeriod(ParamObject):
     Only used here for checking overlap.
     """
 
-    original_function_name: str
+    original_function_name: str = field(default_factory=lambda: _REQUIRED)
+
+    def __post_init__(self) -> None:
+        if self.original_function_name is _REQUIRED:
+            raise ValueError(
+                "'original_function_name' field must be specified for _ParamWithActivePeriod"
+            )
 
 
 def assert_valid_ttsim_pytree(

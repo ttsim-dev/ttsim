@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
+
+_REQUIRED = object()
+
 
 if TYPE_CHECKING:
     import datetime
@@ -19,9 +22,9 @@ class ParamObject:
     Abstract base class for all types of parameters.
     """
 
-    leaf_name: str
-    start_date: datetime.date
-    end_date: datetime.date
+    leaf_name: str | None = None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
     unit: (
         None
         | Literal[
@@ -35,10 +38,10 @@ class ParamObject:
             "Square Meters",
             "Euros / Square Meter",
         ]
-    )
-    reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"]
-    name: dict[Literal["de", "en"], str]
-    description: dict[Literal["de", "en"], str]
+    ) = None
+    reference_period: None | Literal["Year", "Quarter", "Month", "Week", "Day"] = None
+    name: dict[Literal["de", "en"], str] | None = None
+    description: dict[Literal["de", "en"], str] | None = None
 
 
 @dataclass(frozen=True)
@@ -47,9 +50,13 @@ class ScalarParam(ParamObject):
     A scalar parameter directly read from a YAML file.
     """
 
-    value: bool | int | float
+    value: bool | int | float = field(default_factory=lambda: _REQUIRED)  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.value is _REQUIRED:
+            raise ValueError("'value' field must be specified for ScalarParam")
 
 
 @dataclass(frozen=True)
@@ -65,11 +72,13 @@ class DictParam(ParamObject):
         | dict[int, int]
         | dict[int, float]
         | dict[int, bool]
-    )
+    ) = field(default_factory=lambda: _REQUIRED)  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
     def __post_init__(self) -> None:
+        if self.value is _REQUIRED:
+            raise ValueError("'value' field must be specified for DictParam")
         assert all(x not in self.value for x in ["note", "reference"])
 
 
@@ -81,9 +90,15 @@ class PiecewisePolynomialParam(ParamObject):
     parameters for calling `piecewise_polynomial`.
     """
 
-    value: PiecewisePolynomialParamValue
+    value: PiecewisePolynomialParamValue = field(default_factory=lambda: _REQUIRED)  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.value is _REQUIRED:
+            raise ValueError(
+                "'value' field must be specified for PiecewisePolynomialParam"
+            )
 
 
 @dataclass(frozen=True)
@@ -94,9 +109,17 @@ class ConsecutiveInt1dLookupTableParam(ParamObject):
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveInt1dLookupTableParamValue
+    value: ConsecutiveInt1dLookupTableParamValue = field(
+        default_factory=lambda: _REQUIRED
+    )  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.value is _REQUIRED:
+            raise ValueError(
+                "'value' field must be specified for ConsecutiveInt1dLookupTableParam"
+            )
 
 
 @dataclass(frozen=True)
@@ -107,9 +130,17 @@ class ConsecutiveInt2dLookupTableParam(ParamObject):
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveInt2dLookupTableParamValue
+    value: ConsecutiveInt2dLookupTableParamValue = field(
+        default_factory=lambda: _REQUIRED  # type: ignore[assignment]
+    )
     note: str | None = None
     reference: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.value is _REQUIRED:
+            raise ValueError(
+                "'value' field must be specified for ConsecutiveInt2dLookupTableParam"
+            )
 
 
 @dataclass(frozen=True)
@@ -119,11 +150,13 @@ class RawParam(ParamObject):
     dictionary.
     """
 
-    value: dict[str | int, Any]
+    value: dict[str | int, Any] = field(default_factory=lambda: _REQUIRED)  # type: ignore[arg-type, return-value]
     note: str | None = None
     reference: str | None = None
 
     def __post_init__(self) -> None:
+        if self.value is _REQUIRED:
+            raise ValueError("'value' field must be specified for RawParam")
         assert all(x not in self.value for x in ["note", "reference"])
 
 
