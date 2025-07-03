@@ -537,6 +537,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
 ):
     results__tree = main(
         input_data={"tree": minimal_data_tree},
+        date=datetime.date(2024, 1, 1),
         policy_environment=environment,
         targets={"tree": targets__tree},
         rounding=False,
@@ -768,11 +769,10 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     backend,
     xnp,
 ):
-    environment["backend"] = backend
-    environment["xnp"] = xnp
     actual = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
@@ -810,11 +810,10 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
     backend,
     xnp,
 ):
-    environment["backend"] = backend
-    environment["xnp"] = xnp
     actual = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
@@ -901,6 +900,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         main(
             input_data={"tree": minimal_input_data},
             policy_environment=policy_environment,
+            date=datetime.date(2024, 1, 1),
             targets={"tree": {"c": None}},
             rounding=False,
             backend=backend,
