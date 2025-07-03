@@ -26,9 +26,12 @@ from ttsim.interface_dag_elements.orig_policy_objects import load_module
 
 if TYPE_CHECKING:
     import datetime
+    from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
         FlatInterfaceObjects,
+        NestedPolicyEnvironment,
+        QNameData,
         QNameStrings,
         UnorderedQNames,
     )
@@ -44,18 +47,18 @@ def main(
     | main_args.input_data.QName
     | main_args.input_data.Tree
     | None = None,
-    targets: dict[str, Any] | None = None,
+    targets: main_args.targets.Tree | main_args.targets.QName | None = None,
     backend: Literal["numpy", "jax"] | None = None,
     rounding: bool = True,
     fail_and_warn: bool = True,
-    orig_policy_objects: dict[str, Any] | None = None,
-    raw_results: dict[str, Any] | None = None,
-    results: dict[str, Any] | None = None,
-    specialized_environment: dict[str, Any] | None = None,
-    policy_environment: dict[str, Any] | None = None,
-    processed_data: dict[str, Any] | None = None,
-    dnp: dict[str, Any] | None = None,
-    xnp: dict[str, Any] | None = None,
+    orig_policy_objects: main_args.OrigPolicyObjects | None = None,
+    raw_results: main_args.RawResults | None = None,
+    results: main_args.Results | None = None,
+    specialized_environment: main_args.SpecializedEnvironment | None = None,
+    policy_environment: NestedPolicyEnvironment | None = None,
+    processed_data: QNameData | None = None,
+    dnp: ModuleType | None = None,
+    xnp: ModuleType | None = None,
     date: datetime.date | None = None,
     labels: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -131,9 +134,9 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     for k, v in inputs.items():
         if isinstance(v, main_args.MainArg):
             dict_inputs[k] = v.to_dict()
+            breakpoint()
         else:
             dict_inputs[k] = v
-    breakpoint()
     flat_inputs = {}
     accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
         asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
