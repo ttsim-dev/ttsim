@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import datetime
+
 import numpy
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
 from ttsim import (
+    Output,
     main,
-    output,
 )
 from ttsim.interface_dag_elements.data_converters import (
     df_with_mapped_columns_to_flat_data,
@@ -220,10 +222,11 @@ def test_nested_data_to_dataframe(
     results__tree = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
-        output=output.Name("results__tree"),
+        output=Output.name("results__tree"),
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,

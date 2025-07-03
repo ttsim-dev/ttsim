@@ -11,7 +11,7 @@ import numpy
 import pandas as pd
 import pytest
 
-from ttsim import main, output
+from ttsim import Output, main
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -132,7 +132,7 @@ def mettsim_environment(backend) -> NestedPolicyEnvironment:
         orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
         date=datetime.date(2025, 1, 1),
         backend=backend,
-        output=output.Name("policy_environment"),
+        output=Output.name("policy_environment"),
     )
 
 
@@ -537,11 +537,12 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
 ):
     results__tree = main(
         input_data={"tree": minimal_data_tree},
+        date=datetime.date(2024, 1, 1),
         policy_environment=environment,
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
-        output=output.Name("results__tree"),
+        output=Output.name("results__tree"),
     )
     with pytest.raises(
         ValueError,
@@ -665,7 +666,7 @@ def test_fail_if_input_data_tree_is_invalid_via_main(backend):
             targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=output.Name("fail_if__input_data_tree_is_invalid"),
+            output=Output.name("fail_if__input_data_tree_is_invalid"),
         )
 
 
@@ -768,15 +769,14 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     backend,
     xnp,
 ):
-    environment["backend"] = backend
-    environment["xnp"] = xnp
     actual = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
-        output=output.Names(["processed_data", "results__tree"]),
+        output=Output.names(["processed_data", "results__tree"]),
     )
     with pytest.raises(TypeError, match=match):
         non_convertible_objects_in_results_tree(
@@ -810,15 +810,14 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
     backend,
     xnp,
 ):
-    environment["backend"] = backend
-    environment["xnp"] = xnp
     actual = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
-        output=output.Names(["processed_data", "results__tree"]),
+        output=Output.names(["processed_data", "results__tree"]),
     )
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
@@ -850,7 +849,7 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
             targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=output.Name("fail_if__input_data_tree_is_invalid"),
+            output=Output.name("fail_if__input_data_tree_is_invalid"),
         )
 
 
@@ -878,7 +877,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
             targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=output.Name("fail_if__input_data_tree_is_invalid"),
+            output=Output.name("fail_if__input_data_tree_is_invalid"),
         )
 
 
@@ -901,10 +900,11 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         main(
             input_data={"tree": minimal_input_data},
             policy_environment=policy_environment,
+            date=datetime.date(2024, 1, 1),
             targets={"tree": {"c": None}},
             rounding=False,
             backend=backend,
-            output=output.Names(["results__tree", "fail_if__root_nodes_are_missing"]),
+            output=Output.names(["results__tree", "fail_if__root_nodes_are_missing"]),
         )
 
 
@@ -951,7 +951,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             targets={"tree": {"unknown_target": None}},
             rounding=False,
             backend=backend,
-            output=output.Name(
+            output=Output.name(
                 "fail_if__targets_are_not_in_specialized_environment_or_data"
             ),
         )

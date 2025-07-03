@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import re
-from dataclasses import asdict
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -10,8 +10,6 @@ import dags
 import dags.tree as dt
 import optree
 
-from ttsim import arg_templates
-from ttsim.interface_dag_elements import _InterfaceDAGElements
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -28,44 +26,55 @@ if TYPE_CHECKING:
     import datetime
 
     from ttsim.interface_dag_elements.typing import (
+        DashedISOString,
         FlatInterfaceObjects,
+        NestedPolicyEnvironment,
+        QNameData,
         QNameStrings,
         UnorderedQNames,
+    )
+    from ttsim.main_args import (
+        InputData,
+        Labels,
+        OrigPolicyObjects,
+        Output,
+        RawResults,
+        Results,
+        SpecializedEnvironment,
+        Targets,
     )
 
 
 def main(
     *,
-    date_str: str | None = None,
-    output: arg_templates.output.Name | arg_templates.output.Names | None = None,
-    input_data: arg_templates.input_data.DfAndMapper
-    | arg_templates.input_data.DfWithNestedColumns
-    | arg_templates.input_data.Flat
-    | arg_templates.input_data.QName
-    | arg_templates.input_data.Tree
-    | None = None,
-    targets: dict[str, Any] | None = None,
+    output: Output | None = None,
+    date_str: DashedISOString | None = None,
+    input_data: InputData | None = None,
+    targets: Targets | None = None,
     backend: Literal["numpy", "jax"] | None = None,
     rounding: bool = True,
     fail_and_warn: bool = True,
-    orig_policy_objects: dict[str, Any] | None = None,
-    raw_results: dict[str, Any] | None = None,
-    results: dict[str, Any] | None = None,
-    specialized_environment: dict[str, Any] | None = None,
-    policy_environment: dict[str, Any] | None = None,
-    processed_data: dict[str, Any] | None = None,
-    dnp: dict[str, Any] | None = None,
-    xnp: dict[str, Any] | None = None,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    raw_results: RawResults | None = None,
+    results: Results | None = None,
+    specialized_environment: SpecializedEnvironment | None = None,
+    policy_environment: NestedPolicyEnvironment | None = None,
+    processed_data: QNameData | None = None,
     date: datetime.date | None = None,
-    labels: dict[str, Any] | None = None,
+    policy_date_str: DashedISOString | None = None,
+    evaluation_date_str: DashedISOString | None = None,
+    policy_date: datetime.date | None = None,
+    evaluation_date: datetime.date | None = None,
+    labels: Labels | None = None,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
 
     input_qnames = _harmonize_inputs(locals())
-    output_qnames = _harmonize_outputs(output)
+    output_qnames = _harmonize_output(output)
 
+    # If requesting an input template, we do not require any data.
     if not any(re.match("(input|processed)_data", s) for s in input_qnames):
         input_qnames["processed_data"] = {}
         input_qnames["processed_data_columns"] = None
@@ -127,60 +136,54 @@ def main(
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     # Iterate over the skeleton and see whether we need to convert anything to
     # qualified names.
-    flat_inputs = {}
-    accs, vals = optree.tree_flatten_with_accessor(  # type: ignore[var-annotated]
-        asdict(_InterfaceDAGElements()),  # type: ignore[arg-type]
-        none_is_leaf=True,
-    )[:2]
-    if "input_data" in inputs and isinstance(
-        inputs["input_data"], arg_templates.input_data.ABC
-    ):
-        inputs["input_data"] = inputs["input_data"].to_dict()
-    for acc, val in zip(accs, vals, strict=False):
-        qname = dt.qname_from_tree_path(acc.path)
-        if qname in inputs:
-            flat_inputs[qname] = inputs[qname]
+    dict_inputs = {}
+    for k, v in inputs.items():
+        if hasattr(v, "to_dict"):  # Check if it's a MainArg-like object
+            dict_inputs[k] = v.to_dict()
         else:
-            try:
-                flat_inputs[qname] = acc(inputs)
-            except (KeyError, TypeError):
-                flat_inputs[qname] = val
+            dict_inputs[k] = v
+    flat_inputs = {}
+    # We only care about some function with a leaf name, not the precise content.
+    orig_functions = {
+        (*p[:-1], f.leaf_name): f for p, f in _load_orig_functions().items()
+    }
+    for acc in optree.tree_accessors(dt.unflatten_from_tree_paths(orig_functions)):
+        qname = dt.qname_from_tree_path(acc.path)
+        if qname in dict_inputs:
+            flat_inputs[qname] = dict_inputs[qname]
+        else:
+            # Only use those things that can be found.
+            with suppress(KeyError, TypeError):
+                flat_inputs[qname] = acc(dict_inputs)
     return {k: v for k, v in flat_inputs.items() if v is not None}
 
 
-def _harmonize_outputs(
-    output: arg_templates.output.Name | arg_templates.output.Names | None,
-) -> dict[str, Any]:
+def _harmonize_output(output: Output | None) -> dict[str, Any]:
     if output is None:
         flat_output = {
             "qname": None,
             "qnames": None,
         }
-    elif isinstance(output, arg_templates.output.ABC):
+    elif hasattr(output, "to_dict"):  # Check if it's a MainArg-like object
         flat_output = output.to_dict()
-        flat_output["name"] = flat_output.get("name")
-        if isinstance(flat_output["name"], tuple):
-            flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
-        elif isinstance(flat_output["name"], dict):
-            if len(flat_output["name"]) > 1:
-                raise ValueError(
-                    "The output Name must be a single qualified name, a tuple or a "
-                    "dict with one element. If you want to output multiple elements, "
-                    "use Names."
-                )
-            flat_output["name"] = dt.qnames(flat_output["name"])[0]
-        flat_output["names"] = flat_output.get(
-            "names", [flat_output["name"]] if flat_output["name"] is not None else None
-        )
+        if flat_output["name"] is not None:
+            if isinstance(flat_output["name"], tuple):
+                flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
+            elif isinstance(flat_output["name"], dict):
+                if len(flat_output["name"]) > 1:
+                    raise ValueError(
+                        "The output Name must be a single qualified name, a tuple or a "
+                        "dict with one element. If you want to output multiple "
+                        "elements, use 'names'."
+                    )
+                flat_output["name"] = dt.qnames(flat_output["name"])[0]
+            flat_output["names"] = [flat_output["name"]]
         if isinstance(flat_output["names"], dict):
             flat_output["names"] = dt.qnames(flat_output["names"])
         elif isinstance(flat_output["names"][0], tuple):
             flat_output["names"] = [
                 dt.qname_from_tree_path(tp) for tp in flat_output["names"]
             ]
-        elif isinstance(flat_output["names"][0], dict):
-            # Happens if a dict was passed to Name.
-            flat_output["names"] = dt.qnames(flat_output["names"][0])
 
     return flat_output
 
@@ -195,7 +198,7 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
     among the functions with the same leaf name the one that satisfies the include
     condition.
 
-    Fails if multiple functions with the same leaf name satisfy the include condition.
+    Fail if multiple functions with the same leaf name satisfy the include condition.
 
     Parameters
     ----------
@@ -302,7 +305,9 @@ def load_flat_interface_functions_and_inputs() -> FlatInterfaceObjects:
     orig_functions = _load_orig_functions()
     return _remove_tree_logic_from_functions_in_collection(
         orig_functions=orig_functions,
-        top_level_namespace={path[0] for path in orig_functions},
+        top_level_namespace={
+            (*path[:-1], func.leaf_name)[0] for path, func in orig_functions.items()
+        },
     )
 
 
@@ -320,12 +325,14 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
     ] = {}
     for path in paths:
         module = load_module(path=path, root=root)
-        for name, obj in inspect.getmembers(module):
+        for qname, obj in inspect.getmembers(module):
+            # If nesting happens (e.g., df+mapper), we need to be consistent.
+            tree_path = dt.tree_path_from_qname(qname)
             if isinstance(obj, InterfaceFunction | InterfaceInput):
                 if obj.in_top_level_namespace:
-                    flat_functions[(name,)] = obj
+                    flat_functions[tree_path] = obj
                 else:
-                    flat_functions[(str(module.__name__), name)] = obj
+                    flat_functions[(str(module.__name__), *tree_path)] = obj
 
     return flat_functions
 

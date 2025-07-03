@@ -25,12 +25,12 @@ if TYPE_CHECKING:
     )
 
 
-@interface_input()
+@interface_input(leaf_name="df")
 def df_and_mapper__df() -> pd.DataFrame:
     pass
 
 
-@interface_input()
+@interface_input(leaf_name="mapper")
 def df_and_mapper__mapper() -> NestedInputsMapper:
     pass
 

@@ -59,39 +59,65 @@ interface while maintaining GETTSIM's computational robustness.
    - Typically, the set of targets to compute (could be left out, in which case all
      targets are computed)
 
-   This is how it would look like
+   Here is an example (the variables `inputs_df`, `inputs_map`, and `targets_tree` will
+   be shown below).
 
    ```python
-   from gettsim import gettsim, output, targets, input_data
+   from gettsim import InputData, Output, Targets, main
 
-   gettsim(
+   outputs_df = main(
+       output=Output.name(("results", "df_with_mapper")),
        date_str="2025-01-01",
-       output=output.Name(("results", "df_with_mapper"))
-       input_data=input_data.DfAndMapper(
-           df=data,
-           mapper={
-               "p_id": "id",
-               "p_id_kindergeldempfänger": "mother_id",
-               "p_id_ehepartner": "married_spouse_id",
-               "einkommensteuer": {
-                   "gemeinsam_veranlagt": "files_jointly",
-               },
-               "einkommen": {
-                   "aus_abhängiger_beschäftigung": {
-                       "bruttolohn_y": "earnings",
-                   },
-               },
-           },
+       input_data=InputData.df_and_mapper(
+           df=inputs_df,
+           mapper=inputs_map,
        ),
-       targets=targets.Tree(
-           {"kindergeld": {"betrag_m": "child_benefit"}},
-           {"einkommensteuer": {"betrag_y_sn": "income_tax"}},
-       ),
+       targets=Targets(tree=targets_tree),
    )
    ```
 
-   The returned value is a DataFrame of with two columns: `child_benefit` and
-   `income_tax`.
+   All elements that are not atomic are specified as GETTSIM objects, which means that
+   users can benefit from autocompletion and type hints provided by their IDE.
+
+   The first argument, `output`, specifies the output to compute. In this case, we want
+   the "results" in the "DataFrame with mapper" format. That is, GETTSIM will compute
+   all desired targets and return a DataFrame with columns specified by the user.
+
+   Say we want to compute the contributions to long term care insurance
+   (Pflegeversicherung). The fourth argument, `targets`, specifies the set of targets to
+   compute. Because we ask for the "results" in the "DataFrame with mapper" format, this
+   actually has to be a mapping from the targets to the columns in the output DataFrame.
+   In this case, the argument `targets` needs to be a *pytree*, which provides the
+   mapping:
+
+   ```python
+   targets_tree = {
+       "sozialversicherung": {
+           "pflege": {
+               "beitrag": {
+                   "betrag_versicherter_m": "ltci_contrib",
+               }
+           }
+       }
+   }
+   ```
+
+   That is, the call to `main` above will return a DataFrame with one column
+   `ltci_contrib`.
+
+   The second argument, `date_str`, specifies the date at which the policy environment
+   is set up and evaluated.
+
+   Say we want to compute the above for three people, one of whom has an underage child
+   living in her household. In this case, we want to compute the "kindergeld" and
+   "einkommensteuer" targets.
+
+   The third argument, `input_data`, specifies the data on individuals / households in
+   one of various formats. In this case, we use the "DataFrame and mapper" format, which
+   means that the data is provided as a DataFrame with any column names and a mapper
+   that specifies how GETTSIM's input columns map to the columns of that DataFrame.
+
+   The returned value is a DataFrame with two columns: `child_benefit` and `income_tax`.
 
    Users may then replace the type hints in the template by the column name in a dataset
    they will provide. The `input_data` argument is a pytree that maps the input data to

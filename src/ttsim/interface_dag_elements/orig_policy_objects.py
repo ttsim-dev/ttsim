@@ -14,7 +14,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
-    policy_input,
 )
 
 if TYPE_CHECKING:
@@ -38,7 +37,7 @@ def column_objects_and_param_functions(
     root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """
-    Load the original ColumnObjectParamFunctions tree from the resource directory.
+    Load the original ColumnObjectParamFunctions dictionary from the resource directory.
 
     "Original" means:
     - Module names are not removed from the path.
@@ -47,18 +46,9 @@ def column_objects_and_param_functions(
     Parameters
     ----------
     root:
-        The resource directory to load the ColumnObjectParamFunctions tree from.
+        The resource directory to load the ColumnObjectParamFunctions dictionary from.
     """
-
-    @policy_input()
-    def backend() -> Literal["numpy", "jax"]:
-        """The backend to use for computations."""
-
-    @policy_input()
-    def num_segments() -> int:
-        """The number of segments for segment sums in jax."""
-
-    out = {
+    return {
         k: v
         for path in _find_files_recursively(root=root, suffix=".py")
         for k, v in _tree_path_to_orig_column_objects_params_functions(
@@ -66,15 +56,6 @@ def column_objects_and_param_functions(
             root=root,
         ).items()
     }
-    # Add backend so we can decide between numpy and jax for aggregation functions
-    assert "backend" not in out
-    out[("backend",)] = backend
-
-    # Add num_segments for segment sums in jax.
-    assert "num_segments" not in out
-    out[("num_segments",)] = num_segments
-
-    return out
 
 
 @interface_function()

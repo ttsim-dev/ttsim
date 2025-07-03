@@ -306,8 +306,14 @@ disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter 
 module = ["src._gettsim_tests.*",]
 disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter source code.
 
+[[tool.mypy.overrides]]
+module = ["src.ttsim.main_args",]
+disable_error_code = ["no-redef"]  # Instantiate dataclass with same name as elements.
+
+
 [tool.check-manifest]
 ignore = ["src/_gettsim/_version.py"]
+
 
 
 # ======================================================================================

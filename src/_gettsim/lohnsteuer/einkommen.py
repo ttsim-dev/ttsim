@@ -141,8 +141,8 @@ def vorsorge_krankenversicherungsbeiträge_option_b_ab_2019(
 
 @param_function(start_date="2005-01-01", end_date="2022-12-31")
 def einführungsfaktor_rentenversicherungsaufwendungen(
-    evaluationsjahr: int,
     parameter_einführungsfaktor_rentenversicherungsaufwendungen: PiecewisePolynomialParamValue,
+    evaluation_year: int,
     xnp: ModuleType,
 ) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
@@ -156,7 +156,7 @@ def einführungsfaktor_rentenversicherungsaufwendungen(
 
     """
     return piecewise_polynomial(
-        x=evaluationsjahr,
+        x=evaluation_year,
         parameters=parameter_einführungsfaktor_rentenversicherungsaufwendungen,
         xnp=xnp,
     )
