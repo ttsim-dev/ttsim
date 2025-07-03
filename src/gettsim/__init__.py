@@ -11,15 +11,89 @@ except ImportError:
     __version__ = "unknown"
 
 
-from typing import Literal
+from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 
+import ttsim
 from _gettsim_tests import TEST_DIR
+from ttsim import (
+    InputData,
+    Labels,
+    Output,
+    RawResults,
+    Results,
+    SpecializedEnvironment,
+    Targets,
+    merge_trees,
+)
+
+if TYPE_CHECKING:
+    import datetime
+
+    from ttsim.interface_dag_elements.typing import (
+        DashedISOString,
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
+        NestedPolicyEnvironment,
+        QNameData,
+    )
 
 
 def test(backend: Literal["numpy", "jax"] = "numpy") -> None:
     pytest.main([str(TEST_DIR), "--backend", backend])
+
+
+@dataclass(frozen=True)
+class OrigPolicyObjects(ttsim.main_args.MainArg):
+    column_objects_and_param_functions: FlatColumnObjectsParamFunctions | None = None
+    param_specs: FlatOrigParamSpecs | None = None
+
+
+def main(
+    *,
+    output: Output | None = None,
+    date_str: DashedISOString | None = None,
+    input_data: InputData | None = None,
+    targets: Targets | None = None,
+    backend: Literal["numpy", "jax"] = "numpy",
+    rounding: bool = True,
+    fail_and_warn: bool = True,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    raw_results: RawResults | None = None,
+    results: Results | None = None,
+    specialized_environment: SpecializedEnvironment | None = None,
+    policy_environment: NestedPolicyEnvironment | None = None,
+    processed_data: QNameData | None = None,
+    date: datetime.date | None = None,
+    policy_date_str: DashedISOString | None = None,
+    evaluation_date_str: DashedISOString | None = None,
+    policy_date: datetime.date | None = None,
+    evaluation_date: datetime.date | None = None,
+    labels: Labels | None = None,
+) -> dict[str, Any]:
+    if orig_policy_objects is None:
+        orig_policy_objects = ttsim.main_args.OrigPolicyObjects(
+            root=Path(__file__).parent.parent / "_gettsim"
+        )
+
+    return ttsim.main(**locals())
+
+
+__all__ = [
+    "InputData",
+    "Labels",
+    "OrigPolicyObjects",
+    "Output",
+    "RawResults",
+    "Results",
+    "SpecializedEnvironment",
+    "Targets",
+    "main",
+    "merge_trees",
+]
 
 
 __all__ = [
