@@ -199,8 +199,8 @@ def vorsorgeaufwendungen_keine_kappung_krankenversicherung_y_sn(
 
 @param_function(start_date="2005-01-01", end_date="2022-12-31")
 def rate_abzugsfähige_altersvorsorgeaufwendungen(
-    evaluationsjahr: int,
     parameter_einführungsfaktor_altersvorsorgeaufwendungen: PiecewisePolynomialParamValue,
+    evaluation_year: int,
     xnp: ModuleType,
 ) -> dict[str, Any]:
     """Calculate introductory factor for pension expense deductions which depends on the
@@ -214,7 +214,7 @@ def rate_abzugsfähige_altersvorsorgeaufwendungen(
 
     """
     return piecewise_polynomial(
-        x=evaluationsjahr,
+        x=evaluation_year,
         parameters=parameter_einführungsfaktor_altersvorsorgeaufwendungen,
         xnp=xnp,
     )

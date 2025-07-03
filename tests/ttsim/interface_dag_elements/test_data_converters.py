@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import datetime
+
 import numpy
 import pandas as pd
 import pytest
@@ -220,6 +222,7 @@ def test_nested_data_to_dataframe(
     results__tree = main(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,

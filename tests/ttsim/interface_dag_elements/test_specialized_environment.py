@@ -326,7 +326,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 3,
             },
         ),
         (
@@ -344,7 +343,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 3,
             },
         ),
         (
@@ -363,7 +361,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "n1": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 3,
             },
         ),
         (
@@ -385,7 +382,6 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "inputs": {"x": pd.Series([1, 1, 1])},
                 "kin_id": pd.Series([0, 0, 0]),
                 "p_id": pd.Series([0, 1, 2]),
-                "num_segments": 3,
             },
         ),
     ],
@@ -396,11 +392,10 @@ def test_create_agg_by_group_functions(
     input_data__tree,
     backend,
 ):
-    policy_environment["backend"] = backend
-    policy_environment["num_segments"] = len(input_data__tree["p_id"])
     main(
         policy_environment=policy_environment,
         input_data={"tree": input_data__tree},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
@@ -417,6 +412,7 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
     out = main(
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module": {"some_func": None}}},
         rounding=False,
         backend=backend,
@@ -449,6 +445,7 @@ def test_params_target_is_allowed(minimal_input_data):
     out = main(
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"some_param": None, "module": {"some_func": None}}},
         rounding=False,
         backend="numpy",
@@ -480,6 +477,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     results__tree = main(
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"b": None}},
         rounding=False,
         backend=backend,
@@ -491,13 +489,16 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     )
 
 
-def test_partial_params_to_functions(xnp, backend):
+def test_partial_params_to_functions(xnp, dnp, backend):
     # Partial function produces correct result
     func_after_partial = with_partialled_params_and_scalars(
         with_processed_params_and_scalars={
             "some_func": func_before_partial,
             "some_param": SOME_INT_PARAM.value,
         },
+        num_segments=1,
+        evaluation_date=datetime.date(2024, 1, 1),
+        dnp=dnp,
         rounding=False,
         xnp=xnp,
         backend=backend,
@@ -506,14 +507,17 @@ def test_partial_params_to_functions(xnp, backend):
     assert func_after_partial(2) == 3
 
 
-def test_partial_params_to_functions_removes_argument(xnp, backend):
+def test_partial_params_to_functions_removes_argument(xnp, dnp, backend):
     func_after_partial = with_partialled_params_and_scalars(
         with_processed_params_and_scalars={
             "some_func": func_before_partial,
             "some_param": SOME_INT_PARAM.value,
         },
+        num_segments=1,
+        evaluation_date=datetime.date(2024, 1, 1),
         rounding=False,
         xnp=xnp,
+        dnp=dnp,
         backend=backend,
     )["some_func"]
 
@@ -539,7 +543,6 @@ def test_user_provided_aggregate_by_group_specs(backend):
         "p_id": p_id,
         "fam_id": fam_id,
         "module_name": {"betrag_m": betrag_m},
-        "backend": backend,
     }
 
     expected = pd.Series([200, 200, 100], index=pd.Index(data["p_id"], name="p_id"))
@@ -547,6 +550,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
     actual = main(
         policy_environment=policy_environment,
         input_data={"tree": data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module_name": {"betrag_m_fam": None}}},
         rounding=False,
         backend=backend,
@@ -585,13 +589,12 @@ def test_user_provided_aggregation(backend):
             "betrag_m_double": betrag_m_double,
             "betrag_m_double_fam": betrag_m_double_fam,
         },
-        "backend": backend,
-        "num_segments": len(data["p_id"]),
     }
 
     actual = main(
         policy_environment=policy_environment,
         input_data={"tree": data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module_name": {"betrag_m_double_fam": None}}},
         rounding=False,
         backend=backend,
@@ -636,13 +639,12 @@ def test_user_provided_aggregation_with_time_conversion(backend):
             "betrag_double_m": betrag_double_m,
             "max_betrag_double_m_fam": max_betrag_double_m_fam,
         },
-        "backend": backend,
-        "num_segments": len(data["p_id"]),
     }
 
     actual = main(
         policy_environment=policy_environment,
         input_data={"tree": data},
+        date=datetime.date(2024, 1, 1),
         targets={"tree": {"module_name": {"max_betrag_double_y_fam": None}}},
         rounding=False,
         backend=backend,
@@ -723,14 +725,13 @@ def test_user_provided_aggregate_by_p_id_specs(
             "module": {leaf_name: source},
             "p_id": p_id,
             "p_id_someone_else": p_id_someone_else,
-            "backend": backend,
-            "num_segments": len(minimal_input_data_shared_fam["p_id"]),
         },
     )
 
     actual = main(
         input_data={"tree": minimal_input_data_shared_fam},
         policy_environment=policy_environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": target_tree},
         rounding=False,
         backend=backend,
@@ -745,7 +746,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     )
 
 
-def test_policy_environment_with_params_and_scalars_is_processed(backend, xnp):
+def test_policy_environment_with_params_and_scalars_is_processed(xnp, dnp, backend):
     policy_environment = {
         "raw_param_spec": SOME_RAW_PARAM,
         "some_int_param": SOME_INT_PARAM,
@@ -757,11 +758,14 @@ def test_policy_environment_with_params_and_scalars_is_processed(backend, xnp):
         "some_scalar_params_func": some_scalar_params_func,
         "some_converting_params_func": some_converting_params_func,
         "some_param_function_taking_scalar": some_param_function_taking_scalar,
-        "backend": backend,
     }
     actual = with_processed_params_and_scalars(
         without_tree_logic_and_with_derived_functions=policy_environment,
         processed_data={"x": xnp.array([1, 2, 3])},
+        backend=backend,
+        xnp=xnp,
+        dnp=dnp,
+        evaluation_date=datetime.date(2024, 1, 1),
     )
     expected = {
         "some_converting_params_func": ConvertedParam(
@@ -776,8 +780,6 @@ def test_policy_environment_with_params_and_scalars_is_processed(backend, xnp):
         "some_float_scalar": 2.0,
         "some_bool_scalar": True,
         "some_param_function_taking_scalar": 4.0,
-        "num_segments": 3,
-        "backend": backend,
     }
     assert actual == expected
 
@@ -844,6 +846,7 @@ def test_can_override_ttsim_objects_with_data(
     actual = main(
         input_data={"tree": {**minimal_input_data, **overriding_data}},
         policy_environment=nested_policy_environment,
+        date=datetime.date(2024, 1, 1),
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,

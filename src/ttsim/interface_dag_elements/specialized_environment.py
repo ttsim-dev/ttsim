@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-from types import ModuleType
 from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
@@ -24,7 +23,9 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
+    import datetime
     from collections.abc import Callable
+    from types import ModuleType
 
     import networkx as nx
 
@@ -158,6 +159,10 @@ def _add_derived_functions(
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,
     processed_data: QNameData,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+    dnp: ModuleType,
+    evaluation_date: datetime.date,
 ) -> QNameSpecializedEnvironment1:
     """Process the parameters and param functions, remove RawParams from the tree.
 
@@ -169,6 +174,15 @@ def with_processed_params_and_scalars(
         qualified names in all keys and function arguments.
     processed_data
         The processed data.
+    backend
+        The backend to use for computations.
+    xnp
+        The numpy-like module to use for computations.
+    dnp
+        The numpy-like module to use for datetime objects.
+    evaluation_date
+        The date for which the policy system is set up. An integer is
+        interpreted as the year.
 
     Returns
     -------
@@ -186,21 +200,9 @@ def with_processed_params_and_scalars(
         else:
             # Leave nodes not in the data what they are.
             all_nodes[n] = f
-    # The number of segments for jax' segment sum. After processing the data, we know
-    # that the number of ids is at most the length of the data.
-    if processed_data:
-        all_nodes["num_segments"] = len(next(iter(processed_data.values())))
-    else:
-        # Leave at a recognisable value; just used in jittability tests.
-        all_nodes["num_segments"] = 11111
 
     params = {k: v for k, v in all_nodes.items() if isinstance(v, ParamObject)}
-    scalars = {
-        k: v
-        for k, v in all_nodes.items()
-        if isinstance(v, float | int | bool) or k == "backend"
-    }
-    modules = {k: v for k, v in all_nodes.items() if isinstance(v, ModuleType)}
+    scalars = {k: v for k, v in all_nodes.items() if isinstance(v, float | int | bool)}
     param_functions = {
         k: v for k, v in all_nodes.items() if isinstance(v, ParamFunction)
     }
@@ -217,7 +219,12 @@ def with_processed_params_and_scalars(
     processed_param_functions = process(
         **{k: v.value for k, v in params.items()},
         **scalars,
-        **modules,
+        xnp=xnp,
+        dnp=dnp,
+        backend=backend,
+        evaluation_year=evaluation_date.year,
+        evaluation_month=evaluation_date.month,
+        evaluation_day=evaluation_date.day,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},
@@ -233,8 +240,11 @@ def with_processed_params_and_scalars(
 def with_partialled_params_and_scalars(
     with_processed_params_and_scalars: QNameSpecializedEnvironment1,
     rounding: bool,
+    num_segments: int,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
+    dnp: ModuleType,
+    evaluation_date: datetime.date,
 ) -> QNameSpecializedEnvironment2:
     """Partial parameters to functions such that they disappear from the DAG.
 
@@ -245,6 +255,17 @@ def with_partialled_params_and_scalars(
         parameters / scalars as values.
     rounding
         Whether to apply rounding to functions.
+    num_segments
+        The number of segments for segment sums in jax.
+    backend
+        The backend to use for computations.
+    xnp
+        The numpy-like module to use for computations.
+    dnp
+        The numpy-like module to use for datetime objects.
+    evaluation_date
+        The date for which the policy system is set up. An integer is
+        interpreted as the year.
 
     Returns
     -------
@@ -256,6 +277,21 @@ def with_partialled_params_and_scalars(
         for k, v in with_processed_params_and_scalars.items()
         if isinstance(v, ColumnFunction)
     }
+    all_partial_params = {
+        **{
+            k: v
+            for k, v in with_processed_params_and_scalars.items()
+            if not isinstance(v, ColumnObject)
+        },
+        "num_segments": num_segments,
+        "backend": backend,
+        "xnp": xnp,
+        "dnp": dnp,
+        "evaluation_year": evaluation_date.year,
+        "evaluation_month": evaluation_date.month,
+        "evaluation_day": evaluation_date.day,
+    }
+
     processed_functions = {}
     for name, col_func in column_functions.items():
         vect_col_func = (
@@ -266,17 +302,14 @@ def with_partialled_params_and_scalars(
         rounded_col_func = (
             _apply_rounding(vect_col_func, xnp) if rounding else vect_col_func
         )
-        partial_params = {
-            arg: with_processed_params_and_scalars[arg]
+        partial_params_of_this_column_function = {
+            arg: all_partial_params[arg]
             for arg in get_free_arguments(rounded_col_func)
-            if (
-                arg in with_processed_params_and_scalars
-                and not isinstance(with_processed_params_and_scalars[arg], ColumnObject)
-            )
+            if arg in all_partial_params
         }
-        if partial_params:
+        if partial_params_of_this_column_function:
             processed_functions[name] = functools.partial(
-                rounded_col_func, **partial_params
+                rounded_col_func, **partial_params_of_this_column_function
             )
         else:
             processed_functions[name] = rounded_col_func

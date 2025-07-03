@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
@@ -47,10 +47,7 @@ def policy_environment(
     orig_policy_objects__column_objects_and_param_functions: NestedColumnObjectsParamFunctions,  # noqa: E501
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     policy_date: datetime.date,
-    evaluation_date: datetime.date,
-    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
-    dnp: ModuleType,
 ) -> NestedPolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -62,12 +59,14 @@ def policy_environment(
     date
         The date for which the policy system is set up. An integer is
         interpreted as the year.
+    xnp
+        The numpy-like module to use for computations.
 
     Returns
     -------
     The policy environment for the specified date.
     """
-    a_tree = merge_trees(
+    return merge_trees(
         left=_active_column_objects_and_param_functions(
             orig=orig_policy_objects__column_objects_and_param_functions,
             date=policy_date,
@@ -78,24 +77,6 @@ def policy_environment(
             xnp=xnp,
         ),
     )
-
-    assert "evaluationsjahr" not in a_tree, "evaluationsjahr must not be specified"
-    a_tree["evaluationsjahr"] = ScalarParam(
-        leaf_name="evaluationsjahr",
-        start_date=evaluation_date,
-        end_date=evaluation_date,
-        value=evaluation_date.year,
-        name={"de": "Evaluationsjahr. Implementation wird noch verbessert."},
-        description={"de": "Der Zeitpunkt, für den die Berechnung durchgeführt wird."},
-        unit="Year",
-        reference_period=None,
-        note=None,
-        reference=None,
-    )
-    a_tree["backend"] = backend
-    a_tree["xnp"] = xnp
-    a_tree["dnp"] = dnp
-    return a_tree
 
 
 def _active_column_objects_and_param_functions(
