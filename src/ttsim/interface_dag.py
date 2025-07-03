@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
+        DashedISOString,
         FlatInterfaceObjects,
         NestedPolicyEnvironment,
         QNameData,
@@ -39,15 +40,10 @@ if TYPE_CHECKING:
 
 def main(
     *,
-    date_str: str | None = None,
-    output: main_args.output.Name | main_args.output.Names | None = None,
-    input_data: main_args.input_data.DfAndMapper
-    | main_args.input_data.DfWithNestedColumns
-    | main_args.input_data.Flat
-    | main_args.input_data.QName
-    | main_args.input_data.Tree
-    | None = None,
-    targets: main_args.targets.Tree | main_args.targets.QName | None = None,
+    date_str: DashedISOString | None = None,
+    output: main_args.Output | None = None,
+    input_data: main_args.InputData | None = None,
+    targets: main_args.Targets | None = None,
     backend: Literal["numpy", "jax"] | None = None,
     rounding: bool = True,
     fail_and_warn: bool = True,
@@ -60,6 +56,10 @@ def main(
     dnp: ModuleType | None = None,
     xnp: ModuleType | None = None,
     date: datetime.date | None = None,
+    policy_date_str: DashedISOString | None = None,
+    evaluation_date_str: DashedISOString | None = None,
+    policy_date: datetime.date | None = None,
+    evaluation_date: datetime.date | None = None,
     labels: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
@@ -69,6 +69,7 @@ def main(
     input_qnames = _harmonize_inputs(locals())
     output_qnames = _harmonize_output(output)
 
+    # If requesting an input template, we do not require any data.
     if not any(re.match("(input|processed)_data", s) for s in input_qnames):
         input_qnames["processed_data"] = {}
         input_qnames["processed_data_columns"] = None
@@ -134,7 +135,6 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     for k, v in inputs.items():
         if isinstance(v, main_args.MainArg):
             dict_inputs[k] = v.to_dict()
-            breakpoint()
         else:
             dict_inputs[k] = v
     flat_inputs = {}
@@ -151,12 +151,10 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
                 flat_inputs[qname] = acc(dict_inputs)
             except (KeyError, TypeError):
                 flat_inputs[qname] = val
-    return {k: v for k, v in flat_inputs.items() if v is not None and k != "output"}
+    return {k: v for k, v in flat_inputs.items() if v is not None}
 
 
-def _harmonize_output(
-    output: main_args.output.Name | main_args.output.Names | None,
-) -> dict[str, Any]:
+def _harmonize_output(output: main_args.Output | None) -> dict[str, Any]:
     if output is None:
         flat_output = {
             "qname": None,
@@ -164,29 +162,24 @@ def _harmonize_output(
         }
     elif isinstance(output, main_args.MainArg):
         flat_output = output.to_dict()
-        flat_output["name"] = flat_output.get("name")
-        if isinstance(flat_output["name"], tuple):
-            flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
-        elif isinstance(flat_output["name"], dict):
-            if len(flat_output["name"]) > 1:
-                raise ValueError(
-                    "The output Name must be a single qualified name, a tuple or a "
-                    "dict with one element. If you want to output multiple elements, "
-                    "use Names."
-                )
-            flat_output["name"] = dt.qnames(flat_output["name"])[0]
-        flat_output["names"] = flat_output.get(
-            "names", [flat_output["name"]] if flat_output["name"] is not None else None
-        )
+        if flat_output["name"] is not None:
+            if isinstance(flat_output["name"], tuple):
+                flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
+            elif isinstance(flat_output["name"], dict):
+                if len(flat_output["name"]) > 1:
+                    raise ValueError(
+                        "The output Name must be a single qualified name, a tuple or a "
+                        "dict with one element. If you want to output multiple "
+                        "elements, use 'names'."
+                    )
+                flat_output["name"] = dt.qnames(flat_output["name"])[0]
+            flat_output["names"] = [flat_output["name"]]
         if isinstance(flat_output["names"], dict):
             flat_output["names"] = dt.qnames(flat_output["names"])
         elif isinstance(flat_output["names"][0], tuple):
             flat_output["names"] = [
                 dt.qname_from_tree_path(tp) for tp in flat_output["names"]
             ]
-        elif isinstance(flat_output["names"][0], dict):
-            # Happens if a dict was passed to Name.
-            flat_output["names"] = dt.qnames(flat_output["names"][0])
 
     return flat_output
 
@@ -201,7 +194,7 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
     among the functions with the same leaf name the one that satisfies the include
     condition.
 
-    Fails if multiple functions with the same leaf name satisfy the include condition.
+    Fail if multiple functions with the same leaf name satisfy the include condition.
 
     Parameters
     ----------

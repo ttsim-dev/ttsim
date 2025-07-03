@@ -11,7 +11,7 @@ import dags.tree as dt
 import pytest
 from dags import get_free_arguments
 
-from ttsim import main, output
+from ttsim import Output, main
 from ttsim.tt_dag_elements.column_objects_param_function import ColumnFunction
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ def get_orig_gettsim_objects() -> dict[
 ]:
     out = main(
         orig_policy_objects={"root": GETTSIM_ROOT},
-        output=output.Names(
+        output=Output.names(
             [
                 "orig_policy_objects__column_objects_and_param_functions",
                 "orig_policy_objects__param_specs",
@@ -55,7 +55,7 @@ def cached_specialized_environment(
         orig_policy_objects={"root": root},
         backend=backend,
         fail_and_warn=False,
-        output=output.Name(
+        output=Output.name(
             ("specialized_environment", "with_partialled_params_and_scalars")
         ),
     )
@@ -92,6 +92,6 @@ def test_jittable(tree_path, fun, backend, xnp):
             processed_data=processed_data,
             targets={"qname": [qname]},
             backend=backend,
-            output=output.Name(("raw_results", "columns")),
+            output=Output.name(("raw_results", "columns")),
             fail_and_warn=False,
         )

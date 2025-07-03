@@ -8,7 +8,7 @@ import numpy
 import pytest
 
 from ttsim import main
-from ttsim.main_args import input_data, output
+from ttsim.main_args import InputData, Output
 from ttsim.plot_dag import (
     plot_tt_dag,
 )
@@ -42,7 +42,7 @@ def get_orig_mettsim_objects() -> dict[
 ]:
     out = main(
         orig_policy_objects={"root": METTSIM_ROOT},
-        output=output.Names(
+        output=Output.names(
             [
                 "orig_policy_objects__column_objects_and_param_functions",
                 "orig_policy_objects__param_specs",
@@ -121,9 +121,9 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
     ):
         main(
             date_str="2020-01-01",
-            input_data=input_data.Flat(data),
+            input_data=InputData.flat(data),
             orig_policy_objects={"root": METTSIM_ROOT},
             targets={"tree": {"property_tax": {"amount_y": None}}},
-            output=output.Names(["results__tree"]),
+            output=Output.names(["results__tree"]),
             backend=backend,
         )
