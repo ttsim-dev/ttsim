@@ -4,7 +4,7 @@ from ttsim.interface_dag import main
 from ttsim.interface_dag_elements.shared import merge_trees
 from ttsim.main_args import (
     InputData,
-    # Labels,
+    Labels,
     OrigPolicyObjects,
     Output,
     RawResults,
@@ -15,6 +15,7 @@ from ttsim.main_args import (
 
 __all__ = [
     "InputData",
+    "Labels",
     "OrigPolicyObjects",
     "Output",
     "RawResults",
