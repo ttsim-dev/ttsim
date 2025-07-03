@@ -1,7 +1,6 @@
-import dags.tree as dt
 import pandas as pd
 
-from _gettsim.interface import oss
+from ttsim import input_data, main, output  # , targets
 
 inputs_df = pd.DataFrame(
     {
@@ -41,7 +40,7 @@ inputs_map = {
     },
 }
 
-targets_map = {
+targets_tree = {
     "sozialversicherung": {
         "pflege": {
             "beitrag": {
@@ -51,15 +50,15 @@ targets_map = {
     }
 }
 
-result = oss(
-    date="2025-01-01",
-    inputs_df=inputs_df,
-    inputs_tree_to_inputs_df_columns=inputs_map,
-    targets_tree_to_outputs_df_columns=targets_map,
+outputs_df = main(
+    date_str="2025-01-01",
+    output=output.Name(("results", "df_with_mapper")),
+    input_data=input_data.DfAndMapper(
+        df=inputs_df,
+        mapper=inputs_map,
+    ),
+    targets={"tree": targets_tree},  # targets.Tree(targets_tree)
+    backend="numpy",
 )
 
-flat_result = dt.flatten_to_tree_paths(result)
-outputs_df = {
-    v: flat_result[k] for k, v in dt.flatten_to_tree_paths(targets_map).items()
-}
 print(pd.DataFrame(outputs_df).round(2))  # noqa: T201

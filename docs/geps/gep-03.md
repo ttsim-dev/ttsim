@@ -12,7 +12,7 @@
 - * Created
   * 2022-03-28
 - * Updated
-  * 2025-06-xx
+  * 2025-07-xx
 - * Resolution
   * [Accepted](https://gettsim.zulipchat.com/#narrow/stream/309998-GEPs/topic/GEP.2003)
 ```

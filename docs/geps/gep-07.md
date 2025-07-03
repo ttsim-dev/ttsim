@@ -48,33 +48,57 @@ interface while maintaining GETTSIM's computational robustness.
 
 ### New Interface Components
 
-1. **Template-Based Data Input**
+1. **A single entry point**
+
+   The `gettsim` function is the single entry point for all GETTSIM functionality. For
+   computing taxes and transfers, the minimal requirements are:
+
+   - The date at which the policy environment is set up and evaluated
+   - Data on individuals / households in standard dataframe format, i.e., a
+     2-dimensional table
+   - A *pytree* mapping GETTSIM's expected input structure to columns in the dataframe
+     or constants (e.g., when there are no pensioners in the data, pension payments can
+     be quickly set to zero for everyone)
+   - A *pytree* mapping the desired targets to columns they should be called in the
+     output dataframe
+
+   This is how it would look like
 
    ```python
-   from gettsim import get_input_template, set_up_policy_environment
+   from gettsim import gettsim, output, targets, input_data
 
-
-   get_input_template(
-       target_variables=[("kindergeld", "betrag_m"), ("einkommensteuer", "betrag_y_sn")],
-       policy_date="2025-01-01",
+   gettsim(
+       date_str="2025-01-01",
+       output=output.Name(("results", "df_with_mapper"))
+       input_data=input_data.DfAndMapper(
+           df=data,
+           mapper={
+               "p_id": "id",
+               "p_id_kindergeldempfänger": "mother_id",
+               "p_id_ehepartner": "married_spouse_id",
+               "einkommensteuer": {
+                   "gemeinsam_veranlagt": "files_jointly",
+               },
+               "einkommen": {
+                   "aus_abhängiger_beschäftigung": {
+                       "bruttolohn_y": "earnings",
+                   },
+               },
+           },
+       ),
+       targets=targets.Tree(
+           {"kindergeld": {"betrag_m": "child_benefit"}},
+           {"einkommensteuer": {"betrag_y_sn": "income_tax"}},
+       ),
    )
    ```
 
-   A yaml-representation of the template is:
-
-   ```yaml
-   p_id: int
-   p_id_kindergeldempfänger: bool
-   p_id_ehepartner: bool
-   einkommensteuer:
-     gemeinsam_veranlagt: bool
-   einkommen:
-     aus_abhängiger_beschäftigung:
-       bruttolohn_y: float
-   ```
+   The returned value is a DataFrame of with two columns: `child_benefit` and
+   `income_tax`.
 
    Users may then replace the type hints in the template by the column name in a dataset
-   they will provide.
+   they will provide. The `input_data` argument is a pytree that maps the input data to
+   the columns in the dataframe.
 
    ```yaml
    p_id: p_id
