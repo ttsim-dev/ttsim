@@ -23,7 +23,11 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.tt_dag_elements.param_objects import ParamObject
+from ttsim.tt_dag_elements.param_objects import (
+    PLACEHOLDER_FIELD,
+    PLACEHOLDER_VALUE,
+    ParamObject,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -97,7 +101,13 @@ class _ParamWithActivePeriod(ParamObject):
     Only used here for checking overlap.
     """
 
-    original_function_name: str
+    original_function_name: str = PLACEHOLDER_FIELD
+
+    def __post_init__(self) -> None:
+        if self.original_function_name is PLACEHOLDER_VALUE:
+            raise ValueError(
+                "'original_function_name' field must be specified for _ParamWithActivePeriod"
+            )
 
 
 def assert_valid_ttsim_pytree(

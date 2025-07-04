@@ -12,12 +12,13 @@ from ttsim.plot_dag import (
     plot_interface_dag,
 )
 from ttsim.tt_dag_elements import (
-    ParamObject,
+    ScalarParam,
     param_function,
     policy_function,
 )
 
-SOME_PARAM_OBJECT = ParamObject(
+SOME_PARAM_OBJECT = ScalarParam(
+    value=111,
     leaf_name="some_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
