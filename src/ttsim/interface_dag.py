@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import dags
 import dags.tree as dt
+import networkx as nx
 import optree
 
 from ttsim.interface_dag_elements import AllOutputNames
@@ -109,6 +110,11 @@ def main(
     dag = dags.create_dag(
         functions=functions,
         targets=output_qnames["names"],
+    )
+
+    _fail_if_root_nodes_of_interface_dag_are_missing(
+        dag=dag,
+        input_qnames=input_qnames,
     )
 
     def lexsort_key(x: str) -> int:
@@ -347,6 +353,27 @@ def _remove_tree_logic_from_functions_in_collection(
         )
         for path, obj in orig_functions.items()
     }
+
+
+def _fail_if_root_nodes_of_interface_dag_are_missing(
+    dag: dags.DiGraph,
+    input_qnames: dict[str, Any],
+) -> None:
+    """Fail if root nodes are missing."""
+    root_nodes = nx.subgraph_view(
+        dag,
+        filter_node=lambda n: dag.in_degree(n) == 0,
+    ).nodes
+
+    missing_nodes = [node for node in root_nodes if node not in input_qnames]
+    if missing_nodes:
+        formatted = format_list_linewise(
+            [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
+        )
+        raise ValueError(
+            f"The following input arguments are missing to compute the "
+            f"interface DAG:\n{formatted}"
+        )
 
 
 def _fail_if_requested_nodes_cannot_be_found(
