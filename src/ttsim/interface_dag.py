@@ -154,8 +154,8 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 def _harmonize_output(output: Output | None) -> dict[str, Any]:
     if output is None:
         flat_output = {
-            "qname": None,
-            "qnames": None,
+            "name": None,
+            "names": None,
         }
     elif hasattr(output, "to_dict"):  # Check if it's a MainArg-like object
         flat_output = output.to_dict()
@@ -177,6 +177,11 @@ def _harmonize_output(output: Output | None) -> dict[str, Any]:
             flat_output["names"] = [
                 dt.qname_from_tree_path(tp) for tp in flat_output["names"]
             ]
+    else:
+        msg = format_errors_and_warnings(
+            f"Expected an instance of class Output, got {type(output)}"
+        )
+        raise TypeError(msg)
 
     return flat_output
 
