@@ -153,35 +153,36 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 def _harmonize_output(output: Output | None) -> dict[str, Any]:
     if output is None:
-        flat_output = {
+        flat_output: dict[str, Any] = {
             "name": None,
             "names": None,
         }
     elif hasattr(output, "to_dict"):  # Check if it's a MainArg-like object
         flat_output = output.to_dict()
-        if flat_output["name"] is not None:
-            if isinstance(flat_output["name"], tuple):
-                flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
-            elif isinstance(flat_output["name"], dict):
-                if len(flat_output["name"]) > 1:
-                    raise ValueError(
-                        "The output Name must be a single qualified name, a tuple or a "
-                        "dict with one element. If you want to output multiple "
-                        "elements, use 'names'."
-                    )
-                flat_output["name"] = dt.qnames(flat_output["name"])[0]
-            flat_output["names"] = [flat_output["name"]]
-        if isinstance(flat_output["names"], dict):
-            flat_output["names"] = dt.qnames(flat_output["names"])
-        elif isinstance(flat_output["names"][0], tuple):
-            flat_output["names"] = [
-                dt.qname_from_tree_path(tp) for tp in flat_output["names"]
-            ]
     else:
-        msg = format_errors_and_warnings(
-            f"Expected an instance of class Output, got {type(output)}"
-        )
-        raise TypeError(msg)
+        flat_output = {
+            "name": output.get("name"),
+            "names": output.get("names"),
+        }
+
+    if flat_output["name"] is not None:
+        if isinstance(flat_output["name"], tuple):
+            flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
+        elif isinstance(flat_output["name"], dict):
+            if len(flat_output["name"]) > 1:
+                raise ValueError(
+                    "The output Name must be a single qualified name, a tuple or a "
+                    "dict with one element. If you want to output multiple "
+                    "elements, use 'names'."
+                )
+            flat_output["name"] = dt.qnames(flat_output["name"])[0]
+        flat_output["names"] = [flat_output["name"]]
+    if isinstance(flat_output["names"], dict):
+        flat_output["names"] = dt.qnames(flat_output["names"])
+    elif isinstance(flat_output["names"][0], tuple):
+        flat_output["names"] = [
+            dt.qname_from_tree_path(tp) for tp in flat_output["names"]
+        ]
 
     return flat_output
 
