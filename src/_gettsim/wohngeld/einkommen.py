@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 from ttsim.tt_dag_elements import (
     AggType,
-    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveIntLookupTableParamValue,
     PiecewisePolynomialParamValue,
     agg_by_p_id_function,
-    get_consecutive_int_1d_lookup_table_param_value,
+    get_consecutive_int_lookup_table_param_value,
     param_function,
     piecewise_polynomial,
     policy_function,
@@ -32,16 +32,18 @@ def alleinerziehendenbonus(
 def min_einkommen_lookup_table(
     min_einkommen: dict[int, float],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Create a LookupTable for the min income thresholds."""
-    return get_consecutive_int_1d_lookup_table_param_value(raw=min_einkommen, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(
+        raw=min_einkommen, n_dims=1, xnp=xnp
+    )
 
 
 def einkommen(
     einkommen_vor_freibetrag: float,
     einkommensfreibetrag: float,
     anzahl_personen: int,
-    min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
+    min_einkommen_lookup_table: ConsecutiveIntLookupTableParamValue,
     xnp: ModuleType,
 ) -> float:
     """Calculate final income relevant for calculation of housing benefit on household
@@ -49,13 +51,12 @@ def einkommen(
 
     """
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
-    unteres_eink = min_einkommen_lookup_table.values_to_look_up[
+    unteres_eink = min_einkommen_lookup_table.lookup(
         xnp.minimum(
             anzahl_personen,
             min_einkommen_lookup_table.values_to_look_up.shape[0],
         )
-        - min_einkommen_lookup_table.base_to_subtract
-    ]
+    )
 
     return xnp.maximum(eink_nach_abzug_m_hh, unteres_eink)
 
@@ -65,7 +66,7 @@ def einkommen_m_wthh(
     anzahl_personen_wthh: int,
     freibetrag_m_wthh: float,
     einkommen_vor_freibetrag_m_wthh: float,
-    min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
+    min_einkommen_lookup_table: ConsecutiveIntLookupTableParamValue,
     xnp: ModuleType,
 ) -> float:
     """Income relevant for Wohngeld calculation.
@@ -90,7 +91,7 @@ def einkommen_m_bg(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     freibetrag_m_bg: float,
     einkommen_vor_freibetrag_m_bg: float,
-    min_einkommen_lookup_table: ConsecutiveInt1dLookupTableParamValue,
+    min_einkommen_lookup_table: ConsecutiveIntLookupTableParamValue,
     xnp: ModuleType,
 ) -> float:
     """Income relevant for Wohngeld calculation.
@@ -116,7 +117,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y: float,
     familie__kind: bool,
-    abzugsbeträge_steuern_sozialversicherung: ConsecutiveInt1dLookupTableParamValue,
+    abzugsbeträge_steuern_sozialversicherung: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Calculate housing benefit subtractions on the individual level.
 
@@ -132,11 +133,10 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
         stufe = stufe + 1
     if sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0:
         stufe = stufe + 1
-    abzug = abzugsbeträge_steuern_sozialversicherung
     if familie__kind:
         out = 0.0
     else:
-        out = abzug.values_to_look_up[stufe - abzug.base_to_subtract]
+        out = abzugsbeträge_steuern_sozialversicherung.lookup(stufe)
     return out
 
 

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
-    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, RawParam
+    from ttsim.tt_dag_elements import ConsecutiveIntLookupTableParamValue, RawParam
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -115,12 +115,10 @@ def kindergeld_erstes_kind_ohne_staffelung_m(
 
 @param_function(end_date="2022-12-31", leaf_name="kindergeld_erstes_kind_m")
 def kindergeld_erstes_kind_gestaffelt_m(
-    kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
+    kindergeld__satz_nach_anzahl_kinder: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Kindergeld for first child when Kindergeld depends on number of children."""
-    return kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
-        1 - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
-    ]
+    return kindergeld__satz_nach_anzahl_kinder.lookup(1)
 
 
 @policy_function(

@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ttsim.tt_dag_elements import (
-    ConsecutiveInt1dLookupTableParamValue,
-    get_consecutive_int_1d_lookup_table_param_value,
+    ConsecutiveIntLookupTableParamValue,
+    get_consecutive_int_lookup_table_param_value,
     param_function,
     policy_function,
     policy_input,
@@ -325,16 +325,14 @@ def berechtigte_wohnfläche(
     wohnen__bewohnt_eigentum_hh: bool,
     anzahl_personen_hh: int,
     berechtigte_wohnfläche_miete: dict[str, float],
-    berechtigte_wohnfläche_eigentum: ConsecutiveInt1dLookupTableParamValue,
+    berechtigte_wohnfläche_eigentum: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Calculate size of dwelling eligible to claim.
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     if wohnen__bewohnt_eigentum_hh:
-        maximum = berechtigte_wohnfläche_eigentum.values_to_look_up[
-            anzahl_personen_hh - berechtigte_wohnfläche_eigentum.base_to_subtract
-        ]
+        maximum = berechtigte_wohnfläche_eigentum.lookup(anzahl_personen_hh)
     else:
         maximum = (
             berechtigte_wohnfläche_miete["single"]
@@ -455,11 +453,11 @@ def berechtigte_wohnfläche_eigentum(
     parameter_berechtigte_wohnfläche_eigentum: RawParam,
     wohngeld__max_anzahl_personen: dict[str, int],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Berechtigte Wohnfläche für Eigenheim."""
     tmp = parameter_berechtigte_wohnfläche_eigentum.copy()
     je_weitere_person = tmp.pop("je_weitere_person")
     max_anzahl_direkt = tmp.pop("max_anzahl_direkt")
     for i in range(wohngeld__max_anzahl_personen["indizierung"] - max_anzahl_direkt):
         tmp[i] = tmp[max_anzahl_direkt] + i * je_weitere_person
-    return get_consecutive_int_1d_lookup_table_param_value(raw=tmp, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=tmp, n_dims=1, xnp=xnp)

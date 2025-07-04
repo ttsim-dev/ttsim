@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ttsim.tt_dag_elements import (
-    get_consecutive_int_1d_lookup_table_param_value,
+    get_consecutive_int_lookup_table_param_value,
     param_function,
     policy_function,
 )
@@ -13,7 +13,7 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.tt_dag_elements import ConsecutiveIntLookupTableParamValue
 
 
 @policy_function(end_date="2004-12-31", leaf_name="altersfreibetrag_y")
@@ -60,14 +60,12 @@ def altersfreibetrag_y_ab_2005(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_y: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y: float,
     altersentlastungsbetrag_altersgrenze: int,
-    maximaler_altersentlastungsbetrag_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
-    altersentlastungsquote_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    maximaler_altersentlastungsbetrag_gestaffelt: ConsecutiveIntLookupTableParamValue,
+    altersentlastungsquote_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Calculate tax deduction allowance for elderly since 2005."""
     maximaler_altersentlastungsbetrag = (
-        maximaler_altersentlastungsbetrag_gestaffelt.values_to_look_up[
-            geburtsjahr - maximaler_altersentlastungsbetrag_gestaffelt.base_to_subtract
-        ]
+        maximaler_altersentlastungsbetrag_gestaffelt.lookup(geburtsjahr)
     )
 
     einkommen_lohn = (
@@ -81,9 +79,9 @@ def altersfreibetrag_y_ab_2005(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y,
         0.0,
     )
-    betrag = altersentlastungsquote_gestaffelt.values_to_look_up[
-        geburtsjahr - altersentlastungsquote_gestaffelt.base_to_subtract
-    ] * (einkommen_lohn + weiteres_einkommen)
+    betrag = altersentlastungsquote_gestaffelt.lookup(geburtsjahr) * (
+        einkommen_lohn + weiteres_einkommen
+    )
 
     if alter > altersentlastungsbetrag_altersgrenze:
         out = min(betrag, maximaler_altersentlastungsbetrag)
@@ -97,7 +95,7 @@ def altersfreibetrag_y_ab_2005(
 def altersentlastungsquote_gestaffelt(
     raw_altersentlastungsquote_gestaffelt: dict[str | int, int | float],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Convert the raw parameters for the age-based tax deduction allowance to a dict."""
     spec = raw_altersentlastungsquote_gestaffelt.copy()
     first_birthyear_to_consider: int = int(spec.pop("first_birthyear_to_consider"))
@@ -115,7 +113,7 @@ def altersentlastungsquote_gestaffelt(
 def maximaler_altersentlastungsbetrag_gestaffelt(
     raw_maximaler_altersentlastungsbetrag_gestaffelt: dict[str | int, int | float],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Convert the raw parameters for the age-based tax deduction allowance to a dict."""
     spec = raw_maximaler_altersentlastungsbetrag_gestaffelt.copy()
     first_birthyear_to_consider: int = int(spec.pop("first_birthyear_to_consider"))
@@ -134,7 +132,7 @@ def get_consecutive_int_1d_lookup_table_with_filled_up_tails(
     left_tail_key: int,
     right_tail_key: int,
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Create a consecutive integer lookup table with filled tails.
 
     This function takes a dictionary of consecutive integer keys and their corresponding
@@ -156,7 +154,8 @@ def get_consecutive_int_1d_lookup_table_with_filled_up_tails(
         range(max_key_in_spec + 1, right_tail_key + 1),
         raw[max_key_in_spec],
     )
-    return get_consecutive_int_1d_lookup_table_param_value(
+    return get_consecutive_int_lookup_table_param_value(
         raw={**consecutive_dict_start, **raw, **consecutive_dict_end},
+        n_dims=1,
         xnp=xnp,
     )

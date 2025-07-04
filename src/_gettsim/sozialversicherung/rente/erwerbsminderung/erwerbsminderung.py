@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import policy_function
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.tt_dag_elements import ConsecutiveIntLookupTableParamValue
 
 
 @policy_function(start_date="2001-01-01", end_date="2023-06-30", leaf_name="betrag_m")
@@ -150,7 +150,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     sozialversicherung__rente__jahr_renteneintritt: int,
     sozialversicherung__rente__monat_renteneintritt: int,
-    zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    zurechnungszeitgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
 
@@ -164,9 +164,9 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
         sozialversicherung__rente__jahr_renteneintritt * 12
         + sozialversicherung__rente__monat_renteneintritt
     )
-    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
-        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
-    ]
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.lookup(
+        claiming_month_since_ad
+    )
     return (
         altersgrenze_zurechnungszeit
         - (sozialversicherung__rente__alter_bei_renteneintritt)
@@ -202,7 +202,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     sozialversicherung__rente__jahr_renteneintritt: int,
     sozialversicherung__rente__monat_renteneintritt: int,
-    zurechnungszeitgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    zurechnungszeitgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Additional Entgeltpunkte accumulated through "Zurechnungszeit".
 
@@ -216,9 +216,9 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
         sozialversicherung__rente__jahr_renteneintritt * 12
         + sozialversicherung__rente__monat_renteneintritt
     )
-    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.values_to_look_up[
-        claiming_month_since_ad - zurechnungszeitgrenze_gestaffelt.base_to_subtract
-    ]
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.lookup(
+        claiming_month_since_ad
+    )
     return (
         altersgrenze_zurechnungszeit
         - (sozialversicherung__rente__alter_bei_renteneintritt)
@@ -274,7 +274,7 @@ def zugangsfaktor_ohne_gestaffelte_altersgrenze(
 def zugangsfaktor_mit_gestaffelter_altersgrenze(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     wartezeit_langjährig_versichert_erfüllt: bool,
-    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
     sozialversicherung__rente__jahr_renteneintritt: int,
     sozialversicherung__rente__monat_renteneintritt: int,
     altersgrenze_langjährig_versichert: float,
@@ -304,9 +304,7 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
     if wartezeit_langjährig_versichert_erfüllt:
         grenze_abschlagsfrei = altersgrenze_langjährig_versichert
     else:
-        grenze_abschlagsfrei = altersgrenze_gestaffelt.values_to_look_up[
-            claiming_month_since_ad - altersgrenze_gestaffelt.base_to_subtract
-        ]
+        grenze_abschlagsfrei = altersgrenze_gestaffelt.lookup(claiming_month_since_ad)
 
     zugangsfaktor = (
         1

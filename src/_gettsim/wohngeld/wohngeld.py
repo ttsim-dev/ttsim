@@ -25,7 +25,7 @@ from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
     agg_by_group_function,
-    get_consecutive_int_1d_lookup_table_param_value,
+    get_consecutive_int_lookup_table_param_value,
     param_function,
     policy_function,
 )
@@ -33,16 +33,16 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from _gettsim.param_types import ConsecutiveInt1dLookupTableParamValue
+    from _gettsim.param_types import ConsecutiveIntLookupTableParamValue
 
 
 @dataclass(frozen=True)
 class BasisformelParamValues:
     skalierungsfaktor: float
-    a: ConsecutiveInt1dLookupTableParamValue
-    b: ConsecutiveInt1dLookupTableParamValue
-    c: ConsecutiveInt1dLookupTableParamValue
-    zusatzbetrag_nach_haushaltsgröße: ConsecutiveInt1dLookupTableParamValue
+    a: ConsecutiveIntLookupTableParamValue
+    b: ConsecutiveIntLookupTableParamValue
+    c: ConsecutiveIntLookupTableParamValue
+    zusatzbetrag_nach_haushaltsgröße: ConsecutiveIntLookupTableParamValue
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
@@ -93,13 +93,11 @@ def basisformel(
     store the code for Wohngeld calculation.
 
     """
-    a = params.a.values_to_look_up[anzahl_personen - params.a.base_to_subtract]
-    b = params.b.values_to_look_up[anzahl_personen - params.b.base_to_subtract]
-    c = params.c.values_to_look_up[anzahl_personen - params.c.base_to_subtract]
-    zusatzbetrag_nach_haushaltsgröße = (
-        params.zusatzbetrag_nach_haushaltsgröße.values_to_look_up[
-            anzahl_personen - params.zusatzbetrag_nach_haushaltsgröße.base_to_subtract
-        ]
+    a = params.a.lookup(anzahl_personen)
+    b = params.b.lookup(anzahl_personen)
+    c = params.c.lookup(anzahl_personen)
+    zusatzbetrag_nach_haushaltsgröße = params.zusatzbetrag_nach_haushaltsgröße.lookup(
+        anzahl_personen
     )
     out = xnp.maximum(
         0.0,
@@ -211,11 +209,12 @@ def basisformel_params(
 
     return BasisformelParamValues(
         skalierungsfaktor=skalierungsfaktor,
-        a=get_consecutive_int_1d_lookup_table_param_value(raw=a, xnp=xnp),
-        b=get_consecutive_int_1d_lookup_table_param_value(raw=b, xnp=xnp),
-        c=get_consecutive_int_1d_lookup_table_param_value(raw=c, xnp=xnp),
-        zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_1d_lookup_table_param_value(
+        a=get_consecutive_int_lookup_table_param_value(raw=a, n_dims=1, xnp=xnp),
+        b=get_consecutive_int_lookup_table_param_value(raw=b, n_dims=1, xnp=xnp),
+        c=get_consecutive_int_lookup_table_param_value(raw=c, n_dims=1, xnp=xnp),
+        zusatzbetrag_nach_haushaltsgröße=get_consecutive_int_lookup_table_param_value(
             raw=zusatzbetrag_nach_haushaltsgröße,
+            n_dims=1,
             xnp=xnp,
         ),
     )

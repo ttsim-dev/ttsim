@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import (
     AggType,
     agg_by_p_id_function,
-    get_consecutive_int_1d_lookup_table_param_value,
+    get_consecutive_int_lookup_table_param_value,
     join,
     param_function,
     policy_function,
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
-    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.tt_dag_elements import ConsecutiveIntLookupTableParamValue
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -46,7 +46,7 @@ def betrag_ohne_staffelung_m(
 @policy_function(end_date="2022-12-31", leaf_name="betrag_m")
 def betrag_gestaffelt_m(
     anzahl_ansprüche: int,
-    satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
+    satz_nach_anzahl_kinder: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Sum of Kindergeld that parents receive for their children.
 
@@ -54,9 +54,7 @@ def betrag_gestaffelt_m(
     being claimed for.
 
     """
-    return satz_nach_anzahl_kinder.values_to_look_up[
-        anzahl_ansprüche - satz_nach_anzahl_kinder.base_to_subtract
-    ]
+    return satz_nach_anzahl_kinder.lookup(anzahl_ansprüche)
 
 
 @policy_function(
@@ -144,7 +142,7 @@ def gleiche_fg_wie_empfänger(
 def satz_nach_anzahl_kinder(
     satz_gestaffelt: dict[int, float],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Convert the Kindergeld-Satz by child to the amount of Kindergeld by number of
     children.
     """
@@ -159,7 +157,8 @@ def satz_nach_anzahl_kinder(
         + satz_gestaffelt[max_num_children_in_spec] * (k - max_num_children_in_spec)
         for k in range(max_num_children_in_spec + 1, max_num_children)
     }
-    return get_consecutive_int_1d_lookup_table_param_value(
+    return get_consecutive_int_lookup_table_param_value(
         raw={0: 0.0, **base_spec, **extended_spec},
+        n_dims=1,
         xnp=xnp,
     )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_function
+from ttsim.tt_dag_elements import ConsecutiveIntLookupTableParamValue, policy_function
 
 
 @policy_function(
@@ -11,7 +11,7 @@ from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue, policy_
 )
 def altersgrenze(
     geburtsjahr: int,
-    altersgrenze_gestaffelt: ConsecutiveInt1dLookupTableParamValue,
+    altersgrenze_gestaffelt: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """
     Full retirement age (FRA) for very long term insured.
@@ -23,9 +23,7 @@ def altersgrenze(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    return altersgrenze_gestaffelt.values_to_look_up[
-        geburtsjahr - altersgrenze_gestaffelt.base_to_subtract
-    ]
+    return altersgrenze_gestaffelt.lookup(geburtsjahr)
 
 
 @policy_function(start_date="2012-01-01")

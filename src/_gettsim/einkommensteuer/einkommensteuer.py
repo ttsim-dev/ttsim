@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import RawParam
-    from ttsim.tt_dag_elements import ConsecutiveInt1dLookupTableParamValue
+    from ttsim.tt_dag_elements import ConsecutiveIntLookupTableParamValue
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)
@@ -184,7 +184,7 @@ def betrag_ohne_kinderfreibetrag_y_sn(
 def relevantes_kindergeld_mit_staffelung_m(
     anzahl_kindergeld_ansprüche_1: int,
     anzahl_kindergeld_ansprüche_2: int,
-    kindergeld__satz_nach_anzahl_kinder: ConsecutiveInt1dLookupTableParamValue,
+    kindergeld__satz_nach_anzahl_kinder: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Kindergeld relevant for income tax. For each parent, half of the actual
     Kindergeld claim is considered.
@@ -198,12 +198,7 @@ def relevantes_kindergeld_mit_staffelung_m(
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
 
-    return (
-        kindergeld__satz_nach_anzahl_kinder.values_to_look_up[
-            kindergeld_ansprüche - kindergeld__satz_nach_anzahl_kinder.base_to_subtract
-        ]
-        / 2
-    )
+    return kindergeld__satz_nach_anzahl_kinder.lookup(kindergeld_ansprüche) / 2
 
 
 @policy_function(
