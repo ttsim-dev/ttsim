@@ -14,7 +14,6 @@ import numpy
 import plotly.graph_objects as go
 
 from ttsim import main
-from ttsim.arg_templates import output
 from ttsim.interface_dag import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailOrWarnFunction,
@@ -23,6 +22,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceInput,
     interface_function,
 )
+from ttsim.main_args import Output
 from ttsim.tt_dag_elements import (
     ColumnFunction,
     ParamFunction,
@@ -39,8 +39,8 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
-        NestedPolicyEnvironment,
-        QNameSpecializedEnvironment0,
+        PolicyEnvironment,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     )
 
 
@@ -108,7 +108,7 @@ def plot_tt_dag(
         date_str=date_str,
         orig_policy_objects={"root": root},
         backend="numpy",
-        output=output.Name("policy_environment"),
+        output=Output.name("policy_environment"),
     )
 
     if node_selector:
@@ -226,7 +226,7 @@ def _qnames_of_idif_to_their_ancestors(
 
 
 def _get_tt_dag_with_node_metadata(
-    environment: NestedPolicyEnvironment,
+    environment: PolicyEnvironment,
     node_selector: _QNameNodeSelector | None = None,
     include_params: bool = True,
     include_other_objects: bool = False,
@@ -249,7 +249,7 @@ def _get_tt_dag_with_node_metadata(
         labels={"processed_data_columns": qnames_policy_inputs},
         targets={"qname": qnames_to_plot},
         backend="numpy",
-        output=output.Name(tgt),
+        output=Output.name(tgt),
     )
 
     all_nodes = {
@@ -294,7 +294,9 @@ def _get_tt_dag_with_node_metadata(
     return selected_dag
 
 
-def _get_node_descriptions(env: QNameSpecializedEnvironment0) -> dict[str, str]:
+def _get_node_descriptions(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> dict[str, str]:
     """Get the descriptions of the nodes in the environment."""
     out = {}
     for qn, n in env.items():

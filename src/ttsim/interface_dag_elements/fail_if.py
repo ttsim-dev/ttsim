@@ -37,16 +37,15 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedData,
-        NestedPolicyEnvironment,
         NestedStrings,
         NestedTargetDict,
         OrderedQNames,
         OrigParamSpec,
+        PolicyEnvironment,
         QNameData,
         QNameDataColumns,
-        QNamePolicyEnvironment,
-        QNameSpecializedEnvironment0,
-        QNameSpecializedEnvironment2,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
     )
 
@@ -226,7 +225,7 @@ def active_periods_overlap(
 
 @fail_or_warn_function()
 def any_paths_are_invalid(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
     input_data__tree: NestedData,
     targets__tree: NestedTargetDict,
     labels__top_level_namespace: UnorderedQNames,
@@ -342,7 +341,7 @@ def invalid_p_id_values(
 
 @fail_or_warn_function()
 def environment_is_invalid(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
 ) -> None:
     """Validate that the environment is a pytree with supported types."""
     assert_valid_ttsim_pytree(
@@ -360,7 +359,7 @@ def environment_is_invalid(
 def foreign_keys_are_invalid_in_data(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -415,7 +414,7 @@ def foreign_keys_are_invalid_in_data(
 
 @fail_or_warn_function()
 def group_ids_are_outside_top_level_namespace(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
 ) -> None:
     """Fail if group ids are outside the top level namespace."""
     group_ids_outside_top_level_namespace = {
@@ -631,7 +630,7 @@ def input_df_mapper_has_incorrect_format(
 @fail_or_warn_function()
 def root_nodes_are_missing(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
-    specialized_environment__with_partialled_params_and_scalars: QNameSpecializedEnvironment2,
+    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     processed_data: QNameData,
 ) -> None:
     """Fail if root nodes are missing.
@@ -672,7 +671,7 @@ def root_nodes_are_missing(
 
 @fail_or_warn_function()
 def targets_are_not_in_specialized_environment_or_data(
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__processed_data_columns: QNameDataColumns,
     targets__qname: OrderedQNames,
 ) -> None:

@@ -1,167 +1,140 @@
 from __future__ import annotations
 
-import datetime
-from dataclasses import asdict, dataclass, field
-from pathlib import Path
-from typing import Any, Literal, get_type_hints
-
-import dags.tree as dt
-import pandas as pd
-
-from ttsim.interface_dag_elements.interface_node_objects import (
-    FailOrWarnFunction,
-    InterfaceFunction,
-)
+from dataclasses import dataclass, field
 
 
-class NestedInit:
-    def __init_subclass__(cls) -> None:
-        super().__init_subclass__()
-        for name, type_ in get_type_hints(cls).items():
-            if hasattr(type_, "__origin__") and type_.__origin__ is type:
-                setattr(cls, name, type_())
-
-    def __setattr__(self, name: str, value: Any) -> None:  # noqa: ANN401
-        if name in get_type_hints(self.__class__):
-            object.__setattr__(self, name, value)
-        else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' has no attribute '{name}'"
-            )
+@dataclass(frozen=True)
+class WarnIf:
+    functions_and_data_columns_overlap: str = "functions_and_data_columns_overlap"
 
 
-@dataclass
-class WarnIf(NestedInit):
-    functions_and_data_columns_overlap: FailOrWarnFunction | None = None
+@dataclass(frozen=True)
+class FailIf:
+    active_periods_overlap: str = "active_periods_overlap"
+    any_paths_are_invalid: str = "any_paths_are_invalid"
+    environment_is_invalid: str = "environment_is_invalid"
+    foreign_keys_are_invalid_in_data: str = "foreign_keys_are_invalid_in_data"
+    group_ids_are_outside_top_level_namespace: str = (
+        "group_ids_are_outside_top_level_namespace"
+    )
+    group_variables_are_not_constant_within_groups: str = (
+        "group_variables_are_not_constant_within_groups"
+    )
+    input_arrays_have_different_lengths: str = "input_arrays_have_different_lengths"
+    input_data_tree_is_invalid: str = "input_data_tree_is_invalid"
+    input_df_has_bool_or_numeric_column_names: str = (
+        "input_df_has_bool_or_numeric_column_names"
+    )
+    input_df_mapper_columns_missing_in_df: str = "input_df_mapper_columns_missing_in_df"
+    input_df_mapper_has_incorrect_format: str = "input_df_mapper_has_incorrect_format"
+    invalid_p_id_values: str = "invalid_p_id_values"
+    non_convertible_objects_in_results_tree: str = (
+        "non_convertible_objects_in_results_tree"
+    )
+    paths_are_missing_in_targets_tree_mapper: str = (
+        "paths_are_missing_in_targets_tree_mapper"
+    )
+    root_nodes_are_missing: str = "root_nodes_are_missing"
+    targets_are_not_in_specialized_environment_or_data: str = (
+        "targets_are_not_in_specialized_environment_or_data"
+    )
+    targets_tree_is_invalid: str = "targets_tree_is_invalid"
 
 
-@dataclass
-class FailIf(NestedInit):
-    active_periods_overlap: FailOrWarnFunction | None = None
-    any_paths_are_invalid: FailOrWarnFunction | None = None
-    paths_are_missing_in_targets_tree_mapper: FailOrWarnFunction | None = None
-    environment_is_invalid: FailOrWarnFunction | None = None
-    foreign_keys_are_invalid_in_data: FailOrWarnFunction | None = None
-    group_ids_are_outside_top_level_namespace: FailOrWarnFunction | None = None
-    group_variables_are_not_constant_within_groups: FailOrWarnFunction | None = None
-    input_data_tree_is_invalid: FailOrWarnFunction | None = None
-    input_arrays_have_different_lengths: FailOrWarnFunction | None = None
-    invalid_p_id_values: FailOrWarnFunction | None = None
-    input_df_has_bool_or_numeric_column_names: FailOrWarnFunction | None = None
-    input_df_mapper_columns_missing_in_df: FailOrWarnFunction | None = None
-    input_df_mapper_has_incorrect_format: FailOrWarnFunction | None = None
-    non_convertible_objects_in_results_tree: FailOrWarnFunction | None = None
-    root_nodes_are_missing: FailOrWarnFunction | None = None
-    targets_are_not_in_specialized_environment_or_data: FailOrWarnFunction | None = None
-    targets_tree_is_invalid: FailOrWarnFunction | None = None
+@dataclass(frozen=True)
+class Results:
+    df_with_mapper: str = "df_with_mapper"
+    df_with_nested_columns: str = "df_with_nested_columns"
+    tree: str = "tree"
 
 
-@dataclass
-class Results(NestedInit):
-    df_with_mapper: InterfaceFunction | None = None
-    df_with_nested_columns: InterfaceFunction | None = None
-    tree: InterfaceFunction | None = None
+@dataclass(frozen=True)
+class RawResults:
+    columns: str = "columns"
+    combined: str = "combined"
+    from_input_data: str = "from_input_data"
+    params: str = "params"
 
 
-@dataclass
-class RawResults(NestedInit):
-    columns: InterfaceFunction | None = None
-    combined: InterfaceFunction | None = None
-    from_input_data: InterfaceFunction | None = None
-    params: InterfaceFunction | None = None
+@dataclass(frozen=True)
+class SpecializedEnvironment:
+    without_tree_logic_and_with_derived_functions: str = (
+        "without_tree_logic_and_with_derived_functions"
+    )
+    with_processed_params_and_scalars: str = "with_processed_params_and_scalars"
+    with_partialled_params_and_scalars: str = "with_partialled_params_and_scalars"
+    tax_transfer_dag: str = "tax_transfer_dag"
+    tax_transfer_function: str = "tax_transfer_function"
 
 
-@dataclass
-class SpecializedEnvironment(NestedInit):
-    without_tree_logic_and_with_derived_functions: InterfaceFunction | None = None
-    with_processed_params_and_scalars: InterfaceFunction | None = None
-    with_partialled_params_and_scalars: InterfaceFunction | None = None
-    tax_transfer_dag: InterfaceFunction | None = None
-    tax_transfer_function: InterfaceFunction | None = None
+@dataclass(frozen=True)
+class Targets:
+    qname: str = "qname"
+    tree: str = "tree"
 
 
-@dataclass
-class Targets(NestedInit):
-    qname: InterfaceFunction | None = None
-    tree: dict[str, Any] | None = None
+@dataclass(frozen=True)
+class Labels:
+    column_targets: str = "column_targets"
+    grouping_levels: str = "grouping_levels"
+    input_data_targets: str = "input_data_targets"
+    param_targets: str = "param_targets"
+    processed_data_columns: str = "processed_data_columns"
+    input_columns: str = "input_columns"
+    root_nodes: str = "root_nodes"
+    top_level_namespace: str = "top_level_namespace"
 
 
-@dataclass
-class Labels(NestedInit):
-    column_targets: InterfaceFunction | None = None
-    grouping_levels: InterfaceFunction | None = None
-    input_data_targets: InterfaceFunction | None = None
-    param_targets: InterfaceFunction | None = None
-    processed_data_columns: InterfaceFunction | None = None
-    input_columns: InterfaceFunction | None = None
-    root_nodes: InterfaceFunction | None = None
-    top_level_namespace: InterfaceFunction | None = None
+@dataclass(frozen=True)
+class DfAndMapper:
+    df: str = "df"
+    mapper: str = "mapper"
 
 
-@dataclass
-class DfAndMapper(NestedInit):
-    df: pd.DataFrame | None = None
-    mapper: dict[str, Any] | None = None
-
-
-@dataclass
-class InputData(NestedInit):
+@dataclass(frozen=True)
+class InputData:
     df_and_mapper: DfAndMapper = field(default_factory=DfAndMapper)
-    df_with_nested_columns: InterfaceFunction | None = None
-    flat: InterfaceFunction | None = None
-    tree: InterfaceFunction | None = None
+    df_with_nested_columns: str = "df_with_nested_columns"
+    flat: str = "flat"
+    tree: str = "tree"
 
 
-@dataclass
-class OrigPolicyObjects(NestedInit):
-    column_objects_and_param_functions: InterfaceFunction | None = None
-    param_specs: InterfaceFunction | None = None
-    root: Path | None = None
+@dataclass(frozen=True)
+class OrigPolicyObjects:
+    column_objects_and_param_functions: str = "column_objects_and_param_functions"
+    param_specs: str = "param_specs"
+    # Do not include root here, will be pre-defined in user-facing implementations.
 
 
-@dataclass
-class Templates(NestedInit):
-    input_data_dtypes: InterfaceFunction | None = None
+@dataclass(frozen=True)
+class Templates:
+    input_data_dtypes: str = "input_data_dtypes"
 
 
-@dataclass
-class _InterfaceDAGElements:
-    backend: Literal["numpy", "jax"] = "numpy"
-    """The backend to use for computations."""
-    date_str: str | None = None
-    input_data: InputData = field(default_factory=InputData)
-    targets: Targets = field(default_factory=Targets)
-    orig_policy_objects: OrigPolicyObjects = field(default_factory=OrigPolicyObjects)
-    raw_results: RawResults = field(default_factory=RawResults)
+@dataclass(frozen=True)
+class AllOutputNames:
+    policy_environment: str = "policy_environment"
+    templates: Templates = field(default_factory=Templates)
     results: Results = field(default_factory=Results)
+    orig_policy_objects: OrigPolicyObjects = field(default_factory=OrigPolicyObjects)
     specialized_environment: SpecializedEnvironment = field(
         default_factory=SpecializedEnvironment
     )
-    policy_environment: InterfaceFunction | None = None
-    processed_data: InterfaceFunction | None = None
-    dnp: InterfaceFunction | None = None
-    xnp: InterfaceFunction | None = None
-    date: datetime.date | None = None
+    processed_data: str = "processed_data"
+    raw_results: RawResults = field(default_factory=RawResults)
     labels: Labels = field(default_factory=Labels)
-    rounding: bool = True
-    templates: Templates = field(default_factory=Templates)
+    input_data: InputData = field(default_factory=InputData)
+    targets: Targets = field(default_factory=Targets)
+    backend: str = "backend"
+    date_str: str = "date_str"
+    date: str = "date"
+    evaluation_date_str: str = "evaluation_date_str"
+    evaluation_date: str = "evaluation_date"
+    policy_date_str: str = "policy_date_str"
+    policy_date: str = "policy_date"
+    xnp: str = "xnp"
+    dnp: str = "dnp"
+    num_segments: str = "num_segments"
+    rounding: str = "rounding"
     warn_if: WarnIf = field(default_factory=WarnIf)
     fail_if: FailIf = field(default_factory=FailIf)
-
-    def __setattr__(self, name: str, value: Any) -> None:  # noqa: ANN401
-        object.__setattr__(self, name, value)
-
-    def to_dict(self) -> dict[str, Any]:
-        # Skeleton comes from having all leaves equal to None.
-        flat = {
-            p: _getattr(path=p, obj=self)
-            for p in dt.tree_paths(asdict(_InterfaceDAGElements()))
-        }
-        return dt.unflatten_from_tree_paths(flat)
-
-
-def _getattr(path: tuple[str, ...], obj: Any) -> Any:  # noqa: ANN401
-    val = obj.__getattribute__(path[0])
-    if len(path) == 1:
-        return val
-    return _getattr(path[1:], val)

@@ -10,7 +10,7 @@ import numpy
 import pandas as pd
 import pytest
 
-from ttsim import main, merge_trees, output
+from ttsim import Output, main, merge_trees
 from ttsim.interface_dag_elements.specialized_environment import (
     with_partialled_params_and_scalars,
     with_processed_params_and_scalars,
@@ -30,7 +30,7 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import IntColumn, NestedPolicyEnvironment
+    from ttsim.interface_dag_elements.typing import IntColumn, PolicyEnvironment
 
 
 @policy_input()
@@ -203,7 +203,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 
 
 @pytest.fixture(scope="module")
-def mettsim_environment() -> NestedPolicyEnvironment:
+def mettsim_environment() -> PolicyEnvironment:
     return main(
         inputs={
             "orig_policy_objects__root": Path(__file__).parent.parent / "mettsim",
@@ -399,7 +399,7 @@ def test_create_agg_by_group_functions(
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
-        output=output.Name("results__tree"),
+        output=Output.name("results__tree"),
     )
 
 
@@ -416,7 +416,7 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
         targets={"tree": {"module": {"some_func": None}}},
         rounding=False,
         backend=backend,
-        output=output.Name("results__tree"),
+        output=Output.name("results__tree"),
     )
 
     assert isinstance(out, dict)
@@ -449,7 +449,7 @@ def test_params_target_is_allowed(minimal_input_data):
         targets={"tree": {"some_param": None, "module": {"some_func": None}}},
         rounding=False,
         backend="numpy",
-        output=output.Name("results__tree"),
+        output=Output.name("results__tree"),
     )
 
     assert isinstance(out, dict)
@@ -481,7 +481,7 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
         targets={"tree": {"b": None}},
         rounding=False,
         backend=backend,
-        output=output.Name("results__tree"),
+        output=Output.name("results__tree"),
     )
     numpy.testing.assert_array_almost_equal(
         results__tree["b"],
@@ -554,7 +554,7 @@ def test_user_provided_aggregate_by_group_specs(backend):
         targets={"tree": {"module_name": {"betrag_m_fam": None}}},
         rounding=False,
         backend=backend,
-        output=output.Name("results__df_with_nested_columns"),
+        output=Output.name("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -598,7 +598,7 @@ def test_user_provided_aggregation(backend):
         targets={"tree": {"module_name": {"betrag_m_double_fam": None}}},
         rounding=False,
         backend=backend,
-        output=output.Name("results__df_with_nested_columns"),
+        output=Output.name("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -648,7 +648,7 @@ def test_user_provided_aggregation_with_time_conversion(backend):
         targets={"tree": {"module_name": {"max_betrag_double_y_fam": None}}},
         rounding=False,
         backend=backend,
-        output=output.Name("results__df_with_nested_columns"),
+        output=Output.name("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -735,7 +735,7 @@ def test_user_provided_aggregate_by_p_id_specs(
         targets={"tree": target_tree},
         rounding=False,
         backend=backend,
-        output=output.Name("results__df_with_nested_columns"),
+        output=Output.name("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -850,7 +850,7 @@ def test_can_override_ttsim_objects_with_data(
         targets={"tree": targets__tree},
         rounding=False,
         backend=backend,
-        output=output.Name("results__tree"),
+        output=Output.name("results__tree"),
     )
 
     flat_actual = dt.flatten_to_tree_paths(actual)

@@ -98,22 +98,17 @@ if TYPE_CHECKING:
     """Flat mapping of paths to yaml contents; the leaf name is also the last element of the key."""  # noqa: E501
     NestedParamObjects = Mapping[str, ParamObject | "NestedParamObjects"]
     """Tree with param objects."""
-    NestedPolicyEnvironment = Mapping[
+    PolicyEnvironment = Mapping[
         str,
-        ColumnObject | ParamFunction | ParamObject | "NestedPolicyEnvironment",
+        ColumnObject | ParamFunction | ParamObject | "PolicyEnvironment",
     ]
     """Tree of column objects, param functions, and param objects."""
-    QNamePolicyEnvironment = dict[
-        str,
-        ColumnObject | ParamFunction | ParamObject,
-    ]
-    """Tree of column objects, param functions, and param objects."""
-    QNameSpecializedEnvironment0 = Mapping[
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions = Mapping[
         str,
         ColumnObject | ParamFunction | ParamObject | int | float | bool,
     ]
     """Map qualified names to column objects, param functions, param objects, or scalars from processed data."""  # noqa: E501
-    QNameSpecializedEnvironment1 = Mapping[str, ColumnObject | Any]
+    SpecEnvWithProcessedParamsAndScalars = Mapping[str, ColumnObject | Any]
     """Map qualified names to column objects and anything that comes out of processing the params."""  # noqa: E501
-    QNameSpecializedEnvironment2 = Mapping[str, ColumnFunction]
+    SpecEnvWithPartialledParamsAndScalars = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""
