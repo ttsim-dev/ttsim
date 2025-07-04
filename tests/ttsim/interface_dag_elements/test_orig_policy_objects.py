@@ -9,8 +9,7 @@ from ttsim.interface_dag_elements.orig_policy_objects import (
     load_module,
 )
 from ttsim.tt_dag_elements.param_objects import (
-    ConsecutiveInt1dLookupTableParam,
-    ConsecutiveInt2dLookupTableParam,
+    ConsecutiveIntLookupTableParam,
     DictParam,
     PiecewisePolynomialParam,
     RawParam,
@@ -41,8 +40,7 @@ def test_dont_load_init_py():
         ScalarParam,
         DictParam,
         PiecewisePolynomialParam,
-        ConsecutiveInt1dLookupTableParam,
-        ConsecutiveInt2dLookupTableParam,
+        ConsecutiveIntLookupTableParam,
         RawParam,
     ],
 )

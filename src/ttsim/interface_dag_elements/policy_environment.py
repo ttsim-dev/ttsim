@@ -13,14 +13,13 @@ from ttsim.interface_dag_elements.shared import (
     upsert_tree,
 )
 from ttsim.tt_dag_elements import (
-    ConsecutiveInt1dLookupTableParam,
+    ConsecutiveIntLookupTableParam,
     DictParam,
     ParamObject,
     PiecewisePolynomialParam,
     RawParam,
     ScalarParam,
-    get_consecutive_int_1d_lookup_table_param_value,
-    get_consecutive_int_2d_lookup_table_param_value,
+    get_consecutive_int_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
 )
@@ -162,17 +161,19 @@ def _get_one_param(  # noqa: PLR0911
         )
         return PiecewisePolynomialParam(**cleaned_spec)
     if spec["type"] == "consecutive_int_1d_lookup_table":
-        cleaned_spec["value"] = get_consecutive_int_1d_lookup_table_param_value(
+        cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
             raw=cleaned_spec["value"],
+            n_dims=1,
             xnp=xnp,
         )
-        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
     if spec["type"] == "consecutive_int_2d_lookup_table":
-        cleaned_spec["value"] = get_consecutive_int_2d_lookup_table_param_value(
+        cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
             raw=cleaned_spec["value"],
+            n_dims=2,
             xnp=xnp,
         )
-        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
     if spec["type"] == "month_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_month_based_phase_inout_of_age_thresholds_param_value(
@@ -180,7 +181,7 @@ def _get_one_param(  # noqa: PLR0911
                 xnp=xnp,
             )
         )
-        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
     if spec["type"] == "year_based_phase_inout_of_age_thresholds":
         cleaned_spec["value"] = (
             get_year_based_phase_inout_of_age_thresholds_param_value(
@@ -188,7 +189,7 @@ def _get_one_param(  # noqa: PLR0911
                 xnp=xnp,
             )
         )
-        return ConsecutiveInt1dLookupTableParam(**cleaned_spec)
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
     if spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
     raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")

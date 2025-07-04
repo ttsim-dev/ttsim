@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -14,6 +13,8 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from jaxtyping import Array, Float, Int
+
+    from ttsim.tt_dag_elements.typing import NestedDict
 
 
 @dataclass(frozen=True)
@@ -97,45 +98,19 @@ class PiecewisePolynomialParam(ParamObject):
 
 
 @dataclass(frozen=True)
-class ConsecutiveInt1dLookupTableParam(ParamObject):
-    """A parameter with its contents read and converted from a YAML file.
-
-    Its value is a ConsecutiveInt1dLookupTableParamValue object, i.e., it contains the
-    parameters for calling `lookup_table`.
-    """
-
-    value: ConsecutiveInt1dLookupTableParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
-    note: str | None = None
-    reference: str | None = None
-
-
-@dataclass(frozen=True)
-class ConsecutiveInt2dLookupTableParam(ParamObject):
+class ConsecutiveIntLookupTableParam(ParamObject):
     """A parameter with its contents read and converted from a YAML file.
 
     Its value is a ConsecutiveInt2dLookupTableParamValue object, i.e., it contains the
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveInt2dLookupTableParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
+    value: ConsecutiveIntLookupTableParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
 
-@dataclass(frozen=True)
-class ConsecutiveIntNdLookupTableParam(ParamObject):
-    """A parameter with its contents read and converted from a YAML file.
-
-    Its value is a ConsecutiveInt2dLookupTableParamValue object, i.e., it contains the
-    parameters for calling `lookup_table`.
-    """
-
-    value: ConsecutiveIntNdLookupTableParamValue | None = None
-    note: str | None = None
-    reference: str | None = None
-
-
-class ConsecutiveIntNdLookupTableParamValue:
+class ConsecutiveIntLookupTableParamValue:
     """The parameters expected by lookup_table"""
 
     bases_to_subtract: Int[Array, "n_rows n_cols"]
@@ -160,7 +135,7 @@ class ConsecutiveIntNdLookupTableParamValue:
         )
 
     def lookup(
-        self: ConsecutiveIntNdLookupTableParamValue, *args: int
+        self: ConsecutiveIntLookupTableParamValue, *args: int
     ) -> Float[Array, "n_rows n_cols"]:
         index = self.xnp.asarray(args)
         corrected_index = self.xnp.dot(
@@ -202,80 +177,20 @@ class PiecewisePolynomialParamValue:
     rates: Float[Array, " n_segments"]
 
 
-@dataclass(frozen=True)
-class ConsecutiveInt1dLookupTableParamValue:
-    """The parameters expected by lookup_table"""
-
-    base_to_subtract: int
-    values_to_look_up: Float[Array, " n_values_to_look_up"]
-
-
-@dataclass(frozen=True)
-class ConsecutiveInt2dLookupTableParamValue:
-    """The parameters expected by lookup_table"""
-
-    base_to_subtract_rows: int
-    base_to_subtract_cols: int
-    values_to_look_up: Float[Array, "n_rows n_cols"]
-
-
-def get_consecutive_int_1d_lookup_table_param_value(
-    raw: dict[int, float | int | bool],
-    xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
-    """Get the parameters for a 1-dimensional lookup table."""
-    lookup_keys = numpy.asarray(sorted(raw))
-    assert (lookup_keys - min(lookup_keys) == numpy.arange(len(lookup_keys))).all(), (
-        "Dictionary keys must be consecutive integers."
-    )
-
-    return ConsecutiveInt1dLookupTableParamValue(
-        base_to_subtract=min(lookup_keys).item(),
-        values_to_look_up=xnp.asarray([raw[k] for k in lookup_keys]),
-    )
-
-
-def get_consecutive_int_2d_lookup_table_param_value(
-    raw: dict[int, dict[int, float | int | bool]],
-    xnp: ModuleType,
-) -> ConsecutiveIntNdLookupTableParamValue:
-    """Get the parameters for a 2-dimensional lookup table."""
-    lookup_keys_rows = xnp.asarray(sorted(raw.keys()))
-    lookup_keys_cols = xnp.asarray(sorted(raw[lookup_keys_rows[0].item()].keys()))
-    for col_value in raw.values():
-        lookup_keys_this_col = xnp.asarray(sorted(col_value.keys()))
-        assert (lookup_keys_cols == lookup_keys_this_col).all(), (
-            "Column keys must be the same in each column, got:"
-            f"{lookup_keys_cols} and {lookup_keys_this_col}"
-        )
-    for lookup_keys in lookup_keys_rows, lookup_keys_cols:
-        assert (lookup_keys - min(lookup_keys) == xnp.arange(len(lookup_keys))).all(), (
-            f"Dictionary keys must be consecutive integers, got: {lookup_keys}"
-        )
-    return ConsecutiveIntNdLookupTableParamValue(
-        xnp=xnp,
-        bases_to_subtract=xnp.asarray(
-            [min(lookup_keys_rows).item(), min(lookup_keys_cols).item()]
-        ),
-        values_to_look_up=xnp.array(
-            [
-                raw[row.item()][col.item()]
-                for row, col in itertools.product(lookup_keys_rows, lookup_keys_cols)
-            ],
-        ).reshape(len(lookup_keys_rows), len(lookup_keys_cols)),
-    )
-
-
-def get_consecutive_int_nd_lookup_table_param_value(
-    raw: dict[int, dict[int, float | int | bool]],
+def get_consecutive_int_lookup_table_param_value(
+    raw: NestedDict,
     n_dims: int,
     xnp: ModuleType,
-) -> ConsecutiveIntNdLookupTableParamValue:
-    """Get the parameters for a 2-dimensional lookup table."""
-    bases_to_substract = numpy.zeros(n_dims, dtype=numpy.int32)
+) -> ConsecutiveIntLookupTableParamValue:
+    """Get the parameters for a N-dimensional lookup table."""
+    bases_to_substract = numpy.zeros(n_dims, dtype=int)
 
-    def process_level(i: int, level_i_dict) -> Float[Array, "n_rows n_cols"]:
-        bases_to_substract[i - 1] = min(level_i_dict.keys())
+    # Function is recursive to step through all levels of dict
+    def process_level(
+        i: int, level_i_dict: NestedDict
+    ) -> Float[Array, "n_rows n_cols"]:
+        sorted_keys = sorted(level_i_dict.keys())
+        bases_to_substract[i - 1] = min(xnp.asarray(sorted_keys))
         if i < n_dims:
             return xnp.concatenate(
                 [
@@ -283,10 +198,10 @@ def get_consecutive_int_nd_lookup_table_param_value(
                     for key in level_i_dict
                 ]
             )
-        return xnp.asarray(list(level_i_dict.values()))
+        return xnp.asarray([level_i_dict[k] for k in sorted_keys])
 
     values = process_level(1, raw)
-    return ConsecutiveIntNdLookupTableParamValue(
+    return ConsecutiveIntLookupTableParamValue(
         xnp=xnp, values_to_look_up=values, bases_to_subtract=bases_to_substract
     )
 
@@ -298,7 +213,7 @@ def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
 def get_month_based_phase_inout_of_age_thresholds_param_value(
     raw: dict[str | int, Any],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Get the parameters for month-based phase-in/phase-out of age thresholds.
 
     Fills up months for which no parameters are given with the last given value.
@@ -354,8 +269,9 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
             last_m_since_ad_to_consider + 1,
         )
     }
-    return get_consecutive_int_1d_lookup_table_param_value(
+    return get_consecutive_int_lookup_table_param_value(
         raw={**before_phase_inout, **during_phase_inout, **after_phase_inout},
+        n_dims=1,
         xnp=xnp,
     )
 
@@ -363,7 +279,7 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
 def get_year_based_phase_inout_of_age_thresholds_param_value(
     raw: dict[str | int, Any],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Get the parameters for year-based phase-in/phase-out of age thresholds.
 
     Requires all years to be given.
@@ -387,7 +303,8 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
         b_y: _year_fraction(raw[last_year_phase_inout])
         for b_y in range(last_year_phase_inout + 1, last_year_to_consider + 1)
     }
-    return get_consecutive_int_1d_lookup_table_param_value(
+    return get_consecutive_int_lookup_table_param_value(
         raw={**before_phase_inout, **during_phase_inout, **after_phase_inout},
+        n_dims=1,
         xnp=xnp,
     )
