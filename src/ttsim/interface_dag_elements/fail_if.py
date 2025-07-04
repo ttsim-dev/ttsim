@@ -23,7 +23,10 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.tt_dag_elements.param_objects import _REQUIRED, ParamObject
+from ttsim.tt_dag_elements.param_objects import (
+    PLACEHOLDER_FOR_REQUIRED_FIELDS,
+    ParamObject,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -97,10 +100,12 @@ class _ParamWithActivePeriod(ParamObject):
     Only used here for checking overlap.
     """
 
-    original_function_name: str = field(default_factory=lambda: _REQUIRED)
+    original_function_name: str = field(
+        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
+    )
 
     def __post_init__(self) -> None:
-        if self.original_function_name is _REQUIRED:
+        if self.original_function_name is PLACEHOLDER_FOR_REQUIRED_FIELDS:
             raise ValueError(
                 "'original_function_name' field must be specified for _ParamWithActivePeriod"
             )

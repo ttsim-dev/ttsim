@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
 
-_REQUIRED = object()
-
+PLACEHOLDER_FOR_REQUIRED_FIELDS = object()
 
 if TYPE_CHECKING:
     import datetime
@@ -43,6 +42,12 @@ class ParamObject:
     name: dict[Literal["de", "en"], str] | None = None
     description: dict[Literal["de", "en"], str] | None = None
 
+    def __post_init__(self) -> None:
+        if self.value is PLACEHOLDER_FOR_REQUIRED_FIELDS:  # type: ignore[attr-defined]
+            raise ValueError(
+                "'value' field must be specified for any type of 'ParamObject'"
+            )
+
 
 @dataclass(frozen=True)
 class ScalarParam(ParamObject):
@@ -50,13 +55,11 @@ class ScalarParam(ParamObject):
     A scalar parameter directly read from a YAML file.
     """
 
-    value: bool | int | float = field(default_factory=lambda: _REQUIRED)  # type: ignore[assignment]
+    value: bool | int | float = field(
+        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
+    )  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.value is _REQUIRED:
-            raise ValueError("'value' field must be specified for ScalarParam")
 
 
 @dataclass(frozen=True)
@@ -72,13 +75,12 @@ class DictParam(ParamObject):
         | dict[int, int]
         | dict[int, float]
         | dict[int, bool]
-    ) = field(default_factory=lambda: _REQUIRED)  # type: ignore[assignment]
+    ) = field(default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS)  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
     def __post_init__(self) -> None:
-        if self.value is _REQUIRED:
-            raise ValueError("'value' field must be specified for DictParam")
+        super().__post_init__()
         assert all(x not in self.value for x in ["note", "reference"])
 
 
@@ -90,15 +92,11 @@ class PiecewisePolynomialParam(ParamObject):
     parameters for calling `piecewise_polynomial`.
     """
 
-    value: PiecewisePolynomialParamValue = field(default_factory=lambda: _REQUIRED)  # type: ignore[assignment]
+    value: PiecewisePolynomialParamValue = field(
+        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
+    )  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.value is _REQUIRED:
-            raise ValueError(
-                "'value' field must be specified for PiecewisePolynomialParam"
-            )
 
 
 @dataclass(frozen=True)
@@ -110,16 +108,10 @@ class ConsecutiveInt1dLookupTableParam(ParamObject):
     """
 
     value: ConsecutiveInt1dLookupTableParamValue = field(
-        default_factory=lambda: _REQUIRED
+        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
     )  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.value is _REQUIRED:
-            raise ValueError(
-                "'value' field must be specified for ConsecutiveInt1dLookupTableParam"
-            )
 
 
 @dataclass(frozen=True)
@@ -131,16 +123,10 @@ class ConsecutiveInt2dLookupTableParam(ParamObject):
     """
 
     value: ConsecutiveInt2dLookupTableParamValue = field(
-        default_factory=lambda: _REQUIRED  # type: ignore[assignment]
+        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS  # type: ignore[assignment]
     )
     note: str | None = None
     reference: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.value is _REQUIRED:
-            raise ValueError(
-                "'value' field must be specified for ConsecutiveInt2dLookupTableParam"
-            )
 
 
 @dataclass(frozen=True)
@@ -150,13 +136,14 @@ class RawParam(ParamObject):
     dictionary.
     """
 
-    value: dict[str | int, Any] = field(default_factory=lambda: _REQUIRED)  # type: ignore[arg-type, return-value]
+    value: dict[str | int, Any] = field(
+        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS  # type: ignore[arg-type, return-value]
+    )
     note: str | None = None
     reference: str | None = None
 
     def __post_init__(self) -> None:
-        if self.value is _REQUIRED:
-            raise ValueError("'value' field must be specified for RawParam")
+        super().__post_init__()
         assert all(x not in self.value for x in ["note", "reference"])
 
 
