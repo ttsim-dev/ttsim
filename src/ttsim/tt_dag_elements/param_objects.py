@@ -111,6 +111,37 @@ class ConsecutiveInt2dLookupTableParam(ParamObject):
     note: str | None = None
     reference: str | None = None
 
+@dataclass(frozen=True)
+class ConsecutiveIntNdLookupTableParam(ParamObject):
+    """A parameter with its contents read and converted from a YAML file.
+
+    Its value is a ConsecutiveInt2dLookupTableParamValue object, i.e., it contains the
+    parameters for calling `lookup_table`.
+    """
+
+    value: ConsecutiveIntNdLookupTableParamValue
+    note: str | None = None
+    reference: str | None = None
+
+class ConsecutiveIntNdLookupTableParamValue:
+    """The parameters expected by lookup_table"""
+
+    bases_to_subtract: int[Array, "n_dimensions"]
+    lookup_multipliers: int[Array, "n_dimensions"]
+    values_to_look_up: Float[Array, "n_rows n_cols"]
+    xnp: ModuleType
+    def __init__(self, xnp: ModuleType, values_to_look_up: Float[Array, "n_rows n_cols"], bases_to_subtract: int[Array, "n_dimensions"]) -> None:
+        self.xnp = xnp
+        self.values_to_look_up = values_to_look_up.flatten()
+        self.bases_to_subtract = xnp.expand_dims(bases_to_subtract, axis=1)
+        self.lookup_multipliers = xnp.concatenate([(xnp.cumprod(xnp.asarray(values_to_look_up.shape)[::-1])[::-1])[1:],xnp.asarray([1])])
+
+    def lookup(self,*args):
+        print(args)
+        index = self.xnp.asarray(args)
+        corrected_index = self.xnp.dot( (index - self.bases_to_subtract).T,self.lookup_multipliers)
+        return self.values_to_look_up[corrected_index]
+
 
 @dataclass(frozen=True)
 class RawParam(ParamObject):
@@ -180,7 +211,7 @@ def get_consecutive_int_1d_lookup_table_param_value(
 def get_consecutive_int_2d_lookup_table_param_value(
     raw: dict[int, dict[int, float | int | bool]],
     xnp: ModuleType,
-) -> ConsecutiveInt2dLookupTableParamValue:
+) -> ConsecutiveIntNdLookupTableParamValue:
     """Get the parameters for a 2-dimensional lookup table."""
     lookup_keys_rows = xnp.asarray(sorted(raw.keys()))
     lookup_keys_cols = xnp.asarray(sorted(raw[lookup_keys_rows[0].item()].keys()))
@@ -194,9 +225,9 @@ def get_consecutive_int_2d_lookup_table_param_value(
         assert (lookup_keys - min(lookup_keys) == xnp.arange(len(lookup_keys))).all(), (
             f"Dictionary keys must be consecutive integers, got: {lookup_keys}"
         )
-    return ConsecutiveInt2dLookupTableParamValue(
-        base_to_subtract_rows=min(lookup_keys_rows).item(),
-        base_to_subtract_cols=min(lookup_keys_cols).item(),
+    return ConsecutiveIntNdLookupTableParamValue(
+        xnp=xnp,
+        bases_to_subtract=xnp.asarray([min(lookup_keys_rows).item(),min(lookup_keys_cols).item()]),
         values_to_look_up=xnp.array(
             [
                 raw[row.item()][col.item()]
@@ -204,6 +235,22 @@ def get_consecutive_int_2d_lookup_table_param_value(
             ],
         ).reshape(len(lookup_keys_rows), len(lookup_keys_cols)),
     )
+
+def get_consecutive_int_Nd_lookup_table_param_value(
+    raw: dict[int, dict[int, float | int | bool]],
+    n_dims: int,
+    xnp: ModuleType,
+) -> ConsecutiveIntNdLookupTableParamValue:
+    """Get the parameters for a 2-dimensional lookup table."""
+    bases_to_substract = numpy.zeros(n_dims, dtype=numpy.int32)
+    def process_level(i, level_i_dict):
+        bases_to_substract[i-1] = min(level_i_dict.keys())
+        if i < n_dims:
+            return xnp.concatenate([xnp.expand_dims(process_level(i+1, level_i_dict[key]), axis=0) for key in level_i_dict.keys()])
+        else:
+            return xnp.asarray(list(level_i_dict.values()))
+    values = process_level(1,raw)
+    return ConsecutiveIntNdLookupTableParamValue(xnp=xnp, values_to_look_up= values, bases_to_subtract=bases_to_substract)
 
 
 def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
