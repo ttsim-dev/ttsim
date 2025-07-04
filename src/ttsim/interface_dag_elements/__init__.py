@@ -5,110 +5,124 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class WarnIf:
-    functions_and_data_columns_overlap: str = "functions_and_data_columns_overlap"
+    functions_and_data_columns_overlap: str = (
+        "warn_if__functions_and_data_columns_overlap"
+    )
 
 
 @dataclass(frozen=True)
 class FailIf:
-    active_periods_overlap: str = "active_periods_overlap"
-    any_paths_are_invalid: str = "any_paths_are_invalid"
-    environment_is_invalid: str = "environment_is_invalid"
-    foreign_keys_are_invalid_in_data: str = "foreign_keys_are_invalid_in_data"
+    active_periods_overlap: str = "fail_if__active_periods_overlap"
+    any_paths_are_invalid: str = "fail_if__any_paths_are_invalid"
+    environment_is_invalid: str = "fail_if__environment_is_invalid"
+    foreign_keys_are_invalid_in_data: str = "fail_if__foreign_keys_are_invalid_in_data"
     group_ids_are_outside_top_level_namespace: str = (
         "group_ids_are_outside_top_level_namespace"
     )
     group_variables_are_not_constant_within_groups: str = (
         "group_variables_are_not_constant_within_groups"
     )
-    input_arrays_have_different_lengths: str = "input_arrays_have_different_lengths"
-    input_data_tree_is_invalid: str = "input_data_tree_is_invalid"
+    input_arrays_have_different_lengths: str = (
+        "fail_if__input_arrays_have_different_lengths"
+    )
+    input_data_tree_is_invalid: str = "fail_if__input_data_tree_is_invalid"
     input_df_has_bool_or_numeric_column_names: str = (
         "input_df_has_bool_or_numeric_column_names"
     )
-    input_df_mapper_columns_missing_in_df: str = "input_df_mapper_columns_missing_in_df"
-    input_df_mapper_has_incorrect_format: str = "input_df_mapper_has_incorrect_format"
-    invalid_p_id_values: str = "invalid_p_id_values"
+    input_df_mapper_columns_missing_in_df: str = (
+        "fail_if__input_df_mapper_columns_missing_in_df"
+    )
+    input_df_mapper_has_incorrect_format: str = (
+        "fail_if__input_df_mapper_has_incorrect_format"
+    )
+    invalid_p_id_values: str = "fail_if__invalid_p_id_values"
     non_convertible_objects_in_results_tree: str = (
         "non_convertible_objects_in_results_tree"
     )
     paths_are_missing_in_targets_tree_mapper: str = (
         "paths_are_missing_in_targets_tree_mapper"
     )
-    root_nodes_are_missing: str = "root_nodes_are_missing"
+    root_nodes_are_missing: str = "fail_if__root_nodes_are_missing"
     targets_are_not_in_specialized_environment_or_data: str = (
         "targets_are_not_in_specialized_environment_or_data"
     )
-    targets_tree_is_invalid: str = "targets_tree_is_invalid"
+    targets_tree_is_invalid: str = "fail_if__targets_tree_is_invalid"
 
 
 @dataclass(frozen=True)
 class Results:
-    df_with_mapper: str = "df_with_mapper"
-    df_with_nested_columns: str = "df_with_nested_columns"
-    tree: str = "tree"
+    df_with_mapper: str = "results__df_with_mapper"
+    df_with_nested_columns: str = "results__df_with_nested_columns"
+    tree: str = "results__tree"
 
 
 @dataclass(frozen=True)
 class RawResults:
-    columns: str = "columns"
-    combined: str = "combined"
-    from_input_data: str = "from_input_data"
-    params: str = "params"
+    columns: str = "raw_results__columns"
+    combined: str = "raw_results__combined"
+    from_input_data: str = "raw_results__from_input_data"
+    params: str = "raw_results__params"
 
 
 @dataclass(frozen=True)
 class SpecializedEnvironment:
     without_tree_logic_and_with_derived_functions: str = (
-        "without_tree_logic_and_with_derived_functions"
+        "specialized_environment__without_tree_logic_and_with_derived_functions"
     )
-    with_processed_params_and_scalars: str = "with_processed_params_and_scalars"
-    with_partialled_params_and_scalars: str = "with_partialled_params_and_scalars"
-    tax_transfer_dag: str = "tax_transfer_dag"
-    tax_transfer_function: str = "tax_transfer_function"
+    with_processed_params_and_scalars: str = (
+        "specialized_environment__with_processed_params_and_scalars"
+    )
+    with_partialled_params_and_scalars: str = (
+        "specialized_environment__with_partialled_params_and_scalars"
+    )
+    tax_transfer_dag: str = "specialized_environment__tax_transfer_dag"
+    tax_transfer_function: str = "specialized_environment__tax_transfer_function"
 
 
 @dataclass(frozen=True)
 class Targets:
-    qname: str = "qname"
-    tree: str = "tree"
+    qname: str = "targets__qname"
+    tree: str = "targets__tree"
 
 
 @dataclass(frozen=True)
 class Labels:
-    column_targets: str = "column_targets"
-    grouping_levels: str = "grouping_levels"
-    input_data_targets: str = "input_data_targets"
-    param_targets: str = "param_targets"
-    processed_data_columns: str = "processed_data_columns"
-    input_columns: str = "input_columns"
-    root_nodes: str = "root_nodes"
-    top_level_namespace: str = "top_level_namespace"
+    column_targets: str = "labels__column_targets"
+    grouping_levels: str = "labels__grouping_levels"
+    input_data_targets: str = "labels__input_data_targets"
+    param_targets: str = "labels__param_targets"
+    processed_data_columns: str = "labels__processed_data_columns"
+    input_columns: str = "labels__input_columns"
+    root_nodes: str = "labels__root_nodes"
+    top_level_namespace: str = "labels__top_level_namespace"
 
 
 @dataclass(frozen=True)
 class DfAndMapper:
-    df: str = "df"
-    mapper: str = "mapper"
+    df: str = "input_data__df_and_mapper__df"
+    mapper: str = "input_data__df_and_mapper__mapper"
 
 
 @dataclass(frozen=True)
 class InputData:
     df_and_mapper: DfAndMapper = field(default_factory=DfAndMapper)
-    df_with_nested_columns: str = "df_with_nested_columns"
-    flat: str = "flat"
-    tree: str = "tree"
+    df_with_nested_columns: str = "input_data__df_with_nested_columns"
+    flat: str = "input_data__flat"
+    tree: str = "input_data__tree"
 
 
 @dataclass(frozen=True)
 class OrigPolicyObjects:
-    column_objects_and_param_functions: str = "column_objects_and_param_functions"
-    param_specs: str = "param_specs"
+    column_objects_and_param_functions: str = (
+        "orig_policy_objects__column_objects_and_param_functions"
+    )
+    param_specs: str = "orig_policy_objects__param_specs"
     # Do not include root here, will be pre-defined in user-facing implementations.
 
 
 @dataclass(frozen=True)
 class Templates:
-    input_data_dtypes: str = "input_data_dtypes"
+    input_data_dtypes: str = "templates__input_data_dtypes"
 
 
 @dataclass(frozen=True)
