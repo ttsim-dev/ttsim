@@ -37,7 +37,7 @@ if TYPE_CHECKING:
         DashedISOString,
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
-        NestedPolicyEnvironment,
+        PolicyEnvironment,
         QNameData,
     )
 
@@ -65,7 +65,7 @@ def main(
     raw_results: RawResults | None = None,
     results: Results | None = None,
     specialized_environment: SpecializedEnvironment | None = None,
-    policy_environment: NestedPolicyEnvironment | None = None,
+    policy_environment: PolicyEnvironment | None = None,
     processed_data: QNameData | None = None,
     date: datetime.date | None = None,
     policy_date_str: DashedISOString | None = None,

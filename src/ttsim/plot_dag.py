@@ -39,8 +39,8 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.interface_dag_elements.typing import (
-        NestedPolicyEnvironment,
-        QNameSpecializedEnvironment0,
+        PolicyEnvironment,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     )
 
 
@@ -226,7 +226,7 @@ def _qnames_of_idif_to_their_ancestors(
 
 
 def _get_tt_dag_with_node_metadata(
-    environment: NestedPolicyEnvironment,
+    environment: PolicyEnvironment,
     node_selector: _QNameNodeSelector | None = None,
     include_params: bool = True,
     include_other_objects: bool = False,
@@ -294,7 +294,9 @@ def _get_tt_dag_with_node_metadata(
     return selected_dag
 
 
-def _get_node_descriptions(env: QNameSpecializedEnvironment0) -> dict[str, str]:
+def _get_node_descriptions(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> dict[str, str]:
     """Get the descriptions of the nodes in the environment."""
     out = {}
     for qn, n in env.items():

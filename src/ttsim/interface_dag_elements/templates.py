@@ -11,17 +11,17 @@ from ttsim.tt_dag_elements.vectorization import scalar_type_to_array_type
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         NestedInputStructureDict,
-        NestedPolicyEnvironment,
         OrderedQNames,
-        QNameSpecializedEnvironment0,
+        PolicyEnvironment,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         UnorderedQNames,
     )
 
 
 @interface_function()
 def input_data_dtypes(
-    specialized_environment__with_partialled_params_and_scalars: QNameSpecializedEnvironment0,  # noqa: E501
-    policy_environment: NestedPolicyEnvironment,
+    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    policy_environment: PolicyEnvironment,
     targets__qname: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
 ) -> NestedInputStructureDict:

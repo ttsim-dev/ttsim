@@ -1,1 +1,140 @@
 from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+
+@dataclass(frozen=True)
+class WarnIf:
+    functions_and_data_columns_overlap: str = "functions_and_data_columns_overlap"
+
+
+@dataclass(frozen=True)
+class FailIf:
+    active_periods_overlap: str = "active_periods_overlap"
+    any_paths_are_invalid: str = "any_paths_are_invalid"
+    environment_is_invalid: str = "environment_is_invalid"
+    foreign_keys_are_invalid_in_data: str = "foreign_keys_are_invalid_in_data"
+    group_ids_are_outside_top_level_namespace: str = (
+        "group_ids_are_outside_top_level_namespace"
+    )
+    group_variables_are_not_constant_within_groups: str = (
+        "group_variables_are_not_constant_within_groups"
+    )
+    input_arrays_have_different_lengths: str = "input_arrays_have_different_lengths"
+    input_data_tree_is_invalid: str = "input_data_tree_is_invalid"
+    input_df_has_bool_or_numeric_column_names: str = (
+        "input_df_has_bool_or_numeric_column_names"
+    )
+    input_df_mapper_columns_missing_in_df: str = "input_df_mapper_columns_missing_in_df"
+    input_df_mapper_has_incorrect_format: str = "input_df_mapper_has_incorrect_format"
+    invalid_p_id_values: str = "invalid_p_id_values"
+    non_convertible_objects_in_results_tree: str = (
+        "non_convertible_objects_in_results_tree"
+    )
+    paths_are_missing_in_targets_tree_mapper: str = (
+        "paths_are_missing_in_targets_tree_mapper"
+    )
+    root_nodes_are_missing: str = "root_nodes_are_missing"
+    targets_are_not_in_specialized_environment_or_data: str = (
+        "targets_are_not_in_specialized_environment_or_data"
+    )
+    targets_tree_is_invalid: str = "targets_tree_is_invalid"
+
+
+@dataclass(frozen=True)
+class Results:
+    df_with_mapper: str = "df_with_mapper"
+    df_with_nested_columns: str = "df_with_nested_columns"
+    tree: str = "tree"
+
+
+@dataclass(frozen=True)
+class RawResults:
+    columns: str = "columns"
+    combined: str = "combined"
+    from_input_data: str = "from_input_data"
+    params: str = "params"
+
+
+@dataclass(frozen=True)
+class SpecializedEnvironment:
+    without_tree_logic_and_with_derived_functions: str = (
+        "without_tree_logic_and_with_derived_functions"
+    )
+    with_processed_params_and_scalars: str = "with_processed_params_and_scalars"
+    with_partialled_params_and_scalars: str = "with_partialled_params_and_scalars"
+    tax_transfer_dag: str = "tax_transfer_dag"
+    tax_transfer_function: str = "tax_transfer_function"
+
+
+@dataclass(frozen=True)
+class Targets:
+    qname: str = "qname"
+    tree: str = "tree"
+
+
+@dataclass(frozen=True)
+class Labels:
+    column_targets: str = "column_targets"
+    grouping_levels: str = "grouping_levels"
+    input_data_targets: str = "input_data_targets"
+    param_targets: str = "param_targets"
+    processed_data_columns: str = "processed_data_columns"
+    input_columns: str = "input_columns"
+    root_nodes: str = "root_nodes"
+    top_level_namespace: str = "top_level_namespace"
+
+
+@dataclass(frozen=True)
+class DfAndMapper:
+    df: str = "df"
+    mapper: str = "mapper"
+
+
+@dataclass(frozen=True)
+class InputData:
+    df_and_mapper: DfAndMapper = field(default_factory=DfAndMapper)
+    df_with_nested_columns: str = "df_with_nested_columns"
+    flat: str = "flat"
+    tree: str = "tree"
+
+
+@dataclass(frozen=True)
+class OrigPolicyObjects:
+    column_objects_and_param_functions: str = "column_objects_and_param_functions"
+    param_specs: str = "param_specs"
+    # Do not include root here, will be pre-defined in user-facing implementations.
+
+
+@dataclass(frozen=True)
+class Templates:
+    input_data_dtypes: str = "input_data_dtypes"
+
+
+@dataclass(frozen=True)
+class AllOutputNames:
+    policy_environment: str = "policy_environment"
+    templates: Templates = field(default_factory=Templates)
+    results: Results = field(default_factory=Results)
+    orig_policy_objects: OrigPolicyObjects = field(default_factory=OrigPolicyObjects)
+    specialized_environment: SpecializedEnvironment = field(
+        default_factory=SpecializedEnvironment
+    )
+    processed_data: str = "processed_data"
+    raw_results: RawResults = field(default_factory=RawResults)
+    labels: Labels = field(default_factory=Labels)
+    input_data: InputData = field(default_factory=InputData)
+    targets: Targets = field(default_factory=Targets)
+    backend: str = "backend"
+    date_str: str = "date_str"
+    date: str = "date"
+    evaluation_date_str: str = "evaluation_date_str"
+    evaluation_date: str = "evaluation_date"
+    policy_date_str: str = "policy_date_str"
+    policy_date: str = "policy_date"
+    xnp: str = "xnp"
+    dnp: str = "dnp"
+    num_segments: str = "num_segments"
+    rounding: str = "rounding"
+    warn_if: WarnIf = field(default_factory=WarnIf)
+    fail_if: FailIf = field(default_factory=FailIf)

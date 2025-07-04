@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from dataclasses import asdict
 from typing import Any
 
 import dags
@@ -15,6 +16,7 @@ from ttsim.interface_dag import (
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
 )
+from ttsim.interface_dag_elements import AllOutputNames
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
@@ -74,19 +76,15 @@ def test_load_flat_interface_functions_and_inputs() -> None:
 
 
 def test_interface_dag_is_complete() -> None:
-    # Convert InputDependentInterfaceFunctions to InterfaceInputs.
-    nodes_without_idifs = {}
-    for p, n in load_flat_interface_functions_and_inputs().items():
-        if isinstance(n, InputDependentInterfaceFunction):
-            interface_input = _replace_idif_with_interface_inputs(n)
-            new_path = p[:-1] + (interface_input.leaf_name,)
-            nodes_without_idifs[dt.qname_from_tree_path(new_path)] = interface_input
-        else:
-            nodes_without_idifs[dt.qname_from_tree_path(p)] = n
+    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
+    # we only care about some function with a leaf name, not the precise content.
+    nodes = {
+        dt.qname_from_tree_path((*p[:-1], f.leaf_name)): f
+        for p, f in load_flat_interface_functions_and_inputs().items()
+    }
 
     nodes_with_dummy_callables = {
-        qn: dummy_callable(n) if not callable(n) else n
-        for qn, n in nodes_without_idifs.items()
+        qn: dummy_callable(n) if not callable(n) else n for qn, n in nodes.items()
     }
     f = dags.concatenate_functions(
         functions=nodes_with_dummy_callables,
@@ -101,6 +99,28 @@ def test_interface_dag_is_complete() -> None:
             "The full interface DAG should include all root nodes but requires inputs:"
             f"\n\n{format_list_linewise(args.keys())}"
         )
+
+
+def test_all_output_names_is_complete() -> None:
+    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
+    # we only care about some function with a leaf name, not the precise content.
+    nodes = {
+        (*p[:-1], f.leaf_name)
+        for p, f in load_flat_interface_functions_and_inputs().items()
+    }
+
+    # We do include the root path in AllOutputNames because it will be pre-defined in
+    # user-facing implementations.
+    nodes -= {
+        (
+            "orig_policy_objects",
+            "root",
+        ),
+    }
+
+    all_output_names = set(dt.tree_paths(asdict(AllOutputNames())))
+
+    assert nodes == all_output_names
 
 
 def _replace_idif_with_interface_inputs(

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
         NestedData,
         NestedInputStructureDict,
-        NestedPolicyEnvironment,
+        PolicyEnvironment,
     )
 
 
@@ -42,7 +42,7 @@ def cached_policy_environment(
     date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
-) -> NestedPolicyEnvironment:
+) -> PolicyEnvironment:
     return main(
         date=date,
         orig_policy_objects={"root": root},

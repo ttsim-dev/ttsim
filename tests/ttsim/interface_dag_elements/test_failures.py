@@ -46,8 +46,8 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         IntColumn,
-        NestedPolicyEnvironment,
         OrigParamSpec,
+        PolicyEnvironment,
     )
 
 _GENERIC_PARAM_HEADER = {
@@ -127,7 +127,7 @@ def minimal_input_data():
     }
 
 
-def mettsim_environment(backend) -> NestedPolicyEnvironment:
+def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
         date=datetime.date(2025, 1, 1),

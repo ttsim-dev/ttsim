@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     import networkx as nx
     import pandas as pd
 
+    from ttsim.interface_dag_elements import AllOutputNames
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatData,
@@ -19,10 +20,10 @@ if TYPE_CHECKING:
         NestedTargetDict,
         OrderedQNames,
         QNameData,
-        QNameSpecializedEnvironment0,
-        QNameSpecializedEnvironment1,
-        QNameSpecializedEnvironment2,
         QNameStrings,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        SpecEnvWithPartialledParamsAndScalars,
+        SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
     )
 
@@ -42,7 +43,7 @@ class Output(MainArg):
         raise RuntimeError("Use any of the class methods to instantiate this class.")
 
     @classmethod
-    def name(cls, name: str | tuple[str, ...]) -> Output:
+    def name(cls, name: AllOutputNames | str | tuple[str, ...]) -> Output:
         """A single output name. Could be a qualified name or a tree path."""
         obj = object.__new__(cls)
         object.__setattr__(obj, "name", name)
@@ -50,7 +51,7 @@ class Output(MainArg):
         return obj
 
     @classmethod
-    def names(cls, names: Iterable[str | tuple[str, ...]]) -> Output:
+    def names(cls, names: Iterable[AllOutputNames | str | tuple[str, ...]]) -> Output:
         """An iterable of output names. Could be qualified names, tree paths, or a pytree."""  # noqa: E501
         obj = object.__new__(cls)
         object.__setattr__(obj, "name", None)
@@ -184,9 +185,13 @@ class Targets(MainArg):
 @dataclass(frozen=True)
 class SpecializedEnvironment(MainArg):
     without_tree_logic_and_with_derived_functions: (
-        QNameSpecializedEnvironment0 | None
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions | None
     ) = None
-    with_processed_params_and_scalars: QNameSpecializedEnvironment1 | None = None
-    with_partialled_params_and_scalars: QNameSpecializedEnvironment2 | None = None
+    with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars | None = (
+        None
+    )
+    with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars | None = (
+        None
+    )
     tax_transfer_dag: nx.DiGraph | None = None
     tax_transfer_function: Callable[[QNameData], QNameData] | None = None

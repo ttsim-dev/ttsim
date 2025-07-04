@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
-        QNameSpecializedEnvironment2,
+        SpecEnvWithPartialledParamsAndScalars,
     )
 
 GETTSIM_ROOT = Path(__file__).parent.parent / "_gettsim"
@@ -49,7 +49,7 @@ def cached_specialized_environment(
     date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
-) -> QNameSpecializedEnvironment2:
+) -> SpecEnvWithPartialledParamsAndScalars:
     return main(
         date=date,
         orig_policy_objects={"root": root},

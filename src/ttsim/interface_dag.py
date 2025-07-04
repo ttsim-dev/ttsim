@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import re
 from contextlib import suppress
+from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -10,6 +11,7 @@ import dags
 import dags.tree as dt
 import optree
 
+from ttsim.interface_dag_elements import AllOutputNames
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -21,6 +23,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceInput,
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
+from ttsim.main_args import MainArg
 
 if TYPE_CHECKING:
     import datetime
@@ -28,7 +31,7 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         FlatInterfaceObjects,
-        NestedPolicyEnvironment,
+        PolicyEnvironment,
         QNameData,
         QNameStrings,
         UnorderedQNames,
@@ -58,7 +61,7 @@ def main(
     raw_results: RawResults | None = None,
     results: Results | None = None,
     specialized_environment: SpecializedEnvironment | None = None,
-    policy_environment: NestedPolicyEnvironment | None = None,
+    policy_environment: PolicyEnvironment | None = None,
     processed_data: QNameData | None = None,
     date: datetime.date | None = None,
     policy_date_str: DashedISOString | None = None,
@@ -134,28 +137,18 @@ def main(
 
 
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
-    # Iterate over the skeleton and see whether we need to convert anything to
-    # qualified names.
-    dict_inputs = {}
-    for k, v in inputs.items():
-        if hasattr(v, "to_dict"):  # Check if it's a MainArg-like object
-            dict_inputs[k] = v.to_dict()
-        else:
-            dict_inputs[k] = v
-    flat_inputs = {}
-    # We only care about some function with a leaf name, not the precise content.
-    orig_functions = {
-        (*p[:-1], f.leaf_name): f for p, f in _load_orig_functions().items()
+    dict_inputs = {
+        k: v.to_dict() if isinstance(v, MainArg) else v for k, v in inputs.items()
     }
-    for acc in optree.tree_accessors(dt.unflatten_from_tree_paths(orig_functions)):
+    qname_inputs = {}
+    opo = dict_inputs.get("orig_policy_objects")
+    if opo and "root" in opo:
+        qname_inputs["orig_policy_objects__root"] = opo.pop("root")
+    for acc in optree.tree_accessors(asdict(AllOutputNames()), none_is_leaf=True):  # type: ignore[arg-type]
         qname = dt.qname_from_tree_path(acc.path)
-        if qname in dict_inputs:
-            flat_inputs[qname] = dict_inputs[qname]
-        else:
-            # Only use those things that can be found.
-            with suppress(KeyError, TypeError):
-                flat_inputs[qname] = acc(dict_inputs)
-    return {k: v for k, v in flat_inputs.items() if v is not None}
+        with suppress(KeyError, TypeError):
+            qname_inputs[qname] = acc(dict_inputs)
+    return {k: v for k, v in qname_inputs.items() if v is not None}
 
 
 def _harmonize_output(output: Output | None) -> dict[str, Any]:
@@ -216,7 +209,7 @@ def _resolve_dynamic_interface_objects_to_static_nodes(
     path_to_idif: dict[tuple[str, ...], list[InputDependentInterfaceFunction]] = {}
     for orig_p, orig_object in flat_interface_objects.items():
         if isinstance(orig_object, InputDependentInterfaceFunction):
-            new_path = orig_p[:-1] + (orig_object.leaf_name,)
+            new_path = (*orig_p[:-1], orig_object.leaf_name)
             if new_path not in path_to_idif:
                 path_to_idif[new_path] = []
             path_to_idif[new_path].append(orig_object)

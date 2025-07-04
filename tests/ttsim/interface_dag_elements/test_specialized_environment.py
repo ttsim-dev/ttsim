@@ -30,7 +30,7 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import IntColumn, NestedPolicyEnvironment
+    from ttsim.interface_dag_elements.typing import IntColumn, PolicyEnvironment
 
 
 @policy_input()
@@ -203,7 +203,7 @@ def foo_fam(foo: int, fam_id: int) -> int:
 
 
 @pytest.fixture(scope="module")
-def mettsim_environment() -> NestedPolicyEnvironment:
+def mettsim_environment() -> PolicyEnvironment:
     return main(
         inputs={
             "orig_policy_objects__root": Path(__file__).parent.parent / "mettsim",
