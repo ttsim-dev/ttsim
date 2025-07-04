@@ -10,7 +10,7 @@ import optree
 import pandas as pd
 import pytest
 
-from ttsim import main, output
+from ttsim import Output, main
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
 )
@@ -82,7 +82,7 @@ def test_input_is_recognized_as_potential_group_id(backend):
         orig_policy_objects={"root": METTSIM_ROOT},
         date=datetime.date(2020, 1, 1),
         backend=backend,
-        output=output.Name("labels__grouping_levels"),
+        output=Output.name("labels__grouping_levels"),
     )
 
 
@@ -91,7 +91,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
         orig_policy_objects={"root": METTSIM_ROOT},
         date=datetime.date(2020, 1, 1),
         backend=backend,
-        output=output.Name("labels__grouping_levels"),
+        output=Output.name("labels__grouping_levels"),
     )
 
 

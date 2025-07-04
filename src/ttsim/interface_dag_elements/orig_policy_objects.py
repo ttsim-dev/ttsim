@@ -37,7 +37,7 @@ def column_objects_and_param_functions(
     root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """
-    Load the original ColumnObjectParamFunctions tree from the resource directory.
+    Load the original ColumnObjectParamFunctions dictionary from the resource directory.
 
     "Original" means:
     - Module names are not removed from the path.
@@ -46,7 +46,7 @@ def column_objects_and_param_functions(
     Parameters
     ----------
     root:
-        The resource directory to load the ColumnObjectParamFunctions tree from.
+        The resource directory to load the ColumnObjectParamFunctions dictionary from.
     """
     return {
         k: v

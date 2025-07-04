@@ -37,8 +37,8 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,
         NestedParamObjects,
-        NestedPolicyEnvironment,
         OrigParamSpec,
+        PolicyEnvironment,
     )
 
 
@@ -48,7 +48,7 @@ def policy_environment(
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
-) -> NestedPolicyEnvironment:
+) -> PolicyEnvironment:
     """
     Set up the policy environment for a particular date.
 

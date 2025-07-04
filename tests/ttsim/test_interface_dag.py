@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 import inspect
+from dataclasses import asdict
 from typing import Any
 
 import dags
 import dags.tree as dt
 import pytest
 
-from ttsim import arg_templates
+from ttsim import InputData, OrigPolicyObjects, Output, Targets
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _harmonize_inputs,
-    _harmonize_outputs,
+    _harmonize_output,
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
 )
+from ttsim.interface_dag_elements import AllOutputNames
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
@@ -74,19 +76,15 @@ def test_load_flat_interface_functions_and_inputs() -> None:
 
 
 def test_interface_dag_is_complete() -> None:
-    # Convert InputDependentInterfaceFunctions to InterfaceInputs.
-    nodes_without_idifs = {}
-    for p, n in load_flat_interface_functions_and_inputs().items():
-        if isinstance(n, InputDependentInterfaceFunction):
-            interface_input = _replace_idif_with_interface_inputs(n)
-            new_path = p[:-1] + (interface_input.leaf_name,)
-            nodes_without_idifs[dt.qname_from_tree_path(new_path)] = interface_input
-        else:
-            nodes_without_idifs[dt.qname_from_tree_path(p)] = n
+    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
+    # we only care about some function with a leaf name, not the precise content.
+    nodes = {
+        dt.qname_from_tree_path((*p[:-1], f.leaf_name)): f
+        for p, f in load_flat_interface_functions_and_inputs().items()
+    }
 
     nodes_with_dummy_callables = {
-        qn: dummy_callable(n) if not callable(n) else n
-        for qn, n in nodes_without_idifs.items()
+        qn: dummy_callable(n) if not callable(n) else n for qn, n in nodes.items()
     }
     f = dags.concatenate_functions(
         functions=nodes_with_dummy_callables,
@@ -101,6 +99,28 @@ def test_interface_dag_is_complete() -> None:
             "The full interface DAG should include all root nodes but requires inputs:"
             f"\n\n{format_list_linewise(args.keys())}"
         )
+
+
+def test_all_output_names_is_complete() -> None:
+    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
+    # we only care about some function with a leaf name, not the precise content.
+    nodes = {
+        (*p[:-1], f.leaf_name)
+        for p, f in load_flat_interface_functions_and_inputs().items()
+    }
+
+    # We do include the root path in AllOutputNames because it will be pre-defined in
+    # user-facing implementations.
+    nodes -= {
+        (
+            "orig_policy_objects",
+            "root",
+        ),
+    }
+
+    all_output_names = set(dt.tree_paths(asdict(AllOutputNames())))
+
+    assert nodes == all_output_names
 
 
 def _replace_idif_with_interface_inputs(
@@ -163,18 +183,33 @@ def e(c: int, d: float) -> float:
     return c + d
 
 
-def test_harmonize_inputs_qname_input():
+def test_harmonize_inputs_main_args_input():
     x = {
+        "input_data": InputData.df_and_mapper(
+            df={"cannot use df because comparison fails"},
+            mapper={"c": "a", "d": "b", "p_id": "p_id"},
+        ),
+        "targets": Targets(tree={"e": "f"}),
+        "date": "2025-01-01",
+        "backend": "numpy",
+        "rounding": True,
+        "orig_policy_objects": OrigPolicyObjects(
+            column_objects_and_param_functions={("x.py", "e"): e},
+            param_specs={},
+        ),
+    }
+    harmonized = _harmonize_inputs(inputs=x)
+
+    assert harmonized == {
         "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
         "targets__tree": {"e": "f"},
         "date": "2025-01-01",
         "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
         "orig_policy_objects__param_specs": {},
+        "backend": "numpy",
+        "rounding": True,
     }
-    harmonized = _harmonize_inputs(inputs=x)
-
-    assert harmonized == {**x, "backend": "numpy", "rounding": True}
 
 
 def test_harmonize_inputs_tree_input():
@@ -187,12 +222,12 @@ def test_harmonize_inputs_tree_input():
         },
         "targets": {"tree": {"e": "f"}},
         "date": "2025-01-01",
+        "backend": "numpy",
+        "rounding": True,
         "orig_policy_objects": {
             "column_objects_and_param_functions": {("x.py", "e"): e},
             "param_specs": {},
         },
-        "backend": "numpy",
-        "rounding": True,
     }
     harmonized = _harmonize_inputs(inputs=x)
 
@@ -280,21 +315,21 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
 @pytest.mark.parametrize(
     ("output", "expected"),
     [
-        (arg_templates.output.Name("a__b"), {"name": "a__b", "names": ["a__b"]}),
-        (arg_templates.output.Name(("a", "b")), {"name": "a__b", "names": ["a__b"]}),
+        (Output.name("a__b"), {"name": "a__b", "names": ["a__b"]}),
+        (Output.name(("a", "b")), {"name": "a__b", "names": ["a__b"]}),
         (
-            arg_templates.output.Name({"a": {"b": None}}),
+            Output.name({"a": {"b": None}}),
             {"name": "a__b", "names": ["a__b"]},
         ),
-        (arg_templates.output.Names(["a__b"]), {"name": None, "names": ["a__b"]}),
-        (arg_templates.output.Names([("a", "b")]), {"name": None, "names": ["a__b"]}),
+        (Output.names(["a__b"]), {"name": None, "names": ["a__b"]}),
+        (Output.names([("a", "b")]), {"name": None, "names": ["a__b"]}),
         (
-            arg_templates.output.Names({"a": {"b": None}}),
+            Output.names({"a": {"b": None}}),
             {"name": None, "names": ["a__b"]},
         ),
     ],
 )
 def test_harmonize_outputs(output, expected):
-    harmonized = _harmonize_outputs(output=output)
+    harmonized = _harmonize_output(output=output)
 
     assert harmonized == expected

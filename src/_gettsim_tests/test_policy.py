@@ -8,7 +8,7 @@ import dags.tree as dt
 import numpy
 import pytest
 
-from ttsim import main, output
+from ttsim import Output, main
 from ttsim.testing_utils import (
     PolicyTest,
     check_env_completeness,
@@ -39,7 +39,7 @@ def get_orig_gettsim_objects() -> dict[
 ]:
     out = main(
         orig_policy_objects={"root": GETTSIM_ROOT},
-        output=output.Names(
+        output=Output.names(
             [
                 "orig_policy_objects__column_objects_and_param_functions",
                 "orig_policy_objects__param_specs",
@@ -109,7 +109,7 @@ def test_top_level_elements_not_repeated_in_paths(
             backend=backend,
             date=date,
             rounding=False,
-            output=output.Names(
+            output=Output.names(
                 [
                     "specialized_environment__with_partialled_params_and_scalars",
                     "labels__top_level_namespace",

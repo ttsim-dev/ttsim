@@ -1,12 +1,27 @@
 from __future__ import annotations
 
-from ttsim.arg_templates import input_data, output
 from ttsim.interface_dag import main
 from ttsim.interface_dag_elements.shared import merge_trees
+from ttsim.main_args import (
+    InputData,
+    Labels,
+    OrigPolicyObjects,
+    Output,
+    RawResults,
+    Results,
+    SpecializedEnvironment,
+    Targets,
+)
 
 __all__ = [
-    "input_data",
+    "InputData",
+    "Labels",
+    "OrigPolicyObjects",
+    "Output",
+    "RawResults",
+    "Results",
+    "SpecializedEnvironment",
+    "Targets",
     "main",
     "merge_trees",
-    "output",
 ]
