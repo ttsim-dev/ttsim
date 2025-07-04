@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
 
-PLACEHOLDER_FOR_REQUIRED_FIELDS = object()
+PLACEHOLDER_VALUE = object()
+PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
 
 if TYPE_CHECKING:
     import datetime
@@ -43,7 +44,7 @@ class ParamObject:
     description: dict[Literal["de", "en"], str] | None = None
 
     def __post_init__(self) -> None:
-        if self.value is PLACEHOLDER_FOR_REQUIRED_FIELDS:  # type: ignore[attr-defined]
+        if self.value is PLACEHOLDER_VALUE:  # type: ignore[attr-defined]
             raise ValueError(
                 "'value' field must be specified for any type of 'ParamObject'"
             )
@@ -55,9 +56,7 @@ class ScalarParam(ParamObject):
     A scalar parameter directly read from a YAML file.
     """
 
-    value: bool | int | float = field(
-        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
-    )  # type: ignore[assignment]
+    value: bool | int | float = PLACEHOLDER_FIELD  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
@@ -75,7 +74,7 @@ class DictParam(ParamObject):
         | dict[int, int]
         | dict[int, float]
         | dict[int, bool]
-    ) = field(default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS)  # type: ignore[assignment]
+    ) = PLACEHOLDER_FIELD  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
@@ -92,9 +91,7 @@ class PiecewisePolynomialParam(ParamObject):
     parameters for calling `piecewise_polynomial`.
     """
 
-    value: PiecewisePolynomialParamValue = field(
-        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
-    )  # type: ignore[assignment]
+    value: PiecewisePolynomialParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
@@ -107,9 +104,7 @@ class ConsecutiveInt1dLookupTableParam(ParamObject):
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveInt1dLookupTableParamValue = field(
-        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
-    )  # type: ignore[assignment]
+    value: ConsecutiveInt1dLookupTableParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
@@ -122,9 +117,7 @@ class ConsecutiveInt2dLookupTableParam(ParamObject):
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveInt2dLookupTableParamValue = field(
-        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS  # type: ignore[assignment]
-    )
+    value: ConsecutiveInt2dLookupTableParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 
@@ -136,9 +129,7 @@ class RawParam(ParamObject):
     dictionary.
     """
 
-    value: dict[str | int, Any] = field(
-        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS  # type: ignore[arg-type, return-value]
-    )
+    value: dict[str | int, Any] = PLACEHOLDER_FIELD  # type: ignore[assignment]
     note: str | None = None
     reference: str | None = None
 

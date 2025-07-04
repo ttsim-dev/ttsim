@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import itertools
 import textwrap
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
@@ -24,7 +24,8 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     PolicyInput,
 )
 from ttsim.tt_dag_elements.param_objects import (
-    PLACEHOLDER_FOR_REQUIRED_FIELDS,
+    PLACEHOLDER_FIELD,
+    PLACEHOLDER_VALUE,
     ParamObject,
 )
 
@@ -100,12 +101,10 @@ class _ParamWithActivePeriod(ParamObject):
     Only used here for checking overlap.
     """
 
-    original_function_name: str = field(
-        default_factory=lambda: PLACEHOLDER_FOR_REQUIRED_FIELDS
-    )
+    original_function_name: str = PLACEHOLDER_FIELD
 
     def __post_init__(self) -> None:
-        if self.original_function_name is PLACEHOLDER_FOR_REQUIRED_FIELDS:
+        if self.original_function_name is PLACEHOLDER_VALUE:
             raise ValueError(
                 "'original_function_name' field must be specified for _ParamWithActivePeriod"
             )
