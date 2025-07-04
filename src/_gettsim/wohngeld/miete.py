@@ -16,7 +16,7 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from jaxtyping import Array, Float, Int
+    from jaxtyping import Array, Int
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ def max_miete_m_lookup_mit_baujahr(
     baujahre = sorted(tmp[1].keys())
     modified_dict = {}
     for i in range(len(baujahre)):
-        baujahr = baujahre[i]           
+        baujahr = baujahre[i]
         this_dict = {n_p: tmp[n_p][baujahr] for n_p in tmp}
         for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
             this_dict[n_p] = {
@@ -52,11 +52,12 @@ def max_miete_m_lookup_mit_baujahr(
                 for ms in this_dict[max_n_p_defined]
             }
         modified_dict[i] = this_dict
-    
 
     return LookupTableBaujahr(
         baujahre=xnp.asarray(baujahre),
-        lookup_table=get_consecutive_int_Nd_lookup_table_param_value(raw=modified_dict, n_dims=3, xnp=xnp),
+        lookup_table=get_consecutive_int_Nd_lookup_table_param_value(
+            raw=modified_dict, n_dims=3, xnp=xnp
+        ),
     )
 
 
@@ -77,7 +78,9 @@ def max_miete_m_lookup_ohne_baujahr(
             + (n_p - max_n_p_defined) * per_additional_person[ms]  # type: ignore[operator]
             for ms in expanded[max_n_p_defined]
         }
-    return get_consecutive_int_Nd_lookup_table_param_value(raw=expanded, n_dims=2, xnp=xnp)
+    return get_consecutive_int_Nd_lookup_table_param_value(
+        raw=expanded, n_dims=2, xnp=xnp
+    )
 
 
 @param_function(start_date="1984-01-01")
@@ -98,7 +101,9 @@ def min_miete_lookup(
     expanded = raw_min_miete_m.copy()
     for n_p in range(max_n_p_normal + 1, max_anzahl_personen["indizierung"] + 1):
         expanded[n_p] = raw_min_miete_m[max_n_p_normal]
-    return get_consecutive_int_Nd_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_Nd_lookup_table_param_value(
+        raw=expanded, n_dims=1, xnp=xnp
+    )
 
 
 @param_function(start_date="2021-01-01")
@@ -116,7 +121,9 @@ def heizkostenentlastung_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_Nd_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_Nd_lookup_table_param_value(
+        raw=expanded, n_dims=1, xnp=xnp
+    )
 
 
 @param_function(start_date="2023-01-01")
@@ -134,7 +141,9 @@ def dauerhafte_heizkostenkomponente_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_Nd_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_Nd_lookup_table_param_value(
+        raw=expanded, n_dims=1, xnp=xnp
+    )
 
 
 @param_function(start_date="2023-01-01")
@@ -152,7 +161,9 @@ def klimakomponente_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_Nd_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_Nd_lookup_table_param_value(
+        raw=expanded, n_dims=1, xnp=xnp
+    )
 
 
 @policy_function()
@@ -192,6 +203,7 @@ def min_miete_m_hh(
     """Minimum rent considered in Wohngeld calculation."""
     return min_miete_lookup.lookup(anzahl_personen_hh)
 
+
 @policy_function(
     start_date="1984-01-01",
     end_date="2008-12-31",
@@ -212,7 +224,7 @@ def miete_m_hh_mit_baujahr(
         wohnen__baujahr_immobilie_hh,
         side="left",
     )
-    max_miete_m = max_miete_m_lookup.lookup_table.lookup(selected_bin_index,anzahl_personen_hh,mietstufe) # fmt: skip
+    max_miete_m = max_miete_m_lookup.lookup_table.lookup(selected_bin_index,anzahl_personen_hh,mietstufe)  # fmt: skip
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
 
@@ -227,10 +239,10 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveIntNdLookupTableParamValue,
-    xnp: ModuleType
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh,mietstufe)
+    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
 
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
@@ -247,10 +259,10 @@ def miete_m_hh_mit_heizkostenentlastung(
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveIntNdLookupTableParamValue,
     heizkostenentlastung_m_lookup: ConsecutiveIntNdLookupTableParamValue,
-    xnp: ModuleType
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh,mietstufe)
+    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
 
     heating_allowance_m = heizkostenentlastung_m_lookup.lookup(anzahl_personen_hh)
 
@@ -273,14 +285,14 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
     heizkostenentlastung_m_lookup: ConsecutiveIntNdLookupTableParamValue,
     dauerhafte_heizkostenkomponente_m_lookup: ConsecutiveIntNdLookupTableParamValue,
     klimakomponente_m_lookup: ConsecutiveIntNdLookupTableParamValue,
-    xnp: ModuleType
+    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh,mietstufe)
+    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
 
     heizkostenentlastung = heizkostenentlastung_m_lookup.lookup(anzahl_personen_hh)
-    dauerhafte_heizkostenkomponente = (
-        dauerhafte_heizkostenkomponente_m_lookup.lookup(anzahl_personen_hh)
+    dauerhafte_heizkostenkomponente = dauerhafte_heizkostenkomponente_m_lookup.lookup(
+        anzahl_personen_hh
     )
     klimakomponente = klimakomponente_m_lookup.lookup(anzahl_personen_hh)
     return (
