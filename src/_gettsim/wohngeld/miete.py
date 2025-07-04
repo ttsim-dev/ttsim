@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import (
     ConsecutiveInt1dLookupTableParamValue,
     ConsecutiveIntNdLookupTableParamValue,
-    get_consecutive_int_Nd_lookup_table_param_value,
+    get_consecutive_int_nd_lookup_table_param_value,
     param_function,
     policy_function,
 )
@@ -55,7 +55,7 @@ def max_miete_m_lookup_mit_baujahr(
 
     return LookupTableBaujahr(
         baujahre=xnp.asarray(baujahre),
-        lookup_table=get_consecutive_int_Nd_lookup_table_param_value(
+        lookup_table=get_consecutive_int_nd_lookup_table_param_value(
             raw=modified_dict, n_dims=3, xnp=xnp
         ),
     )
@@ -78,7 +78,7 @@ def max_miete_m_lookup_ohne_baujahr(
             + (n_p - max_n_p_defined) * per_additional_person[ms]  # type: ignore[operator]
             for ms in expanded[max_n_p_defined]
         }
-    return get_consecutive_int_Nd_lookup_table_param_value(
+    return get_consecutive_int_nd_lookup_table_param_value(
         raw=expanded, n_dims=2, xnp=xnp
     )
 
@@ -101,7 +101,7 @@ def min_miete_lookup(
     expanded = raw_min_miete_m.copy()
     for n_p in range(max_n_p_normal + 1, max_anzahl_personen["indizierung"] + 1):
         expanded[n_p] = raw_min_miete_m[max_n_p_normal]
-    return get_consecutive_int_Nd_lookup_table_param_value(
+    return get_consecutive_int_nd_lookup_table_param_value(
         raw=expanded, n_dims=1, xnp=xnp
     )
 
@@ -121,7 +121,7 @@ def heizkostenentlastung_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_Nd_lookup_table_param_value(
+    return get_consecutive_int_nd_lookup_table_param_value(
         raw=expanded, n_dims=1, xnp=xnp
     )
 
@@ -141,7 +141,7 @@ def dauerhafte_heizkostenkomponente_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_Nd_lookup_table_param_value(
+    return get_consecutive_int_nd_lookup_table_param_value(
         raw=expanded, n_dims=1, xnp=xnp
     )
 
@@ -161,7 +161,7 @@ def klimakomponente_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_Nd_lookup_table_param_value(
+    return get_consecutive_int_nd_lookup_table_param_value(
         raw=expanded, n_dims=1, xnp=xnp
     )
 
@@ -239,7 +239,6 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveIntNdLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
@@ -259,7 +258,6 @@ def miete_m_hh_mit_heizkostenentlastung(
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveIntNdLookupTableParamValue,
     heizkostenentlastung_m_lookup: ConsecutiveIntNdLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
@@ -285,7 +283,6 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
     heizkostenentlastung_m_lookup: ConsecutiveIntNdLookupTableParamValue,
     dauerhafte_heizkostenkomponente_m_lookup: ConsecutiveIntNdLookupTableParamValue,
     klimakomponente_m_lookup: ConsecutiveIntNdLookupTableParamValue,
-    xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
     max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)

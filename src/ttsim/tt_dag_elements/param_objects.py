@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     import datetime
     from types import ModuleType
 
-    from jaxtyping import Array, Float
+    from jaxtyping import Array, Float, Int
 
 
 @dataclass(frozen=True)
@@ -120,7 +120,7 @@ class ConsecutiveIntNdLookupTableParam(ParamObject):
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveIntNdLookupTableParamValue
+    value: ConsecutiveIntNdLookupTableParamValue | None = None
     note: str | None = None
     reference: str | None = None
 
@@ -128,8 +128,8 @@ class ConsecutiveIntNdLookupTableParam(ParamObject):
 class ConsecutiveIntNdLookupTableParamValue:
     """The parameters expected by lookup_table"""
 
-    bases_to_subtract: int[Array, n_dimensions]
-    lookup_multipliers: int[Array, n_dimensions]
+    bases_to_subtract: Int[Array, "n_rows n_cols"]
+    lookup_multipliers: Int[Array, "n_rows n_cols"]
     values_to_look_up: Float[Array, "n_rows n_cols"]
     xnp: ModuleType
 
@@ -137,7 +137,7 @@ class ConsecutiveIntNdLookupTableParamValue:
         self,
         xnp: ModuleType,
         values_to_look_up: Float[Array, "n_rows n_cols"],
-        bases_to_subtract: int[Array, n_dimensions],
+        bases_to_subtract: Int[Array, "n_rows n_cols"],
     ) -> None:
         self.xnp = xnp
         self.values_to_look_up = values_to_look_up.flatten()
@@ -149,8 +149,9 @@ class ConsecutiveIntNdLookupTableParamValue:
             ]
         )
 
-    def lookup(self, *args):
-        print(args)
+    def lookup(
+        self: ConsecutiveIntNdLookupTableParamValue, *args: int
+    ) -> Float[Array, "n_rows n_cols"]:
         index = self.xnp.asarray(args)
         corrected_index = self.xnp.dot(
             (index - self.bases_to_subtract).T, self.lookup_multipliers
@@ -254,7 +255,7 @@ def get_consecutive_int_2d_lookup_table_param_value(
     )
 
 
-def get_consecutive_int_Nd_lookup_table_param_value(
+def get_consecutive_int_nd_lookup_table_param_value(
     raw: dict[int, dict[int, float | int | bool]],
     n_dims: int,
     xnp: ModuleType,
@@ -262,13 +263,13 @@ def get_consecutive_int_Nd_lookup_table_param_value(
     """Get the parameters for a 2-dimensional lookup table."""
     bases_to_substract = numpy.zeros(n_dims, dtype=numpy.int32)
 
-    def process_level(i, level_i_dict):
+    def process_level(i: int, level_i_dict) -> Float[Array, "n_rows n_cols"]:
         bases_to_substract[i - 1] = min(level_i_dict.keys())
         if i < n_dims:
             return xnp.concatenate(
                 [
                     xnp.expand_dims(process_level(i + 1, level_i_dict[key]), axis=0)
-                    for key in level_i_dict.keys()
+                    for key in level_i_dict
                 ]
             )
         return xnp.asarray(list(level_i_dict.values()))

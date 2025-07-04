@@ -32,7 +32,7 @@ from ttsim.tt_dag_elements.param_objects import (
     ScalarParam,
     get_consecutive_int_1d_lookup_table_param_value,
     get_consecutive_int_2d_lookup_table_param_value,
-    get_consecutive_int_Nd_lookup_table_param_value,
+    get_consecutive_int_nd_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
 )
@@ -72,7 +72,7 @@ __all__ = [
     "agg_by_p_id_function",
     "get_consecutive_int_1d_lookup_table_param_value",
     "get_consecutive_int_2d_lookup_table_param_value",
-    "get_consecutive_int_Nd_lookup_table_param_value",
+    "get_consecutive_int_nd_lookup_table_param_value",
     "get_month_based_phase_inout_of_age_thresholds_param_value",
     "get_piecewise_parameters",
     "get_year_based_phase_inout_of_age_thresholds_param_value",
