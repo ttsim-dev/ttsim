@@ -121,6 +121,21 @@ def test_df_with_mapped_columns_to_flat_data(
         )
 
 
+def test_df_with_mapped_columns_to_flat_data_fails_if_mapper_value_not_in_df(xnp):
+    with pytest.raises(
+        ValueError,
+        match=r"Value of mapper path \(('n2',)\) is not a column name",
+    ):
+        df_with_mapped_columns_to_flat_data(
+            mapper={
+                "n1": "a",
+                "n2": "b",
+            },
+            df=pd.DataFrame({"a": [1, 2, 3]}),
+            xnp=xnp,
+        )
+
+
 @pytest.mark.parametrize(
     (
         "environment",
