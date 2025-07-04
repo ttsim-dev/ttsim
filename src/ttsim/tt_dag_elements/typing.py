@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NewType
+from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias
+
+NestedDict: TypeAlias = dict[int, float | "NestedDict"]  # noqa: TC010
 
 if TYPE_CHECKING:
     import datetime
