@@ -37,6 +37,7 @@ from ttsim.tt_dag_elements import (
     group_creation_function,
     param_function,
     policy_function,
+    policy_input,
 )
 
 if TYPE_CHECKING:
@@ -949,6 +950,38 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
             policy_environment=policy_environment,
             date=datetime.date(2024, 1, 1),
             targets={"tree": {"c": None}},
+            rounding=False,
+            backend=backend,
+            output=Output.names(["results__tree", "fail_if__root_nodes_are_missing"]),
+        )
+
+
+def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
+    minimal_input_data, backend
+):
+    @policy_function()
+    def b(a_fam):
+        return a_fam
+
+    @policy_input()
+    def a() -> int:
+        pass
+
+    policy_environment = {
+        "fam_id": fam_id,
+        "a": a,
+        "b": b,
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="Consider passing the individual level columns instead",
+    ):
+        main(
+            input_data={"tree": minimal_input_data},
+            policy_environment=policy_environment,
+            date=datetime.date(2024, 1, 1),
+            targets={"tree": {"b": None}},
             rounding=False,
             backend=backend,
             output=Output.names(["results__tree", "fail_if__root_nodes_are_missing"]),
