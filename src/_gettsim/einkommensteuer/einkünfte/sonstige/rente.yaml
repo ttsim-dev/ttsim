@@ -1,5 +1,5 @@
 ---
-parameter_ertragsanteil_an_rente:
+parameter_ertragsanteil_der_rente:
   name:
     de: >-
       Ertragsanteil-Funktion für den Anteil an sozialversicherungspflichtigen
