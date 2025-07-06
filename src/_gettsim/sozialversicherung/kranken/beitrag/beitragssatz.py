@@ -42,7 +42,7 @@ def beitragssatz_arbeitnehmer_voller_zusatzbeitrag_ab_07_2005_bis_2008(
     return parameter_beitragssatz["mean_allgemein"] / 2 + zusatzbeitragssatz
 
 
-@policy_function(
+@param_function(
     start_date="2006-01-01",
     end_date="2008-12-31",
     leaf_name="beitragssatz_arbeitnehmer_midijob",
@@ -78,7 +78,7 @@ def beitragssatz_arbeitnehmer_voller_zusatzbeitrag_ab_2009_bis_2018(
     return parameter_beitragssatz["allgemein"] / 2 + zusatzbeitragssatz
 
 
-@policy_function(
+@param_function(
     start_date="2009-01-01",
     end_date="2014-12-31",
     leaf_name="beitragssatz_arbeitnehmer_midijob",
@@ -98,7 +98,7 @@ def beitragssatz_arbeitnehmer_midijob_voller_sonderbeitragssatz(
     )
 
 
-@policy_function(
+@param_function(
     start_date="2015-01-01",
     end_date="2018-12-31",
     leaf_name="beitragssatz_arbeitnehmer_midijob",
@@ -133,7 +133,7 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
     return (parameter_beitragssatz["allgemein"] + zusatzbeitragssatz) / 2
 
 
-@policy_function(
+@param_function(
     start_date="2019-01-01",
     leaf_name="beitragssatz_arbeitnehmer_midijob",
 )
