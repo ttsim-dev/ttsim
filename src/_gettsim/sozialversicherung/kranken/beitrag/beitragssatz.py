@@ -15,7 +15,7 @@ def beitragssatz_arbeitnehmer(beitragssatz: float) -> float:
 
 
 @param_function(end_date="2005-12-31")
-def beitragssatz_arbeitnehmer_jahresanfang(beitragssatz_jahresanfang: float) -> float:
+def beitragssatz_arbeitnehmer_midijob(beitragssatz_jahresanfang: float) -> float:
     """Employee's health insurance contribution rate for the beginning of the year until
     June 2005.
 
@@ -45,10 +45,9 @@ def beitragssatz_arbeitnehmer_voller_zusatzbeitrag_ab_07_2005_bis_2008(
 @policy_function(
     start_date="2006-01-01",
     end_date="2008-12-31",
-    leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
+    leaf_name="beitragssatz_arbeitnehmer_midijob",
 )
-def beitragssatz_arbeitnehmer_jahresanfang_voller_zusatzbeitrag_ab_2006_bis_2008(
-    zusatzbeitragssatz_jahresanfang: float,
+def beitragssatz_arbeitnehmer_midijob_voller_zusatzbeitrag_ab_2006_bis_2008(
     parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
@@ -57,7 +56,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_voller_zusatzbeitrag_ab_2006_bis_2008
     """
     return (
         parameter_beitragssatz_jahresanfang["mean_allgemein"] / 2
-        + zusatzbeitragssatz_jahresanfang
+        + parameter_beitragssatz_jahresanfang["sonderbeitrag"]
     )
 
 
@@ -81,11 +80,10 @@ def beitragssatz_arbeitnehmer_voller_zusatzbeitrag_ab_2009_bis_2018(
 
 @policy_function(
     start_date="2009-01-01",
-    end_date="2018-12-31",
-    leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
+    end_date="2014-12-31",
+    leaf_name="beitragssatz_arbeitnehmer_midijob",
 )
-def beitragssatz_arbeitnehmer_jahresanfang_voller_zusatzbeitrag(
-    zusatzbeitragssatz_jahresanfang: float,
+def beitragssatz_arbeitnehmer_midijob_voller_sonderbeitragssatz(
     parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
@@ -96,7 +94,27 @@ def beitragssatz_arbeitnehmer_jahresanfang_voller_zusatzbeitrag(
     """
     return (
         parameter_beitragssatz_jahresanfang["allgemein"] / 2
-        + zusatzbeitragssatz_jahresanfang
+        + parameter_beitragssatz_jahresanfang["sonderbeitrag"]
+    )
+
+
+@policy_function(
+    start_date="2015-01-01",
+    end_date="2018-12-31",
+    leaf_name="beitragssatz_arbeitnehmer_midijob",
+)
+def beitragssatz_arbeitnehmer_midijob_voller_zusatzbeitragssatz(
+    parameter_beitragssatz_jahresanfang: dict[str, float],
+) -> float:
+    """Employee's health insurance contribution rate at the beginning of the year.
+
+    From July 2005 the contribution rates consists of a general rate (split equally
+    between employers and employees, differs across sickness funds) and a top-up rate,
+    which is fully paid by employees.
+    """
+    return (
+        parameter_beitragssatz_jahresanfang["allgemein"] / 2
+        + parameter_beitragssatz_jahresanfang["mean_zusatzbeitrag"]
     )
 
 
@@ -117,10 +135,9 @@ def beitragssatz_arbeitnehmer_paritätischer_zusatzbeitrag(
 
 @policy_function(
     start_date="2019-01-01",
-    leaf_name="beitragssatz_arbeitnehmer_jahresanfang",
+    leaf_name="beitragssatz_arbeitnehmer_midijob",
 )
-def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
-    zusatzbeitragssatz_jahresanfang: float,
+def beitragssatz_arbeitnehmer_midijob_paritätischer_zusatzbeitrag(
     parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employee's health insurance contribution rate at the beginning of the year.
@@ -129,7 +146,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     """
     return (
         parameter_beitragssatz_jahresanfang["allgemein"]
-        + zusatzbeitragssatz_jahresanfang
+        + parameter_beitragssatz_jahresanfang["mean_zusatzbeitrag"]
     ) / 2
 
 
@@ -144,9 +161,9 @@ def beitragssatz_arbeitgeber_bis_06_2005(beitragssatz: float) -> float:
 
 @param_function(
     end_date="2005-12-31",
-    leaf_name="beitragssatz_arbeitgeber_jahresanfang",
+    leaf_name="beitragssatz_arbeitgeber_midijob",
 )
-def beitragssatz_arbeitgeber_jahresanfang_bis_06_2005(
+def beitragssatz_arbeitgeber_midijob_bis_06_2005(
     beitragssatz_jahresanfang: float,
 ) -> float:
     """Employer's health insurance contribution rate at the beginning of the year."""
@@ -168,9 +185,9 @@ def beitragssatz_arbeitgeber_ohne_zusatzbeitrag_ab_07_2005_bis_2008(
 @param_function(
     start_date="2006-01-01",
     end_date="2008-12-31",
-    leaf_name="beitragssatz_arbeitgeber_jahresanfang",
+    leaf_name="beitragssatz_arbeitgeber_midijob",
 )
-def beitragssatz_arbeitgeber_jahresanfang_ohne_zusatzbeitrag_ab_06_2006_bis_2008(
+def beitragssatz_arbeitgeber_midijob_ohne_zusatzbeitrag_ab_06_2006_bis_2008(
     parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employer's health insurance contribution rate at the begging of the year."""
@@ -192,9 +209,9 @@ def beitragssatz_arbeitgeber_ohne_zusatzbeitrag_ab_09_2009_bis_2018(
 @param_function(
     start_date="2009-01-01",
     end_date="2018-12-31",
-    leaf_name="beitragssatz_arbeitgeber_jahresanfang",
+    leaf_name="beitragssatz_arbeitgeber_midijob",
 )
-def beitragssatz_arbeitgeber_jahresanfang_ohne_zusatzbeitrag_ab_09_2009_bis_2018(
+def beitragssatz_arbeitgeber_midijob_ohne_zusatzbeitrag_ab_09_2009_bis_2018(
     parameter_beitragssatz_jahresanfang: dict[str, float],
 ) -> float:
     """Employer's health insurance contribution rate at the beginning of the year."""
@@ -218,17 +235,17 @@ def beitragssatz_arbeitgeber_paritätischer_zusatzbeitrag(
 
 @policy_function(
     start_date="2019-01-01",
-    leaf_name="beitragssatz_arbeitgeber_jahresanfang",
+    leaf_name="beitragssatz_arbeitgeber_midijob",
 )
-def beitragssatz_arbeitgeber_jahresanfang_paritätischer_zusatzbeitrag(
-    beitragssatz_arbeitnehmer_jahresanfang: float,
+def beitragssatz_arbeitgeber_midijob_paritätischer_zusatzbeitrag(
+    beitragssatz_arbeitnehmer_midijob: float,
 ) -> float:
     """Employer's health insurance contribution rate at the beginning of the year.
 
     Since 2019, the full contribution rate is now split equally between employers and
     employees.
     """
-    return beitragssatz_arbeitnehmer_jahresanfang
+    return beitragssatz_arbeitnehmer_midijob
 
 
 @param_function(
@@ -236,7 +253,7 @@ def beitragssatz_arbeitgeber_jahresanfang_paritätischer_zusatzbeitrag(
     end_date="2014-12-31",
     leaf_name="zusatzbeitragssatz",
 )
-def zusatzbeitragssatz_von_sonderbeitrag(
+def zusatzbeitragssatz_genannt_sonderbeitrag(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance top-up (Zusatzbeitrag) rate until December 2014.
@@ -246,46 +263,15 @@ def zusatzbeitragssatz_von_sonderbeitrag(
     return parameter_beitragssatz["sonderbeitrag"]
 
 
-@param_function(
-    start_date="2015-01-01",
-    leaf_name="zusatzbeitragssatz",
-)
-def zusatzbeitragssatz_von_mean_zusatzbeitrag(
+@param_function(start_date="2015-01-01")
+def zusatzbeitragssatz(
     parameter_beitragssatz: dict[str, float],
 ) -> float:
     """Health insurance top-up rate (Zusatzbeitrag) since January 2015.
 
-    Overwrite this in order to use an individual-specific Zusatzbeitragssatz.
+    Most datasets will not contain information about the individual-specific
+    Zusatzbeitrag. This function returns the mean Zusatzbeitrag of the specific policy
+    date. Overwrite this function in order to use an individual-specific
+    Zusatzbeitragssatz.
     """
     return parameter_beitragssatz["mean_zusatzbeitrag"]
-
-
-@param_function(
-    start_date="2005-07-01",
-    end_date="2014-12-31",
-    leaf_name="zusatzbeitragssatz_jahresanfang",
-)
-def zusatzbeitragssatz_von_sonderbeitrag_jahresanfang(
-    parameter_beitragssatz_jahresanfang: dict[str, float],
-) -> float:
-    """Health insurance top-up (Zusatzbeitrag) rate at the beginning of the year until
-    December 2014.
-
-    Overwrite this in order to use an individual-specific Zusatzbeitragssatz.
-    """
-    return parameter_beitragssatz_jahresanfang["sonderbeitrag"]
-
-
-@param_function(
-    start_date="2015-01-01",
-    leaf_name="zusatzbeitragssatz_jahresanfang",
-)
-def zusatzbeitragssatz_von_mean_zusatzbeitrag_jahresanfang(
-    parameter_beitragssatz_jahresanfang: dict[str, float],
-) -> float:
-    """Health insurance top-up rate (Zusatzbeitrag) at the beginning of the year since
-    January 2015.
-
-    Overwrite this in order to use an individual-specific Zusatzbeitragssatz.
-    """
-    return parameter_beitragssatz_jahresanfang["mean_zusatzbeitrag"]

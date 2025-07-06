@@ -52,8 +52,8 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
     rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
-    kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
-    kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
+    kranken__beitrag__beitragssatz_arbeitnehmer_midijob: float,
+    kranken__beitrag__beitragssatz_arbeitgeber_midijob: float,
     rente__beitrag__beitragssatz_jahresanfang: float,
     arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
     pflege__beitrag__beitragssatz_jahresanfang: float,
@@ -74,12 +74,8 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     )
 
     # Then calculate specific shares
-    an_anteil = (
-        allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang
-    )
-    ag_anteil = (
-        allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang
-    )
+    an_anteil = allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitnehmer_midijob
+    ag_anteil = allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitgeber_midijob
 
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
@@ -99,8 +95,8 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
-    kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
-    kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
+    kranken__beitrag__beitragssatz_arbeitnehmer_midijob: float,
+    kranken__beitrag__beitragssatz_arbeitgeber_midijob: float,
     rente__beitrag__beitragssatz_jahresanfang: float,
     arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
     pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang: dict[str, float],
@@ -121,12 +117,8 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
         + pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang["standard"] / 2
     )
 
-    an_anteil = (
-        allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang
-    )
-    ag_anteil = (
-        allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang
-    )
+    an_anteil = allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitnehmer_midijob
+    ag_anteil = allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitgeber_midijob
 
     # Sum over the shares which are specific for midijobs.
     pausch_mini = (
@@ -145,8 +137,8 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_ohne_minijob_steuerpauschale(
-    kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang: float,
-    kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang: float,
+    kranken__beitrag__beitragssatz_arbeitnehmer_midijob: float,
+    kranken__beitrag__beitragssatz_arbeitgeber_midijob: float,
     rente__beitrag__beitragssatz_jahresanfang: float,
     pflege__beitrag__beitragssatz_nach_kinderzahl_jahresanfang: dict[str, float],
     arbeitslosen__beitrag__beitragssatz_jahresanfang: float,
@@ -169,12 +161,8 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
     )
 
     # Then calculate specific shares
-    an_anteil = (
-        allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitnehmer_jahresanfang
-    )
-    ag_anteil = (
-        allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitgeber_jahresanfang
-    )
+    an_anteil = allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitnehmer_midijob
+    ag_anteil = allg_sozialv_beitr + kranken__beitrag__beitragssatz_arbeitgeber_midijob
 
     # Sum over the shares which are specific for midijobs.
     # New formula only inludes the lump-sum contributions to health care
