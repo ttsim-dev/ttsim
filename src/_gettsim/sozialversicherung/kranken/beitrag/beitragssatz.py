@@ -128,7 +128,7 @@ def beitragssatz_arbeitnehmer_jahresanfang_paritätischer_zusatzbeitrag(
     Zusatzbeitrag is split equally between employers and employees.
     """
     return (
-        parameter_beitragssatz_jahresanfang["allgemein"] / 2
+        parameter_beitragssatz_jahresanfang["allgemein"]
         + zusatzbeitragssatz_jahresanfang
     ) / 2
 
