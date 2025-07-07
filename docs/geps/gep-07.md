@@ -76,7 +76,8 @@ interface while maintaining GETTSIM's computational robustness.
    be shown below).
 
    ```python
-   from gettsim import InputData, Output, Targets, main
+   from gettsim import InputData, MainTarget, TTTargets, main
+
 
    outputs_df = main(
        main_target=MainTarget.results.df_with_mapper,
@@ -90,18 +91,20 @@ interface while maintaining GETTSIM's computational robustness.
    ```
 
    All elements that are not atomic are specified as GETTSIM objects, which means that
-   users can benefit from autocompletion and type hints provided by their IDE.
+   users can benefit from autocompletion and type hints provided by their IDE (see
+   below).
 
-   The first argument, `output`, specifies the output to compute. In this case, we want
-   the "results" in the "DataFrame with mapper" format. That is, GETTSIM will compute
-   all desired targets and return a DataFrame with columns specified by the user.
+   The first argument, `main_target`, specifies the type of object to compute. In this
+   case, we want the "results" in the "DataFrame with mapper" format. That is, GETTSIM
+   will compute all desired targets and return a DataFrame with columns specified by the
+   user.
 
    Say we want to compute the contributions to long term care insurance
-   (Pflegeversicherung). The fourth argument, `targets`, specifies the set of targets to
-   compute. Because we ask for the "results" in the "DataFrame with mapper" format, this
-   actually has to be a mapping from the targets to the columns in the output DataFrame.
-   In this case, the argument `targets` needs to be a *pytree*, which provides the
-   mapping:
+   (Pflegeversicherung). The fourth argument, `tt_targets`, specifies the set of taxes
+   and transfers ("`tt`") to compute. Because we ask for the "results" in the "DataFrame
+   with mapper" format, this actually has to be a mapping from the targets to the
+   columns in the output DataFrame. In this case, the argument `tt_targets` needs to be
+   a *pytree*, which provides that mapping:
 
    ```python
    targets_tree = {
@@ -116,7 +119,7 @@ interface while maintaining GETTSIM's computational robustness.
    ```
 
    That is, the call to `main` above will return a DataFrame with one column
-   `ltci_contrib` and of the same length as the input data.
+   `ltci_contrib`, which will be of the same length as the input data.
 
    The second argument, `date_str`, specifies the date at which the policy environment
    is set up and evaluated.
@@ -176,9 +179,9 @@ interface while maintaining GETTSIM's computational robustness.
      </tbody>
    </table>
 
-   We can use this DataFrame directly, however, we need to tell GETTSIM how to map the
-   columns of the DataFrame to the columns it knows about, This is done by a mapper,
-   which is a *pytree* that in our case looks as follows
+   We can use this DataFrame directly. All we need to do is to tell GETTSIM how to map
+   the columns of that DataFrame to the names of inputs it knows about. This is done by
+   a *mapper*, which again is a *pytree*. In our case, it looks as follows:
 
    ```python
    inputs_map = {
@@ -209,8 +212,10 @@ interface while maintaining GETTSIM's computational robustness.
    }
    ```
 
-   Note that we set several variables to scalars. E.g., we do not consider self-employed
-   people, pensioners, or people with (substitutive) private health insurance.
+   All *leaves* of the tree are either column names in the data or scalars. E.g., we do
+   not consider self-employed people, pensioners, or people with (substitutive) private
+   health insurance. Instead of requiring some default value in the data, we can simply
+   use a scalar value in the mapper.
 
    *Note:* We picked an example with little, but not zero, complexity. The amount of
    inputs is simply necessary because public long term care insurance contributions
@@ -251,14 +256,124 @@ interface while maintaining GETTSIM's computational robustness.
      </tbody>
    </table>
 
-1. **DAG-based granular interface**
+1. **Underlying structure**
 
-   On the other end of the spectrum, the interface so far was not flexible enough for
-   advanced use cases. In particular, many checks were run time and again, slowing down
-   the computation. The updated interface will allow users to customize the graph to
-   their needs.
+   The interface DAG looks as follows:
 
-   ...
+   .. todo::
+
+   Embed the interface DAG without fail/warn nodes as described here:
+   https://mystmd.org/guide/reuse-jupyter-outputs
+
+   The **policy environment** consists of all functions relevant at some point in time.
+   E.g., when requesting a policy environment for some date in the 2020s, Erziehungsgeld
+   will not be part of it because it was replaced by Elterngeld long before. Users
+   wishing to implement reforms—whether they consist of changing parameter values or
+   replacing functions—will do so at the level of the policy environment.
+
+   The **input data** are the data provided by the user. They need to be passed in one
+   of several forms.
+
+   The **processed data** are a version of the input data that can be consumed by
+   downstream functions, which includes conversions of identifiers.
+
+   Users specify the **taxes and transfers targets** ("`tt_targets`"), which GETTSIM
+   will return. When left out, GETTSIM will return all functions it can compute.
+
+   The elements of the **specialized environment** combine policy environment and data.
+   Even if users do not typically need to work with these elements, they are so central
+   to GETTSIM that it is useful to list them here.
+
+   - **with derived functions and without tree logic** adds aggregations (e.g., adding
+     up individual incomes to income at the Steuernummer level) and time conversions
+     (e.g., from month to year). Doing so requires knowing the names of the columns in
+     the data.
+   - **with processed params and scalars**. The parameters of the taxes and transfers
+     system are stored in special objects. Some of them require further conversion
+     through functions that do not depend on household data ("`param_functions`").
+     Similarly, it is possible to pass scalars instead of data columns for things that
+     are not observed in a dataset or that can be assumed constant in a particular
+     application (e.g., setting pension payments to zero when looking at the labor
+     supply of 30-year olds). In this step, these functions are run and all parameters
+     are converted to their final form (e.g., a `ScalarParam` becomes just a number).
+     Where relevant, policy functions are replaced by scalers passed as input data.
+   - **with partialled params and scalars** partials all parameters and scalars to the
+     functions that make up the taxes and transfers DAG. That is, the resulting
+     functions only depend on column arguments (either passed as input data or computed
+     earlier in the DAG).
+   - **taxes and transfers DAG** is the DAG representation of the functions in the
+     previous step.
+   - **taxes and transfers function** is the function that takes the columns in the
+     processed data as arguments and returns the desired taxes and transfers targets.
+     Running this function leads to raw results (there still contain internals and
+     should not be used by non-GETTSIM functions)
+
+   The **results** contain the output of the taxes and transfers function, purged of
+   internals and converted to the format requested by the user.
+
+   The German taxes and transfers system is complex and specifying inputs can be a
+   daunting task. The **templates** aim to help with that. E.g., asking for
+   `MainTarget.templates.input_data` will return a nested dictionary that may include:
+
+   ```python
+   {
+       "einkommensteuer": {
+           "einkünfte": {"aus_forst_und_landwirtschaft": {"betrag_y": "FloatColumn"}}
+       }
+   }
+   ```
+
+   These templates can be modified to become a mapper, as in the above example. That is,
+   "`FloatColumn`" could be replaced by the name of the column in the input data frame
+   or by 0.0 if only employees who don't have other types of income are in the sample.
+
+1. **Autocompletion features**
+
+   The internal structure of the building blocks described in the previous section can
+   be rather complex. In order to minimize errors arising from typos and misconceptions,
+   GETTSIM provides objects that allow to take advantage of modern IDEs'/editors'
+   autocompletion and type hinting features.
+
+   For example, after:
+
+   ```python
+   from gettsim import main, MainTarget
+
+   main(main_target=MainTarget.)
+   ```
+
+   tools like VS Code will show the options:
+
+   ```python
+   results
+   policy_environment
+   templates
+   orig_policy_objects
+   specialized_environment
+   processed_data
+   raw_results
+   labels
+   input_data
+   tt_targets
+   backend
+   date_str
+   date
+   evaluation_date_str
+   evaluation_date
+   policy_date_str
+   policy_date
+   xnp
+   dnp
+   num_segments
+   rounding
+   warn_if
+   fail_if
+   ```
+
+   Such objects are provided for all arguments to main that need a hierarchical
+   structure. E. g. , the 'input-data' argument takes an instance of 'luput Data' like
+   in the above example. Again, one will be able to benefit from auto completion
+   features from typing the first 'l' onwards.
 
 1. **Ecosystem**
 
