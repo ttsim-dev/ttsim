@@ -29,8 +29,8 @@ from ttsim.interface_dag_elements.fail_if import (
     targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt_dag_elements import (
-    ConsecutiveInt1dLookupTableParam,
-    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveIntLookupTableParam,
+    ConsecutiveIntLookupTableParamValue,
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
@@ -63,10 +63,11 @@ _GENERIC_PARAM_SPEC = {
     **_GENERIC_PARAM_HEADER,
 }
 
-_SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM = ConsecutiveInt1dLookupTableParam(
-    leaf_name="some_consecutive_int_1d_lookup_table_param",
-    value=ConsecutiveInt1dLookupTableParamValue(
-        base_to_subtract=1,
+_SOME_CONSECUTIVE_INT_LOOKUP_TABLE_PARAM = ConsecutiveIntLookupTableParam(
+    leaf_name="some_consecutive_int_nd_lookup_table_param",
+    value=ConsecutiveIntLookupTableParamValue(
+        bases_to_subtract=numpy.array([1]),
+        xnp=numpy,
         values_to_look_up=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,
@@ -746,11 +747,11 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
         ),
         (
             {
-                "some_consecutive_int_1d_lookup_table_param": (
-                    _SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM
+                "some_consecutive_int_lookup_table_param": (
+                    _SOME_CONSECUTIVE_INT_LOOKUP_TABLE_PARAM
                 ),
             },
-            {"some_consecutive_int_1d_lookup_table_param": "res1"},
+            {"some_consecutive_int_lookup_table_param": "res1"},
             "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
         (
