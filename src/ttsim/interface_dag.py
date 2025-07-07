@@ -175,7 +175,6 @@ def _harmonize_main_target(
     if isinstance(main_target, tuple):
         return dt.qname_from_tree_path(main_target)
     if isinstance(main_target, dict):
-        # Ideally we'll want to check this recursively.
         if len(optree.tree_flatten(main_target, none_is_leaf=True)[0]) > 1:  # type: ignore[arg-type]
             raise ValueError(msg)
         return dt.qnames(main_target)[0]
