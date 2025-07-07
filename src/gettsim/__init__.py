@@ -22,6 +22,7 @@ from _gettsim_tests import TEST_DIR
 from ttsim import (
     InputData,
     Labels,
+    MainTarget,
     RawResults,
     Results,
     SpecializedEnvironment,
@@ -87,6 +88,7 @@ def main(
 __all__ = [
     "InputData",
     "Labels",
+    "MainTarget",
     "OrigPolicyObjects",
     "RawResults",
     "Results",
