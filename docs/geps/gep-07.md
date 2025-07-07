@@ -265,6 +265,11 @@ interface while maintaining GETTSIM's computational robustness.
    Embed the interface DAG without fail/warn nodes as described here:
    https://mystmd.org/guide/reuse-jupyter-outputs
 
+   The **date** is the date at which the policy environment is set up and evaluated. It
+   could be passed as `date_str`, which is an ISO-string `YYYY-MM-DD`. If users need
+   more control, there are `policy_date` and `evaluation_date` and their `_str`
+   variants.
+
    The **policy environment** consists of all functions relevant at some point in time.
    E.g., when requesting a policy environment for some date in the 2020s, Erziehungsgeld
    will not be part of it because it was replaced by Elterngeld long before. Users
@@ -273,9 +278,6 @@ interface while maintaining GETTSIM's computational robustness.
 
    The **input data** are the data provided by the user. They need to be passed in one
    of several forms.
-
-   The **processed data** are a version of the input data that can be consumed by
-   downstream functions, which includes conversions of identifiers.
 
    Users specify the **taxes and transfers targets** ("`tt_targets`"), which GETTSIM
    will return. When left out, GETTSIM will return all functions it can compute.
@@ -327,6 +329,31 @@ interface while maintaining GETTSIM's computational robustness.
    "`FloatColumn`" could be replaced by the name of the column in the input data frame
    or by 0.0 if only employees who don't have other types of income are in the sample.
 
+   Additional user-facing elements are:
+
+   - **rounding** is a Boolean that determines whether to round the results. Defaults to
+     `True`, which yields a more accurate depiction of the taxes and transfers system.
+     Turn off if you need numerical derivatives or the like.
+
+   * The **backend** is the backend used to compute the taxes and transfers. Default is
+     `numpy`, the other option is `jax`.
+   * **include_fail_and_warn_nodes** is a Boolean that determines whether raise errors
+     and display warnings. Defaults to `True`, only turn off if you really know what you
+     are doing (and even then, turn on before filing an issue).
+
+   Other elements of the interface DAG, which will typically be less relevant for users,
+   include:
+
+   - The **original policy objects**, which consist of all functions and parameters that
+     GETTSIM ships with. These are all functions and parameters that have been relevant
+     at some point in time. A user won't typically need to work with this; a policy
+     environment is constructed from this and a date.
+   - The **labels** contain things like column names, names of root nodes, etc. —
+     anything where we only need the label of something and not the object itself.
+   - **num_segments** is the number of unique individuals in the data. It is required by
+     the Jax backend to aggregate by group / another individual. determine the number of
+     segments in the data.
+
 1. **Autocompletion features**
 
    The internal structure of the building blocks described in the previous section can
@@ -346,17 +373,18 @@ interface while maintaining GETTSIM's computational robustness.
 
    ```python
    results
-   policy_environment
    templates
-   orig_policy_objects
+   policy_environment
    specialized_environment
+   orig_policy_objects
    processed_data
    raw_results
    labels
+   date_str
    input_data
    tt_targets
+   num_segments
    backend
-   date_str
    date
    evaluation_date_str
    evaluation_date
@@ -364,16 +392,15 @@ interface while maintaining GETTSIM's computational robustness.
    policy_date
    xnp
    dnp
-   num_segments
    rounding
    warn_if
    fail_if
    ```
 
    Such objects are provided for all arguments to main that need a hierarchical
-   structure. E. g. , the 'input-data' argument takes an instance of 'luput Data' like
-   in the above example. Again, one will be able to benefit from auto completion
-   features from typing the first 'l' onwards.
+   structure. E.g. , the `input_data` argument takes an instance of `InputData` like in
+   the above example. Again, one will be able to benefit from autocompletion features
+   from typing the first 'I' onwards.
 
 1. **Ecosystem**
 
@@ -392,8 +419,46 @@ interface while maintaining GETTSIM's computational robustness.
 
 ## Backward Compatibility
 
-This interface represents a significant change. Transition should be very smooth,
-however, when ...
+This interface represents a significant change. There is no way to ensure backward
+compatibility. This said, the former:
+
+```python
+from gettsim import (
+    set_up_policy_environment,
+    compute_taxes_and_transfers,
+)
+
+policy_params, policy_functions = set_up_policy_environment(2020)
+result = compute_taxes_and_transfers(
+    data=data,
+    functions=policy_functions,
+    params=policy_params,
+    targets=targets,
+)
+```
+
+can be replaced by:
+
+```python
+from gettsim import main, InputData, MainTarget, TTTargets
+
+result = main(
+    main_targets=[
+        MainTarget.policy_environment,
+        MainTarget.results.df_with_mapper,
+    ],
+    date_str="2025-01-01",
+    input_data=InputData.df_and_mapper(
+        df=data,
+        mapper=inputs_map,
+    ),
+    tt_targets=TTTargets(tree=tt_targets_tree),
+)
+```
+
+Beyond the interface change, users will need to change `targets` to `tt_targets_tree`
+and to create the `inputs_map`. Both adjustments are due to the changes in the internal
+structure of GETTSIM described in [GEP 6](gep-06).
 
 ## Discussion
 
@@ -404,5 +469,3 @@ however, when ...
 ## Copyright
 
 This document has been placed in the public domain.
-
-### References
