@@ -46,18 +46,31 @@ interface while maintaining GETTSIM's computational robustness.
 
 ## Usage and Impact
 
-### New Interface Components
+1. Basic workflow
 
-1. **A single entry point**
+   There is a single entry point for GETTSIM: The `main` function. It is powered by a
+   DAG in the background.
 
-   The `main` function is the single entry point for all GETTSIM functionality. For
-   computing taxes and transfers, the minimal requirements are:
+   This means that the user will have to start by telling it the desired target
+   ("`main_target`") or set of targets ("`main_targets`"). Ultimately, the main target
+   will typically be a dataset with values for taxes and transfers. However,
+   intermediate steps can be useful. E. g., the taxes and transfers system at a
+   particular date (the "`policy_environ­ment`"), which she wants to modify in order to
+   model a reform.
 
-   - The output(s) to compute (various options)
-   - The date at which the policy environment is set up and evaluated
-   - Data on individuals / households in one of various formats
-   - Typically, the set of targets to compute (could be left out, in which case all
-     targets are computed)
+   The targets determine the required inputs. For example, in order to compute taxes and
+   transfers for a set of households, one will need as primitives
+
+   - data on these households ("`input_data`")
+   - the set of taxes and transfers to be computed ("`tt_targets`"). This could be left
+     out, in which case all possible targets will be computed. However, that will often
+     be a daunting task in terms of requirements on the data and computer memory.
+   - the date
+
+   If only a policy environment is to be returned, just the date is required as an
+   input.
+
+1. **Worked example**
 
    Here is an example (the variables `inputs_df`, `inputs_map`, and `targets_tree` will
    be shown below).
@@ -66,13 +79,13 @@ interface while maintaining GETTSIM's computational robustness.
    from gettsim import InputData, Output, Targets, main
 
    outputs_df = main(
-       output=Output.name(("results", "df_with_mapper")),
+       main_target=MainTarget.results.df_with_mapper,
        date_str="2025-01-01",
        input_data=InputData.df_and_mapper(
            df=inputs_df,
            mapper=inputs_map,
        ),
-       targets=Targets(tree=targets_tree),
+       tt_targets=TTTargets(tree=targets_tree),
    )
    ```
 

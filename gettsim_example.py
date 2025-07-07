@@ -1,7 +1,6 @@
 import pandas as pd
 
-from gettsim import InputData, TTTargets, main
-from ttsim.interface_dag_elements import MainTarget
+from gettsim import InputData, MainTarget, TTTargets, main
 
 inputs_df = pd.DataFrame(
     {
@@ -64,3 +63,8 @@ outputs_df = main(
 print(outputs_df.round(2).to_html())  # noqa: T201
 
 print(inputs_df.to_html())  # noqa: T201
+
+pe = main(
+    main_target=MainTarget.policy_environment,
+    date_str="2025-01-01",
+)
