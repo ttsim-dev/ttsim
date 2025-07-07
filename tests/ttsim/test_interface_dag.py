@@ -7,16 +7,17 @@ import dags
 import dags.tree as dt
 import pytest
 
-from ttsim import InputData, OrigPolicyObjects, Output, TTTargets
+from ttsim import InputData, OrigPolicyObjects, TTTargets
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _fail_if_root_nodes_of_interface_dag_are_missing,
     _harmonize_inputs,
-    _harmonize_output,
+    _harmonize_main_target,
+    _harmonize_main_targets,
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
 )
-from ttsim.interface_dag_elements import AllOutputNames
+from ttsim.interface_dag_elements import MainTarget
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
@@ -125,7 +126,7 @@ def test_all_output_names_is_complete() -> None:
         for p, f in load_flat_interface_functions_and_inputs().items()
     }
 
-    # We do include the root path in AllOutputNames because it will be pre-defined in
+    # We do include the root path in MainTarget because it will be pre-defined in
     # user-facing implementations.
     nodes -= {
         (
@@ -134,7 +135,7 @@ def test_all_output_names_is_complete() -> None:
         ),
     }
 
-    all_output_names = set(dt.tree_paths(AllOutputNames.to_dict()))
+    all_output_names = set(dt.tree_paths(MainTarget.to_dict()))
 
     assert nodes == all_output_names
 
@@ -153,7 +154,7 @@ def _replace_idif_with_interface_inputs(
 
 
 @pytest.mark.parametrize(
-    ("output_qnames", "nodes", "error_match"),
+    ("main_targets", "nodes", "error_match"),
     [
         (
             ["a"],
@@ -185,11 +186,11 @@ def _replace_idif_with_interface_inputs(
     ],
 )
 def test_fail_if_requested_nodes_cannot_be_found(
-    output_qnames, nodes, error_match
+    main_targets, nodes, error_match
 ) -> None:
     with pytest.raises(ValueError, match=error_match):
         _fail_if_requested_nodes_cannot_be_found(
-            output_qnames=output_qnames,
+            main_targets=main_targets,
             nodes=nodes,
         )
 
@@ -329,24 +330,29 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
 
 
 @pytest.mark.parametrize(
-    ("output", "expected"),
+    ("main_target", "expected"),
     [
-        (Output.name("a__b"), {"name": "a__b", "names": ["a__b"]}),
-        (Output.name(("a", "b")), {"name": "a__b", "names": ["a__b"]}),
-        (
-            Output.name({"a": {"b": None}}),
-            {"name": "a__b", "names": ["a__b"]},
-        ),
-        (Output.names(["a__b"]), {"name": None, "names": ["a__b"]}),
-        (Output.names([("a", "b")]), {"name": None, "names": ["a__b"]}),
-        (
-            Output.names({"a": {"b": None}}),
-            {"name": None, "names": ["a__b"]},
-        ),
+        ("a__b", "a__b"),
+        (("a", "b"), "a__b"),
+        ({"a": {"b": None}}, "a__b"),
     ],
 )
-def test_harmonize_outputs(output, expected):
-    harmonized = _harmonize_output(output=output)
+def test_harmonize_main_target(main_target, expected):
+    harmonized = _harmonize_main_target(main_target=main_target)
+
+    assert harmonized == expected
+
+
+@pytest.mark.parametrize(
+    ("main_targets", "expected"),
+    [
+        (["a__b"], ["a__b"]),
+        ([("a", "b")], ["a__b"]),
+        ({"a": {"b": None}}, ["a__b"]),
+    ],
+)
+def test_harmonize_main_targets(main_targets, expected):
+    harmonized = _harmonize_main_targets(main_targets=main_targets)
 
     assert harmonized == expected
 

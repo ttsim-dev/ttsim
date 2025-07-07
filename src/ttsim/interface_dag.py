@@ -11,7 +11,7 @@ import dags.tree as dt
 import networkx as nx
 import optree
 
-from ttsim.interface_dag_elements import AllOutputNames
+from ttsim.interface_dag_elements import MainTarget
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -27,20 +27,20 @@ from ttsim.main_args import MainArg
 
 if TYPE_CHECKING:
     import datetime
+    from collections.abc import Iterable
 
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         FlatInterfaceObjects,
+        NestedTargetDict,
         PolicyEnvironment,
         QNameData,
-        QNameStrings,
         UnorderedQNames,
     )
     from ttsim.main_args import (
         InputData,
         Labels,
         OrigPolicyObjects,
-        Output,
         RawResults,
         Results,
         SpecializedEnvironment,
@@ -50,7 +50,8 @@ if TYPE_CHECKING:
 
 def main(
     *,
-    output: Output | None = None,
+    main_target: str | tuple[str, ...] | NestedTargetDict | None = None,
+    main_targets: Iterable[str | tuple[str, ...]] | None = None,
     date_str: DashedISOString | None = None,
     input_data: InputData | None = None,
     tt_targets: TTTargets | None = None,
@@ -75,7 +76,15 @@ def main(
     """
 
     input_qnames = _harmonize_inputs(locals())
-    output_qnames = _harmonize_output(output)
+    if main_target is not None:
+        if main_targets is not None:
+            raise ValueError(
+                "Either `main_target` or `main_targets` must be provided, but not both."
+            )
+        main_target = _harmonize_main_target(main_target)
+        main_targets = [main_target]
+    elif main_targets is not None:
+        main_targets = _harmonize_main_targets(main_targets)
 
     # If requesting an input template, we do not require any data.
     if not any(re.match("(input|processed)_data", s) for s in input_qnames):
@@ -88,7 +97,7 @@ def main(
     )
 
     _fail_if_requested_nodes_cannot_be_found(
-        output_qnames=output_qnames["names"],
+        main_targets=main_targets,  # type: ignore[arg-type]
         nodes=nodes,
     )
 
@@ -99,15 +108,15 @@ def main(
     }
 
     # If main_targets are None, all failures and warnings are included, anyhow.
-    if fail_and_warn and output_qnames["names"] is not None:
-        output_qnames["names"] = include_fail_and_warn_nodes(
+    if fail_and_warn and main_targets is not None:
+        main_targets = include_fail_and_warn_nodes(
             functions=functions,
-            output_qnames=output_qnames["names"],
+            main_targets=main_targets,  # type: ignore[arg-type]
         )
 
     dag = dags.create_dag(
         functions=functions,
-        targets=output_qnames["names"],
+        targets=main_targets,
     )
 
     _fail_if_root_nodes_of_interface_dag_are_missing(
@@ -118,11 +127,11 @@ def main(
     def lexsort_key(x: str) -> int:
         return 0 if x.startswith("fail_if") else 1
 
-    if output_qnames["name"]:
+    if main_target:
         f = dags.concatenate_functions(
             dag=dag,
             functions=functions,
-            targets=output_qnames["name"],
+            targets=main_target,
             enforce_signature=False,
             set_annotations=False,
             lexsort_key=lexsort_key,
@@ -131,7 +140,7 @@ def main(
         f = dags.concatenate_functions(
             dag=dag,
             functions=functions,
-            targets=output_qnames["names"],
+            targets=main_targets,
             return_type="dict",
             enforce_signature=False,
             set_annotations=False,
@@ -148,47 +157,44 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     opo = dict_inputs.get("orig_policy_objects")
     if opo and "root" in opo:
         qname_inputs["orig_policy_objects__root"] = opo.pop("root")
-    for acc in optree.tree_accessors(AllOutputNames.to_dict(), none_is_leaf=True):
+    for acc in optree.tree_accessors(MainTarget.to_dict(), none_is_leaf=True):
         qname = dt.qname_from_tree_path(acc.path)
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
     return {k: v for k, v in qname_inputs.items() if v is not None}
 
 
-def _harmonize_output(output: Output | None) -> dict[str, Any]:
-    if output is None:
-        flat_output: dict[str, Any] = {
-            "name": None,
-            "names": None,
-        }
-    elif hasattr(output, "to_dict"):  # Check if it's a MainArg-like object
-        flat_output = output.to_dict()
+def _harmonize_main_target(
+    main_target: str | tuple[str, ...] | NestedTargetDict,
+) -> str:
+    msg = (
+        "`main_target` must be a single qualified name, a tuple, or a dict with "
+        "one element. If in doubt, use `MainTarget` and tab-complete. If you want to "
+        "output multiple elements, use 'names'."
+    )
+    if isinstance(main_target, tuple):
+        return dt.qname_from_tree_path(main_target)
+    if isinstance(main_target, dict):
+        # Ideally we'll want to check this recursively.
+        if len(main_target) > 1:
+            raise ValueError(msg)
+        return dt.qnames(main_target)[0]
+    if isinstance(main_target, str):
+        return main_target
+    raise ValueError(msg)
+
+
+def _harmonize_main_targets(
+    main_targets: Iterable[str | tuple[str, ...]] | NestedTargetDict,
+) -> list[str]:
+    if isinstance(main_targets, dict):
+        out = dt.qnames(main_targets)
+    elif isinstance(main_targets[0], tuple):  # type: ignore[index]
+        out = [dt.qname_from_tree_path(tp) for tp in main_targets]
     else:
-        flat_output = {
-            "name": output.get("name"),
-            "names": output.get("names"),
-        }
+        out = list(main_targets)
 
-    if flat_output["name"] is not None:
-        if isinstance(flat_output["name"], tuple):
-            flat_output["name"] = dt.qname_from_tree_path(flat_output["name"])
-        elif isinstance(flat_output["name"], dict):
-            if len(flat_output["name"]) > 1:
-                raise ValueError(
-                    "The output Name must be a single qualified name, a tuple or a "
-                    "dict with one element. If you want to output multiple "
-                    "elements, use 'names'."
-                )
-            flat_output["name"] = dt.qnames(flat_output["name"])[0]
-        flat_output["names"] = [flat_output["name"]]
-    if isinstance(flat_output["names"], dict):
-        flat_output["names"] = dt.qnames(flat_output["names"])
-    elif isinstance(flat_output["names"][0], tuple):
-        flat_output["names"] = [
-            dt.qname_from_tree_path(tp) for tp in flat_output["names"]
-        ]
-
-    return flat_output
+    return out
 
 
 def _resolve_dynamic_interface_objects_to_static_nodes(
@@ -261,7 +267,7 @@ def _fail_if_multiple_functions_satisfy_include_condition(
 
 def include_fail_and_warn_nodes(
     functions: dict[str, InterfaceFunction],
-    output_qnames: QNameStrings,
+    main_targets: list[str],
 ) -> list[str]:
     """Extend main targets with failures and warnings that can be computed.
 
@@ -272,17 +278,17 @@ def include_fail_and_warn_nodes(
     fail_or_warn_functions = {
         p: n
         for p, n in functions.items()
-        if isinstance(n, FailOrWarnFunction) and p not in output_qnames
+        if isinstance(n, FailOrWarnFunction) and p not in main_targets
     }
     workers_and_their_inputs = dags.create_dag(
         functions={
             p: n
             for p, n in functions.items()
-            if not isinstance(n, FailOrWarnFunction) or p in output_qnames
+            if not isinstance(n, FailOrWarnFunction) or p in main_targets
         },
-        targets=output_qnames,
+        targets=main_targets,
     )
-    out = output_qnames.copy()
+    out = main_targets.copy()
     for p, n in fail_or_warn_functions.items():
         args = inspect.signature(n).parameters
         if p == "fail_if__root_nodes_are_missing":
@@ -376,11 +382,11 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
 
 
 def _fail_if_requested_nodes_cannot_be_found(
-    output_qnames: list[str] | None,
+    main_targets: list[str] | None,
     nodes: dict[str, InterfaceFunction | InterfaceInput],
 ) -> None:
     """Fail if some qname is not among nodes."""
-    all_qnames = set(nodes.keys())
+    all_nodes = set(nodes.keys())
     interface_function_names = {
         p for p, n in nodes.items() if isinstance(n, InterfaceFunction)
     }
@@ -388,29 +394,34 @@ def _fail_if_requested_nodes_cannot_be_found(
         p: n for p, n in nodes.items() if isinstance(n, FailOrWarnFunction)
     }
 
-    # Output qnames not in interface functions
-    if output_qnames is not None:
-        missing_output_qnames = set(output_qnames) - set(interface_function_names)
+    # main targets not in interface functions
+    if main_targets is not None:
+        missing_main_targets = set(main_targets) - set(interface_function_names)
     else:
-        missing_output_qnames = set()
+        missing_main_targets = set()
 
     # Qnames from include condtions of fail_or_warn functions not in nodes
     for n in fail_or_warn_functions.values():
-        qns = {*n.include_if_all_elements_present, *n.include_if_any_element_present}
-        missing_qnames_from_include_conditions = qns - all_qnames
+        ns: set[str] = {
+            *n.include_if_all_elements_present,
+            *n.include_if_any_element_present,
+        }
+        missing_main_targets_from_include_conditions = ns - all_nodes
 
-    if missing_output_qnames or missing_qnames_from_include_conditions:
-        if missing_output_qnames:
+    if missing_main_targets or missing_main_targets_from_include_conditions:
+        if missing_main_targets:
             msg = format_errors_and_warnings(
                 "The following output names for the interface DAG are not among the "
                 "interface functions or inputs:\n"
-            ) + format_list_linewise(sorted(missing_output_qnames))
+            ) + format_list_linewise(sorted(missing_main_targets))
         else:
             msg = ""
-        if missing_qnames_from_include_conditions:
+        if missing_main_targets_from_include_conditions:
             msg += format_errors_and_warnings(
                 "\n\nThe following elements specified in some include condition of "
                 "`fail_or_warn_function`s are not among the interface functions or "
                 "inputs:\n"
-            ) + format_list_linewise(sorted(missing_qnames_from_include_conditions))
+            ) + format_list_linewise(
+                sorted(missing_main_targets_from_include_conditions)
+            )
         raise ValueError(msg)

@@ -22,7 +22,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceInput,
     interface_function,
 )
-from ttsim.main_args import Output
 from ttsim.tt_dag_elements import (
     ColumnFunction,
     ParamFunction,
@@ -108,7 +107,7 @@ def plot_tt_dag(
         date_str=date_str,
         orig_policy_objects={"root": root},
         backend="numpy",
-        output=Output.name("policy_environment"),
+        main_target="policy_environment",
     )
 
     if node_selector:
@@ -249,7 +248,7 @@ def _get_tt_dag_with_node_metadata(
         labels={"processed_data_columns": qnames_policy_inputs},
         tt_targets={"qname": qnames_to_plot},
         backend="numpy",
-        output=Output.name(tgt),
+        main_target=tgt,
     )
 
     all_nodes = {

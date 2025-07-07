@@ -141,7 +141,7 @@ class Templates(_ABC):
 
 
 @dataclass(frozen=True)
-class AllOutputNames(_ABC):
+class MainTarget(_ABC):
     results: type[Results] = field(default=Results)
     policy_environment: str = "policy_environment"
     templates: type[Templates] = field(default=Templates)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import dags.tree as dt
 
-from ttsim import Output, main
+from ttsim import main
 from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
@@ -19,9 +19,7 @@ def test_template_all_outputs_no_inputs(backend):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        output=Output.names(
-            ["labels__grouping_levels", "templates__input_data_dtypes"]
-        ),
+        main_targets=["labels__grouping_levels", "templates__input_data_dtypes"],
     )
 
     paths_with_unspecified_dtypes = []

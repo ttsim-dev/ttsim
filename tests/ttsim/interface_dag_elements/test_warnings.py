@@ -4,7 +4,7 @@ import warnings
 
 import pandas as pd
 
-from ttsim import Output, main
+from ttsim import main
 from ttsim.interface_dag_elements import warn_if
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
 
@@ -36,7 +36,7 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
             tt_targets={"tree": {"some_target": None}},
             rounding=False,
             backend=backend,
-            output=Output.name("warn_if__functions_and_data_columns_overlap"),
+            main_target=("warn_if__functions_and_data_columns_overlap"),
         )
         # Check that we got exactly one warning
         assert len(w) == 1
@@ -61,5 +61,5 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
             tt_targets={"tree": {"some_func": None}},
             rounding=False,
             backend=backend,
-            output=Output.name("warn_if__functions_and_data_columns_overlap"),
+            main_target=("warn_if__functions_and_data_columns_overlap"),
         )
