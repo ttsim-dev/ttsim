@@ -99,7 +99,7 @@ class PiecewisePolynomialParam(ParamObject):
 class ConsecutiveIntLookupTableParam(ParamObject):
     """A parameter with its contents read and converted from a YAML file.
 
-    Its value is a ConsecutiveInt2dLookupTableParamValue object, i.e., it contains the
+    Its value is a ConsecutiveIntLookupTableParamValue object, i.e., it contains the
     parameters for calling `lookup_table`.
     """
 
