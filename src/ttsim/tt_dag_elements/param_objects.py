@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     import datetime
     from types import ModuleType
 
-    from jaxtyping import Array, Float, Int
+    from jaxtyping import Array, Bool, Float, Int
 
     from ttsim.tt_dag_elements.typing import NestedLookupDict
 
@@ -113,13 +113,19 @@ class ConsecutiveIntLookupTableParamValue:
 
     bases_to_subtract: Int[Array, "n_rows n_cols"]
     lookup_multipliers: Int[Array, "n_rows n_cols"]
-    values_to_look_up: Float[Array, "n_rows n_cols"]
+    values_to_look_up: (
+        Float[Array, "n_rows n_cols"]
+        | Int[Array, "n_rows n_cols"]
+        | Bool[Array, "n_rows n_cols"]
+    )
     xnp: ModuleType
 
     def __init__(
         self,
         xnp: ModuleType,
-        values_to_look_up: Float[Array, "n_rows n_cols"],
+        values_to_look_up: Float[Array, "n_rows n_cols"]
+        | Int[Array, "n_rows n_cols"]
+        | Bool[Array, "n_rows n_cols"],
         bases_to_subtract: Int[Array, "n_rows n_cols"],
     ) -> None:
         self.xnp = xnp
