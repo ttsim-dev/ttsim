@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from ttsim.interface_dag_elements import AllOutputNames  # noqa: TC001
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pathlib import Path
@@ -10,7 +12,6 @@ if TYPE_CHECKING:
     import networkx as nx
     import pandas as pd
 
-    from ttsim.interface_dag_elements import AllOutputNames
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatData,

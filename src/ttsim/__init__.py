@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ttsim.interface_dag import main
+from ttsim.interface_dag_elements import AllOutputNames
 from ttsim.interface_dag_elements.shared import merge_trees
 from ttsim.main_args import (
     InputData,
@@ -14,6 +15,7 @@ from ttsim.main_args import (
 )
 
 __all__ = [
+    "AllOutputNames",
     "InputData",
     "Labels",
     "OrigPolicyObjects",
