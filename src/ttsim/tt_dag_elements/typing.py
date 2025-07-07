@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias
 
-NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]  # noqa: TC010
-
 if TYPE_CHECKING:
     import datetime
 
+    NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]
     OrigParamSpec = (
         # Header
         dict[str, str | None | dict[Literal["de", "en"], str | None]]
