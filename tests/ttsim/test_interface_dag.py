@@ -10,6 +10,7 @@ import pytest
 from ttsim import InputData, OrigPolicyObjects, Output, Targets
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
+    _fail_if_root_nodes_of_interface_dag_are_missing,
     _harmonize_inputs,
     _harmonize_output,
     _resolve_dynamic_interface_objects_to_static_nodes,
@@ -22,10 +23,26 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceInput,
     fail_or_warn_function,
     input_dependent_interface_function,
+    interface_function,
     interface_input,
 )
 from ttsim.plot_dag import dummy_callable
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
+
+
+@interface_function(leaf_name="interface_function_a")
+def interface_function_a(a: int) -> int:
+    return a
+
+
+@interface_function(leaf_name="interface_function_b")
+def interface_function_b(b: int) -> int:
+    return b
+
+
+@interface_function(leaf_name="interface_function_c")
+def interface_function_c(interface_function_a: int, interface_function_b: int) -> int:
+    return interface_function_a + interface_function_b
 
 
 @fail_or_warn_function(
@@ -332,3 +349,20 @@ def test_harmonize_outputs(output, expected):
     harmonized = _harmonize_output(output=output)
 
     assert harmonized == expected
+
+
+def test_fail_if_root_nodes_of_interface_dag_are_missing():
+    dag = dags.create_dag(
+        functions={
+            "interface_function_a": interface_function_a,
+            "interface_function_b": interface_function_b,
+            "interface_function_c": interface_function_c,
+        },
+        targets=None,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(r"The following arguments to `main` are missing for computing the"),
+    ):
+        _fail_if_root_nodes_of_interface_dag_are_missing(dag=dag, input_qnames=["a"])

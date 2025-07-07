@@ -632,6 +632,7 @@ def root_nodes_are_missing(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     processed_data: QNameData,
+    labels__grouping_levels: OrderedQNames,
 ) -> None:
     """Fail if root nodes are missing.
 
@@ -639,8 +640,12 @@ def root_nodes_are_missing(
     ----------
     specialized_environment__tax_transfer_dag
         The DAG of taxes and transfers functions.
+    specialized_environment__with_partialled_params_and_scalars
+        The specialized environment with partialled params and scalars.
     processed_data
         The processed data to be used as an input to the taxes & transfers function.
+    labels__grouping_levels
+        The grouping levels available in the policy environment.
 
     Raises
     ------
@@ -663,10 +668,23 @@ def root_nodes_are_missing(
     ]
 
     if missing_nodes:
-        formatted = format_list_linewise(
+        grouping_levels_in_missing_nodes = (
+            lvl
+            for lvl in labels__grouping_levels
+            if any(qn.endswith(lvl) for qn in missing_nodes)
+        )
+        formatted_missing_nodes = format_list_linewise(
             [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
         )
-        raise ValueError(f"The following data columns are missing.\n{formatted}")
+        msg = f"The following data columns are missing.\n{formatted_missing_nodes}"
+        if grouping_levels_in_missing_nodes:
+            msg += (
+                "\n\nNote that the missing nodes contain columns that are grouped by "
+                f"the following grouping levels: {grouping_levels_in_missing_nodes}. "
+                "Consider passing the individual level columns instead, in which case "
+                "that the aggregation will be handled automatically."
+            )
+        raise ValueError(msg)
 
 
 @fail_or_warn_function()
