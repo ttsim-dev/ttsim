@@ -159,6 +159,5 @@ def satz_nach_anzahl_kinder(
     }
     return get_consecutive_int_lookup_table_param_value(
         raw={0: 0.0, **base_spec, **extended_spec},
-        n_dims=1,
         xnp=xnp,
     )

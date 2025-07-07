@@ -34,9 +34,7 @@ def min_einkommen_lookup_table(
     xnp: ModuleType,
 ) -> ConsecutiveIntLookupTableParamValue:
     """Create a LookupTable for the min income thresholds."""
-    return get_consecutive_int_lookup_table_param_value(
-        raw=min_einkommen, n_dims=1, xnp=xnp
-    )
+    return get_consecutive_int_lookup_table_param_value(raw=min_einkommen, xnp=xnp)
 
 
 def einkommen(

@@ -156,6 +156,5 @@ def get_consecutive_int_1d_lookup_table_with_filled_up_tails(
     )
     return get_consecutive_int_lookup_table_param_value(
         raw={**consecutive_dict_start, **raw, **consecutive_dict_end},
-        n_dims=1,
         xnp=xnp,
     )

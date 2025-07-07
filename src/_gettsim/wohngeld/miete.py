@@ -40,9 +40,8 @@ def max_miete_m_lookup_mit_baujahr(
     max_n_p_defined = max(tmp.keys())
     assert all(isinstance(i, int) for i in tmp)
     baujahre = sorted(tmp[1].keys())
-    modified_dict = {}
-    for i in range(len(baujahre)):
-        baujahr = baujahre[i]
+    lookup_dict = {}
+    for i, baujahr in enumerate(baujahre):
         this_dict = {n_p: tmp[n_p][baujahr] for n_p in tmp}
         for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
             this_dict[n_p] = {
@@ -50,12 +49,12 @@ def max_miete_m_lookup_mit_baujahr(
                 + (n_p - max_n_p_defined) * per_additional_person[baujahr][ms]  # type: ignore[operator]
                 for ms in this_dict[max_n_p_defined]
             }
-        modified_dict[i] = this_dict
+        lookup_dict[i] = this_dict
 
     return LookupTableBaujahr(
         baujahre=xnp.asarray(baujahre),
         lookup_table=get_consecutive_int_lookup_table_param_value(
-            raw=modified_dict, n_dims=3, xnp=xnp
+            raw=lookup_dict, xnp=xnp
         ),
     )
 
@@ -77,7 +76,7 @@ def max_miete_m_lookup_ohne_baujahr(
             + (n_p - max_n_p_defined) * per_additional_person[ms]  # type: ignore[operator]
             for ms in expanded[max_n_p_defined]
         }
-    return get_consecutive_int_lookup_table_param_value(raw=expanded, n_dims=2, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=expanded, xnp=xnp)
 
 
 @param_function(start_date="1984-01-01")
@@ -98,7 +97,7 @@ def min_miete_lookup(
     expanded = raw_min_miete_m.copy()
     for n_p in range(max_n_p_normal + 1, max_anzahl_personen["indizierung"] + 1):
         expanded[n_p] = raw_min_miete_m[max_n_p_normal]
-    return get_consecutive_int_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=expanded, xnp=xnp)
 
 
 @param_function(start_date="2021-01-01")
@@ -116,7 +115,7 @@ def heizkostenentlastung_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=expanded, xnp=xnp)
 
 
 @param_function(start_date="2023-01-01")
@@ -134,7 +133,7 @@ def dauerhafte_heizkostenkomponente_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=expanded, xnp=xnp)
 
 
 @param_function(start_date="2023-01-01")
@@ -152,7 +151,7 @@ def klimakomponente_m_lookup(
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
         )
-    return get_consecutive_int_lookup_table_param_value(raw=expanded, n_dims=1, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=expanded, xnp=xnp)
 
 
 @policy_function()
@@ -208,12 +207,14 @@ def miete_m_hh_mit_baujahr(
     xnp: ModuleType,
 ) -> float:
     """Rent considered in housing benefit calculation on household level until 2008."""
-    selected_bin_index = xnp.searchsorted(
+    baujahr_index = xnp.searchsorted(
         max_miete_m_lookup.baujahre,
         wohnen__baujahr_immobilie_hh,
         side="left",
     )
-    max_miete_m = max_miete_m_lookup.lookup_table.lookup(selected_bin_index,anzahl_personen_hh,mietstufe)  # fmt: skip
+    max_miete_m = max_miete_m_lookup.lookup_table.lookup(
+        baujahr_index, anzahl_personen_hh, mietstufe
+    )
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
 

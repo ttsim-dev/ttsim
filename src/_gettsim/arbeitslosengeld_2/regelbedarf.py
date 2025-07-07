@@ -460,4 +460,4 @@ def berechtigte_wohnfläche_eigentum(
     max_anzahl_direkt = tmp.pop("max_anzahl_direkt")
     for i in range(wohngeld__max_anzahl_personen["indizierung"] - max_anzahl_direkt):
         tmp[i] = tmp[max_anzahl_direkt] + i * je_weitere_person
-    return get_consecutive_int_lookup_table_param_value(raw=tmp, n_dims=1, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=tmp, xnp=xnp)

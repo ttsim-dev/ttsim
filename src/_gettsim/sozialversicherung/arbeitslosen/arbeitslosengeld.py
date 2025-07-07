@@ -169,9 +169,7 @@ def anspruchsdauer_nach_alter(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_lookup_table_param_value(
-        raw=full_spec, n_dims=1, xnp=xnp
-    )
+    return get_consecutive_int_lookup_table_param_value(raw=full_spec, xnp=xnp)
 
 
 @param_function(start_date="1997-03-24")
@@ -191,6 +189,4 @@ def anspruchsdauer_nach_versicherungspflichtigen_monaten(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_lookup_table_param_value(
-        raw=full_spec, n_dims=1, xnp=xnp
-    )
+    return get_consecutive_int_lookup_table_param_value(raw=full_spec, xnp=xnp)
