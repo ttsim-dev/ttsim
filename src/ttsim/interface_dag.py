@@ -170,13 +170,12 @@ def _harmonize_main_target(
     msg = (
         "`main_target` must be a single qualified name, a tuple, or a dict with "
         "one element. If in doubt, use `MainTarget` and tab-complete. If you want to "
-        "output multiple elements, use 'names'."
+        "output multiple elements, use `main_targets` instead."
     )
     if isinstance(main_target, tuple):
         return dt.qname_from_tree_path(main_target)
     if isinstance(main_target, dict):
-        # Ideally we'll want to check this recursively.
-        if len(main_target) > 1:
+        if len(optree.tree_flatten(main_target, none_is_leaf=True)[0]) > 1:  # type: ignore[arg-type]
             raise ValueError(msg)
         return dt.qnames(main_target)[0]
     if isinstance(main_target, str):

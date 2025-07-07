@@ -344,6 +344,21 @@ def test_harmonize_main_target(main_target, expected):
 
 
 @pytest.mark.parametrize(
+    "main_target",
+    [
+        ["a", "b"],
+        {"a": {"b": None}, "c": None},
+        {"a": {"b": None, "c": None}},
+    ],
+)
+def test_harmonize_main_target_fails_for_multiple_elements(main_target):
+    with pytest.raises(
+        ValueError, match="must be a single qualified name, a tuple, or a dict"
+    ):
+        _harmonize_main_target(main_target=main_target)
+
+
+@pytest.mark.parametrize(
     ("main_targets", "expected"),
     [
         (["a__b"], ["a__b"]),
