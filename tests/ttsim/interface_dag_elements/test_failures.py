@@ -140,8 +140,8 @@ def some_x(x):
     return x
 
 
-@policy_function()
-def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> IntColumn:
+@param_function()
+def some_param_func_returning_array_of_length_2(xnp: ModuleType) -> IntColumn:
     return xnp.array([1, 2])
 
 
@@ -795,9 +795,9 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     [
         (
             {
-                "some_policy_func_returning_array_of_length_2": some_policy_func_returning_array_of_length_2,
+                "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             },
-            {"some_policy_func_returning_array_of_length_2": "res1"},
+            {"some_param_func_returning_array_of_length_2": "res1"},
             "The data contains paths that don't have the same length",
         ),
     ],
