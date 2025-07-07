@@ -180,8 +180,8 @@ mypy = ["mypy"]
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
 py313 = ["test", "py313"]
-py313-jax = ["py313", "test", "jax"]
-py313-cuda = ["py313", "test", "cuda"]
+py312-jax = ["py313", "test", "jax"]
+py312-cuda = ["py313", "test", "cuda"]
 
 # ======================================================================================
 # Ruff configuration
