@@ -11,7 +11,7 @@ import numpy
 import pandas as pd
 import pytest
 
-from ttsim import Output, main
+from ttsim import main
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -29,14 +29,15 @@ from ttsim.interface_dag_elements.fail_if import (
     targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt_dag_elements import (
-    ConsecutiveInt1dLookupTableParam,
-    ConsecutiveInt1dLookupTableParamValue,
+    ConsecutiveIntLookupTableParam,
+    ConsecutiveIntLookupTableParamValue,
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
     group_creation_function,
     param_function,
     policy_function,
+    policy_input,
 )
 
 if TYPE_CHECKING:
@@ -62,10 +63,11 @@ _GENERIC_PARAM_SPEC = {
     **_GENERIC_PARAM_HEADER,
 }
 
-_SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM = ConsecutiveInt1dLookupTableParam(
-    leaf_name="some_consecutive_int_1d_lookup_table_param",
-    value=ConsecutiveInt1dLookupTableParamValue(
-        base_to_subtract=1,
+_SOME_CONSECUTIVE_INT_LOOKUP_TABLE_PARAM = ConsecutiveIntLookupTableParam(
+    leaf_name="some_consecutive_int_nd_lookup_table_param",
+    value=ConsecutiveIntLookupTableParamValue(
+        bases_to_subtract=numpy.array([1]),
+        xnp=numpy,
         values_to_look_up=numpy.array([1, 2, 3]),
     ),
     **_GENERIC_PARAM_SPEC,
@@ -132,7 +134,7 @@ def mettsim_environment(backend) -> PolicyEnvironment:
         orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
         date=datetime.date(2025, 1, 1),
         backend=backend,
-        output=Output.name("policy_environment"),
+        main_target=("policy_environment"),
     )
 
 
@@ -518,7 +520,7 @@ def test_fail_if_active_periods_overlap_raises(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree",
+        "tt_targets__tree",
     ),
     [
         (
@@ -531,7 +533,7 @@ def test_fail_if_active_periods_overlap_raises(
 )
 def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
     environment,
-    targets__tree,
+    tt_targets__tree,
     minimal_data_tree,
     backend,
 ):
@@ -539,10 +541,10 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
         input_data={"tree": minimal_data_tree},
         date=datetime.date(2024, 1, 1),
         policy_environment=environment,
-        targets={"tree": targets__tree},
+        tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        output=Output.name("results__tree"),
+        main_target=("results__tree"),
     )
     with pytest.raises(
         ValueError,
@@ -550,7 +552,7 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
     ):
         paths_are_missing_in_targets_tree_mapper(
             results__tree=results__tree,
-            targets__tree=targets__tree,
+            tt_targets__tree=tt_targets__tree,
         )
 
 
@@ -663,10 +665,10 @@ def test_fail_if_invalid_p_id_values_via_main(backend):
         main(
             input_data={"tree": data},
             policy_environment={},
-            targets={"tree": {}},
+            tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=Output.name("fail_if__invalid_p_id_values"),
+            main_target=("fail_if__invalid_p_id_values"),
         )
 
 
@@ -732,7 +734,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree",
+        "tt_targets__tree",
         "match",
     ),
     [
@@ -745,11 +747,11 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
         ),
         (
             {
-                "some_consecutive_int_1d_lookup_table_param": (
-                    _SOME_CONSECUTIVE_INT_1D_LOOKUP_TABLE_PARAM
+                "some_consecutive_int_lookup_table_param": (
+                    _SOME_CONSECUTIVE_INT_LOOKUP_TABLE_PARAM
                 ),
             },
-            {"some_consecutive_int_1d_lookup_table_param": "res1"},
+            {"some_consecutive_int_lookup_table_param": "res1"},
             "The data contains objects that cannot be cast to a pandas.DataFrame",
         ),
         (
@@ -763,7 +765,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
 )
 def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     environment,
-    targets__tree,
+    tt_targets__tree,
     minimal_data_tree,
     match,
     backend,
@@ -773,10 +775,10 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
         date=datetime.date(2024, 1, 1),
-        targets={"tree": targets__tree},
+        tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        output=Output.names(["processed_data", "results__tree"]),
+        main_targets=["processed_data", "results__tree"],
     )
     with pytest.raises(TypeError, match=match):
         non_convertible_objects_in_results_tree(
@@ -789,7 +791,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree",
+        "tt_targets__tree",
         "match",
     ),
     [
@@ -804,7 +806,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
 )
 def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_length(
     environment,
-    targets__tree,
+    tt_targets__tree,
     minimal_data_tree,
     match,
     backend,
@@ -814,10 +816,10 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
         date=datetime.date(2024, 1, 1),
-        targets={"tree": targets__tree},
+        tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        output=Output.names(["processed_data", "results__tree"]),
+        main_targets=["processed_data", "results__tree"],
     )
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
@@ -846,10 +848,10 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
         main(
             input_data={"tree": data},
             policy_environment={},
-            targets={"tree": {}},
+            tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=Output.name("fail_if__invalid_p_id_values"),
+            main_target=("fail_if__invalid_p_id_values"),
         )
 
 
@@ -874,10 +876,10 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
         main(
             input_data={"tree": data},
             policy_environment={},
-            targets={"tree": {}},
+            tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=Output.name("fail_if__invalid_p_id_values"),
+            main_target=("fail_if__invalid_p_id_values"),
         )
 
 
@@ -921,10 +923,10 @@ def test_fail_if_input_arrays_have_different_lengths(backend):
         main(
             input_data={"tree": data},
             policy_environment={},
-            targets={"tree": {}},
+            tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            output=Output.name("fail_if__input_arrays_have_different_lengths"),
+            main_target=("fail_if__input_arrays_have_different_lengths"),
         )
 
 
@@ -948,15 +950,47 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
             input_data={"tree": minimal_input_data},
             policy_environment=policy_environment,
             date=datetime.date(2024, 1, 1),
-            targets={"tree": {"c": None}},
+            tt_targets={"tree": {"c": None}},
             rounding=False,
             backend=backend,
-            output=Output.names(["results__tree", "fail_if__root_nodes_are_missing"]),
+            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
+        )
+
+
+def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
+    minimal_input_data, backend
+):
+    @policy_function()
+    def b(a_fam):
+        return a_fam
+
+    @policy_input()
+    def a() -> int:
+        pass
+
+    policy_environment = {
+        "fam_id": fam_id,
+        "a": a,
+        "b": b,
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="Consider passing the individual level columns instead",
+    ):
+        main(
+            input_data={"tree": minimal_input_data},
+            policy_environment=policy_environment,
+            date=datetime.date(2024, 1, 1),
+            tt_targets={"tree": {"b": None}},
+            rounding=False,
+            backend=backend,
+            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
         )
 
 
 @pytest.mark.parametrize(
-    "policy_environment, targets, labels__processed_data_columns, expected_error_match",
+    "policy_environment, tt_targets, labels__processed_data_columns, expected_error_match",
     [
         ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
@@ -966,7 +1000,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
 )
 def test_fail_if_targets_are_not_in_specialized_environment_or_data(
     policy_environment,
-    targets,
+    tt_targets,
     labels__processed_data_columns,
     expected_error_match,
 ):
@@ -978,7 +1012,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data(
             specialized_environment__without_tree_logic_and_with_derived_functions=dt.flatten_to_qnames(
                 policy_environment
             ),
-            targets__qname=targets,
+            tt_targets__qname=tt_targets,
             labels__processed_data_columns=labels__processed_data_columns,
         )
     assert expected_error_match in str(e.value)
@@ -995,12 +1029,10 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
         main(
             input_data={"tree": minimal_input_data},
             policy_environment={},
-            targets={"tree": {"unknown_target": None}},
+            tt_targets={"tree": {"unknown_target": None}},
             rounding=False,
             backend=backend,
-            output=Output.name(
-                "fail_if__targets_are_not_in_specialized_environment_or_data"
-            ),
+            main_target=("fail_if__targets_are_not_in_specialized_environment_or_data"),
         )
 
 

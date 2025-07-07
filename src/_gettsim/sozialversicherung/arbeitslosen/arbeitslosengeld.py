@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ttsim.tt_dag_elements import (
-    get_consecutive_int_1d_lookup_table_param_value,
+    get_consecutive_int_lookup_table_param_value,
     param_function,
     piecewise_polynomial,
     policy_function,
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from ttsim.tt_dag_elements import (
-        ConsecutiveInt1dLookupTableParamValue,
+        ConsecutiveIntLookupTableParamValue,
         PiecewisePolynomialParamValue,
     )
 
@@ -53,18 +53,15 @@ def monate_verbleibender_anspruchsdauer(
     monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren: int,
     mindestversicherungszeit_erreicht: bool,
     monate_durchgängigen_bezugs_von_arbeitslosengeld: int,
-    anspruchsdauer_nach_alter: ConsecutiveInt1dLookupTableParamValue,
-    anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveInt1dLookupTableParamValue,
+    anspruchsdauer_nach_alter: ConsecutiveIntLookupTableParamValue,
+    anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveIntLookupTableParamValue,
 ) -> int:
     """Remaining amount of months of potential unemployment benefit claims."""
-    auf_altersbasis = anspruchsdauer_nach_alter.values_to_look_up[
-        alter - anspruchsdauer_nach_alter.base_to_subtract
-    ]
+    auf_altersbasis = anspruchsdauer_nach_alter.look_up(alter)
     auf_basis_versicherungspflichtiger_monate = (
-        anspruchsdauer_nach_versicherungspflichtigen_monaten.values_to_look_up[
+        anspruchsdauer_nach_versicherungspflichtigen_monaten.look_up(
             monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
-            - anspruchsdauer_nach_versicherungspflichtigen_monaten.base_to_subtract
-        ]
+        )
     )
 
     if mindestversicherungszeit_erreicht:
@@ -159,7 +156,7 @@ def einkommen_vorjahr_proxy_m(
 def anspruchsdauer_nach_alter(
     raw_anspruchsdauer_nach_alter: dict[str | int, int],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
     tmp = raw_anspruchsdauer_nach_alter.copy()
     max_age: int = tmp.pop("max_age")
@@ -172,14 +169,14 @@ def anspruchsdauer_nach_alter(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=full_spec, xnp=xnp)
 
 
 @param_function(start_date="1997-03-24")
 def anspruchsdauer_nach_versicherungspflichtigen_monaten(
     raw_anspruchsdauer_nach_versicherungspflichtigen_monaten: dict[str | int, int],
     xnp: ModuleType,
-) -> ConsecutiveInt1dLookupTableParamValue:
+) -> ConsecutiveIntLookupTableParamValue:
     """Amount of potential months of unemployment benefit claims by age."""
     tmp = raw_anspruchsdauer_nach_versicherungspflichtigen_monaten.copy()
     max_months: int = tmp.pop("max_months")
@@ -192,4 +189,4 @@ def anspruchsdauer_nach_versicherungspflichtigen_monaten(
         else:
             full_spec[a] = tmp[a]
 
-    return get_consecutive_int_1d_lookup_table_param_value(raw=full_spec, xnp=xnp)
+    return get_consecutive_int_lookup_table_param_value(raw=full_spec, xnp=xnp)

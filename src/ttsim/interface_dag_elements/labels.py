@@ -182,12 +182,12 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
 @interface_function()
 def column_targets(
     specialized_environment__with_partialled_params_and_scalars: UnorderedQNames,
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
 ) -> OrderedQNames:
     """All targets that are column functions."""
     return [
         t
-        for t in targets__qname
+        for t in tt_targets__qname
         if t in specialized_environment__with_partialled_params_and_scalars
     ]
 
@@ -195,13 +195,13 @@ def column_targets(
 @interface_function()
 def param_targets(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(column_targets)
+    possible_targets = set(tt_targets__qname) - set(column_targets)
     return [
         t
-        for t in targets__qname
+        for t in tt_targets__qname
         if t in possible_targets
         and t in specialized_environment__without_tree_logic_and_with_derived_functions
     ]
@@ -209,9 +209,9 @@ def param_targets(
 
 @interface_function()
 def input_data_targets(
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
     param_targets: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(column_targets) - set(param_targets)
-    return [t for t in targets__qname if t in possible_targets]
+    possible_targets = set(tt_targets__qname) - set(column_targets) - set(param_targets)
+    return [t for t in tt_targets__qname if t in possible_targets]

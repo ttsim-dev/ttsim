@@ -38,7 +38,7 @@ inputs:
           betrag_m:
             - 0.0
         sonstige:
-          ertragsanteil_an_rente:
+          ertragsanteil_der_rente:
             - 0.0
           ohne_renten_m:
             - 0.0

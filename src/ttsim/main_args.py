@@ -4,20 +4,18 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
     from pathlib import Path
 
     import networkx as nx
     import pandas as pd
 
-    from ttsim.interface_dag_elements import AllOutputNames
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatData,
         FlatOrigParamSpecs,
         NestedData,
         NestedStrings,
-        NestedTargetDict,
         OrderedQNames,
         QNameData,
         QNameStrings,
@@ -32,31 +30,6 @@ if TYPE_CHECKING:
 class MainArg:
     def to_dict(self) -> dict[str, Any]:
         return self.__dict__
-
-
-@dataclass(frozen=True)
-class Output(MainArg):
-    name: str | tuple[str, ...] | None
-    names: Iterable[str | tuple[str, ...]] | NestedTargetDict | None
-
-    def __init__(self, *args: Any, **kwargs: Any):  # noqa: ANN401, ARG002, ANN204
-        raise RuntimeError("Use any of the class methods to instantiate this class.")
-
-    @classmethod
-    def name(cls, name: AllOutputNames | str | tuple[str, ...]) -> Output:
-        """A single output name. Could be a qualified name or a tree path."""
-        obj = object.__new__(cls)
-        object.__setattr__(obj, "name", name)
-        object.__setattr__(obj, "names", None)
-        return obj
-
-    @classmethod
-    def names(cls, names: Iterable[AllOutputNames | str | tuple[str, ...]]) -> Output:
-        """An iterable of output names. Could be qualified names, tree paths, or a pytree."""  # noqa: E501
-        obj = object.__new__(cls)
-        object.__setattr__(obj, "name", None)
-        object.__setattr__(obj, "names", names)
-        return obj
 
 
 @dataclass(frozen=True)
@@ -177,7 +150,7 @@ class Results(MainArg):
 
 
 @dataclass(frozen=True)
-class Targets(MainArg):
+class TTTargets(MainArg):
     qname: QNameStrings | None = None
     tree: NestedStrings | None = None
 
