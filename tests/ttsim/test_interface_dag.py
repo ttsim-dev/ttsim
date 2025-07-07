@@ -364,8 +364,6 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing():
 
     with pytest.raises(
         ValueError,
-        match=(
-            r"The following input arguments are missing to compute the interface DAG"
-        ),
+        match=(r"The following arguments to `main` are missing for computing the"),
     ):
         _fail_if_root_nodes_of_interface_dag_are_missing(dag=dag, input_qnames=["a"])

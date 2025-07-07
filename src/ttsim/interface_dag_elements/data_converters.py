@@ -144,8 +144,8 @@ def df_with_mapped_columns_to_flat_data(
             )
         else:
             msg = (
-                f"Value of mapper path {path} is not a column name in the provided "
-                "DataFrame or a scalar value."
+                f"Value of mapper path {path} is neither a column name in the provided "
+                "DataFrame nor a scalar value."
             )
             raise ValueError(msg)
 

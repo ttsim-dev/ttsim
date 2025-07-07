@@ -106,7 +106,6 @@ def main(
             output_qnames=output_qnames["names"],
         )
 
-    # Not strictly necessary, but helps with debugging.
     dag = dags.create_dag(
         functions=functions,
         targets=output_qnames["names"],
@@ -371,8 +370,8 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
             [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
         )
         raise ValueError(
-            f"The following input arguments are missing to compute the "
-            f"interface DAG:\n{formatted}"
+            f"The following arguments to `main` are missing for computing the "
+            f"desired output:\n{formatted}"
         )
 
 
