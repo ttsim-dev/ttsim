@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-from dataclasses import asdict
 from typing import Any
 
 import dags
@@ -118,7 +117,7 @@ def test_all_output_names_is_complete() -> None:
         ),
     }
 
-    all_output_names = set(dt.tree_paths(asdict(AllOutputNames())))
+    all_output_names = set(dt.tree_paths(AllOutputNames.to_dict()))
 
     assert nodes == all_output_names
 

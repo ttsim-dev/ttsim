@@ -3,7 +3,6 @@ from __future__ import annotations
 import inspect
 import re
 from contextlib import suppress
-from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -144,7 +143,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     opo = dict_inputs.get("orig_policy_objects")
     if opo and "root" in opo:
         qname_inputs["orig_policy_objects__root"] = opo.pop("root")
-    for acc in optree.tree_accessors(asdict(AllOutputNames()), none_is_leaf=True):  # type: ignore[arg-type]
+    for acc in optree.tree_accessors(AllOutputNames.to_dict(), none_is_leaf=True):
         qname = dt.qname_from_tree_path(acc.path)
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
