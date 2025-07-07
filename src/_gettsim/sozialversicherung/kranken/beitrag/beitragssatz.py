@@ -233,7 +233,7 @@ def beitragssatz_arbeitgeber_paritätischer_zusatzbeitrag(
     return beitragssatz_arbeitnehmer
 
 
-@policy_function(
+@param_function(
     start_date="2019-01-01",
     leaf_name="beitragssatz_arbeitgeber_midijob",
 )
