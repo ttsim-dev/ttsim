@@ -164,7 +164,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
         sozialversicherung__rente__jahr_renteneintritt * 12
         + sozialversicherung__rente__monat_renteneintritt
     )
-    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.lookup(
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.look_up(
         claiming_month_since_ad
     )
     return (
@@ -216,7 +216,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
         sozialversicherung__rente__jahr_renteneintritt * 12
         + sozialversicherung__rente__monat_renteneintritt
     )
-    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.lookup(
+    altersgrenze_zurechnungszeit = zurechnungszeitgrenze_gestaffelt.look_up(
         claiming_month_since_ad
     )
     return (
@@ -304,7 +304,7 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
     if wartezeit_langjährig_versichert_erfüllt:
         grenze_abschlagsfrei = altersgrenze_langjährig_versichert
     else:
-        grenze_abschlagsfrei = altersgrenze_gestaffelt.lookup(claiming_month_since_ad)
+        grenze_abschlagsfrei = altersgrenze_gestaffelt.look_up(claiming_month_since_ad)
 
     zugangsfaktor = (
         1

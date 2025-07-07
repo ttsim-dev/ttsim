@@ -28,7 +28,7 @@ def altersgrenze_bis_1996(
     """
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return altersgrenze_gestaffelt.lookup(birth_month_since_ad)
+    return altersgrenze_gestaffelt.look_up(birth_month_since_ad)
 
 
 @policy_function(
@@ -88,7 +88,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_bis_1996_07(
     """
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return altersgrenze_vorzeitig_gestaffelt.lookup(birth_month_since_ad)
+    return altersgrenze_vorzeitig_gestaffelt.look_up(birth_month_since_ad)
 
 
 @policy_function(
@@ -151,7 +151,7 @@ def altersgrenze_ohne_vertrauensschutz(
     """
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return altersgrenze_gestaffelt.lookup(birth_month_since_ad)
+    return altersgrenze_gestaffelt.look_up(birth_month_since_ad)
 
 
 @policy_function(start_date="1996-07-29", end_date="2009-12-31")
@@ -163,7 +163,7 @@ def altersgrenze_mit_vertrauensschutz(
     """Full retirement age for unemployed for individuals under Vertrauensschutz."""
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return altersgrenze_gestaffelt_vertrauensschutz.lookup(birth_month_since_ad)
+    return altersgrenze_gestaffelt_vertrauensschutz.look_up(birth_month_since_ad)
 
 
 @policy_function(
@@ -184,7 +184,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_12_1989_bis_09_1996(
     """
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return altersgrenze_vorzeitig_gestaffelt.lookup(birth_month_since_ad)
+    return altersgrenze_vorzeitig_gestaffelt.look_up(birth_month_since_ad)
 
 
 @policy_function(
@@ -205,7 +205,7 @@ def altersgrenze_vorzeitig_ohne_vertrauensschutz_ab_07_2004(
     """
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
 
-    return altersgrenze_vorzeitig_gestaffelt.lookup(birth_month_since_ad)
+    return altersgrenze_vorzeitig_gestaffelt.look_up(birth_month_since_ad)
 
 
 @policy_function(end_date="2007-04-29", leaf_name="grundsätzlich_anspruchsberechtigt")

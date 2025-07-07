@@ -198,7 +198,7 @@ def relevantes_kindergeld_mit_staffelung_m(
     """
     kindergeld_ansprüche = anzahl_kindergeld_ansprüche_1 + anzahl_kindergeld_ansprüche_2
 
-    return kindergeld__satz_nach_anzahl_kinder.lookup(kindergeld_ansprüche) / 2
+    return kindergeld__satz_nach_anzahl_kinder.look_up(kindergeld_ansprüche) / 2
 
 
 @policy_function(

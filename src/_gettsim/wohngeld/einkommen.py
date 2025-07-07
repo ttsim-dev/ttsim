@@ -49,7 +49,7 @@ def einkommen(
 
     """
     eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
-    unteres_eink = min_einkommen_lookup_table.lookup(
+    unteres_eink = min_einkommen_lookup_table.look_up(
         xnp.minimum(
             anzahl_personen,
             min_einkommen_lookup_table.values_to_look_up.shape[0],
@@ -134,7 +134,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     if familie__kind:
         out = 0.0
     else:
-        out = abzugsbeträge_steuern_sozialversicherung.lookup(stufe)
+        out = abzugsbeträge_steuern_sozialversicherung.look_up(stufe)
     return out
 
 

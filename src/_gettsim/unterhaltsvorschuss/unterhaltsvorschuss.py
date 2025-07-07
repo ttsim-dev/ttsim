@@ -118,7 +118,7 @@ def kindergeld_erstes_kind_gestaffelt_m(
     kindergeld__satz_nach_anzahl_kinder: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Kindergeld for first child when Kindergeld depends on number of children."""
-    return kindergeld__satz_nach_anzahl_kinder.lookup(1)
+    return kindergeld__satz_nach_anzahl_kinder.look_up(1)
 
 
 @policy_function(

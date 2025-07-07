@@ -54,7 +54,7 @@ def betrag_gestaffelt_m(
     being claimed for.
 
     """
-    return satz_nach_anzahl_kinder.lookup(anzahl_ansprüche)
+    return satz_nach_anzahl_kinder.look_up(anzahl_ansprüche)
 
 
 @policy_function(

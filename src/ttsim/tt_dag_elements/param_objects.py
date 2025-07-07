@@ -132,7 +132,7 @@ class ConsecutiveIntLookupTableParamValue:
             ]
         )
 
-    def lookup(
+    def look_up(
         self: ConsecutiveIntLookupTableParamValue, *args: int
     ) -> float | int | bool:
         index = self.xnp.asarray(args)

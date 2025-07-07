@@ -65,7 +65,7 @@ def altersfreibetrag_y_ab_2005(
 ) -> float:
     """Calculate tax deduction allowance for elderly since 2005."""
     maximaler_altersentlastungsbetrag = (
-        maximaler_altersentlastungsbetrag_gestaffelt.lookup(geburtsjahr)
+        maximaler_altersentlastungsbetrag_gestaffelt.look_up(geburtsjahr)
     )
 
     einkommen_lohn = (
@@ -79,7 +79,7 @@ def altersfreibetrag_y_ab_2005(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_y,
         0.0,
     )
-    betrag = altersentlastungsquote_gestaffelt.lookup(geburtsjahr) * (
+    betrag = altersentlastungsquote_gestaffelt.look_up(geburtsjahr) * (
         einkommen_lohn + weiteres_einkommen
     )
 

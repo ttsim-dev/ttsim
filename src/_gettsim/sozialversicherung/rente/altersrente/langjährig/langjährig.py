@@ -25,7 +25,7 @@ def altersgrenze_gestaffelt_ab_1989(
     Does not check for eligibility for this pathway into retirement.
     """
     birth_month_since_ad = geburtsjahr * 12 + (geburtsmonat - 1)
-    return altersgrenze_gestaffelt.lookup(birth_month_since_ad)
+    return altersgrenze_gestaffelt.look_up(birth_month_since_ad)
 
 
 @policy_function(
@@ -41,7 +41,7 @@ def altersgrenze_vorzeitig_gestaffelt_ab_1989_bis_1996(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    return altersgrenze_vorzeitig_gestaffelt.lookup(geburtsjahr)
+    return altersgrenze_vorzeitig_gestaffelt.look_up(geburtsjahr)
 
 
 @policy_function()

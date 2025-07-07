@@ -332,7 +332,7 @@ def berechtigte_wohnfläche(
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     if wohnen__bewohnt_eigentum_hh:
-        maximum = berechtigte_wohnfläche_eigentum.lookup(anzahl_personen_hh)
+        maximum = berechtigte_wohnfläche_eigentum.look_up(anzahl_personen_hh)
     else:
         maximum = (
             berechtigte_wohnfläche_miete["single"]

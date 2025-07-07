@@ -23,7 +23,7 @@ def altersgrenze(
 
     Does not check for eligibility for this pathway into retirement.
     """
-    return altersgrenze_gestaffelt.lookup(geburtsjahr)
+    return altersgrenze_gestaffelt.look_up(geburtsjahr)
 
 
 @policy_function(start_date="2012-01-01")

@@ -93,10 +93,10 @@ def basisformel(
     store the code for Wohngeld calculation.
 
     """
-    a = params.a.lookup(anzahl_personen)
-    b = params.b.lookup(anzahl_personen)
-    c = params.c.lookup(anzahl_personen)
-    zusatzbetrag_nach_haushaltsgröße = params.zusatzbetrag_nach_haushaltsgröße.lookup(
+    a = params.a.look_up(anzahl_personen)
+    b = params.b.look_up(anzahl_personen)
+    c = params.c.look_up(anzahl_personen)
+    zusatzbetrag_nach_haushaltsgröße = params.zusatzbetrag_nach_haushaltsgröße.look_up(
         anzahl_personen
     )
     out = xnp.maximum(

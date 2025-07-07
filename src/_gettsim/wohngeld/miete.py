@@ -189,7 +189,7 @@ def min_miete_m_hh(
     min_miete_lookup: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Minimum rent considered in Wohngeld calculation."""
-    return min_miete_lookup.lookup(anzahl_personen_hh)
+    return min_miete_lookup.look_up(anzahl_personen_hh)
 
 
 @policy_function(
@@ -212,7 +212,7 @@ def miete_m_hh_mit_baujahr(
         wohnen__baujahr_immobilie_hh,
         side="left",
     )
-    max_miete_m = max_miete_m_lookup.lookup_table.lookup(
+    max_miete_m = max_miete_m_lookup.lookup_table.look_up(
         baujahr_index, anzahl_personen_hh, mietstufe
     )
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
@@ -231,7 +231,7 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     max_miete_m_lookup: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
+    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe)
 
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
@@ -250,9 +250,9 @@ def miete_m_hh_mit_heizkostenentlastung(
     heizkostenentlastung_m_lookup: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
+    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe)
 
-    heating_allowance_m = heizkostenentlastung_m_lookup.lookup(anzahl_personen_hh)
+    heating_allowance_m = heizkostenentlastung_m_lookup.look_up(anzahl_personen_hh)
 
     return (
         max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
@@ -275,13 +275,13 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
     klimakomponente_m_lookup: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.lookup(anzahl_personen_hh, mietstufe)
+    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe)
 
-    heizkostenentlastung = heizkostenentlastung_m_lookup.lookup(anzahl_personen_hh)
-    dauerhafte_heizkostenkomponente = dauerhafte_heizkostenkomponente_m_lookup.lookup(
+    heizkostenentlastung = heizkostenentlastung_m_lookup.look_up(anzahl_personen_hh)
+    dauerhafte_heizkostenkomponente = dauerhafte_heizkostenkomponente_m_lookup.look_up(
         anzahl_personen_hh
     )
-    klimakomponente = klimakomponente_m_lookup.lookup(anzahl_personen_hh)
+    klimakomponente = klimakomponente_m_lookup.look_up(anzahl_personen_hh)
     return (
         max(
             min(wohnen__bruttokaltmiete_m_hh, max_miete_m + klimakomponente),

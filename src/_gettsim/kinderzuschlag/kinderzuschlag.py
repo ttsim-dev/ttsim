@@ -34,7 +34,7 @@ def satz_mit_gestaffeltem_kindergeld(
             + existenzminimum.heizkosten.kind
         )
         / 12
-        - kindergeld__satz_nach_anzahl_kinder.lookup(1),
+        - kindergeld__satz_nach_anzahl_kinder.look_up(1),
         satz_vorjahr_ohne_kindersofortzuschlag,
     )
 

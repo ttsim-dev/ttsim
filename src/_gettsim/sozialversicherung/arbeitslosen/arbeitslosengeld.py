@@ -57,9 +57,9 @@ def monate_verbleibender_anspruchsdauer(
     anspruchsdauer_nach_versicherungspflichtigen_monaten: ConsecutiveIntLookupTableParamValue,
 ) -> int:
     """Remaining amount of months of potential unemployment benefit claims."""
-    auf_altersbasis = anspruchsdauer_nach_alter.lookup(alter)
+    auf_altersbasis = anspruchsdauer_nach_alter.look_up(alter)
     auf_basis_versicherungspflichtiger_monate = (
-        anspruchsdauer_nach_versicherungspflichtigen_monaten.lookup(
+        anspruchsdauer_nach_versicherungspflichtigen_monaten.look_up(
             monate_sozialversicherungspflichtiger_beschäftigung_in_letzten_5_jahren
         )
     )
