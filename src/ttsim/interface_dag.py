@@ -44,7 +44,7 @@ if TYPE_CHECKING:
         RawResults,
         Results,
         SpecializedEnvironment,
-        Targets,
+        TTTargets,
     )
 
 
@@ -53,7 +53,7 @@ def main(
     output: Output | None = None,
     date_str: DashedISOString | None = None,
     input_data: InputData | None = None,
-    targets: Targets | None = None,
+    tt_targets: TTTargets | None = None,
     backend: Literal["numpy", "jax"] | None = None,
     rounding: bool = True,
     fail_and_warn: bool = True,
@@ -98,7 +98,7 @@ def main(
         if isinstance(n, InterfaceFunction) and qn not in input_qnames
     }
 
-    # If targets are None, all failures and warnings are included, anyhow.
+    # If main_targets are None, all failures and warnings are included, anyhow.
     if fail_and_warn and output_qnames["names"] is not None:
         output_qnames["names"] = include_fail_and_warn_nodes(
             functions=functions,
@@ -263,10 +263,10 @@ def include_fail_and_warn_nodes(
     functions: dict[str, InterfaceFunction],
     output_qnames: QNameStrings,
 ) -> list[str]:
-    """Extend targets with failures and warnings that can be computed within the graph.
+    """Extend main targets with failures and warnings that can be computed.
 
-    FailOrWarnFunctions which are included in the targets are treated like regular
-    functions.
+    FailOrWarnFunctions which are included explicitly among the main targets are treated
+    like regular functions.
 
     """
     fail_or_warn_functions = {

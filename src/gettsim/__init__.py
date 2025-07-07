@@ -26,7 +26,7 @@ from ttsim import (
     RawResults,
     Results,
     SpecializedEnvironment,
-    Targets,
+    TTTargets,
     merge_trees,
 )
 
@@ -57,7 +57,7 @@ def main(
     output: Output | None = None,
     date_str: DashedISOString | None = None,
     input_data: InputData | None = None,
-    targets: Targets | None = None,
+    tt_targets: TTTargets | None = None,
     backend: Literal["numpy", "jax"] = "numpy",
     rounding: bool = True,
     fail_and_warn: bool = True,
@@ -90,7 +90,7 @@ __all__ = [
     "RawResults",
     "Results",
     "SpecializedEnvironment",
-    "Targets",
+    "TTTargets",
     "main",
     "merge_trees",
 ]

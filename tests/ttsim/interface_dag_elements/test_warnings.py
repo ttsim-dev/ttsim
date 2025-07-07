@@ -33,7 +33,7 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
                 "some_func": some_func,
                 "some_target": another_func,
             },
-            targets={"tree": {"some_target": None}},
+            tt_targets={"tree": {"some_target": None}},
             rounding=False,
             backend=backend,
             output=Output.name("warn_if__functions_and_data_columns_overlap"),
@@ -58,7 +58,7 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
                 }
             },
             policy_environment={"some_func": some_func},
-            targets={"tree": {"some_func": None}},
+            tt_targets={"tree": {"some_func": None}},
             rounding=False,
             backend=backend,
             output=Output.name("warn_if__functions_and_data_columns_overlap"),

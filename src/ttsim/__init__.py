@@ -11,7 +11,7 @@ from ttsim.main_args import (
     RawResults,
     Results,
     SpecializedEnvironment,
-    Targets,
+    TTTargets,
 )
 
 __all__ = [
@@ -23,7 +23,7 @@ __all__ = [
     "RawResults",
     "Results",
     "SpecializedEnvironment",
-    "Targets",
+    "TTTargets",
     "main",
     "merge_trees",
 ]

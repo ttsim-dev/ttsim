@@ -7,7 +7,7 @@ import dags
 import dags.tree as dt
 import pytest
 
-from ttsim import InputData, OrigPolicyObjects, Output, Targets
+from ttsim import InputData, OrigPolicyObjects, Output, TTTargets
 from ttsim.interface_dag import (
     _fail_if_requested_nodes_cannot_be_found,
     _fail_if_root_nodes_of_interface_dag_are_missing,
@@ -205,7 +205,7 @@ def test_harmonize_inputs_main_args_input():
             df={"cannot use df because comparison fails"},
             mapper={"c": "a", "d": "b", "p_id": "p_id"},
         ),
-        "targets": Targets(tree={"e": "f"}),
+        "tt_targets": TTTargets(tree={"e": "f"}),
         "date": "2025-01-01",
         "backend": "numpy",
         "rounding": True,
@@ -219,7 +219,7 @@ def test_harmonize_inputs_main_args_input():
     assert harmonized == {
         "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
-        "targets__tree": {"e": "f"},
+        "tt_targets__tree": {"e": "f"},
         "date": "2025-01-01",
         "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
         "orig_policy_objects__param_specs": {},
@@ -236,7 +236,7 @@ def test_harmonize_inputs_tree_input():
                 "mapper": {"c": "a", "d": "b", "p_id": "p_id"},
             }
         },
-        "targets": {"tree": {"e": "f"}},
+        "tt_targets": {"tree": {"e": "f"}},
         "date": "2025-01-01",
         "backend": "numpy",
         "rounding": True,
@@ -250,7 +250,7 @@ def test_harmonize_inputs_tree_input():
     assert harmonized == {
         "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
-        "targets__tree": {"e": "f"},
+        "tt_targets__tree": {"e": "f"},
         "date": "2025-01-01",
         "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
         "orig_policy_objects__param_specs": {},

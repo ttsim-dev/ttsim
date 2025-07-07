@@ -92,7 +92,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
     result = main(
         output=Output.name(AllOutputNames.results.df_with_mapper),
         input_data=input_data_arg,
-        targets={"tree": TARGETS_TREE},
+        tt_targets={"tree": TARGETS_TREE},
         date_str="2025-01-01",
         rounding=False,
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},

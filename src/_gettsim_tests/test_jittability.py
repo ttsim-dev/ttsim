@@ -90,7 +90,7 @@ def test_jittable(tree_path, fun, backend, xnp):
             date=date,
             specialized_environment={"with_partialled_params_and_scalars": env},
             processed_data=processed_data,
-            targets={"qname": [qname]},
+            tt_targets={"qname": [qname]},
             backend=backend,
             output=Output.name(("raw_results", "columns")),
             fail_and_warn=False,

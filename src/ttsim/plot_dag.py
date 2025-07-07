@@ -247,7 +247,7 @@ def _get_tt_dag_with_node_metadata(
     env = main(
         policy_environment=environment,
         labels={"processed_data_columns": qnames_policy_inputs},
-        targets={"qname": qnames_to_plot},
+        tt_targets={"qname": qnames_to_plot},
         backend="numpy",
         output=Output.name(tgt),
     )

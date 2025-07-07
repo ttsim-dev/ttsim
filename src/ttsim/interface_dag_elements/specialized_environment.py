@@ -48,7 +48,7 @@ def rounding() -> bool:
 @interface_function()
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
     labels__input_columns: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -66,7 +66,7 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        targets=targets__qname,
+        tt_targets=tt_targets__qname,
         input_columns=labels__input_columns,
         grouping_levels=labels__grouping_levels,
     )
@@ -91,7 +91,7 @@ def _remove_tree_logic_from_policy_environment(
 
 def _add_derived_functions(
     qname_env_without_tree_logic: dict[str, ColumnObject | ParamFunction | ParamObject],
-    targets: OrderedQNames,
+    tt_targets: OrderedQNames,
     input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -111,7 +111,7 @@ def _add_derived_functions(
     column_objects_param_functions
         Dict with qualified function names as keys and functions with qualified
         arguments as values.
-    targets
+    tt_targets
         The list of targets with qualified names.
     data
         Dict with qualified data names as keys and arrays as values.
@@ -144,7 +144,7 @@ def _add_derived_functions(
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
         input_columns=input_columns,
-        targets=targets,
+        tt_targets=tt_targets,
         grouping_levels=grouping_levels,
     )
     return {

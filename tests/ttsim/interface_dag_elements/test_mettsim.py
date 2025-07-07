@@ -123,7 +123,7 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
             date_str="2020-01-01",
             input_data=InputData.flat(data),
             orig_policy_objects={"root": METTSIM_ROOT},
-            targets={"tree": {"property_tax": {"amount_y": None}}},
+            tt_targets={"tree": {"property_tax": {"amount_y": None}}},
             output=Output.names(["results__tree"]),
             backend=backend,
         )

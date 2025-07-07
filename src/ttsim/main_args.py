@@ -178,7 +178,7 @@ class Results(MainArg):
 
 
 @dataclass(frozen=True)
-class Targets(MainArg):
+class TTTargets(MainArg):
     qname: QNameStrings | None = None
     tree: NestedStrings | None = None
 

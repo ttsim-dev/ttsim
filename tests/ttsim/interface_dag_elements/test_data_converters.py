@@ -136,7 +136,7 @@ def test_df_with_mapped_columns_to_flat_data_fails_if_mapper_value_not_in_df(xnp
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree",
+        "tt_targets__tree",
         "expected_output",
     ),
     [
@@ -227,7 +227,7 @@ def test_df_with_mapped_columns_to_flat_data_fails_if_mapper_value_not_in_df(xnp
 def test_nested_data_to_dataframe(
     environment,
     minimal_data_tree,
-    targets__tree,
+    tt_targets__tree,
     expected_output,
     backend,
 ):
@@ -235,14 +235,14 @@ def test_nested_data_to_dataframe(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
         date=datetime.date(2024, 1, 1),
-        targets={"tree": targets__tree},
+        tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
         output=Output.name("results__tree"),
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,
-        nested_outputs_df_column_names=targets__tree,
+        nested_outputs_df_column_names=tt_targets__tree,
         data_with_p_id=minimal_data_tree,
     )
     pd.testing.assert_frame_equal(

@@ -124,7 +124,7 @@ def test_template_all_outputs_with_inputs(backend):
 
 def test_template_output_y_no_inputs(backend):
     actual = main(
-        targets={"tree": {"a": {"y": None}}},
+        tt_targets={"tree": {"a": {"y": None}}},
         policy_environment={
             "inp1": inp1,
             "p1": p1,
@@ -152,7 +152,7 @@ def test_template_output_x_with_inputs(backend):
                 "inp1": [0, 1, 2],
             }
         },
-        targets={"tree": {"a": {"x": None}}},
+        tt_targets={"tree": {"a": {"x": None}}},
         policy_environment={
             "inp1": inp1,
             "p1": p1,

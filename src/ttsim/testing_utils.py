@@ -96,7 +96,7 @@ def execute_test(
             input_data={"tree": test.input_tree},
             policy_environment=environment,
             date=test.date,
-            targets={"tree": test.target_structure},
+            tt_targets={"tree": test.target_structure},
             rounding=True,
             backend=backend,
             fail_and_warn=False,
@@ -250,7 +250,7 @@ def check_env_completeness(
     qname_env_with_derived_functions = main(
         policy_environment=environment,
         labels={"processed_data_columns": qnames_policy_inputs},
-        targets={"qname": list(qname_environment)},
+        tt_targets={"qname": list(qname_environment)},
         backend="numpy",
         output=Output.name(tgt),
     )
