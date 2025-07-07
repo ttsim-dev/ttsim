@@ -132,7 +132,9 @@ class ConsecutiveIntLookupTableParamValue:
             ]
         )
 
-    def lookup(self: ConsecutiveIntLookupTableParamValue, *args: int) -> float:
+    def lookup(
+        self: ConsecutiveIntLookupTableParamValue, *args: int
+    ) -> float | int | bool:
         index = self.xnp.asarray(args)
         corrected_index = self.xnp.dot(
             (index - self.bases_to_subtract).T, self.lookup_multipliers
