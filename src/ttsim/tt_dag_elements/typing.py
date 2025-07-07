@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias
 
-NestedDict: TypeAlias = dict[int, float | "NestedDict"]  # noqa: TC010
+NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]  # noqa: TC010
 
 if TYPE_CHECKING:
     import datetime

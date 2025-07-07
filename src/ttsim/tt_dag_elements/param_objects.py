@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
-import numpy
-
 PLACEHOLDER_VALUE = object()
 PLACEHOLDER_FIELD = field(default_factory=lambda: PLACEHOLDER_VALUE)
 
@@ -14,7 +12,7 @@ if TYPE_CHECKING:
 
     from jaxtyping import Array, Float, Int
 
-    from ttsim.tt_dag_elements.typing import NestedDict
+    from ttsim.tt_dag_elements.typing import NestedLookupDict
 
 
 @dataclass(frozen=True)
@@ -111,7 +109,7 @@ class ConsecutiveIntLookupTableParam(ParamObject):
 
 
 class ConsecutiveIntLookupTableParamValue:
-    """The parameters expected by lookup_table"""
+    """The `value` for ConsecutiveIntLookupTable."""
 
     bases_to_subtract: Int[Array, "n_rows n_cols"]
     lookup_multipliers: Int[Array, "n_rows n_cols"]
@@ -134,9 +132,7 @@ class ConsecutiveIntLookupTableParamValue:
             ]
         )
 
-    def lookup(
-        self: ConsecutiveIntLookupTableParamValue, *args: int
-    ) -> Float[Array, "n_rows n_cols"]:
+    def lookup(self: ConsecutiveIntLookupTableParamValue, *args: int) -> float:
         index = self.xnp.asarray(args)
         corrected_index = self.xnp.dot(
             (index - self.bases_to_subtract).T, self.lookup_multipliers
@@ -178,20 +174,19 @@ class PiecewisePolynomialParamValue:
 
 
 def get_consecutive_int_lookup_table_param_value(
-    raw: NestedDict,
-    n_dims: int,
+    raw: NestedLookupDict,
     xnp: ModuleType,
 ) -> ConsecutiveIntLookupTableParamValue:
     """Get the parameters for a N-dimensional lookup table."""
-    bases_to_substract = numpy.zeros(n_dims, dtype=int)
+    bases_to_substract = {}
 
     # Function is recursive to step through all levels of dict
     def process_level(
-        i: int, level_i_dict: NestedDict
+        i: int, level_i_dict: NestedLookupDict
     ) -> Float[Array, "n_rows n_cols"]:
         sorted_keys = sorted(level_i_dict.keys())
-        bases_to_substract[i - 1] = min(xnp.asarray(sorted_keys))
-        if i < n_dims:
+        bases_to_substract[i] = min(xnp.asarray(sorted_keys))
+        if isinstance(level_i_dict[sorted_keys[0]], dict):
             return xnp.concatenate(
                 [
                     xnp.expand_dims(process_level(i + 1, level_i_dict[key]), axis=0)
@@ -200,9 +195,13 @@ def get_consecutive_int_lookup_table_param_value(
             )
         return xnp.asarray([level_i_dict[k] for k in sorted_keys])
 
-    values = process_level(1, raw)
+    values = process_level(0, raw)
     return ConsecutiveIntLookupTableParamValue(
-        xnp=xnp, values_to_look_up=values, bases_to_subtract=bases_to_substract
+        xnp=xnp,
+        values_to_look_up=values,
+        bases_to_subtract=xnp.asarray(
+            [bases_to_substract[key] for key in sorted(bases_to_substract.keys())]
+        ),
     )
 
 
@@ -271,7 +270,6 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
     }
     return get_consecutive_int_lookup_table_param_value(
         raw={**before_phase_inout, **during_phase_inout, **after_phase_inout},
-        n_dims=1,
         xnp=xnp,
     )
 
@@ -305,6 +303,5 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     }
     return get_consecutive_int_lookup_table_param_value(
         raw={**before_phase_inout, **during_phase_inout, **after_phase_inout},
-        n_dims=1,
         xnp=xnp,
     )

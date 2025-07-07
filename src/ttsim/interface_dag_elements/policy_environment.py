@@ -160,17 +160,9 @@ def _get_one_param(  # noqa: PLR0911
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    if spec["type"] == "consecutive_int_1d_lookup_table":
+    if spec["type"] == "consecutive_int_lookup_table":
         cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
             raw=cleaned_spec["value"],
-            n_dims=1,
-            xnp=xnp,
-        )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
-    if spec["type"] == "consecutive_int_2d_lookup_table":
-        cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
-            raw=cleaned_spec["value"],
-            n_dims=2,
             xnp=xnp,
         )
         return ConsecutiveIntLookupTableParam(**cleaned_spec)

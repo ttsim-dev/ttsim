@@ -43,8 +43,6 @@ __all__ = [
     "AggType",
     "ColumnFunction",
     "ColumnObject",
-    "ConsecutiveInt2dLookupTableParam",
-    "ConsecutiveInt2dLookupTableParamValue",
     "ConsecutiveIntLookupTableParam",
     "ConsecutiveIntLookupTableParamValue",
     "DictParam",
