@@ -96,8 +96,8 @@ class SpecializedEnvironment(_ABC):
 
 @dataclass(frozen=True)
 class Targets(_ABC):
-    qname: str = "targets__qname"
-    tree: str = "targets__tree"
+    qname: str = "tt_targets__qname"
+    tree: str = "tt_targets__tree"
 
 
 @dataclass(frozen=True)
@@ -141,7 +141,7 @@ class Templates(_ABC):
 
 
 @dataclass(frozen=True)
-class AllOutputNames(_ABC):
+class MainTarget(_ABC):
     results: type[Results] = field(default=Results)
     policy_environment: str = "policy_environment"
     templates: type[Templates] = field(default=Templates)
@@ -153,7 +153,7 @@ class AllOutputNames(_ABC):
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
     input_data: type[InputData] = field(default=InputData)
-    targets: type[Targets] = field(default=Targets)
+    tt_targets: type[Targets] = field(default=Targets)
     backend: str = "backend"
     date_str: str = "date_str"
     date: str = "date"

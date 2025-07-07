@@ -590,7 +590,7 @@ def _create_function_for_time_unit(
 def create_agg_by_group_functions(
     column_functions: dict[str, ColumnFunction],
     input_columns: UnorderedQNames,
-    targets: OrderedQNames,
+    tt_targets: OrderedQNames,
     grouping_levels: OrderedQNames,
     # backend: Literal["numpy", "jax"],
 ) -> UnorderedQNames:
@@ -601,7 +601,7 @@ def create_agg_by_group_functions(
     }
     potential_agg_by_group_function_names = {
         # Targets that end with a grouping suffix are potential aggregation targets.
-        *[t for t in targets if gp.match(t)],
+        *[t for t in tt_targets if gp.match(t)],
         *_get_potential_agg_by_group_function_names_from_function_arguments(
             functions=column_functions,
             group_pattern=gp,

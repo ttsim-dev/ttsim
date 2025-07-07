@@ -10,7 +10,7 @@ import optree
 import pandas as pd
 import yaml
 
-from ttsim import Output, main, merge_trees
+from ttsim import main, merge_trees
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_nested_columns,
 )
@@ -48,7 +48,7 @@ def cached_policy_environment(
         orig_policy_objects={"root": root},
         backend=backend,
         fail_and_warn=False,
-        output=Output.name("policy_environment"),
+        main_target="policy_environment",
     )
 
 
@@ -96,11 +96,11 @@ def execute_test(
             input_data={"tree": test.input_tree},
             policy_environment=environment,
             date=test.date,
-            targets={"tree": test.target_structure},
+            tt_targets={"tree": test.target_structure},
             rounding=True,
             backend=backend,
             fail_and_warn=False,
-            output=Output.name("results__df_with_nested_columns"),
+            main_target="results__df_with_nested_columns",
         )
 
         if test.expected_output_tree:
@@ -239,7 +239,7 @@ def check_env_completeness(
     environment = main(
         date=date,
         backend="numpy",
-        output=Output.name("policy_environment"),
+        main_target=("policy_environment"),
         orig_policy_objects=orig_policy_objects,
     )
     qname_environment = dt.flatten_to_qnames(environment)
@@ -250,9 +250,9 @@ def check_env_completeness(
     qname_env_with_derived_functions = main(
         policy_environment=environment,
         labels={"processed_data_columns": qnames_policy_inputs},
-        targets={"qname": list(qname_environment)},
+        tt_targets={"qname": list(qname_environment)},
         backend="numpy",
-        output=Output.name(tgt),
+        main_target=(tgt),
     )
     all_nodes = {
         qn: dummy_callable(n) if not callable(n) else n

@@ -227,14 +227,14 @@ def active_periods_overlap(
 def any_paths_are_invalid(
     policy_environment: PolicyEnvironment,
     input_data__tree: NestedData,
-    targets__tree: NestedTargetDict,
+    tt_targets__tree: NestedTargetDict,
     labels__top_level_namespace: UnorderedQNames,
 ) -> None:
     """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
     return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
         data_tree=input_data__tree,
-        targets=targets__tree,
+        tt_targets=tt_targets__tree,
         top_level_namespace=labels__top_level_namespace,
     )
 
@@ -242,11 +242,11 @@ def any_paths_are_invalid(
 @fail_or_warn_function(include_if_all_elements_present=["results__df_with_mapper"])
 def paths_are_missing_in_targets_tree_mapper(
     results__tree: NestedData,
-    targets__tree: NestedStrings,
+    tt_targets__tree: NestedStrings,
 ) -> None:
     """Fail if the data paths are missing in the paths to column names."""
     paths_in_data = dt.flatten_to_tree_paths(results__tree)
-    paths_in_mapper = dt.flatten_to_tree_paths(targets__tree)
+    paths_in_mapper = dt.flatten_to_tree_paths(tt_targets__tree)
     missing_paths = [str(p) for p in paths_in_mapper if p not in paths_in_data]
     if missing_paths:
         msg = (
@@ -691,7 +691,7 @@ def root_nodes_are_missing(
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__processed_data_columns: QNameDataColumns,
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -701,19 +701,19 @@ def targets_are_not_in_specialized_environment_or_data(
         Dictionary containing functions to build the DAG.
     labels__processed_data_columns
         The columns which are available in the data tree.
-    targets
-        The targets which should be computed. They limit the DAG in the way that only
-        ancestors of these nodes need to be considered.
+    tt_targets__qname
+        The taxes & transfers targets which should be computed. They limit the DAG in
+        the way that only ancestors of these nodes need to be considered.
 
     Raises
     ------
     ValueError
-        Raised if any member of `targets` is not among functions.
+        Raised if any member of `tt_targets` is not among functions.
 
     """
     missing_targets = [
         str(dt.tree_path_from_qname(n))
-        for n in targets__qname
+        for n in tt_targets__qname
         if n
         not in specialized_environment__without_tree_logic_and_with_derived_functions
         and n not in labels__processed_data_columns
@@ -725,14 +725,14 @@ def targets_are_not_in_specialized_environment_or_data(
 
 
 @fail_or_warn_function()
-def targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
+def targets_tree_is_invalid(tt_targets__tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """
     assert_valid_ttsim_pytree(
-        tree=targets__tree,
+        tree=tt_targets__tree,
         leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
-        tree_name="targets__tree",
+        tree_name="tt_targets__tree",
     )
 
 

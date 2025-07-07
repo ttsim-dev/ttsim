@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy
 
-from ttsim import Output, main
+from ttsim import main
 from ttsim.testing_utils import (
     load_policy_test_data,
 )
@@ -90,7 +90,7 @@ def test_template_all_outputs_no_inputs(backend):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        output=Output.name("templates__input_data_dtypes"),
+        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
@@ -117,14 +117,14 @@ def test_template_all_outputs_with_inputs(backend):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        output=Output.name("templates__input_data_dtypes"),
+        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
 def test_template_output_y_no_inputs(backend):
     actual = main(
-        targets={"tree": {"a": {"y": None}}},
+        tt_targets={"tree": {"a": {"y": None}}},
         policy_environment={
             "inp1": inp1,
             "p1": p1,
@@ -136,7 +136,7 @@ def test_template_output_y_no_inputs(backend):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        output=Output.name("templates__input_data_dtypes"),
+        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"a": {"inp2": "FloatColumn"}}
 
@@ -152,7 +152,7 @@ def test_template_output_x_with_inputs(backend):
                 "inp1": [0, 1, 2],
             }
         },
-        targets={"tree": {"a": {"x": None}}},
+        tt_targets={"tree": {"a": {"x": None}}},
         policy_environment={
             "inp1": inp1,
             "p1": p1,
@@ -164,6 +164,6 @@ def test_template_output_x_with_inputs(backend):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        output=Output.name("templates__input_data_dtypes"),
+        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"inp1": "IntColumn"}

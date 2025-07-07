@@ -22,21 +22,23 @@ from _gettsim_tests import TEST_DIR
 from ttsim import (
     InputData,
     Labels,
-    Output,
+    MainTarget,
     RawResults,
     Results,
     SpecializedEnvironment,
-    Targets,
+    TTTargets,
     merge_trees,
 )
 
 if TYPE_CHECKING:
     import datetime
+    from collections.abc import Iterable
 
     from ttsim.interface_dag_elements.typing import (
         DashedISOString,
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
+        NestedTargetDict,
         PolicyEnvironment,
         QNameData,
     )
@@ -54,10 +56,11 @@ class OrigPolicyObjects(ttsim.main_args.MainArg):
 
 def main(
     *,
-    output: Output | None = None,
+    main_target: str | tuple[str, ...] | NestedTargetDict | None = None,
+    main_targets: Iterable[str | tuple[str, ...]] | None = None,
     date_str: DashedISOString | None = None,
     input_data: InputData | None = None,
-    targets: Targets | None = None,
+    tt_targets: TTTargets | None = None,
     backend: Literal["numpy", "jax"] = "numpy",
     rounding: bool = True,
     fail_and_warn: bool = True,
@@ -85,12 +88,12 @@ def main(
 __all__ = [
     "InputData",
     "Labels",
+    "MainTarget",
     "OrigPolicyObjects",
-    "Output",
     "RawResults",
     "Results",
     "SpecializedEnvironment",
-    "Targets",
+    "TTTargets",
     "main",
     "merge_trees",
 ]

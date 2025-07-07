@@ -22,14 +22,14 @@ if TYPE_CHECKING:
 def input_data_dtypes(
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     policy_environment: PolicyEnvironment,
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
 ) -> NestedInputStructureDict:
     base_dtype_tree = dt.create_tree_with_input_types(
         functions=dt.unflatten_from_qnames(
             specialized_environment__with_partialled_params_and_scalars,
         ),
-        targets=targets__qname,
+        targets=tt_targets__qname,
         top_level_inputs=labels__top_level_namespace,
     )
 

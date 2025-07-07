@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
-from ttsim import Output, main
+from ttsim import main
 from ttsim.tt_dag_elements import (
     RoundingSpec,
     policy_function,
@@ -114,10 +114,10 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
         input_data={"tree": input_data__tree},
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
-        targets={"tree": {"namespace": {"test_func": None}}},
+        tt_targets={"tree": {"namespace": {"test_func": None}}},
         rounding=True,
         backend=backend,
-        output=Output.name("results__tree"),
+        main_target=("results__tree"),
     )
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
@@ -150,10 +150,10 @@ def test_rounding_with_time_conversion(backend, xnp):
         input_data={"tree": data},
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
-        targets={"tree": {"test_func_y": None}},
+        tt_targets={"tree": {"test_func_y": None}},
         rounding=True,
         backend=backend,
-        output=Output.name("results__tree"),
+        main_target=("results__tree"),
     )
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
@@ -190,10 +190,10 @@ def test_no_rounding(
         input_data={"tree": data},
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
-        targets={"tree": {"test_func": None}},
+        tt_targets={"tree": {"test_func": None}},
         rounding=False,
         backend=backend,
-        output=Output.name("results__tree"),
+        main_target=("results__tree"),
     )
     assert_series_equal(
         pd.Series(results__tree["test_func"]),
