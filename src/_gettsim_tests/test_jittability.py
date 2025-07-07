@@ -11,14 +11,14 @@ import dags.tree as dt
 import pytest
 from dags import get_free_arguments
 
-from ttsim import Output, main
+from ttsim import main
 from ttsim.tt_dag_elements.column_objects_param_function import ColumnFunction
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
-        QNameSpecializedEnvironment2,
+        SpecEnvWithPartialledParamsAndScalars,
     )
 
 GETTSIM_ROOT = Path(__file__).parent.parent / "_gettsim"
@@ -29,12 +29,10 @@ def get_orig_gettsim_objects() -> dict[
 ]:
     out = main(
         orig_policy_objects={"root": GETTSIM_ROOT},
-        output=Output.names(
-            [
-                "orig_policy_objects__column_objects_and_param_functions",
-                "orig_policy_objects__param_specs",
-            ]
-        ),
+        main_targets=[
+            "orig_policy_objects__column_objects_and_param_functions",
+            "orig_policy_objects__param_specs",
+        ],
     )
     return {k.replace("orig_policy_objects__", ""): v for k, v in out.items()}
 
@@ -49,15 +47,13 @@ def cached_specialized_environment(
     date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
-) -> QNameSpecializedEnvironment2:
+) -> SpecEnvWithPartialledParamsAndScalars:
     return main(
         date=date,
         orig_policy_objects={"root": root},
         backend=backend,
         fail_and_warn=False,
-        output=Output.name(
-            ("specialized_environment", "with_partialled_params_and_scalars")
-        ),
+        main_target=("specialized_environment", "with_partialled_params_and_scalars"),
     )
 
 
@@ -90,8 +86,8 @@ def test_jittable(tree_path, fun, backend, xnp):
             date=date,
             specialized_environment={"with_partialled_params_and_scalars": env},
             processed_data=processed_data,
-            targets={"qname": [qname]},
+            tt_targets={"qname": [qname]},
             backend=backend,
-            output=Output.name(("raw_results", "columns")),
+            main_target=("raw_results", "columns"),
             fail_and_warn=False,
         )

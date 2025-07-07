@@ -1,6 +1,7 @@
 import pandas as pd
 
-from gettsim import InputData, Output, Targets, main
+from gettsim import InputData, TTTargets, main
+from ttsim.interface_dag_elements import MainTarget
 
 inputs_df = pd.DataFrame(
     {
@@ -51,13 +52,13 @@ targets_tree = {
 }
 
 outputs_df = main(
-    output=Output.name(("results", "df_with_mapper")),
+    main_target=MainTarget.results.df_with_mapper,
     date_str="2025-01-01",
     input_data=InputData.df_and_mapper(
         df=inputs_df,
         mapper=inputs_map,
     ),
-    targets=Targets(tree=targets_tree),
+    tt_targets=TTTargets(tree=targets_tree),
 )
 
 print(outputs_df.round(2).to_html())  # noqa: T201

@@ -4,7 +4,7 @@ from typing import Literal
 import pandas as pd
 import pytest
 
-from ttsim import InputData, Output, main
+from ttsim import InputData, MainTarget, main
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
@@ -90,13 +90,13 @@ EXPECTED_RESULTS = pd.DataFrame(
 )
 def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
     result = main(
+        main_target=(MainTarget.results.df_with_mapper),
         input_data=input_data_arg,
-        targets={"tree": TARGETS_TREE},
+        tt_targets={"tree": TARGETS_TREE},
         date_str="2025-01-01",
         rounding=False,
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend=backend,
-        output=Output.name("results__df_with_mapper"),
     )
     pd.testing.assert_frame_equal(
         EXPECTED_RESULTS,

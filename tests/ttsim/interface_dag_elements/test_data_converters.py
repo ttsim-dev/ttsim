@@ -8,7 +8,6 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from ttsim import (
-    Output,
     main,
 )
 from ttsim.interface_dag_elements.data_converters import (
@@ -121,10 +120,22 @@ def test_df_with_mapped_columns_to_flat_data(
         )
 
 
+def test_df_with_mapped_columns_to_flat_data_fails_if_mapper_value_not_in_df(xnp):
+    with pytest.raises(ValueError, match="Value of mapper path"):
+        df_with_mapped_columns_to_flat_data(
+            mapper={
+                "n1": "a",
+                "n2": "b",
+            },
+            df=pd.DataFrame({"a": [1, 2, 3]}),
+            xnp=xnp,
+        )
+
+
 @pytest.mark.parametrize(
     (
         "environment",
-        "targets__tree",
+        "tt_targets__tree",
         "expected_output",
     ),
     [
@@ -215,7 +226,7 @@ def test_df_with_mapped_columns_to_flat_data(
 def test_nested_data_to_dataframe(
     environment,
     minimal_data_tree,
-    targets__tree,
+    tt_targets__tree,
     expected_output,
     backend,
 ):
@@ -223,14 +234,14 @@ def test_nested_data_to_dataframe(
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
         date=datetime.date(2024, 1, 1),
-        targets={"tree": targets__tree},
+        tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        output=Output.name("results__tree"),
+        main_target=("results__tree"),
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,
-        nested_outputs_df_column_names=targets__tree,
+        nested_outputs_df_column_names=tt_targets__tree,
         data_with_p_id=minimal_data_tree,
     )
     pd.testing.assert_frame_equal(

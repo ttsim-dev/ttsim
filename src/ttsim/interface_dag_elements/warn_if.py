@@ -13,8 +13,8 @@ from ttsim.interface_dag_elements.interface_node_objects import fail_or_warn_fun
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
-        NestedPolicyEnvironment,
         OrderedQNames,
+        PolicyEnvironment,
         QNameDataColumns,
     )
 
@@ -66,7 +66,7 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
 
 @fail_or_warn_function()
 def functions_and_data_columns_overlap(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
     labels__processed_data_columns: QNameDataColumns,
 ) -> None:
     """Warn if functions are overridden by data."""

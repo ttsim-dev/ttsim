@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
     from pathlib import Path
 
     import networkx as nx
@@ -16,13 +16,12 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
         NestedData,
         NestedStrings,
-        NestedTargetDict,
         OrderedQNames,
         QNameData,
-        QNameSpecializedEnvironment0,
-        QNameSpecializedEnvironment1,
-        QNameSpecializedEnvironment2,
         QNameStrings,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        SpecEnvWithPartialledParamsAndScalars,
+        SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
     )
 
@@ -31,31 +30,6 @@ if TYPE_CHECKING:
 class MainArg:
     def to_dict(self) -> dict[str, Any]:
         return self.__dict__
-
-
-@dataclass(frozen=True)
-class Output(MainArg):
-    name: str | tuple[str, ...] | None
-    names: Iterable[str | tuple[str, ...]] | NestedTargetDict | None
-
-    def __init__(self, *args: Any, **kwargs: Any):  # noqa: ANN401, ARG002, ANN204
-        raise RuntimeError("Use any of the class methods to instantiate this class.")
-
-    @classmethod
-    def name(cls, name: str | tuple[str, ...]) -> Output:
-        """A single output name. Could be a qualified name or a tree path."""
-        obj = object.__new__(cls)
-        object.__setattr__(obj, "name", name)
-        object.__setattr__(obj, "names", None)
-        return obj
-
-    @classmethod
-    def names(cls, names: Iterable[str | tuple[str, ...]]) -> Output:
-        """An iterable of output names. Could be qualified names, tree paths, or a pytree."""  # noqa: E501
-        obj = object.__new__(cls)
-        object.__setattr__(obj, "name", None)
-        object.__setattr__(obj, "names", names)
-        return obj
 
 
 @dataclass(frozen=True)
@@ -176,7 +150,7 @@ class Results(MainArg):
 
 
 @dataclass(frozen=True)
-class Targets(MainArg):
+class TTTargets(MainArg):
     qname: QNameStrings | None = None
     tree: NestedStrings | None = None
 
@@ -184,9 +158,13 @@ class Targets(MainArg):
 @dataclass(frozen=True)
 class SpecializedEnvironment(MainArg):
     without_tree_logic_and_with_derived_functions: (
-        QNameSpecializedEnvironment0 | None
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions | None
     ) = None
-    with_processed_params_and_scalars: QNameSpecializedEnvironment1 | None = None
-    with_partialled_params_and_scalars: QNameSpecializedEnvironment2 | None = None
+    with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars | None = (
+        None
+    )
+    with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars | None = (
+        None
+    )
     tax_transfer_dag: nx.DiGraph | None = None
     tax_transfer_function: Callable[[QNameData], QNameData] | None = None

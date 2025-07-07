@@ -25,26 +25,26 @@ def betrag_m(
 
 @policy_function()
 def renteneinkünfte_m(
-    ertragsanteil_an_rente: float,
+    ertragsanteil_der_rente: float,
     sozialversicherung__rente__altersrente__betrag_m: float,
     sozialversicherung__rente__private_rente_betrag_m: float,
 ) -> float:
     """Pension income counting towards taxable income."""
-    return ertragsanteil_an_rente * (
+    return ertragsanteil_der_rente * (
         sozialversicherung__rente__altersrente__betrag_m
         + sozialversicherung__rente__private_rente_betrag_m
     )
 
 
 @policy_function()
-def ertragsanteil_an_rente(
+def ertragsanteil_der_rente(
     sozialversicherung__rente__jahr_renteneintritt: int,
-    parameter_ertragsanteil_an_rente: PiecewisePolynomialParamValue,
+    parameter_ertragsanteil_der_rente: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ) -> float:
     """Share of pensions subject to income taxation."""
     return piecewise_polynomial(
         x=sozialversicherung__rente__jahr_renteneintritt,
-        parameters=parameter_ertragsanteil_an_rente,
+        parameters=parameter_ertragsanteil_der_rente,
         xnp=xnp,
     )

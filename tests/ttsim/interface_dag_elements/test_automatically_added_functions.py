@@ -363,7 +363,7 @@ def test_should_not_create_cycle():
 @pytest.mark.parametrize(
     (
         "column_functions",
-        "targets",
+        "tt_targets",
         "input_columns",
         "expected",
     ),
@@ -390,7 +390,7 @@ def test_should_not_create_cycle():
 )
 def test_derived_aggregation_functions_are_in_correct_namespace(
     column_functions,
-    targets,
+    tt_targets,
     input_columns,
     expected,
 ):
@@ -402,7 +402,7 @@ def test_derived_aggregation_functions_are_in_correct_namespace(
     result = create_agg_by_group_functions(
         column_functions=column_functions,
         input_columns=input_columns,
-        targets=targets,
+        tt_targets=tt_targets,
         grouping_levels=("kin",),
     )
     assert expected in result

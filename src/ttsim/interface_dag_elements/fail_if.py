@@ -23,25 +23,29 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.tt_dag_elements.param_objects import ParamObject
+from ttsim.tt_dag_elements.param_objects import (
+    PLACEHOLDER_FIELD,
+    PLACEHOLDER_VALUE,
+    ParamObject,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ttsim.interface_dag_elements.input_data import FlatData
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedData,
-        NestedPolicyEnvironment,
         NestedStrings,
         NestedTargetDict,
         OrderedQNames,
         OrigParamSpec,
+        PolicyEnvironment,
         QNameData,
         QNameDataColumns,
-        QNamePolicyEnvironment,
-        QNameSpecializedEnvironment0,
-        QNameSpecializedEnvironment2,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
     )
 
@@ -96,7 +100,13 @@ class _ParamWithActivePeriod(ParamObject):
     Only used here for checking overlap.
     """
 
-    original_function_name: str
+    original_function_name: str = PLACEHOLDER_FIELD
+
+    def __post_init__(self) -> None:
+        if self.original_function_name is PLACEHOLDER_VALUE:
+            raise ValueError(
+                "'original_function_name' field must be specified for _ParamWithActivePeriod"
+            )
 
 
 def assert_valid_ttsim_pytree(
@@ -215,16 +225,16 @@ def active_periods_overlap(
 
 @fail_or_warn_function()
 def any_paths_are_invalid(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
     input_data__tree: NestedData,
-    targets__tree: NestedTargetDict,
+    tt_targets__tree: NestedTargetDict,
     labels__top_level_namespace: UnorderedQNames,
 ) -> None:
     """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
     return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
         data_tree=input_data__tree,
-        targets=targets__tree,
+        tt_targets=tt_targets__tree,
         top_level_namespace=labels__top_level_namespace,
     )
 
@@ -232,11 +242,11 @@ def any_paths_are_invalid(
 @fail_or_warn_function(include_if_all_elements_present=["results__df_with_mapper"])
 def paths_are_missing_in_targets_tree_mapper(
     results__tree: NestedData,
-    targets__tree: NestedStrings,
+    tt_targets__tree: NestedStrings,
 ) -> None:
     """Fail if the data paths are missing in the paths to column names."""
     paths_in_data = dt.flatten_to_tree_paths(results__tree)
-    paths_in_mapper = dt.flatten_to_tree_paths(targets__tree)
+    paths_in_mapper = dt.flatten_to_tree_paths(tt_targets__tree)
     missing_paths = [str(p) for p in paths_in_mapper if p not in paths_in_data]
     if missing_paths:
         msg = (
@@ -252,21 +262,12 @@ def paths_are_missing_in_targets_tree_mapper(
 @fail_or_warn_function()
 def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) -> None:
     """
-    Validate the basic structure of the data tree.
-
-    1. It must be is a dictionary with string keys and Series or Array leaves.
-    2. It must contain the `p_id` column.
-    3. Each element of `p_id` must uniquely identify a row.
+    Validate the basic structure of the input data tree.
 
     Parameters
     ----------
     input_data__tree
         The data tree.
-
-    Raises
-    ------
-    ValueError
-        If any of the above conditions is not met.
     """
     assert_valid_ttsim_pytree(
         tree=input_data__tree,
@@ -276,9 +277,48 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
         ),
         tree_name="input_data__tree",
     )
-    p_id = input_data__tree.get("p_id", None)
+
+
+@fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
+def input_arrays_have_different_lengths(
+    input_data__flat: FlatData,
+) -> None:
+    """Fail if the input arrays have different lengths."""
+    len_p_id_array = len(input_data__flat[("p_id",)])
+    faulty_arrays: list[str] = []
+    for key, arr in input_data__flat.items():
+        if len(arr) != len_p_id_array:
+            faulty_arrays.append(key)
+    if faulty_arrays:
+        formatted_faulty_paths = "\n".join(f"    - {p}" for p in faulty_arrays)
+        msg = format_errors_and_warnings(
+            "The lengths of the following columns do not match the length of the `p_id`"
+            f" column:\n{formatted_faulty_paths}"
+        )
+        raise ValueError(msg)
+
+
+@fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
+def invalid_p_id_values(
+    input_data__flat: FlatData,
+    xnp: ModuleType,
+) -> None:
+    """Fail if the `p_id` column is invalid.
+
+    Fails if:
+        - The `p_id` column is missing.
+        - The `p_id` column has non-unique values.
+    """
+    p_id = input_data__flat.get(("p_id",), None)
     if p_id is None:
         raise ValueError("The input data must contain the `p_id` column.")
+
+    if not all(isinstance(i, (int, xnp.integer)) for i in p_id):
+        types = (type(i) for i in p_id if not isinstance(i, int))
+        msg = format_errors_and_warnings(
+            f"The `p_id` column must contain integers only. Got: {types}."
+        )
+        raise ValueError(msg)
 
     # Check for non-unique p_ids
     p_id_counts: dict[int, int] = {}
@@ -301,7 +341,7 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
 
 @fail_or_warn_function()
 def environment_is_invalid(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
 ) -> None:
     """Validate that the environment is a pytree with supported types."""
     assert_valid_ttsim_pytree(
@@ -319,7 +359,7 @@ def environment_is_invalid(
 def foreign_keys_are_invalid_in_data(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNamePolicyEnvironment,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> None:
     """
     Check that all foreign keys are valid.
@@ -374,7 +414,7 @@ def foreign_keys_are_invalid_in_data(
 
 @fail_or_warn_function()
 def group_ids_are_outside_top_level_namespace(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
 ) -> None:
     """Fail if group ids are outside the top level namespace."""
     group_ids_outside_top_level_namespace = {
@@ -590,8 +630,9 @@ def input_df_mapper_has_incorrect_format(
 @fail_or_warn_function()
 def root_nodes_are_missing(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
-    specialized_environment__with_partialled_params_and_scalars: QNameSpecializedEnvironment2,
+    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     processed_data: QNameData,
+    labels__grouping_levels: OrderedQNames,
 ) -> None:
     """Fail if root nodes are missing.
 
@@ -599,8 +640,12 @@ def root_nodes_are_missing(
     ----------
     specialized_environment__tax_transfer_dag
         The DAG of taxes and transfers functions.
+    specialized_environment__with_partialled_params_and_scalars
+        The specialized environment with partialled params and scalars.
     processed_data
         The processed data to be used as an input to the taxes & transfers function.
+    labels__grouping_levels
+        The grouping levels available in the policy environment.
 
     Raises
     ------
@@ -623,17 +668,30 @@ def root_nodes_are_missing(
     ]
 
     if missing_nodes:
-        formatted = format_list_linewise(
+        grouping_levels_in_missing_nodes = (
+            lvl
+            for lvl in labels__grouping_levels
+            if any(qn.endswith(lvl) for qn in missing_nodes)
+        )
+        formatted_missing_nodes = format_list_linewise(
             [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
         )
-        raise ValueError(f"The following data columns are missing.\n{formatted}")
+        msg = f"The following data columns are missing.\n{formatted_missing_nodes}"
+        if grouping_levels_in_missing_nodes:
+            msg += (
+                "\n\nNote that the missing nodes contain columns that are grouped by "
+                f"the following grouping levels: {grouping_levels_in_missing_nodes}. "
+                "Consider passing the individual level columns instead, in which case "
+                "that the aggregation will be handled automatically."
+            )
+        raise ValueError(msg)
 
 
 @fail_or_warn_function()
 def targets_are_not_in_specialized_environment_or_data(
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__processed_data_columns: QNameDataColumns,
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
 ) -> None:
     """Fail if some target is not among functions.
 
@@ -643,19 +701,19 @@ def targets_are_not_in_specialized_environment_or_data(
         Dictionary containing functions to build the DAG.
     labels__processed_data_columns
         The columns which are available in the data tree.
-    targets
-        The targets which should be computed. They limit the DAG in the way that only
-        ancestors of these nodes need to be considered.
+    tt_targets__qname
+        The taxes & transfers targets which should be computed. They limit the DAG in
+        the way that only ancestors of these nodes need to be considered.
 
     Raises
     ------
     ValueError
-        Raised if any member of `targets` is not among functions.
+        Raised if any member of `tt_targets` is not among functions.
 
     """
     missing_targets = [
         str(dt.tree_path_from_qname(n))
-        for n in targets__qname
+        for n in tt_targets__qname
         if n
         not in specialized_environment__without_tree_logic_and_with_derived_functions
         and n not in labels__processed_data_columns
@@ -667,14 +725,14 @@ def targets_are_not_in_specialized_environment_or_data(
 
 
 @fail_or_warn_function()
-def targets_tree_is_invalid(targets__tree: NestedTargetDict) -> None:
+def targets_tree_is_invalid(tt_targets__tree: NestedTargetDict) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """
     assert_valid_ttsim_pytree(
-        tree=targets__tree,
+        tree=tt_targets__tree,
         leaf_checker=lambda leaf: isinstance(leaf, (None | str)),
-        tree_name="targets__tree",
+        tree_name="tt_targets__tree",
     )
 
 

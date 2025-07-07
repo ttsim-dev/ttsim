@@ -44,7 +44,7 @@ def tree(raw_results__combined: QNameData, input_data__flat: FlatData) -> Nested
 def df_with_mapper(
     tree: NestedData,
     input_data__flat: FlatData,
-    targets__tree: NestedStrings,
+    tt_targets__tree: NestedStrings,
 ) -> pd.DataFrame:
     """The results DataFrame with mapped column names.
 
@@ -62,7 +62,7 @@ def df_with_mapper(
     """
     return nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=tree,
-        nested_outputs_df_column_names=targets__tree,
+        nested_outputs_df_column_names=tt_targets__tree,
         data_with_p_id=input_data__flat,
     )
 

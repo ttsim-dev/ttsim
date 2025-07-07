@@ -18,17 +18,17 @@ from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
-        NestedPolicyEnvironment,
         OrderedQNames,
+        PolicyEnvironment,
         QNameData,
-        QNameSpecializedEnvironment0,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         UnorderedQNames,
     )
 
 
 @interface_function()
 def grouping_levels(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
 ) -> OrderedQNames:
     """The grouping levels of the policy environment."""
     return tuple(
@@ -40,7 +40,7 @@ def grouping_levels(
 
 @interface_function()
 def top_level_namespace(
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
     """Get the top level namespace.
@@ -113,7 +113,7 @@ def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
 @interface_function()
 def input_columns(
     processed_data_columns: UnorderedQNames,
-    policy_environment: NestedPolicyEnvironment,
+    policy_environment: PolicyEnvironment,
 ) -> UnorderedQNames:
     """The (qualified) column names in the processed data or policy environment.
 
@@ -182,26 +182,26 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
 @interface_function()
 def column_targets(
     specialized_environment__with_partialled_params_and_scalars: UnorderedQNames,
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
 ) -> OrderedQNames:
     """All targets that are column functions."""
     return [
         t
-        for t in targets__qname
+        for t in tt_targets__qname
         if t in specialized_environment__with_partialled_params_and_scalars
     ]
 
 
 @interface_function()
 def param_targets(
-    specialized_environment__without_tree_logic_and_with_derived_functions: QNameSpecializedEnvironment0,  # noqa: E501
-    targets__qname: OrderedQNames,
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    tt_targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(column_targets)
+    possible_targets = set(tt_targets__qname) - set(column_targets)
     return [
         t
-        for t in targets__qname
+        for t in tt_targets__qname
         if t in possible_targets
         and t in specialized_environment__without_tree_logic_and_with_derived_functions
     ]
@@ -209,9 +209,9 @@ def param_targets(
 
 @interface_function()
 def input_data_targets(
-    targets__qname: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
     param_targets: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(targets__qname) - set(column_targets) - set(param_targets)
-    return [t for t in targets__qname if t in possible_targets]
+    possible_targets = set(tt_targets__qname) - set(column_targets) - set(param_targets)
+    return [t for t in tt_targets__qname if t in possible_targets]

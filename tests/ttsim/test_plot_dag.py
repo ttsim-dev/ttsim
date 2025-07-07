@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-from ttsim import Output
 from ttsim.interface_dag import main
 from ttsim.plot_dag import (
     _get_tt_dag_with_node_metadata,
@@ -12,12 +11,13 @@ from ttsim.plot_dag import (
     plot_interface_dag,
 )
 from ttsim.tt_dag_elements import (
-    ParamObject,
+    ScalarParam,
     param_function,
     policy_function,
 )
 
-SOME_PARAM_OBJECT = ParamObject(
+SOME_PARAM_OBJECT = ScalarParam(
+    value=111,
     leaf_name="some_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
@@ -243,7 +243,7 @@ def test_node_selector(node_selector, expected_nodes):
         date_str="2025-01-01",
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend="numpy",
-        output=Output.name("policy_environment"),
+        main_target=("policy_environment"),
     )
     dag = _get_tt_dag_with_node_metadata(
         environment=environment,
