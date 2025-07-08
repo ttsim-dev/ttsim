@@ -668,7 +668,7 @@ def root_nodes_are_missing(
     ]
 
     if missing_nodes:
-        grouping_levels_in_missing_nodes = (
+        grouping_levels_in_missing_nodes = tuple(
             lvl
             for lvl in labels__grouping_levels
             if any(qn.endswith(lvl) for qn in missing_nodes)
@@ -681,8 +681,8 @@ def root_nodes_are_missing(
             msg += (
                 "\n\nNote that the missing nodes contain columns that are grouped by "
                 f"the following grouping levels: {grouping_levels_in_missing_nodes}. "
-                "Consider passing the individual level columns instead, in which case "
-                "that the aggregation will be handled automatically."
+                "In some cases, it may be useful to pass the individual-level columns "
+                "instead, in which case the aggregation will be handled automatically."
             )
         raise ValueError(msg)
 
