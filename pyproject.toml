@@ -40,20 +40,7 @@ classifiers = [
 ]
 # Dependencies and requirements
 requires-python = ">=3.11"
-dependencies = [
-    # "dags>=0.3.1",
-    "ipywidgets",
-    "networkx",
-    "numpy",
-    "numpy-groupies",
-    "pandas",
-    "openpyxl",
-    "plotly>=6.2",
-    "optree",
-    "pygments",
-    "pygraphviz",
-    "pytest",
-    "pyyaml",
+dependencies = [ "ipywidgets", "numpy", "numpy-groupies", "pandas", "openpyxl", "pygments", "pygraphviz", "pytest", "pyyaml", "networkx>=3.5,<4", "plotly>=6.2.0,<7", "optree>=0.16.0,<0.17",
 ]
 
 
@@ -108,7 +95,7 @@ jupyterlab = "*"
 numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
-pandas = ">=2.2"
+pandas = ">=2.3"
 pre-commit = "*"
 pygments = "*"
 pygraphviz = "*"
@@ -118,7 +105,7 @@ pytest-profiling = "*"
 pytest-xdist = "*"
 python = ">=3.11,<3.14"
 pyyaml = "*"
-snakeviz = ">=2.2.2,<3"
+snakeviz = ">=2.2.2"
 toml = "*"
 
 # Development Dependencies (pypi)
@@ -127,9 +114,9 @@ toml = "*"
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
 dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
-jaxtyping = "*"
-kaleido = ">=1.0"
-pdbp = "*"
+jaxtyping = ">=0.3.2, <0.4"
+kaleido = ">=1.0.0, <2"
+pdbp = ">=1.7.0, <2"
 
 
 # Features
@@ -199,8 +186,8 @@ mypy = "mypy --ignore-missing-imports"
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
 py313 = ["test", "py313"]
-py313-jax = ["py313", "test", "jax"]
-py313-cuda = ["py313", "test", "cuda"]
+py312-jax = ["py312", "test", "jax"]
+py312-cuda = ["py312", "test", "cuda"]
 mypy = ["mypy"]
 docs = ["docs", "py313"]
 
@@ -247,6 +234,8 @@ exclude = []
 [tool.ruff.lint.per-file-ignores]
 "conftest.py" = ["ANN"]
 "docs/**/*.ipynb" = ["T201"]
+# Cannot have default values in test functions with fixtures -- not an issue here.
+"src/gettsim/__init__.py" = ["PT028"]
 # Mostly things vectorization can't handle
 "src/_gettsim/*" = ["E501", "PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts

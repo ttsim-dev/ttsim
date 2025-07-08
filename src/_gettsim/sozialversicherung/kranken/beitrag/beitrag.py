@@ -173,6 +173,7 @@ def betrag_selbstständig_m_ohne_zusatzbeitrag(
 def betrag_selbstständig_m_mit_zusatzbeitrag(
     bemessungsgrundlage_selbstständig_m: float,
     parameter_beitragssatz: dict[str, float],
+    zusatzbeitragssatz: float,
 ) -> float:
     """Health insurance contributions for self-employed's income. The self-employed
     pay the full reduced contribution.
@@ -180,10 +181,7 @@ def betrag_selbstständig_m_mit_zusatzbeitrag(
     Contribution rate includes the insurance provider-specific Zusatzbeitrag introduced
     in 2015.
     """
-    beitrag = (
-        parameter_beitragssatz["ermäßigt"]
-        + parameter_beitragssatz["mean_zusatzbeitrag"]
-    )
+    beitrag = parameter_beitragssatz["ermäßigt"] + zusatzbeitragssatz
     return beitrag * bemessungsgrundlage_selbstständig_m
 
 

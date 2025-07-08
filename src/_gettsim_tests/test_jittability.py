@@ -66,7 +66,7 @@ def cached_specialized_environment(
 def test_jittable(tree_path, fun, backend, xnp):
     today = datetime.date.today()  # noqa: DTZ011
     date = min(fun.end_date, today)
-    qname = dt.qname_from_tree_path(tree_path[:-2] + (fun.leaf_name,))
+    qname = dt.qname_from_tree_path((*tree_path[:-2], fun.leaf_name))
     env = {qname: cached_specialized_environment(date, GETTSIM_ROOT, backend)[qname]}
 
     processed_data = {}

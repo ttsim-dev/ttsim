@@ -11,7 +11,7 @@ import dags.tree as dt
 import networkx as nx
 import optree
 
-from ttsim.interface_dag_elements import MainTarget
+from ttsim.interface_dag_elements import MainTarget, MainTargetABC
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -180,6 +180,12 @@ def _harmonize_main_target(
         return dt.qnames(main_target)[0]
     if isinstance(main_target, str):
         return main_target
+    if isinstance(main_target, type(MainTargetABC)):
+        raise TypeError(
+            "`main_target` must be an atomic element of `MainTarget`, got: "
+            f"`{main_target.__name__}`. Best use an IDE and tab-complete until you "
+            "have reached the end of a path."
+        )
     raise ValueError(msg)
 
 
@@ -192,6 +198,14 @@ def _harmonize_main_targets(
         out = [dt.qname_from_tree_path(tp) for tp in main_targets]
     else:
         out = list(main_targets)
+
+    for i in out:
+        if isinstance(i, type(MainTargetABC)):
+            raise TypeError(
+                "Elements of `main_targets` must be atomic elements of `MainTarget`, "
+                f"got: `{i.__name__}`. Best use an IDE and tab-complete until you "
+                "have reached the end of a path."
+            )
 
     return out
 
