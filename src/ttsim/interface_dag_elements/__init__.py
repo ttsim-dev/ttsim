@@ -143,19 +143,20 @@ class Templates(MainTargetABC):
 @dataclass(frozen=True)
 class MainTarget(MainTargetABC):
     results: type[Results] = field(default=Results)
-    policy_environment: str = "policy_environment"
     templates: type[Templates] = field(default=Templates)
-    orig_policy_objects: type[OrigPolicyObjects] = field(default=OrigPolicyObjects)
+    policy_environment: str = "policy_environment"
     specialized_environment: type[SpecializedEnvironment] = field(
         default=SpecializedEnvironment
     )
+    orig_policy_objects: type[OrigPolicyObjects] = field(default=OrigPolicyObjects)
     processed_data: str = "processed_data"
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
+    date_str: str = "date_str"
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
+    num_segments: str = "num_segments"
     backend: str = "backend"
-    date_str: str = "date_str"
     date: str = "date"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"
@@ -163,7 +164,6 @@ class MainTarget(MainTargetABC):
     policy_date: str = "policy_date"
     xnp: str = "xnp"
     dnp: str = "dnp"
-    num_segments: str = "num_segments"
     rounding: str = "rounding"
     warn_if: type[WarnIf] = field(default=WarnIf)
     fail_if: type[FailIf] = field(default=FailIf)

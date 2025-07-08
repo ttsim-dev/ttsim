@@ -6,9 +6,5 @@ This section documents the code inside GETTSIM.
 ---
 maxdepth: 1
 ---
-interface
-functions
-input_variables
-params
 means_testing
 ```
