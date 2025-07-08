@@ -681,9 +681,8 @@ def root_nodes_are_missing(
             msg += (
                 "\n\nNote that the missing nodes contain columns that are grouped by "
                 f"the following grouping levels: {grouping_levels_in_missing_nodes}. "
-                "In some cases, it may be useful to consider passing the individual-"
-                "level columns instead, in which case the aggregation will be handled "
-                "automatically."
+                "In some cases, it may be useful to pass the individual-level columns "
+                "instead, in which case the aggregation will be handled automatically."
             )
         raise ValueError(msg)
 

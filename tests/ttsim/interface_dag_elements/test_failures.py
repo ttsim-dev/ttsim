@@ -977,7 +977,7 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
 
     with pytest.raises(
         ValueError,
-        match="Consider passing the individual level columns instead",
+        match="Note that the missing nodes contain columns that are grouped by ",
     ):
         main(
             input_data={"tree": minimal_input_data},
