@@ -5,11 +5,11 @@ from typing import Any
 
 
 @dataclass(frozen=True)
-class _ABC:
+class MainTargetABC:
     @classmethod
     def to_dict(cls) -> dict[str, Any]:
         return {
-            k: v.to_dict() if isinstance(v, type(_ABC)) else v
+            k: v.to_dict() if isinstance(v, type(MainTargetABC)) else v
             for k, v in cls.__dict__.items()
             if not k.startswith("_")
         }
@@ -19,14 +19,14 @@ class _ABC:
 
 
 @dataclass(frozen=True)
-class WarnIf(_ABC):
+class WarnIf(MainTargetABC):
     functions_and_data_columns_overlap: str = (
         "warn_if__functions_and_data_columns_overlap"
     )
 
 
 @dataclass(frozen=True)
-class FailIf(_ABC):
+class FailIf(MainTargetABC):
     active_periods_overlap: str = "fail_if__active_periods_overlap"
     any_paths_are_invalid: str = "fail_if__any_paths_are_invalid"
     environment_is_invalid: str = "fail_if__environment_is_invalid"
@@ -65,14 +65,14 @@ class FailIf(_ABC):
 
 
 @dataclass(frozen=True)
-class Results(_ABC):
+class Results(MainTargetABC):
     df_with_mapper: str = "results__df_with_mapper"
     df_with_nested_columns: str = "results__df_with_nested_columns"
     tree: str = "results__tree"
 
 
 @dataclass(frozen=True)
-class RawResults(_ABC):
+class RawResults(MainTargetABC):
     columns: str = "raw_results__columns"
     combined: str = "raw_results__combined"
     from_input_data: str = "raw_results__from_input_data"
@@ -80,7 +80,7 @@ class RawResults(_ABC):
 
 
 @dataclass(frozen=True)
-class SpecializedEnvironment(_ABC):
+class SpecializedEnvironment(MainTargetABC):
     without_tree_logic_and_with_derived_functions: str = (
         "specialized_environment__without_tree_logic_and_with_derived_functions"
     )
@@ -95,13 +95,13 @@ class SpecializedEnvironment(_ABC):
 
 
 @dataclass(frozen=True)
-class Targets(_ABC):
+class Targets(MainTargetABC):
     qname: str = "tt_targets__qname"
     tree: str = "tt_targets__tree"
 
 
 @dataclass(frozen=True)
-class Labels(_ABC):
+class Labels(MainTargetABC):
     column_targets: str = "labels__column_targets"
     grouping_levels: str = "labels__grouping_levels"
     input_data_targets: str = "labels__input_data_targets"
@@ -113,13 +113,13 @@ class Labels(_ABC):
 
 
 @dataclass(frozen=True)
-class DfAndMapper(_ABC):
+class DfAndMapper(MainTargetABC):
     df: str = "input_data__df_and_mapper__df"
     mapper: str = "input_data__df_and_mapper__mapper"
 
 
 @dataclass(frozen=True)
-class InputData(_ABC):
+class InputData(MainTargetABC):
     df_and_mapper: type[DfAndMapper] = field(default=DfAndMapper)
     df_with_nested_columns: str = "input_data__df_with_nested_columns"
     flat: str = "input_data__flat"
@@ -127,7 +127,7 @@ class InputData(_ABC):
 
 
 @dataclass(frozen=True)
-class OrigPolicyObjects(_ABC):
+class OrigPolicyObjects(MainTargetABC):
     column_objects_and_param_functions: str = (
         "orig_policy_objects__column_objects_and_param_functions"
     )
@@ -136,12 +136,12 @@ class OrigPolicyObjects(_ABC):
 
 
 @dataclass(frozen=True)
-class Templates(_ABC):
+class Templates(MainTargetABC):
     input_data_dtypes: str = "templates__input_data_dtypes"
 
 
 @dataclass(frozen=True)
-class MainTarget(_ABC):
+class MainTarget(MainTargetABC):
     results: type[Results] = field(default=Results)
     policy_environment: str = "policy_environment"
     templates: type[Templates] = field(default=Templates)

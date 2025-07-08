@@ -43,10 +43,11 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
+    from jaxtyping import Array, Float
+
     from ttsim.interface_dag_elements.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
-        IntColumn,
         OrigParamSpec,
         PolicyEnvironment,
     )
@@ -142,8 +143,8 @@ def some_x(x):
     return x
 
 
-@policy_function()
-def some_policy_func_returning_array_of_length_2(xnp: ModuleType) -> IntColumn:
+@param_function()
+def some_param_func_returning_array_of_length_2(xnp: ModuleType) -> Float[Array, 2]:
     return xnp.array([1, 2])
 
 
@@ -797,9 +798,9 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     [
         (
             {
-                "some_policy_func_returning_array_of_length_2": some_policy_func_returning_array_of_length_2,
+                "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             },
-            {"some_policy_func_returning_array_of_length_2": "res1"},
+            {"some_param_func_returning_array_of_length_2": "res1"},
             "The data contains paths that don't have the same length",
         ),
     ],

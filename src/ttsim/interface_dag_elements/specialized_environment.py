@@ -168,9 +168,9 @@ def with_processed_params_and_scalars(
     Parameters
     ----------
     without_tree_logic_and_with_derived_functions
-        The specialized environment with vectorized column functions, derived functions
-        (aggregations and time conversions), and without tree logic, i.e. absolute
-        qualified names in all keys and function arguments.
+        The specialized environment without tree logic, i.e. absolute qualified names in
+        all keys and function arguments and with derived functions (aggregations and
+        time conversions).
     processed_data
         The processed data.
     backend
@@ -180,13 +180,13 @@ def with_processed_params_and_scalars(
     dnp
         The numpy-like module to use for datetime objects.
     evaluation_date
-        The date for which the policy system is set up. An integer is
-        interpreted as the year.
+        The date for which the policy system is set up. An integer is interpreted as the
+        year.
 
     Returns
     -------
-    The specialized environment with processed parameters and scalars. Input nodes
-    that come in via the processed data are removed from the environment.
+    The specialized environment with processed parameters and scalars. Input nodes that
+    come in via the processed data are removed from the environment.
     """
 
     all_nodes = {}
