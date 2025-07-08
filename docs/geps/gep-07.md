@@ -260,10 +260,11 @@ interface while maintaining GETTSIM's computational robustness.
 
    The interface DAG looks as follows:
 
-   .. todo::
-
-   Embed the interface DAG without fail/warn nodes as described here:
-   https://mystmd.org/guide/reuse-jupyter-outputs
+   ```{raw} html
+   ---
+   file: ./interface_dag.html
+   ---
+   ```
 
    The **date** is the date at which the policy environment is set up and evaluated. It
    could be passed as `date_str`, which is an ISO-string `YYYY-MM-DD`. If users need
