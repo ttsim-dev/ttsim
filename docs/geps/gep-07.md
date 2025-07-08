@@ -298,7 +298,7 @@ interface while maintaining GETTSIM's computational robustness.
      application (e.g., setting pension payments to zero when looking at the labor
      supply of 30-year olds). In this step, these functions are run and all parameters
      are converted to their final form (e.g., a `ScalarParam` becomes just a number).
-     Where relevant, policy functions are replaced by scalers passed as input data.
+     Where relevant, policy functions are replaced by scalars passed as input data.
    - **with partialled params and scalars** partials all parameters and scalars to the
      functions that make up the taxes and transfers DAG. That is, the resulting
      functions only depend on column arguments (either passed as input data or computed
@@ -307,8 +307,8 @@ interface while maintaining GETTSIM's computational robustness.
      previous step.
    - **taxes and transfers function** is the function that takes the columns in the
      processed data as arguments and returns the desired taxes and transfers targets.
-     Running this function leads to raw results (there still contain internals and
-     should not be used by non-GETTSIM functions)
+     Running this function leads to raw results (they still contain internals and should
+     not be used by non-GETTSIM functions)
 
    The **results** contain the output of the taxes and transfers function, purged of
    internals and converted to the format requested by the user.
@@ -336,7 +336,7 @@ interface while maintaining GETTSIM's computational robustness.
      Turn off if you need numerical derivatives or the like.
 
    * The **backend** is the backend used to compute the taxes and transfers. Default is
-     `numpy`, the other option is `jax`.
+     `"numpy"`, the other option is `"jax"`.
    * **include_fail_and_warn_nodes** is a Boolean that determines whether raise errors
      and display warnings. Defaults to `True`, only turn off if you really know what you
      are doing (and even then, turn on before filing an issue).
