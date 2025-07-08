@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim.tt_dag_elements import RoundingSpec, policy_function
+from ttsim.tt_dag_elements import param_function, policy_function
 
 
 @policy_function(start_date="2003-04-01")
@@ -45,11 +45,10 @@ def beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m(
     return quotient * einkommen_diff
 
 
-@policy_function(
+@param_function(
     start_date="2003-04-01",
     end_date="2004-12-31",
     leaf_name="midijob_faktor_f",
-    rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
     kranken__beitrag__beitragssatz_arbeitnehmer_midijob: float,
@@ -84,15 +83,14 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_bis_2004(
         + lohnsteuer__minijob_arbeitgeberpauschale
     )
 
-    # Now calculate final factor
-    return pausch_mini / (an_anteil + ag_anteil)
+    # Midijob Faktor F is rounded to 4 decimal places.
+    return round(pausch_mini / (an_anteil + ag_anteil), ndigits=4)
 
 
-@policy_function(
+@param_function(
     start_date="2005-01-01",
     end_date="2022-09-30",
     leaf_name="midijob_faktor_f",
-    rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
     kranken__beitrag__beitragssatz_arbeitnehmer_midijob: float,
@@ -127,14 +125,13 @@ def midijob_faktor_f_mit_minijob_steuerpauschale_ab_2005_bis_2022_09(
         + lohnsteuer__minijob_arbeitgeberpauschale
     )
 
-    # Now calculate final factor
-    return pausch_mini / (an_anteil + ag_anteil)
+    # Midijob Faktor F is rounded to 4 decimal places.
+    return round(pausch_mini / (an_anteil + ag_anteil), ndigits=4)
 
 
-@policy_function(
+@param_function(
     start_date="2022-10-01",
     leaf_name="midijob_faktor_f",
-    rounding_spec=RoundingSpec(base=0.0001, direction="nearest"),
 )
 def midijob_faktor_f_ohne_minijob_steuerpauschale(
     kranken__beitrag__beitragssatz_arbeitnehmer_midijob: float,
@@ -172,8 +169,8 @@ def midijob_faktor_f_ohne_minijob_steuerpauschale(
         + rente__beitrag__minijob_arbeitgeberpauschale
     )
 
-    # Now calculate final factor f
-    return pausch_mini / (an_anteil + ag_anteil)
+    # Midijob Faktor F is rounded to 4 decimal places.
+    return round(pausch_mini / (an_anteil + ag_anteil), ndigits=4)
 
 
 @policy_function(

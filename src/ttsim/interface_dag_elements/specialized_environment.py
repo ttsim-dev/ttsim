@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     import datetime
     from collections.abc import Callable
     from types import ModuleType
-    from typing import Any
 
     import networkx as nx
 
@@ -38,11 +37,6 @@ if TYPE_CHECKING:
         SpecEnvWithPartialledParamsAndScalars,
         SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
-    )
-    from ttsim.tt_dag_elements.column_objects_param_function import (
-        BoolColumn,
-        FloatColumn,
-        IntColumn,
     )
 
 
@@ -313,49 +307,13 @@ def with_partialled_params_and_scalars(
             if arg in all_partial_params
         }
         if partial_params_of_this_column_function:
-            # Get the return type annotation before partialling
-            original_return_type = None
-            if (
-                hasattr(rounded_col_func, "__annotations__")
-                and "return" in rounded_col_func.__annotations__
-            ):
-                original_return_type = rounded_col_func.__annotations__["return"]
-
-            partial_func = functools.partial(
+            processed_functions[name] = functools.partial(
                 rounded_col_func, **partial_params_of_this_column_function
             )
-            # If the partialled policy function has no free arguments, we have to make
-            # sure it returns an array, not a scalar.
-            remaining_args = get_free_arguments(partial_func)
-            if not remaining_args:
-                processed_functions[name] = _scalar_function_to_array(
-                    scalar_func=partial_func,
-                    xnp=xnp,
-                    original_return_type=original_return_type,
-                )
-            else:
-                processed_functions[name] = partial_func
         else:
             processed_functions[name] = rounded_col_func
 
     return processed_functions
-
-
-def _scalar_function_to_array(
-    scalar_func: Callable[..., Any],
-    xnp: ModuleType,
-    original_return_type: str | None = None,
-) -> Callable[..., Any]:
-    """Wrap a scalar function to return a 1-element array instead of a scalar."""
-
-    def wrapper() -> FloatColumn | IntColumn | BoolColumn:
-        scalar_result = scalar_func()
-        return xnp.array([scalar_result])
-
-    # Replace the return annotation based on the original function's return type
-    if original_return_type:
-        wrapper.__annotations__ = {"return": original_return_type}
-    return wrapper
 
 
 def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
