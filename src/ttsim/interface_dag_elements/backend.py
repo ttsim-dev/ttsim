@@ -25,7 +25,7 @@ def xnp(backend: Literal["numpy", "jax"]) -> ModuleType:
     if backend == "numpy":
         xnp = numpy
     elif backend == "jax":
-        import jax
+        import jax  # noqa: PLC0415
 
         xnp = jax.numpy
     else:

@@ -214,7 +214,7 @@ def _qnames_of_idif_to_their_ancestors(
     """Get the qnames of the input dependent interface functions to their ancestors."""
     idif_qname_to_idif_inputs: dict[str, list[str]] = {}
     for orig_p, orig_object in input_dependent_interface_functions.items():
-        qname = dt.qname_from_tree_path(orig_p[:-1] + (orig_object.leaf_name,))
+        qname = dt.qname_from_tree_path(*orig_p[:-1], orig_object.leaf_name)
         if qname not in idif_qname_to_idif_inputs:
             idif_qname_to_idif_inputs[qname] = []
         ancestors = set(orig_object.include_if_all_inputs_present) | set(
