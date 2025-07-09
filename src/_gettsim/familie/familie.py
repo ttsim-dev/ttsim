@@ -15,36 +15,42 @@ def anzahl_personen_ehe(ehe_id: int) -> int:
 
 
 @policy_function()
-def kind_bis_2(alter: int, kind: bool) -> bool:
-    """Calculate if child under the age of 3."""
-    return kind and (alter <= 2)
+def kind_bis_2(alter: int) -> bool:
+    """Child under the age of 3."""
+    return alter <= 2
 
 
 @policy_function()
-def kind_bis_5(alter: int, kind: bool) -> bool:
-    """Calculate if child under the age of 6."""
-    return kind and (alter <= 5)
+def kind_bis_5(alter: int) -> bool:
+    """Child under the age of 6."""
+    return alter <= 5
 
 
 @policy_function()
-def kind_bis_6(alter: int, kind: bool) -> bool:
-    """Calculate if child under the age of 7."""
-    return kind and (alter <= 6)
+def kind_bis_6(alter: int) -> bool:
+    """Child under the age of 7."""
+    return alter <= 6
 
 
 @policy_function()
-def kind_bis_15(alter: int, kind: bool) -> bool:
-    """Calculate if child under the age of 16."""
-    return kind and (alter <= 15)
+def kind_bis_15(alter: int) -> bool:
+    """Child under the age of 16."""
+    return alter <= 15
 
 
 @policy_function()
-def kind_bis_17(alter: int, kind: bool) -> bool:
-    """Calculate if underage person."""
-    return kind and (alter <= 17)
+def kind_bis_17(alter: int) -> bool:
+    """Underage person."""
+    return alter <= 17
 
 
 @policy_function()
-def erwachsen(kind: bool) -> bool:
-    """Calculate if adult."""
-    return not kind
+def person_ab_18(alter: int) -> bool:
+    """Older than 18."""
+    return alter >= 18
+
+
+@policy_function()
+def person_ab_25(alter: int) -> bool:
+    """Older than 25."""
+    return alter >= 25
