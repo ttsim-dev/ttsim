@@ -46,17 +46,17 @@ interface while maintaining GETTSIM's computational robustness.
 
 ## Usage and Impact
 
-1. Basic workflow
+1. **Basic workflow**
 
    There is a single entry point for GETTSIM: The `main` function. It is powered by a
    DAG in the background.
 
    This means that the user will have to start by telling it the desired target
    ("`main_target`") or set of targets ("`main_targets`"). Ultimately, the main target
-   will typically be a dataset with values for taxes and transfers. However,
-   intermediate steps can be useful. E. g., the taxes and transfers system at a
-   particular date (the "`policy_environ­ment`"), which she wants to modify in order to
-   model a reform.
+   will typically be a dataset with values for taxes and transfers. However, the `main`
+   function can also be used to obtain intermediate objects. E. g., the taxes and
+   transfers system at a particular date (the "`policy_environ­ment`"), which she wants
+   to modify in order to model a reform.
 
    The targets determine the required inputs. For example, in order to compute taxes and
    transfers for a set of households, one will need as primitives
@@ -119,7 +119,9 @@ interface while maintaining GETTSIM's computational robustness.
    ```
 
    That is, the call to `main` above will return a DataFrame with one column
-   `ltci_contrib`, which will be of the same length as the input data.
+   `ltci_contrib`, which will be of the same length as the input data. As the possible
+   target trees will depend on the policy environment, we will need to make the
+   documentation dynamic.
 
    The second argument, `date_str`, specifies the date at which the policy environment
    is set up and evaluated.
@@ -427,9 +429,8 @@ compatibility. This said, the former:
 from gettsim import (
     set_up_policy_environment,
     compute_taxes_and_transfers,
-)
 
-policy_params, policy_functions = set_up_policy_environment(2020)
+policy_params, policy_functions = set_up_policy_environment(2025)
 result = compute_taxes_and_transfers(
     data=data,
     functions=policy_functions,
@@ -443,7 +444,7 @@ can be replaced by:
 ```python
 from gettsim import main, InputData, MainTarget, TTTargets
 
-result = main(
+outputs = main(
     main_targets=[
         MainTarget.policy_environment,
         MainTarget.results.df_with_mapper,
@@ -455,6 +456,8 @@ result = main(
     ),
     tt_targets=TTTargets(tree=tt_targets_tree),
 )
+policy_environment = outputs["policy_environment"]
+result = outputs["results"]["df_with_mapper"]
 ```
 
 Beyond the interface change, users will need to change `targets` to `tt_targets_tree`
