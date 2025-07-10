@@ -8,12 +8,12 @@ from ttsim.tt_dag_elements import AggType, agg_by_group_function
 # TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_erwachsene_fg(familie__person_ab_18: bool, fg_id: int) -> int:
+def anzahl_erwachsene_fg(familie__erwachsen: bool, fg_id: int) -> int:
     pass
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_fg(familie__kind_bis_17: bool, fg_id: int) -> int:
+def anzahl_kinder_fg(familie__kind: bool, fg_id: int) -> int:
     pass
 
 
