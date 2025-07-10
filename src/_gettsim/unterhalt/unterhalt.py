@@ -9,13 +9,13 @@ from ttsim.tt_dag_elements import policy_function
 def kind_festgelegter_zahlbetrag_m(
     anspruch_m: float,
     kindergeld__betrag_m: float,
-    familie__kind: bool,
+    familie__person_bis_17: bool,
     abzugsrate_kindergeld: dict[str, float],
 ) -> float:
     """Monthly actual child alimony payments to be received by the child after
     deductions.
     """
-    if familie__kind:
+    if familie__person_bis_17:
         abzugsrate = abzugsrate_kindergeld["minderjährig"]
     else:
         abzugsrate = abzugsrate_kindergeld["volljährig"]

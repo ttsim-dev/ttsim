@@ -45,6 +45,12 @@ def kind_bis_17(alter: int, kind: bool) -> bool:
 
 
 @policy_function()
+def person_bis_17(alter: int) -> bool:
+    """Calculate if underage person."""
+    return alter <= 17
+
+
+@policy_function()
 def erwachsen(kind: bool) -> bool:
     """Calculate if adult."""
     return not kind

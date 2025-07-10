@@ -163,7 +163,7 @@ def abzug_durch_einkommen_m(
     leaf_name="kind_grundsätzlich_anspruchsberechtigt",
 )
 def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
-    familie__kind: bool,
+    ist_leistungsbegründendes_kind: bool,
     alter_monate: int,
     budgetsatz: bool,
     maximales_kindsalter_budgetsatz: float,
@@ -174,10 +174,16 @@ def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
     """
     if budgetsatz:
-        out = familie__kind and alter_monate <= maximales_kindsalter_budgetsatz
+        out = (
+            ist_leistungsbegründendes_kind
+            and alter_monate <= maximales_kindsalter_budgetsatz
+        )
 
     else:
-        out = familie__kind and alter_monate <= maximales_kindsalter_regelsatz
+        out = (
+            ist_leistungsbegründendes_kind
+            and alter_monate <= maximales_kindsalter_regelsatz
+        )
 
     return out
 
@@ -188,7 +194,7 @@ def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
     leaf_name="kind_grundsätzlich_anspruchsberechtigt",
 )
 def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
-    familie__kind: bool,
+    ist_leistungsbegründendes_kind: bool,
     geburtsjahr: int,
     alter_monate: int,
     budgetsatz: bool,
@@ -202,10 +208,16 @@ def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
     """
     if budgetsatz and geburtsjahr <= abolishment_cohort:
-        out = familie__kind and alter_monate <= maximales_kindsalter_budgetsatz
+        out = (
+            ist_leistungsbegründendes_kind
+            and alter_monate <= maximales_kindsalter_budgetsatz
+        )
 
     elif geburtsjahr <= abolishment_cohort:
-        out = familie__kind and alter_monate <= maximales_kindsalter_regelsatz
+        out = (
+            ist_leistungsbegründendes_kind
+            and alter_monate <= maximales_kindsalter_regelsatz
+        )
 
     else:
         out = False
@@ -330,3 +342,23 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
         return einkommensgrenze.reduziert_alleinerziehend["regelsatz"]
     else:
         return einkommensgrenze.reduziert_paar["regelsatz"]
+
+
+@policy_function(end_date="2008-12-31")
+def ist_leistungsbegründendes_kind(
+    p_id_empfänger: int,
+) -> bool:
+    """
+    Determines whether the given person is considered a 'leistungsbegründendes Kind'
+    (benefit-establishing child) for the purpose of parental leave benefits.
+
+    A 'leistungsbegründende Person' is a person whose existence or characteristics give
+    rise to a potential entitlement to a transfer benefit. This person is not
+    necessarily the same as the benefit recipient or the one being evaluated for
+    eligibility.
+
+    This function returns True if a recipient has been assigned for the person in
+    question, indicating that the person is considered to establish eligibility for a
+    benefit.
+    """
+    return p_id_empfänger >= 0
