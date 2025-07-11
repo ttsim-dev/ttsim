@@ -22,27 +22,9 @@ def anzahl_personen_ehe(ehe_id: int) -> int:
 
 
 @policy_function()
-def kind_bis_2(alter: int, kind: bool) -> bool:
-    """Child under the age of 3."""
-    return kind and (alter <= 2)
-
-
-@policy_function()
-def kind_bis_5(alter: int, kind: bool) -> bool:
-    """Child under the age of 6."""
-    return kind and (alter <= 5)
-
-
-@policy_function()
 def kind_bis_6(alter: int, kind: bool) -> bool:
     """Child under the age of 7."""
     return kind and (alter <= 6)
-
-
-@policy_function()
-def kind_bis_15(alter: int, kind: bool) -> bool:
-    """Child under the age of 16."""
-    return kind and (alter <= 15)
 
 
 @policy_function()
