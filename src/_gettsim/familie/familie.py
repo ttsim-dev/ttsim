@@ -16,21 +16,46 @@ if TYPE_CHECKING:
     from ttsim.tt_dag_elements.typing import BoolColumn, IntColumn
 
 
-@agg_by_group_function(agg_type=AggType.COUNT)
-def anzahl_personen_ehe(ehe_id: int) -> int:
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_fg(ist_kind_in_familiengemeinschaft: bool, fg_id: int) -> int:
     pass
 
 
-@policy_function()
-def kind_bis_6(alter: int, kind: bool) -> bool:
-    """Child under the age of 7."""
-    return kind and (alter <= 6)
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_2_fg(kind_in_fg_bis_2: bool, fg_id: int) -> int:
+    pass
 
 
-@policy_function()
-def kind_bis_17(alter: int, kind: bool) -> bool:
-    """Child under the age of 18."""
-    return kind and (alter <= 17)
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_kinder_bis_5_fg(kind_in_fg_bis_5: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bis_6_fg(kind_in_fg_bis_6: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bis_15_fg(kind_in_fg_bis_15: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bis_17_fg(kind_in_fg_bis_17: bool, fg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_erwachsene_fg(
+    ist_erwachsener_in_familiengemeinschaft: bool, fg_id: int
+) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.MIN)
+def alter_monate_jüngstes_mitglied_fg(alter_monate: int, fg_id: int) -> float:
+    pass
 
 
 @policy_function()
@@ -69,6 +94,11 @@ def person_bis_17(alter: int) -> bool:
     return alter <= 17
 
 
+@agg_by_group_function(agg_type=AggType.COUNT)
+def anzahl_personen_ehe(ehe_id: int) -> int:
+    pass
+
+
 @policy_function()
 def erwachsen(kind: bool) -> bool:
     """Adult."""
@@ -103,3 +133,11 @@ def ist_kind_in_familiengemeinschaft(
     in_gleicher_fg_wie_elternteil_1 = fg_id_elternteil_1 == fg_id
     in_gleicher_fg_wie_elternteil_2 = fg_id_elternteil_2 == fg_id
     return in_gleicher_fg_wie_elternteil_1 | in_gleicher_fg_wie_elternteil_2
+
+
+@policy_function()
+def ist_erwachsener_in_familiengemeinschaft(
+    ist_kind_in_familiengemeinschaft: bool,
+) -> bool:
+    """Person is an adult in the Familengemeinschaft."""
+    return not ist_kind_in_familiengemeinschaft

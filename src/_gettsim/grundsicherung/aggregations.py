@@ -1,4 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ttsim.tt_dag_elements import AggType, agg_by_group_function, policy_function
+
+if TYPE_CHECKING:
+    from ttsim.tt_dag_elements import BoolColumn, IntColumn
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
@@ -18,14 +25,13 @@ def anzahl_personen_eg(eg_id: int) -> int:
     pass
 
 
-@policy_function()
-def ist_kind_in_einstandsgemeinschaft(alter: int) -> bool:
-    """
-    Determines whether the given person is a child in a Einstandsgemeinschaft.
+@policy_function(vectorization_strategy="not_required")
+def ist_kind_in_einstandsgemeinschaft(alter: IntColumn) -> BoolColumn:
+    """Determines whether the given person is a child in a Einstandsgemeinschaft.
 
     The 'child' definition follows §27 SGB XII.
     """
-    # TODO(@MImmesberger): This assumes that parents are part of the minor's
+    # TODO(@MImmesberger): This assumes that parents are part of the minor's (SGB XII)
     # Einstandsgemeinschaft. This is not necessarily true. Rewrite once we refactor SGB
     # XII.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738

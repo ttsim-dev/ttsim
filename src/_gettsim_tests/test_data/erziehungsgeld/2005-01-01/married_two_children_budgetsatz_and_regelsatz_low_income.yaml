@@ -118,7 +118,7 @@ inputs:
             - false
   provided: {}
 outputs:
-  arbeitslosengeld_2:
+  familie:
     anzahl_kinder_fg:
       - 2
       - 2

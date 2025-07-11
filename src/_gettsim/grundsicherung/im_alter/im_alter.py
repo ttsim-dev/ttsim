@@ -95,13 +95,20 @@ def mehrbedarf_schwerbehinderung_g_m(
 
 @policy_function(start_date="2005-01-01")
 def vermögensfreibetrag_eg(
-    arbeitslosengeld_2__anzahl_erwachsene_fg: int,
-    arbeitslosengeld_2__anzahl_kinder_fg: int,
+    familie__anzahl_kinder_fg: int,
+    familie__anzahl_erwachsene_fg: int,
     parameter_vermögensfreibetrag: dict[str, float],
 ) -> float:
-    """Calculate wealth not considered for Grundsicherung im Alter on household level."""
-    return (
-        parameter_vermögensfreibetrag["erwachsene"]
-        * arbeitslosengeld_2__anzahl_erwachsene_fg
-        + parameter_vermögensfreibetrag["kinder"] * arbeitslosengeld_2__anzahl_kinder_fg
-    )
+    """Calculate wealth not considered for Grundsicherung im Alter on household
+    level."""
+    if familie__anzahl_erwachsene_fg > 1:
+        out = (
+            parameter_vermögensfreibetrag["erwachsene"] * familie__anzahl_erwachsene_fg
+            + parameter_vermögensfreibetrag["kinder"] * familie__anzahl_kinder_fg
+        )
+    else:
+        out = (
+            parameter_vermögensfreibetrag["erwachsene"]
+            + parameter_vermögensfreibetrag["kinder"] * familie__anzahl_kinder_fg
+        )
+    return out

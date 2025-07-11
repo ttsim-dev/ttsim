@@ -20,6 +20,14 @@ def leistungsbegründende_kinder_in_fg(
 
 
 @agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_mehrlinge_jüngstes_kind_fg(
+    jüngstes_kind_oder_mehrling: bool,
+    fg_id: int,
+) -> int:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
 def anzahl_anträge_fg(claimed: bool, fg_id: int) -> int:
     pass
 
@@ -29,29 +37,6 @@ def bezugsmonate_partner(
     bisherige_bezugsmonate: int,
     arbeitslosengeld_2__p_id_einstandspartner: int,
     p_id: int,
-) -> int:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.MIN)
-def alter_monate_jüngstes_mitglied_fg(alter_monate: int, fg_id: int) -> float:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_kinder_bis_2_fg(familie__kind_in_fg_bis_2: bool, fg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_kinder_bis_5_fg(familie__kind_in_fg_bis_5: bool, fg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_mehrlinge_jüngstes_kind_fg(
-    jüngstes_kind_oder_mehrling: bool,
-    fg_id: int,
 ) -> int:
     pass
 
@@ -274,7 +259,7 @@ def anrechenbarer_betrag_m(
 @policy_function()
 def jüngstes_kind_oder_mehrling(
     alter_monate: int,
-    alter_monate_jüngstes_mitglied_fg: float,
+    familie__alter_monate_jüngstes_mitglied_fg: float,
     ist_leistungsbegründendes_kind: bool,
 ) -> bool:
     """Check if person is the youngest child in the household or a twin, triplet, etc.
@@ -285,7 +270,7 @@ def jüngstes_kind_oder_mehrling(
 
     """
     return (
-        (alter_monate - alter_monate_jüngstes_mitglied_fg) < 0.1
+        (alter_monate - familie__alter_monate_jüngstes_mitglied_fg) < 0.1
     ) and ist_leistungsbegründendes_kind
 
 

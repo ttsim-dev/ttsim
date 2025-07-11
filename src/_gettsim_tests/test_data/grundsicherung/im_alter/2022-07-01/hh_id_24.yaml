@@ -14,8 +14,8 @@ inputs:
         - false
         - false
       p_id_einstandspartner:
-        - 33
-        - 32
+        - -1
+        - -1
     einkommensteuer:
       betrag_y_sn:
         - 0.0
@@ -59,8 +59,8 @@ inputs:
         - false
         - true
       p_id_ehepartner:
-        - 33
-        - 32
+        - -1
+        - -1
       p_id_elternteil_1:
         - -1
         - -1

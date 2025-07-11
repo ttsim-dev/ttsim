@@ -10,7 +10,6 @@ from ttsim.tt_dag_elements import (
     get_consecutive_int_lookup_table_param_value,
     param_function,
     policy_function,
-    policy_input,
 )
 
 if TYPE_CHECKING:
@@ -37,9 +36,9 @@ def regelbedarf_m(
 @policy_function(start_date="2005-01-01")
 def mehrbedarf_alleinerziehend_m(
     familie__alleinerziehend: bool,
-    anzahl_kinder_bis_17_fg: int,
-    anzahl_kinder_bis_6_fg: int,
-    anzahl_kinder_bis_15_fg: int,
+    familie__anzahl_kinder_bis_17_fg: int,
+    familie__anzahl_kinder_bis_6_fg: int,
+    familie__anzahl_kinder_bis_15_fg: int,
     parameter_mehrbedarf_alleinerziehend: dict[str, float],
 ) -> float:
     """Mehrbedarf (additional need) for single parents as a share of the Regelsatz.
@@ -54,13 +53,13 @@ def mehrbedarf_alleinerziehend_m(
     """
     basis_mehrbedarf = (
         parameter_mehrbedarf_alleinerziehend["basis_je_kind_bis_17"]
-        * anzahl_kinder_bis_17_fg
+        * familie__anzahl_kinder_bis_17_fg
     )
 
     if (
-        anzahl_kinder_bis_6_fg == 1
-        or anzahl_kinder_bis_15_fg == 2
-        or anzahl_kinder_bis_15_fg == 3
+        familie__anzahl_kinder_bis_6_fg == 1
+        or familie__anzahl_kinder_bis_15_fg == 2
+        or familie__anzahl_kinder_bis_15_fg == 3
     ):
         mehrbedarf = max(
             parameter_mehrbedarf_alleinerziehend["kind_bis_6_oder_2_3_kinder_bis_15"],
@@ -272,11 +271,6 @@ def kosten_der_unterkunft_m_bis_2022(
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
     return berechtigte_wohnfläche * anerkannte_warmmiete_je_qm_m
-
-
-@policy_input(start_date="2023-01-01")
-def arbeitslosengeld_2_bezug_im_vorjahr() -> bool:
-    """Whether the person received Arbeitslosengeld 2 / Bürgergeld in the previous year."""
 
 
 @policy_function(

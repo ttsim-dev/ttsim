@@ -6,8 +6,8 @@ from ttsim.tt_dag_elements import FKType, policy_input
 
 
 @policy_input(start_date="2023-01-01")
-def bezug_im_vorjahr() -> bool:
-    """Received Arbeitslosengeld II / Bürgergeld in previous year."""
+def arbeitslosengeld_2_bezug_im_vorjahr() -> bool:
+    """Whether the person received Arbeitslosengeld 2 / Bürgergeld in the previous year."""
 
 
 # TODO(@MImmesberger): Remove input variable eigenbedarf_gedeckt once

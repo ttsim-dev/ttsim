@@ -243,7 +243,7 @@ def grundsätzlich_anspruchsberechtigt(
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def anzurechnendes_einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg: float,
-    arbeitslosengeld_2__anzahl_erwachsene_fg: int,
+    familie__anzahl_erwachsene_fg: int,
     kind_grundsätzlich_anspruchsberechtigt: bool,
     pauschaler_abzug_vom_einkommen: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
@@ -259,7 +259,7 @@ def anzurechnendes_einkommen_y(
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
             - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale
-            * arbeitslosengeld_2__anzahl_erwachsene_fg
+            * familie__anzahl_erwachsene_fg
         ) * pauschaler_abzug_vom_einkommen
     else:
         out = 0.0
@@ -269,7 +269,7 @@ def anzurechnendes_einkommen_y(
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def einkommensgrenze_y(
     einkommensgrenze_ohne_geschwisterbonus: float,
-    arbeitslosengeld_2__anzahl_kinder_fg: float,
+    familie__anzahl_kinder_fg: float,
     kind_grundsätzlich_anspruchsberechtigt: bool,
     aufschlag_einkommen: float,
 ) -> float:
@@ -279,7 +279,7 @@ def einkommensgrenze_y(
     """
     out = (
         einkommensgrenze_ohne_geschwisterbonus
-        + (arbeitslosengeld_2__anzahl_kinder_fg - 1) * aufschlag_einkommen
+        + (familie__anzahl_kinder_fg - 1) * aufschlag_einkommen
     )
     if not kind_grundsätzlich_anspruchsberechtigt:
         out = 0.0
