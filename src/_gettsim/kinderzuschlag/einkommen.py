@@ -30,18 +30,14 @@ def anzahl_kinder_bg(kindergeld__anzahl_ansprüche: int, bg_id: int) -> int:
 @policy_function(start_date="2005-01-01")
 def bruttoeinkommen_eltern_m(
     arbeitslosengeld_2__bruttoeinkommen_m: float,
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
-    familie__erwachsen: bool,
+    kindergeld__anzahl_ansprüche: int,
 ) -> float:
     """Calculate parental gross income for calculation of child benefit.
 
     This variable is used to check whether the minimum income threshold for child
     benefit is met.
     """
-    # TODO(@MImmesberger): Redesign the conditions in this function: False for adults
-    # who do not have Kindergeld claims.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/704
-    if familie__erwachsen and (not kindergeld__grundsätzlich_anspruchsberechtigt):
+    if kindergeld__anzahl_ansprüche > 0:
         out = arbeitslosengeld_2__bruttoeinkommen_m
     else:
         out = 0.0
@@ -57,16 +53,12 @@ def bruttoeinkommen_eltern_m(
 )
 def nettoeinkommen_eltern_m_mit_grober_rundung(
     arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m: float,
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
-    familie__erwachsen: bool,
+    kindergeld__anzahl_ansprüche: int,
 ) -> float:
     """Parental income (after deduction of taxes, social insurance contributions, and
     other deductions) for calculation of child benefit.
     """
-    # TODO(@MImmesberger): Redesign the conditions in this function: False for adults
-    # who do not have Kindergeld claims.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/704
-    if familie__erwachsen and (not kindergeld__grundsätzlich_anspruchsberechtigt):
+    if kindergeld__anzahl_ansprüche > 0:
         out = arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m
     else:
         out = 0.0
@@ -80,16 +72,12 @@ def nettoeinkommen_eltern_m_mit_grober_rundung(
 )
 def nettoeinkommen_eltern_m_mit_genauer_rundung(
     arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m: float,
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
-    familie__erwachsen: bool,
+    kindergeld__anzahl_ansprüche: int,
 ) -> float:
     """Parental income (after deduction of taxes, social insurance contributions, and
     other deductions) for calculation of child benefit.
     """
-    # TODO(@MImmesberger): Redesign the conditions in this function: False for adults
-    # who do not have Kindergeld claims.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/704
-    if familie__erwachsen and (not kindergeld__grundsätzlich_anspruchsberechtigt):
+    if kindergeld__anzahl_ansprüche > 0:
         out = arbeitslosengeld_2__nettoeinkommen_nach_abzug_freibetrag_m
     else:
         out = 0.0
