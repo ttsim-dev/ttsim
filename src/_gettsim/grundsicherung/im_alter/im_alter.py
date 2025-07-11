@@ -101,14 +101,7 @@ def vermögensfreibetrag_eg(
 ) -> float:
     """Calculate wealth not considered for Grundsicherung im Alter on household
     level."""
-    if familie__anzahl_erwachsene_fg > 1:
-        out = (
-            parameter_vermögensfreibetrag["erwachsene"] * familie__anzahl_erwachsene_fg
-            + parameter_vermögensfreibetrag["kinder"] * familie__anzahl_kinder_fg
-        )
-    else:
-        out = (
-            parameter_vermögensfreibetrag["erwachsene"]
-            + parameter_vermögensfreibetrag["kinder"] * familie__anzahl_kinder_fg
-        )
-    return out
+    return (
+        parameter_vermögensfreibetrag["erwachsene"] * familie__anzahl_erwachsene_fg
+        + parameter_vermögensfreibetrag["kinder"] * familie__anzahl_kinder_fg
+    )
