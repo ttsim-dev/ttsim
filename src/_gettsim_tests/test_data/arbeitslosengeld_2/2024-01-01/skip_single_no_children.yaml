@@ -38,8 +38,6 @@ inputs:
       - 0.0
     familie__alleinerziehend:
       - false
-    familie__kind:
-      - false
     familie__p_id_ehepartner:
       - -1
     familie__p_id_elternteil_1:

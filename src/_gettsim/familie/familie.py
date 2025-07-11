@@ -94,6 +94,12 @@ def person_bis_17(alter: int) -> bool:
     return alter <= 17
 
 
+@policy_function()
+def volljährig(alter: int) -> bool:
+    """Person over the age of 18."""
+    return alter > 18
+
+
 @agg_by_group_function(agg_type=AggType.COUNT)
 def anzahl_personen_ehe(ehe_id: int) -> int:
     pass
