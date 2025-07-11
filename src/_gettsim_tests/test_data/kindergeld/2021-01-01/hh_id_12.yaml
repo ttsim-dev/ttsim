@@ -17,9 +17,7 @@ inputs:
             - 0.0
       gesamteinkommen_y:
         - 0.0
-    familie:
-      kind:
-        - false
+    familie: null
     hh_id:
       - 12
     kindergeld:

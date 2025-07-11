@@ -74,10 +74,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - true
-        - false
       p_id_ehepartner:
         - 48
         - -1

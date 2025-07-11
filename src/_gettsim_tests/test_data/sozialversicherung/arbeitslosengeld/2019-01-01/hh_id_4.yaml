@@ -36,9 +36,6 @@ inputs:
             - 4000.0
             - 0.0
     familie:
-      kind:
-        - false
-        - true
       p_id_elternteil_1:
         - -1
         - 5

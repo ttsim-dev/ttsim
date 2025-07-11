@@ -26,10 +26,6 @@ inputs:
         - 5000.0
         - 0.0
     familie:
-      kind:
-        - false
-        - false
-        - true
       p_id_ehepartner:
         - 32
         - 2

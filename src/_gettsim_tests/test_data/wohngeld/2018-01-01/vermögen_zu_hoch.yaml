@@ -128,13 +128,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - true
-        - true
-        - true
-        - true
       p_id_ehepartner:
         - 29
         - 28

@@ -41,9 +41,6 @@ inputs:
       alleinerziehend:
         - true
         - false
-      kind:
-        - false
-        - true
       p_id_elternteil_1:
         - -1
         - 41

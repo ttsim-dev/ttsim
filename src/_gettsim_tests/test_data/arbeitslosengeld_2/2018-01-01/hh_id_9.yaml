@@ -100,12 +100,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - true
-        - true
-        - true
-        - true
       p_id_ehepartner:
         - -1
         - -1
