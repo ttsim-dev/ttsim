@@ -8,6 +8,7 @@ from typing import Any, Literal
 from ttsim.tt_dag_elements import (
     AggType,
     RoundingSpec,
+    agg_by_group_function,
     agg_by_p_id_function,
     param_function,
     policy_function,
@@ -40,6 +41,14 @@ def einkommensgrenze(
         ],
         reduziert_paar=parameter_einkommensgrenze["reduziert_paar"],
     )
+
+
+@agg_by_group_function(end_date="2008-12-31", agg_type=AggType.ANY)
+def leistungsbegründende_kinder_fg(
+    ist_leistungsbegründendes_kind: bool,
+    fg_id: int,
+) -> bool:
+    pass
 
 
 @agg_by_p_id_function(end_date="2008-12-31", agg_type=AggType.SUM)
@@ -89,7 +98,7 @@ def erziehungsgeld_kind_ohne_budgetsatz_m() -> NotImplementedError:
     rounding_spec=RoundingSpec(base=0.01, direction="nearest"),
 )
 def anspruchshöhe_kind_mit_budgetsatz_m(
-    kind_grundsätzlich_anspruchsberechtigt: bool,
+    ist_leistungsbegründendes_kind: bool,
     abzug_durch_einkommen_m: float,
     basisbetrag_m: float,
 ) -> float:
@@ -100,7 +109,7 @@ def anspruchshöhe_kind_mit_budgetsatz_m(
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
     """
-    if kind_grundsätzlich_anspruchsberechtigt:
+    if ist_leistungsbegründendes_kind:
         out = max(
             basisbetrag_m - abzug_durch_einkommen_m,
             0.0,
@@ -160,10 +169,10 @@ def abzug_durch_einkommen_m(
 @policy_function(
     start_date="2004-01-01",
     end_date="2006-12-10",
-    leaf_name="kind_grundsätzlich_anspruchsberechtigt",
+    leaf_name="ist_leistungsbegründendes_kind",
 )
-def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
-    ist_leistungsbegründendes_kind: bool,
+def _leistungsbegründendes_kind_vor_abschaffung(
+    p_id_empfänger: bool,
     alter_monate: int,
     budgetsatz: bool,
     maximales_kindsalter_budgetsatz: float,
@@ -174,16 +183,10 @@ def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
     """
     if budgetsatz:
-        out = (
-            ist_leistungsbegründendes_kind
-            and alter_monate <= maximales_kindsalter_budgetsatz
-        )
+        out = p_id_empfänger >= 0 and alter_monate <= maximales_kindsalter_budgetsatz
 
     else:
-        out = (
-            ist_leistungsbegründendes_kind
-            and alter_monate <= maximales_kindsalter_regelsatz
-        )
+        out = p_id_empfänger >= 0 and alter_monate <= maximales_kindsalter_regelsatz
 
     return out
 
@@ -191,10 +194,10 @@ def _kind_grundsätzlich_anspruchsberechtigt_vor_abschaffung(
 @policy_function(
     start_date="2006-12-11",
     end_date="2008-12-31",
-    leaf_name="kind_grundsätzlich_anspruchsberechtigt",
+    leaf_name="ist_leistungsbegründendes_kind",
 )
-def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
-    ist_leistungsbegründendes_kind: bool,
+def _leistungsbegründendes_kind_nach_abschaffung(
+    p_id_empfänger: int,
     geburtsjahr: int,
     alter_monate: int,
     budgetsatz: bool,
@@ -202,22 +205,24 @@ def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
     maximales_kindsalter_budgetsatz: float,
     maximales_kindsalter_regelsatz: float,
 ) -> bool:
-    """Eligibility for parental leave benefit (Erziehungsgeld) on child level. Abolished
-    for children born after the cut-off date.
+    """
+    Determines whether the given person is considered a 'leistungsbegründendes Kind'
+    (benefit-establishing child) for the purpose of parental leave benefits.
+
+    A 'leistungsbegründende Person' is a person whose existence or characteristics give
+    rise to a potential entitlement to a transfer benefit. This person is not
+    necessarily the same as the benefit recipient or the one being evaluated for
+    eligibility.
+
+    Abolished for children born after the cut-off date.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
     """
     if budgetsatz and geburtsjahr <= abolishment_cohort:
-        out = (
-            ist_leistungsbegründendes_kind
-            and alter_monate <= maximales_kindsalter_budgetsatz
-        )
+        out = p_id_empfänger >= 0 and alter_monate <= maximales_kindsalter_budgetsatz
 
     elif geburtsjahr <= abolishment_cohort:
-        out = (
-            ist_leistungsbegründendes_kind
-            and alter_monate <= maximales_kindsalter_regelsatz
-        )
+        out = p_id_empfänger >= 0 and alter_monate <= maximales_kindsalter_regelsatz
 
     else:
         out = False
@@ -228,14 +233,14 @@ def _kind_grundsätzlich_anspruchsberechtigt_nach_abschaffung(
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def grundsätzlich_anspruchsberechtigt(
     arbeitsstunden_w: float,
-    kind_grundsätzlich_anspruchsberechtigt_fg: bool,
+    leistungsbegründende_kinder_fg: bool,
     maximale_wochenarbeitszeit: float,
 ) -> bool:
     """Eligibility for parental leave benefit (Erziehungsgeld) on parental level.
 
     Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.207)
     """
-    return kind_grundsätzlich_anspruchsberechtigt_fg and (
+    return leistungsbegründende_kinder_fg and (
         arbeitsstunden_w <= maximale_wochenarbeitszeit
     )
 
@@ -244,7 +249,7 @@ def grundsätzlich_anspruchsberechtigt(
 def anzurechnendes_einkommen_y(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg: float,
     familie__anzahl_erwachsene_fg: int,
-    kind_grundsätzlich_anspruchsberechtigt: bool,
+    ist_leistungsbegründendes_kind: bool,
     pauschaler_abzug_vom_einkommen: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
 ) -> float:
@@ -255,7 +260,7 @@ def anzurechnendes_einkommen_y(
     There is special rule for "Beamte, Soldaten und Richter" which is not
     implemented yet.
     """
-    if kind_grundsätzlich_anspruchsberechtigt:
+    if ist_leistungsbegründendes_kind:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
             - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale
@@ -270,7 +275,7 @@ def anzurechnendes_einkommen_y(
 def einkommensgrenze_y(
     einkommensgrenze_ohne_geschwisterbonus: float,
     familie__anzahl_kinder_fg: float,
-    kind_grundsätzlich_anspruchsberechtigt: bool,
+    ist_leistungsbegründendes_kind: bool,
     aufschlag_einkommen: float,
 ) -> float:
     """Income threshold for parental leave benefit (Erziehungsgeld).
@@ -281,7 +286,7 @@ def einkommensgrenze_y(
         einkommensgrenze_ohne_geschwisterbonus
         + (familie__anzahl_kinder_fg - 1) * aufschlag_einkommen
     )
-    if not kind_grundsätzlich_anspruchsberechtigt:
+    if not ist_leistungsbegründendes_kind:
         out = 0.0
     return out
 
@@ -342,23 +347,3 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
         return einkommensgrenze.reduziert_alleinerziehend["regelsatz"]
     else:
         return einkommensgrenze.reduziert_paar["regelsatz"]
-
-
-@policy_function(end_date="2008-12-31")
-def ist_leistungsbegründendes_kind(
-    p_id_empfänger: int,
-) -> bool:
-    """
-    Determines whether the given person is considered a 'leistungsbegründendes Kind'
-    (benefit-establishing child) for the purpose of parental leave benefits.
-
-    A 'leistungsbegründende Person' is a person whose existence or characteristics give
-    rise to a potential entitlement to a transfer benefit. This person is not
-    necessarily the same as the benefit recipient or the one being evaluated for
-    eligibility.
-
-    This function returns True if a recipient has been assigned for the person in
-    question, indicating that the person is considered to establish eligibility for a
-    benefit.
-    """
-    return p_id_empfänger >= 0

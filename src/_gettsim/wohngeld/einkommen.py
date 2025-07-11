@@ -282,9 +282,9 @@ def freibetrag_m_ab_2016(
 @policy_function()
 def ist_kind_mit_erwerbseinkommen(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    kindergeld__leistungsbegründendes_kind: bool,
 ) -> bool:
     """Check if children are working."""
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m > 0
-    ) and kindergeld__grundsätzlich_anspruchsberechtigt
+    ) and kindergeld__leistungsbegründendes_kind

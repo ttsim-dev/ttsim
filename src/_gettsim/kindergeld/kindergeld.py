@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_ansprüche(
-    grundsätzlich_anspruchsberechtigt: bool,
+    leistungsbegründendes_kind: bool,
     p_id_empfänger: int,
     p_id: int,
 ) -> int:
@@ -59,16 +59,16 @@ def betrag_gestaffelt_m(
 
 @policy_function(
     end_date="2011-12-31",
-    leaf_name="grundsätzlich_anspruchsberechtigt",
+    leaf_name="leistungsbegründendes_kind",
 )
-def grundsätzlich_anspruchsberechtigt_nach_lohn(
+def leistungsbegründendes_kind_nach_lohn(
     alter: int,
     in_ausbildung: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     altersgrenze: dict[str, int],
     maximales_einkommen_des_kindes: float,
 ) -> bool:
-    """Determine kindergeld eligibility for an individual child depending on kids wage.
+    """Child gives rise to a Kindergeld claim.
 
     Until 2011, there was an income ceiling for children
     returns a boolean variable whether a specific person is a child eligible for
@@ -87,17 +87,16 @@ def grundsätzlich_anspruchsberechtigt_nach_lohn(
 
 @policy_function(
     start_date="2012-01-01",
-    leaf_name="grundsätzlich_anspruchsberechtigt",
+    leaf_name="leistungsbegründendes_kind",
 )
-def grundsätzlich_anspruchsberechtigt_nach_stunden(
+def leistungsbegründendes_kind_nach_stunden(
     alter: int,
     in_ausbildung: bool,
     arbeitsstunden_w: float,
     altersgrenze: dict[str, int],
     maximale_arbeitsstunden_des_kindes: float,
 ) -> bool:
-    """Determine kindergeld eligibility for an individual child depending on working
-    hours.
+    """Child gives rise to a Kindergeld claim.
 
     The current eligibility rule is, that kids must not work more than 20
     hour and are below 25.
@@ -113,10 +112,10 @@ def grundsätzlich_anspruchsberechtigt_nach_stunden(
 @policy_function()
 def kind_bis_10_mit_kindergeld(
     alter: int,
-    grundsätzlich_anspruchsberechtigt: bool,
+    leistungsbegründendes_kind: bool,
 ) -> bool:
     """Child under the age of 11 and eligible for Kindergeld."""
-    return grundsätzlich_anspruchsberechtigt and (alter <= 10)
+    return leistungsbegründendes_kind and (alter <= 10)
 
 
 @policy_function(vectorization_strategy="not_required")

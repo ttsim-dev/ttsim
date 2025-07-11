@@ -5,7 +5,7 @@ info:
 inputs:
   assumed:
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      leistungsbegründendes_kind:
         - false
         - true
     sozialversicherung:

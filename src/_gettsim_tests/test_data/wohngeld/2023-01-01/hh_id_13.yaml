@@ -117,7 +117,7 @@ inputs:
       - 13
       - 13
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      leistungsbegründendes_kind:
         - false
         - false
         - true

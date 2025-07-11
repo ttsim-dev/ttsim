@@ -89,7 +89,7 @@ inputs:
       - 3
       - 3
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      leistungsbegründendes_kind:
         - false
         - true
       p_id_empfänger:

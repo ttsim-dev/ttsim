@@ -40,7 +40,7 @@ def alleinerziehend_sn(familie__alleinerziehend: bool, sn_id: int) -> bool:
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kindergeld_ansprüche_1(
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    kindergeld__leistungsbegründendes_kind: bool,
     familie__p_id_elternteil_1: int,
     p_id: int,
 ) -> int:
@@ -49,7 +49,7 @@ def anzahl_kindergeld_ansprüche_1(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kindergeld_ansprüche_2(
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    kindergeld__leistungsbegründendes_kind: bool,
     familie__p_id_elternteil_2: int,
     p_id: int,
 ) -> int:

@@ -339,7 +339,7 @@ inputs:
       - 7
       - 7
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      leistungsbegründendes_kind:
         - false
         - false
         - false

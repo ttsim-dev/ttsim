@@ -473,7 +473,7 @@ def test_geschwisterbonus_m(backend, xnp):
 def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
     claimed: bool,
     arbeitsstunden_w: float,
-    kind_grundsätzlich_anspruchsberechtigt_fg: bool,
+    leistungsbegründendes_kind_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
     max_arbeitsstunden_w: int,
@@ -482,7 +482,7 @@ def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
         claimed
         and arbeitsstunden_w <= max_arbeitsstunden_w
         and einkommen_vorjahr_unter_bezugsgrenze
-        and kind_grundsätzlich_anspruchsberechtigt_fg
+        and leistungsbegründendes_kind_fg
         and bezugsmonate_unter_grenze_fg
     )
 
@@ -492,7 +492,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend, xnp):
     # ==============================================================================
     claimed = True
     arbeitsstunden_w = 20.0
-    kind_grundsätzlich_anspruchsberechtigt_fg = True
+    leistungsbegründendes_kind_fg = True
     einkommen_vorjahr_unter_bezugsgrenze = True
     bezugsmonate_unter_grenze_fg = True
     max_arbeitsstunden_w = 31
@@ -500,7 +500,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend, xnp):
     exp = mock__elterngeld__grundsätzlich_anspruchsberechtigt(
         claimed=claimed,
         arbeitsstunden_w=arbeitsstunden_w,
-        kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
+        leistungsbegründendes_kind_fg=leistungsbegründendes_kind_fg,
         einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
         bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
         max_arbeitsstunden_w=max_arbeitsstunden_w,
@@ -517,7 +517,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend, xnp):
         mock__elterngeld__grundsätzlich_anspruchsberechtigt(
             arbeitsstunden_w=arbeitsstunden_w,
             claimed=claimed,
-            kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
+            leistungsbegründendes_kind_fg=leistungsbegründendes_kind_fg,
             einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
             bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
             max_arbeitsstunden_w=max_arbeitsstunden_w,
@@ -533,7 +533,7 @@ def test_grundsätzlich_anspruchsberechtigt(backend, xnp):
     got = converted(
         claimed=claimed,
         arbeitsstunden_w=arbeitsstunden_w,
-        kind_grundsätzlich_anspruchsberechtigt_fg=kind_grundsätzlich_anspruchsberechtigt_fg,
+        leistungsbegründendes_kind_fg=leistungsbegründendes_kind_fg,
         einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
         bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
         max_arbeitsstunden_w=max_arbeitsstunden_w,

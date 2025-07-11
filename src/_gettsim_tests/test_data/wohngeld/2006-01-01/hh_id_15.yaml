@@ -226,7 +226,7 @@ inputs:
       - 15
       - 15
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      leistungsbegründendes_kind:
         - false
         - false
         - false

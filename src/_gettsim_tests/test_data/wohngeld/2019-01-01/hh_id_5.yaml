@@ -63,7 +63,7 @@ inputs:
     hh_id:
       - 5
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      leistungsbegründendes_kind:
         - false
       p_id_empfänger:
         - -1
