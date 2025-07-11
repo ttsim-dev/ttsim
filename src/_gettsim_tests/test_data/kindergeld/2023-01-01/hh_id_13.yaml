@@ -33,7 +33,6 @@ inputs:
         - 3000.0
         - 3000.0
         - 3000.0
-    familie: null
     hh_id:
       - 13
       - 13

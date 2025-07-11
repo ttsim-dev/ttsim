@@ -4,14 +4,30 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim.tt_dag_elements import AggType, agg_by_group_function, join, policy_function
+from ttsim.tt_dag_elements import (
+    AggType,
+    agg_by_group_function,
+    join,
+    policy_function,
+)
 
 if TYPE_CHECKING:
     from ttsim.tt_dag_elements.typing import BoolColumn, IntColumn, ModuleType
 
 
-# TODO(@MImmesberger): Many of these keys can go once we have `_eg` for SGB XII.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.ANY)
+def kind_in_bg(ist_kind_in_bedarfsgemeinschaft: bool, bg_id: int) -> bool:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_erwachsene_bg(
+    ist_erwachsener_in_bedarfsgemeinschaft: bool,
+    bg_id: int,
+) -> int:
+    pass
+
+
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
 def anzahl_kinder_bg(ist_kind_in_bedarfsgemeinschaft: bool, bg_id: int) -> int:
     pass
@@ -32,13 +48,13 @@ def alleinerziehend_bg(familie__alleinerziehend: bool, bg_id: int) -> bool:
     pass
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def kind_in_bg_bis_17(alter: int, ist_kind_in_bedarfsgemeinschaft: bool) -> bool:
     """Child under the age of 18 in Bedarfsgemeinschaft."""
     return ist_kind_in_bedarfsgemeinschaft and (alter <= 17)
 
 
-@policy_function()
+@policy_function(start_date="2005-01-01")
 def ist_kind_in_bedarfsgemeinschaft(
     familie__p_id_elternteil_1: IntColumn,
     familie__p_id_elternteil_2: IntColumn,
@@ -46,9 +62,7 @@ def ist_kind_in_bedarfsgemeinschaft(
     bg_id: IntColumn,
     xnp: ModuleType,
 ) -> BoolColumn:
-    """
-    Determines whether the given person is a child in a family group.
-    """
+    """Child in a Bedarfsgemeinschaft."""
     bg_id_elternteil_1 = join(
         foreign_key=familie__p_id_elternteil_1,
         primary_key=p_id,
@@ -66,3 +80,20 @@ def ist_kind_in_bedarfsgemeinschaft(
     in_gleicher_fg_wie_elternteil_1 = bg_id_elternteil_1 == bg_id
     in_gleicher_fg_wie_elternteil_2 = bg_id_elternteil_2 == bg_id
     return in_gleicher_fg_wie_elternteil_1 | in_gleicher_fg_wie_elternteil_2
+
+
+@policy_function(start_date="2005-01-01")
+def ist_erwachsener_in_bedarfsgemeinschaft(
+    ist_kind_in_bedarfsgemeinschaft: bool,
+) -> bool:
+    """Adult in a Bedarfsgemeinschaft."""
+    return not ist_kind_in_bedarfsgemeinschaft
+
+
+@policy_function(start_date="2005-01-01")
+def hat_kind_in_gleicher_bedarfsgemeinschaft(
+    kind_in_bg: bool,
+    ist_erwachsener_in_bedarfsgemeinschaft: bool,
+) -> bool:
+    """Has a child in the same Bedarfsgemeinschaft."""
+    return kind_in_bg and ist_erwachsener_in_bedarfsgemeinschaft
