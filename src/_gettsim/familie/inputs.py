@@ -10,11 +10,6 @@ def alleinerziehend() -> bool:
     """Single parent."""
 
 
-@policy_input()
-def kind() -> bool:
-    """Dependent child living with parents."""
-
-
 @policy_input(foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)
 def p_id_ehepartner() -> int:
     """Identifier of married partner."""

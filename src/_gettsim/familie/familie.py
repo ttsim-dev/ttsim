@@ -136,12 +136,6 @@ def anzahl_personen_ehe(ehe_id: int) -> int:
 
 
 @policy_function()
-def erwachsen(kind: bool) -> bool:
-    """Adult."""
-    return not kind
-
-
-@policy_function()
 def ist_erwachsener_in_familiengemeinschaft(
     ist_kind_in_familiengemeinschaft: bool,
 ) -> bool:
