@@ -13,7 +13,7 @@ inputs:
       - 8
       - 3
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
         - false

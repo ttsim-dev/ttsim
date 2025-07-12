@@ -70,13 +70,17 @@ def anzahl_kinder_bg(ist_kind_in_bedarfsgemeinschaft: bool, bg_id: int) -> int:
 
 
 @policy_function(start_date="2005-01-01")
-def kind_in_bg_bis_17(alter: int, ist_kind_in_bedarfsgemeinschaft: bool) -> bool:
+def ist_kind_bis_17_in_bedarfsgemeinschaft(
+    alter: int, ist_kind_in_bedarfsgemeinschaft: bool
+) -> bool:
     """Child under the age of 18 in Bedarfsgemeinschaft."""
     return ist_kind_in_bedarfsgemeinschaft and (alter <= 17)
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_bis_17_bg(kind_in_bg_bis_17: bool, bg_id: int) -> int:
+def anzahl_kinder_bis_17_bg(
+    ist_kind_bis_17_in_bedarfsgemeinschaft: bool, bg_id: int
+) -> int:
     pass
 
 

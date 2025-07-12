@@ -405,140 +405,260 @@ for year in range(1990, 2023):
 # ======================================================================================
 
 
-def mock__elterngeld__geschwisterbonus_m(
-    basisbetrag_m: float,
-    geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg: bool,
-    geschwisterbonus_aufschlag: float,
-    geschwisterbonus_minimum: float,
-) -> float:
-    if geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg:
-        out = max(
-            geschwisterbonus_aufschlag * basisbetrag_m,
-            geschwisterbonus_minimum,
-        )
-    else:
-        out = 0.0
-    return out
-
-
-def test_geschwisterbonus_m(backend, xnp):
-    # Test original METTSIM function on scalar input
+def test_housing_benefits_amount_m_fam(backend, xnp):
+    """Test housing benefits amount function with conditional logic."""
+    # Test original function on scalar input
     # ==============================================================================
-    basisbetrag_m = 3.0
-    geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = True
-    geschwisterbonus_aufschlag = 1.0
-    geschwisterbonus_minimum = 2.0
+    eligibility__requirement_fulfilled_fam = True
+    income__amount_m_fam = 1000.0
+    assistance_rate = 0.8
 
-    exp = mock__elterngeld__geschwisterbonus_m(
-        basisbetrag_m=basisbetrag_m,
-        geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-        geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
-        geschwisterbonus_minimum=geschwisterbonus_minimum,
+    from tests.ttsim.mettsim.housing_benefits.amount import (  # noqa: PLC0415
+        amount_m_fam,
     )
-    assert exp == 3.0
 
-    # Create array inputs and assert that METTSIM functions raises error
+    exp = amount_m_fam.function(
+        eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
+        income__amount_m_fam=income__amount_m_fam,
+        assistance_rate=assistance_rate,
+    )
+    assert exp == 800.0
+
+    # Test with false eligibility
+    exp_false = amount_m_fam.function(
+        eligibility__requirement_fulfilled_fam=False,
+        income__amount_m_fam=income__amount_m_fam,
+        assistance_rate=assistance_rate,
+    )
+    assert exp_false == 0.0
+
+    # Create array inputs and assert that original function raises error
     # ==============================================================================
     shape = (10, 2)
-    basisbetrag_m = xnp.full(shape, basisbetrag_m)
-    geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg = xnp.full(
-        shape,
-        geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-    )
+    eligibility__requirement_fulfilled_fam = xnp.full(shape, True)  # noqa: FBT003
+    income__amount_m_fam = xnp.full(shape, income__amount_m_fam)
+    assistance_rate = xnp.full(shape, assistance_rate)
 
     with pytest.raises(ValueError, match="truth value of an array with more than"):
-        mock__elterngeld__geschwisterbonus_m(
-            basisbetrag_m=basisbetrag_m,
-            geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-            geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
-            geschwisterbonus_minimum=geschwisterbonus_minimum,
+        amount_m_fam.function(
+            eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
+            income__amount_m_fam=income__amount_m_fam,
+            assistance_rate=assistance_rate,
         )
 
     # Call converted function on array input and test result
     # ==============================================================================
     converted = _make_vectorizable(
-        mock__elterngeld__geschwisterbonus_m,
+        amount_m_fam.function,
         backend=backend,
         xnp=xnp,
     )
     got = converted(
-        basisbetrag_m=basisbetrag_m,
-        geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg=geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg,
-        geschwisterbonus_aufschlag=geschwisterbonus_aufschlag,
-        geschwisterbonus_minimum=geschwisterbonus_minimum,
+        eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
+        income__amount_m_fam=income__amount_m_fam,
+        assistance_rate=assistance_rate,
     )
     assert_array_equal(got, xnp.full(shape, exp))
 
+    # Test mixed eligibility
+    eligibility__requirement_fulfilled_fam = xnp.array([[True, False], [False, True]])
+    income__amount_m_fam = xnp.array([[1000.0, 1000.0], [1000.0, 1000.0]])
+    assistance_rate = xnp.array([[0.8, 0.8], [0.8, 0.8]])
 
-def mock__elterngeld__grundsätzlich_anspruchsberechtigt(
-    claimed: bool,
-    arbeitsstunden_w: float,
-    leistungsbegründendes_kind_fg: bool,
-    einkommen_vorjahr_unter_bezugsgrenze: bool,
-    bezugsmonate_unter_grenze_fg: bool,
-    max_arbeitsstunden_w: int,
-) -> bool:
-    return (
-        claimed
-        and arbeitsstunden_w <= max_arbeitsstunden_w
-        and einkommen_vorjahr_unter_bezugsgrenze
-        and leistungsbegründendes_kind_fg
-        and bezugsmonate_unter_grenze_fg
+    got_mixed = converted(
+        eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
+        income__amount_m_fam=income__amount_m_fam,
+        assistance_rate=assistance_rate,
     )
+    expected_mixed = xnp.array([[800.0, 0.0], [0.0, 800.0]])
+    assert_array_equal(got_mixed, expected_mixed)
 
 
-def test_grundsätzlich_anspruchsberechtigt(backend, xnp):
-    # Test original METTSIM function on scalar input
+def test_payroll_tax_amount_y(backend, xnp):
+    """Test payroll tax amount function with multiple conditional logic."""
+    # Test original function on scalar input
     # ==============================================================================
-    claimed = True
-    arbeitsstunden_w = 20.0
-    leistungsbegründendes_kind_fg = True
-    einkommen_vorjahr_unter_bezugsgrenze = True
-    bezugsmonate_unter_grenze_fg = True
-    max_arbeitsstunden_w = 31
+    amount_standard_y = 1000.0
+    amount_reduced_y = 800.0
+    parent_is_noble_fam = False
+    wealth_fam = 30000.0  # Below threshold
+    wealth_threshold_for_reduced_tax_rate = 40000.0
 
-    exp = mock__elterngeld__grundsätzlich_anspruchsberechtigt(
-        claimed=claimed,
-        arbeitsstunden_w=arbeitsstunden_w,
-        leistungsbegründendes_kind_fg=leistungsbegründendes_kind_fg,
-        einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
-        bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-        max_arbeitsstunden_w=max_arbeitsstunden_w,
+    # Import the actual function
+    from tests.ttsim.mettsim.payroll_tax.amount import amount_y  # noqa: PLC0415
+
+    # Test standard case (wealth below threshold)
+    exp_standard = amount_y.function(
+        amount_standard_y=amount_standard_y,
+        amount_reduced_y=amount_reduced_y,
+        parent_is_noble_fam=parent_is_noble_fam,
+        wealth_fam=wealth_fam,
+        wealth_threshold_for_reduced_tax_rate=wealth_threshold_for_reduced_tax_rate,
     )
+    assert exp_standard == 1000.0
 
-    assert exp is True
+    # Test reduced case (wealth above threshold)
+    exp_reduced = amount_y.function(
+        amount_standard_y=amount_standard_y,
+        amount_reduced_y=amount_reduced_y,
+        parent_is_noble_fam=parent_is_noble_fam,
+        wealth_fam=60000.0,
+        wealth_threshold_for_reduced_tax_rate=wealth_threshold_for_reduced_tax_rate,
+    )
+    assert exp_reduced == 800.0
 
-    # Create array inputs and assert that METTSIM functions raises error
+    # Test noble case
+    exp_noble = amount_y.function(
+        amount_standard_y=amount_standard_y,
+        amount_reduced_y=amount_reduced_y,
+        parent_is_noble_fam=True,
+        wealth_fam=wealth_fam,
+        wealth_threshold_for_reduced_tax_rate=wealth_threshold_for_reduced_tax_rate,
+    )
+    assert exp_noble == 0.0
+
+    # Create array inputs and assert that original function raises error
     # ==============================================================================
-    shape = (10, 1)
-    arbeitsstunden_w = xnp.full(shape, arbeitsstunden_w)
+    shape = (10, 2)
+    amount_standard_y = xnp.full(shape, amount_standard_y)
+    amount_reduced_y = xnp.full(shape, amount_reduced_y)
+    parent_is_noble_fam = xnp.full(shape, parent_is_noble_fam)
+    wealth_fam = xnp.full(shape, wealth_fam)
+    wealth_threshold_for_reduced_tax_rate = xnp.full(
+        shape, wealth_threshold_for_reduced_tax_rate
+    )
 
     with pytest.raises(ValueError, match="truth value of an array with more than"):
-        mock__elterngeld__grundsätzlich_anspruchsberechtigt(
-            arbeitsstunden_w=arbeitsstunden_w,
-            claimed=claimed,
-            leistungsbegründendes_kind_fg=leistungsbegründendes_kind_fg,
-            einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
-            bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-            max_arbeitsstunden_w=max_arbeitsstunden_w,
+        amount_y.function(
+            amount_standard_y=amount_standard_y,
+            amount_reduced_y=amount_reduced_y,
+            parent_is_noble_fam=parent_is_noble_fam,
+            wealth_fam=wealth_fam,
+            wealth_threshold_for_reduced_tax_rate=wealth_threshold_for_reduced_tax_rate,
         )
 
     # Call converted function on array input and test result
     # ==============================================================================
     converted = _make_vectorizable(
-        mock__elterngeld__grundsätzlich_anspruchsberechtigt,
+        amount_y.function,
         backend=backend,
         xnp=xnp,
     )
     got = converted(
-        claimed=claimed,
-        arbeitsstunden_w=arbeitsstunden_w,
-        leistungsbegründendes_kind_fg=leistungsbegründendes_kind_fg,
-        einkommen_vorjahr_unter_bezugsgrenze=einkommen_vorjahr_unter_bezugsgrenze,
-        bezugsmonate_unter_grenze_fg=bezugsmonate_unter_grenze_fg,
-        max_arbeitsstunden_w=max_arbeitsstunden_w,
+        amount_standard_y=amount_standard_y,
+        amount_reduced_y=amount_reduced_y,
+        parent_is_noble_fam=parent_is_noble_fam,
+        wealth_fam=wealth_fam,
+        wealth_threshold_for_reduced_tax_rate=wealth_threshold_for_reduced_tax_rate,
     )
-    assert_array_equal(got, xnp.full(shape, exp))
+    assert_array_equal(got, xnp.full(shape, exp_standard))
+
+    # Test mixed conditions
+    parent_is_noble_fam = xnp.array([[True, False], [False, True]])
+    wealth_fam = xnp.array([[30000.0, 60000.0], [30000.0, 70000.0]])
+    amount_standard_y = xnp.array([[1000.0, 1000.0], [1000.0, 1000.0]])
+    amount_reduced_y = xnp.array([[800.0, 800.0], [800.0, 800.0]])
+    wealth_threshold_for_reduced_tax_rate = xnp.array(
+        [[40000.0, 40000.0], [40000.0, 40000.0]]
+    )
+
+    got_mixed = converted(
+        amount_standard_y=amount_standard_y,
+        amount_reduced_y=amount_reduced_y,
+        parent_is_noble_fam=parent_is_noble_fam,
+        wealth_fam=wealth_fam,
+        wealth_threshold_for_reduced_tax_rate=wealth_threshold_for_reduced_tax_rate,
+    )
+    # Expected: noble=0, reduced=800, standard=1000, noble=0
+    expected_mixed = xnp.array([[0.0, 800.0], [1000.0, 0.0]])
+    assert_array_equal(got_mixed, expected_mixed)
+
+
+def test_orc_hunting_bounty_amount(backend, xnp):
+    """Test orc hunting bounty function with conditional logic."""
+    # Test original function on scalar input
+    # ==============================================================================
+    small_orcs_hunted = 5
+    large_orcs_hunted = 2
+    parent_is_noble = True
+    bounty_per_orc = type(
+        "BountyPerOrc",
+        (),
+        {
+            "small_orc": 10,
+            "large_orc": type(
+                "BountyPerLargeOrc", (), {"noble_hunter": 50, "peasant_hunter": 30}
+            )(),
+        },
+    )()
+
+    # Import the actual function
+    from tests.ttsim.mettsim.orc_hunting_bounty.orc_hunting_bounty import (  # noqa: PLC0415
+        amount,
+    )
+
+    # Test noble hunter case
+    exp_noble = amount.function(
+        small_orcs_hunted=small_orcs_hunted,
+        large_orcs_hunted=large_orcs_hunted,
+        parent_is_noble=parent_is_noble,
+        bounty_per_orc=bounty_per_orc,
+    )
+    assert exp_noble == 150.0  # 5*10 + 2*50
+
+    # Test peasant hunter case
+    exp_peasant = amount.function(
+        small_orcs_hunted=small_orcs_hunted,
+        large_orcs_hunted=large_orcs_hunted,
+        parent_is_noble=False,
+        bounty_per_orc=bounty_per_orc,
+    )
+    assert exp_peasant == 110.0  # 5*10 + 2*30
+
+    # Create array inputs and assert that original function raises error
+    # ==============================================================================
+    shape = (10, 2)
+    small_orcs_hunted = xnp.full(shape, small_orcs_hunted)
+    large_orcs_hunted = xnp.full(shape, large_orcs_hunted)
+    parent_is_noble = xnp.full(shape, parent_is_noble)
+
+    with pytest.raises(ValueError, match="truth value of an array with more than"):
+        amount.function(
+            small_orcs_hunted=small_orcs_hunted,
+            large_orcs_hunted=large_orcs_hunted,
+            parent_is_noble=parent_is_noble,
+            bounty_per_orc=bounty_per_orc,
+        )
+
+    # Call converted function on array input and test result
+    # ==============================================================================
+    converted = _make_vectorizable(
+        amount.function,
+        backend=backend,
+        xnp=xnp,
+    )
+    got = converted(
+        small_orcs_hunted=small_orcs_hunted,
+        large_orcs_hunted=large_orcs_hunted,
+        parent_is_noble=parent_is_noble,
+        bounty_per_orc=bounty_per_orc,
+    )
+    assert_array_equal(got, xnp.full(shape, exp_noble))
+
+    # Test mixed noble/peasant conditions
+    parent_is_noble = xnp.array([[True, False], [False, True]])
+    small_orcs_hunted = xnp.array([[5, 5], [5, 5]])
+    large_orcs_hunted = xnp.array([[2, 2], [2, 2]])
+
+    got_mixed = converted(
+        small_orcs_hunted=small_orcs_hunted,
+        large_orcs_hunted=large_orcs_hunted,
+        parent_is_noble=parent_is_noble,
+        bounty_per_orc=bounty_per_orc,
+    )
+    # Expected: noble=150, peasant=110, peasant=110, noble=150
+    expected_mixed = xnp.array([[150.0, 110.0], [110.0, 150.0]])
+    assert_array_equal(got_mixed, expected_mixed)
 
 
 # ======================================================================================

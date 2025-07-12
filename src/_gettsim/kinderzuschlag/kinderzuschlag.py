@@ -229,7 +229,7 @@ def basisbetrag_m_bg_check_mindestbruttoeinkommen(
 
 @policy_function(start_date="2005-01-01")
 def basisbetrag_kind_m(
-    kindergeld__leistungsbegründendes_kind: bool,
+    kindergeld__ist_leistungsbegründendes_kind: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
@@ -238,7 +238,7 @@ def basisbetrag_kind_m(
     entzugsrate_kindeseinkommen: float,
 ) -> float:
     """Kinderzuschlag after income for each possibly eligible child is considered."""
-    out = kindergeld__leistungsbegründendes_kind * (
+    out = kindergeld__ist_leistungsbegründendes_kind * (
         satz
         - entzugsrate_kindeseinkommen
         * (

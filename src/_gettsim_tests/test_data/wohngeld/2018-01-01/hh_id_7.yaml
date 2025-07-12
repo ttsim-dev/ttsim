@@ -339,7 +339,7 @@ inputs:
       - 7
       - 7
     kindergeld:
-      leistungsbegründendes_kind:
+      ist_leistungsbegründendes_kind:
         - false
         - false
         - false

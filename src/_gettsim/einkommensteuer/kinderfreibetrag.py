@@ -42,7 +42,7 @@ def anzahl_kinderfreibeträge(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kinderfreibeträge_1(
-    kindergeld__leistungsbegründendes_kind: bool,
+    kindergeld__ist_leistungsbegründendes_kind: bool,
     p_id_kinderfreibetragsempfänger_1: int,
     p_id: int,
 ) -> int:
@@ -51,7 +51,7 @@ def anzahl_kinderfreibeträge_1(
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_kinderfreibeträge_2(
-    kindergeld__leistungsbegründendes_kind: bool,
+    kindergeld__ist_leistungsbegründendes_kind: bool,
     p_id_kinderfreibetragsempfänger_2: int,
     p_id: int,
 ) -> int:

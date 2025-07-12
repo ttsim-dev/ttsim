@@ -89,7 +89,7 @@ inputs:
       - 3
       - 3
     kindergeld:
-      leistungsbegründendes_kind:
+      ist_leistungsbegründendes_kind:
         - false
         - true
       p_id_empfänger:

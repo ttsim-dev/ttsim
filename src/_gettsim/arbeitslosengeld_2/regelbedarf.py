@@ -280,7 +280,7 @@ def kosten_der_unterkunft_m_bis_2022(
 def kosten_der_unterkunft_m_ab_2023(
     bruttokaltmiete_m: float,
     heizkosten_m: float,
-    arbeitslosengeld_2_bezug_im_vorjahr: bool,
+    bezug_im_vorjahr: bool,
     berechtigte_wohnfläche: float,
     anerkannte_warmmiete_je_qm_m: float,
 ) -> float:
@@ -290,7 +290,7 @@ def kosten_der_unterkunft_m_ab_2023(
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
-    if arbeitslosengeld_2_bezug_im_vorjahr:
+    if bezug_im_vorjahr:
         out = berechtigte_wohnfläche * anerkannte_warmmiete_je_qm_m
     else:
         out = bruttokaltmiete_m + heizkosten_m

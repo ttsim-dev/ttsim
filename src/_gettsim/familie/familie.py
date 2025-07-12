@@ -52,57 +52,77 @@ def anzahl_kinder_fg(ist_kind_in_familiengemeinschaft: bool, fg_id: int) -> int:
 
 
 @policy_function()
-def kind_in_fg_bis_2(alter: int, ist_kind_in_familiengemeinschaft: bool) -> bool:
+def ist_kind_bis_2_in_familiengemeinschaft(
+    alter: int, ist_kind_in_familiengemeinschaft: bool
+) -> bool:
     """Child under the age of 3 in Familiengemeinschaft."""
     return ist_kind_in_familiengemeinschaft and (alter <= 2)
 
 
 @agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_kinder_bis_2_fg(kind_in_fg_bis_2: bool, fg_id: int) -> int:
+def anzahl_kinder_bis_2_fg(
+    ist_kind_bis_2_in_familiengemeinschaft: bool, fg_id: int
+) -> int:
     pass
 
 
 @policy_function()
-def kind_in_fg_bis_5(alter: int, ist_kind_in_familiengemeinschaft: bool) -> bool:
+def ist_kind_bis_5_in_familiengemeinschaft(
+    alter: int, ist_kind_in_familiengemeinschaft: bool
+) -> bool:
     """Child under the age of 6 in Familiengemeinschaft."""
     return ist_kind_in_familiengemeinschaft and (alter <= 5)
 
 
 @agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_kinder_bis_5_fg(kind_in_fg_bis_5: bool, fg_id: int) -> int:
+def anzahl_kinder_bis_5_fg(
+    ist_kind_bis_5_in_familiengemeinschaft: bool, fg_id: int
+) -> int:
     pass
 
 
 @policy_function()
-def kind_in_fg_bis_6(alter: int, ist_kind_in_familiengemeinschaft: bool) -> bool:
+def ist_kind_bis_6_in_familiengemeinschaft(
+    alter: int, ist_kind_in_familiengemeinschaft: bool
+) -> bool:
     """Child under the age of 7 in Familiengemeinschaft."""
     return ist_kind_in_familiengemeinschaft and (alter <= 6)
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_bis_6_fg(kind_in_fg_bis_6: bool, fg_id: int) -> int:
+def anzahl_kinder_bis_6_fg(
+    ist_kind_bis_6_in_familiengemeinschaft: bool, fg_id: int
+) -> int:
     pass
 
 
 @policy_function()
-def kind_in_fg_bis_15(alter: int, ist_kind_in_familiengemeinschaft: bool) -> bool:
+def ist_kind_bis_15_in_familiengemeinschaft(
+    alter: int, ist_kind_in_familiengemeinschaft: bool
+) -> bool:
     """Child under the age of 16 in Familiengemeinschaft."""
     return ist_kind_in_familiengemeinschaft and (alter <= 15)
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_bis_15_fg(kind_in_fg_bis_15: bool, fg_id: int) -> int:
+def anzahl_kinder_bis_15_fg(
+    ist_kind_bis_15_in_familiengemeinschaft: bool, fg_id: int
+) -> int:
     pass
 
 
 @policy_function()
-def kind_in_fg_bis_17(alter: int, ist_kind_in_familiengemeinschaft: bool) -> bool:
+def ist_kind_bis_17_in_familiengemeinschaft(
+    alter: int, ist_kind_in_familiengemeinschaft: bool
+) -> bool:
     """Child under the age of 18 in Familiengemeinschaft."""
     return ist_kind_in_familiengemeinschaft and (alter <= 17)
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_bis_17_fg(kind_in_fg_bis_17: bool, fg_id: int) -> int:
+def anzahl_kinder_bis_17_fg(
+    ist_kind_bis_17_in_familiengemeinschaft: bool, fg_id: int
+) -> int:
     pass
 
 
@@ -119,15 +139,9 @@ def alter_monate_jüngstes_mitglied_fg(alter_monate: int, fg_id: int) -> float:
 
 
 @policy_function()
-def person_bis_17(alter: int) -> bool:
-    """Person under the age of 18."""
-    return alter <= 17
-
-
-@policy_function()
 def volljährig(alter: int) -> bool:
     """Person over the age of 18."""
-    return alter > 18
+    return alter >= 18
 
 
 @agg_by_group_function(agg_type=AggType.COUNT)

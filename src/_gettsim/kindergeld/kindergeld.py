@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
 def anzahl_ansprüche(
-    leistungsbegründendes_kind: bool,
+    ist_leistungsbegründendes_kind: bool,
     p_id_empfänger: int,
     p_id: int,
 ) -> int:
@@ -59,7 +59,7 @@ def betrag_gestaffelt_m(
 
 @policy_function(
     end_date="2011-12-31",
-    leaf_name="leistungsbegründendes_kind",
+    leaf_name="ist_leistungsbegründendes_kind",
 )
 def leistungsbegründendes_kind_nach_lohn(
     alter: int,
@@ -87,7 +87,7 @@ def leistungsbegründendes_kind_nach_lohn(
 
 @policy_function(
     start_date="2012-01-01",
-    leaf_name="leistungsbegründendes_kind",
+    leaf_name="ist_leistungsbegründendes_kind",
 )
 def leistungsbegründendes_kind_nach_stunden(
     alter: int,
@@ -112,10 +112,10 @@ def leistungsbegründendes_kind_nach_stunden(
 @policy_function()
 def kind_bis_10_mit_kindergeld(
     alter: int,
-    leistungsbegründendes_kind: bool,
+    ist_leistungsbegründendes_kind: bool,
 ) -> bool:
     """Child under the age of 11 and eligible for Kindergeld."""
-    return leistungsbegründendes_kind and (alter <= 10)
+    return ist_leistungsbegründendes_kind and (alter <= 10)
 
 
 @policy_function(vectorization_strategy="not_required")

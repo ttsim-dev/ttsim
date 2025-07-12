@@ -5,7 +5,7 @@ info:
   source: none
 inputs:
   assumed:
-    kindergeld__leistungsbegründendes_kind:
+    kindergeld__ist_leistungsbegründendes_kind:
       - false
       - true
     sozialversicherung__arbeitslosen__mindestversicherungszeit_erreicht:
