@@ -11,7 +11,7 @@ inputs:
       - 40
       - 10
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
       eigenbedarf_gedeckt:
@@ -27,9 +27,6 @@ inputs:
       alleinerziehend:
         - true
         - false
-      kind:
-        - false
-        - true
       p_id_elternteil_1:
         - -1
         - 0

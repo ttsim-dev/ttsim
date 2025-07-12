@@ -21,9 +21,6 @@ inputs:
         - true
         - true
     familie:
-      kind:
-        - false
-        - false
       p_id_ehepartner:
         - 1
         - 0

@@ -16,7 +16,7 @@ inputs:
       anspruchshöhe_m_bg:
         - 0.0
         - 0.0
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
       bruttoeinkommen_m:
@@ -44,9 +44,6 @@ inputs:
       alleinerziehend:
         - true
         - false
-      kind:
-        - false
-        - true
       p_id_elternteil_1:
         - -1
         - 47

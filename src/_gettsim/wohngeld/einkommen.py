@@ -114,7 +114,6 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
     einkommensteuer__betrag_y_sn: float,
     sozialversicherung__rente__beitrag__betrag_versicherter_y: float,
     sozialversicherung__kranken__beitrag__betrag_versicherter_y: float,
-    familie__kind: bool,
     abzugsbeträge_steuern_sozialversicherung: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Calculate housing benefit subtractions on the individual level.
@@ -131,11 +130,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
         stufe = stufe + 1
     if sozialversicherung__kranken__beitrag__betrag_versicherter_y > 0:
         stufe = stufe + 1
-    if familie__kind:
-        out = 0.0
-    else:
-        out = abzugsbeträge_steuern_sozialversicherung.look_up(stufe)
-    return out
+    return abzugsbeträge_steuern_sozialversicherung.look_up(stufe)
 
 
 @policy_function(end_date="2006-12-31", leaf_name="einkommen_vor_freibetrag_m")
@@ -226,7 +221,6 @@ def freibetrag_m_bis_2015(
     ist_kind_mit_erwerbseinkommen: bool,
     behinderungsgrad: int,
     familie__alleinerziehend: bool,
-    familie__kind: bool,
     alleinerziehendenbonus: int,
     freibetrag_bei_behinderung_gestaffelt_y: PiecewisePolynomialParamValue,
     freibetrag_kinder_m: dict[str, float],
@@ -249,7 +243,7 @@ def freibetrag_m_bis_2015(
             freibetrag_kinder_m["arbeitendes_kind"],
         )
 
-    elif familie__alleinerziehend and (not familie__kind):
+    elif familie__alleinerziehend:
         freibetrag_kinder = (
             alleinerziehendenbonus * freibetrag_kinder_m["alleinerziehend"]
         )
@@ -288,9 +282,9 @@ def freibetrag_m_ab_2016(
 @policy_function()
 def ist_kind_mit_erwerbseinkommen(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    kindergeld__grundsätzlich_anspruchsberechtigt: bool,
+    kindergeld__ist_leistungsbegründendes_kind: bool,
 ) -> bool:
     """Check if children are working."""
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m > 0
-    ) and kindergeld__grundsätzlich_anspruchsberechtigt
+    ) and kindergeld__ist_leistungsbegründendes_kind

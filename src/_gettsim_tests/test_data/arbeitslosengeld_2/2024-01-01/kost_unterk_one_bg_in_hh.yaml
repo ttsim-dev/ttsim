@@ -28,11 +28,6 @@ inputs:
         - false
         - false
     familie:
-      kind:
-        - false
-        - false
-        - true
-        - true
       p_id_ehepartner:
         - -1
         - -1

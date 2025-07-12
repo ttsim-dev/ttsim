@@ -62,11 +62,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - true
-        - true
       p_id_elternteil_1:
         - -1
         - -1
@@ -118,7 +113,7 @@ inputs:
             - false
   provided: {}
 outputs:
-  arbeitslosengeld_2:
+  familie:
     anzahl_kinder_fg:
       - 2
       - 2

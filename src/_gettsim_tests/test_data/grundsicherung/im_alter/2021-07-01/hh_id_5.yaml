@@ -42,9 +42,9 @@ inputs:
     familie:
       alleinerziehend:
         - false
-      kind:
-        - false
       p_id_ehepartner:
+        - -1
+      p_id_einstandspartner:
         - -1
       p_id_elternteil_1:
         - -1

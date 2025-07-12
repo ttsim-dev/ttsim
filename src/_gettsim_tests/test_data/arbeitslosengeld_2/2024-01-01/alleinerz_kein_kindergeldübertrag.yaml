@@ -17,7 +17,7 @@ inputs:
       - 10
       - 8
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
         - false
@@ -74,10 +74,6 @@ inputs:
         - true
         - false
         - false
-      kind:
-        - false
-        - true
-        - true
       p_id_ehepartner:
         - -1
         - -1

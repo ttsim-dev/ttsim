@@ -67,7 +67,7 @@ inputs:
       - 0
       - 0
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
         - false
         - true

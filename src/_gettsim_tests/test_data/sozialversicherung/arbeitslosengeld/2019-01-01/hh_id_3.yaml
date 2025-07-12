@@ -5,7 +5,7 @@ info:
 inputs:
   assumed:
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - true
         - false
     sozialversicherung:
@@ -36,9 +36,6 @@ inputs:
             - 0.0
             - 3000.0
     familie:
-      kind:
-        - true
-        - false
       p_id_elternteil_1:
         - 4
         - -1

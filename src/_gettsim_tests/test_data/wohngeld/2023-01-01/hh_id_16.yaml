@@ -17,7 +17,7 @@ inputs:
       - 4
       - 4
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
         - false
@@ -106,11 +106,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - true
-        - true
       p_id_ehepartner:
         - 75
         - 74
@@ -147,7 +142,7 @@ inputs:
       - 16
       - 16
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
         - false
         - true
