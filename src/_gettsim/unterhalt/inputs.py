@@ -7,9 +7,9 @@ from ttsim.tt_dag_elements import policy_input
 
 @policy_input()
 def anspruch_m() -> float:
-    """Monthly gross child alimony payments to be received by the child as determined by the court."""
+    """Monthly gross alimony payments to be received as determined by the court."""
 
 
 @policy_input()
 def tatsächlich_erhaltener_betrag_m() -> float:
-    """Child alimony payments the child actually receives."""
+    """Alimony payments the recipient actually receives."""

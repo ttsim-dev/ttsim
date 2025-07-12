@@ -43,7 +43,7 @@ inputs:
             - true
       regulär_beschäftigt:
         - true
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   lohnsteuer:

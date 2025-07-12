@@ -198,7 +198,7 @@ def min_miete_m_hh(
     leaf_name="miete_m_hh",
 )
 def miete_m_hh_mit_baujahr(
-    mietstufe: int,
+    mietstufe_hh: int,
     wohnen__baujahr_immobilie_hh: int,
     anzahl_personen_hh: int,
     wohnen__bruttokaltmiete_m_hh: float,
@@ -213,7 +213,7 @@ def miete_m_hh_mit_baujahr(
         side="left",
     )
     max_miete_m = max_miete_m_lookup.lookup_table.look_up(
-        baujahr_index, anzahl_personen_hh, mietstufe
+        baujahr_index, anzahl_personen_hh, mietstufe_hh
     )
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
@@ -224,14 +224,14 @@ def miete_m_hh_mit_baujahr(
     leaf_name="miete_m_hh",
 )
 def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
-    mietstufe: int,
+    mietstufe_hh: int,
     anzahl_personen_hh: int,
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
     max_miete_m_lookup: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe)
+    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe_hh)
 
     return max(min(wohnen__bruttokaltmiete_m_hh, max_miete_m), min_miete_m_hh)
 
@@ -242,7 +242,7 @@ def miete_m_hh_ohne_baujahr_ohne_heizkostenentlastung(
     leaf_name="miete_m_hh",
 )
 def miete_m_hh_mit_heizkostenentlastung(
-    mietstufe: int,
+    mietstufe_hh: int,
     anzahl_personen_hh: int,
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
@@ -250,7 +250,7 @@ def miete_m_hh_mit_heizkostenentlastung(
     heizkostenentlastung_m_lookup: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe)
+    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe_hh)
 
     heating_allowance_m = heizkostenentlastung_m_lookup.look_up(anzahl_personen_hh)
 
@@ -265,7 +265,7 @@ def miete_m_hh_mit_heizkostenentlastung(
     leaf_name="miete_m_hh",
 )
 def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakomponente(
-    mietstufe: int,
+    mietstufe_hh: int,
     anzahl_personen_hh: int,
     wohnen__bruttokaltmiete_m_hh: float,
     min_miete_m_hh: float,
@@ -275,7 +275,7 @@ def miete_m_hh_mit_heizkostenentlastung_dauerhafte_heizkostenkomponente_klimakom
     klimakomponente_m_lookup: ConsecutiveIntLookupTableParamValue,
 ) -> float:
     """Rent considered in housing benefit since 2009."""
-    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe)
+    max_miete_m = max_miete_m_lookup.look_up(anzahl_personen_hh, mietstufe_hh)
 
     heizkostenentlastung = heizkostenentlastung_m_lookup.look_up(anzahl_personen_hh)
     dauerhafte_heizkostenkomponente = dauerhafte_heizkostenkomponente_m_lookup.look_up(

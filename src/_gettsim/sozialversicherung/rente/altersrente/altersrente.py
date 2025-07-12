@@ -118,13 +118,13 @@ def bruttorente_basisbetrag_m(
 
 @policy_function(start_date="1992-01-01", end_date="2023-06-30", leaf_name="rentenwert")
 def rentenwert_nach_wohnort(
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     parameter_rentenwert_nach_wohnort: dict[str, float],
 ) -> float:
     """Rentenwert."""
     return (
         parameter_rentenwert_nach_wohnort["ost"]
-        if wohnort_ost
+        if wohnort_ost_hh
         else parameter_rentenwert_nach_wohnort["west"]
     )
 

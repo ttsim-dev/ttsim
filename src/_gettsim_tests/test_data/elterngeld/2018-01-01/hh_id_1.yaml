@@ -61,7 +61,7 @@ inputs:
         beitrag:
           hat_kinder:
             - true
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   elterngeld:

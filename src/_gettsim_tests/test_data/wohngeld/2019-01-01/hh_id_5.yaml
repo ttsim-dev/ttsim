@@ -116,7 +116,7 @@ inputs:
       wohnfläche_hh:
         - 40.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 5
 outputs:
   wohngeld:
