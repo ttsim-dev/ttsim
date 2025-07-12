@@ -102,11 +102,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - true
-        - true
       p_id_ehepartner:
         - 28
         - 27

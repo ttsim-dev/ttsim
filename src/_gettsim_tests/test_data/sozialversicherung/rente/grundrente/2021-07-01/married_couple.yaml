@@ -38,9 +38,6 @@ inputs:
             - 0.0
             - 0.0
     familie:
-      kind:
-        - false
-        - false
       p_id_ehepartner:
         - 1
         - 0

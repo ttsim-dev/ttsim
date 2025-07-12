@@ -20,9 +20,6 @@ inputs:
         - true
         - true
     familie:
-      kind:
-        - false
-        - true
       p_id_ehepartner:
         - 9
         - 8

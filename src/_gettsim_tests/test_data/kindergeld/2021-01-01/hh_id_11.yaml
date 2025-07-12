@@ -25,11 +25,6 @@ inputs:
         - 200000.0
         - 200000.0
         - 200000.0
-    familie:
-      kind:
-        - false
-        - false
-        - true
     hh_id:
       - 11
       - 11

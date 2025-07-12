@@ -17,8 +17,6 @@ inputs:
       gemeinsam_veranlagt:
         - false
     familie:
-      kind:
-        - false
       p_id_ehepartner:
         - -1
     hh_id:

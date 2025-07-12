@@ -5,9 +5,11 @@ from __future__ import annotations
 from ttsim.tt_dag_elements import policy_function
 
 
+# TODO(@MImmesberger): Treatment of children who live in their own BG may be wrong here.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/1009
 @policy_function(start_date="2005-01-01", end_date="2022-12-31")
 def grundfreibetrag_vermögen(
-    familie__kind: bool,
+    ist_kind_in_bedarfsgemeinschaft: bool,
     alter: int,
     geburtsjahr: int,
     maximaler_grundfreibetrag_vermögen: float,
@@ -20,7 +22,7 @@ def grundfreibetrag_vermögen(
     threshold_years = list(vermögensgrundfreibetrag_je_lebensjahr.keys())
     if geburtsjahr <= threshold_years[0]:
         out = next(iter(vermögensgrundfreibetrag_je_lebensjahr.values())) * alter
-    elif (geburtsjahr >= threshold_years[1]) and (not familie__kind):
+    elif (geburtsjahr >= threshold_years[1]) and (not ist_kind_in_bedarfsgemeinschaft):
         out = list(vermögensgrundfreibetrag_je_lebensjahr.values())[1] * alter
     else:
         out = 0.0
@@ -30,10 +32,12 @@ def grundfreibetrag_vermögen(
 
 # TODO(@MImmesberger): Parameter should be defined as a piecewise_constant.
 # https://github.com/iza-institute-of-labor-economics/gettsim/issues/911
+# TODO(@MImmesberger): Treatment of children who live in their own BG may be wrong here.
+# https://github.com/iza-institute-of-labor-economics/gettsim/issues/1009
 @policy_function(start_date="2005-01-01", end_date="2022-12-31")
 def maximaler_grundfreibetrag_vermögen(
     geburtsjahr: int,
-    familie__kind: bool,
+    ist_kind_in_bedarfsgemeinschaft: bool,
     obergrenze_vermögensgrundfreibetrag: dict[int, float],
 ) -> float:
     """Calculate maximal wealth exemptions by year of birth.
@@ -42,7 +46,7 @@ def maximaler_grundfreibetrag_vermögen(
     """
     threshold_years = list(obergrenze_vermögensgrundfreibetrag.keys())
     obergrenzen = list(obergrenze_vermögensgrundfreibetrag.values())
-    if familie__kind:
+    if ist_kind_in_bedarfsgemeinschaft:
         out = 0.0
     else:
         if geburtsjahr < threshold_years[1]:
@@ -101,7 +105,7 @@ def vermögensfreibetrag_bg_bis_2022(
 def vermögensfreibetrag_bg_ab_2023(
     anzahl_personen_bg: int,
     vermögensfreibetrag_in_karenzzeit_bg: float,
-    arbeitslosengeld_2_bezug_im_vorjahr: bool,
+    bezug_im_vorjahr: bool,
     vermögensfreibetrag_je_person_nach_karenzzeit: dict[str, float],
 ) -> float:
     """Calculate actual wealth exemptions since 2023.
@@ -110,7 +114,7 @@ def vermögensfreibetrag_bg_ab_2023(
 
     Note: Since 2023, Arbeitslosengeld 2 is referred to as Bürgergeld.
     """
-    if arbeitslosengeld_2_bezug_im_vorjahr:
+    if bezug_im_vorjahr:
         out = (
             anzahl_personen_bg
             * vermögensfreibetrag_je_person_nach_karenzzeit["normaler_satz"]

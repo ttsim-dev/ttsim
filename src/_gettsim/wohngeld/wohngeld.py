@@ -53,7 +53,7 @@ def anzahl_personen_wthh(wthh_id: int) -> int:
 @policy_function()
 def betrag_m_wthh(
     anspruchshöhe_m_wthh: float,
-    erwachsene_alle_rentenbezieher_hh: bool,
+    volljährige_alle_rentenbezieher_hh: bool,
     vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh: bool,
     vorrangprüfungen__wohngeld_vorrang_wthh: bool,
 ) -> float:
@@ -66,10 +66,10 @@ def betrag_m_wthh(
     # Alter (SGB XII) is implemented yet. We assume for now that households with only
     # retirees are eligible for Grundsicherung im Alter but not for ALG2/Wohngeld. All
     # other households are not eligible for SGB XII, but SGB II / Wohngeld. Once this is
-    # resolved, remove the `erwachsene_alle_rentenbezieher_hh` condition.
+    # resolved, remove the `volljährige_alle_rentenbezieher_hh` condition.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/703
 
-    if not erwachsene_alle_rentenbezieher_hh and (
+    if not volljährige_alle_rentenbezieher_hh and (
         vorrangprüfungen__wohngeld_vorrang_wthh
         or vorrangprüfungen__wohngeld_kinderzuschlag_vorrang_wthh
     ):

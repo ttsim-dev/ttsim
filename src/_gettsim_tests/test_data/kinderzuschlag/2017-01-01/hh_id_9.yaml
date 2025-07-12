@@ -12,7 +12,7 @@ inputs:
       - 15
       - 13
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
         - false
@@ -57,11 +57,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - true
-        - true
       p_id_elternteil_1:
         - -1
         - -1

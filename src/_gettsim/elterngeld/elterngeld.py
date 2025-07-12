@@ -11,11 +11,45 @@ from ttsim.tt_dag_elements import (
 )
 
 
+@policy_function(start_date="2007-01-01")
+def ist_leistungsbegründendes_kind(
+    alter_monate: int,
+    max_bezugsmonate: dict[str, int],
+) -> bool:
+    """
+    Determines whether the given person is considered a 'leistungsbegründendes Kind'
+    (benefit-establishing child) for the purpose of parental leave benefits.
+
+    A 'leistungsbegründende Person' is a person whose existence or characteristics give
+    rise to a potential entitlement to a transfer benefit. This person is not
+    necessarily the same as the benefit recipient or the one being evaluated for
+    eligibility.
+
+    This function returns True if the person is young enough to give rise to a potential
+    Elterngeld claim.
+    """
+    # TODO(@MImmesberger): This age threshold is not correct once we account for
+    # Elterngeld plus (currently not implemented).
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/151
+    return (
+        alter_monate
+        <= max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
+    )
+
+
 @agg_by_group_function(agg_type=AggType.ANY)
-def kind_grundsätzlich_anspruchsberechtigt_fg(
-    kind_grundsätzlich_anspruchsberechtigt: bool,
+def leistungsbegründende_kinder_in_fg(
+    ist_leistungsbegründendes_kind: bool,
     fg_id: int,
 ) -> bool:
+    pass
+
+
+@agg_by_group_function(agg_type=AggType.SUM)
+def anzahl_mehrlinge_jüngstes_kind_fg(
+    jüngstes_kind_oder_mehrling: bool,
+    fg_id: int,
+) -> int:
     pass
 
 
@@ -29,29 +63,6 @@ def bezugsmonate_partner(
     bisherige_bezugsmonate: int,
     arbeitslosengeld_2__p_id_einstandspartner: int,
     p_id: int,
-) -> int:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.MIN)
-def alter_monate_jüngstes_mitglied_fg(alter_monate: int, fg_id: int) -> float:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_kinder_bis_2_fg(familie__kind_bis_2: bool, fg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_kinder_bis_5_fg(familie__kind_bis_5: bool, fg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_mehrlinge_jüngstes_kind_fg(
-    jüngstes_kind_oder_mehrling: bool,
-    fg_id: int,
 ) -> int:
     pass
 
@@ -134,7 +145,7 @@ def anspruchshöhe_m(
 def grundsätzlich_anspruchsberechtigt_ohne_maximales_vorjahreseinkommen(
     claimed: bool,
     arbeitsstunden_w: float,
-    kind_grundsätzlich_anspruchsberechtigt_fg: bool,
+    leistungsbegründende_kinder_in_fg: bool,
     bezugsmonate_unter_grenze_fg: bool,
     max_arbeitsstunden_w: int,
 ) -> bool:
@@ -142,7 +153,7 @@ def grundsätzlich_anspruchsberechtigt_ohne_maximales_vorjahreseinkommen(
     return (
         claimed
         and arbeitsstunden_w <= max_arbeitsstunden_w
-        and kind_grundsätzlich_anspruchsberechtigt_fg
+        and leistungsbegründende_kinder_in_fg
         and bezugsmonate_unter_grenze_fg
     )
 
@@ -151,7 +162,7 @@ def grundsätzlich_anspruchsberechtigt_ohne_maximales_vorjahreseinkommen(
 def grundsätzlich_anspruchsberechtigt_mit_maximales_vorjahreseinkommen(
     claimed: bool,
     arbeitsstunden_w: float,
-    kind_grundsätzlich_anspruchsberechtigt_fg: bool,
+    leistungsbegründende_kinder_in_fg: bool,
     einkommen_vorjahr_unter_bezugsgrenze: bool,
     bezugsmonate_unter_grenze_fg: bool,
     max_arbeitsstunden_w: int,
@@ -164,7 +175,7 @@ def grundsätzlich_anspruchsberechtigt_mit_maximales_vorjahreseinkommen(
         claimed
         and arbeitsstunden_w <= max_arbeitsstunden_w
         and einkommen_vorjahr_unter_bezugsgrenze
-        and kind_grundsätzlich_anspruchsberechtigt_fg
+        and leistungsbegründende_kinder_in_fg
         and bezugsmonate_unter_grenze_fg
     )
 
@@ -194,15 +205,6 @@ def bezugsmonate_unter_grenze_fg(
     else:
         out = bisherige_bezugsmonate_fg < max_bezugsmonate["basismonate"]
     return out
-
-
-@policy_function(start_date="2007-01-01")
-def kind_grundsätzlich_anspruchsberechtigt(
-    alter: int,
-    max_bezugsmonate: dict[str, int],
-) -> bool:
-    """Child is young enough to give rise to Elterngeld claim."""
-    return alter <= max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
 
 
 @policy_function(start_date="2011-01-01")
@@ -283,15 +285,16 @@ def anrechenbarer_betrag_m(
 @policy_function()
 def jüngstes_kind_oder_mehrling(
     alter_monate: int,
-    alter_monate_jüngstes_mitglied_fg: float,
-    familie__kind: bool,
+    familie__alter_monate_jüngstes_mitglied_fg: float,
+    ist_leistungsbegründendes_kind: bool,
 ) -> bool:
     """Check if person is the youngest child in the household or a twin, triplet, etc.
     of the youngest child.
 
-    # ToDo: replace familie__kind by some age restriction
     # ToDo: Check definition as relevant for Elterngeld. Currently, it is calculated as
     # ToDo: age not being larger than 0.1 of a month
 
     """
-    return ((alter_monate - alter_monate_jüngstes_mitglied_fg) < 0.1) and familie__kind
+    return (
+        (alter_monate - familie__alter_monate_jüngstes_mitglied_fg) < 0.1
+    ) and ist_leistungsbegründendes_kind

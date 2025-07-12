@@ -18,8 +18,6 @@ inputs:
       zu_versteuerndes_einkommen_mit_kinderfreibetrag_y_sn:
         - 42000.0
     familie:
-      kind:
-        - false
       p_id_ehepartner:
         - -1
     hh_id:

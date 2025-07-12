@@ -33,8 +33,6 @@ inputs:
           renteneinkünfte_vorjahr_m:
             - 0.0
     familie:
-      kind:
-        - false
       p_id_ehepartner:
         - -1
     geburtsjahr:

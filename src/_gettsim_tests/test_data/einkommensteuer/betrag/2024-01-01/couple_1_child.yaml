@@ -26,10 +26,6 @@ inputs:
         - 200000.0
         - 0.0
     familie:
-      kind:
-        - false
-        - false
-        - true
       p_id_ehepartner:
         - 6
         - 5
@@ -47,7 +43,7 @@ inputs:
       - 4
       - 4
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
         - false
         - true

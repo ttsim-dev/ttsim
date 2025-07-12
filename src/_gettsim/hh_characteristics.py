@@ -4,7 +4,7 @@ from ttsim.tt_dag_elements import AggType, agg_by_group_function, policy_functio
 
 
 @agg_by_group_function(agg_type=AggType.SUM)
-def anzahl_erwachsene_hh(familie__erwachsen: bool, hh_id: int) -> int:
+def anzahl_volljährige_hh(familie__volljährig: bool, hh_id: int) -> int:
     pass
 
 
@@ -22,9 +22,9 @@ def anzahl_personen_hh(hh_id: int) -> int:
 
 
 @policy_function()
-def erwachsene_alle_rentenbezieher_hh(
-    anzahl_erwachsene_hh: int,
+def volljährige_alle_rentenbezieher_hh(
+    anzahl_volljährige_hh: int,
     anzahl_rentenbezieher_hh: int,
 ) -> bool:
     """Calculate if all adults in the household are pensioners."""
-    return anzahl_erwachsene_hh == anzahl_rentenbezieher_hh
+    return anzahl_volljährige_hh == anzahl_rentenbezieher_hh

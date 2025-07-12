@@ -34,13 +34,17 @@ def mehrlingsbonus_m(anzahl_mehrlinge_fg: int, mehrlingsbonus_pro_kind: float) -
 
 @policy_function(start_date="2007-01-01")
 def geschwisterbonus_grundsätzlich_anspruchsberechtigt_fg(
-    anzahl_kinder_bis_2_fg: int,
-    anzahl_kinder_bis_5_fg: int,
+    familie__anzahl_kinder_bis_2_fg: int,
+    familie__anzahl_kinder_bis_5_fg: int,
     geschwisterbonus_altersgrenzen: dict[int, int],
 ) -> bool:
     """Siblings that give rise to Elterngeld siblings bonus."""
-    geschwister_unter_3 = anzahl_kinder_bis_2_fg >= geschwisterbonus_altersgrenzen[3]
-    geschwister_unter_6 = anzahl_kinder_bis_5_fg >= geschwisterbonus_altersgrenzen[6]
+    geschwister_unter_3 = (
+        familie__anzahl_kinder_bis_2_fg >= geschwisterbonus_altersgrenzen[3]
+    )
+    geschwister_unter_6 = (
+        familie__anzahl_kinder_bis_5_fg >= geschwisterbonus_altersgrenzen[6]
+    )
 
     return geschwister_unter_3 or geschwister_unter_6
 
