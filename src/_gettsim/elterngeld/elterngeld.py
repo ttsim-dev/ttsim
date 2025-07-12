@@ -11,6 +11,32 @@ from ttsim.tt_dag_elements import (
 )
 
 
+@policy_function(start_date="2007-01-01")
+def ist_leistungsbegründendes_kind(
+    alter_monate: int,
+    max_bezugsmonate: dict[str, int],
+) -> bool:
+    """
+    Determines whether the given person is considered a 'leistungsbegründendes Kind'
+    (benefit-establishing child) for the purpose of parental leave benefits.
+
+    A 'leistungsbegründende Person' is a person whose existence or characteristics give
+    rise to a potential entitlement to a transfer benefit. This person is not
+    necessarily the same as the benefit recipient or the one being evaluated for
+    eligibility.
+
+    This function returns True if the person is young enough to give rise to a potential
+    Elterngeld claim.
+    """
+    # TODO(@MImmesberger): This age threshold is not correct once we account for
+    # Elterngeld plus (currently not implemented).
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/151
+    return (
+        alter_monate
+        <= max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
+    )
+
+
 @agg_by_group_function(agg_type=AggType.ANY)
 def leistungsbegründende_kinder_in_fg(
     ist_leistungsbegründendes_kind: bool,
@@ -272,29 +298,3 @@ def jüngstes_kind_oder_mehrling(
     return (
         (alter_monate - familie__alter_monate_jüngstes_mitglied_fg) < 0.1
     ) and ist_leistungsbegründendes_kind
-
-
-@policy_function(start_date="2007-01-01")
-def ist_leistungsbegründendes_kind(
-    alter_monate: int,
-    max_bezugsmonate: dict[str, int],
-) -> bool:
-    """
-    Determines whether the given person is considered a 'leistungsbegründendes Kind'
-    (benefit-establishing child) for the purpose of parental leave benefits.
-
-    A 'leistungsbegründende Person' is a person whose existence or characteristics give
-    rise to a potential entitlement to a transfer benefit. This person is not
-    necessarily the same as the benefit recipient or the one being evaluated for
-    eligibility.
-
-    This function returns True if the person is young enough to give rise to a potential
-    Elterngeld claim.
-    """
-    # TODO(@MImmesberger): This age threshold is not correct once we account for
-    # Elterngeld plus (currently not implemented).
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/151
-    return (
-        alter_monate
-        <= max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
-    )

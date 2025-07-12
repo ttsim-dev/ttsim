@@ -8,23 +8,6 @@ if TYPE_CHECKING:
     from ttsim.tt_dag_elements import BoolColumn, IntColumn
 
 
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_eg(ist_kind_in_einstandsgemeinschaft: bool, eg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_erwachsene_eg(
-    ist_erwachsener_in_einstandsgemeinschaft: bool, eg_id: int
-) -> int:
-    pass
-
-
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.COUNT)
-def anzahl_personen_eg(eg_id: int) -> int:
-    pass
-
-
 @policy_function(vectorization_strategy="not_required")
 def ist_kind_in_einstandsgemeinschaft(alter: IntColumn) -> BoolColumn:
     """Determines whether the given person is a child in a Einstandsgemeinschaft.
@@ -52,3 +35,20 @@ def ist_erwachsener_in_einstandsgemeinschaft(
     # XII.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
     return not ist_kind_in_einstandsgemeinschaft
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_eg(ist_kind_in_einstandsgemeinschaft: bool, eg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_erwachsene_eg(
+    ist_erwachsener_in_einstandsgemeinschaft: bool, eg_id: int
+) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.COUNT)
+def anzahl_personen_eg(eg_id: int) -> int:
+    pass
