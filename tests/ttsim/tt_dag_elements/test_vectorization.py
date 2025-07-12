@@ -424,7 +424,6 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
     )
     assert exp == 800.0
 
-    # Test with false eligibility
     exp_false = amount_m_fam.function(
         eligibility__requirement_fulfilled_fam=False,
         income__amount_m_fam=income__amount_m_fam,
@@ -484,10 +483,8 @@ def test_payroll_tax_amount_y(backend, xnp):
     wealth_fam = 30000.0  # Below threshold
     wealth_threshold_for_reduced_tax_rate = 40000.0
 
-    # Import the actual function
     from tests.ttsim.mettsim.payroll_tax.amount import amount_y  # noqa: PLC0415
 
-    # Test standard case (wealth below threshold)
     exp_standard = amount_y.function(
         amount_standard_y=amount_standard_y,
         amount_reduced_y=amount_reduced_y,
@@ -497,7 +494,6 @@ def test_payroll_tax_amount_y(backend, xnp):
     )
     assert exp_standard == 1000.0
 
-    # Test reduced case (wealth above threshold)
     exp_reduced = amount_y.function(
         amount_standard_y=amount_standard_y,
         amount_reduced_y=amount_reduced_y,
@@ -507,7 +503,6 @@ def test_payroll_tax_amount_y(backend, xnp):
     )
     assert exp_reduced == 800.0
 
-    # Test noble case
     exp_noble = amount_y.function(
         amount_standard_y=amount_standard_y,
         amount_reduced_y=amount_reduced_y,
@@ -592,12 +587,10 @@ def test_orc_hunting_bounty_amount(backend, xnp):
         },
     )()
 
-    # Import the actual function
     from tests.ttsim.mettsim.orc_hunting_bounty.orc_hunting_bounty import (  # noqa: PLC0415
         amount,
     )
 
-    # Test noble hunter case
     exp_noble = amount.function(
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
@@ -606,7 +599,6 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     )
     assert exp_noble == 150.0  # 5*10 + 2*50
 
-    # Test peasant hunter case
     exp_peasant = amount.function(
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
