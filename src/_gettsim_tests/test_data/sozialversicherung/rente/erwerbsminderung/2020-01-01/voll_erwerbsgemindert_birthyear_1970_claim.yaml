@@ -20,7 +20,7 @@ inputs:
             - 1.0
           zugangsfaktor:
             - 0.892
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
   provided: {}
 outputs:

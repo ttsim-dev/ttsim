@@ -58,5 +58,5 @@ def weiblich() -> bool:
 
 
 @policy_input()
-def wohnort_ost() -> bool:
-    """Whether the person lives in the Eastern part of Germany."""
+def wohnort_ost_hh() -> bool:
+    """Whether the household is located in the new Länder (Beitrittsgebiet)."""

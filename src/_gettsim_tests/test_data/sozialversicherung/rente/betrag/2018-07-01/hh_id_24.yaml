@@ -66,7 +66,7 @@ inputs:
           - 60.0
     weiblich:
       - false
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   sozialversicherung:

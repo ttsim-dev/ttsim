@@ -9,7 +9,7 @@ from ttsim.tt_dag_elements import policy_function
 
 @policy_function()
 def entgeltpunkte_west_updated(
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     sozialversicherung__rente__entgeltpunkte_west: float,
     neue_entgeltpunkte: float,
 ) -> float:
@@ -19,7 +19,7 @@ def entgeltpunkte_west_updated(
     potentially other variables (e.g., benefits for raising children, informal care),
     return the new earnings points.
     """
-    if wohnort_ost:
+    if wohnort_ost_hh:
         out = sozialversicherung__rente__entgeltpunkte_west
     else:
         out = sozialversicherung__rente__entgeltpunkte_west + neue_entgeltpunkte
@@ -28,7 +28,7 @@ def entgeltpunkte_west_updated(
 
 @policy_function()
 def entgeltpunkte_ost_updated(
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     neue_entgeltpunkte: float,
 ) -> float:
@@ -38,7 +38,7 @@ def entgeltpunkte_ost_updated(
     potentially other variables (e.g., benefits for raising children, informal care),
     return the new earnings points.
     """
-    if wohnort_ost:
+    if wohnort_ost_hh:
         out = sozialversicherung__rente__entgeltpunkte_ost + neue_entgeltpunkte
     else:
         out = sozialversicherung__rente__entgeltpunkte_ost
@@ -48,14 +48,14 @@ def entgeltpunkte_ost_updated(
 @policy_function()
 def neue_entgeltpunkte(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     beitragspflichtiges_durchschnittsentgelt_y: float,
     umrechnung_entgeltpunkte_beitrittsgebiet: float,
 ) -> float:
     """Return earning points for the wages earned in the last year."""
     # Scale bruttolohn up if earned in eastern Germany
-    if wohnort_ost:
+    if wohnort_ost_hh:
         bruttolohn_scaled_east = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
             * umrechnung_entgeltpunkte_beitrittsgebiet

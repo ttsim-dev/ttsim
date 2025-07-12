@@ -92,7 +92,7 @@ inputs:
       - 60.0
     wohngeld__anspruchshöhe_m_bg:
       - 0.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   arbeitslosengeld_2__anrechnungsfreies_einkommen_m:

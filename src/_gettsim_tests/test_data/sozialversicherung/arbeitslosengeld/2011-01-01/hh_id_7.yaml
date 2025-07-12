@@ -40,7 +40,7 @@ inputs:
       - 7
     p_id:
       - 11
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   sozialversicherung:

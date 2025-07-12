@@ -81,7 +81,7 @@ inputs:
           mean_entgeltpunkte:
             - 15.0
             - 15.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
 outputs:

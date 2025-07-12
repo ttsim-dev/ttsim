@@ -352,7 +352,7 @@ inputs:
         - 100.0
         - 100.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 1
         - 1
         - 1

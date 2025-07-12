@@ -62,7 +62,7 @@ inputs:
             - 480
           mean_entgeltpunkte:
             - 28.8
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   sozialversicherung:

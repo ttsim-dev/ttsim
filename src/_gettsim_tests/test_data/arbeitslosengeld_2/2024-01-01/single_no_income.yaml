@@ -114,7 +114,7 @@ inputs:
     wohngeld:
       anspruchshöhe_m_bg:
         - 0.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   arbeitslosengeld_2:

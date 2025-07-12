@@ -36,7 +36,7 @@ inputs:
           - 6
         pflichtbeitragsmonate:
           - 60.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
   provided: {}
 outputs:

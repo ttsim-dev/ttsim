@@ -54,7 +54,7 @@ inputs:
     p_id:
       - 5
       - 6
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
 outputs:

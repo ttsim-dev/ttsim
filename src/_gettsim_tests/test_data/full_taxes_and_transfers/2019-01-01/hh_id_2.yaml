@@ -425,12 +425,12 @@ inputs:
         - 50.0
         - 50.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 3
         - 3
         - 3
         - 3
-    wohnort_ost:
+    wohnort_ost_hh:
       - true
       - true
       - true

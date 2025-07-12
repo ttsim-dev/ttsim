@@ -31,7 +31,7 @@ inputs:
         grundrente:
           betrag_m:
             - 0.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   sozialversicherung:

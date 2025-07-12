@@ -33,7 +33,7 @@ def geringfügig_beschäftigt(
     ),
 )
 def minijobgrenze_unterscheidung_ost_west(
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     parameter_minijobgrenze_ost_west_unterschied: dict[str, float],
 ) -> float:
     """Minijob income threshold depending on place of living (East or West Germany).
@@ -42,7 +42,7 @@ def minijobgrenze_unterscheidung_ost_west(
     """
     return (
         parameter_minijobgrenze_ost_west_unterschied["ost"]
-        if wohnort_ost
+        if wohnort_ost_hh
         else parameter_minijobgrenze_ost_west_unterschied["west"]
     )
 

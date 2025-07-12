@@ -48,7 +48,7 @@ inputs:
     p_id:
       - 7
       - 8
-    wohnort_ost:
+    wohnort_ost_hh:
       - true
       - true
 outputs:

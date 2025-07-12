@@ -117,7 +117,7 @@ inputs:
             - true
             - false
             - true
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
       - false
