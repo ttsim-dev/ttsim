@@ -78,16 +78,10 @@ def bruttorente_basisbetrag_m_nach_wohnort(
     return out
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
-@policy_function(
-    start_date="2023-07-01",
-)
+@policy_function(start_date="2023-07-01")
 def bruttorente_basisbetrag_m(
     zugangsfaktor: float,
-    sozialversicherung__rente__entgeltpunkte_ost: float,
-    sozialversicherung__rente__entgeltpunkte_west: float,
+    sozialversicherung__rente__entgeltpunkte: float,
     sozialversicherung__rente__bezieht_rente: bool,
     rentenwert: float,
 ) -> float:
@@ -102,14 +96,7 @@ def bruttorente_basisbetrag_m(
     - https://de.wikipedia.org/wiki/Rentenanpassungsformel
     """
     if sozialversicherung__rente__bezieht_rente:
-        out = (
-            (
-                sozialversicherung__rente__entgeltpunkte_west
-                + sozialversicherung__rente__entgeltpunkte_ost
-            )
-            * rentenwert
-            * zugangsfaktor
-        )
+        out = sozialversicherung__rente__entgeltpunkte * rentenwert * zugangsfaktor
     else:
         out = 0.0
 

@@ -257,7 +257,6 @@ umrechnung_entgeltpunkte_beitrittsgebiet:
   2024-01-01:
     value: 1.0140
   2025-01-01:
-    value: 1.0000
     note: Umrechnung entfällt.
 parameter_rentenwert_nach_wohnort:
   name:

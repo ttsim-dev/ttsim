@@ -2,12 +2,8 @@ from __future__ import annotations
 
 from ttsim.tt_dag_elements import policy_function
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 
-
-@policy_function()
+@policy_function(end_date="2023-06-30")
 def entgeltpunkte_west_updated(
     wohnort_ost_hh: bool,
     sozialversicherung__rente__entgeltpunkte_west: float,
@@ -26,7 +22,7 @@ def entgeltpunkte_west_updated(
     return out
 
 
-@policy_function()
+@policy_function(end_date="2023-06-30")
 def entgeltpunkte_ost_updated(
     wohnort_ost_hh: bool,
     sozialversicherung__rente__entgeltpunkte_ost: float,
@@ -45,35 +41,70 @@ def entgeltpunkte_ost_updated(
     return out
 
 
-@policy_function()
-def neue_entgeltpunkte(
+@policy_function(start_date="2023-07-01")
+def entgeltpunkte_updated(
+    sozialversicherung__rente__entgeltpunkte: float,
+    neue_entgeltpunkte: float,
+) -> float:
+    """Updated Entgeltpunkte based on current income."""
+    return sozialversicherung__rente__entgeltpunkte + neue_entgeltpunkte
+
+
+@policy_function(end_date="2024-12-31", leaf_name="neue_entgeltpunkte")
+def neue_entgeltpunkte_nach_wohnort(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     wohnort_ost_hh: bool,
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
     beitragspflichtiges_durchschnittsentgelt_y: float,
     umrechnung_entgeltpunkte_beitrittsgebiet: float,
 ) -> float:
-    """Return earning points for the wages earned in the last year."""
+    """Earning points for the wages earned in this year."""
     # Scale bruttolohn up if earned in eastern Germany
     if wohnort_ost_hh:
-        bruttolohn_scaled_east = (
+        umgerechneter_bruttolohn = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
             * umrechnung_entgeltpunkte_beitrittsgebiet
         )
     else:
-        bruttolohn_scaled_east = (
+        umgerechneter_bruttolohn = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         )
 
     # Calculate the (scaled) wage, which is subject to pension contributions.
     if (
-        bruttolohn_scaled_east
+        umgerechneter_bruttolohn
         > sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m
     ):
-        bruttolohn_scaled_rentenv = (
+        versicherungspflichtiger_bruttolohn = (
             sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m
         )
     else:
-        bruttolohn_scaled_rentenv = bruttolohn_scaled_east
+        versicherungspflichtiger_bruttolohn = umgerechneter_bruttolohn
 
-    return bruttolohn_scaled_rentenv / (beitragspflichtiges_durchschnittsentgelt_y / 12)
+    return versicherungspflichtiger_bruttolohn / (
+        beitragspflichtiges_durchschnittsentgelt_y / 12
+    )
+
+
+@policy_function(start_date="2025-01-01", leaf_name="neue_entgeltpunkte")
+def neue_entgeltpunkte_einheitlich(
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
+    sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
+    beitragspflichtiges_durchschnittsentgelt_y: float,
+) -> float:
+    """Earning points for the wages earned in this year."""
+    if (
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        > sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m
+    ):
+        versicherungspflichtiger_bruttolohn = (
+            sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m
+        )
+    else:
+        versicherungspflichtiger_bruttolohn = (
+            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        )
+
+    return versicherungspflichtiger_bruttolohn / (
+        beitragspflichtiges_durchschnittsentgelt_y / 12
+    )

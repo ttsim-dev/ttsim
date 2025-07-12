@@ -46,15 +46,10 @@ def betrag_m_nach_wohnort(
     return out
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023 (first check whether this is also the case here, not
-# only for old-age pensions).
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
 @policy_function(start_date="2023-07-01", leaf_name="betrag_m")
 def betrag_m_einheitlich(
     zugangsfaktor: float,
-    entgeltpunkte_west: float,
-    entgeltpunkte_ost: float,
+    entgeltpunkte: float,
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
     sozialversicherung__rente__altersrente__rentenwert: float,
@@ -65,7 +60,7 @@ def betrag_m_einheitlich(
     """
     if grundsätzlich_anspruchsberechtigt:
         out = (
-            (entgeltpunkte_ost + entgeltpunkte_west)
+            entgeltpunkte
             * zugangsfaktor
             * sozialversicherung__rente__altersrente__rentenwert
             * rentenartfaktor
@@ -96,35 +91,27 @@ def grundsätzlich_anspruchsberechtigt(
     return anspruch_erwerbsm_rente
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023 (first check whether this is also the case here, not
-# only for old-age pensions).
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
-@policy_function(start_date="2001-01-01")
+@policy_function(start_date="2001-01-01", end_date="2023-06-30")
 def entgeltpunkte_west(
     sozialversicherung__rente__entgeltpunkte_west: float,
-    zurechnungszeit: float,
+    zusätzliche_entgeltpunkte_durch_zurechnungszeit: float,
     anteil_entgeltpunkte_ost: float,
 ) -> float:
     """Entgeltpunkte from West German Beitrags- and Zurechnungszeiten.
 
     In the case of the public disability insurance, pensioners are credited with
     additional earning points. They receive their average earned income points for each
-    year between their age of retirement and the "zurechnungszeitgrenze".
+    year between their age of retirement and the "Zurechnungszeitgrenze".
     """
     return sozialversicherung__rente__entgeltpunkte_west + (
-        zurechnungszeit * (1 - anteil_entgeltpunkte_ost)
+        zusätzliche_entgeltpunkte_durch_zurechnungszeit * (1 - anteil_entgeltpunkte_ost)
     )
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023 (first check whether this is also the case here, not
-# only for old-age pensions).
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
-@policy_function(start_date="2001-01-01")
+@policy_function(start_date="2001-01-01", end_date="2023-06-30")
 def entgeltpunkte_ost(
     sozialversicherung__rente__entgeltpunkte_ost: float,
-    zurechnungszeit: float,
+    zusätzliche_entgeltpunkte_durch_zurechnungszeit: float,
     anteil_entgeltpunkte_ost: float,
 ) -> float:
     """Entgeltpunkte from East German Beitrags- and Zurechnungszeiten.
@@ -133,19 +120,38 @@ def entgeltpunkte_ost(
 
     In the case of the public disability insurance, pensioners are credited with
     additional earning points. They receive their average earned income points for each
-    year between their age of retirement and the "zurechnungszeitgrenze".
+    year between their age of retirement and the "Zurechnungszeitgrenze".
     """
     return sozialversicherung__rente__entgeltpunkte_ost + (
-        zurechnungszeit * anteil_entgeltpunkte_ost
+        zusätzliche_entgeltpunkte_durch_zurechnungszeit * anteil_entgeltpunkte_ost
+    )
+
+
+@policy_function(start_date="2023-07-01")
+def entgeltpunkte(
+    sozialversicherung__rente__entgeltpunkte: float,
+    zusätzliche_entgeltpunkte_durch_zurechnungszeit: float,
+) -> float:
+    """Entgeltpunkte from Beitrags- and Zurechnungszeiten.
+
+    Provides the Entgeltpunkt-basis for calculation of the Erwerbsminderungsrente.
+
+    In the case of the public disability insurance, pensioners are credited with
+    additional earning points. They receive their average earned income points for each
+    year between their age of retirement and the "Zurechnungszeitgrenze".
+    """
+    return (
+        sozialversicherung__rente__entgeltpunkte
+        + zusätzliche_entgeltpunkte_durch_zurechnungszeit
     )
 
 
 @policy_function(
     start_date="2000-12-23",
     end_date="2014-06-30",
-    leaf_name="zurechnungszeit",
+    leaf_name="zusätzliche_entgeltpunkte_durch_zurechnungszeit",
 )
-def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
+def zusätzliche_entgeltpunkte_durch_zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     sozialversicherung__rente__jahr_renteneintritt: int,
@@ -158,7 +164,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
 
     In the case of the public disability insurance, pensioners are credited with
     additional earning points. They receive their average earned income points for each
-    year between their age of retirement and the "zurechnungszeitgrenze".
+    year between their age of retirement and the "Zurechnungszeitgrenze".
     """
     claiming_month_since_ad = (
         sozialversicherung__rente__jahr_renteneintritt * 12
@@ -176,9 +182,9 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_bis_06_2014(
 @policy_function(
     start_date="2014-07-01",
     end_date="2017-07-16",
-    leaf_name="zurechnungszeit",
+    leaf_name="zusätzliche_entgeltpunkte_durch_zurechnungszeit",
 )
-def zurechnungszeit_mit_einheitlicher_altersgrenze(
+def zusätzliche_entgeltpunkte_durch_zurechnungszeit_mit_einheitlicher_altersgrenze(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     zurechnungszeitgrenze: float,
@@ -189,15 +195,17 @@ def zurechnungszeit_mit_einheitlicher_altersgrenze(
 
     In the case of the public disability insurance, pensioners are credited with
     additional earning points. They receive their average earned income points for each
-    year between their age of retirement and the "zurechnungszeitgrenze".
+    year between their age of retirement and the "Zurechnungszeitgrenze".
     """
     return (
         zurechnungszeitgrenze - (sozialversicherung__rente__alter_bei_renteneintritt)
     ) * mean_entgeltpunkte_pro_bewertungsmonat
 
 
-@policy_function(start_date="2017-07-17", leaf_name="zurechnungszeit")
-def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
+@policy_function(
+    start_date="2017-07-17", leaf_name="zusätzliche_entgeltpunkte_durch_zurechnungszeit"
+)
+def zusätzliche_entgeltpunkte_durch_zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
     mean_entgeltpunkte_pro_bewertungsmonat: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     sozialversicherung__rente__jahr_renteneintritt: int,
@@ -210,7 +218,7 @@ def zurechnungszeit_mit_gestaffelter_altersgrenze_ab_07_2017(
 
     In the case of the public disability insurance, pensioners are credited with
     additional earning points. They receive their average earned income points for each
-    year between their age of retirement and the "zurechnungszeitgrenze".
+    year between their age of retirement and the "Zurechnungszeitgrenze".
     """
     claiming_month_since_ad = (
         sozialversicherung__rente__jahr_renteneintritt * 12
@@ -360,11 +368,7 @@ def wartezeit_langjährig_versichert_erfüllt(
     ) / 12 >= wartezeitgrenze_langjährig_versicherte
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023 (first check whether this is also the case here, not
-# only for old-age pensions).
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
-@policy_function()
+@policy_function(end_date="2023-06-30")
 def anteil_entgeltpunkte_ost(
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__entgeltpunkte_ost: float,
@@ -384,12 +388,10 @@ def anteil_entgeltpunkte_ost(
     return out
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023 (first check whether this is also the case here, not
-# only for old-age pensions).
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
-@policy_function()
-def mean_entgeltpunkte_pro_bewertungsmonat(
+@policy_function(
+    end_date="2023-06-30", leaf_name="mean_entgeltpunkte_pro_bewertungsmonat"
+)
+def mean_entgeltpunkte_pro_bewertungsmonat_nach_wohnort(
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__alter_bei_renteneintritt: float,
@@ -407,9 +409,30 @@ def mean_entgeltpunkte_pro_bewertungsmonat(
         - altersgrenze_grundbewertung
     )
 
-    mean_entgeltpunkte_pro_bewertungsmonat = (
+    return (
         sozialversicherung__rente__entgeltpunkte_west
         + sozialversicherung__rente__entgeltpunkte_ost
     ) / belegungsfähiger_gesamtzeitraum
 
-    return mean_entgeltpunkte_pro_bewertungsmonat
+
+@policy_function(
+    start_date="2023-07-01", leaf_name="mean_entgeltpunkte_pro_bewertungsmonat"
+)
+def mean_entgeltpunkte_pro_bewertungsmonat_einheitlich(
+    sozialversicherung__rente__entgeltpunkte: float,
+    sozialversicherung__rente__alter_bei_renteneintritt: float,
+    altersgrenze_grundbewertung: float,
+) -> float:
+    """Average earning points per Bewertungsmonat (as part of the "Grundbewertung").
+
+    Earnings points are divided by "belegungsfähige Gesamtzeitraum" which is the period
+    from the age of 17 until the start of the pension.
+
+    Legal reference: SGB VI § 72: Grundbewertung
+    """
+    belegungsfähiger_gesamtzeitraum = (
+        sozialversicherung__rente__alter_bei_renteneintritt
+        - altersgrenze_grundbewertung
+    )
+
+    return sozialversicherung__rente__entgeltpunkte / belegungsfähiger_gesamtzeitraum
