@@ -15,45 +15,6 @@ if TYPE_CHECKING:
     from ttsim.tt_dag_elements.typing import BoolColumn, IntColumn, ModuleType
 
 
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.ANY)
-def kind_in_bg(ist_kind_in_bedarfsgemeinschaft: bool, bg_id: int) -> bool:
-    pass
-
-
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_erwachsene_bg(
-    ist_erwachsener_in_bedarfsgemeinschaft: bool,
-    bg_id: int,
-) -> int:
-    pass
-
-
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_bg(ist_kind_in_bedarfsgemeinschaft: bool, bg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.COUNT)
-def anzahl_personen_bg(bg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
-def anzahl_kinder_bis_17_bg(familie__kind_in_fg_bis_17: bool, bg_id: int) -> int:
-    pass
-
-
-@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.ANY)
-def alleinerziehend_bg(familie__alleinerziehend: bool, bg_id: int) -> bool:
-    pass
-
-
-@policy_function(start_date="2005-01-01")
-def kind_in_bg_bis_17(alter: int, ist_kind_in_bedarfsgemeinschaft: bool) -> bool:
-    """Child under the age of 18 in Bedarfsgemeinschaft."""
-    return ist_kind_in_bedarfsgemeinschaft and (alter <= 17)
-
-
 @policy_function(start_date="2005-01-01")
 def ist_kind_in_bedarfsgemeinschaft(
     familie__p_id_elternteil_1: IntColumn,
@@ -90,10 +51,44 @@ def ist_erwachsener_in_bedarfsgemeinschaft(
     return not ist_kind_in_bedarfsgemeinschaft
 
 
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.COUNT)
+def anzahl_personen_bg(bg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_erwachsene_bg(
+    ist_erwachsener_in_bedarfsgemeinschaft: bool,
+    bg_id: int,
+) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bg(ist_kind_in_bedarfsgemeinschaft: bool, bg_id: int) -> int:
+    pass
+
+
+@policy_function(start_date="2005-01-01")
+def kind_in_bg_bis_17(alter: int, ist_kind_in_bedarfsgemeinschaft: bool) -> bool:
+    """Child under the age of 18 in Bedarfsgemeinschaft."""
+    return ist_kind_in_bedarfsgemeinschaft and (alter <= 17)
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)
+def anzahl_kinder_bis_17_bg(kind_in_bg_bis_17: bool, bg_id: int) -> int:
+    pass
+
+
+@agg_by_group_function(start_date="2005-01-01", agg_type=AggType.ANY)
+def alleinerziehend_bg(familie__alleinerziehend: bool, bg_id: int) -> bool:
+    pass
+
+
 @policy_function(start_date="2005-01-01")
 def hat_kind_in_gleicher_bedarfsgemeinschaft(
-    kind_in_bg: bool,
+    anzahl_kinder_bg: int,
     ist_erwachsener_in_bedarfsgemeinschaft: bool,
 ) -> bool:
     """Has a child in the same Bedarfsgemeinschaft."""
-    return kind_in_bg and ist_erwachsener_in_bedarfsgemeinschaft
+    return anzahl_kinder_bg >= 1 and ist_erwachsener_in_bedarfsgemeinschaft
