@@ -404,12 +404,7 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
 
     if missing_nodes:
         missing_nodes_formatted = format_list_linewise(
-            [
-                str(dt.tree_path_from_qname(mn))
-                if mn != "('input_data', 'flat')"
-                else "input data in a suitable format, see docs [link eventually]"
-                for mn in missing_nodes
-            ],
+            [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
         )
         idifs_and_their_inputs_formatted: list[str] = []
         for p, objects in idifs_required_but_not_resolved.items():
