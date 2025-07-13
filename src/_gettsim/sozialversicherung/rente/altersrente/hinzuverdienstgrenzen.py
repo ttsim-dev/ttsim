@@ -4,7 +4,7 @@ from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 
 @policy_function(
-    end_date="2016-12-31",
+    end_date="2017-06-30",
     rounding_spec=RoundingSpec(
         base=0.01,
         direction="nearest",
@@ -12,7 +12,7 @@ from ttsim.tt_dag_elements import RoundingSpec, policy_function
     ),
     leaf_name="bruttorente_m",
 )
-def bruttorente_m_mit_harter_monatlicher_hinzuverdienstgrenze(
+def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     alter: int,
     regelaltersrente__altersgrenze: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
@@ -28,40 +28,6 @@ def bruttorente_m_mit_harter_monatlicher_hinzuverdienstgrenze(
     if (alter >= regelaltersrente__altersgrenze) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         <= hinzuverdienstgrenze_m
-    ):
-        out = bruttorente_basisbetrag_m
-    else:
-        out = 0.0
-
-    return out
-
-
-@policy_function(
-    start_date="2017-01-01",
-    end_date="2017-06-30",
-    rounding_spec=RoundingSpec(
-        base=0.01,
-        direction="nearest",
-        reference="§ 123 SGB VI Abs. 1",
-    ),
-    leaf_name="bruttorente_m",
-)
-def bruttorente_m_mit_harter_jährlicher_hinzuverdienstgrenze(
-    alter: int,
-    regelaltersrente__altersgrenze: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    bruttorente_basisbetrag_m: float,
-    hinzuverdienstgrenze_y: float,
-) -> float:
-    """Pension benefits after earnings test for early retirees.
-
-    If earnings are above an earnings limit, the pension is fully deducted.
-    """
-    # TODO (@MImmesberger): Use age with monthly precision.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
-    if (alter >= regelaltersrente__altersgrenze) or (
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        <= hinzuverdienstgrenze_y / 12
     ):
         out = bruttorente_basisbetrag_m
     else:
@@ -120,7 +86,7 @@ def zahlbetrag_ohne_deckel_m(
     regelaltersrente__altersgrenze: float,
     bruttorente_basisbetrag_m: float,
     differenz_bruttolohn_hinzuverdienstgrenze_m: float,
-    hinzuverdienstgrenze_y: float,
+    hinzuverdienstgrenze_m: float,
     abzugsrate_hinzuverdienst: float,
 ) -> float:
     """Pension benefits after earnings test without accounting for the earnings cap
@@ -131,7 +97,7 @@ def zahlbetrag_ohne_deckel_m(
     # No deduction because of age or low earnings
     if (alter >= regelaltersrente__altersgrenze) or (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        <= hinzuverdienstgrenze_y / 12
+        <= hinzuverdienstgrenze_m
     ):
         out = bruttorente_basisbetrag_m
     else:
@@ -150,12 +116,12 @@ def zahlbetrag_ohne_deckel_m(
 )
 def differenz_bruttolohn_hinzuverdienstgrenze_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    hinzuverdienstgrenze_y: float,
+    hinzuverdienstgrenze_m: float,
 ) -> float:
     """Earnings that are subject to pension deductions."""
     return max(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        - hinzuverdienstgrenze_y / 12,
+        - hinzuverdienstgrenze_m,
         0.0,
     )
 
