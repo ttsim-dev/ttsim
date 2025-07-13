@@ -53,7 +53,7 @@ def bruttorente_basisbetrag_m_nach_wohnort(
     sozialversicherung__rente__entgeltpunkte_ost: float,
     sozialversicherung__rente__entgeltpunkte_west: float,
     sozialversicherung__rente__bezieht_rente: bool,
-    parameter_rentenwert_nach_wohnort: dict[str, float],
+    sozialversicherung__rente__parameter_rentenwert_nach_wohnort: dict[str, float],
 ) -> float:
     """Old-Age Pensions claim. The function follows the following equation:
 
@@ -68,9 +68,9 @@ def bruttorente_basisbetrag_m_nach_wohnort(
     if sozialversicherung__rente__bezieht_rente:
         out = (
             sozialversicherung__rente__entgeltpunkte_west
-            * parameter_rentenwert_nach_wohnort["west"]
+            * sozialversicherung__rente__parameter_rentenwert_nach_wohnort["west"]
             + sozialversicherung__rente__entgeltpunkte_ost
-            * parameter_rentenwert_nach_wohnort["ost"]
+            * sozialversicherung__rente__parameter_rentenwert_nach_wohnort["ost"]
         ) * zugangsfaktor
     else:
         out = 0.0
@@ -83,7 +83,7 @@ def bruttorente_basisbetrag_m(
     zugangsfaktor: float,
     sozialversicherung__rente__entgeltpunkte: float,
     sozialversicherung__rente__bezieht_rente: bool,
-    rentenwert: float,
+    sozialversicherung__rente__rentenwert: float,
 ) -> float:
     """Old-Age Pensions claim. The function follows the following equation:
 
@@ -96,24 +96,15 @@ def bruttorente_basisbetrag_m(
     - https://de.wikipedia.org/wiki/Rentenanpassungsformel
     """
     if sozialversicherung__rente__bezieht_rente:
-        out = sozialversicherung__rente__entgeltpunkte * rentenwert * zugangsfaktor
+        out = (
+            sozialversicherung__rente__entgeltpunkte
+            * sozialversicherung__rente__rentenwert
+            * zugangsfaktor
+        )
     else:
         out = 0.0
 
     return out
-
-
-@policy_function(start_date="1992-01-01", end_date="2023-06-30", leaf_name="rentenwert")
-def rentenwert_nach_wohnort(
-    wohnort_ost_hh: bool,
-    parameter_rentenwert_nach_wohnort: dict[str, float],
-) -> float:
-    """Rentenwert."""
-    return (
-        parameter_rentenwert_nach_wohnort["ost"]
-        if wohnort_ost_hh
-        else parameter_rentenwert_nach_wohnort["west"]
-    )
 
 
 @policy_function()
@@ -125,7 +116,7 @@ def zugangsfaktor(
     altersgrenze_vorzeitig: float,
     vorzeitig_grundsätzlich_anspruchsberechtigt: bool,
     regelaltersrente__grundsätzlich_anspruchsberechtigt: bool,
-    zugangsfaktor_veränderung_pro_jahr: dict[str, float],
+    sozialversicherung__rente__zugangsfaktor_veränderung_pro_jahr: dict[str, float],
 ) -> float:
     """Zugangsfaktor (pension adjustment factor).
 
@@ -170,7 +161,9 @@ def zugangsfaktor(
                         sozialversicherung__rente__alter_bei_renteneintritt
                         - referenzalter_abschlag
                     )
-                    * zugangsfaktor_veränderung_pro_jahr["vorzeitiger_renteneintritt"]
+                    * sozialversicherung__rente__zugangsfaktor_veränderung_pro_jahr[
+                        "vorzeitiger_renteneintritt"
+                    ]
                 )
             else:
                 # Early retirement although not eligible to do so.
@@ -188,7 +181,9 @@ def zugangsfaktor(
                     sozialversicherung__rente__alter_bei_renteneintritt
                     - regelaltersrente__altersgrenze
                 )
-                * zugangsfaktor_veränderung_pro_jahr["späterer_renteneintritt"]
+                * sozialversicherung__rente__zugangsfaktor_veränderung_pro_jahr[
+                    "späterer_renteneintritt"
+                ]
             )
 
         # Retirement between full retirement age and normal retirement age:

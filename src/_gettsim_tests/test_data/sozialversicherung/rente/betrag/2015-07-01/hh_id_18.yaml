@@ -73,12 +73,12 @@ inputs:
 outputs:
   sozialversicherung:
     rente:
+      entgeltpunkte_ost_updated:
+        - 0.0
+      entgeltpunkte_west_updated:
+        - 39.88850659
+      neue_entgeltpunkte:
+        - 0.509006589
       altersrente:
         altersgrenze:
           - 65.0
-        entgeltpunkte_ost_updated:
-          - 0.0
-        entgeltpunkte_west_updated:
-          - 39.88850659
-        neue_entgeltpunkte:
-          - 0.509006589

@@ -17,7 +17,7 @@ def betrag_m_nach_wohnort(
     entgeltpunkte_ost: float,
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
-    sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort: dict[
+    sozialversicherung__rente__parameter_rentenwert_nach_wohnort: dict[
         str,
         float,
     ],
@@ -30,13 +30,9 @@ def betrag_m_nach_wohnort(
         out = (
             (
                 entgeltpunkte_west
-                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
-                    "west"
-                ]
+                * sozialversicherung__rente__parameter_rentenwert_nach_wohnort["west"]
                 + entgeltpunkte_ost
-                * sozialversicherung__rente__altersrente__parameter_rentenwert_nach_wohnort[
-                    "ost"
-                ]
+                * sozialversicherung__rente__parameter_rentenwert_nach_wohnort["ost"]
             )
             * zugangsfaktor
             * rentenartfaktor
@@ -52,7 +48,7 @@ def betrag_m_einheitlich(
     entgeltpunkte: float,
     rentenartfaktor: float,
     grundsätzlich_anspruchsberechtigt: bool,
-    sozialversicherung__rente__altersrente__rentenwert: float,
+    sozialversicherung__rente__rentenwert: float,
 ) -> float:
     """Erwerbsminderungsrente (public disability insurance).
 
@@ -62,7 +58,7 @@ def betrag_m_einheitlich(
         out = (
             entgeltpunkte
             * zugangsfaktor
-            * sozialversicherung__rente__altersrente__rentenwert
+            * sozialversicherung__rente__rentenwert
             * rentenartfaktor
         )
     else:
@@ -253,7 +249,7 @@ def zugangsfaktor_ohne_gestaffelte_altersgrenze(
     sozialversicherung__rente__alter_bei_renteneintritt: float,
     altersgrenze: float,
     min_zugangsfaktor: float,
-    sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
+    sozialversicherung__rente__zugangsfaktor_veränderung_pro_jahr: dict[
         str,
         float,
     ],
@@ -270,7 +266,7 @@ def zugangsfaktor_ohne_gestaffelte_altersgrenze(
         1
         + (sozialversicherung__rente__alter_bei_renteneintritt - altersgrenze)
         * (
-            sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr[
+            sozialversicherung__rente__zugangsfaktor_veränderung_pro_jahr[
                 "vorzeitiger_renteneintritt"
             ]
         )
@@ -287,7 +283,7 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
     sozialversicherung__rente__monat_renteneintritt: int,
     altersgrenze_langjährig_versichert: float,
     min_zugangsfaktor: float,
-    sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr: dict[
+    sozialversicherung__rente__zugangsfaktor_veränderung_pro_jahr: dict[
         str,
         float,
     ],
@@ -318,7 +314,7 @@ def zugangsfaktor_mit_gestaffelter_altersgrenze(
         1
         + (sozialversicherung__rente__alter_bei_renteneintritt - grenze_abschlagsfrei)
         * (
-            sozialversicherung__rente__altersrente__zugangsfaktor_veränderung_pro_jahr[
+            sozialversicherung__rente__zugangsfaktor_veränderung_pro_jahr[
                 "vorzeitiger_renteneintritt"
             ]
         )
