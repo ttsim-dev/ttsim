@@ -10,20 +10,19 @@ def bezieht_rente() -> bool:
     """Draws public pension benefits."""
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
-@policy_input()
+@policy_input(end_date="2023-06-30")
 def entgeltpunkte_ost() -> float:
-    """Earnings points for pension claim accumulated in Eastern states."""
+    """Earnings points for public pension claim accumulated in the new Länder (Beitrittsgebiet)."""
 
 
-# TODO(@MImmesberger): Do not distinguish between Entgeltpunkte from West and East
-# Germany starting in July 2023.
-# https://github.com/iza-institute-of-labor-economics/gettsim/issues/925
-@policy_input()
+@policy_input(end_date="2023-06-30")
 def entgeltpunkte_west() -> float:
-    """Earnings points for pension claim accumulated in Western states."""
+    """Earnings points for public pension claim accumulated in the old Länder (non-Beitrittsgebiet)."""
+
+
+@policy_input(start_date="2023-07-01")
+def entgeltpunkte() -> float:
+    """Earnings points for public pension claim."""
 
 
 @policy_input()

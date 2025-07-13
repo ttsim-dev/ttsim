@@ -71,11 +71,11 @@ inputs:
 outputs:
   sozialversicherung:
     rente:
+      neue_entgeltpunkte:
+        - 0.0
+      entgeltpunkte_west_updated:
+        - 31.0625
       altersrente:
-        entgeltpunkte_west_updated:
-          - 31.0625
         langjährig:
           altersgrenze:
             - 65.0
-        neue_entgeltpunkte:
-          - 0.0
