@@ -73,23 +73,23 @@ inputs:
 outputs:
   sozialversicherung:
     rente:
+      neue_entgeltpunkte:
+        - 0.509006589
+      entgeltpunkte_ost_updated:
+        - 0.0
+      entgeltpunkte_west_updated:
+        - 39.88850659
       altersrente:
         altersgrenze:
           - 65.0
         altersgrenze_vorzeitig:
           - 60.0
-        entgeltpunkte_ost_updated:
-          - 0.0
-        entgeltpunkte_west_updated:
-          - 39.88850659
         für_frauen:
           grundsätzlich_anspruchsberechtigt:
             - true
         langjährig:
           grundsätzlich_anspruchsberechtigt:
             - true
-        neue_entgeltpunkte:
-          - 0.509006589
         referenzalter_abschlag:
           - 65.0
         vorzeitig_grundsätzlich_anspruchsberechtigt:
