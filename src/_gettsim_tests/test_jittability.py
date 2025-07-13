@@ -27,14 +27,13 @@ GETTSIM_ROOT = Path(__file__).parent.parent / "_gettsim"
 def get_orig_gettsim_objects() -> dict[
     str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
 ]:
-    out = main(
+    return main(
         orig_policy_objects={"root": GETTSIM_ROOT},
         main_targets=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
-    )
-    return {k.replace("orig_policy_objects__", ""): v for k, v in out.items()}
+    )["orig_policy_objects"]
 
 
 def get_orig_gettsim_column_functions() -> list[ColumnFunction]:

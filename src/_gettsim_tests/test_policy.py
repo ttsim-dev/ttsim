@@ -37,14 +37,13 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 def get_orig_gettsim_objects() -> dict[
     str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
 ]:
-    out = main(
+    return main(
         orig_policy_objects={"root": GETTSIM_ROOT},
         main_targets=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
-    )
-    return {k.replace("orig_policy_objects__", ""): v for k, v in out.items()}
+    )["orig_policy_objects"]
 
 
 def dates_in_orig_gettsim_objects() -> list[datetime.date]:
@@ -122,10 +121,10 @@ def test_top_level_elements_not_repeated_in_paths(
     dt.fail_if_top_level_elements_repeated_in_paths(
         all_tree_paths=dt.flatten_to_tree_paths(
             dt.unflatten_from_qnames(
-                gettsim_objects[
-                    "specialized_environment__with_partialled_params_and_scalars"
+                gettsim_objects["specialized_environment"][
+                    "with_partialled_params_and_scalars"
                 ]
             )
         ),
-        top_level_namespace=gettsim_objects["labels__top_level_namespace"],
+        top_level_namespace=gettsim_objects["labels"]["top_level_namespace"],
     )

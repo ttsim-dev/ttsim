@@ -136,17 +136,17 @@ def main(
             set_annotations=False,
             lexsort_key=lexsort_key,
         )
-    else:
-        f = dags.concatenate_functions(
-            dag=dag,
-            functions=functions,
-            targets=main_targets,
-            return_type="dict",
-            enforce_signature=False,
-            set_annotations=False,
-            lexsort_key=lexsort_key,
-        )
-    return f(**input_qnames)
+        return f(**input_qnames)
+    f = dags.concatenate_functions(
+        dag=dag,
+        functions=functions,
+        targets=main_targets,
+        return_type="dict",
+        enforce_signature=False,
+        set_annotations=False,
+        lexsort_key=lexsort_key,
+    )
+    return dt.unflatten_from_qnames(f(**input_qnames))
 
 
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:

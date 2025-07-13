@@ -784,7 +784,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
     with pytest.raises(TypeError, match=match):
         non_convertible_objects_in_results_tree(
             processed_data=actual["processed_data"],
-            results__tree=actual["results__tree"],
+            results__tree=actual["results"]["tree"],
             xnp=xnp,
         )
 
@@ -825,7 +825,7 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
     with pytest.raises(ValueError, match=match):
         non_convertible_objects_in_results_tree(
             processed_data=actual["processed_data"],
-            results__tree=actual["results__tree"],
+            results__tree=actual["results"]["tree"],
             xnp=xnp,
         )
 
