@@ -217,6 +217,19 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
         any_cond = any(i in input_names for i in self.include_if_any_input_present)
         return all_cond or any_cond
 
+    def include_if_all_inputs_present_only_partly_satisfied(
+        self, input_names: Iterable[str]
+    ) -> bool:
+        """Check if the "include_if_all_inputs_present" condition is only partly satisfied.
+
+        This is the case if at least one of the inputs is present, but not all of them.
+        """
+        return (
+            self.include_if_all_inputs_present
+            and any(i in input_names for i in self.include_if_all_inputs_present)
+            and not all(i in input_names for i in self.include_if_all_inputs_present)
+        )
+
     def remove_tree_logic(
         self,
         tree_path: tuple[str, ...],

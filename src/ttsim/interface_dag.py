@@ -91,8 +91,9 @@ def main(
         input_qnames["processed_data"] = {}
         input_qnames["processed_data_columns"] = None
 
+    flat_interface_objects = load_flat_interface_functions_and_inputs()
     nodes = _resolve_dynamic_interface_objects_to_static_nodes(
-        flat_interface_objects=load_flat_interface_functions_and_inputs(),
+        flat_interface_objects=flat_interface_objects,
         input_qnames=list(input_qnames),
     )
 
@@ -122,6 +123,7 @@ def main(
     _fail_if_root_nodes_of_interface_dag_are_missing(
         dag=dag,
         input_qnames=input_qnames,
+        flat_interface_objects=flat_interface_objects,
     )
 
     def lexsort_key(x: str) -> int:
@@ -376,6 +378,7 @@ def _remove_tree_logic_from_functions_in_collection(
 def _fail_if_root_nodes_of_interface_dag_are_missing(
     dag: dags.DiGraph,
     input_qnames: dict[str, Any],
+    flat_interface_objects: FlatInterfaceObjects,
 ) -> None:
     """Fail if root nodes are missing."""
     root_nodes = nx.subgraph_view(
@@ -384,14 +387,59 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
     ).nodes
 
     missing_nodes = [node for node in root_nodes if node not in input_qnames]
+
+    idifs_required_but_not_resolved: dict[
+        tuple[str, ...], list[InputDependentInterfaceFunction]
+    ] = {}
+    for p, f in flat_interface_objects.items():
+        if isinstance(f, InputDependentInterfaceFunction):
+            p = (*p[:-1], f.leaf_name)
+            if (
+                dt.qname_from_tree_path(p) in missing_nodes
+                and p not in idifs_required_but_not_resolved
+            ):
+                idifs_required_but_not_resolved[p] = [f]
+            elif dt.qname_from_tree_path(p) in missing_nodes:
+                idifs_required_but_not_resolved[p].append(f)
+
     if missing_nodes:
-        formatted = format_list_linewise(
-            [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
+        missing_nodes_formatted = format_list_linewise(
+            [
+                str(dt.tree_path_from_qname(mn))
+                if mn != "('input_data', 'flat')"
+                else "input data in a suitable format, see docs [link eventually]"
+                for mn in missing_nodes
+            ],
         )
-        raise ValueError(
-            f"The following arguments to `main` are missing for computing the "
-            f"desired output:\n{formatted}"
+        idifs_and_their_inputs_formatted: list[str] = []
+        for p, objects in idifs_required_but_not_resolved.items():
+            formatted_objects: list[str] = []
+            for obj in objects:
+                conditions: list[str] = []
+                if obj.include_if_all_inputs_present:
+                    conditions.append(f"All of: {obj.include_if_all_inputs_present}")
+                if obj.include_if_any_input_present:
+                    conditions.append(f"Any of: {obj.include_if_any_input_present}")
+                if conditions:
+                    formatted_objects.append(" or ".join(conditions))
+
+            if formatted_objects:
+                formatted_string = (
+                    f"{p}:\n   Provide one of the following:\n        "
+                    + "\n        ".join(formatted_objects)
+                )
+                idifs_and_their_inputs_formatted.append(formatted_string)
+
+        msg = (
+            "The following arguments to `main` are missing for computing the "
+            f"desired output:\n{missing_nodes_formatted}"
         )
+        if idifs_and_their_inputs_formatted:
+            msg += (
+                "\n\nNote that the following missing nodes could have been created "
+                "endogenously:\n" + "\n".join(idifs_and_their_inputs_formatted)
+            )
+        raise ValueError(msg)
 
 
 def _fail_if_requested_nodes_cannot_be_found(
