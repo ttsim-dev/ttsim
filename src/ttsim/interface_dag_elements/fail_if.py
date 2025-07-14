@@ -280,10 +280,7 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
 
 
 @fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
-def input_data_is_invalid(
-    input_data__flat: FlatData,
-    xnp: ModuleType,
-) -> None:
+def input_data_is_invalid(input_data__flat: FlatData) -> None:
     """Fail if the input data is invalid.
 
     Fails if:
@@ -296,10 +293,10 @@ def input_data_is_invalid(
     if p_id is None:
         raise ValueError("The input data must contain the `p_id` column.")
 
-    if not all(isinstance(i, (int, xnp.integer)) for i in p_id):
-        types = (type(i) for i in p_id if not isinstance(i, int))
+    dtype_normalized = str(p_id.dtype).lower()
+    if "int" not in dtype_normalized:
         msg = format_errors_and_warnings(
-            f"The `p_id` column must contain integers only. Got: {types}."
+            f"The `p_id` column must be of integer dtype. Got: {p_id.dtype}."
         )
         raise ValueError(msg)
 

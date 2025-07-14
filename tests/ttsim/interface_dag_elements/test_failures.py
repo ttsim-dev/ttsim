@@ -874,8 +874,6 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
 @pytest.mark.parametrize(
     "data",
     [
-        {("p_id",): [1, "2", 3]},
-        {("p_id",): [1, "2", 3.0]},
         {("p_id",): numpy.array([1, "2", 3])},
         {("p_id",): numpy.array([1, 2, 3.0])},
         {("p_id",): pd.Series([1, 2, 3.0])},
@@ -885,7 +883,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
 def test_fail_if_p_id_is_not_int(data, xnp):
     with pytest.raises(
         ValueError,
-        match="The `p_id` column must contain integers only.",
+        match="The `p_id` column must be of integer dtype.",
     ):
         input_data_is_invalid(data, xnp)
 
@@ -893,12 +891,11 @@ def test_fail_if_p_id_is_not_int(data, xnp):
 @pytest.mark.parametrize(
     "data",
     [
-        {("p_id",): [1, 2, 3]},
         {("p_id",): numpy.array([1, 2, 3])},
         {("p_id",): pd.Series([1, 2, 3])},
     ],
 )
-def test_p_id_can_be_specified_as_list_series_and_array(data, xnp):
+def test_p_id_can_be_specified_as_series_and_array(data, xnp):
     input_data_is_invalid(data, xnp)
 
 
