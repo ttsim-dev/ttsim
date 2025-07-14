@@ -142,15 +142,6 @@ jaxlib = ">=0.6"
 jax = { version = ">=0.6", extras = ["cpu"] }
 jaxlib = ">=0.6"
 
-[tool.pixi.feature.cuda]
-platforms = ["linux-64"]
-system-requirements = {cuda = "12"}
-
-[tool.pixi.feature.cuda.target.linux-64.dependencies]
-jax = ">=0.6"
-jaxlib = { version = ">=0.6", build = "cuda12*" }
-cuda-nvcc = "~=12"
-
 [tool.pixi.feature.mypy.pypi-dependencies]
 mypy = "~=1.16"
 types-PyYAML = "*"
@@ -173,9 +164,6 @@ tests = "pytest"
 [tool.pixi.feature.jax.tasks]
 tests-jax = "pytest --backend=jax"
 
-[tool.pixi.feature.cuda.tasks]
-tests-cuda = "pytest --backend=jax"
-
 [tool.pixi.feature.mypy.tasks]
 mypy = "mypy --ignore-missing-imports"
 
@@ -187,7 +175,6 @@ py311 = ["test", "py311"]
 py312 = ["test", "py312"]
 py313 = ["test", "py313"]
 py312-jax = ["py312", "test", "jax"]
-py312-cuda = ["py312", "test", "cuda"]
 mypy = ["mypy"]
 docs = ["docs", "py313"]
 
