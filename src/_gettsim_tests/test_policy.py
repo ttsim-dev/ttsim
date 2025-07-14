@@ -8,7 +8,8 @@ import dags.tree as dt
 import numpy
 import pytest
 
-from ttsim import main
+from gettsim import main
+from ttsim import MainTarget
 from ttsim.testing_utils import (
     PolicyTest,
     check_env_completeness,
@@ -20,8 +21,7 @@ if TYPE_CHECKING:
     import datetime
 
     from ttsim.interface_dag_elements.typing import (
-        FlatColumnObjectsParamFunctions,
-        FlatOrigParamSpecs,
+        OrigPolicyObjects,
     )
 
 GETTSIM_ROOT = Path(__file__).parent.parent / "_gettsim"
@@ -34,14 +34,11 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 )
 
 
-def get_orig_gettsim_objects() -> dict[
-    str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
-]:
+def get_orig_gettsim_objects() -> OrigPolicyObjects:
     return main(
-        orig_policy_objects={"root": GETTSIM_ROOT},
         main_targets=[
-            "orig_policy_objects__column_objects_and_param_functions",
-            "orig_policy_objects__param_specs",
+            MainTarget.orig_policy_objects.column_objects_and_param_functions,
+            MainTarget.orig_policy_objects.param_specs,
         ],
     )["orig_policy_objects"]
 
@@ -60,7 +57,7 @@ def dates_in_orig_gettsim_objects() -> list[datetime.date]:
 
 
 @pytest.fixture
-def orig_gettsim_objects():
+def orig_gettsim_objects() -> OrigPolicyObjects:
     return get_orig_gettsim_objects()
 
 
@@ -102,7 +99,6 @@ def test_top_level_elements_not_repeated_in_paths(
 ):
     try:
         gettsim_objects = main(
-            orig_policy_objects={"root": GETTSIM_ROOT},
             backend=backend,
             date=date,
             rounding=False,
