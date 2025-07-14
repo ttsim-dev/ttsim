@@ -249,6 +249,7 @@ def _get_tt_dag_with_node_metadata(
         tt_targets={"qname": qnames_to_plot},
         backend="numpy",
         main_target=tgt,
+        fail_and_warn=False,
     )
 
     all_nodes = {

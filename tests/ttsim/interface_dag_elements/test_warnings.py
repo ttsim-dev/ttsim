@@ -5,7 +5,7 @@ import warnings
 import pandas as pd
 
 from ttsim import main
-from ttsim.interface_dag_elements import warn_if
+from ttsim.interface_dag_elements.warn_if import FunctionsAndDataColumnsOverlapWarning
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
 
 
@@ -48,7 +48,7 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "error",
-            category=warn_if.FunctionsAndDataColumnsOverlapWarning,
+            category=FunctionsAndDataColumnsOverlapWarning,
         )
         main(
             input_data={

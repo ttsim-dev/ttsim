@@ -37,9 +37,7 @@ class FailIf(MainTargetABC):
     group_variables_are_not_constant_within_groups: str = (
         "fail_if__group_variables_are_not_constant_within_groups"
     )
-    input_arrays_have_different_lengths: str = (
-        "fail_if__input_arrays_have_different_lengths"
-    )
+    input_data_is_invalid: str = "fail_if__input_data_is_invalid"
     input_data_tree_is_invalid: str = "fail_if__input_data_tree_is_invalid"
     input_df_has_bool_or_numeric_column_names: str = (
         "fail_if__input_df_has_bool_or_numeric_column_names"
@@ -50,7 +48,6 @@ class FailIf(MainTargetABC):
     input_df_mapper_has_incorrect_format: str = (
         "fail_if__input_df_mapper_has_incorrect_format"
     )
-    invalid_p_id_values: str = "fail_if__invalid_p_id_values"
     non_convertible_objects_in_results_tree: str = (
         "fail_if__non_convertible_objects_in_results_tree"
     )
