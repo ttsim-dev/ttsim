@@ -136,6 +136,10 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [tool.pixi.feature.jax.pypi-dependencies]
 jax = ">=0.6"
+# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+
+[tool.pixi.feature.jax.target.win-64.pypi-dependencies]
+jax = { version = ">=0.6", extras = ["cpu"] }
 
 [tool.pixi.feature.cuda]
 platforms = ["linux-64"]
@@ -150,12 +154,6 @@ platforms = ["osx-arm64"]
 [tool.pixi.feature.metal.target.osx-arm64.pypi-dependencies]
 jax = ">=0.6"
 jax-metal = ">=0.1.1"
-
-# [tool.pixi.feature.jax.pypi-dependencies]
-# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-
-[tool.pixi.feature.jax.target.win-64.pypi-dependencies]
-jax = { version = ">=0.6", extras = ["cpu"] }
 
 [tool.pixi.feature.mypy.pypi-dependencies]
 mypy = "~=1.16"
