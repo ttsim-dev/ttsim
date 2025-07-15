@@ -975,6 +975,7 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
             date=datetime.date(2024, 1, 1),
             tt_targets={"tree": {"b": None}},
             include_warn_nodes=False,
+            include_fail_nodes=False,
             rounding=False,
             backend=backend,
             main_targets=["results__tree", "fail_if__root_nodes_are_missing"],

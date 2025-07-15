@@ -48,6 +48,7 @@ def cached_policy_environment(
         orig_policy_objects={"root": root},
         backend=backend,
         include_fail_nodes=False,
+        include_warn_nodes=False,
         main_target="policy_environment",
     )
 

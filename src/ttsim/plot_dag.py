@@ -147,7 +147,7 @@ def plot_tt_dag(
 
 
 def plot_interface_dag(
-    include_fail_or_warn_nodes: bool = True,
+    include_fail_and_warn_nodes: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
 ) -> go.Figure:
@@ -158,7 +158,7 @@ def plot_interface_dag(
         for p, n in interface_functions_and_inputs.items()
         if not isinstance(n, InputDependentInterfaceFunction)
     }
-    if not include_fail_or_warn_nodes:
+    if not include_fail_and_warn_nodes:
         nodes_without_idifs = {
             qn: n
             for qn, n in nodes_without_idifs.items()

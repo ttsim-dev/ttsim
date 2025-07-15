@@ -110,7 +110,7 @@ def main(
     }
 
     # If main_targets are None, all failures and warnings are included, anyhow.
-    if (include_fail_nodes or include_warn_nodes) and main_targets is not None:
+    if main_targets is not None:
         main_targets = include_fail_or_warn_nodes(
             functions=functions,
             explicit_main_targets=main_targets,  # type: ignore[arg-type]
@@ -297,13 +297,18 @@ def include_fail_or_warn_nodes(
     fail_functions = {
         p: n
         for p, n in functions.items()
-        if isinstance(n, FailFunction) and p not in explicit_main_targets
+        if isinstance(n, FailFunction)
+        and p not in explicit_main_targets
+        and include_fail_nodes
     }
     warn_functions = {
         p: n
         for p, n in functions.items()
-        if isinstance(n, WarnFunction) and p not in explicit_main_targets
+        if isinstance(n, WarnFunction)
+        and p not in explicit_main_targets
+        and include_warn_nodes
     }
+    fail_or_warn_nodes = {**fail_functions, **warn_functions}
     initial_dag = dags.create_dag(
         functions={
             p: n
@@ -317,16 +322,6 @@ def include_fail_or_warn_nodes(
         targets=explicit_main_targets,
     )
     all_main_targets = explicit_main_targets.copy()
-
-    if include_fail_nodes and include_warn_nodes:
-        fail_or_warn_nodes = {
-            **fail_functions,
-            **warn_functions,
-        }
-    elif include_fail_nodes:
-        fail_or_warn_nodes = fail_functions
-    else:
-        fail_or_warn_nodes = warn_functions
 
     for p, n in fail_or_warn_nodes.items():
         args = inspect.signature(n).parameters

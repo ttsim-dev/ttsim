@@ -36,6 +36,7 @@ def cached_specialized_environment(
         date=date,
         backend=backend,
         include_fail_nodes=False,
+        include_warn_nodes=False,
         main_target=("specialized_environment", "with_partialled_params_and_scalars"),
     )
 
