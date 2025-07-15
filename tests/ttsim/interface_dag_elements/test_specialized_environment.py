@@ -852,6 +852,7 @@ def test_can_override_ttsim_objects_with_data(
         policy_environment=nested_policy_environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": tt_targets__tree},
+        include_warn_nodes=False,
         rounding=False,
         backend=backend,
         main_target=("results__tree"),

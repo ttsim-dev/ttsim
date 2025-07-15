@@ -35,7 +35,7 @@ def cached_specialized_environment(
     return main(
         date=date,
         backend=backend,
-        fail_and_warn=False,
+        include_fail_nodes=False,
         main_target=("specialized_environment", "with_partialled_params_and_scalars"),
     )
 
@@ -72,5 +72,5 @@ def test_jittable(tree_path, fun, backend, xnp):
             tt_targets={"qname": [qname]},
             backend=backend,
             main_target=("raw_results", "columns"),
-            fail_and_warn=False,
+            include_fail_nodes=False,
         )
