@@ -30,7 +30,11 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import IntColumn, PolicyEnvironment
+    from ttsim.interface_dag_elements.typing import (
+        FloatColumn,
+        IntColumn,
+        PolicyEnvironment,
+    )
 
 
 @policy_input()
@@ -267,7 +271,7 @@ def function_with_float_return(x: int) -> float:
     return x
 
 
-def some_x(x):
+def some_x(x: int) -> int:
     return x
 
 
@@ -575,11 +579,11 @@ def test_user_provided_aggregation(backend):
     expected = pd.Series([400, 400, 200], index=pd.Index(data["p_id"], name="p_id"))
 
     @policy_function(vectorization_strategy="vectorize")
-    def betrag_m_double(betrag_m):
+    def betrag_m_double(betrag_m: float) -> float:
         return 2 * betrag_m
 
     @agg_by_group_function(agg_type=AggType.MAX)
-    def betrag_m_double_fam(betrag_m_double, fam_id) -> float:
+    def betrag_m_double_fam(betrag_m_double: float, fam_id: int) -> float:
         pass
 
     policy_environment = {
@@ -625,11 +629,11 @@ def test_user_provided_aggregation_with_time_conversion(backend):
     )
 
     @policy_function(vectorization_strategy="vectorize")
-    def betrag_double_m(betrag_m):
+    def betrag_double_m(betrag_m: float) -> float:
         return 2 * betrag_m
 
     @agg_by_group_function(agg_type=AggType.MAX)
-    def max_betrag_double_m_fam(betrag_double_m, fam_id) -> float:
+    def max_betrag_double_m_fam(betrag_double_m: float, fam_id: int) -> float:
         pass
 
     policy_environment = {
@@ -716,7 +720,7 @@ def test_user_provided_aggregate_by_p_id_specs(
     xnp,
 ):
     @policy_function(leaf_name=leaf_name, vectorization_strategy="not_required")
-    def source() -> int:
+    def source() -> FloatColumn:
         return xnp.array([100, 200, 300])
 
     policy_environment = merge_trees(

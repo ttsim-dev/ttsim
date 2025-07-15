@@ -43,7 +43,6 @@ if TYPE_CHECKING:
         OrigParamSpec,
         PolicyEnvironment,
         QNameData,
-        QNameDataColumns,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
@@ -227,7 +226,7 @@ def active_periods_overlap(
 def any_paths_are_invalid(
     policy_environment: PolicyEnvironment,
     input_data__tree: NestedData,
-    tt_targets__tree: NestedTargetDict,
+    tt_targets__tree: NestedTargetDict | NestedStrings,
     labels__top_level_namespace: UnorderedQNames,
 ) -> None:
     """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
@@ -690,7 +689,7 @@ def root_nodes_are_missing(
 @fail_or_warn_function()
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    labels__processed_data_columns: QNameDataColumns,
+    labels__processed_data_columns: UnorderedQNames,
     tt_targets__qname: OrderedQNames,
 ) -> None:
     """Fail if some target is not among functions.
@@ -725,7 +724,7 @@ def targets_are_not_in_specialized_environment_or_data(
 
 
 @fail_or_warn_function()
-def targets_tree_is_invalid(tt_targets__tree: NestedTargetDict) -> None:
+def targets_tree_is_invalid(tt_targets__tree: NestedTargetDict | NestedStrings) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.
     """

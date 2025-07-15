@@ -11,6 +11,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import ColumnFunction
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
+        NestedStrings,
         NestedTargetDict,
         OrderedQNames,
         PolicyEnvironment,
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @interface_function()
-def tree(policy_environment: PolicyEnvironment) -> NestedTargetDict:
+def tree(policy_environment: PolicyEnvironment) -> NestedTargetDict | NestedStrings:
     """Targets as a tree. Will typically be provided by the user.
 
     If requesting `df_with_mapper` as a main target, the leaves must be the desired
@@ -37,6 +38,6 @@ def tree(policy_environment: PolicyEnvironment) -> NestedTargetDict:
 
 
 @interface_function()
-def qname(tree: NestedTargetDict) -> OrderedQNames:
+def qname(tree: NestedTargetDict | NestedStrings) -> OrderedQNames:
     """Targets in their qualified name-representation."""
     return dt.flatten_to_qnames(tree)
