@@ -133,7 +133,7 @@ def main(
             functions=functions,
             targets=main_target,
             enforce_signature=False,
-            set_annotations=False,
+            set_annotations=True,
             lexsort_key=lexsort_key,
         )
         return f(**input_qnames)
@@ -143,7 +143,7 @@ def main(
         targets=main_targets,
         return_type="dict",
         enforce_signature=False,
-        set_annotations=False,
+        set_annotations=True,
         lexsort_key=lexsort_key,
     )
     return dt.unflatten_from_qnames(f(**input_qnames))

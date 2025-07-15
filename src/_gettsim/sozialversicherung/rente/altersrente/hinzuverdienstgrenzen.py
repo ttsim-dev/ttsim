@@ -15,9 +15,9 @@ from ttsim.tt_dag_elements import RoundingSpec, policy_function
 def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     alter: int,
     regelaltersrente__altersgrenze: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     bruttorente_basisbetrag_m: float,
-    hinzuverdienstgrenze: float,
+    hinzuverdienstgrenze_m: float,
 ) -> float:
     """Pension benefits after earnings test for early retirees.
 
@@ -26,8 +26,8 @@ def bruttorente_m_mit_harter_hinzuverdienstgrenze(
     # TODO (@MImmesberger): Use age with monthly precision.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     if (alter >= regelaltersrente__altersgrenze) or (
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
-        <= hinzuverdienstgrenze
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        <= hinzuverdienstgrenze_m
     ):
         out = bruttorente_basisbetrag_m
     else:
@@ -81,12 +81,12 @@ def bruttorente_m_mit_hinzuverdienstdeckel(
     end_date="2022-12-31",
 )
 def zahlbetrag_ohne_deckel_m(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     alter: int,
     regelaltersrente__altersgrenze: float,
     bruttorente_basisbetrag_m: float,
     differenz_bruttolohn_hinzuverdienstgrenze_m: float,
-    hinzuverdienstgrenze: float,
+    hinzuverdienstgrenze_m: float,
     abzugsrate_hinzuverdienst: float,
 ) -> float:
     """Pension benefits after earnings test without accounting for the earnings cap
@@ -96,11 +96,10 @@ def zahlbetrag_ohne_deckel_m(
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/781
     # No deduction because of age or low earnings
     if (alter >= regelaltersrente__altersgrenze) or (
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
-        <= hinzuverdienstgrenze
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        <= hinzuverdienstgrenze_m
     ):
         out = bruttorente_basisbetrag_m
-    # Basis deduction of 40%
     else:
         out = max(
             bruttorente_basisbetrag_m
@@ -115,14 +114,14 @@ def zahlbetrag_ohne_deckel_m(
     start_date="2017-07-01",
     end_date="2022-12-31",
 )
-def differenz_bruttolohn_hinzuverdienstgrenze_y(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    hinzuverdienstgrenze: float,
+def differenz_bruttolohn_hinzuverdienstgrenze_m(
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
+    hinzuverdienstgrenze_m: float,
 ) -> float:
     """Earnings that are subject to pension deductions."""
     return max(
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
-        - hinzuverdienstgrenze,
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        - hinzuverdienstgrenze_m,
         0.0,
     )
 
@@ -131,16 +130,16 @@ def differenz_bruttolohn_hinzuverdienstgrenze_y(
     start_date="2017-07-01",
     end_date="2022-12-31",
 )
-def differenz_bruttolohn_hinzuverdienstdeckel_y(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
-    zahlbetrag_ohne_deckel_y: float,
-    höchster_bruttolohn_letzte_15_jahre_vor_rente_y: float,
+def differenz_bruttolohn_hinzuverdienstdeckel_m(
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
+    zahlbetrag_ohne_deckel_m: float,
+    höchster_bruttolohn_letzte_15_jahre_vor_rente_m: float,
 ) -> float:
     """Income above the earnings cap (Hinzuverdienstdeckel)."""
     return max(
-        zahlbetrag_ohne_deckel_y
-        + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y
-        - höchster_bruttolohn_letzte_15_jahre_vor_rente_y,
+        zahlbetrag_ohne_deckel_m
+        + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
+        - höchster_bruttolohn_letzte_15_jahre_vor_rente_m,
         0.0,
     )
 
