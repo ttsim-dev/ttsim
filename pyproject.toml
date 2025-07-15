@@ -114,9 +114,9 @@ toml = "*"
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
 dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
-jaxtyping = ">=0.3.2, <0.4"
-kaleido = ">=1.0.0, <2"
-pdbp = ">=1.7.0, <2"
+jaxtyping = ">=0.3.2"
+kaleido = ">=1.0.0"
+pdbp = ">=1.7.1"
 
 
 # Features
@@ -187,9 +187,9 @@ mypy = "mypy --ignore-missing-imports"
 py311 = ["test", "py311"]
 py312 = ["test", "py312"]
 py313 = ["test", "py313"]
-py312-jax = ["py312", "test", "jax"]
-py312-cuda = ["py312", "test", "cuda"]
-py312-metal = ["py312", "test", "metal"]
+py313-jax = ["py313", "test", "jax"]
+py313-cuda = ["py313", "test", "cuda"]
+py313-metal = ["py313", "test", "metal"]
 mypy = ["mypy"]
 docs = ["docs", "py313"]
 
