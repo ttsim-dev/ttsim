@@ -61,11 +61,11 @@ interface while maintaining GETTSIM's computational robustness.
    The targets determine the required inputs. For example, in order to compute taxes and
    transfers for a set of households, one will need as primitives
 
+   - the date for which the policy environment is set up ("`policy_date_str`")
    - data on these households ("`input_data`")
    - the set of taxes and transfers to be computed ("`tt_targets`"). This could be left
      out, in which case all possible targets will be computed. However, that will often
      be a daunting task in terms of requirements on the data and computer memory.
-   - the date
 
    If only a policy environment is to be returned, just the date is required as an
    input.
@@ -81,7 +81,7 @@ interface while maintaining GETTSIM's computational robustness.
 
    outputs_df = main(
        main_target=MainTarget.results.df_with_mapper,
-       date_str="2025-01-01",
+       policy_date_str="2025-01-01",
        input_data=InputData.df_and_mapper(
            df=inputs_df,
            mapper=inputs_map,
@@ -123,8 +123,8 @@ interface while maintaining GETTSIM's computational robustness.
    target trees will depend on the policy environment, we will need to make the
    documentation dynamic.
 
-   The second argument, `date_str`, specifies the date at which the policy environment
-   is set up and evaluated.
+   The second argument, `policy_date_str`, specifies the date at which the policy
+   environment is set up and evaluated.
 
    Say we want to compute the long term care insurance contribution for three people,
    one of whom has an underage child living in her household. Our data looks as follows:
@@ -268,10 +268,12 @@ interface while maintaining GETTSIM's computational robustness.
    ---
    ```
 
-   The **date** is the date at which the policy environment is set up and evaluated. It
-   could be passed as `date_str`, which is an ISO-string `YYYY-MM-DD`. If users need
-   more control, there are `policy_date` and `evaluation_date` and their `_str`
-   variants.
+   The **policy_date** is the date at which the policy environment is set up. It could
+   be passed as `policy_date_str`, which is an ISO-string `YYYY-MM-DD`. By default, it
+   is also used as the date for which the taxes and transfers function is evaluated (the
+   distinction matters for things like pensions etc., which depend on cohort, age, and
+   calendar time). If users need more control, `evaluation_date` (or
+   `evaluation_date_str`) can be specified separately.
 
    The **policy environment** consists of all functions relevant at some point in time.
    E.g., when requesting a policy environment for some date in the 2020s, Erziehungsgeld
@@ -340,9 +342,13 @@ interface while maintaining GETTSIM's computational robustness.
 
    * The **backend** is the backend used to compute the taxes and transfers. Default is
      `"numpy"`, the other option is `"jax"`.
-   * **include_fail_and_warn_nodes** is a Boolean that determines whether raise errors
-     and display warnings. Defaults to `True`, only turn off if you really know what you
-     are doing (and even then, turn on before filing an issue).
+   * **include_fail_nodes** is a Boolean that determines whether to raise errors for
+     invalid inputs. Defaults to `True`, only turn off if you really know what you are
+     doing (and even then, please turn it on before filing an issue).
+   * **include_warn_nodes** is a Boolean that determines whether to display warnings for
+     some cases that might lead to surprising behavior. Defaults to `True`, only turn
+     off if you really know what you are doing (and even then, please turn it on before
+     filing an issue).
 
    Other elements of the interface DAG, which will typically be less relevant for users,
    include:
@@ -383,16 +389,14 @@ interface while maintaining GETTSIM's computational robustness.
    processed_data
    raw_results
    labels
-   date_str
+   policy_date_str
    input_data
    tt_targets
    num_segments
    backend
-   date
+   policy_date
    evaluation_date_str
    evaluation_date
-   policy_date_str
-   policy_date
    xnp
    dnp
    rounding
@@ -449,7 +453,7 @@ outputs = main(
         MainTarget.policy_environment,
         MainTarget.results.df_with_mapper,
     ],
-    date_str="2025-01-01",
+    policy_date_str="2025-01-01",
     input_data=InputData.df_and_mapper(
         df=data,
         mapper=inputs_map,
