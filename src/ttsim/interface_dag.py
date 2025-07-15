@@ -379,56 +379,77 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
         dag,
         filter_node=lambda n: dag.in_degree(n) == 0,
     ).nodes
-
     missing_nodes = [node for node in root_nodes if node not in input_qnames]
 
-    idifs_required_but_not_resolved: dict[
+    # Find missing nodes that could have been created endogenously, if inputs were
+    # provided.
+    unresolved_dynamic_nodes_due_to_missing_inputs: dict[
         tuple[str, ...], list[InputDependentInterfaceFunction]
     ] = {}
     for p, f in flat_interface_objects.items():
         if isinstance(f, InputDependentInterfaceFunction):
-            p = (*p[:-1], f.leaf_name)
+            new_path = (*p[:-1], f.leaf_name)
             if (
-                dt.qname_from_tree_path(p) in missing_nodes
-                and p not in idifs_required_but_not_resolved
+                dt.qname_from_tree_path(new_path) in missing_nodes
+                and new_path not in unresolved_dynamic_nodes_due_to_missing_inputs
             ):
-                idifs_required_but_not_resolved[p] = [f]
-            elif dt.qname_from_tree_path(p) in missing_nodes:
-                idifs_required_but_not_resolved[p].append(f)
+                unresolved_dynamic_nodes_due_to_missing_inputs[new_path] = [f]
+            elif new_path in unresolved_dynamic_nodes_due_to_missing_inputs:
+                unresolved_dynamic_nodes_due_to_missing_inputs[new_path].append(f)
 
     if missing_nodes:
         missing_nodes_formatted = format_list_linewise(
             [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
         )
-        idifs_and_their_inputs_formatted: list[str] = []
-        for p, objects in idifs_required_but_not_resolved.items():
-            formatted_objects: list[str] = []
-            for obj in objects:
-                conditions: list[str] = []
-                if obj.include_if_all_inputs_present:
-                    conditions.append(f"All of: {obj.include_if_all_inputs_present}")
-                if obj.include_if_any_input_present:
-                    conditions.append(f"Any of: {obj.include_if_any_input_present}")
-                if conditions:
-                    formatted_objects.append(" or ".join(conditions))
-
-            if formatted_objects:
-                formatted_string = (
-                    f"{p}:\n   Provide one of the following:\n        "
-                    + "\n        ".join(formatted_objects)
-                )
-                idifs_and_their_inputs_formatted.append(formatted_string)
-
+        include_conditions_of_dynamic_nodes = _list_include_conditions_of_dynamic_nodes(
+            unresolved_dynamic_nodes_due_to_missing_inputs,
+        )
         msg = (
             "The following arguments to `main` are missing for computing the "
             f"desired output:\n{missing_nodes_formatted}"
         )
-        if idifs_and_their_inputs_formatted:
+        if include_conditions_of_dynamic_nodes:
             msg += (
                 "\n\nNote that the following missing nodes could have been created "
-                "endogenously:\n" + "\n".join(idifs_and_their_inputs_formatted)
+                "endogenously:\n" + "\n".join(include_conditions_of_dynamic_nodes)
             )
         raise ValueError(msg)
+
+
+def _list_include_conditions_of_dynamic_nodes(
+    paths_to_dynamic_nodes: dict[
+        tuple[str, ...], list[InputDependentInterfaceFunction]
+    ],
+) -> list[str]:
+    """List the include conditions of dynamic nodes to provide them along the missing
+    nodes error message."""
+    out = []
+    for p, dynamic_nodes in paths_to_dynamic_nodes.items():
+        include_conditions_for_this_path: list[str] = []
+        for f in dynamic_nodes:
+            conditions: list[str] = []
+            if f.include_if_all_inputs_present:
+                paths = [
+                    dt.tree_path_from_qname(qn)
+                    for qn in f.include_if_all_inputs_present
+                ]
+                conditions.append(f"All of: {paths}")
+            if f.include_if_any_input_present:
+                paths = [
+                    dt.tree_path_from_qname(qn) for qn in f.include_if_any_input_present
+                ]
+                conditions.append(f"Any of: {paths}")
+            if conditions:
+                include_conditions_for_this_path.append(
+                    " or\n        ".join(conditions)
+                )
+        if include_conditions_for_this_path:
+            formatted_string = (
+                f"{p}:\n   Provide one of the following:\n        "
+                + "\n        ".join(include_conditions_for_this_path)
+            )
+            out.append(formatted_string)
+    return out
 
 
 def _fail_if_requested_nodes_cannot_be_found(
