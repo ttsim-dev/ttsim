@@ -666,9 +666,10 @@ def test_fail_if_p_id_is_missing_via_main(backend):
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
+            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -837,9 +838,10 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
+            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -865,9 +867,10 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
+            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -915,9 +918,10 @@ def test_fail_if_input_data_has_different_lengths(backend):
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
+            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -944,7 +948,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
             tt_targets={"tree": {"c": None}},
             rounding=False,
             backend=backend,
-            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
+            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -975,10 +979,9 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
             date=datetime.date(2024, 1, 1),
             tt_targets={"tree": {"b": None}},
             include_warn_nodes=False,
-            include_fail_nodes=False,
             rounding=False,
             backend=backend,
-            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
+            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -1023,9 +1026,10 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             input_data={"tree": minimal_input_data},
             policy_environment={},
             tt_targets={"tree": {"unknown_target": None}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
-            main_target=("fail_if__targets_are_not_in_specialized_environment_or_data"),
+            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 

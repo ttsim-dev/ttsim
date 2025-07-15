@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import warnings
 
 import pandas as pd
@@ -34,10 +35,10 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
                 "some_target": another_func,
             },
             tt_targets={"tree": {"some_target": None}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
-            include_fail_nodes=False,
             backend=backend,
-            main_target=("warn_if__functions_and_data_columns_overlap"),
+            main_target="results__df_with_nested_columns",
         )
         # Check that we got exactly one warning
         assert len(w) == 1
@@ -60,8 +61,8 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
             },
             policy_environment={"some_func": some_func},
             tt_targets={"tree": {"some_func": None}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
-            include_fail_nodes=False,
             backend=backend,
-            main_target=("warn_if__functions_and_data_columns_overlap"),
+            main_target="results__df_with_nested_columns",
         )
