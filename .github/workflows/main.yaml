@@ -26,7 +26,7 @@ jobs:
           - py311
           - py312
           - py313
-          - py312-jax
+          - py313-jax
         exclude:
           - os: macos-latest
             environment: py311, py312
@@ -57,7 +57,7 @@ jobs:
         run: pixi run -e ${{ matrix.environment }} tests
         shell: bash -el {0}
       - name: Run tests with JAX backend
-        if: matrix.environment == 'py312-jax'
+        if: matrix.environment == 'py313-jax'
         run: pixi run -e ${{ matrix.environment }} tests-jax
         shell: bash -el {0}
       - name: Upload coverage reports

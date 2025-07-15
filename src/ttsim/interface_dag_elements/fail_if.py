@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedData,
+        NestedInputsMapper,
         NestedStrings,
         NestedTargetDict,
         OrderedQNames,
@@ -233,7 +234,7 @@ def any_paths_are_invalid(
     return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
         data_tree=input_data__tree,
-        tt_targets=tt_targets__tree,
+        targets=tt_targets__tree,
         top_level_namespace=labels__top_level_namespace,
     )
 
@@ -279,43 +280,23 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
 
 
 @fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
-def input_arrays_have_different_lengths(
-    input_data__flat: FlatData,
-) -> None:
-    """Fail if the input arrays have different lengths."""
-    len_p_id_array = len(input_data__flat[("p_id",)])
-    faulty_arrays: list[str] = []
-    for key, arr in input_data__flat.items():
-        if len(arr) != len_p_id_array:
-            faulty_arrays.append(key)
-    if faulty_arrays:
-        formatted_faulty_paths = "\n".join(f"    - {p}" for p in faulty_arrays)
-        msg = format_errors_and_warnings(
-            "The lengths of the following columns do not match the length of the `p_id`"
-            f" column:\n{formatted_faulty_paths}"
-        )
-        raise ValueError(msg)
-
-
-@fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
-def invalid_p_id_values(
-    input_data__flat: FlatData,
-    xnp: ModuleType,
-) -> None:
-    """Fail if the `p_id` column is invalid.
+def input_data_is_invalid(input_data__flat: FlatData) -> None:
+    """Fail if the input data is invalid.
 
     Fails if:
         - The `p_id` column is missing.
+        - The `p_id` column has non-integer values.
         - The `p_id` column has non-unique values.
+        - The input arrays have different lengths.
     """
     p_id = input_data__flat.get(("p_id",), None)
     if p_id is None:
         raise ValueError("The input data must contain the `p_id` column.")
 
-    if not all(isinstance(i, (int, xnp.integer)) for i in p_id):
-        types = (type(i) for i in p_id if not isinstance(i, int))
+    dtype_normalized = str(p_id.dtype).lower()
+    if "int" not in dtype_normalized:
         msg = format_errors_and_warnings(
-            f"The `p_id` column must contain integers only. Got: {types}."
+            f"The `p_id` column must be of integer dtype. Got: {p_id.dtype}."
         )
         raise ValueError(msg)
 
@@ -336,6 +317,19 @@ def invalid_p_id_values(
             f"{non_unique_p_ids}\n\n"
         )
         raise ValueError(message)
+
+    len_p_id_array = len(input_data__flat[("p_id",)])
+    faulty_arrays: list[str] = []
+    for key, arr in input_data__flat.items():
+        if len(arr) != len_p_id_array:
+            faulty_arrays.append(key)
+    if faulty_arrays:
+        formatted_faulty_paths = "\n".join(f"    - {p}" for p in faulty_arrays)
+        msg = format_errors_and_warnings(
+            "The lengths of the following columns do not match the length of the `p_id`"
+            f" column:\n{formatted_faulty_paths}"
+        )
+        raise ValueError(msg)
 
 
 @fail_or_warn_function()
@@ -478,7 +472,7 @@ def group_variables_are_not_constant_within_groups(
 @fail_or_warn_function(
     include_if_any_element_present=[
         "results__df_with_mapper",
-        "results_df__df_with_nested_columns",
+        "results__df_with_nested_columns",
     ]
 )
 def non_convertible_objects_in_results_tree(
@@ -559,7 +553,7 @@ def input_df_has_bool_or_numeric_column_names(
 @fail_or_warn_function()
 def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
-    input_data__df_and_mapper__mapper: NestedStrings,
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
     """Fail if the input mapper has columns that are not in the input dataframe."""
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
@@ -576,7 +570,7 @@ def input_df_mapper_columns_missing_in_df(
 
 @fail_or_warn_function()
 def input_df_mapper_has_incorrect_format(
-    input_data__df_and_mapper__mapper: NestedStrings,
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
     if not isinstance(input_data__df_and_mapper__mapper, dict):
