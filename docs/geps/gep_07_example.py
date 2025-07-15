@@ -57,12 +57,13 @@ outputs_df = main(
         df=inputs_df,
         mapper=inputs_map,
     ),
+    fail_and_warn=False,
     tt_targets=TTTargets(tree=targets_tree),
 )
 
-print(outputs_df.round(2).to_html())  # noqa: T201
+print(outputs_df.round(2).to_markdown())  # noqa: T201
 
-print(inputs_df.to_html())  # noqa: T201
+print(inputs_df.to_markdown())  # noqa: T201
 
 pe = main(
     main_target=MainTarget.policy_environment,

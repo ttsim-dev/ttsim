@@ -106,6 +106,7 @@ pytest-xdist = "*"
 python = ">=3.11,<3.14"
 pyyaml = "*"
 snakeviz = ">=2.2.2"
+tabulate = "*"
 toml = "*"
 
 # Development Dependencies (pypi)

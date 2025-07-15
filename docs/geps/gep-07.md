@@ -129,57 +129,12 @@ interface while maintaining GETTSIM's computational robustness.
    Say we want to compute the long term care insurance contribution for three people,
    one of whom has an underage child living in her household. Our data looks as follows:
 
-   <table border="1" class="dataframe">
-     <thead>
-       <tr style="text-align: right;">
-         <th></th>
-         <th>age</th>
-         <th>wage</th>
-         <th>id</th>
-         <th>hh_id</th>
-         <th>mother_id</th>
-         <th>has_kids</th>
-       </tr>
-     </thead>
-     <tbody>
-       <tr>
-         <th>0</th>
-         <td>25</td>
-         <td>950</td>
-         <td>0</td>
-         <td>0</td>
-         <td>-1</td>
-         <td>False</td>
-       </tr>
-       <tr>
-         <th>1</th>
-         <td>45</td>
-         <td>950</td>
-         <td>1</td>
-         <td>1</td>
-         <td>-1</td>
-         <td>True</td>
-       </tr>
-       <tr>
-         <th>2</th>
-         <td>3</td>
-         <td>0</td>
-         <td>2</td>
-         <td>1</td>
-         <td>1</td>
-         <td>False</td>
-       </tr>
-       <tr>
-         <th>3</th>
-         <td>65</td>
-         <td>950</td>
-         <td>3</td>
-         <td>2</td>
-         <td>-1</td>
-         <td>True</td>
-       </tr>
-     </tbody>
-   </table>
+   |     | age | wage |  id | hh_id | mother_id | has_kids |
+   | --: | --: | ---: | --: | ----: | --------: | :------- |
+   |   0 |  25 |  950 |   0 |     0 |        -1 | False    |
+   |   1 |  45 |  950 |   1 |     1 |        -1 | True     |
+   |   2 |   3 |    0 |   2 |     1 |         1 | False    |
+   |   3 |  65 |  950 |   3 |     2 |        -1 | True     |
 
    We can use this DataFrame directly. All we need to do is to tell GETTSIM how to map
    the columns of that DataFrame to the names of inputs it knows about. This is done by
@@ -227,36 +182,12 @@ interface while maintaining GETTSIM's computational robustness.
 
    Finally, here is the output of our example:
 
-   <table border="1" class="dataframe">
-     <thead>
-       <tr style="text-align: right;">
-         <th></th>
-         <th>ltci_contrib</th>
-       </tr>
-       <tr>
-         <th>p_id</th>
-         <th></th>
-       </tr>
-     </thead>
-     <tbody>
-       <tr>
-         <th>0</th>
-         <td>14.72</td>
-       </tr>
-       <tr>
-         <th>1</th>
-         <td>9.82</td>
-       </tr>
-       <tr>
-         <th>2</th>
-         <td>0.00</td>
-       </tr>
-       <tr>
-         <th>3</th>
-         <td>9.82</td>
-       </tr>
-     </tbody>
-   </table>
+   |     | ltci_contrib |
+   | --: | -----------: |
+   |   0 |        14.72 |
+   |   1 |         9.82 |
+   |   2 |            0 |
+   |   3 |         9.82 |
 
 1. **Underlying structure**
 
