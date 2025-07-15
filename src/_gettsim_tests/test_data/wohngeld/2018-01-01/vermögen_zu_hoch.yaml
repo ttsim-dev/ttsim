@@ -128,13 +128,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - true
-        - true
-        - true
-        - true
       p_id_ehepartner:
         - 29
         - 28
@@ -185,7 +178,7 @@ inputs:
       - 6
       - 6
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
         - false
         - false
@@ -338,7 +331,7 @@ inputs:
         - 100.0
         - 100.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 4
         - 4
         - 4

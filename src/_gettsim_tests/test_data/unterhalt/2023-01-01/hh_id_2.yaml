@@ -6,9 +6,8 @@ info:
 inputs:
   assumed: {}
   provided:
-    familie:
-      kind:
-        - false
+    alter:
+      - 19
     hh_id:
       - 2
     kindergeld:

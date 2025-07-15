@@ -50,8 +50,6 @@ inputs:
     familie:
       alleinerziehend:
         - false
-      kind:
-        - false
       p_id_ehepartner:
         - -1
       p_id_elternteil_1:
@@ -67,7 +65,7 @@ inputs:
     hh_id:
       - 10
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
       p_id_empfänger:
         - -1
@@ -120,7 +118,7 @@ inputs:
       wohnfläche_hh:
         - 40.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 5
 outputs:
   wohngeld:

@@ -111,7 +111,7 @@ def main(
     if fail_and_warn and main_targets is not None:
         main_targets = include_fail_and_warn_nodes(
             functions=functions,
-            main_targets=main_targets,  # type: ignore[arg-type]
+            explicit_main_targets=main_targets,  # type: ignore[arg-type]
         )
 
     dag = dags.create_dag(
@@ -133,20 +133,20 @@ def main(
             functions=functions,
             targets=main_target,
             enforce_signature=False,
-            set_annotations=False,
+            set_annotations=True,
             lexsort_key=lexsort_key,
         )
-    else:
-        f = dags.concatenate_functions(
-            dag=dag,
-            functions=functions,
-            targets=main_targets,
-            return_type="dict",
-            enforce_signature=False,
-            set_annotations=False,
-            lexsort_key=lexsort_key,
-        )
-    return f(**input_qnames)
+        return f(**input_qnames)
+    f = dags.concatenate_functions(
+        dag=dag,
+        functions=functions,
+        targets=main_targets,
+        return_type="dict",
+        enforce_signature=False,
+        set_annotations=True,
+        lexsort_key=lexsort_key,
+    )
+    return dt.unflatten_from_qnames(f(**input_qnames))
 
 
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
@@ -280,7 +280,7 @@ def _fail_if_multiple_functions_satisfy_include_condition(
 
 def include_fail_and_warn_nodes(
     functions: dict[str, InterfaceFunction],
-    main_targets: list[str],
+    explicit_main_targets: list[str],
 ) -> list[str]:
     """Extend main targets with failures and warnings that can be computed.
 
@@ -291,35 +291,29 @@ def include_fail_and_warn_nodes(
     fail_or_warn_functions = {
         p: n
         for p, n in functions.items()
-        if isinstance(n, FailOrWarnFunction) and p not in main_targets
+        if isinstance(n, FailOrWarnFunction) and p not in explicit_main_targets
     }
-    workers_and_their_inputs = dags.create_dag(
+    initial_dag = dags.create_dag(
         functions={
-            p: n
-            for p, n in functions.items()
-            if not isinstance(n, FailOrWarnFunction) or p in main_targets
+            p: n for p, n in functions.items() if p not in fail_or_warn_functions
         },
-        targets=main_targets,
+        targets=explicit_main_targets,
     )
-    out = main_targets.copy()
+    all_main_targets = explicit_main_targets.copy()
     for p, n in fail_or_warn_functions.items():
         args = inspect.signature(n).parameters
-        if p == "fail_if__root_nodes_are_missing":
-            check = all(a in workers_and_their_inputs for a in args)
-            if n.include_if_all_elements_present or n.include_if_any_element_present:
-                # all(()) evaluates to True, so include first bit
-                all_cond = n.include_if_all_elements_present and all(
-                    a in workers_and_their_inputs
-                    for a in n.include_if_all_elements_present
-                )
-                any_cond = any(
-                    a in workers_and_their_inputs
-                    for a in n.include_if_any_element_present
-                )
-                check = check and (all_cond or any_cond)
-            if check:
-                out.append(p)
-    return out
+        if n.include_if_all_elements_present or n.include_if_any_element_present:
+            # all(()) evaluates to True, so include first bit
+            all_cond = n.include_if_all_elements_present and all(
+                a in initial_dag for a in n.include_if_all_elements_present
+            )
+            any_cond = any(a in initial_dag for a in n.include_if_any_element_present)
+            check = all_cond or any_cond
+        else:
+            check = all(a in initial_dag for a in args)
+        if check:
+            all_main_targets.append(p)
+    return all_main_targets
 
 
 def load_flat_interface_functions_and_inputs() -> FlatInterfaceObjects:

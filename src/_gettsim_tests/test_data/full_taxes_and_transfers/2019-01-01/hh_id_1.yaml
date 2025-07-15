@@ -12,7 +12,7 @@ inputs:
       - 37
       - 49
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
         - false
@@ -134,11 +134,6 @@ inputs:
         - 48642.0
     familie:
       alleinerziehend:
-        - false
-        - false
-        - false
-        - false
-      kind:
         - false
         - false
         - false
@@ -424,12 +419,12 @@ inputs:
         - 50.0
         - 50.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 3
         - 3
         - 3
         - 3
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
       - false

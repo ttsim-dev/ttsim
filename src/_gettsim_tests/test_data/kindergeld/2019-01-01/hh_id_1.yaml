@@ -37,14 +37,6 @@ inputs:
         - 3000.0
         - 3000.0
         - 3000.0
-    familie:
-      kind:
-        - false
-        - false
-        - false
-        - true
-        - true
-        - true
     hh_id:
       - 1
       - 1

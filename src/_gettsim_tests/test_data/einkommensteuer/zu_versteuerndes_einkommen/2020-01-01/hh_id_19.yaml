@@ -102,11 +102,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - true
-        - true
       p_id_ehepartner:
         - 28
         - 27
@@ -180,7 +175,7 @@ inputs:
           - 0.0
           - 0.0
           - 0.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
       - false

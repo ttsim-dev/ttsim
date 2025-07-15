@@ -51,8 +51,6 @@ inputs:
     familie:
       alleinerziehend:
         - false
-      kind:
-        - false
       p_id_ehepartner:
         - -1
       p_id_elternteil_1:
@@ -87,7 +85,7 @@ inputs:
           - 2035
         private_rente_betrag_m:
           - 0.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   einkommensteuer:

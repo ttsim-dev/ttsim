@@ -38,9 +38,6 @@ inputs:
             - 0.0
             - 0.0
     familie:
-      kind:
-        - false
-        - false
       p_id_ehepartner:
         - 1
         - 0
@@ -81,7 +78,7 @@ inputs:
           mean_entgeltpunkte:
             - 15.0
             - 15.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
 outputs:

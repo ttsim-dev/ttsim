@@ -75,20 +75,20 @@ def bemessungsgrundlage_selbstständig_m(
     leaf_name="beitragsbemessungsgrenze_m",
 )
 def beitragsbemessungsgrenze_m_nach_wohnort(
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     parameter_beitragsbemessungsgrenze_nach_wohnort: dict[str, float],
 ) -> float:
     """Income threshold up to which health insurance payments apply."""
     return (
         parameter_beitragsbemessungsgrenze_nach_wohnort["ost"]
-        if wohnort_ost
+        if wohnort_ost_hh
         else parameter_beitragsbemessungsgrenze_nach_wohnort["west"]
     )
 
 
 @policy_function(start_date="1990-01-01", end_date="2024-12-31")
 def bezugsgröße_selbstständige_m(
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     bezugsgröße_selbstständige_nach_wohnort: dict[str, float],
 ) -> float:
     """Threshold for self employment income subject to health insurance.
@@ -98,7 +98,7 @@ def bezugsgröße_selbstständige_m(
     """
     return (
         bezugsgröße_selbstständige_nach_wohnort["ost"]
-        if wohnort_ost
+        if wohnort_ost_hh
         else bezugsgröße_selbstständige_nach_wohnort["west"]
     )
 

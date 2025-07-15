@@ -5,7 +5,7 @@ info:
   source: none
 inputs:
   assumed:
-    kindergeld__grundsätzlich_anspruchsberechtigt:
+    kindergeld__ist_leistungsbegründendes_kind:
       - false
       - true
     sozialversicherung__arbeitslosen__mindestversicherungszeit_erreicht:
@@ -30,9 +30,6 @@ inputs:
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m:
       - 7000.0
       - 0.0
-    familie__kind:
-      - false
-      - true
     familie__p_id_elternteil_1:
       - -1
       - 7
@@ -48,7 +45,7 @@ inputs:
     p_id:
       - 7
       - 8
-    wohnort_ost:
+    wohnort_ost_hh:
       - true
       - true
 outputs:

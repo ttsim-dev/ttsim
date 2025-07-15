@@ -68,9 +68,6 @@ inputs:
       alleinerziehend:
         - false
         - false
-      kind:
-        - false
-        - false
       p_id_ehepartner:
         - 24
         - 23
@@ -118,7 +115,7 @@ inputs:
         private_rente_betrag_m:
           - 0.0
           - 0.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
 outputs:

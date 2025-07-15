@@ -65,7 +65,7 @@ inputs:
           - 0.0
           - 0.0
           - 0.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
       - false

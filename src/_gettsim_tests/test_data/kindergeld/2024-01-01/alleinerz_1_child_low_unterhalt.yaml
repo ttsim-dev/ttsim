@@ -12,10 +12,6 @@ inputs:
     arbeitsstunden_w:
       - 40.0
       - 0.0
-    familie:
-      kind:
-        - false
-        - true
     hh_id:
       - 0
       - 0

@@ -13,14 +13,14 @@ if TYPE_CHECKING:
         NestedInputStructureDict,
         OrderedQNames,
         PolicyEnvironment,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
     )
 
 
 @interface_function()
 def input_data_dtypes(
-    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     policy_environment: PolicyEnvironment,
     tt_targets__qname: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,

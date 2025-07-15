@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ttsim.tt_dag_elements import FKType, policy_input
+from ttsim.tt_dag_elements import AggType, FKType, agg_by_group_function, policy_input
 
 
 @policy_input()
@@ -10,9 +10,9 @@ def alleinerziehend() -> bool:
     """Single parent."""
 
 
-@policy_input()
-def kind() -> bool:
-    """Dependent child living with parents."""
+@agg_by_group_function(agg_type=AggType.ANY)
+def alleinerziehend_fg(alleinerziehend: bool, fg_id: int) -> bool:
+    pass
 
 
 @policy_input(foreign_key_type=FKType.MUST_NOT_POINT_TO_SELF)

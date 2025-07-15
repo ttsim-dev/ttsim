@@ -17,10 +17,10 @@ abzugsrate_hinzuverdienst:
     value: 0.4
   2023-01-01:
     note: Revoked in 2023.
-hinzuverdienstgrenze:
+hinzuverdienstgrenze_m:
   name:
-    de: Hinzuverdienstgrenze vor der Regelaltersgrenze
-    en: Additional earnings threshold during early retirement
+    de: Monatliche Hinzuverdienstgrenze vor der Regelaltersgrenze
+    en: Monthly additional earnings threshold during early retirement
   description:
     de: >-
       § 34 SGB VI, Hinzuverdienstgrenze vor der Regelaltersgrenze
@@ -29,14 +29,26 @@ hinzuverdienstgrenze:
   unit: Euros
   reference_period: Year
   type: scalar
-  # Values need to be fixed
-  # https://github.com/iza-institute-of-labor-economics/gettsim/issues/808
   2002-01-01:
     value: 350.0
   2008-01-01:
     value: 400.0
   2013-01-01:
     value: 450.0
+  2017-01-01:
+    note: Yearly additional earnings threshold, see 'hinzuverdienstgrenze_y'.
+hinzuverdienstgrenze_y:
+  name:
+    de: Jährliche Hinzuverdienstgrenze vor der Regelaltersgrenze
+    en: Yearly additional earnings threshold during early retirement
+  description:
+    de: >-
+      § 34 SGB VI, Hinzuverdienstgrenze vor der Regelaltersgrenze
+    en: >-
+      § 34 SGB VI, additional earnings threshold during early retirement
+  unit: Euros
+  reference_period: Year
+  type: scalar
   2017-01-01:
     value: 6300.0
   2020-01-01:

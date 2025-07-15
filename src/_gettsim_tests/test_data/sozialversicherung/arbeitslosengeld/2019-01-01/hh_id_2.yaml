@@ -5,7 +5,7 @@ info:
 inputs:
   assumed:
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
     sozialversicherung:
       arbeitslosen:
@@ -28,8 +28,6 @@ inputs:
           bruttolohn_vorjahr_m:
             - 2000.0
     familie:
-      kind:
-        - false
       p_id_elternteil_1:
         - -1
       p_id_elternteil_2:
@@ -40,7 +38,7 @@ inputs:
       - 2
     p_id:
       - 2
-    wohnort_ost:
+    wohnort_ost_hh:
       - true
 outputs:
   sozialversicherung:

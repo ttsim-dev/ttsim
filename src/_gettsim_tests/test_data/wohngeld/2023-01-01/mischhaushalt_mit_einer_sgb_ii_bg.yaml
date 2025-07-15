@@ -13,7 +13,7 @@ inputs:
       - 40
       - 40
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
         - false
         - false
@@ -118,12 +118,6 @@ inputs:
         - false
         - false
         - false
-      kind:
-        - false
-        - false
-        - false
-        - false
-        - false
       p_id_ehepartner:
         - 1
         - 0
@@ -167,7 +161,7 @@ inputs:
       - 0
       - 0
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
         - false
         - false
@@ -306,7 +300,7 @@ inputs:
         - 100.0
         - 100.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 5
         - 5
         - 5

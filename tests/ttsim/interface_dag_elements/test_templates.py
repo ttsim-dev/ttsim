@@ -95,15 +95,15 @@ def test_template_all_outputs_no_inputs(backend):
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
-def test_template_all_outputs_with_inputs(backend):
+def test_template_all_outputs_with_inputs(backend, xnp):
     actual = main(
         input_data={
             "tree": {
-                "p_id": [4, 5, 6],
+                "p_id": xnp.array([4, 5, 6]),
                 "a": {
-                    "inp2": [1, 2, 3],
+                    "inp2": xnp.array([1, 2, 3]),
                 },
-                "inp1": [0, 1, 2],
+                "inp1": xnp.array([0, 1, 2]),
             }
         },
         policy_environment={
@@ -141,15 +141,15 @@ def test_template_output_y_no_inputs(backend):
     assert actual == {"a": {"inp2": "FloatColumn"}}
 
 
-def test_template_output_x_with_inputs(backend):
+def test_template_output_x_with_inputs(backend, xnp):
     actual = main(
         input_data={
             "tree": {
-                "p_id": [4, 5, 6],
+                "p_id": xnp.array([4, 5, 6]),
                 "a": {
-                    "inp2": [1, 2, 3],
+                    "inp2": xnp.array([1, 2, 3]),
                 },
-                "inp1": [0, 1, 2],
+                "inp1": xnp.array([0, 1, 2]),
             }
         },
         tt_targets={"tree": {"a": {"x": None}}},

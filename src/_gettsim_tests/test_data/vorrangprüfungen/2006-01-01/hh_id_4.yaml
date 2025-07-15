@@ -50,12 +50,6 @@ inputs:
         - 2281.0
         - 2281.0
     familie:
-      kind:
-        - false
-        - false
-        - true
-        - true
-        - true
       p_id_elternteil_1:
         - -1
         - -1

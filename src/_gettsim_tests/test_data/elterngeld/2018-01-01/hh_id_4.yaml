@@ -45,9 +45,6 @@ inputs:
       alleinerziehend:
         - false
         - true
-      kind:
-        - true
-        - false
       p_id_ehepartner:
         - -1
         - -1
@@ -86,7 +83,7 @@ inputs:
           hat_kinder:
             - false
             - true
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
       - false
 outputs:

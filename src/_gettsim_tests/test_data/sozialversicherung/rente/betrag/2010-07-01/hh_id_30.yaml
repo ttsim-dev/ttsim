@@ -66,17 +66,17 @@ inputs:
           - 420.0
     weiblich:
       - true
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   sozialversicherung:
     rente:
+      entgeltpunkte_ost_updated:
+        - 10.0
+      entgeltpunkte_west_updated:
+        - 12.99796044
+      neue_entgeltpunkte:
+        - 0.577960442
       altersrente:
         altersgrenze:
           - 60.0
-        entgeltpunkte_ost_updated:
-          - 10.0
-        entgeltpunkte_west_updated:
-          - 12.99796044
-        neue_entgeltpunkte:
-          - 0.577960442

@@ -68,19 +68,19 @@ inputs:
           - 182.0
     weiblich:
       - true
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   sozialversicherung:
     rente:
+      entgeltpunkte_ost_updated:
+        - 0.0
+      entgeltpunkte_west_updated:
+        - 39.88850659
+      neue_entgeltpunkte:
+        - 0.509006589
       altersrente:
         altersgrenze:
           - 65.5
-        entgeltpunkte_ost_updated:
-          - 0.0
-        entgeltpunkte_west_updated:
-          - 39.88850659
-        neue_entgeltpunkte:
-          - 0.509006589
         vorzeitig_grundsätzlich_anspruchsberechtigt:
           - false

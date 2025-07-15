@@ -90,7 +90,7 @@ def _anzurechnendes_einkommen_m(
 def anzurechnendes_einkommen_m(
     einkommen_m_ehe: float,
     familie__anzahl_personen_ehe: int,
-    sozialversicherung__rente__altersrente__rentenwert: float,
+    sozialversicherung__rente__rentenwert: float,
     anzurechnendes_einkommen_ohne_partner: PiecewisePolynomialParamValue,
     anzurechnendes_einkommen_mit_partner: PiecewisePolynomialParamValue,
     xnp: ModuleType,
@@ -111,14 +111,14 @@ def anzurechnendes_einkommen_m(
     if familie__anzahl_personen_ehe == 2:
         out = _anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
-            rentenwert=sozialversicherung__rente__altersrente__rentenwert,
+            rentenwert=sozialversicherung__rente__rentenwert,
             parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_mit_partner,
             xnp=xnp,
         )
     else:
         out = _anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
-            rentenwert=sozialversicherung__rente__altersrente__rentenwert,
+            rentenwert=sozialversicherung__rente__rentenwert,
             parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_ohne_partner,
             xnp=xnp,
         )
@@ -136,7 +136,7 @@ def anzurechnendes_einkommen_m(
 def basisbetrag_m(
     mean_entgeltpunkte_zuschlag: float,
     bewertungszeiten_monate: int,
-    sozialversicherung__rente__altersrente__rentenwert: float,
+    sozialversicherung__rente__rentenwert: float,
     sozialversicherung__rente__altersrente__zugangsfaktor: float,
     maximaler_zugangsfaktor: float,
     berücksichtigte_wartezeit_monate: dict[str, int],
@@ -158,7 +158,7 @@ def basisbetrag_m(
     return (
         mean_entgeltpunkte_zuschlag
         * bewertungszeiten
-        * sozialversicherung__rente__altersrente__rentenwert
+        * sozialversicherung__rente__rentenwert
         * zugangsfaktor
     )
 

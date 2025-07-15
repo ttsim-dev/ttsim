@@ -11,7 +11,7 @@ inputs:
     anzahl_personen_hh:
       - 1
     arbeitslosengeld_2:
-      arbeitslosengeld_2_bezug_im_vorjahr:
+      bezug_im_vorjahr:
         - false
       eigenbedarf_gedeckt:
         - false
@@ -52,8 +52,6 @@ inputs:
     familie:
       alleinerziehend:
         - false
-      kind:
-        - false
       p_id_ehepartner:
         - -1
       p_id_elternteil_1:
@@ -69,7 +67,7 @@ inputs:
     hh_id:
       - 12
     kindergeld:
-      grundsätzlich_anspruchsberechtigt:
+      ist_leistungsbegründendes_kind:
         - false
       p_id_empfänger:
         - -1
@@ -122,7 +120,7 @@ inputs:
       wohnfläche_hh:
         - 40.0
     wohngeld:
-      mietstufe:
+      mietstufe_hh:
         - 5
       mindesteinkommen_erreicht_bg:
         - true

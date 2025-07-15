@@ -31,8 +31,6 @@ inputs:
           renteneinkünfte_vorjahr_m:
             - 0.0
     familie:
-      kind:
-        - false
       p_id_ehepartner:
         - -1
     geburtsjahr:
@@ -61,7 +59,7 @@ inputs:
             - 492
           mean_entgeltpunkte:
             - 41.0
-    wohnort_ost:
+    wohnort_ost_hh:
       - false
 outputs:
   sozialversicherung:

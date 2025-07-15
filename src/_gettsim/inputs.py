@@ -57,6 +57,6 @@ def weiblich() -> bool:
     """Female."""
 
 
-@policy_input()
-def wohnort_ost() -> bool:
-    """Whether the person lives in the Eastern part of Germany."""
+@policy_input(end_date="2024-12-31")
+def wohnort_ost_hh() -> bool:
+    """Whether the household is located in the new Länder (Beitrittsgebiet)."""

@@ -145,13 +145,13 @@ def einkommen_m(
     leaf_name="beitragsbemessungsgrenze_m",
 )
 def beitragsbemessungsgrenze_m_nach_wohnort(
-    wohnort_ost: bool,
+    wohnort_ost_hh: bool,
     parameter_beitragsbemessungsgrenze_nach_wohnort: dict[str, float],
 ) -> float:
     """Income threshold up to which pension insurance payments apply."""
     return (
         parameter_beitragsbemessungsgrenze_nach_wohnort["ost"]
-        if wohnort_ost
+        if wohnort_ost_hh
         else parameter_beitragsbemessungsgrenze_nach_wohnort["west"]
     )
 
