@@ -138,9 +138,6 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 jax = ">=0.6"
 # jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
 
-[tool.pixi.feature.jax.target.win-64.pypi-dependencies]
-jax = { version = ">=0.6", extras = ["cpu"] }
-
 [tool.pixi.feature.cuda]
 platforms = ["linux-64"]
 system-requirements = {cuda = "12"}
