@@ -99,6 +99,24 @@ raw_mindestunterhalt:
     jugendliche:
       satz: 645
     reference: Artikel 1 V. v. 29.11.2023 BGBl. I Nr. 330.
+  2025-01-01:
+    updates_previous: true
+    kleinkind:
+      satz: 482
+    schulkind:
+      satz: 554
+    jugendliche:
+      satz: 649
+    reference: Artikel 1 V. v. 21.11.2024 BGBl. 2024 I Nr. 359
+  2026-01-01:
+    updates_previous: true
+    kleinkind:
+      satz: 486
+    schulkind:
+      satz: 558
+    jugendliche:
+      satz: 653
+    reference: Artikel 1 V. v. 21.11.2024 BGBl. 2024 I Nr. 359
 mindesteinkommen:
   name:
     de: >-

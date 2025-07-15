@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         PolicyEnvironment,
         QNameData,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        SpecEnvWithPartialledParamsAndScalars,
         UnorderedQNames,
     )
 
@@ -181,7 +182,7 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
 
 @interface_function()
 def column_targets(
-    specialized_environment__with_partialled_params_and_scalars: UnorderedQNames,
+    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     tt_targets__qname: OrderedQNames,
 ) -> OrderedQNames:
     """All targets that are column functions."""

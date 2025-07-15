@@ -132,7 +132,7 @@ def test_rounding_with_time_conversion(backend, xnp):
 
     # Define function that should be rounded
     @policy_function(rounding_spec=RoundingSpec(base=1, direction="down"))
-    def test_func_m(x):
+    def test_func_m(x: float) -> float:
         return x
 
     data = {

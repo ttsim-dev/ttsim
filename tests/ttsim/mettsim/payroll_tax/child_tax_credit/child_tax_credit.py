@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from types import ModuleType
-
 from ttsim.tt_dag_elements import (
     AggType,
     agg_by_p_id_function,
     join,
     policy_function,
 )
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)
@@ -22,7 +24,7 @@ def amount_y(
     """The amount of child tax credit at the recipient level."""
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def claim_of_child_y(
     child_eligible: bool,
     schedule: dict[str, float],
@@ -33,7 +35,7 @@ def claim_of_child_y(
         return 0
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def child_eligible(
     age: int,
     schedule: dict[str, float],
@@ -44,11 +46,11 @@ def child_eligible(
 
 @policy_function(vectorization_strategy="not_required")
 def in_same_household_as_recipient(
-    p_id: int,
-    kin_id: int,
-    p_id_recipient: int,
+    p_id: IntColumn,
+    kin_id: IntColumn,
+    p_id_recipient: IntColumn,
     xnp: ModuleType,
-) -> bool:
+) -> BoolColumn:
     return (
         join(
             foreign_key=p_id_recipient,
