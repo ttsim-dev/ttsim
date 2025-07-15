@@ -351,7 +351,7 @@ def tax_transfer_function(
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
-        set_annotations=False,
+        set_annotations=True,
     )
 
     if backend == "jax":

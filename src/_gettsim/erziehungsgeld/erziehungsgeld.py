@@ -172,7 +172,7 @@ def abzug_durch_einkommen_m(
     leaf_name="ist_leistungsbegründendes_kind",
 )
 def _leistungsbegründendes_kind_vor_abschaffung(
-    p_id_empfänger: bool,
+    p_id_empfänger: int,
     alter_monate: int,
     budgetsatz: bool,
     maximales_kindsalter_budgetsatz: float,

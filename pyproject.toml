@@ -317,7 +317,8 @@ filterwarnings = [
     "ignore:The TerminalReporter.writer attribute is",
     "ignore:Repeated execution of the test suite",
     "ignore:Using or importing the ABCs from 'collections'",
-    "ignore:ttsim.interface_dag_elements.warn_if.FunctionsAndDataColumnsOverlapWarning"
+    "ignore:Your data provides the column:",
+    "ignore:Explicitly requested dtype .*64 requested in zeros_like"
 ]
 markers = [
     "wip: Tests that are work-in-progress.",
