@@ -23,6 +23,7 @@ from ttsim.interface_dag_elements.fail_if import (
     group_variables_are_not_constant_within_groups,
     input_data_is_invalid,
     input_df_has_bool_or_numeric_column_names,
+    input_df_mapper_columns_missing_in_df,
     input_df_mapper_has_incorrect_format,
     paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
@@ -1150,3 +1151,16 @@ def test_ttsim_param_with_active_periods(
         leaf_name=leaf_name,
     )
     assert actual == expected
+
+
+def test_fail_if_input_df_mapper_columns_missing_in_df():
+    df = pd.DataFrame({"a": [1]})
+    mapper = {"b": "a", "c": "d", "e": 1, "f": 1.5, "g": True, "h": "i"}
+    with pytest.raises(
+        ValueError,
+        match=r"The\nfollowing columns are missing: \['d', 'i'\]",
+    ):
+        input_df_mapper_columns_missing_in_df(
+            input_data__df_and_mapper__df=df,
+            input_data__df_and_mapper__mapper=mapper,
+        )

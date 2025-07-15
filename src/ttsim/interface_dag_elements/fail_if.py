@@ -558,7 +558,9 @@ def input_df_mapper_columns_missing_in_df(
     """Fail if the input mapper has columns that are not in the input dataframe."""
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
     missing_columns = [
-        col for col in mapper_vals if col not in input_data__df_and_mapper__df.columns
+        col
+        for col in mapper_vals
+        if col not in input_data__df_and_mapper__df.columns and isinstance(col, str)
     ]
     if missing_columns:
         msg = format_errors_and_warnings(
