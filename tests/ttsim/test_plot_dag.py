@@ -36,10 +36,6 @@ def some_param_function():
     return 1
 
 
-def some_other_object():
-    return 1
-
-
 @policy_function(
     start_date="2025-01-01",
     end_date="2025-12-31",
@@ -284,45 +280,5 @@ def test_params_are_removed_from_dag(include_params, expected_nodes):
     dag = _get_tt_dag_with_node_metadata(
         environment=environment,
         include_params=include_params,
-    )
-    assert set(dag.nodes()) == set(expected_nodes)
-
-
-@pytest.mark.parametrize(
-    (
-        "include_other_objects",
-        "expected_nodes",
-    ),
-    [
-        (
-            True,
-            [
-                "some_param",
-                "some_param_function",
-                "some_policy_function",
-                "other_object",
-            ],
-        ),
-        (
-            False,
-            [
-                "some_param",
-                "some_param_function",
-                "some_policy_function",
-            ],
-        ),
-    ],
-)
-def test_other_objects_are_removed_from_dag(include_other_objects, expected_nodes):
-    environment = {
-        "some_param": SOME_PARAM_OBJECT,
-        "some_param_function": some_param_function,
-        "some_policy_function": some_policy_function,
-        "other_object": some_other_object,
-    }
-    dag = _get_tt_dag_with_node_metadata(
-        environment=environment,
-        include_params=True,
-        include_other_objects=include_other_objects,
     )
     assert set(dag.nodes()) == set(expected_nodes)

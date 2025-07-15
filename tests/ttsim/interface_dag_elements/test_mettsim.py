@@ -40,14 +40,13 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 def get_orig_mettsim_objects() -> dict[
     str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
 ]:
-    out = main(
+    return main(
         orig_policy_objects={"root": METTSIM_ROOT},
         main_targets=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
-    )
-    return {k.replace("orig_policy_objects__", ""): v for k, v in out.items()}
+    )["orig_policy_objects"]
 
 
 def dates_in_orig_mettsim_objects() -> list[datetime.date]:
