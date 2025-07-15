@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedData,
+        NestedInputsMapper,
         NestedStrings,
         NestedTargetDict,
         OrderedQNames,
@@ -552,7 +553,7 @@ def input_df_has_bool_or_numeric_column_names(
 @fail_or_warn_function()
 def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
-    input_data__df_and_mapper__mapper: NestedStrings,
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
     """Fail if the input mapper has columns that are not in the input dataframe."""
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
@@ -569,7 +570,7 @@ def input_df_mapper_columns_missing_in_df(
 
 @fail_or_warn_function()
 def input_df_mapper_has_incorrect_format(
-    input_data__df_and_mapper__mapper: NestedStrings,
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
     """Fail if the input tree to column name mapping has an incorrect format."""
     if not isinstance(input_data__df_and_mapper__mapper, dict):
