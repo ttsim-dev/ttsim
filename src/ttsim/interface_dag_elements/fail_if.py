@@ -607,13 +607,13 @@ def input_df_mapper_has_incorrect_format(
     ]
     if non_string_paths:
         msg = format_errors_and_warnings(
-            f"""All path elements of `input_data__df_and_mapper__mapper` must be
+            f"""All path elements of `MainArgs.input_data.df_and_mapper.mapper` must be
             strings. Found the following paths that contain non-string elements:
 
             {format_list_linewise(non_string_paths)}
 
-            Use the target `MainTarget.templates.input_data_dtypes` to create a
-            template.
+            Note that you can use `main(main_target=MainTarget.templates.input_data_dtypes)`
+            to create a template.
             """,
         )
         raise TypeError(msg)
@@ -629,7 +629,7 @@ def input_df_mapper_has_incorrect_format(
         )
         msg = format_errors_and_warnings(
             f"""Values of the input tree to column mapping must be strings, integers,
-            floats, or booleans.
+            floats, or Booleans.
             Found the following incorrect types:
 
             {formatted_incorrect_types}

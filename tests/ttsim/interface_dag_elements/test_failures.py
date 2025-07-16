@@ -722,7 +722,7 @@ def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
                     True: 2,
                 },
             },
-            "All path elements of `input_data__df_and_mapper__mapper` must be\nstrings.",
+            "All path elements of `",
         ),
     ],
 )
