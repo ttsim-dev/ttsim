@@ -93,8 +93,9 @@ def main(
         input_qnames["processed_data"] = {}
         input_qnames["processed_data_columns"] = None
 
+    flat_interface_objects = load_flat_interface_functions_and_inputs()
     nodes = _resolve_dynamic_interface_objects_to_static_nodes(
-        flat_interface_objects=load_flat_interface_functions_and_inputs(),
+        flat_interface_objects=flat_interface_objects,
         input_qnames=list(input_qnames),
     )
 
@@ -109,14 +110,12 @@ def main(
         if isinstance(n, InterfaceFunction) and qn not in input_qnames
     }
 
-    # If main_targets are None, all failures and warnings are included, anyhow.
-    if main_targets is not None:
-        main_targets = include_fail_or_warn_nodes(
-            functions=functions,
-            explicit_main_targets=main_targets,  # type: ignore[arg-type]
-            include_fail_nodes=include_fail_nodes,
-            include_warn_nodes=include_warn_nodes,
-        )
+    main_targets = include_fail_or_warn_nodes(
+        functions=functions,
+        explicit_main_targets=main_targets,  # type: ignore[arg-type]
+        include_fail_nodes=include_fail_nodes,
+        include_warn_nodes=include_warn_nodes,
+    )
 
     dag = dags.create_dag(
         functions=functions,
@@ -126,6 +125,7 @@ def main(
     _fail_if_root_nodes_of_interface_dag_are_missing(
         dag=dag,
         input_qnames=input_qnames,
+        flat_interface_objects=flat_interface_objects,
     )
 
     def lexsort_key(x: str) -> int:
@@ -284,16 +284,20 @@ def _fail_if_multiple_functions_satisfy_include_condition(
 
 def include_fail_or_warn_nodes(
     functions: dict[str, InterfaceFunction],
-    explicit_main_targets: list[str],
+    explicit_main_targets: list[str] | None,
     include_fail_nodes: bool,
     include_warn_nodes: bool,
-) -> list[str]:
+) -> list[str] | None:
     """Extend main targets with failures and warnings that can be computed.
 
     FailFunctions and WarnFunctions which are included explicitly among the main targets
     are treated like regular functions.
 
     """
+    # If main_targets are None, all failures and warnings are included, anyhow.
+    if explicit_main_targets is None:
+        return explicit_main_targets
+
     fail_functions = {
         p: n
         for p, n in functions.items()
@@ -394,22 +398,81 @@ def _remove_tree_logic_from_functions_in_collection(
 def _fail_if_root_nodes_of_interface_dag_are_missing(
     dag: dags.DiGraph,
     input_qnames: dict[str, Any],
+    flat_interface_objects: FlatInterfaceObjects,
 ) -> None:
     """Fail if root nodes are missing."""
     root_nodes = nx.subgraph_view(
         dag,
         filter_node=lambda n: dag.in_degree(n) == 0,
     ).nodes
-
     missing_nodes = [node for node in root_nodes if node not in input_qnames]
+
+    missing_dynamic_nodes: dict[
+        tuple[str, ...], list[InputDependentInterfaceFunction]
+    ] = {}
+    for p, f in flat_interface_objects.items():
+        if isinstance(f, InputDependentInterfaceFunction):
+            new_path = (*p[:-1], f.leaf_name)
+            if (
+                dt.qname_from_tree_path(new_path) in missing_nodes
+                and new_path not in missing_dynamic_nodes
+            ):
+                missing_dynamic_nodes[new_path] = [f]
+            elif new_path in missing_dynamic_nodes:
+                missing_dynamic_nodes[new_path].append(f)
+
     if missing_nodes:
-        formatted = format_list_linewise(
-            [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
+        msg = (
+            "The following arguments to `main` are missing for computing the "
+            "desired output:\n"
+            + format_list_linewise(
+                [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes]
+            )
         )
-        raise ValueError(
-            f"The following arguments to `main` are missing for computing the "
-            f"desired output:\n{formatted}"
-        )
+        if missing_dynamic_nodes:
+            msg += _msg_for_missing_dynamic_nodes(missing_dynamic_nodes)
+        raise ValueError(msg)
+
+
+def _msg_for_missing_dynamic_nodes(
+    paths_to_dynamic_nodes: dict[
+        tuple[str, ...], list[InputDependentInterfaceFunction]
+    ],
+) -> str:
+    """List the include conditions of dynamic nodes to provide them along the missing
+    nodes error message."""
+    msg_nodes = []
+    for p, dynamic_nodes in paths_to_dynamic_nodes.items():
+        include_conditions_for_this_path: list[str] = []
+        for f in dynamic_nodes:
+            conditions: list[str] = []
+            if f.include_if_all_inputs_present:
+                paths = [
+                    dt.tree_path_from_qname(qn)
+                    for qn in f.include_if_all_inputs_present
+                ]
+                conditions.append(f"All of: {paths}")
+            if f.include_if_any_input_present:
+                paths = [
+                    dt.tree_path_from_qname(qn) for qn in f.include_if_any_input_present
+                ]
+                conditions.append(f"Any of: {paths}")
+            if conditions:
+                include_conditions_for_this_path.append(
+                    " or\n        ".join(conditions)
+                )
+        if include_conditions_for_this_path:
+            formatted_string = (
+                f"{p}:\n   Provide one of the following:\n        "
+                + "\n        ".join(include_conditions_for_this_path)
+            )
+            msg_nodes.append(formatted_string)
+
+    return (
+        "\n\nNote that the following missing nodes can also be provided via "
+        "the following inputs:\n"
+        "\n".join(msg_nodes)
+    )
 
 
 def _fail_if_requested_nodes_cannot_be_found(

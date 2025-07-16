@@ -11,10 +11,10 @@ from ttsim.interface_dag_elements.shared import (
 
 def test_template_all_outputs_no_inputs(backend):
     res = main(
+        main_targets=["labels__grouping_levels", "templates__input_data_dtypes"],
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        main_targets=["labels__grouping_levels", "templates__input_data_dtypes"],
     )
 
     paths_with_unspecified_dtypes = []

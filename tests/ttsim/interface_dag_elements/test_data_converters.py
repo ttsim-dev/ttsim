@@ -120,18 +120,6 @@ def test_df_with_mapped_columns_to_flat_data(
         )
 
 
-def test_df_with_mapped_columns_to_flat_data_fails_if_mapper_value_not_in_df(xnp):
-    with pytest.raises(ValueError, match="Value of mapper path"):
-        df_with_mapped_columns_to_flat_data(
-            mapper={
-                "n1": "a",
-                "n2": "b",
-            },
-            df=pd.DataFrame({"a": [1, 2, 3]}),
-            xnp=xnp,
-        )
-
-
 @pytest.mark.parametrize(
     (
         "environment",
@@ -231,13 +219,13 @@ def test_nested_data_to_dataframe(
     backend,
 ):
     results__tree = main(
+        main_target="results__tree",
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,

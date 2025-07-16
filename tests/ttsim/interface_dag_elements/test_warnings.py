@@ -24,6 +24,7 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         main(
+            main_target="warn_if__functions_and_data_columns_overlap",
             input_data={
                 "tree": {
                     "p_id": pd.Series([0]),
@@ -37,8 +38,8 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
             tt_targets={"tree": {"some_target": None}},
             date=datetime.date(2025, 1, 1),
             rounding=False,
+            include_fail_nodes=False,
             backend=backend,
-            main_target="results__df_with_nested_columns",
         )
         # Check that we got exactly one warning
         assert len(w) == 1
@@ -53,6 +54,7 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
             category=FunctionsAndDataColumnsOverlapWarning,
         )
         main(
+            main_target="warn_if__functions_and_data_columns_overlap",
             input_data={
                 "tree": {
                     "p_id": pd.Series([0]),
@@ -63,6 +65,6 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
             tt_targets={"tree": {"some_func": None}},
             date=datetime.date(2025, 1, 1),
             rounding=False,
+            include_fail_nodes=False,
             backend=backend,
-            main_target="results__df_with_nested_columns",
         )

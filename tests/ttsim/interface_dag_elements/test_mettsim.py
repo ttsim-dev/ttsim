@@ -41,11 +41,11 @@ def get_orig_mettsim_objects() -> dict[
     str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
 ]:
     return main(
-        orig_policy_objects={"root": METTSIM_ROOT},
         main_targets=[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
+        orig_policy_objects={"root": METTSIM_ROOT},
     )["orig_policy_objects"]
 
 
@@ -117,10 +117,10 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
         match=r"The following data columns are missing.",
     ):
         main(
+            main_target="results__tree",
             date_str="2020-01-01",
             input_data=InputData.flat(data),
             orig_policy_objects={"root": METTSIM_ROOT},
             tt_targets={"tree": {"property_tax": {"amount_y": None}}},
-            main_target="results__tree",
             backend=backend,
         )

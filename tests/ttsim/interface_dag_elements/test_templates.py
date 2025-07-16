@@ -79,6 +79,7 @@ def z(a__x: int, a__y: float) -> float:
 
 def test_template_all_outputs_no_inputs(backend):
     actual = main(
+        main_target="templates__input_data_dtypes",
         policy_environment={
             "inp1": inp1,
             "p1": p1,
@@ -90,13 +91,13 @@ def test_template_all_outputs_no_inputs(backend):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
 def test_template_all_outputs_with_inputs(backend, xnp):
     actual = main(
+        main_target="templates__input_data_dtypes",
         input_data={
             "tree": {
                 "p_id": xnp.array([4, 5, 6]),
@@ -117,13 +118,13 @@ def test_template_all_outputs_with_inputs(backend, xnp):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
 
 
 def test_template_output_y_no_inputs(backend):
     actual = main(
+        main_target="templates__input_data_dtypes",
         tt_targets={"tree": {"a": {"y": None}}},
         policy_environment={
             "inp1": inp1,
@@ -136,13 +137,13 @@ def test_template_output_y_no_inputs(backend):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"a": {"inp2": "FloatColumn"}}
 
 
 def test_template_output_x_with_inputs(backend, xnp):
     actual = main(
+        main_target="templates__input_data_dtypes",
         input_data={
             "tree": {
                 "p_id": xnp.array([4, 5, 6]),
@@ -164,6 +165,5 @@ def test_template_output_x_with_inputs(backend, xnp):
         rounding=True,
         date_str="2025-01-01",
         backend=backend,
-        main_target=("templates__input_data_dtypes"),
     )
     assert actual == {"inp1": "IntColumn"}

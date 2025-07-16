@@ -273,7 +273,7 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
         tree=input_data__tree,
         leaf_checker=lambda leaf: isinstance(
             leaf,
-            int | pd.Series | numpy.ndarray | xnp.ndarray,
+            pd.Series | numpy.ndarray | xnp.ndarray,
         ),
         tree_name="input_data__tree",
     )
@@ -555,15 +555,26 @@ def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
-    """Fail if the input mapper has columns that are not in the input dataframe."""
+    """Fail if the input mapper specifies columns that are not in the input dataframe.
+
+    Parameters
+    ----------
+    input_data__df_and_mapper__df
+        The input dataframe.
+    input_data__df_and_mapper__mapper
+        The input mapper.
+    xnp
+        The numpy module.
+    """
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
-    missing_columns = [
-        col for col in mapper_vals if col not in input_data__df_and_mapper__df.columns
+    expected_cols_in_df = [v for v in mapper_vals if isinstance(v, str)]
+    missing_cols_in_df = [
+        v for v in expected_cols_in_df if v not in input_data__df_and_mapper__df.columns
     ]
-    if missing_columns:
+    if missing_cols_in_df:
         msg = format_errors_and_warnings(
-            "All columns in the input mapper must be present in the input dataframe. "
-            f"The following columns are missing: {missing_columns}",
+            "Some column names in the input mapper are not present in the input "
+            f"DataFrame. The following columns are missing: {missing_cols_in_df}.",
         )
         raise ValueError(msg)
 
@@ -571,8 +582,14 @@ def input_df_mapper_columns_missing_in_df(
 @fail_function()
 def input_df_mapper_has_incorrect_format(
     input_data__df_and_mapper__mapper: NestedInputsMapper,
+    xnp: ModuleType,
 ) -> None:
-    """Fail if the input tree to column name mapping has an incorrect format."""
+    """Fail if the input mapper has an incorrect format.
+
+    Fails if:
+        - The input mapper is not a valid TTSIM pytree.
+        - The input mapper has non-string paths.
+    """
     if not isinstance(input_data__df_and_mapper__mapper, dict):
         msg = format_errors_and_warnings(
             """The inputs tree to column mapping must be a (nested) dictionary. Call
@@ -590,12 +607,13 @@ def input_df_mapper_has_incorrect_format(
     ]
     if non_string_paths:
         msg = format_errors_and_warnings(
-            f"""All path elements of `inputs_tree_to_df_columns` must be strings.
-            Found the following paths that contain non-string elements:
+            f"""All path elements of `MainArgs.input_data.df_and_mapper.mapper` must be
+            strings. Found the following paths that contain non-string elements:
 
             {format_list_linewise(non_string_paths)}
 
-            Call `dags.tree.create_tree_with_input_types` to create a template.
+            Note that you can use `main(main_target=MainTarget.templates.input_data_dtypes)`
+            to create a template.
             """,
         )
         raise TypeError(msg)
@@ -603,7 +621,7 @@ def input_df_mapper_has_incorrect_format(
     incorrect_types = {
         k: type(v)
         for k, v in dt.flatten_to_qnames(input_data__df_and_mapper__mapper).items()
-        if not isinstance(v, str | int | float | bool)
+        if not xnp.isscalar(v) and not isinstance(v, str)
     }
     if incorrect_types:
         formatted_incorrect_types = "\n".join(
