@@ -133,13 +133,8 @@ def df_with_mapped_columns_to_flat_data(
     """
     path_to_array = {}
     for path, mapper_value in dt.flatten_to_tree_paths(mapper).items():
-        if xnp.isscalar(mapper_value):
-            path_to_array[path] = xnp.asarray(
-                pd.Series(
-                    [mapper_value] * len(df),
-                    index=df.index,
-                ),
-            )
+        if xnp.isscalar(mapper_value) and not isinstance(mapper_value, str):
+            path_to_array[path] = xnp.asarray([mapper_value] * len(df))
         else:
             path_to_array[path] = xnp.asarray(df[mapper_value])
 

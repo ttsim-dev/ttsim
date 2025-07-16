@@ -4,14 +4,14 @@ import copy
 import datetime
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
 
-from ttsim import MainTarget, main
+from ttsim import InputData, MainTarget, main
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -51,6 +51,8 @@ if TYPE_CHECKING:
         OrigParamSpec,
         PolicyEnvironment,
     )
+
+METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 
 _GENERIC_PARAM_HEADER = {
     "name": {"de": "foo", "en": "foo"},
@@ -720,16 +722,17 @@ def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
                     True: 2,
                 },
             },
-            "All path elements of `inputs_tree_to_df_columns` must be strings.",
+            "All path elements of `input_data__df_and_mapper__mapper` must be\nstrings.",
         ),
     ],
 )
 def test_fail_if_input_df_mapper_has_incorrect_format(
     input_data__df_and_mapper__mapper,
     expected_error_message,
+    xnp: ModuleType,
 ):
     with pytest.raises(TypeError, match=expected_error_message):
-        input_df_mapper_has_incorrect_format(input_data__df_and_mapper__mapper)
+        input_df_mapper_has_incorrect_format(input_data__df_and_mapper__mapper, xnp=xnp)
 
 
 @pytest.mark.parametrize(
@@ -1153,14 +1156,34 @@ def test_ttsim_param_with_active_periods(
     assert actual == expected
 
 
-def test_fail_if_input_df_mapper_columns_missing_in_df():
+def test_fail_if_input_df_mapper_columns_missing_in_df(xnp: ModuleType):
     df = pd.DataFrame({"a": [1]})
     mapper = {"b": "a", "c": "d", "e": 1, "f": 1.5, "g": True, "h": "i"}
     with pytest.raises(
         ValueError,
-        match=r"The\nfollowing columns are missing: \['d', 'i'\]",
+        match=r"The following columns are missing: \['d', 'i'\]",
     ):
         input_df_mapper_columns_missing_in_df(
             input_data__df_and_mapper__df=df,
             input_data__df_and_mapper__mapper=mapper,
+            xnp=xnp,
+        )
+
+
+def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
+    backend: Literal["jax", "numpy"],
+):
+    df = pd.DataFrame({"a": [1]})
+    mapper = {"b": "a", "c": "d", "e": 1, "f": 1.5, "g": True, "h": "i"}
+    with pytest.raises(
+        ValueError,
+        match=r"The following columns are missing: \['d', 'i'\]",
+    ):
+        main(
+            input_data=InputData.df_and_mapper(df=df, mapper=mapper),
+            main_target=MainTarget.results.df_with_mapper,
+            orig_policy_objects={"root": METTSIM_ROOT},
+            tt_targets=MainTarget.policy_environment,
+            date_str="2025-01-01",
+            backend=backend,
         )

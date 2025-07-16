@@ -273,7 +273,7 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
         tree=input_data__tree,
         leaf_checker=lambda leaf: isinstance(
             leaf,
-            int | pd.Series | numpy.ndarray | xnp.ndarray,
+            pd.Series | numpy.ndarray | xnp.ndarray,
         ),
         tree_name="input_data__tree",
     )
@@ -554,7 +554,6 @@ def input_df_has_bool_or_numeric_column_names(
 def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedInputsMapper,
-    xnp: ModuleType,
 ) -> None:
     """Fail if the input mapper specifies columns that are not in the input dataframe.
 
@@ -568,7 +567,7 @@ def input_df_mapper_columns_missing_in_df(
         The numpy module.
     """
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
-    expected_cols_in_df = [v for v in mapper_vals if not xnp.isscalar(v)]
+    expected_cols_in_df = [v for v in mapper_vals if isinstance(v, str)]
     missing_cols_in_df = [
         v for v in expected_cols_in_df if v not in input_data__df_and_mapper__df.columns
     ]
