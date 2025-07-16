@@ -1156,7 +1156,7 @@ def test_ttsim_param_with_active_periods(
     assert actual == expected
 
 
-def test_fail_if_input_df_mapper_columns_missing_in_df(xnp: ModuleType):
+def test_fail_if_input_df_mapper_columns_missing_in_df():
     df = pd.DataFrame({"a": [1]})
     mapper = {"b": "a", "c": "d", "e": 1, "f": 1.5, "g": True, "h": "i"}
     with pytest.raises(
@@ -1166,7 +1166,6 @@ def test_fail_if_input_df_mapper_columns_missing_in_df(xnp: ModuleType):
         input_df_mapper_columns_missing_in_df(
             input_data__df_and_mapper__df=df,
             input_data__df_and_mapper__mapper=mapper,
-            xnp=xnp,
         )
 
 
