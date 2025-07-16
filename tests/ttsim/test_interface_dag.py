@@ -427,3 +427,27 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing_with_missing_dynamic_no
             input_qnames=[],
             flat_interface_objects=flat_interface_objects,
         )
+
+
+def test_fail_if_root_nodes_of_interface_dag_are_missing_dynamic_node_as_target():
+    flat_interface_objects = {
+        ("some_idif_require_input_1",): some_idif_require_input_1,
+    }
+    dag = dags.create_dag(
+        functions={
+            "some_idif_require_input_1": some_idif_require_input_1,
+        },
+        targets=["some_idif_require_input_1"],
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"(?!.*Note that the following missing nodes can also be provided via the following input).*"  # noqa: E501
+        ),
+    ):
+        _fail_if_root_nodes_of_interface_dag_are_missing(
+            dag=dag,
+            input_qnames=[],
+            flat_interface_objects=flat_interface_objects,
+        )

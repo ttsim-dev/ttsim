@@ -381,8 +381,6 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
     ).nodes
     missing_nodes = [node for node in root_nodes if node not in input_qnames]
 
-    # Find missing nodes that could have been created endogenously, if inputs were
-    # provided.
     missing_dynamic_nodes: dict[
         tuple[str, ...], list[InputDependentInterfaceFunction]
     ] = {}
