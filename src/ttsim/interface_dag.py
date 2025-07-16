@@ -109,14 +109,12 @@ def main(
         if isinstance(n, InterfaceFunction) and qn not in input_qnames
     }
 
-    # If main_targets are None, all failures and warnings are included, anyhow.
-    if main_targets is not None:
-        main_targets = include_fail_or_warn_nodes(
-            functions=functions,
-            explicit_main_targets=main_targets,  # type: ignore[arg-type]
-            include_fail_nodes=include_fail_nodes,
-            include_warn_nodes=include_warn_nodes,
-        )
+    main_targets = include_fail_or_warn_nodes(
+        functions=functions,
+        explicit_main_targets=main_targets,  # type: ignore[arg-type]
+        include_fail_nodes=include_fail_nodes,
+        include_warn_nodes=include_warn_nodes,
+    )
 
     dag = dags.create_dag(
         functions=functions,
@@ -284,16 +282,20 @@ def _fail_if_multiple_functions_satisfy_include_condition(
 
 def include_fail_or_warn_nodes(
     functions: dict[str, InterfaceFunction],
-    explicit_main_targets: list[str],
+    explicit_main_targets: list[str] | None,
     include_fail_nodes: bool,
     include_warn_nodes: bool,
-) -> list[str]:
+) -> list[str] | None:
     """Extend main targets with failures and warnings that can be computed.
 
     FailFunctions and WarnFunctions which are included explicitly among the main targets
     are treated like regular functions.
 
     """
+    # If main_targets are None, all failures and warnings are included, anyhow.
+    if explicit_main_targets is None:
+        return explicit_main_targets
+
     fail_functions = {
         p: n
         for p, n in functions.items()
