@@ -57,7 +57,6 @@ outputs_df = main(
         df=inputs_df,
         mapper=inputs_map,
     ),
-    fail_and_warn=False,
     tt_targets=TTTargets(tree=targets_tree),
 )
 
