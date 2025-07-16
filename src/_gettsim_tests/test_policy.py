@@ -99,13 +99,13 @@ def test_top_level_elements_not_repeated_in_paths(
 ):
     try:
         gettsim_objects = main(
-            backend=backend,
-            date=date,
-            rounding=False,
             main_targets=[
                 "specialized_environment__with_partialled_params_and_scalars",
                 "labels__top_level_namespace",
             ],
+            backend=backend,
+            date=date,
+            rounding=False,
         )
     except Exception:  # noqa: BLE001
         msg = (

@@ -231,13 +231,13 @@ def test_nested_data_to_dataframe(
     backend,
 ):
     results__tree = main(
+        main_target="results__tree",
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
     result_df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=results__tree,
