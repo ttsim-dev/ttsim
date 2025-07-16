@@ -554,18 +554,28 @@ def input_df_has_bool_or_numeric_column_names(
 def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedInputsMapper,
+    xnp: ModuleType,
 ) -> None:
-    """Fail if the input mapper has columns that are not in the input dataframe."""
+    """Fail if the input mapper specifies columns that are not in the input dataframe.
+
+    Parameters
+    ----------
+    input_data__df_and_mapper__df
+        The input dataframe.
+    input_data__df_and_mapper__mapper
+        The input mapper.
+    xnp
+        The numpy module.
+    """
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
-    missing_columns = [
-        col
-        for col in mapper_vals
-        if col not in input_data__df_and_mapper__df.columns and isinstance(col, str)
+    expected_cols_in_df = [v for v in mapper_vals if not xnp.isscalar(v)]
+    missing_cols_in_df = [
+        v for v in expected_cols_in_df if v not in input_data__df_and_mapper__df.columns
     ]
-    if missing_columns:
+    if missing_cols_in_df:
         msg = format_errors_and_warnings(
-            "All columns in the input mapper must be present in the input dataframe. "
-            f"The following columns are missing: {missing_columns}",
+            "Some column names in the input mapper are not present in the input "
+            f"DataFrame. The following columns are missing: {missing_cols_in_df}.",
         )
         raise ValueError(msg)
 
@@ -573,31 +583,37 @@ def input_df_mapper_columns_missing_in_df(
 @fail_or_warn_function()
 def input_df_mapper_has_incorrect_format(
     input_data__df_and_mapper__mapper: NestedInputsMapper,
+    xnp: ModuleType,
 ) -> None:
-    """Fail if the input tree to column name mapping has an incorrect format."""
-    if not isinstance(input_data__df_and_mapper__mapper, dict):
-        msg = format_errors_and_warnings(
-            """The inputs tree to column mapping must be a (nested) dictionary. Call
-            `dags.tree.create_tree_with_input_types` to create a template.""",
-        )
-        raise TypeError(msg)
+    """Fail if the input mapper has an incorrect format.
+
+    Fails if:
+        - The input mapper is not a valid TTSIM pytree.
+        - The input mapper has non-string paths.
+    """
+    assert_valid_ttsim_pytree(
+        tree=input_data__df_and_mapper__mapper,
+        leaf_checker=lambda leaf: xnp.isscalar(leaf) or isinstance(leaf, str),
+        tree_name="('input_data', 'df_and_mapper', 'mapper')",
+    )
 
     non_string_paths = [
         str(path)
         for path in optree.tree_paths(
-            input_data__df_and_mapper__mapper,  # type: ignore[arg-type]
+            input_data__df_and_mapper__mapper,
             none_is_leaf=True,
         )
         if not all(isinstance(part, str) for part in path)
     ]
     if non_string_paths:
         msg = format_errors_and_warnings(
-            f"""All path elements of `inputs_tree_to_df_columns` must be strings.
-            Found the following paths that contain non-string elements:
+            f"""All path elements of `input_data__df_and_mapper__mapper` must be
+            strings. Found the following paths that contain non-string elements:
 
             {format_list_linewise(non_string_paths)}
 
-            Call `dags.tree.create_tree_with_input_types` to create a template.
+            Use the target `MainTarget.templates.input_data_dtypes` to create a
+            template.
             """,
         )
         raise TypeError(msg)
@@ -605,7 +621,7 @@ def input_df_mapper_has_incorrect_format(
     incorrect_types = {
         k: type(v)
         for k, v in dt.flatten_to_qnames(input_data__df_and_mapper__mapper).items()
-        if not isinstance(v, str | int | float | bool)
+        if not xnp.isscalar(v) and not isinstance(v, str)
     }
     if incorrect_types:
         formatted_incorrect_types = "\n".join(
@@ -613,7 +629,7 @@ def input_df_mapper_has_incorrect_format(
         )
         msg = format_errors_and_warnings(
             f"""Values of the input tree to column mapping must be strings, integers,
-            floats, or Booleans.
+            floats, or booleans.
             Found the following incorrect types:
 
             {formatted_incorrect_types}
