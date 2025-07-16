@@ -22,7 +22,7 @@ from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
     InterfaceInput,
-    fail_or_warn_function,
+    fail_function,
     input_dependent_interface_function,
     interface_function,
     interface_input,
@@ -46,11 +46,11 @@ def interface_function_c(interface_function_a: int, interface_function_b: int) -
     return interface_function_a + interface_function_b
 
 
-@fail_or_warn_function(
+@fail_function(
     include_if_all_elements_present=["a"],
     include_if_any_element_present=["b"],
 )
-def some_fail_or_warn_function() -> None:
+def some_fail_function() -> None:
     pass
 
 
@@ -179,7 +179,7 @@ def _replace_idif_with_interface_inputs(
                     dt.qname_from_tree_path(p): n
                     for p, n in load_flat_interface_functions_and_inputs().items()
                 },
-                "some_fail_or_warn_function": some_fail_or_warn_function,
+                "some_fail_function": some_fail_function,
             },
             r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
         ),

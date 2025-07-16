@@ -16,10 +16,11 @@ import plotly.graph_objects as go
 from ttsim import main
 from ttsim.interface_dag import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
-    FailOrWarnFunction,
+    FailFunction,
     InputDependentInterfaceFunction,
     InterfaceFunction,
     InterfaceInput,
+    WarnFunction,
     interface_function,
 )
 from ttsim.tt_dag_elements import (
@@ -161,7 +162,7 @@ def plot_interface_dag(
         nodes_without_idifs = {
             qn: n
             for qn, n in nodes_without_idifs.items()
-            if not isinstance(n, FailOrWarnFunction)
+            if not isinstance(n, (FailFunction, WarnFunction))
         }
 
     dag = dags.create_dag(functions=nodes_without_idifs, targets=None)

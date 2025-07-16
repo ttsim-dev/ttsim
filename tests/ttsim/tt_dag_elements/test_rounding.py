@@ -116,6 +116,8 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"namespace": {"test_func": None}}},
         rounding=True,
+        include_fail_nodes=False,
+        include_warn_nodes=False,
         backend=backend,
         main_target=("results__tree"),
     )
@@ -152,6 +154,8 @@ def test_rounding_with_time_conversion(backend, xnp):
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"test_func_y": None}},
         rounding=True,
+        include_fail_nodes=False,
+        include_warn_nodes=False,
         backend=backend,
         main_target=("results__tree"),
     )
@@ -191,6 +195,8 @@ def test_no_rounding(
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"test_func": None}},
+        include_fail_nodes=False,
+        include_warn_nodes=False,
         rounding=False,
         backend=backend,
         main_target=("results__tree"),

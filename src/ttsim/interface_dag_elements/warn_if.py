@@ -9,7 +9,8 @@ from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
 )
-from ttsim.interface_dag_elements.interface_node_objects import fail_or_warn_function
+from ttsim.interface_dag_elements.interface_node_objects import warn_function
+from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
@@ -64,17 +65,19 @@ class FunctionsAndDataColumnsOverlapWarning(UserWarning):
         super().__init__(f"{first_part}\n{formatted}\n{second_part}\n{how_to_ignore}")
 
 
-@fail_or_warn_function()
+@warn_function()
 def functions_and_data_columns_overlap(
     policy_environment: PolicyEnvironment,
     labels__processed_data_columns: UnorderedQNames,
 ) -> None:
     """Warn if functions are overridden by data."""
+    flat_policy_environment = dt.flatten_to_qnames(policy_environment)
     overridden_elements = sorted(
         {
             col
             for col in labels__processed_data_columns
-            if col in dt.flatten_to_qnames(policy_environment)
+            if col in flat_policy_environment
+            and not isinstance(flat_policy_environment.get(col), PolicyInput)
         },
     )
     if len(overridden_elements) > 0:
