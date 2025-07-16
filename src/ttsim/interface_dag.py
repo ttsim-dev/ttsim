@@ -398,33 +398,27 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
                 missing_dynamic_nodes[new_path].append(f)
 
     if missing_nodes:
-        missing_nodes_formatted = format_list_linewise(
-            [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
-        )
-        include_conditions_of_dynamic_nodes = _list_include_conditions_of_dynamic_nodes(
-            missing_dynamic_nodes,
-        )
         msg = (
             "The following arguments to `main` are missing for computing the "
-            f"desired output:\n{missing_nodes_formatted}"
+            f"desired output:\n{
+                format_list_linewise(
+                    [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
+                )
+            }"
         )
-        if include_conditions_of_dynamic_nodes:
-            msg += (
-                "\n\nNote that the following missing nodes can also be provided via "
-                "the following inputs:\n"
-                "\n".join(include_conditions_of_dynamic_nodes)
-            )
+        if missing_dynamic_nodes:
+            msg += _msg_for_missing_dynamic_nodes(missing_dynamic_nodes)
         raise ValueError(msg)
 
 
-def _list_include_conditions_of_dynamic_nodes(
+def _msg_for_missing_dynamic_nodes(
     paths_to_dynamic_nodes: dict[
         tuple[str, ...], list[InputDependentInterfaceFunction]
     ],
-) -> list[str]:
+) -> str:
     """List the include conditions of dynamic nodes to provide them along the missing
     nodes error message."""
-    out = []
+    msg_nodes = []
     for p, dynamic_nodes in paths_to_dynamic_nodes.items():
         include_conditions_for_this_path: list[str] = []
         for f in dynamic_nodes:
@@ -449,8 +443,13 @@ def _list_include_conditions_of_dynamic_nodes(
                 f"{p}:\n   Provide one of the following:\n        "
                 + "\n        ".join(include_conditions_for_this_path)
             )
-            out.append(formatted_string)
-    return out
+            msg_nodes.append(formatted_string)
+
+    return (
+        "\n\nNote that the following missing nodes can also be provided via "
+        "the following inputs:\n"
+        "\n".join(msg_nodes)
+    )
 
 
 def _fail_if_requested_nodes_cannot_be_found(
