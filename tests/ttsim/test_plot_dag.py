@@ -236,10 +236,10 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
 )
 def test_node_selector(node_selector, expected_nodes):
     environment = main(
+        main_target="policy_environment",
         date_str="2025-01-01",
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend="numpy",
-        main_target=("policy_environment"),
     )
     dag = _get_tt_dag_with_node_metadata(
         environment=environment,

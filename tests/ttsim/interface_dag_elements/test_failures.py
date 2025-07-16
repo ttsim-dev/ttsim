@@ -131,10 +131,10 @@ def minimal_input_data():
 
 def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
+        main_target="policy_environment",
         orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
         date=datetime.date(2025, 1, 1),
         backend=backend,
-        main_target=("policy_environment"),
     )
 
 
@@ -538,13 +538,13 @@ def test_fail_if_data_paths_are_missing_in_paths_to_mapped_column_names(
     backend,
 ):
     results__tree = main(
+        main_target="results__tree",
         input_data={"tree": minimal_data_tree},
         date=datetime.date(2024, 1, 1),
         policy_environment=environment,
         tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
     with pytest.raises(
         ValueError,
@@ -663,12 +663,12 @@ def test_fail_if_p_id_is_missing_via_main(backend):
         match="The input data must contain the `p_id` column.",
     ):
         main(
+            main_target="fail_if__input_data_is_invalid",
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
         )
 
 
@@ -772,13 +772,13 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_type(
 ):
     with pytest.raises(TypeError, match=match):
         main(
+            main_target=MainTarget.results.df_with_nested_columns,
             input_data={"tree": minimal_data_tree},
             policy_environment=environment,
             date=datetime.date(2024, 1, 1),
             tt_targets={"tree": tt_targets__tree},
             rounding=False,
             backend=backend,
-            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -807,13 +807,13 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
 ):
     with pytest.raises(ValueError, match=match):
         main(
+            main_target=MainTarget.results.df_with_nested_columns,
             input_data={"tree": minimal_data_tree},
             policy_environment=environment,
             date=datetime.date(2024, 1, 1),
             tt_targets={"tree": tt_targets__tree},
             rounding=False,
             backend=backend,
-            main_target=MainTarget.results.df_with_nested_columns,
         )
 
 
@@ -834,12 +834,12 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
         match="The input data must contain the `p_id` column.",
     ):
         main(
+            main_target="fail_if__input_data_is_invalid",
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
         )
 
 
@@ -862,12 +862,12 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
         match="The following `p_id`s are not unique in the input data",
     ):
         main(
+            main_target="fail_if__input_data_is_invalid",
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
         )
 
 
@@ -912,12 +912,12 @@ def test_fail_if_input_data_has_different_lengths(backend):
         match="The lengths of the following columns do not match the length of the",
     ):
         main(
+            main_target="fail_if__input_data_is_invalid",
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
             rounding=False,
             backend=backend,
-            main_target=("fail_if__input_data_is_invalid"),
         )
 
 
@@ -938,13 +938,13 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         match="The following data columns are missing",
     ):
         main(
+            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
             input_data={"tree": minimal_input_data},
             policy_environment=policy_environment,
             date=datetime.date(2024, 1, 1),
             tt_targets={"tree": {"c": None}},
             rounding=False,
             backend=backend,
-            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
         )
 
 
@@ -970,6 +970,7 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
         match="Note that the missing nodes contain columns that are grouped by ",
     ):
         main(
+            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
             input_data={"tree": minimal_input_data},
             policy_environment=policy_environment,
             date=datetime.date(2024, 1, 1),
@@ -978,7 +979,6 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
             include_fail_nodes=False,
             rounding=False,
             backend=backend,
-            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
         )
 
 
@@ -1020,12 +1020,12 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
         match="The following targets have no corresponding function",
     ):
         main(
+            main_target="fail_if__targets_are_not_in_specialized_environment_or_data",
             input_data={"tree": minimal_input_data},
             policy_environment={},
             tt_targets={"tree": {"unknown_target": None}},
             rounding=False,
             backend=backend,
-            main_target=("fail_if__targets_are_not_in_specialized_environment_or_data"),
         )
 
 

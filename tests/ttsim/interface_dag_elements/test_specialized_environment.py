@@ -397,13 +397,13 @@ def test_create_agg_by_group_functions(
     backend,
 ):
     main(
+        main_target="results__tree",
         policy_environment=policy_environment,
         input_data={"tree": input_data__tree},
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
 
 
@@ -414,13 +414,13 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
     }
 
     out = main(
+        main_target="results__tree",
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"module": {"some_func": None}}},
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
 
     assert isinstance(out, dict)
@@ -447,13 +447,13 @@ def test_params_target_is_allowed(minimal_input_data):
     }
 
     out = main(
+        main_target="results__tree",
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"some_param": None, "module": {"some_func": None}}},
         rounding=False,
         backend="numpy",
-        main_target=("results__tree"),
     )
 
     assert isinstance(out, dict)
@@ -479,13 +479,13 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
         "b": b,
     }
     results__tree = main(
+        main_target="results__tree",
         policy_environment=policy_environment,
         input_data={"tree": minimal_input_data},
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"b": None}},
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
     numpy.testing.assert_array_almost_equal(
         results__tree["b"],
@@ -552,13 +552,13 @@ def test_user_provided_aggregate_by_group_specs(backend):
     expected = pd.Series([200, 200, 100], index=pd.Index(data["p_id"], name="p_id"))
 
     actual = main(
+        main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
         input_data={"tree": data},
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"module_name": {"betrag_m_fam": None}}},
         rounding=False,
         backend=backend,
-        main_target=("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -596,13 +596,13 @@ def test_user_provided_aggregation(backend):
     }
 
     actual = main(
+        main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
         input_data={"tree": data},
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"module_name": {"betrag_m_double_fam": None}}},
         rounding=False,
         backend=backend,
-        main_target=("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -646,13 +646,13 @@ def test_user_provided_aggregation_with_time_conversion(backend):
     }
 
     actual = main(
+        main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
         input_data={"tree": data},
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"module_name": {"max_betrag_double_y_fam": None}}},
         rounding=False,
         backend=backend,
-        main_target=("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -733,13 +733,13 @@ def test_user_provided_aggregate_by_p_id_specs(
     )
 
     actual = main(
+        main_target="results__df_with_nested_columns",
         input_data={"tree": minimal_input_data_shared_fam},
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": target_tree},
         rounding=False,
         backend=backend,
-        main_target=("results__df_with_nested_columns"),
     )
 
     pd.testing.assert_series_equal(
@@ -848,6 +848,7 @@ def test_can_override_ttsim_objects_with_data(
     backend,
 ):
     actual = main(
+        main_target="results__tree",
         input_data={"tree": {**minimal_input_data, **overriding_data}},
         policy_environment=nested_policy_environment,
         date=datetime.date(2024, 1, 1),
@@ -856,7 +857,6 @@ def test_can_override_ttsim_objects_with_data(
         include_fail_nodes=False,
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
 
     flat_actual = dt.flatten_to_tree_paths(actual)
