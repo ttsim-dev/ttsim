@@ -380,7 +380,7 @@ def test_harmonize_main_targets(main_targets, expected):
     assert harmonized == expected
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing():
+def test_fail_if_root_nodes_of_interface_dag_are_missing_without_missing_dynamic_nodes():  # noqa: E501
     flat_interface_objects = {
         ("interface_function_a",): interface_function_a,
         ("interface_function_b",): interface_function_b,
@@ -404,7 +404,7 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing():
         )
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing_with_unresolved_dynamic_nodes():  # noqa: E501
+def test_fail_if_root_nodes_of_interface_dag_are_missing_with_missing_dynamic_nodes():
     flat_interface_objects = {
         ("a",): a,
         ("interface_function_a",): interface_function_a,

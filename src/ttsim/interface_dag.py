@@ -383,7 +383,7 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
 
     # Find missing nodes that could have been created endogenously, if inputs were
     # provided.
-    unresolved_dynamic_nodes_due_to_missing_inputs: dict[
+    missing_dynamic_nodes: dict[
         tuple[str, ...], list[InputDependentInterfaceFunction]
     ] = {}
     for p, f in flat_interface_objects.items():
@@ -391,18 +391,18 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
             new_path = (*p[:-1], f.leaf_name)
             if (
                 dt.qname_from_tree_path(new_path) in missing_nodes
-                and new_path not in unresolved_dynamic_nodes_due_to_missing_inputs
+                and new_path not in missing_dynamic_nodes
             ):
-                unresolved_dynamic_nodes_due_to_missing_inputs[new_path] = [f]
-            elif new_path in unresolved_dynamic_nodes_due_to_missing_inputs:
-                unresolved_dynamic_nodes_due_to_missing_inputs[new_path].append(f)
+                missing_dynamic_nodes[new_path] = [f]
+            elif new_path in missing_dynamic_nodes:
+                missing_dynamic_nodes[new_path].append(f)
 
     if missing_nodes:
         missing_nodes_formatted = format_list_linewise(
             [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
         )
         include_conditions_of_dynamic_nodes = _list_include_conditions_of_dynamic_nodes(
-            unresolved_dynamic_nodes_due_to_missing_inputs,
+            missing_dynamic_nodes,
         )
         msg = (
             "The following arguments to `main` are missing for computing the "
@@ -410,8 +410,9 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
         )
         if include_conditions_of_dynamic_nodes:
             msg += (
-                "\n\nNote that the following missing nodes could have been created "
-                "endogenously:\n" + "\n".join(include_conditions_of_dynamic_nodes)
+                "\n\nNote that the following missing nodes can also be provided via "
+                "the following inputs:\n"
+                "\n".join(include_conditions_of_dynamic_nodes)
             )
         raise ValueError(msg)
 
