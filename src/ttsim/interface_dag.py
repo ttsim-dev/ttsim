@@ -400,11 +400,10 @@ def _fail_if_root_nodes_of_interface_dag_are_missing(
     if missing_nodes:
         msg = (
             "The following arguments to `main` are missing for computing the "
-            f"desired output:\n{
-                format_list_linewise(
-                    [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
-                )
-            }"
+            "desired output:\n"
+            + format_list_linewise(
+                [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes]
+            )
         )
         if missing_dynamic_nodes:
             msg += _msg_for_missing_dynamic_nodes(missing_dynamic_nodes)
