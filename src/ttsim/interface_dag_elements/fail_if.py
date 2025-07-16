@@ -591,16 +591,17 @@ def input_df_mapper_has_incorrect_format(
         - The input mapper is not a valid TTSIM pytree.
         - The input mapper has non-string paths.
     """
-    assert_valid_ttsim_pytree(
-        tree=input_data__df_and_mapper__mapper,
-        leaf_checker=lambda leaf: xnp.isscalar(leaf) or isinstance(leaf, str),
-        tree_name="('input_data', 'df_and_mapper', 'mapper')",
-    )
+    if not isinstance(input_data__df_and_mapper__mapper, dict):
+        msg = format_errors_and_warnings(
+            """The inputs tree to column mapping must be a (nested) dictionary. Call
+            `dags.tree.create_tree_with_input_types` to create a template.""",
+        )
+        raise TypeError(msg)
 
     non_string_paths = [
         str(path)
         for path in optree.tree_paths(
-            input_data__df_and_mapper__mapper,
+            input_data__df_and_mapper__mapper,  # type: ignore[arg-type]
             none_is_leaf=True,
         )
         if not all(isinstance(part, str) for part in path)
