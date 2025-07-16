@@ -179,6 +179,15 @@ def plot_interface_dag(
         for ancestor in ancestors:
             dag.add_edge(ancestor, qn)
 
+    # TODO(@MImmesberger): Remove this once evaluation date is handled differently.
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/1019
+    dag.remove_nodes_from(
+        [
+            "date_str",
+            "date",
+        ]
+    )
+
     for node_name in dag.nodes():
         interface_object = nodes_without_idifs.get(node_name)
         if interface_object:
