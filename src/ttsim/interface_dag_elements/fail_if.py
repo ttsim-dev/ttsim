@@ -13,7 +13,7 @@ import numpy
 import optree
 import pandas as pd
 
-from ttsim.interface_dag_elements.interface_node_objects import fail_or_warn_function
+from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
 from ttsim.tt_dag_elements.column_objects_param_function import (
     DEFAULT_END_DATE,
@@ -167,7 +167,7 @@ def assert_valid_ttsim_pytree(
     _assert_valid_ttsim_pytree(tree, current_key=())
 
 
-@fail_or_warn_function()
+@fail_function()
 def active_periods_overlap(
     orig_policy_objects__column_objects_and_param_functions: FlatColumnObjectsParamFunctions,
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
@@ -223,7 +223,7 @@ def active_periods_overlap(
                 )
 
 
-@fail_or_warn_function()
+@fail_function()
 def any_paths_are_invalid(
     policy_environment: PolicyEnvironment,
     input_data__tree: NestedData,
@@ -239,7 +239,7 @@ def any_paths_are_invalid(
     )
 
 
-@fail_or_warn_function(include_if_all_elements_present=["results__df_with_mapper"])
+@fail_function(include_if_all_elements_present=["results__df_with_mapper"])
 def paths_are_missing_in_targets_tree_mapper(
     results__tree: NestedData,
     tt_targets__tree: NestedStrings,
@@ -259,7 +259,7 @@ def paths_are_missing_in_targets_tree_mapper(
         raise ValueError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) -> None:
     """
     Validate the basic structure of the input data tree.
@@ -279,7 +279,7 @@ def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) ->
     )
 
 
-@fail_or_warn_function(include_if_any_element_present=["input_data__flat"])
+@fail_function(include_if_any_element_present=["input_data__flat"])
 def input_data_is_invalid(input_data__flat: FlatData) -> None:
     """Fail if the input data is invalid.
 
@@ -332,7 +332,7 @@ def input_data_is_invalid(input_data__flat: FlatData) -> None:
         raise ValueError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def environment_is_invalid(
     policy_environment: PolicyEnvironment,
 ) -> None:
@@ -348,7 +348,7 @@ def environment_is_invalid(
     )
 
 
-@fail_or_warn_function()
+@fail_function()
 def foreign_keys_are_invalid_in_data(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
@@ -405,7 +405,7 @@ def foreign_keys_are_invalid_in_data(
                     raise ValueError(message)
 
 
-@fail_or_warn_function()
+@fail_function()
 def group_ids_are_outside_top_level_namespace(
     policy_environment: PolicyEnvironment,
 ) -> None:
@@ -423,7 +423,7 @@ def group_ids_are_outside_top_level_namespace(
         )
 
 
-@fail_or_warn_function()
+@fail_function()
 def group_variables_are_not_constant_within_groups(
     labels__grouping_levels: OrderedQNames,
     labels__root_nodes: UnorderedQNames,
@@ -469,7 +469,7 @@ def group_variables_are_not_constant_within_groups(
         raise ValueError(msg)
 
 
-@fail_or_warn_function(
+@fail_function(
     include_if_any_element_present=[
         "results__df_with_mapper",
         "results__df_with_nested_columns",
@@ -518,7 +518,7 @@ def non_convertible_objects_in_results_tree(
         raise ValueError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def input_df_has_bool_or_numeric_column_names(
     input_data__df_and_mapper__df: pd.DataFrame,
 ) -> None:
@@ -550,7 +550,7 @@ def input_df_has_bool_or_numeric_column_names(
         raise ValueError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedInputsMapper,
@@ -568,7 +568,7 @@ def input_df_mapper_columns_missing_in_df(
         raise ValueError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def input_df_mapper_has_incorrect_format(
     input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
@@ -620,7 +620,7 @@ def input_df_mapper_has_incorrect_format(
         raise TypeError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def root_nodes_are_missing(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
@@ -680,7 +680,7 @@ def root_nodes_are_missing(
         raise ValueError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     labels__processed_data_columns: UnorderedQNames,
@@ -717,7 +717,7 @@ def targets_are_not_in_specialized_environment_or_data(
         raise ValueError(msg)
 
 
-@fail_or_warn_function()
+@fail_function()
 def targets_tree_is_invalid(tt_targets__tree: NestedTargetDict | NestedStrings) -> None:
     """
     Validate that the targets tree is a dictionary with string keys and None leaves.

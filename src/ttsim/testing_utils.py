@@ -44,11 +44,12 @@ def cached_policy_environment(
     backend: Literal["numpy", "jax"],
 ) -> PolicyEnvironment:
     return main(
+        main_target="policy_environment",
         date=date,
         orig_policy_objects={"root": root},
         backend=backend,
-        fail_and_warn=False,
-        main_target="policy_environment",
+        include_fail_nodes=False,
+        include_warn_nodes=False,
     )
 
 
@@ -93,14 +94,15 @@ def execute_test(
     environment = cached_policy_environment(date=test.date, root=root, backend=backend)
     if test.target_structure:
         result_df = main(
+            main_target="results__df_with_nested_columns",
             input_data={"tree": test.input_tree},
             policy_environment=environment,
             date=test.date,
             tt_targets={"tree": test.target_structure},
             rounding=True,
             backend=backend,
-            fail_and_warn=False,
-            main_target="results__df_with_nested_columns",
+            include_fail_nodes=False,
+            include_warn_nodes=False,
         )
 
         if test.expected_output_tree:
@@ -237,22 +239,21 @@ def check_env_completeness(
     ],
 ) -> None:
     environment = main(
+        main_target="policy_environment",
         date=date,
         backend="numpy",
-        main_target=("policy_environment"),
         orig_policy_objects=orig_policy_objects,
     )
     qname_environment = dt.flatten_to_qnames(environment)
     qnames_policy_inputs = [
         k for k, v in qname_environment.items() if isinstance(v, PolicyInput)
     ]
-    tgt = "specialized_environment__without_tree_logic_and_with_derived_functions"
     qname_env_with_derived_functions = main(
+        main_target="specialized_environment__without_tree_logic_and_with_derived_functions",
         policy_environment=environment,
         labels={"processed_data_columns": qnames_policy_inputs},
         tt_targets={"qname": list(qname_environment)},
         backend="numpy",
-        main_target=(tgt),
     )
     all_nodes = {
         qn: dummy_callable(n) if not callable(n) else n

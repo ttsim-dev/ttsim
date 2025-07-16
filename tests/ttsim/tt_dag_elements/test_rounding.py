@@ -111,13 +111,15 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
     policy_environment = {"namespace": {"test_func": test_func, "x": x}, "p_id": p_id}
 
     results__tree = main(
+        main_target="results__tree",
         input_data={"tree": input_data__tree},
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"namespace": {"test_func": None}}},
         rounding=True,
+        include_fail_nodes=False,
+        include_warn_nodes=False,
         backend=backend,
-        main_target=("results__tree"),
     )
     assert_series_equal(
         pd.Series(results__tree["namespace"]["test_func"]),
@@ -147,13 +149,15 @@ def test_rounding_with_time_conversion(backend, xnp):
     }
 
     results__tree = main(
+        main_target="results__tree",
         input_data={"tree": data},
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"test_func_y": None}},
         rounding=True,
+        include_fail_nodes=False,
+        include_warn_nodes=False,
         backend=backend,
-        main_target=("results__tree"),
     )
     assert_series_equal(
         pd.Series(results__tree["test_func_y"]),
@@ -187,13 +191,15 @@ def test_no_rounding(
     }
 
     results__tree = main(
+        main_target="results__tree",
         input_data={"tree": data},
         policy_environment=policy_environment,
         date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"test_func": None}},
+        include_fail_nodes=False,
+        include_warn_nodes=False,
         rounding=False,
         backend=backend,
-        main_target=("results__tree"),
     )
     assert_series_equal(
         pd.Series(results__tree["test_func"]),

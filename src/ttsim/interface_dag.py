@@ -17,10 +17,11 @@ from ttsim.interface_dag_elements.fail_if import (
     format_list_linewise,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
-    FailOrWarnFunction,
+    FailFunction,
     InputDependentInterfaceFunction,
     InterfaceFunction,
     InterfaceInput,
+    WarnFunction,
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 from ttsim.main_args import MainArg
@@ -57,7 +58,8 @@ def main(
     tt_targets: TTTargets | None = None,
     rounding: bool = True,
     backend: Literal["numpy", "jax"] | None = None,
-    fail_and_warn: bool = True,
+    include_fail_nodes: bool = True,
+    include_warn_nodes: bool = True,
     date: datetime.date | None = None,
     policy_date_str: DashedISOString | None = None,
     evaluation_date_str: DashedISOString | None = None,
@@ -107,12 +109,12 @@ def main(
         if isinstance(n, InterfaceFunction) and qn not in input_qnames
     }
 
-    # If main_targets are None, all failures and warnings are included, anyhow.
-    if fail_and_warn and main_targets is not None:
-        main_targets = include_fail_and_warn_nodes(
-            functions=functions,
-            explicit_main_targets=main_targets,  # type: ignore[arg-type]
-        )
+    main_targets = include_fail_or_warn_nodes(
+        functions=functions,
+        explicit_main_targets=main_targets,  # type: ignore[arg-type]
+        include_fail_nodes=include_fail_nodes,
+        include_warn_nodes=include_warn_nodes,
+    )
 
     dag = dags.create_dag(
         functions=functions,
@@ -278,29 +280,52 @@ def _fail_if_multiple_functions_satisfy_include_condition(
         raise ValueError(msg)
 
 
-def include_fail_and_warn_nodes(
+def include_fail_or_warn_nodes(
     functions: dict[str, InterfaceFunction],
-    explicit_main_targets: list[str],
-) -> list[str]:
+    explicit_main_targets: list[str] | None,
+    include_fail_nodes: bool,
+    include_warn_nodes: bool,
+) -> list[str] | None:
     """Extend main targets with failures and warnings that can be computed.
 
-    FailOrWarnFunctions which are included explicitly among the main targets are treated
-    like regular functions.
+    FailFunctions and WarnFunctions which are included explicitly among the main targets
+    are treated like regular functions.
 
     """
-    fail_or_warn_functions = {
+    # If main_targets are None, all failures and warnings are included, anyhow.
+    if explicit_main_targets is None:
+        return explicit_main_targets
+
+    fail_functions = {
         p: n
         for p, n in functions.items()
-        if isinstance(n, FailOrWarnFunction) and p not in explicit_main_targets
+        if isinstance(n, FailFunction)
+        and p not in explicit_main_targets
+        and include_fail_nodes
     }
+    warn_functions = {
+        p: n
+        for p, n in functions.items()
+        if isinstance(n, WarnFunction)
+        and p not in explicit_main_targets
+        and include_warn_nodes
+    }
+    fail_or_warn_nodes = {**fail_functions, **warn_functions}
     initial_dag = dags.create_dag(
         functions={
-            p: n for p, n in functions.items() if p not in fail_or_warn_functions
+            p: n
+            for p, n in functions.items()
+            if p
+            not in {
+                **fail_functions,
+                **warn_functions,
+            }
         },
         targets=explicit_main_targets,
     )
     all_main_targets = explicit_main_targets.copy()
-    for p, n in fail_or_warn_functions.items():
+
+    for p, n in fail_or_warn_nodes.items():
         args = inspect.signature(n).parameters
         if n.include_if_all_elements_present or n.include_if_any_element_present:
             # all(()) evaluates to True, so include first bit
@@ -337,7 +362,8 @@ def _load_orig_functions() -> dict[tuple[str, ...], InterfaceFunction | Interfac
         p for p in root.rglob("*.py") if p.name not in ["__init__.py", "typing.py"]
     ]
     flat_functions: dict[
-        tuple[str, ...], InterfaceFunction | InterfaceInput | FailOrWarnFunction
+        tuple[str, ...],
+        InterfaceFunction | InterfaceInput | FailFunction | WarnFunction,
     ] = {}
     for path in paths:
         module = load_module(path=path, root=root)
@@ -398,7 +424,7 @@ def _fail_if_requested_nodes_cannot_be_found(
         p for p, n in nodes.items() if isinstance(n, InterfaceFunction)
     }
     fail_or_warn_functions = {
-        p: n for p, n in nodes.items() if isinstance(n, FailOrWarnFunction)
+        p: n for p, n in nodes.items() if isinstance(n, (FailFunction, WarnFunction))
     }
 
     # main targets not in interface functions

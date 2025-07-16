@@ -33,10 +33,11 @@ def cached_specialized_environment(
     backend: Literal["numpy", "jax"],
 ) -> SpecEnvWithPartialledParamsAndScalars:
     return main(
+        main_target=("specialized_environment", "with_partialled_params_and_scalars"),
         date=date,
         backend=backend,
-        fail_and_warn=False,
-        main_target=("specialized_environment", "with_partialled_params_and_scalars"),
+        include_fail_nodes=False,
+        include_warn_nodes=False,
     )
 
 
@@ -66,11 +67,11 @@ def test_jittable(tree_path, fun, backend, xnp):
 
     with contextlib.suppress(NotImplementedError):
         main(
+            main_target=("raw_results", "columns"),
             date=date,
             specialized_environment={"with_partialled_params_and_scalars": env},
             processed_data=processed_data,
             tt_targets={"qname": [qname]},
             backend=backend,
-            main_target=("raw_results", "columns"),
-            fail_and_warn=False,
+            include_fail_nodes=False,
         )
