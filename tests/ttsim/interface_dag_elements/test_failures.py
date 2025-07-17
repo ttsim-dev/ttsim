@@ -1256,7 +1256,7 @@ def test_invalid_tt_targets_tree(
     [
         (
             {
-                "number_of_individuals_kin": [1, 2, 3],
+                "number_of_individuals_kin": [1],
             },
             r"Leaf at input_data__tree\[number_of_individuals_kin\] is invalid",
         ),
@@ -1271,7 +1271,7 @@ def test_invalid_input_data_tree_via_main(
 ):
     input_data_tree_with_p_id = {
         **input_data_tree,
-        "p_id": xnp.array([0, 1, 2]),
+        "p_id": xnp.array([2]),
     }
     with pytest.raises(TypeError, match=match):
         main(
