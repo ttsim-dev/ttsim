@@ -177,7 +177,12 @@ def anspruchshöhe_m_bg(
     return out
 
 
-@param_function()
+@param_function(end_date="2000-12-31", leaf_name="basisformel_params")
+def basisformel_params_not_implemented() -> NotImplementedError:
+    raise NotImplementedError("Wohngeld basis formula parameters are not implemented.")
+
+
+@param_function(start_date="2001-01-01")
 def basisformel_params(
     skalierungsfaktor: float,
     koeffizienten_berechnungsformel: dict[int, dict[str, float]],

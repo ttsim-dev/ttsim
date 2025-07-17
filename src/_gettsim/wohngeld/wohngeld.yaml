@@ -566,9 +566,6 @@ zusatzbetrag_pro_person_in_großen_haushalten:
   unit: Euros
   reference_period: Month
   type: scalar
-  1984-01-01:
-    value: 0
-    note: Fix this via dates_active!
   2001-01-01:
     value: 40
     reference: Art. 5 G. v. 22.12.1999 BGBl. I S. 2671
