@@ -559,10 +559,16 @@ zusatzbetrag_pro_person_in_großen_haushalten:
       Haushalte mit mehr als 12 Personen erhalten einen zusätzlichen Betrag pro Person,
       der auf das Wohngeld für einen Haushalt mit 12 Personen angerechnet wird.
       §19 Abs. 3 WoGG
+      Das Einführungsdatum des Parameters ist nicht ganz klar. Es ist in der
+      Neuverkündung des WoGG 2002 enthalten, aber nicht in der 1993 Novelle, siehe BGBl
+      I 1993 S. 183.
     en: >-
       Households with more than 12 persons receive an additional amount per person,
       which is counted towards the housing allowance for a household of 12 people.
       §19 Abs. 3 WoGG
+      The introduction date of the parameter is not entirely clear. It is contained in
+      the re-enactment of the WoGG 2002, but not in the 1993 Novelle, see BGBl I 1993
+      S. 183.
   unit: Euros
   reference_period: Month
   type: scalar

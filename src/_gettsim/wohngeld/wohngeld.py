@@ -42,6 +42,10 @@ class BasisformelParamValues:
     a: ConsecutiveIntLookupTableParamValue
     b: ConsecutiveIntLookupTableParamValue
     c: ConsecutiveIntLookupTableParamValue
+
+
+@dataclass(frozen=True)
+class BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße(BasisformelParamValues):
     zusatzbetrag_nach_haushaltsgröße: ConsecutiveIntLookupTableParamValue
 
 
@@ -80,11 +84,35 @@ def betrag_m_wthh(
     return out
 
 
-def basisformel(
+def basisformel_ohne_zusatzbetrag_nach_haushaltsgröße(
     anzahl_personen: int,
     einkommen_m: float,
     miete_m: float,
     params: BasisformelParamValues,
+    xnp: ModuleType,
+) -> float:
+    """Basic formula for housing benefit calculation.
+
+    Note: This function is not a direct target in the DAG, but a helper function to
+    store the code for Wohngeld calculation.
+
+    """
+    a = params.a.look_up(anzahl_personen)
+    b = params.b.look_up(anzahl_personen)
+    c = params.c.look_up(anzahl_personen)
+    out = xnp.maximum(
+        0.0,
+        params.skalierungsfaktor
+        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
+    )
+    return xnp.minimum(miete_m, out)
+
+
+def basisformel_mit_zusatzbetrag_nach_haushaltsgröße(
+    anzahl_personen: int,
+    einkommen_m: float,
+    miete_m: float,
+    params: BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße,
     xnp: ModuleType,
 ) -> float:
     """Basic formula for housing benefit calculation.
@@ -108,13 +136,15 @@ def basisformel(
 
 
 @policy_function(
+    leaf_name="anspruchshöhe_m_wthh",
+    end_date="2000-12-31",
     rounding_spec=RoundingSpec(
         base=1,
         direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
     ),
 )
-def anspruchshöhe_m_wthh(
+def anspruchshöhe_m_wthh_bis_2000(
     anzahl_personen_wthh: int,
     einkommen_m_wthh: float,
     miete_m_wthh: float,
@@ -130,7 +160,7 @@ def anspruchshöhe_m_wthh(
 
     """
     if grundsätzlich_anspruchsberechtigt_wthh:
-        out = basisformel(
+        out = basisformel_ohne_zusatzbetrag_nach_haushaltsgröße(
             anzahl_personen=anzahl_personen_wthh,
             einkommen_m=einkommen_m_wthh,
             miete_m=miete_m_wthh,
@@ -144,13 +174,53 @@ def anspruchshöhe_m_wthh(
 
 
 @policy_function(
+    leaf_name="anspruchshöhe_m_wthh",
+    start_date="2001-01-01",
     rounding_spec=RoundingSpec(
         base=1,
         direction="nearest",
         reference="§ 19 WoGG Abs.2 Anlage 3",
     ),
 )
-def anspruchshöhe_m_bg(
+def anspruchshöhe_m_wthh_ab_2001(
+    anzahl_personen_wthh: int,
+    einkommen_m_wthh: float,
+    miete_m_wthh: float,
+    grundsätzlich_anspruchsberechtigt_wthh: bool,
+    basisformel_params: BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße,
+    xnp: ModuleType,
+) -> float:
+    """Housing benefit after wealth and income check.
+
+    This target is used to calculate the actual Wohngeld of all Bedarfsgemeinschaften in
+    the household that passed the priority check against Arbeitslosengeld 2. Returns
+    zero if not eligible.
+
+    """
+    if grundsätzlich_anspruchsberechtigt_wthh:
+        out = basisformel_mit_zusatzbetrag_nach_haushaltsgröße(
+            anzahl_personen=anzahl_personen_wthh,
+            einkommen_m=einkommen_m_wthh,
+            miete_m=miete_m_wthh,
+            params=basisformel_params,
+            xnp=xnp,
+        )
+    else:
+        out = 0.0
+
+    return out
+
+
+@policy_function(
+    leaf_name="anspruchshöhe_m_bg",
+    end_date="2000-12-31",
+    rounding_spec=RoundingSpec(
+        base=1,
+        direction="nearest",
+        reference="§ 19 WoGG Abs.2 Anlage 3",
+    ),
+)
+def anspruchshöhe_m_bg_bis_2000(
     arbeitslosengeld_2__anzahl_personen_bg: int,
     einkommen_m_bg: float,
     miete_m_bg: float,
@@ -164,7 +234,43 @@ def anspruchshöhe_m_bg(
 
     """
     if grundsätzlich_anspruchsberechtigt_bg:
-        out = basisformel(
+        out = basisformel_ohne_zusatzbetrag_nach_haushaltsgröße(
+            anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
+            einkommen_m=einkommen_m_bg,
+            miete_m=miete_m_bg,
+            params=basisformel_params,
+            xnp=xnp,
+        )
+    else:
+        out = 0.0
+
+    return out
+
+
+@policy_function(
+    leaf_name="anspruchshöhe_m_bg",
+    start_date="2001-01-01",
+    rounding_spec=RoundingSpec(
+        base=1,
+        direction="nearest",
+        reference="§ 19 WoGG Abs.2 Anlage 3",
+    ),
+)
+def anspruchshöhe_m_bg_ab_2001(
+    arbeitslosengeld_2__anzahl_personen_bg: int,
+    einkommen_m_bg: float,
+    miete_m_bg: float,
+    grundsätzlich_anspruchsberechtigt_bg: bool,
+    basisformel_params: BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße,
+    xnp: ModuleType,
+) -> float:
+    """Housing benefit after wealth and income check.
+
+    This target is used for the priority check calculation against Arbeitslosengeld 2.
+
+    """
+    if grundsätzlich_anspruchsberechtigt_bg:
+        out = basisformel_mit_zusatzbetrag_nach_haushaltsgröße(
             anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
             einkommen_m=einkommen_m_bg,
             miete_m=miete_m_bg,
@@ -178,18 +284,47 @@ def anspruchshöhe_m_bg(
 
 
 @param_function(end_date="2000-12-31", leaf_name="basisformel_params")
-def basisformel_params_not_implemented() -> NotImplementedError:
-    raise NotImplementedError("Wohngeld basis formula parameters are not implemented.")
+def basisformel_params_bis_2000(
+    skalierungsfaktor: float,
+    koeffizienten_berechnungsformel: dict[int, dict[str, float]],
+    max_anzahl_personen: dict[str, int],
+    xnp: ModuleType,
+) -> BasisformelParamValues:
+    """Convert the parameters of the Wohngeld basis formula to a format that can be
+    used by Numpy and Jax.
+
+    Note: Not entirely sure that 'zusatzbetrag_pro_person_in_großen_haushalten' was not
+    part of the pre-2001 parameters. At least it wasn't part of the 1993 novella, see
+    BGBl I 1993 S. 183.
+    """
+    a = {i: v["a"] for i, v in koeffizienten_berechnungsformel.items()}
+    b = {i: v["b"] for i, v in koeffizienten_berechnungsformel.items()}
+    c = {i: v["c"] for i, v in koeffizienten_berechnungsformel.items()}
+    max_normal = max_anzahl_personen["normale_berechnung"]
+    for koeff in [a, b, c]:
+        assert max(koeff.keys()) == max_normal, (
+            "The maximum number of persons for the normal calculation of the basic"
+            "Wohngeld formula `max_anzahl_personen['normale_berechnung'] "
+            f"(got: {max_normal}) must be the same as the maximum number of household "
+            f"members in `koeffizienten_berechnungsformel` (got: {max(koeff.keys())})"
+        )
+
+    return BasisformelParamValues(
+        skalierungsfaktor=skalierungsfaktor,
+        a=get_consecutive_int_lookup_table_param_value(raw=a, xnp=xnp),
+        b=get_consecutive_int_lookup_table_param_value(raw=b, xnp=xnp),
+        c=get_consecutive_int_lookup_table_param_value(raw=c, xnp=xnp),
+    )
 
 
-@param_function(start_date="2001-01-01")
-def basisformel_params(
+@param_function(start_date="2001-01-01", leaf_name="basisformel_params")
+def basisformel_params_ab_2001(
     skalierungsfaktor: float,
     koeffizienten_berechnungsformel: dict[int, dict[str, float]],
     max_anzahl_personen: dict[str, int],
     zusatzbetrag_pro_person_in_großen_haushalten: float,
     xnp: ModuleType,
-) -> BasisformelParamValues:
+) -> BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße:
     """Convert the parameters of the Wohngeld basis formula to a format that can be
     used by Numpy and Jax.
     """
@@ -212,7 +347,7 @@ def basisformel_params(
             i - max_normal
         ) * zusatzbetrag_pro_person_in_großen_haushalten
 
-    return BasisformelParamValues(
+    return BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße(
         skalierungsfaktor=skalierungsfaktor,
         a=get_consecutive_int_lookup_table_param_value(raw=a, xnp=xnp),
         b=get_consecutive_int_lookup_table_param_value(raw=b, xnp=xnp),
