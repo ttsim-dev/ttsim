@@ -930,6 +930,19 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         )
 
 
+def test_fail_if_input_data_is_missing_via_main(backend):
+    with pytest.raises(
+        ValueError,
+        match=r"\('input_data', 'flat'\)",
+    ):
+        main(
+            main_target=MainTarget.specialized_environment.tax_transfer_dag,
+            date_str="2025-01-01",
+            orig_policy_objects={"root": METTSIM_ROOT},
+            backend=backend,
+        )
+
+
 def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
     minimal_input_data, backend
 ):

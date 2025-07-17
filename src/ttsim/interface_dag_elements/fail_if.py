@@ -518,6 +518,22 @@ def non_convertible_objects_in_results_tree(
         raise ValueError(msg)
 
 
+@fail_function(
+    include_if_any_element_present=[
+        "specialized_environment__tax_transfer_dag",
+        "raw_results__columns",
+    ]
+)
+def input_data_is_missing(
+    input_data__flat: FlatData | None,
+    processed_data: QNameData | None,
+) -> None:
+    """Fail if input data is missing.
+
+    Triggers the `fail_if_root_nodes_are_missing` function if the input data is missing.
+    """
+
+
 @fail_function()
 def input_df_has_bool_or_numeric_column_names(
     input_data__df_and_mapper__df: pd.DataFrame,
