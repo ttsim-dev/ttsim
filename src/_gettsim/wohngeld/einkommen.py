@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
 
-@agg_by_p_id_function(agg_type=AggType.SUM)
+@agg_by_p_id_function(agg_type=AggType.SUM, end_date="2015-12-31")
 def alleinerziehendenbonus(
     kindergeld__kind_bis_10_mit_kindergeld: bool,
     kindergeld__p_id_empfänger: int,

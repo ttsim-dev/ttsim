@@ -234,7 +234,6 @@ extend-ignore = [
     # ======================================
     "D", # docstrings
     "INP001", # implicit namespace packages without init.
-    "PLR2004", # Magic values used in comparison
     "PT006", # Allows only lists of tuples in parametrize, even if single argument
     "PT007", # wrong type in parametrize
 
@@ -248,6 +247,8 @@ exclude = []
 "src/gettsim/__init__.py" = ["PT028"]
 # Mostly things vectorization can't handle
 "src/_gettsim/*" = ["E501", "PLR1714", "PLR1716", "E721", "SIM108", "RET"]
+"src/_gettsim/lohnsteuer/*.py" = ["PLR2004"]
+"src/_gettsim/familie/familie.py" = ["PLR2004"]
 # All tests return None and use asserts
 "src/_gettsim_tests/**/*.py" = ["ANN", "S101"]
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
@@ -259,7 +260,7 @@ exclude = []
 "tests/ttsim/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 "tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
-"tests/ttsim/**/*.py" = ["ANN", "S101"]
+"tests/ttsim/**/*.py" = ["ANN", "PLR2004", "S101"]
 "tests/ttsim/interface_dag_elements/test_failures.py" = ["E501"]
 # TODO: remove once ported nicely
 "src/ttsim/stale_code_storage.py" = ["ALL"]

@@ -109,13 +109,13 @@ def leistungsbegründendes_kind_nach_stunden(
     )
 
 
-@policy_function()
+@policy_function(end_date="2015-12-31")
 def kind_bis_10_mit_kindergeld(
     alter: int,
     ist_leistungsbegründendes_kind: bool,
 ) -> bool:
     """Child under the age of 11 and eligible for Kindergeld."""
-    return ist_leistungsbegründendes_kind and (alter <= 10)
+    return ist_leistungsbegründendes_kind and (alter <= 10)  # noqa: PLR2004
 
 
 @policy_function(vectorization_strategy="not_required")
