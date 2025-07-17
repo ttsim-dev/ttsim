@@ -233,16 +233,14 @@ extend-ignore = [
     # Ignored during transition phase
     # ======================================
     "D", # docstrings
-    "INP001", # implicit namespace packages without init.
     "PT006", # Allows only lists of tuples in parametrize, even if single argument
     "PT007", # wrong type in parametrize
-
 ]
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
 "conftest.py" = ["ANN"]
-"docs/**/*.ipynb" = ["T201"]
+"docs/*" = ["INP001", "T201"]
 # Cannot have default values in test functions with fixtures -- not an issue here.
 "src/gettsim/__init__.py" = ["PT028"]
 # Mostly things vectorization can't handle
@@ -257,6 +255,7 @@ exclude = []
 "src/ttsim/interface_dag_elements/typing.py" = ["PGH", "PLR", "SIM114"]
 "src/ttsim/plot_dag.py" = ["FBT002"]
 # Mostly things vectorization can't handle
+"tests/*" = ["INP001"]
 "tests/ttsim/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 "tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
