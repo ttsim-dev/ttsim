@@ -300,12 +300,12 @@ def mindesteinkommen_erreicht(
 @policy_function(start_date="2017-07-01")
 def einkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
+    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
+    einkommensteuer__einkünfte__sonstige__private_und_betriebliche_renteneinnahmen_m: float,
     sozialversicherung__rente__altersrente__betrag_m: float,
-    sozialversicherung__rente__private_rente_betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
 ) -> float:
     """Calculate relevant income for advance on alimony payment."""
@@ -316,7 +316,7 @@ def einkommen_m(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
         + sozialversicherung__rente__altersrente__betrag_m
-        + sozialversicherung__rente__private_rente_betrag_m
+        + einkommensteuer__einkünfte__sonstige__private_und_betriebliche_renteneinnahmen_m
         + sozialversicherung__arbeitslosen__betrag_m
     )
 

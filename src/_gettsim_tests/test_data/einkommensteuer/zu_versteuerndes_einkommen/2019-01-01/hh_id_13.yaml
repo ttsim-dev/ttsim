@@ -61,6 +61,15 @@ inputs:
           ohne_renten_m:
             - 0.0
             - 0.0
+          private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+          betriebliche_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+          geförderte_private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
       gemeinsam_veranlagt:
         - false
         - false
@@ -112,9 +121,6 @@ inputs:
         jahr_renteneintritt:
           - 2050
           - 2070
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
     wohnort_ost_hh:
       - false
       - false

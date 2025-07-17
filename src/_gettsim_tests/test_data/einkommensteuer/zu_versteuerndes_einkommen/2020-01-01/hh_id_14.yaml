@@ -91,6 +91,21 @@ inputs:
             - 0.0
             - 0.0
             - 0.0
+          private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+          betriebliche_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+          geförderte_private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
       gemeinsam_veranlagt:
         - true
         - true
@@ -170,11 +185,6 @@ inputs:
           - 2038
           - 2074
           - 2072
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
     wohnort_ost_hh:
       - false
       - false

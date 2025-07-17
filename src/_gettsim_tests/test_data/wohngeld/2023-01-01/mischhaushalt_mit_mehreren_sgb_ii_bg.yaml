@@ -110,6 +110,30 @@ inputs:
             - 0.0
             - 0.0
             - 0.0
+          private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+          betriebliche_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+          geförderte_private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
           ohne_renten_m:
             - 0.0
             - 0.0
@@ -297,14 +321,6 @@ inputs:
           - false
           - false
           - false
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
     unterhalt:
       tatsächlich_erhaltener_betrag_m:
         - 0.0

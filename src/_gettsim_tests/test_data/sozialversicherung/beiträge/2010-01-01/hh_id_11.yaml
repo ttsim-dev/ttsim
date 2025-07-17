@@ -19,6 +19,16 @@ inputs:
           betrag_m:
             - 0.0
             - 0.0
+        sonstige:
+          private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+          betriebliche_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+          geförderte_private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
         ist_selbstständig:
           - false
           - false
@@ -44,9 +54,6 @@ inputs:
           betrag_m:
             - 0.0
             - 0.0
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
     wohnort_ost_hh:
       - false
       - false

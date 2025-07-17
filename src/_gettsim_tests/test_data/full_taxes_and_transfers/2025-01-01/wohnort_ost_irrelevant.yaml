@@ -51,6 +51,12 @@ inputs:
         ist_selbstständig:
           - true
         sonstige:
+          private_renteneinnahmen_m:
+            - 0.0
+          betriebliche_renteneinnahmen_m:
+            - 0.0
+          geförderte_private_renteneinnahmen_m:
+            - 0.0
           ohne_renten_m:
             - 50.0
       gemeinsam_veranlagt:
@@ -166,8 +172,6 @@ inputs:
           - 0.0
         pflichtbeitragsmonate:
           - 444.0
-        private_rente_betrag_m:
-          - 0.0
     unterhalt:
       anspruch_m:
         - 0.0

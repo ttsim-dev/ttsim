@@ -107,6 +107,21 @@ inputs:
             - 50.0
             - 50.0
             - 50.0
+          private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+          betriebliche_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+          geförderte_private_renteneinnahmen_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
       gemeinsam_veranlagt:
         - false
         - false
@@ -366,11 +381,6 @@ inputs:
           - 468.0
           - 168.0
           - 312.0
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
     unterhalt:
       anspruch_m:
         - 177.0

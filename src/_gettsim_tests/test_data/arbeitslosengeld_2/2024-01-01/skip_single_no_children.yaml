@@ -71,7 +71,13 @@ inputs:
       - 0.0
     sozialversicherung__rente__bezieht_rente:
       - false
-    sozialversicherung__rente__private_rente_betrag_m:
+    einkommensteuer__einkünfte__sonstige__betriebliche_renteneinnahmen_m:
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__sonstige__geförderte_private_renteneinnahmen_m:
+      - 0.0
+      - 0.0
+    einkommensteuer__einkünfte__sonstige__private_renteneinnahmen_m:
       - 0.0
       - 0.0
     unterhalt__tatsächlich_erhaltener_betrag_m:

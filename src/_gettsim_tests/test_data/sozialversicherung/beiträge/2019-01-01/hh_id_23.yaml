@@ -16,6 +16,13 @@ inputs:
         aus_selbstständiger_arbeit:
           betrag_m:
             - 1000.0
+        sonstige:
+          private_renteneinnahmen_m:
+            - 0.0
+          betriebliche_renteneinnahmen_m:
+            - 0.0
+          geförderte_private_renteneinnahmen_m:
+            - 0.0
         ist_selbstständig:
           - true
     hh_id:
@@ -35,8 +42,6 @@ inputs:
         altersrente:
           betrag_m:
             - 0.0
-        private_rente_betrag_m:
-          - 0.0
     wohnort_ost_hh:
       - false
 outputs:
