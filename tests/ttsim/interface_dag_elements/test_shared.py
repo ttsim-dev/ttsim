@@ -33,7 +33,7 @@ def test_fail_if_invalid_date():
 
 
 @pytest.mark.parametrize(
-    "base, path_to_upsert, value_to_upsert, expected",
+    ("base", "path_to_upsert", "value_to_upsert", "expected"),
     [
         ({}, ["a"], 1, {"a": 1}),
         ({"a": 1}, ["a"], 2, {"a": 2}),
@@ -51,7 +51,7 @@ def test_upsert_path_and_value(base, path_to_upsert, value_to_upsert, expected):
 
 
 @pytest.mark.parametrize(
-    "base, path_to_insert, value_to_insert, expected",
+    ("base", "path_to_insert", "value_to_insert", "expected"),
     [
         ({}, ("a",), 1, {"a": 1}),
         ({"a": 1}, ("b",), 2, {"a": 1, "b": 2}),
@@ -67,7 +67,7 @@ def test_insert_path_and_value(base, path_to_insert, value_to_insert, expected):
 
 
 @pytest.mark.parametrize(
-    "base, path_to_insert, value_to_insert",
+    ("base", "path_to_insert", "value_to_insert"),
     [
         ({"a": 1}, ("a",), 2),
     ],
@@ -82,7 +82,7 @@ def test_insert_path_and_value_invalid(base, path_to_insert, value_to_insert):
 
 
 @pytest.mark.parametrize(
-    "paths, expected",
+    ("paths", "expected"),
     [
         ("a", {"a": None}),
         (("a", "b"), {"a": {"b": None}}),
@@ -94,7 +94,7 @@ def test_create_tree_from_path_and_value(paths, expected):
 
 
 @pytest.mark.parametrize(
-    "paths, value, expected",
+    ("paths", "value", "expected"),
     [
         ((), {"a": None}, {"a": None}),
         ((), {"a": 1}, {"a": 1}),
@@ -105,7 +105,7 @@ def test_create_tree_from_path_and_value_if_path_is_empty(paths, value, expected
 
 
 @pytest.mark.parametrize(
-    "left, right, expected",
+    ("left", "right", "expected"),
     [
         ({}, {"a": 1}, {"a": 1}),
         ({"a": 1}, {"b": 2}, {"a": 1, "b": 2}),
@@ -120,7 +120,7 @@ def test_merge_trees_valid(left, right, expected):
 
 
 @pytest.mark.parametrize(
-    "left, right",
+    ("left", "right"),
     [({"a": 1}, {"a": 2}), ({"a": 1}, {"a": 1}), ({"a": {"b": 1}}, {"a": {"b": 5}})],
 )
 def test_merge_trees_invalid(left, right):
@@ -129,7 +129,7 @@ def test_merge_trees_invalid(left, right):
 
 
 @pytest.mark.parametrize(
-    "base_dict, update_dict, expected",
+    ("base_dict", "update_dict", "expected"),
     [
         ({}, {"a": 1}, {"a": 1}),
         ({"a": 1}, {"b": 2}, {"a": 1, "b": 2}),
@@ -145,7 +145,7 @@ def test_upsert_tree(base_dict, update_dict, expected):
 
 
 @pytest.mark.parametrize(
-    "tree_to_partition, reference_tree, expected",
+    ("tree_to_partition", "reference_tree", "expected"),
     [
         (
             {
@@ -210,7 +210,7 @@ def test_partition_tree_by_reference_tree(tree_to_partition, reference_tree, exp
 
 
 @pytest.mark.parametrize(
-    "target_name, expected",
+    ("target_name", "expected"),
     [
         (("namespace1__foo"), None),
         (("foo_kin"), "kin_id"),

@@ -233,7 +233,6 @@ extend-ignore = [
     # Ignored during transition phase
     # ======================================
     "D", # docstrings
-    "PT006", # Allows only lists of tuples in parametrize, even if single argument
 ]
 exclude = []
 

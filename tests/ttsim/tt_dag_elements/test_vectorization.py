@@ -299,7 +299,7 @@ TEST_CASES = [
 # ======================================================================================
 
 
-@pytest.mark.parametrize("func, expected, args", TEST_CASES)
+@pytest.mark.parametrize(("func", "expected", "args"), TEST_CASES)
 def test_change_if_to_where_source(func, expected, args):  # noqa: ARG001
     exp = inspect.getsource(expected)
     exp = exp.replace("_exp", "")
@@ -307,7 +307,7 @@ def test_change_if_to_where_source(func, expected, args):  # noqa: ARG001
     assert string_equal(exp, got)
 
 
-@pytest.mark.parametrize("func, expected, args", TEST_CASES)
+@pytest.mark.parametrize(("func", "expected", "args"), TEST_CASES)
 def test_change_if_to_where_wrapper(func, expected, args):
     got_func = _make_vectorizable(func, backend="numpy", xnp=numpy)
     got = got_func(*args)
@@ -375,7 +375,7 @@ def test_disallowed_operation_wrapper(func):
 for year in range(1990, 2023):
 
     @pytest.mark.parametrize(
-        "funcname, func",
+        ("funcname", "func"),
         (
             (funcname, pf.function)
             for funcname, pf in dt.flatten_to_tree_paths(

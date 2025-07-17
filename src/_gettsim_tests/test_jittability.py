@@ -43,7 +43,7 @@ def cached_specialized_environment(
 
 @pytest.mark.skipif_numpy
 @pytest.mark.parametrize(
-    "tree_path, fun",
+    ("tree_path", "fun"),
     get_orig_gettsim_column_functions(),
     ids=[str(x[0]) for x in get_orig_gettsim_column_functions()],
 )
