@@ -193,12 +193,13 @@ def basisformel_params(
     c = {i: v["c"] for i, v in koeffizienten_berechnungsformel.items()}
     max_normal = max_anzahl_personen["normale_berechnung"]
     for koeff in [a, b, c]:
-        assert max(koeff.keys()) == max_normal, (
-            "The maximum number of persons for the normal calculation of the basic"
-            "Wohngeld formula `max_anzahl_personen['normale_berechnung'] "
-            f"(got: {max_normal}) must be the same as the maximum number of household "
-            f"members in `koeffizienten_berechnungsformel` (got: {max(koeff.keys())})"
-        )
+        if max(koeff.keys()) != max_normal:
+            raise ValueError(
+                "The maximum number of persons for the normal calculation of the basic"
+                "Wohngeld formula `max_anzahl_personen['normale_berechnung'] "
+                f"(got: {max_normal}) must be the same as the maximum number of household "
+                f"members in `koeffizienten_berechnungsformel` (got: {max(koeff.keys())})"
+            )
     zusatzbetrag_nach_haushaltsgröße = dict.fromkeys(range(max_normal + 1), 0.0)
     for i in range(max_normal + 1, max_anzahl_personen["indizierung"] + 1):
         for koeff in [a, b, c]:

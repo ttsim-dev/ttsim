@@ -85,7 +85,7 @@ def test_decorator():
 
 
 def test_malformed_rounding_specs():
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
 
         @policy_function(rounding_spec={"base": 1, "direction": "updsf"})
         def test_func():

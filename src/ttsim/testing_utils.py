@@ -118,7 +118,7 @@ def execute_test(
                     check_dtype=False,
                 )
             except AssertionError as e:
-                assert set(result_df.columns) == set(expected_df.columns)
+                assert set(result_df.columns) == set(expected_df.columns)  # noqa: S101
                 cols_with_differences = []
                 for col in expected_df.columns:
                     try:

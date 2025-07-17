@@ -40,7 +40,19 @@ classifiers = [
 ]
 # Dependencies and requirements
 requires-python = ">=3.11"
-dependencies = [ "ipywidgets", "numpy", "numpy-groupies", "pandas", "openpyxl", "pygments", "pygraphviz", "pytest", "pyyaml", "networkx>=3.5,<4", "plotly>=6.2.0,<7", "optree>=0.16.0,<0.17",
+dependencies = [
+    "ipywidgets",
+    "networkx>=3.5",
+    "numpy-groupies",
+    "numpy",
+    "openpyxl",
+    "optree>=0.16.0",
+    "pandas",
+    "plotly>=6.2.0",
+    "pygments",
+    "pygraphviz",
+    "pytest",
+    "pyyaml",
 ]
 
 
@@ -225,7 +237,6 @@ extend-ignore = [
     "PLR2004", # Magic values used in comparison
     "PT006", # Allows only lists of tuples in parametrize, even if single argument
     "PT007", # wrong type in parametrize
-    "S101", # use of asserts outside of tests
 
 ]
 exclude = []
