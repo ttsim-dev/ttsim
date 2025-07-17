@@ -48,7 +48,6 @@ class FailIf(MainTargetABC):
     input_df_mapper_has_incorrect_format: str = (
         "fail_if__input_df_mapper_has_incorrect_format"
     )
-    input_data_is_missing: str = "fail_if__input_data_is_missing"
     non_convertible_objects_in_results_tree: str = (
         "fail_if__non_convertible_objects_in_results_tree"
     )

@@ -930,19 +930,6 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         )
 
 
-def test_fail_if_input_data_is_missing_via_main(backend):
-    with pytest.raises(
-        ValueError,
-        match=r"\('input_data', 'flat'\)",
-    ):
-        main(
-            main_target=MainTarget.specialized_environment.tax_transfer_dag,
-            date_str="2025-01-01",
-            orig_policy_objects={"root": METTSIM_ROOT},
-            backend=backend,
-        )
-
-
 def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
     minimal_input_data, backend
 ):
@@ -1377,4 +1364,25 @@ def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"])
             input_data=InputData.tree(tree=object()),
             orig_policy_objects={"root": METTSIM_ROOT},
             date_str="2025-01-01",
+        )
+
+
+def test_request_tt_function_without_input_data(backend: Literal["jax", "numpy"]):
+    main(
+        date_str="2025-01-01",
+        main_target=MainTarget.specialized_environment.tax_transfer_function,
+        backend=backend,
+        orig_policy_objects={"root": METTSIM_ROOT},
+    )
+
+
+def test_request_raw_results_without_inputs_raises_error(
+    backend: Literal["jax", "numpy"],
+):
+    with pytest.raises(ValueError, match="The following data columns are missing"):
+        main(
+            date_str="2025-01-01",
+            main_target=MainTarget.raw_results.columns,
+            backend=backend,
+            orig_policy_objects={"root": METTSIM_ROOT},
         )
