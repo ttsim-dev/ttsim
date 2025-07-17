@@ -1,7 +1,7 @@
 ---
-mindestpflichtbeitragsmonate:
+mindestpflichtbeitragszeiten_monate:
   name:
-    de: Mindestpflichtbeitragsmonate für Erwerbsminderungsrente
+    de: Mindestpflichtbeitragszeiten für Erwerbsminderungsrente
     en: Minimum number of required contribution months for disability pension
   description:
     de: >-

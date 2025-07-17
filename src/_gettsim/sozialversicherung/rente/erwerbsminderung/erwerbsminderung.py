@@ -72,7 +72,7 @@ def grundsätzlich_anspruchsberechtigt(
     teilweise_erwerbsgemindert: bool,
     sozialversicherung__rente__pflichtbeitragsmonate: float,
     sozialversicherung__rente__mindestwartezeit_erfüllt: bool,
-    mindestpflichtbeitragsmonate: int,
+    mindestpflichtbeitragszeiten_monate: int,
 ) -> bool:
     """
     Eligibility for Erwerbsminderungsrente.
@@ -83,7 +83,7 @@ def grundsätzlich_anspruchsberechtigt(
         (voll_erwerbsgemindert or teilweise_erwerbsgemindert)
         and sozialversicherung__rente__mindestwartezeit_erfüllt
         and sozialversicherung__rente__pflichtbeitragsmonate
-        >= mindestpflichtbeitragsmonate
+        >= mindestpflichtbeitragszeiten_monate
     )
 
     return anspruch_erwerbsm_rente
