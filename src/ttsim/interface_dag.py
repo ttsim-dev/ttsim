@@ -76,7 +76,6 @@ def main(
     """
     Main function that processes the inputs and returns the outputs.
     """
-
     input_qnames = _harmonize_inputs(locals())
     if main_target is not None:
         if main_targets is not None:

@@ -18,6 +18,7 @@ from ttsim.interface_dag_elements.fail_if import (
     _ParamWithActivePeriod,
     active_periods_overlap,
     assert_valid_ttsim_pytree,
+    environment_is_invalid,
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
@@ -649,32 +650,6 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         )
 
 
-def test_fail_if_p_id_is_missing(xnp):
-    data = {("fam_id",): xnp.array([1, 2, 3])}
-
-    with pytest.raises(
-        ValueError,
-        match="The input data must contain the `p_id` column.",
-    ):
-        input_data_is_invalid(data)
-
-
-def test_fail_if_p_id_is_missing_via_main(backend):
-    data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
-    with pytest.raises(
-        ValueError,
-        match="The input data must contain the `p_id` column.",
-    ):
-        main(
-            main_target="fail_if__input_data_is_invalid",
-            input_data={"tree": data},
-            policy_environment={},
-            tt_targets={"tree": {}},
-            rounding=False,
-            backend=backend,
-        )
-
-
 @pytest.mark.parametrize(
     "df",
     [
@@ -831,7 +806,7 @@ def test_fail_if_p_id_does_not_exist(xnp):
         input_data_is_invalid(data)
 
 
-def test_fail_if_p_id_does_not_exist_via_main(backend):
+def test_fail_if_p_id_is_missing_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
@@ -842,6 +817,7 @@ def test_fail_if_p_id_does_not_exist_via_main(backend):
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
         )
@@ -870,6 +846,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
         )
@@ -920,6 +897,7 @@ def test_fail_if_input_data_has_different_lengths(backend):
             input_data={"tree": data},
             policy_environment={},
             tt_targets={"tree": {}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
         )
@@ -1028,6 +1006,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             input_data={"tree": minimal_input_data},
             policy_environment={},
             tt_targets={"tree": {"unknown_target": None}},
+            date=datetime.date(2025, 1, 1),
             rounding=False,
             backend=backend,
         )
@@ -1187,4 +1166,202 @@ def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
             tt_targets=MainTarget.policy_environment,
             date_str="2025-01-01",
             backend=backend,
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "tt_targets__tree",
+        "match",
+    ),
+    [
+        (
+            {
+                1: None,
+                "number_of_individuals_kin": None,
+            },
+            "Key 1 in tt_targets__tree must be a string but",
+        ),
+        (
+            {
+                "number_of_individuals_kin": 1,
+            },
+            r"Leaf at tt_targets__tree\[number_of_individuals_kin\] is invalid",
+        ),
+        (
+            ["number_of_individuals_kin"],
+            "tt_targets__tree must be a dict, got",
+        ),
+        (
+            "number_of_individuals_kin",
+            "tt_targets__tree must be a dict, got",
+        ),
+    ],
+)
+def test_invalid_tt_targets_tree(
+    tt_targets__tree,
+    match,
+    backend: Literal["jax", "numpy"],
+    xnp: ModuleType,
+    minimal_data_tree,
+):
+    with pytest.raises(TypeError, match=match):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            backend=backend,
+            input_data=InputData.tree(
+                tree={
+                    **minimal_data_tree,
+                    "kin_id": xnp.array([0, 1, 2]),
+                }
+            ),
+            orig_policy_objects={"root": METTSIM_ROOT},
+            date_str="2025-01-01",
+            tt_targets={"tree": tt_targets__tree},
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "input_data_tree",
+        "match",
+    ),
+    [
+        (
+            {
+                "number_of_individuals_kin": [1],
+            },
+            r"Leaf at input_data__tree\[number_of_individuals_kin\] is invalid",
+        ),
+        (
+            {"number_of_individuals_kin": "1"},
+            r"Leaf at input_data__tree\[number_of_individuals_kin\] is invalid",
+        ),
+    ],
+)
+def test_invalid_input_data_tree_via_main(
+    input_data_tree, match, backend: Literal["jax", "numpy"], xnp: ModuleType
+):
+    input_data_tree_with_p_id = {
+        **input_data_tree,
+        "p_id": xnp.array([2]),
+    }
+    with pytest.raises(TypeError, match=match):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            backend=backend,
+            input_data=InputData.tree(tree=input_data_tree_with_p_id),
+            orig_policy_objects={"root": METTSIM_ROOT},
+            date_str="2025-01-01",
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "policy_environment",
+        "match",
+    ),
+    [
+        (
+            {
+                "invalid_leaf": 42,
+            },
+            r"Leaf at policy_environment\[invalid_leaf\] is invalid",
+        ),
+        (
+            {
+                "nested": {
+                    "invalid_leaf": "not_allowed_string",
+                },
+            },
+            r"Leaf at policy_environment\[nested\]\[invalid_leaf\] is invalid",
+        ),
+        (
+            {
+                "nested": {
+                    "another_invalid": [1, 2, 3],
+                },
+            },
+            r"Leaf at policy_environment\[nested\]\[another_invalid\] is invalid",
+        ),
+        (
+            {
+                "nested": {
+                    "yet_another": {"dict": "not_allowed"},
+                },
+            },
+            r"Leaf at policy_environment\[nested\]\[yet_another\]\[dict\] is invalid",
+        ),
+        (
+            {
+                1: "valid_string",
+            },
+            "Key 1 in policy_environment must be a string but",
+        ),
+        (
+            ["not_a_dict"],
+            "policy_environment must be a dict, got",
+        ),
+    ],
+)
+def test_fail_if_environment_is_invalid(policy_environment, match):
+    with pytest.raises(TypeError, match=match):
+        environment_is_invalid(policy_environment)
+
+
+@pytest.mark.parametrize(
+    "policy_environment",
+    [
+        # Valid environment with policy functions
+        {
+            "valid_func": policy_function(leaf_name="valid_func")(identity),
+            "another_func": policy_function(leaf_name="another_func")(return_one),
+        },
+        # Valid environment with param functions
+        {
+            "valid_param": some_param_func_returning_array_of_length_2,
+            "another_param": some_param_func_returning_list_of_length_2,
+        },
+        # Valid environment with param objects
+        {
+            "valid_param_obj": _SOME_DICT_PARAM,
+            "another_param_obj": _SOME_PIECEWISE_POLYNOMIAL_PARAM,
+        },
+        # Valid environment with module types
+        {
+            "numpy_module": numpy,
+            "jax_string": "jax",
+            "numpy_string": "numpy",
+        },
+        # Valid environment with nested structure
+        {
+            "nested": {
+                "valid_func": policy_function(leaf_name="nested_func")(identity),
+                "valid_param": some_param_func_returning_array_of_length_2,
+            },
+            "top_level": _SOME_DICT_PARAM,
+        },
+        # Valid environment with mixed types
+        {
+            "func": policy_function(leaf_name="func")(identity),
+            "param": some_param_func_returning_array_of_length_2,
+            "param_obj": _SOME_DICT_PARAM,
+            "module": numpy,
+            "backend": "jax",
+        },
+    ],
+)
+def test_environment_is_invalid_passes(policy_environment):
+    """Test that valid environments pass the validation."""
+    environment_is_invalid(policy_environment)
+
+
+def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
+    with pytest.raises(TypeError, match="input_data__tree must be a dict, got"):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            backend=backend,
+            input_data=InputData.tree(tree=object()),
+            orig_policy_objects={"root": METTSIM_ROOT},
+            date_str="2025-01-01",
         )
