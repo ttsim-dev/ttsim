@@ -226,7 +226,7 @@ extend-ignore = [
     "N999", # Allow non-ASCII characters in file names.
     "PLC2401", # Allow non-ASCII characters in variable names.
     "PLC2403", # Allow non-ASCII function names for imports.
-    "PLR0913", # Allow too many arguments in function definitions.
+    "PLR0913", # Allow many arguments in function definitions.
     "PLR5501", # elif not supported by vectorization converter for Jax
     "TRY003", # Avoid specifying long messages outside the exception class
 
@@ -234,7 +234,6 @@ extend-ignore = [
     # ======================================
     "D", # docstrings
     "PT006", # Allows only lists of tuples in parametrize, even if single argument
-    "PT007", # wrong type in parametrize
 ]
 exclude = []
 

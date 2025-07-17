@@ -1014,7 +1014,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
 
 @pytest.mark.parametrize(
     "param_spec, leaf_name, expected",
-    (
+    [
         (
             {
                 "name": {"de": "spam", "en": "spam"},
@@ -1123,7 +1123,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                 ),
             ],
         ),
-    ),
+    ],
 )
 def test_ttsim_param_with_active_periods(
     param_spec: OrigParamSpec,
