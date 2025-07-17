@@ -192,7 +192,10 @@ def bezugsmonate_unter_grenze_fg(
     parent.
 
     """
-    if familie__alleinerziehend or bezugsmonate_partner >= 2:
+    if (
+        familie__alleinerziehend
+        or bezugsmonate_partner >= max_bezugsmonate["partnermonate"]
+    ):
         out = (
             bisherige_bezugsmonate_fg
             < max_bezugsmonate["basismonate"] + max_bezugsmonate["partnermonate"]
@@ -296,5 +299,5 @@ def jüngstes_kind_oder_mehrling(
 
     """
     return (
-        (alter_monate - familie__alter_monate_jüngstes_mitglied_fg) < 0.1
+        (alter_monate - familie__alter_monate_jüngstes_mitglied_fg) < 0.1  # noqa: PLR2004
     ) and ist_leistungsbegründendes_kind

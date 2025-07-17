@@ -686,7 +686,7 @@ def sum_source_m_by_p_id_someone_else(
 
 
 @pytest.mark.parametrize(
-    ("agg_functions, leaf_name, target_tree, expected"),
+    ("agg_functions", "leaf_name", "target_tree", "expected"),
     [
         (
             {

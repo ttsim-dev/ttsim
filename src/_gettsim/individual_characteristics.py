@@ -9,4 +9,4 @@ def alter_bis_24(alter: int) -> bool:
 
     Trivial, but necessary in order to use the target for aggregation.
     """
-    return alter <= 24
+    return alter <= 24  # noqa: PLR2004

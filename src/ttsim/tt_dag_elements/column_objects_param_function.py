@@ -244,12 +244,13 @@ def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None
 
     Raises
     ------
-    AssertionError
+    TypeError
         If rounding_spec is not a RoundingSpec or None.
     """
-    assert isinstance(rounding_spec, RoundingSpec | None), (
-        f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
-    )
+    if not isinstance(rounding_spec, RoundingSpec | None):
+        raise TypeError(
+            f"`rounding_spec` must be a `RoundingSpec` or `None`, got {rounding_spec}"
+        )
 
 
 @dataclass(frozen=True)

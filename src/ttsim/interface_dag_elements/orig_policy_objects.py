@@ -134,7 +134,8 @@ def load_module(path: Path, root: Path) -> ModuleType:
     _msg = f"Could not load module spec for {path},  {root}"
     if spec is None:
         raise ImportError(_msg)
-    assert spec.loader is not None, _msg
+    if spec.loader is None:
+        raise ImportError(_msg)
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)

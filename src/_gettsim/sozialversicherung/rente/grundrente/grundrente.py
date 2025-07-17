@@ -108,18 +108,18 @@ def anzurechnendes_einkommen_m(
     # singles and those for married subjects
     # Note: Thresholds are defined relativ to rentenwert which is implemented by
     # dividing the income by rentenwert and multiply rentenwert to the result.
-    if familie__anzahl_personen_ehe == 2:
+    if familie__anzahl_personen_ehe == 1:
         out = _anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
             rentenwert=sozialversicherung__rente__rentenwert,
-            parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_mit_partner,
+            parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_ohne_partner,
             xnp=xnp,
         )
     else:
         out = _anzurechnendes_einkommen_m(
             einkommen_m_ehe=einkommen_m_ehe,
             rentenwert=sozialversicherung__rente__rentenwert,
-            parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_ohne_partner,
+            parameter_anzurechnendes_einkommen=anzurechnendes_einkommen_mit_partner,
             xnp=xnp,
         )
     return out

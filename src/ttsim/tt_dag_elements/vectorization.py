@@ -385,7 +385,7 @@ def _call_to_call_from_module(
             attr=func_id,
             ctx=ast.Load(),
         )
-    elif func_id in ("max", "min") and len(args) == 2:
+    elif func_id in ("max", "min") and len(args) == 2:  # noqa: PLR2004
         attr = func_id + "imum"  # max -> maximum, min -> minimum
         call.func = ast.Attribute(
             value=ast.Name(id=module, ctx=ast.Load()),

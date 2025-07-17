@@ -79,7 +79,10 @@ class DictParam(ParamObject):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        assert all(x not in self.value for x in ["note", "reference"])
+        if any(x in self.value for x in ["note", "reference"]):
+            raise ValueError(
+                "'note' and 'reference' cannot be keys in the value dictionary"
+            )
 
 
 @dataclass(frozen=True)
@@ -161,7 +164,10 @@ class RawParam(ParamObject):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        assert all(x not in self.value for x in ["note", "reference"])
+        if any(x in self.value for x in ["note", "reference"]):
+            raise ValueError(
+                "'note' and 'reference' cannot be keys in the value dictionary"
+            )
 
 
 @dataclass(frozen=True)
@@ -245,7 +251,8 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
 
     first_m_since_ad_to_consider = _m_since_ad(y=raw.pop("first_year_to_consider"), m=1)
     last_m_since_ad_to_consider = _m_since_ad(y=raw.pop("last_year_to_consider"), m=12)
-    assert all(isinstance(k, int) for k in raw)
+    if not all(isinstance(k, int) for k in raw):
+        raise ValueError("All keys must be integers")
     first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
     first_month_phase_inout: int = min(raw[first_year_phase_inout].keys())
     first_m_since_ad_phase_inout = _m_since_ad(
@@ -258,8 +265,16 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
         y=last_year_phase_inout,
         m=last_month_phase_inout,
     )
-    assert first_m_since_ad_to_consider <= first_m_since_ad_phase_inout
-    assert last_m_since_ad_to_consider >= last_m_since_ad_phase_inout
+    if first_m_since_ad_to_consider > first_m_since_ad_phase_inout:
+        raise ValueError(
+            "`first_m_since_ad_to_consider` must be less than or equal to "
+            "`first_m_since_ad_phase_inout`."
+        )
+    if last_m_since_ad_to_consider < last_m_since_ad_phase_inout:
+        raise ValueError(
+            "`last_m_since_ad_to_consider` must be greater than or equal to "
+            "`last_m_since_ad_phase_inout`."
+        )
     before_phase_inout: dict[int, float] = {
         b_m: _year_fraction(raw[first_year_phase_inout][first_month_phase_inout])
         for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_inout)
@@ -292,11 +307,20 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     """
     first_year_to_consider = raw.pop("first_year_to_consider")
     last_year_to_consider = raw.pop("last_year_to_consider")
-    assert all(isinstance(k, int) for k in raw)
+    if not all(isinstance(k, int) for k in raw):
+        raise ValueError("All keys must be integers")
     first_year_phase_inout: int = sorted(raw)[0]  # type: ignore[assignment]
     last_year_phase_inout: int = sorted(raw)[-1]  # type: ignore[assignment]
-    assert first_year_to_consider <= first_year_phase_inout
-    assert last_year_to_consider >= last_year_phase_inout
+    if first_year_to_consider > first_year_phase_inout:
+        raise ValueError(
+            "`first_year_to_consider` must be less than or equal to "
+            "`first_year_phase_inout`."
+        )
+    if last_year_to_consider < last_year_phase_inout:
+        raise ValueError(
+            "`last_year_to_consider` must be greater than or equal to "
+            "`last_year_phase_inout`."
+        )
     before_phase_inout: dict[int, float] = {
         b_y: _year_fraction(raw[first_year_phase_inout])
         for b_y in range(first_year_to_consider, first_year_phase_inout)

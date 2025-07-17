@@ -191,7 +191,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
+    ("orig_tree_with_column_objects_and_param_functions", "orig_tree_with_params"),
     [
         # Same global module, no overlapping periods, no name clashes.
         (
@@ -372,7 +372,7 @@ def test_fail_if_active_periods_overlap_passes(
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
+    ("orig_tree_with_column_objects_and_param_functions", "orig_tree_with_params"),
     [
         # Exact overlap.
         (
@@ -965,7 +965,12 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
 
 
 @pytest.mark.parametrize(
-    "policy_environment, tt_targets, labels__processed_data_columns, expected_error_match",
+    (
+        "policy_environment",
+        "tt_targets",
+        "labels__processed_data_columns",
+        "expected_error_match",
+    ),
     [
         ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
@@ -1013,8 +1018,8 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
 
 
 @pytest.mark.parametrize(
-    "param_spec, leaf_name, expected",
-    (
+    ("param_spec", "leaf_name", "expected"),
+    [
         (
             {
                 "name": {"de": "spam", "en": "spam"},
@@ -1123,7 +1128,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                 ),
             ],
         ),
-    ),
+    ],
 )
 def test_ttsim_param_with_active_periods(
     param_spec: OrigParamSpec,

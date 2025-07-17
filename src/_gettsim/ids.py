@@ -131,7 +131,7 @@ def _assign_parents_fg_id(
         (p_id_elternteil_loc >= 0)
         * (fg_id == p_id + p_id * n)
         * (hh_id == hh_id[p_id_elternteil_loc])
-        * (alter < 25)
+        * (alter < 25)  # noqa: PLR2004
         * (1 - children),
         fg_id[p_id_elternteil_loc],
         fg_id,
@@ -159,7 +159,7 @@ def bg_id(
     # TODO(@MImmesberger): Remove hard-coded number
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/668
     return xnp.where(
-        (arbeitslosengeld_2__eigenbedarf_gedeckt) * (alter < 25),
+        (arbeitslosengeld_2__eigenbedarf_gedeckt) * (alter < 25),  # noqa: PLR2004
         offset + p_id,
         fg_id,
     )

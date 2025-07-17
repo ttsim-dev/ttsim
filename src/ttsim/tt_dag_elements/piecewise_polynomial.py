@@ -45,9 +45,8 @@ OPTIONS_REGISTRY = {
     ),
 }
 
-assert set(OPTIONS_REGISTRY.keys()) == set(get_args(FUNC_TYPES)), (
-    "Keys in OPTIONS_REGISTRY must match FUNC_TYPES"
-)
+if set(OPTIONS_REGISTRY.keys()) != set(get_args(FUNC_TYPES)):
+    raise ValueError("Keys in OPTIONS_REGISTRY must match FUNC_TYPES")
 
 
 def piecewise_polynomial(
