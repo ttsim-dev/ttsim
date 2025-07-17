@@ -18,7 +18,7 @@ def einkommen_m(
     erwerbseinkommen_m: float,
     einkommen_aus_zusätzlicher_altersvorsorge_m: float,
     gesetzliche_rente_m: float,
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
+    einkommensteuer__einkünfte__sonstige__alle_weiteren_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     kapitaleinkommen_brutto_m: float,
     einkommensteuer__betrag_m_sn: float,
@@ -35,7 +35,7 @@ def einkommen_m(
         erwerbseinkommen_m
         + gesetzliche_rente_m
         + einkommen_aus_zusätzlicher_altersvorsorge_m
-        + einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        + einkommensteuer__einkünfte__sonstige__alle_weiteren_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + kapitaleinkommen_brutto_m
         + elterngeld__anrechenbarer_betrag_m
@@ -111,7 +111,7 @@ def kapitaleinkommen_brutto_m_mit_freibetrag(
 
 @policy_function(start_date="2011-01-01")
 def einkommen_aus_zusätzlicher_altersvorsorge_m(
-    einkommensteuer__einkünfte__sonstige__private_und_betriebliche_renteneinnahmen_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__einnahmen_aus_privaten_und_betrieblichen_renten: float,
     anrechnungsfreier_anteil_private_renteneinkünfte: PiecewisePolynomialParam,
     grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
     xnp: ModuleType,
@@ -122,14 +122,14 @@ def einkommen_aus_zusätzlicher_altersvorsorge_m(
     Legal reference: § 82 SGB XII Abs. 4
     """
     freibetrag = piecewise_polynomial(
-        x=einkommensteuer__einkünfte__sonstige__private_und_betriebliche_renteneinnahmen_m,
+        x=einkommensteuer__einkünfte__sonstige__rente__einnahmen_aus_privaten_und_betrieblichen_renten,
         parameters=anrechnungsfreier_anteil_private_renteneinkünfte,
         xnp=xnp,
     )
     upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
 
     return (
-        einkommensteuer__einkünfte__sonstige__private_und_betriebliche_renteneinnahmen_m
+        einkommensteuer__einkünfte__sonstige__rente__einnahmen_aus_privaten_und_betrieblichen_renten
         - min(
             freibetrag,
             upper,

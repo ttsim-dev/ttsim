@@ -20,15 +20,16 @@ inputs:
             - 0.0
             - 0.0
         sonstige:
-          private_renteneinnahmen_m:
-            - 0.0
-            - 0.0
-          betriebliche_renteneinnahmen_m:
-            - 0.0
-            - 0.0
-          geförderte_private_renteneinnahmen_m:
-            - 0.0
-            - 0.0
+          rente:
+            sonstige_private_vorsorge_m:
+              - 0.0
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
+              - 0.0
         ist_selbstständig:
           - false
           - false

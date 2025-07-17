@@ -56,22 +56,23 @@ inputs:
             - 0.0
             - 0.0
         sonstige:
-          ohne_renten_m:
+          alle_weiteren_m:
             - 0.0
             - 0.0
             - 0.0
-          geförderte_private_renteneinnahmen_m:
-            - 0.0
-            - 0.0
-            - 0.0
-          private_renteneinnahmen_m:
-            - 0.0
-            - 0.0
-            - 0.0
-          betriebliche_renteneinnahmen_m:
-            - 0.0
-            - 0.0
-            - 0.0
+          rente:
+            geförderte_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+            sonstige_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
       gemeinsam_veranlagt:
         - true
         - false

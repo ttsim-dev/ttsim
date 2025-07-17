@@ -30,7 +30,7 @@ inputs:
       - 0.0
     einkommensteuer__einkünfte__ist_selbstständig:
       - false
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m:
+    einkommensteuer__einkünfte__sonstige__alle_weiteren_m:
       - 0.0
     einkommensteuer__gemeinsam_veranlagt:
       - false
@@ -71,13 +71,13 @@ inputs:
       - 0.0
     sozialversicherung__rente__bezieht_rente:
       - false
-    einkommensteuer__einkünfte__sonstige__betriebliche_renteneinnahmen_m:
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m:
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__geförderte_private_renteneinnahmen_m:
+    einkommensteuer__einkünfte__sonstige__geförderte_private_vorsorge_m:
       - 0.0
       - 0.0
-    einkommensteuer__einkünfte__sonstige__private_renteneinnahmen_m:
+    einkommensteuer__einkünfte__sonstige__sonstige_private_vorsorge_m:
       - 0.0
       - 0.0
     unterhalt__tatsächlich_erhaltener_betrag_m:

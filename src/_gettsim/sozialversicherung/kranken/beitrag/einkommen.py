@@ -106,12 +106,12 @@ def bezugsgröße_selbstständige_m(
 @policy_function()
 def bemessungsgrundlage_rente_m(
     sozialversicherung__rente__altersrente__betrag_m: float,
-    einkommensteuer__einkünfte__sonstige__betriebliche_renteneinnahmen_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
     beitragsbemessungsgrenze_m: float,
 ) -> float:
     """Pension income which is subject to health insurance contribution."""
     return min(
         sozialversicherung__rente__altersrente__betrag_m
-        + einkommensteuer__einkünfte__sonstige__betriebliche_renteneinnahmen_m,
+        + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m,
         beitragsbemessungsgrenze_m,
     )
