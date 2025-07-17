@@ -650,33 +650,6 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
         )
 
 
-def test_fail_if_p_id_is_missing(xnp):
-    data = {("fam_id",): xnp.array([1, 2, 3])}
-
-    with pytest.raises(
-        ValueError,
-        match="The input data must contain the `p_id` column.",
-    ):
-        input_data_is_invalid(data)
-
-
-def test_fail_if_p_id_is_missing_via_main(backend):
-    data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
-    with pytest.raises(
-        ValueError,
-        match="The input data must contain the `p_id` column.",
-    ):
-        main(
-            main_target="fail_if__input_data_is_invalid",
-            input_data={"tree": data},
-            policy_environment={},
-            tt_targets={"tree": {}},
-            date=datetime.date(2025, 1, 1),
-            rounding=False,
-            backend=backend,
-        )
-
-
 @pytest.mark.parametrize(
     "df",
     [
@@ -833,7 +806,7 @@ def test_fail_if_p_id_does_not_exist(xnp):
         input_data_is_invalid(data)
 
 
-def test_fail_if_p_id_does_not_exist_via_main(backend):
+def test_fail_if_p_id_is_missing_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
