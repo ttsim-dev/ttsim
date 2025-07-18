@@ -58,7 +58,7 @@ def main(
     tt_targets: TTTargets | None = None,
     rounding: bool = True,
     backend: Literal["numpy", "jax"] = "numpy",
-    evaluation_date_str: DashedISOString | Literal["use other info"] = "use other info",
+    evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,
     include_warn_nodes: bool = True,
     orig_policy_objects: OrigPolicyObjects | None = None,

@@ -186,6 +186,9 @@ tests = "pytest"
 [tool.pixi.feature.jax.tasks]
 tests-jax = "pytest --backend=jax"
 
+[tool.pixi.feature.cuda.tasks]
+tests-jax = "pytest --backend=jax"
+
 [tool.pixi.feature.mypy.tasks]
 mypy = "mypy --ignore-missing-imports"
 

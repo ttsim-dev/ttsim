@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from ttsim.interface_dag_elements.interface_node_objects import (
+    input_dependent_interface_function,
     interface_function,
     interface_input,
 )
@@ -42,15 +43,34 @@ def policy_date(policy_date_str: DashedISOString) -> datetime.date:
     return to_datetime(policy_date_str)
 
 
-@interface_function(in_top_level_namespace=True)
-def evaluation_date(
-    evaluation_date_str: DashedISOString | Literal["use other info"],
+@input_dependent_interface_function(
+    include_if_no_input_present=["evaluation_date_str"],
+    leaf_name="evaluation_date",
+    in_top_level_namespace=True,
+)
+def evaluation_date_use_other_info(
+    backend: Literal["numpy", "jax"],  # noqa: ARG001
 ) -> datetime.date | None:
     """The date to be used as evaluation date in YYYY-MM-DD format.
 
     Will be overridden by values for year / month / day found in the input data or
     parameters.
+
+    *Developer note:* The backend is needed to get some parent in here, else it will be
+    counted as a root node and thus trigger
+    `_fail_if_root_nodes_of_interface_dag_are_missing`.
+
     """
-    if evaluation_date_str == "use other info":
-        return None
+    return None
+
+
+@input_dependent_interface_function(
+    include_if_all_inputs_present=["evaluation_date_str"],
+    leaf_name="evaluation_date",
+    in_top_level_namespace=True,
+)
+def evaluation_date_from_evaluation_date_str(
+    evaluation_date_str: DashedISOString,
+) -> datetime.date | None:
+    """The date to be used as evaluation date."""
     return to_datetime(evaluation_date_str)
