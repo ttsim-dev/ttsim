@@ -82,12 +82,15 @@ def nettoeinkommen_vor_abzug_freibetrag_m(
 @policy_function(start_date="2005-01-01")
 def bruttoeinkommen_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__alle_weiteren_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     sozialversicherung__rente__altersrente__betrag_m: float,
-    sozialversicherung__rente__private_rente_betrag_m: float,
+    sozialversicherung__rente__erwerbsminderung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
     elterngeld__betrag_m: float,
 ) -> float:
@@ -97,12 +100,15 @@ def bruttoeinkommen_m(
     """
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
-        + einkommensteuer__einkünfte__sonstige__ohne_renten_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
+        + einkommensteuer__einkünfte__sonstige__alle_weiteren_m
+        + einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m
         + sozialversicherung__rente__altersrente__betrag_m
-        + sozialversicherung__rente__private_rente_betrag_m
+        + sozialversicherung__rente__erwerbsminderung__betrag_m
         + sozialversicherung__arbeitslosen__betrag_m
         + elterngeld__betrag_m
     )

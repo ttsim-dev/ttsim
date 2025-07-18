@@ -102,11 +102,27 @@ inputs:
           - false
           - false
         sonstige:
-          ohne_renten_m:
+          alle_weiteren_m:
             - 50.0
             - 50.0
             - 50.0
             - 50.0
+          rente:
+            sonstige_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+              - 0.0
       gemeinsam_veranlagt:
         - false
         - false
@@ -367,11 +383,6 @@ inputs:
           - 132.0
           - 168.0
           - 300.0
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
-          - 0.0
-          - 0.0
     unterhalt:
       anspruch_m:
         - 177.0

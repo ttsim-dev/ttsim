@@ -30,8 +30,9 @@ inputs:
           betrag_y:
             - 0.0
         sonstige:
-          renteneinkünfte_vorjahr_m:
-            - 0.0
+          rente:
+            gesamtbetrag_vorjahr_m:
+              - 0.0
     familie:
       p_id_ehepartner:
         - -1

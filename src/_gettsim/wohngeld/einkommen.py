@@ -140,8 +140,8 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
-    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m: float,
+    einkommensteuer__einkünfte__sonstige__alle_weiteren_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betrag_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     abzugsanteil_vom_einkommen_für_steuern_sozialversicherung: float,
@@ -160,13 +160,13 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
+        + einkommensteuer__einkünfte__sonstige__rente__betrag_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
     )
 
     eink_ind = (
-        einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        einkommen + transfers + einkommensteuer__einkünfte__sonstige__alle_weiteren_m
     )
     return (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
 
@@ -178,8 +178,8 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
-    einkommensteuer__einkünfte__sonstige__renteneinkünfte_m: float,
+    einkommensteuer__einkünfte__sonstige__alle_weiteren_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betrag_m: float,
     unterhalt__tatsächlich_erhaltener_betrag_m: float,
     unterhaltsvorschuss__betrag_m: float,
     elterngeld__anrechenbarer_betrag_m: float,
@@ -203,14 +203,14 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
 
     transfers = (
         sozialversicherung__arbeitslosen__betrag_m
-        + einkommensteuer__einkünfte__sonstige__renteneinkünfte_m
+        + einkommensteuer__einkünfte__sonstige__rente__betrag_m
         + unterhalt__tatsächlich_erhaltener_betrag_m
         + unterhaltsvorschuss__betrag_m
         + elterngeld__anrechenbarer_betrag_m
     )
 
     eink_ind = (
-        einkommen + transfers + einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        einkommen + transfers + einkommensteuer__einkünfte__sonstige__alle_weiteren_m
     )
     return (1 - abzugsanteil_vom_einkommen_für_steuern_sozialversicherung) * eink_ind
 
