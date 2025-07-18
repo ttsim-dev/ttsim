@@ -85,9 +85,12 @@ def bruttoeinkommen_m(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     einkommensteuer__einkünfte__sonstige__alle_weiteren_m: float,
-    einkommensteuer__einkünfte__sonstige__rente__einnahmen_aus_privaten_und_betrieblichen_renten: float,
+    einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     sozialversicherung__rente__altersrente__betrag_m: float,
+    sozialversicherung__rente__erwerbsminderung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
     elterngeld__betrag_m: float,
 ) -> float:
@@ -101,8 +104,11 @@ def bruttoeinkommen_m(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
         + einkommensteuer__einkünfte__sonstige__alle_weiteren_m
-        + einkommensteuer__einkünfte__sonstige__rente__einnahmen_aus_privaten_und_betrieblichen_renten
+        + einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m
         + sozialversicherung__rente__altersrente__betrag_m
+        + sozialversicherung__rente__erwerbsminderung__betrag_m
         + sozialversicherung__arbeitslosen__betrag_m
         + elterngeld__betrag_m
     )

@@ -18,6 +18,7 @@ from ttsim.tt_dag_elements import (
 def betrag_m(
     ertragsanteil: float,
     sozialversicherung__rente__altersrente__betrag_m: float,
+    sozialversicherung__rente__erwerbsminderung__betrag_m: float,
     geförderte_private_vorsorge_m: float,
     sonstige_private_vorsorge_m: float,
     betriebliche_altersvorsorge_m: float,
@@ -30,6 +31,7 @@ def betrag_m(
         ertragsanteil
         * (
             sozialversicherung__rente__altersrente__betrag_m
+            + sozialversicherung__rente__erwerbsminderung__betrag_m
             + sonstige_private_vorsorge_m
         )
         + betriebliche_altersvorsorge_m
@@ -48,18 +50,4 @@ def ertragsanteil(
         x=sozialversicherung__rente__jahr_renteneintritt,
         parameters=parameter_ertragsanteil,
         xnp=xnp,
-    )
-
-
-@policy_function()
-def einnahmen_aus_privaten_und_betrieblichen_renten(
-    sonstige_private_vorsorge_m: float,
-    geförderte_private_vorsorge_m: float,
-    betriebliche_altersvorsorge_m: float,
-) -> float:
-    """Private and occupational pension income."""
-    return (
-        sonstige_private_vorsorge_m
-        + geförderte_private_vorsorge_m
-        + betriebliche_altersvorsorge_m
     )

@@ -304,8 +304,11 @@ def einkommen_m(
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__sonstige__alle_weiteren_m: float,
-    einkommensteuer__einkünfte__sonstige__rente__einnahmen_aus_privaten_und_betrieblichen_renten: float,
+    einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
     sozialversicherung__rente__altersrente__betrag_m: float,
+    sozialversicherung__rente__erwerbsminderung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
 ) -> float:
     """Calculate relevant income for advance on alimony payment."""
@@ -316,7 +319,10 @@ def einkommen_m(
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
         + sozialversicherung__rente__altersrente__betrag_m
-        + einkommensteuer__einkünfte__sonstige__rente__einnahmen_aus_privaten_und_betrieblichen_renten
+        + sozialversicherung__rente__erwerbsminderung__betrag_m
+        + einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m
         + sozialversicherung__arbeitslosen__betrag_m
     )
 
