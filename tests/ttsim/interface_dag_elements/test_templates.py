@@ -89,7 +89,7 @@ def test_template_all_outputs_no_inputs(backend):
             },
         },
         rounding=True,
-        policy_date_str="2025-01-01",
+        evaluation_date_str="2025-01-01",
         backend=backend,
     )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
@@ -116,7 +116,7 @@ def test_template_all_outputs_with_inputs(backend, xnp):
             },
         },
         rounding=True,
-        policy_date_str="2025-01-01",
+        evaluation_date_str="2025-01-01",
         backend=backend,
     )
     assert actual == {"a": {"inp2": "FloatColumn"}, "inp1": "IntColumn"}
@@ -135,7 +135,7 @@ def test_template_output_y_no_inputs(backend):
             },
         },
         rounding=True,
-        policy_date_str="2025-01-01",
+        evaluation_date_str="2025-01-01",
         backend=backend,
     )
     assert actual == {"a": {"inp2": "FloatColumn"}}
@@ -163,7 +163,7 @@ def test_template_output_x_with_inputs(backend, xnp):
             },
         },
         rounding=True,
-        policy_date_str="2025-01-01",
+        evaluation_date_str="2025-01-01",
         backend=backend,
     )
     assert actual == {"inp1": "IntColumn"}

@@ -66,9 +66,17 @@ def policy_environment(
     The policy environment for the specified date.
     """
     return {
-        "policy_year": ScalarParam(value=policy_date.year),
-        "policy_month": ScalarParam(value=policy_date.month),
-        "policy_day": ScalarParam(value=policy_date.day),
+        "policy_year": ScalarParam(
+            value=policy_date.year,
+            start_date=policy_date,
+            end_date=policy_date,
+        ),
+        "policy_month": ScalarParam(
+            value=policy_date.month, start_date=policy_date, end_date=policy_date
+        ),
+        "policy_day": ScalarParam(
+            value=policy_date.day, start_date=policy_date, end_date=policy_date
+        ),
         **merge_trees(
             left=_active_column_objects_and_param_functions(
                 orig=orig_policy_objects__column_objects_and_param_functions,

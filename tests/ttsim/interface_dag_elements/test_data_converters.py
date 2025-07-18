@@ -222,7 +222,7 @@ def test_nested_data_to_dataframe(
         main_target="results__tree",
         input_data={"tree": minimal_data_tree},
         policy_environment=environment,
-        policy_date=datetime.date(2024, 1, 1),
+        evaluation_date=datetime.date(2024, 1, 1),
         tt_targets={"tree": tt_targets__tree},
         rounding=False,
         backend=backend,

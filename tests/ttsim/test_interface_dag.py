@@ -215,7 +215,7 @@ def test_harmonize_inputs_main_args_input():
             mapper={"c": "a", "d": "b", "p_id": "p_id"},
         ),
         "tt_targets": TTTargets(tree={"e": "f"}),
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "backend": "numpy",
         "rounding": True,
         "orig_policy_objects": OrigPolicyObjects(
@@ -229,7 +229,7 @@ def test_harmonize_inputs_main_args_input():
         "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
         "tt_targets__tree": {"e": "f"},
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
         "orig_policy_objects__param_specs": {},
         "backend": "numpy",
@@ -246,7 +246,7 @@ def test_harmonize_inputs_tree_input():
             }
         },
         "tt_targets": {"tree": {"e": "f"}},
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "backend": "numpy",
         "rounding": True,
         "orig_policy_objects": {
@@ -260,7 +260,7 @@ def test_harmonize_inputs_tree_input():
         "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
         "tt_targets__tree": {"e": "f"},
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
         "orig_policy_objects__param_specs": {},
         "backend": "numpy",

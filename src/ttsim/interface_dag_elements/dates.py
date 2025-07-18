@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
@@ -43,10 +43,14 @@ def policy_date(policy_date_str: DashedISOString) -> datetime.date:
 
 
 @interface_function(in_top_level_namespace=True)
-def evaluation_date(evaluation_date_str: DashedISOString) -> datetime.date:
+def evaluation_date(
+    evaluation_date_str: DashedISOString | Literal["use other info"],
+) -> datetime.date | None:
     """The date to be used as evaluation date in YYYY-MM-DD format.
 
     Will be overridden by values for year / month / day found in the input data or
     parameters.
     """
+    if evaluation_date_str == "use other info":
+        return None
     return to_datetime(evaluation_date_str)
