@@ -1387,7 +1387,7 @@ def test_raise_tt_root_nodes_are_missing_without_input_data(
         ValueError, match="For computing results, you need to pass data. "
     ):
         main(
-            date_str="2025-01-01",
+            policy_date_str="2025-01-01",
             main_target=main_target,
             backend=backend,
             orig_policy_objects={"root": METTSIM_ROOT},
@@ -1406,7 +1406,7 @@ def test_raise_some_error_without_input_data(
         ),
     ):
         main(
-            date_str="2025-01-01",
+            policy_date_str="2025-01-01",
             main_target=MainTarget.results.df_with_mapper,
             backend=backend,
             orig_policy_objects={"root": METTSIM_ROOT},

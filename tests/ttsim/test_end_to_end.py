@@ -110,7 +110,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
 def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     result_template = main(
         main_target=MainTarget.templates.input_data_dtypes,
-        date_str="2025-01-01",
+        policy_date_str="2025-01-01",
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend=backend,
         tt_targets=TTTargets(tree=TARGETS_TREE),
