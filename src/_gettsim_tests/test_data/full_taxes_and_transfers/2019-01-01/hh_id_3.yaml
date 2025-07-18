@@ -51,8 +51,15 @@ inputs:
         ist_selbstständig:
           - false
         sonstige:
-          ohne_renten_m:
+          alle_weiteren_m:
             - 50.0
+          rente:
+            sonstige_private_vorsorge_m:
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
       gemeinsam_veranlagt:
         - false
     elterngeld:
@@ -166,8 +173,6 @@ inputs:
           - 0.0
         pflichtbeitragsmonate:
           - 336.0
-        private_rente_betrag_m:
-          - 0.0
     unterhalt:
       anspruch_m:
         - 0.0

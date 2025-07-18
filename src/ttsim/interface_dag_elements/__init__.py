@@ -57,7 +57,7 @@ class FailIf(MainTargetABC):
     paths_are_missing_in_targets_tree_mapper: str = (
         "fail_if__paths_are_missing_in_targets_tree_mapper"
     )
-    root_nodes_are_missing: str = "fail_if__root_nodes_are_missing"
+    tt_root_nodes_are_missing: str = "fail_if__tt_root_nodes_are_missing"
     targets_are_not_in_specialized_environment_or_data: str = (
         "fail_if__targets_are_not_in_specialized_environment_or_data"
     )

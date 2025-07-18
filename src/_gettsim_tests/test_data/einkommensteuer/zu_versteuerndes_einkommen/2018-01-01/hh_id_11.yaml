@@ -44,8 +44,15 @@ inputs:
         ist_selbstständig:
           - false
         sonstige:
-          ohne_renten_m:
+          alle_weiteren_m:
             - 0.0
+          rente:
+            sonstige_private_vorsorge_m:
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
       gemeinsam_veranlagt:
         - false
     familie:
@@ -78,13 +85,14 @@ inputs:
           hat_kinder:
             - false
       rente:
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
         altersrente:
           betrag_m:
             - 0.0
         jahr_renteneintritt:
           - 2043
-        private_rente_betrag_m:
-          - 0.0
     wohnort_ost_hh:
       - false
 outputs:

@@ -102,10 +102,5 @@ def pflichtbeitragsmonate() -> float:
 
 
 @policy_input()
-def private_rente_betrag_m() -> float:
-    """Amount of monthly private pension."""
-
-
-@policy_input()
 def pflegeberücksichtigungszeiten_monate() -> float:
     """Total months of home care provision (01.01.1992-31.03.1995)."""

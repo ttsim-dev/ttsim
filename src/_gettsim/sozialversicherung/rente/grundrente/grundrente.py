@@ -29,7 +29,7 @@ def betrag_m(basisbetrag_m: float, anzurechnendes_einkommen_m: float) -> float:
 
 @policy_function(start_date="2021-01-01")
 def einkommen_m(
-    einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__gesamtbetrag_vorjahr_m: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
@@ -57,7 +57,7 @@ def einkommen_m(
     """
     # Sum income over different income sources.
     return (
-        einkommensteuer__einkünfte__sonstige__renteneinkünfte_vorjahr_m
+        einkommensteuer__einkünfte__sonstige__rente__gesamtbetrag_vorjahr_m
         + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m
         + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m  # income from self-employment
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m  # rental income

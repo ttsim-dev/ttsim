@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 @policy_function()
 def einkommen_m(
     erwerbseinkommen_m: float,
-    private_rente_betrag_m: float,
+    einkommen_aus_zusätzlicher_altersvorsorge_m: float,
     gesetzliche_rente_m: float,
-    einkommensteuer__einkünfte__sonstige__ohne_renten_m: float,
+    einkommensteuer__einkünfte__sonstige__alle_weiteren_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     kapitaleinkommen_brutto_m: float,
     einkommensteuer__betrag_m_sn: float,
@@ -34,8 +34,8 @@ def einkommen_m(
     total_income = (
         erwerbseinkommen_m
         + gesetzliche_rente_m
-        + private_rente_betrag_m
-        + einkommensteuer__einkünfte__sonstige__ohne_renten_m
+        + einkommen_aus_zusätzlicher_altersvorsorge_m
+        + einkommensteuer__einkünfte__sonstige__alle_weiteren_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
         + kapitaleinkommen_brutto_m
         + elterngeld__anrechenbarer_betrag_m
@@ -110,8 +110,10 @@ def kapitaleinkommen_brutto_m_mit_freibetrag(
 
 
 @policy_function(start_date="2011-01-01")
-def private_rente_betrag_m(
-    sozialversicherung__rente__private_rente_betrag_m: float,
+def einkommen_aus_zusätzlicher_altersvorsorge_m(
+    einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
     anrechnungsfreier_anteil_private_renteneinkünfte: PiecewisePolynomialParam,
     grundsicherung__regelbedarfsstufen: Regelbedarfsstufen,
     xnp: ModuleType,
@@ -121,18 +123,25 @@ def private_rente_betrag_m(
 
     Legal reference: § 82 SGB XII Abs. 4
     """
-    sozialversicherung__rente__private_rente_betrag_m_amount_exempt = (
-        piecewise_polynomial(
-            x=sozialversicherung__rente__private_rente_betrag_m,
-            parameters=anrechnungsfreier_anteil_private_renteneinkünfte,
-            xnp=xnp,
-        )
+    freibetrag = piecewise_polynomial(
+        x=(
+            einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m
+            + einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m
+            + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m
+        ),
+        parameters=anrechnungsfreier_anteil_private_renteneinkünfte,
+        xnp=xnp,
     )
     upper = grundsicherung__regelbedarfsstufen.rbs_1 / 2
 
-    return sozialversicherung__rente__private_rente_betrag_m - min(
-        sozialversicherung__rente__private_rente_betrag_m_amount_exempt,
-        upper,
+    return (
+        einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m
+        - min(
+            freibetrag,
+            upper,
+        )
     )
 
 
