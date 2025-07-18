@@ -205,6 +205,12 @@ inputs:
             - 0.0
             - 0.0
             - 0.0
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
         beitrag:
           betrag_versicherter_m:
             - 60.32

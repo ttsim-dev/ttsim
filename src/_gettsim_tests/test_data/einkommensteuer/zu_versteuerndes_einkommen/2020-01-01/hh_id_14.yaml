@@ -181,6 +181,12 @@ inputs:
             - 0.0
             - 0.0
             - 0.0
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
         jahr_renteneintritt:
           - 2037
           - 2038

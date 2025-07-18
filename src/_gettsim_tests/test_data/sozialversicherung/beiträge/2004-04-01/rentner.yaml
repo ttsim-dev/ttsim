@@ -43,6 +43,9 @@ inputs:
         altersrente:
           betrag_m:
             - 1000.0
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
     wohnort_ost_hh:
       - false
 outputs:

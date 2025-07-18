@@ -54,6 +54,10 @@ inputs:
           betrag_m:
             - 0.0
             - 0.0
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
+            - 0.0
     wohnort_ost_hh:
       - false
       - true

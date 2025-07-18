@@ -40,6 +40,9 @@ inputs:
           hat_kinder:
             - false
       rente:
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
         altersrente:
           betrag_m:
             - 0.0

@@ -119,6 +119,10 @@ inputs:
           betrag_m:
             - 0.0
             - 0.0
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
+            - 0.0
         jahr_renteneintritt:
           - 2040
           - 2040

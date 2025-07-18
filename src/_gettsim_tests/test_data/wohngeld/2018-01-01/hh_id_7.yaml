@@ -486,6 +486,21 @@ inputs:
             - 0.0
             - 0.0
       rente:
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
+            - 0.0
         altersrente:
           betrag_m:
             - 0.0
