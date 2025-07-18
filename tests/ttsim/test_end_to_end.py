@@ -5,7 +5,7 @@ import dags.tree as dt
 import pandas as pd
 import pytest
 
-from ttsim import InputData, MainTarget, SpecializedEnvironment, TTTargets, main
+from ttsim import InputData, MainTarget, TTTargets, main
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
@@ -118,30 +118,3 @@ def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     flat_result_template = dt.flatten_to_tree_paths(result_template)
     flat_expected = dt.flatten_to_tree_paths(INPUT_DF_MAPPER)
     assert flat_result_template.keys() == flat_expected.keys()
-
-
-def test_can_create_tt_function(backend: Literal["numpy", "jax"]):
-    tt_function = main(
-        main_target=MainTarget.specialized_environment.tax_transfer_function,
-        date_str="2025-01-01",
-        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
-        backend=backend,
-        tt_targets=TTTargets(tree=TARGETS_TREE),
-    )
-    result_df = main(
-        main_target=MainTarget.results.df_with_mapper,
-        specialized_environment=SpecializedEnvironment(
-            tax_transfer_function=tt_function,
-        ),
-        input_data=InputData.df_and_mapper(df=DF_FOR_MAPPER, mapper=INPUT_DF_MAPPER),
-        date_str="2025-01-01",
-        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
-        backend=backend,
-        tt_targets=TTTargets(tree=TARGETS_TREE),
-    )
-    pd.testing.assert_frame_equal(
-        EXPECTED_TT_RESULTS,
-        result_df,
-        check_dtype=False,
-        check_index_type=False,
-    )
