@@ -161,7 +161,7 @@ def with_processed_params_and_scalars(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
-    evaluation_date: datetime.date,
+    evaluation_date: datetime.date | None,
 ) -> SpecEnvWithProcessedParamsAndScalars:
     """Process the parameters and param functions, remove RawParams from the tree.
 
@@ -186,7 +186,8 @@ def with_processed_params_and_scalars(
     Returns
     -------
     The specialized environment with processed parameters and scalars. Input nodes that
-    come in via the processed data are removed from the environment.
+    come in via the processed data are removed from the environment. Evaluation year /
+    month / day are added if not present.
     """
 
     all_nodes = {}
@@ -199,6 +200,18 @@ def with_processed_params_and_scalars(
         else:
             # Leave nodes not in the data what they are.
             all_nodes[n] = f
+
+    if evaluation_date is None:
+        if "evaluation_year" not in all_nodes:
+            all_nodes["evaluation_year"] = all_nodes["policy_year"]
+        if "evaluation_month" not in all_nodes:
+            all_nodes["evaluation_month"] = all_nodes["policy_month"]
+        if "evaluation_day" not in all_nodes:
+            all_nodes["evaluation_day"] = all_nodes["policy_day"]
+    elif "evaluation_year" not in all_nodes:
+        all_nodes["evaluation_year"] = evaluation_date.year
+        all_nodes["evaluation_month"] = evaluation_date.month
+        all_nodes["evaluation_day"] = evaluation_date.day
 
     params = {k: v for k, v in all_nodes.items() if isinstance(v, ParamObject)}
     scalars = {k: v for k, v in all_nodes.items() if isinstance(v, float | int | bool)}
@@ -221,9 +234,6 @@ def with_processed_params_and_scalars(
         xnp=xnp,
         dnp=dnp,
         backend=backend,
-        evaluation_year=evaluation_date.year,
-        evaluation_month=evaluation_date.month,
-        evaluation_day=evaluation_date.day,
     )
     processed_params = merge_trees(
         left={k: v.value for k, v in params.items() if not isinstance(v, RawParam)},
@@ -243,7 +253,6 @@ def with_partialled_params_and_scalars(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
-    evaluation_date: datetime.date,
 ) -> SpecEnvWithPartialledParamsAndScalars:
     """Partial parameters to functions such that they disappear from the DAG.
 
@@ -286,9 +295,6 @@ def with_partialled_params_and_scalars(
         "backend": backend,
         "xnp": xnp,
         "dnp": dnp,
-        "evaluation_year": evaluation_date.year,
-        "evaluation_month": evaluation_date.month,
-        "evaluation_day": evaluation_date.day,
     }
 
     processed_functions = {}

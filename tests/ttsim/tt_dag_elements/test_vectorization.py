@@ -383,7 +383,7 @@ for year in range(1990, 2023):
                     orig=column_objects_and_param_functions(
                         root=Path(__file__).parent.parent / "mettsim"
                     ),
-                    date=datetime.date(year=year, month=1, day=1),
+                    policy_date=datetime.date(year=year, month=1, day=1),
                 ),
             ).items()
             if not isinstance(

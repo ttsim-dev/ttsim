@@ -65,22 +65,27 @@ def policy_environment(
     -------
     The policy environment for the specified date.
     """
-    return merge_trees(
-        left=_active_column_objects_and_param_functions(
-            orig=orig_policy_objects__column_objects_and_param_functions,
-            date=policy_date,
+    return {
+        "policy_year": ScalarParam(value=policy_date.year),
+        "policy_month": ScalarParam(value=policy_date.month),
+        "policy_day": ScalarParam(value=policy_date.day),
+        **merge_trees(
+            left=_active_column_objects_and_param_functions(
+                orig=orig_policy_objects__column_objects_and_param_functions,
+                policy_date=policy_date,
+            ),
+            right=_active_param_objects(
+                orig=orig_policy_objects__param_specs,
+                policy_date=policy_date,
+                xnp=xnp,
+            ),
         ),
-        right=_active_param_objects(
-            orig=orig_policy_objects__param_specs,
-            date=policy_date,
-            xnp=xnp,
-        ),
-    )
+    }
 
 
 def _active_column_objects_and_param_functions(
     orig: FlatColumnObjectsParamFunctions,
-    date: datetime.date,
+    policy_date: datetime.date,
 ) -> NestedColumnObjectsParamFunctions:
     """
     Traverse `root` and return all ColumnObjectParamFunctions for a given date.
@@ -89,7 +94,7 @@ def _active_column_objects_and_param_functions(
     ----------
     root:
         The directory to traverse.
-    date:
+    policy_date:
         The date for which policy objects should be loaded.
 
     Returns
@@ -99,7 +104,7 @@ def _active_column_objects_and_param_functions(
     flat_objects_tree = {
         (*orig_path[:-2], obj.leaf_name): obj
         for orig_path, obj in orig.items()
-        if obj.is_active(date)
+        if obj.is_active(policy_date)
     }
 
     return dt.unflatten_from_tree_paths(flat_objects_tree)
@@ -107,7 +112,7 @@ def _active_column_objects_and_param_functions(
 
 def _active_param_objects(
     orig: FlatOrigParamSpecs,
-    date: datetime.date,
+    policy_date: datetime.date,
     xnp: ModuleType,
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
@@ -118,18 +123,18 @@ def _active_param_objects(
         param = _get_one_param(
             leaf_name=leaf_name,
             spec=orig_params_spec,
-            date=date,
+            policy_date=policy_date,
             xnp=xnp,
         )
         if param is not None:
             flat_tree_with_params[(*path_to_keep, leaf_name)] = param
         if orig_params_spec.get("add_jahresanfang", False):
-            date_jan1 = date.replace(month=1, day=1)
+            date_jan1 = policy_date.replace(month=1, day=1)
             leaf_name_jan1 = f"{leaf_name}_jahresanfang"
             param = _get_one_param(
                 leaf_name=leaf_name_jan1,
                 spec=orig_params_spec,
-                date=date_jan1,
+                policy_date=date_jan1,
                 xnp=xnp,
             )
             if param is not None:
@@ -140,11 +145,13 @@ def _active_param_objects(
 def _get_one_param(  # noqa: PLR0911
     leaf_name: str,
     spec: OrigParamSpec,
-    date: datetime.date,
+    policy_date: datetime.date,
     xnp: ModuleType,
 ) -> ParamObject:
     """Parse the original specification found in the yaml tree to a ParamObject."""
-    cleaned_spec = _clean_one_param_spec(leaf_name=leaf_name, spec=spec, date=date)
+    cleaned_spec = _clean_one_param_spec(
+        leaf_name=leaf_name, spec=spec, policy_date=policy_date
+    )
 
     if cleaned_spec is None:
         return None
@@ -190,11 +197,11 @@ def _get_one_param(  # noqa: PLR0911
 def _clean_one_param_spec(
     leaf_name: str,
     spec: OrigParamSpec,
-    date: datetime.date,
+    policy_date: datetime.date,
 ) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a ParamObject."""
     policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
-    idx = numpy.searchsorted(policy_dates, date, side="right")  # type: ignore[call-overload]
+    idx = numpy.searchsorted(policy_dates, policy_date, side="right")  # type: ignore[call-overload]
     if idx == 0:
         return None
 

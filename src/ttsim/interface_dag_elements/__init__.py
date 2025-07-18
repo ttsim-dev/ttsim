@@ -149,12 +149,10 @@ class MainTarget(MainTargetABC):
     processed_data: str = "processed_data"
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
-    date_str: str = "date_str"
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
     num_segments: str = "num_segments"
     backend: str = "backend"
-    date: str = "date"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"
     policy_date_str: str = "policy_date_str"
