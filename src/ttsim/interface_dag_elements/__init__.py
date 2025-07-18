@@ -23,6 +23,9 @@ class WarnIf(MainTargetABC):
     functions_and_data_columns_overlap: str = (
         "warn_if__functions_and_data_columns_overlap"
     )
+    evaluation_date_set_in_multiple_places: str = (
+        "warn_if__evaluation_date_set_in_multiple_places"
+    )
 
 
 @dataclass(frozen=True)

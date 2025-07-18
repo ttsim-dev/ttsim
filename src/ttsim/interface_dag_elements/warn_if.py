@@ -13,9 +13,12 @@ from ttsim.interface_dag_elements.interface_node_objects import warn_function
 from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
+    import datetime
+
     from ttsim.interface_dag_elements.typing import (
         OrderedQNames,
         PolicyEnvironment,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         UnorderedQNames,
     )
 
@@ -83,5 +86,58 @@ def functions_and_data_columns_overlap(
     if len(overridden_elements) > 0:
         warnings.warn(
             FunctionsAndDataColumnsOverlapWarning(overridden_elements),
+            stacklevel=2,
+        )
+
+
+class EvaluationDateSetInMultiplePlacesWarning(UserWarning):
+    """
+    Warning that evaluation date is set in multiple places.
+
+    Parameters
+    ----------
+    columns_overriding_functions : UnorderedQNames
+        Names of columns in the data that override hard-coded functions.
+    """
+
+    def __init__(self) -> None:
+        msg = format_errors_and_warnings(
+            """
+                You have passed an evaluation date to `main` and an `evaluation year` is
+                present in the specialized environment without tree logic and with
+                derived functions.
+
+                Only the `evaluation_year` from the environment will be used, the
+                argument you have passed to `main` will not have an effect.
+
+                Note that this warnings function does not check for `evaluation_month`
+                and `evaluation_day` in the environment; nothing will be done about
+                them.
+                """,
+        )
+        super().__init__(msg)
+
+
+@warn_function(
+    include_if_all_elements_present=[
+        "specialized_environment__with_processed_params_and_scalars"
+    ]
+)
+def evaluation_date_set_in_multiple_places(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    evaluation_date: datetime.date | None,
+) -> None:
+    """Warn if evaluation date is passed as an argument to `main` and it is also
+    present in the environment.
+
+    """
+
+    if (
+        evaluation_date is not None
+        and "evaluation_year"
+        in specialized_environment__without_tree_logic_and_with_derived_functions
+    ):
+        warnings.warn(
+            EvaluationDateSetInMultiplePlacesWarning(),
             stacklevel=2,
         )

@@ -126,7 +126,7 @@ def test_interface_dag_is_complete() -> None:
         )
 
 
-def test_all_output_names_is_complete() -> None:
+def test_main_target_class_is_complete() -> None:
     # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
     # we only care about some function with a leaf name, not the precise content.
     nodes = {
@@ -143,9 +143,9 @@ def test_all_output_names_is_complete() -> None:
         ),
     }
 
-    all_output_names = set(dt.tree_paths(MainTarget.to_dict()))
+    main_target_elements = set(dt.tree_paths(MainTarget.to_dict()))
 
-    assert nodes == all_output_names
+    assert nodes == main_target_elements
 
 
 def _replace_idif_with_interface_inputs(
