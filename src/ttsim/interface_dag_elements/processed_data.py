@@ -32,15 +32,15 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
     processed_input_data = {}
     orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])
     internal_p_ids = reorder_ids(ids=orig_p_ids, xnp=xnp)
+    sort_indices = xnp.argsort(orig_p_ids)
+    sorted_orig_ids = orig_p_ids[sort_indices]
+    sorted_internal_ids = internal_p_ids[sort_indices]
     for path, data in input_data__flat.items():
         qname = dt.qname_from_tree_path(path)
         if path[-1].endswith("_id"):
             processed_input_data[qname] = reorder_ids(ids=xnp.asarray(data), xnp=xnp)
         elif path[-1].startswith("p_id_"):
             data_array = xnp.asarray(data)
-            sort_indices = xnp.argsort(orig_p_ids)
-            sorted_orig_ids = orig_p_ids[sort_indices]
-            sorted_internal_ids = internal_p_ids[sort_indices]
             insert_positions = xnp.searchsorted(sorted_orig_ids, data_array)
             variable_with_new_ids = xnp.where(
                 sorted_orig_ids[insert_positions] == data_array,
