@@ -564,13 +564,13 @@ def test_fail_if_foreign_keys_are_invalid_in_data_allow_minus_one_as_foreign_key
 ):
     flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([-1, 1, 2]),
+        ("p_id",): pd.Series([1, 2, 3]),
+        ("p_id_spouse",): pd.Series([-1, 1, 2]),
     }
 
     foreign_keys_are_invalid_in_data(
-        labels__root_nodes={n for n in data if n != "p_id"},
-        processed_data=data,
+        labels__root_nodes={dt.qname_from_tree_path(n) for n in data if n != ("p_id",)},
+        input_data__flat=data,
         specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
@@ -580,14 +580,16 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_non
 ):
     flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_spouse": pd.Series([0, 1, 2]),
+        ("p_id",): pd.Series([1, 2, 3]),
+        ("p_id_spouse",): pd.Series([0, 1, 2]),
     }
 
     with pytest.raises(ValueError, match=r"not a valid p_id in the\sinput data"):
         foreign_keys_are_invalid_in_data(
-            labels__root_nodes={n for n in data if n != "p_id"},
-            processed_data=data,
+            labels__root_nodes={
+                dt.qname_from_tree_path(n) for n in data if n != ("p_id",)
+            },
+            input_data__flat=data,
             specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
         )
 
@@ -597,13 +599,13 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
 ):
     flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "p_id_child_": pd.Series([1, 3, 3]),
+        ("p_id",): pd.Series([1, 2, 3]),
+        ("p_id_child_",): pd.Series([1, 3, 3]),
     }
 
     foreign_keys_are_invalid_in_data(
-        labels__root_nodes={n for n in data if n != "p_id"},
-        processed_data=data,
+        labels__root_nodes={dt.qname_from_tree_path(n) for n in data if n != ("p_id",)},
+        input_data__flat=data,
         specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 
@@ -613,13 +615,13 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
 ):
     flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
-        "p_id": pd.Series([1, 2, 3]),
-        "child_tax_credit__p_id_recipient": pd.Series([1, 3, 3]),
+        ("p_id",): pd.Series([1, 2, 3]),
+        ("child_tax_credit__p_id_recipient",): pd.Series([1, 3, 3]),
     }
 
     foreign_keys_are_invalid_in_data(
-        labels__root_nodes={n for n in data if n != "p_id"},
-        processed_data=data,
+        labels__root_nodes={dt.qname_from_tree_path(n) for n in data if n != ("p_id",)},
+        input_data__flat=data,
         specialized_environment__without_tree_logic_and_with_derived_functions=flat_objects_tree,
     )
 

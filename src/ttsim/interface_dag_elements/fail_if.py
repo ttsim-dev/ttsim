@@ -351,7 +351,7 @@ def environment_is_invalid(
 @fail_function()
 def foreign_keys_are_invalid_in_data(
     labels__root_nodes: UnorderedQNames,
-    processed_data: QNameData,
+    input_data__flat: FlatData,
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> None:
     """
@@ -361,10 +361,9 @@ def foreign_keys_are_invalid_in_data(
     to the `p_id` of the same row.
 
     We test this only in the columns that are actually used, not in some `p_id_xxx`
-    column that may be present in the data. Note that the function `processed_data`
-    leaves foreign keys that are not present in the `p_id` column unchanged.
+    column that may be present in the data.
     """
-    valid_ids = set(processed_data["p_id"].tolist()) | {-1}
+    valid_ids = set(input_data__flat[("p_id",)].tolist()) | {-1}
     relevant_objects = {
         k: v
         for k, v in specialized_environment__without_tree_logic_and_with_derived_functions.items()
@@ -377,11 +376,11 @@ def foreign_keys_are_invalid_in_data(
         if fk_name in labels__root_nodes:
             path = dt.tree_path_from_qname(fk_name)
             # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in processed_data[fk_name].tolist()):
+            if not all(i in valid_ids for i in input_data__flat[path].tolist()):
                 message = format_errors_and_warnings(
                     f"""
                     For {path}, the following are not a valid p_id in the input
-                    data: {[i for i in processed_data[fk_name] if i not in valid_ids]}.
+                    data: {[i for i in input_data__flat[path] if i not in valid_ids]}.
                     """,
                 )
                 raise ValueError(message)
@@ -390,8 +389,8 @@ def foreign_keys_are_invalid_in_data(
                 equal_to_pid_in_same_row = [
                     i
                     for i, j in zip(
-                        processed_data[fk_name].tolist(),
-                        processed_data["p_id"].tolist(),
+                        input_data__flat[path].tolist(),
+                        input_data__flat[("p_id",)].tolist(),
                         strict=False,
                     )
                     if i == j
