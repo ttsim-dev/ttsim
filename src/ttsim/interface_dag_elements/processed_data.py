@@ -46,6 +46,7 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
         elif path[-1].startswith("p_id_"):
             data_array = xnp.asarray(data)
             insert_positions = xnp.searchsorted(sorted_orig_ids, data_array)
+            insert_positions = xnp.minimum(insert_positions, len(sorted_orig_ids) - 1)
             variable_with_new_ids = xnp.where(
                 sorted_orig_ids[insert_positions] == data_array,
                 sorted_internal_ids[insert_positions],
