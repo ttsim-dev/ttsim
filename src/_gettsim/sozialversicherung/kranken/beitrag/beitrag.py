@@ -88,7 +88,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
 ) -> float:
     """Employer's public health insurance contribution.
 
-    Special rules for marginale employment have been introduced in April 1999 as part of
+    Special rules for marginal employment have been introduced in April 1999 as part of
     the '630 Mark' job introduction.
     """
     if einkommensteuer__einkünfte__ist_selbstständig:
