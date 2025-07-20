@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import numpy
 import pytest
-from dags import concatenate_functions
 from numpy.testing import assert_array_equal
 
 from ttsim.interface_dag_elements.orig_policy_objects import (
@@ -720,7 +719,7 @@ def test_make_vectorizable_policy_func(backend, xnp):
 # ======================================================================================
 
 
-def test_make_vectorizable_concatened_func():
+def test_make_vectorizable_nested_func():
     def f_a(x: int) -> int:
         return x
 
@@ -731,28 +730,6 @@ def test_make_vectorizable_concatened_func():
         return f_b(f_a(x))
 
     vectorized = _make_vectorizable(f_manual, backend="numpy", xnp=numpy)
-    got = vectorized(numpy.array([1, 2, 3]))
-    exp = numpy.array([3, 4, 5])
-    assert_array_equal(got, exp)
-
-
-@pytest.mark.xfail(reason="Make vectorizable does not work on dags concatenated funcs.")
-def test_make_vectorizable_dags_concatened_func():
-    def f_a(x: int) -> int:
-        return x
-
-    def f_b(a: int) -> int:
-        return a + 2
-
-    f_dags = concatenate_functions(
-        functions={
-            "a": f_a,
-            "b": f_b,
-        },
-        targets=["b"],
-    )
-
-    vectorized = _make_vectorizable(f_dags, backend="numpy", xnp=numpy)
     got = vectorized(numpy.array([1, 2, 3]))
     exp = numpy.array([3, 4, 5])
     assert_array_equal(got, exp)
