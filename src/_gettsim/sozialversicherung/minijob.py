@@ -5,14 +5,15 @@ from __future__ import annotations
 from ttsim.tt_dag_elements import RoundingSpec, policy_function
 
 
-@policy_function()
+@policy_function(start_date="1999-04-01")
 def geringfügig_beschäftigt(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     minijobgrenze: float,
 ) -> bool:
     """Individual earns less than marginal employment threshold.
 
-    Marginal employed pay no social insurance contributions.
+    Special rules for marginal employment have been introduced in April 1999 as part of
+    the '630 Mark' job introduction.
 
     Legal reference: § 8 Abs. 1 Satz 1 and 2 SGB IV
     """

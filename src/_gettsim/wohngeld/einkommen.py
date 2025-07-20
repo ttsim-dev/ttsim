@@ -136,7 +136,7 @@ def abzugsanteil_vom_einkommen_für_steuern_sozialversicherung(
 @policy_function(end_date="2006-12-31", leaf_name="einkommen_vor_freibetrag_m")
 def einkommen_vor_freibetrag_m_ohne_elterngeld(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__einnahmen_nach_abzug_werbungskosten_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
@@ -153,7 +153,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
     """
     einkommen = (
         einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m
+        + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__einnahmen_nach_abzug_werbungskosten_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
     )
@@ -174,7 +174,7 @@ def einkommen_vor_freibetrag_m_ohne_elterngeld(
 @policy_function(start_date="2007-01-01", leaf_name="einkommen_vor_freibetrag_m")
 def einkommen_vor_freibetrag_m_mit_elterngeld(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__einnahmen_nach_abzug_werbungskosten_m: float,
     einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m: float,
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
     sozialversicherung__arbeitslosen__betrag_m: float,
@@ -196,7 +196,7 @@ def einkommen_vor_freibetrag_m_mit_elterngeld(
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/357
     einkommen = (
         einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m
-        + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__betrag_ohne_minijob_m
+        + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__einnahmen_nach_abzug_werbungskosten_m
         + einkommensteuer__einkünfte__aus_kapitalvermögen__kapitalerträge_m
         + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m
     )

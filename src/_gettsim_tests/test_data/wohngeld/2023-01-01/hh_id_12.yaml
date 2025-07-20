@@ -27,7 +27,7 @@ inputs:
           kapitalerträge_y:
             - 0.0
         aus_nichtselbstständiger_arbeit:
-          betrag_ohne_minijob_y:
+          einnahmen_nach_abzug_werbungskosten_y:
             - 12600.0
           bruttolohn_m:
             - 1050.0

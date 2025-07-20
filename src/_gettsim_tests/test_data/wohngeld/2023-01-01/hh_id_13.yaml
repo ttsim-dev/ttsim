@@ -43,7 +43,7 @@ inputs:
             - 0.0
             - 0.0
         aus_nichtselbstständiger_arbeit:
-          betrag_ohne_minijob_y:
+          einnahmen_nach_abzug_werbungskosten_y:
             - 10800.0
             - 12600.0
             - 0.0

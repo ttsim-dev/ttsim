@@ -5,19 +5,22 @@ from __future__ import annotations
 from ttsim.tt_dag_elements import policy_function
 
 
-@policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")
+@policy_function(
+    start_date="1999-04-01", end_date="2003-03-31", leaf_name="betrag_versicherter_m"
+)
 def betrag_versicherter_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
-    betrag_versicherter_regulär_beschäftigt_m: float,
+    betrag_versicherter_regulärer_beitragssatz: float,
 ) -> float:
     """Public pension insurance contributions paid by the insured person.
 
-    Before Midijob introduction in April 2003.
+    Special rules for marginal employment have been introduced in April 1999 as part of
+    the '630 Mark' job introduction.
     """
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     return out
 
@@ -26,7 +29,7 @@ def betrag_versicherter_m_ohne_midijob(
 def betrag_versicherter_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_in_gleitzone_arbeitnehmer_m: float,
-    betrag_versicherter_regulär_beschäftigt_m: float,
+    betrag_versicherter_regulärer_beitragssatz: float,
     sozialversicherung__in_gleitzone: bool,
 ) -> float:
     """Public pension insurance contributions paid by the insured person.
@@ -38,57 +41,49 @@ def betrag_versicherter_m_mit_midijob(
     elif sozialversicherung__in_gleitzone:
         out = betrag_in_gleitzone_arbeitnehmer_m
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     return out
 
 
 @policy_function()
-def betrag_versicherter_regulär_beschäftigt_m(
+def betrag_versicherter_regulärer_beitragssatz(
     einkommen_m: float,
     beitragssatz: float,
 ) -> float:
-    """Public pension insurance contributions paid by the insured person.
-
-    Before Midijob introduction in April 2003.
-    """
+    """Public pension insurance contributions paid by the insured person."""
     return einkommen_m * beitragssatz / 2
 
 
 @policy_function(
-    end_date="1998-12-31",
+    end_date="1999-03-31",
     leaf_name="betrag_arbeitgeber_m",
 )
 def betrag_arbeitgeber_m_ohne_arbeitgeberpauschale(
-    sozialversicherung__geringfügig_beschäftigt: bool,
-    betrag_versicherter_regulär_beschäftigt_m: float,
+    betrag_versicherter_regulärer_beitragssatz: float,
 ) -> float:
     """Employer's public pension insurance contribution.
 
     Before Minijobs were subject to pension contributions.
     """
-    if sozialversicherung__geringfügig_beschäftigt:
-        out = 0.0
-    else:
-        out = betrag_versicherter_regulär_beschäftigt_m
-
-    return out
+    return betrag_versicherter_regulärer_beitragssatz
 
 
 @policy_function(
-    start_date="1999-01-01",
+    start_date="1999-04-01",
     end_date="2003-03-31",
     leaf_name="betrag_arbeitgeber_m",
 )
 def betrag_arbeitgeber_m_mit_arbeitgeberpauschale(
     sozialversicherung__geringfügig_beschäftigt: bool,
-    betrag_versicherter_regulär_beschäftigt_m: float,
+    betrag_versicherter_regulärer_beitragssatz: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     minijob_arbeitgeberpauschale: float,
 ) -> float:
     """Employer's public pension insurance contribution.
 
-    Before Midijob introduction in April 2003.
+    Special rules for marginal employment have been introduced in April 1999 as part of
+    the '630 Mark' job introduction.
     """
     if sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -96,7 +91,7 @@ def betrag_arbeitgeber_m_mit_arbeitgeberpauschale(
             * minijob_arbeitgeberpauschale
         )
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     return out
 
@@ -105,7 +100,7 @@ def betrag_arbeitgeber_m_mit_arbeitgeberpauschale(
 def betrag_arbeitgeber_m_mit_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_in_gleitzone_arbeitgeber_m: float,
-    betrag_versicherter_regulär_beschäftigt_m: float,
+    betrag_versicherter_regulärer_beitragssatz: float,
     sozialversicherung__in_gleitzone: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     minijob_arbeitgeberpauschale: float,
@@ -122,7 +117,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     elif sozialversicherung__in_gleitzone:
         out = betrag_in_gleitzone_arbeitgeber_m
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     return out
 
