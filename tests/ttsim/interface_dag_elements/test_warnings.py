@@ -106,9 +106,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
         )
 
 
-def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(
-    backend, xnp
-):
+def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
     policy_environment = {
         "policy_year": ScalarParam(value=2025),
         "policy_month": ScalarParam(value=1),
