@@ -52,13 +52,13 @@ def test_processed_data_foreign_key_inside_bounds(xnp):
     # `fail_if.foreign_keys_are_invalid_in_data`.
     input_data__flat = {
         ("p_id",): numpy.array([5, 333, 7, 2]),
-        ("hh_id",): numpy.array([55555, 7, 3, 55555]),
-        ("n0", "p_id_whatever"): numpy.array([-1, 333, 22, -1]),
+        ("hh_id",): numpy.array([55555, 7, 4444, 55555]),
+        ("n0", "p_id_whatever"): numpy.array([-1, 333, 3, -1]),
     }
     expected = {
         "p_id": xnp.array([1, 3, 2, 0]),
-        "hh_id": xnp.array([2, 1, 0, 2]),
-        "n0__p_id_whatever": xnp.array([-1, 3, 2, -1]),
+        "hh_id": xnp.array([2, 0, 1, 2]),
+        "n0__p_id_whatever": xnp.array([-1, 3, 3, -1]),
     }
     pd.testing.assert_frame_equal(
         pd.DataFrame(processed_data(input_data__flat=input_data__flat, xnp=xnp)),
