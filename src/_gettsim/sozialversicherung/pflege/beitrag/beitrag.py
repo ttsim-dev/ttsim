@@ -219,7 +219,7 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
             + sozialversicherung__midijob_bemessungsentgelt_m
             * beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
         )
-    if anzahl_kinder_bis_24 >= 2:
+    if anzahl_kinder_bis_24 > 1:
         add = add - (
             sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
             * beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"]

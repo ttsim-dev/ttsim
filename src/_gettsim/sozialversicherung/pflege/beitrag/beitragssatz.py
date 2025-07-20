@@ -60,7 +60,7 @@ def beitragssatz_arbeitnehmer_mit_abschlag_nach_kinderzahl(
     add = 0.0
     if zahlt_zusatzbetrag_kinderlos:
         add = add + beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
-    if anzahl_kinder_bis_24 >= 2:
+    if anzahl_kinder_bis_24 > 1:
         add = add - beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"] * min(
             anzahl_kinder_bis_24 - 1,
             4,

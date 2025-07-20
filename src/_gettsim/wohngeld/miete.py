@@ -38,7 +38,8 @@ def max_miete_m_lookup_mit_baujahr(
     tmp = raw_max_miete_m_nach_baujahr.copy()
     per_additional_person = tmp.pop("jede_weitere_person")
     max_n_p_defined = max(tmp.keys())
-    assert all(isinstance(i, int) for i in tmp)
+    if not all(isinstance(i, int) for i in tmp):
+        raise ValueError("All keys must be integers")
     baujahre = sorted(tmp[1].keys())
     lookup_dict = {}
     for i, baujahr in enumerate(baujahre):
@@ -69,7 +70,8 @@ def max_miete_m_lookup_ohne_baujahr(
     expanded = raw_max_miete_m.copy()
     per_additional_person = expanded.pop("jede_weitere_person")
     max_n_p_defined = max(expanded.keys())
-    assert all(isinstance(i, int) for i in expanded)
+    if not all(isinstance(i, int) for i in expanded):
+        raise ValueError("All keys must be integers")
     for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
         expanded[n_p] = {
             ms: expanded[max_n_p_defined][ms]
@@ -87,13 +89,14 @@ def min_miete_lookup(
 ) -> ConsecutiveIntLookupTableParamValue:
     """Minimum rent considered in Wohngeld calculation."""
     max_n_p_normal = max_anzahl_personen["normale_berechnung"]
-    assert max(raw_min_miete_m.keys()) == max_n_p_normal, (
-        "The maximum number of persons for the normal calculation of the basic"
-        "Wohngeld formula `max_anzahl_personen['normale_berechnung'] "
-        f"(got: {max_n_p_normal}) must be the same as the maximum number of household "
-        "members in `koeffizienten_berechnungsformel` "
-        f"(got: {max(raw_min_miete_m.keys())})"
-    )
+    if max(raw_min_miete_m.keys()) != max_n_p_normal:
+        raise ValueError(
+            "The maximum number of persons for the normal calculation of the basic"
+            "Wohngeld formula `max_anzahl_personen['normale_berechnung'] "
+            f"(got: {max_n_p_normal}) must be the same as the maximum number of household "
+            "members in `koeffizienten_berechnungsformel` "
+            f"(got: {max(raw_min_miete_m.keys())})"
+        )
     expanded = raw_min_miete_m.copy()
     for n_p in range(max_n_p_normal + 1, max_anzahl_personen["indizierung"] + 1):
         expanded[n_p] = raw_min_miete_m[max_n_p_normal]
@@ -110,7 +113,8 @@ def heizkostenentlastung_m_lookup(
     expanded = raw_heizkostenentlastung_m.copy()
     per_additional_person = expanded.pop("jede_weitere_person")
     max_n_p_defined = max(expanded.keys())
-    assert all(isinstance(i, int) for i in expanded)
+    if not all(isinstance(i, int) for i in expanded):
+        raise ValueError("All keys must be integers")
     for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
@@ -128,7 +132,8 @@ def dauerhafte_heizkostenkomponente_m_lookup(
     expanded = raw_dauerhafte_heizkostenkomponente_m.copy()
     per_additional_person = expanded.pop("jede_weitere_person")
     max_n_p_defined = max(expanded.keys())
-    assert all(isinstance(i, int) for i in expanded)
+    if not all(isinstance(i, int) for i in expanded):
+        raise ValueError("All keys must be integers")
     for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]
@@ -146,7 +151,8 @@ def klimakomponente_m_lookup(
     expanded = raw_klimakomponente_m.copy()
     per_additional_person = expanded.pop("jede_weitere_person")
     max_n_p_defined = max(expanded.keys())
-    assert all(isinstance(i, int) for i in expanded)
+    if not all(isinstance(i, int) for i in expanded):
+        raise ValueError("All keys must be integers")
     for n_p in range(max_n_p_defined + 1, max_anzahl_personen["indizierung"] + 1):  # type: ignore[operator]
         expanded[n_p] = (
             expanded[max_n_p_defined] + (n_p - max_n_p_defined) * per_additional_person  # type: ignore[operator]

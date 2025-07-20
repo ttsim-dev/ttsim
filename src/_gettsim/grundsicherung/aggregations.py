@@ -18,7 +18,7 @@ def ist_kind_in_einstandsgemeinschaft(alter: IntColumn) -> BoolColumn:
     # Einstandsgemeinschaft. This is not necessarily true. Rewrite once we refactor SGB
     # XII.
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/738
-    return alter <= 17
+    return alter <= 17  # noqa: PLR2004
 
 
 @policy_function()

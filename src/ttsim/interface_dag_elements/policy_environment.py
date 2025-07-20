@@ -221,9 +221,10 @@ def _clean_one_param_spec(
         )
         # Parameter ceased to exist
     if spec["type"] == "scalar":
-        assert "updates_previous" not in current_spec, (
-            "'updates_previous' cannot be specified for scalar parameters"
-        )
+        if "updates_previous" in current_spec:
+            raise ValueError(
+                "'updates_previous' cannot be specified for scalar parameters"
+            )
         out["value"] = current_spec["value"]
     else:
         out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
@@ -243,10 +244,11 @@ def _get_param_value(
     current_spec.pop("note", None)
     current_spec.pop("reference", None)
     if updates_previous:
-        assert len(relevant_specs) > 1, (
-            "'updates_previous' cannot be missing in the initial spec, found "
-            f"{relevant_specs}"
-        )
+        if len(relevant_specs) <= 1:
+            raise ValueError(
+                "'updates_previous' cannot be missing in the initial spec, found "
+                f"{relevant_specs}"
+            )
         return upsert_tree(
             base=_get_param_value(relevant_specs=relevant_specs[:-1]),
             to_upsert=current_spec,

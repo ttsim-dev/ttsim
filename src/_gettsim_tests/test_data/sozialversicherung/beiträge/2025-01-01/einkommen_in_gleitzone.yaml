@@ -22,6 +22,20 @@ inputs:
             - 0.0
             - 0.0
             - 0.0
+        sonstige:
+          rente:
+            sonstige_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
         ist_selbstständig:
           - false
           - false
@@ -52,15 +66,16 @@ inputs:
             - true
             - true
       rente:
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
         altersrente:
           betrag_m:
             - 0.0
             - 0.0
             - 0.0
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
-          - 0.0
     wohnort_ost_hh:
       - false
       - false

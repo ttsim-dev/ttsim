@@ -45,10 +45,10 @@ def some_policy_function():
 
 
 @pytest.mark.parametrize(
-    ("include_fail_and_warn_nodes",),
+    "include_fail_and_warn_nodes",
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 def test_plot_full_interface_dag(include_fail_and_warn_nodes):

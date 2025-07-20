@@ -74,7 +74,7 @@ def ist_kind_bis_17_in_bedarfsgemeinschaft(
     alter: int, ist_kind_in_bedarfsgemeinschaft: bool
 ) -> bool:
     """Child under the age of 18 in Bedarfsgemeinschaft."""
-    return ist_kind_in_bedarfsgemeinschaft and (alter <= 17)
+    return ist_kind_in_bedarfsgemeinschaft and (alter <= 17)  # noqa: PLR2004
 
 
 @agg_by_group_function(start_date="2005-01-01", agg_type=AggType.SUM)

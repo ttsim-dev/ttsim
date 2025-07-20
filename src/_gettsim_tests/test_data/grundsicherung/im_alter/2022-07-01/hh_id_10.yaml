@@ -32,8 +32,15 @@ inputs:
           betrag_m:
             - 0.0
         sonstige:
-          ohne_renten_m:
+          alle_weiteren_m:
             - 0.0
+          rente:
+            sonstige_private_vorsorge_m:
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
       gemeinsam_veranlagt:
         - false
     elterngeld:
@@ -85,8 +92,6 @@ inputs:
         grundrente:
           grundrentenzeiten_monate:
             - 120
-        private_rente_betrag_m:
-          - 0.0
     unterhalt:
       tatsächlich_erhaltener_betrag_m:
         - 0.0

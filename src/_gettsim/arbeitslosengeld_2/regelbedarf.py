@@ -58,8 +58,8 @@ def mehrbedarf_alleinerziehend_m(
 
     if (
         familie__anzahl_kinder_bis_6_fg == 1
-        or familie__anzahl_kinder_bis_15_fg == 2
-        or familie__anzahl_kinder_bis_15_fg == 3
+        or familie__anzahl_kinder_bis_15_fg == 2  # noqa: PLR2004
+        or familie__anzahl_kinder_bis_15_fg == 3  # noqa: PLR2004
     ):
         mehrbedarf = max(
             parameter_mehrbedarf_alleinerziehend["kind_bis_6_oder_2_3_kinder_bis_15"],

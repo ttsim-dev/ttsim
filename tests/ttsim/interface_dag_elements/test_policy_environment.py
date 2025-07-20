@@ -96,7 +96,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
 
 
 @pytest.mark.parametrize(
-    "date_string, expected",
+    ("date_string", "expected"),
     [
         ("2023-01-20", datetime.date(2023, 1, 20)),
     ],
@@ -137,7 +137,7 @@ def test_start_date_missing():
 
 
 @pytest.mark.parametrize(
-    "date_string, expected",
+    ("date_string", "expected"),
     [
         ("2023-01-20", datetime.date(2023, 1, 20)),
     ],
@@ -186,7 +186,7 @@ def test_active_period_is_empty():
 
 
 @pytest.mark.parametrize(
-    "tree, last_day, function_name_last_day, function_name_next_day",
+    ("tree", "last_day", "function_name_last_day", "function_name_next_day"),
     [
         (
             {"housing_benefits": {"eligibility": {"requirement_fulfilled_fam": None}}},

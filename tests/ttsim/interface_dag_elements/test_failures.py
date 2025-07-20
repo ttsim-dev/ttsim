@@ -191,7 +191,7 @@ def test_assert_valid_ttsim_pytree(tree, leaf_checker, err_substr):
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
+    ("orig_tree_with_column_objects_and_param_functions", "orig_tree_with_params"),
     [
         # Same global module, no overlapping periods, no name clashes.
         (
@@ -372,7 +372,7 @@ def test_fail_if_active_periods_overlap_passes(
 
 
 @pytest.mark.parametrize(
-    "orig_tree_with_column_objects_and_param_functions, orig_tree_with_params",
+    ("orig_tree_with_column_objects_and_param_functions", "orig_tree_with_params"),
     [
         # Exact overlap.
         (
@@ -903,7 +903,7 @@ def test_fail_if_input_data_has_different_lengths(backend):
         )
 
 
-def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
+def test_fail_if_tt_root_nodes_are_missing_via_main(minimal_input_data, backend):
     def b(a):
         return a
 
@@ -920,7 +920,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         match="The following data columns are missing",
     ):
         main(
-            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
+            main_targets=["results__tree", "fail_if__tt_root_nodes_are_missing"],
             input_data={"tree": minimal_input_data},
             policy_environment=policy_environment,
             date=datetime.date(2024, 1, 1),
@@ -930,7 +930,7 @@ def test_fail_if_root_nodes_are_missing_via_main(minimal_input_data, backend):
         )
 
 
-def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
+def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
     minimal_input_data, backend
 ):
     @policy_function()
@@ -952,7 +952,7 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
         match="Note that the missing nodes contain columns that are grouped by ",
     ):
         main(
-            main_targets=["results__tree", "fail_if__root_nodes_are_missing"],
+            main_targets=["results__tree", "fail_if__tt_root_nodes_are_missing"],
             input_data={"tree": minimal_input_data},
             policy_environment=policy_environment,
             date=datetime.date(2024, 1, 1),
@@ -965,7 +965,12 @@ def test_fail_if_root_nodes_are_missing_asks_for_individual_level_columns(
 
 
 @pytest.mark.parametrize(
-    "policy_environment, tt_targets, labels__processed_data_columns, expected_error_match",
+    (
+        "policy_environment",
+        "tt_targets",
+        "labels__processed_data_columns",
+        "expected_error_match",
+    ),
     [
         ({"foo": some_x}, {"bar": None}, set(), "('bar',)"),
         ({"foo__baz": some_x}, {"foo__bar": None}, set(), "('foo', 'bar')"),
@@ -1013,8 +1018,8 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
 
 
 @pytest.mark.parametrize(
-    "param_spec, leaf_name, expected",
-    (
+    ("param_spec", "leaf_name", "expected"),
+    [
         (
             {
                 "name": {"de": "spam", "en": "spam"},
@@ -1123,7 +1128,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                 ),
             ],
         ),
-    ),
+    ],
 )
 def test_ttsim_param_with_active_periods(
     param_spec: OrigParamSpec,
@@ -1364,4 +1369,45 @@ def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"])
             input_data=InputData.tree(tree=object()),
             orig_policy_objects={"root": METTSIM_ROOT},
             date_str="2025-01-01",
+        )
+
+
+@pytest.mark.parametrize(
+    "main_target",
+    [
+        MainTarget.specialized_environment.tax_transfer_function,
+        MainTarget.raw_results.columns,
+    ],
+)
+def test_raise_tt_root_nodes_are_missing_without_input_data(
+    main_target: MainTarget,
+    backend: Literal["jax", "numpy"],
+):
+    with pytest.raises(
+        ValueError, match="For computing results, you need to pass data. "
+    ):
+        main(
+            date_str="2025-01-01",
+            main_target=main_target,
+            backend=backend,
+            orig_policy_objects={"root": METTSIM_ROOT},
+        )
+
+
+def test_raise_some_error_without_input_data(
+    backend: Literal["jax", "numpy"],
+):
+    with pytest.raises(
+        ValueError,
+        match=(
+            "For computing results, you need to pass data. "
+            "|"
+            "The following arguments to `main` are missing"
+        ),
+    ):
+        main(
+            date_str="2025-01-01",
+            main_target=MainTarget.results.df_with_mapper,
+            backend=backend,
+            orig_policy_objects={"root": METTSIM_ROOT},
         )

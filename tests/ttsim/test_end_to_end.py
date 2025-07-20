@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
+import dags.tree as dt
 import pandas as pd
 import pytest
 
@@ -68,7 +69,7 @@ TARGETS_TREE = {
 }
 
 
-EXPECTED_RESULTS = pd.DataFrame(
+EXPECTED_TT_RESULTS = pd.DataFrame(
     {
         "payroll_tax_amount_y": [2920.0, 0.0, 0.0],
         "payroll_tax_child_tax_credit_amount_m": [8.333333, 0.0, 0.0],
@@ -99,8 +100,21 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
         backend=backend,
     )
     pd.testing.assert_frame_equal(
-        EXPECTED_RESULTS,
+        EXPECTED_TT_RESULTS,
         result,
         check_dtype=False,
         check_index_type=False,
     )
+
+
+def test_can_create_input_template(backend: Literal["numpy", "jax"]):
+    result_template = main(
+        main_target=MainTarget.templates.input_data_dtypes,
+        date_str="2025-01-01",
+        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        backend=backend,
+        tt_targets=TTTargets(tree=TARGETS_TREE),
+    )
+    flat_result_template = dt.flatten_to_tree_paths(result_template)
+    flat_expected = dt.flatten_to_tree_paths(INPUT_DF_MAPPER)
+    assert flat_result_template.keys() == flat_expected.keys()
