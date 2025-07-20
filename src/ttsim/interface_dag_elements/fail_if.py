@@ -360,8 +360,9 @@ def foreign_keys_are_invalid_in_data(
     Foreign keys must point to an existing `p_id` in the input data and must not refer
     to the `p_id` of the same row.
 
-    We need processed_data because we cannot guarantee that `p_id` is present in the
-    input data.
+    We test this only in the columns that are actually used, not in some `p_id_xxx`
+    column that may be present in the data. Note that the function `processed_data`
+    leaves foreign keys that are not present in the `p_id` column unchanged.
     """
     valid_ids = set(processed_data["p_id"].tolist()) | {-1}
     relevant_objects = {
