@@ -204,9 +204,7 @@ def with_processed_params_and_scalars(
     if evaluation_date is None:
         if "evaluation_year" not in all_nodes:
             all_nodes["evaluation_year"] = all_nodes["policy_year"]
-        if "evaluation_month" not in all_nodes:
             all_nodes["evaluation_month"] = all_nodes["policy_month"]
-        if "evaluation_day" not in all_nodes:
             all_nodes["evaluation_day"] = all_nodes["policy_day"]
     elif "evaluation_year" not in all_nodes:
         all_nodes["evaluation_year"] = evaluation_date.year
