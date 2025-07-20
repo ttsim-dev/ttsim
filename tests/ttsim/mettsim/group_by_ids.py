@@ -34,43 +34,48 @@ def fam_id(
     """
     n = xnp.max(p_id) + 1
 
-    # Get the array index for all p_ids of parents
-    p_id_parent_1_loc = p_id_parent_1
-    p_id_parent_2_loc = p_id_parent_2
-    for i in range(p_id.shape[0]):
-        p_id_parent_1_loc = xnp.where(p_id_parent_1 == p_id[i], i, p_id_parent_1_loc)
-        p_id_parent_2_loc = xnp.where(p_id_parent_2 == p_id[i], i, p_id_parent_2_loc)
+    # Sort all arrays according to p_id to make the id equal location in array
+    sorting = xnp.argsort(p_id)
+    index_after_sort = xnp.argsort(xnp.arange(p_id.shape[0])[sorting])
+    sorted_p_id = p_id[sorting]
+    sorted_age = age[sorting]
+    sorted_p_id_parent_1 = p_id_parent_1[sorting]
+    sorted_p_id_parent_2 = p_id_parent_2[sorting]
+    sorted_p_id_spouse = p_id_spouse[sorting]
 
-    children = xnp.isin(p_id, p_id_parent_1) | xnp.isin(p_id, p_id_parent_2)
+    children = xnp.isin(sorted_p_id, sorted_p_id_parent_1) | xnp.isin(
+        sorted_p_id, sorted_p_id_parent_2
+    )
 
     # Assign the same fam_id to everybody who has a spouse,
     # otherwise create a new one from p_id
     out = xnp.where(
-        p_id_spouse < 0,
-        p_id + p_id * n,
-        xnp.maximum(p_id, p_id_spouse) + xnp.minimum(p_id, p_id_spouse) * n,
+        sorted_p_id_spouse < 0,
+        sorted_p_id + sorted_p_id * n,
+        xnp.maximum(sorted_p_id, sorted_p_id_spouse)
+        + xnp.minimum(sorted_p_id, sorted_p_id_spouse) * n,
     )
 
     out = _assign_parents_fam_id(
         fam_id=out,
-        p_id=p_id,
-        p_id_parent_loc=p_id_parent_1_loc,
-        age=age,
+        p_id=sorted_p_id,
+        p_id_parent_loc=sorted_p_id_parent_1,
+        age=sorted_age,
         children=children,
         n=n,
         xnp=xnp,
     )
     out = _assign_parents_fam_id(
         fam_id=out,
-        p_id=p_id,
-        p_id_parent_loc=p_id_parent_2_loc,
-        age=age,
+        p_id=sorted_p_id,
+        p_id_parent_loc=sorted_p_id_parent_2,
+        age=sorted_age,
         children=children,
         n=n,
         xnp=xnp,
     )
 
-    return out
+    return out[index_after_sort]
 
 
 def _assign_parents_fam_id(
