@@ -60,57 +60,55 @@ def fg_id(
     """
     n = xnp.max(p_id) + 1
 
-    # Get the array index for all p_ids of parents
-    p_id_elternteil_1_loc = familie__p_id_elternteil_1
-    p_id_elternteil_2_loc = familie__p_id_elternteil_2
-    for i in range(p_id.shape[0]):
-        p_id_elternteil_1_loc = xnp.where(
-            familie__p_id_elternteil_1 == p_id[i],
-            i,
-            p_id_elternteil_1_loc,
-        )
-        p_id_elternteil_2_loc = xnp.where(
-            familie__p_id_elternteil_2 == p_id[i],
-            i,
-            p_id_elternteil_2_loc,
-        )
+    # Sort all arrays according to p_id to make the id equal location in array
+    sorting = xnp.argsort(p_id)
+    index_after_sort = xnp.argsort(xnp.arange(p_id.shape[0])[sorting])
+    sorted_p_id = p_id[sorting]
+    sorted_hh_id = hh_id[sorting]
+    sorted_alter = alter[sorting]
+    sorted_familie__p_id_elternteil_1 = familie__p_id_elternteil_1[sorting]
+    sorted_familie__p_id_elternteil_2 = familie__p_id_elternteil_2[sorting]
+    sorted_arbeitslosengeld_2__p_id_einstandspartner = (
+        arbeitslosengeld_2__p_id_einstandspartner[sorting]
+    )
 
-    children = xnp.isin(p_id, familie__p_id_elternteil_1) | xnp.isin(
-        p_id,
-        familie__p_id_elternteil_2,
+    children = xnp.isin(sorted_p_id, sorted_familie__p_id_elternteil_1) | xnp.isin(
+        sorted_p_id,
+        sorted_familie__p_id_elternteil_2,
     )
 
     # Assign the same fg_id to everybody who has an Einstandspartner,
     # otherwise create a new one from p_id
     out = xnp.where(
-        arbeitslosengeld_2__p_id_einstandspartner < 0,
-        p_id + p_id * n,
-        xnp.maximum(p_id, arbeitslosengeld_2__p_id_einstandspartner)
-        + xnp.minimum(p_id, arbeitslosengeld_2__p_id_einstandspartner) * n,
+        sorted_arbeitslosengeld_2__p_id_einstandspartner < 0,
+        sorted_p_id + sorted_p_id * n,
+        xnp.maximum(sorted_p_id, sorted_arbeitslosengeld_2__p_id_einstandspartner)
+        + xnp.minimum(sorted_p_id, sorted_arbeitslosengeld_2__p_id_einstandspartner)
+        * n,
     )
 
     out = _assign_parents_fg_id(
         fg_id=out,
-        p_id=p_id,
-        p_id_elternteil_loc=p_id_elternteil_1_loc,
-        hh_id=hh_id,
-        alter=alter,
+        p_id=sorted_p_id,
+        p_id_elternteil_loc=sorted_familie__p_id_elternteil_1,
+        hh_id=sorted_hh_id,
+        alter=sorted_alter,
         children=children,
         n=n,
         xnp=xnp,
     )
     out = _assign_parents_fg_id(
         fg_id=out,
-        p_id=p_id,
-        p_id_elternteil_loc=p_id_elternteil_2_loc,
-        hh_id=hh_id,
-        alter=alter,
+        p_id=sorted_p_id,
+        p_id_elternteil_loc=sorted_familie__p_id_elternteil_2,
+        hh_id=sorted_hh_id,
+        alter=sorted_alter,
         children=children,
         n=n,
         xnp=xnp,
     )
 
-    return out
+    return out[index_after_sort]
 
 
 def _assign_parents_fg_id(
