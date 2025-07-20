@@ -36,19 +36,6 @@ if TYPE_CHECKING:
     from _gettsim.param_types import ConsecutiveIntLookupTableParamValue
 
 
-@dataclass(frozen=True)
-class BasisformelParamValues:
-    skalierungsfaktor: float
-    a: ConsecutiveIntLookupTableParamValue
-    b: ConsecutiveIntLookupTableParamValue
-    c: ConsecutiveIntLookupTableParamValue
-
-
-@dataclass(frozen=True)
-class BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße(BasisformelParamValues):
-    zusatzbetrag_nach_haushaltsgröße: ConsecutiveIntLookupTableParamValue
-
-
 @agg_by_group_function(agg_type=AggType.COUNT)
 def anzahl_personen_wthh(wthh_id: int) -> int:
     pass
@@ -82,57 +69,6 @@ def betrag_m_wthh(
         out = 0.0
 
     return out
-
-
-def basisformel_ohne_zusatzbetrag_nach_haushaltsgröße(
-    anzahl_personen: int,
-    einkommen_m: float,
-    miete_m: float,
-    params: BasisformelParamValues,
-    xnp: ModuleType,
-) -> float:
-    """Basic formula for housing benefit calculation.
-
-    Note: This function is not a direct target in the DAG, but a helper function to
-    store the code for Wohngeld calculation.
-
-    """
-    a = params.a.look_up(anzahl_personen)
-    b = params.b.look_up(anzahl_personen)
-    c = params.c.look_up(anzahl_personen)
-    out = xnp.maximum(
-        0.0,
-        params.skalierungsfaktor
-        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
-    )
-    return xnp.minimum(miete_m, out)
-
-
-def basisformel_mit_zusatzbetrag_nach_haushaltsgröße(
-    anzahl_personen: int,
-    einkommen_m: float,
-    miete_m: float,
-    params: BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße,
-    xnp: ModuleType,
-) -> float:
-    """Basic formula for housing benefit calculation.
-
-    Note: This function is not a direct target in the DAG, but a helper function to
-    store the code for Wohngeld calculation.
-
-    """
-    a = params.a.look_up(anzahl_personen)
-    b = params.b.look_up(anzahl_personen)
-    c = params.c.look_up(anzahl_personen)
-    zusatzbetrag_nach_haushaltsgröße = params.zusatzbetrag_nach_haushaltsgröße.look_up(
-        anzahl_personen
-    )
-    out = xnp.maximum(
-        0.0,
-        params.skalierungsfaktor
-        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
-    )
-    return xnp.minimum(miete_m, out + zusatzbetrag_nach_haushaltsgröße)
 
 
 @policy_function(
@@ -283,6 +219,14 @@ def anspruchshöhe_m_bg_ab_2001(
     return out
 
 
+@dataclass(frozen=True)
+class BasisformelParamValues:
+    skalierungsfaktor: float
+    a: ConsecutiveIntLookupTableParamValue
+    b: ConsecutiveIntLookupTableParamValue
+    c: ConsecutiveIntLookupTableParamValue
+
+
 @param_function(end_date="2000-12-31", leaf_name="basisformel_params")
 def basisformel_params_bis_2000(
     skalierungsfaktor: float,
@@ -315,6 +259,11 @@ def basisformel_params_bis_2000(
         b=get_consecutive_int_lookup_table_param_value(raw=b, xnp=xnp),
         c=get_consecutive_int_lookup_table_param_value(raw=c, xnp=xnp),
     )
+
+
+@dataclass(frozen=True)
+class BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße(BasisformelParamValues):
+    zusatzbetrag_nach_haushaltsgröße: ConsecutiveIntLookupTableParamValue
 
 
 @param_function(start_date="2001-01-01", leaf_name="basisformel_params")
@@ -357,3 +306,54 @@ def basisformel_params_ab_2001(
             xnp=xnp,
         ),
     )
+
+
+def basisformel_ohne_zusatzbetrag_nach_haushaltsgröße(
+    anzahl_personen: int,
+    einkommen_m: float,
+    miete_m: float,
+    params: BasisformelParamValues,
+    xnp: ModuleType,
+) -> float:
+    """Basic formula for housing benefit calculation.
+
+    Note: This function is not a direct target in the DAG, but a helper function to
+    store the code for Wohngeld calculation.
+
+    """
+    a = params.a.look_up(anzahl_personen)
+    b = params.b.look_up(anzahl_personen)
+    c = params.c.look_up(anzahl_personen)
+    max_aus_formel_m = xnp.maximum(
+        0.0,
+        params.skalierungsfaktor
+        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
+    )
+    return xnp.minimum(miete_m, max_aus_formel_m)
+
+
+def basisformel_mit_zusatzbetrag_nach_haushaltsgröße(
+    anzahl_personen: int,
+    einkommen_m: float,
+    miete_m: float,
+    params: BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße,
+    xnp: ModuleType,
+) -> float:
+    """Basic formula for housing benefit calculation.
+
+    Note: This function is not a direct target in the DAG, but a helper function to
+    store the code for Wohngeld calculation.
+
+    """
+    a = params.a.look_up(anzahl_personen)
+    b = params.b.look_up(anzahl_personen)
+    c = params.c.look_up(anzahl_personen)
+    zusatzbetrag_nach_haushaltsgröße = params.zusatzbetrag_nach_haushaltsgröße.look_up(
+        anzahl_personen
+    )
+    max_aus_formel_m = zusatzbetrag_nach_haushaltsgröße + xnp.maximum(
+        0.0,
+        params.skalierungsfaktor
+        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
+    )
+    return xnp.minimum(miete_m, max_aus_formel_m)
