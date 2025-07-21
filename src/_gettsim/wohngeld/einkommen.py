@@ -37,28 +37,6 @@ def min_einkommen_lookup_table(
     return get_consecutive_int_lookup_table_param_value(raw=min_einkommen, xnp=xnp)
 
 
-def einkommen(
-    einkommen_vor_freibetrag: float,
-    einkommensfreibetrag: float,
-    anzahl_personen: int,
-    min_einkommen_lookup_table: ConsecutiveIntLookupTableParamValue,
-    xnp: ModuleType,
-) -> float:
-    """Calculate final income relevant for calculation of housing benefit on household
-    level.
-
-    """
-    eink_nach_abzug_m_hh = einkommen_vor_freibetrag - einkommensfreibetrag
-    unteres_eink = min_einkommen_lookup_table.look_up(
-        xnp.minimum(
-            anzahl_personen,
-            min_einkommen_lookup_table.values_to_look_up.shape[0],
-        )
-    )
-
-    return xnp.maximum(eink_nach_abzug_m_hh, unteres_eink)
-
-
 @policy_function()
 def einkommen_m_wthh(
     anzahl_personen_wthh: int,
@@ -70,43 +48,16 @@ def einkommen_m_wthh(
     """Income relevant for Wohngeld calculation.
 
     Reference: § 13 WoGG
-
-    This target is used to calculate the actual Wohngeld of all Bedarfsgemeinschaften
-    that passed the priority check against Arbeitslosengeld II / Bürgergeld.
-
     """
-    return einkommen(
-        anzahl_personen=anzahl_personen_wthh,
-        einkommensfreibetrag=freibetrag_m_wthh,
-        einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_wthh,
-        min_einkommen_lookup_table=min_einkommen_lookup_table,
-        xnp=xnp,
+    einkommen_ohne_freibetrag = einkommen_vor_freibetrag_m_wthh - freibetrag_m_wthh
+    mindesteinkommen = min_einkommen_lookup_table.look_up(
+        xnp.minimum(
+            anzahl_personen_wthh,
+            min_einkommen_lookup_table.values_to_look_up.shape[0],
+        )
     )
 
-
-@policy_function()
-def einkommen_m_bg(
-    arbeitslosengeld_2__anzahl_personen_bg: int,
-    freibetrag_m_bg: float,
-    einkommen_vor_freibetrag_m_bg: float,
-    min_einkommen_lookup_table: ConsecutiveIntLookupTableParamValue,
-    xnp: ModuleType,
-) -> float:
-    """Income relevant for Wohngeld calculation.
-
-    Reference: § 13 WoGG
-
-    This target is used for the priority check calculation against Arbeitslosengeld II /
-    Bürgergeld on the Bedarfsgemeinschaft level.
-
-    """
-    return einkommen(
-        anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
-        einkommensfreibetrag=freibetrag_m_bg,
-        einkommen_vor_freibetrag=einkommen_vor_freibetrag_m_bg,
-        min_einkommen_lookup_table=min_einkommen_lookup_table,
-        xnp=xnp,
-    )
+    return xnp.maximum(einkommen_ohne_freibetrag, mindesteinkommen)
 
 
 @policy_function()
