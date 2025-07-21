@@ -1,19 +1,7 @@
 """Housing benefits (Wohngeld).
 
 Wohngeld has priority over ALG2 if the recipients can cover their needs according to
-SGB II when receiving Wohngeld. The priority check follows the following logic:
-
-1. Calculate Wohngeld on the Bedarfsgemeinschaft level.
-2. Check whether the Bedarfsgemeinschaft can cover its own needs (Regelbedarf) with
-   Wohngeld. If not, the Bedarfsgemeinschaft is eligible for ALG2.
-3. Compute Wohngeld again for all individuals in the household that can cover their
-   own needs with Wohngeld. This is the final Wohngeld amount that is paid out to
-   the wohngeldrechtlicher Teilhaushalt.
-
-Note: Because Wohngeld is nonlinear in the number of people in the
-wohngeldrechtlicher Teilhaushalt, there may be some individuals that pass the
-priority check, but cannot cover their needs with the Wohngeld calculated in point
-3. In this sense, this implementation is an approximation of the actual Wohngeld.
+SGB II when receiving Wohngeld.
 """
 
 from __future__ import annotations
@@ -80,33 +68,6 @@ def betrag_m_wthh(
     return out
 
 
-def basisformel(
-    anzahl_personen: int,
-    einkommen_m: float,
-    miete_m: float,
-    params: BasisformelParamValues,
-    xnp: ModuleType,
-) -> float:
-    """Basic formula for housing benefit calculation.
-
-    Note: This function is not a direct target in the DAG, but a helper function to
-    store the code for Wohngeld calculation.
-
-    """
-    a = params.a.look_up(anzahl_personen)
-    b = params.b.look_up(anzahl_personen)
-    c = params.c.look_up(anzahl_personen)
-    zusatzbetrag_nach_haushaltsgröße = params.zusatzbetrag_nach_haushaltsgröße.look_up(
-        anzahl_personen
-    )
-    out = xnp.maximum(
-        0.0,
-        params.skalierungsfaktor
-        * (miete_m - ((a + (b * miete_m) + (c * einkommen_m)) * einkommen_m)),
-    )
-    return xnp.minimum(miete_m, out + zusatzbetrag_nach_haushaltsgröße)
-
-
 @policy_function(
     rounding_spec=RoundingSpec(
         base=1,
@@ -129,52 +90,29 @@ def anspruchshöhe_m_wthh(
     zero if not eligible.
 
     """
+    a = basisformel_params.a.look_up(anzahl_personen_wthh)
+    b = basisformel_params.b.look_up(anzahl_personen_wthh)
+    c = basisformel_params.c.look_up(anzahl_personen_wthh)
+    zusatzbetrag_nach_haushaltsgröße = (
+        basisformel_params.zusatzbetrag_nach_haushaltsgröße.look_up(
+            anzahl_personen_wthh
+        )
+    )
+    basisbetrag_nach_haushaltsgröße = xnp.maximum(
+        0.0,
+        basisformel_params.skalierungsfaktor
+        * (
+            miete_m_wthh
+            - ((a + (b * miete_m_wthh) + (c * einkommen_m_wthh)) * einkommen_m_wthh)
+        ),
+    )
     if grundsätzlich_anspruchsberechtigt_wthh:
-        out = basisformel(
-            anzahl_personen=anzahl_personen_wthh,
-            einkommen_m=einkommen_m_wthh,
-            miete_m=miete_m_wthh,
-            params=basisformel_params,
-            xnp=xnp,
+        return xnp.minimum(
+            miete_m_wthh,
+            basisbetrag_nach_haushaltsgröße + zusatzbetrag_nach_haushaltsgröße,
         )
     else:
-        out = 0.0
-
-    return out
-
-
-@policy_function(
-    rounding_spec=RoundingSpec(
-        base=1,
-        direction="nearest",
-        reference="§ 19 WoGG Abs.2 Anlage 3",
-    ),
-)
-def anspruchshöhe_m_bg(
-    arbeitslosengeld_2__anzahl_personen_bg: int,
-    einkommen_m_bg: float,
-    miete_m_bg: float,
-    grundsätzlich_anspruchsberechtigt_bg: bool,
-    basisformel_params: BasisformelParamValues,
-    xnp: ModuleType,
-) -> float:
-    """Housing benefit after wealth and income check.
-
-    This target is used for the priority check calculation against Arbeitslosengeld 2.
-
-    """
-    if grundsätzlich_anspruchsberechtigt_bg:
-        out = basisformel(
-            anzahl_personen=arbeitslosengeld_2__anzahl_personen_bg,
-            einkommen_m=einkommen_m_bg,
-            miete_m=miete_m_bg,
-            params=basisformel_params,
-            xnp=xnp,
-        )
-    else:
-        out = 0.0
-
-    return out
+        return 0.0
 
 
 @param_function()
