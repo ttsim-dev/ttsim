@@ -247,11 +247,9 @@ def grundsätzlich_anspruchsberechtigt(
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def anzurechnendes_einkommen_y(
-    bruttolohn_vorjahr_abzüglich_werbungskosten_y_fg: float,
-    familie__anzahl_erwachsene_fg: int,
+    bruttolohn_vorjahr_abzüglich_werbungskosten_y: float,
     ist_leistungsbegründendes_kind: bool,
     pauschaler_abzug_vom_einkommen: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag: float,
 ) -> float:
     """Income relevant for means testing for parental leave benefit (Erziehungsgeld).
 
@@ -262,10 +260,9 @@ def anzurechnendes_einkommen_y(
     """
     if ist_leistungsbegründendes_kind:
         out = (
-            bruttolohn_vorjahr_abzüglich_werbungskosten_y_fg
-            - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag
-            * familie__anzahl_erwachsene_fg
-        ) * pauschaler_abzug_vom_einkommen
+            bruttolohn_vorjahr_abzüglich_werbungskosten_y
+            * pauschaler_abzug_vom_einkommen
+        )
     else:
         out = 0.0
     return out
