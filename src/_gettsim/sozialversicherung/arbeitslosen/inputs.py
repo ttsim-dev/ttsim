@@ -9,11 +9,9 @@ from ttsim.tt_dag_elements import policy_input
 def mean_nettoeinkommen_in_12_monaten_vor_arbeitslosigkeit_m() -> float:
     """Mean net wage in the 12 months before unemployment.
 
-    To compute this value using GETTSIM:
-    1. Use `arbeitslosengeld__mean_nettoeinkommen_für_bemessungsgrundllage_nach_arbeitslosigkeit_y`
-    as the TT target
-    2. Apply it to data from the 12 months before the unemployment
-    3. Use the result as input for this column.
+    To compute this value using GETTSIM set `('arbeitslosengeld',
+    'mean_nettoeinkommen_für_bemessungsgrundllage_nach_arbeitslosigkeit_y')` as the TT
+    target and use input data from the 12 months before the unemployment.
     """
 
 

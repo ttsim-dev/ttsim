@@ -247,7 +247,7 @@ def grundsätzlich_anspruchsberechtigt(
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def anzurechnendes_einkommen_y(
-    bruttolohn_vorjahr_y_fg: float,
+    bruttolohn_vorjahr_abzüglich_werbungskosten_y_fg: float,
     familie__anzahl_erwachsene_fg: int,
     ist_leistungsbegründendes_kind: bool,
     pauschaler_abzug_vom_einkommen: float,
@@ -262,7 +262,7 @@ def anzurechnendes_einkommen_y(
     """
     if ist_leistungsbegründendes_kind:
         out = (
-            bruttolohn_vorjahr_y_fg
+            bruttolohn_vorjahr_abzüglich_werbungskosten_y_fg
             - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag
             * familie__anzahl_erwachsene_fg
         ) * pauschaler_abzug_vom_einkommen

@@ -24,14 +24,10 @@ inputs:
           bruttolohn_m:
             - 1500.0
             - 0.0
-          bruttolohn_vorjahr_m:
-            - 1500.0
-            - 0.0
-    elterngeld:
-      mean_nettoeinkommen_in_12_monaten_vor_geburt_m:
+    erziehungsgeld:
+      bruttolohn_vorjahr_abzüglich_werbungskosten_m:
         - 1500.0
         - 0.0
-    erziehungsgeld:
       budgetsatz:
         - false
         - true
