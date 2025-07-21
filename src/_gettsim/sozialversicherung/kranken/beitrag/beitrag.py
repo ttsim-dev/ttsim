@@ -11,13 +11,13 @@ def betrag_versicherter_m_ohne_midijob(
     betrag_rentner_m: float,
     betrag_selbstständig_m: float,
     betrag_versicherter_regulär_beschäftigt_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
 ) -> float:
     """Public health insurance contributions paid by the insured person.
 
     Before Midijob introduction in April 2003.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -36,13 +36,13 @@ def betrag_versicherter_m_mit_midijob(
     sozialversicherung__in_gleitzone: bool,
     betrag_versicherter_in_gleitzone_m: float,
     betrag_versicherter_regulär_beschäftigt_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
 ) -> float:
     """Public health insurance contributions paid by the insured person.
 
     After Midijob introduction in April 2003.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -60,7 +60,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommen_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
@@ -68,7 +68,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
 
     Before Midijob introduction in April 2003.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = 0.0
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -88,7 +88,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     betrag_arbeitgeber_in_gleitzone_m: float,
     einkommen_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
@@ -96,7 +96,7 @@ def betrag_arbeitgeber_m_mit_midijob(
 
     After Midijob introduction in April 2003.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = 0.0
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (

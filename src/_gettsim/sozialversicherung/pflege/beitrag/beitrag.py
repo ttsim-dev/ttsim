@@ -11,14 +11,14 @@ from ttsim.tt_dag_elements import policy_function
     leaf_name="betrag_versicherter_m",
 )
 def betrag_versicherter_m_ohne_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     betrag_selbstständig_m: float,
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_versicherter_regulär_beschäftigt_m: float,
     betrag_rentner_m: float,
 ) -> float:
     """Long-term care insurance contributions paid by the insured person."""
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -34,7 +34,7 @@ def betrag_versicherter_m_ohne_midijob(
     leaf_name="betrag_versicherter_m",
 )
 def betrag_versicherter_m_mit_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     betrag_selbstständig_m: float,
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
@@ -43,7 +43,7 @@ def betrag_versicherter_m_mit_midijob(
     betrag_rentner_m: float,
 ) -> float:
     """Long-term care insurance contributions paid by the insured person."""
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
@@ -62,7 +62,7 @@ def betrag_versicherter_m_mit_midijob(
     leaf_name="betrag_arbeitgeber_m",
 )
 def betrag_arbeitgeber_m_ohne_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_arbeitgeber_regulär_beschäftigt_m: float,
 ) -> float:
@@ -71,7 +71,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     Before Midijob introduction in April 2003.
     """
     if (
-        einkommensteuer__einkünfte__ist_selbstständig
+        einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig
         or sozialversicherung__geringfügig_beschäftigt
     ):
         out = 0.0
@@ -86,7 +86,7 @@ def betrag_arbeitgeber_m_ohne_midijob(
     leaf_name="betrag_arbeitgeber_m",
 )
 def betrag_arbeitgeber_m_mit_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
     betrag_arbeitgeber_in_gleitzone_m: float,
@@ -97,7 +97,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     After Midijob introduction in April 2003.
     """
     if (
-        einkommensteuer__einkünfte__ist_selbstständig
+        einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig
         or sozialversicherung__geringfügig_beschäftigt
     ):
         out = 0.0

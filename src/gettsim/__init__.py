@@ -27,6 +27,7 @@ from ttsim import (
     Results,
     SpecializedEnvironment,
     TTTargets,
+    copy_environment,
     merge_trees,
 )
 
@@ -95,12 +96,9 @@ __all__ = [
     "Results",
     "SpecializedEnvironment",
     "TTTargets",
+    "__version__",
+    "copy_environment",
     "main",
     "merge_trees",
-]
-
-
-__all__ = [
-    "__version__",
     "test",
 ]

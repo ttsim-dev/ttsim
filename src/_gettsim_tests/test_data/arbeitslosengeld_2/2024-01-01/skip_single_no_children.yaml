@@ -28,7 +28,7 @@ inputs:
       - 0.0
     einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m:
       - 0.0
-    einkommensteuer__einkünfte__ist_selbstständig:
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
       - false
     einkommensteuer__einkünfte__sonstige__alle_weiteren_m:
       - 0.0
