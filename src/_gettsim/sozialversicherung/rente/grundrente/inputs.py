@@ -39,7 +39,7 @@ def bruttolohn_vorjahr_y() -> float:
 
 @policy_input(start_date="2021-01-01")
 def einnahmen_aus_selbstständiger_arbeit_vorvorjahr_y() -> float:
-    """Earnings from self-employment in the year before the previous year.
+    """Earnings from self-employment 2 years before.
 
     Calculation is based on the 'Einnahmen' definitions of the basic tax law (EStG).
     """
@@ -47,7 +47,7 @@ def einnahmen_aus_selbstständiger_arbeit_vorvorjahr_y() -> float:
 
 @policy_input(start_date="2021-01-01")
 def einnahmen_aus_vermietung_und_verpachtung_vorvorjahr_y() -> float:
-    """Earnings from rental income in the year before the previous year.
+    """Earnings from rental income 2 years before.
 
     Calculation is based on the 'Einnahmen' definitions of the basic tax law (EStG).
     """
@@ -55,7 +55,7 @@ def einnahmen_aus_vermietung_und_verpachtung_vorvorjahr_y() -> float:
 
 @policy_input(start_date="2021-01-01")
 def einnahmen_aus_kapitalvermögen_vorvorjahr_y() -> float:
-    """Earnings from capital income in the year before the previous year.
+    """Earnings from capital income 2 years before.
 
     Calculation is based on the 'Einnahmen' definitions of the basic tax law (EStG).
     """

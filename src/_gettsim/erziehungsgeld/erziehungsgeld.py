@@ -107,7 +107,7 @@ def anspruchshöhe_kind_mit_budgetsatz_m(
     For the calculation, the relevant income, the age of the youngest child, the income
     threshold and the eligibility for erziehungsgeld is needed.
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6
+    Legal reference: BGBl I. v. 17.02.2004
     """
     if ist_leistungsbegründendes_kind:
         out = max(
@@ -154,7 +154,7 @@ def abzug_durch_einkommen_m(
 ) -> float:
     """Reduction of parental leave benefits (means-test).
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.209)
+    Legal reference: BGBl I. v. 17.02.2004 S.209
     """
     if (
         anzurechnendes_einkommen_m > einkommensgrenze_m
@@ -180,7 +180,7 @@ def _leistungsbegründendes_kind_vor_abschaffung(
 ) -> bool:
     """Eligibility for parental leave benefit (Erziehungsgeld) on child level.
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
+    Legal reference: BGBl I. v. 17.02.2004 S.207
     """
     if budgetsatz:
         out = p_id_empfänger >= 0 and alter_monate <= maximales_kindsalter_budgetsatz
@@ -216,7 +216,7 @@ def _leistungsbegründendes_kind_nach_abschaffung(
 
     Abolished for children born after the cut-off date.
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.207)
+    Legal reference: BGBl I. v. 17.02.2004 S.207
     """
     if budgetsatz and geburtsjahr <= abolishment_cohort:
         out = p_id_empfänger >= 0 and alter_monate <= maximales_kindsalter_budgetsatz
@@ -238,7 +238,7 @@ def grundsätzlich_anspruchsberechtigt(
 ) -> bool:
     """Eligibility for parental leave benefit (Erziehungsgeld) on parental level.
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.207)
+    Legal reference: BGBl I. v. 17.02.2004 S.207
     """
     return leistungsbegründende_kinder_fg and (
         arbeitsstunden_w <= maximale_wochenarbeitszeit
@@ -247,7 +247,7 @@ def grundsätzlich_anspruchsberechtigt(
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def anzurechnendes_einkommen_y(
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg: float,
+    bruttolohn_vorjahr_y_fg: float,
     familie__anzahl_erwachsene_fg: int,
     ist_leistungsbegründendes_kind: bool,
     pauschaler_abzug_vom_einkommen: float,
@@ -255,14 +255,14 @@ def anzurechnendes_einkommen_y(
 ) -> float:
     """Income relevant for means testing for parental leave benefit (Erziehungsgeld).
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (p.209)
+    Legal reference: BGBl I. v. 17.02.2004 S.209
 
     There is special rule for "Beamte, Soldaten und Richter" which is not
     implemented yet.
     """
     if ist_leistungsbegründendes_kind:
         out = (
-            einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
+            bruttolohn_vorjahr_y_fg
             - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag
             * familie__anzahl_erwachsene_fg
         ) * pauschaler_abzug_vom_einkommen
@@ -280,7 +280,7 @@ def einkommensgrenze_y(
 ) -> float:
     """Income threshold for parental leave benefit (Erziehungsgeld).
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
+    Legal reference: BGBl I. v. 17.02.2004 S.208
     """
     out = (
         einkommensgrenze_ohne_geschwisterbonus
@@ -301,7 +301,7 @@ def einkommensgrenze_ohne_geschwisterbonus(
     """Income threshold for parental leave benefit (Erziehungsgeld) before adding the
     bonus for additional children.
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
+    Legal reference: BGBl I. v. 17.02.2004 S.208
     """
     if alter_monate < altersgrenze_für_reduziertes_einkommenslimit_kind_monate:
         return einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze
@@ -317,7 +317,7 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_jünger_als_reduzierungsgrenze(
 ) -> float:
     """Base income threshold for parents of children younger than the age threshold.
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
+    Legal reference: BGBl I. v. 17.02.2004 S.208
     """
     if budgetsatz and familie__alleinerziehend_fg:
         return einkommensgrenze.regulär_alleinerziehend["budgetsatz"]
@@ -337,7 +337,7 @@ def einkommensgrenze_ohne_geschwisterbonus_kind_älter_als_reduzierungsgrenze(
 ) -> float:
     """Base income threshold for parents of children older than age threshold.
 
-    Legal reference: Bundesgesetzblatt Jahrgang 2004 Teil I Nr. 6 (pp.208)
+    Legal reference: BGBl I. v. 17.02.2004 S.208
     """
     if budgetsatz and familie__alleinerziehend_fg:
         return einkommensgrenze.reduziert_alleinerziehend["budgetsatz"]

@@ -6,6 +6,11 @@ from ttsim.tt_dag_elements import FKType, policy_input
 
 
 @policy_input(end_date="2008-12-31")
+def bruttolohn_vorjahr_y() -> float:
+    """Gross earnings of the previous year."""
+
+
+@policy_input(end_date="2008-12-31")
 def budgetsatz() -> bool:
     """Applied for "Budgetsatz" of parental leave benefit."""
 
