@@ -1,12 +1,19 @@
+from __future__ import annotations
+
 from pathlib import Path
-from types import ModuleType
-from typing import Literal
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import pandas as pd
 import pytest
 
 from ttsim import InputData, MainTarget, TTTargets, main
+from ttsim.tt_dag_elements.column_objects_param_function import policy_function
+
+if TYPE_CHECKING:
+    from types import ModuleType
+    from typing import Literal
+
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
@@ -155,6 +162,39 @@ def test_modify_evaluation_date_after_creating_policy_environment(
             "property_tax_amount_y": [0.0, 1000.0, 1000.0],
         },
         index=pd.Index([0, 1, 2], name="p_id"),
+    )
+    pd.testing.assert_frame_equal(
+        expected, result, check_dtype=False, check_index_type=False
+    )
+
+
+def test_different_evaluation_dates_across_data_rows(
+    backend: Literal["numpy", "jax"], xnp: ModuleType
+):
+    @policy_function()
+    def f(evaluation_year: int) -> int:
+        return evaluation_year
+
+    result = main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        policy_environment={
+            "f": f,
+        },
+        input_data=InputData.tree(
+            tree={
+                "p_id": xnp.array([1, 2, 3]),
+                "evaluation_year": xnp.array([2020, 2021, 2022]),
+            }
+        ),
+        tt_targets=TTTargets(tree={"f": None}),
+        backend=backend,
+    )
+
+    expected = pd.DataFrame(
+        {
+            ("f",): [2020, 2021, 2022],
+        },
+        index=pd.Index([1, 2, 3], name="p_id"),
     )
     pd.testing.assert_frame_equal(
         expected, result, check_dtype=False, check_index_type=False
