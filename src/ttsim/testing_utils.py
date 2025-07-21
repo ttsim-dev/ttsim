@@ -104,7 +104,7 @@ def execute_test(
             rounding=True,
             backend=backend,
             include_fail_nodes=False,
-            include_warn_nodes=True,
+            include_warn_nodes=False,
         )
 
         if test.expected_output_tree:
