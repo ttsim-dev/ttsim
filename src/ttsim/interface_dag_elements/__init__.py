@@ -23,6 +23,9 @@ class WarnIf(MainTargetABC):
     functions_and_data_columns_overlap: str = (
         "warn_if__functions_and_data_columns_overlap"
     )
+    evaluation_date_set_in_multiple_places: str = (
+        "warn_if__evaluation_date_set_in_multiple_places"
+    )
 
 
 @dataclass(frozen=True)
@@ -54,7 +57,7 @@ class FailIf(MainTargetABC):
     paths_are_missing_in_targets_tree_mapper: str = (
         "fail_if__paths_are_missing_in_targets_tree_mapper"
     )
-    root_nodes_are_missing: str = "fail_if__root_nodes_are_missing"
+    tt_root_nodes_are_missing: str = "fail_if__tt_root_nodes_are_missing"
     targets_are_not_in_specialized_environment_or_data: str = (
         "fail_if__targets_are_not_in_specialized_environment_or_data"
     )
@@ -149,12 +152,10 @@ class MainTarget(MainTargetABC):
     processed_data: str = "processed_data"
     raw_results: type[RawResults] = field(default=RawResults)
     labels: type[Labels] = field(default=Labels)
-    date_str: str = "date_str"
     input_data: type[InputData] = field(default=InputData)
     tt_targets: type[Targets] = field(default=Targets)
     num_segments: str = "num_segments"
     backend: str = "backend"
-    date: str = "date"
     evaluation_date_str: str = "evaluation_date_str"
     evaluation_date: str = "evaluation_date"
     policy_date_str: str = "policy_date_str"

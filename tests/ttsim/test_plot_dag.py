@@ -45,10 +45,10 @@ def some_policy_function():
 
 
 @pytest.mark.parametrize(
-    ("include_fail_and_warn_nodes",),
+    "include_fail_and_warn_nodes",
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 def test_plot_full_interface_dag(include_fail_and_warn_nodes):
@@ -237,7 +237,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
 def test_node_selector(node_selector, expected_nodes):
     environment = main(
         main_target="policy_environment",
-        date_str="2025-01-01",
+        policy_date_str="2025-01-01",
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend="numpy",
     )

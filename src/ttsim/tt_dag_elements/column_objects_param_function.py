@@ -80,9 +80,9 @@ class ColumnObject:
     end_date: datetime.date
     description: str
 
-    def is_active(self, date: datetime.date) -> bool:
+    def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
-        return self.start_date <= date <= self.end_date
+        return self.start_date <= policy_date <= self.end_date
 
     def remove_tree_logic(
         self,
@@ -152,10 +152,9 @@ def policy_input(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable[..., Any]) -> PolicyInput:
-        data_type = func.__annotations__["return"]
         return PolicyInput(
             leaf_name=func.__name__,
-            data_type=data_type,
+            data_type=func.__annotations__["return"],
             start_date=start_date,
             end_date=end_date,
             foreign_key_type=foreign_key_type,
@@ -229,9 +228,9 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
         """The name of the wrapped function."""
         return self.function.__name__
 
-    def is_active(self, date: datetime.date) -> bool:
+    def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
-        return self.start_date <= date <= self.end_date
+        return self.start_date <= policy_date <= self.end_date
 
 
 def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None:
@@ -244,12 +243,13 @@ def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None
 
     Raises
     ------
-    AssertionError
+    TypeError
         If rounding_spec is not a RoundingSpec or None.
     """
-    assert isinstance(rounding_spec, RoundingSpec | None), (
-        f"rounding_spec must be a RoundingSpec or None, got {rounding_spec}"
-    )
+    if not isinstance(rounding_spec, RoundingSpec | None):
+        raise TypeError(
+            f"`rounding_spec` must be a `RoundingSpec` or `None`, got {rounding_spec}"
+        )
 
 
 @dataclass(frozen=True)
@@ -872,9 +872,9 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         """The name of the wrapped function."""
         return self.function.__name__
 
-    def is_active(self, date: datetime.date) -> bool:
+    def is_active(self, policy_date: datetime.date) -> bool:
         """Check if the function is active at a given date."""
-        return self.start_date <= date <= self.end_date
+        return self.start_date <= policy_date <= self.end_date
 
     def remove_tree_logic(
         self,

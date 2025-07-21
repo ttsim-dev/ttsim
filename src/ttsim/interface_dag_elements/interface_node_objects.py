@@ -196,16 +196,19 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
 
     include_if_any_input_present: Iterable[str]
     include_if_all_inputs_present: Iterable[str]
+    include_if_no_input_present: Iterable[str]
 
     def __post_init__(self) -> None:
         super().__post_init__()
         if (
             not self.include_if_all_inputs_present
             and not self.include_if_any_input_present
+            and not self.include_if_no_input_present
         ):
             raise ValueError(
-                "At least one of `include_if_all_inputs_present` or "
-                "`include_if_any_input_present` must be specified."
+                "At least one of `include_if_all_inputs_present`, "
+                "`include_if_any_input_present`, or `include_if_no_input_present` "
+                "must be specified."
             )
 
     def include_condition_satisfied(self, input_names: Iterable[str]) -> bool:
@@ -215,7 +218,10 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
             i in input_names for i in self.include_if_all_inputs_present
         )
         any_cond = any(i in input_names for i in self.include_if_any_input_present)
-        return all_cond or any_cond
+        no_cond = bool(self.include_if_no_input_present) and not any(
+            i in input_names for i in self.include_if_no_input_present
+        )
+        return all_cond or any_cond or no_cond
 
     def remove_tree_logic(
         self,
@@ -233,6 +239,7 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
             in_top_level_namespace=self.in_top_level_namespace,
             include_if_any_input_present=self.include_if_any_input_present,
             include_if_all_inputs_present=self.include_if_all_inputs_present,
+            include_if_no_input_present=self.include_if_no_input_present,
         )
 
 
@@ -240,6 +247,7 @@ def input_dependent_interface_function(
     *,
     include_if_any_input_present: Iterable[str] = (),
     include_if_all_inputs_present: Iterable[str] = (),
+    include_if_no_input_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
 ) -> Callable[
@@ -256,6 +264,9 @@ def input_dependent_interface_function(
     include_if_all_inputs_present
         List of input names that must be present for the function to be used if all of
         the inputs are present.
+    include_if_no_input_present
+        List of input names that must not be present for the function to be used if no
+        inputs are present.
     leaf_name
         The name that should be used as the function's leaf name in the DAG. If omitted,
         we use the name of the function as defined.
@@ -276,6 +287,7 @@ def input_dependent_interface_function(
             in_top_level_namespace=in_top_level_namespace,
             include_if_any_input_present=include_if_any_input_present,
             include_if_all_inputs_present=include_if_all_inputs_present,
+            include_if_no_input_present=include_if_no_input_present,
         )
 
     return inner

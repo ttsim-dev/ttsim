@@ -39,7 +39,7 @@ inputs:
             - 0.0
             - 0.0
         aus_nichtselbstständiger_arbeit:
-          betrag_ohne_minijob_y:
+          einnahmen_nach_abzug_werbungskosten_y:
             - 25000.0
             - 0.0
             - 0.0
@@ -58,14 +58,27 @@ inputs:
             - 0.0
             - 0.0
         sonstige:
-          ertragsanteil_der_rente:
+          alle_weiteren_m:
             - 0.0
             - 0.0
             - 0.0
-          ohne_renten_m:
-            - 0.0
-            - 0.0
-            - 0.0
+          rente:
+            ertragsanteil:
+              - 0.0
+              - 0.0
+              - 0.0
+            sonstige_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
+              - 0.0
+              - 0.0
       gemeinsam_veranlagt:
         - true
         - true
@@ -152,15 +165,16 @@ inputs:
             - 0.0
             - 0.0
             - 0.0
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
+            - 0.0
+            - 0.0
         beitrag:
           betrag_versicherter_m:
             - 100.0
             - 0.0
             - 0.0
-        private_rente_betrag_m:
-          - 0.0
-          - 0.0
-          - 0.0
     unterhalt:
       tatsächlich_erhaltener_betrag_m:
         - 0.0

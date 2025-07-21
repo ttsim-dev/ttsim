@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import datetime
 import warnings
 
 import pandas as pd
+import pytest
 
 from ttsim import main
-from ttsim.interface_dag_elements.warn_if import FunctionsAndDataColumnsOverlapWarning
+from ttsim.interface_dag_elements import MainTarget
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
+from ttsim.tt_dag_elements.param_objects import ScalarParam
 
 
 @policy_function()
@@ -20,8 +23,7 @@ def another_func(some_func: int) -> int:
 
 
 def test_warn_if_functions_and_data_columns_overlap(backend):
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
+    with pytest.warns(match="Your data provides the column:"):
         main(
             main_target="warn_if__functions_and_data_columns_overlap",
             input_data={
@@ -35,22 +37,16 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
                 "some_target": another_func,
             },
             tt_targets={"tree": {"some_target": None}},
+            evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             include_fail_nodes=False,
             backend=backend,
         )
-        # Check that we got exactly one warning
-        assert len(w) == 1
-        # Check that it's the right type of warning
-        assert w[0].category.__name__ == "FunctionsAndDataColumnsOverlapWarning"
 
 
 def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend):
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "error",
-            category=FunctionsAndDataColumnsOverlapWarning,
-        )
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
         main(
             main_target="warn_if__functions_and_data_columns_overlap",
             input_data={
@@ -61,7 +57,70 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
             },
             policy_environment={"some_func": some_func},
             tt_targets={"tree": {"some_func": None}},
+            policy_date=datetime.date(2025, 1, 1),
             rounding=False,
             include_fail_nodes=False,
             backend=backend,
         )
+        assert not w, f"Expected no warning, but got at least: {w[0].message}"
+
+
+def test_warn_if_evaluation_date_set_in_multiple_places(backend):
+    policy_environment = {
+        "policy_year": ScalarParam(value=2025),
+        "policy_month": ScalarParam(value=1),
+        "policy_day": ScalarParam(value=1),
+        "evaluation_year": ScalarParam(value=2025),
+        "evaluation_month": ScalarParam(value=1),
+        "evaluation_day": ScalarParam(value=1),
+        "some_func": some_func,
+        "some_target": another_func,
+    }
+    with pytest.warns(match="You have specified the evaluation date in more than one"):
+        main(
+            main_target="warn_if__evaluation_date_set_in_multiple_places",
+            policy_environment=policy_environment,
+            evaluation_date=datetime.date(2025, 1, 1),
+            backend=backend,
+        )
+
+
+def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend, xnp):
+    policy_environment = {
+        "policy_year": ScalarParam(value=2025),
+        "policy_month": ScalarParam(value=1),
+        "policy_day": ScalarParam(value=1),
+        "evaluation_year": ScalarParam(value=2025),
+        "evaluation_month": ScalarParam(value=1),
+        "evaluation_day": ScalarParam(value=1),
+        "some_func": some_func,
+        "some_target": another_func,
+    }
+    with pytest.warns(match="You have specified the evaluation date in more than one"):
+        main(
+            main_target=MainTarget.raw_results.columns,
+            policy_environment=policy_environment,
+            evaluation_date=datetime.date(2025, 1, 1),
+            processed_data={"p_id": xnp.array([0])},
+            backend=backend,
+        )
+
+
+def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
+    policy_environment = {
+        "policy_year": ScalarParam(value=2025),
+        "policy_month": ScalarParam(value=1),
+        "policy_day": ScalarParam(value=1),
+        "some_func": some_func,
+        "some_target": another_func,
+    }
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        main(
+            main_target=MainTarget.raw_results.columns,
+            policy_environment=policy_environment,
+            evaluation_date=datetime.date(2025, 1, 1),
+            processed_data={"p_id": xnp.array([0])},
+            backend=backend,
+        )
+        assert not w, f"Expected no warning, but got at least: {w[0].message}"

@@ -78,7 +78,7 @@ def test_mettsim(test: PolicyTest, backend: Literal["numpy", "jax"]):
 
 def test_mettsim_policy_environment_dag_with_params():
     plot_tt_dag(
-        date_str="2020-01-01",
+        policy_date_str="2020-01-01",
         root=METTSIM_ROOT,
         include_params=True,
         title="METTSIM Policy Environment DAG with parameters",
@@ -88,7 +88,7 @@ def test_mettsim_policy_environment_dag_with_params():
 
 def test_mettsim_policy_environment_dag_without_params():
     plot_tt_dag(
-        date_str="2020-01-01",
+        policy_date_str="2020-01-01",
         root=METTSIM_ROOT,
         include_params=False,
         title="METTSIM Policy Environment DAG without parameters",
@@ -105,7 +105,7 @@ def test_mettsim_policy_environment_is_complete(orig_mettsim_objects, date):
     """Test that METTSIM's policy environment contains all root nodes of its DAG."""
     check_env_completeness(
         name="METTSIM",
-        date=date,
+        policy_date=date,
         orig_policy_objects=orig_mettsim_objects,
     )
 
@@ -118,7 +118,7 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
     ):
         main(
             main_target="results__tree",
-            date_str="2020-01-01",
+            policy_date_str="2020-01-01",
             input_data=InputData.flat(data),
             orig_policy_objects={"root": METTSIM_ROOT},
             tt_targets={"tree": {"property_tax": {"amount_y": None}}},

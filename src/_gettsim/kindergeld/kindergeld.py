@@ -58,6 +58,15 @@ def betrag_gestaffelt_m(
 
 
 @policy_function(
+    end_date="1995-12-31",
+    leaf_name="ist_leistungsbegründendes_kind",
+)
+def leistungsbegründendes_kind_nach_lohn_not_implemented() -> NotImplementedError:
+    raise NotImplementedError("Kindergeld eligibility is not implemented.")
+
+
+@policy_function(
+    start_date="1996-01-01",
     end_date="2011-12-31",
     leaf_name="ist_leistungsbegründendes_kind",
 )
@@ -109,13 +118,13 @@ def leistungsbegründendes_kind_nach_stunden(
     )
 
 
-@policy_function()
+@policy_function(end_date="2015-12-31")
 def kind_bis_10_mit_kindergeld(
     alter: int,
     ist_leistungsbegründendes_kind: bool,
 ) -> bool:
     """Child under the age of 11 and eligible for Kindergeld."""
-    return ist_leistungsbegründendes_kind and (alter <= 10)
+    return ist_leistungsbegründendes_kind and (alter <= 10)  # noqa: PLR2004
 
 
 @policy_function(vectorization_strategy="not_required")

@@ -40,7 +40,20 @@ classifiers = [
 ]
 # Dependencies and requirements
 requires-python = ">=3.11"
-dependencies = [ "ipywidgets", "numpy", "numpy-groupies", "pandas", "openpyxl", "pygments", "pygraphviz", "pytest", "pyyaml", "networkx>=3.5,<4", "plotly>=6.2.0,<7", "optree>=0.16.0,<0.17",
+dependencies = [
+    "dags>=0.4.1",
+    "ipywidgets",
+    "networkx>=3.5",
+    "numpy-groupies",
+    "numpy",
+    "openpyxl",
+    "optree>=0.16.0",
+    "pandas",
+    "plotly>=6.2.0",
+    "pygments",
+    "pygraphviz",
+    "pytest",
+    "pyyaml",
 ]
 
 
@@ -114,7 +127,6 @@ toml = "*"
 
 [tool.pixi.pypi-dependencies]
 gettsim = {path = ".", editable = true}
-dags = { git = "https://github.com/OpenSourceEconomics/dags.git", branch = "main"}
 jaxtyping = ">=0.3.2"
 kaleido = ">=1.0.0"
 pdbp = ">=1.7.1"
@@ -175,6 +187,9 @@ tests = "pytest"
 [tool.pixi.feature.jax.tasks]
 tests-jax = "pytest --backend=jax"
 
+[tool.pixi.feature.cuda.tasks]
+tests-jax = "pytest --backend=jax"
+
 [tool.pixi.feature.mypy.tasks]
 mypy = "mypy --ignore-missing-imports"
 
@@ -215,41 +230,37 @@ extend-ignore = [
     "N999", # Allow non-ASCII characters in file names.
     "PLC2401", # Allow non-ASCII characters in variable names.
     "PLC2403", # Allow non-ASCII function names for imports.
-    "PLR0913", # Allow too many arguments in function definitions.
+    "PLR0913", # Allow many arguments in function definitions.
     "PLR5501", # elif not supported by vectorization converter for Jax
     "TRY003", # Avoid specifying long messages outside the exception class
 
     # Ignored during transition phase
     # ======================================
     "D", # docstrings
-    "INP001", # implicit namespace packages without init.
-    "PLR2004", # Magic values used in comparison
-    "PT006", # Allows only lists of tuples in parametrize, even if single argument
-    "PT007", # wrong type in parametrize
-    "S101", # use of asserts outside of tests
-
 ]
 exclude = []
 
 [tool.ruff.lint.per-file-ignores]
 "conftest.py" = ["ANN"]
-"docs/**/*.ipynb" = ["T201"]
+"docs/*" = ["INP001", "T201"]
 # Cannot have default values in test functions with fixtures -- not an issue here.
 "src/gettsim/__init__.py" = ["PT028"]
 # Mostly things vectorization can't handle
 "src/_gettsim/*" = ["E501", "PLR1714", "PLR1716", "E721", "SIM108", "RET"]
+# Lohnsteuerklassen and age groups are fine to hard-code.
+"src/_gettsim/lohnsteuer/*.py" = ["PLR2004"]
+"src/_gettsim/familie/familie.py" = ["PLR2004"]
 # All tests return None and use asserts
 "src/_gettsim_tests/**/*.py" = ["ANN", "S101"]
+# Long lines.
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
-"src/ttsim/interface_dag_elements/__init__.py" = ["TC"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
-"src/ttsim/interface_dag_elements/typing.py" = ["PGH", "PLR", "SIM114"]
-"src/ttsim/plot_dag.py" = ["FBT002"]
 # Mostly things vectorization can't handle
 "tests/ttsim/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 "tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
-"tests/ttsim/**/*.py" = ["ANN", "S101"]
+"tests/ttsim/**/*.py" = ["ANN", "INP001", "PLR2004", "S101"]
+# Long lines.
 "tests/ttsim/interface_dag_elements/test_failures.py" = ["E501"]
 # TODO: remove once ported nicely
 "src/ttsim/stale_code_storage.py" = ["ALL"]

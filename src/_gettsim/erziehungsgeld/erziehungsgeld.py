@@ -251,7 +251,7 @@ def anzurechnendes_einkommen_y(
     familie__anzahl_erwachsene_fg: int,
     ist_leistungsbegründendes_kind: bool,
     pauschaler_abzug_vom_einkommen: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag: float,
 ) -> float:
     """Income relevant for means testing for parental leave benefit (Erziehungsgeld).
 
@@ -263,7 +263,7 @@ def anzurechnendes_einkommen_y(
     if ist_leistungsbegründendes_kind:
         out = (
             einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y_fg
-            - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale
+            - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag
             * familie__anzahl_erwachsene_fg
         ) * pauschaler_abzug_vom_einkommen
     else:

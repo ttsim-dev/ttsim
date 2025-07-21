@@ -53,30 +53,27 @@ def main(
     *,
     main_target: str | tuple[str, ...] | NestedTargetDict | None = None,
     main_targets: Iterable[str | tuple[str, ...]] | None = None,
-    date_str: DashedISOString | None = None,
+    policy_date_str: DashedISOString | None = None,
     input_data: InputData | None = None,
     tt_targets: TTTargets | None = None,
     rounding: bool = True,
-    backend: Literal["numpy", "jax"] | None = None,
+    backend: Literal["numpy", "jax"] = "numpy",
+    evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,
     include_warn_nodes: bool = True,
-    date: datetime.date | None = None,
-    policy_date_str: DashedISOString | None = None,
-    evaluation_date_str: DashedISOString | None = None,
-    policy_date: datetime.date | None = None,
-    evaluation_date: datetime.date | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
+    raw_results: RawResults | None = None,
+    results: Results | None = None,
+    specialized_environment: SpecializedEnvironment | None = None,
     policy_environment: PolicyEnvironment | None = None,
     processed_data: QNameData | None = None,
-    specialized_environment: SpecializedEnvironment | None = None,
-    raw_results: RawResults | None = None,
+    policy_date: datetime.date | None = None,
+    evaluation_date: datetime.date | None = None,
     labels: Labels | None = None,
-    results: Results | None = None,
 ) -> dict[str, Any]:
     """
     Main function that processes the inputs and returns the outputs.
     """
-
     input_qnames = _harmonize_inputs(locals())
     if main_target is not None:
         if main_targets is not None:
@@ -93,8 +90,9 @@ def main(
         input_qnames["processed_data"] = {}
         input_qnames["processed_data_columns"] = None
 
+    flat_interface_objects = load_flat_interface_functions_and_inputs()
     nodes = _resolve_dynamic_interface_objects_to_static_nodes(
-        flat_interface_objects=load_flat_interface_functions_and_inputs(),
+        flat_interface_objects=flat_interface_objects,
         input_qnames=list(input_qnames),
     )
 
@@ -124,6 +122,7 @@ def main(
     _fail_if_root_nodes_of_interface_dag_are_missing(
         dag=dag,
         input_qnames=input_qnames,
+        flat_interface_objects=flat_interface_objects,
     )
 
     def lexsort_key(x: str) -> int:
@@ -396,22 +395,81 @@ def _remove_tree_logic_from_functions_in_collection(
 def _fail_if_root_nodes_of_interface_dag_are_missing(
     dag: dags.DiGraph,
     input_qnames: dict[str, Any],
+    flat_interface_objects: FlatInterfaceObjects,
 ) -> None:
     """Fail if root nodes are missing."""
     root_nodes = nx.subgraph_view(
         dag,
         filter_node=lambda n: dag.in_degree(n) == 0,
     ).nodes
-
     missing_nodes = [node for node in root_nodes if node not in input_qnames]
+
+    missing_dynamic_nodes: dict[
+        tuple[str, ...], list[InputDependentInterfaceFunction]
+    ] = {}
+    for p, f in flat_interface_objects.items():
+        if isinstance(f, InputDependentInterfaceFunction):
+            new_path = (*p[:-1], f.leaf_name)
+            if (
+                dt.qname_from_tree_path(new_path) in missing_nodes
+                and new_path not in missing_dynamic_nodes
+            ):
+                missing_dynamic_nodes[new_path] = [f]
+            elif new_path in missing_dynamic_nodes:
+                missing_dynamic_nodes[new_path].append(f)
+
     if missing_nodes:
-        formatted = format_list_linewise(
-            [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes],
+        msg = (
+            "The following arguments to `main` are missing for computing the "
+            "desired output:\n"
+            + format_list_linewise(
+                [str(dt.tree_path_from_qname(mn)) for mn in missing_nodes]
+            )
         )
-        raise ValueError(
-            f"The following arguments to `main` are missing for computing the "
-            f"desired output:\n{formatted}"
-        )
+        if missing_dynamic_nodes:
+            msg += _msg_for_missing_dynamic_nodes(missing_dynamic_nodes)
+        raise ValueError(msg)
+
+
+def _msg_for_missing_dynamic_nodes(
+    paths_to_dynamic_nodes: dict[
+        tuple[str, ...], list[InputDependentInterfaceFunction]
+    ],
+) -> str:
+    """List the include conditions of dynamic nodes to provide them along the missing
+    nodes error message."""
+    msg_nodes = []
+    for p, dynamic_nodes in paths_to_dynamic_nodes.items():
+        include_conditions_for_this_path: list[str] = []
+        for f in dynamic_nodes:
+            conditions: list[str] = []
+            if f.include_if_all_inputs_present:
+                paths = [
+                    dt.tree_path_from_qname(qn)
+                    for qn in f.include_if_all_inputs_present
+                ]
+                conditions.append(f"All of: {paths}")
+            if f.include_if_any_input_present:
+                paths = [
+                    dt.tree_path_from_qname(qn) for qn in f.include_if_any_input_present
+                ]
+                conditions.append(f"Any of: {paths}")
+            if conditions:
+                include_conditions_for_this_path.append(
+                    " or\n        ".join(conditions)
+                )
+        if include_conditions_for_this_path:
+            formatted_string = (
+                f"{p}:\n   Provide one of the following:\n        "
+                + "\n        ".join(include_conditions_for_this_path)
+            )
+            msg_nodes.append(formatted_string)
+
+    return (
+        "\n\nNote that the following missing nodes can also be provided via "
+        "the following inputs:\n"
+        "\n".join(msg_nodes)
+    )
 
 
 def _fail_if_requested_nodes_cannot_be_found(

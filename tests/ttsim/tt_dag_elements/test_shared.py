@@ -14,7 +14,13 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize(
-    "foreign_key, primary_key, target, value_if_foreign_key_is_missing, expected",
+    (
+        "foreign_key",
+        "primary_key",
+        "target",
+        "value_if_foreign_key_is_missing",
+        "expected",
+    ),
     [
         (
             numpy.array([1, 2, 3]),

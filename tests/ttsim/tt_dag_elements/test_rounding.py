@@ -85,7 +85,7 @@ def test_decorator():
 
 
 def test_malformed_rounding_specs():
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
 
         @policy_function(rounding_spec={"base": 1, "direction": "updsf"})
         def test_func():
@@ -93,7 +93,7 @@ def test_malformed_rounding_specs():
 
 
 @pytest.mark.parametrize(
-    "rounding_spec, input_values, exp_output",
+    ("rounding_spec", "input_values", "exp_output"),
     rounding_specs_and_exp_results,
 )
 def test_rounding(rounding_spec, input_values, exp_output, backend):
@@ -114,7 +114,7 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
         main_target="results__tree",
         input_data={"tree": input_data__tree},
         policy_environment=policy_environment,
-        date=datetime.date(2024, 1, 1),
+        evaluation_date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"namespace": {"test_func": None}}},
         rounding=True,
         include_fail_nodes=False,
@@ -152,7 +152,7 @@ def test_rounding_with_time_conversion(backend, xnp):
         main_target="results__tree",
         input_data={"tree": data},
         policy_environment=policy_environment,
-        date=datetime.date(2024, 1, 1),
+        evaluation_date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"test_func_y": None}},
         rounding=True,
         include_fail_nodes=False,
@@ -168,7 +168,7 @@ def test_rounding_with_time_conversion(backend, xnp):
 
 
 @pytest.mark.parametrize(
-    "rounding_spec, input_values_exp_output, ignore_since_no_rounding",
+    ("rounding_spec", "input_values_exp_output", "ignore_since_no_rounding"),
     rounding_specs_and_exp_results,
 )
 def test_no_rounding(
@@ -194,7 +194,7 @@ def test_no_rounding(
         main_target="results__tree",
         input_data={"tree": data},
         policy_environment=policy_environment,
-        date=datetime.date(2024, 1, 1),
+        evaluation_date=datetime.date(2024, 1, 1),
         tt_targets={"tree": {"test_func": None}},
         include_fail_nodes=False,
         include_warn_nodes=False,
@@ -210,7 +210,7 @@ def test_no_rounding(
 
 
 @pytest.mark.parametrize(
-    "rounding_spec, input_values, exp_output",
+    ("rounding_spec", "input_values", "exp_output"),
     rounding_specs_and_exp_results,
 )
 def test_rounding_callable(rounding_spec, input_values, exp_output, xnp):
@@ -230,7 +230,7 @@ def test_rounding_callable(rounding_spec, input_values, exp_output, xnp):
 
 
 @pytest.mark.parametrize(
-    "rounding_spec, input_values, exp_output",
+    ("rounding_spec", "input_values", "exp_output"),
     rounding_specs_and_exp_results,
 )
 def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
@@ -251,7 +251,7 @@ def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
 
 
 @pytest.mark.parametrize(
-    "base, direction, to_add_after_rounding, match",
+    ("base", "direction", "to_add_after_rounding", "match"),
     [
         (1, "upper", 0, "`direction` must be one of"),
         (5, "closest", 0, "`direction` must be one of"),

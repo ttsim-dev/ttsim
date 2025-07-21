@@ -39,13 +39,13 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=100)
 def cached_policy_environment(
-    date: datetime.date,
+    policy_date: datetime.date,
     root: Path,
     backend: Literal["numpy", "jax"],
 ) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
-        date=date,
+        policy_date=policy_date,
         orig_policy_objects={"root": root},
         backend=backend,
         include_fail_nodes=False,
@@ -62,7 +62,7 @@ class PolicyTest:
         input_tree: NestedData,
         expected_output_tree: NestedData,
         path: Path,
-        date: datetime.date,
+        policy_date: datetime.date,
         test_dir: Path,
         xnp: ModuleType,
     ) -> None:
@@ -70,7 +70,7 @@ class PolicyTest:
         self.input_tree = optree.tree_map(xnp.array, input_tree)
         self.expected_output_tree = expected_output_tree
         self.path = path
-        self.date = date
+        self.policy_date = policy_date
         self.test_dir = test_dir
         self.xnp = xnp
 
@@ -91,13 +91,15 @@ def execute_test(
     root: Path,
     backend: Literal["numpy", "jax"],
 ) -> None:
-    environment = cached_policy_environment(date=test.date, root=root, backend=backend)
+    environment = cached_policy_environment(
+        policy_date=test.policy_date, root=root, backend=backend
+    )
     if test.target_structure:
         result_df = main(
             main_target="results__df_with_nested_columns",
             input_data={"tree": test.input_tree},
             policy_environment=environment,
-            date=test.date,
+            policy_date=test.policy_date,
             tt_targets={"tree": test.target_structure},
             rounding=True,
             backend=backend,
@@ -118,7 +120,7 @@ def execute_test(
                     check_dtype=False,
                 )
             except AssertionError as e:
-                assert set(result_df.columns) == set(expected_df.columns)
+                assert set(result_df.columns) == set(expected_df.columns)  # noqa: S101
                 cols_with_differences = []
                 for col in expected_df.columns:
                     try:
@@ -218,14 +220,14 @@ def _get_policy_test_from_raw_test_data(
         },
     )
 
-    date: datetime.date = to_datetime(path_to_yaml.parent.name)
+    policy_date: datetime.date = to_datetime(path_to_yaml.parent.name)
 
     return PolicyTest(
         info=test_info,
         input_tree=input_tree,
         expected_output_tree=expected_output_tree,
         path=path_to_yaml,
-        date=date,
+        policy_date=policy_date,
         test_dir=test_dir,
         xnp=xnp,
     )
@@ -233,14 +235,14 @@ def _get_policy_test_from_raw_test_data(
 
 def check_env_completeness(
     name: str,
-    date: datetime.date,
+    policy_date: datetime.date,
     orig_policy_objects: dict[
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
 ) -> None:
     environment = main(
         main_target="policy_environment",
-        date=date,
+        policy_date=policy_date,
         backend="numpy",
         orig_policy_objects=orig_policy_objects,
     )

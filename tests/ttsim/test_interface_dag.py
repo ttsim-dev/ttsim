@@ -88,6 +88,14 @@ def some_idif_with_conflicting_conditions_require_input_1_or_n1__input_2(
     return input_1 + n1__input_2
 
 
+@input_dependent_interface_function(
+    include_if_any_input_present=["input_1"],
+    include_if_all_inputs_present=["input_2", "input_3"],
+)
+def a() -> int:
+    return 1
+
+
 def test_load_flat_interface_functions_and_inputs() -> None:
     load_flat_interface_functions_and_inputs()
 
@@ -118,7 +126,7 @@ def test_interface_dag_is_complete() -> None:
         )
 
 
-def test_all_output_names_is_complete() -> None:
+def test_main_target_class_is_complete() -> None:
     # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
     # we only care about some function with a leaf name, not the precise content.
     nodes = {
@@ -135,9 +143,9 @@ def test_all_output_names_is_complete() -> None:
         ),
     }
 
-    all_output_names = set(dt.tree_paths(MainTarget.to_dict()))
+    main_target_elements = set(dt.tree_paths(MainTarget.to_dict()))
 
-    assert nodes == all_output_names
+    assert nodes == main_target_elements
 
 
 def _replace_idif_with_interface_inputs(
@@ -207,7 +215,7 @@ def test_harmonize_inputs_main_args_input():
             mapper={"c": "a", "d": "b", "p_id": "p_id"},
         ),
         "tt_targets": TTTargets(tree={"e": "f"}),
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "backend": "numpy",
         "rounding": True,
         "orig_policy_objects": OrigPolicyObjects(
@@ -221,7 +229,7 @@ def test_harmonize_inputs_main_args_input():
         "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
         "tt_targets__tree": {"e": "f"},
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
         "orig_policy_objects__param_specs": {},
         "backend": "numpy",
@@ -238,7 +246,7 @@ def test_harmonize_inputs_tree_input():
             }
         },
         "tt_targets": {"tree": {"e": "f"}},
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "backend": "numpy",
         "rounding": True,
         "orig_policy_objects": {
@@ -252,7 +260,7 @@ def test_harmonize_inputs_tree_input():
         "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
         "tt_targets__tree": {"e": "f"},
-        "date": "2025-01-01",
+        "policy_date_str": "2025-01-01",
         "orig_policy_objects__column_objects_and_param_functions": {("x.py", "e"): e},
         "orig_policy_objects__param_specs": {},
         "backend": "numpy",
@@ -372,12 +380,15 @@ def test_harmonize_main_targets(main_targets, expected):
     assert harmonized == expected
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing():
+def test_fail_if_root_nodes_of_interface_dag_are_missing_without_missing_dynamic_nodes():  # noqa: E501
+    flat_interface_objects = {
+        ("interface_function_a",): interface_function_a,
+        ("interface_function_b",): interface_function_b,
+        ("interface_function_c",): interface_function_c,
+    }
     dag = dags.create_dag(
         functions={
-            "interface_function_a": interface_function_a,
-            "interface_function_b": interface_function_b,
-            "interface_function_c": interface_function_c,
+            dt.qname_from_tree_path(p): f for p, f in flat_interface_objects.items()
         },
         targets=None,
     )
@@ -386,4 +397,57 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing():
         ValueError,
         match=(r"The following arguments to `main` are missing for computing the"),
     ):
-        _fail_if_root_nodes_of_interface_dag_are_missing(dag=dag, input_qnames=["a"])
+        _fail_if_root_nodes_of_interface_dag_are_missing(
+            dag=dag,
+            input_qnames=["a"],
+            flat_interface_objects=flat_interface_objects,
+        )
+
+
+def test_fail_if_root_nodes_of_interface_dag_are_missing_with_missing_dynamic_nodes():
+    flat_interface_objects = {
+        ("a",): a,
+        ("interface_function_a",): interface_function_a,
+    }
+    dag = dags.create_dag(
+        functions={
+            "interface_function_a": interface_function_a,
+        },
+        targets=None,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"All of: \[\('input_2',\), \('input_3',\)\] or\n        Any of: \[\('input_1',\)\]"  # noqa: E501
+        ),
+    ):
+        _fail_if_root_nodes_of_interface_dag_are_missing(
+            dag=dag,
+            input_qnames=[],
+            flat_interface_objects=flat_interface_objects,
+        )
+
+
+def test_fail_if_root_nodes_of_interface_dag_are_missing_dynamic_node_as_target():
+    flat_interface_objects = {
+        ("some_idif_require_input_1",): some_idif_require_input_1,
+    }
+    dag = dags.create_dag(
+        functions={
+            "some_idif_require_input_1": some_idif_require_input_1,
+        },
+        targets=["some_idif_require_input_1"],
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"(?!.*Note that the following missing nodes can also be provided via the following input).*"  # noqa: E501
+        ),
+    ):
+        _fail_if_root_nodes_of_interface_dag_are_missing(
+            dag=dag,
+            input_qnames=[],
+            flat_interface_objects=flat_interface_objects,
+        )

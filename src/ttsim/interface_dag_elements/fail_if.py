@@ -639,7 +639,7 @@ def input_df_mapper_has_incorrect_format(
 
 
 @fail_function()
-def root_nodes_are_missing(
+def tt_root_nodes_are_missing(
     specialized_environment__tax_transfer_dag: nx.DiGraph,
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     processed_data: QNameData,
@@ -663,6 +663,13 @@ def root_nodes_are_missing(
     ValueError
         If root nodes are missing.
     """
+
+    if not processed_data:
+        raise ValueError(
+            "For computing results, you need to pass data. "
+            "You can do this by passing a suitable `input_data=InputData.[x]` argument "
+            "to `main`."
+        )
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tax_transfer_dag,

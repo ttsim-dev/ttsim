@@ -16,7 +16,15 @@ inputs:
         aus_selbstständiger_arbeit:
           betrag_m:
             - 0.0
-        ist_selbstständig:
+        sonstige:
+          rente:
+            sonstige_private_vorsorge_m:
+              - 0.0
+            betriebliche_altersvorsorge_m:
+              - 0.0
+            geförderte_private_vorsorge_m:
+              - 0.0
+        ist_hauptberuflich_selbstständig:
           - false
     hh_id:
       - 13
@@ -35,8 +43,9 @@ inputs:
         altersrente:
           betrag_m:
             - 0.0
-        private_rente_betrag_m:
-          - 0.0
+        erwerbsminderung:
+          betrag_m:
+            - 0.0
     wohnort_ost_hh:
       - false
 outputs:

@@ -5,15 +5,23 @@ from __future__ import annotations
 from ttsim.tt_dag_elements import policy_function
 
 
-@policy_function()
-def einkommen_m(
+@policy_function(end_date="1999-03-31", leaf_name="einkommen_m")
+def einkommen_m_bis_03_1999(
+    einkommen_bis_beitragsbemessungsgrenze_m: float,
+) -> float:
+    """Wage subject to public health insurance contributions."""
+    return einkommen_bis_beitragsbemessungsgrenze_m
+
+
+@policy_function(start_date="1999-04-01", leaf_name="einkommen_m")
+def einkommen_m_ab_04_1999(
     einkommen_bis_beitragsbemessungsgrenze_m: float,
     sozialversicherung__regulär_beschäftigt: bool,
 ) -> float:
     """Wage subject to public health insurance contributions.
 
-    This affects marginally employed persons and high wages for above the assessment
-    ceiling.
+    Special rules for marginal employment have been introduced in April 1999 as part of
+    the '630 Mark' job introduction.
     """
     if sozialversicherung__regulär_beschäftigt:
         out = einkommen_bis_beitragsbemessungsgrenze_m
@@ -42,7 +50,7 @@ def einkommen_bis_beitragsbemessungsgrenze_m(
 def bemessungsgrundlage_selbstständig_m(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     bezugsgröße_selbstständige_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     privat_versichert: bool,
     beitragsbemessungsgrenze_m: float,
     mindestanteil_bezugsgröße_selbstständige: float,
@@ -55,7 +63,10 @@ def bemessungsgrundlage_selbstständig_m(
     Reference: §240 SGB V Abs. 4
     """
     # Calculate if self employed insures via public health insurance.
-    if einkommensteuer__einkünfte__ist_selbstständig and not privat_versichert:
+    if (
+        einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig
+        and not privat_versichert
+    ):
         out = min(
             beitragsbemessungsgrenze_m,
             max(
@@ -106,12 +117,14 @@ def bezugsgröße_selbstständige_m(
 @policy_function()
 def bemessungsgrundlage_rente_m(
     sozialversicherung__rente__altersrente__betrag_m: float,
-    sozialversicherung__rente__private_rente_betrag_m: float,
+    sozialversicherung__rente__erwerbsminderung__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
     beitragsbemessungsgrenze_m: float,
 ) -> float:
     """Pension income which is subject to health insurance contribution."""
     return min(
         sozialversicherung__rente__altersrente__betrag_m
-        + sozialversicherung__rente__private_rente_betrag_m,
+        + sozialversicherung__rente__erwerbsminderung__betrag_m
+        + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m,
         beitragsbemessungsgrenze_m,
     )

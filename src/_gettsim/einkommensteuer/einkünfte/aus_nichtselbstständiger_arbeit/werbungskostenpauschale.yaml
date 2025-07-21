@@ -1,7 +1,7 @@
 ---
-werbungskostenpauschale:
+arbeitnehmerpauschbetrag:
   name:
-    de: Werbungskostenpauschbetrag bei nichtselbstständiger Arbeit.
+    de: Arbeitnehmerpauschbetrag bei nichtselbstständiger Arbeit.
     en: Lump-sum deduction for employment income.
   description:
     de: § 9a Nr. 1a) EStG

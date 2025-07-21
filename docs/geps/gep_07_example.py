@@ -24,7 +24,7 @@ inputs_map = {
     "einkommensteuer": {
         "einkünfte": {
             "aus_nichtselbstständiger_arbeit": {"bruttolohn_m": "wage"},
-            "ist_selbstständig": False,
+            "ist_hauptberuflich_selbstständig": False,
             "aus_selbstständiger_arbeit": {"betrag_m": 0.0},
         }
     },
@@ -52,7 +52,7 @@ targets_tree = {
 
 outputs_df = main(
     main_target=MainTarget.results.df_with_mapper,
-    date_str="2025-01-01",
+    policy_date_str="2025-01-01",
     input_data=InputData.df_and_mapper(
         df=inputs_df,
         mapper=inputs_map,
@@ -60,11 +60,11 @@ outputs_df = main(
     tt_targets=TTTargets(tree=targets_tree),
 )
 
-print(outputs_df.round(2).to_markdown())  # noqa: T201
+print(outputs_df.round(2).to_markdown())
 
-print(inputs_df.to_markdown())  # noqa: T201
+print(inputs_df.to_markdown())
 
 pe = main(
     main_target=MainTarget.policy_environment,
-    date_str="2025-01-01",
+    policy_date_str="2025-01-01",
 )

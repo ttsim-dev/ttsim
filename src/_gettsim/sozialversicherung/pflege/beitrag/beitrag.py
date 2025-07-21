@@ -6,24 +6,39 @@ from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function(
-    start_date="1995-01-01",
+    end_date="1999-03-31",
+    leaf_name="betrag_versicherter_m",
+)
+def betrag_versicherter_m_bis_03_1999(
+    betrag_versicherter_regulärer_beitragssatz: float,
+) -> float:
+    """Long-term care insurance contributions paid by the insured person."""
+    return betrag_versicherter_regulärer_beitragssatz
+
+
+@policy_function(
+    start_date="1999-04-01",
     end_date="2003-03-31",
     leaf_name="betrag_versicherter_m",
 )
 def betrag_versicherter_m_ohne_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     betrag_selbstständig_m: float,
     sozialversicherung__geringfügig_beschäftigt: bool,
-    betrag_versicherter_regulär_beschäftigt_m: float,
+    betrag_versicherter_regulärer_beitragssatz: float,
     betrag_rentner_m: float,
 ) -> float:
-    """Long-term care insurance contributions paid by the insured person."""
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    """Long-term care insurance contributions paid by the insured person.
+
+    Special rules for marginal employment have been introduced in April 1999 as part of
+    the '630 Mark' job introduction.
+    """
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     # Add the care insurance contribution for pensions
     return out + betrag_rentner_m
@@ -34,49 +49,60 @@ def betrag_versicherter_m_ohne_midijob(
     leaf_name="betrag_versicherter_m",
 )
 def betrag_versicherter_m_mit_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     betrag_selbstständig_m: float,
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
     betrag_versicherter_in_gleitzone_m: float,
-    betrag_versicherter_regulär_beschäftigt_m: float,
+    betrag_versicherter_regulärer_beitragssatz: float,
     betrag_rentner_m: float,
 ) -> float:
     """Long-term care insurance contributions paid by the insured person."""
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
         out = betrag_versicherter_in_gleitzone_m
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     # Add the care insurance contribution for pensions
     return out + betrag_rentner_m
 
 
 @policy_function(
-    start_date="1995-01-01",
+    end_date="1999-03-31",
+    leaf_name="betrag_arbeitgeber_m",
+)
+def betrag_arbeitgeber_m_bis_03_1999(
+    betrag_arbeitgeber_regulärer_beitragssatz_m: float,
+) -> float:
+    """Long-term care insurance contribution paid by the employer."""
+    return betrag_arbeitgeber_regulärer_beitragssatz_m
+
+
+@policy_function(
+    start_date="1999-04-01",
     end_date="2003-03-31",
     leaf_name="betrag_arbeitgeber_m",
 )
 def betrag_arbeitgeber_m_ohne_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     sozialversicherung__geringfügig_beschäftigt: bool,
-    betrag_arbeitgeber_regulär_beschäftigt_m: float,
+    betrag_arbeitgeber_regulärer_beitragssatz_m: float,
 ) -> float:
     """Long-term care insurance contribution paid by the employer.
 
     Before Midijob introduction in April 2003.
     """
     if (
-        einkommensteuer__einkünfte__ist_selbstständig
+        einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig
         or sozialversicherung__geringfügig_beschäftigt
     ):
         out = 0.0
     else:
-        out = betrag_arbeitgeber_regulär_beschäftigt_m
+        out = betrag_arbeitgeber_regulärer_beitragssatz_m
 
     return out
 
@@ -86,25 +112,25 @@ def betrag_arbeitgeber_m_ohne_midijob(
     leaf_name="betrag_arbeitgeber_m",
 )
 def betrag_arbeitgeber_m_mit_midijob(
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     sozialversicherung__geringfügig_beschäftigt: bool,
     sozialversicherung__in_gleitzone: bool,
     betrag_arbeitgeber_in_gleitzone_m: float,
-    betrag_arbeitgeber_regulär_beschäftigt_m: float,
+    betrag_arbeitgeber_regulärer_beitragssatz_m: float,
 ) -> float:
     """Long-term care insurance contribution paid by the employer.
 
     After Midijob introduction in April 2003.
     """
     if (
-        einkommensteuer__einkünfte__ist_selbstständig
+        einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig
         or sozialversicherung__geringfügig_beschäftigt
     ):
         out = 0.0
     elif sozialversicherung__in_gleitzone:
         out = betrag_arbeitgeber_in_gleitzone_m
     else:
-        out = betrag_arbeitgeber_regulär_beschäftigt_m
+        out = betrag_arbeitgeber_regulärer_beitragssatz_m
 
     return out
 
@@ -126,7 +152,7 @@ def betrag_selbstständig_m(
 
 
 @policy_function(start_date="1995-01-01")
-def betrag_versicherter_regulär_beschäftigt_m(
+def betrag_versicherter_regulärer_beitragssatz(
     sozialversicherung__kranken__beitrag__einkommen_m: float,
     beitragssatz_arbeitnehmer: float,
 ) -> float:
@@ -137,7 +163,7 @@ def betrag_versicherter_regulär_beschäftigt_m(
 
 
 @policy_function(start_date="1995-01-01")
-def betrag_arbeitgeber_regulär_beschäftigt_m(
+def betrag_arbeitgeber_regulärer_beitragssatz_m(
     sozialversicherung__kranken__beitrag__einkommen_m: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
@@ -215,7 +241,7 @@ def betrag_versicherter_midijob_m_mit_verringertem_beitrag_für_eltern_mit_mehre
             + sozialversicherung__midijob_bemessungsentgelt_m
             * beitragssatz_nach_kinderzahl["zusatz_kinderlos"]
         )
-    if anzahl_kinder_bis_24 >= 2:
+    if anzahl_kinder_bis_24 > 1:
         add = add - (
             sozialversicherung__beitragspflichtige_einnahmen_aus_midijob_arbeitnehmer_m
             * beitragssatz_nach_kinderzahl["abschlag_für_kinder_bis_24"]
