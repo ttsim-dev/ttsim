@@ -5,7 +5,20 @@ from __future__ import annotations
 from ttsim.tt_dag_elements import policy_function
 
 
-@policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")
+@policy_function(
+    end_date="1999-03-31",
+    leaf_name="betrag_versicherter_m",
+)
+def betrag_versicherter_m_bis_03_1999(
+    betrag_versicherter_regulärer_beitragssatz: float,
+) -> float:
+    """Public health insurance contributions paid by the insured person."""
+    return betrag_versicherter_regulärer_beitragssatz
+
+
+@policy_function(
+    start_date="1999-04-01", end_date="2003-03-31", leaf_name="betrag_versicherter_m"
+)
 def betrag_versicherter_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_rentner_m: float,

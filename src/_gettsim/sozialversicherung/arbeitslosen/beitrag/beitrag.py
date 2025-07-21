@@ -27,15 +27,10 @@ def betrag_versicherter_m_ohne_midijob(
     Special rules for marginal employment have been introduced in April 1999 as part of
     the '630 Mark' job introduction.
     """
-    betrag_arbeitgeber_regulärer_beitragssatz_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
-    )
-
-    # Set to 0 for minijobs
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     else:
-        out = betrag_arbeitgeber_regulärer_beitragssatz_m
+        out = sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
 
     return out
 
@@ -49,17 +44,12 @@ def betrag_versicherter_m_mit_midijob(
     beitragssatz: float,
 ) -> float:
     """Unemployment insurance contributions paid by the insured person."""
-    betrag_arbeitgeber_regulärer_beitragssatz_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
-    )
-
-    # Set to 0 for minijobs
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
         out = betrag_versicherter_in_gleitzone_m
     else:
-        out = betrag_arbeitgeber_regulärer_beitragssatz_m
+        out = sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
 
     return out
 
@@ -86,15 +76,10 @@ def betrag_arbeitgeber_m_ohne_midijob(
     Special rules for marginal employment have been introduced in April 1999 as part of
     the '630 Mark' job introduction.
     """
-    betrag_arbeitgeber_regulärer_beitragssatz_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
-    )
-
-    # Set to 0 for minijobs
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     else:
-        out = betrag_arbeitgeber_regulärer_beitragssatz_m
+        out = sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
 
     return out
 
@@ -108,17 +93,12 @@ def betrag_arbeitgeber_m_mit_midijob(
     beitragssatz: float,
 ) -> float:
     """Employer's unemployment insurance contribution since April 2003."""
-    betrag_arbeitgeber_regulärer_beitragssatz_m = (
-        sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
-    )
-
-    # Set to 0 for minijobs
     if sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
         out = betrag_arbeitgeber_in_gleitzone_m
     else:
-        out = betrag_arbeitgeber_regulärer_beitragssatz_m
+        out = sozialversicherung__rente__beitrag__einkommen_m * beitragssatz / 2
 
     return out
 

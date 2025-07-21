@@ -6,6 +6,17 @@ from ttsim.tt_dag_elements import policy_function
 
 
 @policy_function(
+    end_date="1999-03-31",
+    leaf_name="betrag_versicherter_m",
+)
+def betrag_versicherter_m_bis_03_1999(
+    betrag_versicherter_regulärer_beitragssatz: float,
+) -> float:
+    """Long-term care insurance contributions paid by the insured person."""
+    return betrag_versicherter_regulärer_beitragssatz
+
+
+@policy_function(
     start_date="1999-04-01",
     end_date="2003-03-31",
     leaf_name="betrag_versicherter_m",
@@ -58,6 +69,17 @@ def betrag_versicherter_m_mit_midijob(
 
     # Add the care insurance contribution for pensions
     return out + betrag_rentner_m
+
+
+@policy_function(
+    end_date="1999-03-31",
+    leaf_name="betrag_arbeitgeber_m",
+)
+def betrag_arbeitgeber_m_bis_03_1999(
+    betrag_arbeitgeber_regulärer_beitragssatz_m: float,
+) -> float:
+    """Long-term care insurance contribution paid by the employer."""
+    return betrag_arbeitgeber_regulärer_beitragssatz_m
 
 
 @policy_function(

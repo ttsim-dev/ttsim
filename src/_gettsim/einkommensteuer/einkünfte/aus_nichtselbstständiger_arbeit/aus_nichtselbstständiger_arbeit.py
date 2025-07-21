@@ -33,7 +33,13 @@ def betrag_y_ab_04_1999(
 
 @policy_function()
 def einnahmen_nach_abzug_werbungskosten_y(
-    bruttolohn_y: float, werbungskostenpauschale: float
+    bruttolohn_y: float, werbungskosten_y: float
 ) -> float:
-    """Take gross wage and deduct Werbungskostenpauschale."""
-    return max(bruttolohn_y - werbungskostenpauschale, 0.0)
+    """Take gross wage and deduct Werbungskosten."""
+    return max(bruttolohn_y - werbungskosten_y, 0.0)
+
+
+@policy_function()
+def werbungskosten_y(arbeitnehmerpauschbetrag: float) -> float:
+    """Arbeitnehmerpauschbetrag."""
+    return arbeitnehmerpauschbetrag
