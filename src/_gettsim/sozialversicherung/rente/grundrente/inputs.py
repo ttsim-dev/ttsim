@@ -27,3 +27,35 @@ def gesamteinnahmen_aus_renten_vorjahr_m() -> float:
     GETTSIM can calculate this input based on the data of the previous year using the
     target `('sozialversicherung', 'rente', 'grundrente', 'gesamteinnahmen_aus_renten_für_einkommensberechnung_im_folgejahr_m')`.
     """
+
+
+@policy_input(start_date="2021-01-01")
+def bruttolohn_vorjahr_y() -> float:
+    """Earnings in the previous year.
+
+    Calculation is based on the 'Einnahmen' definitions of the basic tax law (EStG).
+    """
+
+
+@policy_input(start_date="2021-01-01")
+def einnahmen_aus_selbstständiger_arbeit_vorvorjahr_y() -> float:
+    """Earnings from self-employment in the year before the previous year.
+
+    Calculation is based on the 'Einnahmen' definitions of the basic tax law (EStG).
+    """
+
+
+@policy_input(start_date="2021-01-01")
+def einnahmen_aus_vermietung_und_verpachtung_vorvorjahr_y() -> float:
+    """Earnings from rental income in the year before the previous year.
+
+    Calculation is based on the 'Einnahmen' definitions of the basic tax law (EStG).
+    """
+
+
+@policy_input(start_date="2021-01-01")
+def einnahmen_aus_kapitalvermögen_vorvorjahr_y() -> float:
+    """Earnings from capital income in the year before the previous year.
+
+    Calculation is based on the 'Einnahmen' definitions of the basic tax law (EStG).
+    """

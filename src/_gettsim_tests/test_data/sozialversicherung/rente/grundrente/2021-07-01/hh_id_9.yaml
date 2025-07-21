@@ -15,19 +15,8 @@ inputs:
       - 70
     einkommensteuer:
       einkünfte:
-        aus_kapitalvermögen:
-          kapitalerträge_y:
-            - 0.0
         aus_nichtselbstständiger_arbeit:
           bruttolohn_m:
-            - 0.0
-          bruttolohn_vorjahr_m:
-            - 1380.0
-        aus_selbstständiger_arbeit:
-          betrag_y:
-            - 0.0
-        aus_vermietung_und_verpachtung:
-          betrag_y:
             - 0.0
     familie:
       p_id_ehepartner:
@@ -53,6 +42,14 @@ inputs:
           - 34.5
         grundrente:
           gesamteinnahmen_aus_renten_vorjahr_m:
+            - 0.0
+          bruttolohn_vorjahr_m:
+            - 1380.0
+          einnahmen_aus_selbstständiger_arbeit_vorvorjahr_y:
+            - 0.0
+          einnahmen_aus_vermietung_und_verpachtung_vorvorjahr_y:
+            - 0.0
+          einnahmen_aus_kapitalvermögen_vorvorjahr_y:
             - 0.0
           bewertungszeiten_monate:
             - 552
