@@ -26,10 +26,6 @@ inputs:
         aus_vermietung_und_verpachtung:
           betrag_y:
             - 0.0
-        sonstige:
-          rente:
-            gesamtbetrag_vorjahr_m:
-              - 0.0
     familie:
       p_id_ehepartner:
         - -1
@@ -53,6 +49,8 @@ inputs:
         entgeltpunkte_west:
           - 0.0
         grundrente:
+          gesamteinnahmen_aus_renten_vorjahr_m:
+            - 0.0
           bewertungszeiten_monate:
             - 0
           grundrentenzeiten_monate:

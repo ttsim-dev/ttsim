@@ -33,11 +33,6 @@ inputs:
           betrag_y:
             - 0.0
             - 0.0
-        sonstige:
-          rente:
-            gesamtbetrag_vorjahr_m:
-              - 0.0
-              - 0.0
     familie:
       p_id_ehepartner:
         - 1
@@ -79,6 +74,9 @@ inputs:
           mean_entgeltpunkte:
             - 15.0
             - 15.0
+          gesamteinnahmen_aus_renten_vorjahr_m:
+            - 0.0
+            - 0.0
     wohnort_ost_hh:
       - false
       - false
