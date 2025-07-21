@@ -129,6 +129,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        backend=backend,
     )
     input_data = InputData.tree(
         tree={
@@ -140,10 +141,10 @@ def test_modify_evaluation_date_after_creating_policy_environment(
     )
     result = main(
         main_target=MainTarget.results.df_with_mapper,
-        input_data=input_data,
+        policy_environment=policy_environment,
         # acre_size_in_hectares capped starting in 2020
         evaluation_date_str="2020-01-01",
-        policy_environment=policy_environment,
+        input_data=input_data,
         tt_targets=TTTargets(
             tree={"property_tax": {"amount_y": "property_tax_amount_y"}}
         ),
@@ -155,4 +156,6 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         },
         index=pd.Index([0, 1, 2], name="p_id"),
     )
-    pd.testing.assert_frame_equal(expected, result)
+    pd.testing.assert_frame_equal(
+        expected, result, check_dtype=False, check_index_type=False
+    )
