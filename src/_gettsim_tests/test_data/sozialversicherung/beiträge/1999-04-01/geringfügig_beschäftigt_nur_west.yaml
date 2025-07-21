@@ -29,7 +29,7 @@ inputs:
             geförderte_private_vorsorge_m:
               - 0.0
               - 0.0
-        ist_selbstständig:
+        ist_hauptberuflich_selbstständig:
           - false
           - false
     hh_id:
@@ -72,10 +72,10 @@ outputs:
           - 0.0
           - 9.75
     beiträge_arbeitgeber_m:
-      - 0.0
+      - 66.0
       - 63.15
     beiträge_gesamt_m:
-      - 0.0
+      - 66.0
       - 126.3
     beiträge_versicherter_m:
       - 0.0
@@ -86,7 +86,7 @@ outputs:
     kranken:
       beitrag:
         betrag_arbeitgeber_m:
-          - 0.0
+          - 30.0
           - 20.4
         betrag_versicherter_m:
           - 0.0
@@ -102,7 +102,7 @@ outputs:
     rente:
       beitrag:
         betrag_arbeitgeber_m:
-          - 0.0
+          - 36.0
           - 30.45
         betrag_versicherter_m:
           - 0.0

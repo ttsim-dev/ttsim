@@ -12,9 +12,10 @@ minijob_arbeitgeberpauschale:
   reference_period: null
   type: scalar
   add_jahresanfang: true
+  1997-01-01:
+    value: 0.2
+    reference: EStG 1997 BGBl. 1997 I S. 821
   2003-04-01:
-    value: 0.02
-  2007-01-01:
     value: 0.02
   2022-10-01:
     note: Ceased to exist

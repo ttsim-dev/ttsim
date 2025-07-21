@@ -96,7 +96,7 @@ inputs:
             - 5.0
             - 6.0
             - 7.0
-        ist_selbstständig:
+        ist_hauptberuflich_selbstständig:
           - false
           - false
           - false

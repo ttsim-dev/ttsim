@@ -5,24 +5,37 @@ from __future__ import annotations
 from ttsim.tt_dag_elements import policy_function
 
 
-@policy_function(end_date="2003-03-31", leaf_name="betrag_versicherter_m")
+@policy_function(
+    end_date="1999-03-31",
+    leaf_name="betrag_versicherter_m",
+)
+def betrag_versicherter_m_bis_03_1999(
+    betrag_versicherter_regulärer_beitragssatz: float,
+) -> float:
+    """Public health insurance contributions paid by the insured person."""
+    return betrag_versicherter_regulärer_beitragssatz
+
+
+@policy_function(
+    start_date="1999-04-01", end_date="2003-03-31", leaf_name="betrag_versicherter_m"
+)
 def betrag_versicherter_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     betrag_rentner_m: float,
     betrag_selbstständig_m: float,
-    betrag_versicherter_regulär_beschäftigt_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    betrag_versicherter_regulärer_beitragssatz: float,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
 ) -> float:
     """Public health insurance contributions paid by the insured person.
 
     Before Midijob introduction in April 2003.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     # Add the health insurance contribution for pensions
     return out + betrag_rentner_m
@@ -35,40 +48,63 @@ def betrag_versicherter_m_mit_midijob(
     betrag_selbstständig_m: float,
     sozialversicherung__in_gleitzone: bool,
     betrag_versicherter_in_gleitzone_m: float,
-    betrag_versicherter_regulär_beschäftigt_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    betrag_versicherter_regulärer_beitragssatz: float,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
 ) -> float:
     """Public health insurance contributions paid by the insured person.
 
     After Midijob introduction in April 2003.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = betrag_selbstständig_m
     elif sozialversicherung__geringfügig_beschäftigt:
         out = 0.0
     elif sozialversicherung__in_gleitzone:
         out = betrag_versicherter_in_gleitzone_m
     else:
-        out = betrag_versicherter_regulär_beschäftigt_m
+        out = betrag_versicherter_regulärer_beitragssatz
 
     # Add the health insurance contribution for pensions
     return out + betrag_rentner_m
 
 
-@policy_function(end_date="2003-03-31", leaf_name="betrag_arbeitgeber_m")
+@policy_function(
+    end_date="1999-03-31",
+    leaf_name="betrag_arbeitgeber_m",
+)
+def betrag_arbeitgeber_m_bis_03_1999(
+    einkommen_m: float,
+    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    beitragssatz_arbeitgeber: float,
+) -> float:
+    """Employer's public health insurance contribution."""
+    if einkommensteuer__einkünfte__ist_selbstständig:
+        out = 0.0
+    else:
+        out = einkommen_m * beitragssatz_arbeitgeber
+
+    return out
+
+
+@policy_function(
+    start_date="1999-04-01",
+    end_date="2003-03-31",
+    leaf_name="betrag_arbeitgeber_m",
+)
 def betrag_arbeitgeber_m_ohne_midijob(
     sozialversicherung__geringfügig_beschäftigt: bool,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     einkommen_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
     """Employer's public health insurance contribution.
 
-    Before Midijob introduction in April 2003.
+    Special rules for marginal employment have been introduced in April 1999 as part of
+    the '630 Mark' job introduction.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = 0.0
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -88,7 +124,7 @@ def betrag_arbeitgeber_m_mit_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     betrag_arbeitgeber_in_gleitzone_m: float,
     einkommen_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     minijob_arbeitgeberpauschale: float,
     beitragssatz_arbeitgeber: float,
 ) -> float:
@@ -96,7 +132,7 @@ def betrag_arbeitgeber_m_mit_midijob(
 
     After Midijob introduction in April 2003.
     """
-    if einkommensteuer__einkünfte__ist_selbstständig:
+    if einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig:
         out = 0.0
     elif sozialversicherung__geringfügig_beschäftigt:
         out = (
@@ -112,7 +148,7 @@ def betrag_arbeitgeber_m_mit_midijob(
 
 
 @policy_function()
-def betrag_versicherter_regulär_beschäftigt_m(
+def betrag_versicherter_regulärer_beitragssatz(
     einkommen_m: float,
     beitragssatz_arbeitnehmer: float,
 ) -> float:
