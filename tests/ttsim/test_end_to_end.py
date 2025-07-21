@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING
 
 import dags.tree as dt
 import pandas as pd
 import pytest
 
 from ttsim import InputData, MainTarget, TTTargets, main
+from ttsim.tt_dag_elements.column_objects_param_function import policy_function
+
+if TYPE_CHECKING:
+    from types import ModuleType
+    from typing import Literal
+
 
 DF_WITH_NESTED_COLUMNS = pd.DataFrame(
     {
@@ -94,7 +102,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
         main_target=(MainTarget.results.df_with_mapper),
         input_data=input_data_arg,
         tt_targets=TTTargets(tree=TARGETS_TREE),
-        date_str="2025-01-01",
+        policy_date_str="2025-01-01",
         rounding=False,
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend=backend,
@@ -110,7 +118,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
 def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     result_template = main(
         main_target=MainTarget.templates.input_data_dtypes,
-        date_str="2025-01-01",
+        policy_date_str="2025-01-01",
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend=backend,
         tt_targets=TTTargets(tree=TARGETS_TREE),
@@ -118,3 +126,76 @@ def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     flat_result_template = dt.flatten_to_tree_paths(result_template)
     flat_expected = dt.flatten_to_tree_paths(INPUT_DF_MAPPER)
     assert flat_result_template.keys() == flat_expected.keys()
+
+
+def test_modify_evaluation_date_after_creating_policy_environment(
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+):
+    policy_environment = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2000-01-01",
+        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        backend=backend,
+    )
+    input_data = InputData.tree(
+        tree={
+            "p_id": xnp.array([0, 1, 2]),
+            "property_tax": {
+                "acre_size_in_hectares": xnp.array([5, 20, 200]),
+            },
+        }
+    )
+    result = main(
+        main_target=MainTarget.results.df_with_mapper,
+        policy_environment=policy_environment,
+        # acre_size_in_hectares capped starting in 2020
+        evaluation_date_str="2020-01-01",
+        input_data=input_data,
+        tt_targets=TTTargets(
+            tree={"property_tax": {"amount_y": "property_tax_amount_y"}}
+        ),
+        backend=backend,
+    )
+    expected = pd.DataFrame(
+        {
+            "property_tax_amount_y": [0.0, 1000.0, 1000.0],
+        },
+        index=pd.Index([0, 1, 2], name="p_id"),
+    )
+    pd.testing.assert_frame_equal(
+        expected, result, check_dtype=False, check_index_type=False
+    )
+
+
+def test_different_evaluation_dates_across_data_rows(
+    backend: Literal["numpy", "jax"], xnp: ModuleType
+):
+    @policy_function()
+    def f(evaluation_year: int) -> int:
+        return evaluation_year
+
+    result = main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        policy_environment={
+            "f": f,
+        },
+        input_data=InputData.tree(
+            tree={
+                "p_id": xnp.array([1, 2, 3]),
+                "evaluation_year": xnp.array([2020, 2021, 2022]),
+            }
+        ),
+        tt_targets=TTTargets(tree={"f": None}),
+        backend=backend,
+    )
+
+    expected = pd.DataFrame(
+        {
+            ("f",): [2020, 2021, 2022],
+        },
+        index=pd.Index([1, 2, 3], name="p_id"),
+    )
+    pd.testing.assert_frame_equal(
+        expected, result, check_dtype=False, check_index_type=False
+    )
