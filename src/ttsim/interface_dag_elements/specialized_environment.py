@@ -205,10 +205,12 @@ def with_processed_params_and_scalars(
     must_set_evaluation_date = (
         # Never need to do anything if the evaluation date is set in the data.
         "evaluation_year" not in processed_data
-        # Check whether an actual date has been injected into the environment.
-        or isinstance(all_nodes.get("evaluation_year"), PolicyInput)
-        # Allow testing with environments that don't have evaluation_[x] set.
-        or "evaluation_year" not in all_nodes
+        and (
+            # PolicyInput as a placeholder
+            isinstance(all_nodes.get("evaluation_year"), PolicyInput)
+            # No evaluation_year in the environment (can happen in tests).
+            or "evaluation_year" not in all_nodes
+        )
     )
     if must_set_evaluation_date:
         if evaluation_date is None:
