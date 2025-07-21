@@ -42,7 +42,7 @@ def einkommen_bis_beitragsbemessungsgrenze_m(
 def bemessungsgrundlage_selbstständig_m(
     einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
     bezugsgröße_selbstständige_m: float,
-    einkommensteuer__einkünfte__ist_selbstständig: bool,
+    einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig: bool,
     privat_versichert: bool,
     beitragsbemessungsgrenze_m: float,
     mindestanteil_bezugsgröße_selbstständige: float,
@@ -55,7 +55,10 @@ def bemessungsgrundlage_selbstständig_m(
     Reference: §240 SGB V Abs. 4
     """
     # Calculate if self employed insures via public health insurance.
-    if einkommensteuer__einkünfte__ist_selbstständig and not privat_versichert:
+    if (
+        einkommensteuer__einkünfte__ist_hauptberuflich_selbstständig
+        and not privat_versichert
+    ):
         out = min(
             beitragsbemessungsgrenze_m,
             max(

@@ -48,7 +48,7 @@ inputs:
         aus_vermietung_und_verpachtung:
           betrag_m:
             - 13.0
-        ist_selbstständig:
+        ist_hauptberuflich_selbstständig:
           - true
         sonstige:
           alle_weiteren_m:
