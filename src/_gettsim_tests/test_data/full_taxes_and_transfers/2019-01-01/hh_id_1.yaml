@@ -138,7 +138,7 @@ inputs:
         - true
         - true
         - true
-      nettoeinkommen_vorjahr_m:
+      mean_nettoeinkommen_in_12_monaten_vor_geburt_m:
         - 1000.0
         - 2000.0
         - 3000.0

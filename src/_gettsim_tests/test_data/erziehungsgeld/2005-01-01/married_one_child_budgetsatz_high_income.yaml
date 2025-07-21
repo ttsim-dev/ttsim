@@ -34,7 +34,7 @@ inputs:
             - 5000.0
             - 0.0
     elterngeld:
-      nettoeinkommen_vorjahr_m:
+      mean_nettoeinkommen_in_12_monaten_vor_geburt_m:
         - 1400.0
         - 5000.0
         - 0.0
