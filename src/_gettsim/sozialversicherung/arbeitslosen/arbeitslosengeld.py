@@ -30,7 +30,7 @@ def betrag_m_not_implemented() -> float:
 def betrag_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     grundsätzlich_anspruchsberechtigt: bool,
-    einkommen_vorjahr_proxy_m: float,
+    mean_nettoeinkommen_in_12_monaten_vor_arbeitslosigkeit_m: float,
     satz: dict[str, float],
 ) -> float:
     """Calculate individual unemployment benefit."""
@@ -40,7 +40,10 @@ def betrag_m(
         arbeitsl_geld_satz = satz["erhöht"]
 
     if grundsätzlich_anspruchsberechtigt:
-        out = einkommen_vorjahr_proxy_m * arbeitsl_geld_satz
+        out = (
+            mean_nettoeinkommen_in_12_monaten_vor_arbeitslosigkeit_m
+            * arbeitsl_geld_satz
+        )
     else:
         out = 0.0
 
@@ -113,43 +116,53 @@ def grundsätzlich_anspruchsberechtigt(
 
 
 @policy_function()
-def einkommen_vorjahr_proxy_m(
-    sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
+def mean_nettoeinkommen_für_bemessungsgrundllage_nach_arbeitslosigkeit_y(
+    sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_y: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y: float,
     sozialversicherungspauschale: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag: float,
     solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ) -> float:
-    """Approximate last years income for unemployment benefit."""
-    # Relevant wage is capped at the contribution thresholds
-    max_wage = min(
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m,
-        sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m,
+    """Approximate last years income for unemployment benefit.
+
+    This target can be used as an input in another GETTSIM call to compute
+    Arbeitslosengeld. In principle, the relevant gross wage for this target is the sum
+    of the gross wages in the 12 months before unemployment. For most datasets, except
+    those with monthly income date (IAB, DRV data), the best approximation will likely
+    be the gross wage in the calendar year before unemployment.
+    """
+    berücksichtigungsfähige_einnahmen = min(
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_y,
+        sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_y,
     )
-
-    # We need to deduct lump-sum amounts for contributions, taxes and soli
-    prox_ssc = sozialversicherungspauschale * max_wage
-
-    # Fictive taxes (Lohnsteuer) are approximated by applying the wage to the tax tariff
-    # Caution: currently wrong calculation due to
-    # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag not being
-    # the same as zu versteuerndes einkommen
-    # waiting for PR Lohnsteuer #150 to be merged to correct this problem
-    prox_tax = piecewise_polynomial(
-        x=12 * max_wage
+    pauschalisierte_sozialversicherungsbeiträge = (
+        sozialversicherungspauschale * berücksichtigungsfähige_einnahmen
+    )
+    # TODO(@MImmesberger): This should likely be Lohnsteuer/Soli Lohnsteuer. However,
+    # not implemented before 2015 yet.
+    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/793
+    approximierte_einkommensteuer = piecewise_polynomial(
+        x=berücksichtigungsfähige_einnahmen
         - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag,
         parameters=einkommensteuer__parameter_einkommensteuertarif,
         xnp=xnp,
     )
-    prox_soli = piecewise_polynomial(
-        x=prox_tax,
+    approximierter_soli = piecewise_polynomial(
+        x=approximierte_einkommensteuer,
         parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
         xnp=xnp,
     )
-    out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
-    return max(out, 0.0)
+    return max(
+        (
+            berücksichtigungsfähige_einnahmen
+            - pauschalisierte_sozialversicherungsbeiträge
+            - approximierte_einkommensteuer
+            - approximierter_soli
+        ),
+        0.0,
+    )
 
 
 @param_function(start_date="1997-03-24")
