@@ -6,5 +6,5 @@ from ttsim.tt_dag_elements import policy_input
 
 
 @policy_input()
-def ist_selbstständig() -> bool:
+def ist_hauptberuflich_selbstständig() -> bool:
     """Self-employed (main profession)."""
