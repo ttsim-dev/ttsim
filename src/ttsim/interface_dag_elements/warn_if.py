@@ -132,10 +132,11 @@ def evaluation_date_set_in_multiple_places(
 
     """
 
-    if (
-        evaluation_date is not None
-        and "evaluation_year"
-        in specialized_environment__without_tree_logic_and_with_derived_functions
+    if evaluation_date is not None and isinstance(
+        specialized_environment__without_tree_logic_and_with_derived_functions.get(
+            "evaluation_year", True
+        ),
+        PolicyInput,
     ):
         warnings.warn(
             EvaluationDateSetInMultiplePlacesWarning(),

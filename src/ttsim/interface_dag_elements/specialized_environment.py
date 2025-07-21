@@ -19,6 +19,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
+    PolicyInput,
 )
 from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
 
@@ -201,15 +202,23 @@ def with_processed_params_and_scalars(
             # Leave nodes not in the data what they are.
             all_nodes[n] = f
 
-    if evaluation_date is None:
-        if "evaluation_year" not in all_nodes:
+    must_set_evaluation_date = (
+        # Never need to do anything if the evaluation date is set in the data.
+        "evaluation_year" not in processed_data
+        # Check whether an actual date has been injected into the environment.
+        or isinstance(all_nodes.get("evaluation_year"), PolicyInput)
+        # Allow testing with environments that don't have evaluation_[x] set.
+        or "evaluation_year" not in all_nodes
+    )
+    if must_set_evaluation_date:
+        if evaluation_date is None:
             all_nodes["evaluation_year"] = all_nodes["policy_year"]
             all_nodes["evaluation_month"] = all_nodes["policy_month"]
             all_nodes["evaluation_day"] = all_nodes["policy_day"]
-    elif "evaluation_year" not in all_nodes:
-        all_nodes["evaluation_year"] = evaluation_date.year
-        all_nodes["evaluation_month"] = evaluation_date.month
-        all_nodes["evaluation_day"] = evaluation_date.day
+        else:
+            all_nodes["evaluation_year"] = evaluation_date.year
+            all_nodes["evaluation_month"] = evaluation_date.month
+            all_nodes["evaluation_day"] = evaluation_date.day
 
     params = {k: v for k, v in all_nodes.items() if isinstance(v, ParamObject)}
     scalars = {k: v for k, v in all_nodes.items() if isinstance(v, float | int | bool)}

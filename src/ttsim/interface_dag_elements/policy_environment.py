@@ -17,6 +17,7 @@ from ttsim.tt_dag_elements import (
     DictParam,
     ParamObject,
     PiecewisePolynomialParam,
+    PolicyInput,
     RawParam,
     ScalarParam,
     get_consecutive_int_lookup_table_param_value,
@@ -76,6 +77,27 @@ def policy_environment(
         ),
         "policy_day": ScalarParam(
             value=policy_date.day, start_date=policy_date, end_date=policy_date
+        ),
+        "evaluation_year": PolicyInput(
+            leaf_name="evaluation_year",
+            data_type=int,
+            start_date=policy_date,
+            end_date=policy_date,
+            description="The evaluation year, will typically be set via `main`.",
+        ),
+        "evaluation_month": PolicyInput(
+            leaf_name="evaluation_month",
+            data_type=int,
+            start_date=policy_date,
+            end_date=policy_date,
+            description="The evaluation month, will typically be set via `main`.",
+        ),
+        "evaluation_day": PolicyInput(
+            leaf_name="evaluation_day",
+            data_type=int,
+            start_date=policy_date,
+            end_date=policy_date,
+            description="The evaluation day, will typically be set via `main`.",
         ),
         **merge_trees(
             left=_active_column_objects_and_param_functions(
