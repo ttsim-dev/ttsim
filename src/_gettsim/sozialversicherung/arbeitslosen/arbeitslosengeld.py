@@ -118,7 +118,7 @@ def einkommen_vorjahr_proxy_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
     sozialversicherungspauschale: float,
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag: float,
     solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ) -> float:
@@ -134,12 +134,12 @@ def einkommen_vorjahr_proxy_m(
 
     # Fictive taxes (Lohnsteuer) are approximated by applying the wage to the tax tariff
     # Caution: currently wrong calculation due to
-    # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale not being
+    # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag not being
     # the same as zu versteuerndes einkommen
     # waiting for PR Lohnsteuer #150 to be merged to correct this problem
     prox_tax = piecewise_polynomial(
         x=12 * max_wage
-        - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
+        - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag,
         parameters=einkommensteuer__parameter_einkommensteuertarif,
         xnp=xnp,
     )
