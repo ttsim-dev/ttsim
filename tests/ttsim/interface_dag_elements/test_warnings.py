@@ -76,7 +76,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places(backend):
         "some_func": some_func,
         "some_target": another_func,
     }
-    with pytest.warns(match="You have passed an evaluation date"):
+    with pytest.warns(match="You have specified the evaluation date in more than one"):
         main(
             main_target="warn_if__evaluation_date_set_in_multiple_places",
             policy_environment=policy_environment,
@@ -96,7 +96,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
         "some_func": some_func,
         "some_target": another_func,
     }
-    with pytest.warns(match="You have passed an evaluation date"):
+    with pytest.warns(match="You have specified the evaluation date in more than one"):
         main(
             main_target=MainTarget.raw_results.columns,
             policy_environment=policy_environment,

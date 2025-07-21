@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import (
         OrderedQNames,
         PolicyEnvironment,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        QNameData,
         UnorderedQNames,
     )
 
@@ -100,21 +100,21 @@ class EvaluationDateSetInMultiplePlacesWarning(UserWarning):
         Names of columns in the data that override hard-coded functions.
     """
 
-    def __init__(self) -> None:
-        msg = format_errors_and_warnings(
-            """
-                You have passed an evaluation date to `main` and an `evaluation year` is
-                present in the specialized environment without tree logic and with
-                derived functions.
-
-                Only the `evaluation_year` from the environment will be used, the
-                argument you have passed to `main` will not have an effect.
-
-                Note that this warnings function does not check for `evaluation_month`
-                and `evaluation_day` in the environment; nothing will be done about
-                them.
-                """,
+    def __init__(self, conditions: dict[str, bool]) -> None:
+        nicely_formatted_conditions = "\n".join(
+            [f"- {k}" for k, v in conditions.items() if v]
         )
+        msg = f"""
+You have specified the evaluation date in more than one way:
+
+{nicely_formatted_conditions}
+
+The last of these will be used.
+
+Note that this warnings function does not check for `evaluation_month`
+and `evaluation_day`, never set them anywhere without also setting
+`evaluation_year`.
+"""
         super().__init__(msg)
 
 
@@ -124,21 +124,26 @@ class EvaluationDateSetInMultiplePlacesWarning(UserWarning):
     ]
 )
 def evaluation_date_set_in_multiple_places(
-    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    policy_environment: PolicyEnvironment,
+    processed_data: QNameData,
     evaluation_date: datetime.date | None,
 ) -> None:
-    """Warn if evaluation date is passed as an argument to `main` and it is also
-    present in the environment.
+    """Warn if more than one of the following hold true:
+    - `evaluation_date` is passed as an argument to `main`
+    - `evaluation_year` is present in the policy environment and it is not a PolicyInput
+    - `evaluation_year` is part of the data
 
     """
-
-    if evaluation_date is not None and isinstance(
-        specialized_environment__without_tree_logic_and_with_derived_functions.get(
-            "evaluation_year", True
+    conditions = {
+        "`evaluation_date` passed as argument to `main`": evaluation_date is not None,
+        "`evaluation_year` is set in the policy environment": (
+            "evaluation_year" in policy_environment
+            and not isinstance(policy_environment["evaluation_year"], PolicyInput)
         ),
-        PolicyInput,
-    ):
+        "`evaluation_year` is present in the data": "evaluation_year" in processed_data,
+    }
+    if sum(conditions.values()) > 1:
         warnings.warn(
-            EvaluationDateSetInMultiplePlacesWarning(),
+            EvaluationDateSetInMultiplePlacesWarning(conditions),
             stacklevel=2,
         )
