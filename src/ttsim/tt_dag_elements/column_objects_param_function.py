@@ -152,10 +152,9 @@ def policy_input(
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     def inner(func: Callable[..., Any]) -> PolicyInput:
-        data_type = func.__annotations__["return"]
         return PolicyInput(
             leaf_name=func.__name__,
-            data_type=data_type,
+            data_type=func.__annotations__["return"],
             start_date=start_date,
             end_date=end_date,
             foreign_key_type=foreign_key_type,
