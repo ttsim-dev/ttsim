@@ -9,18 +9,18 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 - {gh}`1040` Fix `vorjahr` (and similar) input names and their namespaces
   ({ghuser}`MImmesberger`)
 - {gh}`1035` Change the handling of `policy_date`, `evaluation_date`; remove `date`
-  ({ghuser}`hmgaudecker`, `MImmesberger`)
+  ({ghuser}`hmgaudecker`, {ghuser}`MImmesberger`)
 - {gh}`1032` Clean up Wohngeld, Werbungskosten, Minjobs around the introduction of
   exemptions to social insurance contributions ({ghuser}`MImmesberger`)
 - {gh}`1038` Rename `ist_selbstständig` to `ist_hauptberuflich_selbstständig`
   ({ghuser}`MImmesberger`)
 - {gh}`1037` Improve performance of `processed_data` ({ghuser}`JuergenWiemers`,
-  `hmgaudecker`, `mj023`)
+  `hmgaudecker`, {ghuser}`mj023`)
 - {gh}`1031` Fix #1006, Improve error message when input data are missing and results
-  are requested ({ghuser}`MImmesberger`, `hmgaudecker`)
+  are requested ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
 - {gh}`1029` Change namespace of private Renteneinnahmen ({ghuser}`MImmesberger`)
-- {gh}`1033` Tighten ruff checks ({ghuser}`hmgaudecker`, `MImmesberger`)
-- {gh}`1027` Better fail/warn tests ({ghuser}`MImmesberger`, `hmgaudecker`)
+- {gh}`1033` Tighten ruff checks ({ghuser}`hmgaudecker`, {ghuser}`MImmesberger`)
+- {gh}`1027` Better fail/warn tests ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
 - {gh}`1017` Better error message for missing input data ({ghuser}`MImmesberger`,
   `hmgaudecker`)
 - {gh}`1026` Fix bug in `fail_if.input_df_mapper_columns_missing_in_df`
@@ -30,48 +30,49 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 - {gh}`1024` Split up `fail_and_warn` argument of `main` ({ghuser}`MImmesberger`,
   `hmgaudecker`)
 - {gh}`1016` Turn fail_ifs and warn_ifs on + let `main` return a pytree, update pixi
-  environments. ({ghuser}`MImmesberger`, `timmens`, `hmgaudecker`)
+  environments. ({ghuser}`MImmesberger`, {ghuser}`timmens`, {ghuser}`hmgaudecker`)
 - {gh}`1018` Enable annotations for interface / tax-transfer functions
-  ({ghuser}`hmgaudecker`, `MImmesberger`)
+  ({ghuser}`hmgaudecker`, {ghuser}`MImmesberger`)
 - {gh}`1013` Fix Rente Hinzuverdienstgrenze ({ghuser}`MImmesberger`)
 - {gh}`1015` Remaining parts of 2025 parameter update ({ghuser}`MImmesberger`)
 - {gh}`1012` Rente Angleichung Ost/West ({ghuser}`MImmesberger`)
-- {gh}`1011` Simple renamings. ({ghuser}`MImmesberger`, `hmgaudecker`)
-- {gh}`1007` Remove `kind` input ({ghuser}`MImmesberger`, `hmgaudecker`)
+- {gh}`1011` Simple renamings. ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
+- {gh}`1007` Remove `kind` input ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
 - {gh}`1000` Use individual-specific Zusatzbeitrag ({ghuser}`MImmesberger`,
   `hmgaudecker`)
-- {gh}`998` Add N-Dimensional Lookup Table ({ghuser}`mj023`, `hmgaudecker`)
+- {gh}`998` Add N-Dimensional Lookup Table ({ghuser}`mj023`, {ghuser}`hmgaudecker`)
 - {gh}`1001` Rename: output -> main_target(s), targets -> tt_targets
-  ({ghuser}`hmgaudecker`, `MImmesberger`)
+  ({ghuser}`hmgaudecker`, {ghuser}`MImmesberger`)
 - {gh}`997` Improve errors when executing the interface DAG ({ghuser}`MImmesberger`,
   `hmgaudecker`)
-- {gh}`996` Updates to interface ({ghuser}`MImmesberger`, `hmgaudecker`)
+- {gh}`996` Updates to interface ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
 - {gh}`991` Implement remaining interface components ({ghuser}`hmgaudecker`,
   `MImmesberger`)
 - {gh}`993` Upserting of params: Makes all arguments but `value` of the params
-  dataclasses optional ({ghuser}`MImmesberger`, `hmgaudecker`)
+  dataclasses optional ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
 - {gh}`992` Fail if length of data input arrays differs. ({ghuser}`MImmesberger`)
 - {gh}`990` Remove config elements from policy environment ({ghuser}`MImmesberger`,
   `hmgaudecker`)
-- {gh}`986` Make GETTSIM functions jittable ({ghuser}`hmgaudecker`, `MImmesberger`,
-  `mj023`)
-- {gh}`987` Run fail_if functions first ({ghuser}`hmgaudecker`, `MImmesberger`)
+- {gh}`986` Make GETTSIM functions jittable ({ghuser}`hmgaudecker`,
+  {ghuser}`MImmesberger`, `mj023`)
+- {gh}`987` Run fail_if functions first ({ghuser}`hmgaudecker`, {ghuser}`MImmesberger`)
 - {gh}`985` Make date input dependent, improve logic of
-  `InputDependentInterfaceFunction`s ({ghuser}`MImmesberger`, `hmgaudecker`)
+  `InputDependentInterfaceFunction`s ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
 - {gh}`984` Add 'output' keyword to main, fix tests ({ghuser}`hmgaudecker`)
-- {gh}`953` Hierarchical interface ({ghuser}`hmgaudecker`, `MImmesberger`, `mj023`,
-  `timmens`)
+- {gh}`953` Hierarchical interface ({ghuser}`hmgaudecker`, {ghuser}`MImmesberger`,
+  {ghuser}`mj023`, `timmens`)
 - {gh}`957` Use relative paths for taxes and transfers ({ghuser}`MImmesberger`)
 - {gh}`955` ConsecutiveInt type for Anspruchsdauer ALG1 ({ghuser}`MImmesberger`)
 - {gh}`954` Improve implementation of Mehrbedarf für Alleinerziehende.
   ({ghuser}`MImmesberger`)
-- {gh}`948` Preliminary DAG-based interface ({ghuser}`hmgaudecker`, `MImmesberger`,
-  `mj023`)
+- {gh}`948` Preliminary DAG-based interface ({ghuser}`hmgaudecker`,
+  {ghuser}`MImmesberger`, `mj023`)
 - {gh}`943` Remove all occurrences of `vectorization_strategy='loop'` ({ghuser}`mj023`)
 - {gh}`947` METTSIM: Test overwriting scalar param / scalar param function with a data
   column ({ghuser}`MImmesberger`)
 - {gh}`945` Move param dataclasses to param_types.py ({ghuser}`MImmesberger`)
-- {gh}`897` Unify parsing of params ({ghuser}`hmgaudecker`, `MImmesberger`, `mj023`)
+- {gh}`897` Unify parsing of params ({ghuser}`hmgaudecker`, {ghuser}`MImmesberger`,
+  {ghuser}`mj023`)
 - {gh}`899` Remove infrastructure to create synthetic data. ({ghuser}`MImmesberger`)
 - {gh}`894`, {gh}`896` Cleanups ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`).
 - {gh}`891` Prepare for jitting / vectorization of GETTSIM` ({ghuser}`hmgaudecker\`).
