@@ -687,14 +687,14 @@ def test_is_lambda_function_non_function_input():
     assert not _is_lambda_function(None)
 
 
-def test_lambda_functions_disallowed_make_vectorizable():
+def test_lambda_functions_disallowed_make_vectorizable(xnp):
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
-        _make_vectorizable(lambda x: x, backend="numpy", xnp=numpy)
+        _make_vectorizable(lambda x: x, backend="numpy", xnp=xnp)
 
 
-def test_lambda_functions_disallowed_make_vectorizable_source():
+def test_lambda_functions_disallowed_make_vectorizable_source(xnp):
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
-        make_vectorizable_source(lambda x: x, backend="numpy", xnp=numpy)
+        make_vectorizable_source(lambda x: x, backend="numpy", xnp=xnp)
 
 
 # ======================================================================================
@@ -796,3 +796,91 @@ def test_vectorize_function_annotations(backend, xnp):
         "return": "FloatColumn",
     }
     assert inspect.get_annotations(vectorized) == expected_annotations
+
+
+# ======================================================================================
+# Test forbidden type conversions and augmented assignments
+# ======================================================================================
+
+
+def forbidden_type_conversion_float(x):
+    return float(x)
+
+
+def forbidden_type_conversion_int(x):
+    return int(x)
+
+
+def forbidden_type_conversion_bool(x):
+    return bool(x)
+
+
+def forbidden_type_conversion_complex(x):
+    return complex(x)
+
+
+def forbidden_type_conversion_str(x):
+    return str(x)
+
+
+def forbidden_augassign_add(x):
+    y = x
+    y += 1
+    return y
+
+
+def forbidden_augassign_sub(x):
+    y = x
+    y -= 1
+    return y
+
+
+def forbidden_augassign_mult(x):
+    y = x
+    y *= 2
+    return y
+
+
+def forbidden_augassign_div(x):
+    y = x
+    y /= 2
+    return y
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        forbidden_type_conversion_float,
+        forbidden_type_conversion_int,
+        forbidden_type_conversion_bool,
+        forbidden_type_conversion_complex,
+        forbidden_type_conversion_str,
+    ],
+)
+def test_forbidden_type_conversions_raise(func, xnp):
+    """Test that forbidden type conversions raise the correct error."""
+    with pytest.raises(TranslateToVectorizableError, match="Forbidden type conversion"):
+        _make_vectorizable(func, backend="numpy", xnp=xnp)
+    with pytest.raises(TranslateToVectorizableError, match="Forbidden type conversion"):
+        make_vectorizable_source(func, backend="numpy", xnp=xnp)
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        forbidden_augassign_add,
+        forbidden_augassign_sub,
+        forbidden_augassign_mult,
+        forbidden_augassign_div,
+    ],
+)
+def test_forbidden_augassign_raise(func, xnp):
+    """Test that forbidden augmented assignments raise the correct error."""
+    with pytest.raises(
+        TranslateToVectorizableError, match="Forbidden augmented assignment"
+    ):
+        _make_vectorizable(func, backend="numpy", xnp=xnp)
+    with pytest.raises(
+        TranslateToVectorizableError, match="Forbidden augmented assignment"
+    ):
+        make_vectorizable_source(func, backend="numpy", xnp=xnp)
