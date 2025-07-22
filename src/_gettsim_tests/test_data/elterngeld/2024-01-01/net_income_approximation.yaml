@@ -60,6 +60,6 @@ inputs:
       - false
 outputs:
   elterngeld:
-    nettoeinkommen_approximation_m:
+    mean_nettoeinkommen_für_bemessungsgrundllage_nach_geburt_m:
       - 790.0
       - 158.0

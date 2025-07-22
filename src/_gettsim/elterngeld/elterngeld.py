@@ -85,7 +85,7 @@ def betrag_m(
 
 @policy_function(start_date="2007-01-01")
 def basisbetrag_m(
-    nettoeinkommen_vorjahr_m: float,
+    mean_nettoeinkommen_in_12_monaten_vor_geburt_m: float,
     lohnersatzanteil: float,
     anzurechnendes_nettoeinkommen_m: float,
     max_zu_berücksichtigendes_einkommen: float,
@@ -96,7 +96,7 @@ def basisbetrag_m(
 
     """
     berücksichtigtes_einkommen = min(
-        nettoeinkommen_vorjahr_m,
+        mean_nettoeinkommen_in_12_monaten_vor_geburt_m,
         max_zu_berücksichtigendes_einkommen,
     )
     return (
@@ -212,7 +212,7 @@ def bezugsmonate_unter_grenze_fg(
 
 @policy_function(start_date="2011-01-01")
 def lohnersatzanteil(
-    nettoeinkommen_vorjahr_m: float,
+    mean_nettoeinkommen_in_12_monaten_vor_geburt_m: float,
     lohnersatzanteil_einkommen_untere_grenze: float,
     lohnersatzanteil_einkommen_obere_grenze: float,
     einkommensschritte_korrektur: float,
@@ -229,9 +229,9 @@ def lohnersatzanteil(
     """
     # Higher replacement rate if considered income is below a threshold
     if (
-        nettoeinkommen_vorjahr_m
+        mean_nettoeinkommen_in_12_monaten_vor_geburt_m
         < nettoeinkommensstufen_für_lohnersatzrate["lower_threshold"]
-        and nettoeinkommen_vorjahr_m > 0
+        and mean_nettoeinkommen_in_12_monaten_vor_geburt_m > 0
     ):
         out = satz + (
             lohnersatzanteil_einkommen_untere_grenze
@@ -240,7 +240,7 @@ def lohnersatzanteil(
         )
     # Lower replacement rate if considered income is above a threshold
     elif (
-        nettoeinkommen_vorjahr_m
+        mean_nettoeinkommen_in_12_monaten_vor_geburt_m
         > nettoeinkommensstufen_für_lohnersatzrate["upper_threshold"]
     ):
         # Replacement rate is only lowered up to a specific value

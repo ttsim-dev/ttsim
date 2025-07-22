@@ -29,16 +29,11 @@ inputs:
             - 2500.0
             - 2500.0
             - 0.0
-          bruttolohn_vorjahr_m:
-            - 2500.0
-            - 2500.0
-            - 0.0
-    elterngeld:
-      nettoeinkommen_vorjahr_m:
-        - 2500.0
-        - 2500.0
-        - 0.0
     erziehungsgeld:
+      bruttolohn_vorjahr_nach_abzug_werbungskosten_m:
+        - 2423.33
+        - 2423.33
+        - 0.0
       budgetsatz:
         - false
         - false
@@ -99,7 +94,7 @@ outputs:
       - 0.0
       - 0.0
       - 108.4597333
-    anzurechnendes_einkommen_y:
+    anzurechnendes_einkommen_y_fg:
       - 0
       - 0
       - 44201.6
@@ -107,7 +102,7 @@ outputs:
       - 108.4597333
       - 0.0
       - 0.0
-    einkommensgrenze_y:
+    einkommensgrenze_y_fg:
       - 0
       - 0
       - 16500

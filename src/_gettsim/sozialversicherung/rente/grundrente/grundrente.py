@@ -29,11 +29,11 @@ def betrag_m(basisbetrag_m: float, anzurechnendes_einkommen_m: float) -> float:
 
 @policy_function(start_date="2021-01-01")
 def einkommen_m(
-    einkommensteuer__einkünfte__sonstige__rente__gesamtbetrag_vorjahr_m: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
-    einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m: float,
-    einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m: float,
-    einkommensteuer__einkünfte__aus_kapitalvermögen__betrag_m: float,
+    gesamteinnahmen_aus_renten_vorjahr_m: float,
+    bruttolohn_vorjahr_m: float,
+    einnahmen_aus_selbstständiger_arbeit_vorvorjahr_m: float,
+    einnahmen_aus_vermietung_und_verpachtung_vorvorjahr_m: float,
+    einnahmen_aus_kapitalvermögen_vorvorjahr_m: float,
 ) -> float:
     """Income relevant for Grundrentenzuschlag before deductions.
 
@@ -45,9 +45,6 @@ def einkommen_m(
       to be able to use administrative data on this income for the calculation: "It can
       be assumed that the tax office regularly has the data two years after the end of
       the assessment period, which can be retrieved from the pension insurance."
-    - Warning: Currently, earnings of dependent work and pensions are based on the last
-      year, and other income on the current year instead of the year two years ago to
-      avoid the need for several new input variables.
     - Warning: Freibeträge for income are currently not considered as `freibeträge_y`
       depends on pension income through
       `sozialversicherung__kranken__beitrag__betrag_versicherter_m` ->
@@ -57,11 +54,11 @@ def einkommen_m(
     """
     # Sum income over different income sources.
     return (
-        einkommensteuer__einkünfte__sonstige__rente__gesamtbetrag_vorjahr_m
-        + einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m
-        + einkommensteuer__einkünfte__aus_selbstständiger_arbeit__betrag_m  # income from self-employment
-        + einkommensteuer__einkünfte__aus_vermietung_und_verpachtung__betrag_m  # rental income
-        + einkommensteuer__einkünfte__aus_kapitalvermögen__betrag_m
+        gesamteinnahmen_aus_renten_vorjahr_m
+        + bruttolohn_vorjahr_m
+        + einnahmen_aus_selbstständiger_arbeit_vorvorjahr_m
+        + einnahmen_aus_vermietung_und_verpachtung_vorvorjahr_m
+        + einnahmen_aus_kapitalvermögen_vorvorjahr_m
     )
 
 
@@ -258,3 +255,24 @@ def grundsätzlich_anspruchsberechtigt(
 ) -> bool:
     """Has accumulated enough insured years to be eligible."""
     return grundrentenzeiten_monate >= berücksichtigte_wartezeit_monate["min"]
+
+
+@policy_function(start_date="2021-01-01")
+def gesamteinnahmen_aus_renten_für_einkommensberechnung_im_folgejahr_m(
+    sozialversicherung__rente__altersrente__betrag_m: float,
+    sozialversicherung__rente__erwerbsminderung__betrag_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m: float,
+    einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
+) -> float:
+    """Income from private and public pensions in the previous calendar year.
+
+    This target can be used as an input in another GETTSIM call to compute Grundrente.
+    """
+    return (
+        sozialversicherung__rente__altersrente__betrag_m
+        + sozialversicherung__rente__erwerbsminderung__betrag_m
+        + einkommensteuer__einkünfte__sonstige__rente__geförderte_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m
+        + einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m
+    )
