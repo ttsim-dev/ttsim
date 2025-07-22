@@ -30,7 +30,7 @@ inputs:
             - 2500.0
             - 0.0
     erziehungsgeld:
-      bruttolohn_vorjahr_abzüglich_werbungskosten_m:
+      bruttolohn_vorjahr_nach_abzug_werbungskosten_m:
         - 2423.33
         - 2423.33
         - 0.0

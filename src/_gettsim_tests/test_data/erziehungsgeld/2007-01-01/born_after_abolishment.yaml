@@ -25,7 +25,7 @@ inputs:
             - 1500.0
             - 0.0
     erziehungsgeld:
-      bruttolohn_vorjahr_abzüglich_werbungskosten_m:
+      bruttolohn_vorjahr_nach_abzug_werbungskosten_m:
         - 1423.33
         - 0.0
       budgetsatz:
