@@ -26,7 +26,6 @@ from ttsim.interface_dag_elements.fail_if import (
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_columns_missing_in_df,
     input_df_mapper_has_incorrect_format,
-    param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
 )
@@ -36,7 +35,6 @@ from ttsim.tt_dag_elements import (
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
-    ScalarParam,
     group_creation_function,
     param_function,
     policy_function,
@@ -1414,146 +1412,4 @@ def test_raise_some_error_without_input_data(
             main_target=MainTarget.results.df_with_mapper,
             backend=backend,
             orig_policy_objects={"root": METTSIM_ROOT},
-        )
-
-
-@param_function()
-def valid_param_function(x: int) -> int:
-    """A valid param function that only depends on parameters."""
-    return x * 2
-
-
-@param_function()
-def valid_param_function_with_evaluation_and_policy_year(
-    evaluation_year: int,
-    policy_year: int,
-) -> int:
-    """A valid param function that only depends on evaluation_year and policy_year."""
-    return evaluation_year - policy_year
-
-
-@param_function()
-def invalid_param_function(policy_func: int) -> int:
-    """An invalid param function that depends on a column object."""
-    return policy_func * 2
-
-
-@policy_function()
-def some_policy_function(x: int) -> int:
-    """A policy function for testing."""
-    return x + 1
-
-
-@policy_input()
-def some_policy_input() -> int:
-    """A policy input for testing."""
-    return 1
-
-
-@policy_input()
-def evaluation_year() -> int:
-    """A policy input for testing."""
-
-
-@policy_input()
-def policy_year() -> int:
-    """A policy input for testing."""
-
-
-@pytest.mark.parametrize(
-    "specialized_environment",
-    [
-        # Valid environment with only param functions and no dependencies
-        {
-            "valid_param": valid_param_function,
-        },
-        # Valid environment with param functions and column objects but no dependencies
-        {
-            "valid_param": valid_param_function,
-            "policy_func": some_policy_function,
-        },
-        # Valid environment with mixed types but no violations
-        {
-            "valid_param": valid_param_function,
-            "policy_func": some_policy_function,
-            "policy_input": some_policy_input,
-            "some_scalar": 42,
-            "some_dict_param": _SOME_DICT_PARAM,
-        },
-        # Valid environment with evaluation_year and policy_year as scalars
-        {
-            "valid_param": valid_param_function_with_evaluation_and_policy_year,
-            "evaluation_year": ScalarParam(value=2025),
-            "policy_year": ScalarParam(value=2024),
-        },
-        # Valid environment with evaluation_year and policy_year as policy inputs
-        {
-            "valid_param": valid_param_function_with_evaluation_and_policy_year,
-            "evaluation_year": evaluation_year,
-            "policy_year": policy_year,
-        },
-    ],
-)
-def test_param_function_depends_on_column_objects_passes(specialized_environment):
-    """Test that valid environments pass the validation."""
-    param_function_depends_on_column_objects(specialized_environment)
-
-
-@pytest.mark.parametrize(
-    ("specialized_environment", "expected_error_match"),
-    [
-        (
-            {
-                "invalid_param": invalid_param_function,
-                "policy_func": some_policy_function,
-            },
-            "invalid_param depends on policy_func",
-        ),
-        (
-            {
-                "valid_param": valid_param_function,
-                "invalid_param": invalid_param_function,
-                "policy_func": some_policy_function,
-            },
-            "invalid_param depends on policy_func",
-        ),
-    ],
-)
-def test_param_function_depends_on_column_objects_raises(
-    specialized_environment, expected_error_match
-):
-    """Test that invalid environments raise the expected error."""
-    with pytest.raises(ValueError, match=expected_error_match):
-        param_function_depends_on_column_objects(specialized_environment)
-
-
-def test_param_function_depends_on_column_objects_via_main(
-    backend: Literal["jax", "numpy"],
-    xnp: ModuleType,
-):
-    """Test that the param_function_depends_on_column_objects check works via main."""
-
-    with pytest.raises(
-        ValueError,
-        match="invalid_param depends on policy_func",
-    ):
-        main(
-            policy_date_str="2025-01-01",
-            main_target=MainTarget.results.df_with_mapper,
-            tt_targets={
-                "tree": {
-                    "invalid_param": None,
-                },
-            },
-            input_data={
-                "tree": {
-                    "p_id": xnp.array([1, 2, 3]),
-                    "x": xnp.array([1, 2, 3]),
-                },
-            },
-            backend=backend,
-            policy_environment={
-                "invalid_param": invalid_param_function,
-                "policy_func": some_policy_function,
-            },
         )

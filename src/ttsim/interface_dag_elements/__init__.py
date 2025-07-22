@@ -54,9 +54,6 @@ class FailIf(MainTargetABC):
     non_convertible_objects_in_results_tree: str = (
         "fail_if__non_convertible_objects_in_results_tree"
     )
-    param_function_depends_on_column_objects: str = (
-        "fail_if__param_function_depends_on_column_objects"
-    )
     paths_are_missing_in_targets_tree_mapper: str = (
         "fail_if__paths_are_missing_in_targets_tree_mapper"
     )
