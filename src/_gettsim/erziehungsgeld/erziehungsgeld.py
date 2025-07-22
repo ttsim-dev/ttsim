@@ -99,7 +99,7 @@ def erziehungsgeld_kind_ohne_budgetsatz_m() -> NotImplementedError:
 )
 def anspruchshöhe_kind_mit_budgetsatz_m(
     ist_leistungsbegründendes_kind: bool,
-    abzug_durch_einkommen_m: float,
+    abzug_durch_einkommen_m_fg: float,
     basisbetrag_m: float,
 ) -> float:
     """Parental leave benefit (Erziehungsgeld) on child level.
@@ -110,29 +110,23 @@ def anspruchshöhe_kind_mit_budgetsatz_m(
     Legal reference: BGBl I. v. 17.02.2004
     """
     if ist_leistungsbegründendes_kind:
-        out = max(
-            basisbetrag_m - abzug_durch_einkommen_m,
-            0.0,
-        )
+        return max(basisbetrag_m - abzug_durch_einkommen_m_fg, 0.0)
     else:
-        out = 0.0
-
-    return out
+        return 0.0
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
 def basisbetrag_m(
     budgetsatz: bool,
-    anzurechnendes_einkommen_y: float,
-    einkommensgrenze_y: float,
+    anzurechnendes_einkommen_y_fg: float,
+    einkommensgrenze_y_fg: float,
     alter_monate: int,
     altersgrenze_für_reduziertes_einkommenslimit_kind_monate: int,
     satz: dict[str, float],
 ) -> float:
     """Parental leave benefit (Erziehungsgeld) without means-test on child level."""
-    # no benefit if income is above threshold and child is younger than threshold
     if (
-        anzurechnendes_einkommen_y > einkommensgrenze_y
+        anzurechnendes_einkommen_y_fg > einkommensgrenze_y_fg
         and alter_monate < altersgrenze_für_reduziertes_einkommenslimit_kind_monate
     ):
         out = 0.0
@@ -145,9 +139,9 @@ def basisbetrag_m(
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
-def abzug_durch_einkommen_m(
-    anzurechnendes_einkommen_m: float,
-    einkommensgrenze_m: float,
+def abzug_durch_einkommen_m_fg(
+    anzurechnendes_einkommen_m_fg: float,
+    einkommensgrenze_m_fg: float,
     alter_monate: int,
     altersgrenze_für_reduziertes_einkommenslimit_kind_monate: float,
     abschlagsfaktor: float,
@@ -157,10 +151,10 @@ def abzug_durch_einkommen_m(
     Legal reference: BGBl I. v. 17.02.2004 S.209
     """
     if (
-        anzurechnendes_einkommen_m > einkommensgrenze_m
+        anzurechnendes_einkommen_m_fg > einkommensgrenze_m_fg
         and alter_monate >= altersgrenze_für_reduziertes_einkommenslimit_kind_monate
     ):
-        out = anzurechnendes_einkommen_m * abschlagsfaktor
+        out = anzurechnendes_einkommen_m_fg * abschlagsfaktor
     else:
         out = 0.0
     return out
@@ -246,8 +240,8 @@ def grundsätzlich_anspruchsberechtigt(
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
-def anzurechnendes_einkommen_y(
-    bruttolohn_vorjahr_abzüglich_werbungskosten_y: float,
+def anzurechnendes_einkommen_y_fg(
+    bruttolohn_vorjahr_abzüglich_werbungskosten_y_fg: float,
     ist_leistungsbegründendes_kind: bool,
     pauschaler_abzug_vom_einkommen: float,
 ) -> float:
@@ -260,7 +254,7 @@ def anzurechnendes_einkommen_y(
     """
     if ist_leistungsbegründendes_kind:
         out = (
-            bruttolohn_vorjahr_abzüglich_werbungskosten_y
+            bruttolohn_vorjahr_abzüglich_werbungskosten_y_fg
             * pauschaler_abzug_vom_einkommen
         )
     else:
@@ -269,7 +263,7 @@ def anzurechnendes_einkommen_y(
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")
-def einkommensgrenze_y(
+def einkommensgrenze_y_fg(
     einkommensgrenze_ohne_geschwisterbonus: float,
     familie__anzahl_kinder_fg: float,
     ist_leistungsbegründendes_kind: bool,
@@ -279,13 +273,13 @@ def einkommensgrenze_y(
 
     Legal reference: BGBl I. v. 17.02.2004 S.208
     """
-    out = (
-        einkommensgrenze_ohne_geschwisterbonus
-        + (familie__anzahl_kinder_fg - 1) * aufschlag_einkommen
-    )
-    if not ist_leistungsbegründendes_kind:
-        out = 0.0
-    return out
+    if ist_leistungsbegründendes_kind:
+        return (
+            einkommensgrenze_ohne_geschwisterbonus
+            + (familie__anzahl_kinder_fg - 1) * aufschlag_einkommen
+        )
+    else:
+        return 0.0
 
 
 @policy_function(start_date="2004-01-01", end_date="2008-12-31")

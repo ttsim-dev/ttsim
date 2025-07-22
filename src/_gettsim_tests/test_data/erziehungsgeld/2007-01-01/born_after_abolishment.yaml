@@ -75,12 +75,12 @@ outputs:
     anspruchshöhe_kind_m:
       - 0.0
       - 0.0
-    anzurechnendes_einkommen_y:
+    anzurechnendes_einkommen_y_fg:
       - 0
       - 0.0
     betrag_m:
       - 0.0
       - 0.0
-    einkommensgrenze_y:
+    einkommensgrenze_y_fg:
       - 0
       - 0.0

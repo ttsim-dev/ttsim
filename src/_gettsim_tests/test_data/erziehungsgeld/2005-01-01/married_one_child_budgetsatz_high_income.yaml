@@ -94,7 +94,7 @@ outputs:
       - 0.0
       - 0.0
       - 0.0
-    anzurechnendes_einkommen_y:
+    anzurechnendes_einkommen_y_fg:
       - 0
       - 0
       - 56969.6
@@ -102,7 +102,7 @@ outputs:
       - 0.0
       - 0.0
       - 0.0
-    einkommensgrenze_y:
+    einkommensgrenze_y_fg:
       - 0
       - 0
       - 22086
