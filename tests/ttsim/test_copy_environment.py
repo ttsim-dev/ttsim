@@ -9,7 +9,7 @@ import pytest
 
 from ttsim import copy_environment, main
 from ttsim.interface_dag_elements import MainTarget
-from ttsim.tt_dag_elements.param_objects import ScalarParam
+from ttsim.tt_dag_elements.param_objects import RawParam, ScalarParam
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import PolicyEnvironment
@@ -75,17 +75,28 @@ def test_copy_full_policy_environment():
     assert set(optree.tree_paths(policy_env)) == set(optree.tree_paths(copied_env))
 
     # Get reference to nested parameter in both versions
-    original_param = policy_env["payroll_tax"]["employee"]["rate"]
-    copied_param = copied_env["payroll_tax"]["employee"]["rate"]
+    original_param = policy_env["orc_hunting_bounty"]["raw_bounties_per_orc"]
+    copied_param = copied_env["orc_hunting_bounty"]["raw_bounties_per_orc"]
 
     # Values should be equal initially
     assert copied_param.value == original_param.value
 
     # Modify copy - should not affect original
-    copied_env["payroll_tax"]["employee"]["rate"] = ScalarParam(value=0.3)
+    copied_env["orc_hunting_bounty"]["raw_bounties_per_orc"] = RawParam(
+        value={
+            "small_orc": 500,
+            "large_orc": {"peasant_hunter": 500, "noble_hunter": 500},
+        }
+    )
 
-    assert policy_env["payroll_tax"]["employee"]["rate"].value == original_param.value
-    assert copied_env["payroll_tax"]["employee"]["rate"].value == 0.3
+    assert (
+        policy_env["orc_hunting_bounty"]["raw_bounties_per_orc"].value
+        == original_param.value
+    )
+    assert copied_env["orc_hunting_bounty"]["raw_bounties_per_orc"].value == {
+        "small_orc": 500,
+        "large_orc": {"peasant_hunter": 500, "noble_hunter": 500},
+    }
 
 
 def test_deepcopy_fails_on_policy_environment():
