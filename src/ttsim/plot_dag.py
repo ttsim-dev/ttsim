@@ -69,7 +69,7 @@ class NodeMetaData:
 
 
 def plot_tt_dag(
-    date_str: str,
+    policy_date_str: str,
     root: Path,
     node_selector: NodeSelector | None = None,
     title: str = "",
@@ -82,7 +82,7 @@ def plot_tt_dag(
 
     Parameters
     ----------
-    date_str
+    policy_date_str
         The date string.
     root
         The root path.
@@ -106,7 +106,7 @@ def plot_tt_dag(
     """
     environment = main(
         main_target="policy_environment",
-        date_str=date_str,
+        policy_date_str=policy_date_str,
         orig_policy_objects={"root": root},
         backend="numpy",
     )
