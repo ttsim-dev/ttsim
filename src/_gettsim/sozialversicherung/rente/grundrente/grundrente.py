@@ -265,7 +265,7 @@ def gesamteinnahmen_aus_renten_für_einkommensberechnung_im_folgejahr_m(
     einkommensteuer__einkünfte__sonstige__rente__sonstige_private_vorsorge_m: float,
     einkommensteuer__einkünfte__sonstige__rente__betriebliche_altersvorsorge_m: float,
 ) -> float:
-    """Income from private and public pensions in the previous year.
+    """Income from private and public pensions in the previous calendar year.
 
     This target can be used as an input in another GETTSIM call to compute Grundrente.
     """

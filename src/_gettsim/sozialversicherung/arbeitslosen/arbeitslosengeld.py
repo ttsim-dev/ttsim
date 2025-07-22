@@ -116,7 +116,7 @@ def grundsätzlich_anspruchsberechtigt(
 
 
 @policy_function()
-def mean_nettoeinkommen_für_bemessungsgrundllage_nach_arbeitslosigkeit_y(
+def mean_nettoeinkommen_für_bemessungsgrundlage_bei_arbeitslosigkeit_y(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_y: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     sozialversicherungspauschale: float,
@@ -125,7 +125,7 @@ def mean_nettoeinkommen_für_bemessungsgrundllage_nach_arbeitslosigkeit_y(
     solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
     xnp: ModuleType,
 ) -> float:
-    """Approximate last years income for unemployment benefit.
+    """Approximate the income relevant for calculating unemployment insurance benefits.
 
     This target can be used as an input in another GETTSIM call to compute
     Arbeitslosengeld. In principle, the relevant gross wage for this target is the sum

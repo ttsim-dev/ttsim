@@ -31,5 +31,5 @@ def zu_versteuerndes_einkommen_vorjahr_y_sn() -> float:
 
     To compute this value using GETTSIM set `('einkommensteuer',
     'zu_versteuerndes_einkommen_y_sn')` as the TT target and use input data from the
-    year prior to the youngest child's birth year.
+    calendar year prior to the youngest child's birth year.
     """

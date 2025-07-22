@@ -10,7 +10,7 @@ def mean_nettoeinkommen_in_12_monaten_vor_arbeitslosigkeit_m() -> float:
     """Mean net wage in the 12 months before unemployment.
 
     To compute this value using GETTSIM set `('arbeitslosengeld',
-    'mean_nettoeinkommen_für_bemessungsgrundllage_nach_arbeitslosigkeit_y')` as the TT
+    'mean_nettoeinkommen_für_bemessungsgrundlage_bei_arbeitslosigkeit_y')` as the TT
     target and use input data from the 12 months before the unemployment.
     """
 
