@@ -1421,7 +1421,7 @@ def test_raise_some_error_without_input_data(
 
 
 @pytest.mark.skipif(jax is None, reason="Jax is not installed")
-def test_backend_has_changed_from_numpy_to_jax():
+def test_backend_has_changed_from_jax_to_numpy():
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
@@ -1447,7 +1447,7 @@ def test_backend_has_changed_from_numpy_to_jax():
 
 
 @pytest.mark.skipif(jax is None, reason="Jax is not installed")
-def test_backend_has_changed_from_jax_to_numpy():
+def test_backend_has_changed_from_numpy_to_jax():
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
