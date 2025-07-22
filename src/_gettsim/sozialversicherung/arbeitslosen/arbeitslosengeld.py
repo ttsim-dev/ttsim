@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import (
     get_consecutive_int_lookup_table_param_value,
     param_function,
-    piecewise_polynomial,
     policy_function,
 )
 
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
 
     from ttsim.tt_dag_elements import (
         ConsecutiveIntLookupTableParamValue,
-        PiecewisePolynomialParamValue,
     )
 
 
@@ -120,10 +118,8 @@ def mean_nettoeinkommen_für_bemessungsgrundlage_bei_arbeitslosigkeit_y(
     sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_y: float,
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     sozialversicherungspauschale: float,
-    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag: float,
-    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
-    xnp: ModuleType,
+    lohnsteuer__betrag_y: float,
+    lohnsteuer__betrag_soli_y: float,
 ) -> float:
     """Approximate the income relevant for calculating unemployment insurance benefits.
 
@@ -140,26 +136,12 @@ def mean_nettoeinkommen_für_bemessungsgrundlage_bei_arbeitslosigkeit_y(
     pauschalisierte_sozialversicherungsbeiträge = (
         sozialversicherungspauschale * berücksichtigungsfähige_einnahmen
     )
-    # TODO(@MImmesberger): This should likely be Lohnsteuer/Soli Lohnsteuer. However,
-    # not implemented before 2015 yet.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/793
-    approximierte_einkommensteuer = piecewise_polynomial(
-        x=berücksichtigungsfähige_einnahmen
-        - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__arbeitnehmerpauschbetrag,
-        parameters=einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
-    )
-    approximierter_soli = piecewise_polynomial(
-        x=approximierte_einkommensteuer,
-        parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
-        xnp=xnp,
-    )
     return max(
         (
             berücksichtigungsfähige_einnahmen
             - pauschalisierte_sozialversicherungsbeiträge
-            - approximierte_einkommensteuer
-            - approximierter_soli
+            - lohnsteuer__betrag_y
+            - lohnsteuer__betrag_soli_y
         ),
         0.0,
     )
