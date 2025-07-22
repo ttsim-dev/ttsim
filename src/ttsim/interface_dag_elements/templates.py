@@ -34,12 +34,14 @@ def input_data_dtypes(
     )
 
     # Replace dtypes of PolicyInputs that have the generic type 'FloatColumn | IntColumn
-    # | BoolColumn' with the actual dtype of the policy environment.
+    # | BoolColumn' with the actual dtype found in the policy environment.
     flat_policy_env = dt.flatten_to_tree_paths(policy_environment)
     flat_dtype_tree = dt.flatten_to_tree_paths(base_dtype_tree)
     out = {}
     for p, derived_dtype_in_base in flat_dtype_tree.items():
         policy_env_element = flat_policy_env[p]
+        if p[0] in {"evaluation_year", "evaluation_month", "evaluation_day"}:
+            continue
         if isinstance(policy_env_element, PolicyInput) and "|" in derived_dtype_in_base:
             out[p] = scalar_type_to_array_type(policy_env_element.data_type)
         else:

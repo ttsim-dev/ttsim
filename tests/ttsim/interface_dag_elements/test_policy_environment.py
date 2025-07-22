@@ -70,7 +70,7 @@ def test_add_jahresanfang(xnp):
     }
     _active_ttsim_tree_with_params = _active_param_objects(
         orig={("spam.yaml", "foo"): spec},
-        date=pd.to_datetime("2020-07-01").date(),
+        policy_date=pd.to_datetime("2020-07-01").date(),
         xnp=xnp,
     )
     assert _active_ttsim_tree_with_params["foo"].value == 2
@@ -81,7 +81,7 @@ def test_input_is_recognized_as_potential_group_id(backend):
     assert "kin" in main(
         main_target="labels__grouping_levels",
         orig_policy_objects={"root": METTSIM_ROOT},
-        date=datetime.date(2020, 1, 1),
+        policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
 
@@ -90,7 +90,7 @@ def test_p_id_not_recognized_as_potential_group_id(backend):
     assert "p" not in main(
         main_target="labels__grouping_levels",
         orig_policy_objects={"root": METTSIM_ROOT},
-        date=datetime.date(2020, 1, 1),
+        policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
 
@@ -205,11 +205,11 @@ def test_active_tree_with_column_objects_and_param_functions(
     orig = column_objects_and_param_functions(root=METTSIM_ROOT)
     functions_last_day = _active_column_objects_and_param_functions(
         orig=orig,
-        date=last_day,
+        policy_date=last_day,
     )
     functions_next_day = _active_column_objects_and_param_functions(
         orig=orig,
-        date=last_day + datetime.timedelta(days=1),
+        policy_date=last_day + datetime.timedelta(days=1),
     )
 
     accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]

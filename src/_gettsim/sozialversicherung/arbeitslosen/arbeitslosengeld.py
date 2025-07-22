@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from ttsim.tt_dag_elements import (
     get_consecutive_int_lookup_table_param_value,
     param_function,
-    piecewise_polynomial,
     policy_function,
 )
 
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
 
     from ttsim.tt_dag_elements import (
         ConsecutiveIntLookupTableParamValue,
-        PiecewisePolynomialParamValue,
     )
 
 
@@ -30,7 +28,7 @@ def betrag_m_not_implemented() -> float:
 def betrag_m(
     einkommensteuer__anzahl_kinderfreibeträge: int,
     grundsätzlich_anspruchsberechtigt: bool,
-    einkommen_vorjahr_proxy_m: float,
+    mean_nettoeinkommen_in_12_monaten_vor_arbeitslosigkeit_m: float,
     satz: dict[str, float],
 ) -> float:
     """Calculate individual unemployment benefit."""
@@ -40,7 +38,10 @@ def betrag_m(
         arbeitsl_geld_satz = satz["erhöht"]
 
     if grundsätzlich_anspruchsberechtigt:
-        out = einkommen_vorjahr_proxy_m * arbeitsl_geld_satz
+        out = (
+            mean_nettoeinkommen_in_12_monaten_vor_arbeitslosigkeit_m
+            * arbeitsl_geld_satz
+        )
     else:
         out = 0.0
 
@@ -113,43 +114,37 @@ def grundsätzlich_anspruchsberechtigt(
 
 
 @policy_function()
-def einkommen_vorjahr_proxy_m(
-    sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m: float,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m: float,
+def mean_nettoeinkommen_für_bemessungsgrundlage_bei_arbeitslosigkeit_y(
+    sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_y: float,
+    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y: float,
     sozialversicherungspauschale: float,
-    einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
-    einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale: float,
-    solidaritätszuschlag__parameter_solidaritätszuschlag: PiecewisePolynomialParamValue,
-    xnp: ModuleType,
+    lohnsteuer__betrag_y: float,
+    lohnsteuer__betrag_soli_y: float,
 ) -> float:
-    """Approximate last years income for unemployment benefit."""
-    # Relevant wage is capped at the contribution thresholds
-    max_wage = min(
-        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_vorjahr_m,
-        sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_m,
-    )
+    """Approximate the income relevant for calculating unemployment insurance benefits.
 
-    # We need to deduct lump-sum amounts for contributions, taxes and soli
-    prox_ssc = sozialversicherungspauschale * max_wage
-
-    # Fictive taxes (Lohnsteuer) are approximated by applying the wage to the tax tariff
-    # Caution: currently wrong calculation due to
-    # 12 * max_wage - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale not being
-    # the same as zu versteuerndes einkommen
-    # waiting for PR Lohnsteuer #150 to be merged to correct this problem
-    prox_tax = piecewise_polynomial(
-        x=12 * max_wage
-        - einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__werbungskostenpauschale,
-        parameters=einkommensteuer__parameter_einkommensteuertarif,
-        xnp=xnp,
+    This target can be used as an input in another GETTSIM call to compute
+    Arbeitslosengeld. In principle, the relevant gross wage for this target is the sum
+    of the gross wages in the 12 months before unemployment. For most datasets, except
+    those with monthly income date (IAB, DRV data), the best approximation will likely
+    be the gross wage in the calendar year before unemployment.
+    """
+    berücksichtigungsfähige_einnahmen = min(
+        einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
+        sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_y,
     )
-    prox_soli = piecewise_polynomial(
-        x=prox_tax,
-        parameters=solidaritätszuschlag__parameter_solidaritätszuschlag,
-        xnp=xnp,
+    pauschalierte_sozialversicherungsbeiträge = (
+        sozialversicherungspauschale * berücksichtigungsfähige_einnahmen
     )
-    out = max_wage - prox_ssc - prox_tax / 12 - prox_soli / 12
-    return max(out, 0.0)
+    return max(
+        (
+            berücksichtigungsfähige_einnahmen
+            - pauschalierte_sozialversicherungsbeiträge
+            - lohnsteuer__betrag_y
+            - lohnsteuer__betrag_soli_y
+        ),
+        0.0,
+    )
 
 
 @param_function(start_date="1997-03-24")

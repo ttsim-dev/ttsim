@@ -14,15 +14,6 @@ def alle_weiteren_m() -> float:
     """
 
 
-@policy_input(start_date="2021-01-01")
-def gesamtbetrag_vorjahr_m() -> float:
-    """Income from private and public pensions in the previous year.
-
-    GETTSIM can calculate this input based on the data of the previous year using the
-    target `("einkommensteuer", "einkünfte", "sonstige", "betrag_m")`.
-    """
-
-
 @policy_input()
 def sonstige_private_vorsorge_m() -> float:
     """Monthly payout from private pensions without tax-favored contributions.
