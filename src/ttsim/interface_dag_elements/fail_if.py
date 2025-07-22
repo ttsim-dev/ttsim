@@ -12,6 +12,7 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
+from dags import get_free_arguments
 
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
@@ -849,3 +850,69 @@ def _param_with_active_periods(
         )
 
     return out
+
+
+@fail_function()
+def param_function_depends_on_column_objects(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> None:
+    """Fail if any ParamFunction depends on ColumnObject arguments.
+
+    Parameters
+    ----------
+    specialized_environment__without_tree_logic_and_with_derived_functions
+        The specialized environment containing all functions and objects.
+
+    Raises
+    ------
+    ValueError
+        If any ParamFunction has ColumnObject arguments.
+    """
+    param_functions = {
+        name: obj
+        for name, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()
+        if isinstance(obj, ParamFunction)
+    }
+
+    column_objects = {
+        name: obj
+        for name, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()
+        if isinstance(obj, ColumnObject)
+    }
+
+    violations: list[tuple[str, str]] = []
+    for param_func_name, param_func in param_functions.items():
+        func = param_func.function if hasattr(param_func, "function") else param_func
+        func_args = set(get_free_arguments(func))
+
+        allowed_column_object_args = [
+            "evaluation_date",
+            "evaluation_year",
+            "evaluation_month",
+            "evaluation_day",
+            "policy_date",
+            "policy_year",
+            "policy_month",
+            "policy_day",
+        ]
+
+        violations.extend(
+            (param_func_name, arg)
+            for arg in func_args
+            if arg in column_objects and arg not in allowed_column_object_args
+        )
+
+    if violations:
+        formatted_violations = format_list_linewise(
+            [
+                f"{param_func_name} depends on {column_obj_name}"
+                for param_func_name, column_obj_name in violations
+            ]
+        )
+        msg = format_errors_and_warnings(
+            "ParamFunctions should not depend on ColumnObjects. The following "
+            f"violations were found:\n\n{formatted_violations}\n\n"
+            "ParamFunctions should only depend on parameters and scalars, not on "
+            "ColumnObjects."
+        )
+        raise ValueError(msg)
