@@ -133,13 +133,13 @@ def mean_nettoeinkommen_für_bemessungsgrundlage_bei_arbeitslosigkeit_y(
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_y,
         sozialversicherung__rente__beitrag__beitragsbemessungsgrenze_y,
     )
-    pauschalisierte_sozialversicherungsbeiträge = (
+    pauschalierte_sozialversicherungsbeiträge = (
         sozialversicherungspauschale * berücksichtigungsfähige_einnahmen
     )
     return max(
         (
             berücksichtigungsfähige_einnahmen
-            - pauschalisierte_sozialversicherungsbeiträge
+            - pauschalierte_sozialversicherungsbeiträge
             - lohnsteuer__betrag_y
             - lohnsteuer__betrag_soli_y
         ),
