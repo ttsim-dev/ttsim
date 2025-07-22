@@ -29,12 +29,12 @@ def get_orig_gettsim_column_functions() -> list[ColumnFunction]:
 
 @lru_cache(maxsize=100)
 def cached_specialized_environment(
-    date: datetime.date,
+    policy_date: datetime.date,
     backend: Literal["numpy", "jax"],
 ) -> SpecEnvWithPartialledParamsAndScalars:
     return main(
         main_target=("specialized_environment", "with_partialled_params_and_scalars"),
-        date=date,
+        policy_date=policy_date,
         backend=backend,
         include_fail_nodes=False,
         include_warn_nodes=False,
@@ -48,10 +48,9 @@ def cached_specialized_environment(
     ids=[str(x[0]) for x in get_orig_gettsim_column_functions()],
 )
 def test_jittable(tree_path, fun, backend, xnp):
-    today = datetime.date.today()  # noqa: DTZ011
-    date = min(fun.end_date, today)
+    policy_date = min(fun.end_date, datetime.date.today())  # noqa: DTZ011
     qname = dt.qname_from_tree_path((*tree_path[:-2], fun.leaf_name))
-    env = {qname: cached_specialized_environment(date, backend)[qname]}
+    env = {qname: cached_specialized_environment(policy_date, backend)[qname]}
 
     processed_data = {}
     for arg_name in get_free_arguments(env[qname]):
@@ -68,7 +67,7 @@ def test_jittable(tree_path, fun, backend, xnp):
     with contextlib.suppress(NotImplementedError):
         main(
             main_target=("raw_results", "columns"),
-            date=date,
+            policy_date=policy_date,
             specialized_environment={"with_partialled_params_and_scalars": env},
             processed_data=processed_data,
             tt_targets={"qname": [qname]},

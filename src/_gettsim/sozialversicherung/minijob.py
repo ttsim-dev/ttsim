@@ -12,8 +12,6 @@ def geringfügig_beschäftigt(
 ) -> bool:
     """Individual earns less than marginal employment threshold.
 
-    Marginal employed pay no social insurance contributions.
-
     Legal reference: § 8 Abs. 1 Satz 1 and 2 SGB IV
     """
     return (

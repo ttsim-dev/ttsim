@@ -27,13 +27,13 @@ def anzurechnendes_nettoeinkommen_m(
     rounding_spec=RoundingSpec(base=2, direction="down", reference="§ 2 (2) BEEG"),
 )
 def lohnersatzanteil_einkommen_untere_grenze(
-    nettoeinkommen_vorjahr_m: float,
+    mean_nettoeinkommen_in_12_monaten_vor_geburt_m: float,
     nettoeinkommensstufen_für_lohnersatzrate: dict[str, float],
 ) -> float:
     """Lower threshold for replacement rate adjustment minus net income."""
     return (
         nettoeinkommensstufen_für_lohnersatzrate["lower_threshold"]
-        - nettoeinkommen_vorjahr_m
+        - mean_nettoeinkommen_in_12_monaten_vor_geburt_m
     )
 
 
@@ -42,12 +42,12 @@ def lohnersatzanteil_einkommen_untere_grenze(
     rounding_spec=RoundingSpec(base=2, direction="down", reference="§ 2 (2) BEEG"),
 )
 def lohnersatzanteil_einkommen_obere_grenze(
-    nettoeinkommen_vorjahr_m: float,
+    mean_nettoeinkommen_in_12_monaten_vor_geburt_m: float,
     nettoeinkommensstufen_für_lohnersatzrate: dict[str, float],
 ) -> float:
     """Net income minus upper threshold for replacement rate adjustment."""
     return (
-        nettoeinkommen_vorjahr_m
+        mean_nettoeinkommen_in_12_monaten_vor_geburt_m
         - nettoeinkommensstufen_für_lohnersatzrate["upper_threshold"]
     )
 
@@ -102,7 +102,7 @@ def einkommen_vorjahr_unter_bezugsgrenze_ohne_unterscheidung_single_paar(
     start_date="2012-09-18",
     rounding_spec=RoundingSpec(base=0.01, direction="down"),
 )
-def nettoeinkommen_approximation_m(
+def mean_nettoeinkommen_für_bemessungsgrundllage_nach_geburt_m(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     lohnsteuer__betrag_m: float,
     lohnsteuer__betrag_soli_m: float,

@@ -58,6 +58,15 @@ def betrag_gestaffelt_m(
 
 
 @policy_function(
+    end_date="1995-12-31",
+    leaf_name="ist_leistungsbegründendes_kind",
+)
+def leistungsbegründendes_kind_nach_lohn_not_implemented() -> NotImplementedError:
+    raise NotImplementedError("Kindergeld eligibility is not implemented.")
+
+
+@policy_function(
+    start_date="1996-01-01",
     end_date="2011-12-31",
     leaf_name="ist_leistungsbegründendes_kind",
 )

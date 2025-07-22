@@ -84,7 +84,7 @@ def test_gettsim_policy_environment_is_complete(orig_gettsim_objects, date):
 
     check_env_completeness(
         name="GETTSIM",
-        date=date,
+        policy_date=date,
         orig_policy_objects=orig_gettsim_objects,
     )
 
@@ -104,7 +104,7 @@ def test_top_level_elements_not_repeated_in_paths(
                 "labels__top_level_namespace",
             ],
             backend=backend,
-            date=date,
+            policy_date=date,
             rounding=False,
         )
     except Exception:  # noqa: BLE001

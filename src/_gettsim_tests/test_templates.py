@@ -13,7 +13,7 @@ def test_template_all_outputs_no_inputs(backend):
     res = main(
         main_targets=["labels__grouping_levels", "templates__input_data_dtypes"],
         rounding=True,
-        date_str="2025-01-01",
+        policy_date_str="2025-01-01",
         backend=backend,
     )
 

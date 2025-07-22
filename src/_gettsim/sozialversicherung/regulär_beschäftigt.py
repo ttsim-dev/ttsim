@@ -10,13 +10,8 @@ def regulär_beschäftigt_vor_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     minijobgrenze: float,
 ) -> bool:
-    """Regular employment check until March 2003.
-
-    Employees earning more than the minijob threshold, are subject to all ordinary
-    income and social insurance contribution regulations. In gettsim we call these
-    regular employed.
-
-    """
+    """Employee is in regular employment, earning more than the marginal employment
+    threshold."""
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         >= minijobgrenze
@@ -28,13 +23,7 @@ def regulär_beschäftigt_mit_midijob(
     einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m: float,
     midijobgrenze: float,
 ) -> bool:
-    """Regular employment check since April 2003.
-
-    Employees earning more than the midijob threshold, are subject to all ordinary
-    income and social insurance contribution regulations. In gettsim we call these
-    regular employed.
-
-    """
+    """Employee is in regular employment, earning more than the midijob threshold."""
     return (
         einkommensteuer__einkünfte__aus_nichtselbstständiger_arbeit__bruttolohn_m
         >= midijobgrenze
