@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import optree
 import pytest
 
-from gettsim import main
-from ttsim import copy_environment
+from ttsim import copy_environment, main
 from ttsim.interface_dag_elements import MainTarget
 from ttsim.tt_dag_elements.param_objects import ScalarParam
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import PolicyEnvironment
+
+
+METTSIM_ROOT = Path(__file__).parent / "mettsim"
 
 
 def test_copy_single_scalar_param():
@@ -58,50 +62,38 @@ def test_copy_nested_dict_with_params():
 
 def test_copy_full_policy_environment():
     """Copy complete policy environment and verify independence of nested parameters."""
-    # Load policy environment
+    # Load policy environment (mettsim)
     policy_env = main(
-        date_str="2025-01-01",
         main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects={"root": METTSIM_ROOT},
     )
 
     copied_env = copy_environment(policy_env)
 
-    # Verify structure is intact
-    assert isinstance(copied_env, dict)
-    assert "sozialversicherung" in copied_env
-    assert "rente" in copied_env["sozialversicherung"]
-    assert "beitrag" in copied_env["sozialversicherung"]["rente"]
-    assert "beitragssatz" in copied_env["sozialversicherung"]["rente"]["beitrag"]
+    # Verify skeletons (tree structure) are identical
+    assert set(optree.tree_paths(policy_env)) == set(optree.tree_paths(copied_env))
 
     # Get reference to nested parameter in both versions
-    original_param = policy_env["sozialversicherung"]["rente"]["beitrag"][
-        "beitragssatz"
-    ]
-    copied_param = copied_env["sozialversicherung"]["rente"]["beitrag"]["beitragssatz"]
+    original_param = policy_env["payroll_tax"]["employee"]["rate"]
+    copied_param = copied_env["payroll_tax"]["employee"]["rate"]
 
     # Values should be equal initially
     assert copied_param.value == original_param.value
 
     # Modify copy - should not affect original
-    copied_env["sozialversicherung"]["rente"]["beitrag"]["beitragssatz"] = ScalarParam(
-        value=0.3
-    )
+    copied_env["payroll_tax"]["employee"]["rate"] = ScalarParam(value=0.3)
 
-    assert (
-        policy_env["sozialversicherung"]["rente"]["beitrag"]["beitragssatz"].value
-        == original_param.value
-    )
-    assert (
-        copied_env["sozialversicherung"]["rente"]["beitrag"]["beitragssatz"].value
-        == 0.3
-    )
+    assert policy_env["payroll_tax"]["employee"]["rate"].value == original_param.value
+    assert copied_env["payroll_tax"]["employee"]["rate"].value == 0.3
 
 
 def test_deepcopy_fails_on_policy_environment():
     """Verify copy.deepcopy fails on policy environments due to unpickleable objects."""
     policy_env = main(
-        date_str="2025-01-01",
         main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects={"root": METTSIM_ROOT},
     )
 
     with pytest.raises((TypeError, AttributeError)) as excinfo:
@@ -115,8 +107,9 @@ def test_deepcopy_fails_on_policy_environment():
 def test_copy_environment_works_where_deepcopy_fails():
     """Verify copy_environment succeeds on objects that break copy.deepcopy."""
     policy_env = main(
-        date_str="2025-01-01",
         main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects={"root": METTSIM_ROOT},
     )
 
     # Confirm deepcopy fails
@@ -125,6 +118,7 @@ def test_copy_environment_works_where_deepcopy_fails():
 
     # But copy_environment should work
     copied_env = copy_environment(policy_env)
+    assert set(optree.tree_paths(policy_env)) == set(optree.tree_paths(copied_env))
     assert isinstance(copied_env, dict)
     assert len(copied_env) > 0
 
@@ -168,10 +162,11 @@ def test_copy_mixed_data_types():
 
 
 def test_policy_environment_type_inference():
-    """Verify type hints work correctly for PolicyEnvironment input/output."""
+    """Verify type hints work correctly for PolicyEnvironment input/output (mettsim)."""
     policy_env = main(
-        date_str="2025-01-01",
         main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects={"root": METTSIM_ROOT},
     )
 
     # Type checker should infer PolicyEnvironment -> PolicyEnvironment
@@ -179,4 +174,4 @@ def test_policy_environment_type_inference():
 
     # Function should work correctly
     assert isinstance(copied_env, dict)
-    assert "sozialversicherung" in copied_env
+    assert "payroll_tax" in copied_env
