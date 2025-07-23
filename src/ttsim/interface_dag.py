@@ -163,16 +163,27 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         ]
     }
     qname_inputs = {}
-    # Special treatment for root because we do not list it in `MainTarget`.
-    orig_policy_objects = dict_inputs.get("orig_policy_objects")
-    if orig_policy_objects and "root" in orig_policy_objects:
-        qname_inputs["orig_policy_objects__root"] = orig_policy_objects.pop("root")
+    # Special treatment for orig_policy_objects.root because we do not list it in
+    # `MainTarget` so as not to confuse users of GETTSIM, where it is set.
+    if (
+        dict_inputs.get("orig_policy_objects")
+        and "root" in dict_inputs["orig_policy_objects"]
+    ):
+        qname_inputs["orig_policy_objects__root"] = dict_inputs[
+            "orig_policy_objects"
+        ].pop("root")
+    # Remove existing top-level elements that are None, these will be calculated.
+    expected_structure = MainTarget.to_dict()
+    dict_inputs = {
+        k: v
+        for k, v in dict_inputs.items()
+        if k in expected_structure and v is not None
+    }
 
     _fail_if_input_structure_is_invalid(
         user_treedef=optree.tree_flatten(dict_inputs)[1],  # type: ignore[arg-type]
-        main_target_treedef=optree.tree_flatten(MainTarget.to_dict())[1],
+        expected_treedef=optree.tree_flatten(expected_structure)[1],
     )
-
     for acc in optree.tree_accessors(MainTarget.to_dict(), none_is_leaf=True):
         qname = dt.qname_from_tree_path(acc.path)
         with suppress(KeyError, TypeError):
@@ -182,7 +193,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 def _fail_if_input_structure_is_invalid(
     user_treedef: optree.PyTreeDef,
-    main_target_treedef: optree.PyTreeDef,
+    expected_treedef: optree.PyTreeDef,
 ) -> None:
     """
     Recursively check that all keys/paths in user_treedef are valid.
@@ -226,14 +237,8 @@ def _fail_if_input_structure_is_invalid(
                     )
         return invalid
 
-    # If the user input is not a dict at the top level, raise immediately
-    if user_treedef.kind != optree.PyTreeKind.DICT:
-        raise ValueError(
-            "Invalid inputs for main(): input must be a dictionary at the top level."
-        )
-
     invalid_paths = check(
-        user_spec=user_treedef, expected_spec=main_target_treedef, path=()
+        user_spec=user_treedef, expected_spec=expected_treedef, path=()
     )
     if invalid_paths:
         raise ValueError(

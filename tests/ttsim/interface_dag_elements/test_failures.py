@@ -1177,7 +1177,7 @@ def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
             input_data=InputData.df_and_mapper(df=df, mapper=mapper),
             main_target=MainTarget.results.df_with_mapper,
             orig_policy_objects={"root": METTSIM_ROOT},
-            tt_targets=MainTarget.policy_environment,
+            tt_targets=TTTargets(qname={"d": None}),
             policy_date_str="2025-01-01",
             backend=backend,
         )

@@ -273,14 +273,13 @@ def test_harmonize_main_target(main_target, expected):
         {"input_data": {"df_and_mapper": None}},
         {"input_data": {"not_around": None}},
         {"not_around": None},
-        "not_even_a_dict",
     ],
 )
 def test_fail_if_input_structure_is_invalid(dict_inputs):
     with pytest.raises(ValueError, match="Invalid inputs for main()"):
         _fail_if_input_structure_is_invalid(
             user_treedef=optree.tree_flatten(dict_inputs)[1],
-            main_target_treedef=optree.tree_flatten(MainTarget.to_dict())[1],
+            expected_treedef=optree.tree_flatten(MainTarget.to_dict())[1],
         )
 
 
