@@ -884,33 +884,20 @@ def param_function_depends_on_column_objects(
     for param_func_name, param_func in param_functions.items():
         func_args = set(get_free_arguments(param_func.function))
 
-        allowed_column_object_args = [
-            "evaluation_date",
-            "evaluation_year",
-            "evaluation_month",
-            "evaluation_day",
-            "policy_date",
-            "policy_year",
-            "policy_month",
-            "policy_day",
-        ]
-
         violations.extend(
-            (param_func_name, arg)
-            for arg in func_args
-            if arg in column_objects and arg not in allowed_column_object_args
+            (param_func_name, arg) for arg in func_args if arg in column_objects
         )
 
     if violations:
-        formatted_violations = format_list_linewise(
+        formatted_violations = "\n    ".join(
             [
                 f"`{param_func_name}` depends on `{column_obj_name}`"
                 for param_func_name, column_obj_name in violations
             ]
         )
-        msg = format_errors_and_warnings(
+        msg = (
             "ParamFunctions must not depend on ColumnObjects. The following "
-            f"violations were found:\n\n{formatted_violations}\n\n"
+            f"violations were found:\n\n    {formatted_violations}\n\n"
             "ParamFunctions may only depend on parameters and scalars, not on "
             "ColumnObjects."
         )

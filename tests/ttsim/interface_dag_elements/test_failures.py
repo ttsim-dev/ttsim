@@ -36,7 +36,6 @@ from ttsim.tt_dag_elements import (
     DictParam,
     PiecewisePolynomialParam,
     PiecewisePolynomialParamValue,
-    ScalarParam,
     group_creation_function,
     param_function,
     policy_function,
@@ -1424,15 +1423,6 @@ def valid_param_function(x: int) -> int:
 
 
 @param_function()
-def valid_param_function_with_evaluation_and_policy_year(
-    evaluation_year: int,
-    policy_year: int,
-) -> int:
-    """A valid param function that only depends on evaluation_year and policy_year."""
-    return evaluation_year - policy_year
-
-
-@param_function()
 def invalid_param_function(some_policy_function: int) -> int:
     """An invalid param function that depends on a column object."""
     return some_policy_function * 2
@@ -1446,16 +1436,6 @@ def some_policy_function(x: int) -> int:
 
 @policy_input()
 def some_policy_input() -> int:
-    """A policy input for testing."""
-
-
-@policy_input()
-def evaluation_year() -> int:
-    """A policy input for testing."""
-
-
-@policy_input()
-def policy_year() -> int:
     """A policy input for testing."""
 
 
@@ -1478,18 +1458,6 @@ def policy_year() -> int:
             "policy_input": some_policy_input,
             "some_scalar": 42,
             "some_dict_param": _SOME_DICT_PARAM,
-        },
-        # Valid environment with evaluation_year and policy_year as scalars
-        {
-            "valid_param": valid_param_function_with_evaluation_and_policy_year,
-            "evaluation_year": ScalarParam(value=2025),
-            "policy_year": ScalarParam(value=2024),
-        },
-        # Valid environment with evaluation_year and policy_year as policy inputs
-        {
-            "valid_param": valid_param_function_with_evaluation_and_policy_year,
-            "evaluation_year": evaluation_year,
-            "policy_year": policy_year,
         },
     ],
 )
