@@ -94,13 +94,6 @@ def input_data_dtypes(
                 policy_inputs[base_name].data_type
             )
 
-            # Also add the ID of the grouped variable if grouping exists
-            grouping = match.group("grouping")
-            if grouping:
-                grouping_id = f"{grouping}_id"
-                if grouping_id not in cleaned_qname_dtype_tree:
-                    cleaned_qname_dtype_tree[grouping_id] = "IntColumn"
-
         elif qn in policy_inputs:
             # Replace dtypes of PolicyInputs that have the generic type 'FloatColumn |
             # IntColumn | BoolColumn' with the actual dtype found in the policy

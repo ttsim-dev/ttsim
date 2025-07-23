@@ -213,5 +213,4 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
     assert actual == {
         "a": {"inp2": "FloatColumn"},
         "inp1": "IntColumn",
-        "kin_id": "IntColumn",
     }
