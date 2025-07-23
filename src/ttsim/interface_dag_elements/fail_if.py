@@ -663,8 +663,8 @@ def backend_has_changed(
     for func in specialized_environment__with_partialled_params_and_scalars.values():
         if isinstance(func, functools.partial):
             for argname, arg in func.keywords.items():
-                if isinstance(arg, numpy.ndarray) or (
-                    hasattr(arg, "backend") and arg.backend == "numpy"
+                if isinstance(arg, numpy.ndarray) or any(
+                    isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
                 ):
                     issues += f"    {dt.tree_path_from_qname(argname)}\n"
     if issues:
