@@ -115,7 +115,6 @@ class ConsecutiveIntLookupTableParamValue:
     """The `value` for ConsecutiveIntLookupTable."""
 
     __slots__ = (
-        "backend",
         "bases_to_subtract",
         "lookup_multipliers",
         "values_to_look_up",
