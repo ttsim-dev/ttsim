@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import optree
 
@@ -228,7 +228,6 @@ def relevantes_kindergeld_ohne_staffelung_m(
 def parameter_einkommensteuertarif(
     raw_parameter_einkommensteuertarif: RawParam,
     xnp: ModuleType,
-    backend: Literal["numpy", "jax"],
 ) -> PiecewisePolynomialParamValue:
     """Add the quadratic terms to tax tariff function.
 
@@ -264,5 +263,4 @@ def parameter_einkommensteuertarif(
         func_type="piecewise_quadratic",
         parameter_dict=expanded,
         xnp=xnp,
-        backend=backend,
     )

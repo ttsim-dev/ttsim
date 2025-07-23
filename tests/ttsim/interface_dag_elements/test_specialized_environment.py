@@ -169,7 +169,6 @@ SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
         thresholds=[1, 2, 3],
         intercepts=[1, 2, 3],
         rates=[1, 2, 3],
-        backend="numpy",
     ),
     leaf_name="some_piecewise_polynomial_param",
     start_date="2025-01-01",

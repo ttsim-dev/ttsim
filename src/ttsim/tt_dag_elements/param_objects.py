@@ -114,14 +114,6 @@ class ConsecutiveIntLookupTableParam(ParamObject):
 class ConsecutiveIntLookupTableParamValue:
     """The `value` for ConsecutiveIntLookupTable."""
 
-    __slots__ = (
-        "backend",
-        "bases_to_subtract",
-        "lookup_multipliers",
-        "values_to_look_up",
-        "xnp",
-    )
-
     bases_to_subtract: Int[Array, "n_rows n_cols"]
     lookup_multipliers: Int[Array, "n_rows n_cols"]
     values_to_look_up: (
@@ -130,7 +122,6 @@ class ConsecutiveIntLookupTableParamValue:
         | Bool[Array, "n_rows n_cols"]
     )
     xnp: ModuleType
-    backend: Literal["numpy", "jax"]
 
     def __init__(
         self,
@@ -141,9 +132,6 @@ class ConsecutiveIntLookupTableParamValue:
         bases_to_subtract: Int[Array, "n_rows n_cols"],
     ) -> None:
         self.xnp = xnp
-        self.backend = xnp.__name__.split(".")[0]  # type: ignore[assignment]
-        if self.backend not in ["numpy", "jax"]:
-            raise ValueError(f"Invalid backend: {self.backend}")
         self.values_to_look_up = values_to_look_up.flatten()
         self.bases_to_subtract = xnp.expand_dims(bases_to_subtract, axis=1)
         self.lookup_multipliers = xnp.concatenate(
@@ -192,14 +180,11 @@ class PiecewisePolynomialParamValue:
         Intercepts of the polynomial on each segment.
     rates:
         Slope and higher-order coefficients of the polynomial on each segment.
-    backend:
-        The backend that has been used for instantiating the object.
     """
 
     thresholds: Float[Array, " n_segments"]
     intercepts: Float[Array, " n_segments"]
     rates: Float[Array, " n_segments"]
-    backend: Literal["numpy", "jax"]
 
 
 def get_consecutive_int_lookup_table_param_value(

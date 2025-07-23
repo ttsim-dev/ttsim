@@ -4,7 +4,7 @@ Tests for `piecewise_polynomial`
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import numpy
 import pytest
@@ -21,7 +21,7 @@ from ttsim.tt_dag_elements.piecewise_polynomial import (
 
 
 @pytest.fixture
-def parameters(backend: Literal["numpy", "jax"], xnp: ModuleType):
+def parameters(xnp):
     return PiecewisePolynomialParamValue(
         thresholds=xnp.array([-xnp.inf, 9168.0, 14254.0, 55960.0, 265326.0, xnp.inf]),
         rates=xnp.array(
@@ -43,13 +43,10 @@ def parameters(backend: Literal["numpy", "jax"], xnp: ModuleType):
             ],
         ),
         intercepts=xnp.array([0.0, 0.0, 965.5771, 14722.3012, 102656.0212]),
-        backend=backend,
     )
 
 
-def test_get_piecewise_parameters_all_intercepts_supplied(
-    backend: Literal["numpy", "jax"], xnp: ModuleType
-):
+def test_get_piecewise_parameters_all_intercepts_supplied(xnp):
     parameter_dict = {
         0: {
             "lower_threshold": "-inf",
@@ -82,7 +79,6 @@ def test_get_piecewise_parameters_all_intercepts_supplied(
         func_type="piecewise_linear",
         parameter_dict=parameter_dict,
         xnp=xnp,
-        backend=backend,
     )
     expected = xnp.array([0.27, 0.5, 0.8, 1])
 

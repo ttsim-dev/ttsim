@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from ttsim.tt_dag_elements import (
     ConsecutiveIntLookupTableParamValue,
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 class LookupTableBaujahr:
     baujahre: Int[Array, " n_baujahr_categories"]
     lookup_table: ConsecutiveIntLookupTableParamValue
-    backend: Literal["numpy", "jax"]
 
 
 @param_function(
@@ -34,7 +33,6 @@ def max_miete_m_lookup_mit_baujahr(
     raw_max_miete_m_nach_baujahr: dict[int | str, dict[int, dict[int, float]]],
     max_anzahl_personen: dict[str, int],
     xnp: ModuleType,
-    backend: Literal["numpy", "jax"],
 ) -> LookupTableBaujahr:
     """Maximum rent considered in Wohngeld calculation."""
     tmp = raw_max_miete_m_nach_baujahr.copy()
@@ -59,7 +57,6 @@ def max_miete_m_lookup_mit_baujahr(
         lookup_table=get_consecutive_int_lookup_table_param_value(
             raw=lookup_dict, xnp=xnp
         ),
-        backend=backend,
     )
 
 
