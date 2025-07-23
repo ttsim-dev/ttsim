@@ -345,7 +345,7 @@ class TestCreateFunctionForTimeUnit:
         assert function(1) == 7
 
 
-def test_should_not_create_cycle():
+def test_time_conversions_should_not_create_cycle():
     # Check for:
     # https://github.com/iza-institute-of-labor-economics/gettsim/issues/621
     def x(test_m: int) -> int:
@@ -358,6 +358,28 @@ def test_should_not_create_cycle():
     )
 
     assert "test_m" not in time_conversion_functions
+
+
+def test_grouping_functions_should_not_create_cycle():
+    @policy_function()
+    def x(x_hh: int) -> int:
+        return x_hh
+
+    @policy_function()
+    def some_other_function_requiring_x_hh(x_hh: int) -> int:
+        return x_hh
+
+    grouping_functions = create_agg_by_group_functions(
+        column_functions={
+            "x": x,
+            "some_other_function_requiring_x_hh": some_other_function_requiring_x_hh,
+        },
+        input_columns=set(),
+        tt_targets=("some_other_function_requiring_x_hh",),
+        grouping_levels=("hh",),
+    )
+
+    assert "x_hh" not in grouping_functions
 
 
 @pytest.mark.parametrize(

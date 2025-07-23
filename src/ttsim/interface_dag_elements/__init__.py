@@ -32,6 +32,7 @@ class WarnIf(MainTargetABC):
 class FailIf(MainTargetABC):
     active_periods_overlap: str = "fail_if__active_periods_overlap"
     any_paths_are_invalid: str = "fail_if__any_paths_are_invalid"
+    backend_has_changed: str = "fail_if__backend_has_changed"
     environment_is_invalid: str = "fail_if__environment_is_invalid"
     foreign_keys_are_invalid_in_data: str = "fail_if__foreign_keys_are_invalid_in_data"
     group_ids_are_outside_top_level_namespace: str = (
@@ -53,6 +54,9 @@ class FailIf(MainTargetABC):
     )
     non_convertible_objects_in_results_tree: str = (
         "fail_if__non_convertible_objects_in_results_tree"
+    )
+    param_function_depends_on_column_objects: str = (
+        "fail_if__param_function_depends_on_column_objects"
     )
     paths_are_missing_in_targets_tree_mapper: str = (
         "fail_if__paths_are_missing_in_targets_tree_mapper"

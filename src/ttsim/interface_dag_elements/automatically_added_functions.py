@@ -611,7 +611,7 @@ def create_agg_by_group_functions(
     potential_agg_by_group_sources = {
         qn: o for qn, o in all_functions_and_data.items() if not gp.match(qn)
     }
-    # Exclude objects that have been explicitly provided.u
+    # Exclude objects that have been explicitly provided.
 
     agg_by_group_function_names = {
         t
@@ -623,6 +623,19 @@ def create_agg_by_group_functions(
         match = gp.match(abgfn)
         base_name_with_time_unit = match.group("base_name_with_time_unit")
         if base_name_with_time_unit in potential_agg_by_group_sources:
+            # Check if the aggregation target is already a dependency of the source
+            # function to avoid creating cycles in the DAG. Consider a function `x` that
+            # takes `x_hh` as an input, assuming it to be provided in the input data. If
+            # we create a function `x_hh`, which would aggregate `x` by household, we
+            # create a cycle. If `x_hh` is actually provided as an input, `x_hh` would
+            # be overwritten, removing the cycle. However, if `x_hh` is not provided as
+            # an input, an error message would be shown that a cycle between `x` and
+            # `x_hh` was detected. This hides the actual problem, which is that `x_hh`
+            # is not provided as an input.
+            source_function = column_functions.get(base_name_with_time_unit)
+            if source_function and abgfn in get_free_arguments(source_function):
+                continue
+
             group_id = f"{match.group('group')}_id"
             mapper = {"group_id": group_id, "column": base_name_with_time_unit}
             agg_func = rename_arguments(

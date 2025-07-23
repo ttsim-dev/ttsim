@@ -11,7 +11,12 @@ import numpy
 import pandas as pd
 import pytest
 
-from ttsim import InputData, MainTarget, main
+try:
+    import jax
+except ImportError:
+    jax = None
+
+from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -26,6 +31,7 @@ from ttsim.interface_dag_elements.fail_if import (
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_columns_missing_in_df,
     input_df_mapper_has_incorrect_format,
+    param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
 )
@@ -1170,7 +1176,7 @@ def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
             input_data=InputData.df_and_mapper(df=df, mapper=mapper),
             main_target=MainTarget.results.df_with_mapper,
             orig_policy_objects={"root": METTSIM_ROOT},
-            tt_targets=MainTarget.policy_environment,
+            tt_targets=TTTargets(qname={"d": None}),
             policy_date_str="2025-01-01",
             backend=backend,
         )
@@ -1412,4 +1418,200 @@ def test_raise_some_error_without_input_data(
             main_target=MainTarget.results.df_with_mapper,
             backend=backend,
             orig_policy_objects={"root": METTSIM_ROOT},
+        )
+
+
+@pytest.mark.skipif(jax is None, reason="Jax is not installed")
+def test_backend_has_changed_from_jax_to_numpy_passes():
+    policy_environment = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2000-01-01",
+        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
+        backend="jax",
+    )
+    input_data = InputData.tree(
+        tree={
+            "p_id": jax.numpy.array([0, 1, 2]),  # type: ignore[union-attr]
+            "property_tax": {
+                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),  # type: ignore[union-attr]
+            },
+        }
+    )
+    main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        input_data=input_data,
+        policy_environment=policy_environment,
+        tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
+        backend="numpy",
+    )
+
+
+@pytest.mark.skipif(jax is None, reason="Jax is not installed")
+def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
+    input_data = InputData.tree(
+        tree={
+            "p_id": numpy.array([0, 1, 2]),
+            "property_tax": {
+                "acre_size_in_hectares": numpy.array([5, 20, 200]),
+            },
+        }
+    )
+    processed_data = main(
+        main_target=MainTarget.processed_data,
+        backend="numpy",
+        input_data=input_data,
+    )
+    main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        policy_date_str="2000-01-01",
+        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
+        input_data=input_data,
+        processed_data=processed_data,
+        tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
+        backend="jax",
+    )
+
+
+@pytest.mark.skipif(jax is None, reason="Jax is not installed")
+def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
+    xnp: ModuleType,
+):
+    policy_environment = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2000-01-01",
+        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
+        backend="numpy",
+    )
+    input_data = InputData.tree(
+        tree={
+            "p_id": xnp.array([0, 1, 2]),
+            "property_tax": {
+                "acre_size_in_hectares": xnp.array([5, 20, 200]),
+            },
+        }
+    )
+    with pytest.raises(ValueError, match="Backend has changed"):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            input_data=input_data,
+            policy_environment=policy_environment,
+            tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
+            backend="jax",
+        )
+
+
+@param_function()
+def valid_param_function(x: int) -> int:
+    """A valid param function that only depends on parameters."""
+    return x * 2
+
+
+@param_function()
+def invalid_param_function(some_policy_function: int) -> int:
+    """An invalid param function that depends on a column object."""
+    return some_policy_function * 2
+
+
+@policy_function()
+def some_policy_function(x: int) -> int:
+    """A policy function for testing."""
+    return x + 1
+
+
+@policy_input()
+def some_policy_input() -> int:
+    """A policy input for testing."""
+
+
+@pytest.mark.parametrize(
+    "specialized_environment",
+    [
+        # Valid environment with only param functions and no dependencies
+        {
+            "valid_param": valid_param_function,
+        },
+        # Valid environment with param functions and column objects but no dependencies
+        {
+            "valid_param": valid_param_function,
+            "some_policy_function": some_policy_function,
+        },
+        # Valid environment with mixed types but no violations
+        {
+            "valid_param": valid_param_function,
+            "some_policy_function": some_policy_function,
+            "policy_input": some_policy_input,
+            "some_scalar": 42,
+            "some_dict_param": _SOME_DICT_PARAM,
+        },
+    ],
+)
+def test_param_function_depends_on_column_objects_passes(specialized_environment):
+    """Test that valid environments pass the validation."""
+    param_function_depends_on_column_objects(specialized_environment)
+
+
+@pytest.mark.parametrize(
+    ("specialized_environment", "expected_error_match"),
+    [
+        (
+            {
+                "invalid_param": invalid_param_function,
+                "some_policy_function": some_policy_function,
+            },
+            "`invalid_param` depends on `some_policy_function`",
+        ),
+        (
+            {
+                "invalid_param": invalid_param_function,
+                "some_policy_function": some_policy_input,
+            },
+            "`invalid_param` depends on `some_policy_function`",
+        ),
+        (
+            {
+                "valid_param": valid_param_function,
+                "invalid_param": invalid_param_function,
+                "some_policy_function": some_policy_function,
+            },
+            "`invalid_param` depends on `some_policy_function`",
+        ),
+    ],
+)
+def test_param_function_depends_on_column_objects_raises(
+    specialized_environment, expected_error_match
+):
+    """Test that invalid environments raise the expected error."""
+    with pytest.raises(ValueError, match=expected_error_match):
+        param_function_depends_on_column_objects(specialized_environment)
+
+
+def test_param_function_depends_on_column_objects_via_main(
+    backend: Literal["jax", "numpy"],
+    xnp: ModuleType,
+):
+    """Test that the param_function_depends_on_column_objects check works via main."""
+
+    with pytest.raises(
+        ValueError,
+        match="`invalid_param` depends on `some_policy_function`",
+    ):
+        main(
+            policy_date_str="2025-01-01",
+            main_target=MainTarget.results.df_with_mapper,
+            tt_targets={
+                "tree": {
+                    "invalid_param": None,
+                },
+            },
+            input_data={
+                "tree": {
+                    "p_id": xnp.array([1, 2, 3]),
+                    "x": xnp.array([1, 2, 3]),
+                },
+            },
+            backend=backend,
+            policy_environment={
+                "invalid_param": invalid_param_function,
+                "some_policy_function": some_policy_function,
+            },
         )
