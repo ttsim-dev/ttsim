@@ -11,67 +11,94 @@ except ImportError:
     __version__ = "unknown"
 
 
-import itertools
-import warnings
+from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 
-from _gettsim import (
-    aggregation,
-    config,
-    gettsim_typing,
-    piecewise_functions,
-    shared,
-    taxes,
-    transfers,
-    visualization,
-)
-from _gettsim.functions.policy_function import PolicyFunction
-from _gettsim.interface import (
-    FunctionsAndColumnsOverlapWarning,
-    compute_taxes_and_transfers,
-)
-from _gettsim.policy_environment import PolicyEnvironment, set_up_policy_environment
-from _gettsim.synthetic import create_synthetic_data
-from _gettsim.visualization import plot_dag
+import ttsim
 from _gettsim_tests import TEST_DIR
+from ttsim import (
+    InputData,
+    Labels,
+    MainTarget,
+    RawResults,
+    Results,
+    SpecializedEnvironment,
+    TTTargets,
+    merge_trees,
+)
 
-COUNTER_TEST_EXECUTIONS = itertools.count()
+if TYPE_CHECKING:
+    import datetime
+    from collections.abc import Iterable
+
+    from ttsim.interface_dag_elements.typing import (
+        DashedISOString,
+        FlatColumnObjectsParamFunctions,
+        FlatOrigParamSpecs,
+        NestedTargetDict,
+        PolicyEnvironment,
+        QNameData,
+    )
 
 
-def test(*args):
-    n_test_executions = next(COUNTER_TEST_EXECUTIONS)
+def test(backend: Literal["numpy", "jax"] = "numpy") -> None:
+    pytest.main([str(TEST_DIR), "--backend", backend])
 
-    if n_test_executions == 0:
-        pytest.main([str(TEST_DIR), "--noconftest", *args])
-    else:
-        warnings.warn(
-            "Repeated execution of the test suite is not possible. Start a new Python "
-            "session or restart the kernel in a Jupyter/IPython notebook to re-run the "
-            "tests.",
-            stacklevel=2,
+
+@dataclass(frozen=True)
+class OrigPolicyObjects(ttsim.main_args.MainArg):
+    column_objects_and_param_functions: FlatColumnObjectsParamFunctions | None = None
+    param_specs: FlatOrigParamSpecs | None = None
+
+
+def main(
+    *,
+    main_target: str | tuple[str, ...] | NestedTargetDict | None = None,
+    main_targets: Iterable[str | tuple[str, ...]] | None = None,
+    policy_date_str: DashedISOString | None = None,
+    input_data: InputData | None = None,
+    tt_targets: TTTargets | None = None,
+    rounding: bool = True,
+    backend: Literal["numpy", "jax"] = "numpy",
+    evaluation_date_str: DashedISOString | None = None,
+    include_fail_nodes: bool = True,
+    include_warn_nodes: bool = True,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    raw_results: RawResults | None = None,
+    results: Results | None = None,
+    specialized_environment: SpecializedEnvironment | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    processed_data: QNameData | None = None,
+    policy_date: datetime.date | None = None,
+    evaluation_date: datetime.date | None = None,
+    labels: Labels | None = None,
+) -> dict[str, Any]:
+    if orig_policy_objects is None:
+        orig_policy_objects = ttsim.main_args.OrigPolicyObjects(
+            root=Path(__file__).parent.parent / "_gettsim"
         )
+
+    return ttsim.main(**locals())
+
+
+__all__ = [
+    "InputData",
+    "Labels",
+    "MainTarget",
+    "OrigPolicyObjects",
+    "RawResults",
+    "Results",
+    "SpecializedEnvironment",
+    "TTTargets",
+    "main",
+    "merge_trees",
+]
 
 
 __all__ = [
     "__version__",
-    "FunctionsAndColumnsOverlapWarning",
-    "PolicyEnvironment",
-    "PolicyFunction",
-    "compute_taxes_and_transfers",
-    "set_up_policy_environment",
-    "plot_dag",
-    # TODO (@hmgaudecker): See what can be changed/removed from remainder.
-    # https://github.com/iza-institute-of-labor-economics/gettsim/issues/378
-    "aggregation",
-    "config",
-    "piecewise_functions",
-    "policy_environment",
-    "shared",
-    "social_insurance_contributions",
-    "create_synthetic_data",
-    "taxes",
-    "transfers",
-    "gettsim_typing",
-    "visualization",
+    "test",
 ]
