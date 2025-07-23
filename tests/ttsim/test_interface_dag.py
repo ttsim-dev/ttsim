@@ -4,10 +4,12 @@ import inspect
 
 import dags
 import dags.tree as dt
+import optree
 import pytest
 
 from ttsim import InputData, OrigPolicyObjects, TTTargets
 from ttsim.interface_dag import (
+    _fail_if_input_structure_is_invalid,
     _fail_if_requested_nodes_cannot_be_found,
     _fail_if_root_nodes_of_interface_dag_are_missing,
     _harmonize_inputs,
@@ -263,6 +265,23 @@ def test_harmonize_main_target(main_target, expected):
     harmonized = _harmonize_main_target(main_target=main_target)
 
     assert harmonized == expected
+
+
+@pytest.mark.parametrize(
+    "dict_inputs",
+    [
+        {"input_data": {"df_and_mapper": None}},
+        {"input_data": {"not_around": None}},
+        {"not_around": None},
+        "not_even_a_dict",
+    ],
+)
+def test_fail_if_input_structure_is_invalid(dict_inputs):
+    with pytest.raises(ValueError, match="Invalid inputs for main()"):
+        _fail_if_input_structure_is_invalid(
+            user_treedef=optree.tree_flatten(dict_inputs)[1],
+            main_target_treedef=optree.tree_flatten(MainTarget.to_dict())[1],
+        )
 
 
 @pytest.mark.parametrize(
