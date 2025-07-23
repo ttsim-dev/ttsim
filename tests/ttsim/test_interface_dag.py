@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any
 
 import dags
 import dags.tree as dt
@@ -20,12 +19,9 @@ from ttsim.interface_dag import (
 from ttsim.interface_dag_elements import MainTarget
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
-    InputDependentInterfaceFunction,
-    InterfaceInput,
     fail_function,
     input_dependent_interface_function,
     interface_function,
-    interface_input,
 )
 from ttsim.plot_dag import dummy_callable
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
@@ -151,19 +147,6 @@ def test_main_target_class_is_complete() -> None:
     main_target_elements = set(dt.tree_paths(MainTarget.to_dict()))
 
     assert nodes == main_target_elements
-
-
-def _replace_idif_with_interface_inputs(
-    n: InputDependentInterfaceFunction,
-) -> InterfaceInput:
-    @interface_input(
-        in_top_level_namespace=n.in_top_level_namespace,
-        leaf_name=n.leaf_name,
-    )
-    def interface_input_for_idif() -> Any:
-        pass
-
-    return interface_input_for_idif
 
 
 @pytest.mark.parametrize(
