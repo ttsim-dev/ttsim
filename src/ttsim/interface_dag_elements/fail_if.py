@@ -882,8 +882,7 @@ def param_function_depends_on_column_objects(
 
     violations: list[tuple[str, str]] = []
     for param_func_name, param_func in param_functions.items():
-        func = param_func.function if hasattr(param_func, "function") else param_func
-        func_args = set(get_free_arguments(func))
+        func_args = set(get_free_arguments(param_func.function))
 
         allowed_column_object_args = [
             "evaluation_date",
