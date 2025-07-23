@@ -880,24 +880,18 @@ def param_function_depends_on_column_objects(
         if isinstance(obj, ColumnObject)
     }
 
-    violations: list[tuple[str, str]] = []
+    violations = ""
     for param_func_name, param_func in param_functions.items():
         func_args = set(get_free_arguments(param_func.function))
 
-        violations.extend(
-            (param_func_name, arg) for arg in func_args if arg in column_objects
-        )
+        for arg in func_args:
+            if arg in column_objects:
+                violations += f"    `{param_func_name}` depends on `{arg}`\n"
 
     if violations:
-        formatted_violations = "\n    ".join(
-            [
-                f"`{param_func_name}` depends on `{column_obj_name}`"
-                for param_func_name, column_obj_name in violations
-            ]
-        )
         msg = (
             "ParamFunctions must not depend on ColumnObjects. The following "
-            f"violations were found:\n\n    {formatted_violations}\n\n"
+            f"violations were found:\n\n    {violations}\n"
             "ParamFunctions may only depend on parameters and scalars, not on "
             "ColumnObjects."
         )
