@@ -10,11 +10,9 @@
 - * Type
   * Standards Track
 - * Created
-  * 2025-04-11
+  * 2025-07-23
 - * Resolution
-  * One of [Accepted | Rejected |
-    Withdrawn](<https://gettsim.zulipchat.com/#narrow/stream/309998-GEPs/topic/GEP.XXX>)
-    once resolution has been found
+  * [Accepted](https://gettsim.zulipchat.com/#narrow/channel/309998-GEPs/topic/GEP.2007/near/530389224)
 ```
 
 ## Abstract
