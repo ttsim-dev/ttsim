@@ -274,7 +274,7 @@ def input_data_tree_is_invalid(
     """Validate the basic structure of the input data tree."""
     valid_leaf_types = (pd.Series, numpy.ndarray, xnp.ndarray)
     if backend == "numpy" and jax is not None:
-        valid_leaf_types = (*valid_leaf_types, jax.Array)
+        valid_leaf_types = (*valid_leaf_types, jax.numpy.ndarray)
     assert_valid_ttsim_pytree(
         tree=input_data__tree,
         leaf_checker=lambda leaf: isinstance(leaf, valid_leaf_types),
@@ -485,8 +485,18 @@ def non_convertible_objects_in_results_tree(
     xnp: ModuleType,
 ) -> None:
     """Fail if results should be converted to a DataFrame but cannot."""
-    _numeric_types = (int, float, bool, xnp.integer, xnp.floating, xnp.bool_)
-    _array_types = (xnp.ndarray,)
+    _numeric_types = (
+        int,
+        float,
+        bool,
+        numpy.integer,
+        numpy.floating,
+        numpy.bool_,
+        xnp.integer,
+        xnp.floating,
+        xnp.bool_,
+    )
+    _array_types = (numpy.ndarray, xnp.ndarray)
     if backend == "numpy" and jax is not None:
         _numeric_types = (
             *_numeric_types,
@@ -494,7 +504,7 @@ def non_convertible_objects_in_results_tree(
             jax.numpy.floating,
             jax.numpy.bool_,
         )
-        _array_types = (*_array_types, jax.Array)
+        _array_types = (*_array_types, jax.numpy.ndarray)
 
     expected_object_length = len(next(iter(processed_data.values())))
 
