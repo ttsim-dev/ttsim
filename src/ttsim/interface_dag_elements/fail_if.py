@@ -13,6 +13,7 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
+from dags import get_free_arguments
 
 try:
     import jax
@@ -884,3 +885,49 @@ def _param_with_active_periods(
         )
 
     return out
+
+
+@fail_function()
+def param_function_depends_on_column_objects(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> None:
+    """Fail if any ParamFunction depends on ColumnObject arguments.
+
+    Parameters
+    ----------
+    specialized_environment__without_tree_logic_and_with_derived_functions
+        The specialized environment containing all functions and objects.
+
+    Raises
+    ------
+    ValueError
+        If any ParamFunction has ColumnObject arguments.
+    """
+    param_functions = {
+        name: obj
+        for name, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()
+        if isinstance(obj, ParamFunction)
+    }
+
+    column_objects = {
+        name: obj
+        for name, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()
+        if isinstance(obj, ColumnObject)
+    }
+
+    violations = ""
+    for param_func_name, param_func in param_functions.items():
+        func_args = set(get_free_arguments(param_func.function))
+
+        for arg in func_args:
+            if arg in column_objects:
+                violations += f"    `{param_func_name}` depends on `{arg}`\n"
+
+    if violations:
+        msg = (
+            "ParamFunctions must not depend on ColumnObjects. The following "
+            f"violations were found:\n\n{violations}\n"
+            "ParamFunctions may only depend on parameters and scalars, not on "
+            "ColumnObjects."
+        )
+        raise ValueError(msg)
