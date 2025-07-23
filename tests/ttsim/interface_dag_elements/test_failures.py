@@ -11,12 +11,7 @@ import numpy
 import pandas as pd
 import pytest
 
-try:
-    import jax
-except ImportError:
-    jax = None
-
-from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
+from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.interface_dag_elements.fail_if import (
     ConflictingActivePeriodsError,
     _param_with_active_periods,
@@ -96,7 +91,6 @@ _SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
         thresholds=numpy.array([1, 2, 3]),
         intercepts=numpy.array([1, 2, 3]),
         rates=numpy.array([1, 2, 3]),
-        backend="numpy",
     ),
     **_GENERIC_PARAM_SPEC,
 )
@@ -1419,85 +1413,6 @@ def test_raise_some_error_without_input_data(
             main_target=MainTarget.results.df_with_mapper,
             backend=backend,
             orig_policy_objects={"root": METTSIM_ROOT},
-        )
-
-
-@pytest.mark.skipif(jax is None, reason="Jax is not installed")
-def test_backend_has_changed_from_jax_to_numpy_passes():
-    policy_environment = main(
-        main_target=MainTarget.policy_environment,
-        policy_date_str="2000-01-01",
-        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
-        backend="jax",
-    )
-    input_data = InputData.tree(
-        tree={
-            "p_id": jax.numpy.array([0, 1, 2]),  # type: ignore[union-attr]
-            "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),  # type: ignore[union-attr]
-            },
-        }
-    )
-    main(
-        main_target=MainTarget.results.df_with_nested_columns,
-        input_data=input_data,
-        policy_environment=policy_environment,
-        tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
-        backend="numpy",
-    )
-
-
-@pytest.mark.skipif(jax is None, reason="Jax is not installed")
-def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
-    input_data = InputData.tree(
-        tree={
-            "p_id": numpy.array([0, 1, 2]),
-            "property_tax": {
-                "acre_size_in_hectares": numpy.array([5, 20, 200]),
-            },
-        }
-    )
-    processed_data = main(
-        main_target=MainTarget.processed_data,
-        backend="numpy",
-        input_data=input_data,
-    )
-    main(
-        main_target=MainTarget.results.df_with_nested_columns,
-        policy_date_str="2000-01-01",
-        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
-        input_data=input_data,
-        processed_data=processed_data,
-        tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
-        backend="jax",
-    )
-
-
-@pytest.mark.skipif(jax is None, reason="Jax is not installed")
-def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
-    xnp: ModuleType,
-):
-    policy_environment = main(
-        main_target=MainTarget.policy_environment,
-        policy_date_str="2000-01-01",
-        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
-        backend="numpy",
-    )
-    input_data = InputData.tree(
-        tree={
-            "p_id": xnp.array([0, 1, 2]),
-            "property_tax": {
-                "acre_size_in_hectares": xnp.array([5, 20, 200]),
-            },
-        }
-    )
-    with pytest.raises(ValueError, match="Backend has changed"):
-        main(
-            main_target=MainTarget.results.df_with_nested_columns,
-            input_data=input_data,
-            policy_environment=policy_environment,
-            tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
-            backend="jax",
         )
 
 
