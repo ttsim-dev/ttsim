@@ -181,10 +181,10 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     }
 
     _fail_if_input_structure_is_invalid(
-        user_treedef=optree.tree_flatten(dict_inputs)[1],  # type: ignore[arg-type]
-        expected_treedef=optree.tree_flatten(expected_structure)[1],
+        user_treedef=optree.tree_flatten(dict_inputs, none_is_leaf=True)[1],  # type: ignore[arg-type]
+        expected_treedef=optree.tree_flatten(expected_structure, none_is_leaf=True)[1],
     )
-    for acc in optree.tree_accessors(MainTarget.to_dict(), none_is_leaf=True):
+    for acc in optree.tree_accessors(expected_structure, none_is_leaf=True):
         qname = dt.qname_from_tree_path(acc.path)
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
