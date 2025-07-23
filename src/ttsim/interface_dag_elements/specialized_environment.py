@@ -371,20 +371,6 @@ def tax_transfer_function(
 
     if backend == "jax":
         import jax  # noqa: PLC0415
-        import numpy  # noqa: PLC0415
-
-        issues = []
-        for func_name, func in with_partialled_params_and_scalars.items():
-            if isinstance(func, functools.partial):
-                for k, v in func.keywords.items():
-                    if isinstance(v, numpy.ndarray) or (
-                        hasattr(v, "backend") and v.backend == "numpy"
-                    ):
-                        issues.append((func_name, k, v))
-        if issues:
-            raise ValueError(
-                f"Backend has changed from numpy to jax. Please update your code. Issues: {issues}"
-            )
 
         ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 

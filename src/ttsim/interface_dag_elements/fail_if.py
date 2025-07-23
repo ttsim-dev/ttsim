@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import functools
 import itertools
 import textwrap
 from dataclasses import dataclass
@@ -646,6 +647,30 @@ def input_df_mapper_has_incorrect_format(
             """,
         )
         raise TypeError(msg)
+
+
+@fail_function()
+def backend_has_changed(
+    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
+    backend: Literal["numpy", "jax"],
+) -> None:
+    """Fail if the backend has changed."""
+    if backend == "numpy":
+        return
+
+    issues = ""
+    for func in specialized_environment__with_partialled_params_and_scalars.values():
+        if isinstance(func, functools.partial):
+            for argname, arg in func.keywords.items():
+                if isinstance(arg, numpy.ndarray) or (
+                    hasattr(arg, "backend") and arg.backend == "numpy"
+                ):
+                    issues += f"    {dt.tree_path_from_qname(argname)}\n"
+    if issues:
+        raise ValueError(
+            "Backend has changed from numpy to jax.\n\n"
+            f"Found numpy arrays in:\n\n{issues}"
+        )
 
 
 @fail_function()
