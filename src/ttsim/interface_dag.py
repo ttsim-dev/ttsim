@@ -185,8 +185,11 @@ def _fail_if_input_structure_is_invalid(
     main_target_treedef: optree.PyTreeDef,
 ) -> None:
     """
-    Recursively check that all keys/paths in user_treedef exist in main_target_treedef.
-    Raise ValueError if any invalid keys/paths are found.
+    Recursively check that all keys/paths in user_treedef are valid.
+
+    Raise ValueError if
+    - any invalid keys/paths are found.
+    - if the user input is not a dict where a dict is expected.
     """
 
     def check(
@@ -195,6 +198,13 @@ def _fail_if_input_structure_is_invalid(
         path: tuple[str, ...],
     ) -> list[tuple[str, ...]]:
         invalid = []
+        # If a dict is expected but user_spec is not a dict, mark as invalid
+        if (
+            expected_spec.kind == optree.PyTreeKind.DICT
+            and user_spec.kind != optree.PyTreeKind.DICT
+        ):
+            invalid.append(path)
+            return invalid
         if user_spec.kind == expected_spec.kind == optree.PyTreeKind.DICT:
             # This level of the expected pytree as a dict.
             expected_map = dict(
@@ -214,8 +224,13 @@ def _fail_if_input_structure_is_invalid(
                             path=(*path, k),
                         )
                     )
-        # Optionally, could check for extra structure in user_treedef for other kinds
         return invalid
+
+    # If the user input is not a dict at the top level, raise immediately
+    if user_treedef.kind != optree.PyTreeKind.DICT:
+        raise ValueError(
+            "Invalid inputs for main(): input must be a dictionary at the top level."
+        )
 
     invalid_paths = check(
         user_spec=user_treedef, expected_spec=main_target_treedef, path=()
