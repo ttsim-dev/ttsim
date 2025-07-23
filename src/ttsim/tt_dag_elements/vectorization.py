@@ -211,6 +211,16 @@ class Transformer(ast.NodeTransformer):
         self.xnp = xnp
 
     def visit_Call(self, node: ast.Call) -> ast.AST:  # noqa: N802
+        # Forbid type-conversion calls
+        forbidden_type_conversions = {"float", "int", "bool", "complex", "str"}
+        if hasattr(node.func, "id") and node.func.id in forbidden_type_conversions:
+            msg = (
+                f"Forbidden type conversion '{node.func.id}' detected in function. "
+                f"Type conversions like float(), int(), bool(), complex(), str() are "
+                f"not allowed in vectorized functions.\n\nFunction: {self.func_loc}\n\n"
+                f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
+            )
+            raise TranslateToVectorizableError(msg)
         self.generic_visit(node)
         return _call_to_call_from_module(
             node,
@@ -218,6 +228,16 @@ class Transformer(ast.NodeTransformer):
             func_loc=self.func_loc,
             xnp=self.xnp,
         )
+
+    def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST:  # noqa: N802
+        # Forbid any augmented assignment (+=, -=, *=, /=, etc.)
+        msg = (
+            "Augmented assignment is not allowed in vectorized functions. "
+            "Operations like +=, -=, *=, /=, etc. are forbidden.\n\n"
+            f"Function: {self.func_loc}\n\n"
+            f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
+        )
+        raise TranslateToVectorizableError(msg)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:  # noqa: N802
         if isinstance(node.op, ast.Not):

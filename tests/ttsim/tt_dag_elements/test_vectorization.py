@@ -61,18 +61,18 @@ def test_compare_str():
 # ======================================================================================
 
 
-def f1(x):
+def f0(x):
     if x < 0:
         return 0
     else:
         return 1
 
 
-def f1_exp(x):
+def f0_exp(x):
     return numpy.where(x < 0, 0, 1)
 
 
-def f2(x):
+def f1(x):
     if x < 0:
         out = 0
     else:
@@ -80,33 +80,33 @@ def f2(x):
     return out
 
 
-def f2_exp(x):
+def f1_exp(x):
     out = numpy.where(x < 0, 0, 1)
     return out
 
 
-def f3(x):
+def f2(x):
     return 0 if x < 0 else 1
 
 
-def f3_exp(x):
+def f2_exp(x):
     return numpy.where(x < 0, 0, 1)
 
 
-def f4(x):
+def f3(x):
     out = 1
     if x < 0:
         out = 0
     return out
 
 
-def f4_exp(x):
+def f3_exp(x):
     out = 1
     out = numpy.where(x < 0, 0, out)
     return out
 
 
-def f5(x):
+def f4(x):
     if x < 0:
         out = -1
     elif x > 0:
@@ -116,12 +116,12 @@ def f5(x):
     return out
 
 
-def f5_exp(x):
+def f4_exp(x):
     out = numpy.where(x < 0, -1, numpy.where(x > 0, 1, 0))
     return out
 
 
-def f6(flag, another_flag):
+def f5(flag, another_flag):
     if flag and not another_flag:
         out = 1
     else:
@@ -129,49 +129,49 @@ def f6(flag, another_flag):
     return out
 
 
-def f6_exp(flag, another_flag):
+def f5_exp(flag, another_flag):
     out = numpy.where(numpy.logical_and(flag, numpy.logical_not(another_flag)), 1, 0)
     return out
 
 
-def f7(x):
+def f6(x):
     out = 0 if x < 0 else 1
     return out
 
 
-def f7_exp(x):
+def f6_exp(x):
     out = numpy.where(x < 0, 0, 1)
     return out
 
 
-def f8(x):
+def f7(x):
     return -1 if x < 0 else (1 if x > 0 else 0)
 
 
-def f8_exp(x):
+def f7_exp(x):
     return numpy.where(x < 0, -1, numpy.where(x > 0, 1, 0))
 
 
 # expect no change since there is no if-clause and no [and|or] statement.
-def f9(x):
+def f8(x):
     y = numpy.sum(x)
     z = numpy.prod(x)
     return y * z
 
 
-def f10(x):
+def f9(x):
     flag = (x < 0) and (x > -1)
     another_flag = (x < 0) or (x > -1)
     return flag and not another_flag
 
 
-def f10_exp(x):
+def f9_exp(x):
     flag = numpy.logical_and(x < 0, x > -1)
     another_flag = numpy.logical_or(x < 0, x > -1)
     return numpy.logical_and(flag, numpy.logical_not(another_flag))
 
 
-def f11(x):
+def f10(x):
     if x < 0:
         out = -1
     else:
@@ -179,25 +179,12 @@ def f11(x):
     return out
 
 
-def f11_exp(x):
+def f10_exp(x):
     out = numpy.where(x < 0, -1, numpy.where(x > 0, 1, 0))
     return out
 
 
-def f12(x):
-    out = 0
-    if x < 1:
-        out += 1
-    return out
-
-
-def f12_exp(x):
-    out = 0
-    out += numpy.where(x < 1, 1, out)
-    return out
-
-
-def f13(x):
+def f11(x):
     a = x < 0
     b = x > 0
     c = x != 0
@@ -205,7 +192,7 @@ def f13(x):
     return ((a and b) or c) and d
 
 
-def f13_exp(x):
+def f11_exp(x):
     a = x < 0
     b = x > 0
     c = x != 0
@@ -213,7 +200,7 @@ def f13_exp(x):
     return numpy.logical_and(numpy.logical_or(numpy.logical_and(a, b), c), d)
 
 
-def f14(x):
+def f12(x):
     a = x < 0
     b = x > 0
     c = x != 0
@@ -221,7 +208,7 @@ def f14(x):
     return (a and b and c) or d
 
 
-def f14_exp(x):
+def f12_exp(x):
     a = x < 0
     b = x > 0
     c = x != 0
@@ -229,40 +216,24 @@ def f14_exp(x):
     return numpy.logical_or(numpy.logical_and(numpy.logical_and(a, b), c), d)
 
 
-def f15(x):
+def f13(x):
     return min(x, 0)
 
 
-def f15_exp(x):
+def f13_exp(x):
     return numpy.minimum(x, 0)
 
 
-def f16(x):
-    return float(sum(x))
-
-
-def f16_exp(x):
-    return float(numpy.sum(x))
-
-
-def f17(x):
+def f14(x):
     a = x < 0
     b = x // 2
     return any((a, b))
 
 
-def f17_exp(x):
+def f14_exp(x):
     a = x < 0
     b = x // 2
     return numpy.any((a, b))
-
-
-def f18(x):
-    return int(any(x)) + 1
-
-
-def f18_exp(x):
-    return int(numpy.any(x)) + 1
 
 
 x = numpy.arange(-10, 10)
@@ -272,24 +243,21 @@ another_flag = rng.binomial(1, 0.75, size=100)
 
 
 TEST_CASES = [
+    (f0, f0_exp, (x,)),
     (f1, f1_exp, (x,)),
     (f2, f2_exp, (x,)),
     (f3, f3_exp, (x,)),
     (f4, f4_exp, (x,)),
-    (f5, f5_exp, (x,)),
-    (f6, f6_exp, (flag, another_flag)),
+    (f5, f5_exp, (flag, another_flag)),
+    (f6, f6_exp, (x,)),
     (f7, f7_exp, (x,)),
-    (f8, f8_exp, (x,)),
-    (f9, f9, (x,)),
+    (f8, f8, (x,)),
+    (f9, f9_exp, (x,)),
     (f10, f10_exp, (x,)),
     (f11, f11_exp, (x,)),
     (f12, f12_exp, (x,)),
     (f13, f13_exp, (x,)),
     (f14, f14_exp, (x,)),
-    (f15, f15_exp, (x,)),
-    (f16, f16_exp, (x,)),
-    (f17, f17_exp, (x,)),
-    (f18, f18_exp, (x,)),
 ]
 
 
@@ -351,7 +319,7 @@ def g4(x):
 
 def test_notimplemented_error():
     with pytest.raises(NotImplementedError):
-        _make_vectorizable(f1, backend="dask", xnp=numpy)
+        _make_vectorizable(f0, backend="dask", xnp=numpy)
 
 
 @pytest.mark.parametrize("func", [g1, g2, g3, g4])
@@ -687,14 +655,14 @@ def test_is_lambda_function_non_function_input():
     assert not _is_lambda_function(None)
 
 
-def test_lambda_functions_disallowed_make_vectorizable():
+def test_lambda_functions_disallowed_make_vectorizable(xnp):
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
-        _make_vectorizable(lambda x: x, backend="numpy", xnp=numpy)
+        _make_vectorizable(lambda x: x, backend="numpy", xnp=xnp)
 
 
-def test_lambda_functions_disallowed_make_vectorizable_source():
+def test_lambda_functions_disallowed_make_vectorizable_source(xnp):
     with pytest.raises(TranslateToVectorizableError, match="Lambda functions are not"):
-        make_vectorizable_source(lambda x: x, backend="numpy", xnp=numpy)
+        make_vectorizable_source(lambda x: x, backend="numpy", xnp=xnp)
 
 
 # ======================================================================================
@@ -796,3 +764,91 @@ def test_vectorize_function_annotations(backend, xnp):
         "return": "FloatColumn",
     }
     assert inspect.get_annotations(vectorized) == expected_annotations
+
+
+# ======================================================================================
+# Test forbidden type conversions and augmented assignments
+# ======================================================================================
+
+
+def forbidden_type_conversion_float(x):
+    return float(x)
+
+
+def forbidden_type_conversion_int(x):
+    return int(x)
+
+
+def forbidden_type_conversion_bool(x):
+    return bool(x)
+
+
+def forbidden_type_conversion_complex(x):
+    return complex(x)
+
+
+def forbidden_type_conversion_str(x):
+    return str(x)
+
+
+def forbidden_augassign_add(x):
+    y = x
+    y += 1
+    return y
+
+
+def forbidden_augassign_sub(x):
+    y = x
+    y -= 1
+    return y
+
+
+def forbidden_augassign_mult(x):
+    y = x
+    y *= 2
+    return y
+
+
+def forbidden_augassign_div(x):
+    y = x
+    y /= 2
+    return y
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        forbidden_type_conversion_float,
+        forbidden_type_conversion_int,
+        forbidden_type_conversion_bool,
+        forbidden_type_conversion_complex,
+        forbidden_type_conversion_str,
+    ],
+)
+def test_forbidden_type_conversions_raise(func, xnp):
+    """Test that forbidden type conversions raise the correct error."""
+    with pytest.raises(TranslateToVectorizableError, match="Forbidden type conversion"):
+        _make_vectorizable(func, backend="numpy", xnp=xnp)
+    with pytest.raises(TranslateToVectorizableError, match="Forbidden type conversion"):
+        make_vectorizable_source(func, backend="numpy", xnp=xnp)
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        forbidden_augassign_add,
+        forbidden_augassign_sub,
+        forbidden_augassign_mult,
+        forbidden_augassign_div,
+    ],
+)
+def test_forbidden_augassign_raise(func, xnp):
+    """Test that augmented assignments raise the correct error."""
+    with pytest.raises(
+        TranslateToVectorizableError, match="Augmented assignment is not allowed"
+    ):
+        _make_vectorizable(func, backend="numpy", xnp=xnp)
+    with pytest.raises(
+        TranslateToVectorizableError, match="Augmented assignment is not allowed"
+    ):
+        make_vectorizable_source(func, backend="numpy", xnp=xnp)
