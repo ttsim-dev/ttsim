@@ -155,9 +155,10 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         k: v.to_dict() if isinstance(v, MainArg) else v for k, v in inputs.items()
     }
     qname_inputs = {}
-    opo = dict_inputs.get("orig_policy_objects")
-    if opo and "root" in opo:
-        qname_inputs["orig_policy_objects__root"] = opo.pop("root")
+    # Special treatment for root because we do not list it in `MainTarget`.
+    orig_policy_objects = dict_inputs.get("orig_policy_objects")
+    if orig_policy_objects and "root" in orig_policy_objects:
+        qname_inputs["orig_policy_objects__root"] = orig_policy_objects.pop("root")
     for acc in optree.tree_accessors(MainTarget.to_dict(), none_is_leaf=True):
         qname = dt.qname_from_tree_path(acc.path)
         with suppress(KeyError, TypeError):
