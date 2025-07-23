@@ -96,6 +96,11 @@ def a() -> int:
     return 1
 
 
+@policy_function()
+def e(c: int, d: float) -> float:
+    return c + d
+
+
 def test_load_flat_interface_functions_and_inputs() -> None:
     load_flat_interface_functions_and_inputs()
 
@@ -203,11 +208,6 @@ def test_fail_if_requested_nodes_cannot_be_found(
         )
 
 
-@policy_function()
-def e(c: int, d: float) -> float:
-    return c + d
-
-
 def test_harmonize_inputs_main_args_input():
     x = {
         "input_data": InputData.df_and_mapper(
@@ -266,6 +266,49 @@ def test_harmonize_inputs_tree_input():
         "backend": "numpy",
         "rounding": True,
     }
+
+
+@pytest.mark.parametrize(
+    ("main_target", "expected"),
+    [
+        ("a__b", "a__b"),
+        (("a", "b"), "a__b"),
+        ({"a": {"b": None}}, "a__b"),
+    ],
+)
+def test_harmonize_main_target(main_target, expected):
+    harmonized = _harmonize_main_target(main_target=main_target)
+
+    assert harmonized == expected
+
+
+@pytest.mark.parametrize(
+    "main_target",
+    [
+        ["a", "b"],
+        {"a": {"b": None}, "c": None},
+        {"a": {"b": None, "c": None}},
+    ],
+)
+def test_harmonize_main_target_fails_for_multiple_elements(main_target):
+    with pytest.raises(
+        ValueError, match="must be a single qualified name, a tuple, or a dict"
+    ):
+        _harmonize_main_target(main_target=main_target)
+
+
+@pytest.mark.parametrize(
+    ("main_targets", "expected"),
+    [
+        (["a__b"], ["a__b"]),
+        ([("a", "b")], ["a__b"]),
+        ({"a": {"b": None}}, ["a__b"]),
+    ],
+)
+def test_harmonize_main_targets(main_targets, expected):
+    harmonized = _harmonize_main_targets(main_targets=main_targets)
+
+    assert harmonized == expected
 
 
 @pytest.mark.parametrize(
@@ -335,49 +378,6 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
             },
             input_qnames=["input_1", "n1__input_2"],
         )
-
-
-@pytest.mark.parametrize(
-    ("main_target", "expected"),
-    [
-        ("a__b", "a__b"),
-        (("a", "b"), "a__b"),
-        ({"a": {"b": None}}, "a__b"),
-    ],
-)
-def test_harmonize_main_target(main_target, expected):
-    harmonized = _harmonize_main_target(main_target=main_target)
-
-    assert harmonized == expected
-
-
-@pytest.mark.parametrize(
-    "main_target",
-    [
-        ["a", "b"],
-        {"a": {"b": None}, "c": None},
-        {"a": {"b": None, "c": None}},
-    ],
-)
-def test_harmonize_main_target_fails_for_multiple_elements(main_target):
-    with pytest.raises(
-        ValueError, match="must be a single qualified name, a tuple, or a dict"
-    ):
-        _harmonize_main_target(main_target=main_target)
-
-
-@pytest.mark.parametrize(
-    ("main_targets", "expected"),
-    [
-        (["a__b"], ["a__b"]),
-        ([("a", "b")], ["a__b"]),
-        ({"a": {"b": None}}, ["a__b"]),
-    ],
-)
-def test_harmonize_main_targets(main_targets, expected):
-    harmonized = _harmonize_main_targets(main_targets=main_targets)
-
-    assert harmonized == expected
 
 
 def test_fail_if_root_nodes_of_interface_dag_are_missing_without_missing_dynamic_nodes():  # noqa: E501
