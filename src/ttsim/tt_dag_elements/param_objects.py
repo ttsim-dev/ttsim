@@ -114,6 +114,14 @@ class ConsecutiveIntLookupTableParam(ParamObject):
 class ConsecutiveIntLookupTableParamValue:
     """The `value` for ConsecutiveIntLookupTable."""
 
+    __slots__ = (
+        "backend",
+        "bases_to_subtract",
+        "lookup_multipliers",
+        "values_to_look_up",
+        "xnp",
+    )
+
     bases_to_subtract: Int[Array, "n_rows n_cols"]
     lookup_multipliers: Int[Array, "n_rows n_cols"]
     values_to_look_up: (
