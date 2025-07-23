@@ -6,6 +6,14 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/gettsi
 
 ## Unpublished
 
+- {gh}`1043` Raise more errors during vectorization ({ghuser}`hmgaudecker`,
+  {ghuser}`timmens`)
+
+- {gh}`1044` Fail if ParamFunctions depends on ColumnObjects ({ghuser}`MImmesberger`,
+  {ghuser}`hmgaudecker`)
+
+- {gh}`1042` Add copy_environment function ({ghuser}`timmens`, {ghuser}`hmgaudecker`)
+
 - {gh}`1041` Don't create DAG cycles via automatically added functions
   ({ghuser}`MImmesberger`)
 
