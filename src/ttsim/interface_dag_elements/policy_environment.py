@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
@@ -48,7 +48,6 @@ def policy_environment(
     orig_policy_objects__param_specs: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
-    backend: Literal["numpy", "jax"],
 ) -> PolicyEnvironment:
     """
     Set up the policy environment for a particular date.
@@ -109,7 +108,6 @@ def policy_environment(
                 orig=orig_policy_objects__param_specs,
                 policy_date=policy_date,
                 xnp=xnp,
-                backend=backend,
             ),
         ),
     }
@@ -146,7 +144,6 @@ def _active_param_objects(
     orig: FlatOrigParamSpecs,
     policy_date: datetime.date,
     xnp: ModuleType,
-    backend: Literal["numpy", "jax"],
 ) -> NestedParamObjects:
     """Parse the original yaml tree."""
     flat_tree_with_params = {}
@@ -158,7 +155,6 @@ def _active_param_objects(
             spec=orig_params_spec,
             policy_date=policy_date,
             xnp=xnp,
-            backend=backend,
         )
         if param is not None:
             flat_tree_with_params[(*path_to_keep, leaf_name)] = param
@@ -170,7 +166,6 @@ def _active_param_objects(
                 spec=orig_params_spec,
                 policy_date=date_jan1,
                 xnp=xnp,
-                backend=backend,
             )
             if param is not None:
                 flat_tree_with_params[(*path_to_keep, leaf_name_jan1)] = param
@@ -182,7 +177,6 @@ def _get_one_param(  # noqa: PLR0911
     spec: OrigParamSpec,
     policy_date: datetime.date,
     xnp: ModuleType,
-    backend: Literal["numpy", "jax"],
 ) -> ParamObject:
     """Parse the original specification found in the yaml tree to a ParamObject."""
     cleaned_spec = _clean_one_param_spec(
@@ -201,7 +195,6 @@ def _get_one_param(  # noqa: PLR0911
             func_type=spec["type"],
             parameter_dict=cleaned_spec["value"],
             xnp=xnp,
-            backend=backend,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
     if spec["type"] == "consecutive_int_lookup_table":

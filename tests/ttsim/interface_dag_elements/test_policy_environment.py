@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import optree
 import pandas as pd
@@ -61,7 +61,7 @@ def some_int_param():
     )
 
 
-def test_add_jahresanfang(backend: Literal["numpy", "jax"], xnp: ModuleType):
+def test_add_jahresanfang(xnp: ModuleType):
     spec = {
         "name": {"de": "Test", "en": "Check"},
         "description": {"de": "Nichts zu sehen", "en": "Nothing to do"},
@@ -74,7 +74,6 @@ def test_add_jahresanfang(backend: Literal["numpy", "jax"], xnp: ModuleType):
         orig={("spam.yaml", "foo"): spec},
         policy_date=pd.to_datetime("2020-07-01").date(),
         xnp=xnp,
-        backend=backend,
     )
     assert _active_ttsim_tree_with_params["foo"].value == 2
     assert _active_ttsim_tree_with_params["foo_jahresanfang"].value == 1

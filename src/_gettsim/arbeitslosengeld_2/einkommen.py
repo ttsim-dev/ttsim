@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from ttsim.interface_dag_elements.shared import upsert_tree
 from ttsim.tt_dag_elements import (
@@ -210,7 +210,6 @@ def anrechnungsfreies_einkommen_m(
 def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
     raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParam,
     xnp: ModuleType,
-    backend: Literal["numpy", "jax"],
 ) -> PiecewisePolynomialParamValue:
     """Parameter for calculation of income not subject to transfer withdrawal when
     children are not in the Bedarfsgemeinschaft.
@@ -220,7 +219,6 @@ def parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg(
         func_type="piecewise_linear",
         parameter_dict=raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg,
         xnp=xnp,
-        backend=backend,
     )
 
 
@@ -229,7 +227,6 @@ def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
     raw_parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg: RawParam,
     raw_parameter_anrechnungsfreies_einkommen_ohne_kinder_in_bg: RawParam,
     xnp: ModuleType,
-    backend: Literal["numpy", "jax"],
 ) -> PiecewisePolynomialParamValue:
     """Parameter for calculation of income not subject to transfer withdrawal when
     children are in the Bedarfsgemeinschaft.
@@ -243,5 +240,4 @@ def parameter_anrechnungsfreies_einkommen_mit_kindern_in_bg(
         func_type="piecewise_linear",
         parameter_dict=updated_parameters,
         xnp=xnp,
-        backend=backend,
     )

@@ -96,7 +96,6 @@ _SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
         thresholds=numpy.array([1, 2, 3]),
         intercepts=numpy.array([1, 2, 3]),
         rates=numpy.array([1, 2, 3]),
-        backend="numpy",
     ),
     **_GENERIC_PARAM_SPEC,
 )
