@@ -5,13 +5,19 @@ import itertools
 import textwrap
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
 import networkx as nx
 import numpy
 import optree
 import pandas as pd
+
+try:
+    import jax
+except ImportError:
+    jax = None
+
 
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
@@ -260,21 +266,16 @@ def paths_are_missing_in_targets_tree_mapper(
 
 
 @fail_function()
-def input_data_tree_is_invalid(input_data__tree: NestedData, xnp: ModuleType) -> None:
-    """
-    Validate the basic structure of the input data tree.
-
-    Parameters
-    ----------
-    input_data__tree
-        The data tree.
-    """
+def input_data_tree_is_invalid(
+    input_data__tree: NestedData, backend: Literal["numpy", "jax"], xnp: ModuleType
+) -> None:
+    """Validate the basic structure of the input data tree."""
+    valid_leaf_types = (pd.Series, numpy.ndarray, xnp.ndarray)
+    if backend == "numpy" and jax is not None:
+        valid_leaf_types = (*valid_leaf_types, jax.Array)
     assert_valid_ttsim_pytree(
         tree=input_data__tree,
-        leaf_checker=lambda leaf: isinstance(
-            leaf,
-            pd.Series | numpy.ndarray | xnp.ndarray,
-        ),
+        leaf_checker=lambda leaf: isinstance(leaf, valid_leaf_types),
         tree_name="input_data__tree",
     )
 
@@ -478,21 +479,30 @@ def group_variables_are_not_constant_within_groups(
 def non_convertible_objects_in_results_tree(
     processed_data: QNameData,
     results__tree: NestedData,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> None:
-    """Fail if results should be converted to a DataFrame but contain non-convertible
-    objects.
-    """
+    """Fail if results should be converted to a DataFrame but cannot."""
     _numeric_types = (int, float, bool, xnp.integer, xnp.floating, xnp.bool_)
+    _array_types = (xnp.ndarray,)
+    if backend == "numpy" and jax is not None:
+        _numeric_types = (
+            *_numeric_types,
+            jax.numpy.integer,
+            jax.numpy.floating,
+            jax.numpy.bool_,
+        )
+        _array_types = (*_array_types, jax.Array)
+
     expected_object_length = len(next(iter(processed_data.values())))
 
     paths_with_incorrect_types: list[str] = []
     paths_with_incorrect_length: list[str] = []
-    for path, data in dt.flatten_to_tree_paths(results__tree).items():
-        if isinstance(data, xnp.ndarray):
-            if len(data) not in {1, expected_object_length}:
+    for path, column_data in dt.flatten_to_tree_paths(results__tree).items():
+        if isinstance(column_data, _array_types):
+            if len(column_data) not in {1, expected_object_length}:
                 paths_with_incorrect_length.append(str(path))
-        elif isinstance(data, _numeric_types):
+        elif isinstance(column_data, _numeric_types):
             continue
         else:
             paths_with_incorrect_types.append(str(path))
@@ -526,7 +536,7 @@ def input_df_has_bool_or_numeric_column_names(
     common_msg = format_errors_and_warnings(
         """DataFrame column names cannot be booleans or numbers. This restriction
         prevents ambiguity between actual column references and values intended for
-        broadcasting.
+        broadcasting (i.e., just supplying a single value applying to all rows).
         """,
     )
     bool_column_names = [

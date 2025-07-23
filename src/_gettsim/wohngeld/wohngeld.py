@@ -19,7 +19,7 @@ priority check, but cannot cover their needs with the Wohngeld calculated in poi
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from ttsim.tt_dag_elements import (
     AggType,
@@ -225,6 +225,7 @@ class BasisformelParamValues:
     a: ConsecutiveIntLookupTableParamValue
     b: ConsecutiveIntLookupTableParamValue
     c: ConsecutiveIntLookupTableParamValue
+    backend: Literal["numpy", "jax"]
 
 
 @param_function(end_date="2000-12-31", leaf_name="basisformel_params")
@@ -233,6 +234,7 @@ def basisformel_params_bis_2000(
     koeffizienten_berechnungsformel: dict[int, dict[str, float]],
     max_anzahl_personen: dict[str, int],
     xnp: ModuleType,
+    backend: Literal["numpy", "jax"],
 ) -> BasisformelParamValues:
     """Convert the parameters of the Wohngeld basis formula to a format that can be
     used by Numpy and Jax.
@@ -259,6 +261,7 @@ def basisformel_params_bis_2000(
         a=get_consecutive_int_lookup_table_param_value(raw=a, xnp=xnp),
         b=get_consecutive_int_lookup_table_param_value(raw=b, xnp=xnp),
         c=get_consecutive_int_lookup_table_param_value(raw=c, xnp=xnp),
+        backend=backend,
     )
 
 
@@ -274,6 +277,7 @@ def basisformel_params_ab_2001(
     max_anzahl_personen: dict[str, int],
     zusatzbetrag_pro_person_in_großen_haushalten: float,
     xnp: ModuleType,
+    backend: Literal["numpy", "jax"],
 ) -> BasisformelParamValuesMitZusatzbetragNachHaushaltsgröße:
     """Convert the parameters of the Wohngeld basis formula to a format that can be
     used by Numpy and Jax.
@@ -307,6 +311,7 @@ def basisformel_params_ab_2001(
             raw=zusatzbetrag_nach_haushaltsgröße,
             xnp=xnp,
         ),
+        backend=backend,
     )
 
 

@@ -101,6 +101,7 @@ def get_piecewise_parameters(
     func_type: FUNC_TYPES,
     parameter_dict: dict[int, dict[str, float]],
     xnp: ModuleType,
+    backend: Literal["numpy", "jax"],
 ) -> PiecewisePolynomialParamValue:
     """Create the objects for piecewise polynomial.
 
@@ -148,6 +149,7 @@ def get_piecewise_parameters(
         thresholds=thresholds,
         rates=rates,
         intercepts=intercepts,
+        backend=backend,
     )
 
 

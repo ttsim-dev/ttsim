@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy
 
@@ -56,6 +56,7 @@ def parameter_max_lohnsteuer_klasse_5_6(
     einkommensteuer__parameter_einkommensteuertarif: PiecewisePolynomialParamValue,
     einkommensgrenzwerte_steuerklassen_5_6: dict[int, float],
     xnp: ModuleType,
+    backend: Literal["numpy", "jax"],
 ) -> PiecewisePolynomialParamValue:
     """Create paramter values for the piecewise polynomial that represents the maximum amount of Lohnsteuer
     that can be paid on incomes higher than the income thresholds for Steuerklasse 5 and 6.
@@ -98,6 +99,7 @@ def parameter_max_lohnsteuer_klasse_5_6(
         thresholds=xnp.asarray(thresholds),
         intercepts=xnp.asarray(intercepts),
         rates=xnp.asarray(rates),
+        backend=backend,
     )
 
 
