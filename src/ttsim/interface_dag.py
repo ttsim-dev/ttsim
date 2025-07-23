@@ -151,16 +151,12 @@ def main(
 
 
 def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    expected_structure = MainTarget.to_dict()
+    # Remove existing top-level elements that are None, these will be calculated.
     dict_inputs = {
         k: v.to_dict() if isinstance(v, MainArg) else v
         for k, v in inputs.items()
-        if k
-        not in [
-            "main_target",
-            "main_targets",
-            "include_fail_nodes",
-            "include_warn_nodes",
-        ]
+        if v is not None and k in expected_structure
     }
     qname_inputs = {}
     # Special treatment for orig_policy_objects.root because we do not list it in
@@ -172,13 +168,6 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         qname_inputs["orig_policy_objects__root"] = dict_inputs[
             "orig_policy_objects"
         ].pop("root")
-    # Remove existing top-level elements that are None, these will be calculated.
-    expected_structure = MainTarget.to_dict()
-    dict_inputs = {
-        k: v
-        for k, v in dict_inputs.items()
-        if k in expected_structure and v is not None
-    }
 
     _fail_if_input_structure_is_invalid(
         user_treedef=optree.tree_flatten(dict_inputs, none_is_leaf=True)[1],  # type: ignore[arg-type]
