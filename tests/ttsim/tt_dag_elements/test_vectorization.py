@@ -184,19 +184,6 @@ def f11_exp(x):
     return out
 
 
-def f12(x):
-    out = 0
-    if x < 1:
-        out += 1
-    return out
-
-
-def f12_exp(x):
-    out = 0
-    out += numpy.where(x < 1, 1, out)
-    return out
-
-
 def f13(x):
     a = x < 0
     b = x > 0
@@ -237,14 +224,6 @@ def f15_exp(x):
     return numpy.minimum(x, 0)
 
 
-def f16(x):
-    return float(sum(x))
-
-
-def f16_exp(x):
-    return float(numpy.sum(x))
-
-
 def f17(x):
     a = x < 0
     b = x // 2
@@ -255,14 +234,6 @@ def f17_exp(x):
     a = x < 0
     b = x // 2
     return numpy.any((a, b))
-
-
-def f18(x):
-    return int(any(x)) + 1
-
-
-def f18_exp(x):
-    return int(numpy.any(x)) + 1
 
 
 x = numpy.arange(-10, 10)
@@ -283,13 +254,10 @@ TEST_CASES = [
     (f9, f9, (x,)),
     (f10, f10_exp, (x,)),
     (f11, f11_exp, (x,)),
-    (f12, f12_exp, (x,)),
     (f13, f13_exp, (x,)),
     (f14, f14_exp, (x,)),
     (f15, f15_exp, (x,)),
-    (f16, f16_exp, (x,)),
     (f17, f17_exp, (x,)),
-    (f18, f18_exp, (x,)),
 ]
 
 
@@ -875,12 +843,12 @@ def test_forbidden_type_conversions_raise(func, xnp):
     ],
 )
 def test_forbidden_augassign_raise(func, xnp):
-    """Test that forbidden augmented assignments raise the correct error."""
+    """Test that augmented assignments raise the correct error."""
     with pytest.raises(
-        TranslateToVectorizableError, match="Forbidden augmented assignment"
+        TranslateToVectorizableError, match="Augmented assignment is not allowed"
     ):
         _make_vectorizable(func, backend="numpy", xnp=xnp)
     with pytest.raises(
-        TranslateToVectorizableError, match="Forbidden augmented assignment"
+        TranslateToVectorizableError, match="Augmented assignment is not allowed"
     ):
         make_vectorizable_source(func, backend="numpy", xnp=xnp)

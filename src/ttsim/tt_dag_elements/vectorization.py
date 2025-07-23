@@ -230,24 +230,14 @@ class Transformer(ast.NodeTransformer):
         )
 
     def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST:  # noqa: N802
-        # Forbid +=, -=, *=, /=
-        forbidden_ops = (ast.Add, ast.Sub, ast.Mult, ast.Div)
-        if isinstance(node.op, forbidden_ops):
-            op_str = {
-                ast.Add: "+=",
-                ast.Sub: "-=",
-                ast.Mult: "*=",
-                ast.Div: "/=",
-            }[type(node.op)]
-            msg = (
-                f"Forbidden augmented assignment '{op_str}' detected in function. "
-                f"Operations like +=, -=, *=, /= are not allowed in vectorized "
-                f"functions.\n\nFunction: {self.func_loc}\n\n"
-                f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
-            )
-            raise TranslateToVectorizableError(msg)
-        self.generic_visit(node)
-        return node
+        # Forbid any augmented assignment (+=, -=, *=, /=, etc.)
+        msg = (
+            "Augmented assignment is not allowed in vectorized functions. "
+            "Operations like +=, -=, *=, /=, etc. are forbidden.\n\n"
+            f"Function: {self.func_loc}\n\n"
+            f"Problematic source code: \n\n{_node_to_formatted_source(node)}\n"
+        )
+        raise TranslateToVectorizableError(msg)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:  # noqa: N802
         if isinstance(node.op, ast.Not):
