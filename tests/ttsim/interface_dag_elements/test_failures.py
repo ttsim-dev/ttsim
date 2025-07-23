@@ -1433,9 +1433,9 @@ def valid_param_function_with_evaluation_and_policy_year(
 
 
 @param_function()
-def invalid_param_function(policy_func: int) -> int:
+def invalid_param_function(some_policy_function: int) -> int:
     """An invalid param function that depends on a column object."""
-    return policy_func * 2
+    return some_policy_function * 2
 
 
 @policy_function()
@@ -1447,7 +1447,6 @@ def some_policy_function(x: int) -> int:
 @policy_input()
 def some_policy_input() -> int:
     """A policy input for testing."""
-    return 1
 
 
 @policy_input()
@@ -1470,12 +1469,12 @@ def policy_year() -> int:
         # Valid environment with param functions and column objects but no dependencies
         {
             "valid_param": valid_param_function,
-            "policy_func": some_policy_function,
+            "some_policy_function": some_policy_function,
         },
         # Valid environment with mixed types but no violations
         {
             "valid_param": valid_param_function,
-            "policy_func": some_policy_function,
+            "some_policy_function": some_policy_function,
             "policy_input": some_policy_input,
             "some_scalar": 42,
             "some_dict_param": _SOME_DICT_PARAM,
@@ -1505,17 +1504,24 @@ def test_param_function_depends_on_column_objects_passes(specialized_environment
         (
             {
                 "invalid_param": invalid_param_function,
-                "policy_func": some_policy_function,
+                "some_policy_function": some_policy_function,
             },
-            "invalid_param depends on policy_func",
+            "`invalid_param` depends on `some_policy_function`",
+        ),
+        (
+            {
+                "invalid_param": invalid_param_function,
+                "some_policy_function": some_policy_input,
+            },
+            "`invalid_param` depends on `some_policy_function`",
         ),
         (
             {
                 "valid_param": valid_param_function,
                 "invalid_param": invalid_param_function,
-                "policy_func": some_policy_function,
+                "some_policy_function": some_policy_function,
             },
-            "invalid_param depends on policy_func",
+            "`invalid_param` depends on `some_policy_function`",
         ),
     ],
 )
@@ -1535,7 +1541,7 @@ def test_param_function_depends_on_column_objects_via_main(
 
     with pytest.raises(
         ValueError,
-        match="invalid_param depends on policy_func",
+        match="`invalid_param` depends on `some_policy_function`",
     ):
         main(
             policy_date_str="2025-01-01",
@@ -1554,6 +1560,6 @@ def test_param_function_depends_on_column_objects_via_main(
             backend=backend,
             policy_environment={
                 "invalid_param": invalid_param_function,
-                "policy_func": some_policy_function,
+                "some_policy_function": some_policy_function,
             },
         )

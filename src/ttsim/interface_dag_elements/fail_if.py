@@ -905,14 +905,14 @@ def param_function_depends_on_column_objects(
     if violations:
         formatted_violations = format_list_linewise(
             [
-                f"{param_func_name} depends on {column_obj_name}"
+                f"`{param_func_name}` depends on `{column_obj_name}`"
                 for param_func_name, column_obj_name in violations
             ]
         )
         msg = format_errors_and_warnings(
-            "ParamFunctions should not depend on ColumnObjects. The following "
+            "ParamFunctions must not depend on ColumnObjects. The following "
             f"violations were found:\n\n{formatted_violations}\n\n"
-            "ParamFunctions should only depend on parameters and scalars, not on "
+            "ParamFunctions may only depend on parameters and scalars, not on "
             "ColumnObjects."
         )
         raise ValueError(msg)
