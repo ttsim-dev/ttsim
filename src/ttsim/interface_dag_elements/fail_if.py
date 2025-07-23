@@ -891,7 +891,7 @@ def param_function_depends_on_column_objects(
     if violations:
         msg = (
             "ParamFunctions must not depend on ColumnObjects. The following "
-            f"violations were found:\n\n    {violations}\n"
+            f"violations were found:\n\n{violations}\n"
             "ParamFunctions may only depend on parameters and scalars, not on "
             "ColumnObjects."
         )
