@@ -351,12 +351,22 @@ def tax_transfer_dag(
     )
 
 
+@interface_input(in_top_level_namespace=True)
+def tt_function_set_annotations() -> bool:
+    """Whether to set annotations on the tax-transfer function.
+
+    Defaults to true, turn off in case you run into trouble with type annotations when
+    modifying the policy environment.
+    """
+
+
 @interface_function()
 def tax_transfer_function(
     tax_transfer_dag: nx.DiGraph,
     with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     labels__column_targets: OrderedQNames,
     backend: Literal["numpy", "jax"],
+    tt_function_set_annotations: bool,
 ) -> Callable[[QNameData], QNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
     ttf_with_keyword_args = concatenate_functions(
@@ -366,7 +376,7 @@ def tax_transfer_function(
         return_type="dict",
         aggregator=None,
         enforce_signature=True,
-        set_annotations=True,
+        set_annotations=tt_function_set_annotations,
     )
 
     if backend == "jax":

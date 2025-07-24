@@ -167,5 +167,6 @@ class MainTarget(MainTargetABC):
     xnp: str = "xnp"
     dnp: str = "dnp"
     rounding: str = "rounding"
+    tt_function_set_annotations: str = "tt_function_set_annotations"
     warn_if: type[WarnIf] = field(default=WarnIf)
     fail_if: type[FailIf] = field(default=FailIf)

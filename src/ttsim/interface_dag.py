@@ -61,6 +61,7 @@ def main(
     evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,
     include_warn_nodes: bool = True,
+    tt_function_set_annotations: bool = True,
     orig_policy_objects: OrigPolicyObjects | None = None,
     raw_results: RawResults | None = None,
     results: Results | None = None,
@@ -70,7 +71,7 @@ def main(
     policy_date: datetime.date | None = None,
     evaluation_date: datetime.date | None = None,
     labels: Labels | None = None,
-) -> dict[str, Any]:
+) -> Any:  # noqa: ANN401
     """
     Main function that processes the inputs and returns the outputs.
     """
@@ -268,7 +269,7 @@ def _harmonize_main_targets(
     if isinstance(main_targets, dict):
         out = dt.qnames(main_targets)
     elif isinstance(main_targets[0], tuple):  # type: ignore[index]
-        out = [dt.qname_from_tree_path(tp) for tp in main_targets]
+        out = [dt.qname_from_tree_path(tp) for tp in main_targets]  # type: ignore[arg-type]
     else:
         out = list(main_targets)
 
@@ -465,7 +466,7 @@ def _remove_tree_logic_from_functions_in_collection(
 
 
 def _fail_if_root_nodes_of_interface_dag_are_missing(
-    dag: dags.DiGraph,
+    dag: nx.DiGraph,
     input_qnames: dict[str, Any],
     flat_interface_objects: FlatInterfaceObjects,
 ) -> None:
