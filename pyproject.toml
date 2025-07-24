@@ -4,16 +4,15 @@
 
 [project]
 # Basic information
-name = "gettsim"
+name = "ttsim"
 dynamic = ["version"]
-description = "The German Taxes and Transfers SIMulator"
+description = "code powering Taxes and Transfers SIMulators"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
 # About the project
 authors = [
     { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
     { name = "Marvin Immesberger" },
-    { name = "Christian Zimpelmann" }
 ]
 maintainers = [
     { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
@@ -25,7 +24,6 @@ keywords = [
     "Benefits",
     "Transfers",
     "Pensions",
-    "Germany",
 ]
 classifiers = [
     "Intended Audience :: Science/Research",
@@ -58,11 +56,11 @@ dependencies = [
 
 
 [project.urls]
-Repository = "https://github.com/iza-institute-of-labor-economics/gettsim"
-Changelog = "https://gettsim.readthedocs.io/en/stable/changes.html"
+Repository = "https://github.com/ttsim-dev/ttsim"
+Changelog = "https://github.com/ttsim-dev/ttsim/CHANGES.md"
 Documentation = "https://gettsim.readthedocs.io"
-Github = "https://github.com/iza-institute-of-labor-economics/gettsim"
-Tracker = "https://github.com/iza-institute-of-labor-economics/gettsim/issues"
+Github = "https://github.com/ttsim-dev/ttsim"
+Tracker = "https://github.com/ttsim-dev/ttsim/issues"
 
 
 # ======================================================================================
@@ -74,7 +72,7 @@ requires = ["hatchling", "hatch_vcs"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.hooks.vcs]
-version-file = "src/_gettsim/_version.py"
+version-file = "src/ttsim/_version.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = ["tests"]
@@ -126,7 +124,7 @@ toml = "*"
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.pypi-dependencies]
-gettsim = {path = ".", editable = true}
+ttsim = {path = ".", editable = true}
 jaxtyping = ">=0.3.2"
 kaleido = ">=1.0.0"
 pdbp = ">=1.7.1"
@@ -170,14 +168,6 @@ mypy = "~=1.16"
 types-PyYAML = "*"
 types-pytz = "*"
 
-[tool.pixi.feature.docs.dependencies]
-myst-parser = "*"
-nbsphinx = "*"
-pydata-sphinx-theme = "*"
-sphinx = "*"
-sphinx-automodapi = "<0.17.0"
-sphinx-copybutton = "*"
-
 # Tasks
 # --------------------------------------------------------------------------------------
 
@@ -193,9 +183,6 @@ tests-jax = "pytest --backend=jax"
 [tool.pixi.feature.mypy.tasks]
 mypy = "mypy --ignore-missing-imports"
 
-[tool.pixi.feature.docs.tasks]
-docs = "sphinx-build -T -b html docs docs/_build/html"
-
 # Environments
 # --------------------------------------------------------------------------------------
 
@@ -207,7 +194,6 @@ py313-jax = ["py313", "test", "jax"]
 py313-cuda = ["py313", "test", "cuda"]
 py313-metal = ["py313", "test", "metal"]
 mypy = ["mypy"]
-docs = ["docs", "py313"]
 
 # ======================================================================================
 # Ruff configuration
@@ -245,34 +231,19 @@ exclude = []
 
 [tool.ruff.lint.per-file-ignores]
 "conftest.py" = ["ANN"]
-"docs/*" = ["INP001", "T201"]
-# Cannot have default values in test functions with fixtures -- not an issue here.
-"src/gettsim/__init__.py" = ["PT028"]
-# Mostly things vectorization can't handle
-"src/_gettsim/*" = ["E501", "PLR1714", "PLR1716", "E721", "SIM108", "RET"]
-# Lohnsteuerklassen and age groups are fine to hard-code.
-"src/_gettsim/lohnsteuer/*.py" = ["PLR2004"]
-"src/_gettsim/familie/familie.py" = ["PLR2004"]
-# All tests return None and use asserts
-"src/_gettsim_tests/**/*.py" = ["ANN", "S101"]
 # Long lines.
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 # Mostly things vectorization can't handle
-"tests/ttsim/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
-"tests/ttsim/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
+"tests/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
+"tests/tt_dag_elements/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
-"tests/ttsim/**/*.py" = ["ANN", "INP001", "PLR2004", "S101"]
+"tests/**/*.py" = ["ANN", "INP001", "PLR2004", "S101"]
 # Long lines.
-"tests/ttsim/interface_dag_elements/test_failures.py" = ["E501"]
-# TODO: remove once ported nicely
-"src/ttsim/stale_code_storage.py" = ["ALL"]
-"outdated_docs/**/*.ipynb" = ["ALL"]
-"src/_gettsim_tests/test_docs.py" = ["ALL"]
+"tests/interface_dag_elements/test_failures.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
-
 
 # ======================================================================================
 # mypy configuration
@@ -294,8 +265,6 @@ disable_error_code = ["overload-cannot-match"]
 [[tool.mypy.overrides]]
 module = [
     "conftest",
-    "src.ttsim.stale_code_storage",
-    "src._gettsim_tests.test_docs",
 ]
 disallow_untyped_defs = false
 ignore_errors = true
@@ -303,10 +272,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = ["tests.*",]
-disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter source code.
-
-[[tool.mypy.overrides]]
-module = ["src._gettsim_tests.*",]
 disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter source code.
 
 [[tool.mypy.overrides]]
@@ -342,11 +307,7 @@ markers = [
     "skipif_jax: skip test if backend is jax",
     "skipif_numpy: skip test if backend is numpy"
 ]
-norecursedirs = ["docs"]
-testpaths = [
-    "src/_gettsim_tests",
-    "tests/ttsim",
-]
+testpaths = ["tests"]
 
 # ======================================================================================
 # yamlfix configuration

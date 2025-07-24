@@ -1,7 +1,7 @@
 ---
 
 name: Enhancement
-about: Suggest an idea for GETTSIM
+about: Suggest an idea for TTSIM
 title: "ENH:"
 labels: "enhancement"
 assignees: ''
@@ -11,7 +11,7 @@ assignees: ''
 #### Is your feature request related to a problem?
 
 Provide a description of what the problem is, e.g. "I wish I could use
-GETTSIM to do [...]".
+TTSIM to do [...]".
 
 #### Describe the solution you would like to see
 

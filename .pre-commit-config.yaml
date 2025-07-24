@@ -73,18 +73,7 @@ repos:
         args:
           - --wrap
           - '88'
-        files: (README\.md)
-  - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.22
-    hooks:
-      - id: mdformat
-        additional_dependencies:
-          - mdformat-myst
-          - mdformat-ruff
-        args:
-          - --wrap
-          - '88'
-        files: (docs/.|CHANGES.md|CODE_OF_CONDUCT.md)
+        files: (README.md|CHANGES.md|CODE_OF_CONDUCT.md)
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.16.1
     hooks:
@@ -99,8 +88,8 @@ repos:
           - types-pytz
           - numpy >= 2
           - jaxtyping
-          # - dags >= 0.3
-          - optree >= 0.15
+          - dags >= 0.4.1
+          - optree >= 0.16
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.33.2
     hooks:
@@ -108,7 +97,7 @@ repos:
         name: Validate JSON/YAML files against schema
         entry: check-jsonschema
         language: python
-        files: ^(tests/ttsim/mettsim|src/_gettsim)/.*\.(yaml|yml)$
+        files: ^tests/mettsim/.*\.(yaml|yml)$
         args:
           - --schemafile=src/ttsim/params-schema.json
 ci:
