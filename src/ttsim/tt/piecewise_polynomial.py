@@ -122,7 +122,7 @@ def get_piecewise_parameters(
         )
 
     # Extract lower thresholds.
-    lower_thresholds, upper_thresholds, thresholds = _check_and_get_thresholds(
+    lower_thresholds, upper_thresholds, thresholds = get_piecewise_thresholds(
         leaf_name=leaf_name,
         parameter_dict=parameter_dict,
         xnp=xnp,
@@ -151,7 +151,7 @@ def get_piecewise_parameters(
     )
 
 
-def _check_and_get_thresholds(  # noqa: C901
+def get_piecewise_thresholds(  # noqa: C901
     leaf_name: str,
     parameter_dict: dict[int, dict[str, float]],
     xnp: ModuleType,
