@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from jaxtyping import Array, Bool, Float, Int
 
-    from ttsim.typing.tt_dag_elements import NestedLookupDict
+    from ttsim.typing import NestedLookupDict
 
 
 @dataclass(frozen=True)
