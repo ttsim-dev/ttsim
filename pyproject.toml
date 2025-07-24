@@ -263,12 +263,9 @@ disallow_empty_bodies = false
 disable_error_code = ["overload-cannot-match"]
 
 [[tool.mypy.overrides]]
-module = [
-    "conftest",
-]
+module = ["conftest"]
 disallow_untyped_defs = false
 ignore_errors = true
-
 
 [[tool.mypy.overrides]]
 module = ["tests.*",]
@@ -277,10 +274,6 @@ disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter 
 [[tool.mypy.overrides]]
 module = ["src.ttsim.main_args",]
 disable_error_code = ["no-redef"]  # Instantiate dataclass with same name as elements.
-
-
-[tool.check-manifest]
-ignore = ["src/_gettsim/_version.py"]
 
 
 

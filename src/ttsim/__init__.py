@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ttsim._version import __version__, __version_tuple__, version, version_tuple
 from ttsim.copy_environment import copy_environment
 from ttsim.interface_dag import main
 from ttsim.interface_dag_elements import MainTarget
@@ -23,7 +24,11 @@ __all__ = [
     "Results",
     "SpecializedEnvironment",
     "TTTargets",
+    "__version__",
+    "__version_tuple__",
     "copy_environment",
     "main",
     "merge_trees",
+    "version",
+    "version_tuple",
 ]
