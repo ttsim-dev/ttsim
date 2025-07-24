@@ -150,6 +150,7 @@ def plot_interface_dag(
     include_fail_and_warn_nodes: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
+    remove_orig_policy_objects__root: bool = True,
 ) -> go.Figure:
     """Plot the full interface DAG."""
     interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
@@ -194,6 +195,8 @@ def plot_interface_dag(
             description=description or "No description available.",
             namespace=namespace,
         )
+    if remove_orig_policy_objects__root:
+        dag.remove_nodes_from(["orig_policy_objects__root"])
 
     fig = _plot_dag(
         dag=dag,

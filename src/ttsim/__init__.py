@@ -52,7 +52,6 @@ __all__ = [
     "SpecializedEnvironment",
     "TTTargets",
     "__version__",
-    "__version__",
     "__version_tuple__",
     "copy_environment",
     "main",
