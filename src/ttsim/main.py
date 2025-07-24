@@ -39,7 +39,7 @@ if TYPE_CHECKING:
         SpecializedEnvironment,
         TTTargets,
     )
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         DashedISOString,
         FlatInterfaceObjects,
         NestedTargetDict,

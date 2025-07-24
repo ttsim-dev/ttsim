@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         FlatData,
         NestedData,
         NestedInputsMapper,

@@ -112,3 +112,5 @@ if TYPE_CHECKING:
     """Map qualified names to column objects and anything that comes out of processing the params."""  # noqa: E501
     SpecEnvWithPartialledParamsAndScalars = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""
+
+    NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]

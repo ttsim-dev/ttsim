@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         DashedISOString,
         IntColumn,
         UnorderedQNames,

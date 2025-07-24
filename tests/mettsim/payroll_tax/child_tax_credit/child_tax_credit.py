@@ -12,7 +12,7 @@ from ttsim.tt import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.typing.interface_dag_elements import BoolColumn, IntColumn
+    from ttsim.typing import BoolColumn, IntColumn
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

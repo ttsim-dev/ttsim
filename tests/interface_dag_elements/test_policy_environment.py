@@ -24,7 +24,7 @@ from ttsim.tt import ScalarParam, policy_function
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         NestedColumnObjectsParamFunctions,
     )
 

@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedData,

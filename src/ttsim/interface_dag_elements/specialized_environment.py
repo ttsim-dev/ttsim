@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
     import networkx as nx
 
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         OrderedQNames,
         PolicyEnvironment,
         QNameData,

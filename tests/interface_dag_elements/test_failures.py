@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 
     from jaxtyping import Array, Float
 
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         OrigParamSpec,

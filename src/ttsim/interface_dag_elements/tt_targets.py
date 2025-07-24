@@ -10,7 +10,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.tt.column_objects_param_function import ColumnFunction
 
 if TYPE_CHECKING:
-    from ttsim.typing.interface_dag_elements import (
+    from ttsim.typing import (
         NestedStrings,
         NestedTargetDict,
         OrderedQNames,
