@@ -71,3 +71,4 @@ ___*
 _version.py
 .pixi/
 prof/
+.DS_Store
