@@ -350,6 +350,21 @@ def environment_is_invalid(
         tree_name="policy_environment",
     )
 
+    flat_policy_environment = dt.flatten_to_tree_paths(policy_environment)
+    paths_with_incorrect_leaf_names = []
+    for p, f in flat_policy_environment.items():
+        if hasattr(f, "leaf_name") and p[-1] != f.leaf_name:
+            paths_with_incorrect_leaf_names.append(str(p))
+    if paths_with_incorrect_leaf_names:
+        formatted_paths = "\n".join(paths_with_incorrect_leaf_names)
+        msg = format_errors_and_warnings(
+            "The name of the last branch element of the policy environment must be the "
+            "same as the leaf name of the PolicyFunction. The following tree paths are "
+            "not compatible with the PolicyFunction: "
+            f"\n\n{formatted_paths}"
+        )
+        raise ValueError(msg)
+
 
 @fail_function()
 def foreign_keys_are_invalid_in_data(

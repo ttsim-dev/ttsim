@@ -68,15 +68,22 @@ def policy_environment(
     """
     return {
         "policy_year": ScalarParam(
+            leaf_name="policy_year",
             value=policy_date.year,
             start_date=policy_date,
             end_date=policy_date,
         ),
         "policy_month": ScalarParam(
-            value=policy_date.month, start_date=policy_date, end_date=policy_date
+            leaf_name="policy_month",
+            value=policy_date.month,
+            start_date=policy_date,
+            end_date=policy_date,
         ),
         "policy_day": ScalarParam(
-            value=policy_date.day, start_date=policy_date, end_date=policy_date
+            leaf_name="policy_day",
+            value=policy_date.day,
+            start_date=policy_date,
+            end_date=policy_date,
         ),
         "evaluation_year": PolicyInput(
             leaf_name="evaluation_year",

@@ -34,9 +34,9 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
             },
             policy_environment={
                 "some_func": some_func,
-                "some_target": another_func,
+                "another_func": another_func,
             },
-            tt_targets={"tree": {"some_target": None}},
+            tt_targets={"tree": {"another_func": None}},
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             include_fail_nodes=False,
@@ -67,14 +67,14 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
 
 def test_warn_if_evaluation_date_set_in_multiple_places(backend):
     policy_environment = {
-        "policy_year": ScalarParam(value=2025),
-        "policy_month": ScalarParam(value=1),
-        "policy_day": ScalarParam(value=1),
-        "evaluation_year": ScalarParam(value=2025),
-        "evaluation_month": ScalarParam(value=1),
-        "evaluation_day": ScalarParam(value=1),
+        "policy_year": ScalarParam(value=2025, leaf_name="policy_year"),
+        "policy_month": ScalarParam(value=1, leaf_name="policy_month"),
+        "policy_day": ScalarParam(value=1, leaf_name="policy_day"),
+        "evaluation_year": ScalarParam(value=2025, leaf_name="evaluation_year"),
+        "evaluation_month": ScalarParam(value=1, leaf_name="evaluation_month"),
+        "evaluation_day": ScalarParam(value=1, leaf_name="evaluation_day"),
         "some_func": some_func,
-        "some_target": another_func,
+        "another_func": another_func,
     }
     with pytest.warns(match="You have specified the evaluation date in more than one"):
         main(
@@ -87,14 +87,14 @@ def test_warn_if_evaluation_date_set_in_multiple_places(backend):
 
 def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend, xnp):
     policy_environment = {
-        "policy_year": ScalarParam(value=2025),
-        "policy_month": ScalarParam(value=1),
-        "policy_day": ScalarParam(value=1),
-        "evaluation_year": ScalarParam(value=2025),
-        "evaluation_month": ScalarParam(value=1),
-        "evaluation_day": ScalarParam(value=1),
+        "policy_year": ScalarParam(value=2025, leaf_name="policy_year"),
+        "policy_month": ScalarParam(value=1, leaf_name="policy_month"),
+        "policy_day": ScalarParam(value=1, leaf_name="policy_day"),
+        "evaluation_year": ScalarParam(value=2025, leaf_name="evaluation_year"),
+        "evaluation_month": ScalarParam(value=1, leaf_name="evaluation_month"),
+        "evaluation_day": ScalarParam(value=1, leaf_name="evaluation_day"),
         "some_func": some_func,
-        "some_target": another_func,
+        "another_func": another_func,
     }
     with pytest.warns(match="You have specified the evaluation date in more than one"):
         main(
@@ -108,11 +108,11 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
 
 def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
     policy_environment = {
-        "policy_year": ScalarParam(value=2025),
-        "policy_month": ScalarParam(value=1),
-        "policy_day": ScalarParam(value=1),
+        "policy_year": ScalarParam(value=2025, leaf_name="policy_year"),
+        "policy_month": ScalarParam(value=1, leaf_name="policy_month"),
+        "policy_day": ScalarParam(value=1, leaf_name="policy_day"),
         "some_func": some_func,
-        "some_target": another_func,
+        "another_func": another_func,
     }
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")

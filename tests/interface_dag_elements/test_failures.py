@@ -73,8 +73,8 @@ _GENERIC_PARAM_SPEC = {
     **_GENERIC_PARAM_HEADER,
 }
 
-_SOME_CONSECUTIVE_INT_LOOKUP_TABLE_PARAM = ConsecutiveIntLookupTableParam(
-    leaf_name="some_consecutive_int_nd_lookup_table_param",
+some_consecutive_int_lookup_table_param = ConsecutiveIntLookupTableParam(
+    leaf_name="some_consecutive_int_lookup_table_param",
     value=ConsecutiveIntLookupTableParamValue(
         bases_to_subtract=numpy.array([1]),
         xnp=numpy,
@@ -83,14 +83,14 @@ _SOME_CONSECUTIVE_INT_LOOKUP_TABLE_PARAM = ConsecutiveIntLookupTableParam(
     **_GENERIC_PARAM_SPEC,
 )
 
-_SOME_DICT_PARAM = DictParam(
+some_dict_param = DictParam(
     leaf_name="some_dict_param",
     value={"a": 1, "b": 2},
     **_GENERIC_PARAM_SPEC,
 )
 
 
-_SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
+some_piecewise_polynomial_param = PiecewisePolynomialParam(
     leaf_name="some_piecewise_polynomial_param",
     value=PiecewisePolynomialParamValue(
         thresholds=numpy.array([1, 2, 3]),
@@ -535,7 +535,7 @@ def test_fail_if_active_periods_overlap_raises(
     [
         (
             {
-                "some_dict_param": _SOME_DICT_PARAM,
+                "some_dict_param": some_dict_param,
             },
             {"some_dict_param": "res1"},
         ),
@@ -727,7 +727,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
     [
         (
             {
-                "some_piecewise_polynomial_param": _SOME_PIECEWISE_POLYNOMIAL_PARAM,
+                "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
             },
             {"some_piecewise_polynomial_param": "res1"},
             "The data contains objects that cannot be cast to a pandas.DataFrame",
@@ -735,7 +735,7 @@ def test_fail_if_input_df_mapper_has_incorrect_format(
         (
             {
                 "some_consecutive_int_lookup_table_param": (
-                    _SOME_CONSECUTIVE_INT_LOOKUP_TABLE_PARAM
+                    some_consecutive_int_lookup_table_param
                 ),
             },
             {"some_consecutive_int_lookup_table_param": "res1"},
@@ -1332,13 +1332,12 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
         },
         # Valid environment with param functions
         {
-            "valid_param": some_param_func_returning_array_of_length_2,
-            "another_param": some_param_func_returning_list_of_length_2,
+            "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
         },
         # Valid environment with param objects
         {
-            "valid_param_obj": _SOME_DICT_PARAM,
-            "another_param_obj": _SOME_PIECEWISE_POLYNOMIAL_PARAM,
+            "some_dict_param": some_dict_param,
+            "some_piecewise_polynomial_param": some_piecewise_polynomial_param,
         },
         # Valid environment with module types
         {
@@ -1349,16 +1348,16 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
         # Valid environment with nested structure
         {
             "nested": {
-                "valid_func": policy_function(leaf_name="nested_func")(identity),
-                "valid_param": some_param_func_returning_array_of_length_2,
+                "nested_func": policy_function(leaf_name="nested_func")(identity),
+                "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             },
-            "top_level": _SOME_DICT_PARAM,
+            "some_dict_param": some_dict_param,
         },
         # Valid environment with mixed types
         {
             "func": policy_function(leaf_name="func")(identity),
-            "param": some_param_func_returning_array_of_length_2,
-            "param_obj": _SOME_DICT_PARAM,
+            "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
+            "some_dict_param": some_dict_param,
             "module": numpy,
             "backend": "jax",
         },
@@ -1377,6 +1376,29 @@ def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"])
             input_data=InputData.tree(tree=object()),
             orig_policy_objects={"root": METTSIM_ROOT},
             policy_date_str="2025-01-01",
+        )
+
+
+@pytest.mark.parametrize(
+    "policy_environment",
+    [
+        {"foo": policy_function(leaf_name="bar")(return_one)},
+    ],
+)
+def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
+    policy_environment: PolicyEnvironment,
+    xnp: ModuleType,
+):
+    with pytest.raises(
+        ValueError,
+        match="must be the same\nas the leaf name of the PolicyFunction",
+    ):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            policy_date_str="2025-01-01",
+            orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
+            input_data=InputData.tree(tree={"p_id": xnp.array([0, 1, 2])}),
+            policy_environment=policy_environment,
         )
 
 
@@ -1541,7 +1563,7 @@ def some_policy_input() -> int:
             "some_policy_function": some_policy_function,
             "policy_input": some_policy_input,
             "some_scalar": 42,
-            "some_dict_param": _SOME_DICT_PARAM,
+            "some_dict_param": some_dict_param,
         },
     ],
 )
@@ -1593,7 +1615,7 @@ def test_param_function_depends_on_column_objects_via_main(
 
     with pytest.raises(
         ValueError,
-        match="`invalid_param` depends on `some_policy_function`",
+        match="`invalid_param_function` depends on `some_policy_function`",
     ):
         main(
             policy_date_str="2025-01-01",
@@ -1611,7 +1633,7 @@ def test_param_function_depends_on_column_objects_via_main(
             },
             backend=backend,
             policy_environment={
-                "invalid_param": invalid_param_function,
+                "invalid_param_function": invalid_param_function,
                 "some_policy_function": some_policy_function,
             },
         )

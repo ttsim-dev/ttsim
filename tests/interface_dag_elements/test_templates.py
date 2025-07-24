@@ -27,7 +27,7 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 
 p1 = ScalarParam(
     value=1,
-    leaf_name="some_int_param",
+    leaf_name="p1",
     start_date="2025-01-01",
     end_date="2025-12-31",
     name="some_int_param",
@@ -40,7 +40,7 @@ p1 = ScalarParam(
 
 p2 = DictParam(
     value={"a": 1, "b": 2},
-    leaf_name="some_dict_param",
+    leaf_name="p2",
     start_date="2025-01-01",
     end_date="2025-12-31",
     name="some_dict_param",
