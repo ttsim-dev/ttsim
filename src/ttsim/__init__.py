@@ -13,7 +13,7 @@ except ImportError:
 
 from ttsim import tt
 from ttsim.copy_environment import copy_environment
-from ttsim.interface_dag_elements.shared import merge_trees
+from ttsim.interface_dag_elements.shared import merge_trees, upsert_tree
 from ttsim.main import main
 from ttsim.main_args import (
     InputData,
@@ -29,6 +29,7 @@ from ttsim.plot_dag import plot_interface_dag, plot_tt_dag
 
 copy_environment = copy_environment
 merge_trees = merge_trees
+upsert_tree = upsert_tree
 main = main
 plot_tt_dag = plot_tt_dag
 plot_interface_dag = plot_interface_dag
@@ -59,6 +60,7 @@ __all__ = [
     "plot_interface_dag",
     "plot_tt_dag",
     "tt",
+    "upsert_tree",
     "version",
     "version_tuple",
 ]
