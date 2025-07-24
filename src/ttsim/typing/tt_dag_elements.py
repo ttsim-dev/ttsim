@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 if TYPE_CHECKING:
     import datetime
@@ -16,5 +16,3 @@ if TYPE_CHECKING:
             dict[Literal["note", "reference"] | str | int, Any],  # noqa: PYI051
         ]
     )
-    DashedISOString = NewType("DashedISOString", str)
-    """A string representing a date in the format 'YYYY-MM-DD'."""
