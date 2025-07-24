@@ -16467,8 +16467,8 @@ packages:
   timestamp: 1733367480074
 - pypi: ./
   name: ttsim
-  version: 0.7.1.dev188+g5d736342.d20250724
-  sha256: cefa7a79ac4a812de443db006820c39c6a5375f5f14df80edff5f39c58e7b87a
+  version: 0.7.1.dev196+g78c6be45
+  sha256: d73f9bec2cbbf60bddd0fbd5c6b08af0920846d9fb0018026c4841227fbc006f
   requires_dist:
   - dags>=0.4.1
   - ipywidgets

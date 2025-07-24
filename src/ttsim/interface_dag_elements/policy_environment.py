@@ -7,7 +7,12 @@ from typing import TYPE_CHECKING, Any
 import dags.tree as dt
 import numpy
 
-from ttsim import (
+from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.interface_dag_elements.shared import (
+    merge_trees,
+    upsert_tree,
+)
+from ttsim.tt import (
     ConsecutiveIntLookupTableParam,
     DictParam,
     ParamObject,
@@ -18,11 +23,6 @@ from ttsim import (
     get_consecutive_int_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
-)
-from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.interface_dag_elements.shared import (
-    merge_trees,
-    upsert_tree,
 )
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
