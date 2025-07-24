@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
 
-from jaxtyping import Array, Bool, Float, Int
-
-BoolColumn: TypeAlias = Bool[Array, " n_obs"]
-IntColumn: TypeAlias = Int[Array, " n_obs"]
-FloatColumn: TypeAlias = Float[Array, " n_obs"]
-
-
 if TYPE_CHECKING:
+    from jaxtyping import Array, Bool, Float, Int
+
+    BoolColumn: TypeAlias = Bool[Array, " n_obs"]
+    IntColumn: TypeAlias = Int[Array, " n_obs"]
+    FloatColumn: TypeAlias = Float[Array, " n_obs"]
+
     # Make these available for import from other modules.
     import datetime
     from collections.abc import Iterable, Mapping
