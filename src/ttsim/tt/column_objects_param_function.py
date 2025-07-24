@@ -11,7 +11,7 @@ import dags.tree as dt
 from dags import rename_arguments
 
 from ttsim.interface_dag_elements.shared import to_datetime
-from ttsim.tt_dag_elements.aggregation import (
+from ttsim.tt.aggregation import (
     AggType,
     all_by_p_id,
     any_by_p_id,
@@ -28,14 +28,14 @@ from ttsim.tt_dag_elements.aggregation import (
     min_by_p_id,
     sum_by_p_id,
 )
-from ttsim.tt_dag_elements.rounding import RoundingSpec
-from ttsim.tt_dag_elements.vectorization import vectorize_function
+from ttsim.tt.rounding import RoundingSpec
+from ttsim.tt.vectorization import vectorize_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         DashedISOString,
         IntColumn,
         UnorderedQNames,

@@ -8,7 +8,7 @@ from ttsim.interface_dag_elements.orig_policy_objects import (
     _find_files_recursively,
     load_module,
 )
-from ttsim.tt_dag_elements.param_objects import (
+from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParam,
     DictParam,
     PiecewisePolynomialParam,

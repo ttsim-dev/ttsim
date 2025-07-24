@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal, get_args
 
 import numpy
 
-from ttsim.tt_dag_elements.param_objects import PiecewisePolynomialParamValue
+from ttsim.tt.param_objects import PiecewisePolynomialParamValue
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -122,7 +122,7 @@ def get_piecewise_parameters(
         )
 
     # Extract lower thresholds.
-    lower_thresholds, upper_thresholds, thresholds = check_and_get_thresholds(
+    lower_thresholds, upper_thresholds, thresholds = get_piecewise_thresholds(
         leaf_name=leaf_name,
         parameter_dict=parameter_dict,
         xnp=xnp,
@@ -151,7 +151,7 @@ def get_piecewise_parameters(
     )
 
 
-def check_and_get_thresholds(  # noqa: C901
+def get_piecewise_thresholds(  # noqa: C901
     leaf_name: str,
     parameter_dict: dict[int, dict[str, float]],
     xnp: ModuleType,

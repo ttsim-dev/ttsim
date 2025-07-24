@@ -3,10 +3,10 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, overload
 
-from ttsim.tt_dag_elements import aggregation_jax, aggregation_numpy
+from ttsim.tt import aggregation_jax, aggregation_numpy
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
+    from ttsim.tt import BoolColumn, FloatColumn, IntColumn
 
 
 class AggType(StrEnum):

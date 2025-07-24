@@ -10,12 +10,12 @@ from ttsim.interface_dag_elements.fail_if import (
     format_list_linewise,
 )
 from ttsim.interface_dag_elements.interface_node_objects import warn_function
-from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
+from ttsim.tt.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         PolicyEnvironment,
         QNameData,
         UnorderedQNames,

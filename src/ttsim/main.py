@@ -11,7 +11,6 @@ import dags.tree as dt
 import networkx as nx
 import optree
 
-from ttsim.interface_dag_elements import MainTarget, MainTargetABC
 from ttsim.interface_dag_elements.fail_if import (
     format_errors_and_warnings,
     format_list_linewise,
@@ -25,19 +24,12 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 )
 from ttsim.interface_dag_elements.orig_policy_objects import load_module
 from ttsim.main_args import MainArg
+from ttsim.main_target import MainTarget, MainTargetABC
 
 if TYPE_CHECKING:
     import datetime
     from collections.abc import Iterable
 
-    from ttsim.interface_dag_elements.typing import (
-        DashedISOString,
-        FlatInterfaceObjects,
-        NestedTargetDict,
-        PolicyEnvironment,
-        QNameData,
-        UnorderedQNames,
-    )
     from ttsim.main_args import (
         InputData,
         Labels,
@@ -46,6 +38,14 @@ if TYPE_CHECKING:
         Results,
         SpecializedEnvironment,
         TTTargets,
+    )
+    from ttsim.typing import (
+        DashedISOString,
+        FlatInterfaceObjects,
+        NestedTargetDict,
+        PolicyEnvironment,
+        QNameData,
+        UnorderedQNames,
     )
 
 

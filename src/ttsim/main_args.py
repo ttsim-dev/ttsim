@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     import networkx as nx
     import pandas as pd
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatData,
         FlatOrigParamSpecs,

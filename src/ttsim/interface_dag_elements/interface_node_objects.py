@@ -9,7 +9,7 @@ import dags.tree as dt
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-    from ttsim.interface_dag_elements.typing import UnorderedQNames
+    from ttsim.typing import UnorderedQNames
 
 
 FunArgTypes = ParamSpec("FunArgTypes")

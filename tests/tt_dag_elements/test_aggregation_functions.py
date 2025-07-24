@@ -13,7 +13,7 @@ except ImportError:
     my_datetime = lambda x: x  # noqa: E731
 
 
-from ttsim.tt_dag_elements.aggregation import (
+from ttsim.tt.aggregation import (
     grouped_all,
     grouped_any,
     grouped_count,

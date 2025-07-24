@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from ttsim import InputData, MainTarget, TTTargets, main
-from ttsim.tt_dag_elements.column_objects_param_function import policy_function
+from ttsim.tt.column_objects_param_function import policy_function
 
 if TYPE_CHECKING:
     from types import ModuleType

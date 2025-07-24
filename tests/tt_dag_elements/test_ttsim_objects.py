@@ -4,7 +4,7 @@ import inspect
 
 import pytest
 
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     AggType,
     PolicyFunction,
     PolicyInput,
@@ -13,7 +13,7 @@ from ttsim.tt_dag_elements import (
     policy_function,
     policy_input,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.column_objects_param_function import (
     ParamFunction,
     param_function,
 )

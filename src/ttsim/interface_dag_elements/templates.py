@@ -9,11 +9,11 @@ from ttsim.interface_dag_elements.interface_node_objects import interface_functi
 from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
-from ttsim.tt_dag_elements.vectorization import scalar_type_to_array_type
+from ttsim.tt.column_objects_param_function import PolicyInput
+from ttsim.tt.vectorization import scalar_type_to_array_type
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         NestedInputStructureDict,
         OrderedQNames,
         PolicyEnvironment,

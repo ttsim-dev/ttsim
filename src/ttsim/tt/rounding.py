@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import FloatColumn
+    from ttsim.typing import FloatColumn
 
 
 ROUNDING_DIRECTION = Literal["up", "down", "nearest"]

@@ -8,11 +8,11 @@ import optree
 import pytest
 
 from ttsim import copy_environment, main
-from ttsim.interface_dag_elements import MainTarget
-from ttsim.tt_dag_elements.param_objects import RawParam, ScalarParam
+from ttsim.main_target import MainTarget
+from ttsim.tt.param_objects import RawParam, ScalarParam
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import PolicyEnvironment
+    from ttsim.typing import PolicyEnvironment
 
 
 METTSIM_ROOT = Path(__file__).parent / "mettsim"

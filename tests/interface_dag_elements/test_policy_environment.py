@@ -19,12 +19,12 @@ from ttsim.interface_dag_elements.policy_environment import (
     _active_param_objects,
     _get_param_value,
 )
-from ttsim.tt_dag_elements import ScalarParam, policy_function
+from ttsim.tt import ScalarParam, policy_function
 
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         NestedColumnObjectsParamFunctions,
     )
 

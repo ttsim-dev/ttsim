@@ -22,7 +22,7 @@ from ttsim.testing_utils import (
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
     )

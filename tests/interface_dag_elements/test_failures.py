@@ -35,7 +35,7 @@ from ttsim.interface_dag_elements.fail_if import (
     paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
 )
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     ConsecutiveIntLookupTableParam,
     ConsecutiveIntLookupTableParamValue,
     DictParam,
@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 
     from jaxtyping import Array, Float
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         OrigParamSpec,
