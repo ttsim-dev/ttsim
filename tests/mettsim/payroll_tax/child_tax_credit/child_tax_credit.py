@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     AggType,
     agg_by_p_id_function,
     join,

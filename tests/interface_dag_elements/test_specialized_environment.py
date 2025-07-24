@@ -15,7 +15,7 @@ from ttsim.interface_dag_elements.specialized_environment import (
     with_partialled_params_and_scalars,
     with_processed_params_and_scalars,
 )
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     AggType,
     DictParam,
     PiecewisePolynomialParam,

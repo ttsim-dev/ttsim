@@ -23,7 +23,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
 )
 from ttsim.main import load_flat_interface_functions_and_inputs
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     ColumnFunction,
     ParamFunction,
     ParamObject,

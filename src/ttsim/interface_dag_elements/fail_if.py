@@ -23,7 +23,7 @@ except ImportError:
 
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
 from ttsim.interface_dag_elements.shared import get_name_of_group_by_id
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
     ColumnFunction,
     ColumnObject,
@@ -31,7 +31,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
     PolicyInput,
 )
-from ttsim.tt_dag_elements.param_objects import (
+from ttsim.tt.param_objects import (
     PLACEHOLDER_FIELD,
     PLACEHOLDER_VALUE,
     ParamObject,

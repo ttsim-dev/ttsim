@@ -1,5 +1,5 @@
-from ttsim.tt_dag_elements.aggregation import AggType
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.aggregation import AggType
+from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
     ColumnFunction,
@@ -17,7 +17,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     policy_function,
     policy_input,
 )
-from ttsim.tt_dag_elements.param_objects import (
+from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParam,
     ConsecutiveIntLookupTableParamValue,
     DictParam,
@@ -30,12 +30,12 @@ from ttsim.tt_dag_elements.param_objects import (
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
 )
-from ttsim.tt_dag_elements.piecewise_polynomial import (
+from ttsim.tt.piecewise_polynomial import (
     get_piecewise_parameters,
     piecewise_polynomial,
 )
-from ttsim.tt_dag_elements.rounding import RoundingSpec
-from ttsim.tt_dag_elements.shared import join
+from ttsim.tt.rounding import RoundingSpec
+from ttsim.tt.shared import join
 
 __all__ = [
     "AggByGroupFunction",

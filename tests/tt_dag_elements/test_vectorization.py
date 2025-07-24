@@ -18,16 +18,16 @@ from ttsim.interface_dag_elements.orig_policy_objects import (
 from ttsim.interface_dag_elements.policy_environment import (
     _active_column_objects_and_param_functions,
 )
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     GroupCreationFunction,
     PolicyInput,
     policy_function,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.column_objects_param_function import (
     AggByGroupFunction,
     AggByPIDFunction,
 )
-from ttsim.tt_dag_elements.vectorization import (
+from ttsim.tt.vectorization import (
     TranslateToVectorizableError,
     _is_lambda_function,
     _make_vectorizable,

@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Possible leaves of the various trees.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    from ttsim.tt_dag_elements import (
+    from ttsim.tt import (
         ColumnFunction,
         ColumnObject,
         ParamFunction,

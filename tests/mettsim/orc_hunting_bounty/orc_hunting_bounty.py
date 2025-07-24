@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ttsim.tt_dag_elements import param_function, policy_function, policy_input
+from ttsim.tt import param_function, policy_function, policy_input
 
 if TYPE_CHECKING:
     from ttsim.typing.interface_dag_elements import RawParam

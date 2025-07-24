@@ -8,11 +8,11 @@ from ttsim import main
 from ttsim.testing_utils import (
     load_policy_test_data,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.column_objects_param_function import (
     policy_function,
     policy_input,
 )
-from ttsim.tt_dag_elements.param_objects import DictParam, ScalarParam
+from ttsim.tt.param_objects import DictParam, ScalarParam
 
 METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 

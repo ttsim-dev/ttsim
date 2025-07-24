@@ -17,7 +17,7 @@ from ttsim.interface_dag_elements.data_converters import (
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.plot_dag import dummy_callable
-from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
+from ttsim.tt.column_objects_param_function import PolicyInput
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)

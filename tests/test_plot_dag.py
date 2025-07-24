@@ -10,7 +10,7 @@ from ttsim.plot_dag import (
     _QNameNodeSelector,
     plot_interface_dag,
 )
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     ScalarParam,
     param_function,
     policy_function,

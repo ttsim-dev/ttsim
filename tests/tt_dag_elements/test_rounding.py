@@ -8,7 +8,7 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from ttsim import main
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     RoundingSpec,
     policy_function,
     policy_input,

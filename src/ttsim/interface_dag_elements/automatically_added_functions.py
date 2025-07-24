@@ -12,8 +12,8 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_specific_time_units_and_groupings,
     group_pattern,
 )
-from ttsim.tt_dag_elements.aggregation import grouped_sum
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.aggregation import grouped_sum
+from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
     DEFAULT_START_DATE,
     AggByGroupFunction,
@@ -22,7 +22,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import (
     ParamFunction,
     TimeConversionFunction,
 )
-from ttsim.tt_dag_elements.param_objects import ScalarParam
+from ttsim.tt.param_objects import ScalarParam
 
 if TYPE_CHECKING:
     import re

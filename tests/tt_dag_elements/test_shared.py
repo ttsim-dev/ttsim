@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy
 import pytest
 
-from ttsim.tt_dag_elements import join
+from ttsim.tt import join
 
 if TYPE_CHECKING:
     from types import ModuleType

@@ -26,7 +26,7 @@ from ttsim.main import (
 )
 from ttsim.main_target import MainTarget
 from ttsim.plot_dag import dummy_callable
-from ttsim.tt_dag_elements.column_objects_param_function import policy_function
+from ttsim.tt.column_objects_param_function import policy_function
 
 
 @interface_function(leaf_name="interface_function_a")
