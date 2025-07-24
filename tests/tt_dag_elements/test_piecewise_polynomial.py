@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from types import ModuleType
 
 
-from ttsim.tt_dag_elements.piecewise_polynomial import (
+from ttsim.tt.piecewise_polynomial import (
     PiecewisePolynomialParamValue,
     get_piecewise_parameters,
     piecewise_polynomial,

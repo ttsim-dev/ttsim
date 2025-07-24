@@ -15,7 +15,7 @@ from ttsim.interface_dag_elements.data_converters import (
     df_with_nested_columns_to_flat_data,
     nested_data_to_df_with_mapped_columns,
 )
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     ScalarParam,
     param_function,
     policy_function,

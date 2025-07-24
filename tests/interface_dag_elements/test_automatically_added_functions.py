@@ -29,7 +29,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import (
     y_to_q,
     y_to_w,
 )
-from ttsim.tt_dag_elements import policy_function
+from ttsim.tt import policy_function
 
 
 def return_one() -> int:

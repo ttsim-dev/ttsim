@@ -1,4 +1,4 @@
-![PyPI - Version](https://img.shields.io/pypi/v/ttsim)
+![PyPI - Version](https://img.shields.io/pypi/v/ttsim-backend)
 [![image](https://img.shields.io/conda/vn/conda-forge/ttsim.svg)](https://anaconda.org/conda-forge/ttsim)
 [![image](https://img.shields.io/conda/pn/conda-forge/ttsim.svg)](https://anaconda.org/conda-forge/ttsim)
 [![main](https://github.com/ttsim-dev/ttsim/actions/workflows/main.yaml/badge.svg)](https://github.com/ttsim-dev/ttsim/actions/workflows/main.yaml)

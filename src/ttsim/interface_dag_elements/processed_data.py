@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.tt_dag_elements.column_objects_param_function import reorder_ids
+from ttsim.tt.column_objects_param_function import reorder_ids
 
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import FlatData, QNameData
+    from ttsim.typing import FlatData, QNameData
 
 
 @interface_function(in_top_level_namespace=True)

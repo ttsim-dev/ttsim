@@ -11,7 +11,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.column_objects_param_function import (
     ColumnObject,
     ParamFunction,
 )
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         OrigParamSpec,

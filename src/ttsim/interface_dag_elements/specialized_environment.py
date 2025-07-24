@@ -15,13 +15,13 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     interface_input,
 )
 from ttsim.interface_dag_elements.shared import merge_trees
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.column_objects_param_function import (
     ColumnFunction,
     ColumnObject,
     ParamFunction,
     PolicyInput,
 )
-from ttsim.tt_dag_elements.param_objects import ParamObject, RawParam
+from ttsim.tt.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
     import datetime
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
     import networkx as nx
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         OrderedQNames,
         PolicyEnvironment,
         QNameData,

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim.tt_dag_elements import group_creation_function
+from ttsim.tt import group_creation_function
 
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import IntColumn
+    from ttsim.tt import IntColumn
 
 
 @group_creation_function()

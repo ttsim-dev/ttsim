@@ -12,7 +12,7 @@ from ttsim.interface_dag_elements.shared import to_datetime
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim.interface_dag_elements.typing import DashedISOString
+    from ttsim.typing import DashedISOString
 
 
 @interface_input(in_top_level_namespace=True)

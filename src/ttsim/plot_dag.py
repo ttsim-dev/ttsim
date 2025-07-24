@@ -14,7 +14,6 @@ import numpy
 import plotly.graph_objects as go
 
 from ttsim import main
-from ttsim.interface_dag import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailFunction,
     InputDependentInterfaceFunction,
@@ -23,7 +22,8 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     WarnFunction,
     interface_function,
 )
-from ttsim.tt_dag_elements import (
+from ttsim.main import load_flat_interface_functions_and_inputs
+from ttsim.tt import (
     ColumnFunction,
     ParamFunction,
     ParamObject,
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         PolicyEnvironment,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     )
@@ -150,6 +150,7 @@ def plot_interface_dag(
     include_fail_and_warn_nodes: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
+    remove_orig_policy_objects__root: bool = True,
 ) -> go.Figure:
     """Plot the full interface DAG."""
     interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
@@ -194,6 +195,8 @@ def plot_interface_dag(
             description=description or "No description available.",
             namespace=namespace,
         )
+    if remove_orig_policy_objects__root:
+        dag.remove_nodes_from(["orig_policy_objects__root"])
 
     fig = _plot_dag(
         dag=dag,

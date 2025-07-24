@@ -16466,9 +16466,9 @@ packages:
   size: 110051
   timestamp: 1733367480074
 - pypi: ./
-  name: ttsim
-  version: 0.7.1.dev188+g5d736342.d20250724
-  sha256: cefa7a79ac4a812de443db006820c39c6a5375f5f14df80edff5f39c58e7b87a
+  name: ttsim-backend
+  version: 1.0a2.dev0+ga773e329.d20250724
+  sha256: 1be8d435b93bfdd8104c17dad66f77bbc218fe35f7e100772eda2f186940c1b1
   requires_dist:
   - dags>=0.4.1
   - ipywidgets

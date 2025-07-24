@@ -4,7 +4,7 @@
 
 [project]
 # Basic information
-name = "ttsim"
+name = "ttsim-backend"
 dynamic = ["version"]
 description = "code powering Taxes and Transfers SIMulators"
 readme = { file = "README.md", content-type = "text/markdown" }
@@ -124,7 +124,7 @@ toml = "*"
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.pypi-dependencies]
-ttsim = {path = ".", editable = true}
+ttsim-backend = {path = ".", editable = true}
 jaxtyping = ">=0.3.2"
 kaleido = ">=1.0.0"
 pdbp = ">=1.7.1"
@@ -231,6 +231,8 @@ exclude = []
 
 [tool.ruff.lint.per-file-ignores]
 "conftest.py" = ["ANN"]
+# Re-export things for tab-completion explicitly.
+"src/ttsim/__init__.py" = ["PLW0127"]
 # Long lines.
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]

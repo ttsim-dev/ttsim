@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     AggType,
     agg_by_p_id_function,
     join,
@@ -12,7 +12,7 @@ from ttsim.tt_dag_elements import (
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import BoolColumn, IntColumn
+    from ttsim.typing import BoolColumn, IntColumn
 
 
 @agg_by_p_id_function(agg_type=AggType.SUM)

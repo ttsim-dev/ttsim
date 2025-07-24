@@ -12,7 +12,7 @@ from ttsim.interface_dag_elements.shared import (
     merge_trees,
     upsert_tree,
 )
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     ConsecutiveIntLookupTableParam,
     DictParam,
     ParamObject,
@@ -24,15 +24,15 @@ from ttsim.tt_dag_elements import (
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import (
+from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
-from ttsim.tt_dag_elements.piecewise_polynomial import get_piecewise_parameters
+from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedColumnObjectsParamFunctions,

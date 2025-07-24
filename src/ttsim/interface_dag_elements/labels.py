@@ -14,10 +14,10 @@ from ttsim.interface_dag_elements.shared import (
     get_re_pattern_for_all_time_units_and_groupings,
     group_pattern,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
+from ttsim.tt.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing import (
         OrderedQNames,
         PolicyEnvironment,
         QNameData,

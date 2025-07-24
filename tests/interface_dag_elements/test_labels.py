@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from ttsim.interface_dag_elements.labels import grouping_levels, top_level_namespace
-from ttsim.tt_dag_elements import policy_function, policy_input
+from ttsim.tt import policy_function, policy_input
 
 
 def identity(x: int) -> int:

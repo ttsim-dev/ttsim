@@ -11,7 +11,7 @@ Policy regime starting in 2020:
 
 from __future__ import annotations
 
-from ttsim.tt_dag_elements import (
+from ttsim.tt import (
     AggType,
     agg_by_group_function,
     policy_function,
