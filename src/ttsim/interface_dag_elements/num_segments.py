@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.typing.interface_dag_elements import QNameData
 
 if TYPE_CHECKING:
     from ttsim.interface_dag_elements.typing import QNameData

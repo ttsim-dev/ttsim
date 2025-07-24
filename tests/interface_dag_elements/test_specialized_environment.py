@@ -30,7 +30,7 @@ from ttsim.tt_dag_elements import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         FloatColumn,
         IntColumn,
         PolicyEnvironment,

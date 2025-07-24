@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, overload
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
+    from ttsim.typing.interface_dag_elements import BoolColumn, FloatColumn, IntColumn
 
 
 @overload

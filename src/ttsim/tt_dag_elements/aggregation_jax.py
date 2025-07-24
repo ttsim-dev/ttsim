@@ -9,7 +9,7 @@ except ImportError:
     pass
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
+    from ttsim.typing.tt_dag_elements import BoolColumn, FloatColumn, IntColumn
 
 
 def grouped_count(group_id: IntColumn, num_segments: int) -> jnp.ndarray:

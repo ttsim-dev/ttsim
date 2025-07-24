@@ -15,7 +15,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 if TYPE_CHECKING:
     import datetime
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         PolicyEnvironment,
         QNameData,
         UnorderedQNames,

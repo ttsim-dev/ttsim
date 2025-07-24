@@ -10,7 +10,7 @@ from ttsim.tt_dag_elements import join
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import IntColumn
+    from ttsim.typing.interface_dag_elements import IntColumn
 
 
 @pytest.mark.parametrize(

@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     import re
     from collections.abc import Callable
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         BoolColumn,
         FloatColumn,
         IntColumn,
@@ -584,7 +584,7 @@ def _create_function_for_time_unit(
     def func(x: FloatColumn | IntColumn | BoolColumn) -> FloatColumn:
         return converter(x)
 
-    return func  # type: ignore[has-type]
+    return func
 
 
 def create_agg_by_group_functions(

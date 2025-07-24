@@ -13,7 +13,7 @@ from ttsim.interface_dag_elements.interface_node_objects import interface_functi
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         FlatData,
         NestedData,
         NestedStrings,

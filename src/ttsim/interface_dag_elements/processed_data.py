@@ -10,7 +10,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import reorder_ids
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import FlatData, QNameData
+    from ttsim.typing.interface_dag_elements import FlatData, QNameData
 
 
 @interface_function(in_top_level_namespace=True)

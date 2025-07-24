@@ -7,7 +7,7 @@ from ttsim.tt_dag_elements import group_creation_function
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.interface_dag_elements.typing import IntColumn
+    from ttsim.typing.tt_dag_elements import IntColumn
 
 
 @group_creation_function()

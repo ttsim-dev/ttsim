@@ -8,7 +8,7 @@ import dags.tree as dt
 import optree
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         DashedISOString,
         NestedColumnObjectsParamFunctions,
         NestedData,

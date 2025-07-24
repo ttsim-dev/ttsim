@@ -12,7 +12,7 @@ from ttsim.interface_dag_elements import MainTarget
 from ttsim.tt_dag_elements.param_objects import RawParam, ScalarParam
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import PolicyEnvironment
+    from ttsim.typing.interface_dag_elements import PolicyEnvironment
 
 
 METTSIM_ROOT = Path(__file__).parent / "mettsim"

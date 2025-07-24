@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ttsim.interface_dag_elements.input_data import FlatData
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
         NestedData,

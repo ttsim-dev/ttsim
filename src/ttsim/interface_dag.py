@@ -30,14 +30,6 @@ if TYPE_CHECKING:
     import datetime
     from collections.abc import Iterable
 
-    from ttsim.interface_dag_elements.typing import (
-        DashedISOString,
-        FlatInterfaceObjects,
-        NestedTargetDict,
-        PolicyEnvironment,
-        QNameData,
-        UnorderedQNames,
-    )
     from ttsim.main_args import (
         InputData,
         Labels,
@@ -46,6 +38,14 @@ if TYPE_CHECKING:
         Results,
         SpecializedEnvironment,
         TTTargets,
+    )
+    from ttsim.typing.interface_dag_elements import (
+        DashedISOString,
+        FlatInterfaceObjects,
+        NestedTargetDict,
+        PolicyEnvironment,
+        QNameData,
+        UnorderedQNames,
     )
 
 

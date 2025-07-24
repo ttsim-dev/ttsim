@@ -13,7 +13,7 @@ from ttsim.tt_dag_elements.column_objects_param_function import PolicyInput
 from ttsim.tt_dag_elements.vectorization import scalar_type_to_array_type
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         NestedInputStructureDict,
         OrderedQNames,
         PolicyEnvironment,

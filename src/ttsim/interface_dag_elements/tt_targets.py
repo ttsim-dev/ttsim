@@ -7,10 +7,10 @@ import dags.tree as dt
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
 )
-from ttsim.tt_dag_elements.column_objects_param_function import ColumnFunction
+from ttsim.typing.tt_dag_elements import ColumnFunction
 
 if TYPE_CHECKING:
-    from ttsim.interface_dag_elements.typing import (
+    from ttsim.typing.interface_dag_elements import (
         NestedStrings,
         NestedTargetDict,
         OrderedQNames,

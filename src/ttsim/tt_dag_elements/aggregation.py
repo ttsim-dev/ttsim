@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal, overload
 from ttsim.tt_dag_elements import aggregation_jax, aggregation_numpy
 
 if TYPE_CHECKING:
-    from ttsim.tt_dag_elements.typing import BoolColumn, FloatColumn, IntColumn
+    from ttsim.typing.tt_dag_elements import BoolColumn, FloatColumn, IntColumn
 
 
 class AggType(StrEnum):
