@@ -14,7 +14,6 @@ import numpy
 import plotly.graph_objects as go
 
 from ttsim import main
-from ttsim.interface_dag import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailFunction,
     InputDependentInterfaceFunction,
@@ -23,6 +22,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     WarnFunction,
     interface_function,
 )
+from ttsim.main import load_flat_interface_functions_and_inputs
 from ttsim.tt_dag_elements import (
     ColumnFunction,
     ParamFunction,

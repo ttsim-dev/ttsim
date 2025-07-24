@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from ttsim import main
-from ttsim.interface_dag_elements import MainTarget
+from ttsim.main_target import MainTarget
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
 from ttsim.tt_dag_elements.param_objects import ScalarParam
 

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ttsim.interface_dag import main
+from ttsim.main import main
 from ttsim.plot_dag import (
     _get_tt_dag_with_node_metadata,
     _QNameNodeSelector,

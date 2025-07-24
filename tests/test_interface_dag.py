@@ -8,7 +8,13 @@ import optree
 import pytest
 
 from ttsim import InputData, OrigPolicyObjects, TTTargets
-from ttsim.interface_dag import (
+from ttsim.interface_dag_elements.fail_if import format_list_linewise
+from ttsim.interface_dag_elements.interface_node_objects import (
+    fail_function,
+    input_dependent_interface_function,
+    interface_function,
+)
+from ttsim.main import (
     _fail_if_input_structure_is_invalid,
     _fail_if_requested_nodes_cannot_be_found,
     _fail_if_root_nodes_of_interface_dag_are_missing,
@@ -18,13 +24,7 @@ from ttsim.interface_dag import (
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
 )
-from ttsim.interface_dag_elements import MainTarget
-from ttsim.interface_dag_elements.fail_if import format_list_linewise
-from ttsim.interface_dag_elements.interface_node_objects import (
-    fail_function,
-    input_dependent_interface_function,
-    interface_function,
-)
+from ttsim.main_target import MainTarget
 from ttsim.plot_dag import dummy_callable
 from ttsim.tt_dag_elements.column_objects_param_function import policy_function
 

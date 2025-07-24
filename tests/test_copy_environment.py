@@ -8,7 +8,7 @@ import optree
 import pytest
 
 from ttsim import copy_environment, main
-from ttsim.interface_dag_elements import MainTarget
+from ttsim.main_target import MainTarget
 from ttsim.tt_dag_elements.param_objects import RawParam, ScalarParam
 
 if TYPE_CHECKING:
