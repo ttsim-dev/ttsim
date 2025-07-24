@@ -232,6 +232,7 @@ exclude = []
 [tool.ruff.lint.per-file-ignores]
 "conftest.py" = ["ANN"]
 # Long lines.
+"src/ttsim/__init__.py" = ["PLW0127"]
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 # Mostly things vectorization can't handle
