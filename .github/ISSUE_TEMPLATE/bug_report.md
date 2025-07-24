@@ -1,7 +1,7 @@
 ---
 
 name: Bug Report
-about: Create a bug report to help us improve GETTSIM
+about: Create a bug report to help us improve TTSIM
 title: "BUG:"
 labels: "bug"
 assignees: ''
@@ -15,9 +15,9 @@ A clear and concise description of what the bug is.
 
 - [ ] I have checked that this issue has not already been reported.
 
-- [ ] I have confirmed this bug exists on the latest version of GETTSIM.
+- [ ] I have confirmed this bug exists on the latest version of TTSIM.
 
-- [ ] (optional) I have confirmed this bug exists on the `main` branch of GETTSIM.
+- [ ] (optional) I have confirmed this bug exists on the `main` branch of TTSIM.
 
 ---
 
