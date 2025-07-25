@@ -385,14 +385,14 @@ def _create_dag_with_selected_nodes(
             selected_nodes.update(
                 _kth_order_predecessors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
-                else list(nx.ancestors(complete_dag, node))
+                else [*list(nx.ancestors(complete_dag, node)), node]
             )
     elif node_selector.type == "descendants":
         for node in node_selector.qnames:
             selected_nodes.update(
                 _kth_order_successors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
-                else list(nx.descendants(complete_dag, node))
+                else [*list(nx.descendants(complete_dag, node)), node]
             )
     elif node_selector.type == "neighbors":
         order = node_selector.order or 1

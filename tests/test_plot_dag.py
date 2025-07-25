@@ -117,6 +117,21 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
+                qnames=["property_tax__amount_m"],
+                type="ancestors",
+            ),
+            [
+                "xnp",  # not part of the plot, will be removed by a downstream func
+                "property_tax__acre_size_in_hectares_after_cap",
+                "property_tax__tax_schedule",
+                "property_tax__year_from_which_cap_is_applied",
+                "property_tax__cap_in_hectares",
+                "property_tax__amount_y",
+                "property_tax__amount_m",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
                 qnames=["payroll_tax__amount_y"],
                 type="neighbors",
                 order=1,
@@ -223,6 +238,18 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
+                qnames=["housing_benefits__income__amount_m"],
+                type="descendants",
+            ),
+            [
+                "housing_benefits__amount_m_fam",
+                "housing_benefits__eligibility__requirement_fulfilled_fam",
+                "housing_benefits__income__amount_m_fam",
+                "housing_benefits__income__amount_m",
+            ],
+        ),
+        (
+            _QNameNodeSelector(
                 qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
                 type="nodes",
             ),
@@ -233,12 +260,12 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
     ],
 )
-def test_node_selector(node_selector, expected_nodes):
+def test_node_selector(node_selector, expected_nodes, backend):
     environment = main(
         main_target="policy_environment",
         policy_date_str="2025-01-01",
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
-        backend="numpy",
+        backend=backend,
     )
     dag = _get_tt_dag_with_node_metadata(
         environment=environment,
