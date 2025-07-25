@@ -1475,6 +1475,7 @@ def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
         main_target=MainTarget.processed_data,
         backend="numpy",
         input_data=input_data,
+        tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
     )
     main(
         main_target=MainTarget.results.df_with_nested_columns,
