@@ -113,7 +113,7 @@ def execute_test(
             tt_targets={"tree": test.target_structure},
             rounding=True,
             backend=backend,
-            include_fail_nodes=False,
+            include_fail_nodes=True,
             include_warn_nodes=False,
         )
 
