@@ -181,15 +181,26 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
 
 
 @interface_function()
+def input_data_targets(
+    tt_targets__qname: OrderedQNames,
+    input_columns: UnorderedQNames,
+) -> OrderedQNames:
+    return [t for t in tt_targets__qname if t in input_columns]
+
+
+@interface_function()
 def column_targets(
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     tt_targets__qname: OrderedQNames,
+    input_data_targets: OrderedQNames,
 ) -> OrderedQNames:
     """All targets that are column functions."""
+    possible_targets = set(tt_targets__qname) - set(input_data_targets)
     return [
         t
         for t in tt_targets__qname
         if t in specialized_environment__with_partialled_params_and_scalars
+        and t in possible_targets
     ]
 
 
@@ -198,21 +209,14 @@ def param_targets(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     tt_targets__qname: OrderedQNames,
     column_targets: OrderedQNames,
+    input_data_targets: OrderedQNames,
 ) -> OrderedQNames:
-    possible_targets = set(tt_targets__qname) - set(column_targets)
+    possible_targets = (
+        set(tt_targets__qname) - set(column_targets) - set(input_data_targets)
+    )
     return [
         t
         for t in tt_targets__qname
-        if t in possible_targets
-        and t in specialized_environment__without_tree_logic_and_with_derived_functions
+        if t in specialized_environment__without_tree_logic_and_with_derived_functions
+        and t in possible_targets
     ]
-
-
-@interface_function()
-def input_data_targets(
-    tt_targets__qname: OrderedQNames,
-    column_targets: OrderedQNames,
-    param_targets: OrderedQNames,
-) -> OrderedQNames:
-    possible_targets = set(tt_targets__qname) - set(column_targets) - set(param_targets)
-    return [t for t in tt_targets__qname if t in possible_targets]

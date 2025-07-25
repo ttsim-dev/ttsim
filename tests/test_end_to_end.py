@@ -199,3 +199,32 @@ def test_different_evaluation_dates_across_data_rows(
     pd.testing.assert_frame_equal(
         expected, result, check_dtype=False, check_index_type=False
     )
+
+
+def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]):
+    result = main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree(
+            {
+                "kin_id": xnp.array([0, 0, 0]),
+                "payroll_tax": {
+                    "amount_y": xnp.array([1000, 0, 0]),
+                },
+                "p_id": xnp.array([0, 1, 2]),
+            }
+        ),
+        tt_targets=TTTargets(tree={"kin_id": None, "payroll_tax": {"amount_y": None}}),
+        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        backend=backend,
+    )
+    expected = pd.DataFrame(
+        {
+            ("kin_id",): [0, 0, 0],
+            ("payroll_tax", "amount_y"): [1000, 0, 0],
+        },
+        index=pd.Index([0, 1, 2], name="p_id"),
+    )
+    pd.testing.assert_frame_equal(
+        expected, result, check_dtype=False, check_index_type=False
+    )
