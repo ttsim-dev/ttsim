@@ -1391,7 +1391,7 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
 ):
     with pytest.raises(
         ValueError,
-        match="must be the same\nas the leaf name of the PolicyFunction",
+        match="The last element of the object's path must be the same as the leaf name",
     ):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
