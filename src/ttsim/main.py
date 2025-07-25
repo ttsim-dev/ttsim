@@ -187,7 +187,7 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 _MSG_FOR_MISSING_TT_TARGETS = """When providing data, `tt_targets` must be provided.
 
-The reason is ambiguity what you are after when overriding some column
+This is because it's ambiguous what you intend to compute when overriding some column
 that could be computed from primitives.
 
 A simple way out is to first obtain all possible `tt_targets`
