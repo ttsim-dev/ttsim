@@ -90,6 +90,10 @@ def main(
     if not any(re.match("(input|processed)_data", s) for s in input_qnames):
         input_qnames["processed_data"] = {}
         input_qnames["processed_data_columns"] = None
+    # If providing data, we require tt_targets.
+    else:
+        if tt_targets is None:
+            raise ValueError(_MSG_FOR_MISSING_TT_TARGETS)
 
     flat_interface_objects = load_flat_interface_functions_and_inputs()
     nodes = _resolve_dynamic_interface_objects_to_static_nodes(
@@ -179,6 +183,26 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
     return {k: v for k, v in qname_inputs.items() if v is not None}
+
+
+_MSG_FOR_MISSING_TT_TARGETS = """When providing data, `tt_targets` must be provided.
+
+This is because it's ambiguous what you intend to compute when overriding some column
+that could be computed from primitives.
+
+A simple way out is to first obtain all possible `tt_targets`
+without providing data by running:
+
+    main(
+        main_target="tt_targets__qname",
+        ...
+    )
+
+where `...` is the rest of the arguments to `main`, EXCEPT for `input_data`.
+
+Then, either use the result directly as the argument to `tt_targets` or prune it
+according to your needs.
+"""
 
 
 def _fail_if_input_structure_is_invalid(

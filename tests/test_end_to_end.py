@@ -217,6 +217,7 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
         tt_targets=TTTargets(tree={"kin_id": None, "payroll_tax": {"amount_y": None}}),
         orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
         backend=backend,
+        include_warn_nodes=False,
     )
     expected = pd.DataFrame(
         {
