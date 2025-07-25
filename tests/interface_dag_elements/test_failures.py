@@ -1254,10 +1254,11 @@ def test_invalid_input_data_tree_via_main(
     with pytest.raises(TypeError, match=match):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
-            backend=backend,
-            input_data=InputData.tree(tree=input_data_tree_with_p_id),
-            orig_policy_objects={"root": METTSIM_ROOT},
             policy_date_str="2025-01-01",
+            orig_policy_objects={"root": METTSIM_ROOT},
+            input_data=InputData.tree(tree=input_data_tree_with_p_id),
+            tt_targets=TTTargets(tree={"p_id": None}),
+            backend=backend,
         )
 
 
@@ -1364,10 +1365,11 @@ def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"])
     with pytest.raises(TypeError, match="input_data__tree must be a dict, got"):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
-            backend=backend,
-            input_data=InputData.tree(tree=object()),
-            orig_policy_objects={"root": METTSIM_ROOT},
             policy_date_str="2025-01-01",
+            orig_policy_objects={"root": METTSIM_ROOT},
+            input_data=InputData.tree(tree=object()),
+            tt_targets=TTTargets(tree={"p_id": None}),
+            backend=backend,
         )
 
 
@@ -1387,10 +1389,9 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
     ):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
-            policy_date_str="2025-01-01",
-            orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
-            input_data=InputData.tree(tree={"p_id": xnp.array([0, 1, 2])}),
             policy_environment=policy_environment,
+            tt_targets=TTTargets(tree={"p_id": None}),
+            input_data=InputData.tree(tree={"p_id": xnp.array([0, 1, 2])}),
         )
 
 
