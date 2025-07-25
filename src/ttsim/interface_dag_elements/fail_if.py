@@ -890,7 +890,6 @@ def _param_with_active_periods(
             if start_date:
                 out.append(
                     _ParamWithActivePeriod(
-                        leaf_name=leaf_name,
                         start_date=start_date,
                         end_date=end_date,
                         original_function_name=leaf_name,
@@ -902,7 +901,6 @@ def _param_with_active_periods(
     if start_date:
         out.append(
             _ParamWithActivePeriod(
-                leaf_name=leaf_name,
                 original_function_name=leaf_name,
                 start_date=start_date,
                 end_date=end_date,

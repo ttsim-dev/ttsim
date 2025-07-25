@@ -74,7 +74,6 @@ _GENERIC_PARAM_SPEC = {
 }
 
 some_consecutive_int_lookup_table_param = ConsecutiveIntLookupTableParam(
-    leaf_name="some_consecutive_int_lookup_table_param",
     value=ConsecutiveIntLookupTableParamValue(
         bases_to_subtract=numpy.array([1]),
         xnp=numpy,
@@ -84,14 +83,12 @@ some_consecutive_int_lookup_table_param = ConsecutiveIntLookupTableParam(
 )
 
 some_dict_param = DictParam(
-    leaf_name="some_dict_param",
     value={"a": 1, "b": 2},
     **_GENERIC_PARAM_SPEC,
 )
 
 
 some_piecewise_polynomial_param = PiecewisePolynomialParam(
-    leaf_name="some_piecewise_polynomial_param",
     value=PiecewisePolynomialParamValue(
         thresholds=numpy.array([1, 2, 3]),
         intercepts=numpy.array([1, 2, 3]),
@@ -1052,7 +1049,6 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             "foo",
             [
                 _ParamWithActivePeriod(
-                    leaf_name="foo",
                     original_function_name="foo",
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(2099, 12, 31),
@@ -1073,7 +1069,6 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             "foo",
             [
                 _ParamWithActivePeriod(
-                    leaf_name="foo",
                     original_function_name="foo",
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(1984, 12, 31),
@@ -1105,7 +1100,6 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
             "bar",
             [
                 _ParamWithActivePeriod(
-                    leaf_name="bar",
                     original_function_name="bar",
                     start_date=datetime.date(2023, 3, 1),
                     end_date=datetime.date(2099, 12, 31),
@@ -1115,7 +1109,6 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     reference_period=None,
                 ),
                 _ParamWithActivePeriod(
-                    leaf_name="bar",
                     original_function_name="bar",
                     start_date=datetime.date(2016, 1, 1),
                     end_date=datetime.date(2023, 1, 31),
@@ -1125,7 +1118,6 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data_via_main(
                     reference_period=None,
                 ),
                 _ParamWithActivePeriod(
-                    leaf_name="bar",
                     original_function_name="bar",
                     start_date=datetime.date(1984, 1, 1),
                     end_date=datetime.date(2011, 12, 31),

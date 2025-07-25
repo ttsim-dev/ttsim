@@ -18,7 +18,6 @@ from ttsim.tt import (
 
 SOME_PARAM_OBJECT = ScalarParam(
     value=111,
-    leaf_name="some_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
     unit=None,

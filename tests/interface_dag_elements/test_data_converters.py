@@ -52,11 +52,7 @@ def int_param_function() -> int:
     return 1
 
 
-_SOME_SCALAR_PARAM = ScalarParam(
-    leaf_name="some_scalar_param",
-    value=1,
-    **_GENERIC_PARAM_SPEC,
-)
+_SOME_SCALAR_PARAM = ScalarParam(value=1, **_GENERIC_PARAM_SPEC)
 
 
 @pytest.fixture

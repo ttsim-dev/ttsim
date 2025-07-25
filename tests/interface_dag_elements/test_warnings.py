@@ -67,12 +67,12 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
 
 def test_warn_if_evaluation_date_set_in_multiple_places(backend):
     policy_environment = {
-        "policy_year": ScalarParam(value=2025, leaf_name="policy_year"),
-        "policy_month": ScalarParam(value=1, leaf_name="policy_month"),
-        "policy_day": ScalarParam(value=1, leaf_name="policy_day"),
-        "evaluation_year": ScalarParam(value=2025, leaf_name="evaluation_year"),
-        "evaluation_month": ScalarParam(value=1, leaf_name="evaluation_month"),
-        "evaluation_day": ScalarParam(value=1, leaf_name="evaluation_day"),
+        "policy_year": ScalarParam(value=2025),
+        "policy_month": ScalarParam(value=1),
+        "policy_day": ScalarParam(value=1),
+        "evaluation_year": ScalarParam(value=2025),
+        "evaluation_month": ScalarParam(value=1),
+        "evaluation_day": ScalarParam(value=1),
         "some_func": some_func,
         "another_func": another_func,
     }
@@ -87,12 +87,12 @@ def test_warn_if_evaluation_date_set_in_multiple_places(backend):
 
 def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend, xnp):
     policy_environment = {
-        "policy_year": ScalarParam(value=2025, leaf_name="policy_year"),
-        "policy_month": ScalarParam(value=1, leaf_name="policy_month"),
-        "policy_day": ScalarParam(value=1, leaf_name="policy_day"),
-        "evaluation_year": ScalarParam(value=2025, leaf_name="evaluation_year"),
-        "evaluation_month": ScalarParam(value=1, leaf_name="evaluation_month"),
-        "evaluation_day": ScalarParam(value=1, leaf_name="evaluation_day"),
+        "policy_year": ScalarParam(value=2025),
+        "policy_month": ScalarParam(value=1),
+        "policy_day": ScalarParam(value=1),
+        "evaluation_year": ScalarParam(value=2025),
+        "evaluation_month": ScalarParam(value=1),
+        "evaluation_day": ScalarParam(value=1),
         "some_func": some_func,
         "another_func": another_func,
     }
@@ -108,9 +108,9 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
 
 def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
     policy_environment = {
-        "policy_year": ScalarParam(value=2025, leaf_name="policy_year"),
-        "policy_month": ScalarParam(value=1, leaf_name="policy_month"),
-        "policy_day": ScalarParam(value=1, leaf_name="policy_day"),
+        "policy_year": ScalarParam(value=2025),
+        "policy_month": ScalarParam(value=1),
+        "policy_day": ScalarParam(value=1),
         "some_func": some_func,
         "another_func": another_func,
     }

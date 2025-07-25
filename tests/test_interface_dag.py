@@ -25,7 +25,7 @@ from ttsim.main import (
     load_flat_interface_functions_and_inputs,
 )
 from ttsim.main_target import MainTarget
-from ttsim.plot_dag import dummy_callable
+from ttsim.plot_dag import convert_all_nodes_to_callables
 from ttsim.tt.column_objects_param_function import policy_function
 
 
@@ -111,11 +111,8 @@ def test_interface_dag_is_complete() -> None:
         for p, f in load_flat_interface_functions_and_inputs().items()
     }
 
-    nodes_with_dummy_callables = {
-        qn: dummy_callable(n) if not callable(n) else n for qn, n in nodes.items()
-    }
     f = dags.concatenate_functions(
-        functions=nodes_with_dummy_callables,
+        functions=convert_all_nodes_to_callables(nodes),
         targets=None,
         return_type="dict",
         enforce_signature=False,
