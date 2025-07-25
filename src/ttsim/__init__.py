@@ -24,14 +24,11 @@ from ttsim.main_args import (
     TTTargets,
 )
 from ttsim.main_target import MainTarget
-from ttsim.plot_dag import plot_interface_dag, plot_tt_dag
 
 copy_environment = copy_environment
 merge_trees = merge_trees
 upsert_tree = upsert_tree
 main = main
-plot_tt_dag = plot_tt_dag
-plot_interface_dag = plot_interface_dag
 MainTarget = MainTarget
 InputData = InputData
 Labels = Labels
@@ -55,8 +52,6 @@ __all__ = [
     "copy_environment",
     "main",
     "merge_trees",
-    "plot_interface_dag",
-    "plot_tt_dag",
     "upsert_tree",
     "version",
     "version_tuple",

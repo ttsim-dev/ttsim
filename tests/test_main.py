@@ -27,7 +27,7 @@ from ttsim.main import (
     main,
 )
 from ttsim.main_target import MainTarget
-from ttsim.plot_dag import convert_all_nodes_to_callables
+from ttsim.plot.dag.tt import convert_all_nodes_to_callables
 from ttsim.tt.column_objects_param_function import policy_function
 
 

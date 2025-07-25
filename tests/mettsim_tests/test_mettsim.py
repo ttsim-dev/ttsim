@@ -7,11 +7,8 @@ from typing import TYPE_CHECKING, Literal
 import numpy
 import pytest
 
-from ttsim import main
+from ttsim import main, plot
 from ttsim.main_args import InputData
-from ttsim.plot_dag import (
-    plot_tt_dag,
-)
 from ttsim.testing_utils import (
     PolicyTest,
     check_env_completeness,
@@ -77,7 +74,7 @@ def test_mettsim(test: PolicyTest, backend: Literal["numpy", "jax"]):
 
 
 def test_mettsim_policy_environment_dag_with_params():
-    plot_tt_dag(
+    plot.dag.tt(
         policy_date_str="2020-01-01",
         root=METTSIM_ROOT,
         include_params=True,
@@ -87,7 +84,7 @@ def test_mettsim_policy_environment_dag_with_params():
 
 
 def test_mettsim_policy_environment_dag_without_params():
-    plot_tt_dag(
+    plot.dag.tt(
         policy_date_str="2020-01-01",
         root=METTSIM_ROOT,
         include_params=False,
