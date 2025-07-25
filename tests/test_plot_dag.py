@@ -122,7 +122,10 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
             ),
             [
                 "xnp",  # not part of the plot, will be removed by a downstream func
+                "evaluation_year",
+                "property_tax__acre_size_in_hectares",
                 "property_tax__acre_size_in_hectares_after_cap",
+                "evaluation_year",
                 "property_tax__tax_schedule",
                 "property_tax__year_from_which_cap_is_applied",
                 "property_tax__cap_in_hectares",
