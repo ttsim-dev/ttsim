@@ -24,7 +24,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 )
 from ttsim.main import load_flat_interface_functions_and_inputs
 from ttsim.tt import (
-    ColumnFunction,
     ParamFunction,
     ParamObject,
     PolicyFunction,
@@ -74,7 +73,6 @@ def plot_tt_dag(
     node_selector: NodeSelector | None = None,
     title: str = "",
     include_params: bool = True,
-    include_other_objects: bool = False,
     show_node_description: bool = False,
     output_path: Path | None = None,
 ) -> go.Figure:
@@ -92,9 +90,6 @@ def plot_tt_dag(
         The title of the plot.
     include_params
         Include param functions when plotting the DAG.
-    include_other_objects
-        Include backend policy inputs when plotting the DAG. Most users will not want
-        this.
     show_node_description
         Show a description of the node when hovering over it.
     output_path
@@ -124,7 +119,6 @@ def plot_tt_dag(
         environment=environment,
         node_selector=qname_node_selector,
         include_params=include_params,
-        include_other_objects=include_other_objects,
     )
     # Remove backend, xnp, dnp, and num_segments from the TT DAG.
     dag_with_node_metadata.remove_nodes_from(
@@ -234,7 +228,6 @@ def _get_tt_dag_with_node_metadata(
     environment: PolicyEnvironment,
     node_selector: _QNameNodeSelector | None = None,
     include_params: bool = True,
-    include_other_objects: bool = False,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
     qname_environment = dt.flatten_to_qnames(environment)
@@ -271,14 +264,6 @@ def _get_tt_dag_with_node_metadata(
     if not include_params:
         selected_dag.remove_nodes_from(
             [qn for qn, v in env.items() if isinstance(v, (ParamObject, ParamFunction))]
-        )
-    if not include_other_objects:
-        selected_dag.remove_nodes_from(
-            [
-                qn
-                for qn, n in env.items()
-                if not isinstance(n, (ColumnFunction, ParamFunction, ParamObject))
-            ]
         )
 
     node_descriptions = _get_node_descriptions(env)
@@ -385,14 +370,14 @@ def _create_dag_with_selected_nodes(
             selected_nodes.update(
                 _kth_order_predecessors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
-                else list(nx.ancestors(complete_dag, node))
+                else [*list(nx.ancestors(complete_dag, node)), node]
             )
     elif node_selector.type == "descendants":
         for node in node_selector.qnames:
             selected_nodes.update(
                 _kth_order_successors(complete_dag, node, order=node_selector.order)
                 if node_selector.order
-                else list(nx.descendants(complete_dag, node))
+                else [*list(nx.descendants(complete_dag, node)), node]
             )
     elif node_selector.type == "neighbors":
         order = node_selector.order or 1
