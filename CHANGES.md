@@ -8,6 +8,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 - {gh}`11` Fix several bugs in `plot_tt_dag`. ({ghuser}`MImmesberger`)
 
+- {gh}`9` Raise an error when passing data but no targets. ({ghuser}`hmgaudecker`)
+
 - {gh}`8` Allow for input data as targets. ({ghuser}`MImmesberger`)
 
 - {gh}`6` Fail if the leaf name of an object in the policy environment differs from the

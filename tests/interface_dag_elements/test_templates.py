@@ -4,14 +4,9 @@ from pathlib import Path
 
 import numpy
 
-from ttsim import main
-from ttsim.testing_utils import (
-    load_policy_test_data,
-)
-from ttsim.tt.column_objects_param_function import (
-    policy_function,
-    policy_input,
-)
+from ttsim import TTTargets, main
+from ttsim.testing_utils import load_policy_test_data
+from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.tt.param_objects import DictParam, ScalarParam
 
 METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
@@ -106,15 +101,6 @@ def test_template_all_outputs_no_inputs(backend):
 def test_template_all_outputs_with_inputs(backend, xnp):
     actual = main(
         main_target="templates__input_data_dtypes",
-        input_data={
-            "tree": {
-                "p_id": xnp.array([4, 5, 6]),
-                "a": {
-                    "inp2": xnp.array([1, 2, 3]),
-                },
-                "inp1": xnp.array([0, 1, 2]),
-            }
-        },
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
@@ -124,8 +110,17 @@ def test_template_all_outputs_with_inputs(backend, xnp):
                 "z": z,
             },
         },
-        rounding=True,
         evaluation_date_str="2025-01-01",
+        input_data={
+            "tree": {
+                "p_id": xnp.array([4, 5, 6]),
+                "a": {
+                    "inp2": xnp.array([1, 2, 3]),
+                },
+                "inp1": xnp.array([0, 1, 2]),
+            }
+        },
+        tt_targets=TTTargets(tree={"a__x": None, "a__y": None, "b__z": None}),
         backend=backend,
     )
     assert actual == {
@@ -187,14 +182,6 @@ def test_template_output_x_with_inputs(backend, xnp):
 def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp):
     actual = main(
         main_target="templates__input_data_dtypes",
-        input_data={
-            "tree": {
-                "p_id": xnp.array([4, 5, 6]),
-                "a": {
-                    "inp2": xnp.array([1, 2, 3]),
-                },
-            }
-        },
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
@@ -204,7 +191,15 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
                 "z": z,
             },
         },
-        rounding=True,
+        input_data={
+            "tree": {
+                "p_id": xnp.array([4, 5, 6]),
+                "a": {
+                    "inp2": xnp.array([1, 2, 3]),
+                },
+            }
+        },
+        tt_targets={"tree": {"a": {"x": None, "y": None}, "b": {"z": None}}},
         evaluation_date_str="2025-01-01",
         backend=backend,
     )

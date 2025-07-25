@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 
 import dags
 import dags.tree as dt
@@ -23,6 +24,7 @@ from ttsim.main import (
     _harmonize_main_targets,
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
+    main,
 )
 from ttsim.main_target import MainTarget
 from ttsim.plot_dag import convert_all_nodes_to_callables
@@ -307,6 +309,24 @@ def test_harmonize_main_targets(main_targets, expected):
     harmonized = _harmonize_main_targets(main_targets=main_targets)
 
     assert harmonized == expected
+
+
+def test_fail_if_data_is_provided_but_no_tt_targets(backend, xnp):
+    with pytest.raises(
+        ValueError, match="When providing data, `tt_targets` must be provided"
+    ):
+        main(
+            main_target="templates__input_data_dtypes",
+            policy_date_str="2025-01-01",
+            input_data={
+                "tree": {
+                    "p_id": xnp.array([4, 5, 6]),
+                    "payroll_tax": {"amount_y": xnp.array([1, 2, 3])},
+                }
+            },
+            orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
+            backend=backend,
+        )
 
 
 @pytest.mark.parametrize(

@@ -6,8 +6,7 @@ import warnings
 import pandas as pd
 import pytest
 
-from ttsim import main
-from ttsim.main_target import MainTarget
+from ttsim import MainTarget, TTTargets, main
 from ttsim.tt.column_objects_param_function import policy_function
 from ttsim.tt.param_objects import ScalarParam
 
@@ -102,6 +101,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
             processed_data={"p_id": xnp.array([0])},
+            tt_targets=TTTargets(tree={"p_id": None}),
             backend=backend,
         )
 
@@ -121,6 +121,7 @@ def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
             processed_data={"p_id": xnp.array([0])},
+            tt_targets=TTTargets(tree={"p_id": None}),
             backend=backend,
         )
         assert not w, f"Expected no warning, but got at least: {w[0].message}"
