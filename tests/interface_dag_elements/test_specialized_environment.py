@@ -124,10 +124,9 @@ SOME_RAW_PARAM = RawParam(
         "some_float_param": 1,
         "some_bool_param": False,
     },
-    leaf_name="raw_param_spec",
     start_date="2025-01-01",
     end_date="2025-12-31",
-    name="raw_param_spec",
+    name="Raw param spec",
     description="Some raw param spec",
     unit=None,
     reference_period=None,
@@ -138,10 +137,9 @@ SOME_RAW_PARAM = RawParam(
 
 SOME_INT_PARAM = ScalarParam(
     value=1,
-    leaf_name="some_int_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
-    name="some_int_param",
+    name="Some int param",
     description="Some int param",
     unit=None,
     reference_period=None,
@@ -152,10 +150,9 @@ SOME_INT_PARAM = ScalarParam(
 
 SOME_DICT_PARAM = DictParam(
     value={"a": 1, "b": False},
-    leaf_name="some_dict_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
-    name="some_dict_param",
+    name="Some dict param",
     description="Some dict param",
     unit=None,
     reference_period=None,
@@ -170,10 +167,9 @@ SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
         intercepts=[1, 2, 3],
         rates=[1, 2, 3],
     ),
-    leaf_name="some_piecewise_polynomial_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
-    name="some_piecewise_polynomial_param",
+    name="Some piecewise polynomial param",
     description="Some piecewise polynomial param",
     unit=None,
     reference_period=None,
@@ -300,9 +296,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="vectorize")(
-                        return_n1__x_kin
-                    ),
+                    "f": policy_function(leaf_name="f")(return_n1__x_kin),
                     "x": x,
                 },
             },
@@ -319,9 +313,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="vectorize")(
-                        return_x_kin
-                    ),
+                    "f": policy_function(leaf_name="f")(return_x_kin),
                     "x": x,
                 },
             },
@@ -338,7 +330,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="vectorize")(some_x),
+                    "f": policy_function(leaf_name="f")(some_x),
                     "x": x,
                 },
             },
@@ -355,7 +347,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(vectorization_strategy="vectorize")(some_x),
+                    "f": policy_function(leaf_name="f")(some_x),
                     "x": x,
                 },
                 "y_kin": y_kin,
@@ -373,10 +365,7 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
                 "kin_id": kin_id,
                 "p_id": p_id,
                 "n1": {
-                    "f": policy_function(
-                        leaf_name="f",
-                        vectorization_strategy="vectorize",
-                    )(return_y_kin),
+                    "f": policy_function(leaf_name="f")(return_y_kin),
                     "y_kin": y_kin_namespaced_input,
                 },
                 "inputs": {"x": x},
@@ -434,7 +423,6 @@ def test_params_target_is_allowed(minimal_input_data):
         "module": {"some_func": some_func},
         "some_param": ScalarParam(
             value=1,
-            leaf_name="some_param",
             start_date="2025-01-01",
             end_date="2025-12-31",
             unit="Euros",

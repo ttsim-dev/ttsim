@@ -25,7 +25,6 @@ def test_copy_single_scalar_param():
 
     # Content should be identical
     assert copied.value == original.value
-    assert copied.leaf_name == original.leaf_name
 
     # But objects should be independent
     assert copied is not original

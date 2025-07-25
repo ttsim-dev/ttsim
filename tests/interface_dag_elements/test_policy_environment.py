@@ -49,10 +49,9 @@ def some_params_spec_with_updates_previous():
 def some_int_param():
     return ScalarParam(
         value=1,
-        leaf_name="some_int_param",
         start_date="2025-01-01",
         end_date="2025-12-31",
-        name="some_int_param",
+        name="Some int param",
         description="Some int param",
         unit=None,
         reference_period=None,

@@ -42,16 +42,17 @@ def int_policy_function() -> int:
     return 1
 
 
+@policy_function()
+def another_int_policy_function() -> int:
+    return 1
+
+
 @param_function()
 def int_param_function() -> int:
     return 1
 
 
-_SOME_SCALAR_PARAM = ScalarParam(
-    leaf_name="some_scalar_param",
-    value=1,
-    **_GENERIC_PARAM_SPEC,
-)
+_SOME_SCALAR_PARAM = ScalarParam(value=1, **_GENERIC_PARAM_SPEC)
 
 
 @pytest.fixture
@@ -130,12 +131,12 @@ def test_df_with_mapped_columns_to_flat_data(
         # Two policy functions
         (
             {
-                "some_policy_function": int_policy_function,
-                "another_policy_function": int_policy_function,
+                "int_policy_function": int_policy_function,
+                "another_int_policy_function": another_int_policy_function,
             },
             {
-                "some_policy_function": "res1",
-                "another_policy_function": "res2",
+                "int_policy_function": "res1",
+                "another_int_policy_function": "res2",
             },
             pd.DataFrame(
                 {"res1": numpy.array([1, 1, 1]), "res2": numpy.array([1, 1, 1])},
@@ -145,10 +146,10 @@ def test_df_with_mapped_columns_to_flat_data(
         # One policy function
         (
             {
-                "some_policy_function": int_policy_function,
+                "int_policy_function": int_policy_function,
             },
             {
-                "some_policy_function": "res1",
+                "int_policy_function": "res1",
             },
             pd.DataFrame(
                 {"res1": numpy.array([1, 1, 1])},
@@ -158,10 +159,10 @@ def test_df_with_mapped_columns_to_flat_data(
         # One param function
         (
             {
-                "some_param_function": int_param_function,
+                "int_param_function": int_param_function,
             },
             {
-                "some_param_function": "res1",
+                "int_param_function": "res1",
             },
             pd.DataFrame(
                 {"res1": numpy.array([1, 1, 1])},
@@ -171,12 +172,12 @@ def test_df_with_mapped_columns_to_flat_data(
         # One param function and one policy function
         (
             {
-                "some_param_function": int_param_function,
-                "some_policy_function": int_policy_function,
+                "int_param_function": int_param_function,
+                "int_policy_function": int_policy_function,
             },
             {
-                "some_param_function": "res1",
-                "some_policy_function": "res2",
+                "int_param_function": "res1",
+                "int_policy_function": "res2",
             },
             pd.DataFrame(
                 {"res1": numpy.array([1, 1, 1]), "res2": numpy.array([1, 1, 1])},
@@ -198,11 +199,11 @@ def test_df_with_mapped_columns_to_flat_data(
         (
             {
                 "some_scalar_param": _SOME_SCALAR_PARAM,
-                "some_policy_function": int_policy_function,
+                "int_policy_function": int_policy_function,
             },
             {
                 "some_scalar_param": "res1",
-                "some_policy_function": "res2",
+                "int_policy_function": "res2",
             },
             pd.DataFrame(
                 {"res1": numpy.array([1, 1, 1]), "res2": numpy.array([1, 1, 1])},

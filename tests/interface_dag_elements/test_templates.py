@@ -25,12 +25,11 @@ POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
 )
 
 
-p1 = ScalarParam(
+par1 = ScalarParam(
     value=1,
-    leaf_name="some_int_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
-    name="some_int_param",
+    name="Some int param",
     description="Some int param",
     unit=None,
     reference_period=None,
@@ -38,12 +37,11 @@ p1 = ScalarParam(
     reference=None,
 )
 
-p2 = DictParam(
+par2 = DictParam(
     value={"a": 1, "b": 2},
-    leaf_name="some_dict_param",
     start_date="2025-01-01",
     end_date="2025-12-31",
-    name="some_dict_param",
+    name="Some dict param",
     description="Some dict param",
     unit=None,
     reference_period=None,
@@ -68,13 +66,13 @@ def inp2() -> float:
 
 
 @policy_function()
-def x(inp1_kin: int, p1: int, p2: dict[str, int]) -> int:
-    return inp1_kin + p1 + p2["a"] + p2["b"]
+def x(inp1_kin: int, par1: int, par2: dict[str, int]) -> int:
+    return inp1_kin + par1 + par2["a"] + par2["b"]
 
 
 @policy_function()
-def y(inp2: float, p2: dict[str, int]) -> float:
-    return inp2 + p2["b"]
+def y(inp2: float, par2: dict[str, int]) -> float:
+    return inp2 + par2["b"]
 
 
 @policy_function()
@@ -88,8 +86,8 @@ def test_template_all_outputs_no_inputs(backend):
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
-            "p1": p1,
-            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "par1": par1,
+            "a": {"inp2": inp2, "x": x, "y": y, "par2": par2},
             "b": {
                 "z": z,
             },
@@ -120,8 +118,8 @@ def test_template_all_outputs_with_inputs(backend, xnp):
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
-            "p1": p1,
-            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "par1": par1,
+            "a": {"inp2": inp2, "x": x, "y": y, "par2": par2},
             "b": {
                 "z": z,
             },
@@ -144,8 +142,8 @@ def test_template_output_y_no_inputs(backend):
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
-            "p1": p1,
-            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "par1": par1,
+            "a": {"inp2": inp2, "x": x, "y": y, "par2": par2},
             "b": {
                 "z": z,
             },
@@ -173,8 +171,8 @@ def test_template_output_x_with_inputs(backend, xnp):
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
-            "p1": p1,
-            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "par1": par1,
+            "a": {"inp2": inp2, "x": x, "y": y, "par2": par2},
             "b": {
                 "z": z,
             },
@@ -200,8 +198,8 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
-            "p1": p1,
-            "a": {"inp2": inp2, "x": x, "y": y, "p2": p2},
+            "par1": par1,
+            "a": {"inp2": inp2, "x": x, "y": y, "par2": par2},
             "b": {
                 "z": z,
             },

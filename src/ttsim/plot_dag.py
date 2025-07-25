@@ -155,7 +155,9 @@ def plot_interface_dag(
     """Plot the full interface DAG."""
     interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
     nodes_without_idifs = {
-        dt.qname_from_tree_path(p): dummy_callable(n) if not callable(n) else n
+        dt.qname_from_tree_path(p): dummy_callable(obj=n, leaf_name=p[-1])
+        if not callable(n)
+        else n
         for p, n in interface_functions_and_inputs.items()
         if not isinstance(n, InputDependentInterfaceFunction)
     }
@@ -254,9 +256,7 @@ def _get_tt_dag_with_node_metadata(
         backend="numpy",
     )
 
-    all_nodes = {
-        qn: dummy_callable(n) if not callable(n) else n for qn, n in env.items()
-    }
+    all_nodes = convert_all_nodes_to_callables(env)
 
     complete_dag = dags.create_dag(functions=all_nodes, targets=qnames_to_plot)
 
@@ -296,6 +296,17 @@ def _get_tt_dag_with_node_metadata(
     return selected_dag
 
 
+def convert_all_nodes_to_callables(
+    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
+    return {
+        qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
+        if not callable(n)
+        else n
+        for qn, n in env.items()
+    }
+
+
 def _get_node_descriptions(
     env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> dict[str, str]:
@@ -321,18 +332,20 @@ def _get_node_descriptions(
 
 
 @overload
-def dummy_callable(obj: PolicyInput) -> PolicyFunction: ...
+def dummy_callable(obj: PolicyInput, leaf_name: str) -> PolicyFunction: ...
 
 
 @overload
-def dummy_callable(obj: ParamObject) -> ParamFunction: ...
+def dummy_callable(obj: ParamObject, leaf_name: str) -> ParamFunction: ...
 
 
 @overload
-def dummy_callable(obj: InterfaceInput) -> InterfaceFunction: ...
+def dummy_callable(obj: InterfaceInput, leaf_name: str) -> InterfaceFunction: ...
 
 
-def dummy_callable(obj: ModuleType | str | float | bool) -> Callable[[], Any]:
+def dummy_callable(
+    obj: ModuleType | str | float | bool, leaf_name: str
+) -> Callable[[], Any]:
     """Dummy callable, for plotting and checking DAG completeness."""
 
     def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
@@ -340,20 +353,20 @@ def dummy_callable(obj: ModuleType | str | float | bool) -> Callable[[], Any]:
 
     if isinstance(obj, PolicyInput):
         return policy_function(
-            leaf_name=obj.leaf_name,
+            leaf_name=leaf_name,
             start_date=obj.start_date,
             end_date=obj.end_date,
             foreign_key_type=obj.foreign_key_type,
         )(dummy)
     if isinstance(obj, ParamObject):
         return param_function(
-            leaf_name=obj.leaf_name,
+            leaf_name=leaf_name,
             start_date=obj.start_date,
             end_date=obj.end_date,
         )(dummy)
     if isinstance(obj, InterfaceInput):
         return interface_function(
-            leaf_name=obj.leaf_name,
+            leaf_name=leaf_name,
             in_top_level_namespace=obj.in_top_level_namespace,
         )(dummy)
     return dummy

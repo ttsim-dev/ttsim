@@ -16,7 +16,7 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.shared import to_datetime
-from ttsim.plot_dag import dummy_callable
+from ttsim.plot_dag import convert_all_nodes_to_callables
 from ttsim.tt.column_objects_param_function import PolicyInput
 
 # Set display options to show all columns without truncation
@@ -267,10 +267,7 @@ def check_env_completeness(
         tt_targets={"qname": list(qname_environment)},
         backend="numpy",
     )
-    all_nodes = {
-        qn: dummy_callable(n) if not callable(n) else n
-        for qn, n in qname_env_with_derived_functions.items()
-    }
+    all_nodes = convert_all_nodes_to_callables(qname_env_with_derived_functions)
     f = dags.concatenate_functions(
         functions=all_nodes,
         targets=list(qname_env_with_derived_functions.keys()),

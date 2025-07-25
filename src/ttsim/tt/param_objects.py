@@ -21,7 +21,6 @@ class ParamObject:
     Abstract base class for all types of parameters.
     """
 
-    leaf_name: str | None = None
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
     unit: (

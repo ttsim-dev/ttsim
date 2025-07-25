@@ -350,6 +350,22 @@ def environment_is_invalid(
         tree_name="policy_environment",
     )
 
+    flat_policy_environment = dt.flatten_to_tree_paths(policy_environment)
+    paths_with_incorrect_leaf_names = ""
+    for p, f in flat_policy_environment.items():
+        if hasattr(f, "leaf_name") and p[-1] != f.leaf_name:
+            paths_with_incorrect_leaf_names += f"    {p}\n"
+    if paths_with_incorrect_leaf_names:
+        msg = (
+            format_errors_and_warnings(
+                "The last element of the object's path must be the same as the leaf name "
+                "of that object. The following tree paths are not compatible with the "
+                "corresponding object in the policy environment:\n\n"
+            )
+            + paths_with_incorrect_leaf_names
+        )
+        raise ValueError(msg)
+
 
 @fail_function()
 def foreign_keys_are_invalid_in_data(
@@ -874,7 +890,6 @@ def _param_with_active_periods(
             if start_date:
                 out.append(
                     _ParamWithActivePeriod(
-                        leaf_name=leaf_name,
                         start_date=start_date,
                         end_date=end_date,
                         original_function_name=leaf_name,
@@ -886,7 +901,6 @@ def _param_with_active_periods(
     if start_date:
         out.append(
             _ParamWithActivePeriod(
-                leaf_name=leaf_name,
                 original_function_name=leaf_name,
                 start_date=start_date,
                 end_date=end_date,

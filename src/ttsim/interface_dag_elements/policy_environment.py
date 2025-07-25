@@ -73,10 +73,14 @@ def policy_environment(
             end_date=policy_date,
         ),
         "policy_month": ScalarParam(
-            value=policy_date.month, start_date=policy_date, end_date=policy_date
+            value=policy_date.month,
+            start_date=policy_date,
+            end_date=policy_date,
         ),
         "policy_day": ScalarParam(
-            value=policy_date.day, start_date=policy_date, end_date=policy_date
+            value=policy_date.day,
+            start_date=policy_date,
+            end_date=policy_date,
         ),
         "evaluation_year": PolicyInput(
             leaf_name="evaluation_year",
@@ -179,9 +183,7 @@ def _get_one_param(  # noqa: PLR0911
     xnp: ModuleType,
 ) -> ParamObject:
     """Parse the original specification found in the yaml tree to a ParamObject."""
-    cleaned_spec = _clean_one_param_spec(
-        leaf_name=leaf_name, spec=spec, policy_date=policy_date
-    )
+    cleaned_spec = _clean_one_param_spec(spec=spec, policy_date=policy_date)
 
     if cleaned_spec is None:
         return None
@@ -225,7 +227,6 @@ def _get_one_param(  # noqa: PLR0911
 
 
 def _clean_one_param_spec(
-    leaf_name: str,
     spec: OrigParamSpec,
     policy_date: datetime.date,
 ) -> dict[str, Any] | None:
@@ -236,7 +237,6 @@ def _clean_one_param_spec(
         return None
 
     out: dict[str, Any] = {}
-    out["leaf_name"] = leaf_name
     out["start_date"] = policy_dates[idx - 1]
     out["end_date"] = (
         policy_dates[idx] - datetime.timedelta(days=1)
