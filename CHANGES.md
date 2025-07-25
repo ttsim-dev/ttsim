@@ -6,8 +6,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0a2 — 2025-07-xx
 
-- {gh}`11` Add main node to plot of TT DAG when using `NodeSelector`.
-  ({ghuser}`MImmesberger`)
+- {gh}`11` Fix several bugs in `plot_tt_dag`. ({ghuser}`MImmesberger`)
 
 - {gh}`8` Allow for input data as targets. ({ghuser}`MImmesberger`)
 
