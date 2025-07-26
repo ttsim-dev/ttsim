@@ -10,7 +10,7 @@ import dags.tree as dt
 import networkx as nx
 
 from ttsim import main
-from ttsim.plot.dag.shared import NodeMetaData, _plot_dag, dummy_callable
+from ttsim.plot.dag.shared import NodeMetaData, dummy_callable, get_figure
 from ttsim.tt import (
     ParamFunction,
     ParamObject,
@@ -108,7 +108,7 @@ def tt(
             "num_segments",
         ]
     )
-    fig = _plot_dag(
+    fig = get_figure(
         dag=dag_with_node_metadata,
         title=title,
         show_node_description=show_node_description,

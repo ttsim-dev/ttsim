@@ -12,7 +12,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     WarnFunction,
 )
 from ttsim.main import load_flat_interface_functions_and_inputs
-from ttsim.plot.dag.shared import NodeMetaData, _plot_dag, dummy_callable
+from ttsim.plot.dag.shared import NodeMetaData, dummy_callable, get_figure
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -74,7 +74,7 @@ def interface(
     if remove_orig_policy_objects__root:
         dag.remove_nodes_from(["orig_policy_objects__root"])
 
-    fig = _plot_dag(
+    fig = get_figure(
         dag=dag,
         title="Full Interface DAG",
         show_node_description=show_node_description,

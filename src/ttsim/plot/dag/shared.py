@@ -33,7 +33,7 @@ class NodeMetaData:
     namespace: str
 
 
-def _plot_dag(
+def get_figure(
     dag: nx.DiGraph,
     title: str,
     show_node_description: bool,
