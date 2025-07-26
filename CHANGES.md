@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0a2 — 2025-07-xx
 
+- {gh}`16` Add fail/warn mechanism to ColumnObjects and ParamFunctions.
+  ({ghuser}`hmgaudecker`)
+
 - {gh}`15` Do not call len() on unsized arrays. ({ghuser}`hmgaudecker`)
 
 - {gh}`14` Do not loop over the attributes of Jax arrays in
