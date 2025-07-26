@@ -431,7 +431,7 @@ def _fail_if_raw_incompatible_with_min_max_int_in_table(
     key_types = {type(k) for k in raw}
     if key_types != {int}:
         msg = (
-            "The raw dictionary must be a dictionary with int keys. You provided keys "
+            "The raw object must be a dictionary with int keys. You provided keys "
             f"of type: {key_types}"
         )
         raise TypeError(msg)
