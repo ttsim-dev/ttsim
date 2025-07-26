@@ -223,7 +223,7 @@ def _get_one_param(  # noqa: PLR0911
         )
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
 
-    if spec["type"] == "sparse_dict_with_int_keys":
+    if spec["type"] == "sparse_ints_to_consecutive_int_lookup_table":
         cleaned_spec["value"] = convert_sparse_dict_to_consecutive_int_lookup_table(
             raw=cleaned_spec["value"],
             xnp=xnp,

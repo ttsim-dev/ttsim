@@ -19,11 +19,11 @@ bounty_topup_by_age:
     de: Altersabhängiger Gefahrenzulagenfaktor
     en: Age-dependent bounty topup factor
   description:
-    de: Test für den Typ sparse_dict_with_int_keys
-    en: Test the sparse_dict_with_int_keys type
+    de: Test für den Typ sparse_ints_to_consecutive_int_lookup_table
+    en: Test the sparse_ints_to_consecutive_int_lookup_table type
   unit: Euros
   reference_period: null
-  type: sparse_dict_with_int_keys
+  type: sparse_ints_to_consecutive_int_lookup_table
   1900-01-01:
     0: 1.0
     60: 1.5
