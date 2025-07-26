@@ -360,9 +360,8 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
 
     Returns:
         ConsecutiveIntLookupTableParamValue: A lookup table with consecutive integer
-        keys
-            from min_int_in_table to max_int_in_table - 1, with gaps filled using the
-            last defined value.
+        keys from min_int_in_table to max_int_in_table, with gaps filled using the
+        last defined value.
 
     Example:
         >>> result = convert_sparse_dict_to_consecutive_int_lookup_table(
@@ -370,7 +369,7 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
         ...     xnp=xnp,
         ... )
         >>> result.value
-        {0: 1, 1: 1, 2: 1, 3: 3, 4: 3}
+        {0: 1, 1: 1, 2: 1, 3: 3, 4: 3, 5: 3}
     """
     tmp: dict[str | int, Any] = raw.copy()
 
@@ -388,7 +387,7 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
     )
     keys_in_base_spec: list[int] = sorted(base_spec.keys())
     full_table: dict[int, Any] = {}
-    for a in range(min_int_in_table, max_int_in_table):
+    for a in range(min_int_in_table, max_int_in_table + 1):
         if a < min(keys_in_base_spec):
             full_table[a] = base_spec[min(keys_in_base_spec)]
         elif a not in keys_in_base_spec:
