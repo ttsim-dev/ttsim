@@ -94,8 +94,8 @@ class SpecializedEnvironment(MainTargetABC):
     with_partialled_params_and_scalars: str = (
         "specialized_environment__with_partialled_params_and_scalars"
     )
-    tax_transfer_dag: str = "specialized_environment__tax_transfer_dag"
-    tax_transfer_function: str = "specialized_environment__tax_transfer_function"
+    tt_dag: str = "specialized_environment__tt_dag"
+    tt_function: str = "specialized_environment__tt_function"
 
 
 @dataclass(frozen=True)

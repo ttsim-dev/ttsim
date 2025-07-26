@@ -706,7 +706,7 @@ def backend_has_changed(
 
 @fail_function()
 def tt_root_nodes_are_missing(
-    specialized_environment__tax_transfer_dag: nx.DiGraph,
+    specialized_environment__tt_dag: nx.DiGraph,
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     processed_data: QNameData,
     labels__grouping_levels: OrderedQNames,
@@ -715,7 +715,7 @@ def tt_root_nodes_are_missing(
 
     Parameters
     ----------
-    specialized_environment__tax_transfer_dag
+    specialized_environment__tt_dag
         The DAG of taxes and transfers functions.
     specialized_environment__with_partialled_params_and_scalars
         The specialized environment with partialled params and scalars.
@@ -738,9 +738,8 @@ def tt_root_nodes_are_missing(
         )
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
-        specialized_environment__tax_transfer_dag,
-        filter_node=lambda n: specialized_environment__tax_transfer_dag.in_degree(n)
-        == 0,
+        specialized_environment__tt_dag,
+        filter_node=lambda n: specialized_environment__tt_dag.in_degree(n) == 0,
     ).nodes
 
     missing_nodes = [

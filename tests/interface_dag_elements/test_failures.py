@@ -1475,7 +1475,7 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
 @pytest.mark.parametrize(
     "main_target",
     [
-        MainTarget.specialized_environment.tax_transfer_function,
+        MainTarget.specialized_environment.tt_function,
         MainTarget.raw_results.columns,
     ],
 )

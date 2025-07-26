@@ -166,5 +166,5 @@ class SpecializedEnvironment(MainArg):
     with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars | None = (
         None
     )
-    tax_transfer_dag: nx.DiGraph | None = None
-    tax_transfer_function: Callable[[QNameData], QNameData] | None = None
+    tt_dag: nx.DiGraph | None = None
+    tt_function: Callable[[QNameData], QNameData] | None = None

@@ -340,7 +340,7 @@ def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
 
 
 @interface_function()
-def tax_transfer_dag(
+def tt_dag(
     with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     labels__column_targets: OrderedQNames,
 ) -> nx.DiGraph:
@@ -361,8 +361,8 @@ def tt_function_set_annotations() -> bool:
 
 
 @interface_function()
-def tax_transfer_function(
-    tax_transfer_dag: nx.DiGraph,
+def tt_function(
+    tt_dag: nx.DiGraph,
     with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     labels__column_targets: OrderedQNames,
     backend: Literal["numpy", "jax"],
@@ -370,7 +370,7 @@ def tax_transfer_function(
 ) -> Callable[[QNameData], QNameData]:
     """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
     ttf_with_keyword_args = concatenate_functions(
-        dag=tax_transfer_dag,
+        dag=tt_dag,
         functions=with_partialled_params_and_scalars,
         targets=list(labels__column_targets),
         return_type="dict",
