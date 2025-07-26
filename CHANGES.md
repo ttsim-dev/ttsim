@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0a2 — 2025-07-xx
 
+- {gh}`17` Add type for sparse dicts with int keys param. ({ghuser}`MImmesberger`)
+
 - {gh}`16` Add fail/warn mechanism to ColumnObjects and ParamFunctions.
   ({ghuser}`hmgaudecker`)
 
