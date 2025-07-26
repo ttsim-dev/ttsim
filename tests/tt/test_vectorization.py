@@ -555,10 +555,10 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     )()
 
     from tests.mettsim.orc_hunting_bounty.orc_hunting_bounty import (  # noqa: PLC0415
-        amount,
+        amount_without_topup,
     )
 
-    exp_noble = amount.function(
+    exp_noble = amount_without_topup.function(
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
         parent_is_noble=parent_is_noble,
@@ -566,7 +566,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     )
     assert exp_noble == 150.0  # 5*10 + 2*50
 
-    exp_peasant = amount.function(
+    exp_peasant = amount_without_topup.function(
         small_orcs_hunted=small_orcs_hunted,
         large_orcs_hunted=large_orcs_hunted,
         parent_is_noble=False,
@@ -582,7 +582,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     parent_is_noble = xnp.full(shape, parent_is_noble)
 
     with pytest.raises(ValueError, match="truth value of an array with more than"):
-        amount.function(
+        amount_without_topup.function(
             small_orcs_hunted=small_orcs_hunted,
             large_orcs_hunted=large_orcs_hunted,
             parent_is_noble=parent_is_noble,
@@ -592,7 +592,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
     # Call converted function on array input and test result
     # ==============================================================================
     converted = _make_vectorizable(
-        amount.function,
+        amount_without_topup.function,
         backend=backend,
         xnp=xnp,
     )

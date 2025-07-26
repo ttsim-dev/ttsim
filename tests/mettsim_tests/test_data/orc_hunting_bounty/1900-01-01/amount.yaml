@@ -23,9 +23,13 @@ inputs:
       - false
       - false
       - true
+    age:
+      - 0
+      - 60
+      - 100
 outputs:
   orc_hunting_bounty:
     amount:
       - 200.0
-      - 400.0
-      - 100.0
+      - 600.0
+      - 150.0
