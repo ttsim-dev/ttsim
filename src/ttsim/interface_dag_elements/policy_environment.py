@@ -20,6 +20,7 @@ from ttsim.tt import (
     PolicyInput,
     RawParam,
     ScalarParam,
+    convert_sparse_dict_to_consecutive_int_lookup_table,
     get_consecutive_int_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
     get_year_based_phase_inout_of_age_thresholds_param_value,
@@ -221,8 +222,17 @@ def _get_one_param(  # noqa: PLR0911
             )
         )
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
+
+    if spec["type"] == "sparse_dict_with_int_keys":
+        cleaned_spec["value"] = convert_sparse_dict_to_consecutive_int_lookup_table(
+            raw=cleaned_spec["value"],
+            xnp=xnp,
+        )
+        return ConsecutiveIntLookupTableParam(**cleaned_spec)
+
     if spec["type"] == "require_converter":
         return RawParam(**cleaned_spec)
+
     raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
 
 

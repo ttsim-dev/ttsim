@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ttsim.tt import param_function, policy_function, policy_input
 
 if TYPE_CHECKING:
-    from ttsim.typing import RawParam
+    from ttsim.tt import ConsecutiveIntLookupTableParamValue, RawParam
 
 
 @dataclass(frozen=True)
@@ -42,14 +42,24 @@ def large_orcs_hunted() -> int:
     """The number of large orcs hunted."""
 
 
-@policy_function(vectorization_strategy="vectorize")
+@policy_function()
 def amount(
+    amount_without_topup: float,
+    bounty_topup_by_age: ConsecutiveIntLookupTableParamValue,
+    age: int,
+) -> float:
+    """Orc-hunting bounty."""
+    return amount_without_topup * bounty_topup_by_age.look_up(age)
+
+
+@policy_function()
+def amount_without_topup(
     small_orcs_hunted: int,
     large_orcs_hunted: int,
     parent_is_noble: bool,
     bounty_per_orc: BountyPerOrc,
 ) -> float:
-    """Orc-hunting bounty."""
+    """Orc-hunting bounty without topup."""
     bounty_small_orcs = bounty_per_orc.small_orc * small_orcs_hunted
     if parent_is_noble:
         bounty_large_orcs = bounty_per_orc.large_orc.noble_hunter * large_orcs_hunted

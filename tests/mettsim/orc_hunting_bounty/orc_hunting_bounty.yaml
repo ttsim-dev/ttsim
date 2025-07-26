@@ -14,3 +14,18 @@ raw_bounties_per_orc:
     large_orc:
       peasant_hunter: 200
       noble_hunter: 100
+bounty_topup_by_age:
+  name:
+    de: Gefahrenzulagenfaktor abhängig vom Alter
+    en: Bounty topup factor depending on age
+  description:
+    de: Test für den Typ sparse_dict_with_int_keys
+    en: Test the sparse_dict_with_int_keys type
+  unit: Euros
+  reference_period: null
+  type: sparse_dict_with_int_keys
+  1900-01-01:
+    0: 1.0
+    60: 1.5
+    min_int_in_table: 0
+    max_int_in_table: 120
