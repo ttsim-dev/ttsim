@@ -1535,6 +1535,7 @@ def test_fail_if_tt_dag_includes_function_with_fail_msg_if_included_set(
             policy_environment=env,
             tt_targets=TTTargets(tree={"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
+            include_warn_nodes=False,
             backend=backend,
         )
 
@@ -1556,8 +1557,29 @@ def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set(
             policy_environment=env,
             tt_targets=TTTargets(tree={"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
+            include_warn_nodes=False,
             backend=backend,
         )
+
+
+def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set_does_not_fail_if_overriden(
+    minimal_data_tree: NestedData,
+    backend: Literal["jax", "numpy"],
+):
+    env = mettsim_environment(backend)
+    env["fam_id"] = dummy_fam_id
+    env["sp_id"] = should_fail_sp_id
+
+    minimal_data_tree["sp_id"] = numpy.array([0, 0, 1])
+
+    main(
+        main_target=MainTarget.results.df_with_mapper,
+        policy_environment=env,
+        tt_targets=TTTargets(tree={"fam_id": None}),
+        input_data=InputData.tree(tree=minimal_data_tree),
+        include_warn_nodes=False,
+        backend=backend,
+    )
 
 
 @pytest.mark.skipif(jax is None, reason="Jax is not installed")

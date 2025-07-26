@@ -708,18 +708,26 @@ def backend_has_changed(
 def tt_dag_includes_function_with_fail_msg_if_included_set(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     specialized_environment__tt_dag: nx.DiGraph,
+    labels__processed_data_columns: UnorderedQNames,
 ) -> None:
-    """Fail if the TT DAG includes functions with `fail_msg_if_included` set.
-
-    Doing this for policy inputs would be slightly harder because we
-    """
+    """Fail if the TT DAG includes functions with `fail_msg_if_included` set."""
 
     env = specialized_environment__without_tree_logic_and_with_derived_functions
     issues = ""
     for node in specialized_environment__tt_dag:
-        # Need to check 1. because this may run before 'fail_if.root_nodes_are_missing'
-        # and 2. because we may override ParamObjects with ColumnObjects.
-        if node in env and hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
+        if (
+            # This may run before 'fail_if.root_nodes_are_missing'
+            node not in env
+            or
+            # ColumnObjects overridden by data are fine
+            (
+                not isinstance(env[node], PolicyInput)
+                and node in labels__processed_data_columns
+            )
+        ):
+            continue
+        # Check because ParamObjects can be overridden by ColumnObjects down the road.
+        if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
             if msg := env[node].fail_msg_if_included:
                 issues += f"{node}:\n\n{msg}\n\n\n"
     if issues:
