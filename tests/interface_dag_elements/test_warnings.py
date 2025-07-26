@@ -37,15 +37,6 @@ def another_func(some_func: int) -> int:
     return some_func
 
 
-@pytest.fixture(scope="module")
-def minimal_input_data():
-    n_individuals = 5
-    return {
-        "p_id": pd.Series(numpy.arange(n_individuals), name="p_id"),
-        "fam_id": pd.Series(numpy.arange(n_individuals), name="fam_id"),
-    }
-
-
 def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
