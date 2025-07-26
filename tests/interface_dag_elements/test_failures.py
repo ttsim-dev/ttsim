@@ -158,6 +158,11 @@ def should_fail_sp_id(
     return xnp.maximum(p_id, p_id_spouse) + xnp.minimum(p_id, p_id_spouse) * n
 
 
+@policy_input(fail_msg_if_included="""This should fail.""")
+def p_id_spouse() -> IntColumn:
+    """Just to test that we can pass a policy input with `fail_msg_if_included` set."""
+
+
 @group_creation_function(leaf_name="fam_id")
 def dummy_fam_id(sp_id: IntColumn, xnp: ModuleType) -> IntColumn:  # noqa: ARG001
     """
@@ -1513,7 +1518,7 @@ def test_raise_some_error_without_input_data(
         )
 
 
-def test_fail_if_tt_dag_includes_functions_with_fail_msg_if_included_set(
+def test_fail_if_tt_dag_includes_function_with_fail_msg_if_included_set(
     minimal_data_tree: NestedData,
     backend: Literal["jax", "numpy"],
 ):
@@ -1523,7 +1528,28 @@ def test_fail_if_tt_dag_includes_functions_with_fail_msg_if_included_set(
 
     with pytest.raises(
         ValueError,
-        match="part of the DAG, but have the `fail_msg_if_included` attribute set",
+        match="The TT DAG includes the following functions with `fail_msg_if_included`",
+    ):
+        main(
+            main_target=MainTarget.results.df_with_mapper,
+            policy_environment=env,
+            tt_targets=TTTargets(tree={"fam_id": None}),
+            input_data=InputData.tree(tree=minimal_data_tree),
+            backend=backend,
+        )
+
+
+def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set(
+    minimal_data_tree: NestedData,
+    backend: Literal["jax", "numpy"],
+):
+    env = mettsim_environment(backend)
+    env["fam_id"] = dummy_fam_id
+    env["p_id_spouse"] = p_id_spouse
+
+    with pytest.raises(
+        ValueError,
+        match="The TT DAG includes the following functions with `fail_msg_if_included`",
     ):
         main(
             main_target=MainTarget.results.df_with_mapper,

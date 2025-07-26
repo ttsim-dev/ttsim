@@ -192,7 +192,7 @@ def test_warn_if_tt_dag_includes_functions_with_warn_msg_if_included_set(
     env["sp_id"] = should_warn_sp_id
     env["fam_id"] = dummy_fam_id
 
-    with pytest.warns(match="You should pass `sp_id` as an input."):
+    with pytest.warns(match="The TT DAG includes elements with `warn_msg_if_included`"):
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=env,
