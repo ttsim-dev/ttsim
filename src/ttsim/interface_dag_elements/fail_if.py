@@ -689,6 +689,10 @@ def backend_has_changed(
     for func in specialized_environment__with_partialled_params_and_scalars.values():
         if isinstance(func, functools.partial):
             for argname, arg in func.keywords.items():
+                # We are fine if it is a jax array and we do not want to loop over its
+                # attributes (GETTSIM tests fail otherwise).
+                if isinstance(arg, jax.Array):  # type: ignore[union-attr]
+                    continue
                 if isinstance(arg, numpy.ndarray) or any(
                     isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
                 ):
