@@ -5,10 +5,10 @@ from pathlib import Path
 import pytest
 
 from ttsim.main import main
-from ttsim.plot_dag import (
+from ttsim.plot.dag.interface import interface
+from ttsim.plot.dag.tt import (
     _get_tt_dag_with_node_metadata,
     _QNameNodeSelector,
-    plot_interface_dag,
 )
 from ttsim.tt import (
     ScalarParam,
@@ -51,7 +51,7 @@ def some_policy_function():
     ],
 )
 def test_plot_full_interface_dag(include_fail_and_warn_nodes):
-    plot_interface_dag(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
+    interface(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
 
 
 @pytest.mark.parametrize(
