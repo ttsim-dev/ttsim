@@ -528,13 +528,22 @@ def non_convertible_objects_in_results_tree(
     paths_with_incorrect_length: list[str] = []
     for path, column_data in dt.flatten_to_tree_paths(results__tree).items():
         if isinstance(column_data, _array_types):
-            if len(column_data) not in {1, expected_object_length}:
+            if column_data.shape not in {(), (1,), (expected_object_length,)}:
                 paths_with_incorrect_length.append(str(path))
         elif isinstance(column_data, _numeric_types):
             continue
         else:
             paths_with_incorrect_types.append(str(path))
 
+    if paths_with_incorrect_length:
+        msg = (
+            format_errors_and_warnings(
+                "The data contains paths that don't have the same length as the input data "
+                "and are not scalars. The following paths are faulty: "
+            )
+            + f"\n{format_list_linewise(paths_with_incorrect_length)}"
+        )
+        raise ValueError(msg)
     if paths_with_incorrect_types:
         msg = (
             format_errors_and_warnings(
@@ -545,15 +554,6 @@ def non_convertible_objects_in_results_tree(
             + f"\n{format_list_linewise(paths_with_incorrect_types)}"
         )
         raise TypeError(msg)
-    if paths_with_incorrect_length:
-        msg = (
-            format_errors_and_warnings(
-                "The data contains paths that don't have the same length as the input data "
-                "and are not scalars. The following paths are faulty: "
-            )
-            + f"\n{format_list_linewise(paths_with_incorrect_length)}"
-        )
-        raise ValueError(msg)
 
 
 @fail_function()
