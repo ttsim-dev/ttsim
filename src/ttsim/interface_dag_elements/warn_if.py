@@ -124,10 +124,7 @@ def tt_dag_includes_function_with_warn_msg_if_included_set(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     specialized_environment__tt_dag: nx.DiGraph,
 ) -> None:
-    """Fail if the TT DAG includes functions with `fail_msg_if_included` set.
-
-    Doing this for policy inputs would be slightly harder because we
-    """
+    """Warn if the TT DAG includes functions with `warn_msg_if_included` set."""
 
     env = specialized_environment__without_tree_logic_and_with_derived_functions
     my_warnings = set()
