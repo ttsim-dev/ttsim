@@ -1,6 +1,6 @@
 import pytest
 
-from ttsim.tt.param_objects import convert_sparse_dict_to_consecutive_int_lookup_table
+from ttsim.tt.param_objects import convert_sparse_ints_to_consecutive_int_lookup_table
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ from ttsim.tt.param_objects import convert_sparse_dict_to_consecutive_int_lookup
         ),
     ],
 )
-def test_convert_sparse_dict_to_consecutive_int_lookup_table(raw, expected_result, xnp):
-    result = convert_sparse_dict_to_consecutive_int_lookup_table(raw, xnp)
+def test_convert_sparse_ints_to_consecutive_int_lookup_table(raw, expected_result, xnp):
+    result = convert_sparse_ints_to_consecutive_int_lookup_table(raw, xnp)
     for k, v in expected_result.items():
         assert result.look_up(k) == v

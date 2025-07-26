@@ -345,7 +345,7 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     )
 
 
-def convert_sparse_dict_to_consecutive_int_lookup_table(
+def convert_sparse_ints_to_consecutive_int_lookup_table(
     raw: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any],
     xnp: ModuleType,
 ) -> ConsecutiveIntLookupTableParamValue:
@@ -365,7 +365,7 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
         last defined value.
 
     Example:
-        >>> result = convert_sparse_dict_to_consecutive_int_lookup_table(
+        >>> result = convert_sparse_ints_to_consecutive_int_lookup_table(
         ...     raw={
         ...         1: 1,
         ...         3: 3,
