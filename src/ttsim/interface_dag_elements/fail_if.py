@@ -38,7 +38,7 @@ from ttsim.tt.param_objects import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from ttsim.interface_dag_elements.input_data import FlatData
     from ttsim.typing import (
@@ -705,8 +705,41 @@ def backend_has_changed(
 
 
 @fail_function()
+def tt_dag_includes_function_with_fail_msg_if_included_set(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    specialized_environment__tt_dag: nx.DiGraph,
+    labels__processed_data_columns: UnorderedQNames,
+) -> None:
+    """Fail if the TT DAG includes functions with `fail_msg_if_included` set."""
+
+    env = specialized_environment__without_tree_logic_and_with_derived_functions
+    issues = ""
+    for node in specialized_environment__tt_dag:
+        if (
+            # This may run before 'fail_if.root_nodes_are_missing'
+            node not in env
+            or
+            # ColumnObjects overridden by data are fine
+            (
+                not isinstance(env[node], PolicyInput)
+                and node in labels__processed_data_columns
+            )
+        ):
+            continue
+        # Check because ParamObjects can be overridden by ColumnObjects down the road.
+        if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
+            if msg := env[node].fail_msg_if_included:
+                issues += f"{node}:\n\n{msg}\n\n\n"
+    if issues:
+        raise ValueError(
+            "The TT DAG includes the following functions with `fail_msg_if_included` "
+            f"set.\n\n{issues}"
+        )
+
+
+@fail_function()
 def tt_root_nodes_are_missing(
-    specialized_environment__tax_transfer_dag: nx.DiGraph,
+    specialized_environment__tt_dag: nx.DiGraph,
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     processed_data: QNameData,
     labels__grouping_levels: OrderedQNames,
@@ -715,7 +748,7 @@ def tt_root_nodes_are_missing(
 
     Parameters
     ----------
-    specialized_environment__tax_transfer_dag
+    specialized_environment__tt_dag
         The DAG of taxes and transfers functions.
     specialized_environment__with_partialled_params_and_scalars
         The specialized environment with partialled params and scalars.
@@ -738,9 +771,8 @@ def tt_root_nodes_are_missing(
         )
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
-        specialized_environment__tax_transfer_dag,
-        filter_node=lambda n: specialized_environment__tax_transfer_dag.in_degree(n)
-        == 0,
+        specialized_environment__tt_dag,
+        filter_node=lambda n: specialized_environment__tt_dag.in_degree(n) == 0,
     ).nodes
 
     missing_nodes = [
@@ -848,7 +880,7 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
     return "\n\n".join(wrapped_paragraphs)
 
 
-def format_list_linewise(some_list: list[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
+def format_list_linewise(some_list: Iterable[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
     formatted_list = '",\n    "'.join(some_list)
     return textwrap.dedent(
         """

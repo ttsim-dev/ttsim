@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
@@ -33,7 +32,6 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         FloatColumn,
         IntColumn,
-        PolicyEnvironment,
     )
 
 
@@ -200,17 +198,6 @@ def minimal_input_data_shared_fam():
 @agg_by_group_function(agg_type=AggType.SUM)
 def foo_fam(foo: int, fam_id: int) -> int:
     pass
-
-
-@pytest.fixture(scope="module")
-def mettsim_environment() -> PolicyEnvironment:
-    return main(
-        inputs={
-            "orig_policy_objects__root": Path(__file__).parent.parent / "mettsim",
-            "date": datetime.date(2025, 1, 1),
-        },
-        output_names=["policy_environment"],
-    )["policy_environment"]
 
 
 # Create a function which is used by some tests below

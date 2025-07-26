@@ -112,6 +112,8 @@ class PolicyInput(ColumnObject):
 
     data_type: type[float | int | bool]
     foreign_key_type: FKType = FKType.IRRELEVANT
+    warn_msg_if_included: str | None = None
+    fail_msg_if_included: str | None = None
 
     def remove_tree_logic(
         self,
@@ -126,6 +128,8 @@ def policy_input(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     foreign_key_type: FKType = FKType.IRRELEVANT,
+    warn_msg_if_included: str | None = None,
+    fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
@@ -159,6 +163,8 @@ def policy_input(
             end_date=end_date,
             foreign_key_type=foreign_key_type,
             description=str(inspect.getdoc(func)),
+            warn_msg_if_included=warn_msg_if_included,
+            fail_msg_if_included=fail_msg_if_included,
         )
 
     return inner
@@ -205,6 +211,8 @@ class ColumnFunction(ColumnObject, Generic[FunArgTypes, ReturnType]):
     function: Callable[FunArgTypes, ReturnType]
     rounding_spec: RoundingSpec | None = None
     foreign_key_type: FKType = FKType.IRRELEVANT
+    warn_msg_if_included: str | None = None
+    fail_msg_if_included: str | None = None
 
     def __post_init__(self) -> None:
         _fail_if_rounding_has_wrong_type(self.rounding_spec)
@@ -300,6 +308,8 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             vectorization_strategy=self.vectorization_strategy,
+            warn_msg_if_included=self.warn_msg_if_included,
+            fail_msg_if_included=self.fail_msg_if_included,
         )
 
     def vectorize(self, backend: str, xnp: ModuleType) -> PolicyFunction:
@@ -322,6 +332,8 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             vectorization_strategy="not_required",
+            warn_msg_if_included=self.warn_msg_if_included,
+            fail_msg_if_included=self.fail_msg_if_included,
         )
 
 
@@ -333,6 +345,8 @@ def policy_function(
     rounding_spec: RoundingSpec | None = None,
     vectorization_strategy: Literal["loop", "vectorize", "not_required"] = "vectorize",
     foreign_key_type: FKType = FKType.IRRELEVANT,
+    warn_msg_if_included: str | None = None,
+    fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
@@ -379,6 +393,8 @@ def policy_function(
             rounding_spec=rounding_spec,
             foreign_key_type=foreign_key_type,
             vectorization_strategy=vectorization_strategy,
+            warn_msg_if_included=warn_msg_if_included,
+            fail_msg_if_included=fail_msg_if_included,
         )
 
     return inner
@@ -441,6 +457,8 @@ class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
             description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
+            warn_msg_if_included=self.warn_msg_if_included,
+            fail_msg_if_included=self.fail_msg_if_included,
         )
 
 
@@ -450,6 +468,8 @@ def group_creation_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     reorder: bool = True,
+    warn_msg_if_included: str | None = None,
+    fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
@@ -482,6 +502,8 @@ def group_creation_function(
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
+            warn_msg_if_included=warn_msg_if_included,
+            fail_msg_if_included=fail_msg_if_included,
         )
 
     return decorator
@@ -532,6 +554,8 @@ class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             orig_location=self.orig_location,
+            warn_msg_if_included=self.warn_msg_if_included,
+            fail_msg_if_included=self.fail_msg_if_included,
         )
 
 
@@ -541,6 +565,8 @@ def agg_by_group_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
+    warn_msg_if_included: str | None = None,
+    fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
@@ -579,6 +605,8 @@ def agg_by_group_function(
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
+            warn_msg_if_included=warn_msg_if_included,
+            fail_msg_if_included=fail_msg_if_included,
         )
 
     return inner
@@ -664,6 +692,8 @@ class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
             orig_location=self.orig_location,
+            warn_msg_if_included=self.warn_msg_if_included,
+            fail_msg_if_included=self.fail_msg_if_included,
         )
 
 
@@ -673,6 +703,8 @@ def agg_by_p_id_function(
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
     agg_type: AggType,
+    warn_msg_if_included: str | None = None,
+    fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
@@ -726,6 +758,8 @@ def agg_by_p_id_function(
             description=str(inspect.getdoc(func)),
             foreign_key_type=FKType.IRRELEVANT,
             orig_location=f"{func.__module__}.{func.__name__}",
+            warn_msg_if_included=warn_msg_if_included,
+            fail_msg_if_included=fail_msg_if_included,
         )
 
     return inner
@@ -796,6 +830,8 @@ class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
             description=self.description,
             rounding_spec=self.rounding_spec,
             foreign_key_type=self.foreign_key_type,
+            warn_msg_if_included=self.warn_msg_if_included,
+            fail_msg_if_included=self.fail_msg_if_included,
         )
 
 
@@ -850,6 +886,8 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
     end_date: datetime.date
     function: Callable[FunArgTypes, ReturnType]
     description: str
+    warn_msg_if_included: str | None = None
+    fail_msg_if_included: str | None = None
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -892,6 +930,8 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
             start_date=self.start_date,
             end_date=self.end_date,
             description=self.description,
+            warn_msg_if_included=self.warn_msg_if_included,
+            fail_msg_if_included=self.fail_msg_if_included,
         )
 
 
@@ -901,6 +941,8 @@ def param_function(
     leaf_name: str | None = None,
     start_date: str | datetime.date = DEFAULT_START_DATE,
     end_date: str | datetime.date = DEFAULT_END_DATE,
+    warn_msg_if_included: str | None = None,
+    fail_msg_if_included: str | None = None,
 ) -> Callable[[Callable[..., Any]], ParamFunction[..., Any]]:
     """
     Decorator that makes a `ParamFunction` from a function.
@@ -938,6 +980,8 @@ def param_function(
             start_date=start_date,
             end_date=end_date,
             description=str(inspect.getdoc(func)),
+            warn_msg_if_included=warn_msg_if_included,
+            fail_msg_if_included=fail_msg_if_included,
         )
 
     return inner

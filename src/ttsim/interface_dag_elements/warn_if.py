@@ -15,9 +15,12 @@ from ttsim.tt.column_objects_param_function import PolicyInput
 if TYPE_CHECKING:
     import datetime
 
+    import networkx as nx
+
     from ttsim.typing import (
         PolicyEnvironment,
         QNameData,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         UnorderedQNames,
     )
 
@@ -113,4 +116,38 @@ Note that this warnings function does not check for `evaluation_month`
 and `evaluation_day`, never set them anywhere without also setting
 `evaluation_year`.
 """
+        warnings.warn(UserWarning(msg), stacklevel=2)
+
+
+@warn_function()
+def tt_dag_includes_function_with_warn_msg_if_included_set(
+    specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    specialized_environment__tt_dag: nx.DiGraph,
+    labels__processed_data_columns: UnorderedQNames,
+) -> None:
+    """Warn if the TT DAG includes functions with `warn_msg_if_included` set."""
+
+    env = specialized_environment__without_tree_logic_and_with_derived_functions
+    my_warnings = set()
+    for node in specialized_environment__tt_dag:
+        if (
+            # This may run before 'fail_if.root_nodes_are_missing'
+            node not in env
+            or
+            # ColumnObjects overridden by data are fine
+            (
+                not isinstance(env[node], PolicyInput)
+                and node in labels__processed_data_columns
+            )
+        ):
+            continue
+        # Check because ParamObjects can be overridden by ColumnObjects down the road.
+        if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
+            if msg := env[node].warn_msg_if_included:
+                my_warnings |= {f"{msg}\n\n\n"}
+    if my_warnings:
+        msg = (
+            "The TT DAG includes elements with `warn_msg_if_included` set to the "
+            f"following values:\n\n{format_list_linewise(my_warnings)}"
+        )
         warnings.warn(UserWarning(msg), stacklevel=2)

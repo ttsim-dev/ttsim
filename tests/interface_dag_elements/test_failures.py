@@ -56,6 +56,8 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         FlatColumnObjectsParamFunctions,
         FlatOrigParamSpecs,
+        IntColumn,
+        NestedData,
         OrigParamSpec,
         PolicyEnvironment,
     )
@@ -104,6 +106,7 @@ def minimal_data_tree():
     return {
         "hh_id": numpy.array([1, 2, 3]),
         "p_id": numpy.array([1, 2, 3]),
+        "p_id_spouse": numpy.array([2, 1, -1]),
     }
 
 
@@ -123,11 +126,6 @@ def return_three() -> int:
     return 3
 
 
-@group_creation_function()
-def fam_id() -> int:
-    pass
-
-
 @pytest.fixture(scope="module")
 def minimal_input_data():
     n_individuals = 5
@@ -144,6 +142,34 @@ def mettsim_environment(backend) -> PolicyEnvironment:
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )
+
+
+@group_creation_function(
+    leaf_name="sp_id", fail_msg_if_included="""This should fail."""
+)
+def should_fail_sp_id(
+    p_id: IntColumn, p_id_spouse: IntColumn, xnp: ModuleType
+) -> IntColumn:
+    """
+    Copy of `sp_id` from METTSIM, but with `fail_msg_if_included` set.
+    """
+    n = xnp.max(p_id)
+    p_id_spouse = xnp.where(p_id_spouse < 0, p_id, p_id_spouse)
+    return xnp.maximum(p_id, p_id_spouse) + xnp.minimum(p_id, p_id_spouse) * n
+
+
+@policy_input(fail_msg_if_included="""This should fail.""")
+def p_id_spouse() -> IntColumn:
+    """Just to test that we can pass a policy input with `fail_msg_if_included` set."""
+
+
+@group_creation_function(leaf_name="fam_id")
+def dummy_fam_id(sp_id: IntColumn, xnp: ModuleType) -> IntColumn:  # noqa: ARG001
+    """
+    Just want to use this as a drop-in replacement for `fam_id` from METTSIM with
+    minimal inputs.
+    """
+    return sp_id
 
 
 def some_x(x):
@@ -636,7 +662,7 @@ def test_fail_if_group_ids_are_outside_top_level_namespace():
         ValueError,
         match="Group identifiers must live in the top-level namespace. Got:",
     ):
-        group_ids_are_outside_top_level_namespace({"n1": {"fam_id": fam_id}})
+        group_ids_are_outside_top_level_namespace({"n1": {"fam_id": dummy_fam_id}})
 
 
 def test_fail_if_group_variables_are_not_constant_within_groups():
@@ -1003,7 +1029,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
         pass
 
     policy_environment = {
-        "fam_id": fam_id,
+        "fam_id": dummy_fam_id,
         "a": a,
         "b": b,
     }
@@ -1454,7 +1480,7 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
 @pytest.mark.parametrize(
     "main_target",
     [
-        MainTarget.specialized_environment.tax_transfer_function,
+        MainTarget.specialized_environment.tt_function,
         MainTarget.raw_results.columns,
     ],
 )
@@ -1490,6 +1516,70 @@ def test_raise_some_error_without_input_data(
             backend=backend,
             orig_policy_objects={"root": METTSIM_ROOT},
         )
+
+
+def test_fail_if_tt_dag_includes_function_with_fail_msg_if_included_set(
+    minimal_data_tree: NestedData,
+    backend: Literal["jax", "numpy"],
+):
+    env = mettsim_environment(backend)
+    env["sp_id"] = should_fail_sp_id
+    env["fam_id"] = dummy_fam_id
+
+    with pytest.raises(
+        ValueError,
+        match="The TT DAG includes the following functions with `fail_msg_if_included`",
+    ):
+        main(
+            main_target=MainTarget.results.df_with_mapper,
+            policy_environment=env,
+            tt_targets=TTTargets(tree={"fam_id": None}),
+            input_data=InputData.tree(tree=minimal_data_tree),
+            include_warn_nodes=False,
+            backend=backend,
+        )
+
+
+def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set(
+    minimal_data_tree: NestedData,
+    backend: Literal["jax", "numpy"],
+):
+    env = mettsim_environment(backend)
+    env["fam_id"] = dummy_fam_id
+    env["p_id_spouse"] = p_id_spouse
+
+    with pytest.raises(
+        ValueError,
+        match="The TT DAG includes the following functions with `fail_msg_if_included`",
+    ):
+        main(
+            main_target=MainTarget.results.df_with_mapper,
+            policy_environment=env,
+            tt_targets=TTTargets(tree={"fam_id": None}),
+            input_data=InputData.tree(tree=minimal_data_tree),
+            include_warn_nodes=False,
+            backend=backend,
+        )
+
+
+def test_fail_if_tt_dag_includes_policy_input_with_fail_msg_if_included_set_does_not_fail_if_overriden(
+    minimal_data_tree: NestedData,
+    backend: Literal["jax", "numpy"],
+):
+    env = mettsim_environment(backend)
+    env["fam_id"] = dummy_fam_id
+    env["sp_id"] = should_fail_sp_id
+
+    minimal_data_tree["sp_id"] = numpy.array([0, 0, 1])
+
+    main(
+        main_target=MainTarget.results.df_with_mapper,
+        policy_environment=env,
+        tt_targets=TTTargets(tree={"fam_id": None}),
+        input_data=InputData.tree(tree=minimal_data_tree),
+        include_warn_nodes=False,
+        backend=backend,
+    )
 
 
 @pytest.mark.skipif(jax is None, reason="Jax is not installed")

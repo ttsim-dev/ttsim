@@ -142,14 +142,14 @@ def input_columns(
 
 @interface_function()
 def root_nodes(
-    specialized_environment__tax_transfer_dag: nx.DiGraph,
+    specialized_environment__tt_dag: nx.DiGraph,
     processed_data_columns: UnorderedQNames,
 ) -> UnorderedQNames:
     """Names of the columns in `processed_data` required for the tax transfer function.
 
     Parameters
     ----------
-    specialized_environment__tax_transfer_dag:
+    specialized_environment__tt_dag:
         The tax transfer DAG.
     processed_data:
         The processed data.
@@ -161,9 +161,8 @@ def root_nodes(
     """
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
-        specialized_environment__tax_transfer_dag,
-        filter_node=lambda n: specialized_environment__tax_transfer_dag.in_degree(n)
-        == 0,
+        specialized_environment__tt_dag,
+        filter_node=lambda n: specialized_environment__tt_dag.in_degree(n) == 0,
     ).nodes
 
     # Restrict the passed data to the subset that is actually used.

@@ -26,6 +26,9 @@ class WarnIf(MainTargetABC):
     evaluation_date_set_in_multiple_places: str = (
         "warn_if__evaluation_date_set_in_multiple_places"
     )
+    tt_dag_includes_function_with_warn_msg_if_included_set: str = (
+        "warn_if__tt_dag_includes_function_with_warn_msg_if_included_set"
+    )
 
 
 @dataclass(frozen=True)
@@ -66,6 +69,9 @@ class FailIf(MainTargetABC):
         "fail_if__targets_are_not_in_specialized_environment_or_data"
     )
     targets_tree_is_invalid: str = "fail_if__targets_tree_is_invalid"
+    tt_dag_includes_function_with_fail_msg_if_included_set: str = (
+        "fail_if__tt_dag_includes_function_with_fail_msg_if_included_set"
+    )
 
 
 @dataclass(frozen=True)
@@ -94,8 +100,8 @@ class SpecializedEnvironment(MainTargetABC):
     with_partialled_params_and_scalars: str = (
         "specialized_environment__with_partialled_params_and_scalars"
     )
-    tax_transfer_dag: str = "specialized_environment__tax_transfer_dag"
-    tax_transfer_function: str = "specialized_environment__tax_transfer_function"
+    tt_dag: str = "specialized_environment__tt_dag"
+    tt_function: str = "specialized_environment__tt_function"
 
 
 @dataclass(frozen=True)
