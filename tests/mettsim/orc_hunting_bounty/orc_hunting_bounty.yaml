@@ -16,8 +16,8 @@ raw_bounties_per_orc:
       noble_hunter: 100
 bounty_topup_by_age:
   name:
-    de: Gefahrenzulagenfaktor abhängig vom Alter
-    en: Bounty topup factor depending on age
+    de: Altersabhängiger Gefahrenzulagenfaktor
+    en: Age-dependent bounty topup factor
   description:
     de: Test für den Typ sparse_dict_with_int_keys
     en: Test the sparse_dict_with_int_keys type

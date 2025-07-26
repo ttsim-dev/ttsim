@@ -346,16 +346,17 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
 
 
 def convert_sparse_dict_to_consecutive_int_lookup_table(
-    raw: dict[str | int, Any],
+    raw: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any],
     xnp: ModuleType,
 ) -> ConsecutiveIntLookupTableParamValue:
     """Convert sparse dict to consecutive int lookup table.
 
     Converts a dict with sparse integer keys to a consecutive int lookup table by
-    filling in the gaps with the last defined value.
+    filling in the gaps with the last value that is explicitly defined.
 
     Args:
-        raw: Dictionary with sparse integer keys and float values
+        raw: Dictionary with sparse integer keys and float values. Special keys
+             are 'min_int_in_table' and 'max_int_in_table'.
         xnp: NumPy-like module (numpy or jax.numpy)
 
     Returns:
@@ -365,13 +366,25 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
 
     Example:
         >>> result = convert_sparse_dict_to_consecutive_int_lookup_table(
-        ...     raw={1: 1, 3: 3, 'min_int_in_table': 0, 'max_int_in_table': 5},
+        ...     raw={
+        ...         1: 1,
+        ...         3: 3,
+        ...         "min_int_in_table": 0,
+        ...         "max_int_in_table": 5,
+        ...     },
         ...     xnp=xnp,
-        ... )
+        ...     )
         >>> result.value
-        {0: 1, 1: 1, 2: 1, 3: 3, 4: 3, 5: 3}
+        {
+            0: 1,
+            1: 1,
+            2: 1,
+            3: 3,
+            4: 3,
+            5: 3
+        }
     """
-    tmp: dict[str | int, Any] = raw.copy()
+    tmp: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any] = raw.copy()
 
     _fail_if_raw_not_dict(tmp)
     _fail_if_raw_missing_min_max_int_in_table_keys(tmp)
@@ -400,14 +413,16 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
     )
 
 
-def _fail_if_raw_not_dict(raw: dict[str | int, Any]) -> None:
+def _fail_if_raw_not_dict(
+    raw: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any],
+) -> None:
     if not isinstance(raw, dict):
         msg = f"The raw dictionary must be a dictionary. You provided: {type(raw)}"
         raise TypeError(msg)
 
 
 def _fail_if_raw_missing_min_max_int_in_table_keys(
-    raw: dict[str | int, Any],
+    raw: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any],
 ) -> None:
     if "min_int_in_table" not in raw or "max_int_in_table" not in raw:
         msg = (
@@ -418,7 +433,7 @@ def _fail_if_raw_missing_min_max_int_in_table_keys(
     if not isinstance(raw["min_int_in_table"], int) or not isinstance(
         raw["max_int_in_table"], int
     ):
-        msg = "The 'min_int_in_table' and 'max_int_in_table' keys must be integers."
+        msg = "The 'min_int_in_table' and 'max_int_in_table' values must be integers."
         raise TypeError(msg)
 
 
