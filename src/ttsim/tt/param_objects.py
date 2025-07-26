@@ -346,7 +346,7 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
 
 
 def convert_sparse_dict_to_consecutive_int_lookup_table(
-    raw: dict[int, float],
+    raw: Any,  # noqa: ANN401
     xnp: ModuleType,
 ) -> ConsecutiveIntLookupTableParamValue:
     """Convert sparse dict to consecutive int lookup table.
@@ -372,18 +372,18 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
         >>> result.value
         {0: 1, 1: 1, 2: 1, 3: 3, 4: 3}
     """
-    min_int_in_table: int = raw.pop("min_int_in_table")  # type: ignore[call-overload]
-    max_int_in_table: int = raw.pop("max_int_in_table")  # type: ignore[call-overload]
+    tmp: dict[int, Any] = raw.copy()
+    min_int_in_table: int = raw.pop("min_int_in_table")
+    max_int_in_table: int = raw.pop("max_int_in_table")
 
-    _fail_if_raw_not_dict_with_int_keys(raw)
+    _fail_if_raw_not_dict_with_int_keys(tmp)
     _fail_if_raw_incompatible_with_min_max_int_in_table(
-        raw=raw,
+        raw=tmp,
         min_int_in_table=min_int_in_table,
         max_int_in_table=max_int_in_table,
     )
-    tmp = raw.copy()
     keys_in_raw: list[int] = sorted(tmp.keys())
-    full_table: dict[int, float] = {}
+    full_table: dict[int, Any] = {}
     for a in range(min_int_in_table, max_int_in_table):
         if a < min(keys_in_raw):
             full_table[a] = tmp[min(keys_in_raw)]
@@ -398,7 +398,7 @@ def convert_sparse_dict_to_consecutive_int_lookup_table(
 
 
 def _fail_if_raw_incompatible_with_min_max_int_in_table(
-    raw: dict[int, float],
+    raw: dict[int, Any],
     min_int_in_table: int,
     max_int_in_table: int,
 ) -> None:
@@ -418,7 +418,7 @@ def _fail_if_raw_incompatible_with_min_max_int_in_table(
         raise ValueError(msg)
 
 
-def _fail_if_raw_not_dict_with_int_keys(raw: dict[int, float]) -> None:
+def _fail_if_raw_not_dict_with_int_keys(raw: dict[int, Any]) -> None:
     if not isinstance(raw, dict):
         msg = f"The raw dictionary must be a dictionary. You provided: {type(raw)}"
         raise TypeError(msg)
