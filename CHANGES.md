@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0a2 — 2025-07-xx
 
+- {gh}`14` Do not loop over the attributes of Jax arrays in
+  `fail_if.backend_has_changed` ({ghuser}`hmgaudecker`)
+
 - {gh}`13` Put `plot_tt_dag` and `plot_interface_dag` into `ttsim.plot.dag` namespace;
   rename to `tt` and `interface`. ({ghuser}`MImmesberger`)
 
