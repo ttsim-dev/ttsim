@@ -31,6 +31,7 @@ from ttsim.interface_dag_elements.fail_if import (
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_columns_missing_in_df,
     input_df_mapper_has_incorrect_format,
+    non_convertible_objects_in_results_tree,
     param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
@@ -799,6 +800,61 @@ def test_fail_if_non_convertible_objects_in_results_tree_because_of_object_lengt
             rounding=False,
             backend=backend,
         )
+
+
+@pytest.mark.parametrize(
+    "results_numbers",
+    [
+        1.5,
+        numpy.array([1.5]),
+        numpy.array([1.5, 2.5, 3.5]),
+    ],
+)
+def test_fail_if_non_convertible_objects_in_results_tree_passes_with_correct_length(
+    results_numbers,
+    minimal_data_tree,
+    xnp,
+    backend,
+):
+    if isinstance(results_numbers, numpy.ndarray):
+        results__tree = {"some_col": xnp.array(results_numbers)}
+    else:
+        results__tree = {"some_number": results_numbers}
+
+    processed_data = main(
+        main_target=MainTarget.processed_data,
+        input_data={"tree": minimal_data_tree},
+        tt_targets={"tree": {}},
+        backend=backend,
+    )
+    non_convertible_objects_in_results_tree(
+        processed_data=processed_data,
+        results__tree=results__tree,
+        backend=backend,
+        xnp=xnp,
+    )
+
+
+@pytest.mark.skipif_numpy
+def test_fail_if_non_convertible_objects_in_results_tree_passes_with_unsized_jax_array(
+    minimal_data_tree,
+    xnp,
+    backend,
+):
+    results__tree = {"some_col": xnp.array(1.5)}
+    assert results__tree["some_col"].shape == ()
+    processed_data = main(
+        main_target=MainTarget.processed_data,
+        input_data={"tree": minimal_data_tree},
+        tt_targets={"tree": {}},
+        backend=backend,
+    )
+    non_convertible_objects_in_results_tree(
+        processed_data=processed_data,
+        results__tree=results__tree,
+        backend=backend,
+        xnp=xnp,
+    )
 
 
 def test_fail_if_p_id_does_not_exist(xnp):
