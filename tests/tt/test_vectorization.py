@@ -64,7 +64,8 @@ def test_compare_str():
 def f0(x):
     if x < 0:
         return 0
-    return 1
+    else:
+        return 1
 
 
 def f0_exp(x):
@@ -706,7 +707,8 @@ def test_make_vectorizable_nested_func():
 def scalar_func(x: int) -> int:
     if x < 0:
         return 0
-    return x * 2
+    else:
+        return x * 2
 
 
 @policy_function(vectorization_strategy="not_required")
