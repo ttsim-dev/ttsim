@@ -16,7 +16,7 @@ from ttsim.tt.param_objects import (
     ScalarParam,
 )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
+METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 
 def test_load_path():

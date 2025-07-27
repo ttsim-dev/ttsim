@@ -1,3 +1,10 @@
+[run]
+source =
+    src/ttsim
+omit =
+    src/ttsim/typing.py
+branch = True
+
 [report]
 exclude_lines =
     pragma: no cover

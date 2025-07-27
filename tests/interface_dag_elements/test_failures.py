@@ -62,7 +62,7 @@ if TYPE_CHECKING:
         PolicyEnvironment,
     )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
+METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 _GENERIC_PARAM_HEADER = {
     "name": {"de": "foo", "en": "foo"},
@@ -138,7 +138,7 @@ def minimal_input_data():
 def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
-        orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
+        orig_policy_objects={"root": Path(__file__).parent.parent / "middle_earth"},
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )

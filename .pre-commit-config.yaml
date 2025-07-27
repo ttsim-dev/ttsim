@@ -97,7 +97,7 @@ repos:
         name: Validate JSON/YAML files against schema
         entry: check-jsonschema
         language: python
-        files: ^tests/mettsim/.*\.(yaml|yml)$
+        files: ^tests/middle_earth/.*\.(yaml|yml)$
         args:
           - --schemafile=src/ttsim/params-schema.json
 ci:

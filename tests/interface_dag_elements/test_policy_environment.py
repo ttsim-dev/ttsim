@@ -28,7 +28,7 @@ if TYPE_CHECKING:
         NestedColumnObjectsParamFunctions,
     )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
+METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 
 @pytest.fixture(scope="module")

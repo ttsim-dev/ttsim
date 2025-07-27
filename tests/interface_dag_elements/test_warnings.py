@@ -40,7 +40,7 @@ def another_func(some_func: int) -> int:
 def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
-        orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
+        orig_policy_objects={"root": Path(__file__).parent.parent / "middle_earth"},
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )

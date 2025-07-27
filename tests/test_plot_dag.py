@@ -267,7 +267,7 @@ def test_node_selector(node_selector, expected_nodes, backend):
     environment = main(
         main_target="policy_environment",
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        orig_policy_objects={"root": Path(__file__).parent / "middle_earth"},
         backend=backend,
     )
     dag = _get_tt_dag_with_node_metadata(
