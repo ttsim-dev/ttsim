@@ -28,7 +28,7 @@ METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 
 POLICY_TEST_IDS_AND_CASES = load_policy_cases(
-    policy_cases_dir=Path(__file__).parent.parent
+    policy_cases_root=Path(__file__).parent.parent
     / "tests_middle_earth"
     / "policy_cases",
     policy_name="",
