@@ -61,8 +61,8 @@ class PolicyTest:
         "info",
         "input_tree",
         "path",
+        "policy_cases_dir",
         "policy_date",
-        "test_data_dir",
         "xnp",
     )
 
@@ -73,7 +73,7 @@ class PolicyTest:
         expected_output_tree: NestedData,
         path: Path,
         policy_date: datetime.date,
-        test_data_dir: Path,
+        policy_cases_dir: Path,
         xnp: ModuleType,
     ) -> None:
         self.info = info
@@ -81,7 +81,7 @@ class PolicyTest:
         self.expected_output_tree = expected_output_tree
         self.path = path
         self.policy_date = policy_date
-        self.test_data_dir = test_data_dir
+        self.policy_cases_dir = policy_cases_dir
         self.xnp = xnp
 
     @property
@@ -93,7 +93,7 @@ class PolicyTest:
 
     @property
     def name(self) -> str:
-        return self.path.relative_to(self.test_data_dir).as_posix()
+        return self.path.relative_to(self.policy_cases_dir).as_posix()
 
 
 def execute_test(
@@ -157,20 +157,20 @@ expected[cols_with_differences]:
 
 
 def load_policy_test_data(
-    test_data_dir: Path,
+    policy_cases_dir: Path,
     policy_name: str,
     xnp: ModuleType,
 ) -> dict[str, PolicyTest]:
     """Load all tests found by recursively searching
 
-        test_data_dir / policy_name
+        policy_cases_dir / policy_name
 
     for yaml files.
 
-    If `policy_name` is empty, all tests found in `test_data_dir` are loaded.
+    If `policy_name` is empty, all tests found in `policy_cases_dir` are loaded.
     """
     out = {}
-    for path_to_yaml in (test_data_dir / policy_name).glob("**/*.yaml"):
+    for path_to_yaml in (policy_cases_dir / policy_name).glob("**/*.yaml"):
         if _is_skipped(path_to_yaml):
             continue
 
@@ -178,7 +178,7 @@ def load_policy_test_data(
             raw_test_data: NestedData = yaml.safe_load(file)
 
             this_test = _get_policy_test_from_raw_test_data(
-                test_data_dir=test_data_dir,
+                policy_cases_dir=policy_cases_dir,
                 raw_test_data=raw_test_data,
                 path_to_yaml=path_to_yaml,
                 xnp=xnp,
@@ -193,7 +193,7 @@ def _is_skipped(test_file: Path) -> bool:
 
 
 def _get_policy_test_from_raw_test_data(
-    test_data_dir: Path,
+    policy_cases_dir: Path,
     path_to_yaml: Path,
     raw_test_data: NestedData,
     xnp: ModuleType,
@@ -238,7 +238,7 @@ def _get_policy_test_from_raw_test_data(
         expected_output_tree=expected_output_tree,
         path=path_to_yaml,
         policy_date=policy_date,
-        test_data_dir=test_data_dir,
+        policy_cases_dir=policy_cases_dir,
         xnp=xnp,
     )
 

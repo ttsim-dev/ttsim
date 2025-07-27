@@ -28,7 +28,9 @@ METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
-    test_data_dir=Path(__file__).parent.parent / "tests_middle_earth" / "test_data",
+    policy_cases_dir=Path(__file__).parent.parent
+    / "tests_middle_earth"
+    / "policy_cases",
     policy_name="",
     xnp=numpy,
 )
@@ -69,7 +71,7 @@ def orig_mettsim_objects():
     POLICY_TEST_IDS_AND_CASES.values(),
     ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
-def test_mettsim(test: PolicyTest, backend: Literal["numpy", "jax"]):
+def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
     execute_test(test=test, root=METTSIM_ROOT, backend=backend)
 
 
