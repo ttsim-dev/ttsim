@@ -13,7 +13,7 @@ from ttsim.testing_utils import (
     PolicyTest,
     check_env_completeness,
     execute_test,
-    load_policy_test_data,
+    load_policy_cases,
 )
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 
-POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
+POLICY_TEST_IDS_AND_CASES = load_policy_cases(
     policy_cases_dir=Path(__file__).parent.parent
     / "tests_middle_earth"
     / "policy_cases",

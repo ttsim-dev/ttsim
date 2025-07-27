@@ -156,7 +156,7 @@ expected[cols_with_differences]:
                 ) from e
 
 
-def load_policy_test_data(
+def load_policy_cases(
     policy_cases_dir: Path,
     policy_name: str,
     xnp: ModuleType,
