@@ -104,7 +104,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
         tt_targets=TTTargets(tree=TARGETS_TREE),
         policy_date_str="2025-01-01",
         rounding=False,
-        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        orig_policy_objects={"root": Path(__file__).parent / "middle_earth"},
         backend=backend,
     )
     pd.testing.assert_frame_equal(
@@ -119,7 +119,7 @@ def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     result_template = main(
         main_target=MainTarget.templates.input_data_dtypes,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        orig_policy_objects={"root": Path(__file__).parent / "middle_earth"},
         backend=backend,
         tt_targets=TTTargets(tree=TARGETS_TREE),
     )
@@ -135,7 +135,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
-        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        orig_policy_objects={"root": Path(__file__).parent / "middle_earth"},
         backend=backend,
     )
     input_data = InputData.tree(
@@ -215,7 +215,7 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
             }
         ),
         tt_targets=TTTargets(tree={"kin_id": None, "payroll_tax": {"amount_y": None}}),
-        orig_policy_objects={"root": Path(__file__).parent / "mettsim"},
+        orig_policy_objects={"root": Path(__file__).parent / "middle_earth"},
         backend=backend,
         include_warn_nodes=False,
     )

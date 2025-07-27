@@ -237,7 +237,7 @@ exclude = []
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 # Mostly things vectorization can't handle
-"tests/mettsim/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
+"tests/middle_earth/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 "tests/tt/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
 "tests/**/*.py" = ["ANN", "INP001", "PLR2004", "S101"]

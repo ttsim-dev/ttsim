@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ttsim.typing import PolicyEnvironment
 
 
-METTSIM_ROOT = Path(__file__).parent / "mettsim"
+METTSIM_ROOT = Path(__file__).parent / "middle_earth"
 
 
 def test_copy_single_scalar_param():

@@ -9,7 +9,7 @@ from ttsim.testing_utils import load_policy_test_data
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.tt.param_objects import DictParam, ScalarParam
 
-METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
+METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(

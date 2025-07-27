@@ -324,7 +324,7 @@ def test_fail_if_data_is_provided_but_no_tt_targets(backend, xnp):
                     "payroll_tax": {"amount_y": xnp.array([1, 2, 3])},
                 }
             },
-            orig_policy_objects={"root": Path(__file__).parent.parent / "mettsim"},
+            orig_policy_objects={"root": Path(__file__).parent.parent / "middle_earth"},
             backend=backend,
         )
 
