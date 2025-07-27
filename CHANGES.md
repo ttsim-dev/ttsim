@@ -4,7 +4,9 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## v1.0a3 — 2025-07-xx
+## v1.0a3 — 2025-07-27
+
+- {gh}`19` Clearer architecture ({ghuser}`hmgaudecker`)
 
 - {gh}`17` Add type for sparse dicts with int keys param. ({ghuser}`MImmesberger`)
 
