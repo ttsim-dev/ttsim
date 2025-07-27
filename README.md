@@ -1,6 +1,5 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/ttsim-backend)
 [![image](https://img.shields.io/conda/vn/conda-forge/ttsim-backend.svg)](https://anaconda.org/conda-forge/ttsim-backend)
-[![image](https://img.shields.io/conda/pn/conda-forge/ttsim-backend.svg)](https://anaconda.org/conda-forge/ttsim-backend)
 [![main](https://github.com/ttsim-dev/ttsim/actions/workflows/main.yaml/badge.svg)](https://github.com/ttsim-dev/ttsim/actions/workflows/main.yaml)
 [![image](https://codecov.io/gh/ttsim-dev/ttsim/branch/main/graph/badge.svg)](https://codecov.io/gh/ttsim-dev/ttsim)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
