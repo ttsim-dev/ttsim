@@ -4,7 +4,11 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## v1.0a2 — 2025-07-xx
+## v1.0a3 — 2025-07-xx
+
+- {gh}`17` Add type for sparse dicts with int keys param. ({ghuser}`MImmesberger`)
+
+## v1.0a2 — 2025-07-26
 
 - {gh}`16` Add fail/warn mechanism to ColumnObjects and ParamFunctions.
   ({ghuser}`hmgaudecker`)

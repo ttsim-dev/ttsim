@@ -343,3 +343,123 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
         raw={**before_phase_inout, **during_phase_inout, **after_phase_inout},
         xnp=xnp,
     )
+
+
+def convert_sparse_to_consecutive_int_lookup_table(
+    raw: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any],
+    xnp: ModuleType,
+) -> ConsecutiveIntLookupTableParamValue:
+    """Convert sparse dict to consecutive int lookup table.
+
+    Converts a dict with sparse integer keys to a consecutive int lookup table by
+    filling in the gaps with the last value that is explicitly defined.
+
+    Args:
+        raw: Dictionary with sparse integer keys and float values. Special keys
+             are 'min_int_in_table' and 'max_int_in_table'.
+        xnp: NumPy-like module (numpy or jax.numpy)
+
+    Returns:
+        ConsecutiveIntLookupTableParamValue: A lookup table with consecutive integer
+        keys from min_int_in_table to max_int_in_table, with gaps filled using the
+        last defined value.
+
+    Example:
+        >>> result = convert_sparse_to_consecutive_int_lookup_table(
+        ...     raw={
+        ...         1: 1,
+        ...         3: 3,
+        ...         "min_int_in_table": 0,
+        ...         "max_int_in_table": 5,
+        ...     },
+        ...     xnp=xnp,
+        ...     )
+        >>> result.value
+        {
+            0: 1,
+            1: 1,
+            2: 1,
+            3: 3,
+            4: 3,
+            5: 3
+        }
+    """
+    tmp: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any] = raw.copy()
+
+    _fail_if_raw_not_dict(tmp)
+    _fail_if_raw_missing_min_max_int_in_table_keys(tmp)
+
+    min_int_in_table: int = tmp.pop("min_int_in_table")
+    max_int_in_table: int = tmp.pop("max_int_in_table")
+
+    base_spec: dict[int, Any] = tmp  # type: ignore[assignment]
+    _fail_if_raw_incompatible_with_min_max_int_in_table(
+        raw=base_spec,
+        min_int_in_table=min_int_in_table,
+        max_int_in_table=max_int_in_table,
+    )
+    keys_in_base_spec: list[int] = sorted(base_spec.keys())
+    full_table: dict[int, Any] = {}
+    for a in range(min_int_in_table, max_int_in_table + 1):
+        if a < min(keys_in_base_spec):
+            full_table[a] = base_spec[min(keys_in_base_spec)]
+        elif a not in keys_in_base_spec:
+            full_table[a] = full_table[a - 1]
+        else:
+            full_table[a] = base_spec[a]
+    return get_consecutive_int_lookup_table_param_value(
+        raw=full_table,
+        xnp=xnp,
+    )
+
+
+def _fail_if_raw_not_dict(
+    raw: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any],
+) -> None:
+    if not isinstance(raw, dict):
+        msg = f"The raw dictionary must be a dictionary. You provided: {type(raw)}"
+        raise TypeError(msg)
+
+
+def _fail_if_raw_missing_min_max_int_in_table_keys(
+    raw: dict[int | Literal["min_int_in_table", "max_int_in_table"], Any],
+) -> None:
+    if "min_int_in_table" not in raw or "max_int_in_table" not in raw:
+        msg = (
+            "The raw dictionary must contain 'min_int_in_table' and 'max_int_in_table' "
+            "keys."
+        )
+        raise TypeError(msg)
+    if not isinstance(raw["min_int_in_table"], int) or not isinstance(
+        raw["max_int_in_table"], int
+    ):
+        msg = "The 'min_int_in_table' and 'max_int_in_table' values must be integers."
+        raise TypeError(msg)
+
+
+def _fail_if_raw_incompatible_with_min_max_int_in_table(
+    raw: dict[int, Any],
+    min_int_in_table: int,
+    max_int_in_table: int,
+) -> None:
+    key_types = {type(k) for k in raw}
+    if key_types != {int}:
+        msg = (
+            "The raw object must be a dictionary with int keys. You provided keys "
+            f"of type: {key_types}"
+        )
+        raise TypeError(msg)
+    if min(raw.keys()) < min_int_in_table:
+        msg = (
+            "The smallest integer in the lookup table must not be larger than the "
+            "smallest key in the raw dictionary. You provided the following values: "
+            f"min_int_in_table={min_int_in_table}, min(raw.keys())={min(raw.keys())}"
+        )
+        raise ValueError(msg)
+    if max(raw.keys()) >= max_int_in_table:
+        msg = (
+            "The largest integer in the lookup table must not be smaller than the "
+            "largest key in the raw dictionary. You provided the following values: "
+            f"max_int_in_table={max_int_in_table}, max(raw.keys())={max(raw.keys())}"
+        )
+        raise ValueError(msg)
