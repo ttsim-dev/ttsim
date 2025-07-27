@@ -210,7 +210,7 @@ class Transformer(ast.NodeTransformer):
         self.func_loc = func_loc
         self.xnp = xnp
 
-    def visit_Call(self, node: ast.Call) -> ast.AST:  # noqa: N802
+    def visit_Call(self, node: ast.Call) -> ast.AST:
         # Forbid type-conversion calls
         forbidden_type_conversions = {"float", "int", "bool", "complex", "str"}
         if hasattr(node.func, "id") and node.func.id in forbidden_type_conversions:
@@ -229,7 +229,7 @@ class Transformer(ast.NodeTransformer):
             xnp=self.xnp,
         )
 
-    def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST:  # noqa: N802
+    def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST:
         # Forbid any augmented assignment (+=, -=, *=, /=, etc.)
         msg = (
             "Augmented assignment is not allowed in vectorized functions. "
@@ -239,16 +239,16 @@ class Transformer(ast.NodeTransformer):
         )
         raise TranslateToVectorizableError(msg)
 
-    def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:  # noqa: N802
+    def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.UnaryOp | ast.Call:
         if isinstance(node.op, ast.Not):
             return _not_to_call(node, module=self.module)
         return node
 
-    def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:  # noqa: N802
+    def visit_BoolOp(self, node: ast.BoolOp) -> ast.Call:
         self.generic_visit(node)
         return _boolop_to_call(node, module=self.module)
 
-    def visit_If(  # noqa: N802
+    def visit_If(
         self,
         node: ast.If,
     ) -> ast.Call | ast.Return | ast.Assign | ast.AugAssign:
@@ -264,7 +264,7 @@ class Transformer(ast.NodeTransformer):
             out = call
         return out
 
-    def visit_IfExp(self, node: ast.IfExp) -> ast.AST:  # noqa: N802
+    def visit_IfExp(self, node: ast.IfExp) -> ast.AST:
         self.generic_visit(node)
         return _ifexp_to_call(node, module=self.module)
 
