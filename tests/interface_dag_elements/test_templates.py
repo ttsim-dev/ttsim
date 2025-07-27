@@ -11,10 +11,9 @@ from ttsim.tt.param_objects import DictParam, ScalarParam
 
 METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 
-TEST_DIR = Path(__file__).parent
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
-    test_dir=TEST_DIR,
+    test_data_dir=Path(__file__).parent,
     policy_name="",
     xnp=numpy,
 )

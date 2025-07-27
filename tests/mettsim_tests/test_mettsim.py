@@ -28,7 +28,7 @@ METTSIM_ROOT = Path(__file__).parent.parent / "mettsim"
 
 
 POLICY_TEST_IDS_AND_CASES = load_policy_test_data(
-    test_dir=Path(__file__).parent.parent / "mettsim_tests",
+    test_data_dir=Path(__file__).parent.parent / "mettsim_tests",
     policy_name="",
     xnp=numpy,
 )
