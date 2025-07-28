@@ -5,7 +5,7 @@
 [project]
 # Basic information
 name = "mettsim"
-dynamic = ["version"]
+version = "0.0.0"
 description = "The Middle Earth Taxes and Transfers SIMulator"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
@@ -53,11 +53,8 @@ Tracker = "https://github.com/ttsim-dev/ttsim/issues"
 # ======================================================================================
 
 [build-system]
-requires = ["hatchling", "hatch_vcs"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.build.hooks.vcs]
-version-file = "_version.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = ["tests_middle_earth"]
@@ -66,9 +63,6 @@ only-packages = true
 [tool.hatch.build.targets.wheel]
 only-include = ["."]
 sources = ["."]
-
-[tool.hatch.version]
-source = "vcs"
 
 [tool.hatch.metadata]
 allow-direct-references = true
