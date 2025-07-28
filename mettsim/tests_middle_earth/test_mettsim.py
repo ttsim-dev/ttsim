@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy
 import pytest
 
+from mettsim import middle_earth
 from ttsim import main, plot
 from ttsim.main_args import InputData
 from ttsim.testing_utils import (
@@ -24,13 +24,11 @@ if TYPE_CHECKING:
         FlatOrigParamSpecs,
     )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
-
 
 POLICY_TEST_IDS_AND_CASES = load_policy_cases(
-    policy_cases_root=Path(__file__).parent.parent
-    / "tests_middle_earth"
-    / "policy_cases",
+    policy_cases_root=(
+        middle_earth.ROOT_PATH.parent / "tests_middle_earth" / "policy_cases"
+    ),
     policy_name="",
     xnp=numpy,
 )
@@ -44,7 +42,7 @@ def get_orig_mettsim_objects() -> dict[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
-        orig_policy_objects={"root": METTSIM_ROOT},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
     )["orig_policy_objects"]
 
 
@@ -72,13 +70,13 @@ def orig_mettsim_objects():
     ids=POLICY_TEST_IDS_AND_CASES.keys(),
 )
 def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
-    execute_test(test=test, root=METTSIM_ROOT, backend=backend)
+    execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
 
 
 def test_mettsim_policy_environment_dag_with_params():
     plot.dag.tt(
         policy_date_str="2020-01-01",
-        root=METTSIM_ROOT,
+        root=middle_earth.ROOT_PATH,
         include_params=True,
         title="METTSIM Policy Environment DAG with parameters",
         show_node_description=True,
@@ -88,7 +86,7 @@ def test_mettsim_policy_environment_dag_with_params():
 def test_mettsim_policy_environment_dag_without_params():
     plot.dag.tt(
         policy_date_str="2020-01-01",
-        root=METTSIM_ROOT,
+        root=middle_earth.ROOT_PATH,
         include_params=False,
         title="METTSIM Policy Environment DAG without parameters",
         show_node_description=True,
@@ -119,7 +117,7 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
             main_target="results__tree",
             policy_date_str="2020-01-01",
             input_data=InputData.flat(data),
-            orig_policy_objects={"root": METTSIM_ROOT},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
             tt_targets={"tree": {"property_tax": {"amount_y": None}}},
             backend=backend,
         )

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
+from mettsim import middle_earth
 from ttsim.main import main
 from ttsim.plot.dag.interface import interface
 from ttsim.plot.dag.tt import (
@@ -267,7 +266,7 @@ def test_node_selector(node_selector, expected_nodes, backend):
     environment = main(
         main_target="policy_environment",
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": Path(__file__).parent / "middle_earth"},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
         backend=backend,
     )
     dag = _get_tt_dag_with_node_metadata(

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import datetime
 import warnings
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy
 import pandas as pd
 import pytest
 
+from mettsim import middle_earth
 from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt import ScalarParam, group_creation_function, policy_function
 
@@ -40,7 +40,7 @@ def another_func(some_func: int) -> int:
 def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
-        orig_policy_objects={"root": Path(__file__).parent.parent / "middle_earth"},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )

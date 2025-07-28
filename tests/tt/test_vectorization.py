@@ -4,7 +4,6 @@ import datetime
 import functools
 import inspect
 import string
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
@@ -12,6 +11,7 @@ import numpy
 import pytest
 from numpy.testing import assert_array_equal
 
+from mettsim import middle_earth
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
 )
@@ -348,7 +348,7 @@ for year in range(1990, 2023):
             for funcname, pf in dt.flatten_to_tree_paths(
                 _active_column_objects_and_param_functions(
                     orig=column_objects_and_param_functions(
-                        root=Path(__file__).parent.parent / "middle_earth"
+                        root=middle_earth.ROOT_PATH
                     ),
                     policy_date=datetime.date(year=year, month=1, day=1),
                 ),
@@ -380,7 +380,7 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
     income__amount_m_fam = 1000.0
     assistance_rate = 0.8
 
-    from tests.middle_earth.housing_benefits.amount import (  # noqa: PLC0415
+    from mettsim.middle_earth.housing_benefits.amount import (  # noqa: PLC0415
         amount_m_fam,
     )
 
@@ -450,7 +450,7 @@ def test_payroll_tax_amount_y(backend, xnp):
     wealth_fam = 30000.0  # Below threshold
     wealth_threshold_for_reduced_tax_rate = 40000.0
 
-    from tests.middle_earth.payroll_tax.amount import amount_y  # noqa: PLC0415
+    from mettsim.middle_earth.payroll_tax.amount import amount_y  # noqa: PLC0415
 
     exp_standard = amount_y.function(
         amount_standard_y=amount_standard_y,
@@ -554,7 +554,7 @@ def test_orc_hunting_bounty_amount(backend, xnp):
         },
     )()
 
-    from tests.middle_earth.orc_hunting_bounty.orc_hunting_bounty import (  # noqa: PLC0415
+    from mettsim.middle_earth.orc_hunting_bounty.orc_hunting_bounty import (  # noqa: PLC0415
         amount_without_topup,
     )
 

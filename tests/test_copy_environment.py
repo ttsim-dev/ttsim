@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import optree
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
     from ttsim.typing import PolicyEnvironment
 
 
-METTSIM_ROOT = Path(__file__).parent / "middle_earth"
+from mettsim import middle_earth
 
 
 def test_copy_single_scalar_param():
@@ -65,7 +64,7 @@ def test_copy_full_policy_environment():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": METTSIM_ROOT},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
     )
 
     copied_env = copy_environment(policy_env)
@@ -103,7 +102,7 @@ def test_deepcopy_fails_on_policy_environment():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": METTSIM_ROOT},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
     )
 
     with pytest.raises((TypeError, AttributeError)) as excinfo:
@@ -119,7 +118,7 @@ def test_copy_environment_works_where_deepcopy_fails():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": METTSIM_ROOT},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
     )
 
     # Confirm deepcopy fails
@@ -176,7 +175,7 @@ def test_policy_environment_type_inference():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": METTSIM_ROOT},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
     )
 
     # Type checker should infer PolicyEnvironment -> PolicyEnvironment
