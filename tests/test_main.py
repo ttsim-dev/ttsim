@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import inspect
-from pathlib import Path
 
 import dags
 import dags.tree as dt
 import optree
 import pytest
 
+from mettsim import middle_earth
 from ttsim import InputData, OrigPolicyObjects, TTTargets
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
@@ -324,7 +324,7 @@ def test_fail_if_data_is_provided_but_no_tt_targets(backend, xnp):
                     "payroll_tax": {"amount_y": xnp.array([1, 2, 3])},
                 }
             },
-            orig_policy_objects={"root": Path(__file__).parent.parent / "middle_earth"},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
             backend=backend,
         )
 

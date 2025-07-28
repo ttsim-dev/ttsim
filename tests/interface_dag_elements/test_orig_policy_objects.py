@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
+from mettsim import middle_earth
 from ttsim.interface_dag_elements.orig_policy_objects import (
     _find_files_recursively,
     load_module,
@@ -16,13 +15,11 @@ from ttsim.tt.param_objects import (
     ScalarParam,
 )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
-
 
 def test_load_path():
     assert load_module(
-        path=METTSIM_ROOT / "payroll_tax" / "amount.py",
-        root=METTSIM_ROOT,
+        path=middle_earth.ROOT_PATH / "payroll_tax" / "amount.py",
+        root=middle_earth.ROOT_PATH,
     )
 
 
@@ -30,7 +27,7 @@ def test_dont_load_init_py():
     """Don't load __init__.py files as sources for PolicyFunctions and
     AggregationSpecs.
     """
-    all_files = _find_files_recursively(root=METTSIM_ROOT, suffix=".py")
+    all_files = _find_files_recursively(root=middle_earth.ROOT_PATH, suffix=".py")
     assert "__init__.py" not in [file.name for file in all_files]
 
 

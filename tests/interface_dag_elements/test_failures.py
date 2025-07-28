@@ -3,13 +3,14 @@ from __future__ import annotations
 import copy
 import datetime
 import re
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+
+from mettsim import middle_earth
 
 try:
     import jax
@@ -62,7 +63,6 @@ if TYPE_CHECKING:
         PolicyEnvironment,
     )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
 
 _GENERIC_PARAM_HEADER = {
     "name": {"de": "foo", "en": "foo"},
@@ -138,7 +138,7 @@ def minimal_input_data():
 def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
-        orig_policy_objects={"root": Path(__file__).parent.parent / "middle_earth"},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )
@@ -1249,7 +1249,7 @@ def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
         main(
             input_data=InputData.df_and_mapper(df=df, mapper=mapper),
             main_target=MainTarget.results.df_with_mapper,
-            orig_policy_objects={"root": METTSIM_ROOT},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
             tt_targets=TTTargets(qname={"d": None}),
             policy_date_str="2025-01-01",
             backend=backend,
@@ -1302,7 +1302,7 @@ def test_invalid_tt_targets_tree(
                     "kin_id": xnp.array([0, 1, 2]),
                 }
             ),
-            orig_policy_objects={"root": METTSIM_ROOT},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
             policy_date_str="2025-01-01",
             tt_targets={"tree": tt_targets__tree},
         )
@@ -1337,7 +1337,7 @@ def test_invalid_input_data_tree_via_main(
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             policy_date_str="2025-01-01",
-            orig_policy_objects={"root": METTSIM_ROOT},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
             input_data=InputData.tree(tree=input_data_tree_with_p_id),
             tt_targets=TTTargets(tree={"p_id": None}),
             backend=backend,
@@ -1448,7 +1448,7 @@ def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"])
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             policy_date_str="2025-01-01",
-            orig_policy_objects={"root": METTSIM_ROOT},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
             input_data=InputData.tree(tree=object()),
             tt_targets=TTTargets(tree={"p_id": None}),
             backend=backend,
@@ -1495,7 +1495,7 @@ def test_raise_tt_root_nodes_are_missing_without_input_data(
             policy_date_str="2025-01-01",
             main_target=main_target,
             backend=backend,
-            orig_policy_objects={"root": METTSIM_ROOT},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
         )
 
 
@@ -1514,7 +1514,7 @@ def test_raise_some_error_without_input_data(
             policy_date_str="2025-01-01",
             main_target=MainTarget.results.df_with_mapper,
             backend=backend,
-            orig_policy_objects={"root": METTSIM_ROOT},
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
         )
 
 
@@ -1587,7 +1587,7 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
-        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
+        orig_policy_objects=OrigPolicyObjects(root=middle_earth.ROOT_PATH),
         backend="jax",
     )
     input_data = InputData.tree(
@@ -1626,7 +1626,7 @@ def test_backend_has_changed_from_numpy_for_processed_data_to_jax_passes():
     main(
         main_target=MainTarget.results.df_with_nested_columns,
         policy_date_str="2000-01-01",
-        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
+        orig_policy_objects=OrigPolicyObjects(root=middle_earth.ROOT_PATH),
         input_data=input_data,
         processed_data=processed_data,
         tt_targets=TTTargets(tree={"property_tax": {"amount_y": None}}),
@@ -1641,7 +1641,7 @@ def test_backend_has_changed_from_numpy_for_policy_environment_to_jax_raises(
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
-        orig_policy_objects=OrigPolicyObjects(root=METTSIM_ROOT),
+        orig_policy_objects=OrigPolicyObjects(root=middle_earth.ROOT_PATH),
         backend="numpy",
     )
     input_data = InputData.tree(

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import optree
@@ -28,7 +27,7 @@ if TYPE_CHECKING:
         NestedColumnObjectsParamFunctions,
     )
 
-METTSIM_ROOT = Path(__file__).parent.parent / "middle_earth"
+from mettsim import middle_earth
 
 
 @pytest.fixture(scope="module")
@@ -81,7 +80,7 @@ def test_add_jahresanfang(xnp: ModuleType):
 def test_input_is_recognized_as_potential_group_id(backend):
     assert "kin" in main(
         main_target="labels__grouping_levels",
-        orig_policy_objects={"root": METTSIM_ROOT},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -90,7 +89,7 @@ def test_input_is_recognized_as_potential_group_id(backend):
 def test_p_id_not_recognized_as_potential_group_id(backend):
     assert "p" not in main(
         main_target="labels__grouping_levels",
-        orig_policy_objects={"root": METTSIM_ROOT},
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -203,7 +202,7 @@ def test_active_tree_with_column_objects_and_param_functions(
     function_name_last_day: str,
     function_name_next_day: str,
 ):
-    orig = column_objects_and_param_functions(root=METTSIM_ROOT)
+    orig = column_objects_and_param_functions(root=middle_earth.ROOT_PATH)
     functions_last_day = _active_column_objects_and_param_functions(
         orig=orig,
         policy_date=last_day,
