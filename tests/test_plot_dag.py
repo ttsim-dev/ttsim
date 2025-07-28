@@ -120,7 +120,6 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
                 type="ancestors",
             ),
             [
-                "xnp",  # not part of the plot, will be removed by a downstream func
                 "evaluation_year",
                 "property_tax__acre_size_in_hectares",
                 "property_tax__acre_size_in_hectares_after_cap",
@@ -310,3 +309,18 @@ def test_params_are_removed_from_dag(include_params, expected_nodes):
         include_params=include_params,
     )
     assert set(dag.nodes()) == set(expected_nodes)
+
+
+def test_orphaned_policy_inputs_are_removed_from_dag():
+    environment = main(
+        main_target="policy_environment",
+        policy_date_str="2025-01-01",
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        backend="numpy",
+    )
+    dag = _get_tt_dag_with_node_metadata(
+        environment=environment,
+        include_params=True,
+    )
+    assert "evaluation_day" not in dag.nodes()
+    assert "policy_day" not in dag.nodes()
