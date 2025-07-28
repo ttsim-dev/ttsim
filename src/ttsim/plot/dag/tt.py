@@ -182,8 +182,8 @@ def _get_tt_dag_with_node_metadata(
     ]:
         if (
             x in selected_dag.nodes()
-            and not list(selected_dag.predecessors(x))
-            and not list(selected_dag.successors(x))
+            and not set(selected_dag.predecessors(x))
+            and not set(selected_dag.successors(x))
         ):
             selected_dag.remove_node(x)
 

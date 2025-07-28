@@ -311,7 +311,7 @@ def test_params_are_removed_from_dag(include_params, expected_nodes):
     assert set(dag.nodes()) == set(expected_nodes)
 
 
-def test_orphaned_policy_inputs_are_removed_from_dag():
+def test_orphaned_dates_are_removed_from_dag():
     environment = main(
         main_target="policy_environment",
         policy_date_str="2025-01-01",
