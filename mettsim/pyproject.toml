@@ -1,0 +1,74 @@
+# ======================================================================================
+# Project metadata
+# ======================================================================================
+
+[project]
+# Basic information
+name = "mettsim"
+dynamic = ["version"]
+description = "The Middle Earth Taxes and Transfers SIMulator"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE" }
+# About the project
+authors = [
+    { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
+    { name = "Marvin Immesberger" },
+]
+maintainers = [
+    { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },
+    { name = "Marvin Immesberger" }
+]
+keywords = [
+    "Testing",
+    "Taxes",
+    "Benefits",
+    "Transfers",
+    "Pensions",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+# Dependencies and requirements
+requires-python = ">=3.11"
+
+
+[project.urls]
+Repository = "https://github.com/ttsim-dev/ttsim"
+Changelog = "https://gettsim.readthedocs.io/en/stable/changes.html"
+Documentation = "https://gettsim.readthedocs.io"
+Github = "https://github.com/ttsim-dev/ttsim"
+Tracker = "https://github.com/ttsim-dev/ttsim/issues"
+
+
+# ======================================================================================
+# Build system configuration
+# ======================================================================================
+
+[build-system]
+requires = ["hatchling", "hatch_vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "_version.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["tests_middle_earth"]
+only-packages = true
+
+[tool.hatch.build.targets.wheel]
+only-include = ["."]
+sources = ["."]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.metadata]
+allow-direct-references = true

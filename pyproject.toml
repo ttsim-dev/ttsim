@@ -125,6 +125,7 @@ toml = "*"
 
 [tool.pixi.pypi-dependencies]
 ttsim-backend = {path = ".", editable = true}
+mettsim = {path = "mettsim", editable = true}
 jaxtyping = ">=0.3.2"
 kaleido = ">=1.0.0"
 pdbp = ">=1.7.1"
@@ -237,10 +238,11 @@ exclude = []
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 # Mostly things vectorization can't handle
-"tests/middle_earth/**/*.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
+"mettsim/middle_earth/**/*.py" = ["PLR1714", "PLR1716", "PLR2004", "E721", "SIM108", "RET"]
 "tests/tt/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]
 # All tests return None and use asserts
 "tests/**/*.py" = ["ANN", "INP001", "PLR2004", "S101"]
+"mettsim/tests_middle_earth/*.py" = ["ANN", "INP001", "PLR2004", "S101"]
 # Long lines.
 "tests/interface_dag_elements/test_failures.py" = ["E501"]
 
@@ -270,7 +272,7 @@ disallow_untyped_defs = false
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = ["tests.*",]
+module = ["tests.*", "mettsim.tests_middle_earth.*"]
 disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter source code.
 
 [[tool.mypy.overrides]]
