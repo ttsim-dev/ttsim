@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-from ttsim import TTTargets, main
+from typing import TYPE_CHECKING
+
+from mettsim import middle_earth
+from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.tt.param_objects import DictParam, ScalarParam
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 par1 = ScalarParam(
     value=1,
@@ -191,3 +197,24 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
         "a": {"inp2": "FloatColumn"},
         "inp1": "IntColumn",
     }
+
+
+def test_derived_functions_not_in_template_if_input_data_is_provided(xnp: ModuleType):
+    template = main(
+        main_target=MainTarget.templates.input_data_dtypes,
+        policy_date_str="2000-01-01",
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        tt_targets={"tree": {"wealth_tax": {"amount_y": None}}},
+        input_data=InputData.tree(
+            tree={
+                "p_id": xnp.array([0, 1, 2]),
+                "kin_id": xnp.array([0, 0, 0]),
+                "payroll_tax": {
+                    "amount_y": xnp.array([1000, 0, 0]),
+                },
+            }
+        ),
+    )
+
+    assert "wealth_fam" not in template
+    assert "wealth_kin" not in template
