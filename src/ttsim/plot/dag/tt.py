@@ -69,7 +69,7 @@ def tt(
     root
         The root path.
     node_selector
-        A NodeSelector to specify the nodes to plot.
+        The node selector. Default is None, i.e. the entire DAG is plotted.
     title
         The title of the plot.
     include_params
