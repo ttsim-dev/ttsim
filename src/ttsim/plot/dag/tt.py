@@ -19,8 +19,6 @@ from ttsim.tt import (
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Any
-    from collections.abc import Callable
 
     import plotly.graph_objects as go
 
@@ -79,10 +77,10 @@ def tt(
     output_path
         If provided, the figure is written to the path.
     input_node_paths
-        List of node paths to treat as inputs (i.e., exclude from computation and 
-        show as leaf nodes). Each path is a tuple of strings representing the path 
-        to a node in the policy tree. When provided, these nodes will be excluded 
-        from the DAG computation, effectively "pruning" the graph to show what 
+        List of node paths to treat as inputs (i.e., exclude from computation and
+        show as leaf nodes). Each path is a tuple of strings representing the path
+        to a node in the policy tree. When provided, these nodes will be excluded
+        from the DAG computation, effectively "pruning" the graph to show what
         would be computed if these values were provided as inputs.
 
     Returns
@@ -101,8 +99,8 @@ def tt(
         if node_selector is None:
             node_selector = NodeSelector(
                 node_paths=[],  # Empty list - we only care about the input_node_paths
-                type="nodes",   # Default type
-                input_node_paths=input_node_paths
+                type="nodes",  # Default type
+                input_node_paths=input_node_paths,
             )
         else:
             # Create a new NodeSelector with the input_node_paths added
@@ -116,8 +114,10 @@ def tt(
     if node_selector:
         input_qnames = None
         if node_selector.input_node_paths:
-            input_qnames = [dt.qname_from_tree_path(qn) for qn in node_selector.input_node_paths]
-        
+            input_qnames = [
+                dt.qname_from_tree_path(qn) for qn in node_selector.input_node_paths
+            ]
+
         qname_node_selector = _QNameNodeSelector(
             qnames=[dt.qname_from_tree_path(qn) for qn in node_selector.node_paths],
             type=node_selector.type,
@@ -180,16 +180,16 @@ def _get_tt_dag_with_node_metadata(
     if node_selector and node_selector.input_qnames:
         # Create pruned environment by excluding input nodes before conversion
         env_without_inputs = {
-            qn: n for qn, n in env.items() 
-            if qn not in node_selector.input_qnames
+            qn: n for qn, n in env.items() if qn not in node_selector.input_qnames
         }
         # Also filter targets to exclude input nodes
         targets_without_inputs = [
-            qn for qn in qnames_to_plot 
-            if qn not in node_selector.input_qnames
+            qn for qn in qnames_to_plot if qn not in node_selector.input_qnames
         ]
         all_nodes = convert_all_nodes_to_callables(env_without_inputs)
-        complete_dag = dags.create_dag(functions=all_nodes, targets=targets_without_inputs)  # type: ignore[arg-type]
+        complete_dag = dags.create_dag(
+            functions=all_nodes, targets=targets_without_inputs
+        )  # type: ignore[arg-type]
         # Use the original env for metadata since complete_dag may still reference pruned nodes
         metadata_env = env
     else:
