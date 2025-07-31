@@ -1,0 +1,22 @@
+---
+info:
+  note: ''
+  precision_atol: 0.01
+  source: ''
+inputs:
+  assumed: {}
+  provided:
+    p_id:
+      - 0
+    kin_id:
+      - 0
+    fam_id:
+      - 0
+    wealth:
+      - 2000
+outputs:
+  wealth_tax:
+    exempt_from_wealth_tax:
+      - false
+    amount_y:
+      - 20.0
