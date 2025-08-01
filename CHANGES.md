@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0a3 — 2025-07-27
 
+- {gh}`23` Remove orphaned policy inputs from the TT DAG. ({ghuser}`MImmesberger`)
+
 - {gh}`19` Clearer architecture ({ghuser}`hmgaudecker`)
 
 - {gh}`17` Add type for sparse dicts with int keys param. ({ghuser}`MImmesberger`)

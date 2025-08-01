@@ -379,6 +379,7 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
     eligibility__requirement_fulfilled_fam = True
     income__amount_m_fam = 1000.0
     assistance_rate = 0.8
+    max_amount_m_fam = 1000.0
 
     from mettsim.middle_earth.housing_benefits.amount import (  # noqa: PLC0415
         amount_m_fam,
@@ -388,6 +389,8 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
         eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
         income__amount_m_fam=income__amount_m_fam,
         assistance_rate=assistance_rate,
+        max_amount_m_fam=max_amount_m_fam,
+        xnp=xnp,
     )
     assert exp == 800.0
 
@@ -395,6 +398,8 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
         eligibility__requirement_fulfilled_fam=False,
         income__amount_m_fam=income__amount_m_fam,
         assistance_rate=assistance_rate,
+        max_amount_m_fam=max_amount_m_fam,
+        xnp=xnp,
     )
     assert exp_false == 0.0
 
@@ -410,6 +415,8 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
             eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
             income__amount_m_fam=income__amount_m_fam,
             assistance_rate=assistance_rate,
+            max_amount_m_fam=max_amount_m_fam,
+            xnp=xnp,
         )
 
     # Call converted function on array input and test result
@@ -423,6 +430,8 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
         eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
         income__amount_m_fam=income__amount_m_fam,
         assistance_rate=assistance_rate,
+        max_amount_m_fam=max_amount_m_fam,
+        xnp=xnp,
     )
     assert_array_equal(got, xnp.full(shape, exp))
 
@@ -435,6 +444,8 @@ def test_housing_benefits_amount_m_fam(backend, xnp):
         eligibility__requirement_fulfilled_fam=eligibility__requirement_fulfilled_fam,
         income__amount_m_fam=income__amount_m_fam,
         assistance_rate=assistance_rate,
+        max_amount_m_fam=max_amount_m_fam,
+        xnp=xnp,
     )
     expected_mixed = xnp.array([[800.0, 0.0], [0.0, 800.0]])
     assert_array_equal(got_mixed, expected_mixed)
