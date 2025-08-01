@@ -100,14 +100,7 @@ def tt(
         include_params=include_params,
     )
     # Remove backend, xnp, dnp, and num_segments from the TT DAG.
-    dag_with_node_metadata.remove_nodes_from(
-        [
-            "backend",
-            "xnp",
-            "dnp",
-            "num_segments",
-        ]
-    )
+
     fig = get_figure(
         dag=dag_with_node_metadata,
         title=title,
@@ -161,8 +154,41 @@ def _get_tt_dag_with_node_metadata(
             [qn for qn, v in env.items() if isinstance(v, (ParamObject, ParamFunction))]
         )
 
-    node_descriptions = _get_node_descriptions(env)
+    # Handle 'special' nodes
+    ## 1. Remove backend, xnp, dnp, and num_segments
+    selected_dag.remove_nodes_from(
+        [
+            "backend",
+            "xnp",
+            "dnp",
+            "num_segments",
+        ]
+    )
+    ## 2. Remove policy_x, evaluation_x; x \in {year, month, day, date} nodes if they
+    # are orphaned
+    # This may happen because these are policy inputs that may be inputs to param
+    # functions. Because the TT DAG is created **after** param functions are resolved,
+    # they show up as orphaned nodes in the DAG if no other column object depends on
+    # them. Hence, we remove them here explicitly.
+    for x in [
+        "policy_year",
+        "policy_month",
+        "policy_day",
+        "policy_date",
+        "evaluation_year",
+        "evaluation_month",
+        "evaluation_day",
+        "evaluation_date",
+    ]:
+        if (
+            x in selected_dag.nodes()
+            and not set(selected_dag.predecessors(x))
+            and not set(selected_dag.successors(x))
+        ):
+            selected_dag.remove_node(x)
+
     # Add Node Metadata to DAG
+    node_descriptions = _get_node_descriptions(env)
     for qn in all_nodes:
         if qn not in selected_dag.nodes():
             continue
