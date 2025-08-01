@@ -77,7 +77,24 @@ def input_data_dtypes(
             continue
 
         match = pattern_all.fullmatch(qn)
-        base_name = match.group("base_name")
+        base_name = match.group("base_name") if match else qn
+
+        # Skip aggregated variables when both a base name and an aggregated
+        # form of the base name is required by the DAG. Fixes #24.
+        if (
+            match
+            and match.group("grouping")
+            and base_name in policy_inputs
+            and qn not in policy_inputs
+        ):
+            # Add the base variable to the template instead of the aggregated one
+            if base_name not in cleaned_qname_dtype_tree:
+                cleaned_qname_dtype_tree[base_name] = scalar_type_to_array_type(
+                    policy_inputs[base_name].data_type
+                )
+            # Skip this aggregated variable - the base variable will be added instead
+            continue
+
         if (
             base_name not in qname_dtype_tree
             and base_name not in cleaned_qname_dtype_tree
