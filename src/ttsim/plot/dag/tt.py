@@ -37,15 +37,6 @@ class NodeSelector:
     order: int | None = None
 
 
-@dataclass(frozen=True)
-class _QNameNodeSelector:
-    """Select nodes from the DAG."""
-
-    qnames: list[str]
-    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
-    order: int | None = None
-
-
 def tt(
     policy_date_str: str,
     root: Path,
@@ -200,17 +191,6 @@ def _get_tt_dag_with_node_metadata(
         )
 
     return selected_dag
-
-
-def convert_all_nodes_to_callables(
-    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    return {
-        qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
-        if not callable(n)
-        else n
-        for qn, n in env.items()
-    }
 
 
 def _get_node_descriptions(

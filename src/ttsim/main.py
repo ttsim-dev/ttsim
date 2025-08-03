@@ -28,7 +28,7 @@ from ttsim.main_target import MainTarget, MainTargetABC
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Callable
 
     from ttsim.main_args import (
         InputData,
@@ -61,6 +61,7 @@ def main(
     evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,
     include_warn_nodes: bool = True,
+    tt_function: Callable[[QNameData], QNameData] | None = None,
     tt_function_set_annotations: bool = True,
     orig_policy_objects: OrigPolicyObjects | None = None,
     raw_results: RawResults | None = None,

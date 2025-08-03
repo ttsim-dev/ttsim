@@ -112,9 +112,20 @@ def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
 
 
 @interface_function()
+def policy_inputs(policy_environment: PolicyEnvironment) -> UnorderedQNames:
+    """The (qualified) names of the policy inputs in the policy environment."""
+    return {
+        k
+        for k, v in dt.flatten_to_qnames(policy_environment).items()
+        if isinstance(v, PolicyInput)
+    }
+
+
+@interface_function()
 def input_columns(
     processed_data_columns: UnorderedQNames,
     policy_environment: PolicyEnvironment,
+    policy_inputs: UnorderedQNames,
 ) -> UnorderedQNames:
     """The (qualified) column names in the processed data or policy environment.
 
@@ -132,11 +143,7 @@ def input_columns(
         The (qualified) column names in the processed data or policy environment.
     """
     if not processed_data_columns:
-        return {
-            k
-            for k, v in dt.flatten_to_qnames(policy_environment).items()
-            if isinstance(v, PolicyInput)
-        }
+        return policy_inputs
     return processed_data_columns
 
 

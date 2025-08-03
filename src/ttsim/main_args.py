@@ -167,4 +167,3 @@ class SpecializedEnvironment(MainArg):
         None
     )
     tt_dag: nx.DiGraph | None = None
-    tt_function: Callable[[QNameData], QNameData] | None = None

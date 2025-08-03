@@ -180,47 +180,6 @@ def get_figure(
     )
 
 
-@overload
-def dummy_callable(obj: PolicyInput, leaf_name: str) -> PolicyFunction: ...
-
-
-@overload
-def dummy_callable(obj: ParamObject, leaf_name: str) -> ParamFunction: ...
-
-
-@overload
-def dummy_callable(obj: InterfaceInput, leaf_name: str) -> InterfaceFunction: ...
-
-
-def dummy_callable(
-    obj: ModuleType | str | float | bool, leaf_name: str
-) -> Callable[[], Any]:
-    """Dummy callable, for plotting and checking DAG completeness."""
-
-    def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
-        pass
-
-    if isinstance(obj, PolicyInput):
-        return policy_function(
-            leaf_name=leaf_name,
-            start_date=obj.start_date,
-            end_date=obj.end_date,
-            foreign_key_type=obj.foreign_key_type,
-        )(dummy)
-    if isinstance(obj, ParamObject):
-        return param_function(
-            leaf_name=leaf_name,
-            start_date=obj.start_date,
-            end_date=obj.end_date,
-        )(dummy)
-    if isinstance(obj, InterfaceInput):
-        return interface_function(
-            leaf_name=leaf_name,
-            in_top_level_namespace=obj.in_top_level_namespace,
-        )(dummy)
-    return dummy
-
-
 def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:
     """Convert HSL color values to hexadecimal color code.
 

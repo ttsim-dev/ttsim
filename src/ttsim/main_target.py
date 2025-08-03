@@ -101,7 +101,6 @@ class SpecializedEnvironment(MainTargetABC):
         "specialized_environment__with_partialled_params_and_scalars"
     )
     tt_dag: str = "specialized_environment__tt_dag"
-    tt_function: str = "specialized_environment__tt_function"
 
 
 @dataclass(frozen=True)
@@ -173,6 +172,7 @@ class MainTarget(MainTargetABC):
     xnp: str = "xnp"
     dnp: str = "dnp"
     rounding: str = "rounding"
+    tt_function: str = "tt_function"
     tt_function_set_annotations: str = "tt_function_set_annotations"
     warn_if: type[WarnIf] = field(default=WarnIf)
     fail_if: type[FailIf] = field(default=FailIf)

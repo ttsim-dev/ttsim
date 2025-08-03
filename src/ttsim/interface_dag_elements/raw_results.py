@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 def columns(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    specialized_environment__tt_function: Callable[[QNameData], QNameData],
+    tt_function: Callable[[QNameData], QNameData],
 ) -> QNameData:
-    return specialized_environment__tt_function(
+    return tt_function(
         {k: v for k, v in processed_data.items() if k in labels__root_nodes},
     )
 
