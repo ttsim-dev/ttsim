@@ -4,11 +4,7 @@ from typing import TYPE_CHECKING
 
 import dags.tree as dt
 
-from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
-from ttsim.interface_dag_elements.shared import (
-    get_re_pattern_for_all_time_units_and_groupings,
-)
 from ttsim.tt.column_objects_param_function import PolicyInput
 from ttsim.tt.vectorization import scalar_type_to_array_type
 
@@ -27,7 +23,6 @@ def input_data_dtypes(
     specialized_environment_from_policy_inputs__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     policy_environment: PolicyEnvironment,
     tt_targets__qname: OrderedQNames,
-    labels__grouping_levels: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
 ) -> NestedInputStructureDict:
     """
@@ -41,8 +36,6 @@ def input_data_dtypes(
         The policy environment containing functions and parameters.
     tt_targets__qname
         Ordered qualified names of the targets.
-    labels__grouping_levels
-        Ordered qualified names of grouping levels.
     labels__top_level_namespace
         Unordered qualified names of the top-level namespace.
 
@@ -67,34 +60,11 @@ def input_data_dtypes(
 
     cleaned_qname_dtype_tree: dict[str, str] = {}
 
-    pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        time_units=list(TIME_UNIT_LABELS),
-        grouping_levels=labels__grouping_levels,
-    )
-
     for qn, derived_dtype_in_base in qname_dtype_tree.items():
         if qn in {"evaluation_year", "evaluation_month", "evaluation_day"}:
             continue
 
-        match = pattern_all.fullmatch(qn)
-        base_name = match.group("base_name")
-        if (
-            base_name not in qname_dtype_tree
-            and base_name not in cleaned_qname_dtype_tree
-            and base_name in policy_inputs
-        ):
-            # If some input data is provided, we create aggregation functions
-            # automatically only if the source node is part of the input data. Hence, if
-            # the user provides incomplete input data (i.e. some policy inputs are
-            # missing) and those policy inputs are sources of automatic aggregation
-            # functions, dt.create_tree_with_input_types will return the name of the
-            # aggregation function as root node. The policy input is not in the output.
-            # We take care of this here.
-            cleaned_qname_dtype_tree[base_name] = scalar_type_to_array_type(
-                policy_inputs[base_name].data_type
-            )
-
-        elif qn in policy_inputs:
+        if qn in policy_inputs:
             # Replace dtypes of PolicyInputs that have the generic type 'FloatColumn |
             # IntColumn | BoolColumn' with the actual dtype found in the policy
             # environment.

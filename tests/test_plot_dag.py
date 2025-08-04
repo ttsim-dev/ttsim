@@ -13,6 +13,7 @@ from ttsim.plot.dag.interface import interface
 from ttsim.plot.dag.tt import (
     _get_tt_dag_with_node_metadata,
     _QNameNodeSelector,
+    tt,
 )
 from ttsim.tt import (
     ScalarParam,
@@ -389,3 +390,26 @@ def test_input_data_overrides_nodes_in_plotting_dag(xnp):
     assert "payroll_tax__income__gross_wage_y" not in dag.nodes()
     assert "payroll_tax__income__deductions_y" not in dag.nodes()
     assert "payroll_tax__amount_y" in dag.nodes()
+
+
+def test_fail_if_input_data_provided_without_node_selector(xnp):
+    # with pytest.raises(ValueError, match="you must also provide a node selector."):
+    from ttsim.plot.dag import NodeSelector
+
+    tt(
+        root=middle_earth.ROOT_PATH,
+        policy_date_str="2025-01-01",
+        input_data={
+            "tree": {
+                "p_id": xnp.array([100]),
+                "payroll_tax": {
+                    "amount_m": xnp.array([100]),
+                },
+            }
+        },
+        node_selector=NodeSelector(
+            node_paths=[("payroll_tax", "amount_y")],
+            type="ancestors",
+            order=1,
+        ),
+    )

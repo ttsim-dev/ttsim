@@ -9,6 +9,7 @@ import dags.tree as dt
 import networkx as nx
 
 from ttsim import main
+from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
 from ttsim.main_args import OrigPolicyObjects, TTTargets
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.shared import NodeMetaData, get_figure
@@ -85,6 +86,10 @@ def tt(
     -------
     The figure.
     """
+    _fail_if_input_data_provided_without_node_selector(
+        input_data=input_data, node_selector=node_selector
+    )
+
     if node_selector:
         qname_node_selector = _QNameNodeSelector(
             qnames={dt.qname_from_tree_path(qn) for qn in node_selector.node_paths},
@@ -322,3 +327,18 @@ def _kth_order_successors(
                 _kth_order_successors(dag, successor, order=order - 1, base=base)
             )
     return base
+
+
+def _fail_if_input_data_provided_without_node_selector(
+    input_data: InputData | None,
+    node_selector: NodeSelector | None,
+) -> None:
+    if not node_selector and input_data:
+        msg = format_errors_and_warnings(
+            "When providing input data, you must also provide a node selector."
+            "This is because there is no way to tell which nodes should be part of the "
+            "DAG when overriding intermediate nodes with input data. "
+            "To specify a node selector, use "
+            "\n\n >>> from ttsim.plot.dag import NodeSelector"
+        )
+        raise ValueError(msg)
