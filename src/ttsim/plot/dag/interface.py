@@ -11,8 +11,11 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
     WarnFunction,
 )
+from ttsim.interface_dag_elements.specialized_environment_from_policy_inputs import (
+    dummy_callable,
+)
 from ttsim.main import load_flat_interface_functions_and_inputs
-from ttsim.plot.dag.shared import NodeMetaData, dummy_callable, get_figure
+from ttsim.plot.dag.shared import NodeMetaData, get_figure
 
 if TYPE_CHECKING:
     from pathlib import Path

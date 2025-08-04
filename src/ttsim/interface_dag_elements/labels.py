@@ -124,7 +124,6 @@ def policy_inputs(policy_environment: PolicyEnvironment) -> UnorderedQNames:
 @interface_function()
 def input_columns(
     processed_data_columns: UnorderedQNames,
-    policy_environment: PolicyEnvironment,
     policy_inputs: UnorderedQNames,
 ) -> UnorderedQNames:
     """The (qualified) column names in the processed data or policy environment.

@@ -2,29 +2,10 @@ from __future__ import annotations
 
 import colorsys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, overload
 
 import networkx as nx
 import numpy
 import plotly.graph_objects as go
-
-from ttsim.interface_dag_elements.interface_node_objects import (
-    InterfaceFunction,
-    InterfaceInput,
-    interface_function,
-)
-from ttsim.tt import (
-    ParamFunction,
-    ParamObject,
-    PolicyFunction,
-    PolicyInput,
-    param_function,
-    policy_function,
-)
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import ModuleType
 
 
 @dataclass(frozen=True)

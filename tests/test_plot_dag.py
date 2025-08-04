@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import datetime
+from typing import Any
+
 import pytest
 
 from mettsim import middle_earth
 from ttsim.main import main
+from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
+from ttsim.main_target import MainTarget
 from ttsim.plot.dag.interface import interface
 from ttsim.plot.dag.tt import (
     _get_tt_dag_with_node_metadata,
@@ -14,6 +19,49 @@ from ttsim.tt import (
     param_function,
     policy_function,
 )
+from ttsim.tt.column_objects_param_function import PolicyInput
+
+
+def get_required_policy_env_objects(policy_date: datetime.date) -> dict[str, Any]:
+    return {
+        "policy_year": ScalarParam(
+            value=policy_date.year,
+            start_date=policy_date,
+            end_date=policy_date,
+        ),
+        "policy_month": ScalarParam(
+            value=policy_date.month,
+            start_date=policy_date,
+            end_date=policy_date,
+        ),
+        "policy_day": ScalarParam(
+            value=policy_date.day,
+            start_date=policy_date,
+            end_date=policy_date,
+        ),
+        "evaluation_year": PolicyInput(
+            leaf_name="evaluation_year",
+            data_type=int,
+            start_date=policy_date,
+            end_date=policy_date,
+            description="The evaluation year, will typically be set via `main`.",
+        ),
+        "evaluation_month": PolicyInput(
+            leaf_name="evaluation_month",
+            data_type=int,
+            start_date=policy_date,
+            end_date=policy_date,
+            description="The evaluation month, will typically be set via `main`.",
+        ),
+        "evaluation_day": PolicyInput(
+            leaf_name="evaluation_day",
+            data_type=int,
+            start_date=policy_date,
+            end_date=policy_date,
+            description="The evaluation day, will typically be set via `main`.",
+        ),
+    }
+
 
 SOME_PARAM_OBJECT = ScalarParam(
     value=111,
@@ -61,7 +109,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
     [
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_y"],
+                qnames={"payroll_tax__amount_y"},
                 type="ancestors",
                 order=1,
             ),
@@ -76,7 +124,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m"],
+                qnames={"payroll_tax__amount_m"},
                 type="ancestors",
                 order=1,
             ),
@@ -87,7 +135,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m"],
+                qnames={"payroll_tax__amount_m"},
                 type="ancestors",
                 order=2,
             ),
@@ -103,7 +151,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                qnames={"payroll_tax__amount_m", "property_tax__amount_m"},
                 type="ancestors",
                 order=1,
             ),
@@ -116,7 +164,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["property_tax__amount_m"],
+                qnames={"property_tax__amount_m"},
                 type="ancestors",
             ),
             [
@@ -133,7 +181,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_y"],
+                qnames={"payroll_tax__amount_y"},
                 type="neighbors",
                 order=1,
             ),
@@ -149,7 +197,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m"],
+                qnames={"payroll_tax__amount_m"},
                 type="neighbors",
                 order=1,
             ),
@@ -161,7 +209,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m"],
+                qnames={"payroll_tax__amount_m"},
                 type="neighbors",
                 order=2,
             ),
@@ -179,7 +227,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                qnames={"payroll_tax__amount_m", "property_tax__amount_m"},
                 type="neighbors",
                 order=1,
             ),
@@ -193,7 +241,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_y"],
+                qnames={"payroll_tax__amount_y"},
                 type="descendants",
                 order=1,
             ),
@@ -204,7 +252,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m"],
+                qnames={"payroll_tax__amount_m"},
                 type="descendants",
                 order=1,
             ),
@@ -215,7 +263,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m"],
+                qnames={"payroll_tax__amount_m"},
                 type="descendants",
                 order=2,
             ),
@@ -227,7 +275,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                qnames={"payroll_tax__amount_m", "property_tax__amount_m"},
                 type="descendants",
                 order=1,
             ),
@@ -239,7 +287,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["housing_benefits__income__amount_m"],
+                qnames={"housing_benefits__income__amount_m"},
                 type="descendants",
             ),
             [
@@ -251,7 +299,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
         (
             _QNameNodeSelector(
-                qnames=["payroll_tax__amount_m", "property_tax__amount_m"],
+                qnames={"payroll_tax__amount_m", "property_tax__amount_m"},
                 type="nodes",
             ),
             [
@@ -261,15 +309,10 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
     ],
 )
-def test_node_selector(node_selector, expected_nodes, backend):
-    environment = main(
-        main_target="policy_environment",
-        policy_date_str="2025-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
-        backend=backend,
-    )
+def test_node_selector(node_selector, expected_nodes):
     dag = _get_tt_dag_with_node_metadata(
-        environment=environment,
+        root=middle_earth.ROOT_PATH,
+        policy_date_str="2025-01-01",
         node_selector=node_selector,
         include_params=True,
     )
@@ -303,24 +346,38 @@ def test_params_are_removed_from_dag(include_params, expected_nodes):
         "some_param": SOME_PARAM_OBJECT,
         "some_param_function": some_param_function,
         "some_policy_function": some_policy_function,
+        **get_required_policy_env_objects(policy_date=datetime.date(2025, 1, 1)),
     }
     dag = _get_tt_dag_with_node_metadata(
-        environment=environment,
+        root=middle_earth.ROOT_PATH,
+        policy_date_str="2025-01-01",
+        policy_environment=environment,
         include_params=include_params,
     )
     assert set(dag.nodes()) == set(expected_nodes)
 
 
 def test_orphaned_dates_are_removed_from_dag():
-    environment = main(
-        main_target="policy_environment",
-        policy_date_str="2025-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
-        backend="numpy",
-    )
     dag = _get_tt_dag_with_node_metadata(
-        environment=environment,
+        root=middle_earth.ROOT_PATH,
+        policy_date_str="2025-01-01",
         include_params=True,
     )
     assert "evaluation_day" not in dag.nodes()
     assert "policy_day" not in dag.nodes()
+
+
+def test_input_data_overrides_plotting_dag():
+    dag = main(
+        main_target=MainTarget.specialized_environment_from_policy_inputs.complete_dag,
+        orig_policy_objects=OrigPolicyObjects(root=middle_earth.ROOT_PATH),
+        policy_environment=get_required_policy_env_objects(
+            policy_date=datetime.date(2025, 1, 1)
+        ),
+        tt_targets=TTTargets(qname=["payroll_tax__amount_y"]),
+        input_data=InputData.tree(
+            {
+                "payroll_tax__amount_y": 100,
+            }
+        ),
+    )

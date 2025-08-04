@@ -15,6 +15,9 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     input_dependent_interface_function,
     interface_function,
 )
+from ttsim.interface_dag_elements.specialized_environment_from_policy_inputs import (
+    dummy_callable,
+)
 from ttsim.main import (
     _fail_if_input_structure_is_invalid,
     _fail_if_requested_nodes_cannot_be_found,
@@ -27,7 +30,6 @@ from ttsim.main import (
     main,
 )
 from ttsim.main_target import MainTarget
-from ttsim.plot.dag.tt import convert_all_nodes_to_callables
 from ttsim.tt.column_objects_param_function import policy_function
 
 
@@ -114,7 +116,12 @@ def test_interface_dag_is_complete() -> None:
     }
 
     f = dags.concatenate_functions(
-        functions=convert_all_nodes_to_callables(nodes),
+        functions={
+            qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
+            if not callable(n)
+            else n
+            for qn, n in nodes.items()
+        },
         targets=None,
         return_type="dict",
         enforce_signature=False,

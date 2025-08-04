@@ -5,16 +5,16 @@ import textwrap
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-import dags
 import dags.tree as dt
 import networkx as nx
 
 from ttsim import main
-from ttsim.plot.dag.shared import NodeMetaData, dummy_callable, get_figure
+from ttsim.main_args import OrigPolicyObjects, TTTargets
+from ttsim.main_target import MainTarget
+from ttsim.plot.dag.shared import NodeMetaData, get_figure
 from ttsim.tt import (
     ParamFunction,
     ParamObject,
-    PolicyInput,
 )
 
 if TYPE_CHECKING:
@@ -22,9 +22,10 @@ if TYPE_CHECKING:
 
     import plotly.graph_objects as go
 
+    from ttsim.main_args import InputData
     from ttsim.typing import (
+        DashedISOString,
         PolicyEnvironment,
-        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     )
 
 
@@ -37,9 +38,20 @@ class NodeSelector:
     order: int | None = None
 
 
+@dataclass(frozen=True)
+class _QNameNodeSelector:
+    """Select nodes from the DAG."""
+
+    qnames: set[str]
+    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    order: int | None = None
+
+
 def tt(
-    policy_date_str: str,
     root: Path,
+    policy_date_str: DashedISOString | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    input_data: InputData | None = None,
     node_selector: NodeSelector | None = None,
     title: str = "",
     include_params: bool = True,
@@ -50,35 +62,32 @@ def tt(
 
     Parameters
     ----------
-    policy_date_str
-        The date string.
     root
         The root path.
+    policy_date_str
+        The date string.
+    policy_environment
+        (Optional) The policy environment.
+    input_data
+        (Optional) The input data.
     node_selector
-        The node selector. Default is None, i.e. the entire DAG is plotted.
+        (Optional) The node selector. If not provided, the entire DAG is plotted.
     title
-        The title of the plot.
+        (Optional) The title of the plot.
     include_params
-        Include param functions when plotting the DAG.
+        (Optional) Include param functions when plotting the DAG. Default is True.
     show_node_description
-        Show a description of the node when hovering over it.
+        (Optional) Show a description of the node when hovering over it.
     output_path
-        If provided, the figure is written to the path.
+        (Optional) If provided, the figure is written to the path.
 
     Returns
     -------
     The figure.
     """
-    environment = main(
-        main_target="policy_environment",
-        policy_date_str=policy_date_str,
-        orig_policy_objects={"root": root},
-        backend="numpy",
-    )
-
     if node_selector:
         qname_node_selector = _QNameNodeSelector(
-            qnames=[dt.qname_from_tree_path(qn) for qn in node_selector.node_paths],
+            qnames={dt.qname_from_tree_path(qn) for qn in node_selector.node_paths},
             type=node_selector.type,
             order=node_selector.order,
         )
@@ -86,11 +95,13 @@ def tt(
         qname_node_selector = None
 
     dag_with_node_metadata = _get_tt_dag_with_node_metadata(
-        environment=environment,
+        root=root,
+        policy_date_str=policy_date_str,
+        policy_environment=policy_environment,
+        input_data=input_data,
         node_selector=qname_node_selector,
         include_params=include_params,
     )
-    # Remove backend, xnp, dnp, and num_segments from the TT DAG.
 
     fig = get_figure(
         dag=dag_with_node_metadata,
@@ -104,45 +115,59 @@ def tt(
 
 
 def _get_tt_dag_with_node_metadata(
-    environment: PolicyEnvironment,
+    root: Path,
+    policy_date_str: DashedISOString | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    input_data: InputData | None = None,
     node_selector: _QNameNodeSelector | None = None,
     include_params: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
-    qname_environment = dt.flatten_to_qnames(environment)
-    qnames_to_plot = list(qname_environment)
-    if node_selector:
-        # Node selector might contain derived functions that are not in qnames_to_plot
-        qnames_to_plot.extend(node_selector.qnames)
-
-    qnames_policy_inputs = [
-        k
-        for k, v in qname_environment.items()
-        if isinstance(v, PolicyInput) and k in qnames_to_plot
-    ]
-    env = main(
-        main_target="specialized_environment__without_tree_logic_and_with_derived_functions",
-        policy_environment=environment,
-        labels={"processed_data_columns": qnames_policy_inputs},
-        tt_targets={"qname": qnames_to_plot},
-        backend="numpy",
+    if not policy_environment:
+        policy_environment = main(
+            main_target=MainTarget.policy_environment,
+            orig_policy_objects=OrigPolicyObjects(root=root),
+            policy_date_str=policy_date_str,
+            backend="numpy",
+        )
+    all_tt_targets = (
+        [*dt.qnames(policy_environment), *node_selector.qnames]
+        if node_selector
+        else dt.qnames(policy_environment)
     )
-
-    all_nodes = convert_all_nodes_to_callables(env)
-
-    complete_dag = dags.create_dag(functions=all_nodes, targets=qnames_to_plot)
+    complete_dag_and_specialized_environment = main(
+        main_targets=[
+            MainTarget.specialized_environment_from_policy_inputs.complete_dag,
+            MainTarget.specialized_environment_from_policy_inputs.without_tree_logic_and_with_derived_functions,
+        ],
+        orig_policy_objects=OrigPolicyObjects(root=root),
+        policy_environment=policy_environment,
+        tt_targets=TTTargets(qname=all_tt_targets),
+        input_data=input_data,
+        policy_date_str=policy_date_str,
+    )
+    complete_dag = complete_dag_and_specialized_environment[
+        "specialized_environment_from_policy_inputs"
+    ]["complete_dag"]
+    specialized_environment = complete_dag_and_specialized_environment[
+        "specialized_environment_from_policy_inputs"
+    ]["without_tree_logic_and_with_derived_functions"]
 
     if node_selector is None:
         selected_dag = complete_dag
     else:
-        selected_dag = _create_dag_with_selected_nodes(
+        selected_dag = select_nodes_from_dag(
             complete_dag=complete_dag,
             node_selector=node_selector,
         )
 
     if not include_params:
         selected_dag.remove_nodes_from(
-            [qn for qn, v in env.items() if isinstance(v, (ParamObject, ParamFunction))]
+            [
+                qn
+                for qn, v in policy_environment.items()
+                if isinstance(v, (ParamObject, ParamFunction))
+            ]
         )
 
     # Handle 'special' nodes
@@ -179,11 +204,9 @@ def _get_tt_dag_with_node_metadata(
             selected_dag.remove_node(x)
 
     # Add Node Metadata to DAG
-    node_descriptions = _get_node_descriptions(env)
-    for qn in all_nodes:
-        if qn not in selected_dag.nodes():
-            continue
-        description = node_descriptions[qn]
+    node_descriptions = _get_node_descriptions(specialized_environment)
+    for qn in selected_dag.nodes():
+        description = node_descriptions.get(qn, "No description available.")
         node_namespace = qn.split("__")[0] if "__" in qn else "top-level"
         selected_dag.nodes[qn]["node_metadata"] = NodeMetaData(
             description=description,
@@ -194,11 +217,12 @@ def _get_tt_dag_with_node_metadata(
 
 
 def _get_node_descriptions(
-    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    specialized_environment: PolicyEnvironment,
 ) -> dict[str, str]:
     """Get the descriptions of the nodes in the environment."""
+    qn_specialized_environment = dt.flatten_to_qnames(specialized_environment)
     out = {}
-    for qn, n in env.items():
+    for p, n in qn_specialized_environment.items():
         descr = None
         if hasattr(n, "description"):
             if isinstance(n.description, str):
@@ -209,15 +233,15 @@ def _get_node_descriptions(
                 and n.description["en"] is not None
             ):
                 descr = n.description["en"]
-        if not descr:
-            descr = "No description available."
-        # Wrap description at 79 characters
-        descr = textwrap.fill(descr, width=79)
-        out[qn] = descr
+            else:
+                continue
+            # Wrap description at 79 characters
+            descr = textwrap.fill(descr, width=79)
+            out[p] = descr
     return out
 
 
-def _create_dag_with_selected_nodes(
+def select_nodes_from_dag(
     complete_dag: nx.DiGraph,
     node_selector: _QNameNodeSelector,
 ) -> nx.DiGraph:

@@ -104,6 +104,15 @@ class SpecializedEnvironment(MainTargetABC):
 
 
 @dataclass(frozen=True)
+class SpecializedEnvironmentFromPolicyInputs(MainTargetABC):
+    qnames_to_derive_functions_from: str = (
+        "specialized_environment_from_policy_inputs__qnames_to_derive_functions_from"
+    )
+    without_tree_logic_and_with_derived_functions: str = "specialized_environment_from_policy_inputs__without_tree_logic_and_with_derived_functions"
+    complete_dag: str = "specialized_environment_from_policy_inputs__complete_dag"
+
+
+@dataclass(frozen=True)
 class Targets(MainTargetABC):
     qname: str = "tt_targets__qname"
     tree: str = "tt_targets__tree"
@@ -113,6 +122,7 @@ class Targets(MainTargetABC):
 class Labels(MainTargetABC):
     column_targets: str = "labels__column_targets"
     grouping_levels: str = "labels__grouping_levels"
+    policy_inputs: str = "labels__policy_inputs"
     input_data_targets: str = "labels__input_data_targets"
     param_targets: str = "labels__param_targets"
     processed_data_columns: str = "labels__processed_data_columns"
@@ -156,6 +166,11 @@ class MainTarget(MainTargetABC):
     policy_environment: str = "policy_environment"
     specialized_environment: type[SpecializedEnvironment] = field(
         default=SpecializedEnvironment
+    )
+    specialized_environment_from_policy_inputs: type[
+        SpecializedEnvironmentFromPolicyInputs
+    ] = field(
+        default=SpecializedEnvironmentFromPolicyInputs,
     )
     orig_policy_objects: type[OrigPolicyObjects] = field(default=OrigPolicyObjects)
     processed_data: str = "processed_data"
