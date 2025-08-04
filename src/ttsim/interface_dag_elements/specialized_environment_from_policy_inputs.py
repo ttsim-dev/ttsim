@@ -109,7 +109,6 @@ def without_tree_logic_and_with_derived_functions(
 @interface_function()
 def complete_dag(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    policy_environment: PolicyEnvironment,
     tt_targets__qname: OrderedQNames,
 ) -> nx.DiGraph:
     """Create the complete DAG.
@@ -124,7 +123,7 @@ def complete_dag(
     }
     return create_dag(
         functions=functions,
-        targets=[*dt.qnames(policy_environment), *tt_targets__qname],
+        targets=tt_targets__qname,
     )
 
 

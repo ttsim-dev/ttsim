@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import datetime
+from types import ModuleType
 from typing import Any
 
 import pytest
 
 from mettsim import middle_earth
 from ttsim.main import main
-from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
+from ttsim.main_args import InputData, TTTargets
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.interface import interface
 from ttsim.plot.dag.tt import (
@@ -367,17 +368,24 @@ def test_orphaned_dates_are_removed_from_dag():
     assert "policy_day" not in dag.nodes()
 
 
-def test_input_data_overrides_plotting_dag():
+def test_input_data_overrides_plotting_dag(xnp: ModuleType):
     dag = main(
         main_target=MainTarget.specialized_environment_from_policy_inputs.complete_dag,
-        orig_policy_objects=OrigPolicyObjects(root=middle_earth.ROOT_PATH),
-        policy_environment=get_required_policy_env_objects(
-            policy_date=datetime.date(2025, 1, 1)
-        ),
+        policy_date_str="2025-01-01",
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
         tt_targets=TTTargets(qname=["payroll_tax__amount_y"]),
         input_data=InputData.tree(
             {
-                "payroll_tax__amount_y": 100,
+                "p_id": xnp.array([100]),
+                "payroll_tax": {
+                    "income": {
+                        "amount_y": xnp.array([100]),
+                    }
+                },
             }
         ),
     )
+    assert "payroll_tax__income__amount_y" in dag.nodes()
+    assert "payroll_tax__income__gross_wage_y" not in dag.nodes()
+    assert "payroll_tax__income__deductions_y" not in dag.nodes()
+    assert "payroll_tax__amount_y" in dag.nodes()
