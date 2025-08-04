@@ -199,7 +199,7 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
     }
 
 
-def test_derived_functions_not_in_template_if_input_data_is_provided(xnp: ModuleType):
+def test_returns_root_nodes_when_injecting_unrelated_input_data(xnp: ModuleType):
     template = main(
         main_target=MainTarget.templates.input_data_dtypes,
         policy_date_str="2000-01-01",
@@ -216,5 +216,11 @@ def test_derived_functions_not_in_template_if_input_data_is_provided(xnp: Module
         ),
     )
 
-    assert "wealth_fam" not in template
-    assert "wealth_kin" not in template
+    assert "kin_id" in template  # policy input
+    assert "fam_id" not in template  # endogenous group creation function
+    # Inputs for fam_id
+    assert "p_id_spouse" in template
+    assert "p_id" in template
+    assert "age" in template
+    assert "p_id_parent_1" in template
+    assert "p_id_parent_2" in template
