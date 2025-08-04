@@ -28,7 +28,7 @@ from ttsim.main_target import MainTarget, MainTargetABC
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Iterable, Callable
+    from collections.abc import Callable, Iterable
 
     from ttsim.main_args import (
         InputData,

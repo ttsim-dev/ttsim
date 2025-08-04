@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-from types import ModuleType
 from typing import Any
 
 import pytest
@@ -368,7 +367,7 @@ def test_orphaned_dates_are_removed_from_dag():
     assert "policy_day" not in dag.nodes()
 
 
-def test_input_data_overrides_plotting_dag(xnp: ModuleType):
+def test_input_data_overrides_nodes_in_plotting_dag(xnp):
     dag = main(
         main_target=MainTarget.specialized_environment_from_policy_inputs.complete_dag,
         policy_date_str="2025-01-01",
@@ -384,6 +383,7 @@ def test_input_data_overrides_plotting_dag(xnp: ModuleType):
                 },
             }
         ),
+        include_warn_nodes=False,
     )
     assert "payroll_tax__income__amount_y" in dag.nodes()
     assert "payroll_tax__income__gross_wage_y" not in dag.nodes()

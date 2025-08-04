@@ -1,22 +1,24 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Literal
+
 from dags import concatenate_functions
+
 from ttsim.interface_dag_elements.interface_node_objects import (
     interface_function,
     interface_input,
 )
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from ttsim.typing import (
-        SpecEnvWithPartialledParamsAndScalars,
-        QNameData,
-        OrderedQNames,
-        Literal,
-    )
     from collections.abc import Callable
+
     import networkx as nx
+
+    from ttsim.typing import (
+        OrderedQNames,
+        QNameData,
+        SpecEnvWithPartialledParamsAndScalars,
+    )
 
 
 @interface_input(in_top_level_namespace=True)
@@ -31,12 +33,13 @@ def tt_function_set_annotations() -> bool:
 @interface_function(in_top_level_namespace=True)
 def tt_function(
     specialized_environment__tt_dag: nx.DiGraph,
-    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
+    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     labels__column_targets: OrderedQNames,
-    backend: Literal["numpy", "jax"],
     tt_function_set_annotations: bool,
+    backend: Literal["numpy", "jax"],
 ) -> Callable[[QNameData], QNameData]:
-    """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
+    """Returns a function that takes a dictionary of arrays and unpacks them as keyword
+    argugments."""
     ttf_with_keyword_args = concatenate_functions(
         dag=specialized_environment__tt_dag,
         functions=specialized_environment__with_partialled_params_and_scalars,

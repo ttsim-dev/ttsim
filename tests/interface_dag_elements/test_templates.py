@@ -194,6 +194,7 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
         backend=backend,
     )
     assert actual == {
+        "kin_id": "IntColumn",
         "a": {"inp2": "FloatColumn"},
         "inp1": "IntColumn",
     }
@@ -214,6 +215,7 @@ def test_returns_root_nodes_when_injecting_unrelated_input_data(xnp: ModuleType)
                 },
             }
         ),
+        include_warn_nodes=False,
     )
 
     assert "kin_id" in template  # policy input

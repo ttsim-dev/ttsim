@@ -8,11 +8,12 @@ when creating an input data template or plotting it.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 import dags.tree as dt
 from dags import create_dag
 
+from ttsim.interface_dag_elements import specialized_environment
 from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceFunction,
@@ -36,6 +37,7 @@ from ttsim.tt.column_objects_param_function import (
 from ttsim.tt.param_objects import ParamObject
 
 if TYPE_CHECKING:
+    import datetime
     from collections.abc import Callable
     from types import ModuleType
     from typing import Any
@@ -45,7 +47,10 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         OrderedQNames,
         PolicyEnvironment,
+        QNameData,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+        SpecEnvWithPartialledParamsAndScalars,
+        SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
     )
 
@@ -107,23 +112,72 @@ def without_tree_logic_and_with_derived_functions(
 
 
 @interface_function()
-def complete_dag(
-    without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    tt_targets__qname: OrderedQNames,
-) -> nx.DiGraph:
-    """Create the complete DAG.
-
-    Transforms non-callable nodes into callables to include them as nodes in the DAG.
-    """
-    functions = {
+def without_processed_data_nodes_with_dummy_callables(
+    without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    processed_data: QNameData,
+) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
+    """Remove nodes that are in the processed data from the policy environment."""
+    return {
         qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
         if not callable(n)
         else n
         for qn, n in without_tree_logic_and_with_derived_functions.items()
+        if qn not in processed_data
     }
+
+
+@interface_function()
+def complete_dag(
+    without_processed_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    tt_targets__qname: OrderedQNames,
+) -> nx.DiGraph:
+    """Create the complete DAG.
+
+    The DAG is based on without_tree_logic_and_with_derived_functions because it should
+    include parameters and param_functions. Transforms non-callable nodes into callables
+    to include them as nodes in the DAG.
+    """
     return create_dag(
-        functions=functions,
+        functions=without_processed_data_nodes_with_dummy_callables,
         targets=tt_targets__qname,
+    )
+
+
+@interface_function()
+def with_processed_params_and_scalars(
+    without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    processed_data: QNameData,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+    dnp: ModuleType,
+    evaluation_date: datetime.date | None,
+) -> SpecEnvWithProcessedParamsAndScalars:
+    return specialized_environment.with_processed_params_and_scalars(
+        without_tree_logic_and_with_derived_functions=without_tree_logic_and_with_derived_functions,
+        processed_data=processed_data,
+        backend=backend,
+        xnp=xnp,
+        dnp=dnp,
+        evaluation_date=evaluation_date,
+    )
+
+
+@interface_function()
+def with_partialled_params_and_scalars(
+    with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,
+    rounding: bool,
+    num_segments: int,
+    backend: Literal["numpy", "jax"],
+    xnp: ModuleType,
+    dnp: ModuleType,
+) -> SpecEnvWithPartialledParamsAndScalars:
+    return specialized_environment.with_partialled_params_and_scalars(
+        with_processed_params_and_scalars=with_processed_params_and_scalars,
+        rounding=rounding,
+        num_segments=num_segments,
+        backend=backend,
+        xnp=xnp,
+        dnp=dnp,
     )
 
 

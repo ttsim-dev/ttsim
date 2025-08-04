@@ -128,8 +128,10 @@ def _get_tt_dag_with_node_metadata(
             main_target=MainTarget.policy_environment,
             orig_policy_objects=OrigPolicyObjects(root=root),
             policy_date_str=policy_date_str,
-            backend="numpy",
         )
+    # It is not sufficient to use node_selector.qnames as tt_targets because of the
+    # NodeSelector types 'neighbors' and 'descendants'. We must always create the
+    # complete DAG (given input data) before selecting nodes.
     all_tt_targets = (
         [*dt.qnames(policy_environment), *node_selector.qnames]
         if node_selector

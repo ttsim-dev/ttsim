@@ -108,8 +108,15 @@ class SpecializedEnvironmentFromPolicyInputs(MainTargetABC):
     qnames_to_derive_functions_from: str = (
         "specialized_environment_from_policy_inputs__qnames_to_derive_functions_from"
     )
-    without_tree_logic_and_with_derived_functions: str = "specialized_environment_from_policy_inputs__without_tree_logic_and_with_derived_functions"
+    without_tree_logic_and_with_derived_functions: str = "specialized_environment_from_policy_inputs__without_tree_logic_and_with_derived_functions"  # noqa: E501
+    without_processed_data_nodes_with_dummy_callables: str = "specialized_environment_from_policy_inputs__without_processed_data_nodes_with_dummy_callables"  # noqa: E501
     complete_dag: str = "specialized_environment_from_policy_inputs__complete_dag"
+    with_processed_params_and_scalars: str = (
+        "specialized_environment_from_policy_inputs__with_processed_params_and_scalars"
+    )
+    with_partialled_params_and_scalars: str = (
+        "specialized_environment_from_policy_inputs__with_partialled_params_and_scalars"
+    )
 
 
 @dataclass(frozen=True)

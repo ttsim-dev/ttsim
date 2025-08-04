@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 @interface_function()
 def input_data_dtypes(
-    specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
+    specialized_environment_from_policy_inputs__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     policy_environment: PolicyEnvironment,
     tt_targets__qname: OrderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -53,7 +53,7 @@ def input_data_dtypes(
     """
     base_dtype_tree = dt.create_tree_with_input_types(
         functions=dt.unflatten_from_qnames(
-            specialized_environment__with_partialled_params_and_scalars,
+            specialized_environment_from_policy_inputs__with_partialled_params_and_scalars,
         ),
         targets=tt_targets__qname,
         top_level_inputs=labels__top_level_namespace,
