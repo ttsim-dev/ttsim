@@ -11,6 +11,7 @@ from ttsim.main_args import InputData, TTTargets
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.interface import interface
 from ttsim.plot.dag.tt import (
+    NodeSelector,
     _get_tt_dag_with_node_metadata,
     _QNameNodeSelector,
     tt,
@@ -393,9 +394,22 @@ def test_input_data_overrides_nodes_in_plotting_dag(xnp):
 
 
 def test_fail_if_input_data_provided_without_node_selector(xnp):
-    # with pytest.raises(ValueError, match="you must also provide a node selector."):
-    from ttsim.plot.dag import NodeSelector
+    with pytest.raises(ValueError, match="you must also provide a node selector."):
+        tt(
+            root=middle_earth.ROOT_PATH,
+            policy_date_str="2025-01-01",
+            input_data={
+                "tree": {
+                    "p_id": xnp.array([100]),
+                    "payroll_tax": {
+                        "amount_m": xnp.array([100]),
+                    },
+                }
+            },
+        )
 
+
+def test_can_create_template_with_selector_and_input_data_from_tt(xnp):
     tt(
         root=middle_earth.ROOT_PATH,
         policy_date_str="2025-01-01",

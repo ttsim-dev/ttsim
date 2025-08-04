@@ -88,7 +88,8 @@ def qnames_to_derive_functions_from(
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
-    tt_targets__qname: OrderedQNames,
+    labels__column_targets: OrderedQNames,
+    labels__param_targets: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -105,7 +106,7 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        tt_targets=tt_targets__qname,
+        tt_targets=labels__column_targets + labels__param_targets,
         input_columns=qnames_to_derive_functions_from,
         grouping_levels=labels__grouping_levels,
     )
@@ -129,7 +130,8 @@ def without_processed_data_nodes_with_dummy_callables(
 @interface_function()
 def complete_dag(
     without_processed_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    tt_targets__qname: OrderedQNames,
+    labels__column_targets: OrderedQNames,
+    labels__param_targets: OrderedQNames,
 ) -> nx.DiGraph:
     """Create the complete DAG.
 
@@ -139,7 +141,7 @@ def complete_dag(
     """
     return create_dag(
         functions=without_processed_data_nodes_with_dummy_callables,
-        targets=tt_targets__qname,
+        targets=labels__column_targets + labels__param_targets,
     )
 
 
