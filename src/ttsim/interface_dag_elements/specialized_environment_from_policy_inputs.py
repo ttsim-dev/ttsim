@@ -18,6 +18,7 @@ from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT
 from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceFunction,
     InterfaceInput,
+    input_dependent_interface_function,
     interface_function,
 )
 from ttsim.interface_dag_elements.shared import (
@@ -55,9 +56,89 @@ if TYPE_CHECKING:
     )
 
 
+@input_dependent_interface_function(
+    include_if_any_input_present=[
+        "input_data__df_and_mapper__df",
+        "input_data__df_and_mapper__mapper",
+        "input_data__df_with_nested_columnsinput_data__tree",
+    ],
+    leaf_name="input_columns_or_empty_list",
+)
+def input_columns_or_empty_list_input_data_provided(
+    labels__input_columns: UnorderedQNames,
+) -> UnorderedQNames:
+    """The input columns or an empty set.
+
+    When computing nodes from this namespace (helpers to create templates or plot the
+    DAG), we don't necessarily need to have input data, as input data only customizes
+    the targets.
+    """
+    return labels__input_columns
+
+
+@input_dependent_interface_function(
+    include_if_no_input_present=[
+        "input_data__df_and_mapper__df",
+        "input_data__df_and_mapper__mapper",
+        "input_data__df_with_nested_columnsinput_data__tree",
+    ],
+    leaf_name="input_columns_or_empty_list",
+)
+def input_columns_or_empty_list_no_input_data_provided(
+    policy_date_str: DashedISOString,  # fake input
+) -> UnorderedQNames:
+    """The input columns or an empty set.
+
+    When computing nodes from this namespace (helpers to create templates or plot the
+    DAG), we don't necessarily need to have input data, as input data only customizes
+    the targets.
+    """
+    return set()
+
+
+@input_dependent_interface_function(
+    include_if_any_input_present=[
+        "input_data__df_and_mapper__df",
+        "input_data__df_and_mapper__mapper",
+        "input_data__df_with_nested_columnsinput_data__tree",
+    ],
+    leaf_name="processed_data_or_empty_dict",
+)
+def processed_data_or_empty_dict_input_data_provided(
+    processed_data: QNameData,
+) -> QNameData:
+    """The processed data or an empty dict.
+
+    When computing nodes from this namespace (helpers to create templates or plot the
+    DAG), we don't necessarily need to have processed data, as processed data only
+    customizes the targets.
+    """
+    return processed_data
+
+
+@input_dependent_interface_function(
+    include_if_no_input_present=[
+        "input_data__df_and_mapper__df",
+        "input_data__df_and_mapper__mapper",
+        "input_data__df_with_nested_columnsinput_data__tree",
+    ],
+    leaf_name="processed_data_or_empty_dict",
+)
+def processed_data_or_empty_dict_no_input_data_provided(
+    policy_date_str: DashedISOString,  # fake input
+) -> QNameData:
+    """The processed data or an empty dict.
+
+    When computing nodes from this namespace (helpers to create templates or plot the
+    DAG), we don't necessarily need to have processed data, as processed data only
+    customizes the targets.
+    """
+    return {}
+
+
 @interface_function()
 def qnames_to_derive_functions_from(
-    labels__input_columns: UnorderedQNames,
+    input_columns_or_empty_list: UnorderedQNames,
     labels__policy_inputs: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
@@ -71,10 +152,11 @@ def qnames_to_derive_functions_from(
         grouping_levels=labels__grouping_levels,
     )
     base_names_input_columns = {
-        pattern_all.fullmatch(qn).group("base_name") for qn in labels__input_columns
+        pattern_all.fullmatch(qn).group("base_name")
+        for qn in input_columns_or_empty_list
     }
 
-    out = set(labels__input_columns)
+    out = set(input_columns_or_empty_list)
     for pi in labels__policy_inputs:
         match = pattern_all.fullmatch(pi)
         base_name = match.group("base_name")
@@ -88,8 +170,8 @@ def qnames_to_derive_functions_from(
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
-    labels__column_targets: OrderedQNames,
-    labels__param_targets: OrderedQNames,
+    input_columns_or_empty_list: UnorderedQNames,
+    tt_targets__qname: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -106,7 +188,7 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        tt_targets=labels__column_targets + labels__param_targets,
+        tt_targets=set(tt_targets__qname) - set(input_columns_or_empty_list),
         input_columns=qnames_to_derive_functions_from,
         grouping_levels=labels__grouping_levels,
     )
@@ -115,7 +197,7 @@ def without_tree_logic_and_with_derived_functions(
 @interface_function()
 def without_processed_data_nodes_with_dummy_callables(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    labels__input_columns: UnorderedQNames,
+    input_columns_or_empty_list: UnorderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
     """Remove nodes that are in the processed data from the policy environment."""
     return {
@@ -123,15 +205,15 @@ def without_processed_data_nodes_with_dummy_callables(
         if not callable(n)
         else n
         for qn, n in without_tree_logic_and_with_derived_functions.items()
-        if qn not in labels__input_columns
+        if qn not in input_columns_or_empty_list
     }
 
 
 @interface_function()
 def complete_dag(
     without_processed_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    labels__column_targets: OrderedQNames,
-    labels__param_targets: OrderedQNames,
+    tt_targets__qname: OrderedQNames,
+    input_columns_or_empty_list: UnorderedQNames,
 ) -> nx.DiGraph:
     """Create the complete DAG.
 
@@ -141,14 +223,14 @@ def complete_dag(
     """
     return create_dag(
         functions=without_processed_data_nodes_with_dummy_callables,
-        targets=labels__column_targets + labels__param_targets,
+        targets=set(tt_targets__qname) - set(input_columns_or_empty_list),
     )
 
 
 @interface_function()
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    processed_data: QNameData,
+    processed_data_or_empty_dict: QNameData,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
@@ -156,7 +238,7 @@ def with_processed_params_and_scalars(
 ) -> SpecEnvWithProcessedParamsAndScalars:
     return specialized_environment.with_processed_params_and_scalars(
         without_tree_logic_and_with_derived_functions=without_tree_logic_and_with_derived_functions,
-        processed_data=processed_data,
+        processed_data=processed_data_or_empty_dict,
         backend=backend,
         xnp=xnp,
         dnp=dnp,
@@ -168,7 +250,6 @@ def with_processed_params_and_scalars(
 def with_partialled_params_and_scalars(
     with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,
     rounding: bool,
-    num_segments: int,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
@@ -176,7 +257,7 @@ def with_partialled_params_and_scalars(
     return specialized_environment.with_partialled_params_and_scalars(
         with_processed_params_and_scalars=with_processed_params_and_scalars,
         rounding=rounding,
-        num_segments=num_segments,
+        num_segments=0,  # doesn't matter because we never execute these functions
         backend=backend,
         xnp=xnp,
         dnp=dnp,

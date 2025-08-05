@@ -87,13 +87,12 @@ def main(
     elif main_targets is not None:
         main_targets = _harmonize_main_targets(main_targets)
 
-    # If requesting an input template, we do not require any data.
-    if not any(re.match("(input|processed)_data", s) for s in input_qnames):
-        input_qnames["processed_data"] = {}
     # If providing data, we require tt_targets.
-    else:
-        if tt_targets is None:
-            raise ValueError(_MSG_FOR_MISSING_TT_TARGETS)
+    if (
+        any(re.match("(input|processed)_data", s) for s in input_qnames)
+        and tt_targets is None
+    ):
+        raise ValueError(_MSG_FOR_MISSING_TT_TARGETS)
 
     flat_interface_objects = load_flat_interface_functions_and_inputs()
     nodes = _resolve_dynamic_interface_objects_to_static_nodes(
