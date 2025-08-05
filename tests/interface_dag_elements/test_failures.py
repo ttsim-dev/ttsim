@@ -1055,7 +1055,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
     (
         "policy_environment",
         "tt_targets",
-        "labels__processed_data_columns",
+        "labels__input_columns",
         "expected_error_match",
     ),
     [
@@ -1068,7 +1068,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
 def test_fail_if_targets_are_not_in_specialized_environment_or_data(
     policy_environment,
     tt_targets,
-    labels__processed_data_columns,
+    labels__input_columns,
     expected_error_match,
 ):
     with pytest.raises(
@@ -1080,7 +1080,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data(
                 policy_environment
             ),
             tt_targets__qname=tt_targets,
-            labels__processed_data_columns=labels__processed_data_columns,
+            labels__input_columns=labels__input_columns,
         )
     assert expected_error_match in str(e.value)
 

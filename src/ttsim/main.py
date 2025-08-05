@@ -90,7 +90,6 @@ def main(
     # If requesting an input template, we do not require any data.
     if not any(re.match("(input|processed)_data", s) for s in input_qnames):
         input_qnames["processed_data"] = {}
-        input_qnames["processed_data_columns"] = None
     # If providing data, we require tt_targets.
     else:
         if tt_targets is None:

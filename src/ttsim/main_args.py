@@ -127,7 +127,6 @@ class Labels(MainArg):
     grouping_levels: OrderedQNames | None = None
     input_data_targets: OrderedQNames | None = None
     param_targets: OrderedQNames | None = None
-    processed_data_columns: UnorderedQNames | None = None
     input_columns: UnorderedQNames | None = None
     root_nodes: UnorderedQNames | None = None
     top_level_namespace: UnorderedQNames | None = None

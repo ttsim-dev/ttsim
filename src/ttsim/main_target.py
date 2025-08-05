@@ -132,7 +132,6 @@ class Labels(MainTargetABC):
     policy_inputs: str = "labels__policy_inputs"
     input_data_targets: str = "labels__input_data_targets"
     param_targets: str = "labels__param_targets"
-    processed_data_columns: str = "labels__processed_data_columns"
     input_columns: str = "labels__input_columns"
     root_nodes: str = "labels__root_nodes"
     top_level_namespace: str = "labels__top_level_namespace"

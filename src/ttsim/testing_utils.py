@@ -263,7 +263,7 @@ def check_env_completeness(
     qname_env_with_derived_functions = main(
         main_target="specialized_environment__without_tree_logic_and_with_derived_functions",
         policy_environment=environment,
-        labels={"processed_data_columns": qnames_policy_inputs},
+        labels={"input_columns": qnames_policy_inputs},
         tt_targets={"qname": list(qname_environment)},
         backend="numpy",
     )

@@ -115,7 +115,7 @@ def without_tree_logic_and_with_derived_functions(
 @interface_function()
 def without_processed_data_nodes_with_dummy_callables(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    processed_data: QNameData,
+    labels__input_columns: UnorderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
     """Remove nodes that are in the processed data from the policy environment."""
     return {
@@ -123,7 +123,7 @@ def without_processed_data_nodes_with_dummy_callables(
         if not callable(n)
         else n
         for qn, n in without_tree_logic_and_with_derived_functions.items()
-        if qn not in processed_data
+        if qn not in labels__input_columns
     }
 
 

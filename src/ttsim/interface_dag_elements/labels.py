@@ -106,7 +106,7 @@ def top_level_namespace(
 
 
 @interface_function()
-def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
+def input_columns(processed_data: QNameData) -> UnorderedQNames:
     """The (qualified) column names in the processed data."""
     return set(processed_data.keys())
 
@@ -122,34 +122,9 @@ def policy_inputs(policy_environment: PolicyEnvironment) -> UnorderedQNames:
 
 
 @interface_function()
-def input_columns(
-    processed_data_columns: UnorderedQNames,
-    policy_inputs: UnorderedQNames,
-) -> UnorderedQNames:
-    """The (qualified) column names in the processed data or policy environment.
-
-    Parameters
-    ----------
-    processed_data_columns:
-        The column names in the processed data.
-    policy_environment:
-        The policy environment. The qualified names of the PolicyInput elements will
-        be returned if the processed_data_columns are empty.
-
-    Returns
-    -------
-    input_columns:
-        The (qualified) column names in the processed data or policy environment.
-    """
-    if not processed_data_columns:
-        return policy_inputs
-    return processed_data_columns
-
-
-@interface_function()
 def root_nodes(
     specialized_environment__tt_dag: nx.DiGraph,
-    processed_data_columns: UnorderedQNames,
+    input_columns: UnorderedQNames,
 ) -> UnorderedQNames:
     """Names of the columns in `processed_data` required for the tax transfer function.
 
@@ -172,7 +147,7 @@ def root_nodes(
     ).nodes
 
     # Restrict the passed data to the subset that is actually used.
-    return {k for k in processed_data_columns if k in root_nodes}
+    return {k for k in input_columns if k in root_nodes}
 
 
 def fail_if_multiple_time_units_for_same_base_name_and_group(
