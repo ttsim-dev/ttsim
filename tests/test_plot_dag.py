@@ -92,6 +92,14 @@ def some_policy_function():
     return 1
 
 
+@policy_function(
+    start_date="2025-01-01",
+    end_date="2025-12-31",
+)
+def some_policy_function_depending_on_derived_param(some_param_y: float) -> float:
+    return some_param_y + 1
+
+
 @pytest.mark.parametrize(
     "include_fail_and_warn_nodes",
     [
@@ -324,11 +332,20 @@ def test_node_selector(node_selector, expected_nodes):
 @pytest.mark.parametrize(
     (
         "include_params",
+        "policy_environment",
         "expected_nodes",
     ),
     [
         (
             True,
+            {
+                "some_param": SOME_PARAM_OBJECT,
+                "some_param_function": some_param_function,
+                "some_policy_function": some_policy_function,
+                **get_required_policy_env_objects(
+                    policy_date=datetime.date(2025, 1, 1)
+                ),
+            },
             [
                 "some_param",
                 "some_param_function",
@@ -337,23 +354,57 @@ def test_node_selector(node_selector, expected_nodes):
         ),
         (
             False,
+            {
+                "some_param": SOME_PARAM_OBJECT,
+                "some_param_function": some_param_function,
+                "some_policy_function": some_policy_function,
+                **get_required_policy_env_objects(
+                    policy_date=datetime.date(2025, 1, 1)
+                ),
+            },
             [
                 "some_policy_function",
             ],
         ),
+        (
+            False,
+            {
+                "a": {
+                    "some_param": SOME_PARAM_OBJECT,
+                    "some_param_function": some_param_function,
+                    "some_policy_function": some_policy_function,
+                },
+                **get_required_policy_env_objects(
+                    policy_date=datetime.date(2025, 1, 1)
+                ),
+            },
+            [
+                "a__some_policy_function",
+            ],
+        ),
+        (
+            False,
+            {
+                "some_param_m": SOME_PARAM_OBJECT,
+                "some_param_function": some_param_function,
+                "some_policy_function_depending_on_derived_param": some_policy_function_depending_on_derived_param,  # noqa: E501
+                **get_required_policy_env_objects(
+                    policy_date=datetime.date(2025, 1, 1)
+                ),
+            },
+            [
+                "some_policy_function_depending_on_derived_param",
+            ],
+        ),
     ],
 )
-def test_params_are_removed_from_dag(include_params, expected_nodes):
-    environment = {
-        "some_param": SOME_PARAM_OBJECT,
-        "some_param_function": some_param_function,
-        "some_policy_function": some_policy_function,
-        **get_required_policy_env_objects(policy_date=datetime.date(2025, 1, 1)),
-    }
+def test_params_are_removed_from_dag(
+    include_params, policy_environment, expected_nodes
+):
     dag = _get_tt_dag_with_node_metadata(
         root=middle_earth.ROOT_PATH,
         policy_date_str="2025-01-01",
-        policy_environment=environment,
+        policy_environment=policy_environment,
         include_params=include_params,
     )
     assert set(dag.nodes()) == set(expected_nodes)

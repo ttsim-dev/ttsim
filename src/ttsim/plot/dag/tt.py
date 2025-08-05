@@ -16,6 +16,7 @@ from ttsim.plot.dag.shared import NodeMetaData, get_figure
 from ttsim.tt import (
     ParamFunction,
     ParamObject,
+    TimeConversionFunction,
 )
 
 if TYPE_CHECKING:
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
     from ttsim.typing import (
         DashedISOString,
         PolicyEnvironment,
+        SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     )
 
 
@@ -156,9 +158,11 @@ def _get_tt_dag_with_node_metadata(
     complete_dag = complete_dag_and_specialized_environment[
         "specialized_environment_from_policy_inputs"
     ]["complete_dag"]
-    specialized_environment = complete_dag_and_specialized_environment[
-        "specialized_environment_from_policy_inputs"
-    ]["without_tree_logic_and_with_derived_functions"]
+    without_tree_logic_and_with_derived_functions = (
+        complete_dag_and_specialized_environment[
+            "specialized_environment_from_policy_inputs"
+        ]["without_tree_logic_and_with_derived_functions"]
+    )
 
     if node_selector is None:
         selected_dag = complete_dag
@@ -169,13 +173,23 @@ def _get_tt_dag_with_node_metadata(
         )
 
     if not include_params:
-        selected_dag.remove_nodes_from(
-            [
-                qn
-                for qn, v in policy_environment.items()
-                if isinstance(v, (ParamObject, ParamFunction))
-            ]
-        )
+        qnames_params: set[str] = set()
+        for qn, v in without_tree_logic_and_with_derived_functions.items():
+            if isinstance(v, (ParamObject, ParamFunction)):
+                qnames_params.add(qn)
+            elif (
+                isinstance(v, TimeConversionFunction)
+                and hasattr(v, "source")
+                and v.source in without_tree_logic_and_with_derived_functions
+                and isinstance(
+                    without_tree_logic_and_with_derived_functions[v.source],
+                    (ParamObject, ParamFunction),
+                )
+            ):
+                # Also add time-converted params
+                qnames_params.add(qn)
+
+        selected_dag.remove_nodes_from(qnames_params)
 
     # Handle 'special' nodes
     ## 1. Remove backend, xnp, dnp, and num_segments
@@ -211,7 +225,9 @@ def _get_tt_dag_with_node_metadata(
             selected_dag.remove_node(x)
 
     # Add Node Metadata to DAG
-    node_descriptions = _get_node_descriptions(specialized_environment)
+    node_descriptions = _get_node_descriptions(
+        without_tree_logic_and_with_derived_functions
+    )
     for qn in selected_dag.nodes():
         description = node_descriptions.get(qn, "No description available.")
         node_namespace = qn.split("__")[0] if "__" in qn else "top-level"
@@ -224,12 +240,12 @@ def _get_tt_dag_with_node_metadata(
 
 
 def _get_node_descriptions(
-    specialized_environment: PolicyEnvironment,
+    without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
 ) -> dict[str, str]:
     """Get the descriptions of the nodes in the environment."""
-    qn_specialized_environment = dt.flatten_to_qnames(specialized_environment)
+    qn_env = dt.flatten_to_qnames(without_tree_logic_and_with_derived_functions)
     out = {}
-    for p, n in qn_specialized_environment.items():
+    for p, n in qn_env.items():
         descr = None
         if hasattr(n, "description"):
             if isinstance(n.description, str):
