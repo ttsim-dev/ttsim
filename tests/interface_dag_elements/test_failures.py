@@ -1489,7 +1489,8 @@ def test_raise_tt_root_nodes_are_missing_without_input_data(
     backend: Literal["jax", "numpy"],
 ):
     with pytest.raises(
-        ValueError, match="For computing results, you need to pass data. "
+        ValueError,
+        match="The following arguments to `main` are missing",
     ):
         main(
             policy_date_str="2025-01-01",
@@ -1504,11 +1505,7 @@ def test_raise_some_error_without_input_data(
 ):
     with pytest.raises(
         ValueError,
-        match=(
-            "For computing results, you need to pass data. "
-            "|"
-            "The following arguments to `main` are missing"
-        ),
+        match="The following arguments to `main` are missing",
     ):
         main(
             policy_date_str="2025-01-01",

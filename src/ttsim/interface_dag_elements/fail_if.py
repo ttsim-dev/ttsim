@@ -759,13 +759,6 @@ def tt_root_nodes_are_missing(
     ValueError
         If root nodes are missing.
     """
-
-    if not processed_data:
-        raise ValueError(
-            "For computing results, you need to pass data. "
-            "You can do this by passing a suitable `input_data=InputData.[x]` argument "
-            "to `main`."
-        )
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tt_dag,

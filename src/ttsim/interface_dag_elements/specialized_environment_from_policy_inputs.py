@@ -87,7 +87,7 @@ def processed_data_or_empty_dict_input_data_provided(
     leaf_name="processed_data_or_empty_dict",
 )
 def processed_data_or_empty_dict_no_input_data_provided(
-    policy_date_str: DashedISOString,  # fake input
+    labels__grouping_levels: OrderedQNames,  # fake input
 ) -> QNameData:
     """The processed data or an empty dict.
 

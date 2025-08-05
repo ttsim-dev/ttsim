@@ -105,6 +105,9 @@ class SpecializedEnvironment(MainTargetABC):
 
 @dataclass(frozen=True)
 class SpecializedEnvironmentFromPolicyInputs(MainTargetABC):
+    processed_data_or_empty_dict: str = (
+        "specialized_environment_from_policy_inputs__processed_data_or_empty_dict"
+    )
     qnames_to_derive_functions_from: str = (
         "specialized_environment_from_policy_inputs__qnames_to_derive_functions_from"
     )
