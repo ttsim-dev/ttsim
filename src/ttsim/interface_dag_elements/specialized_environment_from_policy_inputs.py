@@ -60,7 +60,8 @@ if TYPE_CHECKING:
     include_if_any_input_present=[
         "input_data__df_and_mapper__df",
         "input_data__df_and_mapper__mapper",
-        "input_data__df_with_nested_columnsinput_data__tree",
+        "input_data__df_with_nested_columns",
+        "input_data__tree",
     ],
     leaf_name="processed_data_or_empty_dict",
 )
@@ -80,7 +81,8 @@ def processed_data_or_empty_dict_input_data_provided(
     include_if_no_input_present=[
         "input_data__df_and_mapper__df",
         "input_data__df_and_mapper__mapper",
-        "input_data__df_with_nested_columnsinput_data__tree",
+        "input_data__df_with_nested_columns",
+        "input_data__tree",
     ],
     leaf_name="processed_data_or_empty_dict",
 )
