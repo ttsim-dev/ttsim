@@ -64,7 +64,6 @@ def tt(
     input_data: InputData | None = None,
     processed_data: QNameData | None = None,
     labels: Labels | None = None,
-    tt_targets: TTTargets | None = None,
     policy_environment: PolicyEnvironment | None = None,
     backend: Literal["numpy", "jax"] = "numpy",
     include_fail_nodes: bool = True,
@@ -137,7 +136,6 @@ def tt(
         orig_policy_objects=orig_policy_objects,
         processed_data=processed_data,
         labels=labels,
-        tt_targets=tt_targets,
         backend=backend,
         include_fail_nodes=include_fail_nodes,
         include_warn_nodes=include_warn_nodes,
@@ -164,37 +162,26 @@ def _get_tt_dag_with_node_metadata(
     orig_policy_objects: OrigPolicyObjects | None = None,
     processed_data: QNameData | None = None,
     labels: Labels | None = None,
-    tt_targets: TTTargets | None = None,
     backend: Literal["numpy", "jax"] = "numpy",
     include_fail_nodes: bool = True,
     include_warn_nodes: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
-    if not policy_environment:
-        policy_environment = main(
-            main_target=MainTarget.policy_environment,
-            orig_policy_objects=(OrigPolicyObjects(root=root) if root else None),
-            policy_date_str=policy_date_str,
-        )
-    # It is not sufficient to use node_selector.qnames as tt_targets because of the
-    # NodeSelector types 'neighbors' and 'descendants'. We must always create the
-    # complete DAG (given input data) before selecting nodes.
-    all_tt_targets = (
-        [*dt.qnames(policy_environment), *node_selector.qnames]
-        if node_selector
-        else dt.qnames(policy_environment)
-    )
     complete_tt_dag_and_specialized_environment = main(
         main_targets=[
             MainTarget.specialized_environment_from_policy_inputs.complete_tt_dag,
             MainTarget.specialized_environment_from_policy_inputs.without_tree_logic_and_with_derived_functions,
         ],
         policy_date_str=policy_date_str,
-        orig_policy_objects=orig_policy_objects
-        if orig_policy_objects
-        else OrigPolicyObjects(root=root),
+        orig_policy_objects=(
+            orig_policy_objects if orig_policy_objects else OrigPolicyObjects(root=root)
+        ),
         policy_environment=policy_environment,
-        tt_targets=tt_targets if tt_targets else TTTargets(qname=all_tt_targets),
+        tt_targets=(
+            TTTargets(qname=dict.fromkeys(node_selector.qnames))
+            if node_selector
+            else None
+        ),
         input_data=input_data,
         processed_data=processed_data,
         labels=labels,

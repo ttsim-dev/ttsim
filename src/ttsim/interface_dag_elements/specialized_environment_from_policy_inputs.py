@@ -73,7 +73,7 @@ def qnames_to_derive_functions_from(
         pattern_all.fullmatch(qn).group("base_name") for qn in labels__input_columns
     }
 
-    out = labels__input_columns.copy()
+    out = set(labels__input_columns)
     for pi in labels__policy_inputs:
         match = pattern_all.fullmatch(pi)
         base_name = match.group("base_name")
@@ -87,8 +87,9 @@ def qnames_to_derive_functions_from(
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
-    labels__input_columns: UnorderedQNames,
     tt_targets__qname: OrderedQNames,
+    labels__input_columns: UnorderedQNames,
+    labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -105,7 +106,10 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        tt_targets=set(tt_targets__qname) - labels__input_columns,
+        tt_targets=(
+            (labels__all_qnames_in_policy_environment | set(tt_targets__qname))
+            - set(labels__input_columns)
+        ),
         input_columns=qnames_to_derive_functions_from,
         grouping_levels=labels__grouping_levels,
     )
@@ -130,6 +134,7 @@ def without_processed_data_nodes_with_dummy_callables(
 def complete_tt_dag(
     without_processed_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     tt_targets__qname: OrderedQNames,
+    labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__input_columns: UnorderedQNames,
 ) -> nx.DiGraph:
     """Create the complete DAG.
@@ -140,7 +145,10 @@ def complete_tt_dag(
     """
     return create_dag(
         functions=without_processed_data_nodes_with_dummy_callables,
-        targets=set(tt_targets__qname) - labels__input_columns,
+        targets=(
+            (labels__all_qnames_in_policy_environment | set(tt_targets__qname))
+            - set(labels__input_columns)
+        ),
     )
 
 

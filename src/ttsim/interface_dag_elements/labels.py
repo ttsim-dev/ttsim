@@ -145,6 +145,14 @@ def input_columns_is_empty_set(
 
 
 @interface_function()
+def all_qnames_in_policy_environment(
+    policy_environment: PolicyEnvironment,
+) -> UnorderedQNames:
+    """The names of all objects in the policy environment."""
+    return set(dt.qnames(policy_environment))
+
+
+@interface_function()
 def policy_inputs(policy_environment: PolicyEnvironment) -> UnorderedQNames:
     """The (qualified) names of the policy inputs in the policy environment."""
     return {

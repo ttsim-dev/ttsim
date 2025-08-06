@@ -127,6 +127,7 @@ class Targets(MainTargetABC):
 
 @dataclass(frozen=True)
 class Labels(MainTargetABC):
+    all_qnames_in_policy_environment: str = "labels__all_qnames_in_policy_environment"
     column_targets: str = "labels__column_targets"
     grouping_levels: str = "labels__grouping_levels"
     policy_inputs: str = "labels__policy_inputs"

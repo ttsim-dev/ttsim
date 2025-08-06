@@ -7,7 +7,7 @@ import pytest
 
 from mettsim import middle_earth
 from ttsim.main import main
-from ttsim.main_args import InputData, TTTargets
+from ttsim.main_args import Labels, TTTargets
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.interface import interface
 from ttsim.plot.dag.tt import (
@@ -420,22 +420,13 @@ def test_orphaned_dates_are_removed_from_dag():
     assert "policy_day" not in dag.nodes()
 
 
-def test_input_data_overrides_nodes_in_plotting_dag(xnp):
+def test_input_data_overrides_nodes_in_plotting_dag():
     dag = main(
         main_target=MainTarget.specialized_environment_from_policy_inputs.complete_tt_dag,
         policy_date_str="2025-01-01",
         orig_policy_objects={"root": middle_earth.ROOT_PATH},
         tt_targets=TTTargets(qname=["payroll_tax__amount_y"]),
-        input_data=InputData.tree(
-            {
-                "p_id": xnp.array([100]),
-                "payroll_tax": {
-                    "income": {
-                        "amount_y": xnp.array([100]),
-                    }
-                },
-            }
-        ),
+        labels=Labels(input_columns=["payroll_tax__income__amount_y"]),
         include_warn_nodes=False,
     )
     assert "payroll_tax__income__amount_y" in dag.nodes()
