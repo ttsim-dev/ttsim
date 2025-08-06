@@ -304,15 +304,13 @@ def input_data_is_invalid(input_data__flat: FlatData) -> None:
         raise ValueError(msg)
 
     # Check for non-unique p_ids
-    p_id_counts: dict[int, int] = {}
-    # Need the map because Jax loop items are 1-element arrays.
-    for i in map(int, p_id):
-        if i in p_id_counts:
-            p_id_counts[i] += 1
-        else:
-            p_id_counts[i] = 1
+    # Convert to numpy array for performance (avoid slow JAX array iteration)
+    p_id_numpy = numpy.asarray(p_id)
 
-    non_unique_p_ids = [i for i, count in p_id_counts.items() if count > 1]
+    # Use pandas duplicated for efficient duplicate detection
+    p_id_series = pd.Series(p_id_numpy)
+    duplicated_mask = p_id_series.duplicated(keep=False)
+    non_unique_p_ids = p_id_series[duplicated_mask].unique().tolist()
 
     if non_unique_p_ids:
         message = (

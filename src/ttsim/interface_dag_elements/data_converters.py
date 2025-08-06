@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
+import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -131,12 +132,19 @@ def df_with_mapped_columns_to_flat_data(
 
 
     """
+    # Always use numpy for initial data preparation (performance optimization for JAX)
     path_to_array = {}
     for path, mapper_value in dt.flatten_to_tree_paths(mapper).items():
-        if xnp.isscalar(mapper_value) and not isinstance(mapper_value, str):
-            path_to_array[path] = xnp.asarray([mapper_value] * len(df))
+        if np.isscalar(mapper_value) and not isinstance(mapper_value, str):
+            numpy_array = np.asarray([mapper_value] * len(df))
         else:
-            path_to_array[path] = xnp.asarray(df[mapper_value])
+            numpy_array = np.asarray(df[mapper_value])
+
+        # Convert to target backend array with zero-copy if JAX
+        if xnp.__name__ == "jax.numpy":
+            path_to_array[path] = xnp.asarray(numpy_array, copy=False)
+        else:
+            path_to_array[path] = numpy_array
 
     return path_to_array
 
@@ -164,10 +172,19 @@ def df_with_nested_columns_to_flat_data(
         >>> result
         {("a", "b"): np.array([1, 2, 3]), ("c",): np.array([4, 5, 6])}
     """
-    return {
-        _remove_nan_from_keys(key): xnp.asarray(value)
-        for key, value in df.to_dict(orient="list").items()
-    }
+    # Always use numpy for initial data preparation (performance optimization for JAX)
+    result = {}
+    for key, value in df.to_dict(orient="list").items():
+        clean_key = _remove_nan_from_keys(key)
+        numpy_array = np.asarray(value)
+
+        # Convert to target backend array with zero-copy if JAX
+        if xnp.__name__ == "jax.numpy":
+            result[clean_key] = xnp.asarray(numpy_array, copy=False)
+        else:
+            result[clean_key] = numpy_array
+
+    return result
 
 
 def _remove_nan_from_keys(path: tuple[str | Any, ...]) -> tuple[str, ...]:
