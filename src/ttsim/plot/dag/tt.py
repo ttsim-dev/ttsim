@@ -144,9 +144,9 @@ def _get_tt_dag_with_node_metadata(
         if node_selector
         else dt.qnames(policy_environment)
     )
-    complete_dag_and_specialized_environment = main(
+    complete_tt_dag_and_specialized_environment = main(
         main_targets=[
-            MainTarget.specialized_environment_from_policy_inputs.complete_dag,
+            MainTarget.specialized_environment_from_policy_inputs.complete_tt_dag,
             MainTarget.specialized_environment_from_policy_inputs.without_tree_logic_and_with_derived_functions,
         ],
         orig_policy_objects=OrigPolicyObjects(root=root),
@@ -155,20 +155,20 @@ def _get_tt_dag_with_node_metadata(
         input_data=input_data,
         policy_date_str=policy_date_str,
     )
-    complete_dag = complete_dag_and_specialized_environment[
+    complete_tt_dag = complete_tt_dag_and_specialized_environment[
         "specialized_environment_from_policy_inputs"
-    ]["complete_dag"]
+    ]["complete_tt_dag"]
     without_tree_logic_and_with_derived_functions = (
-        complete_dag_and_specialized_environment[
+        complete_tt_dag_and_specialized_environment[
             "specialized_environment_from_policy_inputs"
         ]["without_tree_logic_and_with_derived_functions"]
     )
 
     if node_selector is None:
-        selected_dag = complete_dag
+        selected_dag = complete_tt_dag
     else:
         selected_dag = select_nodes_from_dag(
-            complete_dag=complete_dag,
+            complete_tt_dag=complete_tt_dag,
             node_selector=node_selector,
         )
 
@@ -265,7 +265,7 @@ def _get_node_descriptions(
 
 
 def select_nodes_from_dag(
-    complete_dag: nx.DiGraph,
+    complete_tt_dag: nx.DiGraph,
     node_selector: _QNameNodeSelector,
 ) -> nx.DiGraph:
     """Select nodes based on the node selector."""
@@ -275,21 +275,25 @@ def select_nodes_from_dag(
     elif node_selector.type == "ancestors":
         for node in node_selector.qnames:
             selected_nodes.update(
-                _kth_order_predecessors(complete_dag, node, order=node_selector.order)
+                _kth_order_predecessors(
+                    complete_tt_dag, node, order=node_selector.order
+                )
                 if node_selector.order
-                else [*list(nx.ancestors(complete_dag, node)), node]
+                else [*list(nx.ancestors(complete_tt_dag, node)), node]
             )
     elif node_selector.type == "descendants":
         for node in node_selector.qnames:
             selected_nodes.update(
-                _kth_order_successors(complete_dag, node, order=node_selector.order)
+                _kth_order_successors(complete_tt_dag, node, order=node_selector.order)
                 if node_selector.order
-                else [*list(nx.descendants(complete_dag, node)), node]
+                else [*list(nx.descendants(complete_tt_dag, node)), node]
             )
     elif node_selector.type == "neighbors":
         order = node_selector.order or 1
         for node in node_selector.qnames:
-            selected_nodes.update(_kth_order_neighbors(complete_dag, node, order=order))
+            selected_nodes.update(
+                _kth_order_neighbors(complete_tt_dag, node, order=order)
+            )
     else:
         msg = (
             f"Invalid node selector type: {node_selector.type}. "
@@ -297,8 +301,8 @@ def select_nodes_from_dag(
         )
         raise ValueError(msg)
 
-    dag_copy = copy.deepcopy(complete_dag)
-    dag_copy.remove_nodes_from(set(complete_dag.nodes) - set(selected_nodes))
+    dag_copy = copy.deepcopy(complete_tt_dag)
+    dag_copy.remove_nodes_from(set(complete_tt_dag.nodes) - set(selected_nodes))
     return dag_copy
 
 

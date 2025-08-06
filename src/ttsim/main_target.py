@@ -105,15 +105,13 @@ class SpecializedEnvironment(MainTargetABC):
 
 @dataclass(frozen=True)
 class SpecializedEnvironmentFromPolicyInputs(MainTargetABC):
-    processed_data_or_empty_dict: str = (
-        "specialized_environment_from_policy_inputs__processed_data_or_empty_dict"
-    )
+    input_columns: str = "specialized_environment_from_policy_inputs__input_columns"
     qnames_to_derive_functions_from: str = (
         "specialized_environment_from_policy_inputs__qnames_to_derive_functions_from"
     )
     without_tree_logic_and_with_derived_functions: str = "specialized_environment_from_policy_inputs__without_tree_logic_and_with_derived_functions"  # noqa: E501
     without_processed_data_nodes_with_dummy_callables: str = "specialized_environment_from_policy_inputs__without_processed_data_nodes_with_dummy_callables"  # noqa: E501
-    complete_dag: str = "specialized_environment_from_policy_inputs__complete_dag"
+    complete_tt_dag: str = "specialized_environment_from_policy_inputs__complete_tt_dag"
     with_processed_params_and_scalars: str = (
         "specialized_environment_from_policy_inputs__with_processed_params_and_scalars"
     )

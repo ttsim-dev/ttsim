@@ -422,7 +422,7 @@ def test_orphaned_dates_are_removed_from_dag():
 
 def test_input_data_overrides_nodes_in_plotting_dag(xnp):
     dag = main(
-        main_target=MainTarget.specialized_environment_from_policy_inputs.complete_dag,
+        main_target=MainTarget.specialized_environment_from_policy_inputs.complete_tt_dag,
         policy_date_str="2025-01-01",
         orig_policy_objects={"root": middle_earth.ROOT_PATH},
         tt_targets=TTTargets(qname=["payroll_tax__amount_y"]),
