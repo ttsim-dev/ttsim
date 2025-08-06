@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import colorsys
 from dataclasses import dataclass
+from typing import Any
 
 import networkx as nx
 import numpy
@@ -16,8 +17,8 @@ class NodeMetaData:
 
 def get_figure(
     dag: nx.DiGraph,
-    title: str,
     show_node_description: bool,
+    **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
     """Plot the DAG."""
     nice_dag = nx.relabel_nodes(
@@ -136,29 +137,29 @@ def get_figure(
         },
     )
 
-    # Create the figure with specified canvas size
-    return go.Figure(
-        data=[*edge_traces, node_trace],
-        layout=go.Layout(
-            title={"text": title, "font": {"size": 16}},
-            showlegend=False,
-            hovermode="closest",
-            margin={"b": 40, "l": 40, "r": 40, "t": 60},
-            width=1800,
-            height=1200,
-            annotations=annotations,
-            xaxis={
-                "showgrid": False,
-                "zeroline": False,
-                "showticklabels": False,
-            },
-            yaxis={
-                "showgrid": False,
-                "zeroline": False,
-                "showticklabels": False,
-            },
-        ),
+    layout = go.Layout(
+        showlegend=False,
+        hovermode="closest",
+        margin={"b": 40, "l": 40, "r": 40, "t": 60},
+        width=1800,
+        height=1200,
+        annotations=annotations,
+        xaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+        },
+        yaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+        },
     )
+
+    if kwargs:
+        layout.update(kwargs)
+
+    return go.Figure(data=[*edge_traces, node_trace], layout=layout)
 
 
 def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:

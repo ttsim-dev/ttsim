@@ -8,7 +8,10 @@ import networkx as nx
 from ttsim.interface_dag_elements.automatically_added_functions import (
     TIME_UNIT_LABELS,
 )
-from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.interface_dag_elements.interface_node_objects import (
+    input_dependent_interface_function,
+    interface_function,
+)
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
@@ -17,6 +20,8 @@ from ttsim.interface_dag_elements.shared import (
 from ttsim.tt.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.typing import (
         OrderedQNames,
         PolicyEnvironment,
@@ -105,10 +110,38 @@ def top_level_namespace(
     )
 
 
-@interface_function()
-def input_columns(processed_data: QNameData) -> UnorderedQNames:
-    """The (qualified) column names in the processed data."""
+@input_dependent_interface_function(
+    include_if_any_input_present=[
+        "input_data__flat",
+        "input_data__tree",
+        "input_data__df_with_nested_columns",
+        "input_data__df_and_mapper__df",
+        "processed_data",
+    ],
+    leaf_name="input_columns",
+)
+def input_columns_from_input_data(
+    processed_data: QNameData,
+) -> UnorderedQNames:
+    """The (qualified) column names in the input data."""
     return set(processed_data.keys())
+
+
+@input_dependent_interface_function(
+    include_if_no_input_present=[
+        "input_data__flat",
+        "input_data__tree",
+        "input_data__df_with_nested_columns",
+        "input_data__df_and_mapper__df",
+        "processed_data",
+    ],
+    leaf_name="input_columns",
+)
+def input_columns_is_empty_set(
+    xnp: ModuleType,  # fake input # noqa: ARG001
+) -> UnorderedQNames:
+    """No input data provided, hence input columns are an empty set."""
+    return set()
 
 
 @interface_function()

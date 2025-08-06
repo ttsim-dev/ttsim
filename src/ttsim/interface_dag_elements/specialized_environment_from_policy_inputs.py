@@ -18,7 +18,6 @@ from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT
 from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceFunction,
     InterfaceInput,
-    input_dependent_interface_function,
     interface_function,
 )
 from ttsim.interface_dag_elements.shared import (
@@ -55,43 +54,9 @@ if TYPE_CHECKING:
     )
 
 
-@input_dependent_interface_function(
-    include_if_any_input_present=[
-        "input_data__flat",
-        "input_data__tree",
-        "input_data__df_with_nested_columns",
-        "input_data__df_and_mapper__df",
-        "processed_data",
-    ],
-    leaf_name="input_columns",
-)
-def input_columns_from_input_data(
-    labels__input_columns: UnorderedQNames,
-) -> UnorderedQNames:
-    """The (qualified) column names in the input data."""
-    return labels__input_columns
-
-
-@input_dependent_interface_function(
-    include_if_no_input_present=[
-        "input_data__flat",
-        "input_data__tree",
-        "input_data__df_with_nested_columns",
-        "input_data__df_and_mapper__df",
-        "processed_data",
-    ],
-    leaf_name="input_columns",
-)
-def input_columns_is_empty_set(
-    xnp: ModuleType,  # fake input # noqa: ARG001
-) -> UnorderedQNames:
-    """No input data provided, hence input columns are an empty set."""
-    return set()
-
-
 @interface_function()
 def qnames_to_derive_functions_from(
-    input_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
     labels__policy_inputs: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
@@ -105,10 +70,10 @@ def qnames_to_derive_functions_from(
         grouping_levels=labels__grouping_levels,
     )
     base_names_input_columns = {
-        pattern_all.fullmatch(qn).group("base_name") for qn in input_columns
+        pattern_all.fullmatch(qn).group("base_name") for qn in labels__input_columns
     }
 
-    out = input_columns.copy()
+    out = labels__input_columns.copy()
     for pi in labels__policy_inputs:
         match = pattern_all.fullmatch(pi)
         base_name = match.group("base_name")
@@ -122,7 +87,7 @@ def qnames_to_derive_functions_from(
 def without_tree_logic_and_with_derived_functions(
     policy_environment: PolicyEnvironment,
     qnames_to_derive_functions_from: UnorderedQNames,
-    input_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
     tt_targets__qname: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
@@ -140,7 +105,7 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        tt_targets=set(tt_targets__qname) - input_columns,
+        tt_targets=set(tt_targets__qname) - labels__input_columns,
         input_columns=qnames_to_derive_functions_from,
         grouping_levels=labels__grouping_levels,
     )
@@ -149,7 +114,7 @@ def without_tree_logic_and_with_derived_functions(
 @interface_function()
 def without_processed_data_nodes_with_dummy_callables(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
-    input_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
     """Remove nodes that are in the processed data from the policy environment."""
     return {
@@ -157,7 +122,7 @@ def without_processed_data_nodes_with_dummy_callables(
         if not callable(n)
         else n
         for qn, n in without_tree_logic_and_with_derived_functions.items()
-        if qn not in input_columns
+        if qn not in labels__input_columns
     }
 
 
@@ -165,7 +130,7 @@ def without_processed_data_nodes_with_dummy_callables(
 def complete_tt_dag(
     without_processed_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     tt_targets__qname: OrderedQNames,
-    input_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
 ) -> nx.DiGraph:
     """Create the complete DAG.
 
@@ -175,7 +140,7 @@ def complete_tt_dag(
     """
     return create_dag(
         functions=without_processed_data_nodes_with_dummy_callables,
-        targets=set(tt_targets__qname) - input_columns,
+        targets=set(tt_targets__qname) - labels__input_columns,
     )
 
 

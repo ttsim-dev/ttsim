@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import textwrap
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
 import networkx as nx
@@ -24,10 +24,11 @@ if TYPE_CHECKING:
 
     import plotly.graph_objects as go
 
-    from ttsim.main_args import InputData
+    from ttsim.main_args import InputData, Labels
     from ttsim.typing import (
         DashedISOString,
         PolicyEnvironment,
+        QNameData,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     )
 
@@ -51,15 +52,25 @@ class _QNameNodeSelector:
 
 
 def tt(
+    # Args specific to TTSIM plotting
     root: Path,
-    policy_date_str: DashedISOString | None = None,
-    policy_environment: PolicyEnvironment | None = None,
-    input_data: InputData | None = None,
     node_selector: NodeSelector | None = None,
-    title: str = "",
     include_params: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
+    # Elements of main
+    policy_date_str: DashedISOString | None = None,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    input_data: InputData | None = None,
+    processed_data: QNameData | None = None,
+    labels: Labels | None = None,
+    tt_targets: TTTargets | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    backend: Literal["numpy", "jax"] = "numpy",
+    include_fail_nodes: bool = True,
+    include_warn_nodes: bool = True,
+    # Args specific to plotly
+    **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
     """Plot the TT DAG.
 
@@ -67,22 +78,37 @@ def tt(
     ----------
     root
         The root path.
-    policy_date_str
-        The date string.
-    policy_environment
-        (Optional) The policy environment.
-    input_data
-        (Optional) The input data.
     node_selector
-        (Optional) The node selector. If not provided, the entire DAG is plotted.
-    title
-        (Optional) The title of the plot.
+        The node selector. If not provided, the entire DAG is plotted.
     include_params
-        (Optional) Include param functions when plotting the DAG. Default is True.
+        Include param functions when plotting the DAG. Default is True.
     show_node_description
-        (Optional) Show a description of the node when hovering over it.
+        Show a description of the node when hovering over it.
     output_path
-        (Optional) If provided, the figure is written to the path.
+        If provided, the figure is written to the path.
+    policy_date_str
+        The date for which to plot the DAG.
+    orig_policy_objects
+        The orig policy objects.
+    input_data
+        The input data.
+    processed_data
+        The processed data.
+    labels
+        The labels.
+    tt_targets
+        The TT targets.
+    policy_environment
+        The policy environment.
+    backend
+        The backend to use when executing main.
+    include_fail_nodes
+        Whether to include fail nodes when executing main.
+    include_warn_nodes
+        Whether to include warn nodes when executing main.
+    kwargs
+        Additional keyword arguments. Will be passed to
+        plotly.graph_objects.Figure.layout.
 
     Returns
     -------
@@ -103,17 +129,24 @@ def tt(
 
     dag_with_node_metadata = _get_tt_dag_with_node_metadata(
         root=root,
-        policy_date_str=policy_date_str,
-        policy_environment=policy_environment,
-        input_data=input_data,
         node_selector=qname_node_selector,
         include_params=include_params,
+        input_data=input_data,
+        policy_date_str=policy_date_str,
+        policy_environment=policy_environment,
+        orig_policy_objects=orig_policy_objects,
+        processed_data=processed_data,
+        labels=labels,
+        tt_targets=tt_targets,
+        backend=backend,
+        include_fail_nodes=include_fail_nodes,
+        include_warn_nodes=include_warn_nodes,
     )
 
     fig = get_figure(
         dag=dag_with_node_metadata,
-        title=title,
         show_node_description=show_node_description,
+        **kwargs,
     )
     if output_path:
         fig.write_html(output_path)
@@ -122,18 +155,25 @@ def tt(
 
 
 def _get_tt_dag_with_node_metadata(
-    root: Path,
-    policy_date_str: DashedISOString | None = None,
-    policy_environment: PolicyEnvironment | None = None,
-    input_data: InputData | None = None,
+    root: Path | None = None,
     node_selector: _QNameNodeSelector | None = None,
     include_params: bool = True,
+    input_data: InputData | None = None,
+    policy_date_str: DashedISOString | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    processed_data: QNameData | None = None,
+    labels: Labels | None = None,
+    tt_targets: TTTargets | None = None,
+    backend: Literal["numpy", "jax"] = "numpy",
+    include_fail_nodes: bool = True,
+    include_warn_nodes: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
     if not policy_environment:
         policy_environment = main(
             main_target=MainTarget.policy_environment,
-            orig_policy_objects=OrigPolicyObjects(root=root),
+            orig_policy_objects=(OrigPolicyObjects(root=root) if root else None),
             policy_date_str=policy_date_str,
         )
     # It is not sufficient to use node_selector.qnames as tt_targets because of the
@@ -149,11 +189,18 @@ def _get_tt_dag_with_node_metadata(
             MainTarget.specialized_environment_from_policy_inputs.complete_tt_dag,
             MainTarget.specialized_environment_from_policy_inputs.without_tree_logic_and_with_derived_functions,
         ],
-        orig_policy_objects=OrigPolicyObjects(root=root),
-        policy_environment=policy_environment,
-        tt_targets=TTTargets(qname=all_tt_targets),
-        input_data=input_data,
         policy_date_str=policy_date_str,
+        orig_policy_objects=orig_policy_objects
+        if orig_policy_objects
+        else OrigPolicyObjects(root=root),
+        policy_environment=policy_environment,
+        tt_targets=tt_targets if tt_targets else TTTargets(qname=all_tt_targets),
+        input_data=input_data,
+        processed_data=processed_data,
+        labels=labels,
+        backend=backend,
+        include_fail_nodes=include_fail_nodes,
+        include_warn_nodes=include_warn_nodes,
     )
     complete_tt_dag = complete_tt_dag_and_specialized_environment[
         "specialized_environment_from_policy_inputs"

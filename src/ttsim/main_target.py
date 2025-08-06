@@ -105,7 +105,6 @@ class SpecializedEnvironment(MainTargetABC):
 
 @dataclass(frozen=True)
 class SpecializedEnvironmentFromPolicyInputs(MainTargetABC):
-    input_columns: str = "specialized_environment_from_policy_inputs__input_columns"
     qnames_to_derive_functions_from: str = (
         "specialized_environment_from_policy_inputs__qnames_to_derive_functions_from"
     )
