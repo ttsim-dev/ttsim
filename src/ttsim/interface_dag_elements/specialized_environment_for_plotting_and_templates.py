@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, overload
 
 import dags.tree as dt
+import networkx as nx
 from dags import create_dag
 
 from ttsim.interface_dag_elements import specialized_environment
@@ -42,8 +43,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
     from typing import Any
-
-    import networkx as nx
 
     from ttsim.typing import (
         OrderedQNames,
@@ -140,14 +139,44 @@ def complete_tt_dag(
 
     The DAG is based on without_tree_logic_and_with_derived_functions because it should
     include parameters and param_functions.
+
+    If tt_targets are specified, only nodes that are ancestors or descendants of the
+    targets are kept. If no tt_targets are specified, the entire DAG is returned.
     """
-    return create_dag(
+    dag = create_dag(
         functions=without_processed_data_nodes_with_dummy_callables,
+        # We need to specify all possible nodes as targets here because of the selection
+        # types 'descendants' and 'neighbors'. In these cases 'tt_targets__qname' is not
+        # the end point of the DAG, but the start point (descendants) or the middle
+        # point (neighbors).
         targets=(
             (labels__all_qnames_in_policy_environment | set(tt_targets__qname))
             - set(labels__input_columns)
         ),
     )
+
+    # If no input columns are specified, return the entire DAG
+    if not labels__input_columns:
+        return dag
+
+    # Keep only nodes that are ancestors or descendants of the tt_targets. This is
+    # necessary because we specified all nodes as targets in the initial DAG.
+    target_nodes = set(tt_targets__qname)
+    nodes_to_keep = set()
+
+    for target in target_nodes:
+        if target in dag.nodes():
+            # Add the target itself
+            nodes_to_keep.add(target)
+            # Add all ancestors (nodes that the target depends on)
+            nodes_to_keep.update(nx.ancestors(dag, target))
+            # Add all descendants (nodes that depend on the target)
+            nodes_to_keep.update(nx.descendants(dag, target))
+
+    # Remove nodes that are not ancestors or descendants of any target
+    dag.remove_nodes_from(set(dag.nodes()) - nodes_to_keep)
+
+    return dag
 
 
 @interface_function()

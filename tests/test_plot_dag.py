@@ -400,14 +400,15 @@ def test_input_data_overrides_nodes_in_plotting_dag():
         main_target=MainTarget.specialized_environment_for_plotting_and_templates.complete_tt_dag,
         policy_date_str="2025-01-01",
         orig_policy_objects={"root": middle_earth.ROOT_PATH},
-        tt_targets=TTTargets(qname=["payroll_tax__amount_y"]),
-        labels=Labels(input_columns=["payroll_tax__income__amount_y"]),
+        tt_targets=TTTargets(qname=["wealth_tax__amount_y"]),
+        labels=Labels(input_columns=["wealth_tax__exempt_from_wealth_tax"]),
         include_warn_nodes=False,
     )
-    assert "payroll_tax__income__amount_y" in dag.nodes()
-    assert "payroll_tax__income__gross_wage_y" not in dag.nodes()
-    assert "payroll_tax__income__deductions_y" not in dag.nodes()
-    assert "payroll_tax__amount_y" in dag.nodes()
+    assert "wealth_tax__exempt_from_wealth_tax" in dag.nodes()
+    assert "wealth_tax__amount_y" in dag.nodes()
+    assert "wealth_fam" not in dag.nodes()
+    assert "wealth_kin" not in dag.nodes()
+    assert "wealth" in dag.nodes()
 
 
 def test_can_create_template_with_selector_and_input_data_from_tt(xnp):
