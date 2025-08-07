@@ -1,9 +1,10 @@
-"""Builds the specialized environment from policy inputs.
+"""Builds the specialized environment specifically for creating input templates or plots
+of the DAG.
 
-The main difference to `specialized_environment` is that policy inputs are taken as a
-basis for derived functions alongside with the user-provided input data. This is useful
-for applications where users are interested in the DAG itself (not its execution), e.g.
-when creating an input data template or plotting it.
+The main difference to `specialized_environment` is that input data is optional. Derived
+functions are created based on policy inputs if the corresponding input data is not
+available. This is useful for applications where users are interested in the DAG itself
+(not its execution).
 """
 
 from __future__ import annotations
@@ -93,13 +94,7 @@ def without_tree_logic_and_with_derived_functions(
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Return a flat policy environment with derived functions.
-
-    Two steps:
-    1. Remove all tree logic from the policy environment.
-    2. Add derived functions to the policy environment.
-
-    """
+    """Return a flat policy environment with derived functions."""
     qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
         qname_env=dt.flatten_to_qnames(policy_environment),
         labels__top_level_namespace=labels__top_level_namespace,
@@ -120,7 +115,11 @@ def without_processed_data_nodes_with_dummy_callables(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     labels__input_columns: UnorderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Remove nodes that are in the processed data from the policy environment."""
+    """Remove nodes from the environment that are overridden by input columns.
+
+    Transforms non-callable nodes into callables to include them as nodes in the DAG
+    created later.
+    """
     return {
         qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
         if not callable(n)
@@ -140,8 +139,7 @@ def complete_tt_dag(
     """Create the complete DAG.
 
     The DAG is based on without_tree_logic_and_with_derived_functions because it should
-    include parameters and param_functions. Transforms non-callable nodes into callables
-    to include them as nodes in the DAG.
+    include parameters and param_functions.
     """
     return create_dag(
         functions=without_processed_data_nodes_with_dummy_callables,
@@ -155,6 +153,7 @@ def complete_tt_dag(
 @interface_function()
 def with_processed_params_and_scalars(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    labels__input_columns: UnorderedQNames,
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
     dnp: ModuleType,
@@ -162,7 +161,7 @@ def with_processed_params_and_scalars(
 ) -> SpecEnvWithProcessedParamsAndScalars:
     return specialized_environment.with_processed_params_and_scalars(
         without_tree_logic_and_with_derived_functions=without_tree_logic_and_with_derived_functions,
-        processed_data={},
+        processed_data=dict.fromkeys(labels__input_columns),
         backend=backend,
         xnp=xnp,
         dnp=dnp,

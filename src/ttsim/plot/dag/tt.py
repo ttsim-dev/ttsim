@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 import textwrap
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
@@ -33,28 +32,13 @@ if TYPE_CHECKING:
     )
 
 
-@dataclass(frozen=True)
-class NodeSelector:
-    """Select nodes from the DAG."""
-
-    node_paths: list[tuple[str, ...]]
-    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
-    order: int | None = None
-
-
-@dataclass(frozen=True)
-class _QNameNodeSelector:
-    """Select nodes from the DAG."""
-
-    qnames: set[str]
-    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
-    order: int | None = None
-
-
 def tt(
+    *,
     # Args specific to TTSIM plotting
     root: Path,
-    node_selector: NodeSelector | None = None,
+    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    | None = None,
+    selection_depth: int | None = None,
     include_params: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
@@ -62,6 +46,7 @@ def tt(
     policy_date_str: DashedISOString | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
     input_data: InputData | None = None,
+    tt_targets: TTTargets | None = None,
     processed_data: QNameData | None = None,
     labels: Labels | None = None,
     policy_environment: PolicyEnvironment | None = None,
@@ -77,8 +62,16 @@ def tt(
     ----------
     root
         The root path.
-    node_selector
-        The node selector. If not provided, the entire DAG is plotted.
+    selection_type
+        The type of the DAG to plot. Can be one of:
+        - "neighbors": Plot the neighbors of the target nodes.
+        - "descendants": Plot the descendants of the target nodes.
+        - "ancestors": Plot the ancestors of the target nodes.
+        - "nodes": Plot the target nodes.
+        If not provided, the entire DAG is plotted.
+    selection_depth
+        The depth of the selection. Only used if selection_type is "neighbors",
+        "descendants", or "ancestors".
     include_params
         Include param functions when plotting the DAG. Default is True.
     show_node_description
@@ -91,12 +84,12 @@ def tt(
         The orig policy objects.
     input_data
         The input data.
+    tt_targets
+        The TT targets.
     processed_data
         The processed data.
     labels
         The labels.
-    tt_targets
-        The TT targets.
     policy_environment
         The policy environment.
     backend
@@ -113,24 +106,13 @@ def tt(
     -------
     The figure.
     """
-    _fail_if_input_data_provided_without_node_selector(
-        input_data=input_data, node_selector=node_selector
-    )
-
-    if node_selector:
-        qname_node_selector = _QNameNodeSelector(
-            qnames={dt.qname_from_tree_path(qn) for qn in node_selector.node_paths},
-            type=node_selector.type,
-            order=node_selector.order,
-        )
-    else:
-        qname_node_selector = None
-
     dag_with_node_metadata = _get_tt_dag_with_node_metadata(
         root=root,
-        node_selector=qname_node_selector,
+        selection_type=selection_type,
+        selection_depth=selection_depth,
         include_params=include_params,
         input_data=input_data,
+        tt_targets=tt_targets,
         policy_date_str=policy_date_str,
         policy_environment=policy_environment,
         orig_policy_objects=orig_policy_objects,
@@ -154,9 +136,12 @@ def tt(
 
 def _get_tt_dag_with_node_metadata(
     root: Path | None = None,
-    node_selector: _QNameNodeSelector | None = None,
+    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    | None = None,
+    selection_depth: int | None = None,
     include_params: bool = True,
     input_data: InputData | None = None,
+    tt_targets: TTTargets | None = None,
     policy_date_str: DashedISOString | None = None,
     policy_environment: PolicyEnvironment | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
@@ -169,19 +154,15 @@ def _get_tt_dag_with_node_metadata(
     """Get the TT DAG to plot."""
     complete_tt_dag_and_specialized_environment = main(
         main_targets=[
-            MainTarget.specialized_environment_from_policy_inputs.complete_tt_dag,
-            MainTarget.specialized_environment_from_policy_inputs.without_tree_logic_and_with_derived_functions,
+            MainTarget.specialized_environment_for_plotting_and_templates.complete_tt_dag,
+            MainTarget.specialized_environment_for_plotting_and_templates.without_tree_logic_and_with_derived_functions,
         ],
         policy_date_str=policy_date_str,
         orig_policy_objects=(
             orig_policy_objects if orig_policy_objects else OrigPolicyObjects(root=root)
         ),
         policy_environment=policy_environment,
-        tt_targets=(
-            TTTargets(qname=dict.fromkeys(node_selector.qnames))
-            if node_selector
-            else None
-        ),
+        tt_targets=tt_targets,
         input_data=input_data,
         processed_data=processed_data,
         labels=labels,
@@ -190,20 +171,24 @@ def _get_tt_dag_with_node_metadata(
         include_warn_nodes=include_warn_nodes,
     )
     complete_tt_dag = complete_tt_dag_and_specialized_environment[
-        "specialized_environment_from_policy_inputs"
+        "specialized_environment_for_plotting_and_templates"
     ]["complete_tt_dag"]
     without_tree_logic_and_with_derived_functions = (
         complete_tt_dag_and_specialized_environment[
-            "specialized_environment_from_policy_inputs"
+            "specialized_environment_for_plotting_and_templates"
         ]["without_tree_logic_and_with_derived_functions"]
     )
 
-    if node_selector is None:
+    if not selection_type:
         selected_dag = complete_tt_dag
     else:
+        tt_targets_qnames = _get_tt_targets_qnames(tt_targets)
+        _fail_if_tt_targets_not_provided(tt_targets_qnames)
         selected_dag = select_nodes_from_dag(
             complete_tt_dag=complete_tt_dag,
-            node_selector=node_selector,
+            tt_targets_qnames=tt_targets_qnames,
+            selection_type=selection_type,
+            selection_depth=selection_depth,
         )
 
     if not include_params:
@@ -300,37 +285,37 @@ def _get_node_descriptions(
 
 def select_nodes_from_dag(
     complete_tt_dag: nx.DiGraph,
-    node_selector: _QNameNodeSelector,
+    tt_targets_qnames: set[str],
+    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"],
+    selection_depth: int | None = None,
 ) -> nx.DiGraph:
     """Select nodes based on the node selector."""
     selected_nodes: set[str] = set()
-    if node_selector.type == "nodes":
-        selected_nodes.update(node_selector.qnames)
-    elif node_selector.type == "ancestors":
-        for node in node_selector.qnames:
+    if selection_type == "nodes":
+        selected_nodes.update(tt_targets_qnames)
+    elif selection_type == "ancestors":
+        for node in tt_targets_qnames:
             selected_nodes.update(
-                _kth_order_predecessors(
-                    complete_tt_dag, node, order=node_selector.order
-                )
-                if node_selector.order
+                _kth_order_predecessors(complete_tt_dag, node, order=selection_depth)
+                if selection_depth
                 else [*list(nx.ancestors(complete_tt_dag, node)), node]
             )
-    elif node_selector.type == "descendants":
-        for node in node_selector.qnames:
+    elif selection_type == "descendants":
+        for node in tt_targets_qnames:
             selected_nodes.update(
-                _kth_order_successors(complete_tt_dag, node, order=node_selector.order)
-                if node_selector.order
+                _kth_order_successors(complete_tt_dag, node, order=selection_depth)
+                if selection_depth
                 else [*list(nx.descendants(complete_tt_dag, node)), node]
             )
-    elif node_selector.type == "neighbors":
-        order = node_selector.order or 1
-        for node in node_selector.qnames:
+    elif selection_type == "neighbors":
+        order = selection_depth or 1
+        for node in tt_targets_qnames:
             selected_nodes.update(
                 _kth_order_neighbors(complete_tt_dag, node, order=order)
             )
     else:
         msg = (
-            f"Invalid node selector type: {node_selector.type}. "
+            f"Invalid selection type: {selection_type}. "
             "Choose one of 'nodes', 'ancestors', 'descendants', or 'neighbors'."
         )
         raise ValueError(msg)
@@ -383,16 +368,30 @@ def _kth_order_successors(
     return base
 
 
-def _fail_if_input_data_provided_without_node_selector(
-    input_data: InputData | None,
-    node_selector: NodeSelector | None,
-) -> None:
-    if not node_selector and input_data:
+def _get_tt_targets_qnames(tt_targets: TTTargets | dict[str, Any]) -> set[str]:
+    """Extract qnames from TTTargets object."""
+    if isinstance(tt_targets, TTTargets):
+        # It's a TTTargets dataclass
+        if tt_targets.qname is not None:
+            return set(tt_targets.qname)
+        if tt_targets.tree is not None:
+            # Convert tree to qnames
+            return set(dt.flatten_to_qnames(tt_targets.tree))
+        return set()
+    # It's a dict-like object with the same structure as TTTargets
+    if "qname" in tt_targets and tt_targets["qname"] is not None:
+        return set(tt_targets["qname"])
+    if "tree" in tt_targets and tt_targets["tree"] is not None:
+        # Convert tree to qnames
+        return set(dt.flatten_to_qnames(tt_targets["tree"]))
+    return set()
+
+
+def _fail_if_tt_targets_not_provided(qnames: set[str] | None) -> None:
+    if not qnames:
         msg = format_errors_and_warnings(
-            "When providing input data, you must also provide a node selector."
-            "This is because there is no way to tell which nodes should be part of the "
-            "DAG when overriding intermediate nodes with input data. "
-            "To specify a node selector, use "
-            "\n\n >>> from ttsim.plot.dag import NodeSelector"
+            "TT targets must be provided when using a selection type. "
+            "To fix this, either set selection_type to None (this plots the entire DAG)"
+            " or provide TT targets."
         )
         raise ValueError(msg)

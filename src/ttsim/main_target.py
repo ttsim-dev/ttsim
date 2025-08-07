@@ -105,18 +105,14 @@ class SpecializedEnvironment(MainTargetABC):
 
 @dataclass(frozen=True)
 class SpecializedEnvironmentFromPolicyInputs(MainTargetABC):
-    qnames_to_derive_functions_from: str = (
-        "specialized_environment_from_policy_inputs__qnames_to_derive_functions_from"
+    qnames_to_derive_functions_from: str = "specialized_environment_for_plotting_and_templates__qnames_to_derive_functions_from"  # noqa: E501
+    without_tree_logic_and_with_derived_functions: str = "specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions"  # noqa: E501
+    without_processed_data_nodes_with_dummy_callables: str = "specialized_environment_for_plotting_and_templates__without_processed_data_nodes_with_dummy_callables"  # noqa: E501
+    complete_tt_dag: str = (
+        "specialized_environment_for_plotting_and_templates__complete_tt_dag"
     )
-    without_tree_logic_and_with_derived_functions: str = "specialized_environment_from_policy_inputs__without_tree_logic_and_with_derived_functions"  # noqa: E501
-    without_processed_data_nodes_with_dummy_callables: str = "specialized_environment_from_policy_inputs__without_processed_data_nodes_with_dummy_callables"  # noqa: E501
-    complete_tt_dag: str = "specialized_environment_from_policy_inputs__complete_tt_dag"
-    with_processed_params_and_scalars: str = (
-        "specialized_environment_from_policy_inputs__with_processed_params_and_scalars"
-    )
-    with_partialled_params_and_scalars: str = (
-        "specialized_environment_from_policy_inputs__with_partialled_params_and_scalars"
-    )
+    with_processed_params_and_scalars: str = "specialized_environment_for_plotting_and_templates__with_processed_params_and_scalars"  # noqa: E501
+    with_partialled_params_and_scalars: str = "specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars"  # noqa: E501
 
 
 @dataclass(frozen=True)
@@ -174,7 +170,7 @@ class MainTarget(MainTargetABC):
     specialized_environment: type[SpecializedEnvironment] = field(
         default=SpecializedEnvironment
     )
-    specialized_environment_from_policy_inputs: type[
+    specialized_environment_for_plotting_and_templates: type[
         SpecializedEnvironmentFromPolicyInputs
     ] = field(
         default=SpecializedEnvironmentFromPolicyInputs,

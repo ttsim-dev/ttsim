@@ -15,7 +15,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     input_dependent_interface_function,
     interface_function,
 )
-from ttsim.interface_dag_elements.specialized_environment_from_policy_inputs import (
+from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
     dummy_callable,
 )
 from ttsim.main import (
