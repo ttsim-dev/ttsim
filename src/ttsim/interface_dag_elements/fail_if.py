@@ -305,10 +305,9 @@ def input_data_is_invalid(input_data__flat: FlatData) -> None:
 
     # Check for non-unique p_ids
     # Convert to numpy array for performance (avoid slow JAX array iteration)
-    p_id_numpy = numpy.asarray(p_id)
 
     # Use pandas duplicated for efficient duplicate detection
-    p_id_series = pd.Series(p_id_numpy)
+    p_id_series = pd.Series(numpy.asarray(p_id))
     duplicated_mask = p_id_series.duplicated(keep=False)
     non_unique_p_ids = p_id_series[duplicated_mask].unique().tolist()
 

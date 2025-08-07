@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dags.tree as dt
-import numpy as np
+import numpy
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -84,6 +84,7 @@ def nested_data_to_df_with_mapped_columns(
 def df_with_mapped_columns_to_flat_data(
     mapper: NestedInputsMapper,
     df: pd.DataFrame,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
     """Transform a pandas DataFrame to a flattened data structure.
@@ -135,13 +136,13 @@ def df_with_mapped_columns_to_flat_data(
     # Always use numpy for initial data preparation (performance optimization for JAX)
     path_to_array = {}
     for path, mapper_value in dt.flatten_to_tree_paths(mapper).items():
-        if np.isscalar(mapper_value) and not isinstance(mapper_value, str):
-            numpy_array = np.asarray([mapper_value] * len(df))
+        if numpy.isscalar(mapper_value) and not isinstance(mapper_value, str):
+            numpy_array = numpy.asarray([mapper_value] * len(df))
         else:
-            numpy_array = np.asarray(df[mapper_value])
+            numpy_array = numpy.asarray(df[mapper_value])
 
         # Convert to target backend array with zero-copy if JAX
-        if xnp.__name__ == "jax.numpy":
+        if backend == "jax":
             path_to_array[path] = xnp.asarray(numpy_array, copy=False)
         else:
             path_to_array[path] = numpy_array
@@ -151,6 +152,7 @@ def df_with_mapped_columns_to_flat_data(
 
 def df_with_nested_columns_to_flat_data(
     df: pd.DataFrame,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
     """Convert a DataFrame with nested columns to a flattened data structure.
@@ -176,10 +178,10 @@ def df_with_nested_columns_to_flat_data(
     result = {}
     for key, value in df.to_dict(orient="list").items():
         clean_key = _remove_nan_from_keys(key)
-        numpy_array = np.asarray(value)
+        numpy_array = numpy.asarray(value)
 
         # Convert to target backend array with zero-copy if JAX
-        if xnp.__name__ == "jax.numpy":
+        if backend == "jax":
             result[clean_key] = xnp.asarray(numpy_array, copy=False)
         else:
             result[clean_key] = numpy_array
