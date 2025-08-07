@@ -133,17 +133,18 @@ def df_with_mapped_columns_to_flat_data(
 
 
     """
-    # Always use numpy for initial data preparation (performance optimization for JAX)
     path_to_array = {}
     for path, mapper_value in dt.flatten_to_tree_paths(mapper).items():
+        # Use numpy for array creation if JAX backend is chosen
+        # Performance optimization for JAX, PR #34
         if numpy.isscalar(mapper_value) and not isinstance(mapper_value, str):
             numpy_array = numpy.asarray([mapper_value] * len(df))
         else:
             numpy_array = numpy.asarray(df[mapper_value])
 
-        # Convert to target backend array with zero-copy if JAX
+        # Convert numpy array back to JAX array if JAX backend is chosen
         if backend == "jax":
-            path_to_array[path] = xnp.asarray(numpy_array, copy=False)
+            path_to_array[path] = xnp.asarray(numpy_array)
         else:
             path_to_array[path] = numpy_array
 
@@ -174,17 +175,17 @@ def df_with_nested_columns_to_flat_data(
         >>> result
         {("a", "b"): np.array([1, 2, 3]), ("c",): np.array([4, 5, 6])}
     """
-    # Always use numpy for initial data preparation (performance optimization for JAX)
     result = {}
     for key, value in df.to_dict(orient="list").items():
         clean_key = _remove_nan_from_keys(key)
-        numpy_array = numpy.asarray(value)
 
-        # Convert to target backend array with zero-copy if JAX
+        # Use numpy for array creation if JAX backend is chosen and
+        # immediately convert back to JAX array.
+        # Performance optimization for JAX, PR #34
         if backend == "jax":
-            result[clean_key] = xnp.asarray(numpy_array, copy=False)
+            result[clean_key] = xnp.asarray(numpy.asarray(value))
         else:
-            result[clean_key] = numpy_array
+            result[clean_key] = numpy.asarray(value)
 
     return result
 

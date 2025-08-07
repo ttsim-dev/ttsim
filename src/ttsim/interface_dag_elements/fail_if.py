@@ -283,7 +283,7 @@ def input_data_tree_is_invalid(
 
 
 @fail_function(include_if_any_element_present=["input_data__flat"])
-def input_data_is_invalid(input_data__flat: FlatData) -> None:
+def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
     """Fail if the input data is invalid.
 
     Fails if:
@@ -304,17 +304,15 @@ def input_data_is_invalid(input_data__flat: FlatData) -> None:
         raise ValueError(msg)
 
     # Check for non-unique p_ids
-    # Convert to numpy array for performance (avoid slow JAX array iteration)
+    if p_id.shape[0] == 1:  # Special case for single-row data
+        return
 
-    # Use pandas duplicated for efficient duplicate detection
-    p_id_series = pd.Series(numpy.asarray(p_id))
-    duplicated_mask = p_id_series.duplicated(keep=False)
-    non_unique_p_ids = p_id_series[duplicated_mask].unique().tolist()
-
-    if non_unique_p_ids:
+    p_id_sorted = xnp.sort(p_id)
+    duplicates = xnp.diff(p_id_sorted, append=0) == 0
+    if xnp.sum(duplicates) >= 1:
         message = (
             "The following `p_id`s are not unique in the input data:\n\n"
-            f"{non_unique_p_ids}\n\n"
+            f"{p_id_sorted[duplicates]}\n\n"
         )
         raise ValueError(message)
 
