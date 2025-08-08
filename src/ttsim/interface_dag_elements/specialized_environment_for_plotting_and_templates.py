@@ -110,7 +110,7 @@ def without_tree_logic_and_with_derived_functions(
 
 
 @interface_function()
-def without_processed_data_nodes_with_dummy_callables(
+def without_input_data_nodes_with_dummy_callables(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     labels__input_columns: UnorderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
@@ -130,7 +130,7 @@ def without_processed_data_nodes_with_dummy_callables(
 
 @interface_function()
 def complete_tt_dag(
-    without_processed_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
+    without_input_data_nodes_with_dummy_callables: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     tt_targets__qname: OrderedQNames,
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__input_columns: UnorderedQNames,
@@ -144,7 +144,7 @@ def complete_tt_dag(
     targets are kept. If no tt_targets are specified, the entire DAG is returned.
     """
     dag = create_dag(
-        functions=without_processed_data_nodes_with_dummy_callables,
+        functions=without_input_data_nodes_with_dummy_callables,
         # We need to specify all possible nodes as targets here because of the selection
         # types 'descendants' and 'neighbors'. In these cases 'tt_targets__qname' is not
         # the end point of the DAG, but the start point (descendants) or the middle

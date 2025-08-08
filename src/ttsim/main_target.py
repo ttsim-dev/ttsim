@@ -107,7 +107,7 @@ class SpecializedEnvironment(MainTargetABC):
 class SpecializedEnvrionmentForPlottingAndTemplates(MainTargetABC):
     qnames_to_derive_functions_from: str = "specialized_environment_for_plotting_and_templates__qnames_to_derive_functions_from"  # noqa: E501
     without_tree_logic_and_with_derived_functions: str = "specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions"  # noqa: E501
-    without_processed_data_nodes_with_dummy_callables: str = "specialized_environment_for_plotting_and_templates__without_processed_data_nodes_with_dummy_callables"  # noqa: E501
+    without_input_data_nodes_with_dummy_callables: str = "specialized_environment_for_plotting_and_templates__without_input_data_nodes_with_dummy_callables"  # noqa: E501
     complete_tt_dag: str = (
         "specialized_environment_for_plotting_and_templates__complete_tt_dag"
     )

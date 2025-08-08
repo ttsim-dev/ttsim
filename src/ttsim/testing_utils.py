@@ -16,8 +16,9 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.shared import to_datetime
-from ttsim.plot.dag.tt import convert_all_nodes_to_callables
-from ttsim.tt.column_objects_param_function import PolicyInput
+from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
+    dummy_callable,
+)
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
@@ -250,24 +251,18 @@ def check_env_completeness(
         str, FlatColumnObjectsParamFunctions | FlatOrigParamSpecs
     ],
 ) -> None:
-    environment = main(
-        main_target="policy_environment",
-        policy_date=policy_date,
-        backend="numpy",
-        orig_policy_objects=orig_policy_objects,
-    )
-    qname_environment = dt.flatten_to_qnames(environment)
-    qnames_policy_inputs = [
-        k for k, v in qname_environment.items() if isinstance(v, PolicyInput)
-    ]
     qname_env_with_derived_functions = main(
-        main_target="specialized_environment__without_tree_logic_and_with_derived_functions",
-        policy_environment=environment,
-        labels={"input_columns": qnames_policy_inputs},
-        tt_targets={"qname": list(qname_environment)},
+        main_target="specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions",
+        policy_date=policy_date,
+        orig_policy_objects=orig_policy_objects,
         backend="numpy",
     )
-    all_nodes = convert_all_nodes_to_callables(qname_env_with_derived_functions)
+    all_nodes = {
+        qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
+        if not callable(n)
+        else n
+        for qn, n in qname_env_with_derived_functions.items()
+    }
     f = dags.concatenate_functions(
         functions=all_nodes,
         targets=list(qname_env_with_derived_functions.keys()),
