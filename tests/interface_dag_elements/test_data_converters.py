@@ -109,6 +109,7 @@ def test_df_with_mapped_columns_to_flat_data(
     result = df_with_mapped_columns_to_flat_data(
         mapper=inputs_tree_to_df_columns,
         df=df,
+        backend="numpy",
         xnp=numpy,
     )
 
@@ -261,6 +262,7 @@ def test_nested_data_to_dataframe(
 def test_df_with_nested_columns_to_flat_data(df, expected):
     result = df_with_nested_columns_to_flat_data(
         df=df,
+        backend="numpy",
         xnp=numpy,
     )
 

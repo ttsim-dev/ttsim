@@ -283,7 +283,7 @@ def input_data_tree_is_invalid(
 
 
 @fail_function(include_if_any_element_present=["input_data__flat"])
-def input_data_is_invalid(input_data__flat: FlatData) -> None:
+def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
     """Fail if the input data is invalid.
 
     Fails if:
@@ -304,20 +304,15 @@ def input_data_is_invalid(input_data__flat: FlatData) -> None:
         raise ValueError(msg)
 
     # Check for non-unique p_ids
-    p_id_counts: dict[int, int] = {}
-    # Need the map because Jax loop items are 1-element arrays.
-    for i in map(int, p_id):
-        if i in p_id_counts:
-            p_id_counts[i] += 1
-        else:
-            p_id_counts[i] = 1
+    if p_id.shape[0] == 1:  # Special case for single-row data
+        return
 
-    non_unique_p_ids = [i for i, count in p_id_counts.items() if count > 1]
-
-    if non_unique_p_ids:
+    p_id_sorted = xnp.sort(xnp.asarray(p_id))
+    duplicates = xnp.diff(p_id_sorted, append=0) == 0
+    if xnp.sum(duplicates) >= 1:
         message = (
             "The following `p_id`s are not unique in the input data:\n\n"
-            f"{non_unique_p_ids}\n\n"
+            f"{p_id_sorted[duplicates]}\n\n"
         )
         raise ValueError(message)
 
