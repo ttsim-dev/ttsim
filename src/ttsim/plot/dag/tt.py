@@ -9,7 +9,7 @@ import networkx as nx
 
 from ttsim import main
 from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
-from ttsim.main_args import OrigPolicyObjects, TTTargets
+from ttsim.main_args import OrigPolicyObjects
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.shared import NodeMetaData, get_figure
 from ttsim.tt import (
@@ -36,6 +36,7 @@ def tt(
     *,
     # Args specific to TTSIM plotting
     root: Path,
+    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
     selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
     | None = None,
     selection_depth: int | None = None,
@@ -46,7 +47,6 @@ def tt(
     policy_date_str: DashedISOString | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
     input_data: InputData | None = None,
-    tt_targets: TTTargets | None = None,
     processed_data: QNameData | None = None,
     labels: Labels | None = None,
     policy_environment: PolicyEnvironment | None = None,
@@ -62,12 +62,17 @@ def tt(
     ----------
     root
         The root path.
+    primary_nodes
+        The qnames or paths of the primary nodes. Primary nodes are used to determine
+        which other nodes to include in the plot based on the selection_type. They may
+        be root nodes (for descendants), end nodes (for ancestors), or middle nodes
+        (for neighbors). If not provided, the entire DAG is plotted.
     selection_type
         The type of the DAG to plot. Can be one of:
-        - "neighbors": Plot the neighbors of the target nodes.
-        - "descendants": Plot the descendants of the target nodes.
-        - "ancestors": Plot the ancestors of the target nodes.
-        - "nodes": Plot the selected nodes only.
+            - "neighbors": Plot the neighbors of the primary nodes.
+            - "descendants": Plot the descendants of the primary nodes.
+            - "ancestors": Plot the ancestors of the primary nodes.
+            - "nodes": Plot the primary nodes only.
         If not provided, the entire DAG is plotted.
     selection_depth
         The depth of the selection. Only used if selection_type is "neighbors",
@@ -84,8 +89,6 @@ def tt(
         The orig policy objects.
     input_data
         The input data.
-    tt_targets
-        The TT targets.
     processed_data
         The processed data.
     labels
@@ -108,11 +111,11 @@ def tt(
     """
     dag_with_node_metadata = _get_tt_dag_with_node_metadata(
         root=root,
+        primary_nodes=primary_nodes,
         selection_type=selection_type,
         selection_depth=selection_depth,
         include_params=include_params,
         input_data=input_data,
-        tt_targets=tt_targets,
         policy_date_str=policy_date_str,
         policy_environment=policy_environment,
         orig_policy_objects=orig_policy_objects,
@@ -136,12 +139,12 @@ def tt(
 
 def _get_tt_dag_with_node_metadata(
     root: Path | None = None,
+    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
     selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
     | None = None,
     selection_depth: int | None = None,
     include_params: bool = True,
     input_data: InputData | None = None,
-    tt_targets: TTTargets | None = None,
     policy_date_str: DashedISOString | None = None,
     policy_environment: PolicyEnvironment | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
@@ -152,6 +155,7 @@ def _get_tt_dag_with_node_metadata(
     include_warn_nodes: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
+    qnames_primary_nodes = _get_qnames_primary_nodes(primary_nodes)
     complete_tt_dag_and_specialized_environment = main(
         main_targets=[
             MainTarget.specialized_environment_for_plotting_and_templates.complete_tt_dag,
@@ -162,7 +166,11 @@ def _get_tt_dag_with_node_metadata(
             orig_policy_objects if orig_policy_objects else OrigPolicyObjects(root=root)
         ),
         policy_environment=policy_environment,
-        tt_targets=tt_targets,
+        tt_targets={
+            "qname": dict.fromkeys(qnames_primary_nodes)
+            if qnames_primary_nodes
+            else None
+        },
         input_data=input_data,
         processed_data=processed_data,
         labels=labels,
@@ -182,11 +190,10 @@ def _get_tt_dag_with_node_metadata(
     if not selection_type:
         selected_dag = complete_tt_dag
     else:
-        tt_targets_qnames = _get_tt_targets_qnames(tt_targets)
-        _fail_if_tt_targets_not_provided(tt_targets_qnames)
+        _fail_if_primary_nodes_not_specified(qnames_primary_nodes)
         selected_dag = select_nodes_from_dag(
             complete_tt_dag=complete_tt_dag,
-            tt_targets_qnames=tt_targets_qnames,
+            qnames_primary_nodes=qnames_primary_nodes,
             selection_type=selection_type,
             selection_depth=selection_depth,
         )
@@ -285,7 +292,7 @@ def _get_node_descriptions(
 
 def select_nodes_from_dag(
     complete_tt_dag: nx.DiGraph,
-    tt_targets_qnames: set[str],
+    qnames_primary_nodes: set[str],
     selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"],
     selection_depth: int | None = None,
 ) -> nx.DiGraph:
@@ -294,13 +301,13 @@ def select_nodes_from_dag(
         order = selection_depth or 1
         selected_nodes = {
             neighbor
-            for node in tt_targets_qnames
+            for node in qnames_primary_nodes
             for neighbor in _kth_order_neighbors(complete_tt_dag, node, order=order)
         }
     elif selection_type == "descendants":
         selected_nodes = {
             descendant
-            for node in tt_targets_qnames
+            for node in qnames_primary_nodes
             for descendant in (
                 _kth_order_successors(complete_tt_dag, node, order=selection_depth)
                 if selection_depth
@@ -310,7 +317,7 @@ def select_nodes_from_dag(
     elif selection_type == "ancestors":
         selected_nodes = {
             ancestor
-            for node in tt_targets_qnames
+            for node in qnames_primary_nodes
             for ancestor in (
                 _kth_order_predecessors(complete_tt_dag, node, order=selection_depth)
                 if selection_depth
@@ -318,7 +325,7 @@ def select_nodes_from_dag(
             )
         }
     elif selection_type == "nodes":
-        selected_nodes = set(tt_targets_qnames)
+        selected_nodes = set(qnames_primary_nodes)
     else:
         msg = (
             f"Invalid selection type: {selection_type}. "
@@ -374,30 +381,28 @@ def _kth_order_successors(
     return base
 
 
-def _get_tt_targets_qnames(tt_targets: TTTargets | dict[str, Any]) -> set[str]:
-    """Extract qnames from TTTargets object."""
-    if isinstance(tt_targets, TTTargets):
-        # It's a TTTargets dataclass
-        if tt_targets.qname is not None:
-            return set(tt_targets.qname)
-        if tt_targets.tree is not None:
-            # Convert tree to qnames
-            return set(dt.flatten_to_qnames(tt_targets.tree))
+def _get_qnames_primary_nodes(
+    primary_nodes: set[str] | set[tuple[str, str]] | None,
+) -> set[str]:
+    """Get the qnames of the selected nodes."""
+    if not primary_nodes:
         return set()
-    # It's a dict-like object with the same structure as TTTargets
-    if "qname" in tt_targets and tt_targets["qname"] is not None:
-        return set(tt_targets["qname"])
-    if "tree" in tt_targets and tt_targets["tree"] is not None:
-        # Convert tree to qnames
-        return set(dt.flatten_to_qnames(tt_targets["tree"]))
-    return set()
+    if all(isinstance(node, str) for node in primary_nodes):
+        return primary_nodes  # type: ignore[return-value]
+    if all(isinstance(node, tuple) for node in primary_nodes):
+        return {dt.qname_from_tree_path(node) for node in primary_nodes}  # type: ignore[arg-type]
+    msg = (
+        "Primary nodes must be either a set of qnames or a set of tree paths. "
+        f"Got {primary_nodes}."
+    )
+    raise ValueError(msg)
 
 
-def _fail_if_tt_targets_not_provided(qnames: set[str] | None) -> None:
+def _fail_if_primary_nodes_not_specified(qnames: set[str] | None) -> None:
     if not qnames:
         msg = format_errors_and_warnings(
-            "TT targets must be provided when using a selection type. "
-            "To fix this, either set selection_type to None (this plots the entire DAG)"
-            " or provide TT targets."
+            "You must not specify a selection type when no primary nodes are specified."
+            " To fix this, either set 'selection_type' to None (this plots the entire "
+            "DAG) or provide 'primary_nodes'."
         )
         raise ValueError(msg)

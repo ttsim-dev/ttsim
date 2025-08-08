@@ -113,14 +113,14 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
     (
         "selection_type",
         "selection_depth",
-        "tt_targets",
+        "primary_nodes",
         "expected_nodes",
     ),
     [
         (
             "ancestors",
             1,
-            TTTargets(qname=["payroll_tax__amount_y"]),
+            {"payroll_tax__amount_y"},
             [
                 "payroll_tax__amount_y",
                 "payroll_tax__amount_standard_y",
@@ -133,7 +133,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "ancestors",
             1,
-            TTTargets(qname=["payroll_tax__amount_m"]),
+            {"payroll_tax__amount_m"},
             [
                 "payroll_tax__amount_m",
                 "payroll_tax__amount_y",
@@ -142,7 +142,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "ancestors",
             2,
-            TTTargets(qname=["payroll_tax__amount_m"]),
+            {"payroll_tax__amount_m"},
             [
                 "payroll_tax__amount_m",
                 "payroll_tax__amount_y",
@@ -156,7 +156,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "ancestors",
             1,
-            TTTargets(qname=["payroll_tax__amount_m", "property_tax__amount_m"]),
+            {"payroll_tax__amount_m", "property_tax__amount_m"},
             [
                 "payroll_tax__amount_m",
                 "payroll_tax__amount_y",
@@ -167,7 +167,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "ancestors",
             None,
-            TTTargets(qname=["property_tax__amount_m"]),
+            {"property_tax__amount_m"},
             [
                 "evaluation_year",
                 "property_tax__acre_size_in_hectares",
@@ -183,7 +183,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "neighbors",
             1,
-            TTTargets(qname=["payroll_tax__amount_y"]),
+            {"payroll_tax__amount_y"},
             [
                 "payroll_tax__amount_m",
                 "payroll_tax__amount_y",
@@ -197,7 +197,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "neighbors",
             1,
-            TTTargets(qname=["payroll_tax__amount_m"]),
+            {"payroll_tax__amount_m"},
             [
                 "housing_benefits__income__amount_m",
                 "payroll_tax__amount_m",
@@ -207,7 +207,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "neighbors",
             2,
-            TTTargets(qname=["payroll_tax__amount_m"]),
+            {"payroll_tax__amount_m"},
             [
                 "housing_benefits__income__amount_m_fam",
                 "housing_benefits__income__amount_m",
@@ -223,7 +223,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "neighbors",
             1,
-            TTTargets(qname=["payroll_tax__amount_m", "property_tax__amount_m"]),
+            {"payroll_tax__amount_m", "property_tax__amount_m"},
             [
                 "housing_benefits__income__amount_m",
                 "payroll_tax__amount_m",
@@ -235,7 +235,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "descendants",
             1,
-            TTTargets(qname=["payroll_tax__amount_y"]),
+            {"payroll_tax__amount_y"},
             [
                 "payroll_tax__amount_m",
                 "payroll_tax__amount_y",
@@ -244,7 +244,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "descendants",
             1,
-            TTTargets(qname=["payroll_tax__amount_m"]),
+            {"payroll_tax__amount_m"},
             [
                 "housing_benefits__income__amount_m",
                 "payroll_tax__amount_m",
@@ -253,7 +253,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "descendants",
             2,
-            TTTargets(qname=["payroll_tax__amount_m"]),
+            {"payroll_tax__amount_m"},
             [
                 "housing_benefits__income__amount_m_fam",
                 "housing_benefits__income__amount_m",
@@ -263,7 +263,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "descendants",
             1,
-            TTTargets(qname=["payroll_tax__amount_m", "property_tax__amount_m"]),
+            {"payroll_tax__amount_m", "property_tax__amount_m"},
             [
                 "housing_benefits__income__amount_m",
                 "payroll_tax__amount_m",
@@ -273,7 +273,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "descendants",
             None,
-            TTTargets(qname=["housing_benefits__income__amount_m"]),
+            {"housing_benefits__income__amount_m"},
             [
                 "housing_benefits__amount_m_fam",
                 "housing_benefits__eligibility__requirement_fulfilled_fam",
@@ -284,7 +284,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         (
             "nodes",
             None,
-            TTTargets(qname=["payroll_tax__amount_m", "property_tax__amount_m"]),
+            {"payroll_tax__amount_m", "property_tax__amount_m"},
             [
                 "payroll_tax__amount_m",
                 "property_tax__amount_m",
@@ -292,13 +292,13 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
     ],
 )
-def test_node_selector(selection_type, selection_depth, tt_targets, expected_nodes):
+def test_node_selector(selection_type, selection_depth, primary_nodes, expected_nodes):
     dag = _get_tt_dag_with_node_metadata(
         root=middle_earth.ROOT_PATH,
+        primary_nodes=primary_nodes,
         policy_date_str="2025-01-01",
         selection_type=selection_type,
         selection_depth=selection_depth,
-        tt_targets=tt_targets,
         include_params=True,
     )
     assert set(dag.nodes()) == set(expected_nodes)
@@ -411,19 +411,33 @@ def test_input_data_overrides_nodes_in_plotting_dag():
     assert "wealth" in dag.nodes()
 
 
-def test_can_create_template_with_selector_and_input_data_from_tt(xnp):
+def test_can_create_template_with_selector_and_input_data_from_tt():
     tt(
         root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",
-        input_data={
-            "tree": {
-                "p_id": xnp.array([100]),
-                "payroll_tax": {
-                    "amount_m": xnp.array([100]),
-                },
-            }
-        },
+        labels=Labels(
+            input_columns=["payroll_tax__amount_m"],
+        ),
         selection_type="ancestors",
         selection_depth=1,
-        tt_targets=TTTargets(qname=["payroll_tax__amount_y"]),
+    )
+
+
+def test_can_pass_plotly_kwargs_to_tt():
+    tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
+        policy_date_str="2025-01-01",
+        labels=Labels(
+            input_columns=["payroll_tax__amount_m"],
+        ),
+        output_path="test_dag.html",
+        selection_type="ancestors",
+        selection_depth=1,
+        title="Test DAG Plot",
+        width=200,
+        height=800,
+        showlegend=True,
+        hovermode="closest",
     )
