@@ -973,22 +973,15 @@ def test_p_id_can_be_specified_as_jax_array(xnp):
     input_data_is_invalid(data, xnp)
 
 
-def test_single_person_with_p_id_zero_does_not_trigger_duplicate_error(xnp):
-    """Test edge case: single person with p_id=0 should not be flagged as duplicate.
+@pytest.mark.parametrize("p_id_value", [-100, 0, 1, 42, 999])
+def test_input_data_single_person_with_any_p_id_works_correctly(xnp, p_id_value):
+    """Test that single-row data works for any p_id value.
 
-    Without the single-row protection in input_data_is_invalid, this test would fail
-    because the duplicate detection logic incorrectly identifies p_id=0 as a duplicate
-    when using xnp.diff([0], append=0) which gives [0], and 0 == 0 is True.
+    The p_id=0 case is particularly important because this test would fail under the
+    implementation of duplicate detection in place at the time of creation (PR #34).
     """
-    data = {("p_id",): xnp.array([0])}
+    data = {("p_id",): xnp.array([p_id_value])}
     input_data_is_invalid(data, xnp)
-
-
-def test_single_person_with_any_p_id_works_correctly(xnp):
-    """Test that single-row data works for any p_id value."""
-    for p_id_value in [-100, 0, 1, 42, 999]:
-        data = {("p_id",): xnp.array([p_id_value])}
-        input_data_is_invalid(data, xnp)
 
 
 def test_fail_if_input_data_has_different_lengths(backend):
