@@ -4,6 +4,11 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
+## unpublished
+
+- {gh}`34` Optimize JAX performance in data preparation pipeline
+  ({ghuser}`JuergenWiemers`)
+
 ## v1.0a3 — 2025-07-27
 
 - {gh}`23` Remove orphaned policy inputs from the TT DAG. ({ghuser}`MImmesberger`)
