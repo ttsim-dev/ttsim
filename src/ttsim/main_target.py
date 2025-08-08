@@ -123,8 +123,8 @@ class Targets(MainTargetABC):
 
 @dataclass(frozen=True)
 class Labels(MainTargetABC):
-    column_targets: str = "labels__column_targets"
     input_columns: str = "labels__input_columns"
+    column_targets: str = "labels__column_targets"
     input_data_targets: str = "labels__input_data_targets"
     param_targets: str = "labels__param_targets"
     root_nodes: str = "labels__root_nodes"

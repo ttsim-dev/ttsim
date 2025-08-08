@@ -78,7 +78,7 @@ def tt(
         The depth of the selection. Only used if selection_type is "neighbors",
         "descendants", or "ancestors".
     include_params
-        Include param functions when plotting the DAG. Default is True.
+        Include params and param functions when plotting the DAG. Default is True.
     show_node_description
         Show a description of the node when hovering over it.
     output_path
