@@ -323,7 +323,7 @@ def test_fail_if_data_is_provided_but_no_tt_targets(backend, xnp):
         ValueError, match="When providing data, `tt_targets` must be provided"
     ):
         main(
-            main_target="templates__input_data_dtypes",
+            main_target="templates__input_data_dtypes__tree",
             policy_date_str="2025-01-01",
             input_data={
                 "tree": {

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import pandas as pd
 
 from ttsim.interface_dag_elements.data_converters import (
     nested_data_to_df_with_mapped_columns,
@@ -11,8 +12,6 @@ from ttsim.interface_dag_elements.data_converters import (
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
 if TYPE_CHECKING:
-    import pandas as pd
-
     from ttsim.typing import (
         FlatData,
         NestedData,
@@ -72,7 +71,7 @@ def df_with_nested_columns(
     tree: NestedData,
     input_data__flat: FlatData,
 ) -> pd.DataFrame:
-    """The results DataFrame with nested column names corresponding to tree paths..
+    """The results DataFrame with nested column names corresponding to tree paths.
 
     Args:
         tree:
@@ -88,5 +87,5 @@ def df_with_nested_columns(
     """
     return nested_data_to_df_with_nested_columns(
         nested_data_to_convert=tree,
-        data_with_p_id=input_data__flat,
+        index=pd.Index(input_data__flat[("p_id",)], name="p_id"),
     )

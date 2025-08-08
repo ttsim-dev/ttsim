@@ -120,7 +120,7 @@ def execute_test(
         if test.expected_output_tree:
             expected_df = nested_data_to_df_with_nested_columns(
                 nested_data_to_convert=test.expected_output_tree,
-                data_with_p_id=test.input_tree,
+                index=pd.Index(test.input_tree["p_id"], name="p_id"),
             )
             try:
                 pd.testing.assert_frame_equal(

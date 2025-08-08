@@ -432,7 +432,6 @@ def test_can_pass_plotly_kwargs_to_tt():
         labels=Labels(
             input_columns=["payroll_tax__amount_m"],
         ),
-        output_path="test_dag.html",
         selection_type="ancestors",
         selection_depth=1,
         title="Test DAG Plot",

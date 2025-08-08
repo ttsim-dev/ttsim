@@ -158,8 +158,14 @@ class OrigPolicyObjects(MainTargetABC):
 
 
 @dataclass(frozen=True)
+class InputDataDtypes(MainTargetABC):
+    tree: str = "templates__input_data_dtypes__tree"
+    df_with_nested_columns: str = "templates__input_data_dtypes__df_with_nested_columns"
+
+
+@dataclass(frozen=True)
 class Templates(MainTargetABC):
-    input_data_dtypes: str = "templates__input_data_dtypes"
+    input_data_dtypes: type[InputDataDtypes] = field(default=InputDataDtypes)
 
 
 @dataclass(frozen=True)

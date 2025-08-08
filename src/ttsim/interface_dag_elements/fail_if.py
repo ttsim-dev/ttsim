@@ -650,7 +650,7 @@ def input_df_mapper_has_incorrect_format(
 
             {format_list_linewise(non_string_paths)}
 
-            Note that you can use `main(main_target=MainTarget.templates.input_data_dtypes)`
+            Note that you can use `main(main_target=MainTarget.templates.input_data_dtypes.tree)`
             to create a template.
             """,
         )

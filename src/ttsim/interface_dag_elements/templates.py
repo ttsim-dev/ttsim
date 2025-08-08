@@ -3,12 +3,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import dags.tree as dt
+import pandas as pd
 
+from ttsim.interface_dag_elements.data_converters import (
+    nested_data_to_df_with_nested_columns,
+)
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 from ttsim.tt.column_objects_param_function import PolicyInput
 from ttsim.tt.vectorization import scalar_type_to_array_type
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.typing import (
         NestedInputStructureDict,
         OrderedQNames,
@@ -18,8 +24,8 @@ if TYPE_CHECKING:
     )
 
 
-@interface_function()
-def input_data_dtypes(
+@interface_function(leaf_name="tree")
+def input_data_dtypes__tree(
     specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,  # noqa: E501
     policy_environment: PolicyEnvironment,
     tt_targets__qname: OrderedQNames,
@@ -75,3 +81,17 @@ def input_data_dtypes(
             cleaned_qname_dtype_tree[qn] = derived_dtype_in_base
 
     return dt.unflatten_from_qnames(cleaned_qname_dtype_tree)
+
+
+@interface_function(leaf_name="df_with_nested_columns")
+def input_data_dtypes__df_with_nested_columns(
+    tree: NestedInputStructureDict,
+    xnp: ModuleType,
+) -> pd.DataFrame:
+    """
+    A template of the required input data and their expected types.
+    """
+    return nested_data_to_df_with_nested_columns(
+        nested_data_to_convert=tree,
+        index=pd.Index(xnp.array([1])),
+    )
