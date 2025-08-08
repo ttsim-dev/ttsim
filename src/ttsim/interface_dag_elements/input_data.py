@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import dags.tree as dt
 
@@ -55,6 +55,7 @@ def tree() -> NestedData:
 def flat_from_df_and_mapper(
     df_and_mapper__df: pd.DataFrame,
     df_and_mapper__mapper: NestedInputsMapper,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
     """The input DataFrame as a flattened data structure.
@@ -72,6 +73,7 @@ def flat_from_df_and_mapper(
     return df_with_mapped_columns_to_flat_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
+        backend=backend,
         xnp=xnp,
     )
 
@@ -82,6 +84,7 @@ def flat_from_df_and_mapper(
 )
 def flat_from_df_with_nested_columns(
     df_with_nested_columns: pd.DataFrame,
+    backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
     """The input DataFrame as a flattened data structure.
@@ -96,6 +99,7 @@ def flat_from_df_with_nested_columns(
     """
     return df_with_nested_columns_to_flat_data(
         df=df_with_nested_columns,
+        backend=backend,
         xnp=xnp,
     )
 

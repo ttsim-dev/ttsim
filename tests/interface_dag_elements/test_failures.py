@@ -890,7 +890,7 @@ def test_fail_if_p_id_does_not_exist(xnp):
         ValueError,
         match="The input data must contain the `p_id` column.",
     ):
-        input_data_is_invalid(data)
+        input_data_is_invalid(data, xnp)
 
 
 def test_fail_if_p_id_is_missing_via_main(backend):
@@ -917,7 +917,7 @@ def test_fail_if_p_id_is_not_unique(xnp):
         ValueError,
         match="The following `p_id`s are not unique in the input data",
     ):
-        input_data_is_invalid(data)
+        input_data_is_invalid(data, xnp)
 
 
 def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
@@ -948,12 +948,12 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
         {("p_id",): pd.Series([1, "2", 3.0])},
     ],
 )
-def test_fail_if_p_id_is_not_int(data):
+def test_fail_if_p_id_is_not_int(data, xnp):
     with pytest.raises(
         ValueError,
         match="The `p_id` column must be of integer dtype.",
     ):
-        input_data_is_invalid(data)
+        input_data_is_invalid(data, xnp)
 
 
 @pytest.mark.parametrize(
@@ -963,14 +963,25 @@ def test_fail_if_p_id_is_not_int(data):
         {("p_id",): pd.Series([1, 2, 3])},
     ],
 )
-def test_p_id_can_be_specified_as_series_and_numpy_array(data):
-    input_data_is_invalid(data)
+def test_p_id_can_be_specified_as_series_and_numpy_array(data, xnp):
+    input_data_is_invalid(data, xnp)
 
 
 @pytest.mark.skipif_numpy
 def test_p_id_can_be_specified_as_jax_array(xnp):
     data = {("p_id",): xnp.array([1, 2, 3])}
-    input_data_is_invalid(data)
+    input_data_is_invalid(data, xnp)
+
+
+@pytest.mark.parametrize("p_id_value", [-100, 0, 1, 42, 999])
+def test_input_data_single_person_with_any_p_id_works_correctly(xnp, p_id_value):
+    """Test that single-row data works for any p_id value.
+
+    The p_id=0 case is particularly important because this test would fail under the
+    implementation of duplicate detection in place at the time of creation (PR #34).
+    """
+    data = {("p_id",): xnp.array([p_id_value])}
+    input_data_is_invalid(data, xnp)
 
 
 def test_fail_if_input_data_has_different_lengths(backend):
