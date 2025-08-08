@@ -307,7 +307,7 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
     if p_id.shape[0] == 1:  # Special case for single-row data
         return
 
-    p_id_sorted = xnp.sort(p_id)
+    p_id_sorted = xnp.sort(xnp.asarray(p_id))
     duplicates = xnp.diff(p_id_sorted, append=0) == 0
     if xnp.sum(duplicates) >= 1:
         message = (
