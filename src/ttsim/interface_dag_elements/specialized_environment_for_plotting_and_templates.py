@@ -2,9 +2,9 @@
 of the DAG.
 
 The main difference to `specialized_environment` is that input data is optional. Derived
-functions are created based on policy inputs if the corresponding input data is not
-available. This is useful for applications where users are interested in the DAG itself
-(not its execution).
+functions are created based on policy inputs or the qnames of the input columns. This is
+useful for applications where users are interested in the DAG itself (not its
+execution).
 """
 
 from __future__ import annotations

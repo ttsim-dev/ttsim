@@ -67,7 +67,7 @@ def tt(
         - "neighbors": Plot the neighbors of the target nodes.
         - "descendants": Plot the descendants of the target nodes.
         - "ancestors": Plot the ancestors of the target nodes.
-        - "nodes": Plot the target nodes.
+        - "nodes": Plot the selected nodes only.
         If not provided, the entire DAG is plotted.
     selection_depth
         The depth of the selection. Only used if selection_type is "neighbors",
@@ -205,7 +205,7 @@ def _get_tt_dag_with_node_metadata(
                     (ParamObject, ParamFunction),
                 )
             ):
-                # Also add time-converted params
+                # Also schedule time-converted params for removal.
                 qnames_params.add(qn)
 
         selected_dag.remove_nodes_from(qnames_params)
@@ -264,22 +264,22 @@ def _get_node_descriptions(
     """Get the descriptions of the nodes in the environment."""
     qn_env = dt.flatten_to_qnames(without_tree_logic_and_with_derived_functions)
     out = {}
-    for p, n in qn_env.items():
+    for qn, node in qn_env.items():
         descr = None
-        if hasattr(n, "description"):
-            if isinstance(n.description, str):
-                descr = n.description
+        if hasattr(node, "description"):
+            if isinstance(node.description, str):
+                descr = node.description
             elif (
-                isinstance(n.description, dict)
-                and "en" in n.description
-                and n.description["en"] is not None
+                isinstance(node.description, dict)
+                and "en" in node.description
+                and node.description["en"] is not None
             ):
-                descr = n.description["en"]
+                descr = node.description["en"]
             else:
                 continue
             # Wrap description at 79 characters
             descr = textwrap.fill(descr, width=79)
-            out[p] = descr
+            out[qn] = descr
     return out
 
 
@@ -290,29 +290,35 @@ def select_nodes_from_dag(
     selection_depth: int | None = None,
 ) -> nx.DiGraph:
     """Select nodes based on the node selector."""
-    selected_nodes: set[str] = set()
-    if selection_type == "nodes":
-        selected_nodes.update(tt_targets_qnames)
-    elif selection_type == "ancestors":
-        for node in tt_targets_qnames:
-            selected_nodes.update(
-                _kth_order_predecessors(complete_tt_dag, node, order=selection_depth)
-                if selection_depth
-                else [*list(nx.ancestors(complete_tt_dag, node)), node]
-            )
+    if selection_type == "neighbors":
+        order = selection_depth or 1
+        selected_nodes = {
+            neighbor
+            for node in tt_targets_qnames
+            for neighbor in _kth_order_neighbors(complete_tt_dag, node, order=order)
+        }
     elif selection_type == "descendants":
-        for node in tt_targets_qnames:
-            selected_nodes.update(
+        selected_nodes = {
+            descendant
+            for node in tt_targets_qnames
+            for descendant in (
                 _kth_order_successors(complete_tt_dag, node, order=selection_depth)
                 if selection_depth
                 else [*list(nx.descendants(complete_tt_dag, node)), node]
             )
-    elif selection_type == "neighbors":
-        order = selection_depth or 1
-        for node in tt_targets_qnames:
-            selected_nodes.update(
-                _kth_order_neighbors(complete_tt_dag, node, order=order)
+        }
+    elif selection_type == "ancestors":
+        selected_nodes = {
+            ancestor
+            for node in tt_targets_qnames
+            for ancestor in (
+                _kth_order_predecessors(complete_tt_dag, node, order=selection_depth)
+                if selection_depth
+                else [*list(nx.ancestors(complete_tt_dag, node)), node]
             )
+        }
+    elif selection_type == "nodes":
+        selected_nodes = set(tt_targets_qnames)
     else:
         msg = (
             f"Invalid selection type: {selection_type}. "
@@ -321,7 +327,7 @@ def select_nodes_from_dag(
         raise ValueError(msg)
 
     dag_copy = copy.deepcopy(complete_tt_dag)
-    dag_copy.remove_nodes_from(set(complete_tt_dag.nodes) - set(selected_nodes))
+    dag_copy.remove_nodes_from(set(complete_tt_dag.nodes) - selected_nodes)
     return dag_copy
 
 

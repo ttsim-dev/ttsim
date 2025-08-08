@@ -104,7 +104,7 @@ class SpecializedEnvironment(MainTargetABC):
 
 
 @dataclass(frozen=True)
-class SpecializedEnvironmentFromPolicyInputs(MainTargetABC):
+class SpecializedEnvrionmentForPlottingAndTemplates(MainTargetABC):
     qnames_to_derive_functions_from: str = "specialized_environment_for_plotting_and_templates__qnames_to_derive_functions_from"  # noqa: E501
     without_tree_logic_and_with_derived_functions: str = "specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions"  # noqa: E501
     without_processed_data_nodes_with_dummy_callables: str = "specialized_environment_for_plotting_and_templates__without_processed_data_nodes_with_dummy_callables"  # noqa: E501
@@ -123,15 +123,15 @@ class Targets(MainTargetABC):
 
 @dataclass(frozen=True)
 class Labels(MainTargetABC):
-    all_qnames_in_policy_environment: str = "labels__all_qnames_in_policy_environment"
     column_targets: str = "labels__column_targets"
-    grouping_levels: str = "labels__grouping_levels"
-    policy_inputs: str = "labels__policy_inputs"
+    input_columns: str = "labels__input_columns"
     input_data_targets: str = "labels__input_data_targets"
     param_targets: str = "labels__param_targets"
-    input_columns: str = "labels__input_columns"
     root_nodes: str = "labels__root_nodes"
     top_level_namespace: str = "labels__top_level_namespace"
+    grouping_levels: str = "labels__grouping_levels"
+    all_qnames_in_policy_environment: str = "labels__all_qnames_in_policy_environment"
+    policy_inputs: str = "labels__policy_inputs"
 
 
 @dataclass(frozen=True)
@@ -171,9 +171,9 @@ class MainTarget(MainTargetABC):
         default=SpecializedEnvironment
     )
     specialized_environment_for_plotting_and_templates: type[
-        SpecializedEnvironmentFromPolicyInputs
+        SpecializedEnvrionmentForPlottingAndTemplates
     ] = field(
-        default=SpecializedEnvironmentFromPolicyInputs,
+        default=SpecializedEnvrionmentForPlottingAndTemplates,
     )
     orig_policy_objects: type[OrigPolicyObjects] = field(default=OrigPolicyObjects)
     processed_data: str = "processed_data"
