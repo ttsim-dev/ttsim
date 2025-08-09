@@ -66,14 +66,16 @@ def tt(
     primary_nodes
         The qnames or paths of the primary nodes. Primary nodes are used to determine
         which other nodes to include in the plot based on the selection_type. They may
-        be root nodes (for descendants), end nodes (for ancestors), or middle nodes
-        (for neighbors). If not provided, the entire DAG is plotted.
+        be root nodes (for descendants), end nodes (for ancestors), or middle nodes (for
+        neighbors). If not provided, the entire DAG is plotted.
     selection_type
         The type of the DAG to plot. Can be one of:
             - "neighbors": Plot the neighbors of the primary nodes.
             - "descendants": Plot the descendants of the primary nodes.
             - "ancestors": Plot the ancestors of the primary nodes.
-            - "all_paths": Plot all paths that connect the primary nodes.
+            - "all_paths": Plot all paths that connect primary nodes. Primary nodes are
+              omitted if they are not connected to any other primary nodes. Must provide
+              at least two primary nodes.
         If not provided, the entire DAG is plotted.
     selection_depth
         The depth of the selection. Only used if selection_type is "neighbors",
@@ -326,6 +328,7 @@ def select_nodes_from_dag(
             )
         }
     elif selection_type == "all_paths":
+        _fail_if_less_than_two_primary_nodes(qnames_primary_nodes)
         selected_nodes = {
             node
             for start_node, end_node in itertools.permutations(qnames_primary_nodes, 2)
@@ -410,5 +413,14 @@ def _fail_if_primary_nodes_not_specified(qnames: set[str] | None) -> None:
             "You must not specify a selection type when no primary nodes are specified."
             " To fix this, either set 'selection_type' to None (this plots the entire "
             "DAG) or provide 'primary_nodes'."
+        )
+        raise ValueError(msg)
+
+
+def _fail_if_less_than_two_primary_nodes(qnames_primary_nodes: set[str]) -> None:
+    if len(qnames_primary_nodes) < 2:  # noqa: PLR2004
+        msg = format_errors_and_warnings(
+            "When using the 'all_paths' selection type, you must provide at least two "
+            f"primary nodes. Got {len(qnames_primary_nodes)}."
         )
         raise ValueError(msg)
