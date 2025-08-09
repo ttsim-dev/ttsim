@@ -25,7 +25,6 @@ from ttsim.tt.param_objects import ParamObject, RawParam
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Callable
     from types import ModuleType
 
     import networkx as nx
@@ -349,42 +348,3 @@ def tt_dag(
         functions=with_partialled_params_and_scalars,
         targets=labels__column_targets,
     )
-
-
-@interface_input(in_top_level_namespace=True)
-def tt_function_set_annotations() -> bool:
-    """Whether to set annotations on the tax-transfer function.
-
-    Defaults to true, turn off in case you run into trouble with type annotations when
-    modifying the policy environment.
-    """
-
-
-@interface_function()
-def tt_function(
-    tt_dag: nx.DiGraph,
-    with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
-    labels__column_targets: OrderedQNames,
-    backend: Literal["numpy", "jax"],
-    tt_function_set_annotations: bool,
-) -> Callable[[QNameData], QNameData]:
-    """Returns a function that takes a dictionary of arrays and unpacks them as keyword arguments."""
-    ttf_with_keyword_args = concatenate_functions(
-        dag=tt_dag,
-        functions=with_partialled_params_and_scalars,
-        targets=list(labels__column_targets),
-        return_type="dict",
-        aggregator=None,
-        enforce_signature=True,
-        set_annotations=tt_function_set_annotations,
-    )
-
-    if backend == "jax":
-        import jax  # noqa: PLC0415
-
-        ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
-
-    def wrapper(processed_data: QNameData) -> QNameData:
-        return ttf_with_keyword_args(**processed_data)
-
-    return wrapper

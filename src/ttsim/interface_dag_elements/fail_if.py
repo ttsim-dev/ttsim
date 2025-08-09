@@ -645,7 +645,7 @@ def input_df_mapper_has_incorrect_format(
 
             {format_list_linewise(non_string_paths)}
 
-            Note that you can use `main(main_target=MainTarget.templates.input_data_dtypes)`
+            Note that you can use `main(main_target=MainTarget.templates.input_data_dtypes.tree)`
             to create a template.
             """,
         )
@@ -703,7 +703,7 @@ def backend_has_changed(
 def tt_dag_includes_function_with_fail_msg_if_included_set(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     specialized_environment__tt_dag: nx.DiGraph,
-    labels__processed_data_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
 ) -> None:
     """Fail if the TT DAG includes functions with `fail_msg_if_included` set."""
 
@@ -715,10 +715,7 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
             node not in env
             or
             # ColumnObjects overridden by data are fine
-            (
-                not isinstance(env[node], PolicyInput)
-                and node in labels__processed_data_columns
-            )
+            (not isinstance(env[node], PolicyInput) and node in labels__input_columns)
         ):
             continue
         # Check because ParamObjects can be overridden by ColumnObjects down the road.
@@ -757,13 +754,6 @@ def tt_root_nodes_are_missing(
     ValueError
         If root nodes are missing.
     """
-
-    if not processed_data:
-        raise ValueError(
-            "For computing results, you need to pass data. "
-            "You can do this by passing a suitable `input_data=InputData.[x]` argument "
-            "to `main`."
-        )
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tt_dag,
@@ -801,7 +791,7 @@ def tt_root_nodes_are_missing(
 @fail_function()
 def targets_are_not_in_specialized_environment_or_data(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-    labels__processed_data_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
     tt_targets__qname: OrderedQNames,
 ) -> None:
     """Fail if some target is not among functions.
@@ -810,7 +800,7 @@ def targets_are_not_in_specialized_environment_or_data(
     ----------
     functions
         Dictionary containing functions to build the DAG.
-    labels__processed_data_columns
+    labels__input_columns
         The columns which are available in the data tree.
     tt_targets__qname
         The taxes & transfers targets which should be computed. They limit the DAG in
@@ -827,7 +817,7 @@ def targets_are_not_in_specialized_environment_or_data(
         for n in tt_targets__qname
         if n
         not in specialized_environment__without_tree_logic_and_with_derived_functions
-        and n not in labels__processed_data_columns
+        and n not in labels__input_columns
     ]
     if missing_targets:
         formatted = format_list_linewise(missing_targets)

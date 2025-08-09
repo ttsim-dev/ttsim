@@ -8,7 +8,10 @@ import networkx as nx
 from ttsim.interface_dag_elements.automatically_added_functions import (
     TIME_UNIT_LABELS,
 )
-from ttsim.interface_dag_elements.interface_node_objects import interface_function
+from ttsim.interface_dag_elements.interface_node_objects import (
+    input_dependent_interface_function,
+    interface_function,
+)
 from ttsim.interface_dag_elements.shared import (
     get_base_name_and_grouping_suffix,
     get_re_pattern_for_all_time_units_and_groupings,
@@ -17,6 +20,8 @@ from ttsim.interface_dag_elements.shared import (
 from ttsim.tt.column_objects_param_function import PolicyInput
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from ttsim.typing import (
         OrderedQNames,
         PolicyEnvironment,
@@ -105,45 +110,62 @@ def top_level_namespace(
     )
 
 
-@interface_function()
-def processed_data_columns(processed_data: QNameData) -> UnorderedQNames:
-    """The (qualified) column names in the processed data."""
+@input_dependent_interface_function(
+    include_if_any_input_present=[
+        "input_data__flat",
+        "input_data__tree",
+        "input_data__df_with_nested_columns",
+        "input_data__df_and_mapper__df",
+        "processed_data",
+    ],
+    leaf_name="input_columns",
+)
+def input_columns_from_input_data(
+    processed_data: QNameData,
+) -> UnorderedQNames:
+    """The (qualified) column names in the input data."""
     return set(processed_data.keys())
 
 
+@input_dependent_interface_function(
+    include_if_no_input_present=[
+        "input_data__flat",
+        "input_data__tree",
+        "input_data__df_with_nested_columns",
+        "input_data__df_and_mapper__df",
+        "processed_data",
+    ],
+    leaf_name="input_columns",
+)
+def input_columns_is_empty_set(
+    xnp: ModuleType,  # fake input # noqa: ARG001
+) -> UnorderedQNames:
+    """No input data provided, hence input columns are an empty set."""
+    return set()
+
+
 @interface_function()
-def input_columns(
-    processed_data_columns: UnorderedQNames,
+def all_qnames_in_policy_environment(
     policy_environment: PolicyEnvironment,
 ) -> UnorderedQNames:
-    """The (qualified) column names in the processed data or policy environment.
+    """The names of all objects in the policy environment."""
+    return set(dt.qnames(policy_environment))
 
-    Parameters
-    ----------
-    processed_data_columns:
-        The column names in the processed data.
-    policy_environment:
-        The policy environment. The qualified names of the PolicyInput elements will
-        be returned if the processed_data_columns are empty.
 
-    Returns
-    -------
-    input_columns:
-        The (qualified) column names in the processed data or policy environment.
-    """
-    if not processed_data_columns:
-        return {
-            k
-            for k, v in dt.flatten_to_qnames(policy_environment).items()
-            if isinstance(v, PolicyInput)
-        }
-    return processed_data_columns
+@interface_function()
+def policy_inputs(policy_environment: PolicyEnvironment) -> UnorderedQNames:
+    """The (qualified) names of the policy inputs in the policy environment."""
+    return {
+        k
+        for k, v in dt.flatten_to_qnames(policy_environment).items()
+        if isinstance(v, PolicyInput)
+    }
 
 
 @interface_function()
 def root_nodes(
     specialized_environment__tt_dag: nx.DiGraph,
-    processed_data_columns: UnorderedQNames,
+    input_columns: UnorderedQNames,
 ) -> UnorderedQNames:
     """Names of the columns in `processed_data` required for the tax transfer function.
 
@@ -166,7 +188,7 @@ def root_nodes(
     ).nodes
 
     # Restrict the passed data to the subset that is actually used.
-    return {k for k in processed_data_columns if k in root_nodes}
+    return {k for k in input_columns if k in root_nodes}
 
 
 def fail_if_multiple_time_units_for_same_base_name_and_group(

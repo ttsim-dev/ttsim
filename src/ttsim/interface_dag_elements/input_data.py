@@ -108,7 +108,10 @@ def flat_from_df_with_nested_columns(
     include_if_all_inputs_present=["input_data__tree"],
     leaf_name="flat",
 )
-def flat_from_tree(tree: NestedData, xnp: ModuleType) -> FlatData:  # noqa: ARG001
+def flat_from_tree(
+    tree: NestedData,
+    xnp: ModuleType,  # noqa: ARG001
+) -> FlatData:
     """The input DataFrame as a flattened data structure.
 
     Args:

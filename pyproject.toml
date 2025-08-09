@@ -304,7 +304,7 @@ markers = [
     "skipif_jax: skip test if backend is jax",
     "skipif_numpy: skip test if backend is numpy"
 ]
-testpaths = ["tests"]
+testpaths = ["tests", "mettsim/tests_middle_earth"]
 
 # ======================================================================================
 # yamlfix configuration

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
 
     import networkx as nx
@@ -128,7 +127,6 @@ class Labels(MainArg):
     grouping_levels: OrderedQNames | None = None
     input_data_targets: OrderedQNames | None = None
     param_targets: OrderedQNames | None = None
-    processed_data_columns: UnorderedQNames | None = None
     input_columns: UnorderedQNames | None = None
     root_nodes: UnorderedQNames | None = None
     top_level_namespace: UnorderedQNames | None = None
@@ -167,4 +165,3 @@ class SpecializedEnvironment(MainArg):
         None
     )
     tt_dag: nx.DiGraph | None = None
-    tt_function: Callable[[QNameData], QNameData] | None = None

@@ -2,19 +2,20 @@ from __future__ import annotations
 
 import copy
 import textwrap
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-import dags
 import dags.tree as dt
 import networkx as nx
 
 from ttsim import main
-from ttsim.plot.dag.shared import NodeMetaData, dummy_callable, get_figure
+from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
+from ttsim.main_args import OrigPolicyObjects
+from ttsim.main_target import MainTarget
+from ttsim.plot.dag.shared import NodeMetaData, get_figure
 from ttsim.tt import (
     ParamFunction,
     ParamObject,
-    PolicyInput,
+    TimeConversionFunction,
 )
 
 if TYPE_CHECKING:
@@ -22,89 +23,113 @@ if TYPE_CHECKING:
 
     import plotly.graph_objects as go
 
+    from ttsim.main_args import InputData, Labels
     from ttsim.typing import (
+        DashedISOString,
         PolicyEnvironment,
+        QNameData,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
     )
 
 
-@dataclass(frozen=True)
-class NodeSelector:
-    """Select nodes from the DAG."""
-
-    node_paths: list[tuple[str, ...]]
-    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
-    order: int | None = None
-
-
-@dataclass(frozen=True)
-class _QNameNodeSelector:
-    """Select nodes from the DAG."""
-
-    qnames: list[str]
-    type: Literal["neighbors", "descendants", "ancestors", "nodes"]
-    order: int | None = None
-
-
 def tt(
-    policy_date_str: str,
+    *,
+    # Args specific to TTSIM plotting
     root: Path,
-    node_selector: NodeSelector | None = None,
-    title: str = "",
+    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
+    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    | None = None,
+    selection_depth: int | None = None,
     include_params: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
+    # Elements of main
+    policy_date_str: DashedISOString | None = None,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    input_data: InputData | None = None,
+    processed_data: QNameData | None = None,
+    labels: Labels | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    backend: Literal["numpy", "jax"] = "numpy",
+    include_fail_nodes: bool = True,
+    include_warn_nodes: bool = True,
+    # Args specific to plotly
+    **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
     """Plot the TT DAG.
 
     Parameters
     ----------
-    policy_date_str
-        The date string.
     root
         The root path.
-    node_selector
-        The node selector. Default is None, i.e. the entire DAG is plotted.
-    title
-        The title of the plot.
+    primary_nodes
+        The qnames or paths of the primary nodes. Primary nodes are used to determine
+        which other nodes to include in the plot based on the selection_type. They may
+        be root nodes (for descendants), end nodes (for ancestors), or middle nodes
+        (for neighbors). If not provided, the entire DAG is plotted.
+    selection_type
+        The type of the DAG to plot. Can be one of:
+            - "neighbors": Plot the neighbors of the primary nodes.
+            - "descendants": Plot the descendants of the primary nodes.
+            - "ancestors": Plot the ancestors of the primary nodes.
+            - "nodes": Plot the primary nodes only.
+        If not provided, the entire DAG is plotted.
+    selection_depth
+        The depth of the selection. Only used if selection_type is "neighbors",
+        "descendants", or "ancestors".
     include_params
-        Include param functions when plotting the DAG.
+        Include params and param functions when plotting the DAG. Default is True.
     show_node_description
         Show a description of the node when hovering over it.
     output_path
         If provided, the figure is written to the path.
+    policy_date_str
+        The date for which to plot the DAG.
+    orig_policy_objects
+        The orig policy objects.
+    input_data
+        The input data.
+    processed_data
+        The processed data.
+    labels
+        The labels.
+    policy_environment
+        The policy environment.
+    backend
+        The backend to use when executing main.
+    include_fail_nodes
+        Whether to include fail nodes when executing main.
+    include_warn_nodes
+        Whether to include warn nodes when executing main.
+    kwargs
+        Additional keyword arguments. Will be passed to
+        plotly.graph_objects.Figure.layout.
 
     Returns
     -------
     The figure.
     """
-    environment = main(
-        main_target="policy_environment",
-        policy_date_str=policy_date_str,
-        orig_policy_objects={"root": root},
-        backend="numpy",
-    )
-
-    if node_selector:
-        qname_node_selector = _QNameNodeSelector(
-            qnames=[dt.qname_from_tree_path(qn) for qn in node_selector.node_paths],
-            type=node_selector.type,
-            order=node_selector.order,
-        )
-    else:
-        qname_node_selector = None
-
     dag_with_node_metadata = _get_tt_dag_with_node_metadata(
-        environment=environment,
-        node_selector=qname_node_selector,
+        root=root,
+        primary_nodes=primary_nodes,
+        selection_type=selection_type,
+        selection_depth=selection_depth,
         include_params=include_params,
+        input_data=input_data,
+        policy_date_str=policy_date_str,
+        policy_environment=policy_environment,
+        orig_policy_objects=orig_policy_objects,
+        processed_data=processed_data,
+        labels=labels,
+        backend=backend,
+        include_fail_nodes=include_fail_nodes,
+        include_warn_nodes=include_warn_nodes,
     )
-    # Remove backend, xnp, dnp, and num_segments from the TT DAG.
 
     fig = get_figure(
         dag=dag_with_node_metadata,
-        title=title,
         show_node_description=show_node_description,
+        **kwargs,
     )
     if output_path:
         fig.write_html(output_path)
@@ -113,46 +138,84 @@ def tt(
 
 
 def _get_tt_dag_with_node_metadata(
-    environment: PolicyEnvironment,
-    node_selector: _QNameNodeSelector | None = None,
+    root: Path | None = None,
+    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
+    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    | None = None,
+    selection_depth: int | None = None,
     include_params: bool = True,
+    input_data: InputData | None = None,
+    policy_date_str: DashedISOString | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    orig_policy_objects: OrigPolicyObjects | None = None,
+    processed_data: QNameData | None = None,
+    labels: Labels | None = None,
+    backend: Literal["numpy", "jax"] = "numpy",
+    include_fail_nodes: bool = True,
+    include_warn_nodes: bool = True,
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
-    qname_environment = dt.flatten_to_qnames(environment)
-    qnames_to_plot = list(qname_environment)
-    if node_selector:
-        # Node selector might contain derived functions that are not in qnames_to_plot
-        qnames_to_plot.extend(node_selector.qnames)
-
-    qnames_policy_inputs = [
-        k
-        for k, v in qname_environment.items()
-        if isinstance(v, PolicyInput) and k in qnames_to_plot
-    ]
-    env = main(
-        main_target="specialized_environment__without_tree_logic_and_with_derived_functions",
-        policy_environment=environment,
-        labels={"processed_data_columns": qnames_policy_inputs},
-        tt_targets={"qname": qnames_to_plot},
-        backend="numpy",
+    qnames_primary_nodes = _get_qnames_primary_nodes(primary_nodes)
+    complete_tt_dag_and_specialized_environment = main(
+        main_targets=[
+            MainTarget.specialized_environment_for_plotting_and_templates.complete_tt_dag,
+            MainTarget.specialized_environment_for_plotting_and_templates.without_tree_logic_and_with_derived_functions,
+        ],
+        policy_date_str=policy_date_str,
+        orig_policy_objects=(
+            orig_policy_objects if orig_policy_objects else OrigPolicyObjects(root=root)
+        ),
+        policy_environment=policy_environment,
+        tt_targets={
+            "qname": dict.fromkeys(qnames_primary_nodes)
+            if qnames_primary_nodes
+            else None
+        },
+        input_data=input_data,
+        processed_data=processed_data,
+        labels=labels,
+        backend=backend,
+        include_fail_nodes=include_fail_nodes,
+        include_warn_nodes=include_warn_nodes,
+    )
+    complete_tt_dag = complete_tt_dag_and_specialized_environment[
+        "specialized_environment_for_plotting_and_templates"
+    ]["complete_tt_dag"]
+    without_tree_logic_and_with_derived_functions = (
+        complete_tt_dag_and_specialized_environment[
+            "specialized_environment_for_plotting_and_templates"
+        ]["without_tree_logic_and_with_derived_functions"]
     )
 
-    all_nodes = convert_all_nodes_to_callables(env)
-
-    complete_dag = dags.create_dag(functions=all_nodes, targets=qnames_to_plot)
-
-    if node_selector is None:
-        selected_dag = complete_dag
+    if not selection_type:
+        selected_dag = complete_tt_dag
     else:
-        selected_dag = _create_dag_with_selected_nodes(
-            complete_dag=complete_dag,
-            node_selector=node_selector,
+        _fail_if_primary_nodes_not_specified(qnames_primary_nodes)
+        selected_dag = select_nodes_from_dag(
+            complete_tt_dag=complete_tt_dag,
+            qnames_primary_nodes=qnames_primary_nodes,
+            selection_type=selection_type,
+            selection_depth=selection_depth,
         )
 
     if not include_params:
-        selected_dag.remove_nodes_from(
-            [qn for qn, v in env.items() if isinstance(v, (ParamObject, ParamFunction))]
-        )
+        qnames_params: set[str] = set()
+        for qn, v in without_tree_logic_and_with_derived_functions.items():
+            if isinstance(v, (ParamObject, ParamFunction)):
+                qnames_params.add(qn)
+            elif (
+                isinstance(v, TimeConversionFunction)
+                and hasattr(v, "source")
+                and v.source in without_tree_logic_and_with_derived_functions
+                and isinstance(
+                    without_tree_logic_and_with_derived_functions[v.source],
+                    (ParamObject, ParamFunction),
+                )
+            ):
+                # Also schedule time-converted params for removal.
+                qnames_params.add(qn)
+
+        selected_dag.remove_nodes_from(qnames_params)
 
     # Handle 'special' nodes
     ## 1. Remove backend, xnp, dnp, and num_segments
@@ -188,11 +251,11 @@ def _get_tt_dag_with_node_metadata(
             selected_dag.remove_node(x)
 
     # Add Node Metadata to DAG
-    node_descriptions = _get_node_descriptions(env)
-    for qn in all_nodes:
-        if qn not in selected_dag.nodes():
-            continue
-        description = node_descriptions[qn]
+    node_descriptions = _get_node_descriptions(
+        without_tree_logic_and_with_derived_functions
+    )
+    for qn in selected_dag.nodes():
+        description = node_descriptions.get(qn, "No description available.")
         node_namespace = qn.split("__")[0] if "__" in qn else "top-level"
         selected_dag.nodes[qn]["node_metadata"] = NodeMetaData(
             description=description,
@@ -202,76 +265,76 @@ def _get_tt_dag_with_node_metadata(
     return selected_dag
 
 
-def convert_all_nodes_to_callables(
-    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
-) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    return {
-        qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
-        if not callable(n)
-        else n
-        for qn, n in env.items()
-    }
-
-
 def _get_node_descriptions(
-    env: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
+    without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
 ) -> dict[str, str]:
     """Get the descriptions of the nodes in the environment."""
+    qn_env = dt.flatten_to_qnames(without_tree_logic_and_with_derived_functions)
     out = {}
-    for qn, n in env.items():
+    for qn, node in qn_env.items():
         descr = None
-        if hasattr(n, "description"):
-            if isinstance(n.description, str):
-                descr = n.description
+        if hasattr(node, "description"):
+            if isinstance(node.description, str):
+                descr = node.description
             elif (
-                isinstance(n.description, dict)
-                and "en" in n.description
-                and n.description["en"] is not None
+                isinstance(node.description, dict)
+                and "en" in node.description
+                and node.description["en"] is not None
             ):
-                descr = n.description["en"]
-        if not descr:
-            descr = "No description available."
-        # Wrap description at 79 characters
-        descr = textwrap.fill(descr, width=79)
-        out[qn] = descr
+                descr = node.description["en"]
+            else:
+                continue
+            # Wrap description at 79 characters
+            descr = textwrap.fill(descr, width=79)
+            out[qn] = descr
     return out
 
 
-def _create_dag_with_selected_nodes(
-    complete_dag: nx.DiGraph,
-    node_selector: _QNameNodeSelector,
+def select_nodes_from_dag(
+    complete_tt_dag: nx.DiGraph,
+    qnames_primary_nodes: set[str],
+    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"],
+    selection_depth: int | None = None,
 ) -> nx.DiGraph:
     """Select nodes based on the node selector."""
-    selected_nodes: set[str] = set()
-    if node_selector.type == "nodes":
-        selected_nodes.update(node_selector.qnames)
-    elif node_selector.type == "ancestors":
-        for node in node_selector.qnames:
-            selected_nodes.update(
-                _kth_order_predecessors(complete_dag, node, order=node_selector.order)
-                if node_selector.order
-                else [*list(nx.ancestors(complete_dag, node)), node]
+    if selection_type == "neighbors":
+        order = selection_depth or 1
+        selected_nodes = {
+            neighbor
+            for node in qnames_primary_nodes
+            for neighbor in _kth_order_neighbors(complete_tt_dag, node, order=order)
+        }
+    elif selection_type == "descendants":
+        selected_nodes = {
+            descendant
+            for node in qnames_primary_nodes
+            for descendant in (
+                _kth_order_successors(complete_tt_dag, node, order=selection_depth)
+                if selection_depth
+                else [*list(nx.descendants(complete_tt_dag, node)), node]
             )
-    elif node_selector.type == "descendants":
-        for node in node_selector.qnames:
-            selected_nodes.update(
-                _kth_order_successors(complete_dag, node, order=node_selector.order)
-                if node_selector.order
-                else [*list(nx.descendants(complete_dag, node)), node]
+        }
+    elif selection_type == "ancestors":
+        selected_nodes = {
+            ancestor
+            for node in qnames_primary_nodes
+            for ancestor in (
+                _kth_order_predecessors(complete_tt_dag, node, order=selection_depth)
+                if selection_depth
+                else [*list(nx.ancestors(complete_tt_dag, node)), node]
             )
-    elif node_selector.type == "neighbors":
-        order = node_selector.order or 1
-        for node in node_selector.qnames:
-            selected_nodes.update(_kth_order_neighbors(complete_dag, node, order=order))
+        }
+    elif selection_type == "nodes":
+        selected_nodes = set(qnames_primary_nodes)
     else:
         msg = (
-            f"Invalid node selector type: {node_selector.type}. "
+            f"Invalid selection type: {selection_type}. "
             "Choose one of 'nodes', 'ancestors', 'descendants', or 'neighbors'."
         )
         raise ValueError(msg)
 
-    dag_copy = copy.deepcopy(complete_dag)
-    dag_copy.remove_nodes_from(set(complete_dag.nodes) - set(selected_nodes))
+    dag_copy = copy.deepcopy(complete_tt_dag)
+    dag_copy.remove_nodes_from(set(complete_tt_dag.nodes) - selected_nodes)
     return dag_copy
 
 
@@ -316,3 +379,30 @@ def _kth_order_successors(
                 _kth_order_successors(dag, successor, order=order - 1, base=base)
             )
     return base
+
+
+def _get_qnames_primary_nodes(
+    primary_nodes: set[str] | set[tuple[str, str]] | None,
+) -> set[str]:
+    """Get the qnames of the selected nodes."""
+    if not primary_nodes:
+        return set()
+    if all(isinstance(node, str) for node in primary_nodes):
+        return primary_nodes  # type: ignore[return-value]
+    if all(isinstance(node, tuple) for node in primary_nodes):
+        return {dt.qname_from_tree_path(node) for node in primary_nodes}  # type: ignore[arg-type]
+    msg = (
+        "Primary nodes must be either a set of qnames or a set of tree paths. "
+        f"Got {primary_nodes}."
+    )
+    raise ValueError(msg)
+
+
+def _fail_if_primary_nodes_not_specified(qnames: set[str] | None) -> None:
+    if not qnames:
+        msg = format_errors_and_warnings(
+            "You must not specify a selection type when no primary nodes are specified."
+            " To fix this, either set 'selection_type' to None (this plots the entire "
+            "DAG) or provide 'primary_nodes'."
+        )
+        raise ValueError(msg)

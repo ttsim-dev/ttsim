@@ -117,7 +117,7 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
 
 def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     result_template = main(
-        main_target=MainTarget.templates.input_data_dtypes,
+        main_target=MainTarget.templates.input_data_dtypes.tree,
         policy_date_str="2025-01-01",
         orig_policy_objects={"root": middle_earth.ROOT_PATH},
         backend=backend,

@@ -28,15 +28,15 @@ def _get_p_id_index(data_with_p_id: NestedData | QNameData | FlatData) -> pd.Ind
 
 def nested_data_to_df_with_nested_columns(
     nested_data_to_convert: NestedData,
-    data_with_p_id: NestedData | QNameData | FlatData,
+    index: pd.Index,
 ) -> pd.DataFrame:
     """Convert a nested data structure to a DataFrame.
 
     Args:
         nested_data_to_convert:
             A nested data structure.
-        data_with_p_id:
-            Some data structure with a "p_id" column.
+        index:
+            The index to use for the DataFrame.
 
     Returns
     -------
@@ -44,11 +44,9 @@ def nested_data_to_df_with_nested_columns(
     """
     flat_data_to_convert = dt.flatten_to_tree_paths(nested_data_to_convert)
 
-    p_id_index = _get_p_id_index(data_with_p_id)
-
     return pd.DataFrame(
         flat_data_to_convert,
-        index=p_id_index,
+        index=index,
     )
 
 

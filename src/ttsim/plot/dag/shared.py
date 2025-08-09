@@ -2,29 +2,11 @@ from __future__ import annotations
 
 import colorsys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any
 
 import networkx as nx
 import numpy
 import plotly.graph_objects as go
-
-from ttsim.interface_dag_elements.interface_node_objects import (
-    InterfaceFunction,
-    InterfaceInput,
-    interface_function,
-)
-from ttsim.tt import (
-    ParamFunction,
-    ParamObject,
-    PolicyFunction,
-    PolicyInput,
-    param_function,
-    policy_function,
-)
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import ModuleType
 
 
 @dataclass(frozen=True)
@@ -35,8 +17,8 @@ class NodeMetaData:
 
 def get_figure(
     dag: nx.DiGraph,
-    title: str,
     show_node_description: bool,
+    **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
     """Plot the DAG."""
     nice_dag = nx.relabel_nodes(
@@ -155,70 +137,29 @@ def get_figure(
         },
     )
 
-    # Create the figure with specified canvas size
-    return go.Figure(
-        data=[*edge_traces, node_trace],
-        layout=go.Layout(
-            title={"text": title, "font": {"size": 16}},
-            showlegend=False,
-            hovermode="closest",
-            margin={"b": 40, "l": 40, "r": 40, "t": 60},
-            width=1800,
-            height=1200,
-            annotations=annotations,
-            xaxis={
-                "showgrid": False,
-                "zeroline": False,
-                "showticklabels": False,
-            },
-            yaxis={
-                "showgrid": False,
-                "zeroline": False,
-                "showticklabels": False,
-            },
-        ),
+    layout = go.Layout(
+        showlegend=False,
+        hovermode="closest",
+        margin={"b": 40, "l": 40, "r": 40, "t": 60},
+        width=1800,
+        height=1200,
+        annotations=annotations,
+        xaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+        },
+        yaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+        },
     )
 
+    if kwargs:
+        layout.update(kwargs)
 
-@overload
-def dummy_callable(obj: PolicyInput, leaf_name: str) -> PolicyFunction: ...
-
-
-@overload
-def dummy_callable(obj: ParamObject, leaf_name: str) -> ParamFunction: ...
-
-
-@overload
-def dummy_callable(obj: InterfaceInput, leaf_name: str) -> InterfaceFunction: ...
-
-
-def dummy_callable(
-    obj: ModuleType | str | float | bool, leaf_name: str
-) -> Callable[[], Any]:
-    """Dummy callable, for plotting and checking DAG completeness."""
-
-    def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
-        pass
-
-    if isinstance(obj, PolicyInput):
-        return policy_function(
-            leaf_name=leaf_name,
-            start_date=obj.start_date,
-            end_date=obj.end_date,
-            foreign_key_type=obj.foreign_key_type,
-        )(dummy)
-    if isinstance(obj, ParamObject):
-        return param_function(
-            leaf_name=leaf_name,
-            start_date=obj.start_date,
-            end_date=obj.end_date,
-        )(dummy)
-    if isinstance(obj, InterfaceInput):
-        return interface_function(
-            leaf_name=leaf_name,
-            in_top_level_namespace=obj.in_top_level_namespace,
-        )(dummy)
-    return dummy
+    return go.Figure(data=[*edge_traces, node_trace], layout=layout)
 
 
 def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:

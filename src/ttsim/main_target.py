@@ -101,7 +101,18 @@ class SpecializedEnvironment(MainTargetABC):
         "specialized_environment__with_partialled_params_and_scalars"
     )
     tt_dag: str = "specialized_environment__tt_dag"
-    tt_function: str = "specialized_environment__tt_function"
+
+
+@dataclass(frozen=True)
+class SpecializedEnvrionmentForPlottingAndTemplates(MainTargetABC):
+    qnames_to_derive_functions_from: str = "specialized_environment_for_plotting_and_templates__qnames_to_derive_functions_from"  # noqa: E501
+    without_tree_logic_and_with_derived_functions: str = "specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions"  # noqa: E501
+    without_input_data_nodes_with_dummy_callables: str = "specialized_environment_for_plotting_and_templates__without_input_data_nodes_with_dummy_callables"  # noqa: E501
+    complete_tt_dag: str = (
+        "specialized_environment_for_plotting_and_templates__complete_tt_dag"
+    )
+    with_processed_params_and_scalars: str = "specialized_environment_for_plotting_and_templates__with_processed_params_and_scalars"  # noqa: E501
+    with_partialled_params_and_scalars: str = "specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars"  # noqa: E501
 
 
 @dataclass(frozen=True)
@@ -112,14 +123,15 @@ class Targets(MainTargetABC):
 
 @dataclass(frozen=True)
 class Labels(MainTargetABC):
+    input_columns: str = "labels__input_columns"
     column_targets: str = "labels__column_targets"
-    grouping_levels: str = "labels__grouping_levels"
     input_data_targets: str = "labels__input_data_targets"
     param_targets: str = "labels__param_targets"
-    processed_data_columns: str = "labels__processed_data_columns"
-    input_columns: str = "labels__input_columns"
     root_nodes: str = "labels__root_nodes"
     top_level_namespace: str = "labels__top_level_namespace"
+    grouping_levels: str = "labels__grouping_levels"
+    all_qnames_in_policy_environment: str = "labels__all_qnames_in_policy_environment"
+    policy_inputs: str = "labels__policy_inputs"
 
 
 @dataclass(frozen=True)
@@ -146,8 +158,14 @@ class OrigPolicyObjects(MainTargetABC):
 
 
 @dataclass(frozen=True)
+class InputDataDtypes(MainTargetABC):
+    tree: str = "templates__input_data_dtypes__tree"
+    df_with_nested_columns: str = "templates__input_data_dtypes__df_with_nested_columns"
+
+
+@dataclass(frozen=True)
 class Templates(MainTargetABC):
-    input_data_dtypes: str = "templates__input_data_dtypes"
+    input_data_dtypes: type[InputDataDtypes] = field(default=InputDataDtypes)
 
 
 @dataclass(frozen=True)
@@ -157,6 +175,11 @@ class MainTarget(MainTargetABC):
     policy_environment: str = "policy_environment"
     specialized_environment: type[SpecializedEnvironment] = field(
         default=SpecializedEnvironment
+    )
+    specialized_environment_for_plotting_and_templates: type[
+        SpecializedEnvrionmentForPlottingAndTemplates
+    ] = field(
+        default=SpecializedEnvrionmentForPlottingAndTemplates,
     )
     orig_policy_objects: type[OrigPolicyObjects] = field(default=OrigPolicyObjects)
     processed_data: str = "processed_data"
@@ -173,6 +196,7 @@ class MainTarget(MainTargetABC):
     xnp: str = "xnp"
     dnp: str = "dnp"
     rounding: str = "rounding"
+    tt_function: str = "tt_function"
     tt_function_set_annotations: str = "tt_function_set_annotations"
     warn_if: type[WarnIf] = field(default=WarnIf)
     fail_if: type[FailIf] = field(default=FailIf)

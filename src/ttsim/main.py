@@ -28,7 +28,7 @@ from ttsim.main_target import MainTarget, MainTargetABC
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
     from ttsim.main_args import (
         InputData,
@@ -61,6 +61,7 @@ def main(
     evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,
     include_warn_nodes: bool = True,
+    tt_function: Callable[[QNameData], QNameData] | None = None,
     tt_function_set_annotations: bool = True,
     orig_policy_objects: OrigPolicyObjects | None = None,
     raw_results: RawResults | None = None,
@@ -86,14 +87,12 @@ def main(
     elif main_targets is not None:
         main_targets = _harmonize_main_targets(main_targets)
 
-    # If requesting an input template, we do not require any data.
-    if not any(re.match("(input|processed)_data", s) for s in input_qnames):
-        input_qnames["processed_data"] = {}
-        input_qnames["processed_data_columns"] = None
     # If providing data, we require tt_targets.
-    else:
-        if tt_targets is None:
-            raise ValueError(_MSG_FOR_MISSING_TT_TARGETS)
+    if (
+        any(re.match("(input|processed)_data", s) for s in input_qnames)
+        and tt_targets is None
+    ):
+        raise ValueError(_MSG_FOR_MISSING_TT_TARGETS)
 
     flat_interface_objects = load_flat_interface_functions_and_inputs()
     nodes = _resolve_dynamic_interface_objects_to_static_nodes(

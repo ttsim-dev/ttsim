@@ -128,6 +128,8 @@ def test_warn_if_evaluation_date_set_in_multiple_places(backend):
             main_target="warn_if__evaluation_date_set_in_multiple_places",
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
+            processed_data={},
+            tt_targets=TTTargets(tree={}),
             backend=backend,
         )
 

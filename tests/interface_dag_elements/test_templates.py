@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-from ttsim import TTTargets, main
+from typing import TYPE_CHECKING
+
+from mettsim import middle_earth
+from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 from ttsim.tt.param_objects import DictParam, ScalarParam
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 par1 = ScalarParam(
     value=1,
@@ -61,7 +67,7 @@ def z(a__x: int, a__y: float) -> float:
 
 def test_template_all_outputs_no_inputs(backend):
     actual = main(
-        main_target="templates__input_data_dtypes",
+        main_target="templates__input_data_dtypes__tree",
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
@@ -84,7 +90,7 @@ def test_template_all_outputs_no_inputs(backend):
 
 def test_template_all_outputs_with_inputs(backend, xnp):
     actual = main(
-        main_target="templates__input_data_dtypes",
+        main_target="templates__input_data_dtypes__tree",
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
@@ -116,7 +122,7 @@ def test_template_all_outputs_with_inputs(backend, xnp):
 
 def test_template_output_y_no_inputs(backend):
     actual = main(
-        main_target="templates__input_data_dtypes",
+        main_target="templates__input_data_dtypes__tree",
         tt_targets={"tree": {"a": {"y": None}}},
         policy_environment={
             "kin_id": kin_id,
@@ -136,7 +142,7 @@ def test_template_output_y_no_inputs(backend):
 
 def test_template_output_x_with_inputs(backend, xnp):
     actual = main(
-        main_target="templates__input_data_dtypes",
+        main_target="templates__input_data_dtypes__tree",
         input_data={
             "tree": {
                 "p_id": xnp.array([4, 5, 6]),
@@ -165,7 +171,7 @@ def test_template_output_x_with_inputs(backend, xnp):
 
 def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp):
     actual = main(
-        main_target="templates__input_data_dtypes",
+        main_target="templates__input_data_dtypes__tree",
         policy_environment={
             "kin_id": kin_id,
             "inp1": inp1,
@@ -188,6 +194,53 @@ def test_template_all_outputs_no_input_for_root_of_derived_function(backend, xnp
         backend=backend,
     )
     assert actual == {
+        "kin_id": "IntColumn",
         "a": {"inp2": "FloatColumn"},
         "inp1": "IntColumn",
     }
+
+
+def test_returns_root_nodes_when_injecting_unrelated_input_data(xnp: ModuleType):
+    template = main(
+        main_target=MainTarget.templates.input_data_dtypes.tree,
+        policy_date_str="2000-01-01",
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        tt_targets={"tree": {"wealth_tax": {"amount_y": None}}},
+        input_data=InputData.tree(
+            tree={
+                "p_id": xnp.array([0, 1, 2]),
+                "kin_id": xnp.array([0, 0, 0]),
+                "payroll_tax": {
+                    "amount_y": xnp.array([1000, 0, 0]),
+                },
+            }
+        ),
+        include_warn_nodes=False,
+    )
+
+    assert "kin_id" in template  # policy input
+    assert "fam_id" not in template  # endogenous group creation function
+    # Inputs for fam_id
+    assert "p_id_spouse" in template
+    assert "p_id" in template
+    assert "age" in template
+    assert "p_id_parent_1" in template
+    assert "p_id_parent_2" in template
+
+
+def test_template_df_with_nested_columns():
+    actual = main(
+        main_target=MainTarget.templates.input_data_dtypes.df_with_nested_columns,
+        policy_date_str="2000-01-01",
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        tt_targets={"tree": {"wealth_tax": {"amount_y": None}}},
+    )
+    assert actual.columns.tolist() == [
+        ("age",),
+        ("kin_id",),
+        ("p_id",),
+        ("p_id_parent_1",),
+        ("p_id_parent_2",),
+        ("p_id_spouse",),
+        ("wealth",),
+    ]

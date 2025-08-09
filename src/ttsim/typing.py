@@ -102,6 +102,10 @@ if TYPE_CHECKING:
         ColumnObject | ParamFunction | ParamObject | "PolicyEnvironment",
     ]
     """Tree of column objects, param functions, and param objects."""
+    FlatPolicyEnvironment = Mapping[
+        tuple[str, ...], ColumnObject | ParamFunction | ParamObject
+    ]
+    """Flat mapping of paths to column objects, param functions, and param objects."""
     SpecEnvWithoutTreeLogicAndWithDerivedFunctions = Mapping[
         str,
         ColumnObject | ParamFunction | ParamObject | int | float | bool,

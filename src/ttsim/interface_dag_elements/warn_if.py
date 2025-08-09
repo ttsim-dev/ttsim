@@ -28,14 +28,14 @@ if TYPE_CHECKING:
 @warn_function()
 def functions_and_data_columns_overlap(
     policy_environment: PolicyEnvironment,
-    labels__processed_data_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
 ) -> None:
     """Warn if functions are overridden by data."""
     flat_policy_environment = dt.flatten_to_qnames(policy_environment)
     overridden_elements = sorted(
         {
             col
-            for col in labels__processed_data_columns
+            for col in labels__input_columns
             if col in flat_policy_environment
             and not isinstance(flat_policy_environment.get(col), PolicyInput)
         },
@@ -123,7 +123,7 @@ and `evaluation_day`, never set them anywhere without also setting
 def tt_dag_includes_function_with_warn_msg_if_included_set(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     specialized_environment__tt_dag: nx.DiGraph,
-    labels__processed_data_columns: UnorderedQNames,
+    labels__input_columns: UnorderedQNames,
 ) -> None:
     """Warn if the TT DAG includes functions with `warn_msg_if_included` set."""
 
@@ -135,10 +135,7 @@ def tt_dag_includes_function_with_warn_msg_if_included_set(
             node not in env
             or
             # ColumnObjects overridden by data are fine
-            (
-                not isinstance(env[node], PolicyInput)
-                and node in labels__processed_data_columns
-            )
+            (not isinstance(env[node], PolicyInput) and node in labels__input_columns)
         ):
             continue
         # Check because ParamObjects can be overridden by ColumnObjects down the road.

@@ -1066,7 +1066,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
     (
         "policy_environment",
         "tt_targets",
-        "labels__processed_data_columns",
+        "labels__input_columns",
         "expected_error_match",
     ),
     [
@@ -1079,7 +1079,7 @@ def test_fail_if_tt_root_nodes_are_missing_asks_for_individual_level_columns(
 def test_fail_if_targets_are_not_in_specialized_environment_or_data(
     policy_environment,
     tt_targets,
-    labels__processed_data_columns,
+    labels__input_columns,
     expected_error_match,
 ):
     with pytest.raises(
@@ -1091,7 +1091,7 @@ def test_fail_if_targets_are_not_in_specialized_environment_or_data(
                 policy_environment
             ),
             tt_targets__qname=tt_targets,
-            labels__processed_data_columns=labels__processed_data_columns,
+            labels__input_columns=labels__input_columns,
         )
     assert expected_error_match in str(e.value)
 
@@ -1491,7 +1491,7 @@ def test_fail_if_name_of_last_branch_element_is_not_the_functions_leaf_name(
 @pytest.mark.parametrize(
     "main_target",
     [
-        MainTarget.specialized_environment.tt_function,
+        MainTarget.tt_function,
         MainTarget.raw_results.columns,
     ],
 )
@@ -1500,7 +1500,8 @@ def test_raise_tt_root_nodes_are_missing_without_input_data(
     backend: Literal["jax", "numpy"],
 ):
     with pytest.raises(
-        ValueError, match="For computing results, you need to pass data. "
+        ValueError,
+        match="The following arguments to `main` are missing",
     ):
         main(
             policy_date_str="2025-01-01",
@@ -1515,11 +1516,7 @@ def test_raise_some_error_without_input_data(
 ):
     with pytest.raises(
         ValueError,
-        match=(
-            "For computing results, you need to pass data. "
-            "|"
-            "The following arguments to `main` are missing"
-        ),
+        match="The following arguments to `main` are missing",
     ):
         main(
             policy_date_str="2025-01-01",
