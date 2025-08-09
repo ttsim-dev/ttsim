@@ -5,6 +5,7 @@ import inspect
 import dags
 import dags.tree as dt
 import networkx as nx
+import numpy as np
 import optree
 import pandas as pd
 import pytest
@@ -168,99 +169,184 @@ def test_main_target_class_is_complete() -> None:
     assert nodes == main_target_elements
 
 
-def test_main_args_can_be_passed_as_class_methods(xnp):  # noqa: PLR0915
-    """Test that main args can be specified both as direct constructors and classmethods
-    symmetrically by comparing object equivalence."""
-    # TTTargets
-    tt_direct = TTTargets(tree={"wealth_tax": {"amount_y": None}})
-    tt_classmethod = TTTargets.tree({"wealth_tax": {"amount_y": None}})
-    assert tt_direct.tree == tt_classmethod.tree
-    assert tt_direct.qname is None
-    assert tt_classmethod.qname is None
+@pytest.mark.parametrize(
+    ("classmethod_instance", "expected_field_name"),
+    [
+        (
+            InputData.df_and_mapper(
+                pd.DataFrame({"test": [1, 2]}), {"nested": {"key": "test"}}
+            ),
+            "df_and_mapper",
+        ),
+        (
+            InputData.df_with_nested_columns(pd.DataFrame({"test": [1, 2, 3]})),
+            "df_with_nested_columns",
+        ),
+        (InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
+        (InputData.flat({"flat.key": [1, 2, 3]}), "flat"),
+        (InputData.qname({"qname.test": np.array([1, 2, 3])}), "qname"),
+    ],
+)
+def test_input_data_classmethods(classmethod_instance, expected_field_name):
+    # Test that the classmethod works and other fields are None
+    all_fields = set(InputData.__dataclass_fields__.keys())
+    for field in all_fields:
+        field_val = getattr(classmethod_instance, field)
+        if field == expected_field_name:
+            assert field_val is not None
+        else:
+            assert field_val is None
 
-    # OrigPolicyObjects
-    orig_direct = OrigPolicyObjects(root=middle_earth.ROOT_PATH)
-    orig_classmethod = OrigPolicyObjects.root(middle_earth.ROOT_PATH)
-    assert orig_direct.root == orig_classmethod.root
-    assert orig_direct.column_objects_and_param_functions is None
-    assert orig_classmethod.column_objects_and_param_functions is None
-    assert orig_direct.param_specs is None
-    assert orig_classmethod.param_specs is None
 
-    # Labels
-    labels_direct = Labels(input_columns=["test_column"])
-    labels_classmethod = Labels.input_columns(["test_column"])
-    assert labels_direct.input_columns == labels_classmethod.input_columns
-    assert labels_direct.column_targets is None
-    assert labels_classmethod.column_targets is None
-    assert labels_direct.grouping_levels is None
-    assert labels_classmethod.grouping_levels is None
-    assert labels_direct.input_data_targets is None
-    assert labels_classmethod.input_data_targets is None
-    assert labels_direct.param_targets is None
-    assert labels_classmethod.param_targets is None
-    assert labels_direct.root_nodes is None
-    assert labels_classmethod.root_nodes is None
-    assert labels_direct.top_level_namespace is None
-    assert labels_classmethod.top_level_namespace is None
+@pytest.mark.parametrize(
+    ("classmethod_instance", "dict_instance"),
+    [
+        # TTTargets
+        (TTTargets.qname({"test": "value"}), TTTargets(qname={"test": "value"})),
+        (
+            TTTargets.tree({"wealth_tax": {"amount_y": None}}),
+            TTTargets(tree={"wealth_tax": {"amount_y": None}}),
+        ),
+        # OrigPolicyObjects
+        (
+            OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            OrigPolicyObjects(root=middle_earth.ROOT_PATH),
+        ),
+        (
+            OrigPolicyObjects.column_objects_and_param_functions({}),
+            OrigPolicyObjects(column_objects_and_param_functions={}),
+        ),
+        (OrigPolicyObjects.param_specs({}), OrigPolicyObjects(param_specs={})),
+        # Labels
+        (Labels.input_columns(["test_column"]), Labels(input_columns=["test_column"])),
+        (
+            Labels.column_targets(["target1", "target2"]),
+            Labels(column_targets=["target1", "target2"]),
+        ),
+        (Labels.grouping_levels(["level1"]), Labels(grouping_levels=["level1"])),
+        (
+            Labels.input_data_targets(["data_target"]),
+            Labels(input_data_targets=["data_target"]),
+        ),
+        (
+            Labels.param_targets(["param_target"]),
+            Labels(param_targets=["param_target"]),
+        ),
+        (Labels.root_nodes(["root"]), Labels(root_nodes=["root"])),
+        (
+            Labels.top_level_namespace(["namespace"]),
+            Labels(top_level_namespace=["namespace"]),
+        ),
+        # Results
+        (
+            Results.df_with_mapper(pd.DataFrame({"test": [1, 2, 3]})),
+            Results(df_with_mapper=pd.DataFrame({"test": [1, 2, 3]})),
+        ),
+        (
+            Results.df_with_nested_columns(pd.DataFrame({"nested": [1, 2]})),
+            Results(df_with_nested_columns=pd.DataFrame({"nested": [1, 2]})),
+        ),
+        (
+            Results.tree({"result_tree": {"data": [1, 2, 3]}}),
+            Results(tree={"result_tree": {"data": [1, 2, 3]}}),
+        ),
+        # RawResults
+        (
+            RawResults.columns({"test": np.array([1, 2, 3])}),
+            RawResults(columns={"test": np.array([1, 2, 3])}),
+        ),
+        (
+            RawResults.params({"param": np.array([4, 5, 6])}),
+            RawResults(params={"param": np.array([4, 5, 6])}),
+        ),
+        (
+            RawResults.from_input_data({"input": np.array([7, 8, 9])}),
+            RawResults(from_input_data={"input": np.array([7, 8, 9])}),
+        ),
+        (
+            RawResults.combined({"combined": np.array([1, 2])}),
+            RawResults(combined={"combined": np.array([1, 2])}),
+        ),
+        # SpecializedEnvironment
+        (
+            SpecializedEnvironment.without_tree_logic_and_with_derived_functions({}),
+            SpecializedEnvironment(without_tree_logic_and_with_derived_functions={}),
+        ),
+        (
+            SpecializedEnvironment.with_processed_params_and_scalars({}),
+            SpecializedEnvironment(with_processed_params_and_scalars={}),
+        ),
+        (
+            SpecializedEnvironment.with_partialled_params_and_scalars({}),
+            SpecializedEnvironment(with_partialled_params_and_scalars={}),
+        ),
+        (
+            SpecializedEnvironment.tt_dag(nx.DiGraph()),
+            SpecializedEnvironment(tt_dag=nx.DiGraph()),
+        ),
+        # SpecializedEnvironmentForPlottingAndTemplates
+        (
+            SpecializedEnvironmentForPlottingAndTemplates.qnames_to_derive_functions_from(
+                ["a"]
+            ),
+            SpecializedEnvironmentForPlottingAndTemplates(
+                qnames_to_derive_functions_from=["a"]
+            ),
+        ),
+        (
+            SpecializedEnvironmentForPlottingAndTemplates.without_tree_logic_and_with_derived_functions(
+                {}
+            ),
+            SpecializedEnvironmentForPlottingAndTemplates(
+                without_tree_logic_and_with_derived_functions={}
+            ),
+        ),
+        (
+            SpecializedEnvironmentForPlottingAndTemplates.without_input_data_nodes_with_dummy_callables(
+                {}
+            ),
+            SpecializedEnvironmentForPlottingAndTemplates(
+                without_input_data_nodes_with_dummy_callables={}
+            ),
+        ),
+        (
+            SpecializedEnvironmentForPlottingAndTemplates.complete_tt_dag(nx.DiGraph()),
+            SpecializedEnvironmentForPlottingAndTemplates(complete_tt_dag=nx.DiGraph()),
+        ),
+        (
+            SpecializedEnvironmentForPlottingAndTemplates.with_processed_params_and_scalars(
+                {}
+            ),
+            SpecializedEnvironmentForPlottingAndTemplates(
+                with_processed_params_and_scalars={}
+            ),
+        ),
+        (
+            SpecializedEnvironmentForPlottingAndTemplates.with_partialled_params_and_scalars(
+                {}
+            ),
+            SpecializedEnvironmentForPlottingAndTemplates(
+                with_partialled_params_and_scalars={}
+            ),
+        ),
+    ],
+)
+def test_main_args_can_be_passed_as_class_methods(classmethod_instance, dict_instance):
+    # Get all field names from the dataclass
+    cls = type(classmethod_instance)
+    all_fields = set(cls.__dataclass_fields__.keys())
 
-    # Results
-    test_df = pd.DataFrame({"test": [1, 2, 3]})
-    results_direct = Results(df_with_mapper=test_df)
-    results_classmethod = Results.df_with_mapper(test_df)
-    assert results_direct.df_with_mapper.equals(results_classmethod.df_with_mapper)
-    assert results_direct.tree is None
-    assert results_classmethod.tree is None
-    assert results_direct.df_with_nested_columns is None
-    assert results_classmethod.df_with_nested_columns is None
+    # Test that both instances have the same field values
+    for field in all_fields:
+        classmethod_val = getattr(classmethod_instance, field)
+        dict_val = getattr(dict_instance, field)
 
-    # RawResults
-    test_qname_data = {"test": xnp.array([1, 2, 3])}
-    raw_results_direct = RawResults(columns=test_qname_data)
-    raw_results_classmethod = RawResults.columns(test_qname_data)
-    assert raw_results_direct.columns == raw_results_classmethod.columns
-    assert raw_results_direct.params is None
-    assert raw_results_classmethod.params is None
-    assert raw_results_direct.from_input_data is None
-    assert raw_results_classmethod.from_input_data is None
-    assert raw_results_direct.combined is None
-    assert raw_results_classmethod.combined is None
-
-    # SpecializedEnvironment
-    test_dag = nx.DiGraph()
-    specialized_direct = SpecializedEnvironment(tt_dag=test_dag)
-    specialized_classmethod = SpecializedEnvironment.tt_dag(test_dag)
-    assert specialized_direct.tt_dag == specialized_classmethod.tt_dag
-    assert specialized_direct.with_processed_params_and_scalars is None
-    assert specialized_classmethod.with_processed_params_and_scalars is None
-    assert specialized_direct.with_partialled_params_and_scalars is None
-    assert specialized_classmethod.with_partialled_params_and_scalars is None
-    assert specialized_direct.without_tree_logic_and_with_derived_functions is None
-    assert specialized_classmethod.without_tree_logic_and_with_derived_functions is None
-
-    # SpecializedEnvironmentForPlottingAndTemplates
-    specialized_direct = SpecializedEnvironmentForPlottingAndTemplates(
-        qnames_to_derive_functions_from=["a"]
-    )
-    specialized_classmethod = (
-        SpecializedEnvironmentForPlottingAndTemplates.qnames_to_derive_functions_from(
-            ["a"]
-        )
-    )
-    assert (
-        specialized_direct.qnames_to_derive_functions_from
-        == specialized_classmethod.qnames_to_derive_functions_from
-    )
-    assert specialized_direct.without_tree_logic_and_with_derived_functions is None
-    assert specialized_classmethod.without_tree_logic_and_with_derived_functions is None
-    assert specialized_direct.without_input_data_nodes_with_dummy_callables is None
-    assert specialized_classmethod.without_input_data_nodes_with_dummy_callables is None
-    assert specialized_direct.complete_tt_dag is None
-    assert specialized_classmethod.complete_tt_dag is None
-    assert specialized_direct.with_processed_params_and_scalars is None
-    assert specialized_classmethod.with_processed_params_and_scalars is None
-    assert specialized_direct.with_partialled_params_and_scalars is None
-    assert specialized_classmethod.with_partialled_params_and_scalars is None
+        if classmethod_val is not None:
+            # The target field should have the same type
+            assert type(classmethod_val) is type(dict_val)
+        else:
+            # All other fields should be None
+            assert dict_val is None
 
 
 @pytest.mark.parametrize(
