@@ -141,8 +141,6 @@ def get_figure(
         showlegend=False,
         hovermode="closest",
         margin={"b": 40, "l": 40, "r": 40, "t": 60},
-        width=1800,
-        height=1200,
         annotations=annotations,
         xaxis={
             "showgrid": False,

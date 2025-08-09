@@ -282,17 +282,28 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
             ],
         ),
         (
-            "nodes",
+            "all_paths",
             None,
-            {"payroll_tax__amount_m", "property_tax__amount_m"},
+            {"payroll_tax__income__amount_y", "payroll_tax__amount_y"},
             [
-                "payroll_tax__amount_m",
-                "property_tax__amount_m",
+                "payroll_tax__income__amount_y",
+                "payroll_tax__amount_y",
+                "payroll_tax__amount_standard_y",
+                "payroll_tax__amount_reduced_y",
+            ],
+        ),
+        (
+            "all_paths",
+            None,
+            {"payroll_tax__income__amount_y", "property_tax__amount_y"},
+            [
+                "payroll_tax__income__amount_y",
+                "property_tax__amount_y",
             ],
         ),
     ],
 )
-def test_node_selector(selection_type, selection_depth, primary_nodes, expected_nodes):
+def test_node_selection(selection_type, selection_depth, primary_nodes, expected_nodes):
     dag = _get_tt_dag_with_node_metadata(
         root=middle_earth.ROOT_PATH,
         primary_nodes=primary_nodes,
@@ -411,7 +422,7 @@ def test_input_data_overrides_nodes_in_plotting_dag():
     assert "wealth" in dag.nodes()
 
 
-def test_can_create_template_with_selector_and_input_data_from_tt():
+def test_can_create_template_with_selection_and_input_data_from_tt():
     tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
@@ -440,3 +451,27 @@ def test_can_pass_plotly_kwargs_to_tt():
         showlegend=True,
         hovermode="closest",
     )
+
+
+def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
+    with pytest.raises(
+        ValueError, match="you must provide at least two\nprimary nodes"
+    ):
+        tt(
+            root=middle_earth.ROOT_PATH,
+            primary_nodes=["payroll_tax__amount_y"],
+            selection_type="all_paths",
+            policy_date_str="2025-01-01",
+        )
+
+
+def test_fail_if_invalid_selection_type():
+    with pytest.raises(
+        ValueError, match="Invalid selection type: invalid_selection_type"
+    ):
+        tt(
+            root=middle_earth.ROOT_PATH,
+            primary_nodes=["payroll_tax__amount_y"],
+            selection_type="invalid_selection_type",
+            policy_date_str="2025-01-01",
+        )

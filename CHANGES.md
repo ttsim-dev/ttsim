@@ -4,12 +4,12 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-# Unreleased
+## v1.0 — 2025-08-09
+
+- {gh}`38` Plotting: Replace `nodes` selection type with `all_paths`.
 
 - {gh}`37` Make it possible to pass all main args as class methods.
   ({ghuser}`MImmesberger`)
-
-## v1.0a4 — 2025-08-09
 
 - {gh}`32` Build inputs template and plotting DAG from specialized environment based on
   policy_inputs ({ghuser}`MImmesberger`)
@@ -17,15 +17,11 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 - {gh}`34` Optimize JAX performance in data preparation pipeline
   ({ghuser}`JuergenWiemers`)
 
-## v1.0a3 — 2025-07-27
-
 - {gh}`23` Remove orphaned policy inputs from the TT DAG. ({ghuser}`MImmesberger`)
 
 - {gh}`19` Clearer architecture ({ghuser}`hmgaudecker`)
 
 - {gh}`17` Add type for sparse dicts with int keys param. ({ghuser}`MImmesberger`)
-
-## v1.0a2 — 2025-07-26
 
 - {gh}`16` Add fail/warn mechanism to ColumnObjects and ParamFunctions.
   ({ghuser}`hmgaudecker`)
@@ -47,8 +43,6 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 - {gh}`6` Fail if the leaf name of an object in the policy environment differs from the
   last element of the path ({ghuser}`MImmesberger`, {ghuser}`hmgaudecker`)
 
-## v1.0a1 — 2025-07-24
-
-- All development happened in a single GETTSIM repository. See
-  [the GETTSIM changelog](https://gettsim.readthedocs.io/en/latest/changes.html) for all
+- Prior to this, all development happened in a single GETTSIM repository. See
+  [the GETTSIM changelog](https://gettsim.readthedocs.io/en/latest/changes.html) for the
   history.
