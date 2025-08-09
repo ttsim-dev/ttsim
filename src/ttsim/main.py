@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         RawResults,
         Results,
         SpecializedEnvironment,
+        SpecializedEnvironmentForPlottingAndTemplates,
         TTTargets,
     )
     from ttsim.typing import (
@@ -67,6 +68,8 @@ def main(
     raw_results: RawResults | None = None,
     results: Results | None = None,
     specialized_environment: SpecializedEnvironment | None = None,
+    specialized_environment_for_plotting_and_templates: SpecializedEnvironmentForPlottingAndTemplates  # noqa: E501
+    | None = None,
     policy_environment: PolicyEnvironment | None = None,
     processed_data: QNameData | None = None,
     policy_date: datetime.date | None = None,
