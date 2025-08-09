@@ -68,9 +68,7 @@ def main(
     raw_results: RawResults | None = None,
     results: Results | None = None,
     specialized_environment: SpecializedEnvironment | None = None,
-    specialized_environment_for_plotting_and_templates: (
-        SpecializedEnvironmentForPlottingAndTemplates | None
-    ) = None,
+    specialized_environment_for_plotting_and_templates: SpecializedEnvironmentForPlottingAndTemplates | None = None,  # noqa: E501
     policy_environment: PolicyEnvironment | None = None,
     processed_data: QNameData | None = None,
     policy_date: datetime.date | None = None,
