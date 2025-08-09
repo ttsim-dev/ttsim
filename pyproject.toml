@@ -234,6 +234,9 @@ exclude = []
 "conftest.py" = ["ANN"]
 # Re-export things for tab-completion explicitly.
 "src/ttsim/__init__.py" = ["PLW0127"]
+# Redefinitions in main_args.py allow for different ways to construct the arguments of
+# main.
+"src/ttsim/main_args.py" = ["F811"]
 # Long lines.
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
