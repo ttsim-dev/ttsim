@@ -303,7 +303,7 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
         ),
     ],
 )
-def test_node_selector(selection_type, selection_depth, primary_nodes, expected_nodes):
+def test_node_selection(selection_type, selection_depth, primary_nodes, expected_nodes):
     dag = _get_tt_dag_with_node_metadata(
         root=middle_earth.ROOT_PATH,
         primary_nodes=primary_nodes,
@@ -422,7 +422,7 @@ def test_input_data_overrides_nodes_in_plotting_dag():
     assert "wealth" in dag.nodes()
 
 
-def test_can_create_template_with_selector_and_input_data_from_tt():
+def test_can_create_template_with_selection_and_input_data_from_tt():
     tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],

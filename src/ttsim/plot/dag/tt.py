@@ -297,7 +297,7 @@ def select_nodes_from_dag(
     selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"],
     selection_depth: int | None = None,
 ) -> nx.DiGraph:
-    """Select nodes based on the node selector."""
+    """Select nodes to plot."""
     if selection_type == "neighbors":
         order = selection_depth or 1
         selected_nodes = {
