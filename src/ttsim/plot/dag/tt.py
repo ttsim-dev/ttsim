@@ -73,9 +73,7 @@ def tt(
             - "neighbors": Plot the neighbors of the primary nodes.
             - "descendants": Plot the descendants of the primary nodes.
             - "ancestors": Plot the ancestors of the primary nodes.
-            - "all_paths": Plot all paths that connect primary nodes. Primary nodes are
-              omitted if they are not connected to any other primary nodes. Must provide
-              at least two primary nodes.
+            - "all_paths": Plot all paths that connect primary nodes.
         If not provided, the entire DAG is plotted.
     selection_depth
         The depth of the selection. Only used if selection_type is "neighbors",
@@ -335,6 +333,7 @@ def select_nodes_from_dag(
             for path in nx.all_simple_paths(complete_tt_dag, start_node, end_node)
             for node in path
         }
+        selected_nodes = selected_nodes.union(qnames_primary_nodes)
     else:
         msg = (
             f"Invalid selection type: {selection_type}. "

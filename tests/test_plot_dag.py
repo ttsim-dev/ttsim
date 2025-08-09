@@ -292,6 +292,15 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
                 "payroll_tax__amount_reduced_y",
             ],
         ),
+        (
+            "all_paths",
+            None,
+            {"payroll_tax__income__amount_y", "property_tax__amount_y"},
+            [
+                "payroll_tax__income__amount_y",
+                "property_tax__amount_y",
+            ],
+        ),
     ],
 )
 def test_node_selector(selection_type, selection_depth, primary_nodes, expected_nodes):
