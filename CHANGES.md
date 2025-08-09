@@ -4,7 +4,10 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## unpublished
+## v1.0a4 — 2025-08-09
+
+- {gh}`32` Build inputs template and plotting DAG from specialized environment based on
+  policy_inputs ({ghuser}`MImmesberger`)
 
 - {gh}`34` Optimize JAX performance in data preparation pipeline
   ({ghuser}`JuergenWiemers`)
