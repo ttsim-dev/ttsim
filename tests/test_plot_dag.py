@@ -282,12 +282,14 @@ def test_plot_full_interface_dag(include_fail_and_warn_nodes):
             ],
         ),
         (
-            "nodes",
+            "all_paths",
             None,
-            {"payroll_tax__amount_m", "property_tax__amount_m"},
+            {"payroll_tax__income__amount_y", "payroll_tax__amount_y"},
             [
-                "payroll_tax__amount_m",
-                "property_tax__amount_m",
+                "payroll_tax__income__amount_y",
+                "payroll_tax__amount_y",
+                "payroll_tax__amount_standard_y",
+                "payroll_tax__amount_reduced_y",
             ],
         ),
     ],

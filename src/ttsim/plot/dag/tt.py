@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import itertools
 import textwrap
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -37,7 +38,7 @@ def tt(
     # Args specific to TTSIM plotting
     root: Path,
     primary_nodes: set[str] | set[tuple[str, str]] | None = None,
-    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"]
     | None = None,
     selection_depth: int | None = None,
     include_params: bool = True,
@@ -72,7 +73,7 @@ def tt(
             - "neighbors": Plot the neighbors of the primary nodes.
             - "descendants": Plot the descendants of the primary nodes.
             - "ancestors": Plot the ancestors of the primary nodes.
-            - "nodes": Plot the primary nodes only.
+            - "all_paths": Plot all paths that connect the primary nodes.
         If not provided, the entire DAG is plotted.
     selection_depth
         The depth of the selection. Only used if selection_type is "neighbors",
@@ -140,7 +141,7 @@ def tt(
 def _get_tt_dag_with_node_metadata(
     root: Path | None = None,
     primary_nodes: set[str] | set[tuple[str, str]] | None = None,
-    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"]
+    selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"]
     | None = None,
     selection_depth: int | None = None,
     include_params: bool = True,
@@ -293,7 +294,7 @@ def _get_node_descriptions(
 def select_nodes_from_dag(
     complete_tt_dag: nx.DiGraph,
     qnames_primary_nodes: set[str],
-    selection_type: Literal["neighbors", "descendants", "ancestors", "nodes"],
+    selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"],
     selection_depth: int | None = None,
 ) -> nx.DiGraph:
     """Select nodes based on the node selector."""
@@ -324,8 +325,13 @@ def select_nodes_from_dag(
                 else [*list(nx.ancestors(complete_tt_dag, node)), node]
             )
         }
-    elif selection_type == "nodes":
-        selected_nodes = set(qnames_primary_nodes)
+    elif selection_type == "all_paths":
+        selected_nodes = {
+            node
+            for start_node, end_node in itertools.permutations(qnames_primary_nodes, 2)
+            for path in nx.all_simple_paths(complete_tt_dag, start_node, end_node)
+            for node in path
+        }
     else:
         msg = (
             f"Invalid selection type: {selection_type}. "
