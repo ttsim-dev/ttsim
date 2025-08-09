@@ -376,20 +376,16 @@ class SpecializedEnvironment(MainArg):
 
 @dataclass(frozen=True)
 class SpecializedEnvironmentForPlottingAndTemplates(MainArg):
-    qnames_to_derive_functions_from: UnorderedQNames | None = None
+    qnames_to_derive_functions_from: UnorderedQNames | None
     without_tree_logic_and_with_derived_functions: (
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions | None
-    ) = None
+    )
     without_input_data_nodes_with_dummy_callables: (
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions | None
-    ) = None
-    complete_tt_dag: nx.DiGraph | None = None
-    with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars | None = (
-        None
     )
-    with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars | None = (
-        None
-    )
+    complete_tt_dag: nx.DiGraph | None
+    with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars | None
+    with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars | None
 
     def __post_init__(self) -> None:
         _fix_classmethod_namespace_conflicts(self)

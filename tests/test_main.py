@@ -17,6 +17,7 @@ from ttsim import (
     RawResults,
     Results,
     SpecializedEnvironment,
+    SpecializedEnvironmentForPlottingAndTemplates,
     TTTargets,
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
@@ -236,6 +237,30 @@ def test_main_args_can_be_passed_as_class_methods(xnp):  # noqa: PLR0915
     assert specialized_classmethod.with_partialled_params_and_scalars is None
     assert specialized_direct.without_tree_logic_and_with_derived_functions is None
     assert specialized_classmethod.without_tree_logic_and_with_derived_functions is None
+
+    # SpecializedEnvironmentForPlottingAndTemplates
+    specialized_direct = SpecializedEnvironmentForPlottingAndTemplates(
+        qnames_to_derive_functions_from=["a"]
+    )
+    specialized_classmethod = (
+        SpecializedEnvironmentForPlottingAndTemplates.qnames_to_derive_functions_from(
+            ["a"]
+        )
+    )
+    assert (
+        specialized_direct.qnames_to_derive_functions_from
+        == specialized_classmethod.qnames_to_derive_functions_from
+    )
+    assert specialized_direct.without_tree_logic_and_with_derived_functions is None
+    assert specialized_classmethod.without_tree_logic_and_with_derived_functions is None
+    assert specialized_direct.without_input_data_nodes_with_dummy_callables is None
+    assert specialized_classmethod.without_input_data_nodes_with_dummy_callables is None
+    assert specialized_direct.complete_tt_dag is None
+    assert specialized_classmethod.complete_tt_dag is None
+    assert specialized_direct.with_processed_params_and_scalars is None
+    assert specialized_classmethod.with_processed_params_and_scalars is None
+    assert specialized_direct.with_partialled_params_and_scalars is None
+    assert specialized_classmethod.with_partialled_params_and_scalars is None
 
 
 @pytest.mark.parametrize(
