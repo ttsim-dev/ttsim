@@ -174,13 +174,15 @@ class OrigPolicyObjects(MainArg):
 
 @dataclass(frozen=True)
 class Labels(MainArg):
+    input_columns: UnorderedQNames | None = None
     column_targets: OrderedQNames | None = None
-    grouping_levels: OrderedQNames | None = None
     input_data_targets: OrderedQNames | None = None
     param_targets: OrderedQNames | None = None
-    input_columns: UnorderedQNames | None = None
     root_nodes: UnorderedQNames | None = None
     top_level_namespace: UnorderedQNames | None = None
+    grouping_levels: OrderedQNames | None = None
+    all_qnames_in_policy_environment: UnorderedQNames | None = None
+    policy_inputs: OrderedQNames | None = None
 
     def __post_init__(self) -> None:
         _fix_classmethod_namespace_conflicts(self)
