@@ -7,6 +7,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 ## Unreleased
 
 - {gh}`38` Plotting: Replace `nodes` selection type with `all_paths`.
+
+- {gh}`37` Make it possible to pass all main args as class methods.
   ({ghuser}`MImmesberger`)
 
 ## v1.0a4 — 2025-08-09

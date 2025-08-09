@@ -21,6 +21,7 @@ from ttsim.main_args import (
     RawResults,
     Results,
     SpecializedEnvironment,
+    SpecializedEnvironmentForPlottingAndTemplates,
     TTTargets,
 )
 from ttsim.main_target import MainTarget
@@ -36,6 +37,9 @@ OrigPolicyObjects = OrigPolicyObjects
 RawResults = RawResults
 Results = Results
 SpecializedEnvironment = SpecializedEnvironment
+SpecializedEnvironmentForPlottingAndTemplates = (
+    SpecializedEnvironmentForPlottingAndTemplates
+)
 TTTargets = TTTargets
 
 __all__ = [
@@ -46,6 +50,7 @@ __all__ = [
     "RawResults",
     "Results",
     "SpecializedEnvironment",
+    "SpecializedEnvironmentForPlottingAndTemplates",
     "TTTargets",
     "__version__",
     "__version_tuple__",
