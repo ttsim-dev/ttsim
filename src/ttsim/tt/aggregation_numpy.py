@@ -149,13 +149,25 @@ def sum_by_p_id(
 
     if column.dtype in ["bool"]:
         column = column.astype(int)
-    out = numpy.zeros_like(p_id_to_store_by, dtype=column.dtype)
 
-    map_p_id_to_position = {p_id: iloc for iloc, p_id in enumerate(p_id_to_store_by)}
+    # Vectorized implementation using numpy_groupies
+    valid_mask = p_id_to_aggregate_by >= 0
+    valid_p_ids = p_id_to_aggregate_by[valid_mask]
+    valid_column = column[valid_mask]
 
-    for iloc, id_receiver in enumerate(p_id_to_aggregate_by):
-        if id_receiver >= 0:
-            out[map_p_id_to_position[id_receiver]] += column[iloc]
+    if len(valid_p_ids) > 0:
+        max_p_id = int(max(numpy.max(valid_p_ids), numpy.max(p_id_to_store_by)))
+        grouped_sums = npg.aggregate(
+            valid_p_ids,
+            valid_column,
+            func="sum",
+            size=max_p_id + 1,
+            fill_value=0,
+        )
+        out = grouped_sums[p_id_to_store_by]
+    else:
+        out = numpy.zeros_like(p_id_to_store_by, dtype=column.dtype)
+
     return out
 
 
