@@ -454,3 +454,15 @@ def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
             selection_type="all_paths",
             policy_date_str="2025-01-01",
         )
+
+
+def test_fail_if_invalid_selection_type():
+    with pytest.raises(
+        ValueError, match="Invalid selection type: invalid_selection_type"
+    ):
+        tt(
+            root=middle_earth.ROOT_PATH,
+            primary_nodes=["payroll_tax__amount_y"],
+            selection_type="invalid_selection_type",
+            policy_date_str="2025-01-01",
+        )
