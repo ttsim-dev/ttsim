@@ -4,6 +4,11 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
+## v1.0.1 — unpublished
+
+- {gh}`40` Improve performance of `aggregation_numpy` and `data_converters`
+  ({ghuser}`JuergenWiemers`)
+
 ## v1.0 — 2025-08-09
 
 - {gh}`38` Plotting: Replace `nodes` selection type with `all_paths`.
