@@ -66,28 +66,30 @@ def join(
     -------
     The joined array.
     """
-    # For each foreign key and for each primary key, check if they match
-    matches_foreign_key = foreign_key[:, None] == primary_key
+    # First, get the sort order of primary_key to enable efficient lookup
+    sort_indices = xnp.argsort(primary_key)
+    sorted_primary_key = primary_key[sort_indices]
+    sorted_target = target[sort_indices]
 
-    # For each foreign key, add a column with True at the end, to later fall back to
-    # the value for unresolved foreign keys
-    padded_matches_foreign_key = xnp.pad(
-        matches_foreign_key,
-        ((0, 0), (0, 1)),
-        "constant",
-        constant_values=True,
+    # Use searchsorted to find where each foreign_key would be inserted
+    # in the sorted primary_key array
+    positions = xnp.searchsorted(sorted_primary_key, foreign_key, side="left")
+
+    # Check if the foreign keys actually match the primary keys at those positions
+    # Handle out-of-bounds positions
+    valid_positions = positions < len(sorted_primary_key)
+    matches = valid_positions & (
+        sorted_primary_key[xnp.minimum(positions, len(sorted_primary_key) - 1)]
+        == foreign_key
     )
 
-    # For each foreign key, compute the index of the first matching primary key
-    indices = xnp.argmax(padded_matches_foreign_key, axis=1)
-
-    # Add the value for unresolved foreign keys at the end of the target array
-    padded_targets = xnp.pad(
-        target,
-        (0, 1),
-        "constant",
-        constant_values=value_if_foreign_key_is_missing,
+    # Create result array initialized with the missing value
+    result = xnp.full_like(
+        foreign_key, value_if_foreign_key_is_missing, dtype=target.dtype
     )
 
-    # Return the target at the index of the first matching primary key
-    return padded_targets.take(indices)
+    # For valid matches, get the corresponding target values
+    valid_indices = xnp.where(
+        matches, positions, 0
+    )  # Use 0 as safe fallback for invalid indices
+    return xnp.where(matches, sorted_target[valid_indices], result)
