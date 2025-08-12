@@ -346,11 +346,13 @@ def environment_is_invalid(
     )
 
     flat_policy_environment = dt.flatten_to_tree_paths(policy_environment)
-    paths_with_incorrect_leaf_names = ""
-    for p, f in flat_policy_environment.items():
-        if hasattr(f, "leaf_name") and p[-1] != f.leaf_name:
-            paths_with_incorrect_leaf_names += f"    {p}\n"
-    if paths_with_incorrect_leaf_names:
+    incorrect_paths = [
+        f"    {p}\n"
+        for p, f in flat_policy_environment.items()
+        if hasattr(f, "leaf_name") and p[-1] != f.leaf_name
+    ]
+    if incorrect_paths:
+        paths_with_incorrect_leaf_names = "".join(incorrect_paths)
         msg = (
             format_errors_and_warnings(
                 "The last element of the object's path must be the same as the leaf name "
@@ -404,16 +406,13 @@ def foreign_keys_are_invalid_in_data(
                 raise ValueError(message)
 
             if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
-                equal_to_pid_in_same_row = [
-                    i
-                    for i, j in zip(
-                        input_data__flat[path].tolist(),
-                        input_data__flat[("p_id",)].tolist(),
-                        strict=False,
-                    )
-                    if i == j
-                ]
-                if any(equal_to_pid_in_same_row):
+                # Optimized check using numpy operations instead of Python iteration
+                data_array = input_data__flat[path]
+                p_id_array = input_data__flat[("p_id",)]
+                # Use vectorized equality check
+                self_references = data_array == p_id_array
+                if numpy.any(self_references):
+                    equal_to_pid_in_same_row = data_array[self_references].tolist()
                     message = format_errors_and_warnings(
                         f"""
                         For {path}, the following are equal to the p_id in the same
@@ -605,9 +604,8 @@ def input_df_mapper_columns_missing_in_df(
     """
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
     expected_cols_in_df = [v for v in mapper_vals if isinstance(v, str)]
-    missing_cols_in_df = [
-        v for v in expected_cols_in_df if v not in input_data__df_and_mapper__df.columns
-    ]
+    df_columns_set = set(input_data__df_and_mapper__df.columns)
+    missing_cols_in_df = [v for v in expected_cols_in_df if v not in df_columns_set]
     if missing_cols_in_df:
         msg = format_errors_and_warnings(
             "Some column names in the input mapper are not present in the input "
@@ -684,7 +682,7 @@ def backend_has_changed(
     if backend == "numpy":
         return
 
-    issues = ""
+    issue_list = []
     for func in specialized_environment__with_partialled_params_and_scalars.values():
         if isinstance(func, functools.partial):
             for argname, arg in func.keywords.items():
@@ -695,8 +693,9 @@ def backend_has_changed(
                 if isinstance(arg, numpy.ndarray) or any(
                     isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
                 ):
-                    issues += f"    {dt.tree_path_from_qname(argname)}\n"
-    if issues:
+                    issue_list.append(f"    {dt.tree_path_from_qname(argname)}\n")
+    if issue_list:
+        issues = "".join(issue_list)
         raise ValueError(
             "Backend has changed from numpy to jax.\n\n"
             f"Found numpy arrays in:\n\n{issues}"
