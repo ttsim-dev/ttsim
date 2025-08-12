@@ -390,11 +390,15 @@ def foreign_keys_are_invalid_in_data(
         if fk_name in labels__root_nodes:
             path = dt.tree_path_from_qname(fk_name)
             # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in input_data__flat[path].tolist()):
+            data_array = input_data__flat[path]
+            valid_ids_array = numpy.array(list(valid_ids))
+            valid_mask = numpy.isin(data_array, valid_ids_array)
+            if not numpy.all(valid_mask):
+                invalid_ids = data_array[~valid_mask].tolist()
                 message = format_errors_and_warnings(
                     f"""
                     For {path}, the following are not a valid p_id in the input
-                    data: {[i for i in input_data__flat[path] if i not in valid_ids]}.
+                    data: {invalid_ids}.
                     """,
                 )
                 raise ValueError(message)
