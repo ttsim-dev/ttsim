@@ -133,10 +133,10 @@ def df_with_mapped_columns_to_flat_data(
     """
     path_to_array = {}
     for path, mapper_value in dt.flatten_to_tree_paths(mapper).items():
-        # Use numpy for array creation if JAX backend is chosen
-        # Performance optimization for JAX, PR #34
+        # Use numpy for array creation regardless of backend for performance reasons,
+        # see #34.
         if numpy.isscalar(mapper_value) and not isinstance(mapper_value, str):
-            numpy_array = numpy.asarray([mapper_value] * len(df))
+            numpy_array = numpy.full(len(df), mapper_value)
         else:
             numpy_array = numpy.asarray(df[mapper_value])
 
