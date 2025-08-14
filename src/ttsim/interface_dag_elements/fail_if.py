@@ -346,19 +346,17 @@ def environment_is_invalid(
     )
 
     flat_policy_environment = dt.flatten_to_tree_paths(policy_environment)
-    paths_with_incorrect_leaf_names = ""
-    for p, f in flat_policy_environment.items():
-        if hasattr(f, "leaf_name") and p[-1] != f.leaf_name:
-            paths_with_incorrect_leaf_names += f"    {p}\n"
+    paths_with_incorrect_leaf_names = [
+        f"    {p}"
+        for p, f in flat_policy_environment.items()
+        if hasattr(f, "leaf_name") and p[-1] != f.leaf_name
+    ]
     if paths_with_incorrect_leaf_names:
-        msg = (
-            format_errors_and_warnings(
-                "The last element of the object's path must be the same as the leaf name "
-                "of that object. The following tree paths are not compatible with the "
-                "corresponding object in the policy environment:\n\n"
-            )
-            + paths_with_incorrect_leaf_names
-        )
+        msg = format_errors_and_warnings(
+            "The last element of the object's path must be the same as the leaf name "
+            "of that object. The following tree paths are not compatible with the "
+            "corresponding object in the policy environment:\n\n"
+        ) + "\n".join(paths_with_incorrect_leaf_names)
         raise ValueError(msg)
 
 
@@ -390,31 +388,28 @@ def foreign_keys_are_invalid_in_data(
         if fk_name in labels__root_nodes:
             path = dt.tree_path_from_qname(fk_name)
             # Referenced `p_id` must exist in the input data
-            if not all(i in valid_ids for i in input_data__flat[path].tolist()):
-                message = format_errors_and_warnings(
-                    f"""
-                    For {path}, the following are not a valid p_id in the input
-                    data: {[i for i in input_data__flat[path] if i not in valid_ids]}.
-                    """,
+            data_array = input_data__flat[path]
+            valid_ids_array = numpy.array(list(valid_ids))
+            valid_mask = numpy.isin(data_array, valid_ids_array)
+            if not numpy.all(valid_mask):
+                invalid_ids = data_array[~valid_mask].tolist()
+                message = (
+                    f"For {path}, the following are not a valid p_id in the input "
+                    f"data: {invalid_ids}."
                 )
                 raise ValueError(message)
 
             if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
-                equal_to_pid_in_same_row = [
-                    i
-                    for i, j in zip(
-                        input_data__flat[path].tolist(),
-                        input_data__flat[("p_id",)].tolist(),
-                        strict=False,
-                    )
-                    if i == j
-                ]
-                if any(equal_to_pid_in_same_row):
-                    message = format_errors_and_warnings(
-                        f"""
-                        For {path}, the following are equal to the p_id in the same
-                        row: {equal_to_pid_in_same_row}.
-                        """,
+                # Optimized check using numpy operations instead of Python iteration
+                data_array = input_data__flat[path]
+                p_id_array = input_data__flat[("p_id",)]
+                # Use vectorized equality check
+                self_references = data_array == p_id_array
+                if numpy.any(self_references):
+                    equal_to_pid_in_same_row = data_array[self_references].tolist()
+                    message = (
+                        f"For {path}, the following are equal to the p_id in the same "
+                        f"row: {equal_to_pid_in_same_row}."
                     )
                     raise ValueError(message)
 
