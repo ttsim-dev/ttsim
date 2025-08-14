@@ -346,21 +346,17 @@ def environment_is_invalid(
     )
 
     flat_policy_environment = dt.flatten_to_tree_paths(policy_environment)
-    incorrect_paths = [
-        f"    {p}\n"
+    paths_with_incorrect_leaf_names = [
+        f"    {p}"
         for p, f in flat_policy_environment.items()
         if hasattr(f, "leaf_name") and p[-1] != f.leaf_name
     ]
-    if incorrect_paths:
-        paths_with_incorrect_leaf_names = "".join(incorrect_paths)
-        msg = (
-            format_errors_and_warnings(
-                "The last element of the object's path must be the same as the leaf name "
-                "of that object. The following tree paths are not compatible with the "
-                "corresponding object in the policy environment:\n\n"
-            )
-            + paths_with_incorrect_leaf_names
-        )
+    if paths_with_incorrect_leaf_names:
+        msg = format_errors_and_warnings(
+            "The last element of the object's path must be the same as the leaf name "
+            "of that object. The following tree paths are not compatible with the "
+            "corresponding object in the policy environment:\n\n"
+        ) + "\n".join(paths_with_incorrect_leaf_names)
         raise ValueError(msg)
 
 
@@ -397,11 +393,9 @@ def foreign_keys_are_invalid_in_data(
             valid_mask = numpy.isin(data_array, valid_ids_array)
             if not numpy.all(valid_mask):
                 invalid_ids = data_array[~valid_mask].tolist()
-                message = format_errors_and_warnings(
-                    f"""
-                    For {path}, the following are not a valid p_id in the input
-                    data: {invalid_ids}.
-                    """,
+                message = (
+                    f"For {path}, the following are not a valid p_id in the input "
+                    f"data: {invalid_ids}."
                 )
                 raise ValueError(message)
 
@@ -413,11 +407,9 @@ def foreign_keys_are_invalid_in_data(
                 self_references = data_array == p_id_array
                 if numpy.any(self_references):
                     equal_to_pid_in_same_row = data_array[self_references].tolist()
-                    message = format_errors_and_warnings(
-                        f"""
-                        For {path}, the following are equal to the p_id in the same
-                        row: {equal_to_pid_in_same_row}.
-                        """,
+                    message = (
+                        f"For {path}, the following are equal to the p_id in the same "
+                        f"row: {equal_to_pid_in_same_row}."
                     )
                     raise ValueError(message)
 
@@ -604,8 +596,9 @@ def input_df_mapper_columns_missing_in_df(
     """
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
     expected_cols_in_df = [v for v in mapper_vals if isinstance(v, str)]
-    df_columns_set = set(input_data__df_and_mapper__df.columns)
-    missing_cols_in_df = [v for v in expected_cols_in_df if v not in df_columns_set]
+    missing_cols_in_df = [
+        v for v in expected_cols_in_df if v not in input_data__df_and_mapper__df.columns
+    ]
     if missing_cols_in_df:
         msg = format_errors_and_warnings(
             "Some column names in the input mapper are not present in the input "
@@ -682,7 +675,7 @@ def backend_has_changed(
     if backend == "numpy":
         return
 
-    issue_list = []
+    issues = ""
     for func in specialized_environment__with_partialled_params_and_scalars.values():
         if isinstance(func, functools.partial):
             for argname, arg in func.keywords.items():
@@ -693,9 +686,8 @@ def backend_has_changed(
                 if isinstance(arg, numpy.ndarray) or any(
                     isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
                 ):
-                    issue_list.append(f"    {dt.tree_path_from_qname(argname)}\n")
-    if issue_list:
-        issues = "".join(issue_list)
+                    issues += f"    {dt.tree_path_from_qname(argname)}\n"
+    if issues:
         raise ValueError(
             "Backend has changed from numpy to jax.\n\n"
             f"Found numpy arrays in:\n\n{issues}"

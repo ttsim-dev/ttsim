@@ -6,6 +6,10 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0.1 — unpublished
 
+- {gh}`41` Improve performance of `tt.shared.join` and
+  `ttsim.interface_dag_elements.fail_if.foreign_keys_are_invalid_in_data`
+  ({ghuser}`JuergenWiemers`)
+
 - {gh}`40` Improve performance of `aggregation_numpy` and `data_converters`
   ({ghuser}`JuergenWiemers`)
 

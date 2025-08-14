@@ -71,8 +71,7 @@ def join(
     sorted_primary_key = primary_key[sort_indices]
     sorted_target = target[sort_indices]
 
-    # Use searchsorted to find where each foreign_key would be inserted
-    # in the sorted primary_key array
+    # Find where each foreign_key would be inserted in the sorted primary_key array
     positions = xnp.searchsorted(sorted_primary_key, foreign_key, side="left")
 
     # Check if the foreign keys actually match the primary keys at those positions
@@ -88,8 +87,6 @@ def join(
         foreign_key, value_if_foreign_key_is_missing, dtype=target.dtype
     )
 
-    # For valid matches, get the corresponding target values
-    valid_indices = xnp.where(
-        matches, positions, 0
-    )  # Use 0 as safe fallback for invalid indices
+    # Get the corresponding target values for valid matches, use 0 for invalid indices
+    valid_indices = xnp.where(matches, positions, 0)
     return xnp.where(matches, sorted_target[valid_indices], result)
