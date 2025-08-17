@@ -49,11 +49,17 @@ class FailIf(MainTargetABC):
     input_df_has_bool_or_numeric_column_names: str = (
         "fail_if__input_df_has_bool_or_numeric_column_names"
     )
+    input_df_and_mapper_p_id_is_invalid: str = (
+        "fail_if__input_df_and_mapper_p_id_is_invalid"
+    )
     input_df_mapper_columns_missing_in_df: str = (
         "fail_if__input_df_mapper_columns_missing_in_df"
     )
     input_df_mapper_has_incorrect_format: str = (
         "fail_if__input_df_mapper_has_incorrect_format"
+    )
+    input_df_with_nested_columns_p_id_is_invalid: str = (
+        "fail_if__input_df_with_nested_columns_p_id_is_invalid"
     )
     non_convertible_objects_in_results_tree: str = (
         "fail_if__non_convertible_objects_in_results_tree"

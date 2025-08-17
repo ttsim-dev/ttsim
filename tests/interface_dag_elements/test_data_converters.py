@@ -75,9 +75,14 @@ def minimal_data_tree():
                 "n1": {
                     "n2": "a",
                 },
+                "p_id": "p_id",
             },
-            pd.DataFrame({"a": [1, 2, 3]}),
-            {("n1", "n2"): pd.Series([1, 2, 3])},
+            pd.DataFrame({"a": [1, 2, 3], "p_id": [0, 1, 2]}),
+            {
+                ("n1", "n2"): pd.Series([1, 2, 3]),
+                ("p_id",): pd.Series([0, 1, 2]),
+                ("__original_sort_indices__",): numpy.array([0, 1, 2]),
+            },
         ),
         (
             {
@@ -85,9 +90,15 @@ def minimal_data_tree():
                     "n2": "a",
                 },
                 "n3": "b",
+                "p_id": "p_id",
             },
-            pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
-            {("n1", "n2"): pd.Series([1, 2, 3]), ("n3",): pd.Series([4, 5, 6])},
+            pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "p_id": [0, 1, 2]}),
+            {
+                ("n1", "n2"): pd.Series([1, 2, 3]),
+                ("n3",): pd.Series([4, 5, 6]),
+                ("p_id",): pd.Series([0, 1, 2]),
+                ("__original_sort_indices__",): numpy.array([0, 1, 2]),
+            },
         ),
         (
             {
@@ -95,9 +106,15 @@ def minimal_data_tree():
                     "n2": "a",
                 },
                 "n3": 3,
+                "p_id": "p_id",
             },
-            pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
-            {("n1", "n2"): pd.Series([1, 2, 3]), ("n3",): pd.Series([3, 3, 3])},
+            pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "p_id": [0, 1, 2]}),
+            {
+                ("n1", "n2"): pd.Series([1, 2, 3]),
+                ("n3",): pd.Series([3, 3, 3]),
+                ("p_id",): pd.Series([0, 1, 2]),
+                ("__original_sort_indices__",): numpy.array([0, 1, 2]),
+            },
         ),
     ],
 )
@@ -114,12 +131,9 @@ def test_df_with_mapped_columns_to_flat_data(
     )
 
     assert set(result.keys()) == set(expected.keys())
-    for key in result:
-        pd.testing.assert_series_equal(
-            pd.Series(result[key]),
-            expected[key],
-            check_names=False,
-        )
+    for key, value in expected.items():
+        assert numpy.array_equal(result[key], value)
+    assert isinstance(result[("p_id",)], numpy.ndarray)
 
 
 @pytest.mark.parametrize(
@@ -250,12 +264,26 @@ def test_nested_data_to_dataframe(
     ),
     [
         (
-            pd.DataFrame({("a", "b"): [1, 2, 3], ("c",): [4, 5, 6]}),
-            {("a", "b"): [1, 2, 3], ("c",): [4, 5, 6]},
+            pd.DataFrame(
+                {("a", "b"): [1, 2, 3], ("c",): [4, 5, 6], ("p_id",): [0, 1, 2]}
+            ),
+            {
+                ("a", "b"): [1, 2, 3],
+                ("c",): [4, 5, 6],
+                ("p_id",): [0, 1, 2],
+                ("__original_sort_indices__",): numpy.array([0, 1, 2]),
+            },
         ),
         (
-            pd.DataFrame({("a", "b"): [1, 2, 3], ("b",): [4, 5, 6]}),
-            {("a", "b"): [1, 2, 3], ("b",): [4, 5, 6]},
+            pd.DataFrame(
+                {("a", "b"): [1, 2, 3], ("b",): [4, 5, 6], ("p_id",): [0, 1, 2]}
+            ),
+            {
+                ("a", "b"): [1, 2, 3],
+                ("b",): [4, 5, 6],
+                ("p_id",): [0, 1, 2],
+                ("__original_sort_indices__",): numpy.array([0, 1, 2]),
+            },
         ),
     ],
 )
@@ -267,5 +295,5 @@ def test_df_with_nested_columns_to_flat_data(df, expected):
     )
 
     assert set(result.keys()) == set(expected.keys())
-    for key in result:
-        assert_array_equal(result[key], expected[key])
+    for key, value in result.items():
+        assert_array_equal(value, expected[key])

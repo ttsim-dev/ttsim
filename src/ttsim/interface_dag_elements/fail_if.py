@@ -579,6 +579,117 @@ def input_df_has_bool_or_numeric_column_names(
 
 
 @fail_function()
+def input_df_and_mapper_p_id_is_invalid(
+    input_data__df_and_mapper__df: pd.DataFrame,
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
+) -> None:
+    """Fail if p_id column in DataFrame input is missing or invalid.
+
+    This validation runs before data conversion to ensure early failure.
+
+    Fails if:
+        - The mapper doesn't include a p_id mapping
+        - The p_id column is missing from the DataFrame
+        - The p_id column has non-integer values
+        - The p_id column has non-unique values
+    """
+    # Check if mapper includes p_id
+    mapper_flat = dt.flatten_to_qnames(input_data__df_and_mapper__mapper)
+    p_id_mapping = mapper_flat.get("p_id", None)
+
+    if p_id_mapping is None:
+        raise ValueError("The input mapper must include a mapping for 'p_id'.")
+
+    if not isinstance(p_id_mapping, str):
+        raise TypeError("The p_id mapping must be a string column name.")
+
+    # Check if p_id column exists in DataFrame
+    if p_id_mapping not in input_data__df_and_mapper__df.columns:
+        raise ValueError(
+            f"The p_id column '{p_id_mapping}' is missing from the DataFrame."
+        )
+
+    # Get p_id column data
+    p_id_series = input_data__df_and_mapper__df[p_id_mapping]
+
+    # Check data type
+    dtype_normalized = str(p_id_series.dtype).lower()
+    if "int" not in dtype_normalized:
+        msg = format_errors_and_warnings(
+            f"The p_id column must be of integer dtype. Got: {p_id_series.dtype}."
+        )
+        raise ValueError(msg)
+
+    # Check for uniqueness (skip for single-row data)
+    if len(p_id_series) > 1 and p_id_series.duplicated().any():
+        duplicated_ids = p_id_series[p_id_series.duplicated(keep=False)].unique()
+        raise ValueError(
+            f"p_id values must be unique. Duplicated values: {duplicated_ids.tolist()}"
+        )
+
+
+@fail_function()
+def input_df_with_nested_columns_p_id_is_invalid(
+    input_data__df_with_nested_columns: pd.DataFrame,
+) -> None:
+    """Fail if p_id column in nested DataFrame input is missing or invalid.
+
+    This validation runs before data conversion to ensure early failure.
+
+    Fails if:
+        - The ('p_id',) column is missing
+        - The p_id column has non-integer values
+        - The p_id column has non-unique values
+    """
+    # Find the p_id column efficiently (accounting for MultiIndex padding)
+    p_id_column = None
+    for col in input_data__df_with_nested_columns.columns:
+        # Handle both regular columns and MultiIndex tuples
+        if isinstance(col, tuple):
+            clean_col = tuple(el for el in col if not pd.isna(el))
+        else:
+            clean_col = (col,)
+
+        if clean_col == ("p_id",):
+            p_id_column = col
+            break
+
+    if p_id_column is None:
+        raise ValueError("Column with p_id data is missing from the DataFrame")
+
+    # Get p_id column data using the actual column name
+    try:
+        p_id_values = input_data__df_with_nested_columns[p_id_column]
+
+        # Handle MultiIndex DataFrame results
+        if hasattr(p_id_values, "values"):
+            p_id_array = numpy.asarray(p_id_values.values).flatten()  # Flatten to 1D
+        else:
+            p_id_array = p_id_values
+
+        # Create a Series for consistent interface
+        p_id_series = pd.Series(p_id_array)
+
+    except (KeyError, ValueError, AttributeError) as e:
+        raise ValueError(f"Could not access p_id column: {e}") from e
+
+    # Check data type
+    dtype_normalized = str(p_id_series.dtype).lower()
+    if "int" not in dtype_normalized:
+        msg = format_errors_and_warnings(
+            f"The p_id column must be of integer dtype. Got: {p_id_series.dtype}."
+        )
+        raise ValueError(msg)
+
+    # Check for uniqueness (skip for single-row data)
+    if len(p_id_series) > 1 and p_id_series.duplicated().any():
+        duplicated_ids = p_id_series[p_id_series.duplicated(keep=False)].unique()
+        raise ValueError(
+            f"p_id values must be unique. Duplicated values: {duplicated_ids.tolist()}"
+        )
+
+
+@fail_function()
 def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedInputsMapper,

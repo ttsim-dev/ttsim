@@ -29,9 +29,11 @@ from ttsim.interface_dag_elements.fail_if import (
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
     input_data_is_invalid,
+    input_df_and_mapper_p_id_is_invalid,
     input_df_has_bool_or_numeric_column_names,
     input_df_mapper_columns_missing_in_df,
     input_df_mapper_has_incorrect_format,
+    input_df_with_nested_columns_p_id_is_invalid,
     non_convertible_objects_in_results_tree,
     param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
@@ -1251,8 +1253,16 @@ def test_fail_if_input_df_mapper_columns_missing_in_df():
 def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
     backend: Literal["jax", "numpy"],
 ):
-    df = pd.DataFrame({"a": [1]})
-    mapper = {"b": "a", "c": "d", "e": 1, "f": 1.5, "g": True, "h": "i"}
+    df = pd.DataFrame({"a": [1], "p_id": [0]})  # Added p_id column
+    mapper = {
+        "b": "a",
+        "c": "d",
+        "e": 1,
+        "f": 1.5,
+        "g": True,
+        "h": "i",
+        "p_id": "p_id",
+    }  # Added p_id mapping
     with pytest.raises(
         ValueError,
         match=r"The following columns are missing: \['d', 'i'\]",
@@ -1785,3 +1795,423 @@ def test_param_function_depends_on_column_objects_via_main(
                 "some_policy_function": some_policy_function,
             },
         )
+
+
+@pytest.mark.parametrize(
+    ("input_data", "expected_error_match"),
+    [
+        # Missing p_id column
+        (
+            {("fam_id",): numpy.array([1, 2, 3])},
+            "The input data must contain the `p_id` column.",
+        ),
+        # p_id column with wrong type - string
+        (
+            {("p_id",): numpy.array(["1", "2", "3"])},
+            "The `p_id` column must be of integer dtype.",
+        ),
+        # p_id column with wrong type - float
+        (
+            {("p_id",): numpy.array([1.0, 2.0, 3.0])},
+            "The `p_id` column must be of integer dtype.",
+        ),
+        # p_id column with wrong type - mixed types
+        (
+            {("p_id",): numpy.array([1, "2", 3])},
+            "The `p_id` column must be of integer dtype.",
+        ),
+        # Non-unique p_id values - duplicates
+        (
+            {("p_id",): numpy.array([1, 1, 3, 4])},
+            "The following `p_id`s are not unique in the input data",
+        ),
+        # Non-unique p_id values - multiple duplicates
+        (
+            {("p_id",): numpy.array([1, 1, 3, 3, 5])},
+            "The following `p_id`s are not unique in the input data",
+        ),
+        # Arrays with different lengths
+        (
+            {
+                ("p_id",): numpy.array([1, 2, 3]),
+                ("fam_id",): numpy.array([1, 2]),  # Different length
+            },
+            "The lengths of the following columns do not match the length of the `p_id`",
+        ),
+        # Multiple arrays with different lengths
+        (
+            {
+                ("p_id",): numpy.array([1, 2, 3]),
+                ("fam_id",): numpy.array([1, 2]),
+                ("hh_id",): numpy.array([1]),
+            },
+            "The lengths of the following columns do not match the length of the `p_id`",
+        ),
+    ],
+)
+def test_input_data_is_invalid_raises(input_data, expected_error_match, xnp):
+    """Test that input_data_is_invalid raises appropriate errors for invalid data."""
+    with pytest.raises(ValueError, match=expected_error_match):
+        input_data_is_invalid(input_data, xnp)
+
+
+@pytest.mark.parametrize(
+    "input_data",
+    [
+        # Valid single-row data
+        {("p_id",): numpy.array([1])},
+        # Valid multi-row data with unique p_ids
+        {("p_id",): numpy.array([1, 2, 3])},
+        # Valid data with additional columns of same length
+        {
+            ("p_id",): numpy.array([1, 2, 3]),
+            ("fam_id",): numpy.array([10, 20, 30]),
+        },
+        # Valid data with nested structure
+        {
+            ("p_id",): numpy.array([1, 2, 3]),
+            ("demographics", "age"): numpy.array([25, 30, 35]),
+        },
+        # Valid data with various p_id values including zero
+        {("p_id",): numpy.array([0, 1, 2])},
+        # Valid data with negative p_id values
+        {("p_id",): numpy.array([-1, 0, 1])},
+        # Valid single-row data with any p_id value
+        {("p_id",): numpy.array([42])},
+        {("p_id",): numpy.array([0])},
+        {("p_id",): numpy.array([-100])},
+    ],
+)
+def test_input_data_is_invalid_passes(input_data, xnp):
+    """Test that input_data_is_invalid passes for valid data."""
+    input_data_is_invalid(input_data, xnp)
+
+
+@pytest.mark.parametrize(
+    "p_id_dtype",
+    [
+        numpy.int8,
+        numpy.int16,
+        numpy.int32,
+        numpy.int64,
+        "int",
+        "int32",
+        "int64",
+    ],
+)
+def test_input_data_is_invalid_accepts_various_integer_dtypes(p_id_dtype, xnp):
+    """Test that input_data_is_invalid accepts various integer dtypes."""
+    input_data = {("p_id",): numpy.array([1, 2, 3], dtype=p_id_dtype)}
+    input_data_is_invalid(input_data, xnp)
+
+
+@pytest.mark.parametrize(
+    ("df", "mapper", "expected_error_match"),
+    [
+        # Missing p_id mapping in mapper
+        (
+            pd.DataFrame({"person_id": [1, 2, 3]}),
+            {"fam_id": "family_id"},
+            "The input mapper must include a mapping for 'p_id'.",
+        ),
+        # p_id mapping is not a string
+        (
+            pd.DataFrame({"person_id": [1, 2, 3]}),
+            {"p_id": 123},
+            "The p_id mapping must be a string column name.",
+        ),
+        # p_id mapping is None - this should check for missing p_id first
+        (
+            pd.DataFrame({"person_id": [1, 2, 3]}),
+            {"p_id": None},
+            "The input mapper must include a mapping for 'p_id'.",
+        ),
+        # p_id column missing from DataFrame
+        (
+            pd.DataFrame({"other_id": [1, 2, 3]}),
+            {"p_id": "person_id"},
+            "The p_id column 'person_id' is missing from the DataFrame.",
+        ),
+        # p_id column with wrong type - string
+        (
+            pd.DataFrame({"person_id": ["1", "2", "3"]}),
+            {"p_id": "person_id"},
+            "The p_id column must be of integer dtype.",
+        ),
+        # p_id column with wrong type - float
+        (
+            pd.DataFrame({"person_id": [1.0, 2.0, 3.0]}),
+            {"p_id": "person_id"},
+            "The p_id column must be of integer dtype.",
+        ),
+        # p_id column with wrong type - object
+        (
+            pd.DataFrame({"person_id": [1, "2", 3]}),
+            {"p_id": "person_id"},
+            "The p_id column must be of integer dtype.",
+        ),
+        # Non-unique p_id values - duplicates
+        (
+            pd.DataFrame({"person_id": [1, 1, 3, 4]}),
+            {"p_id": "person_id"},
+            "p_id values must be unique. Duplicated values:",
+        ),
+        # Non-unique p_id values - multiple duplicates
+        (
+            pd.DataFrame({"person_id": [1, 1, 3, 3, 5]}),
+            {"p_id": "person_id"},
+            "p_id values must be unique. Duplicated values:",
+        ),
+    ],
+)
+def test_input_df_and_mapper_p_id_is_invalid_raises(df, mapper, expected_error_match):
+    """Test that input_df_and_mapper_p_id_is_invalid raises appropriate errors."""
+    with pytest.raises((ValueError, TypeError), match=expected_error_match):
+        input_df_and_mapper_p_id_is_invalid(df, mapper)
+
+
+@pytest.mark.parametrize(
+    ("df", "mapper"),
+    [
+        # Valid single-row data
+        (
+            pd.DataFrame({"person_id": [1]}),
+            {"p_id": "person_id"},
+        ),
+        # Valid multi-row data with unique p_ids
+        (
+            pd.DataFrame({"person_id": [1, 2, 3]}),
+            {"p_id": "person_id"},
+        ),
+        # Valid data with additional columns
+        (
+            pd.DataFrame({"person_id": [1, 2, 3], "age": [25, 30, 35]}),
+            {"p_id": "person_id", "age": "age"},
+        ),
+        # Valid data with nested mapper structure
+        (
+            pd.DataFrame({"person_id": [1, 2, 3], "family_id": [10, 20, 30]}),
+            {"p_id": "person_id", "family": {"fam_id": "family_id"}},
+        ),
+        # Valid data with various p_id values including zero
+        (
+            pd.DataFrame({"person_id": [0, 1, 2]}),
+            {"p_id": "person_id"},
+        ),
+        # Valid data with negative p_id values
+        (
+            pd.DataFrame({"person_id": [-1, 0, 1]}),
+            {"p_id": "person_id"},
+        ),
+    ],
+)
+def test_input_df_and_mapper_p_id_is_invalid_passes(df, mapper):
+    """Test that input_df_and_mapper_p_id_is_invalid passes for valid data."""
+    input_df_and_mapper_p_id_is_invalid(df, mapper)
+
+
+@pytest.mark.parametrize(
+    "p_id_dtype",
+    [
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "Int8",
+        "Int16",
+        "Int32",
+        "Int64",
+    ],
+)
+def test_input_df_and_mapper_accepts_various_integer_dtypes(p_id_dtype):
+    """Test that input_df_and_mapper_p_id_is_invalid accepts various integer dtypes."""
+    df = pd.DataFrame({"person_id": pd.Series([1, 2, 3], dtype=p_id_dtype)})
+    mapper = {"p_id": "person_id"}
+    input_df_and_mapper_p_id_is_invalid(df, mapper)
+
+
+def test_input_df_and_mapper_single_person_with_any_p_id_works_correctly():
+    """Test that single-row data works for any p_id value."""
+    for p_id_value in [-100, 0, 1, 42, 999]:
+        df = pd.DataFrame({"person_id": [p_id_value]})
+        mapper = {"p_id": "person_id"}
+        input_df_and_mapper_p_id_is_invalid(df, mapper)
+
+
+# =============================================================================
+# Tests for input_df_with_nested_columns_p_id_is_invalid
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("df", "expected_error_match"),
+    [
+        # Missing p_id column entirely
+        (
+            pd.DataFrame({("fam_id",): [1, 2, 3]}),
+            "Column with p_id data is missing from the DataFrame",
+        ),
+        # DataFrame with no columns at all
+        (
+            pd.DataFrame(),
+            "Column with p_id data is missing from the DataFrame",
+        ),
+    ],
+)
+def test_input_df_with_nested_columns_p_id_is_invalid_raises_missing_column(
+    df, expected_error_match
+):
+    """Test that input_df_with_nested_columns_p_id_is_invalid raises errors for missing p_id."""
+    with pytest.raises(ValueError, match=expected_error_match):
+        input_df_with_nested_columns_p_id_is_invalid(df)
+
+
+@pytest.mark.parametrize(
+    ("p_id_data", "expected_error_match"),
+    [
+        # p_id column with wrong type - string
+        (["1", "2", "3"], "The p_id column must be of integer dtype."),
+        # p_id column with wrong type - float
+        ([1.0, 2.0, 3.0], "The p_id column must be of integer dtype."),
+        # p_id column with wrong type - mixed types
+        ([1, "2", 3], "The p_id column must be of integer dtype."),
+    ],
+)
+def test_input_df_with_nested_columns_p_id_is_invalid_raises_wrong_type(
+    p_id_data, expected_error_match
+):
+    """Test that input_df_with_nested_columns_p_id_is_invalid raises errors for wrong p_id type."""
+    df = pd.DataFrame({("p_id",): p_id_data})
+    with pytest.raises(ValueError, match=expected_error_match):
+        input_df_with_nested_columns_p_id_is_invalid(df)
+
+
+@pytest.mark.parametrize(
+    ("p_id_data", "expected_error_match"),
+    [
+        # Non-unique p_id values - duplicates
+        ([1, 1, 3, 4], "p_id values must be unique. Duplicated values:"),
+        # Non-unique p_id values - multiple duplicates
+        ([1, 1, 3, 3, 5], "p_id values must be unique. Duplicated values:"),
+    ],
+)
+def test_input_df_with_nested_columns_p_id_is_invalid_raises_non_unique(
+    p_id_data, expected_error_match
+):
+    """Test that input_df_with_nested_columns_p_id_is_invalid raises errors for non-unique p_id."""
+    df = pd.DataFrame({("p_id",): p_id_data})
+    with pytest.raises(ValueError, match=expected_error_match):
+        input_df_with_nested_columns_p_id_is_invalid(df)
+
+
+@pytest.mark.parametrize(
+    "df",
+    [
+        # Valid single-row data
+        pd.DataFrame({("p_id",): [1]}),
+        # Valid multi-row data with unique p_ids
+        pd.DataFrame({("p_id",): [1, 2, 3]}),
+        # Valid data with various p_id values including zero
+        pd.DataFrame({("p_id",): [0, 1, 2]}),
+        # Valid data with negative p_id values
+        pd.DataFrame({("p_id",): [-1, 0, 1]}),
+        # Valid single-row data with any p_id value
+        pd.DataFrame({("p_id",): [42]}),
+        pd.DataFrame({("p_id",): [0]}),
+        pd.DataFrame({("p_id",): [-100]}),
+    ],
+)
+def test_input_df_with_nested_columns_p_id_is_invalid_passes(df):
+    """Test that input_df_with_nested_columns_p_id_is_invalid passes for valid data."""
+    input_df_with_nested_columns_p_id_is_invalid(df)
+
+
+@pytest.mark.parametrize(
+    "p_id_dtype",
+    [
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "Int8",
+        "Int16",
+        "Int32",
+        "Int64",
+    ],
+)
+def test_input_df_with_nested_columns_accepts_various_integer_dtypes(p_id_dtype):
+    """Test that input_df_with_nested_columns_p_id_is_invalid accepts various integer dtypes."""
+    df = pd.DataFrame({("p_id",): pd.Series([1, 2, 3], dtype=p_id_dtype)})
+    input_df_with_nested_columns_p_id_is_invalid(df)
+
+
+def test_input_df_with_nested_columns_single_person_with_any_p_id_works_correctly():
+    """Test that single-row data works for any p_id value."""
+    for p_id_value in [-100, 0, 1, 42, 999]:
+        df = pd.DataFrame({("p_id",): [p_id_value]})
+        input_df_with_nested_columns_p_id_is_invalid(df)
+
+
+# =============================================================================
+# Edge case and robustness tests
+# =============================================================================
+
+
+def test_input_data_is_invalid_with_pandas_series(xnp):
+    """Test that input_data_is_invalid works with pandas Series."""
+    input_data = {("p_id",): pd.Series([1, 2, 3])}
+    input_data_is_invalid(input_data, xnp)
+
+
+def test_input_data_is_invalid_with_jax_array(xnp):
+    """Test that input_data_is_invalid works with JAX arrays."""
+    if str(type(xnp)).endswith("jax.numpy'>"):
+        input_data = {("p_id",): xnp.array([1, 2, 3])}
+        input_data_is_invalid(input_data, xnp)
+
+
+def test_input_df_and_mapper_with_nullable_integer_dtypes():
+    """Test input_df_and_mapper_p_id_is_invalid with pandas nullable integer dtypes."""
+    for dtype in ["Int8", "Int16", "Int32", "Int64"]:
+        df = pd.DataFrame({"person_id": pd.Series([1, 2, 3], dtype=dtype)})
+        mapper = {"p_id": "person_id"}
+        input_df_and_mapper_p_id_is_invalid(df, mapper)
+
+
+def test_input_df_with_nested_columns_empty_dataframe():
+    """Test input_df_with_nested_columns_p_id_is_invalid with empty DataFrame."""
+    df = pd.DataFrame()
+    with pytest.raises(ValueError, match="Column with p_id data is missing"):
+        input_df_with_nested_columns_p_id_is_invalid(df)
+
+
+def test_all_validation_functions_handle_zero_p_id_correctly(xnp):
+    """Test that all validation functions handle p_id=0 correctly."""
+    # Test input_data_is_invalid
+    input_data = {("p_id",): xnp.array([0])}
+    input_data_is_invalid(input_data, xnp)
+
+    # Test input_df_and_mapper_p_id_is_invalid
+    df = pd.DataFrame({"person_id": [0]})
+    mapper = {"p_id": "person_id"}
+    input_df_and_mapper_p_id_is_invalid(df, mapper)
+
+    # Test input_df_with_nested_columns_p_id_is_invalid
+    df_nested = pd.DataFrame({("p_id",): [0]})
+    input_df_with_nested_columns_p_id_is_invalid(df_nested)
+
+
+def test_all_validation_functions_handle_negative_p_id_correctly(xnp):
+    """Test that all validation functions handle negative p_id values correctly."""
+    # Test input_data_is_invalid
+    input_data = {("p_id",): xnp.array([-1, -2, -3])}
+    input_data_is_invalid(input_data, xnp)
+
+    # Test input_df_and_mapper_p_id_is_invalid
+    df = pd.DataFrame({"person_id": [-1, -2, -3]})
+    mapper = {"p_id": "person_id"}
+    input_df_and_mapper_p_id_is_invalid(df, mapper)
+
+    # Test input_df_with_nested_columns_p_id_is_invalid
+    df_nested = pd.DataFrame({("p_id",): [-1, -2, -3]})
+    input_df_with_nested_columns_p_id_is_invalid(df_nested)
