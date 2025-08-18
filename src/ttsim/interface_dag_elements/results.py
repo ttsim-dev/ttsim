@@ -84,7 +84,7 @@ def tree(raw_results__combined: QNameData, input_data__flat: FlatData) -> Nested
 @interface_function()
 def df_with_mapper(
     tree: NestedData,
-    input_data__flat: FlatData,  # noqa: ARG001
+    input_data__flat: FlatData,
     processed_data: QNameData,
     tt_targets__tree: NestedStrings,
 ) -> pd.DataFrame:
@@ -106,10 +106,14 @@ def df_with_mapper(
     """
     # Create DataFrame using original sorted p_ids which match the sorted results
     # data in the tree.
-    original_sorted_p_ids = processed_data.get(
-        "__original_sorted_p_ids__", processed_data["p_id"]
-    )
-    original_dtype = processed_data.get("__original_p_id_dtype__", None)
+    sort_indices = processed_data.get("__original_sort_indices__")
+    if sort_indices is not None:
+        original_p_ids = input_data__flat[("p_id",)]
+        original_sorted_p_ids = numpy.asarray(original_p_ids)[sort_indices]
+        original_dtype = original_p_ids.dtype
+    else:
+        msg = "Sort indices must be provided to restore the original order."
+        raise ValueError(msg)
 
     # Convert to numpy array with original dtype if available to ensure
     # consistent pandas Index dtype
@@ -136,7 +140,7 @@ def df_with_mapper(
 @interface_function()
 def df_with_nested_columns(
     tree: NestedData,
-    input_data__flat: FlatData,  # noqa: ARG001
+    input_data__flat: FlatData,
     processed_data: QNameData,
 ) -> pd.DataFrame:
     """The results DataFrame with nested column names corresponding to tree paths.
@@ -155,10 +159,14 @@ def df_with_nested_columns(
     """
     # Create DataFrame using original sorted p_ids which match the sorted results
     # data in the tree.
-    original_sorted_p_ids = processed_data.get(
-        "__original_sorted_p_ids__", processed_data["p_id"]
-    )
-    original_dtype = processed_data.get("__original_p_id_dtype__", None)
+    sort_indices = processed_data.get("__original_sort_indices__")
+    if sort_indices is not None:
+        original_p_ids = input_data__flat[("p_id",)]
+        original_sorted_p_ids = numpy.asarray(original_p_ids)[sort_indices]
+        original_dtype = original_p_ids.dtype
+    else:
+        msg = "Sort indices must be provided to restore the original order."
+        raise ValueError(msg)
 
     # Convert to numpy array with original dtype if available to ensure
     # consistent pandas Index dtype

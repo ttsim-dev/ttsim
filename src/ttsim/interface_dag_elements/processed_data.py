@@ -68,10 +68,4 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
     # Store original sort indices for row order restoration in results
     processed_input_data["__original_sort_indices__"] = sort_indices
 
-    # Store original sorted p_ids for DataFrame index creation in results
-    processed_input_data["__original_sorted_p_ids__"] = sorted_orig_ids
-
-    # Store original p_id dtype to ensure correct pandas Index dtype
-    processed_input_data["__original_p_id_dtype__"] = input_data__flat[("p_id",)].dtype
-
     return processed_input_data
