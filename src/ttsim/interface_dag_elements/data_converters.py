@@ -131,33 +131,20 @@ def df_with_mapped_columns_to_flat_data(
 
 
     """
-    # Sort DataFrame by p_id to optimize downstream sorting operations
-    sorted_df = df.sort_values("p_id").reset_index(drop=True)
-    # Store which original row positions were moved to create the sorted DataFrame
-    sort_indices = df.sort_values("p_id").index.to_numpy()
-
     path_to_array = {}
     for path, mapper_value in dt.flatten_to_tree_paths(mapper).items():
         # Use numpy for array creation regardless of backend for performance reasons,
         # see #34.
         if numpy.isscalar(mapper_value) and not isinstance(mapper_value, str):
-            numpy_array = numpy.full(len(sorted_df), mapper_value)
+            numpy_array = numpy.full(len(df), mapper_value)
         else:
-            numpy_array = numpy.asarray(sorted_df[mapper_value])
+            numpy_array = numpy.asarray(df[mapper_value])
 
         # Convert numpy array back to JAX array if JAX backend is chosen
         if backend == "jax":
             path_to_array[path] = xnp.asarray(numpy_array)
         else:
             path_to_array[path] = numpy_array
-
-    # Store indices to restore original order in final DataFrame output
-    if backend == "jax":
-        path_to_array[("__original_sort_indices__",)] = xnp.asarray(
-            numpy.asarray(sort_indices)
-        )
-    else:
-        path_to_array[("__original_sort_indices__",)] = numpy.asarray(sort_indices)
 
     return path_to_array
 
@@ -172,10 +159,8 @@ def df_with_nested_columns_to_flat_data(
     Args:
         df:
             The pandas DataFrame with nested columns.
-        backend:
-            The backend to use for computation.
         xnp:
-            The backend module.
+            The numpy module.
 
     Returns
     -------
@@ -184,29 +169,12 @@ def df_with_nested_columns_to_flat_data(
     Examples
     --------
         >>> df = pd.DataFrame({("a", "b"): [1, 2, 3], ("c",): [4, 5, 6]})
-        >>> result = df_with_nested_columns_to_flat_data(df, "numpy", np)
+        >>> result = df_with_nested_columns_to_flat_data(df, xnp=np)
         >>> result
         {("a", "b"): np.array([1, 2, 3]), ("c",): np.array([4, 5, 6])}
     """
-    # Handles Pandas MultiIndex padding with NaN
-    p_id_column = None
-    for col in df.columns:
-        clean_col = tuple(el for el in col if not pd.isna(el))
-        if "p_id" in clean_col:
-            p_id_column = col
-            break
-
-    # Sort DataFrame by original p_id to optimize downstream sorting operations
-    sorted_df = (
-        df.reindex(columns=df.columns.sort_values())
-        .sort_values(p_id_column)
-        .reset_index(drop=True)
-    )
-    # Store which original row positions were moved to create the sorted DataFrame
-    sort_indices = df.sort_values(p_id_column).index.to_numpy()
-
     result = {}
-    for key, value in sorted_df.to_dict(orient="list").items():
+    for key, value in df.to_dict(orient="list").items():
         clean_key = _remove_nan_from_keys(key)
 
         # Use numpy for array creation if JAX backend is chosen and
@@ -216,14 +184,6 @@ def df_with_nested_columns_to_flat_data(
             result[clean_key] = xnp.asarray(numpy.asarray(value))
         else:
             result[clean_key] = numpy.asarray(value)
-
-    # Store indices to restore original order in final DataFrame output
-    if backend == "jax":
-        result[("__original_sort_indices__",)] = xnp.asarray(
-            numpy.asarray(sort_indices)
-        )
-    else:
-        result[("__original_sort_indices__",)] = numpy.asarray(sort_indices)
 
     return result
 

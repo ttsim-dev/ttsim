@@ -34,30 +34,44 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
     internal_p_ids = reorder_ids(ids=orig_p_ids, xnp=xnp)
     sort_indices = xnp.argsort(orig_p_ids)
     sorted_orig_ids = orig_p_ids[sort_indices]
-    sorted_internal_ids = internal_p_ids[sort_indices]
+    sorted_internal_p_ids = internal_p_ids[sort_indices]
 
-    processed_input_data = {"p_id": internal_p_ids}
+    processed_input_data = {"p_id": sorted_internal_p_ids}
     for path, data in input_data__flat.items():
         qname = dt.qname_from_tree_path(path)
         if path == ("p_id",):
             continue
+
+        # Optimization: Sort the data by orig_p_ids
+        data_array = xnp.asarray(data)
+        sorted_data_array = data_array[sort_indices]
+
         if path[-1].endswith("_id"):
-            processed_input_data[qname] = reorder_ids(ids=xnp.asarray(data), xnp=xnp)
+            processed_input_data[qname] = reorder_ids(ids=sorted_data_array, xnp=xnp)
         elif path[-1].startswith("p_id_"):
-            data_array = xnp.asarray(data)
             # Second line makes sure out-of-bounds ids don't raise an error. Any garbage
             # that is actually used will be checked inside
             # fail_if.foreign_keys_are_invalid_in_data, so don't worry here.
             insert_positions = xnp.minimum(
-                xnp.searchsorted(sorted_orig_ids, data_array),
+                xnp.searchsorted(sorted_orig_ids, sorted_data_array),
                 len(sorted_orig_ids) - 1,
             )
             variable_with_new_ids = xnp.where(
-                sorted_orig_ids[insert_positions] == data_array,
-                sorted_internal_ids[insert_positions],
-                data_array,
+                sorted_orig_ids[insert_positions] == sorted_data_array,
+                sorted_internal_p_ids[insert_positions],
+                sorted_data_array,
             )
             processed_input_data[qname] = variable_with_new_ids
         else:
-            processed_input_data[qname] = xnp.asarray(data)
+            processed_input_data[qname] = sorted_data_array
+
+    # Store original sort indices for row order restoration in results
+    processed_input_data["__original_sort_indices__"] = sort_indices
+
+    # Store original sorted p_ids for DataFrame index creation in results
+    processed_input_data["__original_sorted_p_ids__"] = sorted_orig_ids
+
+    # Store original p_id dtype to ensure correct pandas Index dtype
+    processed_input_data["__original_p_id_dtype__"] = input_data__flat[("p_id",)].dtype
+
     return processed_input_data

@@ -16,18 +16,7 @@ from ttsim.interface_dag_elements.results import _restore_original_row_order
         "should_be_unchanged",
     ),
     [
-        # No sort indices - should return DataFrame unchanged
-        (
-            pd.DataFrame(
-                {"col1": [10, 20, 30], "col2": [100, 200, 300]},
-                index=pd.Index([3, 1, 2], name="p_id"),
-            ),
-            {},  # No sort indices
-            [10, 20, 30],  # Should remain unchanged
-            [3, 1, 2],  # Original index preserved
-            True,  # DataFrame should be identical
-        ),
-        # With sort indices - should restore original order
+        # Should restore original order
         (
             pd.DataFrame(
                 {"col1": [10, 20, 30], "col2": [100, 200, 300]},

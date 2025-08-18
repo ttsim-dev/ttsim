@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import dags.tree as dt
 import numpy
@@ -23,21 +23,27 @@ if TYPE_CHECKING:
 
 def _restore_original_row_order(
     df: pd.DataFrame,
-    input_data__flat: FlatData,
+    data_with_sort_indices: FlatData | QNameData,
 ) -> pd.DataFrame:
     """Restore the original row order of a DataFrame using stored sort indices.
 
     Args:
         df: The DataFrame with rows in sorted order.
-        input_data__flat: The flat data containing the original sort indices.
+        data_with_sort_indices: The data containing the original sort indices.
 
     Returns:
         DataFrame with rows restored to their original order.
     """
-    if ("__original_sort_indices__",) not in input_data__flat:
-        return df
+    # Check for sort indices in both FlatData format (tuple keys) and
+    # QNameData format (string keys)
+    data_dict = cast("dict[Any, Any]", data_with_sort_indices)
+    sort_indices = data_dict.get("__original_sort_indices__")
+    if sort_indices is None:
+        sort_indices = data_dict.get(("__original_sort_indices__",))
 
-    sort_indices = input_data__flat[("__original_sort_indices__",)]
+    if sort_indices is None:
+        msg = "Sort indices must be provided to restore the original order."
+        raise ValueError(msg)
 
     # Create inverse permutation: restore_order[orig_pos] = sorted_pos
     restore_order = numpy.empty(len(sort_indices), dtype=int)
@@ -78,7 +84,8 @@ def tree(raw_results__combined: QNameData, input_data__flat: FlatData) -> Nested
 @interface_function()
 def df_with_mapper(
     tree: NestedData,
-    input_data__flat: FlatData,
+    input_data__flat: FlatData,  # noqa: ARG001
+    processed_data: QNameData,
     tt_targets__tree: NestedStrings,
 ) -> pd.DataFrame:
     """The results DataFrame with mapped column names.
@@ -88,6 +95,8 @@ def df_with_mapper(
             The results of a TTSIM run.
         input_data__tree:
             The data tree of the TTSIM run.
+        processed_data:
+            The processed data containing sort indices.
         nested_outputs_df_column_names:
             A tree that maps paths (sequence of keys) to data columns names.
 
@@ -95,20 +104,40 @@ def df_with_mapper(
     -------
         A DataFrame.
     """
+    # Create DataFrame using original sorted p_ids which match the sorted results
+    # data in the tree.
+    original_sorted_p_ids = processed_data.get(
+        "__original_sorted_p_ids__", processed_data["p_id"]
+    )
+    original_dtype = processed_data.get("__original_p_id_dtype__", None)
+
+    # Convert to numpy array with original dtype if available to ensure
+    # consistent pandas Index dtype
+    if original_dtype is not None:
+        original_sorted_p_ids = numpy.asarray(
+            original_sorted_p_ids, dtype=original_dtype
+        )
+
+    # Create a temporary data structure with original sorted p_ids for the
+    # DataFrame index
+    data_with_original_p_id = dict(processed_data)
+    data_with_original_p_id["p_id"] = original_sorted_p_ids
+
     df = nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=tree,
         nested_outputs_df_column_names=tt_targets__tree,
-        data_with_p_id=input_data__flat,
+        data_with_p_id=data_with_original_p_id,
     )
 
-    # Restore original row order if sort indices are available
-    return _restore_original_row_order(df, input_data__flat)
+    # Restore original row order using sort indices from processed_data
+    return _restore_original_row_order(df, processed_data)
 
 
 @interface_function()
 def df_with_nested_columns(
     tree: NestedData,
-    input_data__flat: FlatData,
+    input_data__flat: FlatData,  # noqa: ARG001
+    processed_data: QNameData,
 ) -> pd.DataFrame:
     """The results DataFrame with nested column names corresponding to tree paths.
 
@@ -117,17 +146,31 @@ def df_with_nested_columns(
             The results of a TTSIM run.
         input_data__tree:
             The data tree of the TTSIM run.
-        nested_outputs_df_column_names:
-            A tree that maps paths (sequence of keys) to data columns names.
+        processed_data:
+            The processed data containing sort indices.
 
     Returns
     -------
     A DataFrame with a hierarchical index in the column dimension.
     """
+    # Create DataFrame using original sorted p_ids which match the sorted results
+    # data in the tree.
+    original_sorted_p_ids = processed_data.get(
+        "__original_sorted_p_ids__", processed_data["p_id"]
+    )
+    original_dtype = processed_data.get("__original_p_id_dtype__", None)
+
+    # Convert to numpy array with original dtype if available to ensure
+    # consistent pandas Index dtype
+    if original_dtype is not None:
+        original_sorted_p_ids = numpy.asarray(
+            original_sorted_p_ids, dtype=original_dtype
+        )
+
     df = nested_data_to_df_with_nested_columns(
         nested_data_to_convert=tree,
-        index=pd.Index(input_data__flat[("p_id",)], name="p_id"),
+        index=pd.Index(original_sorted_p_ids, name="p_id"),
     )
 
-    # Restore original row order if sort indices are available
-    return _restore_original_row_order(df, input_data__flat)
+    # Restore original row order using sort indices from processed_data
+    return _restore_original_row_order(df, processed_data)

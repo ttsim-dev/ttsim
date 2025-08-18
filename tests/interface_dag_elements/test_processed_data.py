@@ -21,6 +21,9 @@ def test_processed_data(input_data__flat, xnp):
         "p_id": xnp.array([0, 1, 2, 3]),
         "hh_id": xnp.array([2, 2, 0, 1]),
         "n0__p_id_whatever": xnp.array([-1, -1, 1, 3]),
+        "__original_sort_indices__": xnp.array([0, 1, 2, 3]),
+        "__original_sorted_p_ids__": xnp.array([2, 5, 7, 333]),
+        "__original_p_id_dtype__": input_data__flat[("p_id",)].dtype,
     }
     pd.testing.assert_frame_equal(
         pd.DataFrame(processed_data(input_data__flat=input_data__flat, xnp=xnp)),
@@ -40,6 +43,9 @@ def test_processed_data_foreign_key_out_of_bounds(xnp):
         "p_id": xnp.array([0, 1, 2, 3]),
         "hh_id": xnp.array([2, 2, 0, 1]),
         "n0__p_id_whatever": xnp.array([999, -1, -5, 3]),  # -5, 999 preserved unchanged
+        "__original_sort_indices__": xnp.array([0, 1, 2, 3]),
+        "__original_sorted_p_ids__": xnp.array([2, 5, 7, 333]),
+        "__original_p_id_dtype__": input_data__flat[("p_id",)].dtype,
     }
     pd.testing.assert_frame_equal(
         pd.DataFrame(processed_data(input_data__flat=input_data__flat, xnp=xnp)),
@@ -59,6 +65,9 @@ def test_processed_data_foreign_key_inside_bounds(xnp):
         "p_id": xnp.array([0, 1, 2, 3]),
         "hh_id": xnp.array([2, 2, 1, 0]),
         "n0__p_id_whatever": xnp.array([-1, -1, 3, 3]),
+        "__original_sort_indices__": xnp.array([0, 1, 2, 3]),
+        "__original_sorted_p_ids__": xnp.array([2, 5, 7, 333]),
+        "__original_p_id_dtype__": input_data__flat[("p_id",)].dtype,
     }
     pd.testing.assert_frame_equal(
         pd.DataFrame(processed_data(input_data__flat=input_data__flat, xnp=xnp)),
