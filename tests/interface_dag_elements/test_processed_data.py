@@ -10,9 +10,9 @@ from ttsim.interface_dag_elements.processed_data import processed_data
 @pytest.fixture
 def input_data__flat():
     return {
-        ("p_id",): numpy.array([2, 5, 7, 333]),
-        ("hh_id",): numpy.array([55555, 55555, 3, 7]),
-        ("n0", "p_id_whatever"): numpy.array([-1, -1, 5, 333]),
+        ("p_id",): numpy.array([5, 333, 7, 2]),
+        ("hh_id",): numpy.array([55555, 7, 3, 55555]),
+        ("n0", "p_id_whatever"): numpy.array([-1, 333, 5, -1]),
     }
 
 
@@ -21,7 +21,7 @@ def test_processed_data(input_data__flat, xnp):
         "p_id": xnp.array([0, 1, 2, 3]),
         "hh_id": xnp.array([2, 2, 0, 1]),
         "n0__p_id_whatever": xnp.array([-1, -1, 1, 3]),
-        "__original_sort_indices__": xnp.array([0, 1, 2, 3]),
+        "__original_sort_indices__": xnp.array([3, 0, 2, 1]),
     }
     pd.testing.assert_frame_equal(
         pd.DataFrame(processed_data(input_data__flat=input_data__flat, xnp=xnp)),

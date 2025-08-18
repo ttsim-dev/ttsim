@@ -31,12 +31,11 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
     """
 
     orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])
-    internal_p_ids = reorder_ids(ids=orig_p_ids, xnp=xnp)
     sort_indices = xnp.argsort(orig_p_ids)
-    sorted_orig_ids = orig_p_ids[sort_indices]
-    sorted_internal_p_ids = internal_p_ids[sort_indices]
+    sorted_orig_p_ids = orig_p_ids[sort_indices]
+    internal_p_ids = xnp.arange(len(orig_p_ids))
 
-    processed_input_data = {"p_id": sorted_internal_p_ids}
+    processed_input_data = {"p_id": internal_p_ids}
     for path, data in input_data__flat.items():
         qname = dt.qname_from_tree_path(path)
         if path == ("p_id",):
@@ -53,12 +52,12 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
             # that is actually used will be checked inside
             # fail_if.foreign_keys_are_invalid_in_data, so don't worry here.
             insert_positions = xnp.minimum(
-                xnp.searchsorted(sorted_orig_ids, sorted_data_array),
-                len(sorted_orig_ids) - 1,
+                xnp.searchsorted(sorted_orig_p_ids, sorted_data_array),
+                len(sorted_orig_p_ids) - 1,
             )
             variable_with_new_ids = xnp.where(
-                sorted_orig_ids[insert_positions] == sorted_data_array,
-                sorted_internal_p_ids[insert_positions],
+                sorted_orig_p_ids[insert_positions] == sorted_data_array,
+                internal_p_ids[insert_positions],
                 sorted_data_array,
             )
             processed_input_data[qname] = variable_with_new_ids
