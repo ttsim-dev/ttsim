@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
@@ -35,8 +35,8 @@ def tree(
         len(input_data__sort_indices)
     )
 
-    def reorder_arrays(v: object) -> object:
-        return v[restore_order] if hasattr(v, "shape") and v.ndim > 0 else v  # type: ignore[index, attr-defined]
+    def reorder_arrays(v: Any) -> Any:  # noqa: ANN401
+        return v[restore_order] if hasattr(v, "shape") and v.ndim > 0 else v
 
     return dt.unflatten_from_qnames(
         {

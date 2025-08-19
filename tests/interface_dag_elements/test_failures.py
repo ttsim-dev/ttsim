@@ -34,6 +34,7 @@ from ttsim.interface_dag_elements.fail_if import (
     input_df_mapper_has_incorrect_format,
     input_df_mapper_p_id_is_missing,
     non_convertible_objects_in_results_tree,
+    p_id_x_among_targets,
     param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
     targets_are_not_in_specialized_environment_or_data,
@@ -1847,3 +1848,36 @@ def test_param_function_depends_on_column_objects_via_main(
                 "some_policy_function": some_policy_function,
             },
         )
+
+
+def test_p_id_x_among_targets():
+    """Test that p_id_* columns are not allowed as targets."""
+    targets_with_p_id = ["p_id_child", "valid_target", "p_id_household"]
+
+    with pytest.raises(
+        ValueError,
+        match="p_id_\\* columns were requested as targets, but these contain internal ID mappings",
+    ):
+        p_id_x_among_targets(tt_targets__qname=targets_with_p_id)
+
+
+def test_p_id_x_among_targets_via_main(minimal_input_data, backend):
+    """Test that p_id_* columns are not allowed as targets via main."""
+    with pytest.raises(
+        ValueError,
+        match="p_id_\\* columns were requested as targets, but these contain internal ID mappings",
+    ):
+        main(
+            main_target="fail_if__p_id_x_among_targets",
+            input_data={"tree": minimal_input_data},
+            tt_targets={"tree": {"p_id_person": None, "some_valid_target": None}},
+            backend=backend,
+        )
+
+
+def test_p_id_x_among_targets_passes_with_valid_targets():
+    """Test that validation passes when no p_id_* columns are in targets."""
+    valid_targets = ["income", "tax", "benefit"]
+
+    # Should not raise any exception
+    p_id_x_among_targets(tt_targets__qname=valid_targets)

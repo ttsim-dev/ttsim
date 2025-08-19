@@ -229,3 +229,40 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
     pd.testing.assert_frame_equal(
         expected, result, check_dtype=False, check_index_type=False
     )
+
+
+@pytest.mark.parametrize("backend", ["numpy", "jax"])
+def test_input_data_reordering_with_distinct_values(
+    xnp: ModuleType, backend: Literal["numpy", "jax"]
+):
+    """Test that demonstrates input data gets reordered internally and restored
+    correctly.
+    """
+    result = main(
+        main_target=MainTarget.results.df_with_nested_columns,
+        policy_date_str="2025-01-01",
+        input_data=InputData.tree(
+            {
+                "age": xnp.array([25, 45, 35]),
+                "wealth": xnp.array([1000, 2000, 3000]),
+                "p_id": xnp.array([2, 0, 1]),
+            }
+        ),
+        # Request input columns as outputs to see if they maintain correct order
+        tt_targets=TTTargets(tree={"age": None, "wealth": None}),
+        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    # Expected: Values should appear in same positions as original p_id order
+    expected = pd.DataFrame(
+        {
+            ("age",): [25, 45, 35],
+            ("wealth",): [1000, 2000, 3000],
+        },
+        index=pd.Index([2, 0, 1], name="p_id"),
+    )
+    pd.testing.assert_frame_equal(
+        expected, result, check_dtype=False, check_index_type=False
+    )
