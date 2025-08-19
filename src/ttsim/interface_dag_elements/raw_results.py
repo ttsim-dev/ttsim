@@ -43,16 +43,3 @@ def from_input_data(
     processed_data: QNameData,
 ) -> QNameData:
     return {ot: processed_data[ot] for ot in labels__input_data_targets}
-
-
-@interface_function()
-def combined(
-    columns: QNameData,
-    params: QNameData,
-    from_input_data: QNameData,
-) -> QNameData:
-    return {
-        **columns,
-        **params,
-        **from_input_data,
-    }

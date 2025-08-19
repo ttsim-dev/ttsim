@@ -10,29 +10,36 @@ from ttsim.tt.column_objects_param_function import reorder_ids
 if TYPE_CHECKING:
     from types import ModuleType
 
-    from ttsim.typing import FlatData, QNameData
+    from ttsim.typing import FlatData, IntColumn, QNameData
 
 
 @interface_function(in_top_level_namespace=True)
-def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
+def processed_data(
+    input_data__flat: FlatData, input_data__sort_indices: IntColumn, xnp: ModuleType
+) -> QNameData:
     """Process the data for use in the taxes and transfers function.
 
     Replace id's by consecutive integers starting at zero.
     The Jax-based backend will work correctly only with these transformed indices.
     They will be transformed back when converting raw results to results.
 
+    As an optimization, user data is sorted by original p_id.
+
     Args:
-        input_data__tree:
+        input_data__flat:
             The input data provided by the user.
+        input_data__sort_indices:
+            Sort indices used for restoring original order of user data.
+        xnp:
+            The backend module (numpy or jax).
 
     Returns
     -------
-        A DataFrame.
+        A processed data dictionary.
     """
 
     orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])
-    sort_indices = xnp.argsort(orig_p_ids)
-    sorted_orig_p_ids = orig_p_ids[sort_indices]
+    sorted_orig_p_ids = orig_p_ids[input_data__sort_indices]
     internal_p_ids = xnp.arange(len(orig_p_ids))
 
     processed_input_data = {"p_id": internal_p_ids}
@@ -41,9 +48,7 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
         if path == ("p_id",):
             continue
 
-        # Optimization: Sort the data by orig_p_ids
-        data_array = xnp.asarray(data)
-        sorted_data_array = data_array[sort_indices]
+        sorted_data_array = xnp.asarray(data[input_data__sort_indices])
 
         if path[-1].endswith("_id"):
             processed_input_data[qname] = reorder_ids(ids=sorted_data_array, xnp=xnp)
@@ -63,8 +68,5 @@ def processed_data(input_data__flat: FlatData, xnp: ModuleType) -> QNameData:
             processed_input_data[qname] = variable_with_new_ids
         else:
             processed_input_data[qname] = sorted_data_array
-
-    # Store original sort indices for row order restoration in results
-    processed_input_data["__original_sort_indices__"] = sort_indices
 
     return processed_input_data

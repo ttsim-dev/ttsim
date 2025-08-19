@@ -1253,14 +1253,7 @@ def test_fail_if_input_df_mapper_columns_missing_in_df_via_main(
     backend: Literal["jax", "numpy"],
 ):
     df = pd.DataFrame({"a": [1]})
-    mapper = {
-        "b": "a",
-        "c": "d",
-        "e": 1,
-        "f": 1.5,
-        "g": True,
-        "h": "i",
-    }
+    mapper = {"b": "a", "c": "d", "e": 1, "f": 1.5, "g": True, "h": "i"}
     with pytest.raises(
         ValueError,
         match=r"The following columns are missing: \['d', 'i'\]",

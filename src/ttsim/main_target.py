@@ -85,7 +85,6 @@ class Results(MainTargetABC):
 @dataclass(frozen=True)
 class RawResults(MainTargetABC):
     columns: str = "raw_results__columns"
-    combined: str = "raw_results__combined"
     from_input_data: str = "raw_results__from_input_data"
     params: str = "raw_results__params"
 
@@ -146,6 +145,7 @@ class InputData(MainTargetABC):
     df_and_mapper: type[DfAndMapper] = field(default=DfAndMapper)
     df_with_nested_columns: str = "input_data__df_with_nested_columns"
     flat: str = "input_data__flat"
+    sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
 
 
