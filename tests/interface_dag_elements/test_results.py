@@ -50,13 +50,13 @@ from ttsim.interface_dag_elements.results import tree
             },
             {
                 "row_data": numpy.array(
-                    [200, 300, 100]
-                ),  # Length == num_rows, should be reordered
+                    [100, 200, 300]
+                ),  # from_input_data is already in original order
             },
             numpy.array([1, 2, 0]),
             {
                 "param_value": numpy.array([1, 2]),  # Unchanged
-                "row_data": numpy.array([100, 200, 300]),  # Reordered to original
+                "row_data": numpy.array([100, 200, 300]),  # from_input_data unchanged
             },
         ),
         (
@@ -90,13 +90,13 @@ from ttsim.interface_dag_elements.results import tree
             {},
             {
                 "input_col": numpy.array(
-                    [200, 300, 100]
-                ),  # Row-length array, reordered
+                    [100, 200, 300]
+                ),  # from_input_data is already in original order
                 "input_scalar": 99.9,  # Scalar, not reordered
             },
             numpy.array([1, 2, 0]),
             {
-                "input_col": numpy.array([100, 200, 300]),  # Array reordered
+                "input_col": numpy.array([100, 200, 300]),  # from_input_data unchanged
                 "input_scalar": 99.9,  # Scalar unchanged
             },
         ),
@@ -111,7 +111,9 @@ from ttsim.interface_dag_elements.results import tree
                 "param_array": numpy.array([7, 8, 9]),  # In params, not reordered
             },
             {
-                "original_data": numpy.array([400, 500, 600]),
+                "original_data": numpy.array(
+                    [500, 600, 400]
+                ),  # from_input_data in original order
                 "metadata_scalar": "some_string",
             },
             numpy.array([2, 0, 1]),
@@ -124,7 +126,7 @@ from ttsim.interface_dag_elements.results import tree
                 "param_array": numpy.array([7, 8, 9]),  # Unchanged (in params)
                 "original_data": numpy.array(
                     [500, 600, 400]
-                ),  # Reordered: indices [2, 0, 1] -> [500, 600, 400]
+                ),  # from_input_data unchanged (already in original order)
                 "metadata_scalar": "some_string",  # Unchanged
             },
         ),

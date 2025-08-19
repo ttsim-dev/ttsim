@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import dags.tree as dt
+
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ttsim.typing import (
+        FlatData,
         OrderedQNames,
         QNameData,
         SpecEnvWithProcessedParamsAndScalars,
@@ -40,6 +43,9 @@ def params(
 @interface_function()
 def from_input_data(
     labels__input_data_targets: OrderedQNames,
-    processed_data: QNameData,
+    input_data__flat: FlatData,
 ) -> QNameData:
-    return {ot: processed_data[ot] for ot in labels__input_data_targets}
+    return {
+        target: input_data__flat[dt.tree_path_from_qname(target)]
+        for target in labels__input_data_targets
+    }
