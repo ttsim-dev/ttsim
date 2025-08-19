@@ -231,7 +231,6 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
     )
 
 
-@pytest.mark.parametrize("backend", ["numpy", "jax"])
 def test_input_data_reordering_with_distinct_values(
     xnp: ModuleType, backend: Literal["numpy", "jax"]
 ):
