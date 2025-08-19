@@ -992,38 +992,3 @@ def param_function_depends_on_column_objects(
             "ColumnObjects."
         )
         raise ValueError(msg)
-
-
-@fail_function()
-def p_id_x_among_targets(
-    tt_targets__qname: OrderedQNames,
-) -> None:
-    """Fail if any p_id_* columns are requested as targets.
-
-    Parameters
-    ----------
-    tt_targets__qname
-        The taxes & transfers targets which should be computed.
-
-    Raises
-    ------
-    ValueError
-        Raised if any target name starts with 'p_id_'. These columns contain
-        internal ID mappings that would not be meaningful to users.
-    """
-    p_id_targets = [
-        str(dt.tree_path_from_qname(target))
-        for target in tt_targets__qname
-        if target.startswith("p_id_")
-    ]
-
-    if p_id_targets:
-        formatted = format_list_linewise(p_id_targets)
-        msg = (
-            "The following p_id_* columns were requested as targets, but these "
-            "contain internal ID mappings that are not meaningful for users:\n\n"
-            f"{formatted}\n\n"
-            "Please remove these from your targets specification. If you need person "
-            "identifiers in your results, use the original ID columns from your input data."
-        )
-        raise ValueError(msg)
