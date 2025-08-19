@@ -11,7 +11,6 @@ from ttsim.interface_dag_elements.results import tree
         "raw_results_columns",
         "raw_results_params",
         "raw_results_from_input_data",
-        "input_data_flat",
         "input_data__sort_indices",
         "expected_result",
     ),
@@ -23,8 +22,6 @@ from ttsim.interface_dag_elements.results import tree
             {},
             # Raw results from input data (empty)
             {},
-            # Input data flat (empty since no id columns in this test)
-            {},
             # Sort indices
             numpy.array([1, 2, 0]),
             # Expected result with restored row order
@@ -34,7 +31,6 @@ from ttsim.interface_dag_elements.results import tree
             # Nested raw results
             {"level1__result_col": numpy.array([200, 300, 100])},
             {"level1__scalar_value": 42},
-            {},
             {},
             numpy.array([1, 2, 0]),
             {
@@ -57,7 +53,6 @@ from ttsim.interface_dag_elements.results import tree
                     [200, 300, 100]
                 ),  # Length == num_rows, should be reordered
             },
-            {},
             numpy.array([1, 2, 0]),
             {
                 "param_value": numpy.array([1, 2]),  # Unchanged
@@ -70,7 +65,6 @@ def test_restore_original_row_order(
     raw_results_columns,
     raw_results_params,
     raw_results_from_input_data,
-    input_data_flat,
     input_data__sort_indices,
     expected_result,
 ):
@@ -79,7 +73,6 @@ def test_restore_original_row_order(
         raw_results_columns,
         raw_results_params,
         raw_results_from_input_data,
-        input_data_flat,
         input_data__sort_indices,
     )
 
