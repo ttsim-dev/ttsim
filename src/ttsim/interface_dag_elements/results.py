@@ -40,7 +40,7 @@ def tree(
 
     return dt.unflatten_from_qnames(
         {
-            **raw_results__params,  # May contain policy parameters of any length
+            **raw_results__params,
             **{k: reorder_arrays(v) for k, v in raw_results__from_input_data.items()},
             **{k: reorder_arrays(v) for k, v in raw_results__columns.items()},
         }
