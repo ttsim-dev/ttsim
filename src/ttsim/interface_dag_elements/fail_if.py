@@ -1028,6 +1028,6 @@ def endogenous_p_id_among_targets(
             f"{formatted}\n\n"
             "Please remove these from your targets specification. If you need "
             "these endogenous person identifiers, please add your request to "
-            "https://github.com/ttsim-dev/ttsim/issues/XXX"
+            "https://github.com/ttsim-dev/ttsim/issues/43"
         )
         raise ValueError(msg)
