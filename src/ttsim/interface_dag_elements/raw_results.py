@@ -24,20 +24,14 @@ def columns(
     processed_data: QNameData,
     tt_function: Callable[[QNameData], QNameData],
 ) -> QNameData:
+    """Return the raw results of the TT function that have been requested as targets.
+
+    Arrays are sorted according to the internal sort order.
+
+    """
     return tt_function(
         {k: v for k, v in processed_data.items() if k in labels__root_nodes},
     )
-
-
-@interface_function()
-def params(
-    labels__param_targets: OrderedQNames,
-    specialized_environment__with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,  # noqa: E501
-) -> QNameData:
-    return {
-        pt: specialized_environment__with_processed_params_and_scalars[pt]
-        for pt in labels__param_targets
-    }
 
 
 @interface_function()
@@ -45,7 +39,27 @@ def from_input_data(
     labels__input_data_targets: OrderedQNames,
     input_data__flat: FlatData,
 ) -> QNameData:
+    """Return input data that have been requested as targets.
+
+    Arrays are sorted as they are in the input data.
+
+    """
     return {
         target: input_data__flat[dt.tree_path_from_qname(target)]
         for target in labels__input_data_targets
+    }
+
+
+@interface_function()
+def params(
+    labels__param_targets: OrderedQNames,
+    specialized_environment__with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,  # noqa: E501
+) -> QNameData:
+    """Return parameters that have been requested as targets.
+
+    This includes outputs of param_functions.
+    """
+    return {
+        pt: specialized_environment__with_processed_params_and_scalars[pt]
+        for pt in labels__param_targets
     }
