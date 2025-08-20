@@ -995,36 +995,39 @@ def param_function_depends_on_column_objects(
 
 
 @fail_function()
-def p_id_x_among_targets(
-    tt_targets__qname: OrderedQNames,
+def endogenous_p_id_among_targets(
+    labels__column_targets: OrderedQNames,
 ) -> None:
     """Fail if any p_id_* columns are requested as targets.
 
     Parameters
     ----------
-    tt_targets__qname
-        The taxes & transfers targets which should be computed.
+    labels__column_targets
+        The column targets which should be computed endogenously.
 
     Raises
     ------
     ValueError
-        Raised if any target name starts with 'p_id_'. These columns contain
-        internal ID mappings that would not be meaningful to users.
+        Raised if any endogenous target name starts with 'p_id_'. These columns contain
+        internal ID mappings that would not be meaningful after reverting the internal
+        `p_id` column to the original `p_id` column.
     """
+
     p_id_targets = [
         str(dt.tree_path_from_qname(target))
-        for target in tt_targets__qname
+        for target in labels__column_targets
         if target.startswith("p_id_")
     ]
 
     if p_id_targets:
         formatted = format_list_linewise(p_id_targets)
         msg = (
-            "The following p_id_* columns were requested as targets, but these "
-            "contain internal ID mappings that are not meaningful for users:\n\n"
+            "The following endogenous p_id_* columns were requested as targets, but "
+            "these contain internal ID mappings that are not meaningful after "
+            "reverting the internal `p_id` column to the original `p_id` column:\n\n"
             f"{formatted}\n\n"
-            "Please remove these from your targets specification. If you need person "
-            "identifiers in your results, merge the original ID columns from your input data to the result."
-            "\nIn case you need this behaviour, please add your request to https://github.com/ttsim-dev/ttsim/issues/XXX"
+            "Please remove these from your targets specification. If you need "
+            "these endogenous person identifiers, please add your request to "
+            "https://github.com/ttsim-dev/ttsim/issues/XXX"
         )
         raise ValueError(msg)
