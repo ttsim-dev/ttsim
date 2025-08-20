@@ -667,6 +667,27 @@ def input_df_mapper_has_incorrect_format(
 
 
 @fail_function()
+def input_df_mapper_p_id_is_missing(
+    input_data__df_and_mapper__mapper: NestedInputsMapper,
+) -> None:
+    """Fail if the input mapper does not include a mapping for 'p_id'.
+
+    Parameters
+    ----------
+    input_data__df_and_mapper__mapper
+        The input mapper.
+    """
+    mapper_flat = dt.flatten_to_qnames(input_data__df_and_mapper__mapper)
+    p_id_mapping = mapper_flat.get("p_id", None)
+
+    if p_id_mapping is None:
+        raise ValueError("The input mapper must include a mapping for 'p_id'.")
+
+    if not isinstance(p_id_mapping, str):
+        raise TypeError("The p_id mapping must be a string column name.")
+
+
+@fail_function()
 def backend_has_changed(
     specialized_environment__with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     backend: Literal["numpy", "jax"],
@@ -969,5 +990,44 @@ def param_function_depends_on_column_objects(
             f"violations were found:\n\n{violations}\n"
             "ParamFunctions may only depend on parameters and scalars, not on "
             "ColumnObjects."
+        )
+        raise ValueError(msg)
+
+
+@fail_function()
+def endogenous_p_id_among_targets(
+    labels__column_targets: OrderedQNames,
+) -> None:
+    """Fail if any p_id_* columns are requested as targets.
+
+    Parameters
+    ----------
+    labels__column_targets
+        The column targets which should be computed endogenously.
+
+    Raises
+    ------
+    ValueError
+        Raised if any endogenous target name starts with 'p_id_'. These columns contain
+        internal ID mappings that would not be meaningful after reverting the internal
+        `p_id` column to the original `p_id` column.
+    """
+
+    p_id_targets = [
+        str(dt.tree_path_from_qname(target))
+        for target in labels__column_targets
+        if target.startswith("p_id_")
+    ]
+
+    if p_id_targets:
+        formatted = format_list_linewise(p_id_targets)
+        msg = (
+            "The following endogenous p_id_* columns were requested as targets, but "
+            "these contain internal ID mappings that are not meaningful after "
+            "reverting the internal `p_id` column to the original `p_id` column:\n\n"
+            f"{formatted}\n\n"
+            "Please remove these from your targets specification. If you need "
+            "these endogenous person identifiers, please add your request to "
+            "https://github.com/ttsim-dev/ttsim/issues/43"
         )
         raise ValueError(msg)

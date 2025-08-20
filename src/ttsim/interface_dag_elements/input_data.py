@@ -10,6 +10,7 @@ from ttsim.interface_dag_elements.data_converters import (
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     input_dependent_interface_function,
+    interface_function,
     interface_input,
 )
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         FlatData,
+        IntColumn,
         NestedData,
         NestedInputsMapper,
     )
@@ -126,3 +128,17 @@ def flat_from_tree(
         Flattened data structure.
     """
     return dt.flatten_to_tree_paths(tree)
+
+
+@interface_function()
+def sort_indices(input_data__flat: FlatData, xnp: ModuleType) -> IntColumn:
+    """Create sort indices for restoring the original row order.
+
+    Args:
+        input_data__flat: The flattened input data.
+        xnp: The backend module (numpy or jax).
+
+    Returns:
+        Sort indices array.
+    """
+    return xnp.argsort(xnp.asarray(input_data__flat[("p_id",)]))

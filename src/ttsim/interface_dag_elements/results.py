@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
+import numpy
 import pandas as pd
 
 from ttsim.interface_dag_elements.data_converters import (
@@ -14,6 +15,7 @@ from ttsim.interface_dag_elements.interface_node_objects import interface_functi
 if TYPE_CHECKING:
     from ttsim.typing import (
         FlatData,
+        IntColumn,
         NestedData,
         NestedStrings,
         QNameData,
@@ -21,22 +23,28 @@ if TYPE_CHECKING:
 
 
 @interface_function()
-def tree(raw_results__combined: QNameData, input_data__flat: FlatData) -> NestedData:
-    """The combined results as a tree.
+def tree(
+    raw_results__columns: QNameData,
+    raw_results__params: QNameData,
+    raw_results__from_input_data: QNameData,
+    input_data__sort_indices: IntColumn,
+) -> NestedData:
+    """The combined results as a tree with original row order restored."""
+    restore_order = numpy.empty(len(input_data__sort_indices), dtype=int)
+    restore_order[input_data__sort_indices] = numpy.arange(
+        len(input_data__sort_indices)
+    )
 
-    The transformed id's are converted back to their original values.
+    def reorder_arrays(v: Any) -> Any:  # noqa: ANN401
+        return v[restore_order] if hasattr(v, "shape") and v.ndim > 0 else v
 
-    """
-    out = {}
-    for k in raw_results__combined:
-        path = dt.tree_path_from_qname(k)
-        if path in input_data__flat and (
-            path[-1].endswith("_id") or path[-1].startswith("p_id_")
-        ):
-            out[k] = input_data__flat[path]
-        else:
-            out[k] = raw_results__combined[k]
-    return dt.unflatten_from_qnames(out)
+    return dt.unflatten_from_qnames(
+        {
+            **raw_results__params,
+            **raw_results__from_input_data,
+            **{k: reorder_arrays(v) for k, v in raw_results__columns.items()},
+        }
+    )
 
 
 @interface_function()
@@ -49,10 +57,10 @@ def df_with_mapper(
 
     Args:
         tree:
-            The results of a TTSIM run.
-        input_data__tree:
-            The data tree of the TTSIM run.
-        nested_outputs_df_column_names:
+            The results of a TTSIM run with original row order already restored.
+        input_data__flat:
+            The input data containing original p_ids.
+        tt_targets__tree:
             A tree that maps paths (sequence of keys) to data columns names.
 
     Returns
@@ -75,11 +83,9 @@ def df_with_nested_columns(
 
     Args:
         tree:
-            The results of a TTSIM run.
-        input_data__tree:
-            The data tree of the TTSIM run.
-        nested_outputs_df_column_names:
-            A tree that maps paths (sequence of keys) to data columns names.
+            The results of a TTSIM run with original row order already restored.
+        input_data__flat:
+            The flat input data containing original p_ids.
 
     Returns
     -------

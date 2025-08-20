@@ -55,6 +55,7 @@ class FailIf(MainTargetABC):
     input_df_mapper_has_incorrect_format: str = (
         "fail_if__input_df_mapper_has_incorrect_format"
     )
+    input_df_mapper_p_id_is_missing: str = "fail_if__input_df_mapper_p_id_is_missing"
     non_convertible_objects_in_results_tree: str = (
         "fail_if__non_convertible_objects_in_results_tree"
     )
@@ -64,6 +65,7 @@ class FailIf(MainTargetABC):
     paths_are_missing_in_targets_tree_mapper: str = (
         "fail_if__paths_are_missing_in_targets_tree_mapper"
     )
+    endogenous_p_id_among_targets: str = "fail_if__endogenous_p_id_among_targets"
     tt_root_nodes_are_missing: str = "fail_if__tt_root_nodes_are_missing"
     targets_are_not_in_specialized_environment_or_data: str = (
         "fail_if__targets_are_not_in_specialized_environment_or_data"
@@ -84,7 +86,6 @@ class Results(MainTargetABC):
 @dataclass(frozen=True)
 class RawResults(MainTargetABC):
     columns: str = "raw_results__columns"
-    combined: str = "raw_results__combined"
     from_input_data: str = "raw_results__from_input_data"
     params: str = "raw_results__params"
 
@@ -145,6 +146,7 @@ class InputData(MainTargetABC):
     df_and_mapper: type[DfAndMapper] = field(default=DfAndMapper)
     df_with_nested_columns: str = "input_data__df_with_nested_columns"
     flat: str = "input_data__flat"
+    sort_indices: str = "input_data__sort_indices"
     tree: str = "input_data__tree"
 
 
