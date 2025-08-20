@@ -375,7 +375,9 @@ def foreign_keys_are_invalid_in_data(
     We test this only in the columns that are actually used, not in some `p_id_xxx`
     column that may be present in the data.
     """
-    valid_ids = set(input_data__flat[("p_id",)].tolist()) | {-1}
+    # Optimization: Create p_id arrays once outside the loop
+    p_id_original = input_data__flat[("p_id",)]
+    p_id_with_sentinel = numpy.concatenate([p_id_original, [-1]])
     relevant_objects = {
         k: v
         for k, v in specialized_environment__without_tree_logic_and_with_derived_functions.items()
@@ -387,12 +389,10 @@ def foreign_keys_are_invalid_in_data(
             continue
         if fk_name in labels__root_nodes:
             path = dt.tree_path_from_qname(fk_name)
-            # Referenced `p_id` must exist in the input data
-            data_array = input_data__flat[path]
-            valid_ids_array = numpy.array(list(valid_ids))
-            valid_mask = numpy.isin(data_array, valid_ids_array)
+            data = input_data__flat[path]
+            valid_mask = numpy.isin(data, p_id_with_sentinel)
             if not numpy.all(valid_mask):
-                invalid_ids = data_array[~valid_mask].tolist()
+                invalid_ids = data[~valid_mask].tolist()
                 message = (
                     f"For {path}, the following are not a valid p_id in the input "
                     f"data: {invalid_ids}."
@@ -400,13 +400,9 @@ def foreign_keys_are_invalid_in_data(
                 raise ValueError(message)
 
             if fk.foreign_key_type == FKType.MUST_NOT_POINT_TO_SELF:
-                # Optimized check using numpy operations instead of Python iteration
-                data_array = input_data__flat[path]
-                p_id_array = input_data__flat[("p_id",)]
-                # Use vectorized equality check
-                self_references = data_array == p_id_array
+                self_references = data == p_id_original
                 if numpy.any(self_references):
-                    equal_to_pid_in_same_row = data_array[self_references].tolist()
+                    equal_to_pid_in_same_row = data[self_references].tolist()
                     message = (
                         f"For {path}, the following are equal to the p_id in the same "
                         f"row: {equal_to_pid_in_same_row}."
