@@ -4,11 +4,11 @@ import colorsys
 from dataclasses import dataclass
 from typing import Any
 
+import dags.tree as dt
 import networkx as nx
 import numpy
 import plotly.graph_objects as go
 
-import dags.tree as dt
 
 @dataclass(frozen=True)
 class NodeMetaData:
@@ -38,9 +38,7 @@ def get_figure(
     **kwargs : Any
         Additional keyword arguments passed to the plotly layout.
     """
-    nice_dag = nx.relabel_nodes(
-        dag, {qn: qname_to_label(qn) for qn in dag.nodes()}
-    )
+    nice_dag = nx.relabel_nodes(dag, {qn: qname_to_label(qn) for qn in dag.nodes()})
 
     pos = nx.nx_agraph.pygraphviz_layout(nice_dag, prog="dot", args="-Grankdir=LR")
     # Create edge traces with arrows
@@ -112,20 +110,22 @@ def get_figure(
         for qname in dag.nodes():
             tp = dt.tree_path_from_qname(qname)
 
-                best_match = None
-                best_match_length = 0
-                for namespace_tuple, color in node_colormap.items():
-                    if namespace_tuple == tuple(namespace_parts[:len(namespace_tuple)]):
-                        if len(namespace_tuple) > best_match_length:
-                            best_match = namespace_tuple
-                            best_match_length = len(namespace_tuple)
+            longest_match = None
+            longest_match_length = 0
+            for map_tp in node_colormap:
+                if tp[: len(map_tp)] == map_tp and len(map_tp) > longest_match_length:
+                    longest_match = map_tp
+                    longest_match_length = len(map_tp)
 
-
-            for map_tp, color in node_colormap.items():
-                if tp[:len(map_tp)] == map_tp:
-                    individual_node_colormap[qname] = color
-            if qname not in individual_node_colormap:
-                individual_node_colormap[qname] = "black"
+            if longest_match is not None:
+                individual_node_colormap[qname] = node_colormap[longest_match]
+            else:
+                if len(tp) == 1:
+                    individual_node_colormap[qname] = node_colormap.get(
+                        ("top-level",), "dimgray"
+                    )
+                else:
+                    individual_node_colormap[qname] = "black"
     else:
         # Use default automatic color generation
         top_level_namespaces = {
@@ -156,7 +156,6 @@ def get_figure(
             else qname
         )
         node_colors.append(individual_node_colormap[qname])
-
 
     node_trace = go.Scatter(
         x=node_x,
@@ -199,8 +198,10 @@ def get_figure(
 
     return go.Figure(data=[*edge_traces, node_trace], layout=layout)
 
+
 def qname_to_label(qname: str) -> str:
     return qname.replace("__", "<br>")
+
 
 def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:
     """Convert HSL color values to hexadecimal color code.

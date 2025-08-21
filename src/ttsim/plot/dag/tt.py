@@ -87,11 +87,17 @@ def tt(
         Show a description of the node when hovering over it.
     output_path
         If provided, the figure is written to the path.
-    node_colormap
+    node_colormap : dict[tuple[str, ...], str] | None, default=None
         Dictionary mapping namespace tuples to colors. If provided, overrides
-        the default automatic color generation. Tuples can represent any level
-        of the namespace hierarchy (e.g., ("housing_benefits",) for top-level,
-        ("housing_benefits", "eligibility") for second-level).
+        the default automatic color generation, which cycles through colors at the
+        uppermost level of the namespace hierarchy.
+        - Tuples can represent any level of the namespace hierarchy (e.g.,
+          ("housing_benefits",) would be the first level,
+          ("housing_benefits", "eligibility") the second level.
+        - The tuple ("top-level",) is used to catch all members of the top-level
+          namespace.
+        - Individual elements or sub-namespaces can be overriden -- the longest
+          match will be used.
     policy_date_str
         The date for which to plot the DAG.
     orig_policy_objects

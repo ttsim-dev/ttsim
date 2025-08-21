@@ -30,30 +30,31 @@ def interface(
     output_path: Path | None = None,
     remove_orig_policy_objects__root: bool = True,
     node_colormap: dict[tuple[str, ...], str] | None = {
-        ("policy_date",): "#B8860B",
-        ("policy_date_str",): "#B8860B",
-        ("orig_policy_objects",): "#B8860B",
-        ("policy_environment",): "#B8860B",
-        ("evaluation_date",): "#B8860B",
-        ("evaluation_date_str",): "#B8860B",
-        ("rounding",): "#006994",
-        ("input_data",): "#0000FF",
-        ("processed_data",): "#0000FF",
-        ("labels",): "#90EE90",
-        ("raw_results",): "#98FB98",
-        ("results",): "#006400",
-        ("tt_targets",): "#013220",
-        ("specialized_environment",): "#008000",
-        ("specialized_environment_for_plotting_and_templates",): "#90EE90",
-        ("templates",): "#40E0D0",
-        ("tt_function",): "#0000FF",
-        ("tt_function_set_annotations",): "#87CEEB",
-        ("fail_if",): "#FF0000",
-        ("warn_if",): "#FFB6C1",
-        ("backend",): "#808080",
-        ("dnp",): "#808080",
-        ("num_segments",): "#808080",
-        ("xnp",): "#808080",
+        ("policy_date",): "gold",
+        ("policy_date_str",): "gold",
+        ("orig_policy_objects",): "gold",
+        ("policy_environment",): "gold",
+        ("evaluation_date",): "gold",
+        ("evaluation_date_str",): "gold",
+        ("rounding",): "teal",
+        ("tt_function",): "teal",
+        ("tt_function_set_annotations",): "teal",
+        ("input_data",): "mediumblue",
+        ("input_data", "sort_indices"): "lightblue",
+        ("processed_data",): "midnightblue",
+        ("labels",): "ivory",
+        ("raw_results",): "honeydew",
+        ("results",): "limegreen",
+        ("tt_targets",): "darkolivegreen",
+        ("specialized_environment",): "darkgreen",
+        ("specialized_environment_for_plotting_and_templates",): "palegreen",
+        ("templates",): "lawngreen",
+        ("fail_if",): "indianred",
+        ("warn_if",): "salmon",
+        ("backend",): "lightgray",
+        ("dnp",): "lightgray",
+        ("num_segments",): "lightgray",
+        ("xnp",): "lightgray",
     },
     **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
@@ -73,9 +74,16 @@ def interface(
         Whether to remove `orig_policy_objects__root` node from the plot.
     node_colormap : dict[tuple[str, ...], str] | None, default=None
         Dictionary mapping namespace tuples to colors. If provided, overrides
-        the default automatic color generation. Tuples can represent any level
-        of the namespace hierarchy (e.g., ("housing_benefits",) for top-level,
-        ("housing_benefits", "eligibility") for second-level).
+        the default automatic color generation, which cycles through colors at the
+        uppermost level of the namespace hierarchy.
+        - Tuples can represent any level of the namespace hierarchy (e.g.,
+          ("input_data",) would be the first level,
+          ("input_data", "df_and_mapper") the second level.
+        - The tuple ("top-level",) is used to catch all members of the top-level
+          namespace.
+        - Individual elements or sub-namespaces can be overridden as the longest
+          match will be used.
+        - Fallback color is black.
     **kwargs
         Additional keyword arguments. Will be passed to
         plotly.graph_objects.Figure.layout.

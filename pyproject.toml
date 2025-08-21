@@ -241,7 +241,7 @@ exclude = []
 "src/ttsim/interface_dag_elements/specialized_environment.py" = ["E501"]
 "src/ttsim/interface_dag_elements/fail_if.py" = ["E501"]
 # Complexity, allow dictionaries as defaults.
-"src/ttsim/plot/dag/*.py" = ["B006", "C901", "PLR0915"]
+"src/ttsim/plot/dag/*.py" = ["B006", "C901", "PLR0912", "PLR0915"]
 # Mostly things vectorization can't handle
 "src_mettsim/mettsim/middle_earth/**/*.py" = ["PLR1714", "PLR1716", "PLR2004", "E721", "SIM108", "RET"]
 "tests/tt/test_vectorization.py" = ["PLR1714", "PLR1716", "E721", "SIM108", "RET"]

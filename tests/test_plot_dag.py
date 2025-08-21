@@ -4,8 +4,8 @@ import datetime
 from typing import Any
 
 import pytest
-
 from mettsim import middle_earth
+
 from ttsim.main import main
 from ttsim.main_args import Labels, TTTargets
 from ttsim.main_target import MainTarget
@@ -20,14 +20,6 @@ from ttsim.tt import (
     policy_function,
 )
 from ttsim.tt.column_objects_param_function import PolicyInput
-
-METTSIM_COLORMAP = {
-    ("housing_benefits",): "red",
-    ("orc_hunting_bounty",): "green",
-    ("payroll_tax", "child_tax_credit"): "orange",
-    ("payroll_tax", "income"): "yellow",
-    ("wealth_tax",): "blue",
-}
 
 
 def get_required_policy_env_objects(policy_date: datetime.date) -> dict[str, Any]:
@@ -440,7 +432,7 @@ def test_can_create_template_with_selection_and_input_data_from_tt():
         ),
         selection_type="ancestors",
         selection_depth=1,
-        node_colormap=METTSIM_COLORMAP,
+        node_colormap=middle_earth.COLORMAP,
     )
 
 
@@ -454,7 +446,7 @@ def test_can_pass_plotly_kwargs_to_tt():
         ),
         selection_type="ancestors",
         selection_depth=1,
-        node_colormap=METTSIM_COLORMAP,
+        node_colormap=middle_earth.COLORMAP,
         title="Test DAG Plot",
         width=200,
         height=800,
@@ -472,7 +464,7 @@ def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="all_paths",
             policy_date_str="2025-01-01",
-            node_colormap=METTSIM_COLORMAP,
+            node_colormap=middle_earth.COLORMAP,
         )
 
 
@@ -485,7 +477,7 @@ def test_fail_if_invalid_selection_type():
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="invalid_selection_type",
             policy_date_str="2025-01-01",
-            node_colormap=METTSIM_COLORMAP,
+            node_colormap=middle_earth.COLORMAP,
         )
 
 
