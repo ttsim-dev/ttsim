@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0.1 — unpublished
 
+- {gh}`46` Optimization for `fail_if.foreign_keys_are_invalid_in_data`
+  ({ghuser}`JuergenWiemers`)
+
 - {gh}`42` Pre-sort user data by p_id for performance ({ghuser}`JuergenWiemers`,
   {ghuser}`hmgaudecker`)
 
