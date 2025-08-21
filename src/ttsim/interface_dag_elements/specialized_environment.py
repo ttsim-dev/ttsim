@@ -53,7 +53,7 @@ def without_tree_logic_and_with_derived_functions(
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Return a flat policy environment with derived functions.
+    """Return a flat policy environment which includes derived functions.
 
     Two steps:
     1. Remove all tree logic from the policy environment.
@@ -163,31 +163,11 @@ def with_processed_params_and_scalars(
     dnp: ModuleType,
     evaluation_date: datetime.date | None,
 ) -> SpecEnvWithProcessedParamsAndScalars:
-    """Process the parameters and param functions, remove RawParams from the tree.
+    """
+    The policy environment where all parameters and param functions have been processed.
 
-    Parameters
-    ----------
-    without_tree_logic_and_with_derived_functions
-        The specialized environment without tree logic, i.e. absolute qualified names in
-        all keys and function arguments and with derived functions (aggregations and
-        time conversions).
-    processed_data
-        The processed data.
-    backend
-        The backend to use for computations.
-    xnp
-        The numpy-like module to use for computations.
-    dnp
-        The numpy-like module to use for datetime objects.
-    evaluation_date
-        The date for which the policy system is set up. An integer is interpreted as the
-        year.
-
-    Returns
-    -------
-    The specialized environment with processed parameters and scalars. Input nodes that
-    come in via the processed data are removed from the environment. Evaluation year /
-    month / day are added if not present.
+    All RawParams have been removed (note that a RawParam object is pointless without a
+    param function making use of it).
     """
 
     all_nodes = {}
@@ -226,7 +206,7 @@ def with_processed_params_and_scalars(
     param_functions = {
         k: v for k, v in all_nodes.items() if isinstance(v, ParamFunction)
     }
-    # Construct a function for the processing of all params.
+    # Construct a function for processing all param_functions.
     process = concatenate_functions(
         functions=param_functions,
         targets=None,
@@ -262,30 +242,9 @@ def with_partialled_params_and_scalars(
     xnp: ModuleType,
     dnp: ModuleType,
 ) -> SpecEnvWithPartialledParamsAndScalars:
-    """Partial parameters to functions such that they disappear from the DAG.
-
-    Parameters
-    ----------
-    with_processed_params_and_scalars
-        The tree with qualified names as keys and column objects or processed
-        parameters / scalars as values.
-    rounding
-        Whether to apply rounding to functions.
-    num_segments
-        The number of segments for segment sums in jax.
-    backend
-        The backend to use for computations.
-    xnp
-        The numpy-like module to use for computations.
-    dnp
-        The numpy-like module to use for datetime objects.
-    evaluation_date
-        The date for which the policy system is set up. An integer is
-        interpreted as the year.
-
-    Returns
-    -------
-    Tree with column functions that depend on columns only.
+    """
+    The policy environment where all parameters and scalars have been partialed into
+    the column functions.
 
     """
     column_functions = {
@@ -343,7 +302,7 @@ def tt_dag(
     with_partialled_params_and_scalars: SpecEnvWithPartialledParamsAndScalars,
     labels__column_targets: OrderedQNames,
 ) -> nx.DiGraph:
-    """Thin wrapper around `create_dag`."""
+    """The taxes-transfers DAG."""
     return create_dag(
         functions=with_partialled_params_and_scalars,
         targets=labels__column_targets,

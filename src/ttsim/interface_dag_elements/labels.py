@@ -49,19 +49,7 @@ def top_level_namespace(
     policy_environment: PolicyEnvironment,
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
-    """Get the top level namespace.
-
-    Parameters
-    ----------
-    policy_environment:
-        The policy environment.
-
-
-    Returns
-    -------
-    top_level_namespace:
-        The top level namespace.
-    """
+    """The elements of the top level namespace."""
     time_units = tuple(TIME_UNIT_LABELS)
     direct_top_level_names = set(policy_environment)
 
@@ -146,7 +134,7 @@ def input_columns_is_empty_set(
 def all_qnames_in_policy_environment(
     policy_environment: PolicyEnvironment,
 ) -> UnorderedQNames:
-    """The names of all objects in the policy environment."""
+    """The (qualified) names of all objects in the policy environment."""
     return set(dt.qnames(policy_environment))
 
 
@@ -165,20 +153,9 @@ def root_nodes(
     specialized_environment__tt_dag: nx.DiGraph,
     input_columns: UnorderedQNames,
 ) -> UnorderedQNames:
-    """Names of the columns in `processed_data` required for the tax transfer function.
+    """The (qualified) names of those columns in `processed_data` which are required for
+    the tax transfer function."""
 
-    Parameters
-    ----------
-    specialized_environment__tt_dag:
-        The tax transfer DAG.
-    processed_data:
-        The processed data.
-
-    Returns
-    -------
-    The names of the columns in `processed_data` required for the tax transfer function.
-
-    """
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tt_dag,
@@ -204,6 +181,9 @@ def input_data_targets(
     tt_targets__qname: OrderedQNames,
     input_columns: UnorderedQNames,
 ) -> OrderedQNames:
+    """
+    The (qualified) names of the targets that are already present in the input data.
+    """
     return [t for t in tt_targets__qname if t in input_columns]
 
 
@@ -213,7 +193,7 @@ def column_targets(
     tt_targets__qname: OrderedQNames,
     input_data_targets: OrderedQNames,
 ) -> OrderedQNames:
-    """All targets that are column functions."""
+    """The (qualified) names of the targets that are column functions."""
     possible_targets = set(tt_targets__qname) - set(input_data_targets)
     return [
         t
@@ -230,6 +210,7 @@ def param_targets(
     column_targets: OrderedQNames,
     input_data_targets: OrderedQNames,
 ) -> OrderedQNames:
+    """The (qualified) names of the targets that are parameters or param functions."""
     possible_targets = (
         set(tt_targets__qname) - set(column_targets) - set(input_data_targets)
     )

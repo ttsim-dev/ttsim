@@ -153,7 +153,7 @@ def get_figure(
         node_text.append(
             label + "<br><br>" + metadata.description.replace("\n", "<br>")
             if show_node_description
-            else qname
+            else label
         )
         node_colors.append(individual_node_colormap[qname])
 

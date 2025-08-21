@@ -51,7 +51,7 @@ def policy_date(policy_date_str: DashedISOString) -> datetime.date:
 def evaluation_date_use_other_info(
     backend: Literal["numpy", "jax"],  # noqa: ARG001
 ) -> datetime.date | None:
-    """The date to be used as evaluation date"""
+    """The date to be used as evaluation date."""
     return None
 
 
@@ -63,5 +63,5 @@ def evaluation_date_use_other_info(
 def evaluation_date_from_evaluation_date_str(
     evaluation_date_str: DashedISOString,
 ) -> datetime.date | None:
-    """The date to be used as evaluation date"""
+    """The date to be used as evaluation date."""
     return to_datetime(evaluation_date_str)
