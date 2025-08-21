@@ -660,7 +660,7 @@ def test_fail_if_foreign_keys_are_invalid_in_data_when_foreign_key_points_to_sam
     )
 
 
-def test_fail_if_foreign_keys_point_to_self_when_must_not_point_to_self(backend):
+def test_fail_if_foreign_keys_point_to_self_when_they_must_not(backend):
     flat_objects_tree = dt.flatten_to_qnames(mettsim_environment(backend))
     data = {
         ("p_id",): pd.Series([1, 2, 3]),
