@@ -29,22 +29,24 @@ if TYPE_CHECKING:
 
 @interface_input(leaf_name="df")
 def df_and_mapper__df() -> pd.DataFrame:
-    pass
+    """A DataFrame with input data and arbitrary column names."""
 
 
 @interface_input(leaf_name="mapper")
 def df_and_mapper__mapper() -> NestedInputsMapper:
-    pass
+    """
+    A dictionary mapping expected tree paths to column names in the input DataFrame.
+    """
 
 
 @interface_input()
 def df_with_nested_columns() -> pd.DataFrame:
-    pass
+    """A DataFrame with nested column names corresponding to the expected tree paths."""
 
 
 @interface_input()
 def tree() -> NestedData:
-    pass
+    """The input data as a pytree of arrays."""
 
 
 @input_dependent_interface_function(
@@ -60,18 +62,7 @@ def flat_from_df_and_mapper(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input DataFrame as a flattened data structure.
-
-    Args:
-        df_and_mapper__df:
-            The input DataFrame.
-        df_and_mapper__mapper:
-            Dictionary mapping tree paths to column names.
-
-    Returns
-    -------
-        Flattened data structure.
-    """
+    """The input data as a flat pytree of arrays."""
     return df_with_mapped_columns_to_flat_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
@@ -89,16 +80,7 @@ def flat_from_df_with_nested_columns(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input DataFrame as a flattened data structure.
-
-    Args:
-        df_with_nested_columns:
-            The input DataFrame with nested column names.
-
-    Returns
-    -------
-        Flattened data structure.
-    """
+    """The input data as a flat pytree of arrays."""
     return df_with_nested_columns_to_flat_data(
         df=df_with_nested_columns,
         backend=backend,
@@ -114,31 +96,11 @@ def flat_from_tree(
     tree: NestedData,
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
-    """The input DataFrame as a flattened data structure.
-
-    Args:
-        tree:
-            The input tree.
-        xnp:
-            The backend to use, just put here so that fail_if.input_data_tree_is_invalid
-            runs before this.
-
-    Returns
-    -------
-        Flattened data structure.
-    """
+    """The input data as a flat pytree of arrays."""
     return dt.flatten_to_tree_paths(tree)
 
 
 @interface_function()
 def sort_indices(input_data__flat: FlatData, xnp: ModuleType) -> IntColumn:
-    """Create sort indices for restoring the original row order.
-
-    Args:
-        input_data__flat: The flattened input data.
-        xnp: The backend module (numpy or jax).
-
-    Returns:
-        Sort indices array.
-    """
+    """Sort indices for restoring the original row order."""
     return xnp.argsort(xnp.asarray(input_data__flat[("p_id",)]))

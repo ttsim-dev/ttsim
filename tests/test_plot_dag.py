@@ -21,6 +21,14 @@ from ttsim.tt import (
 )
 from ttsim.tt.column_objects_param_function import PolicyInput
 
+METTSIM_COLORMAP = {
+    ("housing_benefits",): "red",
+    ("orc_hunting_bounty",): "green",
+    ("payroll_tax", "child_tax_credit"): "orange",
+    ("payroll_tax", "income"): "yellow",
+    ("wealth_tax",): "blue",
+}
+
 
 def get_required_policy_env_objects(policy_date: datetime.date) -> dict[str, Any]:
     return {
@@ -432,6 +440,7 @@ def test_can_create_template_with_selection_and_input_data_from_tt():
         ),
         selection_type="ancestors",
         selection_depth=1,
+        node_colormap=METTSIM_COLORMAP,
     )
 
 
@@ -445,6 +454,7 @@ def test_can_pass_plotly_kwargs_to_tt():
         ),
         selection_type="ancestors",
         selection_depth=1,
+        node_colormap=METTSIM_COLORMAP,
         title="Test DAG Plot",
         width=200,
         height=800,
@@ -462,6 +472,7 @@ def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="all_paths",
             policy_date_str="2025-01-01",
+            node_colormap=METTSIM_COLORMAP,
         )
 
 
@@ -474,4 +485,84 @@ def test_fail_if_invalid_selection_type():
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="invalid_selection_type",
             policy_date_str="2025-01-01",
+            node_colormap=METTSIM_COLORMAP,
         )
+
+
+def test_node_colormap_functionality():
+    """Test that node_colormap parameter works correctly for both tt and interface
+    functions.
+    """
+
+    # Test with top-level namespace coloring
+    top_level_colormap = {
+        ("housing_benefits",): "#ff0000",
+        ("payroll_tax",): "#00ff00",
+        ("wealth_tax",): "#0000ff",
+    }
+
+    # Test tt function with colormap
+    fig_tt = tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
+        policy_date_str="2025-01-01",
+        node_colormap=top_level_colormap,
+    )
+    assert fig_tt is not None
+
+    # Test interface function with colormap
+    fig_interface = interface(
+        node_colormap=top_level_colormap,
+    )
+    assert fig_interface is not None
+
+    # Test with hierarchical namespace coloring
+    hierarchical_colormap = {
+        ("housing_benefits",): "#ff0000",
+        (
+            "housing_benefits",
+            "eligibility",
+        ): "#ff8888",
+        (
+            "housing_benefits",
+            "income",
+        ): "#ff4444",
+        ("payroll_tax",): "#00ff00",
+        (
+            "payroll_tax",
+            "child_tax_credit",
+        ): "#88ff88",
+    }
+
+    # Test tt function with hierarchical colormap
+    fig_tt_hierarchical = tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
+        policy_date_str="2025-01-01",
+        node_colormap=hierarchical_colormap,
+    )
+    assert fig_tt_hierarchical is not None
+
+    # Test interface function with hierarchical colormap
+    fig_interface_hierarchical = interface(
+        node_colormap=hierarchical_colormap,
+    )
+    assert fig_interface_hierarchical is not None
+
+
+def test_node_colormap_fallback_to_default():
+    """Test that nodes not in the colormap fall back to default colors."""
+
+    # Partial colormap that doesn't cover all namespaces
+    partial_colormap = {
+        ("housing_benefits",): "#ff0000",
+    }
+
+    # Test that this doesn't raise an error and produces a valid figure
+    fig = tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
+        policy_date_str="2025-01-01",
+        node_colormap=partial_colormap,
+    )
+    assert fig is not None

@@ -44,6 +44,7 @@ def tt(
     include_params: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
+    node_colormap: dict[tuple[str, ...], str] | None = None,
     # Elements of main
     policy_date_str: DashedISOString | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
@@ -86,6 +87,11 @@ def tt(
         Show a description of the node when hovering over it.
     output_path
         If provided, the figure is written to the path.
+    node_colormap
+        Dictionary mapping namespace tuples to colors. If provided, overrides
+        the default automatic color generation. Tuples can represent any level
+        of the namespace hierarchy (e.g., ("housing_benefits",) for top-level,
+        ("housing_benefits", "eligibility") for second-level).
     policy_date_str
         The date for which to plot the DAG.
     orig_policy_objects
@@ -132,6 +138,7 @@ def tt(
     fig = get_figure(
         dag=dag_with_node_metadata,
         show_node_description=show_node_description,
+        node_colormap=node_colormap,
         **kwargs,
     )
     if output_path:

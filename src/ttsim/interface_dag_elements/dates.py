@@ -51,16 +51,7 @@ def policy_date(policy_date_str: DashedISOString) -> datetime.date:
 def evaluation_date_use_other_info(
     backend: Literal["numpy", "jax"],  # noqa: ARG001
 ) -> datetime.date | None:
-    """The date to be used as evaluation date in YYYY-MM-DD format.
-
-    Will be overridden by values for year / month / day found in the input data or
-    parameters.
-
-    *Developer note:* The backend is needed to get some parent in here, else it will be
-    counted as a root node and thus trigger
-    `_fail_if_root_nodes_of_interface_dag_are_missing`.
-
-    """
+    """The date to be used as evaluation date"""
     return None
 
 
@@ -72,5 +63,5 @@ def evaluation_date_use_other_info(
 def evaluation_date_from_evaluation_date_str(
     evaluation_date_str: DashedISOString,
 ) -> datetime.date | None:
-    """The date to be used as evaluation date."""
+    """The date to be used as evaluation date"""
     return to_datetime(evaluation_date_str)

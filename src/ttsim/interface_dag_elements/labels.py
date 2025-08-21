@@ -120,9 +120,7 @@ def top_level_namespace(
     ],
     leaf_name="input_columns",
 )
-def input_columns_from_input_data(
-    processed_data: QNameData,
-) -> UnorderedQNames:
+def input_columns_from_input_data(processed_data: QNameData) -> UnorderedQNames:
     """The (qualified) column names in the input data."""
     return set(processed_data.keys())
 
@@ -139,8 +137,8 @@ def input_columns_from_input_data(
 )
 def input_columns_is_empty_set(
     xnp: ModuleType,  # fake input # noqa: ARG001
-) -> UnorderedQNames:
-    """No input data provided, hence input columns are an empty set."""
+) -> UnorderedQNames:  # fake input
+    """The (qualified) column names in the input data."""
     return set()
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dags
 import dags.tree as dt
@@ -25,11 +25,61 @@ if TYPE_CHECKING:
 
 def interface(
     include_fail_and_warn_nodes: bool = True,
+    include_backend_nodes: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
     remove_orig_policy_objects__root: bool = True,
+    node_colormap: dict[tuple[str, ...], str] | None = {
+        ("policy_date",): "#B8860B",
+        ("policy_date_str",): "#B8860B",
+        ("orig_policy_objects",): "#B8860B",
+        ("policy_environment",): "#B8860B",
+        ("evaluation_date",): "#B8860B",
+        ("evaluation_date_str",): "#B8860B",
+        ("rounding",): "#006994",
+        ("input_data",): "#0000FF",
+        ("processed_data",): "#0000FF",
+        ("labels",): "#90EE90",
+        ("raw_results",): "#98FB98",
+        ("results",): "#006400",
+        ("tt_targets",): "#013220",
+        ("specialized_environment",): "#008000",
+        ("specialized_environment_for_plotting_and_templates",): "#90EE90",
+        ("templates",): "#40E0D0",
+        ("tt_function",): "#0000FF",
+        ("tt_function_set_annotations",): "#87CEEB",
+        ("fail_if",): "#FF0000",
+        ("warn_if",): "#FFB6C1",
+        ("backend",): "#808080",
+        ("dnp",): "#808080",
+        ("num_segments",): "#808080",
+        ("xnp",): "#808080",
+    },
+    **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
-    """Plot the full interface DAG."""
+    """Plot the full interface DAG.
+
+    Parameters
+    ----------
+    include_fail_and_warn_nodes : bool, default=True
+        Whether to include fail and warn nodes in the plot.
+    include_backend_nodes : bool, default=True
+        Whether to include `backend`, `xnp`, and `dnp` in the plot.
+    show_node_description : bool, default=False
+        Whether to show node descriptions on hover.
+    output_path : Path | None, default=None
+        If provided, the figure is written to the path.
+    remove_orig_policy_objects__root : bool, default=True
+        Whether to remove `orig_policy_objects__root` node from the plot.
+    node_colormap : dict[tuple[str, ...], str] | None, default=None
+        Dictionary mapping namespace tuples to colors. If provided, overrides
+        the default automatic color generation. Tuples can represent any level
+        of the namespace hierarchy (e.g., ("housing_benefits",) for top-level,
+        ("housing_benefits", "eligibility") for second-level).
+    **kwargs
+        Additional keyword arguments. Will be passed to
+        plotly.graph_objects.Figure.layout.
+    """
     interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
     nodes_without_idifs = {
         dt.qname_from_tree_path(p): dummy_callable(obj=n, leaf_name=p[-1])
@@ -45,23 +95,29 @@ def interface(
             if not isinstance(n, (FailFunction, WarnFunction))
         }
 
+    # Will add the leaf names of input-dependent interface functions to the graph.
     dag = dags.create_dag(functions=nodes_without_idifs, targets=None)
 
     # Add edges manually for InputDependentInterfaceFunction
     input_dependent_interface_functions = {
-        qn: n
-        for qn, n in interface_functions_and_inputs.items()
+        tp: n
+        for tp, n in interface_functions_and_inputs.items()
         if isinstance(n, InputDependentInterfaceFunction)
     }
-    qnames_of_idif_to_their_ancestors = _qnames_of_idif_to_their_ancestors(
+    for qn, ancestors in _qnames_of_final_idif_to_their_ancestors(
         input_dependent_interface_functions
-    )
-    for qn, ancestors in qnames_of_idif_to_their_ancestors.items():
+    ).items():
         for ancestor in ancestors:
             dag.add_edge(ancestor, qn)
 
+    final_idif_to_one_original = _qnames_of_final_idif_to_one_original(
+        input_dependent_interface_functions
+    )
+
     for node_name in dag.nodes():
         interface_object = nodes_without_idifs.get(node_name)
+        if not interface_object:
+            interface_object = final_idif_to_one_original[node_name]
         if interface_object:
             f = (
                 interface_object.function
@@ -74,13 +130,20 @@ def interface(
             description=description or "No description available.",
             namespace=namespace,
         )
+    if not include_backend_nodes:
+        dag.remove_nodes_from(["backend", "xnp", "dnp"])
     if remove_orig_policy_objects__root:
         dag.remove_nodes_from(["orig_policy_objects__root"])
 
+    kwargs_with_title = kwargs
+    if "title" not in kwargs:
+        kwargs_with_title["title"] = "Full Interface DAG"
+
     fig = get_figure(
         dag=dag,
-        title="Full Interface DAG",
         show_node_description=show_node_description,
+        node_colormap=node_colormap,
+        **kwargs_with_title,
     )
 
     if output_path:
@@ -89,12 +152,14 @@ def interface(
     return fig
 
 
-def _qnames_of_idif_to_their_ancestors(
+def _qnames_of_final_idif_to_their_ancestors(
     input_dependent_interface_functions: dict[
         tuple[str, ...], InputDependentInterfaceFunction
     ],
 ) -> dict[str, list[str]]:
-    """Get the qnames of the input dependent interface functions to their ancestors."""
+    """Return a mapping of the qnames of the input dependent interface functions in the
+    final DAG to all possible ancestors.
+    """
     idif_qname_to_idif_inputs: dict[str, list[str]] = {}
     for orig_p, orig_object in input_dependent_interface_functions.items():
         qname = dt.qname_from_tree_path((*orig_p[:-1], orig_object.leaf_name))
@@ -105,3 +170,20 @@ def _qnames_of_idif_to_their_ancestors(
         )
         idif_qname_to_idif_inputs[qname].extend(list(ancestors))
     return idif_qname_to_idif_inputs
+
+
+def _qnames_of_final_idif_to_one_original(
+    input_dependent_interface_functions: dict[
+        tuple[str, ...], InputDependentInterfaceFunction
+    ],
+) -> dict[str, InputDependentInterfaceFunction]:
+    """Return a mapping of the qnames of the input dependent interface functions in the
+    final DAG to one of the original input dependent interface functions.
+
+    Will be used for docstrings.
+    """
+    out: dict[str, InputDependentInterfaceFunction] = {}
+    for orig_p, orig_object in input_dependent_interface_functions.items():
+        final_qname = dt.qname_from_tree_path((*orig_p[:-1], orig_object.leaf_name))
+        out[final_qname] = orig_object
+    return out

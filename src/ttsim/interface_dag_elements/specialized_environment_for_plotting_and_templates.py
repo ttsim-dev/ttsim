@@ -229,14 +229,18 @@ def dummy_callable(obj: InterfaceInput, leaf_name: str) -> InterfaceFunction: ..
 
 
 def dummy_callable(
-    obj: ModuleType | str | float | bool, leaf_name: str
+    obj: PolicyInput | ParamObject | InterfaceInput, leaf_name: str
 ) -> Callable[[], Any]:
     """Dummy callable, for plotting and checking DAG completeness."""
 
     def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
         pass
 
+    # Extract docstring from the appropriate attribute based on object type
     if isinstance(obj, PolicyInput):
+        original_docstring = obj.docstring
+        if original_docstring:
+            dummy.__doc__ = original_docstring
         return policy_function(
             leaf_name=leaf_name,
             start_date=obj.start_date,
@@ -244,12 +248,19 @@ def dummy_callable(
             foreign_key_type=obj.foreign_key_type,
         )(dummy)
     if isinstance(obj, ParamObject):
+        # Use description["en"] for ParamObjects
+        original_docstring = obj.description.get("en") if obj.description else None
+        if original_docstring:
+            dummy.__doc__ = original_docstring
         return param_function(
             leaf_name=leaf_name,
             start_date=obj.start_date,
             end_date=obj.end_date,
         )(dummy)
     if isinstance(obj, InterfaceInput):
+        original_docstring = obj.docstring
+        if original_docstring:
+            dummy.__doc__ = original_docstring
         return interface_function(
             leaf_name=leaf_name,
             in_top_level_namespace=obj.in_top_level_namespace,
