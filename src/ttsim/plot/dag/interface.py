@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     import plotly.graph_objects as go
 
-DEFAULT_COLORMAP = {
+INTERFACE_COLORMAP = {
     ("policy_date",): "gold",
     ("policy_date_str",): "gold",
     ("orig_policy_objects",): "gold",
@@ -57,7 +57,7 @@ def interface(
     show_node_description: bool = False,
     output_path: Path | None = None,
     remove_orig_policy_objects__root: bool = True,
-    node_colormap: dict[tuple[str, ...], str] | None = DEFAULT_COLORMAP,
+    node_colormap: dict[tuple[str, ...], str] | None = INTERFACE_COLORMAP,
     **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
     """Plot the full interface DAG.
