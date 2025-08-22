@@ -22,6 +22,34 @@ if TYPE_CHECKING:
 
     import plotly.graph_objects as go
 
+DEFAULT_COLORMAP = {
+    ("policy_date",): "gold",
+    ("policy_date_str",): "gold",
+    ("orig_policy_objects",): "gold",
+    ("policy_environment",): "gold",
+    ("evaluation_date",): "gold",
+    ("evaluation_date_str",): "gold",
+    ("rounding",): "teal",
+    ("tt_function",): "teal",
+    ("tt_function_set_annotations",): "teal",
+    ("input_data",): "mediumblue",
+    ("input_data", "sort_indices"): "lightblue",
+    ("processed_data",): "midnightblue",
+    ("labels",): "ivory",
+    ("raw_results",): "honeydew",
+    ("results",): "limegreen",
+    ("tt_targets",): "darkolivegreen",
+    ("specialized_environment",): "darkgreen",
+    ("specialized_environment_for_plotting_and_templates",): "palegreen",
+    ("templates",): "lawngreen",
+    ("fail_if",): "indianred",
+    ("warn_if",): "salmon",
+    ("backend",): "lightgray",
+    ("dnp",): "lightgray",
+    ("num_segments",): "lightgray",
+    ("xnp",): "lightgray",
+}
+
 
 def interface(
     include_fail_and_warn_nodes: bool = True,
@@ -29,33 +57,7 @@ def interface(
     show_node_description: bool = False,
     output_path: Path | None = None,
     remove_orig_policy_objects__root: bool = True,
-    node_colormap: dict[tuple[str, ...], str] | None = {
-        ("policy_date",): "gold",
-        ("policy_date_str",): "gold",
-        ("orig_policy_objects",): "gold",
-        ("policy_environment",): "gold",
-        ("evaluation_date",): "gold",
-        ("evaluation_date_str",): "gold",
-        ("rounding",): "teal",
-        ("tt_function",): "teal",
-        ("tt_function_set_annotations",): "teal",
-        ("input_data",): "mediumblue",
-        ("input_data", "sort_indices"): "lightblue",
-        ("processed_data",): "midnightblue",
-        ("labels",): "ivory",
-        ("raw_results",): "honeydew",
-        ("results",): "limegreen",
-        ("tt_targets",): "darkolivegreen",
-        ("specialized_environment",): "darkgreen",
-        ("specialized_environment_for_plotting_and_templates",): "palegreen",
-        ("templates",): "lawngreen",
-        ("fail_if",): "indianred",
-        ("warn_if",): "salmon",
-        ("backend",): "lightgray",
-        ("dnp",): "lightgray",
-        ("num_segments",): "lightgray",
-        ("xnp",): "lightgray",
-    },
+    node_colormap: dict[tuple[str, ...], str] | None = DEFAULT_COLORMAP,
     **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
     """Plot the full interface DAG.
