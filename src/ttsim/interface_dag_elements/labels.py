@@ -125,7 +125,7 @@ def input_columns_from_input_data(processed_data: QNameData) -> UnorderedQNames:
 )
 def input_columns_is_empty_set(
     xnp: ModuleType,  # fake input # noqa: ARG001
-) -> UnorderedQNames:  # fake input
+) -> UnorderedQNames:
     """The (qualified) column names in the input data."""
     return set()
 
