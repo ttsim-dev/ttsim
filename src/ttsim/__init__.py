@@ -13,7 +13,11 @@ except ImportError:
 
 from ttsim import plot
 from ttsim.entry_point import main
-from ttsim.interface_dag_elements.shared import merge_trees, upsert_tree
+from ttsim.interface_dag_elements.shared import (
+    copy_environment,
+    merge_trees,
+    upsert_tree,
+)
 from ttsim.main_args import (
     InputData,
     Labels,
@@ -25,7 +29,6 @@ from ttsim.main_args import (
     TTTargets,
 )
 from ttsim.main_target import MainTarget
-from ttsim.utils import copy_environment
 
 copy_environment = copy_environment
 merge_trees = merge_trees
