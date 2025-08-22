@@ -21,16 +21,7 @@ from ttsim import (
     SpecializedEnvironmentForPlottingAndTemplates,
     TTTargets,
 )
-from ttsim.interface_dag_elements.fail_if import format_list_linewise
-from ttsim.interface_dag_elements.interface_node_objects import (
-    fail_function,
-    input_dependent_interface_function,
-    interface_function,
-)
-from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
-    dummy_callable,
-)
-from ttsim.main import (
+from ttsim.entry_point import (
     _fail_if_input_structure_is_invalid,
     _fail_if_requested_nodes_cannot_be_found,
     _fail_if_root_nodes_of_interface_dag_are_missing,
@@ -40,6 +31,15 @@ from ttsim.main import (
     _resolve_dynamic_interface_objects_to_static_nodes,
     load_flat_interface_functions_and_inputs,
     main,
+)
+from ttsim.interface_dag_elements.fail_if import format_list_linewise
+from ttsim.interface_dag_elements.interface_node_objects import (
+    fail_function,
+    input_dependent_interface_function,
+    interface_function,
+)
+from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
+    dummy_callable,
 )
 from ttsim.main_target import MainTarget
 from ttsim.tt.column_objects_param_function import policy_function

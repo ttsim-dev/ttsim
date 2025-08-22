@@ -6,20 +6,14 @@ from typing import Any
 import pytest
 from mettsim import middle_earth
 
-from ttsim.main import main
-from ttsim.main_args import Labels, TTTargets
-from ttsim.main_target import MainTarget
-from ttsim.plot.dag.interface import interface
-from ttsim.plot.dag.tt import (
-    _get_tt_dag_with_node_metadata,
-    tt,
-)
+from ttsim import Labels, MainTarget, TTTargets, main, plot
+from ttsim.plot.dag.tt import _get_tt_dag_with_node_metadata
 from ttsim.tt import (
+    PolicyInput,
     ScalarParam,
     param_function,
     policy_function,
 )
-from ttsim.tt.column_objects_param_function import PolicyInput
 
 
 def get_required_policy_env_objects(policy_date: datetime.date) -> dict[str, Any]:
@@ -106,7 +100,7 @@ def some_policy_function_depending_on_derived_param(some_param_y: float) -> floa
     ],
 )
 def test_plot_full_interface_dag(include_fail_and_warn_nodes):
-    interface(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
+    plot.dag.interface(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
 
 
 @pytest.mark.parametrize(
@@ -423,7 +417,7 @@ def test_input_data_overrides_nodes_in_plotting_dag():
 
 
 def test_can_create_template_with_selection_and_input_data_from_tt():
-    tt(
+    plot.dag.tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",
@@ -437,7 +431,7 @@ def test_can_create_template_with_selection_and_input_data_from_tt():
 
 
 def test_can_pass_plotly_kwargs_to_tt():
-    tt(
+    plot.dag.tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",
@@ -459,7 +453,7 @@ def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
     with pytest.raises(
         ValueError, match="you must provide at least two\nprimary nodes"
     ):
-        tt(
+        plot.dag.tt(
             root=middle_earth.ROOT_PATH,
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="all_paths",
@@ -472,7 +466,7 @@ def test_fail_if_invalid_selection_type():
     with pytest.raises(
         ValueError, match="Invalid selection type: invalid_selection_type"
     ):
-        tt(
+        plot.dag.tt(
             root=middle_earth.ROOT_PATH,
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="invalid_selection_type",
@@ -494,7 +488,7 @@ def test_node_colormap_functionality():
     }
 
     # Test tt function with colormap
-    fig_tt = tt(
+    fig_tt = plot.dag.tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",
@@ -503,7 +497,7 @@ def test_node_colormap_functionality():
     assert fig_tt is not None
 
     # Test interface function with colormap
-    fig_interface = interface(
+    fig_interface = plot.dag.interface(
         node_colormap=top_level_colormap,
     )
     assert fig_interface is not None
@@ -527,7 +521,7 @@ def test_node_colormap_functionality():
     }
 
     # Test tt function with hierarchical colormap
-    fig_tt_hierarchical = tt(
+    fig_tt_hierarchical = plot.dag.tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",
@@ -536,7 +530,7 @@ def test_node_colormap_functionality():
     assert fig_tt_hierarchical is not None
 
     # Test interface function with hierarchical colormap
-    fig_interface_hierarchical = interface(
+    fig_interface_hierarchical = plot.dag.interface(
         node_colormap=hierarchical_colormap,
     )
     assert fig_interface_hierarchical is not None
@@ -551,7 +545,7 @@ def test_node_colormap_fallback_to_default():
     }
 
     # Test that this doesn't raise an error and produces a valid figure
-    fig = tt(
+    fig = plot.dag.tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",

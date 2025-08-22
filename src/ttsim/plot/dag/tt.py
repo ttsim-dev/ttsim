@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import dags.tree as dt
 import networkx as nx
 
-from ttsim import main
+from ttsim.entry_point import main
 from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
 from ttsim.main_args import OrigPolicyObjects
 from ttsim.main_target import MainTarget
@@ -91,13 +91,14 @@ def tt(
         Dictionary mapping namespace tuples to colors. If provided, overrides
         the default automatic color generation, which cycles through colors at the
         uppermost level of the namespace hierarchy.
-        - Tuples can represent any level of the namespace hierarchy (e.g.,
-          ("housing_benefits",) would be the first level,
-          ("housing_benefits", "eligibility") the second level.
-        - The tuple ("top-level",) is used to catch all members of the top-level
-          namespace.
-        - Individual elements or sub-namespaces can be overriden -- the longest
-          match will be used.
+            - Tuples can represent any level of the namespace hierarchy (e.g.,
+              ("payroll_tax",) would be the first level,
+              ("payroll_tax", "child_tax_credit") the second level.
+            - The tuple ("top-level",) is used to catch all members of the top-level
+              namespace.
+            - Individual elements or sub-namespaces can be overridden as the longest
+              match will be used.
+            - Fallback color is black.
     policy_date_str
         The date for which to plot the DAG.
     orig_policy_objects

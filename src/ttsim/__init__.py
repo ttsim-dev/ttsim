@@ -11,9 +11,9 @@ except ImportError:
     version = "unknown"
     version_tuple = ("unknown", "unknown", "unknown")
 
-from ttsim.copy_environment import copy_environment
+from ttsim import plot
+from ttsim.entry_point import main
 from ttsim.interface_dag_elements.shared import merge_trees, upsert_tree
-from ttsim.main import main
 from ttsim.main_args import (
     InputData,
     Labels,
@@ -25,6 +25,7 @@ from ttsim.main_args import (
     TTTargets,
 )
 from ttsim.main_target import MainTarget
+from ttsim.utils import copy_environment
 
 copy_environment = copy_environment
 merge_trees = merge_trees
@@ -57,6 +58,7 @@ __all__ = [
     "copy_environment",
     "main",
     "merge_trees",
+    "plot",
     "upsert_tree",
     "version",
     "version_tuple",

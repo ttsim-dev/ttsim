@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 import dags
 import dags.tree as dt
 
+from ttsim.entry_point import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
     FailFunction,
     InputDependentInterfaceFunction,
@@ -14,7 +15,6 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
     dummy_callable,
 )
-from ttsim.main import load_flat_interface_functions_and_inputs
 from ttsim.plot.dag.shared import NodeMetaData, get_figure
 
 if TYPE_CHECKING:
