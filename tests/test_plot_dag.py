@@ -139,8 +139,13 @@ def test_input_dependent_interface_functions_with_same_path_have_same_docstring(
             else:
                 path_to_idifs[path] = [idif]
 
-    for idifs in path_to_idifs.values():
-        assert all(idifs[0].__doc__ == idif.__doc__ for idif in idifs)
+    for path, idifs in path_to_idifs.items():
+        if any(idifs[0].__doc__ != idif.__doc__ for idif in idifs):
+            raise ValueError(
+                "Input dependent interface functions with the same path must have the "
+                f"same docstring.\n\nOffending path: {path}\n\n"
+                f"Variants:\n\n" + "\n".join(idif.__name__ for idif in idifs)
+            )
 
 
 @pytest.mark.parametrize(
