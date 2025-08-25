@@ -4,8 +4,8 @@ import datetime
 from typing import Any
 
 import pytest
-
 from mettsim import middle_earth
+
 from ttsim import Labels, MainTarget, TTTargets, main, plot
 from ttsim.entry_point import load_flat_interface_functions_and_inputs
 from ttsim.interface_dag_elements.interface_node_objects import (
