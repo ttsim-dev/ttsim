@@ -9,8 +9,8 @@ import numpy as np
 import optree
 import pandas as pd
 import pytest
-from mettsim import middle_earth
 
+from mettsim import middle_earth
 from ttsim import (
     InputData,
     Labels,

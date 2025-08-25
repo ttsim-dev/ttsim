@@ -124,6 +124,25 @@ def test_all_namespaces_are_colored_in_interface_dag():
     assert not paths_not_covered_by_colormap
 
 
+def test_input_dependent_interface_functions_with_same_path_have_same_docstring():
+    """All input dependent interface functions with the same path must have the same
+    docstring.
+    """
+    flat_interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
+
+    path_to_idifs: dict[tuple[str, ...], list[InputDependentInterfaceFunction]] = {}
+    for orig_path, idif in flat_interface_functions_and_inputs.items():
+        if isinstance(idif, InputDependentInterfaceFunction):
+            path = (*orig_path[:-1], idif.leaf_name)
+            if path in path_to_idifs:
+                path_to_idifs[path].append(idif)
+            else:
+                path_to_idifs[path] = [idif]
+
+    for idifs in path_to_idifs.values():
+        assert all(idifs[0].__doc__ == idif.__doc__ for idif in idifs)
+
+
 @pytest.mark.parametrize(
     (
         "selection_type",
