@@ -46,7 +46,7 @@ def df_with_nested_columns() -> pd.DataFrame:
 
 @interface_input()
 def tree() -> NestedData:
-    """The input data as a pytree of arrays."""
+    """The input data as a nested dictionary of arrays."""
 
 
 @input_dependent_interface_function(
@@ -62,7 +62,7 @@ def flat_from_df_and_mapper(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat pytree of arrays."""
+    """The input data as a flat dictionary of arrays."""
     return df_with_mapped_columns_to_flat_data(
         df=df_and_mapper__df,
         mapper=df_and_mapper__mapper,
@@ -80,7 +80,7 @@ def flat_from_df_with_nested_columns(
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
 ) -> FlatData:
-    """The input data as a flat pytree of arrays."""
+    """The input data as a flat dictionary of arrays."""
     return df_with_nested_columns_to_flat_data(
         df=df_with_nested_columns,
         backend=backend,
@@ -96,7 +96,7 @@ def flat_from_tree(
     tree: NestedData,
     xnp: ModuleType,  # noqa: ARG001
 ) -> FlatData:
-    """The input data as a flat pytree of arrays."""
+    """The input data as a flat dictionary of arrays."""
     return dt.flatten_to_tree_paths(tree)
 
 
