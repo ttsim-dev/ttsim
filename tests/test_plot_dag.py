@@ -4,9 +4,14 @@ import datetime
 from typing import Any
 
 import pytest
-from mettsim import middle_earth
 
+from mettsim import middle_earth
 from ttsim import Labels, MainTarget, TTTargets, main, plot
+from ttsim.entry_point import load_flat_interface_functions_and_inputs
+from ttsim.interface_dag_elements.interface_node_objects import (
+    InputDependentInterfaceFunction,
+)
+from ttsim.plot.dag.interface import INTERFACE_COLORMAP
 from ttsim.plot.dag.tt import _get_tt_dag_with_node_metadata
 from ttsim.tt import (
     PolicyInput,
@@ -101,6 +106,22 @@ def some_policy_function_depending_on_derived_param(some_param_y: float) -> floa
 )
 def test_plot_full_interface_dag(include_fail_and_warn_nodes):
     plot.dag.interface(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
+
+
+def test_all_namespaces_are_colored_in_interface_dag():
+    flat_interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
+
+    paths_not_covered_by_colormap = set()
+    for orig_path, obj in flat_interface_functions_and_inputs.items():
+        if isinstance(obj, InputDependentInterfaceFunction):
+            path = (*orig_path[:-1], obj.leaf_name)
+        else:
+            path = orig_path
+        variants_expected_in_colormap = {path[: n + 1] for n in range(len(path))}
+        if not any(p in INTERFACE_COLORMAP for p in variants_expected_in_colormap):
+            paths_not_covered_by_colormap.add(path)
+
+    assert not paths_not_covered_by_colormap
 
 
 @pytest.mark.parametrize(
