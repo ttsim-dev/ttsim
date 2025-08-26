@@ -4,22 +4,21 @@ import datetime
 from typing import Any
 
 import pytest
-
 from mettsim import middle_earth
-from ttsim.main import main
-from ttsim.main_args import Labels, TTTargets
-from ttsim.main_target import MainTarget
-from ttsim.plot.dag.interface import interface
-from ttsim.plot.dag.tt import (
-    _get_tt_dag_with_node_metadata,
-    tt,
+
+from ttsim import Labels, MainTarget, TTTargets, main, plot
+from ttsim.entry_point import load_flat_interface_functions_and_inputs
+from ttsim.interface_dag_elements.interface_node_objects import (
+    InputDependentInterfaceFunction,
 )
+from ttsim.plot.dag.interface import INTERFACE_COLORMAP
+from ttsim.plot.dag.tt import _get_tt_dag_with_node_metadata
 from ttsim.tt import (
+    PolicyInput,
     ScalarParam,
     param_function,
     policy_function,
 )
-from ttsim.tt.column_objects_param_function import PolicyInput
 
 
 def get_required_policy_env_objects(policy_date: datetime.date) -> dict[str, Any]:
@@ -106,7 +105,47 @@ def some_policy_function_depending_on_derived_param(some_param_y: float) -> floa
     ],
 )
 def test_plot_full_interface_dag(include_fail_and_warn_nodes):
-    interface(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
+    plot.dag.interface(include_fail_and_warn_nodes=include_fail_and_warn_nodes)
+
+
+def test_all_namespaces_are_colored_in_interface_dag():
+    flat_interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
+
+    paths_not_covered_by_colormap = set()
+    for orig_path, obj in flat_interface_functions_and_inputs.items():
+        if isinstance(obj, InputDependentInterfaceFunction):
+            path = (*orig_path[:-1], obj.leaf_name)
+        else:
+            path = orig_path
+        variants_expected_in_colormap = {path[: n + 1] for n in range(len(path))}
+        if not any(p in INTERFACE_COLORMAP for p in variants_expected_in_colormap):
+            paths_not_covered_by_colormap.add(path)
+
+    assert not paths_not_covered_by_colormap
+
+
+def test_input_dependent_interface_functions_with_same_path_have_same_docstring():
+    """All input dependent interface functions with the same path must have the same
+    docstring.
+    """
+    flat_interface_functions_and_inputs = load_flat_interface_functions_and_inputs()
+
+    path_to_idifs: dict[tuple[str, ...], list[InputDependentInterfaceFunction]] = {}
+    for orig_path, idif in flat_interface_functions_and_inputs.items():
+        if isinstance(idif, InputDependentInterfaceFunction):
+            path = (*orig_path[:-1], idif.leaf_name)
+            if path in path_to_idifs:
+                path_to_idifs[path].append(idif)
+            else:
+                path_to_idifs[path] = [idif]
+
+    for path, idifs in path_to_idifs.items():
+        if any(idifs[0].__doc__ != idif.__doc__ for idif in idifs):
+            raise ValueError(
+                "Input dependent interface functions with the same path must have the "
+                f"same docstring.\n\nOffending path: {path}\n\n"
+                f"Variants:\n\n" + "\n".join(idif.__name__ for idif in idifs)
+            )
 
 
 @pytest.mark.parametrize(
@@ -423,7 +462,7 @@ def test_input_data_overrides_nodes_in_plotting_dag():
 
 
 def test_can_create_template_with_selection_and_input_data_from_tt():
-    tt(
+    plot.dag.tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",
@@ -432,11 +471,12 @@ def test_can_create_template_with_selection_and_input_data_from_tt():
         ),
         selection_type="ancestors",
         selection_depth=1,
+        node_colormap=middle_earth.COLORMAP,
     )
 
 
 def test_can_pass_plotly_kwargs_to_tt():
-    tt(
+    plot.dag.tt(
         root=middle_earth.ROOT_PATH,
         primary_nodes=["payroll_tax__amount_y"],
         policy_date_str="2025-01-01",
@@ -445,6 +485,7 @@ def test_can_pass_plotly_kwargs_to_tt():
         ),
         selection_type="ancestors",
         selection_depth=1,
+        node_colormap=middle_earth.COLORMAP,
         title="Test DAG Plot",
         width=200,
         height=800,
@@ -457,11 +498,12 @@ def test_fail_if_selection_type_is_all_paths_and_less_than_two_primary_nodes():
     with pytest.raises(
         ValueError, match="you must provide at least two\nprimary nodes"
     ):
-        tt(
+        plot.dag.tt(
             root=middle_earth.ROOT_PATH,
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="all_paths",
             policy_date_str="2025-01-01",
+            node_colormap=middle_earth.COLORMAP,
         )
 
 
@@ -469,9 +511,89 @@ def test_fail_if_invalid_selection_type():
     with pytest.raises(
         ValueError, match="Invalid selection type: invalid_selection_type"
     ):
-        tt(
+        plot.dag.tt(
             root=middle_earth.ROOT_PATH,
             primary_nodes=["payroll_tax__amount_y"],
             selection_type="invalid_selection_type",
             policy_date_str="2025-01-01",
+            node_colormap=middle_earth.COLORMAP,
         )
+
+
+def test_node_colormap_functionality():
+    """Test that node_colormap parameter works correctly for both tt and interface
+    functions.
+    """
+
+    # Test with top-level namespace coloring
+    top_level_colormap = {
+        ("housing_benefits",): "#ff0000",
+        ("payroll_tax",): "#00ff00",
+        ("wealth_tax",): "#0000ff",
+    }
+
+    # Test tt function with colormap
+    fig_tt = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
+        policy_date_str="2025-01-01",
+        node_colormap=top_level_colormap,
+    )
+    assert fig_tt is not None
+
+    # Test interface function with colormap
+    fig_interface = plot.dag.interface(
+        node_colormap=top_level_colormap,
+    )
+    assert fig_interface is not None
+
+    # Test with hierarchical namespace coloring
+    hierarchical_colormap = {
+        ("housing_benefits",): "#ff0000",
+        (
+            "housing_benefits",
+            "eligibility",
+        ): "#ff8888",
+        (
+            "housing_benefits",
+            "income",
+        ): "#ff4444",
+        ("payroll_tax",): "#00ff00",
+        (
+            "payroll_tax",
+            "child_tax_credit",
+        ): "#88ff88",
+    }
+
+    # Test tt function with hierarchical colormap
+    fig_tt_hierarchical = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
+        policy_date_str="2025-01-01",
+        node_colormap=hierarchical_colormap,
+    )
+    assert fig_tt_hierarchical is not None
+
+    # Test interface function with hierarchical colormap
+    fig_interface_hierarchical = plot.dag.interface(
+        node_colormap=hierarchical_colormap,
+    )
+    assert fig_interface_hierarchical is not None
+
+
+def test_node_colormap_fallback_to_default():
+    """Test that nodes not in the colormap fall back to default colors."""
+
+    # Partial colormap that doesn't cover all namespaces
+    partial_colormap = {
+        ("housing_benefits",): "#ff0000",
+    }
+
+    # Test that this doesn't raise an error and produces a valid figure
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes=["payroll_tax__amount_y"],
+        policy_date_str="2025-01-01",
+        node_colormap=partial_colormap,
+    )
+    assert fig is not None

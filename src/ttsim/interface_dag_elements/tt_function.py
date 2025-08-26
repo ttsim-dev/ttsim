@@ -38,8 +38,7 @@ def tt_function(
     tt_function_set_annotations: bool,
     backend: Literal["numpy", "jax"],
 ) -> Callable[[QNameData], QNameData]:
-    """Returns a function that takes a dictionary of arrays and unpacks them as keyword
-    argugments."""
+    """Return the function calculating the taxes and transfers."""
     ttf_with_keyword_args = concatenate_functions(
         dag=specialized_environment__tt_dag,
         functions=specialized_environment__with_partialled_params_and_scalars,

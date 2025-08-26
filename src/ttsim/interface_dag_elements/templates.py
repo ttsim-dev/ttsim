@@ -31,25 +31,7 @@ def input_data_dtypes__tree(
     tt_targets__qname: OrderedQNames,
     labels__top_level_namespace: UnorderedQNames,
 ) -> NestedInputStructureDict:
-    """
-    A template of the required input data and their expected types.
-
-    Parameters
-    ----------
-    specialized_environment__with_partialled_params_and_scalars
-        The specialized environment with partialled parameters and scalars.
-    policy_environment
-        The policy environment containing functions and parameters.
-    tt_targets__qname
-        Ordered qualified names of the targets.
-    labels__top_level_namespace
-        Unordered qualified names of the top-level namespace.
-
-    Returns
-    -------
-    NestedInputStructureDict
-        A nested dictionary mapping input paths to their data types.
-    """
+    """A template of the required input data and their expected types."""
     base_dtype_tree = dt.create_tree_with_input_types(
         functions=dt.unflatten_from_qnames(
             specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars,
@@ -88,9 +70,7 @@ def input_data_dtypes__df_with_nested_columns(
     tree: NestedInputStructureDict,
     xnp: ModuleType,
 ) -> pd.DataFrame:
-    """
-    A template of the required input data and their expected types.
-    """
+    """A template of the required input data and their expected types."""
     return nested_data_to_df_with_nested_columns(
         nested_data_to_convert=tree,
         index=pd.Index(xnp.array([1])),

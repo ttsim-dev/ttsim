@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-
 from mettsim import middle_earth
+
 from ttsim.interface_dag_elements.orig_policy_objects import (
     _find_files_recursively,
     load_module,
