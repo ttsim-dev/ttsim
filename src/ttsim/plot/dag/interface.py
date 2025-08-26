@@ -64,17 +64,17 @@ def interface(
 
     Parameters
     ----------
-    include_fail_and_warn_nodes : bool, default=True
+    include_fail_and_warn_nodes
         Whether to include fail and warn nodes in the plot.
-    include_backend_nodes : bool, default=True
+    include_backend_nodes
         Whether to include `backend`, `xnp`, and `dnp` in the plot.
-    show_node_description : bool, default=False
+    show_node_description
         Whether to show node descriptions on hover.
-    output_path : Path | None, default=None
+    output_path
         If provided, the figure is written to the path.
-    remove_orig_policy_objects__root : bool, default=True
+    remove_orig_policy_objects__root
         Whether to remove `orig_policy_objects__root` node from the plot.
-    node_colormap : dict[tuple[str, ...], str] | None, default=INTERFACE_COLORMAP
+    node_colormap
         Dictionary mapping namespace tuples to colors.
             - Tuples can represent any level of the namespace hierarchy (e.g.,
               ("input_data",) would be the first level,

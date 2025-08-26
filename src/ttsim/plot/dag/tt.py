@@ -87,7 +87,7 @@ def tt(
         Show a description of the node when hovering over it.
     output_path
         If provided, the figure is written to the path.
-    node_colormap : dict[tuple[str, ...], str] | None, default=None
+    node_colormap
         Dictionary mapping namespace tuples to colors.
             - Tuples can represent any level of the namespace hierarchy (e.g.,
               ("payroll_tax",) would be the first level,
