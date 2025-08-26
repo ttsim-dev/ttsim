@@ -4,7 +4,7 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## v1.0.1 — unpublished
+## v1.1.0 — 2025-08-26
 
 - {gh}`44` Add a default fixed colormap to plots and general improvements to plotting.
   ({ghuser}`hmgaudecker`)
