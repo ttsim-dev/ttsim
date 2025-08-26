@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.0.1 — unpublished
 
+- {gh}`44` Add a default fixed colormap to plots and general improvements to plotting.
+  ({ghuser}`hmgaudecker`)
+
 - {gh}`46` Optimization for `fail_if.foreign_keys_are_invalid_in_data`
   ({ghuser}`JuergenWiemers`)
 

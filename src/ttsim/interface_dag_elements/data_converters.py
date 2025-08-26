@@ -30,7 +30,7 @@ def nested_data_to_df_with_nested_columns(
     nested_data_to_convert: NestedData,
     index: pd.Index,
 ) -> pd.DataFrame:
-    """Convert a nested data structure to a DataFrame.
+    """Convert a nested data structure to a DataFrame with a MultiIndex for the columns.
 
     Args:
         nested_data_to_convert:
@@ -55,7 +55,8 @@ def nested_data_to_df_with_mapped_columns(
     nested_outputs_df_column_names: NestedStrings,
     data_with_p_id: NestedData | QNameData | FlatData,
 ) -> pd.DataFrame:
-    """Convert a nested data structure to a DataFrame.
+    """Convert a nested data structure to a DataFrame with columns specified in
+    `nested_outputs_df_column_names`.
 
     Args:
         nested_data_to_convert:

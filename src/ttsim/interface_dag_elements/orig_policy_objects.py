@@ -37,16 +37,11 @@ def column_objects_and_param_functions(
     root: Path,
 ) -> FlatColumnObjectsParamFunctions:
     """
-    Load the original ColumnObjectParamFunctions dictionary from the resource directory.
+    The original ColumnObjectParamFunctions dictionary.
 
     "Original" means:
     - Module names are not removed from the path.
     - The last path element is the ColumnObject's original name, not the leaf name.
-
-    Parameters
-    ----------
-    root:
-        The resource directory to load the ColumnObjectParamFunctions dictionary from.
     """
     return {
         k: v
@@ -61,17 +56,12 @@ def column_objects_and_param_functions(
 @interface_function()
 def param_specs(root: Path) -> FlatOrigParamSpecs:
     """
-    Load the original contents of yaml files found in *root*.
+    The original parameter specifications, typically loaded from yaml files.
 
     "Original" means:
     - Module names are not removed from the path.
     - The outermost key in each yaml file becomes the leaf name of the tree path.
       Beyond that, the contents of the yaml files are not parsed.
-
-    Parameters
-    ----------
-    root:
-        The resource directory to load the parameter specifications from.
     """
     return {
         k: v

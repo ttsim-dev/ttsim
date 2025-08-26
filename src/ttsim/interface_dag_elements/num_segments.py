@@ -10,12 +10,11 @@ if TYPE_CHECKING:
 
 @interface_function(in_top_level_namespace=True)
 def num_segments(processed_data: QNameData) -> int:
-    """The number of segments for segment sums in jax.
+    """The number of segments for segment sums in jax."""
 
-    After processing the data, we know that the number of ids is at most the length of
-    the data.
-    """
     if processed_data:
+        # After processing the data, we know that the number of ids is at most the
+        # length of the data.
         return len(next(iter(processed_data.values())))
     # Leave at a recognisable value; just used in jittability tests.
     return 11111

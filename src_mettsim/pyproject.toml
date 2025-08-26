@@ -7,8 +7,8 @@
 name = "mettsim"
 version = "0.0.0"
 description = "The Middle Earth Taxes and Transfers SIMulator"
-readme = { file = "README.md", content-type = "text/markdown" }
-license = { file = "LICENSE" }
+readme = { file = "mettsim/README.md", content-type = "text/markdown" }
+license = { file = "mettsim/LICENSE" }
 # About the project
 authors = [
     { name = "Hans-Martin von Gaudecker", email = "hmgaudecker@uni-bonn.de" },

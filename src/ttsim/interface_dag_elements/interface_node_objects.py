@@ -50,6 +50,7 @@ class InterfaceInput(InterfaceNodeObject):
     """A dummy function representing an input node."""
 
     return_type: type
+    docstring: str
 
     def remove_tree_logic(
         self,
@@ -76,6 +77,7 @@ def interface_input(
             leaf_name=leaf_name if leaf_name else func.__name__,
             in_top_level_namespace=in_top_level_namespace,
             return_type=func.__annotations__["return"],
+            docstring=inspect.getdoc(func),  # type: ignore[arg-type]
         )
 
     return inner

@@ -14,14 +14,12 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 
 @interface_input(in_top_level_namespace=True)
 def backend() -> Literal["numpy", "jax"]:
-    """The computing backend to use for the taxes and transfers function."""
+    """The name of the backend to use for the taxes and transfers function."""
 
 
 @interface_function(in_top_level_namespace=True)
 def xnp(backend: Literal["numpy", "jax"]) -> ModuleType:
-    """
-    Return the backend for numerical operations (either NumPy or jax).
-    """
+    """The actual backend used for numerical operations (numpy or jax.numpy)."""
     if backend == "numpy":
         xnp = numpy
     elif backend == "jax":
@@ -35,9 +33,7 @@ def xnp(backend: Literal["numpy", "jax"]) -> ModuleType:
 
 @interface_function(in_top_level_namespace=True)
 def dnp(backend: Literal["numpy", "jax"]) -> ModuleType:
-    """
-    Return the backend for datetime objects (either NumPy or jax-datetime)
-    """
+    """The backend used for datetime objects (numpy or jax-datetime)."""
     if backend == "numpy":
         dnp = numpy
     elif backend == "jax":

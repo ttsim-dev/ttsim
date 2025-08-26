@@ -53,20 +53,7 @@ def df_with_mapper(
     input_data__flat: FlatData,
     tt_targets__tree: NestedStrings,
 ) -> pd.DataFrame:
-    """The results DataFrame with mapped column names.
-
-    Args:
-        tree:
-            The results of a TTSIM run with original row order already restored.
-        input_data__flat:
-            The input data containing original p_ids.
-        tt_targets__tree:
-            A tree that maps paths (sequence of keys) to data columns names.
-
-    Returns
-    -------
-        A DataFrame.
-    """
+    """The results DataFrame with mapped column names."""
     return nested_data_to_df_with_mapped_columns(
         nested_data_to_convert=tree,
         nested_outputs_df_column_names=tt_targets__tree,
@@ -79,18 +66,7 @@ def df_with_nested_columns(
     tree: NestedData,
     input_data__flat: FlatData,
 ) -> pd.DataFrame:
-    """The results DataFrame with nested column names corresponding to tree paths.
-
-    Args:
-        tree:
-            The results of a TTSIM run with original row order already restored.
-        input_data__flat:
-            The flat input data containing original p_ids.
-
-    Returns
-    -------
-    A DataFrame with a hierarchical index in the column dimension.
-    """
+    """The results DataFrame with nested column names corresponding to tree paths."""
     return nested_data_to_df_with_nested_columns(
         nested_data_to_convert=tree,
         index=pd.Index(input_data__flat[("p_id",)], name="p_id"),

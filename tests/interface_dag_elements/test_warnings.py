@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Literal
 import numpy
 import pandas as pd
 import pytest
-
 from mettsim import middle_earth
+
 from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt import ScalarParam, group_creation_function, policy_function
 

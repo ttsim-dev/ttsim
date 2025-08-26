@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import numpy
 import pytest
+from mettsim import middle_earth
 from numpy.testing import assert_array_equal
 
-from mettsim import middle_earth
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
 )

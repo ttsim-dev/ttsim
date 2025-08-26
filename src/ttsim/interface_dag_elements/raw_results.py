@@ -24,7 +24,7 @@ def columns(
     processed_data: QNameData,
     tt_function: Callable[[QNameData], QNameData],
 ) -> QNameData:
-    """Return the raw results of the TT function that have been requested as targets.
+    """The raw results of the TT function that have been requested as targets.
 
     Arrays are sorted according to the internal sort order.
 
@@ -39,7 +39,7 @@ def from_input_data(
     labels__input_data_targets: OrderedQNames,
     input_data__flat: FlatData,
 ) -> QNameData:
-    """Return input data that have been requested as targets.
+    """The input data columns that have been requested as targets.
 
     Arrays are sorted as they are in the input data.
 
@@ -55,9 +55,9 @@ def params(
     labels__param_targets: OrderedQNames,
     specialized_environment__with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,  # noqa: E501
 ) -> QNameData:
-    """Return parameters that have been requested as targets.
+    """The parameters that have been requested as targets.
 
-    This includes outputs of param_functions.
+    Possibly includes outputs of param_functions.
     """
     return {
         pt: specialized_environment__with_processed_params_and_scalars[pt]

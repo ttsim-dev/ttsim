@@ -17,24 +17,12 @@ if TYPE_CHECKING:
 def processed_data(
     input_data__flat: FlatData, input_data__sort_indices: IntColumn, xnp: ModuleType
 ) -> QNameData:
-    """Process the data for use in the taxes and transfers function.
+    """The internal processed data for use in the taxes and transfers function.
 
-    Replace id's by consecutive integers starting at zero and sort according to the
-    original `p_id`.
-    The Jax-based backend will work correctly only with these transformed indices.
-    They will be transformed back when converting raw results to results.
+    We replace identifiers by consecutive integers starting at zero and sort the data
+    according to the original `p_id`.
 
-    Args:
-        input_data__flat:
-            The input data provided by the user.
-        input_data__sort_indices:
-            Sort indices used for restoring original order of user data.
-        xnp:
-            The backend module (numpy or jax).
-
-    Returns
-    -------
-        A processed data dictionary.
+    The transformations will be undone when going from raw results to results.
     """
 
     orig_p_ids = xnp.asarray(input_data__flat[("p_id",)])

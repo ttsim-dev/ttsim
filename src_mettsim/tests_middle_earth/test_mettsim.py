@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy
 import pytest
-
 from mettsim import middle_earth
+
 from ttsim import main, plot
 from ttsim.main_args import InputData
 from ttsim.testing_utils import (

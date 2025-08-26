@@ -127,20 +127,6 @@ def assert_valid_ttsim_pytree(
       - The tree is a dictionary.
       - All keys are strings.
       - All leaves satisfy a provided condition (leaf_checker).
-
-    Parameters
-    ----------
-    tree : Any
-         The tree to validate.
-    leaf_checker : Callable[..., Any]
-         A function that takes a leaf and returns True if it is valid.
-    tree_name : str
-         The name of the tree (used for error messages).
-
-    Raises
-    ------
-    TypeError
-        If any branch or leaf does not meet the expected requirements.
     """
 
     def _assert_valid_ttsim_pytree(subtree: Any, current_key: tuple[str, ...]) -> None:  # noqa: ANN401
@@ -238,7 +224,7 @@ def any_paths_are_invalid(
     tt_targets__tree: NestedTargetDict | NestedStrings,
     labels__top_level_namespace: UnorderedQNames,
 ) -> None:
-    """Thin wrapper around `dt.fail_if_paths_are_invalid`."""
+    """Fail if any paths are invalid in the policy environment."""
     return dt.fail_if_paths_are_invalid(
         functions=policy_environment,
         data_tree=input_data__tree,
@@ -252,7 +238,7 @@ def paths_are_missing_in_targets_tree_mapper(
     results__tree: NestedData,
     tt_targets__tree: NestedStrings,
 ) -> None:
-    """Fail if the data paths are missing in the paths to column names."""
+    """Fail if the data paths are missing in the mapping of paths to column names."""
     paths_in_data = dt.flatten_to_tree_paths(results__tree)
     paths_in_mapper = dt.flatten_to_tree_paths(tt_targets__tree)
     missing_paths = [str(p) for p in paths_in_mapper if p not in paths_in_data]
@@ -303,10 +289,11 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
         )
         raise ValueError(msg)
 
-    # Check for non-unique p_ids
-    if p_id.shape[0] == 1:  # Special case for single-row data
+    # No need to check for unique p_ids when data has only one row.
+    if p_id.shape[0] == 1:
         return
 
+    # Check for non-unique p_ids.
     p_id_sorted = xnp.sort(xnp.asarray(p_id))
     duplicates = xnp.diff(p_id_sorted, append=0) == 0
     if xnp.sum(duplicates) >= 1:
@@ -435,14 +422,7 @@ def group_variables_are_not_constant_within_groups(
     processed_data: QNameData,
 ) -> None:
     """
-    Check that group variables are constant within each group.
-
-    Parameters
-    ----------
-    data
-        Dictionary of data.
-    grouping_levels
-        The grouping levels available in the policy environment.
+    Fail if group-level variables are not constant within a group.
     """
     faulty_data_columns = []
 
@@ -579,16 +559,8 @@ def input_df_mapper_columns_missing_in_df(
     input_data__df_and_mapper__df: pd.DataFrame,
     input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
-    """Fail if the input mapper specifies columns that are not in the input dataframe.
-
-    Parameters
-    ----------
-    input_data__df_and_mapper__df
-        The input dataframe.
-    input_data__df_and_mapper__mapper
-        The input mapper.
-    xnp
-        The numpy module.
+    """
+    Fail if the input mapper specifies columns that are not in the input dataframe.
     """
     mapper_vals = dt.flatten_to_qnames(input_data__df_and_mapper__mapper).values()
     expected_cols_in_df = [v for v in mapper_vals if isinstance(v, str)]
@@ -666,13 +638,7 @@ def input_df_mapper_has_incorrect_format(
 def input_df_mapper_p_id_is_missing(
     input_data__df_and_mapper__mapper: NestedInputsMapper,
 ) -> None:
-    """Fail if the input mapper does not include a mapping for 'p_id'.
-
-    Parameters
-    ----------
-    input_data__df_and_mapper__mapper
-        The input mapper.
-    """
+    """Fail if the input mapper does not include a mapping for 'p_id'."""
     mapper_flat = dt.flatten_to_qnames(input_data__df_and_mapper__mapper)
     p_id_mapping = mapper_flat.get("p_id", None)
 
@@ -717,7 +683,7 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
     specialized_environment__tt_dag: nx.DiGraph,
     labels__input_columns: UnorderedQNames,
 ) -> None:
-    """Fail if the TT DAG includes functions with `fail_msg_if_included` set."""
+    """Fail if the TT DAG includes functions that are marked as invalid."""
 
     env = specialized_environment__without_tree_logic_and_with_derived_functions
     issues = ""
@@ -748,24 +714,8 @@ def tt_root_nodes_are_missing(
     processed_data: QNameData,
     labels__grouping_levels: OrderedQNames,
 ) -> None:
-    """Fail if root nodes are missing.
+    """Fail if root nodes are missing."""
 
-    Parameters
-    ----------
-    specialized_environment__tt_dag
-        The DAG of taxes and transfers functions.
-    specialized_environment__with_partialled_params_and_scalars
-        The specialized environment with partialled params and scalars.
-    processed_data
-        The processed data to be used as an input to the taxes & transfers function.
-    labels__grouping_levels
-        The grouping levels available in the policy environment.
-
-    Raises
-    ------
-    ValueError
-        If root nodes are missing.
-    """
     # Obtain root nodes
     root_nodes = nx.subgraph_view(
         specialized_environment__tt_dag,
@@ -806,24 +756,7 @@ def targets_are_not_in_specialized_environment_or_data(
     labels__input_columns: UnorderedQNames,
     tt_targets__qname: OrderedQNames,
 ) -> None:
-    """Fail if some target is not among functions.
-
-    Parameters
-    ----------
-    functions
-        Dictionary containing functions to build the DAG.
-    labels__input_columns
-        The columns which are available in the data tree.
-    tt_targets__qname
-        The taxes & transfers targets which should be computed. They limit the DAG in
-        the way that only ancestors of these nodes need to be considered.
-
-    Raises
-    ------
-    ValueError
-        Raised if any member of `tt_targets` is not among functions.
-
-    """
+    """Fail if some target is not among functions."""
     missing_targets = [
         str(dt.tree_path_from_qname(n))
         for n in tt_targets__qname
@@ -948,18 +881,7 @@ def _param_with_active_periods(
 def param_function_depends_on_column_objects(
     specialized_environment__without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
 ) -> None:
-    """Fail if any ParamFunction depends on ColumnObject arguments.
-
-    Parameters
-    ----------
-    specialized_environment__without_tree_logic_and_with_derived_functions
-        The specialized environment containing all functions and objects.
-
-    Raises
-    ------
-    ValueError
-        If any ParamFunction has ColumnObject arguments.
-    """
+    """Fail if any ParamFunction depends on ColumnObject arguments."""
     param_functions = {
         name: obj
         for name, obj in specialized_environment__without_tree_logic_and_with_derived_functions.items()
@@ -996,17 +918,9 @@ def endogenous_p_id_among_targets(
 ) -> None:
     """Fail if any p_id_* columns are requested as targets.
 
-    Parameters
-    ----------
-    labels__column_targets
-        The column targets which should be computed endogenously.
-
-    Raises
-    ------
-    ValueError
-        Raised if any endogenous target name starts with 'p_id_'. These columns contain
-        internal ID mappings that would not be meaningful after reverting the internal
-        `p_id` column to the original `p_id` column.
+    A ValueError is raised if any endogenous target name starts with `p_id_`. These
+    columns contain internal ID mappings that would not be meaningful after reverting
+    the internal `p_id` column to the original `p_id` column.
     """
 
     p_id_targets = [

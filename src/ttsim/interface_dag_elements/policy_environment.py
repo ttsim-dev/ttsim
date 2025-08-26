@@ -50,23 +50,7 @@ def policy_environment(
     policy_date: datetime.date,
     xnp: ModuleType,
 ) -> PolicyEnvironment:
-    """
-    Set up the policy environment for a particular date.
-
-    Parameters
-    ----------
-    root
-        The directory to load the policy environment from.
-    date
-        The date for which the policy system is set up. An integer is
-        interpreted as the year.
-    xnp
-        The numpy-like module to use for computations.
-
-    Returns
-    -------
-    The policy environment for the specified date.
-    """
+    """The policy environment at a particular date."""
     return {
         "policy_year": ScalarParam(
             value=policy_date.year,

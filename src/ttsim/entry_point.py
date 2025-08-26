@@ -62,19 +62,19 @@ def main(
     evaluation_date_str: DashedISOString | None = None,
     include_fail_nodes: bool = True,
     include_warn_nodes: bool = True,
-    tt_function: Callable[[QNameData], QNameData] | None = None,
     tt_function_set_annotations: bool = True,
+    policy_date: datetime.date | None = None,
+    evaluation_date: datetime.date | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
-    raw_results: RawResults | None = None,
-    results: Results | None = None,
+    policy_environment: PolicyEnvironment | None = None,
+    processed_data: QNameData | None = None,
+    labels: Labels | None = None,
     specialized_environment: SpecializedEnvironment | None = None,
     specialized_environment_for_plotting_and_templates: SpecializedEnvironmentForPlottingAndTemplates  # noqa: E501
     | None = None,
-    policy_environment: PolicyEnvironment | None = None,
-    processed_data: QNameData | None = None,
-    policy_date: datetime.date | None = None,
-    evaluation_date: datetime.date | None = None,
-    labels: Labels | None = None,
+    tt_function: Callable[[QNameData], QNameData] | None = None,
+    raw_results: RawResults | None = None,
+    results: Results | None = None,
 ) -> Any:  # noqa: ANN401
     """
     Main function that processes the inputs and returns the outputs.

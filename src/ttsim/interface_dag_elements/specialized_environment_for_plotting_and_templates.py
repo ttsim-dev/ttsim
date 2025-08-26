@@ -93,7 +93,11 @@ def without_tree_logic_and_with_derived_functions(
     labels__top_level_namespace: UnorderedQNames,
     labels__grouping_levels: OrderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Return a flat policy environment with derived functions."""
+    """A flat policy environment with derived functions.
+
+    The difference to the corresponding function in `specialized_environment` is that
+    policy inputs may be considered like actual inputs.
+    """
     qname_env_without_tree_logic = _remove_tree_logic_from_policy_environment(
         qname_env=dt.flatten_to_qnames(policy_environment),
         labels__top_level_namespace=labels__top_level_namespace,
@@ -114,10 +118,8 @@ def without_input_data_nodes_with_dummy_callables(
     without_tree_logic_and_with_derived_functions: SpecEnvWithoutTreeLogicAndWithDerivedFunctions,  # noqa: E501
     labels__input_columns: UnorderedQNames,
 ) -> SpecEnvWithoutTreeLogicAndWithDerivedFunctions:
-    """Remove nodes from the environment that are overridden by input columns.
-
-    Transforms non-callable nodes into callables to include them as nodes in the DAG
-    created later.
+    """An environment where non-callable are transformed into callables so we can use
+    dags to set up the DAG for plotting and templates.
     """
     return {
         qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
@@ -135,10 +137,7 @@ def complete_tt_dag(
     labels__all_qnames_in_policy_environment: UnorderedQNames,
     labels__input_columns: UnorderedQNames,
 ) -> nx.DiGraph:
-    """Create the complete DAG.
-
-    The DAG is based on without_tree_logic_and_with_derived_functions because it should
-    include parameters and param_functions.
+    """The complete DAG, which includes parameters and param_functions.
 
     If tt_targets are specified, only nodes that are ancestors or descendants of the
     targets are kept. If no tt_targets are specified, the entire DAG is returned.
@@ -188,6 +187,14 @@ def with_processed_params_and_scalars(
     dnp: ModuleType,
     evaluation_date: datetime.date | None,
 ) -> SpecEnvWithProcessedParamsAndScalars:
+    """The environment where all parameters and param functions have been processed.
+
+    All RawParams have been removed (note that a RawParam object is pointless without a
+    param function making use of it).
+
+    The difference to the corresponding function in `specialized_environment` is that
+    policy inputs may be considered like actual inputs.
+    """
     return specialized_environment.with_processed_params_and_scalars(
         without_tree_logic_and_with_derived_functions=without_tree_logic_and_with_derived_functions,
         processed_data=dict.fromkeys(labels__input_columns),
@@ -206,6 +213,12 @@ def with_partialled_params_and_scalars(
     xnp: ModuleType,
     dnp: ModuleType,
 ) -> SpecEnvWithPartialledParamsAndScalars:
+    """The policy environment where all parameters and scalars have been partialed into
+    the column functions.
+
+    The difference to the corresponding function in `specialized_environment` is that
+    policy inputs may be considered like actual inputs.
+    """
     return specialized_environment.with_partialled_params_and_scalars(
         with_processed_params_and_scalars=with_processed_params_and_scalars,
         rounding=rounding,
@@ -229,14 +242,18 @@ def dummy_callable(obj: InterfaceInput, leaf_name: str) -> InterfaceFunction: ..
 
 
 def dummy_callable(
-    obj: ModuleType | str | float | bool, leaf_name: str
+    obj: PolicyInput | ParamObject | InterfaceInput, leaf_name: str
 ) -> Callable[[], Any]:
     """Dummy callable, for plotting and checking DAG completeness."""
 
     def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
         pass
 
+    # Extract docstring from the appropriate attribute based on object type
     if isinstance(obj, PolicyInput):
+        original_docstring = obj.docstring
+        if original_docstring:
+            dummy.__doc__ = original_docstring
         return policy_function(
             leaf_name=leaf_name,
             start_date=obj.start_date,
@@ -244,12 +261,19 @@ def dummy_callable(
             foreign_key_type=obj.foreign_key_type,
         )(dummy)
     if isinstance(obj, ParamObject):
+        # Use description["en"] for ParamObjects
+        original_docstring = obj.description.get("en") if obj.description else None
+        if original_docstring:
+            dummy.__doc__ = original_docstring
         return param_function(
             leaf_name=leaf_name,
             start_date=obj.start_date,
             end_date=obj.end_date,
         )(dummy)
     if isinstance(obj, InterfaceInput):
+        original_docstring = obj.docstring
+        if original_docstring:
+            dummy.__doc__ = original_docstring
         return interface_function(
             leaf_name=leaf_name,
             in_top_level_namespace=obj.in_top_level_namespace,

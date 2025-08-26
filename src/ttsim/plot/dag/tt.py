@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import dags.tree as dt
 import networkx as nx
 
-from ttsim import main
+from ttsim.entry_point import main
 from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
 from ttsim.main_args import OrigPolicyObjects
 from ttsim.main_target import MainTarget
@@ -44,6 +44,7 @@ def tt(
     include_params: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
+    node_colormap: dict[tuple[str, ...], str] | None = None,
     # Elements of main
     policy_date_str: DashedISOString | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
@@ -86,6 +87,18 @@ def tt(
         Show a description of the node when hovering over it.
     output_path
         If provided, the figure is written to the path.
+    node_colormap
+        Dictionary mapping namespace tuples to colors.
+            - Tuples can represent any level of the namespace hierarchy (e.g.,
+              ("payroll_tax",) would be the first level,
+              ("payroll_tax", "child_tax_credit") the second level.
+            - The tuple ("top-level",) is used to catch all members of the top-level
+              namespace.
+            - Individual elements or sub-namespaces can be overridden as the longest
+              match will be used.
+            - Fallback color is black.
+            - Use any color from https://plotly.com/python/css-colors/
+        If None, cycle through colors at the uppermost level of the namespace hierarchy.
     policy_date_str
         The date for which to plot the DAG.
     orig_policy_objects
@@ -132,6 +145,7 @@ def tt(
     fig = get_figure(
         dag=dag_with_node_metadata,
         show_node_description=show_node_description,
+        node_colormap=node_colormap,
         **kwargs,
     )
     if output_path:
