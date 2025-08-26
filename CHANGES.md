@@ -4,6 +4,11 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
+## v1.1.1 — unpublished
+
+- {gh}`49` Fix test failure on WSL2 due do different DAG execution order
+  ({ghuser}`JuergenWiemers`)
+
 ## v1.1.0 — 2025-08-26
 
 - {gh}`44` Add a default fixed colormap to plots and general improvements to plotting.
