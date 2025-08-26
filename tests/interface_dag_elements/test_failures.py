@@ -1538,7 +1538,16 @@ def test_environment_is_invalid_passes(policy_environment):
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
-    with pytest.raises(TypeError, match="input_data__tree must be a dict, got"):
+    # Matches both `TypeError` and `ValueError` because on WSL2 the DAG execution order
+    # consistently differs from all other tested platforms:
+    # 1. `fail_if.input_data_tree_is_invalid` -> TypeError: "input_data__tree must be a dict"
+    #    -> runs before `fail_if.any_paths_are_invalid` on all tested platforms except WSL2
+    # 2. `fail_if.any_paths_are_invalid` -> ValueError: "argument type ... not in flattenable types"
+    #    -> runs before `fail_if.input_data_tree_is_invalid` on WSL2
+    with pytest.raises(
+        (TypeError, ValueError),
+        match=r"(input_data__tree must be a dict, got|argument type .* is not in the flattenalbe types)",
+    ):
         main(
             main_target=MainTarget.results.df_with_nested_columns,
             policy_date_str="2025-01-01",
