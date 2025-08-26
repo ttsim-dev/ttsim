@@ -35,13 +35,13 @@ INTERFACE_COLORMAP = {
     ("input_data",): "mediumblue",
     ("input_data", "sort_indices"): "lightblue",
     ("processed_data",): "midnightblue",
-    ("labels",): "ivory",
-    ("raw_results",): "honeydew",
-    ("results",): "limegreen",
+    ("labels",): "lemonchiffon",
+    ("raw_results",): "lightgreen",
+    ("results",): "lime",
     ("tt_targets",): "darkolivegreen",
     ("specialized_environment",): "darkgreen",
     ("specialized_environment_for_plotting_and_templates",): "palegreen",
-    ("templates",): "lawngreen",
+    ("templates",): "limegreen",
     ("fail_if",): "indianred",
     ("warn_if",): "salmon",
     ("backend",): "lightgray",
@@ -74,18 +74,18 @@ def interface(
         If provided, the figure is written to the path.
     remove_orig_policy_objects__root : bool, default=True
         Whether to remove `orig_policy_objects__root` node from the plot.
-    node_colormap : dict[tuple[str, ...], str] | None, default=None
-        Dictionary mapping namespace tuples to colors. If provided, overrides
-        the default automatic color generation, which cycles through colors at the
-        uppermost level of the namespace hierarchy.
-        - Tuples can represent any level of the namespace hierarchy (e.g.,
-          ("input_data",) would be the first level,
-          ("input_data", "df_and_mapper") the second level.
-        - The tuple ("top-level",) is used to catch all members of the top-level
-          namespace.
-        - Individual elements or sub-namespaces can be overridden as the longest
-          match will be used.
-        - Fallback color is black.
+    node_colormap : dict[tuple[str, ...], str] | None, default=INTERFACE_COLORMAP
+        Dictionary mapping namespace tuples to colors.
+            - Tuples can represent any level of the namespace hierarchy (e.g.,
+              ("input_data",) would be the first level,
+              ("input_data", "df_and_mapper") the second level.
+            - The tuple ("top-level",) is used to catch all members of the top-level
+              namespace.
+            - Individual elements or sub-namespaces can be overridden as the longest
+              match will be used.
+            - Fallback color is black.
+            - Use any color from https://plotly.com/python/css-colors/
+        If None, cycle through colors at the uppermost level of the namespace hierarchy.
     **kwargs
         Additional keyword arguments. Will be passed to
         plotly.graph_objects.Figure.layout.

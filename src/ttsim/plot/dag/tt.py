@@ -88,9 +88,7 @@ def tt(
     output_path
         If provided, the figure is written to the path.
     node_colormap : dict[tuple[str, ...], str] | None, default=None
-        Dictionary mapping namespace tuples to colors. If provided, overrides
-        the default automatic color generation, which cycles through colors at the
-        uppermost level of the namespace hierarchy.
+        Dictionary mapping namespace tuples to colors.
             - Tuples can represent any level of the namespace hierarchy (e.g.,
               ("payroll_tax",) would be the first level,
               ("payroll_tax", "child_tax_credit") the second level.
@@ -99,6 +97,8 @@ def tt(
             - Individual elements or sub-namespaces can be overridden as the longest
               match will be used.
             - Fallback color is black.
+            - Use any color from https://plotly.com/python/css-colors/
+        If None, cycle through colors at the uppermost level of the namespace hierarchy.
     policy_date_str
         The date for which to plot the DAG.
     orig_policy_objects
