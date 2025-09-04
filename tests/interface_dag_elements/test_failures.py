@@ -9,6 +9,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+
 from mettsim import middle_earth
 
 try:
@@ -1511,8 +1512,7 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
         # Valid environment with module types
         {
             "numpy_module": numpy,
-            "jax_string": "jax",
-            "numpy_string": "numpy",
+            "backend": "numpy",
         },
         # Valid environment with nested structure
         {
@@ -1535,6 +1535,42 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
 def test_environment_is_invalid_passes(policy_environment):
     """Test that valid environments pass the validation."""
     environment_is_invalid(policy_environment)
+
+
+@pytest.mark.parametrize(
+    "evaluation_date_dict",
+    [
+        {
+            "evaluation_year": 2024,
+            "evaluation_month": 1,
+            "evaluation_day": 1,
+        },
+        {
+            "evaluation_year": ScalarParam(value=2024),
+            "evaluation_month": ScalarParam(value=1),
+            "evaluation_day": ScalarParam(value=1),
+        },
+    ],
+)
+def test_can_pass_evaluation_date_to_policy_environment(
+    xnp, backend, evaluation_date_dict
+):
+    @policy_function()
+    def some_func():
+        return 1
+
+    policy_environment = {
+        **evaluation_date_dict,
+        "some_func": some_func,
+    }
+    main(
+        main_target=MainTarget.results.tree,
+        policy_environment=policy_environment,
+        input_data=InputData.tree({"p_id": xnp.array([0])}),
+        tt_targets=TTTargets.tree({"some_func": None}),
+        backend=backend,
+        include_warn_nodes=False,
+    )
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
