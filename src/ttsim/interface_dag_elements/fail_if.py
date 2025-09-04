@@ -322,7 +322,7 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
 
 
 @fail_function()
-def policy_environmen_is_invalid(
+def policy_environment_is_invalid(
     policy_environment: PolicyEnvironment,
 ) -> None:
     """Validate that the environment is a pytree with supported types."""

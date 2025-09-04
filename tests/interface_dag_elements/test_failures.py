@@ -36,7 +36,7 @@ from ttsim.interface_dag_elements.fail_if import (
     non_convertible_objects_in_results_tree,
     param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
-    policy_environmen_is_invalid,
+    policy_environment_is_invalid,
     targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt import (
@@ -1487,9 +1487,9 @@ def test_invalid_input_data_tree_via_main(
         ),
     ],
 )
-def test_fail_if_policy_environmen_is_invalid(policy_environment, match):
+def test_fail_if_policy_environment_is_invalid(policy_environment, match):
     with pytest.raises(TypeError, match=match):
-        policy_environmen_is_invalid(policy_environment)
+        policy_environment_is_invalid(policy_environment)
 
 
 @pytest.mark.parametrize(
@@ -1532,7 +1532,7 @@ def test_fail_if_policy_environmen_is_invalid(policy_environment, match):
 )
 def test_policy_environment_is_invalid_passes(policy_environment):
     """Test that valid environments pass the validation."""
-    policy_environmen_is_invalid(policy_environment)
+    policy_environment_is_invalid(policy_environment)
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
