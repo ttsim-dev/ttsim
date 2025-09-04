@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 import pytest
-
 from mettsim import middle_earth
+
 from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt.column_objects_param_function import policy_function
 
