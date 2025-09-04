@@ -30,11 +30,6 @@ if TYPE_CHECKING:
 from mettsim import middle_earth
 
 
-@policy_function()
-def identity(x: int) -> int:
-    return x
-
-
 @pytest.fixture(scope="module")
 def some_params_spec_with_updates_previous():
     return [
