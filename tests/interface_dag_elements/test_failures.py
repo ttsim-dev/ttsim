@@ -9,6 +9,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+
 from mettsim import middle_earth
 
 try:
@@ -1532,6 +1533,21 @@ def test_fail_if_policy_environment_is_invalid(policy_environment, match):
 def test_policy_environment_is_invalid_passes(policy_environment):
     """Test that valid environments pass the validation."""
     policy_environment_is_invalid(policy_environment)
+
+
+def test_raises_error_if_p_id_is_passed_as_scalar(backend: Literal["jax", "numpy"]):
+    with pytest.raises(
+        ValueError,
+        match="`p_id` must be an array or series.",
+    ):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            policy_date_str="2025-01-01",
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
+            input_data=InputData.tree(tree={"p_id": 1}),
+            tt_targets=TTTargets(tree={"p_id": None}),
+            backend=backend,
+        )
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
