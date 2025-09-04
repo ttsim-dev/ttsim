@@ -9,6 +9,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+
 from mettsim import middle_earth
 
 try:
@@ -1570,6 +1571,29 @@ def test_can_pass_evaluation_date_to_policy_environment(
         backend=backend,
         include_warn_nodes=False,
     )
+
+
+def test_raises_error_if_evaluation_date_has_wrong_type():
+    policy_environment = {
+        "evaluation_year": "2024",
+        "evaluation_month": "1",
+        "evaluation_day": "1",
+    }
+    with pytest.raises(
+        TypeError,
+        match="evaluation_year, evaluation_month, evaluation_day must be int, PolicyInput, or a ScalarParam.",
+    ):
+        environment_is_invalid(policy_environment)
+
+
+def test_raises_error_if_backend_has_wrong_type():
+    policy_environment = {
+        "backend": "not_numpy_or_jax",
+    }
+    with pytest.raises(
+        ValueError, match="backend must be 'numpy' or 'jax', got not_numpy_or_jax"
+    ):
+        environment_is_invalid(policy_environment)
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
