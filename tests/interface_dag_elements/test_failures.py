@@ -9,7 +9,6 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
-
 from mettsim import middle_earth
 
 try:
