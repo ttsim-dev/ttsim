@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.1.1 — unpublished
 
+- {gh}`52` Fix fail_if checks: input data tree was too greedy and environment had an
+  ambiguous name. ({ghuser}`MImmesberger`)
 - {gh}`49` Fix test failure on WSL2 due to different DAG execution order
   ({ghuser}`JuergenWiemers`)
 

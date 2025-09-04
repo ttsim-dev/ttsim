@@ -24,7 +24,6 @@ from ttsim.interface_dag_elements.fail_if import (
     active_periods_overlap,
     assert_valid_ttsim_pytree,
     endogenous_p_id_among_targets,
-    environment_is_invalid,
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
@@ -36,6 +35,7 @@ from ttsim.interface_dag_elements.fail_if import (
     non_convertible_objects_in_results_tree,
     param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
+    policy_environment_is_invalid,
     targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt import (
@@ -1486,9 +1486,9 @@ def test_invalid_input_data_tree_via_main(
         ),
     ],
 )
-def test_fail_if_environment_is_invalid(policy_environment, match):
+def test_fail_if_policy_environment_is_invalid(policy_environment, match):
     with pytest.raises(TypeError, match=match):
-        environment_is_invalid(policy_environment)
+        policy_environment_is_invalid(policy_environment)
 
 
 @pytest.mark.parametrize(
@@ -1511,8 +1511,6 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
         # Valid environment with module types
         {
             "numpy_module": numpy,
-            "jax_string": "jax",
-            "numpy_string": "numpy",
         },
         # Valid environment with nested structure
         {
@@ -1528,13 +1526,27 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
             "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             "some_dict_param": some_dict_param,
             "module": numpy,
-            "backend": "jax",
         },
     ],
 )
-def test_environment_is_invalid_passes(policy_environment):
+def test_policy_environment_is_invalid_passes(policy_environment):
     """Test that valid environments pass the validation."""
-    environment_is_invalid(policy_environment)
+    policy_environment_is_invalid(policy_environment)
+
+
+def test_raises_error_if_p_id_is_passed_as_scalar(backend: Literal["jax", "numpy"]):
+    with pytest.raises(
+        ValueError,
+        match="`p_id` must be an array or series.",
+    ):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            policy_date_str="2025-01-01",
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
+            input_data=InputData.tree(tree={"p_id": 1}),
+            tt_targets=TTTargets(tree={"p_id": None}),
+            backend=backend,
+        )
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):

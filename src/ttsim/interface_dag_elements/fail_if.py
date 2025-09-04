@@ -258,7 +258,7 @@ def input_data_tree_is_invalid(
     input_data__tree: NestedData, backend: Literal["numpy", "jax"], xnp: ModuleType
 ) -> None:
     """Validate the basic structure of the input data tree."""
-    valid_leaf_types = (pd.Series, numpy.ndarray, xnp.ndarray)
+    valid_leaf_types = (pd.Series, numpy.ndarray, xnp.ndarray, int, float, bool)
     if backend == "numpy" and jax is not None:
         valid_leaf_types = (*valid_leaf_types, jax.numpy.ndarray)
     assert_valid_ttsim_pytree(
@@ -282,6 +282,9 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
     if p_id is None:
         raise ValueError("The input data must contain the `p_id` column.")
 
+    if not hasattr(input_data__flat[("p_id",)], "__len__"):
+        raise ValueError("`p_id` must be an array or series.")
+
     dtype_normalized = str(p_id.dtype).lower()
     if "int" not in dtype_normalized:
         msg = format_errors_and_warnings(
@@ -303,11 +306,13 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
         )
         raise ValueError(message)
 
+    # Check that all arrays have the same length as the p_id array.
     len_p_id_array = len(input_data__flat[("p_id",)])
     faulty_arrays: list[str] = []
-    for key, arr in input_data__flat.items():
-        if len(arr) != len_p_id_array:
-            faulty_arrays.append(key)
+    for path, inp in input_data__flat.items():
+        if hasattr(inp, "__len__") and len(inp) != len_p_id_array:
+            faulty_arrays.append(path)
+
     if faulty_arrays:
         formatted_faulty_paths = "\n".join(f"    - {p}" for p in faulty_arrays)
         msg = format_errors_and_warnings(
@@ -318,17 +323,15 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
 
 
 @fail_function()
-def environment_is_invalid(
+def policy_environment_is_invalid(
     policy_environment: PolicyEnvironment,
 ) -> None:
     """Validate that the environment is a pytree with supported types."""
     assert_valid_ttsim_pytree(
         tree=policy_environment,
-        leaf_checker=lambda leaf: isinstance(
-            leaf,
-            ColumnObject | ParamFunction | ParamObject | ModuleType,
-        )
-        or (isinstance(leaf, str) and leaf in ["numpy", "jax"]),
+        leaf_checker=lambda leaf: (
+            isinstance(leaf, ColumnObject | ParamFunction | ParamObject | ModuleType)
+        ),
         tree_name="policy_environment",
     )
 

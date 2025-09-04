@@ -34,6 +34,10 @@ def processed_data(
         qname = dt.qname_from_tree_path(path)
         if path == ("p_id",):
             continue
+        if not hasattr(data, "__len__"):
+            # Scalars don't need to be sorted.
+            processed_input_data[qname] = data
+            continue
 
         sorted_data = xnp.asarray(data[input_data__sort_indices])
 

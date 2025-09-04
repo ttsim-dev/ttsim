@@ -14,6 +14,8 @@ from ttsim.interface_dag_elements.specialized_environment import (
     with_partialled_params_and_scalars,
     with_processed_params_and_scalars,
 )
+from ttsim.main_args import InputData, TTTargets
+from ttsim.main_target import MainTarget
 from ttsim.tt import (
     AggType,
     DictParam,
@@ -841,3 +843,25 @@ def test_can_override_ttsim_objects_with_data(
     assert flat_actual.keys() == flat_expected.keys()
     for key in flat_expected:
         numpy.testing.assert_array_almost_equal(flat_actual[key], flat_expected[key])
+
+
+def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backend):
+    policy_environment = {
+        "identity": identity,
+        "identity_plus_one": identity_plus_one,
+    }
+    input_data = {
+        "p_id": xnp.array([1, 2, 3]),
+        "identity": 1,
+    }
+    root_nodes = main(
+        main_target=MainTarget.labels.root_nodes,
+        policy_environment=policy_environment,
+        input_data=InputData.tree(input_data),
+        tt_targets=TTTargets.tree({"identity_plus_one": None}),
+        policy_date=datetime.date(2024, 1, 1),
+        evaluation_date_str="2024-01-01",
+        backend=backend,
+        include_warn_nodes=False,
+    )
+    assert root_nodes == set()
