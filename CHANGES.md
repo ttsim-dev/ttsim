@@ -4,13 +4,10 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## Unreleased
-
-- {gh}`52` Fix input data and policy environment `fail_if` checks
-  ({ghuser}`MImmesberger`)
-
 ## v1.1.1 — unpublished
 
+- {gh}`52` Fix fail_if checks: input data tree was too greedy and environment had an
+  ambiguous name. ({ghuser}`MImmesberger`)
 - {gh}`49` Fix test failure on WSL2 due to different DAG execution order
   ({ghuser}`JuergenWiemers`)
 

@@ -304,6 +304,8 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
         raise ValueError(message)
 
     # Check that all arrays have the same length as the p_id array.
+    if not hasattr(input_data__flat[("p_id",)], "__len__"):
+        raise ValueError("`p_id` must be an array or series.")
     len_p_id_array = len(input_data__flat[("p_id",)])
     faulty_arrays: list[str] = []
     for path, inp in input_data__flat.items():
