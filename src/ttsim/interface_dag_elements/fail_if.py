@@ -35,7 +35,6 @@ from ttsim.tt.param_objects import (
     PLACEHOLDER_FIELD,
     PLACEHOLDER_VALUE,
     ParamObject,
-    ScalarParam,
 )
 
 if TYPE_CHECKING:
@@ -321,50 +320,18 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
 
 
 @fail_function()
-def environment_is_invalid(
+def policy_environmen_is_invalid(
     policy_environment: PolicyEnvironment,
 ) -> None:
     """Validate that the environment is a pytree with supported types."""
-    if not isinstance(policy_environment, dict):
-        raise TypeError(
-            "policy_environment must be a dict, got {type(policy_environment)}."
-        )
-
-    # Check that the policy environment is valid
     assert_valid_ttsim_pytree(
-        tree={
-            k: v
-            for k, v in policy_environment.items()
-            if k
-            not in ["evaluation_year", "evaluation_month", "evaluation_day", "backend"]
-        },
+        tree=policy_environment,
         leaf_checker=lambda leaf: (
             isinstance(leaf, ColumnObject | ParamFunction | ParamObject | ModuleType)
         ),
         tree_name="policy_environment",
     )
-    # Check special paths explicitly
-    if "backend" in policy_environment and policy_environment.get("backend") not in [
-        "numpy",
-        "jax",
-    ]:
-        raise ValueError(
-            f"backend must be 'numpy' or 'jax', got {policy_environment.get('backend')}"
-        )
-    invalid_evaluation_dates = [
-        field
-        for field in ["evaluation_year", "evaluation_month", "evaluation_day"]
-        if field in policy_environment
-        and not isinstance(
-            policy_environment.get(field), int | PolicyInput | ScalarParam
-        )
-    ]
-    if invalid_evaluation_dates:
-        raise TypeError(
-            f"{', '.join(invalid_evaluation_dates)} must be int, PolicyInput, or a ScalarParam."
-        )
 
-    # Check for incorrect leaf names
     flat_policy_environment = dt.flatten_to_tree_paths(policy_environment)
     paths_with_incorrect_leaf_names = [
         f"    {p}"

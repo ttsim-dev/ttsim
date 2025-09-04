@@ -9,6 +9,7 @@ import dags.tree as dt
 import numpy
 import pandas as pd
 import pytest
+
 from mettsim import middle_earth
 
 try:
@@ -24,7 +25,6 @@ from ttsim.interface_dag_elements.fail_if import (
     active_periods_overlap,
     assert_valid_ttsim_pytree,
     endogenous_p_id_among_targets,
-    environment_is_invalid,
     foreign_keys_are_invalid_in_data,
     group_ids_are_outside_top_level_namespace,
     group_variables_are_not_constant_within_groups,
@@ -36,6 +36,7 @@ from ttsim.interface_dag_elements.fail_if import (
     non_convertible_objects_in_results_tree,
     param_function_depends_on_column_objects,
     paths_are_missing_in_targets_tree_mapper,
+    policy_environmen_is_invalid,
     targets_are_not_in_specialized_environment_or_data,
 )
 from ttsim.tt import (
@@ -1486,9 +1487,9 @@ def test_invalid_input_data_tree_via_main(
         ),
     ],
 )
-def test_fail_if_environment_is_invalid(policy_environment, match):
+def test_fail_if_policy_environmen_is_invalid(policy_environment, match):
     with pytest.raises(TypeError, match=match):
-        environment_is_invalid(policy_environment)
+        policy_environmen_is_invalid(policy_environment)
 
 
 @pytest.mark.parametrize(
@@ -1511,7 +1512,6 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
         # Valid environment with module types
         {
             "numpy_module": numpy,
-            "backend": "numpy",
         },
         # Valid environment with nested structure
         {
@@ -1527,72 +1527,12 @@ def test_fail_if_environment_is_invalid(policy_environment, match):
             "some_param_func_returning_array_of_length_2": some_param_func_returning_array_of_length_2,
             "some_dict_param": some_dict_param,
             "module": numpy,
-            "backend": "jax",
         },
     ],
 )
-def test_environment_is_invalid_passes(policy_environment):
+def test_policy_environment_is_invalid_passes(policy_environment):
     """Test that valid environments pass the validation."""
-    environment_is_invalid(policy_environment)
-
-
-@pytest.mark.parametrize(
-    "evaluation_date_dict",
-    [
-        {
-            "evaluation_year": 2024,
-            "evaluation_month": 1,
-            "evaluation_day": 1,
-        },
-        {
-            "evaluation_year": ScalarParam(value=2024),
-            "evaluation_month": ScalarParam(value=1),
-            "evaluation_day": ScalarParam(value=1),
-        },
-    ],
-)
-def test_can_pass_evaluation_date_to_policy_environment(
-    xnp, backend, evaluation_date_dict
-):
-    @policy_function()
-    def some_func():
-        return 1
-
-    policy_environment = {
-        **evaluation_date_dict,
-        "some_func": some_func,
-    }
-    main(
-        main_target=MainTarget.results.tree,
-        policy_environment=policy_environment,
-        input_data=InputData.tree({"p_id": xnp.array([0])}),
-        tt_targets=TTTargets.tree({"some_func": None}),
-        backend=backend,
-        include_warn_nodes=False,
-    )
-
-
-def test_raises_error_if_evaluation_date_has_wrong_type():
-    policy_environment = {
-        "evaluation_year": "2024",
-        "evaluation_month": "1",
-        "evaluation_day": "1",
-    }
-    with pytest.raises(
-        TypeError,
-        match="evaluation_year, evaluation_month, evaluation_day must be int, PolicyInput, or a ScalarParam.",
-    ):
-        environment_is_invalid(policy_environment)
-
-
-def test_raises_error_if_backend_has_wrong_type():
-    policy_environment = {
-        "backend": "not_numpy_or_jax",
-    }
-    with pytest.raises(
-        ValueError, match="backend must be 'numpy' or 'jax', got not_numpy_or_jax"
-    ):
-        environment_is_invalid(policy_environment)
+    policy_environmen_is_invalid(policy_environment)
 
 
 def test_invalid_input_data_as_object_via_main(backend: Literal["jax", "numpy"]):
