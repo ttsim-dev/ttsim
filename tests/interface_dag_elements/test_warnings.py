@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Literal
 import numpy
 import pandas as pd
 import pytest
-from mettsim import middle_earth
 
+from mettsim import middle_earth
 from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt import ScalarParam, group_creation_function, policy_function
 
@@ -191,5 +191,20 @@ def test_warn_if_tt_dag_includes_functions_with_warn_msg_if_included_set(
             policy_environment=env,
             tt_targets=TTTargets(tree={"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
+            backend=backend,
+        )
+
+
+def test_warn_if_tt_function_type_annotations_turned_off(
+    minimal_data_tree: NestedData,
+    backend: Literal["jax", "numpy"],
+):
+    with pytest.warns(match="`tt_function_set_annotations` is set to False."):
+        main(
+            main_target=MainTarget.results.df_with_mapper,
+            policy_environment=mettsim_environment(backend),
+            tt_targets=TTTargets(tree={"hh_id": None}),
+            input_data=InputData.tree(tree=minimal_data_tree),
+            tt_function_set_annotations=False,
             backend=backend,
         )

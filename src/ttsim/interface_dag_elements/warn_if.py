@@ -148,3 +148,17 @@ def tt_dag_includes_function_with_warn_msg_if_included_set(
             f"following values:\n\n{format_list_linewise(my_warnings)}"
         )
         warnings.warn(UserWarning(msg), stacklevel=2)
+
+
+@warn_function()
+def tt_function_type_annotations_turned_off(tt_function_set_annotations: bool) -> None:
+    """Warn if `tt_function_set_annotations` is set to False."""
+    if not tt_function_set_annotations:
+        msg = (
+            "`tt_function_set_annotations` is set to False. This means that type "
+            "annotations are not considered when creating the tax-transfer function."
+            "This disables some of the safety checks via `fail_if` nodes. If your "
+            "`main` run is not working as expected, try setting "
+            "`tt_function_set_annotations` to True."
+        )
+        warnings.warn(UserWarning(msg), stacklevel=2)
