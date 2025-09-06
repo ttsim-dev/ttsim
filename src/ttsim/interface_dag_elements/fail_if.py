@@ -13,7 +13,7 @@ import networkx as nx
 import numpy
 import optree
 import pandas as pd
-from dags import get_free_arguments
+from dags import create_dag, get_free_arguments
 
 try:
     import jax
@@ -54,6 +54,7 @@ if TYPE_CHECKING:
         QNameData,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,
         SpecEnvWithPartialledParamsAndScalars,
+        SpecEnvWithProcessedParamsAndScalars,
         UnorderedQNames,
     )
 
@@ -942,5 +943,72 @@ def endogenous_p_id_among_targets(
             "Please remove these from your targets specification. If you need "
             "these endogenous person identifiers, please add your request to "
             "https://github.com/ttsim-dev/ttsim/issues/43"
+        )
+        raise ValueError(msg)
+
+
+@fail_function()
+def passed_scalar_inputs_for_natively_vectorized_functions(
+    tt_function_set_annotations: bool,
+    specialized_environment__with_processed_params_and_scalars: SpecEnvWithProcessedParamsAndScalars,
+    processed_data: QNameData,
+    labels__column_targets: OrderedQNames,
+) -> None:
+    """Fail if scalar inputs (as opposed to arrays) are passed to functions that are
+    natively vectorized.
+
+    While scalar inputs are generally allowed, they cause problems if directly used in
+    natively vectorized functions (e.g. aggregations or group creation functions). If
+    `tt_function_set_annotations` is set to True, this fail function catches this issue
+    to yield a more helpful error message.
+    """
+    if not tt_function_set_annotations:
+        # If type annotations are not set, we cannot check this.
+        return
+
+    column_functions = {
+        k: v
+        for k, v in specialized_environment__with_processed_params_and_scalars.items()
+        if isinstance(v, ColumnFunction)
+    }
+
+    dag = create_dag(
+        functions=column_functions,
+        targets=labels__column_targets,
+    )
+
+    root_nodes = nx.subgraph_view(
+        dag,
+        filter_node=lambda n: dag.in_degree(n) == 0,
+    ).nodes
+
+    nodes_with_root_node_inputs = {
+        n: column_functions[n]
+        for n in dag.nodes()
+        if any(root_node in dag.predecessors(n) for root_node in root_nodes)
+    }
+
+    scalars_in_processed_data = {
+        k for k, v in processed_data.items() if isinstance(v, (int, float, bool))
+    }
+
+    root_nodes_supposed_to_be_arrays: set[str] = set()
+    for func in nodes_with_root_node_inputs.values():
+        args = get_free_arguments(func.function)
+        annotations = func.function.__annotations__
+        for arg in args:
+            if arg in scalars_in_processed_data and "Column" in annotations[arg]:
+                root_nodes_supposed_to_be_arrays.add(str(dt.tree_path_from_qname(arg)))
+
+    if root_nodes_supposed_to_be_arrays:
+        formatted = "\n".join(
+            f"    - {path}" for path in sorted(root_nodes_supposed_to_be_arrays)
+        )
+        msg = (
+            "The following root nodes must be passed as arrays or series, but were "
+            "passed as scalars in the input data:\n\n"
+            f"{formatted}\n\n"
+            "To fix this, pass them as arrays (numpy, jax.numpy) or pd.Series matching "
+            "the length of `p_id`."
         )
         raise ValueError(msg)

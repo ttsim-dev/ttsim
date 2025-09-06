@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import pandas as pd
 import pytest
-from mettsim import middle_earth
 
+from mettsim import middle_earth
 from ttsim import InputData, MainTarget, TTTargets, main
 from ttsim.tt.column_objects_param_function import policy_function
 
@@ -264,48 +264,4 @@ def test_input_data_reordering_with_distinct_values(
     )
     pd.testing.assert_frame_equal(
         expected, result, check_dtype=False, check_index_type=False
-    )
-
-
-def test_scalar_input_data(xnp: ModuleType, backend: Literal["numpy", "jax"]):
-    input_data_tree = {
-        "age": 30,
-        "kin_id": 0,
-        "orc_hunting_bounty": {
-            "large_orcs_hunted": 10,
-            "small_orcs_hunted": 20,
-        },
-        "p_id": xnp.array([0, 1, 2]),
-        "p_id_parent_1": -1,
-        "p_id_parent_2": -1,
-        "p_id_spouse": -1,
-        "parent_is_noble": False,
-        "payroll_tax": {
-            "child_tax_credit": {
-                "p_id_recipient": -1,
-            },
-            "income": {
-                "gross_wage_y": xnp.array([10000, 20000, 30000]),
-            },
-        },
-        "property_tax": {
-            "acre_size_in_hectares": 10,
-        },
-        "wealth": 10000,
-    }
-    main(
-        main_target=MainTarget.results.df_with_nested_columns,
-        policy_date_str="2025-01-01",
-        input_data=InputData.tree(input_data_tree),
-        tt_targets=TTTargets(
-            tree={
-                "wealth_tax": {"amount_y": None},
-                "property_tax": {"amount_y": None},
-                "payroll_tax": {"amount_y": None},
-                "orc_hunting_bounty": {"amount": None},
-                "housing_benefits": {"amount_y_fam": None},
-            }
-        ),
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
-        backend=backend,
     )
