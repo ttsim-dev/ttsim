@@ -1947,3 +1947,64 @@ def test_endogenous_p_id_among_targets_via_main(xnp):
             tt_targets=TTTargets(tree={"p_id": None, "p_id_person": None}),
             input_data=InputData.tree(tree={"p_id": xnp.array([0, 1, 2])}),
         )
+
+
+def test_pass_scalars_for_natively_vectorized_functions(
+    xnp: ModuleType, backend: Literal["numpy", "jax"]
+):
+    input_data_tree = {
+        "age": 30,
+        "kin_id": 0,
+        "orc_hunting_bounty": {
+            "large_orcs_hunted": 10,
+            "small_orcs_hunted": 20,
+        },
+        "p_id": xnp.array([0, 1, 2]),
+        "p_id_parent_1": -1,
+        "p_id_parent_2": -1,
+        "p_id_spouse": -1,
+        "parent_is_noble": False,
+        "payroll_tax": {
+            "child_tax_credit": {
+                "p_id_recipient": -1,
+            },
+            "income": {
+                "gross_wage_y": xnp.array([10000, 20000, 30000]),
+            },
+        },
+        "property_tax": {
+            "acre_size_in_hectares": 10,
+        },
+        "wealth": 10000,
+    }
+    with pytest.raises(
+        ValueError,
+        match="The following root nodes must be passed as arrays or series, but were "
+        "passed as scalars in the input data:\n\n"
+        "    - \\('age',\\)\n"
+        "    - \\('kin_id',\\)\n"
+        "    - \\('p_id_parent_1',\\)\n"
+        "    - \\('p_id_parent_2',\\)\n"
+        "    - \\('p_id_spouse',\\)\n"
+        "    - \\('parent_is_noble',\\)\n"
+        "    - \\('payroll_tax', 'child_tax_credit', 'p_id_recipient'\\)\n"
+        "    - \\('wealth',\\)\n\n"
+        "To fix this, pass them as arrays \\(numpy, jax\\.numpy\\) or pd\\.Series matching "
+        "the length of `p_id`\\.",
+    ):
+        main(
+            main_target=MainTarget.results.df_with_nested_columns,
+            policy_date_str="2025-01-01",
+            input_data=InputData.tree(input_data_tree),
+            tt_targets=TTTargets(
+                tree={
+                    "wealth_tax": {"amount_y": None},
+                    "property_tax": {"amount_y": None},
+                    "payroll_tax": {"amount_y": None},
+                    "orc_hunting_bounty": {"amount": None},
+                    "housing_benefits": {"amount_y_fam": None},
+                }
+            ),
+            orig_policy_objects={"root": middle_earth.ROOT_PATH},
+            backend=backend,
+        )

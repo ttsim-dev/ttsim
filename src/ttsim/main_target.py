@@ -29,6 +29,9 @@ class WarnIf(MainTargetABC):
     tt_dag_includes_function_with_warn_msg_if_included_set: str = (
         "warn_if__tt_dag_includes_function_with_warn_msg_if_included_set"
     )
+    tt_function_type_annotations_turned_off: str = (
+        "warn_if__tt_function_type_annotations_turned_off"
+    )
 
 
 @dataclass(frozen=True)
@@ -73,6 +76,9 @@ class FailIf(MainTargetABC):
     targets_tree_is_invalid: str = "fail_if__targets_tree_is_invalid"
     tt_dag_includes_function_with_fail_msg_if_included_set: str = (
         "fail_if__tt_dag_includes_function_with_fail_msg_if_included_set"
+    )
+    passed_scalar_inputs_for_natively_vectorized_functions: str = (
+        "fail_if__passed_scalar_inputs_for_natively_vectorized_functions"
     )
 
 
