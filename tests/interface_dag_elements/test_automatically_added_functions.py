@@ -103,7 +103,7 @@ def test_q_to_y(quarterly_value: float, yearly_value: float) -> None:
     ("quarterly_value", "monthly_value"),
     [
         (0, 0),
-        (1, 3),
+        (3, 1),
     ],
 )
 def test_q_to_m(quarterly_value: float, monthly_value: float) -> None:

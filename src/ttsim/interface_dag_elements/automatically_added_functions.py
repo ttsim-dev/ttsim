@@ -155,7 +155,7 @@ def q_to_m(value: float) -> float:
     -------
     Monthly value.
     """
-    return value * _M_PER_Y / _Q_PER_Y
+    return value * _Q_PER_Y / _M_PER_Y
 
 
 def q_to_w(value: float) -> float:
