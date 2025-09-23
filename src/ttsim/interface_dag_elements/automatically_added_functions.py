@@ -62,347 +62,347 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
         raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
-def y_to_q(value: float) -> float:
+def per_y_to_per_q(value: float) -> float:
     """
-    Converts yearly to quarterly values.
+    Converts values per year to values per quarter.
 
     Parameters
     ----------
     value
-        Yearly value to be converted to quarterly value.
+        Value per year to be converted to value per quarter.
 
     Returns
     -------
-    Quarterly value.
+    Value per quarter.
     """
     return value / _Q_PER_Y
 
 
-def y_to_m(value: float) -> float:
+def per_y_to_per_m(value: float) -> float:
     """
-    Converts yearly to monthly values.
+    Converts values per year to values per month.
 
     Parameters
     ----------
     value
-        Yearly value to be converted to monthly value.
+        Value per year to be converted to value per month.
 
     Returns
     -------
-    Monthly value.
+    Value per month.
     """
     return value / _M_PER_Y
 
 
-def y_to_w(value: float) -> float:
+def per_y_to_per_w(value: float) -> float:
     """
-    Converts yearly to weekly values.
+    Converts values per year to values per week.
 
     Parameters
     ----------
     value
-        Yearly value to be converted to weekly value.
+        Value per year to be converted to value per week.
 
     Returns
     -------
-    Weekly value.
+    Value per week.
     """
     return value / _W_PER_Y
 
 
-def y_to_d(value: float) -> float:
+def per_y_to_per_d(value: float) -> float:
     """
-    Converts yearly to daily values.
+    Converts values per year to values per day.
 
     Parameters
     ----------
     value
-        Yearly value to be converted to daily value.
+        Value per year to be converted to value per day.
 
     Returns
     -------
-    Daily value.
+    Value per day.
     """
     return value / _D_PER_Y
 
 
-def q_to_y(value: float) -> float:
+def per_q_to_per_y(value: float) -> float:
     """
-    Converts quarterly to yearly values.
+    Converts values per quarter to values per year.
 
     Parameters
     ----------
     value
-        Quarterly value to be converted to yearly value.
+        Value per quarter to be converted to value per year.
 
     Returns
     -------
-    Yearly value.
+    Value per year.
     """
     return value * _Q_PER_Y
 
 
-def q_to_m(value: float) -> float:
+def per_q_to_per_m(value: float) -> float:
     """
-    Converts quarterly to monthly values.
+    Converts values per quarter to values per month.
 
     Parameters
     ----------
     value
-        Quarterly value to be converted to monthly value.
+        Value per quarter to be converted to value per month.
 
     Returns
     -------
-    Monthly value.
+    Value per month.
     """
     return value * _Q_PER_Y / _M_PER_Y
 
 
-def q_to_w(value: float) -> float:
+def per_q_to_per_w(value: float) -> float:
     """
-    Converts quarterly to weekly values.
+    Converts values per quarter to values per week.
 
     Parameters
     ----------
     value
-        Quarterly value to be converted to weekly value.
+        Value per quarter to be converted to value per week.
 
     Returns
     -------
-    Weekly value.
+    Value per week.
     """
     return value * _Q_PER_Y / _W_PER_Y
 
 
-def q_to_d(value: float) -> float:
+def per_q_to_per_d(value: float) -> float:
     """
-    Converts quarterly to daily values.
+    Converts values per quarter to values per day.
 
     Parameters
     ----------
     value
-        Quarterly value to be converted to daily value.
+        Value per quarter to be converted to value per day.
 
     Returns
     -------
-    Daily value.
+    Value per day.
     """
     return value * _Q_PER_Y / _D_PER_Y
 
 
-def m_to_y(value: float) -> float:
+def per_m_to_per_y(value: float) -> float:
     """
-    Converts monthly to yearly values.
+    Converts values per month to values per year.
 
     Parameters
     ----------
     value
-        Monthly value to be converted to yearly value.
+        Value per month to be converted to value per year.
 
     Returns
     -------
-    Yearly value.
+    Value per year.
     """
     return value * _M_PER_Y
 
 
-def m_to_q(value: float) -> float:
+def per_m_to_per_q(value: float) -> float:
     """
-    Converts monthly to quarterly values.
+    Converts values per month to values per quarter.
 
     Parameters
     ----------
     value
-        Monthly value to be converted to quarterly value.
+        Value per month to be converted to value per quarter.
 
     Returns
     -------
-    Quarterly value.
+    Value per quarter.
     """
     return value * _M_PER_Y / _Q_PER_Y
 
 
-def m_to_w(value: float) -> float:
+def per_m_to_per_w(value: float) -> float:
     """
-    Converts monthly to weekly values.
+    Converts values per month to values per week.
 
     Parameters
     ----------
     value
-        Monthly value to be converted to weekly value.
+        Value per month to be converted to value per week.
 
     Returns
     -------
-    Weekly value.
+    Value per week.
     """
     return value * _M_PER_Y / _W_PER_Y
 
 
-def m_to_d(value: float) -> float:
+def per_m_to_per_d(value: float) -> float:
     """
-    Converts monthly to daily values.
+    Converts values per month to values per day.
 
     Parameters
     ----------
     value
-        Monthly value to be converted to daily value.
+        Value per month to be converted to value per day.
 
     Returns
     -------
-    Daily value.
+    Value per day.
     """
     return value * _M_PER_Y / _D_PER_Y
 
 
-def w_to_y(value: float) -> float:
+def per_w_to_per_y(value: float) -> float:
     """
-    Converts weekly to yearly values.
+    Converts values per week to values per year.
 
     Parameters
     ----------
     value
-        Weekly value to be converted to yearly value.
+        Value per week to be converted to value per year.
 
     Returns
     -------
-    Yearly value.
+    Value per year.
     """
     return value * _W_PER_Y
 
 
-def w_to_q(value: float) -> float:
+def per_w_to_per_q(value: float) -> float:
     """
-    Converts weekly to quarterly values.
+    Converts values per week to values per quarter.
 
     Parameters
     ----------
     value
-        Weekly value to be converted to quarterly value.
+        Value per week to be converted to value per quarter.
 
     Returns
     -------
-    Quarterly value.
+    Value per quarter.
     """
     return value * _W_PER_Y / _Q_PER_Y
 
 
-def w_to_m(value: float) -> float:
+def per_w_to_per_m(value: float) -> float:
     """
-    Converts weekly to monthly values.
+    Converts values per week to values per month.
 
     Parameters
     ----------
     value
-        Weekly value to be converted to monthly value.
+        Value per week to be converted to value per month.
 
     Returns
     -------
-    Monthly value.
+    Value per month.
     """
     return value * _W_PER_Y / _M_PER_Y
 
 
-def w_to_d(value: float) -> float:
+def per_w_to_per_d(value: float) -> float:
     """
-    Converts weekly to daily values.
+    Converts values per week to values per day.
 
     Parameters
     ----------
     value
-        Weekly value to be converted to daily value.
+        Value per week to be converted to value per day.
 
     Returns
     -------
-    Daily value.
+    Value per day.
     """
     return value * _W_PER_Y / _D_PER_Y
 
 
-def d_to_y(value: float) -> float:
+def per_d_to_per_y(value: float) -> float:
     """
-    Converts daily to yearly values.
+    Converts values per day to values per year.
 
     Parameters
     ----------
     value
-        Daily value to be converted to yearly value.
+        Value per day to be converted to value per year.
 
     Returns
     -------
-    Yearly value.
+    Value per year.
     """
     return value * _D_PER_Y
 
 
-def d_to_m(value: float) -> float:
+def per_d_to_per_m(value: float) -> float:
     """
-    Converts daily to monthly values.
+    Converts values per day to values per month.
 
     Parameters
     ----------
     value
-        Daily value to be converted to monthly value.
+        Value per day to be converted to value per month.
 
     Returns
     -------
-    Monthly value.
+    Value per month.
     """
     return value * _D_PER_Y / _M_PER_Y
 
 
-def d_to_q(value: float) -> float:
+def per_d_to_per_q(value: float) -> float:
     """
-    Converts daily to quarterly values.
+    Converts values per day to values per quarter.
 
     Parameters
     ----------
     value
-        Daily value to be converted to quarterly value.
+        Value per day to be converted to value per quarter.
 
     Returns
     -------
-    Quarterly value.
+    Value per quarter.
     """
     return value * _D_PER_Y / _Q_PER_Y
 
 
-def d_to_w(value: float) -> float:
+def per_d_to_per_w(value: float) -> float:
     """
-    Converts daily to weekly values.
+    Converts values per day to values per week.
 
     Parameters
     ----------
     value
-        Daily value to be converted to weekly value.
+        Value per day to be converted to value per week.
 
     Returns
     -------
-    Weekly value.
+    Value per week.
     """
     return value * _D_PER_Y / _W_PER_Y
 
 
 _time_conversion_functions = {
-    "y_to_m": y_to_m,
-    "y_to_q": y_to_q,
-    "y_to_w": y_to_w,
-    "y_to_d": y_to_d,
-    "q_to_y": q_to_y,
-    "q_to_m": q_to_m,
-    "q_to_w": q_to_w,
-    "q_to_d": q_to_d,
-    "m_to_y": m_to_y,
-    "m_to_q": m_to_q,
-    "m_to_w": m_to_w,
-    "m_to_d": m_to_d,
-    "w_to_y": w_to_y,
-    "w_to_q": w_to_q,
-    "w_to_m": w_to_m,
-    "w_to_d": w_to_d,
-    "d_to_y": d_to_y,
-    "d_to_m": d_to_m,
-    "d_to_q": d_to_q,
-    "d_to_w": d_to_w,
+    "per_y_to_per_m": per_y_to_per_m,
+    "per_y_to_per_q": per_y_to_per_q,
+    "per_y_to_per_w": per_y_to_per_w,
+    "per_y_to_per_d": per_y_to_per_d,
+    "per_q_to_per_y": per_q_to_per_y,
+    "per_q_to_per_m": per_q_to_per_m,
+    "per_q_to_per_w": per_q_to_per_w,
+    "per_q_to_per_d": per_q_to_per_d,
+    "per_m_to_per_y": per_m_to_per_y,
+    "per_m_to_per_q": per_m_to_per_q,
+    "per_m_to_per_w": per_m_to_per_w,
+    "per_m_to_per_d": per_m_to_per_d,
+    "per_w_to_per_y": per_w_to_per_y,
+    "per_w_to_per_q": per_w_to_per_q,
+    "per_w_to_per_m": per_w_to_per_m,
+    "per_w_to_per_d": per_w_to_per_d,
+    "per_d_to_per_y": per_d_to_per_y,
+    "per_d_to_per_m": per_d_to_per_m,
+    "per_d_to_per_q": per_d_to_per_q,
+    "per_d_to_per_w": per_d_to_per_w,
 }
 
 
@@ -549,7 +549,7 @@ def _create_one_set_of_time_conversion_functions(
             function=_create_function_for_time_unit(
                 source=qname_source,
                 converter=_time_conversion_functions[
-                    f"{time_unit}_to_{target_time_unit}"
+                    f"per_{time_unit}_to_per_{target_time_unit}"
                 ],
             ),
             source=qname_source,
@@ -557,7 +557,7 @@ def _create_one_set_of_time_conversion_functions(
             end_date=element.end_date,
             description=(
                 f"Time conversion of {dt.tree_path_from_qname(qname_source)} "
-                f"from {time_unit} to {target_time_unit}"
+                f"from per {time_unit} to per {target_time_unit}"
             ),
         )
 
