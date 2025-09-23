@@ -62,6 +62,22 @@ def fail_if_multiple_time_units_for_same_base_name_and_group(
         raise ValueError(f"Multiple time units for base names: {invalid}")
 
 
+def y_to_q(value: float) -> float:
+    """
+    Converts values on year level to values on quarter level.
+
+    Parameters
+    ----------
+    value
+        Value on year level to be converted to value on quarter level.
+
+    Returns
+    -------
+    Value on quarter level.
+    """
+    return value * _Q_PER_Y
+
+
 def per_y_to_per_q(value: float) -> float:
     """
     Converts values per year to values per quarter.
@@ -75,7 +91,23 @@ def per_y_to_per_q(value: float) -> float:
     -------
     Value per quarter.
     """
-    return value / _Q_PER_Y
+    return q_to_y(value)
+
+
+def y_to_m(value: float) -> float:
+    """
+    Converts values on year level to values on month level.
+
+    Parameters
+    ----------
+    value
+        Value on year level to be converted to value on month level.
+
+    Returns
+    -------
+    Value on month level.
+    """
+    return value * _M_PER_Y
 
 
 def per_y_to_per_m(value: float) -> float:
@@ -91,7 +123,23 @@ def per_y_to_per_m(value: float) -> float:
     -------
     Value per month.
     """
-    return value / _M_PER_Y
+    return m_to_y(value)
+
+
+def y_to_w(value: float) -> float:
+    """
+    Converts values on year level to values on week level.
+
+    Parameters
+    ----------
+    value
+        Value on year level to be converted to value on week level.
+
+    Returns
+    -------
+    Value on week level.
+    """
+    return value * _W_PER_Y
 
 
 def per_y_to_per_w(value: float) -> float:
@@ -107,7 +155,23 @@ def per_y_to_per_w(value: float) -> float:
     -------
     Value per week.
     """
-    return value / _W_PER_Y
+    return w_to_y(value)
+
+
+def y_to_d(value: float) -> float:
+    """
+    Converts values on year level to values on day level.
+
+    Parameters
+    ----------
+    value
+        Value on year level to be converted to value on day level.
+
+    Returns
+    -------
+    Value on day level.
+    """
+    return value * _D_PER_Y
 
 
 def per_y_to_per_d(value: float) -> float:
@@ -123,7 +187,23 @@ def per_y_to_per_d(value: float) -> float:
     -------
     Value per day.
     """
-    return value / _D_PER_Y
+    return d_to_y(value)
+
+
+def q_to_y(value: float) -> float:
+    """
+    Converts values on quarter level to values on year level.
+
+    Parameters
+    ----------
+    value
+        Value on quarter level to be converted to value on year level.
+
+    Returns
+    -------
+    Value on year level.
+    """
+    return value / _Q_PER_Y
 
 
 def per_q_to_per_y(value: float) -> float:
@@ -139,7 +219,23 @@ def per_q_to_per_y(value: float) -> float:
     -------
     Value per year.
     """
-    return value * _Q_PER_Y
+    return y_to_q(value)
+
+
+def q_to_m(value: float) -> float:
+    """
+    Converts values on quarter level to values on month level.
+
+    Parameters
+    ----------
+    value
+        Value on quarter level to be converted to value on month level.
+
+    Returns
+    -------
+    Value on month level.
+    """
+    return value * _M_PER_Y / _Q_PER_Y
 
 
 def per_q_to_per_m(value: float) -> float:
@@ -155,7 +251,23 @@ def per_q_to_per_m(value: float) -> float:
     -------
     Value per month.
     """
-    return value * _Q_PER_Y / _M_PER_Y
+    return m_to_q(value)
+
+
+def q_to_w(value: float) -> float:
+    """
+    Converts values on quarter level to values on week level.
+
+    Parameters
+    ----------
+    value
+        Value on quarter level to be converted to value on week level.
+
+    Returns
+    -------
+    Value on week level.
+    """
+    return value * _W_PER_Y / _Q_PER_Y
 
 
 def per_q_to_per_w(value: float) -> float:
@@ -171,7 +283,23 @@ def per_q_to_per_w(value: float) -> float:
     -------
     Value per week.
     """
-    return value * _Q_PER_Y / _W_PER_Y
+    return w_to_q(value)
+
+
+def q_to_d(value: float) -> float:
+    """
+    Converts values on quarter level to values on day level.
+
+    Parameters
+    ----------
+    value
+        Value on quarter level to be converted to value on day level.
+
+    Returns
+    -------
+    Value on day level.
+    """
+    return value * _D_PER_Y / _Q_PER_Y
 
 
 def per_q_to_per_d(value: float) -> float:
@@ -187,7 +315,23 @@ def per_q_to_per_d(value: float) -> float:
     -------
     Value per day.
     """
-    return value * _Q_PER_Y / _D_PER_Y
+    return d_to_q(value)
+
+
+def m_to_y(value: float) -> float:
+    """
+    Converts values on month level to values on year level.
+
+    Parameters
+    ----------
+    value
+        Value on month level to be converted to value on year level.
+
+    Returns
+    -------
+    Value on year level.
+    """
+    return value / _M_PER_Y
 
 
 def per_m_to_per_y(value: float) -> float:
@@ -203,7 +347,23 @@ def per_m_to_per_y(value: float) -> float:
     -------
     Value per year.
     """
-    return value * _M_PER_Y
+    return y_to_m(value)
+
+
+def m_to_q(value: float) -> float:
+    """
+    Converts values on month level to values on quarter level.
+
+    Parameters
+    ----------
+    value
+        Value on month level to be converted to value on quarter level.
+
+    Returns
+    -------
+    Value on quarter level.
+    """
+    return value * _Q_PER_Y / _M_PER_Y
 
 
 def per_m_to_per_q(value: float) -> float:
@@ -219,7 +379,23 @@ def per_m_to_per_q(value: float) -> float:
     -------
     Value per quarter.
     """
-    return value * _M_PER_Y / _Q_PER_Y
+    return q_to_m(value)
+
+
+def m_to_w(value: float) -> float:
+    """
+    Converts values on month level to values on week level.
+
+    Parameters
+    ----------
+    value
+        Value on month level to be converted to value on week level.
+
+    Returns
+    -------
+    Value on week level.
+    """
+    return value * _W_PER_Y / _M_PER_Y
 
 
 def per_m_to_per_w(value: float) -> float:
@@ -235,7 +411,23 @@ def per_m_to_per_w(value: float) -> float:
     -------
     Value per week.
     """
-    return value * _M_PER_Y / _W_PER_Y
+    return w_to_m(value)
+
+
+def m_to_d(value: float) -> float:
+    """
+    Converts values on month level to values on day level.
+
+    Parameters
+    ----------
+    value
+        Value on month level to be converted to value on day level.
+
+    Returns
+    -------
+    Value on day level.
+    """
+    return value * _D_PER_Y / _M_PER_Y
 
 
 def per_m_to_per_d(value: float) -> float:
@@ -251,7 +443,23 @@ def per_m_to_per_d(value: float) -> float:
     -------
     Value per day.
     """
-    return value * _M_PER_Y / _D_PER_Y
+    return d_to_m(value)
+
+
+def w_to_y(value: float) -> float:
+    """
+    Converts values on week level to values on year level.
+
+    Parameters
+    ----------
+    value
+        Value on week level to be converted to value on year level.
+
+    Returns
+    -------
+    Value on year level.
+    """
+    return value / _W_PER_Y
 
 
 def per_w_to_per_y(value: float) -> float:
@@ -267,7 +475,23 @@ def per_w_to_per_y(value: float) -> float:
     -------
     Value per year.
     """
-    return value * _W_PER_Y
+    return y_to_w(value)
+
+
+def w_to_q(value: float) -> float:
+    """
+    Converts values on week level to values on quarter level.
+
+    Parameters
+    ----------
+    value
+        Value on week level to be converted to value on quarter level.
+
+    Returns
+    -------
+    Value on quarter level.
+    """
+    return value * _Q_PER_Y / _W_PER_Y
 
 
 def per_w_to_per_q(value: float) -> float:
@@ -283,7 +507,23 @@ def per_w_to_per_q(value: float) -> float:
     -------
     Value per quarter.
     """
-    return value * _W_PER_Y / _Q_PER_Y
+    return q_to_w(value)
+
+
+def w_to_m(value: float) -> float:
+    """
+    Converts values on week level to values on month level.
+
+    Parameters
+    ----------
+    value
+        Value on week level to be converted to value on month level.
+
+    Returns
+    -------
+    Value on month level.
+    """
+    return value * _M_PER_Y / _W_PER_Y
 
 
 def per_w_to_per_m(value: float) -> float:
@@ -299,7 +539,23 @@ def per_w_to_per_m(value: float) -> float:
     -------
     Value per month.
     """
-    return value * _W_PER_Y / _M_PER_Y
+    return m_to_w(value)
+
+
+def w_to_d(value: float) -> float:
+    """
+    Converts values on week level to values on day level.
+
+    Parameters
+    ----------
+    value
+        Value on week level to be converted to value on day level.
+
+    Returns
+    -------
+    Value on day level.
+    """
+    return value * _D_PER_Y / _W_PER_Y
 
 
 def per_w_to_per_d(value: float) -> float:
@@ -315,7 +571,23 @@ def per_w_to_per_d(value: float) -> float:
     -------
     Value per day.
     """
-    return value * _W_PER_Y / _D_PER_Y
+    return d_to_w(value)
+
+
+def d_to_y(value: float) -> float:
+    """
+    Converts values on day level to values on year level.
+
+    Parameters
+    ----------
+    value
+        Value on day level to be converted to value on year level.
+
+    Returns
+    -------
+    Value on year level.
+    """
+    return value / _D_PER_Y
 
 
 def per_d_to_per_y(value: float) -> float:
@@ -331,7 +603,23 @@ def per_d_to_per_y(value: float) -> float:
     -------
     Value per year.
     """
-    return value * _D_PER_Y
+    return y_to_d(value)
+
+
+def d_to_m(value: float) -> float:
+    """
+    Converts values on day level to values on month level.
+
+    Parameters
+    ----------
+    value
+        Value on day level to be converted to value on month level.
+
+    Returns
+    -------
+    Value on month level.
+    """
+    return value * _M_PER_Y / _D_PER_Y
 
 
 def per_d_to_per_m(value: float) -> float:
@@ -347,7 +635,23 @@ def per_d_to_per_m(value: float) -> float:
     -------
     Value per month.
     """
-    return value * _D_PER_Y / _M_PER_Y
+    return m_to_d(value)
+
+
+def d_to_q(value: float) -> float:
+    """
+    Converts values on day level to values on quarter level.
+
+    Parameters
+    ----------
+    value
+        Value on day level to be converted to value on quarter level.
+
+    Returns
+    -------
+    Value on quarter level.
+    """
+    return value * _Q_PER_Y / _D_PER_Y
 
 
 def per_d_to_per_q(value: float) -> float:
@@ -363,7 +667,23 @@ def per_d_to_per_q(value: float) -> float:
     -------
     Value per quarter.
     """
-    return value * _D_PER_Y / _Q_PER_Y
+    return q_to_d(value)
+
+
+def d_to_w(value: float) -> float:
+    """
+    Converts values on day level to values on week level.
+
+    Parameters
+    ----------
+    value
+        Value on day level to be converted to value on week level.
+
+    Returns
+    -------
+    Value on week level.
+    """
+    return value * _W_PER_Y / _D_PER_Y
 
 
 def per_d_to_per_w(value: float) -> float:
@@ -379,7 +699,7 @@ def per_d_to_per_w(value: float) -> float:
     -------
     Value per week.
     """
-    return value * _D_PER_Y / _W_PER_Y
+    return w_to_d(value)
 
 
 _time_conversion_functions = {
