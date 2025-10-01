@@ -16,7 +16,6 @@ import networkx as nx
 from dags import create_dag
 
 from ttsim.interface_dag_elements import specialized_environment
-from ttsim.interface_dag_elements.automatically_added_functions import TIME_UNIT_LABELS
 from ttsim.interface_dag_elements.interface_node_objects import (
     InterfaceFunction,
     InterfaceInput,
@@ -37,6 +36,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
+from ttsim.unit_converters import TIME_UNIT_LABELS
 
 if TYPE_CHECKING:
     import datetime

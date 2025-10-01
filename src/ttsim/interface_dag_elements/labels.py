@@ -5,9 +5,6 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import networkx as nx
 
-from ttsim.interface_dag_elements.automatically_added_functions import (
-    TIME_UNIT_LABELS,
-)
 from ttsim.interface_dag_elements.interface_node_objects import (
     input_dependent_interface_function,
     interface_function,
@@ -18,6 +15,9 @@ from ttsim.interface_dag_elements.shared import (
     group_pattern,
 )
 from ttsim.tt.column_objects_param_function import PolicyInput
+from ttsim.unit_converters import (
+    TIME_UNIT_LABELS,
+)
 
 if TYPE_CHECKING:
     from types import ModuleType
