@@ -6,6 +6,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.1.1 — unpublished
 
+- {gh}`56` Add and expose time converters targeting stocks.
 - {gh}`53` Raise error if scalar is passed to ColumnFunction expecting array input.
   ({ghuser}`MImmesberger`)
 - {gh}`52` Fix fail_if checks: input data tree was too greedy and environment had an

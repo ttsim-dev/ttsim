@@ -5,9 +5,6 @@ from typing import TYPE_CHECKING
 import dags.tree as dt
 import networkx as nx
 
-from ttsim.interface_dag_elements.automatically_added_functions import (
-    TIME_UNIT_LABELS,
-)
 from ttsim.interface_dag_elements.interface_node_objects import (
     input_dependent_interface_function,
     interface_function,
@@ -18,6 +15,7 @@ from ttsim.interface_dag_elements.shared import (
     group_pattern,
 )
 from ttsim.tt.column_objects_param_function import PolicyInput
+from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -50,7 +48,7 @@ def top_level_namespace(
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
     """The elements of the top level namespace."""
-    time_units = tuple(TIME_UNIT_LABELS)
+    time_units = tuple(TIME_UNIT_IDS_TO_LABELS)
     direct_top_level_names = set(policy_environment)
 
     # Do not create variations for lower-level namespaces.
