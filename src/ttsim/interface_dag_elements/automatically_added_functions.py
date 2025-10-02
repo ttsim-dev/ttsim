@@ -24,7 +24,7 @@ from ttsim.tt.column_objects_param_function import (
 )
 from ttsim.tt.param_objects import ScalarParam
 from ttsim.unit_converters import (
-    TIME_UNIT_LABELS,
+    TIME_UNIT_IDS_TO_LABELS,
     per_d_to_per_m,
     per_d_to_per_q,
     per_d_to_per_w,
@@ -156,7 +156,7 @@ def create_time_conversion_functions(
     -------
     The functions dict with the new time conversion functions.
     """
-    time_units = tuple(TIME_UNIT_LABELS)
+    time_units = tuple(TIME_UNIT_IDS_TO_LABELS)
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         grouping_levels=grouping_levels,
         time_units=time_units,

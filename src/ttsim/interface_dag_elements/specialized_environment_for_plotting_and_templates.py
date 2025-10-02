@@ -36,7 +36,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
 )
 from ttsim.tt.param_objects import ParamObject
-from ttsim.unit_converters import TIME_UNIT_LABELS
+from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     import datetime
@@ -66,7 +66,7 @@ def qnames_to_derive_functions_from(
     policy inputs (if their base name is not already in the input columns).
     """
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
-        time_units=list(TIME_UNIT_LABELS),
+        time_units=list(TIME_UNIT_IDS_TO_LABELS),
         grouping_levels=labels__grouping_levels,
     )
     base_names_input_columns = {
