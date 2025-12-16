@@ -682,7 +682,7 @@ def test_fail_if_foreign_keys_point_to_self_when_they_must_not(backend):
 def test_fail_if_group_ids_are_outside_top_level_namespace():
     with pytest.raises(
         ValueError,
-        match="Group identifiers must live in the top-level namespace. Got:",
+        match=r"Group identifiers must live in the top-level namespace. Got:",
     ):
         group_ids_are_outside_top_level_namespace({"n1": {"fam_id": dummy_fam_id}})
 
@@ -714,7 +714,7 @@ def test_fail_if_group_variables_are_not_constant_within_groups():
 def test_fail_if_input_df_has_bool_or_numeric_column_names(df):
     with pytest.raises(
         ValueError,
-        match="DataFrame column names cannot be booleans or numbers.",
+        match=r"DataFrame column names cannot be booleans or numbers.",
     ):
         input_df_has_bool_or_numeric_column_names(df)
 
@@ -910,7 +910,7 @@ def test_fail_if_p_id_does_not_exist(xnp):
 
     with pytest.raises(
         ValueError,
-        match="The input data must contain the `p_id` column.",
+        match=r"The input data must contain the `p_id` column.",
     ):
         input_data_is_invalid(data, xnp)
 
@@ -919,7 +919,7 @@ def test_fail_if_p_id_is_missing_via_main(backend):
     data = {"fam_id": pd.Series([1, 2, 3], name="fam_id")}
     with pytest.raises(
         ValueError,
-        match="The input data must contain the `p_id` column.",
+        match=r"The input data must contain the `p_id` column.",
     ):
         main(
             main_target="fail_if__input_data_is_invalid",
@@ -973,7 +973,7 @@ def test_fail_if_p_id_is_not_unique_via_main(minimal_input_data, backend):
 def test_fail_if_p_id_is_not_int(data, xnp):
     with pytest.raises(
         ValueError,
-        match="The `p_id` column must be of integer dtype.",
+        match=r"The `p_id` column must be of integer dtype.",
     ):
         input_data_is_invalid(data, xnp)
 
@@ -1537,7 +1537,7 @@ def test_policy_environment_is_invalid_passes(policy_environment):
 def test_raises_error_if_p_id_is_passed_as_scalar(backend: Literal["jax", "numpy"]):
     with pytest.raises(
         ValueError,
-        match="`p_id` must be an array or series.",
+        match=r"`p_id` must be an array or series.",
     ):
         main(
             main_target=MainTarget.results.df_with_nested_columns,

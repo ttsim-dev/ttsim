@@ -474,7 +474,7 @@ def test_harmonize_main_target(main_target, expected):
     ],
 )
 def test_fail_if_input_structure_is_invalid(dict_inputs):
-    with pytest.raises(ValueError, match="Invalid inputs for main()"):
+    with pytest.raises(ValueError, match=r"Invalid inputs for main()"):
         _fail_if_input_structure_is_invalid(
             user_treedef=optree.tree_flatten(dict_inputs)[1],
             expected_treedef=optree.tree_flatten(MainTarget.to_dict())[1],
