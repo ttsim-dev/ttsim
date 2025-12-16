@@ -73,7 +73,7 @@ def test_insert_path_and_value(base, path_to_insert, value_to_insert, expected):
     ],
 )
 def test_insert_path_and_value_invalid(base, path_to_insert, value_to_insert):
-    with pytest.raises(ValueError, match="Conflicting paths in trees to merge."):
+    with pytest.raises(ValueError, match=r"Conflicting paths in trees to merge."):
         insert_path_and_value(
             base=base,
             path_to_insert=path_to_insert,
@@ -124,7 +124,7 @@ def test_merge_trees_valid(left, right, expected):
     [({"a": 1}, {"a": 2}), ({"a": 1}, {"a": 1}), ({"a": {"b": 1}}, {"a": {"b": 5}})],
 )
 def test_merge_trees_invalid(left, right):
-    with pytest.raises(ValueError, match="Conflicting paths in trees to merge."):
+    with pytest.raises(ValueError, match=r"Conflicting paths in trees to merge."):
         merge_trees(left=left, right=right)
 
 
