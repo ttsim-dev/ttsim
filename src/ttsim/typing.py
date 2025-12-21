@@ -31,7 +31,7 @@ if TYPE_CHECKING:
         NestedTargetDict,
     )
 
-    from ttsim.interface_dag_elements import (
+    from ttsim.interface_dag_elements.interface_node_objects import (
         InterfaceFunction,
         InterfaceInput,
     )
