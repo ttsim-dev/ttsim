@@ -99,7 +99,7 @@ def piecewise_polynomial(
 def get_piecewise_parameters(
     leaf_name: str,
     func_type: FUNC_TYPES,
-    parameter_dict: dict[int, dict[str, float]],
+    parameter_dict: dict[int, dict[str, float | str]],
     xnp: ModuleType,
 ) -> PiecewisePolynomialParamValue:
     """Create the objects for piecewise polynomial.
@@ -153,7 +153,7 @@ def get_piecewise_parameters(
 
 def get_piecewise_thresholds(  # noqa: C901
     leaf_name: str,
-    parameter_dict: dict[int, dict[str, float]],
+    parameter_dict: dict[int, dict[str, float | str]],
     xnp: ModuleType,
 ) -> tuple[
     Float[Array, " n_segments"],
