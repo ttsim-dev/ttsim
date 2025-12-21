@@ -6,7 +6,7 @@ import numpy
 import pytest
 
 try:
-    import jax_datetime
+    import jax_datetime  # ty: ignore[unresolved-import]
 
     my_datetime = jax_datetime.to_datetime
 except ImportError:
