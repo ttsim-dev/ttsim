@@ -42,7 +42,7 @@ class ParamObject:
     description: dict[Literal["de", "en"], str] | None = None
 
     def __post_init__(self) -> None:
-        if self.value is PLACEHOLDER_VALUE:  # type: ignore[attr-defined]
+        if self.value is PLACEHOLDER_VALUE:  # ty: ignore[unresolved-attribute]
             raise ValueError(
                 "'value' field must be specified for any type of 'ParamObject'"
             )
@@ -54,7 +54,7 @@ class ScalarParam(ParamObject):
     A scalar parameter directly read from a YAML file.
     """
 
-    value: bool | int | float = PLACEHOLDER_FIELD  # type: ignore[assignment]
+    value: bool | int | float = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
 
@@ -72,7 +72,7 @@ class DictParam(ParamObject):
         | dict[int, int]
         | dict[int, float]
         | dict[int, bool]
-    ) = PLACEHOLDER_FIELD  # type: ignore[assignment]
+    ) = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
 
@@ -92,7 +92,7 @@ class PiecewisePolynomialParam(ParamObject):
     parameters for calling `piecewise_polynomial`.
     """
 
-    value: PiecewisePolynomialParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
+    value: PiecewisePolynomialParamValue = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
 
@@ -105,7 +105,7 @@ class ConsecutiveIntLookupTableParam(ParamObject):
     parameters for calling `lookup_table`.
     """
 
-    value: ConsecutiveIntLookupTableParamValue = PLACEHOLDER_FIELD  # type: ignore[assignment]
+    value: ConsecutiveIntLookupTableParamValue = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
 
@@ -164,7 +164,7 @@ class RawParam(ParamObject):
     dictionary.
     """
 
-    value: dict[str | int, Any] = PLACEHOLDER_FIELD  # type: ignore[assignment]
+    value: dict[str | int, Any] = PLACEHOLDER_FIELD
     note: str | None = None
     reference: str | None = None
 
@@ -225,8 +225,8 @@ def get_consecutive_int_lookup_table_param_value(
     )
 
 
-def _year_fraction(r: dict[Literal["years", "months"], int]) -> float:
-    return r["years"] + r["months"] / 12
+def _year_fraction(spec: dict[Literal["years", "months"], int]) -> float:
+    return spec["years"] + spec["months"] / 12
 
 
 def get_month_based_phase_inout_of_age_thresholds_param_value(
@@ -259,13 +259,13 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
     last_m_since_ad_to_consider = _m_since_ad(y=raw.pop("last_year_to_consider"), m=12)
     if not all(isinstance(k, int) for k in raw):
         raise ValueError("All keys must be integers")
-    first_year_phase_inout: int = min(raw.keys())  # type: ignore[assignment]
+    first_year_phase_inout: int = min(raw.keys())  # ty: ignore[invalid-assignment]
     first_month_phase_inout: int = min(raw[first_year_phase_inout].keys())
     first_m_since_ad_phase_inout = _m_since_ad(
         y=first_year_phase_inout,
         m=first_month_phase_inout,
     )
-    last_year_phase_inout: int = max(raw.keys())  # type: ignore[assignment]
+    last_year_phase_inout: int = max(raw.keys())  # ty: ignore[invalid-assignment]
     last_month_phase_inout: int = max(raw[last_year_phase_inout].keys())
     last_m_since_ad_phase_inout = _m_since_ad(
         y=last_year_phase_inout,
@@ -286,7 +286,7 @@ def get_month_based_phase_inout_of_age_thresholds_param_value(
         for b_m in range(first_m_since_ad_to_consider, first_m_since_ad_phase_inout)
     }
     during_phase_inout: dict[int, float] = _fill_phase_inout(
-        raw=raw,  # type: ignore[arg-type]
+        raw=raw,  # ty: ignore[invalid-argument-type]
         first_m_since_ad_phase_inout=first_m_since_ad_phase_inout,
         last_m_since_ad_phase_inout=last_m_since_ad_phase_inout,
     )
@@ -315,8 +315,8 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
     last_year_to_consider = raw.pop("last_year_to_consider")
     if not all(isinstance(k, int) for k in raw):
         raise ValueError("All keys must be integers")
-    first_year_phase_inout: int = sorted(raw)[0]  # type: ignore[assignment]
-    last_year_phase_inout: int = sorted(raw)[-1]  # type: ignore[assignment]
+    first_year_phase_inout: int = sorted(raw)[0]  # ty: ignore[invalid-assignment]
+    last_year_phase_inout: int = sorted(raw)[-1]  # ty: ignore[invalid-assignment]
     if first_year_to_consider > first_year_phase_inout:
         raise ValueError(
             "`first_year_to_consider` must be less than or equal to "
@@ -331,9 +331,8 @@ def get_year_based_phase_inout_of_age_thresholds_param_value(
         b_y: _year_fraction(raw[first_year_phase_inout])
         for b_y in range(first_year_to_consider, first_year_phase_inout)
     }
-    during_phase_inout: dict[int, float] = {
-        b_y: _year_fraction(raw[b_y])  # type: ignore[misc]
-        for b_y in raw
+    during_phase_inout: dict[int, float] = {  # ty: ignore[invalid-assignment]
+        b_y: _year_fraction(spec) for b_y, spec in raw.items()
     }
     after_phase_inout: dict[int, float] = {
         b_y: _year_fraction(raw[last_year_phase_inout])
@@ -392,7 +391,7 @@ def convert_sparse_to_consecutive_int_lookup_table(
     min_int_in_table: int = tmp.pop("min_int_in_table")
     max_int_in_table: int = tmp.pop("max_int_in_table")
 
-    base_spec: dict[int, Any] = tmp  # type: ignore[assignment]
+    base_spec: dict[int, Any] = tmp  # ty: ignore[invalid-assignment]
     _fail_if_raw_incompatible_with_min_max_int_in_table(
         raw=base_spec,
         min_int_in_table=min_int_in_table,
