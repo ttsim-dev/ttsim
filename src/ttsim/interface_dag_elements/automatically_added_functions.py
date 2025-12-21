@@ -49,7 +49,7 @@ from ttsim.unit_converters import (
 
 if TYPE_CHECKING:
     import re
-    from collections.abc import Callable
+    from types import FunctionType
 
     from ttsim.typing import (
         BoolColumn,
@@ -255,8 +255,8 @@ def _create_one_set_of_time_conversion_functions(
 
 def _create_function_for_time_unit(
     source: str,
-    converter: Callable[[float], float],
-) -> Callable[[BoolColumn | FloatColumn | IntColumn], FloatColumn]:
+    converter: FunctionType[[float], float],
+) -> FunctionType[[BoolColumn | FloatColumn | IntColumn], FloatColumn]:
     @overload
     @rename_arguments(mapper={"x": source})
     def func(x: FloatColumn) -> FloatColumn: ...

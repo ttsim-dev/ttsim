@@ -28,7 +28,8 @@ from ttsim.main_target import MainTarget, MainTargetABC
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
+    from types import FunctionType
 
     from ttsim.main_args import (
         InputData,
@@ -72,7 +73,7 @@ def main(
     specialized_environment: SpecializedEnvironment | None = None,
     specialized_environment_for_plotting_and_templates: SpecializedEnvironmentForPlottingAndTemplates  # noqa: E501
     | None = None,
-    tt_function: Callable[[QNameData], QNameData] | None = None,
+    tt_function: FunctionType[[QNameData], QNameData] | None = None,
     raw_results: RawResults | None = None,
     results: Results | None = None,
 ) -> Any:  # noqa: ANN401

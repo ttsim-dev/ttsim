@@ -7,7 +7,7 @@ import dags.tree as dt
 from ttsim.interface_dag_elements.interface_node_objects import interface_function
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from types import FunctionType
 
     from ttsim.typing import (
         FlatData,
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def columns(
     labels__root_nodes: UnorderedQNames,
     processed_data: QNameData,
-    tt_function: Callable[[QNameData], QNameData],
+    tt_function: FunctionType[[QNameData], QNameData],
 ) -> QNameData:
     """The raw results of the TT function that have been requested as targets.
 

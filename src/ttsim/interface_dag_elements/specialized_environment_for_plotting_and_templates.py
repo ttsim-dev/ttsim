@@ -40,8 +40,7 @@ from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Callable
-    from types import ModuleType
+    from types import FunctionType, ModuleType
     from typing import Any
 
     from ttsim.typing import (
@@ -243,7 +242,7 @@ def dummy_callable(obj: InterfaceInput, leaf_name: str) -> InterfaceFunction: ..
 
 def dummy_callable(
     obj: PolicyInput | ParamObject | InterfaceInput, leaf_name: str
-) -> Callable[[], Any]:
+) -> FunctionType[[], Any]:
     """Dummy callable, for plotting and checking DAG completeness."""
 
     def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202

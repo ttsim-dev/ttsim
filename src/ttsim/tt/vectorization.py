@@ -13,19 +13,18 @@ import numpy
 from dags.signature import rename_arguments
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import ModuleType
+    from types import FunctionType, ModuleType
 
 
 BACKEND_TO_MODULE = {"jax": "jax.numpy", "numpy": "numpy"}
 
 
 def vectorize_function(
-    func: Callable[..., Any],
+    func: FunctionType[..., Any],
     vectorization_strategy: Literal["loop", "vectorize"],
     backend: Literal["numpy", "jax"],
     xnp: ModuleType,
-) -> Callable[..., Any]:
+) -> FunctionType[..., Any]:
     """Returns a new PolicyFunction with the function attribute vectorized.
 
     Args:
@@ -45,7 +44,7 @@ def vectorize_function(
 
     """
 
-    vectorized: Callable[..., Any]
+    vectorized: FunctionType[..., Any]
     if vectorization_strategy == "loop":
         assigned = (
             "__signature__",
@@ -64,17 +63,17 @@ def vectorize_function(
 
     # Update annotations and signature to reflect that the inputs are now expected to be
     # arrays.
-    vectorized.__signature__ = _create_vectorized_signature(func)  # type: ignore[attr-defined]
+    vectorized.__signature__ = _create_vectorized_signature(func)  # ty: ignore[invalid-assignment]
     vectorized.__annotations__ = _create_vectorized_annotations(func)
 
     return vectorized
 
 
 def _make_vectorizable(
-    func: Callable[..., Any],
+    func: FunctionType[..., Any],
     backend: str,
     xnp: ModuleType,
-) -> Callable[..., Any]:
+) -> FunctionType[..., Any]:
     """Redefine function to be vectorizable given backend.
 
     Args:
@@ -128,7 +127,7 @@ def _make_vectorizable(
 
 
 def make_vectorizable_source(
-    func: Callable[..., Any],
+    func: FunctionType[..., Any],
     backend: str,
     xnp: ModuleType,
 ) -> str:
@@ -156,7 +155,7 @@ def make_vectorizable_source(
 
 
 def _make_vectorizable_ast(
-    func: Callable[..., Any],
+    func: FunctionType[..., Any],
     module: str,
     xnp: ModuleType,
 ) -> ast.Module:
@@ -180,7 +179,7 @@ def _make_vectorizable_ast(
     return ast.fix_missing_locations(new_tree)
 
 
-def _func_to_ast(func: Callable[..., Any]) -> ast.Module:
+def _func_to_ast(func: FunctionType[..., Any]) -> ast.Module:
     source = inspect.getsource(func)
     source_dedented = textwrap.dedent(source)
     source_without_decorators = _remove_decorator_lines(source_dedented)
@@ -189,7 +188,7 @@ def _func_to_ast(func: Callable[..., Any]) -> ast.Module:
 
 def _args_from_func_ast(func_ast: ast.Module) -> list[str]:
     """Get function arguments from function ast."""
-    return [arg.arg for arg in func_ast.body[0].args.args]  # type: ignore[attr-defined]
+    return [arg.arg for arg in func_ast.body[0].args.args]  # ty: ignore[unresolved-attribute]
 
 
 def _remove_decorator_lines(source: str) -> str:
@@ -289,7 +288,7 @@ def _not_to_call(node: ast.UnaryOp, module: str) -> ast.Call:
 
 def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
     """Transform If statement to Call."""
-    args = [node.test, node.body[0].value]  # type: ignore[attr-defined]
+    args = [node.test, node.body[0].value]  # ty: ignore[unresolved-attribute]
 
     if len(node.orelse) > 1 or len(node.body) > 1:
         msg = _too_many_operations_error_message(node, func_loc=func_loc)
@@ -299,9 +298,9 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
             msg = _return_and_no_else_error_message(node.body[0], func_loc=func_loc)
             raise TranslateToVectorizableError(msg)
         if hasattr(node.body[0], "targets"):
-            name = ast.Name(id=node.body[0].targets[0].id, ctx=ast.Load())
+            name = ast.Name(id=node.body[0].targets[0].id, ctx=ast.Load())  # ty: ignore[non-subscriptable]
         else:
-            name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # type: ignore[attr-defined]
+            name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # ty: ignore[unresolved-attribute]
         args.append(name)
     elif isinstance(node.orelse[0], ast.Return):
         args.append(node.orelse[0].value)
@@ -388,7 +387,7 @@ def _call_to_call_from_module(
     if not transform_node:
         return node
 
-    func_id = node.func.id  # type: ignore[attr-defined]
+    func_id = node.func.id  # ty: ignore[unresolved-attribute]
     call = node
     args = node.args
 
@@ -434,7 +433,7 @@ class TranslateToVectorizableError(ValueError):
 
 def _too_many_arguments_call_error_message(node: ast.Call, func_loc: str) -> str:
     source = _node_to_formatted_source(node)
-    _func_name = node.func.id  # type: ignore[attr-defined]
+    _func_name = node.func.id  # ty: ignore[unresolved-attribute]
     return (
         "\n\n"
         f"The function {_func_name} is called with too many arguments. Please only use "
@@ -505,7 +504,7 @@ def _module_from_backend(backend: str) -> str:
 # ======================================================================================
 
 
-def _create_vectorized_signature(func: Callable[..., Any]) -> inspect.Signature:
+def _create_vectorized_signature(func: FunctionType[..., Any]) -> inspect.Signature:
     """Create a signature for the vectorized function."""
     parameters = [
         inspect.Parameter(
@@ -522,7 +521,7 @@ def _create_vectorized_signature(func: Callable[..., Any]) -> inspect.Signature:
     return inspect.Signature(parameters=parameters, return_annotation=return_annotation)
 
 
-def _create_vectorized_annotations(func: Callable[..., Any]) -> dict[str, Any]:
+def _create_vectorized_annotations(func: FunctionType[..., Any]) -> dict[str, Any]:
     """Create annotations for the vectorized function."""
     parameters_and_return = ["return", *inspect.signature(func).parameters]
     annotations = inspect.get_annotations(func)

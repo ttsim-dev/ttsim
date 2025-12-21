@@ -38,7 +38,8 @@ from ttsim.tt.param_objects import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
+    from types import FunctionType
 
     from ttsim.interface_dag_elements.input_data import FlatData
     from ttsim.typing import (
@@ -120,7 +121,7 @@ class _ParamWithActivePeriod(ParamObject):
 
 def assert_valid_ttsim_pytree(
     tree: Any,  # noqa: ANN401
-    leaf_checker: Callable[..., Any],
+    leaf_checker: FunctionType[..., Any],
     tree_name: str,
 ) -> None:
     """

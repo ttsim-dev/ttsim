@@ -10,7 +10,7 @@ from ttsim.interface_dag_elements.interface_node_objects import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from types import FunctionType
 
     import networkx as nx
 
@@ -37,7 +37,7 @@ def tt_function(
     labels__column_targets: OrderedQNames,
     tt_function_set_annotations: bool,
     backend: Literal["numpy", "jax"],
-) -> Callable[[QNameData], QNameData]:
+) -> FunctionType[[QNameData], QNameData]:
     """Return the function calculating the taxes and transfers."""
     ttf_with_keyword_args = concatenate_functions(
         dag=specialized_environment__tt_dag,

@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar
 import dags.tree as dt
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
+    from types import FunctionType
 
     from ttsim.typing import UnorderedQNames
 
@@ -63,7 +64,7 @@ class InterfaceInput(InterfaceNodeObject):
 def interface_input(
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> Callable[[Callable[..., Any]], InterfaceInput]:
+) -> FunctionType[[FunctionType[..., Any]], InterfaceInput]:
     """
     Decorator that makes a (dummy) function an `InterfaceInput`.
 
@@ -72,7 +73,7 @@ def interface_input(
     A decorator that returns an InterfaceInput object.
     """
 
-    def inner(func: Callable[..., Any]) -> InterfaceInput:
+    def inner(func: FunctionType[..., Any]) -> InterfaceInput:
         return InterfaceInput(
             leaf_name=leaf_name if leaf_name else func.__name__,
             in_top_level_namespace=in_top_level_namespace,
@@ -83,7 +84,9 @@ def interface_input(
     return inner
 
 
-def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) -> None:
+def _frozen_safe_update_wrapper(
+    wrapper: object, wrapped: FunctionType[..., Any]
+) -> None:
     """Update a frozen wrapper dataclass to look like the wrapped function.
 
     This is necessary because the wrapper is a frozen dataclass, so we cannot
@@ -119,7 +122,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
     Base class for all functions operating on columns of data.
     """
 
-    function: Callable[FunArgTypes, ReturnType]
+    function: FunctionType[FunArgTypes, ReturnType]
 
     def __post_init__(self) -> None:
         # Expose the signature of the wrapped function for dependency resolution
@@ -163,7 +166,7 @@ def interface_function(
     *,
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> Callable[[Callable[..., Any]], InterfaceFunction[..., Any]]:
+) -> FunctionType[[FunctionType[..., Any]], InterfaceFunction[..., Any]]:
     """
     Decorator that makes an `InterfaceFunction` from a function.
 
@@ -180,7 +183,7 @@ def interface_function(
     A decorator that returns an InterfaceFunction object.
     """
 
-    def inner(func: Callable[..., Any]) -> InterfaceFunction:  # type: ignore[type-arg]
+    def inner(func: FunctionType[..., Any]) -> InterfaceFunction:  # type: ignore[type-arg]
         return InterfaceFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
@@ -251,8 +254,8 @@ def input_dependent_interface_function(
     include_if_no_input_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> Callable[
-    [Callable[..., Any]], InputDependentInterfaceFunction[FunArgTypes, ReturnType]
+) -> FunctionType[
+    [FunctionType[..., Any]], InputDependentInterfaceFunction[FunArgTypes, ReturnType]
 ]:
     """
     Decorator that makes an `InputDependentInterfaceFunction` from a function.
@@ -280,7 +283,7 @@ def input_dependent_interface_function(
     """
 
     def inner(
-        func: Callable[..., Any],
+        func: FunctionType[..., Any],
     ) -> InputDependentInterfaceFunction[FunArgTypes, ReturnType]:
         return InputDependentInterfaceFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
@@ -326,12 +329,12 @@ def fail_function(
     include_if_all_elements_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> Callable[[Callable[..., Any]], FailFunction]:
+) -> FunctionType[[FunctionType[..., Any]], FailFunction]:
     """
     Decorator that makes a `FailFunction` from a function.
     """
 
-    def inner(func: Callable[..., Any]) -> FailFunction:
+    def inner(func: FunctionType[..., Any]) -> FailFunction:
         return FailFunction(
             include_if_any_element_present=include_if_any_element_present,
             include_if_all_elements_present=include_if_all_elements_present,
@@ -375,12 +378,12 @@ def warn_function(
     include_if_all_elements_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> Callable[[Callable[..., Any]], WarnFunction]:
+) -> FunctionType[[FunctionType[..., Any]], WarnFunction]:
     """
     Decorator that makes a `WarnFunction` from a function.
     """
 
-    def inner(func: Callable[..., Any]) -> WarnFunction:
+    def inner(func: FunctionType[..., Any]) -> WarnFunction:
         return WarnFunction(
             include_if_any_element_present=include_if_any_element_present,
             include_if_all_elements_present=include_if_all_elements_present,

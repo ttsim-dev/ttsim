@@ -5,8 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, ParamSpec, get_args
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import ModuleType
+    from types import FunctionType, ModuleType
 
     from ttsim.typing import FloatColumn
 
@@ -40,9 +39,9 @@ class RoundingSpec:
 
     def apply_rounding(
         self,
-        func: Callable[P, FloatColumn],
+        func: FunctionType[P, FloatColumn],
         xnp: ModuleType,
-    ) -> Callable[P, FloatColumn]:
+    ) -> FunctionType[P, FloatColumn]:
         """Decorator to round the output of a function.
 
         Parameters
