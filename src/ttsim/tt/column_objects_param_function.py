@@ -32,6 +32,7 @@ from ttsim.tt.rounding import RoundingSpec
 from ttsim.tt.vectorization import vectorize_function
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import FunctionType, ModuleType
 
     from ttsim.typing import (
@@ -130,7 +131,7 @@ def policy_input(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> FunctionType[[FunctionType[..., Any]], PolicyInput]:
+) -> Callable[[FunctionType[..., Any]], PolicyInput]:
     """
     Decorator that makes a (dummy) function a `PolicyInput`.
 
@@ -263,7 +264,7 @@ def _fail_if_rounding_has_wrong_type(rounding_spec: RoundingSpec | None) -> None
 
 
 @dataclass(frozen=True)
-class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
+class PolicyFunction(ColumnFunction):
     """
     Computes a column based on at least one input column and/or parameters.
 
@@ -299,7 +300,7 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
         # the same as for the initially defined function, since otherwise global
         # variables or imported functions cannot be found after vectorization.
         # This is not done by dt.one_function_without_tree_logic, so we do it here.
-        function_without_tree_logic.__globals__.update(self.function.__globals__)
+        function_without_tree_logic.__globals__.update(self.function.__globals__)  # ty: ignore[unresolved-attribute]
 
         return PolicyFunction(
             leaf_name=self.leaf_name,
@@ -314,7 +315,9 @@ class PolicyFunction(ColumnFunction):  # type: ignore[type-arg]
             fail_msg_if_included=self.fail_msg_if_included,
         )
 
-    def vectorize(self, backend: str, xnp: ModuleType) -> PolicyFunction:
+    def vectorize(
+        self, backend: Literal["numpy", "jax"], xnp: ModuleType
+    ) -> PolicyFunction:
         func = (
             self.function
             if self.vectorization_strategy == "not_required"
@@ -349,7 +352,7 @@ def policy_function(
     foreign_key_type: FKType = FKType.IRRELEVANT,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> FunctionType[[FunctionType[..., Any]], PolicyFunction]:
+) -> Callable[[FunctionType[..., Any]], PolicyFunction]:
     """
     Decorator that makes a `PolicyFunction` from a function.
 
@@ -425,7 +428,7 @@ def reorder_ids(ids: IntColumn, xnp: ModuleType) -> IntColumn:
 
 
 @dataclass(frozen=True)
-class GroupCreationFunction(ColumnFunction):  # type: ignore[type-arg]
+class GroupCreationFunction(ColumnFunction):
     """
     A function that computes endogenous group_by IDs.
 
@@ -472,7 +475,7 @@ def group_creation_function(
     reorder: bool = True,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> FunctionType[[FunctionType[..., Any]], GroupCreationFunction]:
+) -> Callable[[FunctionType[..., Any]], GroupCreationFunction]:
     """
     Decorator that creates a group_by function from a function.
 
@@ -512,7 +515,7 @@ def group_creation_function(
 
 
 @dataclass(frozen=True)
-class AggByGroupFunction(ColumnFunction):  # type: ignore[type-arg]
+class AggByGroupFunction(ColumnFunction):
     """
     A function that is an aggregation of another column by some group id.
 
@@ -569,7 +572,7 @@ def agg_by_group_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> FunctionType[[FunctionType[..., Any]], AggByGroupFunction]:
+) -> Callable[[FunctionType[..., Any]], AggByGroupFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -650,7 +653,7 @@ def _fail_if_other_arg_is_invalid(
 
 
 @dataclass(frozen=True)
-class AggByPIDFunction(ColumnFunction):  # type: ignore[type-arg]
+class AggByPIDFunction(ColumnFunction):
     """
     A function that is an aggregation of another column by some group id.
 
@@ -707,7 +710,7 @@ def agg_by_p_id_function(
     agg_type: AggType,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> FunctionType[[FunctionType[..., Any]], AggByPIDFunction]:
+) -> Callable[[FunctionType[..., Any]], AggByPIDFunction]:
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
     agg_registry = {
@@ -788,7 +791,7 @@ def _fail_if_other_p_id_is_invalid(
 
 
 @dataclass(frozen=True)
-class TimeConversionFunction(ColumnFunction):  # type: ignore[type-arg]
+class TimeConversionFunction(ColumnFunction):
     """
     A function that is a time conversion of another function.
 
@@ -920,7 +923,7 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         self,
         tree_path: tuple[str, ...],
         top_level_namespace: UnorderedQNames,
-    ) -> ParamFunction:  # type: ignore[type-arg]
+    ) -> ParamFunction:
         """Remove tree logic from the function and update the function signature."""
         return ParamFunction(
             leaf_name=self.leaf_name,
@@ -945,7 +948,7 @@ def param_function(
     end_date: str | datetime.date = DEFAULT_END_DATE,
     warn_msg_if_included: str | None = None,
     fail_msg_if_included: str | None = None,
-) -> FunctionType[[FunctionType[..., Any]], ParamFunction[..., Any]]:
+) -> Callable[[FunctionType[..., Any]], ParamFunction[..., Any]]:
     """
     Decorator that makes a `ParamFunction` from a function.
 
@@ -975,7 +978,7 @@ def param_function(
     """
     start_date, end_date = _convert_and_validate_dates(start_date, end_date)
 
-    def inner(func: FunctionType[..., Any]) -> ParamFunction:  # type: ignore[type-arg]
+    def inner(func: FunctionType[..., Any]) -> ParamFunction:
         return ParamFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,

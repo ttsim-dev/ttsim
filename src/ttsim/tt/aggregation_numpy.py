@@ -6,7 +6,7 @@ import numpy
 import numpy_groupies as npg
 
 if TYPE_CHECKING:
-    from ttsim.tt import BoolColumn, FloatColumn, IntColumn
+    from ttsim.typing import BoolColumn, FloatColumn, IntColumn
 
 
 def grouped_count(group_id: IntColumn) -> IntColumn:
