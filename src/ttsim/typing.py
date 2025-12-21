@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar
 
 if TYPE_CHECKING:
     from jaxtyping import Array, Bool, Float, Int
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
             dict[Literal["note", "reference"] | str | int, Any],  # noqa: PYI051
         ]
     )
-    DashedISOString = NewType("DashedISOString", str)
+    DashedISOString = str
     """A string representing a date in the format 'YYYY-MM-DD'."""
 
     from dags.tree.typing import (  # noqa: F401

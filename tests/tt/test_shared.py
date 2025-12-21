@@ -8,7 +8,7 @@ import optree
 import pytest
 from mettsim import middle_earth
 
-from ttsim import MainTarget, copy_environment, main
+from ttsim import MainTarget, OrigPolicyObjects, copy_environment, main
 from ttsim.tt import RawParam, ScalarParam, join
 
 if TYPE_CHECKING:
@@ -78,14 +78,14 @@ def test_join(
 
 def test_copy_single_scalar_param():
     """Copy a ScalarParam and verify content equality but object independence."""
-    original = ScalarParam(value=0.186)
+    original = {"param": ScalarParam(value=0.186)}
     copied = copy_environment(original)
 
     # Content should be identical
-    assert copied.value == original.value
+    assert copied["param"].value == original["param"].value
 
     # But objects should be independent
-    assert copied is not original
+    assert copied["param"] is not original["param"]
 
 
 def test_copy_nested_dict_with_params():
@@ -123,7 +123,7 @@ def test_copy_full_policy_environment():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
     )
 
     copied_env = copy_environment(policy_env)
@@ -161,7 +161,7 @@ def test_deepcopy_fails_on_policy_environment():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
     )
 
     with pytest.raises((TypeError, AttributeError)) as excinfo:
@@ -177,7 +177,7 @@ def test_copy_environment_works_where_deepcopy_fails():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
     )
 
     # Confirm deepcopy fails
@@ -234,7 +234,7 @@ def test_policy_environment_type_inference():
     policy_env = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
     )
 
     # Type checker should infer PolicyEnvironment -> PolicyEnvironment
