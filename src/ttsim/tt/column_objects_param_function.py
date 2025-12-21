@@ -186,7 +186,7 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) ->
     """
     object.__setattr__(wrapper, "__signature__", inspect.signature(wrapped))
 
-    WRAPPER_ASSIGNMENTS = (  # noqa: N806
+    for attr in (
         "__globals__",
         "__closure__",
         "__code__",
@@ -196,8 +196,7 @@ def _frozen_safe_update_wrapper(wrapper: object, wrapped: Callable[..., Any]) ->
         "__module__",
         "__annotations__",
         "__type_params__",
-    )
-    for attr in WRAPPER_ASSIGNMENTS:
+    ):
         if hasattr(wrapped, attr):
             object.__setattr__(wrapper, attr, getattr(wrapped, attr))
 
