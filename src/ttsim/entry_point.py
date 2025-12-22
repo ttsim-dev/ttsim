@@ -28,8 +28,7 @@ from ttsim.main_target import MainTarget, MainTargetABC
 
 if TYPE_CHECKING:
     import datetime
-    from collections.abc import Iterable
-    from types import FunctionType
+    from collections.abc import Callable, Iterable
 
     from ttsim.main_args import (
         InputData,
@@ -73,7 +72,7 @@ def main(
     specialized_environment: SpecializedEnvironment | None = None,
     specialized_environment_for_plotting_and_templates: SpecializedEnvironmentForPlottingAndTemplates  # noqa: E501
     | None = None,
-    tt_function: FunctionType[[QNameData], QNameData] | None = None,
+    tt_function: Callable[[QNameData], QNameData] | None = None,
     raw_results: RawResults | None = None,
     results: Results | None = None,
 ) -> Any:  # noqa: ANN401
@@ -178,10 +177,10 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         ].pop("root")
 
     _fail_if_input_structure_is_invalid(
-        user_treedef=optree.tree_flatten(dict_inputs, none_is_leaf=True)[1],  # type: ignore[arg-type]
-        expected_treedef=optree.tree_flatten(expected_structure, none_is_leaf=True)[1],
+        user_treedef=optree.tree_flatten(dict_inputs, none_is_leaf=True)[1],  # ty: ignore [invalid-argument-type]
+        expected_treedef=optree.tree_flatten(expected_structure, none_is_leaf=True)[1],  # ty: ignore [invalid-argument-type]
     )
-    for acc in optree.tree_accessors(expected_structure, none_is_leaf=True):
+    for acc in optree.tree_accessors(expected_structure, none_is_leaf=True):  # ty: ignore [invalid-argument-type]
         qname = dt.qname_from_tree_path(acc.path)
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
@@ -274,9 +273,9 @@ def _harmonize_main_target(
         "output multiple elements, use `main_targets` instead."
     )
     if isinstance(main_target, tuple):
-        return dt.qname_from_tree_path(main_target)
+        return dt.qname_from_tree_path(main_target)  # ty: ignore [invalid-argument-type]
     if isinstance(main_target, dict):
-        if len(optree.tree_flatten(main_target, none_is_leaf=True)[0]) > 1:  # type: ignore[arg-type]
+        if len(optree.tree_flatten(main_target, none_is_leaf=True)[0]) > 1:  # ty: ignore [invalid-argument-type]
             raise ValueError(msg)
         return dt.qnames(main_target)[0]
     if isinstance(main_target, str):
@@ -294,9 +293,9 @@ def _harmonize_main_targets(
     main_targets: Iterable[str | tuple[str, ...]] | NestedTargetDict,
 ) -> list[str]:
     if isinstance(main_targets, dict):
-        out = dt.qnames(main_targets)
+        out = dt.qnames(main_targets)  # ty: ignore [invalid-argument-type]
     elif isinstance(main_targets[0], tuple):
-        out = [dt.qname_from_tree_path(tp) for tp in main_targets]  # type: ignore[arg-type]
+        out = [dt.qname_from_tree_path(tp) for tp in main_targets]  # ty: ignore [invalid-argument-type]
     else:
         out = list(main_targets)
 

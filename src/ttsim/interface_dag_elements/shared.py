@@ -173,7 +173,7 @@ def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     -------
     The merged pytree.
     """
-    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # type: ignore[arg-type]
+    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # ty: ignore [invalid-argument-type]
         raise ValueError("Conflicting paths in trees to merge.")
 
     return upsert_tree(base=left, to_upsert=right)

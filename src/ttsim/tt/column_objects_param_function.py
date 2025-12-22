@@ -164,7 +164,7 @@ def policy_input(
             end_date=end_date,
             foreign_key_type=foreign_key_type,
             description=str(inspect.getdoc(func)),
-            docstring=inspect.getdoc(func),  # type: ignore[arg-type]
+            docstring=inspect.getdoc(func),  # ty: ignore [invalid-argument-type]
             warn_msg_if_included=warn_msg_if_included,
             fail_msg_if_included=fail_msg_if_included,
         )
