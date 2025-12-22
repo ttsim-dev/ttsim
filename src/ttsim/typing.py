@@ -130,14 +130,14 @@ if TYPE_CHECKING:
         ColumnObject | ParamFunction,
     ]
     """Flat mapping of paths to column objects or param functions."""
-    NestedColumnObjectsParamFunctions = Mapping[
+    NestedColumnObjectsParamFunctions = dict[
         str,
         ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions",
     ]
     """Tree of column objects or param functions."""
     FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
     """Flat mapping of paths to yaml contents; the leaf name is also the last element of the key."""  # noqa: E501
-    NestedParamObjects = Mapping[str, ParamObject | "NestedParamObjects"]
+    NestedParamObjects = dict[str, ParamObject | "NestedParamObjects"]
     """Tree with param objects."""
     PolicyEnvironment = Mapping[
         str,

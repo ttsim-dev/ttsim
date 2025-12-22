@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import dags.tree as dt
 import numpy
@@ -176,10 +176,15 @@ def _get_one_param(  # noqa: PLR0911
         return ScalarParam(**cleaned_spec)
     if spec["type"] == "dict":
         return DictParam(**cleaned_spec)
-    if spec["type"].startswith("piecewise_"):
+    if spec["type"] in {
+        "piecewise_constant",
+        "piecewise_linear",
+        "piecewise_quadratic",
+        "piecewise_cubic",
+    }:
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
-            func_type=spec["type"],
+            func_type=spec["type"],  # ty: ignore[invalid-argument-type]
             parameter_dict=cleaned_spec["value"],
             xnp=xnp,
         )
@@ -225,13 +230,15 @@ def _clean_one_param_spec(
     policy_date: datetime.date,
 ) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a ParamObject."""
-    policy_dates = numpy.sort(
-        cast(
-            "list[datetime.date]",
-            [key for key in spec if isinstance(key, datetime.date)],
-        )
+    date_keys = [key for key in spec if isinstance(key, datetime.date)]
+    policy_dates_dt64 = numpy.sort([numpy.datetime64(d) for d in date_keys])
+    idx = numpy.searchsorted(
+        policy_dates_dt64, numpy.datetime64(policy_date), side="right"
     )
-    idx = numpy.searchsorted(policy_dates, policy_date, side="right")  # type: ignore[call-overload]
+    policy_dates = [
+        datetime.date.fromisoformat(str(d.astype("datetime64[D]")))
+        for d in policy_dates_dt64
+    ]
     if idx == 0:
         return None
 
