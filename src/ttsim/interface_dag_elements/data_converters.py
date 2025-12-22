@@ -20,9 +20,9 @@ if TYPE_CHECKING:
 
 def _get_p_id_index(data_with_p_id: NestedData | QNameData | FlatData) -> pd.Index:
     if "p_id" in data_with_p_id:
-        return pd.Index(data_with_p_id["p_id"], name="p_id")
+        return pd.Index(data_with_p_id["p_id"], name="p_id")  # ty: ignore[invalid-argument-type]
     if ("p_id",) in data_with_p_id:
-        return pd.Index(data_with_p_id[("p_id",)], name="p_id")
+        return pd.Index(data_with_p_id[("p_id",)], name="p_id")  # ty: ignore[invalid-argument-type]
     raise ValueError("No p_id found in data_with_p_id")
 
 

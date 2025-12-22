@@ -6,7 +6,10 @@ import itertools
 import textwrap
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 import dags.tree as dt
 import networkx as nx
@@ -16,7 +19,7 @@ import pandas as pd
 from dags import create_dag, get_free_arguments
 
 try:
-    import jax
+    import jax  # ty: ignore[unresolved-import]
 except ImportError:
     jax = None
 
@@ -196,15 +199,11 @@ def active_periods_overlap(
 
     for orig_path, obj in orig_policy_objects__param_specs.items():
         path = (*orig_path[:-2], orig_path[-1])
+        p_w_a_p = _param_with_active_periods(param_spec=obj, leaf_name=orig_path[-1])
         if path in overlap_checker:
-            overlap_checker[path].extend(
-                _param_with_active_periods(param_spec=obj, leaf_name=orig_path[-1]),
-            )
+            overlap_checker[path].extend(p_w_a_p)
         else:
-            overlap_checker[path] = _param_with_active_periods(
-                param_spec=obj,
-                leaf_name=orig_path[-1],
-            )
+            overlap_checker[path] = p_w_a_p  # ty: ignore[invalid-assignment]
 
     # Check for overlapping start and end dates for time-dependent functions.
     for path, objects in overlap_checker.items():
@@ -212,7 +211,7 @@ def active_periods_overlap(
         for (start1, end1), (start2, end2) in itertools.combinations(active_period, 2):
             if start1 <= end2 and start2 <= end1:
                 raise ConflictingActivePeriodsError(
-                    affected_column_objects=objects,
+                    affected_column_objects=cast("list[ColumnObject]", objects),
                     path=path,
                     overlap_start=max(start1, start2),
                     overlap_end=min(end1, end2),
@@ -310,7 +309,7 @@ def input_data_is_invalid(input_data__flat: FlatData, xnp: ModuleType) -> None:
 
     # Check that all arrays have the same length as the p_id array.
     len_p_id_array = len(input_data__flat[("p_id",)])
-    faulty_arrays: list[str] = []
+    faulty_arrays: list[tuple[str, ...]] = []
     for path, inp in input_data__flat.items():
         if hasattr(inp, "__len__") and len(inp) != len_p_id_array:
             faulty_arrays.append(path)
@@ -701,9 +700,10 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
             (not isinstance(env[node], PolicyInput) and node in labels__input_columns)
         ):
             continue
-        # Check because ParamObjects can be overridden by ColumnObjects down the road.
+        # Check for attribute existence because ParamObjects can be overridden by
+        # ColumnObjects down the road.
         if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
-            if msg := env[node].fail_msg_if_included:
+            if msg := env[node].fail_msg_if_included:  # type: ignore[possibly-missing-attribute]
                 issues += f"{node}:\n\n{msg}\n\n\n"
     if issues:
         raise ValueError(
@@ -845,12 +845,23 @@ def _param_with_active_periods(
     if not relevant:
         raise ValueError(f"No relevant dates found for {param_spec}")
 
-    params_header = {
-        "name": param_spec["name"],
-        "description": param_spec["description"],
-        "unit": param_spec["unit"],
-        "reference_period": param_spec["reference_period"],
-    }
+    p_s_name = cast(
+        "dict[Literal['de', 'en'], str] | None",
+        param_spec.get("name", None),
+    )
+    p_s_description = cast(
+        "dict[Literal['de', 'en'], str] | None",
+        param_spec.get("description", None),
+    )
+    p_s_unit = cast(
+        "Literal['Euros', 'DM', 'Share', 'Percent', 'Years', 'Months', 'Hours', 'Square Meters', 'Euros / Square Meter'] | None",
+        param_spec.get("unit", None),
+    )
+    p_s_reference_period = cast(
+        "Literal['Year', 'Quarter', 'Month', 'Week', 'Day'] | None",
+        param_spec.get("reference_period", None),
+    )
+
     out = []
     start_date: datetime.date | None = None
     end_date = DEFAULT_END_DATE
@@ -864,7 +875,10 @@ def _param_with_active_periods(
                         start_date=start_date,
                         end_date=end_date,
                         original_function_name=leaf_name,
-                        **params_header,
+                        name=p_s_name,
+                        description=p_s_description,
+                        unit=p_s_unit,
+                        reference_period=p_s_reference_period,
                     ),
                 )
             start_date = None
@@ -875,7 +889,10 @@ def _param_with_active_periods(
                 original_function_name=leaf_name,
                 start_date=start_date,
                 end_date=end_date,
-                **params_header,
+                name=p_s_name,
+                description=p_s_description,
+                unit=p_s_unit,
+                reference_period=p_s_reference_period,
             ),
         )
 
@@ -901,7 +918,9 @@ def param_function_depends_on_column_objects(
 
     violations = ""
     for param_func_name, param_func in param_functions.items():
-        func_args = set(get_free_arguments(param_func.function))
+        func_args = set(
+            get_free_arguments(cast("Callable[..., Any]", param_func.function))
+        )
 
         for arg in func_args:
             if arg in column_objects:
@@ -975,7 +994,7 @@ def passed_scalar_inputs_for_natively_vectorized_functions(
 
     dag = create_dag(
         functions=column_functions,
-        targets=labels__column_targets,
+        targets=cast("list[str]", labels__column_targets),
     )
 
     root_nodes = nx.subgraph_view(
@@ -995,7 +1014,7 @@ def passed_scalar_inputs_for_natively_vectorized_functions(
 
     root_nodes_supposed_to_be_arrays: set[str] = set()
     for func in nodes_with_root_node_inputs.values():
-        args = get_free_arguments(func.function)
+        args = get_free_arguments(cast("Callable[..., Any]", func.function))
         annotations = func.function.__annotations__
         for arg in args:
             if arg in scalars_in_processed_data and "Column" in annotations[arg]:

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar
 import dags.tree as dt
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
     from types import FunctionType
 
     from ttsim.typing import UnorderedQNames
@@ -64,7 +64,7 @@ class InterfaceInput(InterfaceNodeObject):
 def interface_input(
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> FunctionType[[FunctionType[..., Any]], InterfaceInput]:
+) -> Callable[[FunctionType[..., Any]], InterfaceInput]:
     """
     Decorator that makes a (dummy) function an `InterfaceInput`.
 
@@ -166,7 +166,7 @@ def interface_function(
     *,
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> FunctionType[[FunctionType[..., Any]], InterfaceFunction[..., Any]]:
+) -> Callable[[FunctionType[..., Any]], InterfaceFunction[..., Any]]:
     """
     Decorator that makes an `InterfaceFunction` from a function.
 
@@ -254,7 +254,7 @@ def input_dependent_interface_function(
     include_if_no_input_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> FunctionType[
+) -> Callable[
     [FunctionType[..., Any]], InputDependentInterfaceFunction[FunArgTypes, ReturnType]
 ]:
     """
@@ -329,7 +329,7 @@ def fail_function(
     include_if_all_elements_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> FunctionType[[FunctionType[..., Any]], FailFunction]:
+) -> Callable[[FunctionType[..., Any]], FailFunction]:
     """
     Decorator that makes a `FailFunction` from a function.
     """
@@ -378,7 +378,7 @@ def warn_function(
     include_if_all_elements_present: Iterable[str] = (),
     leaf_name: str | None = None,
     in_top_level_namespace: bool = False,
-) -> FunctionType[[FunctionType[..., Any]], WarnFunction]:
+) -> Callable[[FunctionType[..., Any]], WarnFunction]:
     """
     Decorator that makes a `WarnFunction` from a function.
     """
