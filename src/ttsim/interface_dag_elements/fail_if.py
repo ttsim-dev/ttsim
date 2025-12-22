@@ -668,7 +668,7 @@ def backend_has_changed(
             for argname, arg in func.keywords.items():
                 # We are fine if it is a jax array and we do not want to loop over its
                 # attributes (GETTSIM tests fail otherwise).
-                if isinstance(arg, jax.Array):  # type: ignore[union-attr]
+                if isinstance(arg, jax.Array):  # ty: ignore[possibly-missing-attribute]
                     continue
                 if isinstance(arg, numpy.ndarray) or any(
                     isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
@@ -703,7 +703,7 @@ def tt_dag_includes_function_with_fail_msg_if_included_set(
         # Check for attribute existence because ParamObjects can be overridden by
         # ColumnObjects down the road.
         if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
-            if msg := env[node].fail_msg_if_included:  # type: ignore[possibly-missing-attribute]
+            if msg := env[node].fail_msg_if_included:  # ty: ignore[possibly-missing-attribute]
                 issues += f"{node}:\n\n{msg}\n\n\n"
     if issues:
         raise ValueError(

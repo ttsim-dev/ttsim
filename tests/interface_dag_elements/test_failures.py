@@ -1704,9 +1704,9 @@ def test_backend_has_changed_from_jax_to_numpy_passes():
     )
     input_data = InputData.tree(
         tree={
-            "p_id": jax.numpy.array([0, 1, 2]),  # type: ignore[union-attr]
+            "p_id": jax.numpy.array([0, 1, 2]),  # ty: ignore[possibly-missing-attribute]
             "property_tax": {
-                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),  # type: ignore[union-attr]
+                "acre_size_in_hectares": jax.numpy.array([5, 20, 200]),  # ty: ignore[possibly-missing-attribute]
             },
         }
     )
