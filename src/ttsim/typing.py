@@ -107,7 +107,7 @@ if TYPE_CHECKING:
     """Mapping of qualified name paths to 1d arrays."""
     QNameStrings = Iterable[str]
     """A list, tuple, or set of qualified names."""
-    RawParamValue: TypeAlias = dict[str, Any]
+    RawParamValue: TypeAlias = dict[str | int, Any]
     """The value field of a RawParam."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
