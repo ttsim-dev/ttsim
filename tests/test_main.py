@@ -208,7 +208,7 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
         ),
         (
             TTTargets.tree({"wealth_tax": {"amount_y": None}}),
-            TTTargets(tree={"wealth_tax": {"amount_y": None}}),  # ty: ignore[unknown-argument]
+            TTTargets.tree({"wealth_tax": {"amount_y": None}}),
         ),
         # OrigPolicyObjects
         (

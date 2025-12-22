@@ -97,11 +97,11 @@ class ConvertedParam:
 
 @param_function()
 def some_converting_params_func(
-    raw_param_spec: RawParam,
+    raw_param_spec: dict[str, bool | float],
 ) -> ConvertedParam:
     return ConvertedParam(
         some_float_param=raw_param_spec["some_float_param"],
-        some_bool_param=raw_param_spec["some_bool_param"],
+        some_bool_param=raw_param_spec["some_bool_param"],  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -124,10 +124,10 @@ SOME_RAW_PARAM = RawParam(
         "some_float_param": 1,
         "some_bool_param": False,
     },
-    start_date="2025-01-01",
-    end_date="2025-12-31",
-    name="Raw param spec",
-    description="Some raw param spec",
+    start_date=datetime.date(2025, 1, 1),
+    end_date=datetime.date(2025, 12, 31),
+    name={"de": "Ein raw param spec", "en": "Some raw param spec"},
+    description={"de": "Ein raw param spec", "en": "Some raw param spec"},
     unit=None,
     reference_period=None,
     note=None,
@@ -137,10 +137,10 @@ SOME_RAW_PARAM = RawParam(
 
 SOME_INT_PARAM = ScalarParam(
     value=1,
-    start_date="2025-01-01",
-    end_date="2025-12-31",
-    name="Some int param",
-    description="Some int param",
+    start_date=datetime.date(2025, 1, 1),
+    end_date=datetime.date(2025, 12, 31),
+    name={"de": "Ein int param", "en": "Some int param"},
+    description={"de": "Ein int param", "en": "Some int param"},
     unit=None,
     reference_period=None,
     note=None,
@@ -150,10 +150,10 @@ SOME_INT_PARAM = ScalarParam(
 
 SOME_DICT_PARAM = DictParam(
     value={"a": 1, "b": False},
-    start_date="2025-01-01",
-    end_date="2025-12-31",
-    name="Some dict param",
-    description="Some dict param",
+    start_date=datetime.date(2025, 1, 1),
+    end_date=datetime.date(2025, 12, 31),
+    name={"de": "Ein dict param", "en": "Some dict param"},
+    description={"de": "Ein dict param", "en": "Some dict param"},
     unit=None,
     reference_period=None,
     note=None,
@@ -167,10 +167,16 @@ SOME_PIECEWISE_POLYNOMIAL_PARAM = PiecewisePolynomialParam(
         intercepts=[1, 2, 3],
         rates=[1, 2, 3],
     ),
-    start_date="2025-01-01",
-    end_date="2025-12-31",
-    name="Some piecewise polynomial param",
-    description="Some piecewise polynomial param",
+    start_date=datetime.date(2025, 1, 1),
+    end_date=datetime.date(2025, 12, 31),
+    name={
+        "de": "Ein piecewise polynomial param",
+        "en": "Some piecewise polynomial param",
+    },
+    description={
+        "de": "Ein piecewise polynomial param",
+        "en": "Some piecewise polynomial param",
+    },
     unit=None,
     reference_period=None,
     note=None,
@@ -377,9 +383,9 @@ def test_create_agg_by_group_functions(
     main(
         main_target="results__tree",
         policy_environment=policy_environment,
-        input_data={"tree": input_data__tree},
+        input_data=InputData.tree(tree=input_data__tree),
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": tt_targets__tree},
+        tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
     )
@@ -394,9 +400,9 @@ def test_output_is_tree(minimal_input_data, backend, xnp):
     out = main(
         main_target="results__tree",
         policy_environment=policy_environment,
-        input_data={"tree": minimal_input_data},
+        input_data=InputData.tree(tree=minimal_input_data),
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"module": {"some_func": None}}},
+        tt_targets=TTTargets.tree({"module": {"some_func": None}}),
         rounding=False,
         backend=backend,
     )
@@ -412,8 +418,8 @@ def test_params_target_is_allowed(minimal_input_data):
         "module": {"some_func": some_func},
         "some_param": ScalarParam(
             value=1,
-            start_date="2025-01-01",
-            end_date="2025-12-31",
+            start_date=datetime.date(2025, 1, 1),
+            end_date=datetime.date(2025, 12, 31),
             unit="Euros",
             reference_period="Year",
             name={"de": "Ein Parameter", "en": "Some parameter"},
@@ -426,9 +432,9 @@ def test_params_target_is_allowed(minimal_input_data):
     out = main(
         main_target="results__tree",
         policy_environment=policy_environment,
-        input_data={"tree": minimal_input_data},
+        input_data=InputData.tree(tree=minimal_input_data),
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"some_param": None, "module": {"some_func": None}}},
+        tt_targets=TTTargets.tree({"some_param": None, "module": {"some_func": None}}),
         rounding=False,
         backend="numpy",
     )
@@ -458,9 +464,9 @@ def test_function_without_data_dependency_is_not_mistaken_for_data(
     results__tree = main(
         main_target="results__tree",
         policy_environment=policy_environment,
-        input_data={"tree": minimal_input_data},
+        input_data=InputData.tree(tree=minimal_input_data),
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"b": None}},
+        tt_targets=TTTargets.tree({"b": None}),
         rounding=False,
         backend=backend,
     )
@@ -529,9 +535,9 @@ def test_user_provided_aggregate_by_group_specs(backend):
     actual = main(
         main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
-        input_data={"tree": data},
+        input_data=InputData.tree(tree=data),
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"module_name": {"betrag_m_fam": None}}},
+        tt_targets=TTTargets.tree({"module_name": {"betrag_m_fam": None}}),
         rounding=False,
         backend=backend,
     )
@@ -573,9 +579,9 @@ def test_user_provided_aggregation(backend):
     actual = main(
         main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
-        input_data={"tree": data},
+        input_data=InputData.tree(tree=data),
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"module_name": {"betrag_m_double_fam": None}}},
+        tt_targets=TTTargets.tree({"module_name": {"betrag_m_double_fam": None}}),
         rounding=False,
         backend=backend,
     )
@@ -623,9 +629,9 @@ def test_user_provided_aggregation_with_time_conversion(backend):
     actual = main(
         main_target="results__df_with_nested_columns",
         policy_environment=policy_environment,
-        input_data={"tree": data},
+        input_data=InputData.tree(tree=data),
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"module_name": {"max_betrag_double_y_fam": None}}},
+        tt_targets=TTTargets.tree({"module_name": {"max_betrag_double_y_fam": None}}),
         rounding=False,
         backend=backend,
     )
@@ -709,10 +715,10 @@ def test_user_provided_aggregate_by_p_id_specs(
 
     actual = main(
         main_target="results__df_with_nested_columns",
-        input_data={"tree": minimal_input_data_shared_fam},
+        input_data=InputData.tree(tree=minimal_input_data_shared_fam),
         policy_environment=policy_environment,
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": target_tree},
+        tt_targets=TTTargets.tree(target_tree),
         rounding=False,
         backend=backend,
     )
@@ -827,10 +833,10 @@ def test_can_override_ttsim_objects_with_data(
 ):
     actual = main(
         main_target="results__tree",
-        input_data={"tree": {**minimal_input_data, **overriding_data}},
+        input_data=InputData.tree(tree={**minimal_input_data, **overriding_data}),
         policy_environment=nested_policy_environment,
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": tt_targets__tree},
+        tt_targets=TTTargets.tree(tt_targets__tree),
         include_warn_nodes=False,
         include_fail_nodes=False,
         rounding=False,

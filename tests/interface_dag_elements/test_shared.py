@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, cast
 
 import pytest
 
@@ -16,6 +17,9 @@ from ttsim.interface_dag_elements.shared import (
     upsert_path_and_value,
     upsert_tree,
 )
+
+if TYPE_CHECKING:
+    import re
 
 
 @dataclass
@@ -259,7 +263,7 @@ def test_get_re_pattern_for_time_units_and_groupings(
         time_units=time_units,
         grouping_levels=grouping_levels,
     )
-    match = result.fullmatch(func_name)
+    match = cast("re.Match[str]", result.fullmatch(func_name))
     assert match.group("base_name") == expected_base_name
     assert match.group("time_unit") == expected_time_unit
     assert match.group("grouping") == expected_grouping

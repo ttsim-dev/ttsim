@@ -7,7 +7,7 @@ import numpy
 import pytest
 from mettsim import middle_earth
 
-from ttsim import main, plot
+from ttsim import OrigPolicyObjects, TTTargets, main, plot
 from ttsim.main_args import InputData
 from ttsim.testing_utils import (
     PolicyTest,
@@ -42,18 +42,18 @@ def get_orig_mettsim_objects() -> dict[
             "orig_policy_objects__column_objects_and_param_functions",
             "orig_policy_objects__param_specs",
         ],
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
     )["orig_policy_objects"]
 
 
 def dates_in_orig_mettsim_objects() -> list[datetime.date]:
     orig_objects = get_orig_mettsim_objects()
     start_dates = {
-        v.start_date
+        v.start_date  # ty: ignore[possibly-missing-attribute]
         for v in orig_objects["column_objects_and_param_functions"].values()
     }
     end_dates = {
-        v.end_date + timedelta(days=1)
+        v.end_date + timedelta(days=1)  # ty: ignore[possibly-missing-attribute]
         for v in orig_objects["column_objects_and_param_functions"].values()
     }
     return sorted(start_dates | end_dates)
@@ -117,7 +117,7 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
             main_target="results__tree",
             policy_date_str="2020-01-01",
             input_data=InputData.flat(data),
-            orig_policy_objects={"root": middle_earth.ROOT_PATH},
-            tt_targets={"tree": {"property_tax": {"amount_y": None}}},
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
             backend=backend,
         )

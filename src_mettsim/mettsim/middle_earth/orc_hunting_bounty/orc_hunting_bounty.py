@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 from ttsim.tt import param_function, policy_function, policy_input
 
 if TYPE_CHECKING:
-    from ttsim.tt import ConsecutiveIntLookupTableParamValue, RawParam
+    from typing import Any
+
+    from ttsim.tt import ConsecutiveIntLookupTableParamValue
 
 
 @dataclass(frozen=True)
@@ -22,7 +24,7 @@ class BountyPerOrc:
 
 
 @param_function()
-def bounty_per_orc(raw_bounties_per_orc: RawParam) -> BountyPerOrc:
+def bounty_per_orc(raw_bounties_per_orc: dict[str, Any]) -> BountyPerOrc:
     return BountyPerOrc(
         small_orc=raw_bounties_per_orc["small_orc"],
         large_orc=BountyPerLargeOrc(

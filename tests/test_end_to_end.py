@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
-from ttsim import InputData, MainTarget, TTTargets, main
+from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.tt.column_objects_param_function import policy_function
 
 if TYPE_CHECKING:
@@ -101,10 +101,10 @@ def test_end_to_end(input_data_arg, backend: Literal["numpy", "jax"]):
     result = main(
         main_target=(MainTarget.results.df_with_mapper),
         input_data=input_data_arg,
-        tt_targets=TTTargets(tree=TARGETS_TREE),
+        tt_targets=TTTargets.tree(TARGETS_TREE),
         policy_date_str="2025-01-01",
         rounding=False,
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         backend=backend,
     )
     pd.testing.assert_frame_equal(
@@ -119,9 +119,9 @@ def test_can_create_input_template(backend: Literal["numpy", "jax"]):
     result_template = main(
         main_target=MainTarget.templates.input_data_dtypes.tree,
         policy_date_str="2025-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         backend=backend,
-        tt_targets=TTTargets(tree=TARGETS_TREE),
+        tt_targets=TTTargets.tree(TARGETS_TREE),
     )
     flat_result_template = dt.flatten_to_tree_paths(result_template)
     flat_expected = dt.flatten_to_tree_paths(INPUT_DF_MAPPER)
@@ -135,7 +135,7 @@ def test_modify_evaluation_date_after_creating_policy_environment(
     policy_environment = main(
         main_target=MainTarget.policy_environment,
         policy_date_str="2000-01-01",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         backend=backend,
     )
     input_data = InputData.tree(
@@ -152,8 +152,8 @@ def test_modify_evaluation_date_after_creating_policy_environment(
         # acre_size_in_hectares capped starting in 2020
         evaluation_date_str="2020-01-01",
         input_data=input_data,
-        tt_targets=TTTargets(
-            tree={"property_tax": {"amount_y": "property_tax_amount_y"}}
+        tt_targets=TTTargets.tree(
+            {"property_tax": {"amount_y": "property_tax_amount_y"}}
         ),
         backend=backend,
     )
@@ -186,7 +186,7 @@ def test_different_evaluation_dates_across_data_rows(
                 "evaluation_year": xnp.array([2022, 2020, 2021]),
             }
         ),
-        tt_targets=TTTargets(tree={"f": None}),
+        tt_targets=TTTargets.tree({"f": None}),
         backend=backend,
     )
 
@@ -214,8 +214,8 @@ def test_input_data_as_targets(xnp: ModuleType, backend: Literal["numpy", "jax"]
                 "p_id": xnp.array([2, 0, 1]),
             }
         ),
-        tt_targets=TTTargets(tree={"kin_id": None, "payroll_tax": {"amount_y": None}}),
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        tt_targets=TTTargets.tree({"kin_id": None, "payroll_tax": {"amount_y": None}}),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         backend=backend,
         include_warn_nodes=False,
     )
@@ -248,8 +248,8 @@ def test_input_data_reordering_with_distinct_values(
             }
         ),
         # Request input columns as outputs to see if they maintain correct order
-        tt_targets=TTTargets(tree={"age": None, "wealth": None}),
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        tt_targets=TTTargets.tree({"age": None, "wealth": None}),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         backend=backend,
         include_warn_nodes=False,
     )

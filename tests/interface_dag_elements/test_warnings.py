@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
-from ttsim import InputData, MainTarget, TTTargets, main
+from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.tt import ScalarParam, group_creation_function, policy_function
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ def another_func(some_func: int) -> int:
 def mettsim_environment(backend) -> PolicyEnvironment:
     return main(
         main_target="policy_environment",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         policy_date=datetime.date(2025, 1, 1),
         backend=backend,
     )
@@ -73,17 +73,17 @@ def test_warn_if_functions_and_data_columns_overlap(backend):
     with pytest.warns(match="Your data provides the column:"):
         main(
             main_target="warn_if__functions_and_data_columns_overlap",
-            input_data={
-                "tree": {
+            input_data=InputData.tree(
+                tree={
                     "p_id": pd.Series([0]),
                     "some_func": pd.Series([1]),
                 }
-            },
+            ),
             policy_environment={
                 "some_func": some_func,
                 "another_func": another_func,
             },
-            tt_targets={"tree": {"another_func": None}},
+            tt_targets=TTTargets.tree({"another_func": None}),
             evaluation_date=datetime.date(2025, 1, 1),
             rounding=False,
             include_fail_nodes=False,
@@ -96,14 +96,14 @@ def test_warn_if_functions_and_columns_overlap_no_warning_if_no_overlap(backend)
         warnings.simplefilter("always")
         main(
             main_target="warn_if__functions_and_data_columns_overlap",
-            input_data={
-                "tree": {
+            input_data=InputData.tree(
+                tree={
                     "p_id": pd.Series([0]),
                     "x": pd.Series([1]),
                 }
-            },
+            ),
             policy_environment={"some_func": some_func},
-            tt_targets={"tree": {"some_func": None}},
+            tt_targets=TTTargets.tree({"some_func": None}),
             policy_date=datetime.date(2025, 1, 1),
             rounding=False,
             include_fail_nodes=False,
@@ -129,7 +129,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places(backend):
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
             processed_data={},
-            tt_targets=TTTargets(tree={}),
+            tt_targets=TTTargets.tree({}),
             backend=backend,
         )
 
@@ -151,7 +151,7 @@ def test_warn_if_evaluation_date_set_in_multiple_places_implicitly_added(backend
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
             processed_data={"p_id": xnp.array([0])},
-            tt_targets=TTTargets(tree={"p_id": None}),
+            tt_targets=TTTargets.tree({"p_id": None}),
             backend=backend,
         )
 
@@ -171,7 +171,7 @@ def test_do_not_need_to_warn_if_evaluation_date_is_set_only_once(backend, xnp):
             policy_environment=policy_environment,
             evaluation_date=datetime.date(2025, 1, 1),
             processed_data={"p_id": xnp.array([0])},
-            tt_targets=TTTargets(tree={"p_id": None}),
+            tt_targets=TTTargets.tree({"p_id": None}),
             backend=backend,
         )
         assert not w, f"Expected no warning, but got at least: {w[0].message}"
@@ -182,14 +182,14 @@ def test_warn_if_tt_dag_includes_functions_with_warn_msg_if_included_set(
     backend: Literal["jax", "numpy"],
 ):
     env = mettsim_environment(backend)
-    env["sp_id"] = should_warn_sp_id
-    env["fam_id"] = dummy_fam_id
+    env["sp_id"] = should_warn_sp_id  # ty: ignore [invalid-assignment]
+    env["fam_id"] = dummy_fam_id  # ty: ignore [invalid-assignment]
 
     with pytest.warns(match="The TT DAG includes elements with `warn_msg_if_included`"):
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=env,
-            tt_targets=TTTargets(tree={"fam_id": None}),
+            tt_targets=TTTargets.tree({"fam_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             backend=backend,
         )
@@ -203,7 +203,7 @@ def test_warn_if_tt_function_type_annotations_turned_off(
         main(
             main_target=MainTarget.results.df_with_mapper,
             policy_environment=mettsim_environment(backend),
-            tt_targets=TTTargets(tree={"hh_id": None}),
+            tt_targets=TTTargets.tree({"hh_id": None}),
             input_data=InputData.tree(tree=minimal_data_tree),
             tt_function_set_annotations=False,
             backend=backend,
