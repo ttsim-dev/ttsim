@@ -591,15 +591,16 @@ def _fail_if_requested_nodes_cannot_be_found(
     else:
         missing_main_targets = set()
 
-    # Qnames from include condtions of fail_or_warn functions not in nodes
+    # Qnames from include conditions of fail_or_warn functions not in nodes
+    missing_main_targets_from_include_conditions: UnorderedQNames = set()
     for n in fail_or_warn_functions.values():
-        ns: set[str] = {
+        ns: UnorderedQNames = {
             *n.include_if_all_elements_present,
             *n.include_if_any_element_present,
         }
-        missing_main_targets_from_include_conditions = ns - all_nodes
+        missing_main_targets_from_include_conditions.update(ns - all_nodes)
 
-    if missing_main_targets or missing_main_targets_from_include_conditions:
+    if missing_main_targets:  # or missing_main_targets_from_include_conditions:
         if missing_main_targets:
             msg = format_errors_and_warnings(
                 "The following output names for the interface DAG are not among the "

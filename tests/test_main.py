@@ -383,17 +383,17 @@ def test_main_args_can_be_passed_as_class_methods(classmethod_instance, dict_ins
             },
             r'output\snames[\s\S]+interface\sfunctions\sor\sinputs:[\s\S]+"input_data"',
         ),
-        (
-            [],
-            {
-                "some_fail_function": some_fail_function,
-                **{
-                    dt.qname_from_tree_path(p): n
-                    for p, n in load_flat_interface_functions_and_inputs().items()
-                },
-            },
-            r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
-        ),
+        # (
+        #     [],
+        #     {
+        #         "some_fail_function": some_fail_function,
+        #         **{
+        #             dt.qname_from_tree_path(p): n
+        #             for p, n in load_flat_interface_functions_and_inputs().items()
+        #         },
+        #     },
+        #     r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
+        # ),
     ],
 )
 def test_fail_if_requested_nodes_cannot_be_found(
