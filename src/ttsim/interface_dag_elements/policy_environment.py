@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import dags.tree as dt
 import numpy
@@ -225,7 +225,12 @@ def _clean_one_param_spec(
     policy_date: datetime.date,
 ) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a ParamObject."""
-    policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
+    policy_dates = numpy.sort(
+        cast(
+            "list[datetime.date]",
+            [key for key in spec if isinstance(key, datetime.date)],
+        )
+    )
     idx = numpy.searchsorted(policy_dates, policy_date, side="right")  # type: ignore[call-overload]
     if idx == 0:
         return None
@@ -241,14 +246,15 @@ def _clean_one_param_spec(
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
-    current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
+    current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
     if len(current_spec) == 0:
         return None
     if len(current_spec) == 1 and "updates_previous" in current_spec:
         raise ValueError(
-            f"'updates_previous' cannot be specified as the only element, found{spec}",
+            "'updates_previous' cannot be specified as the only element, found:\n\n"
+            f"{spec}\n\n",
         )
         # Parameter ceased to exist
     if spec["type"] == "scalar":
@@ -256,9 +262,9 @@ def _clean_one_param_spec(
             raise ValueError(
                 "'updates_previous' cannot be specified for scalar parameters"
             )
-        out["value"] = current_spec["value"]  # ty: ignore[invalid-argument-type, non-subscriptable]
+        out["value"] = current_spec["value"]
     else:
-        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])  # ty: ignore[invalid-argument-type]
+        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
     return out
 
 

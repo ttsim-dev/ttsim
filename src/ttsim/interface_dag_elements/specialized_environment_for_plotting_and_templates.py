@@ -9,7 +9,7 @@ execution).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Literal, cast, overload
 
 import dags.tree as dt
 import networkx as nx
@@ -40,6 +40,7 @@ from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     import datetime
+    import re
     from collections.abc import Callable
     from types import ModuleType
     from typing import Any
@@ -69,14 +70,16 @@ def qnames_to_derive_functions_from(
         time_units=list(TIME_UNIT_IDS_TO_LABELS),
         grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
     )
-    base_names_input_columns = {
-        pattern_all.fullmatch(qn).group("base_name") for qn in labels__input_columns
-    }
+    fullmatches = cast(
+        "list[re.Match[str]]",
+        [pattern_all.fullmatch(qn) for qn in labels__input_columns],
+    )
+    base_names_input_columns = {f.group("base_name") for f in fullmatches}
 
     out = set(labels__input_columns)
     for pi in labels__policy_inputs:
-        match = pattern_all.fullmatch(pi)
-        base_name = match.group("base_name")  # ty: ignore[possibly-missing-attribute]
+        match = cast("re.Match[str]", pattern_all.fullmatch(pi))
+        base_name = match.group("base_name")
         if base_name in base_names_input_columns:
             continue
         out.add(pi)

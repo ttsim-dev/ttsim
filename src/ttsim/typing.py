@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, TypeVar, overload
 
 if TYPE_CHECKING:
     from jaxtyping import Array, Bool, Float, Int
@@ -11,18 +11,60 @@ if TYPE_CHECKING:
 
     # Make these available for import from other modules.
     import datetime
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Iterator, Mapping
 
-    OrigParamSpec = (
-        # Header
-        dict[str, str | None | dict[Literal["de", "en"], str | None]]
-        |
-        # Parameters at one point in time
-        dict[
-            datetime.date,
-            dict[Literal["note", "reference"] | str | int, Any],  # noqa: PYI051
-        ]
-    )
+    class OrigParamSpec(Protocol):
+        """A dictionary with patterns for header and parameters at one point in time."""
+
+        @overload
+        def __getitem__(
+            self, key: str
+        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+
+        @overload
+        def __getitem__(
+            self, key: datetime.date
+        ) -> dict[Literal["note", "reference"] | str | int, Any]: ...
+
+        def __getitem__(
+            self, key: str | datetime.date
+        ) -> (
+            str
+            | None
+            | dict[Literal["de", "en"], str | None]
+            | dict[Literal["note", "reference"] | str | int, Any]
+        ): ...
+
+        @overload
+        def get(
+            self, key: str, default: None = None
+        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+
+        @overload
+        def get(
+            self, key: str, default: str | bool | float
+        ) -> (
+            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+        ): ...
+
+        def get(
+            self,
+            key: str,
+            default: str
+            | None
+            | bool
+            | float
+            | dict[Literal["de", "en"], str | None] = None,
+        ) -> (
+            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+        ): ...
+
+        def __contains__(self, key: str | datetime.date) -> bool: ...
+
+        def __iter__(self) -> Iterator[str | datetime.date]: ...
+
+        def keys(self) -> Iterable[str | datetime.date]: ...
+
     DashedISOString = str
     """A string representing a date in the format 'YYYY-MM-DD'."""
 
