@@ -386,11 +386,11 @@ def test_main_args_can_be_passed_as_class_methods(classmethod_instance, dict_ins
         (
             [],
             {
+                "some_fail_function": some_fail_function,
                 **{
                     dt.qname_from_tree_path(p): n
                     for p, n in load_flat_interface_functions_and_inputs().items()
                 },
-                "some_fail_function": some_fail_function,
             },
             r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
         ),
