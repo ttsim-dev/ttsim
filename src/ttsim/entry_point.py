@@ -105,7 +105,7 @@ def main(
     )
 
     _fail_if_requested_nodes_cannot_be_found(
-        main_targets=main_targets,  # type: ignore[arg-type]
+        main_targets=main_targets,
         nodes=nodes,
     )
 
@@ -117,7 +117,7 @@ def main(
 
     main_targets = include_fail_or_warn_nodes(
         functions=functions,
-        explicit_main_targets=main_targets,  # type: ignore[arg-type]
+        explicit_main_targets=main_targets,
         include_fail_nodes=include_fail_nodes,
         include_warn_nodes=include_warn_nodes,
     )
@@ -295,7 +295,7 @@ def _harmonize_main_targets(
 ) -> list[str]:
     if isinstance(main_targets, dict):
         out = dt.qnames(main_targets)
-    elif isinstance(main_targets[0], tuple):  # type: ignore[index]
+    elif isinstance(main_targets[0], tuple):
         out = [dt.qname_from_tree_path(tp) for tp in main_targets]  # type: ignore[arg-type]
     else:
         out = list(main_targets)

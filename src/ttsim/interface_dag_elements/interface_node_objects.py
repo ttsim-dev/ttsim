@@ -149,7 +149,7 @@ class InterfaceFunction(InterfaceNodeObject, Generic[FunArgTypes, ReturnType]):
         self,
         tree_path: tuple[str, ...],
         top_level_namespace: UnorderedQNames,
-    ) -> InterfaceFunction:  # type: ignore[type-arg]
+    ) -> InterfaceFunction:
         """Remove tree logic from the function and update the function signature."""
         return InterfaceFunction(
             leaf_name=self.leaf_name,
@@ -183,7 +183,7 @@ def interface_function(
     A decorator that returns an InterfaceFunction object.
     """
 
-    def inner(func: FunctionType[..., Any]) -> InterfaceFunction:  # type: ignore[type-arg]
+    def inner(func: FunctionType[..., Any]) -> InterfaceFunction:
         return InterfaceFunction(
             leaf_name=leaf_name if leaf_name else func.__name__,
             function=func,
@@ -231,7 +231,7 @@ class InputDependentInterfaceFunction(InterfaceFunction[FunArgTypes, ReturnType]
         self,
         tree_path: tuple[str, ...],
         top_level_namespace: UnorderedQNames,
-    ) -> InputDependentInterfaceFunction:  # type: ignore[type-arg]
+    ) -> InputDependentInterfaceFunction:
         """Remove tree logic from the function and update the function signature."""
         return InputDependentInterfaceFunction(
             leaf_name=self.leaf_name,
@@ -298,7 +298,7 @@ def input_dependent_interface_function(
 
 
 @dataclass(frozen=True)
-class FailFunction(InterfaceFunction):  # type: ignore[type-arg]
+class FailFunction(InterfaceFunction):
     """An interface function that fails under certain conditions."""
 
     include_if_any_element_present: Iterable[str]
@@ -347,7 +347,7 @@ def fail_function(
 
 
 @dataclass(frozen=True)
-class WarnFunction(InterfaceFunction):  # type: ignore[type-arg]
+class WarnFunction(InterfaceFunction):
     """An interface function that warns under certain conditions."""
 
     include_if_any_element_present: Iterable[str]

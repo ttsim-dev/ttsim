@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
     # Make these available for import from other modules.
     import datetime
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     OrigParamSpec = (
         # Header
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
         InterfaceInput,
     )
 
-    FlatInterfaceObjects = dict[
+    FlatInterfaceObjects = Mapping[
         tuple[str, ...], InterfaceFunction | InterfaceInput | "FlatInterfaceObjects"
     ]
     """Flattened tree of interface objects."""
@@ -55,13 +55,13 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for input, processing, and output; including metadata.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedData = dict[str, FloatColumn | IntColumn | BoolColumn | "NestedData"]
+    NestedData = Mapping[str, FloatColumn | IntColumn | BoolColumn | "NestedData"]
     """Tree mapping TTSIM paths to 1d arrays."""
-    FlatData = dict[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
+    FlatData = Mapping[tuple[str, ...], FloatColumn | IntColumn | BoolColumn]
     """Flattened tree mapping TTSIM paths to 1d arrays."""
-    NestedInputsMapper = dict[str, str | bool | int | float | "NestedInputsMapper"]
+    NestedInputsMapper = Mapping[str, str | bool | int | float | "NestedInputsMapper"]
     """Tree mapping TTSIM paths to df columns or constants."""
-    QNameData = dict[str, FloatColumn | IntColumn | BoolColumn]
+    QNameData = Mapping[str, FloatColumn | IntColumn | BoolColumn]
     """Mapping of qualified name paths to 1d arrays."""
     QNameStrings = Iterable[str]
     """A list, tuple, or set of qualified names."""
@@ -69,7 +69,7 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Collections of names etc.
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedStrings = dict[str, str | "NestedStrings"]
+    NestedStrings = Mapping[str, str | "NestedStrings"]
     """Tree mapping TTSIM paths to df columns or type hints."""
     UnorderedQNames = set[str]
     """A set of qualified names."""
@@ -79,41 +79,41 @@ if TYPE_CHECKING:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Tree-like data structures for policy objects
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    NestedPolicyInputs = dict[str, PolicyInput | "NestedPolicyInputs"]
+    NestedPolicyInputs = Mapping[str, PolicyInput | "NestedPolicyInputs"]
     """Tree of policy inputs."""
-    FlatColumnObjects = dict[str, ColumnObject]
+    FlatColumnObjects = Mapping[str, ColumnObject]
     """Flat mapping of paths to column objects."""
-    FlatColumnObjectsParamFunctions = dict[
+    FlatColumnObjectsParamFunctions = Mapping[
         tuple[str, ...],
         ColumnObject | ParamFunction,
     ]
     """Flat mapping of paths to column objects or param functions."""
-    NestedColumnObjectsParamFunctions = dict[
+    NestedColumnObjectsParamFunctions = Mapping[
         str,
         ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions",
     ]
     """Tree of column objects or param functions."""
     FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
     """Flat mapping of paths to yaml contents; the leaf name is also the last element of the key."""  # noqa: E501
-    NestedParamObjects = dict[str, ParamObject | "NestedParamObjects"]
+    NestedParamObjects = Mapping[str, ParamObject | "NestedParamObjects"]
     """Tree with param objects."""
-    PolicyEnvironment = dict[
+    PolicyEnvironment = Mapping[
         str,
         ColumnObject | ParamFunction | ParamObject | "PolicyEnvironment",
     ]
     """Tree of column objects, param functions, and param objects."""
-    FlatPolicyEnvironment = dict[
+    FlatPolicyEnvironment = Mapping[
         tuple[str, ...], ColumnObject | ParamFunction | ParamObject
     ]
     """Flat mapping of paths to column objects, param functions, and param objects."""
-    SpecEnvWithoutTreeLogicAndWithDerivedFunctions = dict[
+    SpecEnvWithoutTreeLogicAndWithDerivedFunctions = Mapping[
         str,
         ColumnObject | ParamFunction | ParamObject | int | float | bool,
     ]
     """Map qualified names to column objects, param functions, param objects, or scalars from processed data."""  # noqa: E501
-    SpecEnvWithProcessedParamsAndScalars = dict[str, ColumnObject | Any]
+    SpecEnvWithProcessedParamsAndScalars = Mapping[str, ColumnObject | Any]
     """Map qualified names to column objects and anything that comes out of processing the params."""  # noqa: E501
-    SpecEnvWithPartialledParamsAndScalars = dict[str, ColumnFunction]
+    SpecEnvWithPartialledParamsAndScalars = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""
 
     NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]

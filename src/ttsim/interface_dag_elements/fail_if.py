@@ -815,7 +815,7 @@ def format_errors_and_warnings(text: str, width: int = 79) -> str:
     return "\n\n".join(wrapped_paragraphs)
 
 
-def format_list_linewise(some_list: Iterable[Any]) -> str:  # type: ignore[type-arg, unused-ignore]
+def format_list_linewise(some_list: Iterable[Any]) -> str:
     formatted_list = '",\n    "'.join(some_list)
     return textwrap.dedent(
         """

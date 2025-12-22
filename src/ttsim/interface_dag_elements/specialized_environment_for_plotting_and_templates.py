@@ -70,8 +70,7 @@ def qnames_to_derive_functions_from(
         grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
     )
     base_names_input_columns = {
-        pattern_all.fullmatch(qn).group("base_name")
-        for qn in labels__input_columns  # ty: ignore[possibly-missing-attribute]
+        pattern_all.fullmatch(qn).group("base_name") for qn in labels__input_columns
     }
 
     out = set(labels__input_columns)
