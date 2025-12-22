@@ -281,15 +281,6 @@ unsupported-base = "error"
 unused-ignore-comment = "error"
 useless-overload-body = "error"
 
-# [[tool.ty.overrides]]
-# module = ["tests.*", "src_mettsim.tests_middle_earth.*"]
-# disable_error_code = ["no-untyped-def"]  # All tests return None, don't clutter source code.
-
-# [[tool.ty.overrides]]
-# module = ["src.ttsim.main_args",]
-# disable_error_code = ["no-redef"]  # Instantiate dataclass with same name as elements.
-
-
 
 # ======================================================================================
 # pytest configuration
