@@ -66,9 +66,9 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        tt_targets=tt_targets__qname,  # ty: ignore[invalid-argument-type]
+        tt_targets=tt_targets__qname,
         input_columns=labels__input_columns,
-        grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
+        grouping_levels=labels__grouping_levels,
     )
 
 
@@ -129,7 +129,7 @@ def _add_derived_functions(
     time_conversion_functions = create_time_conversion_functions(
         qname_policy_environment=qname_env_without_tree_logic,
         input_columns=input_columns,
-        grouping_levels=grouping_levels,  # ty: ignore[invalid-argument-type]
+        grouping_levels=grouping_levels,
     )
     column_functions = {
         k: v
@@ -144,8 +144,8 @@ def _add_derived_functions(
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
         input_columns=input_columns,
-        tt_targets=tt_targets,  # ty: ignore[invalid-argument-type]
-        grouping_levels=grouping_levels,  # ty: ignore[invalid-argument-type]
+        tt_targets=tt_targets,
+        grouping_levels=grouping_levels,
     )
     return {
         **qname_env_without_tree_logic,

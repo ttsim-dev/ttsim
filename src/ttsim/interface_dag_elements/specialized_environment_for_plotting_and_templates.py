@@ -68,7 +68,7 @@ def qnames_to_derive_functions_from(
     """
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         time_units=list(TIME_UNIT_IDS_TO_LABELS),
-        grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
+        grouping_levels=labels__grouping_levels,
     )
     fullmatches = cast(
         "list[re.Match[str]]",
@@ -112,7 +112,7 @@ def without_tree_logic_and_with_derived_functions(
             - set(labels__input_columns)
         ),
         input_columns=qnames_to_derive_functions_from,
-        grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
+        grouping_levels=labels__grouping_levels,
     )
 
 

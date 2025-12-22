@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
 
 if TYPE_CHECKING:
     from jaxtyping import Array, Bool, Float, Int
@@ -115,7 +115,7 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to df columns or type hints."""
     UnorderedQNames = set[str]
     """A set of qualified names."""
-    OrderedQNames = TypeVar("OrderedQNames", tuple[str, ...], list[str])
+    OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
     """A tuple or a list of qualified names."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
