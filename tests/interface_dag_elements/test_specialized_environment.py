@@ -31,10 +31,7 @@ from ttsim.tt import (
 )
 
 if TYPE_CHECKING:
-    from ttsim.typing import (
-        FloatColumn,
-        IntColumn,
-    )
+    from ttsim.typing import FloatColumn, IntColumn, RawParamValue
 
 
 @policy_input()
@@ -96,12 +93,10 @@ class ConvertedParam:
 
 
 @param_function()
-def some_converting_params_func(
-    raw_param_spec: dict[str, bool | float],
-) -> ConvertedParam:
+def some_converting_params_func(raw_param_spec: RawParamValue) -> ConvertedParam:
     return ConvertedParam(
         some_float_param=raw_param_spec["some_float_param"],
-        some_bool_param=raw_param_spec["some_bool_param"],  # ty: ignore[invalid-argument-type]
+        some_bool_param=raw_param_spec["some_bool_param"],
     )
 
 

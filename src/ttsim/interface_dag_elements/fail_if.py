@@ -8,9 +8,6 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 import dags.tree as dt
 import networkx as nx
 import numpy
@@ -41,7 +38,7 @@ from ttsim.tt.param_objects import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
     from types import FunctionType
 
     from ttsim.interface_dag_elements.input_data import FlatData
