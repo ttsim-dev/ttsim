@@ -940,7 +940,6 @@ class ParamFunction(Generic[FunArgTypes, ReturnType]):
         )
 
 
-# Never returns a column, require precise annotation
 def param_function(
     *,
     leaf_name: str | None = None,

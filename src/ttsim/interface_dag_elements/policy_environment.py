@@ -256,9 +256,9 @@ def _clean_one_param_spec(
             raise ValueError(
                 "'updates_previous' cannot be specified for scalar parameters"
             )
-        out["value"] = current_spec["value"]
+        out["value"] = current_spec["value"]  # ty: ignore[invalid-argument-type, non-subscriptable]
     else:
-        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
+        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])  # ty: ignore[invalid-argument-type]
     return out
 
 
@@ -281,7 +281,7 @@ def _get_param_value(
                 f"{relevant_specs}"
             )
         return upsert_tree(
-            base=_get_param_value(relevant_specs=relevant_specs[:-1]),
-            to_upsert=current_spec,
+            base=_get_param_value(relevant_specs=relevant_specs[:-1]),  # ty: ignore[invalid-argument-type]
+            to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
         )
     return current_spec

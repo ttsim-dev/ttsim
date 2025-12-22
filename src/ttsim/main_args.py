@@ -135,7 +135,7 @@ class InputData(MainArg):
 
     def to_dict(self) -> dict[str, Any]:
         if self.df_and_mapper is not None:
-            return {"df_and_mapper": self.df_and_mapper.to_dict()}
+            return {"df_and_mapper": self.df_and_mapper.to_dict()}  # ty: ignore[unresolved-attribute]
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
 

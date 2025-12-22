@@ -140,7 +140,7 @@ def tt_dag_includes_function_with_warn_msg_if_included_set(
             continue
         # Check because ParamObjects can be overridden by ColumnObjects down the road.
         if hasattr(env[node], "fail_msg_if_included"):  # noqa: SIM102
-            if msg := env[node].warn_msg_if_included:
+            if msg := env[node].warn_msg_if_included:  # ty: ignore[possibly-missing-attribute]
                 my_warnings |= {f"{msg}\n\n\n"}
     if my_warnings:
         msg = (

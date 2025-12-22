@@ -66,9 +66,9 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        tt_targets=tt_targets__qname,
+        tt_targets=tt_targets__qname,  # ty: ignore[invalid-argument-type]
         input_columns=labels__input_columns,
-        grouping_levels=labels__grouping_levels,
+        grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -80,7 +80,7 @@ def _remove_tree_logic_from_policy_environment(
     out = {}
     for name, obj in qname_env.items():
         if hasattr(obj, "remove_tree_logic"):
-            out[name] = obj.remove_tree_logic(
+            out[name] = obj.remove_tree_logic(  # ty: ignore[call-non-callable]
                 tree_path=dt.tree_path_from_qname(name),
                 top_level_namespace=labels__top_level_namespace,
             )
@@ -129,7 +129,7 @@ def _add_derived_functions(
     time_conversion_functions = create_time_conversion_functions(
         qname_policy_environment=qname_env_without_tree_logic,
         input_columns=input_columns,
-        grouping_levels=grouping_levels,
+        grouping_levels=grouping_levels,  # ty: ignore[invalid-argument-type]
     )
     column_functions = {
         k: v
@@ -144,8 +144,8 @@ def _add_derived_functions(
     aggregate_by_group_functions = create_agg_by_group_functions(
         column_functions=column_functions,
         input_columns=input_columns,
-        tt_targets=tt_targets,
-        grouping_levels=grouping_levels,
+        tt_targets=tt_targets,  # ty: ignore[invalid-argument-type]
+        grouping_levels=grouping_levels,  # ty: ignore[invalid-argument-type]
     )
     return {
         **qname_env_without_tree_logic,
@@ -267,7 +267,7 @@ def with_partialled_params_and_scalars(
     processed_functions = {}
     for name, col_func in column_functions.items():
         vect_col_func = (
-            col_func.vectorize(backend=backend, xnp=xnp)
+            col_func.vectorize(backend=backend, xnp=xnp)  # ty: ignore[call-non-callable]
             if hasattr(col_func, "vectorize")
             else col_func
         )
@@ -291,7 +291,7 @@ def with_partialled_params_and_scalars(
 
 def _apply_rounding(element: ColumnFunction, xnp: ModuleType) -> ColumnFunction:
     return (
-        element.rounding_spec.apply_rounding(element, xnp=xnp)
+        element.rounding_spec.apply_rounding(element, xnp=xnp)  # ty: ignore[possibly-missing-attribute]
         if getattr(element, "rounding_spec", False)
         else element
     )
@@ -304,6 +304,6 @@ def tt_dag(
 ) -> nx.DiGraph:
     """The taxes-transfers DAG."""
     return create_dag(
-        functions=with_partialled_params_and_scalars,
-        targets=labels__column_targets,
+        functions=with_partialled_params_and_scalars,  # ty: ignore[invalid-argument-type]
+        targets=labels__column_targets,  # ty: ignore[invalid-argument-type]
     )

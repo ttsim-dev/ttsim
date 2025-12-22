@@ -135,6 +135,8 @@ def interface(
                 else interface_object
             )
             description = inspect.getdoc(f)
+        else:
+            description = ""
         namespace = node_name.split("__")[0] if "__" in node_name else "top-level"
         dag.nodes[node_name]["node_metadata"] = NodeMetaData(
             description=description or "No description available.",

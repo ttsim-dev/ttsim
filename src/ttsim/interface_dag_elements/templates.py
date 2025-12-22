@@ -36,7 +36,7 @@ def input_data_dtypes__tree(
         functions=dt.unflatten_from_qnames(
             specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars,
         ),
-        targets=tt_targets__qname,
+        targets=dict.fromkeys(tt_targets__qname),
         top_level_inputs=labels__top_level_namespace,
     )
 

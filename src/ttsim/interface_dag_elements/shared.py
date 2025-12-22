@@ -387,4 +387,4 @@ def copy_environment(env: SomeEnv) -> SomeEnv:
     A copy of *env*, which is a deep copy for all practical purposes.
 
     """
-    return optree.tree_map(copy, env)
+    return optree.tree_map(copy, env)  # ty: ignore[invalid-argument-type]

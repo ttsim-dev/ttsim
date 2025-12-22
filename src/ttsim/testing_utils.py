@@ -19,6 +19,7 @@ from ttsim.interface_dag_elements.shared import to_datetime
 from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templates import (  # noqa: E501
     dummy_callable,
 )
+from ttsim.main_args import InputData, OrigPolicyObjects, TTTargets
 
 # Set display options to show all columns without truncation
 pd.set_option("display.max_columns", None)
@@ -47,7 +48,7 @@ def cached_policy_environment(
     return main(
         main_target="policy_environment",
         policy_date=policy_date,
-        orig_policy_objects={"root": root},
+        orig_policy_objects=OrigPolicyObjects.root(root),
         backend=backend,
         include_fail_nodes=True,
         include_warn_nodes=False,
@@ -78,7 +79,7 @@ class PolicyTest:
         xnp: ModuleType,
     ) -> None:
         self.info = info
-        self.input_tree = optree.tree_map(xnp.array, input_tree)
+        self.input_tree = optree.tree_map(xnp.array, input_tree)  # ty: ignore[invalid-argument-type]
         self.expected_output_tree = expected_output_tree
         self.path = path
         self.policy_date = policy_date
@@ -108,10 +109,10 @@ def execute_test(
     if test.target_structure:
         result_df = main(
             main_target="results__df_with_nested_columns",
-            input_data={"tree": test.input_tree},
+            input_data=InputData.tree(test.input_tree),  # ty: ignore[invalid-argument-type]
             policy_environment=environment,
             policy_date=test.policy_date,
-            tt_targets={"tree": test.target_structure},
+            tt_targets=TTTargets.tree(test.target_structure),
             rounding=True,
             backend=backend,
             include_fail_nodes=True,
@@ -254,7 +255,7 @@ def check_env_completeness(
     qname_env_with_derived_functions = main(
         main_target="specialized_environment_for_plotting_and_templates__without_tree_logic_and_with_derived_functions",
         policy_date=policy_date,
-        orig_policy_objects=orig_policy_objects,
+        orig_policy_objects=OrigPolicyObjects(**orig_policy_objects),
         backend="numpy",
     )
     all_nodes = {

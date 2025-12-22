@@ -40,7 +40,8 @@ from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
     import datetime
-    from types import FunctionType, ModuleType
+    from collections.abc import Callable
+    from types import ModuleType
     from typing import Any
 
     from ttsim.typing import (
@@ -66,16 +67,17 @@ def qnames_to_derive_functions_from(
     """
     pattern_all = get_re_pattern_for_all_time_units_and_groupings(
         time_units=list(TIME_UNIT_IDS_TO_LABELS),
-        grouping_levels=labels__grouping_levels,
+        grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
     )
     base_names_input_columns = {
-        pattern_all.fullmatch(qn).group("base_name") for qn in labels__input_columns
+        pattern_all.fullmatch(qn).group("base_name")
+        for qn in labels__input_columns  # ty: ignore[possibly-missing-attribute]
     }
 
     out = set(labels__input_columns)
     for pi in labels__policy_inputs:
         match = pattern_all.fullmatch(pi)
-        base_name = match.group("base_name")
+        base_name = match.group("base_name")  # ty: ignore[possibly-missing-attribute]
         if base_name in base_names_input_columns:
             continue
         out.add(pi)
@@ -103,12 +105,12 @@ def without_tree_logic_and_with_derived_functions(
     )
     return _add_derived_functions(
         qname_env_without_tree_logic=qname_env_without_tree_logic,
-        tt_targets=(
+        tt_targets=list(
             (labels__all_qnames_in_policy_environment | set(tt_targets__qname))
             - set(labels__input_columns)
         ),
         input_columns=qnames_to_derive_functions_from,
-        grouping_levels=labels__grouping_levels,
+        grouping_levels=labels__grouping_levels,  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -121,7 +123,7 @@ def without_input_data_nodes_with_dummy_callables(
     dags to set up the DAG for plotting and templates.
     """
     return {
-        qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])
+        qn: dummy_callable(obj=n, leaf_name=dt.tree_path_from_qname(qn)[-1])  # ty: ignore[no-matching-overload]
         if not callable(n)
         else n
         for qn, n in without_tree_logic_and_with_derived_functions.items()
@@ -142,12 +144,12 @@ def complete_tt_dag(
     targets are kept. If no tt_targets are specified, the entire DAG is returned.
     """
     dag = create_dag(
-        functions=without_input_data_nodes_with_dummy_callables,
+        functions=without_input_data_nodes_with_dummy_callables,  # ty: ignore[invalid-argument-type]
         # We need to specify all possible nodes as targets here because of the selection
         # types 'descendants' and 'neighbors'. In these cases 'tt_targets__qname' is not
         # the end point of the DAG, but the start point (descendants) or the middle
         # point (neighbors).
-        targets=(
+        targets=list(
             (labels__all_qnames_in_policy_environment | set(tt_targets__qname))
             - set(labels__input_columns)
         ),
@@ -242,10 +244,10 @@ def dummy_callable(obj: InterfaceInput, leaf_name: str) -> InterfaceFunction: ..
 
 def dummy_callable(
     obj: PolicyInput | ParamObject | InterfaceInput, leaf_name: str
-) -> FunctionType[[], Any]:
+) -> Callable[[], Any]:
     """Dummy callable, for plotting and checking DAG completeness."""
 
-    def dummy():  # type: ignore[no-untyped-def]  # noqa: ANN202
+    def dummy():  # noqa: ANN202
         pass
 
     # Extract docstring from the appropriate attribute based on object type
@@ -264,6 +266,14 @@ def dummy_callable(
         original_docstring = obj.description.get("en") if obj.description else None
         if original_docstring:
             dummy.__doc__ = original_docstring
+        if obj.start_date is None:
+            raise ValueError(
+                "start_date must be provided for ParamObjects in dummy_callable"
+            )
+        if obj.end_date is None:
+            raise ValueError(
+                "end_date must be provided for ParamObjects in dummy_callable"
+            )
         return param_function(
             leaf_name=leaf_name,
             start_date=obj.start_date,

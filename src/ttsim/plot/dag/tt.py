@@ -10,7 +10,7 @@ import networkx as nx
 
 from ttsim.entry_point import main
 from ttsim.interface_dag_elements.fail_if import format_errors_and_warnings
-from ttsim.main_args import OrigPolicyObjects
+from ttsim.main_args import OrigPolicyObjects, TTTargets
 from ttsim.main_target import MainTarget
 from ttsim.plot.dag.shared import NodeMetaData, get_figure
 from ttsim.tt import (
@@ -173,21 +173,26 @@ def _get_tt_dag_with_node_metadata(
 ) -> nx.DiGraph:
     """Get the TT DAG to plot."""
     qnames_primary_nodes = _get_qnames_primary_nodes(primary_nodes)
+    tt_targets = (
+        TTTargets.qname(dict.fromkeys(qnames_primary_nodes))
+        if qnames_primary_nodes
+        else None
+    )
+    if orig_policy_objects is None:
+        if root is None:
+            raise ValueError(
+                "root must be provided if orig_policy_objects is not provided"
+            )
+        orig_policy_objects = OrigPolicyObjects.root(root)
     complete_tt_dag_and_specialized_environment = main(
         main_targets=[
             MainTarget.specialized_environment_for_plotting_and_templates.complete_tt_dag,
             MainTarget.specialized_environment_for_plotting_and_templates.without_tree_logic_and_with_derived_functions,
         ],
         policy_date_str=policy_date_str,
-        orig_policy_objects=(
-            orig_policy_objects if orig_policy_objects else OrigPolicyObjects(root=root)
-        ),
+        orig_policy_objects=orig_policy_objects,
         policy_environment=policy_environment,
-        tt_targets={
-            "qname": dict.fromkeys(qnames_primary_nodes)
-            if qnames_primary_nodes
-            else None
-        },
+        tt_targets=tt_targets,
         input_data=input_data,
         processed_data=processed_data,
         labels=labels,
@@ -412,9 +417,9 @@ def _get_qnames_primary_nodes(
     if not primary_nodes:
         return set()
     if all(isinstance(node, str) for node in primary_nodes):
-        return primary_nodes  # type: ignore[return-value]
+        return primary_nodes
     if all(isinstance(node, tuple) for node in primary_nodes):
-        return {dt.qname_from_tree_path(node) for node in primary_nodes}  # type: ignore[arg-type]
+        return {dt.qname_from_tree_path(node) for node in primary_nodes}  # ty: ignore[invalid-argument-type]
     msg = (
         "Primary nodes must be either a set of qnames or a set of tree paths. "
         f"Got {primary_nodes}."
