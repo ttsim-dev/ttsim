@@ -252,8 +252,6 @@ exclude = []
 "tests/interface_dag_elements/test_failures.py" = ["E501"]
 # Redundant literals for being clear what needs to be there.
 "src/ttsim/typing.py" = ["PYI051"]
-# Temporary
-"tests/test_main.py" = ["ERA001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

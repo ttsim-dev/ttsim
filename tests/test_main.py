@@ -146,7 +146,7 @@ def test_interface_dag_is_complete() -> None:
 def test_inputs_of_input_dependent_interface_functions_are_part_of_the_dag() -> None:
     # All inputs of InputDependentInterfaceFunctions should be part of the DAG."""
     all_nodes: FlatInterfaceObjects = load_flat_interface_functions_and_inputs()
-    all_dynamic_nodes: dict[str, InputDependentInterfaceFunction] = {
+    all_dynamic_nodes: dict[tuple[str, ...], InputDependentInterfaceFunction] = {
         k: v
         for k, v in all_nodes.items()
         if isinstance(v, InputDependentInterfaceFunction)
