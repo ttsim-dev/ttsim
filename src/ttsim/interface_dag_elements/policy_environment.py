@@ -176,10 +176,15 @@ def _get_one_param(  # noqa: PLR0911
         return ScalarParam(**cleaned_spec)
     if spec["type"] == "dict":
         return DictParam(**cleaned_spec)
-    if spec["type"].startswith("piecewise_"):
+    if spec["type"] in {
+        "piecewise_constant",
+        "piecewise_linear",
+        "piecewise_quadratic",
+        "piecewise_cubic",
+    }:
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
-            func_type=spec["type"],
+            func_type=spec["type"],  # ty: ignore[invalid-argument-type]
             parameter_dict=cleaned_spec["value"],
             xnp=xnp,
         )
@@ -225,8 +230,15 @@ def _clean_one_param_spec(
     policy_date: datetime.date,
 ) -> dict[str, Any] | None:
     """Prepare the specification of one parameter for creating a ParamObject."""
-    policy_dates = numpy.sort([key for key in spec if isinstance(key, datetime.date)])
-    idx = numpy.searchsorted(policy_dates, policy_date, side="right")  # type: ignore[call-overload]
+    date_keys = [key for key in spec if isinstance(key, datetime.date)]
+    policy_dates_dt64 = numpy.sort([numpy.datetime64(d) for d in date_keys])
+    idx = numpy.searchsorted(
+        policy_dates_dt64, numpy.datetime64(policy_date), side="right"
+    )
+    policy_dates = [
+        datetime.date.fromisoformat(str(d.astype("datetime64[D]")))
+        for d in policy_dates_dt64
+    ]
     if idx == 0:
         return None
 
@@ -241,14 +253,15 @@ def _clean_one_param_spec(
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
-    current_spec = copy.deepcopy(spec[policy_dates[idx - 1]])
+    current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
     if len(current_spec) == 0:
         return None
     if len(current_spec) == 1 and "updates_previous" in current_spec:
         raise ValueError(
-            f"'updates_previous' cannot be specified as the only element, found{spec}",
+            "'updates_previous' cannot be specified as the only element, found:\n\n"
+            f"{spec}\n\n",
         )
         # Parameter ceased to exist
     if spec["type"] == "scalar":
@@ -281,7 +294,7 @@ def _get_param_value(
                 f"{relevant_specs}"
             )
         return upsert_tree(
-            base=_get_param_value(relevant_specs=relevant_specs[:-1]),
-            to_upsert=current_spec,
+            base=_get_param_value(relevant_specs=relevant_specs[:-1]),  # ty: ignore[invalid-argument-type]
+            to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
         )
     return current_spec

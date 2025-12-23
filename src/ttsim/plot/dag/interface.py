@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import dags
 import dags.tree as dt
@@ -134,10 +134,12 @@ def interface(
                 if hasattr(interface_object, "function")
                 else interface_object
             )
-            description = inspect.getdoc(f)
+            description = cast("str", inspect.getdoc(f))
+        else:
+            description = "No description available."
         namespace = node_name.split("__")[0] if "__" in node_name else "top-level"
         dag.nodes[node_name]["node_metadata"] = NodeMetaData(
-            description=description or "No description available.",
+            description=description,
             namespace=namespace,
         )
     if not include_backend_nodes:

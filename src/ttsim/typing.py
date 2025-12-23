@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NewType, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
 
 if TYPE_CHECKING:
     from jaxtyping import Array, Bool, Float, Int
@@ -11,19 +11,61 @@ if TYPE_CHECKING:
 
     # Make these available for import from other modules.
     import datetime
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Iterator, Mapping
 
-    OrigParamSpec = (
-        # Header
-        dict[str, str | None | dict[Literal["de", "en"], str | None]]
-        |
-        # Parameters at one point in time
-        dict[
-            datetime.date,
-            dict[Literal["note", "reference"] | str | int, Any],  # noqa: PYI051
-        ]
-    )
-    DashedISOString = NewType("DashedISOString", str)
+    class OrigParamSpec(Protocol):
+        """A dictionary with patterns for header and parameters at one point in time."""
+
+        @overload
+        def __getitem__(
+            self, key: str
+        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+
+        @overload
+        def __getitem__(
+            self, key: datetime.date
+        ) -> dict[Literal["note", "reference"] | str | int, Any]: ...
+
+        def __getitem__(
+            self, key: str | datetime.date
+        ) -> (
+            str
+            | None
+            | dict[Literal["de", "en"], str | None]
+            | dict[Literal["note", "reference"] | str | int, Any]
+        ): ...
+
+        @overload
+        def get(
+            self, key: str, default: None = None
+        ) -> str | None | dict[Literal["de", "en"], str | None]: ...
+
+        @overload
+        def get(
+            self, key: str, default: str | bool | float
+        ) -> (
+            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+        ): ...
+
+        def get(
+            self,
+            key: str,
+            default: str
+            | None
+            | bool
+            | float
+            | dict[Literal["de", "en"], str | None] = None,
+        ) -> (
+            str | None | dict[Literal["de", "en"], str | None] | bool | int | float
+        ): ...
+
+        def __contains__(self, key: str | datetime.date) -> bool: ...
+
+        def __iter__(self) -> Iterator[str | datetime.date]: ...
+
+        def keys(self) -> Iterable[str | datetime.date]: ...
+
+    DashedISOString = str
     """A string representing a date in the format 'YYYY-MM-DD'."""
 
     from dags.tree.typing import (  # noqa: F401
@@ -31,7 +73,7 @@ if TYPE_CHECKING:
         NestedTargetDict,
     )
 
-    from ttsim.interface_dag_elements import (
+    from ttsim.interface_dag_elements.interface_node_objects import (
         InterfaceFunction,
         InterfaceInput,
     )
@@ -65,6 +107,8 @@ if TYPE_CHECKING:
     """Mapping of qualified name paths to 1d arrays."""
     QNameStrings = Iterable[str]
     """A list, tuple, or set of qualified names."""
+    RawParamValue: TypeAlias = dict[str | int, Any]
+    """The value field of a RawParam."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Collections of names etc.
@@ -73,7 +117,7 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to df columns or type hints."""
     UnorderedQNames = set[str]
     """A set of qualified names."""
-    OrderedQNames = TypeVar("OrderedQNames", tuple[str, ...], list[str])
+    OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
     """A tuple or a list of qualified names."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -88,14 +132,14 @@ if TYPE_CHECKING:
         ColumnObject | ParamFunction,
     ]
     """Flat mapping of paths to column objects or param functions."""
-    NestedColumnObjectsParamFunctions = Mapping[
+    NestedColumnObjectsParamFunctions = dict[
         str,
         ColumnObject | ParamFunction | "NestedColumnObjectsParamFunctions",
     ]
     """Tree of column objects or param functions."""
     FlatOrigParamSpecs = dict[tuple[str, ...], OrigParamSpec]
     """Flat mapping of paths to yaml contents; the leaf name is also the last element of the key."""  # noqa: E501
-    NestedParamObjects = Mapping[str, ParamObject | "NestedParamObjects"]
+    NestedParamObjects = dict[str, ParamObject | "NestedParamObjects"]
     """Tree with param objects."""
     PolicyEnvironment = Mapping[
         str,

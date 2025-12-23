@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, cast, overload
 
 import dags.tree as dt
 from dags import get_free_arguments, rename_arguments
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
         FloatColumn,
         IntColumn,
         OrderedQNames,
-        QNamePolicyEnvironment,
+        PolicyEnvironment,
         UnorderedQNames,
     )
 
@@ -96,7 +96,7 @@ _automatic_time_converters = {
 
 
 def _convertibles(
-    qname_policy_environment: QNamePolicyEnvironment,
+    qname_policy_environment: PolicyEnvironment,
 ) -> dict[str, ColumnObject | ParamFunction | ScalarParam]:
     return {
         qn: e
@@ -110,7 +110,7 @@ def _convertibles(
 
 
 def create_time_conversion_functions(
-    qname_policy_environment: QNamePolicyEnvironment,
+    qname_policy_environment: PolicyEnvironment,
     input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
 ) -> UnorderedQNames:
@@ -165,7 +165,7 @@ def create_time_conversion_functions(
     bngs_to_time_conversion_inputs = {}
     bngs_to_variations = {}
     for qname, element in _convertibles(qname_policy_environment).items():
-        match = pattern_all.fullmatch(qname)
+        match = cast("re.Match[str]", pattern_all.fullmatch(qname))
         # We must not find multiple time units for the same base name and group.
         bngs = get_base_name_and_grouping_suffix(match)
         if match.group("time_unit"):
@@ -309,7 +309,7 @@ def create_agg_by_group_functions(
     }
     out = {}
     for abgfn in agg_by_group_function_names:
-        match = gp.match(abgfn)
+        match = cast("re.Match[str]", gp.match(abgfn))
         base_name_with_time_unit = match.group("base_name_with_time_unit")
         if base_name_with_time_unit in potential_agg_by_group_sources:
             # Check if the aggregation target is already a dependency of the source
@@ -325,8 +325,8 @@ def create_agg_by_group_functions(
             if source_function and abgfn in get_free_arguments(source_function):
                 continue
 
-            group_id = f"{match.group('group')}_id"
-            mapper = {"group_id": group_id, "column": base_name_with_time_unit}
+            group_id = match.group("group")
+            mapper = {"group_id": f"{group_id}_id", "column": base_name_with_time_unit}
             agg_func = rename_arguments(
                 func=grouped_sum,
                 mapper=mapper,
@@ -339,14 +339,14 @@ def create_agg_by_group_functions(
                 description=(
                     f"Automatic sum aggregation of "
                     f"{dt.tree_path_from_qname(base_name_with_time_unit)} by "
-                    f"{match.group('group')} ID."
+                    f"{group_id} ID."
                 ),
             )
     return out
 
 
 def _get_potential_agg_by_group_function_names_from_function_arguments(
-    functions: UnorderedQNames,
+    functions: dict[str, ColumnFunction],
     group_pattern: re.Pattern[str],
 ) -> UnorderedQNames:
     """Get potential aggregation function names from function arguments.

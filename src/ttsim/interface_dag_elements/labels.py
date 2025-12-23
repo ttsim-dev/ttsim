@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import dags.tree as dt
 import networkx as nx
@@ -18,6 +18,7 @@ from ttsim.tt.column_objects_param_function import PolicyInput
 from ttsim.unit_converters import TIME_UNIT_IDS_TO_LABELS
 
 if TYPE_CHECKING:
+    import re
     from types import ModuleType
 
     from ttsim.typing import (
@@ -63,7 +64,7 @@ def top_level_namespace(
     bngs_to_variations = {}
     all_top_level_names = direct_top_level_names.copy()
     for name in top_level_objects_for_variations:
-        match = pattern_all.fullmatch(name)
+        match = cast("re.Match[str]", pattern_all.fullmatch(name))
         # We must not find multiple time units for the same base name and group.
         bngs = get_base_name_and_grouping_suffix(match)
         if match.group("time_unit"):

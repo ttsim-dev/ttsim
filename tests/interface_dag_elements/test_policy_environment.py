@@ -9,7 +9,7 @@ import optree
 import pandas as pd
 import pytest
 
-from ttsim import main
+from ttsim import OrigPolicyObjects, main
 from ttsim.interface_dag_elements.orig_policy_objects import (
     column_objects_and_param_functions,
 )
@@ -48,10 +48,10 @@ def some_params_spec_with_updates_previous():
 def some_int_param():
     return ScalarParam(
         value=1,
-        start_date="2025-01-01",
-        end_date="2025-12-31",
-        name="Some int param",
-        description="Some int param",
+        start_date=datetime.date(2025, 1, 1),
+        end_date=datetime.date(2025, 12, 31),
+        name={"de": "Some int param", "en": "Some int param"},
+        description={"de": "Some int param", "en": "Some int param"},
         unit=None,
         reference_period=None,
         note=None,
@@ -69,7 +69,7 @@ def test_add_jahresanfang(xnp: ModuleType):
         datetime.date(2020, 7, 1): {"value": 2},
     }
     _active_ttsim_tree_with_params = _active_param_objects(
-        orig={("spam.yaml", "foo"): spec},
+        orig={("spam.yaml", "foo"): spec},  # ty: ignore[invalid-argument-type]
         policy_date=pd.to_datetime("2020-07-01").date(),
         xnp=xnp,
     )
@@ -80,7 +80,7 @@ def test_add_jahresanfang(xnp: ModuleType):
 def test_input_is_recognized_as_potential_group_id(backend):
     assert "kin" in main(
         main_target="labels__grouping_levels",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -89,7 +89,7 @@ def test_input_is_recognized_as_potential_group_id(backend):
 def test_p_id_not_recognized_as_potential_group_id(backend):
     assert "p" not in main(
         main_target="labels__grouping_levels",
-        orig_policy_objects={"root": middle_earth.ROOT_PATH},
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
         policy_date=datetime.date(2020, 1, 1),
         backend=backend,
     )
@@ -212,7 +212,7 @@ def test_active_tree_with_column_objects_and_param_functions(
         policy_date=last_day + datetime.timedelta(days=1),
     )
 
-    accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]
+    accessor = optree.tree_accessors(tree, none_is_leaf=True)[0]  # ty: ignore[invalid-argument-type]
 
     assert accessor(functions_last_day).__name__ == function_name_last_day
     assert accessor(functions_next_day).__name__ == function_name_next_day

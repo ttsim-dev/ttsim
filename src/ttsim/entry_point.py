@@ -103,8 +103,8 @@ def main(
         input_qnames=list(input_qnames),
     )
 
-    _fail_if_requested_nodes_cannot_be_found(
-        main_targets=main_targets,  # type: ignore[arg-type]
+    _fail_if_main_targets_not_among_nodes(
+        main_targets=main_targets,
         nodes=nodes,
     )
 
@@ -116,7 +116,7 @@ def main(
 
     main_targets = include_fail_or_warn_nodes(
         functions=functions,
-        explicit_main_targets=main_targets,  # type: ignore[arg-type]
+        explicit_main_targets=main_targets,
         include_fail_nodes=include_fail_nodes,
         include_warn_nodes=include_warn_nodes,
     )
@@ -177,10 +177,10 @@ def _harmonize_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         ].pop("root")
 
     _fail_if_input_structure_is_invalid(
-        user_treedef=optree.tree_flatten(dict_inputs, none_is_leaf=True)[1],  # type: ignore[arg-type]
-        expected_treedef=optree.tree_flatten(expected_structure, none_is_leaf=True)[1],
+        user_treedef=optree.tree_flatten(dict_inputs, none_is_leaf=True)[1],  # ty: ignore [invalid-argument-type]
+        expected_treedef=optree.tree_flatten(expected_structure, none_is_leaf=True)[1],  # ty: ignore [invalid-argument-type]
     )
-    for acc in optree.tree_accessors(expected_structure, none_is_leaf=True):
+    for acc in optree.tree_accessors(expected_structure, none_is_leaf=True):  # ty: ignore [invalid-argument-type]
         qname = dt.qname_from_tree_path(acc.path)
         with suppress(KeyError, TypeError):
             qname_inputs[qname] = acc(dict_inputs)
@@ -273,9 +273,9 @@ def _harmonize_main_target(
         "output multiple elements, use `main_targets` instead."
     )
     if isinstance(main_target, tuple):
-        return dt.qname_from_tree_path(main_target)
+        return dt.qname_from_tree_path(main_target)  # ty: ignore [invalid-argument-type]
     if isinstance(main_target, dict):
-        if len(optree.tree_flatten(main_target, none_is_leaf=True)[0]) > 1:  # type: ignore[arg-type]
+        if len(optree.tree_flatten(main_target, none_is_leaf=True)[0]) > 1:  # ty: ignore [invalid-argument-type]
             raise ValueError(msg)
         return dt.qnames(main_target)[0]
     if isinstance(main_target, str):
@@ -293,9 +293,9 @@ def _harmonize_main_targets(
     main_targets: Iterable[str | tuple[str, ...]] | NestedTargetDict,
 ) -> list[str]:
     if isinstance(main_targets, dict):
-        out = dt.qnames(main_targets)
-    elif isinstance(main_targets[0], tuple):  # type: ignore[index]
-        out = [dt.qname_from_tree_path(tp) for tp in main_targets]  # type: ignore[arg-type]
+        out = dt.qnames(main_targets)  # ty: ignore [invalid-argument-type]
+    elif isinstance(main_targets[0], tuple):
+        out = [dt.qname_from_tree_path(tp) for tp in main_targets]  # ty: ignore [invalid-argument-type]
     else:
         out = list(main_targets)
 
@@ -571,47 +571,24 @@ def _msg_for_missing_dynamic_nodes(
     )
 
 
-def _fail_if_requested_nodes_cannot_be_found(
+def _fail_if_main_targets_not_among_nodes(
     main_targets: list[str] | None,
     nodes: dict[str, InterfaceFunction | InterfaceInput],
 ) -> None:
     """Fail if some qname is not among nodes."""
-    all_nodes = set(nodes.keys())
     interface_function_names = {
         p for p, n in nodes.items() if isinstance(n, InterfaceFunction)
     }
-    fail_or_warn_functions = {
-        p: n for p, n in nodes.items() if isinstance(n, (FailFunction, WarnFunction))
-    }
 
-    # main targets not in interface functions
     if main_targets is not None:
         missing_main_targets = set(main_targets) - set(interface_function_names)
     else:
         missing_main_targets = set()
 
-    # Qnames from include condtions of fail_or_warn functions not in nodes
-    for n in fail_or_warn_functions.values():
-        ns: set[str] = {
-            *n.include_if_all_elements_present,
-            *n.include_if_any_element_present,
-        }
-        missing_main_targets_from_include_conditions = ns - all_nodes
+    if missing_main_targets:
+        msg = format_errors_and_warnings(
+            "The following output names for the interface DAG are not among the "
+            "interface functions or inputs:\n"
+        ) + format_list_linewise(sorted(missing_main_targets))
 
-    if missing_main_targets or missing_main_targets_from_include_conditions:
-        if missing_main_targets:
-            msg = format_errors_and_warnings(
-                "The following output names for the interface DAG are not among the "
-                "interface functions or inputs:\n"
-            ) + format_list_linewise(sorted(missing_main_targets))
-        else:
-            msg = ""
-        if missing_main_targets_from_include_conditions:
-            msg += format_errors_and_warnings(
-                "\n\nThe following elements specified in some include condition of "
-                "`fail_or_warn_function`s are not among the interface functions or "
-                "inputs:\n"
-            ) + format_list_linewise(
-                sorted(missing_main_targets_from_include_conditions)
-            )
         raise ValueError(msg)

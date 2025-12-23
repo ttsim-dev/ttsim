@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
 
-from ttsim import main
+from ttsim import InputData, TTTargets, main
 from ttsim.tt import (
     RoundingSpec,
     policy_function,
@@ -87,7 +87,7 @@ def test_decorator():
 def test_malformed_rounding_specs():
     with pytest.raises(TypeError):
 
-        @policy_function(rounding_spec={"base": 1, "direction": "updsf"})
+        @policy_function(rounding_spec={"base": 1, "direction": "updsf"})  # ty: ignore[invalid-argument-type]
         def test_func():
             return 0
 
@@ -112,10 +112,10 @@ def test_rounding(rounding_spec, input_values, exp_output, backend):
 
     results__tree = main(
         main_target="results__tree",
-        input_data={"tree": input_data__tree},
+        input_data=InputData.tree(input_data__tree),
         policy_environment=policy_environment,
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"namespace": {"test_func": None}}},
+        tt_targets=TTTargets.tree({"namespace": {"test_func": None}}),
         rounding=True,
         include_fail_nodes=False,
         include_warn_nodes=False,
@@ -150,10 +150,10 @@ def test_rounding_with_time_conversion(backend, xnp):
 
     results__tree = main(
         main_target="results__tree",
-        input_data={"tree": data},
+        input_data=InputData.tree(data),
         policy_environment=policy_environment,
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"test_func_y": None}},
+        tt_targets=TTTargets.tree({"test_func_y": None}),
         rounding=True,
         include_fail_nodes=False,
         include_warn_nodes=False,
@@ -192,10 +192,10 @@ def test_no_rounding(
 
     results__tree = main(
         main_target="results__tree",
-        input_data={"tree": data},
+        input_data=InputData.tree(data),
         policy_environment=policy_environment,
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": {"test_func": None}},
+        tt_targets=TTTargets.tree({"test_func": None}),
         include_fail_nodes=False,
         include_warn_nodes=False,
         rounding=False,

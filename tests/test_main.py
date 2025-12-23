@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import TYPE_CHECKING
 
 import dags
 import dags.tree as dt
@@ -23,7 +24,7 @@ from ttsim import (
 )
 from ttsim.entry_point import (
     _fail_if_input_structure_is_invalid,
-    _fail_if_requested_nodes_cannot_be_found,
+    _fail_if_main_targets_not_among_nodes,
     _fail_if_root_nodes_of_interface_dag_are_missing,
     _harmonize_inputs,
     _harmonize_main_target,
@@ -34,7 +35,7 @@ from ttsim.entry_point import (
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
-    fail_function,
+    InputDependentInterfaceFunction,
     input_dependent_interface_function,
     interface_function,
 )
@@ -43,6 +44,9 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
 )
 from ttsim.main_target import MainTarget
 from ttsim.tt.column_objects_param_function import policy_function
+
+if TYPE_CHECKING:
+    from ttsim.typing import FlatInterfaceObjects, UnorderedQNames
 
 
 @interface_function(leaf_name="interface_function_a")
@@ -58,14 +62,6 @@ def interface_function_b(b: int) -> int:
 @interface_function(leaf_name="interface_function_c")
 def interface_function_c(interface_function_a: int, interface_function_b: int) -> int:
     return interface_function_a + interface_function_b
-
-
-@fail_function(
-    include_if_all_elements_present=["a"],
-    include_if_any_element_present=["b"],
-)
-def some_fail_function() -> None:
-    pass
 
 
 @input_dependent_interface_function(
@@ -120,8 +116,8 @@ def test_load_flat_interface_functions_and_inputs() -> None:
 
 
 def test_interface_dag_is_complete() -> None:
-    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
-    # we only care about some function with a leaf name, not the precise content.
+    # We keep only one of possibly many static versions of one
+    # InputDependentInterfaceFunctions; only the leaf name matters here.
     nodes = {
         dt.qname_from_tree_path((*p[:-1], f.leaf_name)): f
         for p, f in load_flat_interface_functions_and_inputs().items()
@@ -147,9 +143,40 @@ def test_interface_dag_is_complete() -> None:
         )
 
 
+def test_inputs_of_input_dependent_interface_functions_are_part_of_the_dag() -> None:
+    # All inputs of InputDependentInterfaceFunctions should be part of the DAG."""
+    all_nodes: FlatInterfaceObjects = load_flat_interface_functions_and_inputs()
+    all_dynamic_nodes: dict[tuple[str, ...], InputDependentInterfaceFunction] = {
+        k: v
+        for k, v in all_nodes.items()
+        if isinstance(v, InputDependentInterfaceFunction)
+    }
+    qname_node_names: set[str] = {
+        dt.qname_from_tree_path(p)
+        if not isinstance(f, InputDependentInterfaceFunction)
+        else dt.qname_from_tree_path((*p[:-1], f.leaf_name))
+        for p, f in all_nodes.items()
+    }
+
+    dynamic_inputs_not_among_nodes: UnorderedQNames = set()
+    for n in all_dynamic_nodes.values():
+        ns: UnorderedQNames = {
+            *n.include_if_all_inputs_present,
+            *n.include_if_any_input_present,
+        }
+        dynamic_inputs_not_among_nodes.update(ns - qname_node_names)
+
+    if dynamic_inputs_not_among_nodes:
+        raise ValueError(
+            "The following inputs of InputDependentInterfaceFunctions are not part of"
+            " the interface DAG:"
+            f"\n\n{format_list_linewise(dynamic_inputs_not_among_nodes)}"
+        )
+
+
 def test_main_target_class_is_complete() -> None:
-    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
-    # we only care about some function with a leaf name, not the precise content.
+    # We keep only one of possibly many static versions of one
+    # InputDependentInterfaceFunctions; only the leaf name matters here.
     nodes = {
         (*p[:-1], f.leaf_name)
         for p, f in load_flat_interface_functions_and_inputs().items()
@@ -183,7 +210,7 @@ def test_main_target_class_is_complete() -> None:
             "df_with_nested_columns",
         ),
         (InputData.tree({"tree_data": {"key": [1, 2, 3]}}), "tree"),
-        (InputData.flat({"flat.key": [1, 2, 3]}), "flat"),
+        (InputData.flat({"flat.key": [1, 2, 3]}), "flat"),  # ty: ignore[invalid-argument-type]
         (InputData.qname({"qname.test": np.array([1, 2, 3])}), "qname"),
     ],
 )
@@ -202,95 +229,110 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
     ("classmethod_instance", "dict_instance"),
     [
         # TTTargets
-        (TTTargets.qname({"test": "value"}), TTTargets(qname={"test": "value"})),
+        (
+            TTTargets.qname({"test": "value"}),
+            TTTargets(qname={"test": "value"}),  # ty: ignore[unknown-argument]
+        ),
         (
             TTTargets.tree({"wealth_tax": {"amount_y": None}}),
-            TTTargets(tree={"wealth_tax": {"amount_y": None}}),
+            TTTargets(tree={"wealth_tax": {"amount_y": None}}),  # ty: ignore[unknown-argument]
         ),
         # OrigPolicyObjects
         (
             OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-            OrigPolicyObjects(root=middle_earth.ROOT_PATH),
+            OrigPolicyObjects(root=middle_earth.ROOT_PATH),  # ty: ignore[unknown-argument]
         ),
         (
             OrigPolicyObjects.column_objects_and_param_functions({}),
-            OrigPolicyObjects(column_objects_and_param_functions={}),
+            OrigPolicyObjects(column_objects_and_param_functions={}),  # ty: ignore[unknown-argument]
         ),
-        (OrigPolicyObjects.param_specs({}), OrigPolicyObjects(param_specs={})),
+        (
+            OrigPolicyObjects.param_specs({}),
+            OrigPolicyObjects(param_specs={}),  # ty: ignore[unknown-argument]
+        ),
         # Labels
-        (Labels.input_columns(["test_column"]), Labels(input_columns=["test_column"])),
+        (
+            Labels.input_columns({"test_column"}),
+            Labels(input_columns={"test_column"}),  # ty: ignore[unknown-argument]
+        ),
         (
             Labels.column_targets(["target1", "target2"]),
-            Labels(column_targets=["target1", "target2"]),
+            Labels(column_targets=["target1", "target2"]),  # ty: ignore[unknown-argument]
         ),
-        (Labels.grouping_levels(["level1"]), Labels(grouping_levels=["level1"])),
+        (
+            Labels.grouping_levels(["level1"]),
+            Labels(grouping_levels=["level1"]),  # ty: ignore[unknown-argument]
+        ),
         (
             Labels.input_data_targets(["data_target"]),
-            Labels(input_data_targets=["data_target"]),
+            Labels(input_data_targets=["data_target"]),  # ty: ignore[unknown-argument]
         ),
         (
             Labels.param_targets(["param_target"]),
-            Labels(param_targets=["param_target"]),
+            Labels(param_targets=["param_target"]),  # ty: ignore[unknown-argument]
         ),
-        (Labels.root_nodes(["root"]), Labels(root_nodes=["root"])),
         (
-            Labels.top_level_namespace(["namespace"]),
-            Labels(top_level_namespace=["namespace"]),
+            Labels.root_nodes({"root"}),
+            Labels(root_nodes={"root"}),  # ty: ignore[unknown-argument]
+        ),
+        (
+            Labels.top_level_namespace({"namespace"}),
+            Labels(top_level_namespace={"namespace"}),  # ty: ignore[unknown-argument]
         ),
         # Results
         (
             Results.df_with_mapper(pd.DataFrame({"test": [1, 2, 3]})),
-            Results(df_with_mapper=pd.DataFrame({"test": [1, 2, 3]})),
+            Results(df_with_mapper=pd.DataFrame({"test": [1, 2, 3]})),  # ty: ignore[unknown-argument]
         ),
         (
             Results.df_with_nested_columns(pd.DataFrame({"nested": [1, 2]})),
-            Results(df_with_nested_columns=pd.DataFrame({"nested": [1, 2]})),
+            Results(df_with_nested_columns=pd.DataFrame({"nested": [1, 2]})),  # ty: ignore[unknown-argument]
         ),
         (
             Results.tree({"result_tree": {"data": [1, 2, 3]}}),
-            Results(tree={"result_tree": {"data": [1, 2, 3]}}),
+            Results(tree={"result_tree": {"data": [1, 2, 3]}}),  # ty: ignore[unknown-argument]
         ),
         # RawResults
         (
             RawResults.columns({"test": np.array([1, 2, 3])}),
-            RawResults(columns={"test": np.array([1, 2, 3])}),
+            RawResults(columns={"test": np.array([1, 2, 3])}),  # ty: ignore[unknown-argument]
         ),
         (
             RawResults.params({"param": np.array([4, 5, 6])}),
-            RawResults(params={"param": np.array([4, 5, 6])}),
+            RawResults(params={"param": np.array([4, 5, 6])}),  # ty: ignore[unknown-argument]
         ),
         (
             RawResults.from_input_data({"input": np.array([7, 8, 9])}),
-            RawResults(from_input_data={"input": np.array([7, 8, 9])}),
+            RawResults(from_input_data={"input": np.array([7, 8, 9])}),  # ty: ignore[unknown-argument]
         ),
         (
             RawResults.combined({"combined": np.array([1, 2])}),
-            RawResults(combined={"combined": np.array([1, 2])}),
+            RawResults(combined={"combined": np.array([1, 2])}),  # ty: ignore[unknown-argument]
         ),
         # SpecializedEnvironment
         (
             SpecializedEnvironment.without_tree_logic_and_with_derived_functions({}),
-            SpecializedEnvironment(without_tree_logic_and_with_derived_functions={}),
+            SpecializedEnvironment(without_tree_logic_and_with_derived_functions={}),  # ty: ignore[unknown-argument]
         ),
         (
             SpecializedEnvironment.with_processed_params_and_scalars({}),
-            SpecializedEnvironment(with_processed_params_and_scalars={}),
+            SpecializedEnvironment(with_processed_params_and_scalars={}),  # ty: ignore[unknown-argument]
         ),
         (
             SpecializedEnvironment.with_partialled_params_and_scalars({}),
-            SpecializedEnvironment(with_partialled_params_and_scalars={}),
+            SpecializedEnvironment(with_partialled_params_and_scalars={}),  # ty: ignore[unknown-argument]
         ),
         (
             SpecializedEnvironment.tt_dag(nx.DiGraph()),
-            SpecializedEnvironment(tt_dag=nx.DiGraph()),
+            SpecializedEnvironment(tt_dag=nx.DiGraph()),  # ty: ignore[unknown-argument]
         ),
         # SpecializedEnvironmentForPlottingAndTemplates
         (
             SpecializedEnvironmentForPlottingAndTemplates.qnames_to_derive_functions_from(
-                ["a"]
+                {"a"}
             ),
             SpecializedEnvironmentForPlottingAndTemplates(
-                qnames_to_derive_functions_from=["a"]
+                qnames_to_derive_functions_from={"a"}  # ty: ignore[unknown-argument]
             ),
         ),
         (
@@ -298,7 +340,7 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
                 {}
             ),
             SpecializedEnvironmentForPlottingAndTemplates(
-                without_tree_logic_and_with_derived_functions={}
+                without_tree_logic_and_with_derived_functions={}  # ty: ignore[unknown-argument]
             ),
         ),
         (
@@ -306,19 +348,19 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
                 {}
             ),
             SpecializedEnvironmentForPlottingAndTemplates(
-                without_input_data_nodes_with_dummy_callables={}
+                without_input_data_nodes_with_dummy_callables={}  # ty: ignore[unknown-argument]
             ),
         ),
         (
             SpecializedEnvironmentForPlottingAndTemplates.complete_tt_dag(nx.DiGraph()),
-            SpecializedEnvironmentForPlottingAndTemplates(complete_tt_dag=nx.DiGraph()),
+            SpecializedEnvironmentForPlottingAndTemplates(complete_tt_dag=nx.DiGraph()),  # ty: ignore[unknown-argument]
         ),
         (
             SpecializedEnvironmentForPlottingAndTemplates.with_processed_params_and_scalars(
                 {}
             ),
             SpecializedEnvironmentForPlottingAndTemplates(
-                with_processed_params_and_scalars={}
+                with_processed_params_and_scalars={}  # ty: ignore[unknown-argument]
             ),
         ),
         (
@@ -326,7 +368,7 @@ def test_input_data_classmethods(classmethod_instance, expected_field_name):
                 {}
             ),
             SpecializedEnvironmentForPlottingAndTemplates(
-                with_partialled_params_and_scalars={}
+                with_partialled_params_and_scalars={}  # ty: ignore[unknown-argument]
             ),
         ),
     ],
@@ -368,24 +410,11 @@ def test_main_args_can_be_passed_as_class_methods(classmethod_instance, dict_ins
             },
             r'output\snames[\s\S]+interface\sfunctions\sor\sinputs:[\s\S]+"input_data"',
         ),
-        (
-            [],
-            {
-                **{
-                    dt.qname_from_tree_path(p): n
-                    for p, n in load_flat_interface_functions_and_inputs().items()
-                },
-                "some_fail_function": some_fail_function,
-            },
-            r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
-        ),
     ],
 )
-def test_fail_if_requested_nodes_cannot_be_found(
-    main_targets, nodes, error_match
-) -> None:
+def test_fail_if_main_targets_not_among_nodes(main_targets, nodes, error_match) -> None:
     with pytest.raises(ValueError, match=error_match):
-        _fail_if_requested_nodes_cannot_be_found(
+        _fail_if_main_targets_not_among_nodes(
             main_targets=main_targets,
             nodes=nodes,
         )
@@ -394,22 +423,22 @@ def test_fail_if_requested_nodes_cannot_be_found(
 def test_harmonize_inputs_main_args_input():
     x = {
         "input_data": InputData.df_and_mapper(
-            df={"cannot use df because comparison fails"},
+            df="cannot use df because comparison fails",  # ty: ignore[invalid-argument-type]
             mapper={"c": "a", "d": "b", "p_id": "p_id"},
         ),
-        "tt_targets": TTTargets(tree={"e": "f"}),
+        "tt_targets": TTTargets.tree({"e": "f"}),
         "policy_date_str": "2025-01-01",
         "backend": "numpy",
         "rounding": True,
         "orig_policy_objects": OrigPolicyObjects(
-            column_objects_and_param_functions={("x.py", "e"): e},
-            param_specs={},
+            column_objects_and_param_functions={("x.py", "e"): e},  # ty: ignore[unknown-argument]
+            param_specs={},  # ty: ignore[unknown-argument]
         ),
     }
     harmonized = _harmonize_inputs(inputs=x)
 
     assert harmonized == {
-        "input_data__df_and_mapper__df": {"cannot use df because comparison fails"},
+        "input_data__df_and_mapper__df": "cannot use df because comparison fails",
         "input_data__df_and_mapper__mapper": {"c": "a", "d": "b", "p_id": "p_id"},
         "tt_targets__tree": {"e": "f"},
         "policy_date_str": "2025-01-01",
@@ -477,7 +506,7 @@ def test_fail_if_input_structure_is_invalid(dict_inputs):
     with pytest.raises(ValueError, match=r"Invalid inputs for main()"):
         _fail_if_input_structure_is_invalid(
             user_treedef=optree.tree_flatten(dict_inputs)[1],
-            expected_treedef=optree.tree_flatten(MainTarget.to_dict())[1],
+            expected_treedef=optree.tree_flatten(MainTarget.to_dict())[1],  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -517,13 +546,13 @@ def test_fail_if_data_is_provided_but_no_tt_targets(backend, xnp):
         main(
             main_target="templates__input_data_dtypes__tree",
             policy_date_str="2025-01-01",
-            input_data={
-                "tree": {
+            input_data=InputData.tree(
+                {
                     "p_id": xnp.array([4, 5, 6]),
                     "payroll_tax": {"amount_y": xnp.array([1, 2, 3])},
                 }
-            },
-            orig_policy_objects={"root": middle_earth.ROOT_PATH},
+            ),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
             backend=backend,
         )
 
@@ -597,7 +626,7 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
         )
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing_without_missing_dynamic_nodes():  # noqa: E501
+def test_fail_if_static_root_node_is_missing():
     flat_interface_objects = {
         ("interface_function_a",): interface_function_a,
         ("interface_function_b",): interface_function_b,
@@ -616,12 +645,12 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing_without_missing_dynamic
     ):
         _fail_if_root_nodes_of_interface_dag_are_missing(
             dag=dag,
-            input_qnames=["a"],
+            input_qnames={"a": None},
             flat_interface_objects=flat_interface_objects,
         )
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing_with_missing_dynamic_nodes():
+def test_fail_if_dynamic_root_node_is_missing():
     flat_interface_objects = {
         ("a",): a,
         ("interface_function_a",): interface_function_a,
@@ -641,12 +670,12 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing_with_missing_dynamic_no
     ):
         _fail_if_root_nodes_of_interface_dag_are_missing(
             dag=dag,
-            input_qnames=[],
+            input_qnames={},
             flat_interface_objects=flat_interface_objects,
         )
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing_dynamic_node_as_target():
+def test_fail_if_inputs_to_create_dynamic_root_node_are_missing():
     flat_interface_objects = {
         ("some_idif_require_input_1",): some_idif_require_input_1,
     }
@@ -665,6 +694,6 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing_dynamic_node_as_target(
     ):
         _fail_if_root_nodes_of_interface_dag_are_missing(
             dag=dag,
-            input_qnames=[],
+            input_qnames={},
             flat_interface_objects=flat_interface_objects,
         )

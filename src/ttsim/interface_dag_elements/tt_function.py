@@ -41,7 +41,7 @@ def tt_function(
     """Return the function calculating the taxes and transfers."""
     ttf_with_keyword_args = concatenate_functions(
         dag=specialized_environment__tt_dag,
-        functions=specialized_environment__with_partialled_params_and_scalars,
+        functions=specialized_environment__with_partialled_params_and_scalars,  # ty: ignore[invalid-argument-type]
         targets=list(labels__column_targets),
         return_type="dict",
         aggregator=None,
@@ -50,7 +50,7 @@ def tt_function(
     )
 
     if backend == "jax":
-        import jax  # noqa: PLC0415
+        import jax  # noqa: PLC0415 # ty: ignore[unresolved-import]
 
         ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 

@@ -34,9 +34,9 @@ def input_data_dtypes__tree(
     """A template of the required input data and their expected types."""
     base_dtype_tree = dt.create_tree_with_input_types(
         functions=dt.unflatten_from_qnames(
-            specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars,
+            specialized_environment_for_plotting_and_templates__with_partialled_params_and_scalars,  # ty: ignore[invalid-argument-type]
         ),
-        targets=tt_targets__qname,
+        targets=dict.fromkeys(tt_targets__qname),
         top_level_inputs=labels__top_level_namespace,
     )
 

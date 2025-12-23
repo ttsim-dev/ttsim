@@ -8,6 +8,8 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from ttsim import (
+    InputData,
+    TTTargets,
     main,
 )
 from ttsim.interface_dag_elements.data_converters import (
@@ -52,7 +54,7 @@ def int_param_function() -> int:
     return 1
 
 
-_SOME_SCALAR_PARAM = ScalarParam(value=1, **_GENERIC_PARAM_SPEC)
+_SOME_SCALAR_PARAM = ScalarParam(value=1, **_GENERIC_PARAM_SPEC)  # ty: ignore[invalid-argument-type]
 
 
 @pytest.fixture
@@ -222,10 +224,10 @@ def test_nested_data_to_dataframe(
 ):
     results__tree = main(
         main_target="results__tree",
-        input_data={"tree": minimal_data_tree},
+        input_data=InputData.tree(tree=minimal_data_tree),
         policy_environment=environment,
         evaluation_date=datetime.date(2024, 1, 1),
-        tt_targets={"tree": tt_targets__tree},
+        tt_targets=TTTargets.tree(tt_targets__tree),
         rounding=False,
         backend=backend,
     )

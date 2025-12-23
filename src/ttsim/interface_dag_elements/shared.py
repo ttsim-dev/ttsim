@@ -27,6 +27,7 @@ if TYPE_CHECKING:
         | SpecEnvWithPartialledParamsAndScalars
     )
 
+
 _DASHED_ISO_DATE_REGEX = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
@@ -172,7 +173,7 @@ def merge_trees(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     -------
     The merged pytree.
     """
-    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # type: ignore[arg-type]
+    if set(optree.tree_paths(left)) & set(optree.tree_paths(right)):  # ty: ignore [invalid-argument-type]
         raise ValueError("Conflicting paths in trees to merge.")
 
     return upsert_tree(base=left, to_upsert=right)
@@ -387,4 +388,4 @@ def copy_environment(env: SomeEnv) -> SomeEnv:
     A copy of *env*, which is a deep copy for all practical purposes.
 
     """
-    return optree.tree_map(copy, env)
+    return optree.tree_map(copy, env)  # ty: ignore[invalid-argument-type]
