@@ -9,8 +9,8 @@ import numpy as np
 import optree
 import pandas as pd
 import pytest
-from mettsim import middle_earth
 
+from mettsim import middle_earth
 from ttsim import (
     InputData,
     Labels,
@@ -23,7 +23,7 @@ from ttsim import (
 )
 from ttsim.entry_point import (
     _fail_if_input_structure_is_invalid,
-    _fail_if_requested_nodes_cannot_be_found,
+    _fail_if_main_targets_not_among_nodes,
     _fail_if_root_nodes_of_interface_dag_are_missing,
     _harmonize_inputs,
     _harmonize_main_target,
@@ -34,7 +34,6 @@ from ttsim.entry_point import (
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
-    fail_function,
     input_dependent_interface_function,
     interface_function,
 )
@@ -58,14 +57,6 @@ def interface_function_b(b: int) -> int:
 @interface_function(leaf_name="interface_function_c")
 def interface_function_c(interface_function_a: int, interface_function_b: int) -> int:
     return interface_function_a + interface_function_b
-
-
-@fail_function(
-    include_if_all_elements_present=["a"],
-    include_if_any_element_present=["b"],
-)
-def some_fail_function() -> None:
-    pass
 
 
 @input_dependent_interface_function(
@@ -383,24 +374,11 @@ def test_main_args_can_be_passed_as_class_methods(classmethod_instance, dict_ins
             },
             r'output\snames[\s\S]+interface\sfunctions\sor\sinputs:[\s\S]+"input_data"',
         ),
-        # (
-        #     [],
-        #     {
-        #         "some_fail_function": some_fail_function,
-        #         **{
-        #             dt.qname_from_tree_path(p): n
-        #             for p, n in load_flat_interface_functions_and_inputs().items()
-        #         },
-        #     },
-        #     r'include\scondition[\s\S]+functions or inputs:[\s\S]+"a",\s+"b"',
-        # ),
     ],
 )
-def test_fail_if_requested_nodes_cannot_be_found(
-    main_targets, nodes, error_match
-) -> None:
+def test_fail_if_main_targets_not_among_nodes(main_targets, nodes, error_match) -> None:
     with pytest.raises(ValueError, match=error_match):
-        _fail_if_requested_nodes_cannot_be_found(
+        _fail_if_main_targets_not_among_nodes(
             main_targets=main_targets,
             nodes=nodes,
         )

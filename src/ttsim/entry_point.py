@@ -103,7 +103,7 @@ def main(
         input_qnames=list(input_qnames),
     )
 
-    _fail_if_requested_nodes_cannot_be_found(
+    _fail_if_main_targets_not_among_nodes(
         main_targets=main_targets,
         nodes=nodes,
     )
@@ -571,48 +571,24 @@ def _msg_for_missing_dynamic_nodes(
     )
 
 
-def _fail_if_requested_nodes_cannot_be_found(
+def _fail_if_main_targets_not_among_nodes(
     main_targets: list[str] | None,
     nodes: dict[str, InterfaceFunction | InterfaceInput],
 ) -> None:
     """Fail if some qname is not among nodes."""
-    all_nodes = set(nodes.keys())
     interface_function_names = {
         p for p, n in nodes.items() if isinstance(n, InterfaceFunction)
     }
-    fail_or_warn_functions = {
-        p: n for p, n in nodes.items() if isinstance(n, (FailFunction, WarnFunction))
-    }
 
-    # main targets not in interface functions
     if main_targets is not None:
         missing_main_targets = set(main_targets) - set(interface_function_names)
     else:
         missing_main_targets = set()
 
-    # Qnames from include conditions of fail_or_warn functions not in nodes
-    missing_main_targets_from_include_conditions: UnorderedQNames = set()
-    for n in fail_or_warn_functions.values():
-        ns: UnorderedQNames = {
-            *n.include_if_all_elements_present,
-            *n.include_if_any_element_present,
-        }
-        missing_main_targets_from_include_conditions.update(ns - all_nodes)
+    if missing_main_targets:
+        msg = format_errors_and_warnings(
+            "The following output names for the interface DAG are not among the "
+            "interface functions or inputs:\n"
+        ) + format_list_linewise(sorted(missing_main_targets))
 
-    if missing_main_targets:  # or missing_main_targets_from_include_conditions:
-        if missing_main_targets:
-            msg = format_errors_and_warnings(
-                "The following output names for the interface DAG are not among the "
-                "interface functions or inputs:\n"
-            ) + format_list_linewise(sorted(missing_main_targets))
-        else:
-            msg = ""
-        if missing_main_targets_from_include_conditions:
-            msg += format_errors_and_warnings(
-                "\n\nThe following elements specified in some include condition of "
-                "`fail_or_warn_function`s are not among the interface functions or "
-                "inputs:\n"
-            ) + format_list_linewise(
-                sorted(missing_main_targets_from_include_conditions)
-            )
         raise ValueError(msg)
