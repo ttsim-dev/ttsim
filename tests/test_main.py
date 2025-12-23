@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import TYPE_CHECKING
 
 import dags
 import dags.tree as dt
@@ -34,6 +35,7 @@ from ttsim.entry_point import (
 )
 from ttsim.interface_dag_elements.fail_if import format_list_linewise
 from ttsim.interface_dag_elements.interface_node_objects import (
+    InputDependentInterfaceFunction,
     input_dependent_interface_function,
     interface_function,
 )
@@ -42,6 +44,9 @@ from ttsim.interface_dag_elements.specialized_environment_for_plotting_and_templ
 )
 from ttsim.main_target import MainTarget
 from ttsim.tt.column_objects_param_function import policy_function
+
+if TYPE_CHECKING:
+    from ttsim.typing import FlatInterfaceObjects, UnorderedQNames
 
 
 @interface_function(leaf_name="interface_function_a")
@@ -111,8 +116,8 @@ def test_load_flat_interface_functions_and_inputs() -> None:
 
 
 def test_interface_dag_is_complete() -> None:
-    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
-    # we only care about some function with a leaf name, not the precise content.
+    # We keep only one of possibly many static versions of one
+    # InputDependentInterfaceFunctions; only the leaf name matters here.
     nodes = {
         dt.qname_from_tree_path((*p[:-1], f.leaf_name)): f
         for p, f in load_flat_interface_functions_and_inputs().items()
@@ -138,9 +143,40 @@ def test_interface_dag_is_complete() -> None:
         )
 
 
+def test_inputs_of_input_dependent_interface_functions_are_part_of_the_dag() -> None:
+    # All inputs of InputDependentInterfaceFunctions should be part of the DAG."""
+    all_nodes: FlatInterfaceObjects = load_flat_interface_functions_and_inputs()
+    all_dynamic_nodes: dict[str, InputDependentInterfaceFunction] = {
+        k: v
+        for k, v in all_nodes.items()
+        if isinstance(v, InputDependentInterfaceFunction)
+    }
+    qname_node_names: set[str] = {
+        dt.qname_from_tree_path(p)
+        if not isinstance(f, InputDependentInterfaceFunction)
+        else dt.qname_from_tree_path((*p[:-1], f.leaf_name))
+        for p, f in all_nodes.items()
+    }
+
+    dynamic_inputs_not_among_nodes: UnorderedQNames = set()
+    for n in all_dynamic_nodes.values():
+        ns: UnorderedQNames = {
+            *n.include_if_all_inputs_present,
+            *n.include_if_any_input_present,
+        }
+        dynamic_inputs_not_among_nodes.update(ns - qname_node_names)
+
+    if dynamic_inputs_not_among_nodes:
+        raise ValueError(
+            "The following inputs of InputDependentInterfaceFunctions are not part of"
+            " the interface DAG:"
+            f"\n\n{format_list_linewise(dynamic_inputs_not_among_nodes)}"
+        )
+
+
 def test_main_target_class_is_complete() -> None:
-    # This will keep only one of possibly many InputDependentInterfaceFunctions. Here,
-    # we only care about some function with a leaf name, not the precise content.
+    # We keep only one of possibly many static versions of one
+    # InputDependentInterfaceFunctions; only the leaf name matters here.
     nodes = {
         (*p[:-1], f.leaf_name)
         for p, f in load_flat_interface_functions_and_inputs().items()
@@ -590,7 +626,7 @@ def test_resolve_dynamic_interface_objects_to_static_nodes_with_conflicting_cond
         )
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing_without_missing_dynamic_nodes():  # noqa: E501
+def test_fail_if_static_root_node_is_missing():
     flat_interface_objects = {
         ("interface_function_a",): interface_function_a,
         ("interface_function_b",): interface_function_b,
@@ -614,7 +650,7 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing_without_missing_dynamic
         )
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing_with_missing_dynamic_nodes():
+def test_fail_if_dynamic_root_node_is_missing():
     flat_interface_objects = {
         ("a",): a,
         ("interface_function_a",): interface_function_a,
@@ -639,7 +675,7 @@ def test_fail_if_root_nodes_of_interface_dag_are_missing_with_missing_dynamic_no
         )
 
 
-def test_fail_if_root_nodes_of_interface_dag_are_missing_dynamic_node_as_target():
+def test_fail_if_inputs_to_create_dynamic_root_node_are_missing():
     flat_interface_objects = {
         ("some_idif_require_input_1",): some_idif_require_input_1,
     }
