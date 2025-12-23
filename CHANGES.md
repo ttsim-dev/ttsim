@@ -6,6 +6,8 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.1.1 — unpublished
 
+- {gh}`63` Use ty as the type checker for ttsim. Many improvements to type safety.
+  ({ghuser}`hmgaudecker`)
 - {gh}`56` Add and expose time converters targeting stocks.
 - {gh}`53` Raise error if scalar is passed to ColumnFunction expecting array input.
   ({ghuser}`MImmesberger`)
