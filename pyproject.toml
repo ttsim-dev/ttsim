@@ -125,6 +125,7 @@ toml = "*"
 [tool.pixi.pypi-dependencies]
 ttsim-backend = {path = ".", editable = true}
 mettsim = {path = "src_mettsim", editable = true}
+dags = { git = "https://github.com/opensourceeconomics/dags.git", branch = "py-3.14" }
 jaxtyping = ">=0.3.2"
 kaleido = ">=1.0.0"
 pdbp = ">=1.7.1"
