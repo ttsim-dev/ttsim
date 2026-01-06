@@ -1,0 +1,23 @@
+---
+info:
+  note: Reproducer for Python 3.14 annotation extraction bug
+  precision_atol: 0.01
+  source: Created to reproduce Python 3.14 annotation extraction bug
+inputs:
+  assumed: {}
+  provided:
+    p_id:
+      - 0
+      - 1
+      - 2
+    wealth:
+      - 1000.0
+      - 1000.0
+      - 1000.0
+outputs:
+  payroll_tax:
+    child_tax_credit:
+      net_income_parents_m:
+        - 800.0
+        - 1000.0
+        - 800.0

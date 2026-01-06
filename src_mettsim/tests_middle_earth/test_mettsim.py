@@ -73,6 +73,54 @@ def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
     execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
 
 
+def test_python314_annotation_extraction_bug(backend: Literal["numpy", "jax"]):
+    """Reproducer for Python 3.14 annotation extraction bug.
+
+    This test reproduces the issue where annotation extraction fails in Python 3.14
+    when functions decorated with @policy_function go through vectorization and
+    rounding, then are passed to concatenate_functions with set_annotations=True.
+
+    The bug manifests as:
+    AnnotationMismatchError: function <function_name> has the argument type
+    annotation '<param_name>: no_annotation_found', but function <param_name> has
+    return type: BoolColumn.
+
+    Root cause: After vectorization and rounding,
+    inspect.get_annotations(eval_str=False) on the wrapper function loses parameter
+    annotations, returning only {'args': 'P.args', 'kwargs': 'P.kwargs',
+    'return': 'FloatColumn'} instead of the actual parameter annotations.
+
+    Expected behavior:
+    - Python 3.14: This test should FAIL with AnnotationMismatchError
+    - Python 3.13: This test should PASS (bug doesn't exist)
+    """
+
+    policy_cases_root = (
+        middle_earth.ROOT_PATH.parent.parent / "tests_middle_earth" / "policy_cases"
+    )
+
+    cases = load_policy_cases(
+        policy_cases_root=policy_cases_root,
+        policy_name="",
+        xnp=numpy,
+    )
+
+    test_file = (
+        policy_cases_root
+        / "payroll_tax"
+        / "2025-01-01"
+        / "annotation_bug_reproducer.yaml"
+    )
+    for test in cases.values():
+        if str(test.path) == str(test_file):
+            # In Python 3.14, this will raise AnnotationMismatchError (test fails)
+            # In Python 3.13, this will succeed (test passes)
+            execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
+            break
+    else:
+        pytest.fail(f"Could not find test case: {test_file}")
+
+
 def test_mettsim_policy_environment_dag_with_params():
     plot.dag.tt(
         policy_date_str="2020-01-01",
