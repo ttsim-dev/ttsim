@@ -73,6 +73,35 @@ def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
     execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
 
 
+def test_python314_annotation_extraction_bug(backend: Literal["numpy", "jax"]):
+    """Check Python 3.14 annotation extraction bug (fixed in dags>=0.4.2)."""
+
+    policy_cases_root = (
+        middle_earth.ROOT_PATH.parent.parent / "tests_middle_earth" / "policy_cases"
+    )
+
+    cases = load_policy_cases(
+        policy_cases_root=policy_cases_root,
+        policy_name="",
+        xnp=numpy,
+    )
+
+    test_file = (
+        policy_cases_root
+        / "payroll_tax"
+        / "2025-01-01"
+        / "annotation_bug_reproducer.yaml"
+    )
+    for test in cases.values():
+        if str(test.path) == str(test_file):
+            # In Python 3.14, this will raise AnnotationMismatchError (test fails)
+            # In Python 3.13, this will succeed (test passes)
+            execute_test(test=test, root=middle_earth.ROOT_PATH, backend=backend)
+            break
+    else:
+        pytest.fail(f"Could not find test case: {test_file}")
+
+
 def test_mettsim_policy_environment_dag_with_params():
     plot.dag.tt(
         policy_date_str="2020-01-01",

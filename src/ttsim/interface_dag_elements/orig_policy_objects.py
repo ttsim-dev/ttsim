@@ -149,7 +149,7 @@ def _tree_path_to_orig_yaml_object(path: Path, root: Path) -> FlatOrigParamSpecs
     """
     raw_contents: dict[str, OrigParamSpec] = yaml.load(
         path.read_text(encoding="utf-8"),
-        Loader=yaml.CSafeLoader,
+        Loader=yaml.SafeLoader,
     )
     tree_path = path.relative_to(root).parts
     return {(*tree_path, name): obj for name, obj in raw_contents.items()}

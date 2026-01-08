@@ -298,7 +298,7 @@ def _if_to_call(node: ast.If, module: str, func_loc: str) -> ast.Call:
             msg = _return_and_no_else_error_message(node.body[0], func_loc=func_loc)
             raise TranslateToVectorizableError(msg)
         if hasattr(node.body[0], "targets"):
-            name = ast.Name(id=node.body[0].targets[0].id, ctx=ast.Load())  # ty: ignore[non-subscriptable]
+            name = ast.Name(id=node.body[0].targets[0].id, ctx=ast.Load())  # ty: ignore[not-subscriptable]
         else:
             name = ast.Name(id=node.body[0].target.id, ctx=ast.Load())  # ty: ignore[unresolved-attribute]
         args.append(name)
