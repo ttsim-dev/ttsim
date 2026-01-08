@@ -74,26 +74,7 @@ def test_policy_cases(test: PolicyTest, backend: Literal["numpy", "jax"]):
 
 
 def test_python314_annotation_extraction_bug(backend: Literal["numpy", "jax"]):
-    """Reproducer for Python 3.14 annotation extraction bug.
-
-    This test reproduces the issue where annotation extraction fails in Python 3.14
-    when functions decorated with @policy_function go through vectorization and
-    rounding, then are passed to concatenate_functions with set_annotations=True.
-
-    The bug manifests as:
-    AnnotationMismatchError: function <function_name> has the argument type
-    annotation '<param_name>: no_annotation_found', but function <param_name> has
-    return type: BoolColumn.
-
-    Root cause: After vectorization and rounding,
-    inspect.get_annotations(eval_str=False) on the wrapper function loses parameter
-    annotations, returning only {'args': 'P.args', 'kwargs': 'P.kwargs',
-    'return': 'FloatColumn'} instead of the actual parameter annotations.
-
-    Expected behavior:
-    - Python 3.14: This test should FAIL with AnnotationMismatchError
-    - Python 3.13: This test should PASS (bug doesn't exist)
-    """
+    """Check Python 3.14 annotation extraction bug (fixed in dags>=0.4.2)."""
 
     policy_cases_root = (
         middle_earth.ROOT_PATH.parent.parent / "tests_middle_earth" / "policy_cases"
