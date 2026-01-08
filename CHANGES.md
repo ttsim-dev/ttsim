@@ -6,6 +6,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## v1.1.1 — unpublished
 
+- {gh}`65` Add Python 3.14 support. ({ghuser}`hmgaudecker`)
 - {gh}`63` Use ty as the type checker for ttsim. Many improvements to type safety.
   ({ghuser}`hmgaudecker`)
 - {gh}`56` Add and expose time converters targeting stocks.
