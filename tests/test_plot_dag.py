@@ -700,3 +700,85 @@ def test_node_colormap_glob_patterns_in_plot():
         node_colormap=glob_colormap,
     )
     assert fig is not None
+
+
+def test_node_colormap_doublestar_patterns():
+    """Test that ** patterns match any number of path segments."""
+    # ** at the beginning - match suffix at any depth
+    assert _matches_glob_pattern(("betrag_m_bg",), ("**", "*_bg"))
+    assert _matches_glob_pattern(("bürgergeld", "betrag_m_bg"), ("**", "*_bg"))
+    assert _matches_glob_pattern(
+        ("bürgergeld", "einkommen", "betrag_m_bg"), ("**", "*_bg")
+    )
+    assert not _matches_glob_pattern(("bürgergeld", "betrag_m"), ("**", "*_bg"))
+
+    # ** in the middle - match prefix and suffix
+    assert _matches_glob_pattern(
+        ("bürgergeld", "einkommen", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+    assert _matches_glob_pattern(
+        ("bürgergeld", "a", "b", "c", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+    # ** can match zero segments
+    assert _matches_glob_pattern(
+        ("bürgergeld", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+    assert not _matches_glob_pattern(
+        ("wohngeld", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+
+    # ** at the end - match any descendants
+    assert _matches_glob_pattern(("bürgergeld",), ("bürgergeld", "**"))
+    assert _matches_glob_pattern(("bürgergeld", "x"), ("bürgergeld", "**"))
+    assert _matches_glob_pattern(("bürgergeld", "x", "y", "z"), ("bürgergeld", "**"))
+
+    # Just ** matches everything
+    assert _matches_glob_pattern(("anything",), ("**",))
+    assert _matches_glob_pattern(("a", "b", "c"), ("**",))
+
+    # Specificity: patterns without ** should win over patterns with **
+    tp = ("bürgergeld", "betrag_m_bg")
+    specific_pattern = ("bürgergeld", "*_bg")
+    doublestar_pattern = ("**", "*_bg")
+    assert _pattern_specificity(tp, specific_pattern) > _pattern_specificity(
+        tp, doublestar_pattern
+    )
+
+    # Test _find_color_for_qname with ** patterns
+    colormap = {
+        ("**", "*_bg"): "purple",  # Match any _bg at any depth
+        ("bürgergeld", "*"): "green",  # More specific for bürgergeld direct children
+        ("bürgergeld", "betrag_m_bg"): "darkgreen",  # Most specific
+        ("top-level",): "gray",
+    }
+
+    # Most specific wins
+    assert _find_color_for_qname("bürgergeld__betrag_m_bg", colormap) == "darkgreen"
+
+    # Namespace pattern wins over **
+    assert _find_color_for_qname("bürgergeld__einkommen_bg", colormap) == "green"
+
+    # ** pattern catches nested _bg
+    assert _find_color_for_qname("wohngeld__nested__amount_bg", colormap) == "purple"
+
+    # ** pattern catches top-level _bg
+    assert _find_color_for_qname("some_var_bg", colormap) == "purple"
+
+
+def test_node_colormap_doublestar_in_plot():
+    """Test that ** patterns work in actual DAG plots."""
+    doublestar_colormap = {
+        ("**", "*_y"): "#ff0000",  # Match any yearly variable at any depth
+        ("housing_benefits",): "#00ff00",
+        ("top-level",): "#888888",
+    }
+
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes={"payroll_tax__amount_y"},
+        policy_date_str="2025-01-01",
+        selection_type="ancestors",
+        selection_depth=2,
+        node_colormap=doublestar_colormap,
+    )
+    assert fig is not None

@@ -258,16 +258,25 @@ def _find_color_for_qname(qname: str, node_colormap: dict[tuple[str, ...], str])
 def _matches_glob_pattern(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> bool:
     """Check if a tree path matches a glob pattern tuple.
 
-    The pattern tuple must match from the start of the tree path. Each element
-    in the pattern is matched against the corresponding element in the tree
-    path using fnmatch (glob-style matching).
+    The pattern tuple is matched against the tree path. Each element in the
+    pattern is matched against the corresponding element in the tree path using
+    fnmatch (glob-style matching).
+
+    Special patterns:
+    - `"**"` matches any number of path segments (including zero)
+    - `("top-level",)` matches single-element tree paths only
+
+    Examples:
+    - `("housing_benefits",)` matches `housing_benefits__*` (prefix match)
+    - `("**", "*_bg")` matches any path ending with `_bg` at any depth
+    - `("ns", "**", "*_m")` matches `ns__*__*_m` at any depth
 
     Parameters
     ----------
     tp
         The tree path to match against.
     pattern_tp
-        The pattern tuple, which may contain glob wildcards.
+        The pattern tuple, which may contain glob wildcards and `**`.
 
     Returns
     -------
@@ -278,11 +287,56 @@ def _matches_glob_pattern(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> b
     if pattern_tp == ("top-level",):
         return len(tp) == 1
 
+    # Handle patterns containing "**"
+    if "**" in pattern_tp:
+        return _matches_glob_pattern_with_doublestar(tp, pattern_tp)
+
     # Pattern must not be longer than the tree path for prefix matching
     if len(pattern_tp) > len(tp):
         return False
 
     return all(fnmatch.fnmatch(t, p) for t, p in zip(tp, pattern_tp, strict=False))
+
+
+def _matches_glob_pattern_with_doublestar(
+    tp: tuple[str, ...], pattern_tp: tuple[str, ...]
+) -> bool:
+    """Match a tree path against a pattern containing "**".
+
+    The "**" wildcard matches any number of path segments (including zero).
+    """
+    # Find the position of the first "**"
+    doublestar_idx = pattern_tp.index("**")
+
+    # Split pattern into before and after the "**"
+    before = pattern_tp[:doublestar_idx]
+    after = pattern_tp[doublestar_idx + 1 :]
+
+    # Check prefix (before the **)
+    if len(before) > len(tp):
+        return False
+    if not all(fnmatch.fnmatch(t, p) for t, p in zip(tp, before, strict=False)):
+        return False
+
+    # Check if there are more "**" in the remaining pattern
+    if "**" in after:
+        # Recursively handle multiple "**"
+        remaining_tp = tp[len(before) :]
+        return any(
+            _matches_glob_pattern_with_doublestar(remaining_tp[i:], after)
+            for i in range(len(remaining_tp) + 1)
+        )
+
+    # Single "**" case: after must match suffix
+    if len(after) > len(tp) - len(before):
+        return False
+    if not after:
+        # No suffix pattern, "**" matches everything remaining
+        return True
+
+    # Match suffix from the end
+    suffix_tp = tp[-len(after) :]
+    return all(fnmatch.fnmatch(t, p) for t, p in zip(suffix_tp, after, strict=False))
 
 
 def _pattern_specificity(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> int:
@@ -292,7 +346,8 @@ def _pattern_specificity(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> in
     1. Longer patterns (more levels matched)
     2. Exact matches over wildcard matches at each level
     3. More specific wildcards (fewer * and ? characters)
-    4. The special ("top-level",) pattern has lowest priority (catch-all)
+    4. Patterns with "**" have lower priority than equivalent patterns without
+    5. The special ("top-level",) pattern has lowest priority (catch-all)
 
     Parameters
     ----------
@@ -310,11 +365,21 @@ def _pattern_specificity(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> in
     if pattern_tp == ("top-level",):
         return -1
 
+    # Count "**" wildcards - each one significantly reduces specificity
+    doublestar_count = pattern_tp.count("**")
+
     # Base score from pattern length (each level worth 1000 points)
-    score = len(pattern_tp) * 1000
+    # Subtract "**" from length since they don't represent specific levels
+    effective_length = len(pattern_tp) - doublestar_count
+    score = effective_length * 1000
+
+    # Heavy penalty for "**" wildcards (they match anything)
+    score -= doublestar_count * 500
 
     # Bonus for exact matches, penalty for wildcards
     for i, pattern_element in enumerate(pattern_tp):
+        if pattern_element == "**":
+            continue  # Already penalized above
         if i < len(tp):
             if pattern_element == tp[i]:
                 # Exact match at this level
