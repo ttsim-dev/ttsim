@@ -15,6 +15,7 @@ from ttsim.plot.dag.interface import INTERFACE_COLORMAP
 from ttsim.plot.dag.shared import (
     _find_color_for_qname,
     _matches_glob_pattern,
+    _normalize_colormap,
     _pattern_specificity,
 )
 from ttsim.plot.dag.tt import _get_tt_dag_with_node_metadata
@@ -780,5 +781,81 @@ def test_node_colormap_doublestar_in_plot():
         selection_type="ancestors",
         selection_depth=2,
         node_colormap=doublestar_colormap,
+    )
+    assert fig is not None
+
+
+def test_normalize_colormap():
+    """Test that _normalize_colormap converts qname strings to tuples."""
+    # Mixed input with both tuples and qname strings
+    mixed_colormap = {
+        ("housing_benefits",): "green",
+        "payroll_tax": "red",
+        "wealth_tax__amount": "blue",
+        ("**", "*_bg"): "purple",
+        "**__betrag_?": "orange",
+        "top-level": "gray",
+    }
+
+    normalized = _normalize_colormap(mixed_colormap)
+
+    # Check that all keys are tuples
+    assert all(isinstance(k, tuple) for k in normalized)
+
+    # Check specific conversions
+    assert ("housing_benefits",) in normalized
+    assert ("payroll_tax",) in normalized
+    assert ("wealth_tax", "amount") in normalized
+    assert ("**", "*_bg") in normalized
+    assert ("**", "betrag_?") in normalized
+    assert ("top-level",) in normalized
+
+    # Check colors are preserved
+    assert normalized[("housing_benefits",)] == "green"
+    assert normalized[("payroll_tax",)] == "red"
+    assert normalized[("wealth_tax", "amount")] == "blue"
+    assert normalized[("**", "*_bg")] == "purple"
+    assert normalized[("**", "betrag_?")] == "orange"
+    assert normalized[("top-level",)] == "gray"
+
+
+def test_node_colormap_qname_strings():
+    """Test that node_colormap accepts qname strings as keys."""
+    # Use qname strings in colormap (equivalent to tuple patterns)
+    qname_colormap = {
+        "payroll_tax": "#ff0000",
+        "housing_benefits__*": "#00ff00",
+        "**__*_y": "#0000ff",
+        "top-level": "#888888",
+    }
+
+    # Test that this works in an actual plot
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes={"payroll_tax__amount_y"},
+        policy_date_str="2025-01-01",
+        selection_type="neighbors",
+        node_colormap=qname_colormap,
+    )
+    assert fig is not None
+
+
+def test_node_colormap_qname_and_tuple_mixed():
+    """Test that node_colormap accepts mixed qname strings and tuples."""
+    mixed_colormap = {
+        ("payroll_tax",): "#ff0000",  # Tuple
+        "housing_benefits__*": "#00ff00",  # Qname string
+        ("**", "*_m"): "#0000ff",  # Tuple with **
+        "wealth_tax": "#ffff00",  # Qname string
+        "top-level": "#888888",  # Special qname
+    }
+
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes={"payroll_tax__amount_y"},
+        policy_date_str="2025-01-01",
+        selection_type="ancestors",
+        selection_depth=2,
+        node_colormap=mixed_colormap,
     )
     assert fig is not None

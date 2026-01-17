@@ -20,7 +20,7 @@ class NodeMetaData:
 def get_figure(
     dag: nx.DiGraph,
     show_node_description: bool,
-    node_colormap: dict[tuple[str, ...], str] | None = None,
+    node_colormap: dict[tuple[str, ...] | str, str] | None = None,
     **kwargs: Any,  # noqa: ANN401
 ) -> go.Figure:
     """Plot the DAG.
@@ -31,11 +31,11 @@ def get_figure(
         The DAG to plot.
     show_node_description : bool
         Whether to show node descriptions on hover.
-    node_colormap : dict[tuple[str, ...], str] | None, optional
-        Dictionary mapping namespace tuples to colors. If provided, overrides
-        the default automatic color generation. Tuples can represent any level
-        of the namespace hierarchy (e.g., ("housing_benefits",) for top-level,
-        ("housing_benefits", "eligibility") for second-level).
+    node_colormap : dict[tuple[str, ...] | str, str] | None, optional
+        Dictionary mapping namespace patterns to colors. Patterns can be specified
+        as tuples (e.g., ("housing_benefits", "*_m")) or as qualified name strings
+        (e.g., "housing_benefits__*_m"). If provided, overrides the default automatic
+        color generation.
     **kwargs : Any
         Additional keyword arguments passed to the plotly layout.
     """
@@ -106,9 +106,11 @@ def get_figure(
 
     # Create namespace to color mapping
     if node_colormap is not None:
+        # Normalize colormap to use tuples as keys
+        normalized_colormap = _normalize_colormap(node_colormap)
         # Use provided colormap with glob pattern support
         for qname in dag.nodes():
-            color = _find_color_for_qname(qname, node_colormap)
+            color = _find_color_for_qname(qname, normalized_colormap)
             individual_node_colormap[qname] = color
     else:
         # Use default automatic color generation
@@ -210,6 +212,34 @@ def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:
 
     rgb = colorsys.hls_to_rgb(h=hue, l=lightness, s=saturation)
     return f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"
+
+
+def _normalize_colormap(
+    node_colormap: dict[tuple[str, ...] | str, str],
+) -> dict[tuple[str, ...], str]:
+    """Normalize colormap keys to tuples.
+
+    Accepts both tuple patterns and qname strings (with '__' separators).
+    Converts qname strings to tuple patterns.
+
+    Parameters
+    ----------
+    node_colormap
+        Dictionary with keys that are either tuples or qname strings.
+
+    Returns
+    -------
+    dict[tuple[str, ...], str]
+        Dictionary with all keys normalized to tuples.
+    """
+    normalized = {}
+    for pattern, color in node_colormap.items():
+        if isinstance(pattern, str):
+            # Convert qname string to tuple
+            normalized[dt.tree_path_from_qname(pattern)] = color
+        else:
+            normalized[pattern] = color
+    return normalized
 
 
 def _find_color_for_qname(qname: str, node_colormap: dict[tuple[str, ...], str]) -> str:

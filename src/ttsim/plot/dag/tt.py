@@ -44,7 +44,7 @@ def tt(
     include_params: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
-    node_colormap: dict[tuple[str, ...], str] | None = None,
+    node_colormap: dict[tuple[str, ...] | str, str] | None = None,
     # Elements of main
     policy_date_str: DashedISOString | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
@@ -88,25 +88,27 @@ def tt(
     output_path
         If provided, the figure is written to the path.
     node_colormap
-        Dictionary mapping namespace tuples to colors. Supports glob-style patterns
-        using `*` (match any characters), `?` (match single character), and `**`
-        (match any number of path segments).
+        Dictionary mapping namespace patterns to colors. Patterns can be specified as
+        tuples or as qualified name strings (with ``__`` separators). Supports
+        glob-style patterns using ``*`` (match any characters), ``?`` (match single
+        character), and ``**`` (match any number of path segments).
 
             - Tuples can represent any level of the namespace hierarchy (e.g.,
-              ("payroll_tax",) would be the first level,
-              ("payroll_tax", "child_tax_credit") the second level.
+              ``("payroll_tax",)`` would be the first level,
+              ``("payroll_tax", "child_tax_credit")`` the second level.
+            - Qualified name strings use ``__`` as separator (e.g.,
+              ``"payroll_tax__child_tax_credit"``).
             - Glob patterns allow flexible matching:
-              - ("wealth*",) matches all top-level names starting with "wealth"
-              - ("*_m",) matches all top-level names ending with "_m"
-              - ("housing_benefits", "*_m") matches monthly variables under
-                housing_benefits
-              - ("**", "*_bg") matches any node ending with "_bg" at any depth
-              - ("bürgergeld", "**", "*_m") matches monthly variables anywhere
-                under bürgergeld
-            - The tuple ("top-level",) is used to catch all members of the top-level
-              namespace that don't match other patterns.
+              - ``("wealth*",)`` or ``"wealth*"`` matches all top-level names starting
+                with "wealth"
+              - ``("**", "betrag_?")`` or ``"**__betrag_?"`` matches any node named
+                ``betrag_m``, ``betrag_y``, etc. at any depth
+              - ``("bürgergeld", "**", "*_m")`` or ``"bürgergeld__**__*_m"`` matches
+                monthly variables anywhere under bürgergeld
+            - The pattern ``("top-level",)`` or ``"top-level"`` is used to catch all
+              members of the top-level namespace that don't match other patterns.
             - Matching priority: exact matches > longer patterns > fewer wildcards
-              > patterns without "**". Among equal-specificity patterns, first
+              > patterns without ``**``. Among equal-specificity patterns, first
               defined wins.
             - Fallback color is black for nested namespaces, dimgray for top-level.
             - Use any color from https://plotly.com/python/css-colors/
