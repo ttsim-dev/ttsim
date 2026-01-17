@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import colorsys
+import fnmatch
 from dataclasses import dataclass
 from typing import Any
 
@@ -105,27 +106,10 @@ def get_figure(
 
     # Create namespace to color mapping
     if node_colormap is not None:
-        # Use provided colormap
-        namespace_colors = {}
+        # Use provided colormap with glob pattern support
         for qname in dag.nodes():
-            tp = dt.tree_path_from_qname(qname)
-
-            longest_match = None
-            longest_match_length = 0
-            for map_tp in node_colormap:
-                if tp[: len(map_tp)] == map_tp and len(map_tp) > longest_match_length:
-                    longest_match = map_tp
-                    longest_match_length = len(map_tp)
-
-            if longest_match is not None:
-                individual_node_colormap[qname] = node_colormap[longest_match]
-            else:
-                if len(tp) == 1:
-                    individual_node_colormap[qname] = node_colormap.get(
-                        ("top-level",), "dimgray"
-                    )
-                else:
-                    individual_node_colormap[qname] = "black"
+            color = _find_color_for_qname(qname, node_colormap)
+            individual_node_colormap[qname] = color
     else:
         # Use default automatic color generation
         top_level_namespaces = {
@@ -226,3 +210,118 @@ def hsl_to_hex(hue: float, saturation: float, lightness: float) -> str:
 
     rgb = colorsys.hls_to_rgb(h=hue, l=lightness, s=saturation)
     return f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"
+
+
+def _find_color_for_qname(qname: str, node_colormap: dict[tuple[str, ...], str]) -> str:
+    """Find the color for a qname using glob pattern matching.
+
+    Matching priority:
+    1. Exact matches (no wildcards) take precedence
+    2. Longer patterns are more specific than shorter ones
+    3. Patterns without wildcards score higher than those with wildcards
+    4. Among equal-specificity patterns, first defined wins
+
+    Parameters
+    ----------
+    qname
+        The qualified name to find a color for.
+    node_colormap
+        Dictionary mapping pattern tuples to colors. Patterns can contain
+        glob wildcards (* for any characters, ? for single character).
+
+    Returns
+    -------
+    str
+        The color for the qname, or "black" if no match is found.
+    """
+    tp = dt.tree_path_from_qname(qname)
+
+    best_match_color = None
+    best_match_score = -1
+
+    for pattern_tp, color in node_colormap.items():
+        if _matches_glob_pattern(tp, pattern_tp):
+            score = _pattern_specificity(tp, pattern_tp)
+            if score > best_match_score:
+                best_match_color = color
+                best_match_score = score
+
+    if best_match_color is not None:
+        return best_match_color
+
+    # Fall back to top-level color for single-element tree paths, else black
+    if len(tp) == 1:
+        return node_colormap.get(("top-level",), "dimgray")
+    return "black"
+
+
+def _matches_glob_pattern(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> bool:
+    """Check if a tree path matches a glob pattern tuple.
+
+    The pattern tuple must match from the start of the tree path. Each element
+    in the pattern is matched against the corresponding element in the tree
+    path using fnmatch (glob-style matching).
+
+    Parameters
+    ----------
+    tp
+        The tree path to match against.
+    pattern_tp
+        The pattern tuple, which may contain glob wildcards.
+
+    Returns
+    -------
+    bool
+        True if the tree path matches the pattern.
+    """
+    # Special case: ("top-level",) matches single-element tree paths
+    if pattern_tp == ("top-level",):
+        return len(tp) == 1
+
+    # Pattern must not be longer than the tree path for prefix matching
+    if len(pattern_tp) > len(tp):
+        return False
+
+    return all(fnmatch.fnmatch(t, p) for t, p in zip(tp, pattern_tp, strict=False))
+
+
+def _pattern_specificity(tp: tuple[str, ...], pattern_tp: tuple[str, ...]) -> int:
+    """Calculate the specificity score of a pattern match.
+
+    Higher scores indicate more specific matches. The scoring prioritizes:
+    1. Longer patterns (more levels matched)
+    2. Exact matches over wildcard matches at each level
+    3. More specific wildcards (fewer * and ? characters)
+    4. The special ("top-level",) pattern has lowest priority (catch-all)
+
+    Parameters
+    ----------
+    tp
+        The tree path being matched.
+    pattern_tp
+        The pattern tuple that matched.
+
+    Returns
+    -------
+    int
+        A specificity score (higher = more specific).
+    """
+    # Special case: ("top-level",) is a catch-all with lowest priority
+    if pattern_tp == ("top-level",):
+        return -1
+
+    # Base score from pattern length (each level worth 1000 points)
+    score = len(pattern_tp) * 1000
+
+    # Bonus for exact matches, penalty for wildcards
+    for i, pattern_element in enumerate(pattern_tp):
+        if i < len(tp):
+            if pattern_element == tp[i]:
+                # Exact match at this level
+                score += 100
+            else:
+                # Wildcard match - penalize based on wildcard complexity
+                wildcard_count = pattern_element.count("*") + pattern_element.count("?")
+                score -= wildcard_count * 10
+
+    return score

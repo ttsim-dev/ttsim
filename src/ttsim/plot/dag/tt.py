@@ -88,15 +88,22 @@ def tt(
     output_path
         If provided, the figure is written to the path.
     node_colormap
-        Dictionary mapping namespace tuples to colors.
+        Dictionary mapping namespace tuples to colors. Supports glob-style patterns
+        using `*` (match any characters) and `?` (match single character).
+
             - Tuples can represent any level of the namespace hierarchy (e.g.,
               ("payroll_tax",) would be the first level,
               ("payroll_tax", "child_tax_credit") the second level.
+            - Glob patterns allow flexible matching:
+              - ("wealth*",) matches all top-level names starting with "wealth"
+              - ("*_m",) matches all top-level names ending with "_m"
+              - ("housing_benefits", "*_m") matches monthly variables under
+                housing_benefits
             - The tuple ("top-level",) is used to catch all members of the top-level
-              namespace.
-            - Individual elements or sub-namespaces can be overridden as the longest
-              match will be used.
-            - Fallback color is black.
+              namespace that don't match other patterns.
+            - Matching priority: exact matches > longer patterns > fewer wildcards.
+              Among equal-specificity patterns, first defined wins.
+            - Fallback color is black for nested namespaces, dimgray for top-level.
             - Use any color from https://plotly.com/python/css-colors/
         If None, cycle through colors at the uppermost level of the namespace hierarchy.
     policy_date_str
