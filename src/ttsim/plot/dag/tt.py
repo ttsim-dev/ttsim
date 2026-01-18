@@ -37,7 +37,7 @@ def tt(
     *,
     # Args specific to TTSIM plotting
     root: Path,
-    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
+    primary_nodes: set[str] | set[tuple[str, ...]] | None = None,
     selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"]
     | None = None,
     selection_depth: int | None = None,
@@ -65,10 +65,13 @@ def tt(
     root
         The root path.
     primary_nodes
-        The qnames or paths of the primary nodes. Primary nodes are used to determine
-        which other nodes to include in the plot based on the selection_type. They may
-        be root nodes (for descendants), end nodes (for ancestors), or middle nodes (for
-        neighbors). If not provided, the entire DAG is plotted.
+        The primary nodes, specified as tree paths (e.g.,
+        `{("einkommensteuer", "abgeltungssteuer", "betrag_y_sn")}`) or qualified names
+        (e.g., `{"einkommensteuer__abgeltungssteuer__betrag_y_sn"}`). Primary nodes are
+        used to determine which other nodes to include in the plot based on the
+        selection_type. They may be root nodes (for descendants), end nodes (for
+        ancestors), or middle nodes (for neighbors). If not provided, the entire DAG is
+        plotted.
     selection_type
         The type of the DAG to plot. Can be one of:
             - "neighbors": Plot the neighbors of the primary nodes.
@@ -170,7 +173,7 @@ def tt(
 
 def _get_tt_dag_with_node_metadata(
     root: Path | None = None,
-    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
+    primary_nodes: set[str] | set[tuple[str, ...]] | None = None,
     selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"]
     | None = None,
     selection_depth: int | None = None,
@@ -425,7 +428,7 @@ def _kth_order_successors(
 
 
 def _get_qnames_primary_nodes(
-    primary_nodes: set[str] | set[tuple[str, str]] | None,
+    primary_nodes: set[str] | set[tuple[str, ...]] | None,
 ) -> set[str]:
     """Get the qnames of the selected nodes."""
     if not primary_nodes:
