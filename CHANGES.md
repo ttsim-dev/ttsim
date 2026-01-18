@@ -4,7 +4,12 @@ This is a record of all past `ttsim` releases and what went into them in reverse
 chronological order. We follow [semantic versioning](https://semver.org/) and all
 releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim).
 
-## v1.1.1 — unpublished
+## Unreleased
+
+- {gh}`67` Add glob-style pattern matching for `node_colormap` in DAG plotting.
+  ({ghuser}`hmgaudecker`)
+
+## v1.1.1 — 2026-01-12
 
 - {gh}`65` Add Python 3.14 support. ({ghuser}`hmgaudecker`)
 - {gh}`63` Use ty as the type checker for ttsim. Many improvements to type safety.

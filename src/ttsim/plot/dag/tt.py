@@ -37,14 +37,14 @@ def tt(
     *,
     # Args specific to TTSIM plotting
     root: Path,
-    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
+    primary_nodes: set[str] | set[tuple[str, ...]] | None = None,
     selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"]
     | None = None,
     selection_depth: int | None = None,
     include_params: bool = True,
     show_node_description: bool = False,
     output_path: Path | None = None,
-    node_colormap: dict[tuple[str, ...], str] | None = None,
+    node_colormap: dict[tuple[str, ...] | str, str] | None = None,
     # Elements of main
     policy_date_str: DashedISOString | None = None,
     orig_policy_objects: OrigPolicyObjects | None = None,
@@ -65,10 +65,13 @@ def tt(
     root
         The root path.
     primary_nodes
-        The qnames or paths of the primary nodes. Primary nodes are used to determine
-        which other nodes to include in the plot based on the selection_type. They may
-        be root nodes (for descendants), end nodes (for ancestors), or middle nodes (for
-        neighbors). If not provided, the entire DAG is plotted.
+        The primary nodes, specified as tree paths (e.g.,
+        `{("einkommensteuer", "abgeltungssteuer", "betrag_y_sn")}`) or qualified names
+        (e.g., `{"einkommensteuer__abgeltungssteuer__betrag_y_sn"}`). Primary nodes are
+        used to determine which other nodes to include in the plot based on the
+        selection_type. They may be root nodes (for descendants), end nodes (for
+        ancestors), or middle nodes (for neighbors). If not provided, the entire DAG is
+        plotted.
     selection_type
         The type of the DAG to plot. Can be one of:
             - "neighbors": Plot the neighbors of the primary nodes.
@@ -88,15 +91,29 @@ def tt(
     output_path
         If provided, the figure is written to the path.
     node_colormap
-        Dictionary mapping namespace tuples to colors.
+        Dictionary mapping namespace patterns to colors. Patterns can be specified as
+        tuples or as qualified name strings (with ``__`` separators). Supports
+        glob-style patterns using ``*`` (match any characters), ``?`` (match single
+        character), and ``**`` (match any number of path segments).
+
             - Tuples can represent any level of the namespace hierarchy (e.g.,
-              ("payroll_tax",) would be the first level,
-              ("payroll_tax", "child_tax_credit") the second level.
-            - The tuple ("top-level",) is used to catch all members of the top-level
-              namespace.
-            - Individual elements or sub-namespaces can be overridden as the longest
-              match will be used.
-            - Fallback color is black.
+              ``("payroll_tax",)`` would be the first level,
+              ``("payroll_tax", "child_tax_credit")`` the second level.
+            - Qualified name strings use ``__`` as separator (e.g.,
+              ``"payroll_tax__child_tax_credit"``).
+            - Glob patterns allow flexible matching:
+              - ``("wealth*",)`` or ``"wealth*"`` matches all top-level names starting
+                with "wealth"
+              - ``("**", "betrag_?")`` or ``"**__betrag_?"`` matches any node named
+                ``betrag_m``, ``betrag_y``, etc. at any depth
+              - ``("bürgergeld", "**", "*_m")`` or ``"bürgergeld__**__*_m"`` matches
+                monthly variables anywhere under bürgergeld
+            - The pattern ``("top-level",)`` or ``"top-level"`` is used to catch all
+              members of the top-level namespace that don't match other patterns.
+            - Matching priority: exact matches > longer patterns > fewer wildcards
+              > patterns without ``**``. Among equal-specificity patterns, first
+              defined wins.
+            - Fallback color is black for nested namespaces, dimgray for top-level.
             - Use any color from https://plotly.com/python/css-colors/
         If None, cycle through colors at the uppermost level of the namespace hierarchy.
     policy_date_str
@@ -156,7 +173,7 @@ def tt(
 
 def _get_tt_dag_with_node_metadata(
     root: Path | None = None,
-    primary_nodes: set[str] | set[tuple[str, str]] | None = None,
+    primary_nodes: set[str] | set[tuple[str, ...]] | None = None,
     selection_type: Literal["neighbors", "descendants", "ancestors", "all_paths"]
     | None = None,
     selection_depth: int | None = None,
@@ -411,7 +428,7 @@ def _kth_order_successors(
 
 
 def _get_qnames_primary_nodes(
-    primary_nodes: set[str] | set[tuple[str, str]] | None,
+    primary_nodes: set[str] | set[tuple[str, ...]] | None,
 ) -> set[str]:
     """Get the qnames of the selected nodes."""
     if not primary_nodes:

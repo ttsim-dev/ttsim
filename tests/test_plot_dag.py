@@ -12,6 +12,12 @@ from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
 )
 from ttsim.plot.dag.interface import INTERFACE_COLORMAP
+from ttsim.plot.dag.shared import (
+    _find_color_for_qname,
+    _matches_glob_pattern,
+    _normalize_colormap,
+    _pattern_specificity,
+)
 from ttsim.plot.dag.tt import _get_tt_dag_with_node_metadata
 from ttsim.tt import (
     PolicyInput,
@@ -591,5 +597,265 @@ def test_node_colormap_fallback_to_default():
         primary_nodes={"payroll_tax__amount_y"},
         policy_date_str="2025-01-01",
         node_colormap=partial_colormap,
+    )
+    assert fig is not None
+
+
+def test_node_colormap_glob_patterns():
+    """Test that node_colormap supports glob-style pattern matching."""
+    # Test _matches_glob_pattern
+    # Prefix matching with *
+    assert _matches_glob_pattern(("wealth_housing",), ("wealth*",))
+    assert _matches_glob_pattern(("wealth_financial",), ("wealth*",))
+    assert not _matches_glob_pattern(("income",), ("wealth*",))
+
+    # Suffix matching with *
+    assert _matches_glob_pattern(("amount_m",), ("*_m",))
+    assert _matches_glob_pattern(("income_m",), ("*_m",))
+    assert not _matches_glob_pattern(("amount_y",), ("*_m",))
+
+    # Single character matching with ?
+    assert _matches_glob_pattern(("p_id",), ("p_i?",))
+    assert not _matches_glob_pattern(
+        ("p_idx",), ("p_i?",)
+    )  # ? matches exactly one char
+
+    # Exact matching (no wildcards)
+    assert _matches_glob_pattern(("housing_benefits",), ("housing_benefits",))
+    assert not _matches_glob_pattern(("housing",), ("housing_benefits",))
+
+    # Multi-level patterns
+    assert _matches_glob_pattern(
+        ("housing_benefits", "eligibility"), ("housing_benefits", "*")
+    )
+    assert _matches_glob_pattern(
+        ("housing_benefits", "income_check"), ("housing_benefits", "*_check")
+    )
+
+    # Top-level special case
+    assert _matches_glob_pattern(("p_id",), ("top-level",))
+    assert not _matches_glob_pattern(("housing_benefits", "amount"), ("top-level",))
+
+    # Test _pattern_specificity - longer patterns should score higher
+    short_pattern = ("housing*",)
+    long_pattern = ("housing_benefits", "*")
+    assert _pattern_specificity(("housing_benefits", "amount"), long_pattern) > (
+        _pattern_specificity(("housing_benefits", "amount"), short_pattern)
+    )
+
+    # Exact matches should score higher than wildcard matches
+    exact_pattern = ("housing_benefits",)
+    wildcard_pattern = ("housing*",)
+    assert _pattern_specificity(("housing_benefits",), exact_pattern) > (
+        _pattern_specificity(("housing_benefits",), wildcard_pattern)
+    )
+
+    # Test _find_color_for_qname
+    colormap = {
+        ("wealth*",): "blue",
+        ("wealth_housing",): "navy",  # More specific, should win
+        ("*_m",): "orange",
+        ("housing_benefits",): "green",
+        ("housing_benefits", "*"): "lightgreen",
+        ("top-level",): "gray",
+    }
+
+    # Exact match takes precedence over wildcard
+    assert _find_color_for_qname("wealth_housing", colormap) == "navy"
+
+    # Wildcard prefix match
+    assert _find_color_for_qname("wealth_financial", colormap) == "blue"
+
+    # Wildcard suffix match
+    assert _find_color_for_qname("income_m", colormap) == "orange"
+
+    # Hierarchical pattern
+    assert _find_color_for_qname("housing_benefits__eligibility", colormap) == (
+        "lightgreen"
+    )
+
+    # Top-level fallback
+    assert _find_color_for_qname("p_id", colormap) == "gray"
+
+    # No match falls back to default
+    assert _find_color_for_qname("unknown__nested", colormap) == "black"
+
+
+def test_node_colormap_glob_patterns_in_plot():
+    """Test that glob patterns work in actual DAG plots."""
+
+    # Use glob patterns in colormap
+    glob_colormap = {
+        ("payroll*",): "#ff0000",  # Match payroll_tax and any payroll_ prefix
+        ("housing_benefits", "*"): "#00ff00",  # Match all under housing_benefits
+        ("*_tax",): "#0000ff",  # Match anything ending in _tax
+        ("top-level",): "#888888",
+    }
+
+    # Test that this works in an actual plot
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes={"payroll_tax__amount_y"},
+        policy_date_str="2025-01-01",
+        selection_type="neighbors",
+        node_colormap=glob_colormap,
+    )
+    assert fig is not None
+
+
+def test_node_colormap_doublestar_patterns():
+    """Test that ** patterns match any number of path segments."""
+    # ** at the beginning - match suffix at any depth
+    assert _matches_glob_pattern(("betrag_m_bg",), ("**", "*_bg"))
+    assert _matches_glob_pattern(("bürgergeld", "betrag_m_bg"), ("**", "*_bg"))
+    assert _matches_glob_pattern(
+        ("bürgergeld", "einkommen", "betrag_m_bg"), ("**", "*_bg")
+    )
+    assert not _matches_glob_pattern(("bürgergeld", "betrag_m"), ("**", "*_bg"))
+
+    # ** in the middle - match prefix and suffix
+    assert _matches_glob_pattern(
+        ("bürgergeld", "einkommen", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+    assert _matches_glob_pattern(
+        ("bürgergeld", "a", "b", "c", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+    # ** can match zero segments
+    assert _matches_glob_pattern(
+        ("bürgergeld", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+    assert not _matches_glob_pattern(
+        ("wohngeld", "betrag_m"), ("bürgergeld", "**", "*_m")
+    )
+
+    # ** at the end - match any descendants
+    assert _matches_glob_pattern(("bürgergeld",), ("bürgergeld", "**"))
+    assert _matches_glob_pattern(("bürgergeld", "x"), ("bürgergeld", "**"))
+    assert _matches_glob_pattern(("bürgergeld", "x", "y", "z"), ("bürgergeld", "**"))
+
+    # Just ** matches everything
+    assert _matches_glob_pattern(("anything",), ("**",))
+    assert _matches_glob_pattern(("a", "b", "c"), ("**",))
+
+    # Specificity: patterns without ** should win over patterns with **
+    tp = ("bürgergeld", "betrag_m_bg")
+    specific_pattern = ("bürgergeld", "*_bg")
+    doublestar_pattern = ("**", "*_bg")
+    assert _pattern_specificity(tp, specific_pattern) > _pattern_specificity(
+        tp, doublestar_pattern
+    )
+
+    # Test _find_color_for_qname with ** patterns
+    colormap = {
+        ("**", "*_bg"): "purple",  # Match any _bg at any depth
+        ("bürgergeld", "*"): "green",  # More specific for bürgergeld direct children
+        ("bürgergeld", "betrag_m_bg"): "darkgreen",  # Most specific
+        ("top-level",): "gray",
+    }
+
+    # Most specific wins
+    assert _find_color_for_qname("bürgergeld__betrag_m_bg", colormap) == "darkgreen"
+
+    # Namespace pattern wins over **
+    assert _find_color_for_qname("bürgergeld__einkommen_bg", colormap) == "green"
+
+    # ** pattern catches nested _bg
+    assert _find_color_for_qname("wohngeld__nested__amount_bg", colormap) == "purple"
+
+    # ** pattern catches top-level _bg
+    assert _find_color_for_qname("some_var_bg", colormap) == "purple"
+
+
+def test_node_colormap_doublestar_in_plot():
+    """Test that ** patterns work in actual DAG plots."""
+    doublestar_colormap = {
+        ("**", "*_y"): "#ff0000",  # Match any yearly variable at any depth
+        ("housing_benefits",): "#00ff00",
+        ("top-level",): "#888888",
+    }
+
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes={"payroll_tax__amount_y"},
+        policy_date_str="2025-01-01",
+        selection_type="ancestors",
+        selection_depth=2,
+        node_colormap=doublestar_colormap,
+    )
+    assert fig is not None
+
+
+def test_normalize_colormap():
+    """Test that _normalize_colormap converts qname strings to tuples."""
+    # Mixed input with both tuples and qname strings
+    mixed_colormap = {
+        ("housing_benefits",): "green",
+        "payroll_tax": "red",
+        "wealth_tax__amount": "blue",
+        ("**", "*_bg"): "purple",
+        "**__betrag_?": "orange",
+        "top-level": "gray",
+    }
+
+    normalized = _normalize_colormap(mixed_colormap)
+
+    # Check that all keys are tuples
+    assert all(isinstance(k, tuple) for k in normalized)
+
+    # Check specific conversions
+    assert ("housing_benefits",) in normalized
+    assert ("payroll_tax",) in normalized
+    assert ("wealth_tax", "amount") in normalized
+    assert ("**", "*_bg") in normalized
+    assert ("**", "betrag_?") in normalized
+    assert ("top-level",) in normalized
+
+    # Check colors are preserved
+    assert normalized[("housing_benefits",)] == "green"
+    assert normalized[("payroll_tax",)] == "red"
+    assert normalized[("wealth_tax", "amount")] == "blue"
+    assert normalized[("**", "*_bg")] == "purple"
+    assert normalized[("**", "betrag_?")] == "orange"
+    assert normalized[("top-level",)] == "gray"
+
+
+def test_node_colormap_qname_strings():
+    """Test that node_colormap accepts qname strings as keys."""
+    # Use qname strings in colormap (equivalent to tuple patterns)
+    qname_colormap = {
+        "payroll_tax": "#ff0000",
+        "housing_benefits__*": "#00ff00",
+        "**__*_y": "#0000ff",
+        "top-level": "#888888",
+    }
+
+    # Test that this works in an actual plot
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes={"payroll_tax__amount_y"},
+        policy_date_str="2025-01-01",
+        selection_type="neighbors",
+        node_colormap=qname_colormap,
+    )
+    assert fig is not None
+
+
+def test_node_colormap_qname_and_tuple_mixed():
+    """Test that node_colormap accepts mixed qname strings and tuples."""
+    mixed_colormap = {
+        ("payroll_tax",): "#ff0000",  # Tuple
+        "housing_benefits__*": "#00ff00",  # Qname string
+        ("**", "*_m"): "#0000ff",  # Tuple with **
+        "wealth_tax": "#ffff00",  # Qname string
+        "top-level": "#888888",  # Special qname
+    }
+
+    fig = plot.dag.tt(
+        root=middle_earth.ROOT_PATH,
+        primary_nodes={"payroll_tax__amount_y"},
+        policy_date_str="2025-01-01",
+        selection_type="ancestors",
+        selection_depth=2,
+        node_colormap=mixed_colormap,
     )
     assert fig is not None
