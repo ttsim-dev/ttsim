@@ -175,46 +175,45 @@ types-pytz = "*"
 # Tasks
 # --------------------------------------------------------------------------------------
 
-# Platform-specific test tasks (dot -c needed for pygraphviz on macOS)
-[tool.pixi.feature.test.target.osx-64.tasks]
+[tool.pixi.feature.tests.target.osx-64.tasks]
 ty = "ty check"
-test = "dot -c && pytest"
+tests = "dot -c && pytest" # dot -c needed for pygraphviz on macOS
 
-[tool.pixi.feature.test.target.osx-arm64.tasks]
+[tool.pixi.feature.tests.target.osx-arm64.tasks]
 ty = "ty check"
-test = "dot -c && pytest"
+tests = "dot -c && pytest" # dot -c needed for pygraphviz on macOS
 
-[tool.pixi.feature.test.target.linux-64.tasks]
+[tool.pixi.feature.tests.target.linux-64.tasks]
 ty = "ty check"
-test = "pytest"
+tests = "pytest"
 
-[tool.pixi.feature.test.target.win-64.tasks]
+[tool.pixi.feature.tests.target.win-64.tasks]
 ty = "ty check"
-test = "pytest"
+tests = "pytest"
 
 [tool.pixi.feature.jax.target.osx-arm64.tasks]
-test-jax = "dot -c && pytest --backend=jax"
+tests-jax = "dot -c && pytest --backend=jax"
 
 [tool.pixi.feature.jax.target.linux-64.tasks]
-test-jax = "pytest --backend=jax"
+tests-jax = "pytest --backend=jax"
 
 [tool.pixi.feature.jax.target.win-64.tasks]
-test-jax = "pytest --backend=jax"
+tests-jax = "pytest --backend=jax"
 
 [tool.pixi.feature.cuda.target.linux-64.tasks]
-test-jax = "pytest --backend=jax"
+tests-jax = "pytest --backend=jax"
 
 # Environments
 # --------------------------------------------------------------------------------------
 
 [tool.pixi.environments]
-py311 = ["test", "py311"]
-py312 = ["test", "py312"]
-py313 = ["test", "py313"]
-py314 = ["test", "py314"]
-py314-jax = ["py314", "test", "jax"]
-py314-cuda = ["py314", "test", "cuda"]
-py314-metal = ["py314", "test", "metal"]
+py311 = ["tests", "py311"]
+py312 = ["tests", "py312"]
+py313 = ["tests", "py313"]
+py314 = ["tests", "py314"]
+py314-jax = ["py314", "tests", "jax"]
+py314-cuda = ["py314", "tests", "cuda"]
+py314-metal = ["py314", "tests", "metal"]
 
 # ======================================================================================
 # Ruff configuration
