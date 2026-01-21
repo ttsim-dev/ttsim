@@ -63,3 +63,24 @@ def params(
         pt: specialized_environment__with_processed_params_and_scalars[pt]
         for pt in labels__param_targets
     }
+
+
+@interface_function()
+def combined(
+    raw_results__columns: QNameData,
+    raw_results__params: QNameData,
+    raw_results__from_input_data: QNameData,
+) -> QNameData:
+    """All raw results combined into a single dict.
+
+    This merges columns (computed values), params (parameter values), and
+    from_input_data (input data requested as targets) into one dictionary.
+
+    Note: Arrays retain their internal sort order. Use results__tree for
+    results with restored original row order.
+    """
+    return {
+        **raw_results__columns,
+        **raw_results__params,
+        **raw_results__from_input_data,
+    }

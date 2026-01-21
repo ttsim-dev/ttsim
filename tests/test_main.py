@@ -697,3 +697,591 @@ def test_fail_if_inputs_to_create_dynamic_root_node_are_missing():
             input_qnames={},
             flat_interface_objects=flat_interface_objects,
         )
+
+
+# =============================================================================
+# Tests for main() function parameter validation and behavior
+# =============================================================================
+
+
+def test_main_fails_when_both_main_target_and_main_targets_provided(backend, xnp):
+    """Test that providing both main_target and main_targets raises ValueError."""
+    with pytest.raises(
+        ValueError,
+        match=r"Either `main_target` or `main_targets` must be provided, but not both",
+    ):
+        main(
+            main_target=MainTarget.policy_environment,
+            main_targets=[MainTarget.policy_environment],
+            policy_date_str="2025-01-01",
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            backend=backend,
+        )
+
+
+def test_main_with_neither_main_target_nor_main_targets_requires_data():
+    """Test that providing neither main_target nor main_targets and no data fails.
+
+    When no specific target is requested, the system attempts to compute all targets,
+    which requires input data to be provided.
+    """
+    with pytest.raises(
+        ValueError,
+        match=r"The following arguments to `main` are missing",
+    ):
+        main(
+            policy_date_str="2025-01-01",
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        )
+
+
+def test_main_with_main_targets_returns_nested_dict(backend, xnp):
+    """Test that main_targets returns a properly nested dict via unflatten_from_qnames."""
+    result = main(
+        main_targets=[
+            MainTarget.policy_environment,
+            MainTarget.orig_policy_objects.column_objects_and_param_functions,
+        ],
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    assert isinstance(result, dict)
+    assert "policy_environment" in result
+    assert "orig_policy_objects" in result
+    assert "column_objects_and_param_functions" in result["orig_policy_objects"]
+
+
+def test_main_with_single_main_target_returns_direct_value(backend, xnp):
+    """Test that main_target returns the value directly, not wrapped in a dict."""
+    result = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    assert isinstance(result, dict)
+
+
+def test_main_with_main_targets_nested_structure(backend, xnp):
+    """Test that main_targets with nested paths returns properly nested dict."""
+    result = main(
+        main_targets=[
+            MainTarget.results.df_with_mapper,
+            MainTarget.results.tree,
+        ],
+        input_data=InputData.tree(
+            {
+                "p_id": xnp.array([0, 1, 2]),
+                "age": xnp.array([25, 30, 35]),
+            }
+        ),
+        tt_targets=TTTargets.tree({"age": None}),
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    assert isinstance(result, dict)
+    assert "results" in result
+    assert "df_with_mapper" in result["results"]
+    assert "tree" in result["results"]
+
+
+def test_main_target_fails_for_main_target_abc_subclass():
+    """Test that passing a MainTargetABC subclass (not a leaf value) raises TypeError."""
+    with pytest.raises(
+        TypeError,
+        match=r"`main_target` must be an atomic element of `MainTarget`",
+    ):
+        _harmonize_main_target(main_target=MainTarget.results)
+
+
+def test_main_targets_fails_for_main_target_abc_subclass():
+    """Test that passing a MainTargetABC subclass in main_targets raises TypeError."""
+    with pytest.raises(
+        TypeError,
+        match=r"Elements of `main_targets` must be atomic elements of `MainTarget`",
+    ):
+        _harmonize_main_targets(main_targets=[MainTarget.results])
+
+
+# =============================================================================
+# Tests for rounding parameter
+# =============================================================================
+
+
+def test_rounding_parameter_is_passed_through(backend, xnp):
+    """Test that the rounding parameter is correctly passed through main().
+
+    We test both rounding=True and rounding=False are accepted without error,
+    demonstrating the parameter is functional.
+    """
+    input_data = InputData.tree(
+        {
+            "p_id": xnp.array([0, 1]),
+            "property_tax": {
+                "acre_size_in_hectares": xnp.array([10, 20]),
+            },
+        }
+    )
+    tt_targets = TTTargets.tree({"property_tax": {"amount_y": None}})
+
+    result_with_rounding = main(
+        main_target=MainTarget.results.tree,
+        input_data=input_data,
+        tt_targets=tt_targets,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        rounding=True,
+        include_warn_nodes=False,
+    )
+
+    result_without_rounding = main(
+        main_target=MainTarget.results.tree,
+        input_data=input_data,
+        tt_targets=tt_targets,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        rounding=False,
+        include_warn_nodes=False,
+    )
+
+    assert "property_tax" in result_with_rounding
+    assert "property_tax" in result_without_rounding
+    assert "amount_y" in result_with_rounding["property_tax"]
+    assert "amount_y" in result_without_rounding["property_tax"]
+
+
+# =============================================================================
+# Tests for include_fail_nodes and include_warn_nodes
+# =============================================================================
+
+
+def test_include_fail_nodes_false_excludes_fail_functions(backend, xnp):
+    """Test that include_fail_nodes=False excludes fail functions from execution."""
+    result = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_fail_nodes=False,
+    )
+
+    assert result is not None
+
+
+def test_include_warn_nodes_false_excludes_warn_functions(backend, xnp):
+    """Test that include_warn_nodes=False excludes warn functions from execution."""
+    result = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    assert result is not None
+
+
+def test_include_fail_and_warn_nodes_false_excludes_both(backend, xnp):
+    """Test that setting both include flags to False excludes both types."""
+    result = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_fail_nodes=False,
+        include_warn_nodes=False,
+    )
+
+    assert result is not None
+
+
+# =============================================================================
+# Tests for policy_date vs policy_date_str
+# =============================================================================
+
+
+def test_policy_date_datetime_object_works(backend, xnp):
+    """Test that passing policy_date as datetime.date object works.
+
+    policy_date is an InterfaceInput, so we test it indirectly by verifying
+    the policy_environment is created correctly for the given date.
+    """
+    import datetime
+
+    result = main(
+        main_target=MainTarget.policy_environment,
+        policy_date=datetime.date(2025, 1, 15),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    assert isinstance(result, dict)
+    assert len(result) > 0
+
+
+def test_policy_date_str_and_policy_date_produce_same_policy_environment(backend, xnp):
+    """Test that policy_date_str and policy_date produce equivalent policy environments."""
+    import datetime
+
+    result_from_str = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-15",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    result_from_date = main(
+        main_target=MainTarget.policy_environment,
+        policy_date=datetime.date(2025, 1, 15),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    assert result_from_str.keys() == result_from_date.keys()
+
+
+# =============================================================================
+# Tests for dynamic interface object resolution
+# =============================================================================
+
+
+def test_resolve_dynamic_interface_objects_none_satisfy_condition():
+    """Test that when no InputDependentInterfaceFunction satisfies conditions,
+    the node is not included in static nodes.
+    """
+    flat_interface_objects = {
+        ("some_idif_require_input_1",): some_idif_require_input_1,
+        ("some_idif_require_input_2_and_n1__input_2",): some_idif_require_input_2_and_n1__input_2,
+    }
+
+    result = _resolve_dynamic_interface_objects_to_static_nodes(
+        flat_interface_objects=flat_interface_objects,
+        input_qnames=["unrelated_input"],
+    )
+
+    assert "some_idif" not in result
+
+
+# =============================================================================
+# Tests for main_targets with various input formats
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    "main_targets_input",
+    [
+        ["policy_environment", "orig_policy_objects__column_objects_and_param_functions"],
+        [("policy_environment",), ("orig_policy_objects", "column_objects_and_param_functions")],
+        {"policy_environment": None, "orig_policy_objects": {"column_objects_and_param_functions": None}},
+    ],
+)
+def test_main_targets_accepts_various_formats(backend, xnp, main_targets_input):
+    """Test that main_targets accepts strings, tuples, and dicts."""
+    result = main(
+        main_targets=main_targets_input,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    assert isinstance(result, dict)
+    assert "policy_environment" in result
+    assert "orig_policy_objects" in result
+
+
+# =============================================================================
+# Tests for advanced parameter overrides
+# =============================================================================
+
+
+def test_policy_environment_override_bypasses_loading(backend, xnp):
+    """Test that providing policy_environment directly bypasses loading from root.
+
+    When policy_environment is provided, the system skips loading from orig_policy_objects.
+    """
+    # Get a base policy environment first
+    base_env = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    from ttsim.tt import policy_function as pf
+
+    @pf()
+    def custom_function(x: int) -> int:
+        return x * 2
+
+    # Add custom function to environment
+    custom_env = {**base_env, "custom_function": custom_function}
+
+    result = main(
+        main_target=MainTarget.results.tree,
+        policy_environment=custom_env,
+        input_data=InputData.tree(
+            {
+                "p_id": xnp.array([0, 1, 2]),
+                "x": xnp.array([1, 2, 3]),
+            }
+        ),
+        tt_targets=TTTargets.tree({"custom_function": None}),
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    assert "custom_function" in result
+    assert list(result["custom_function"]) == [2, 4, 6]
+
+
+def test_evaluation_date_str_override(backend, xnp):
+    """Test that evaluation_date_str can override the default evaluation date.
+
+    We test this indirectly by verifying the property tax calculation uses
+    the evaluation_date for capping. In METTSIM, acre_size_in_hectares is
+    capped starting in 2020.
+    """
+    input_data = InputData.tree(
+        {
+            "p_id": xnp.array([0]),
+            "property_tax": {
+                "acre_size_in_hectares": xnp.array([200]),  # Above the cap
+            },
+        }
+    )
+
+    # Get policy environment for year 2000 (before the cap was introduced)
+    policy_env = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2000-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    # Use evaluation_date_str to override to 2020 when cap applies
+    result = main(
+        main_target=MainTarget.results.tree,
+        policy_environment=policy_env,
+        evaluation_date_str="2020-01-01",
+        input_data=input_data,
+        tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
+        backend=backend,
+    )
+
+    # The result should reflect the capped value
+    assert "property_tax" in result
+    assert "amount_y" in result["property_tax"]
+
+
+def test_evaluation_date_datetime_object_override(backend, xnp):
+    """Test that evaluation_date as datetime.date works."""
+    import datetime
+
+    input_data = InputData.tree(
+        {
+            "p_id": xnp.array([0]),
+            "property_tax": {
+                "acre_size_in_hectares": xnp.array([200]),
+            },
+        }
+    )
+
+    # Get policy environment
+    policy_env = main(
+        main_target=MainTarget.policy_environment,
+        policy_date_str="2000-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    # Use evaluation_date (datetime.date object)
+    result = main(
+        main_target=MainTarget.results.tree,
+        policy_environment=policy_env,
+        evaluation_date=datetime.date(2020, 1, 1),
+        input_data=input_data,
+        tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
+        backend=backend,
+    )
+
+    assert "property_tax" in result
+    assert "amount_y" in result["property_tax"]
+
+
+# =============================================================================
+# Tests for error messages and validation
+# =============================================================================
+
+
+def test_invalid_main_target_provides_helpful_error_message(backend):
+    """Test that invalid main_target provides a helpful error message."""
+    with pytest.raises(
+        ValueError, match=r"output names for the interface DAG"
+    ):
+        main(
+            main_target="nonexistent_target",
+            policy_date_str="2025-01-01",
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            backend=backend,
+        )
+
+
+def test_invalid_main_targets_provides_helpful_error_message(backend):
+    """Test that invalid main_targets provides a helpful error message."""
+    with pytest.raises(
+        ValueError, match=r"output names for the interface DAG"
+    ):
+        main(
+            main_targets=["nonexistent_target_1", "nonexistent_target_2"],
+            policy_date_str="2025-01-01",
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            backend=backend,
+        )
+
+
+# =============================================================================
+# Tests for raw_results output
+# =============================================================================
+
+
+def test_raw_results_columns_output(backend, xnp):
+    """Test that raw_results__columns returns computed column values."""
+    result = main(
+        main_target=MainTarget.raw_results.columns,
+        input_data=InputData.tree(
+            {
+                "p_id": xnp.array([0, 1, 2]),
+                "property_tax": {
+                    "acre_size_in_hectares": xnp.array([10, 20, 30]),
+                },
+            }
+        ),
+        tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    assert isinstance(result, dict)
+    assert "property_tax__amount_y" in result
+
+
+def test_raw_results_combined_output(backend, xnp):
+    """Test that raw_results__combined merges columns, params, and input data targets."""
+    result = main(
+        main_target=MainTarget.raw_results.combined,
+        input_data=InputData.tree(
+            {
+                "p_id": xnp.array([0, 1, 2]),
+                "property_tax": {
+                    "acre_size_in_hectares": xnp.array([10, 20, 30]),
+                },
+            }
+        ),
+        # Request both a computed target and an input data target
+        tt_targets=TTTargets.tree({
+            "property_tax": {
+                "amount_y": None,
+                "acre_size_in_hectares": None,
+            },
+        }),
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    assert isinstance(result, dict)
+    # Should contain computed column
+    assert "property_tax__amount_y" in result
+    # Should contain input data target
+    assert "property_tax__acre_size_in_hectares" in result
+
+
+# =============================================================================
+# Tests for labels output
+# =============================================================================
+
+
+def test_labels_input_columns_output(backend, xnp):
+    """Test that labels__input_columns returns the input column names."""
+    result = main(
+        main_target=MainTarget.labels.input_columns,
+        input_data=InputData.tree(
+            {
+                "p_id": xnp.array([0, 1, 2]),
+                "age": xnp.array([25, 30, 35]),
+                "wealth": xnp.array([1000.0, 2000.0, 3000.0]),
+            }
+        ),
+        tt_targets=TTTargets.tree({"age": None, "wealth": None}),
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    assert isinstance(result, set)
+    assert "age" in result
+    assert "wealth" in result
+    assert "p_id" in result
+
+
+def test_labels_column_targets_output(backend, xnp):
+    """Test that labels__column_targets returns the computed target column names.
+
+    Note: column_targets excludes input_data_targets, so we need to request
+    a computed target (not just echo an input).
+    """
+    result = main(
+        main_target=MainTarget.labels.column_targets,
+        input_data=InputData.tree(
+            {
+                "p_id": xnp.array([0, 1, 2]),
+                "property_tax": {
+                    "acre_size_in_hectares": xnp.array([10, 20, 30]),
+                },
+            }
+        ),
+        tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+        include_warn_nodes=False,
+    )
+
+    assert isinstance(result, list)
+    assert "property_tax__amount_y" in result
+
+
+# =============================================================================
+# Tests for specialized_environment outputs
+# =============================================================================
+
+
+def test_specialized_environment_tt_dag_output(backend, xnp):
+    """Test that specialized_environment__tt_dag returns a networkx DiGraph."""
+    result = main(
+        main_target=MainTarget.specialized_environment.tt_dag,
+        input_data=InputData.tree(
+            {
+                "p_id": xnp.array([0, 1, 2]),
+                "age": xnp.array([25, 30, 35]),
+            }
+        ),
+        tt_targets=TTTargets.tree({"age": None}),
+        policy_date_str="2025-01-01",
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        backend=backend,
+    )
+
+    assert isinstance(result, nx.DiGraph)

@@ -94,6 +94,7 @@ class RawResults(MainTargetABC):
     columns: str = "raw_results__columns"
     from_input_data: str = "raw_results__from_input_data"
     params: str = "raw_results__params"
+    combined: str = "raw_results__combined"
 
 
 @dataclass(frozen=True)
