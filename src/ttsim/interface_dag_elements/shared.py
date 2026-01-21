@@ -311,11 +311,10 @@ def partition_by_reference_dict(
 
 
 def remove_group_suffix(col: str, grouping_levels: OrderedQNames) -> str:
-    out = col
     for g in grouping_levels:
-        out = out.removesuffix(f"_{g}")
-
-    return out
+        if col.endswith(f"_{g}"):
+            return col.removesuffix(f"_{g}")
+    return col
 
 
 def get_name_of_group_by_id(

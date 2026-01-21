@@ -266,18 +266,14 @@ def _find_color_for_qname(qname: str, node_colormap: dict[tuple[str, ...], str])
     """
     tp = dt.tree_path_from_qname(qname)
 
-    best_match_color = None
-    best_match_score = -1
+    matches = [
+        (color, _pattern_specificity(tp, pattern_tp))
+        for pattern_tp, color in node_colormap.items()
+        if _matches_glob_pattern(tp, pattern_tp)
+    ]
 
-    for pattern_tp, color in node_colormap.items():
-        if _matches_glob_pattern(tp, pattern_tp):
-            score = _pattern_specificity(tp, pattern_tp)
-            if score > best_match_score:
-                best_match_color = color
-                best_match_score = score
-
-    if best_match_color is not None:
-        return best_match_color
+    if matches:
+        return max(matches, key=lambda x: x[1])[0]
 
     # Fall back to top-level color for single-element tree paths, else black
     if len(tp) == 1:

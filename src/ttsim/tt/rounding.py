@@ -24,18 +24,18 @@ class RoundingSpec:
 
     def __post_init__(self) -> None:
         """Validate the types of base and to_add_after_rounding."""
-        if type(self.base) not in [int, float]:
-            raise ValueError(f"base needs to be a number, got {self.base!r}")
+        if not isinstance(self.base, (int, float)):
+            msg = f"base needs to be a number, got {self.base!r}"
+            raise TypeError(msg)
         valid_directions = get_args(ROUNDING_DIRECTION)
         if self.direction not in valid_directions:
             raise ValueError(
                 f"`direction` must be one of {valid_directions}, "
                 f"got {self.direction!r}",
             )
-        if type(self.to_add_after_rounding) not in [int, float]:
-            raise ValueError(
-                f"Additive part must be a number, got {self.to_add_after_rounding!r}",
-            )
+        if not isinstance(self.to_add_after_rounding, (int, float)):
+            msg = f"Additive part must be a number, got {self.to_add_after_rounding!r}"
+            raise TypeError(msg)
 
     def apply_rounding(
         self,
@@ -64,7 +64,7 @@ class RoundingSpec:
                 rounded_out = self.base * xnp.ceil(out / self.base)
             elif self.direction == "down":
                 rounded_out = self.base * xnp.floor(out / self.base)
-            elif self.direction == "nearest":
+            else:  # self.direction == "nearest"
                 rounded_out = self.base * (xnp.asarray(out) / self.base).round()
 
             return rounded_out + self.to_add_after_rounding

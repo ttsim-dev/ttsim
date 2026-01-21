@@ -161,7 +161,7 @@ def _active_param_objects(
     return dt.unflatten_from_tree_paths(flat_tree_with_params)
 
 
-def _get_one_param(  # noqa: PLR0911
+def _get_one_param(
     leaf_name: str,
     spec: OrigParamSpec,
     policy_date: datetime.date,
@@ -172,11 +172,14 @@ def _get_one_param(  # noqa: PLR0911
 
     if cleaned_spec is None:
         return None
-    if spec["type"] == "scalar":
+
+    param_type = spec["type"]
+
+    if param_type == "scalar":
         return ScalarParam(**cleaned_spec)
-    if spec["type"] == "dict":
+    if param_type == "dict":
         return DictParam(**cleaned_spec)
-    if spec["type"] in {
+    if param_type in {
         "piecewise_constant",
         "piecewise_linear",
         "piecewise_quadratic",
@@ -184,45 +187,31 @@ def _get_one_param(  # noqa: PLR0911
     }:
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
-            func_type=spec["type"],  # ty: ignore[invalid-argument-type]
+            func_type=param_type,  # ty: ignore[invalid-argument-type]
             parameter_dict=cleaned_spec["value"],
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
-    if spec["type"] == "consecutive_int_lookup_table":
-        cleaned_spec["value"] = get_consecutive_int_lookup_table_param_value(
-            raw=cleaned_spec["value"],
-            xnp=xnp,
-        )
+    lookup_table_converters = {
+        "consecutive_int_lookup_table": get_consecutive_int_lookup_table_param_value,
+        "month_based_phase_inout_of_age_thresholds": (
+            get_month_based_phase_inout_of_age_thresholds_param_value
+        ),
+        "year_based_phase_inout_of_age_thresholds": (
+            get_year_based_phase_inout_of_age_thresholds_param_value
+        ),
+        "sparse_to_consecutive_int_lookup_table": (
+            convert_sparse_to_consecutive_int_lookup_table
+        ),
+    }
+    if param_type in lookup_table_converters:
+        converter = lookup_table_converters[param_type]
+        cleaned_spec["value"] = converter(raw=cleaned_spec["value"], xnp=xnp)
         return ConsecutiveIntLookupTableParam(**cleaned_spec)
-    if spec["type"] == "month_based_phase_inout_of_age_thresholds":
-        cleaned_spec["value"] = (
-            get_month_based_phase_inout_of_age_thresholds_param_value(
-                raw=cleaned_spec["value"],
-                xnp=xnp,
-            )
-        )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
-    if spec["type"] == "year_based_phase_inout_of_age_thresholds":
-        cleaned_spec["value"] = (
-            get_year_based_phase_inout_of_age_thresholds_param_value(
-                raw=cleaned_spec["value"],
-                xnp=xnp,
-            )
-        )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
-
-    if spec["type"] == "sparse_to_consecutive_int_lookup_table":
-        cleaned_spec["value"] = convert_sparse_to_consecutive_int_lookup_table(
-            raw=cleaned_spec["value"],
-            xnp=xnp,
-        )
-        return ConsecutiveIntLookupTableParam(**cleaned_spec)
-
-    if spec["type"] == "require_converter":
+    if param_type == "require_converter":
         return RawParam(**cleaned_spec)
 
-    raise ValueError(f"Unknown parameter type: {spec['type']} for {leaf_name}")
+    raise ValueError(f"Unknown parameter type: {param_type} for {leaf_name}")
 
 
 def _clean_one_param_spec(
