@@ -167,7 +167,7 @@ platforms = ["osx-arm64"]
 jax = ">=0.8"
 jax-metal = ">=0.1.1"
 
-[tool.pixi.feature.ty.pypi-dependencies]
+[tool.pixi.feature.tests.pypi-dependencies]
 ty = ">=0.0.9"
 types-PyYAML = "*"
 types-pytz = "*"
