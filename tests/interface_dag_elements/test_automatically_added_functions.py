@@ -28,85 +28,84 @@ def return_n1__x_kin(n1__x_kin: int) -> int:
     return n1__x_kin
 
 
-class TestCreateFunctionsForTimeUnits:
-    @pytest.mark.parametrize(
-        ("name", "expected"),
-        [
-            ("test_y", ["test_m", "test_q", "test_w", "test_d"]),
-            ("test_y_kin", ["test_m_kin", "test_q_kin", "test_w_kin", "test_d_kin"]),
-            ("test_y_sn", ["test_m_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
-            ("test_q", ["test_y", "test_m", "test_w", "test_d"]),
-            ("test_q_kin", ["test_y_kin", "test_m_kin", "test_w_kin", "test_d_kin"]),
-            ("test_q_sn", ["test_y_sn", "test_m_sn", "test_w_sn", "test_d_sn"]),
-            ("test_m", ["test_y", "test_q", "test_w", "test_d"]),
-            ("test_m_kin", ["test_y_kin", "test_q_kin", "test_w_kin", "test_d_kin"]),
-            ("test_m_sn", ["test_y_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
-            ("test_w", ["test_y", "test_m", "test_q", "test_d"]),
-            ("test_w_kin", ["test_y_kin", "test_m_kin", "test_q_kin", "test_d_kin"]),
-            ("test_w_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_d_sn"]),
-            ("test_d", ["test_y", "test_m", "test_q", "test_w"]),
-            ("test_d_kin", ["test_y_kin", "test_m_kin", "test_q_kin", "test_w_kin"]),
-            ("test_d_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_w_sn"]),
-        ],
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("test_y", ["test_m", "test_q", "test_w", "test_d"]),
+        ("test_y_kin", ["test_m_kin", "test_q_kin", "test_w_kin", "test_d_kin"]),
+        ("test_y_sn", ["test_m_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
+        ("test_q", ["test_y", "test_m", "test_w", "test_d"]),
+        ("test_q_kin", ["test_y_kin", "test_m_kin", "test_w_kin", "test_d_kin"]),
+        ("test_q_sn", ["test_y_sn", "test_m_sn", "test_w_sn", "test_d_sn"]),
+        ("test_m", ["test_y", "test_q", "test_w", "test_d"]),
+        ("test_m_kin", ["test_y_kin", "test_q_kin", "test_w_kin", "test_d_kin"]),
+        ("test_m_sn", ["test_y_sn", "test_q_sn", "test_w_sn", "test_d_sn"]),
+        ("test_w", ["test_y", "test_m", "test_q", "test_d"]),
+        ("test_w_kin", ["test_y_kin", "test_m_kin", "test_q_kin", "test_d_kin"]),
+        ("test_w_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_d_sn"]),
+        ("test_d", ["test_y", "test_m", "test_q", "test_w"]),
+        ("test_d_kin", ["test_y_kin", "test_m_kin", "test_q_kin", "test_w_kin"]),
+        ("test_d_sn", ["test_y_sn", "test_m_sn", "test_q_sn", "test_w_sn"]),
+    ],
+)
+def test_should_create_functions_for_other_time_units(
+    name: str,
+    expected: list[str],
+) -> None:
+    time_conversion_functions = create_time_conversion_functions(
+        qname_policy_environment={
+            name: policy_function(leaf_name=name)(return_one),
+        },
+        input_columns=set(),
+        grouping_levels=("sn", "kin"),
     )
-    def test_should_create_functions_for_other_time_units_for_functions(
-        self,
-        name: str,
-        expected: list[str],
-    ) -> None:
-        time_conversion_functions = create_time_conversion_functions(
-            qname_policy_environment={
-                name: policy_function(leaf_name=name)(return_one),
-            },
-            input_columns=set(),
-            grouping_levels=("sn", "kin"),
-        )
 
-        for expected_name in expected:
-            assert expected_name in time_conversion_functions
-
-    def test_should_not_create_functions_automatically_that_exist_already(self) -> None:
-        time_conversion_functions = create_time_conversion_functions(
-            qname_policy_environment={
-                "test1_d": policy_function(leaf_name="test1_d")(return_one),
-            },
-            input_columns={"test2_y"},
-            grouping_levels=("sn", "kin"),
-        )
-
-        assert "test1_d" not in time_conversion_functions
-        assert "test2_y" not in time_conversion_functions
-
-    def test_should_overwrite_functions_with_data_cols_that_only_differ_in_time_period(
-        self,
-    ) -> None:
-        time_conversion_functions = create_time_conversion_functions(
-            qname_policy_environment={
-                "test_d": policy_function(leaf_name="test_d")(return_one),
-            },
-            input_columns={"test_y"},
-            grouping_levels=("sn", "kin"),
-        )
-
-        assert "test_d" in time_conversion_functions
+    for expected_name in expected:
+        assert expected_name in time_conversion_functions
 
 
-class TestCreateFunctionForTimeUnit:
-    def test_should_rename_parameter(self):
-        function = _create_function_for_time_unit("test", per_d_to_per_m)
+def test_should_not_create_functions_automatically_that_exist_already() -> None:
+    time_conversion_functions = create_time_conversion_functions(
+        qname_policy_environment={
+            "test1_d": policy_function(leaf_name="test1_d")(return_one),
+        },
+        input_columns={"test2_y"},
+        grouping_levels=("sn", "kin"),
+    )
 
-        parameter_spec = inspect.getfullargspec(function)
-        assert parameter_spec.args == ["test"]
+    assert "test1_d" not in time_conversion_functions
+    assert "test2_y" not in time_conversion_functions
 
-    def test_should_not_set_info_if_none(self):
-        function = _create_function_for_time_unit("test", per_d_to_per_m)
 
-        assert not hasattr(function, "__info__")
+def test_should_overwrite_with_data_cols_differing_only_in_time_period() -> None:
+    time_conversion_functions = create_time_conversion_functions(
+        qname_policy_environment={
+            "test_d": policy_function(leaf_name="test_d")(return_one),
+        },
+        input_columns={"test_y"},
+        grouping_levels=("sn", "kin"),
+    )
 
-    def test_should_apply_converter(self):
-        function = _create_function_for_time_unit("test", per_d_to_per_w)
+    assert "test_d" in time_conversion_functions
 
-        assert function(1) == 7
+
+def test_create_function_for_time_unit_should_rename_parameter():
+    function = _create_function_for_time_unit("test", per_d_to_per_m)
+
+    parameter_spec = inspect.getfullargspec(function)
+    assert parameter_spec.args == ["test"]
+
+
+def test_create_function_for_time_unit_should_not_set_info_if_none():
+    function = _create_function_for_time_unit("test", per_d_to_per_m)
+
+    assert not hasattr(function, "__info__")
+
+
+def test_create_function_for_time_unit_should_apply_converter():
+    function = _create_function_for_time_unit("test", per_d_to_per_w)
+
+    assert function(1) == 7
 
 
 def test_time_conversions_should_not_create_cycle():
