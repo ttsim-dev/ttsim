@@ -174,13 +174,31 @@ types-pytz = "*"
 # Tasks
 # --------------------------------------------------------------------------------------
 
-[tool.pixi.feature.test.tasks]
+# Platform-specific test tasks (dot -c needed for pygraphviz on macOS)
+[tool.pixi.feature.test.target.osx-64.tasks]
+tests = "dot -c && pytest"
+
+[tool.pixi.feature.test.target.osx-arm64.tasks]
+tests = "dot -c && pytest"
+
+[tool.pixi.feature.test.target.linux-64.tasks]
 tests = "pytest"
 
-[tool.pixi.feature.jax.tasks]
+[tool.pixi.feature.test.target.win-64.tasks]
+tests = "pytest"
+
+# JAX test tasks
+[tool.pixi.feature.jax.target.osx-arm64.tasks]
+tests-jax = "dot -c && pytest --backend=jax"
+
+[tool.pixi.feature.jax.target.linux-64.tasks]
 tests-jax = "pytest --backend=jax"
 
-[tool.pixi.feature.cuda.tasks]
+[tool.pixi.feature.jax.target.win-64.tasks]
+tests-jax = "pytest --backend=jax"
+
+# CUDA test tasks (linux only)
+[tool.pixi.feature.cuda.target.linux-64.tasks]
 tests-jax = "pytest --backend=jax"
 
 [tool.pixi.feature.ty.tasks]
