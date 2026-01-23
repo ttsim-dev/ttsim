@@ -491,12 +491,11 @@ def _node_to_formatted_source(node: ast.AST) -> str:
 
 
 def _module_from_backend(backend: str) -> str:
-    if backend in BACKEND_TO_MODULE:
+    try:
         return BACKEND_TO_MODULE[backend]
-
-    raise NotImplementedError(
-        f"Argument 'backend' is {backend} but must be in {BACKEND_TO_MODULE.keys()}.",
-    )
+    except KeyError:
+        msg = f"Argument 'backend' is {backend!r}, must be in {set(BACKEND_TO_MODULE)}."
+        raise NotImplementedError(msg) from None
 
 
 # ======================================================================================
@@ -542,6 +541,4 @@ def scalar_type_to_array_type(orig_type: Literal["int", "float", "bool"]) -> str
         "float": "FloatColumn",
         "bool": "BoolColumn",
     }
-    if orig_type in registry:
-        return registry[orig_type]
-    return orig_type
+    return registry.get(orig_type, orig_type)
