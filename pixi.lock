@@ -12421,7 +12421,7 @@ packages:
 - pypi: ./src_mettsim
   name: mettsim
   version: 0.0.0
-  sha256: 6d4a479947b69f33e287e7ed3d2758fd99a12470bb993f512835141d88567bbc
+  sha256: c87225df3e904e26a7f2fabbd8db4e29405944e5d5caffc719ce69b94ded1b17
   requires_python: '>=3.11'
 - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.2.0-pyhcf101f3_0.conda
   sha256: d3fb4beb5e0a52b6cc33852c558e077e1bfe44df1159eb98332d69a264b14bae
@@ -18357,8 +18357,8 @@ packages:
   timestamp: 1733367480074
 - pypi: ./
   name: ttsim-backend
-  version: 1.1.2.dev15+gcac56f511
-  sha256: 0fe47f50cf1125bb474e765223c726a54c2ca734bf6f38d8bb364aa69c028096
+  version: 1.1.2.dev16+gb6066eef4.d20260123
+  sha256: b43687bd28aaa35894af7a1189ded037db5a16685a2eb9a23c97d44b8f64f767
   requires_dist:
   - dags>=0.4.2
   - ipywidgets
