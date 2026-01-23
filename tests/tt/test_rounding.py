@@ -261,7 +261,8 @@ def test_rounding_spec(rounding_spec, input_values, exp_output, xnp):
 )
 def test_rounding_spec_validation(base, direction, to_add_after_rounding, match):
     """Test validation of RoundingSpec parameters."""
-    with pytest.raises(ValueError, match=match):
+    expected_exception = TypeError if "be a number" in match else ValueError
+    with pytest.raises(expected_exception, match=match):
         RoundingSpec(
             base=base,
             direction=direction,
