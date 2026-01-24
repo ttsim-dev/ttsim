@@ -213,7 +213,7 @@ py314-metal = [ "py314", "tests", "metal" ]
 
 [tool.ruff]
 fix = true
-target-version = "py314"
+target-version = "py313"
 unsafe-fixes = false
 
 [tool.ruff.lint]
