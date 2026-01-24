@@ -105,9 +105,6 @@ pre-commit = "*"
 pygments = "*"
 pygraphviz = "*"
 pytest = "*"
-pytest-cov = "*"
-pytest-profiling = "*"
-pytest-xdist = "*"
 pyyaml = "*"
 snakeviz = ">=2.2.2"
 tabulate = "*"
@@ -122,7 +119,6 @@ kaleido = ">=1.0.0"
 mettsim = { path = "src_mettsim", editable = true }
 pdbp = ">=1.7.1"
 ttsim-backend = { path = ".", editable = true }
-ty = ">=0.0.9"
 
 # Features
 # --------------------------------------------------------------------------------------
@@ -161,8 +157,12 @@ jax = ">=0.8"
 jax-metal = ">=0.1.1"
 
 [tool.pixi.feature.tests.pypi-dependencies]
+ty = ">=0.0.9"
 types-PyYAML = "*"
 types-pytz = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
 
 # Tasks
 # --------------------------------------------------------------------------------------
@@ -213,7 +213,7 @@ py314-metal = [ "py314", "tests", "metal" ]
 
 [tool.ruff]
 fix = true
-target-version = "py311"
+target-version = "py314"
 unsafe-fixes = false
 
 [tool.ruff.lint]
