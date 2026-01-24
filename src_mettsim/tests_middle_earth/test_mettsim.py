@@ -209,7 +209,9 @@ def test_tt_function_cloudpickle(backend: Literal["numpy", "jax"]):
             assert numpy.allclose(original_result[key], restored_result[key])
     """)
 
-    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True
+    )
 
     if result.returncode != 0:
         pytest.fail(f"Subprocess failed:\\nstderr: {result.stderr}")
