@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+import textwrap
 from datetime import timedelta
 from typing import TYPE_CHECKING, Literal
 
@@ -158,10 +161,6 @@ def test_tt_function_cloudpickle(backend: Literal["numpy", "jax"]):
     Runs in subprocess to avoid pytest's AssertionRewritingHook contaminating
     module __globals__, which causes unpicklable objects in the closure chain.
     """
-    import subprocess
-    import sys
-    import textwrap
-
     code = textwrap.dedent(f"""
         import numpy
         import cloudpickle
@@ -177,7 +176,8 @@ def test_tt_function_cloudpickle(backend: Literal["numpy", "jax"]):
             ("p_id_parent_2",): numpy.array([-1, -1]),
             ("p_id_spouse",): numpy.array([1, 0]),
             ("parent_is_noble",): numpy.array([False, False]),
-            ("payroll_tax", "child_tax_credit", "p_id_recipient"): numpy.array([-1, -1]),
+            ("payroll_tax", "child_tax_credit", "p_id_recipient"):
+                numpy.array([-1, -1]),
             ("payroll_tax", "income", "gross_wage_y"): numpy.array([10000.0, 0.0]),
             ("wealth",): numpy.array([0.0, 0.0]),
         }}
@@ -209,9 +209,12 @@ def test_tt_function_cloudpickle(backend: Literal["numpy", "jax"]):
             assert numpy.allclose(original_result[key], restored_result[key])
     """)
 
-    result = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
     if result.returncode != 0:
-        pytest.fail(f"Subprocess failed:\\nstderr: {result.stderr}")
+        pytest.fail(f"Subprocess failed:\nstderr: {result.stderr}")

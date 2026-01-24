@@ -393,7 +393,7 @@ def copy_environment(env: SomeEnv) -> SomeEnv:
     return optree.tree_map(copy, env)  # ty: ignore[invalid-argument-type]
 
 
-def cloudpickle_main_output(obj: Any, root: Path) -> bytes:
+def cloudpickle_main_output(obj: object, root: Path) -> bytes:
     """Cloudpickle an object that references policy modules.
 
     Policy modules are loaded with non-importable relative paths, which causes
