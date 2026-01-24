@@ -150,3 +150,50 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
             tt_targets=TTTargets.tree({"property_tax": {"amount_y": None}}),
             backend=backend,
         )
+
+
+def test_tt_function_cloudpickle(backend: Literal["numpy", "jax"]):
+    """tt_function should be cloudpicklable after policy modules are loaded."""
+    import cloudpickle
+
+    data = {
+        ("age",): numpy.array([30, 30]),
+        ("kin_id",): numpy.array([0, 0]),
+        ("p_id",): numpy.array([0, 1]),
+        ("p_id_parent_1",): numpy.array([-1, -1]),
+        ("p_id_parent_2",): numpy.array([-1, -1]),
+        ("p_id_spouse",): numpy.array([1, 0]),
+        ("parent_is_noble",): numpy.array([False, False]),
+        ("payroll_tax", "child_tax_credit", "p_id_recipient"): numpy.array([-1, -1]),
+        ("payroll_tax", "income", "gross_wage_y"): numpy.array([10000.0, 0.0]),
+        ("wealth",): numpy.array([0.0, 0.0]),
+    }
+
+    tt_func = main(
+        main_target="tt_function",
+        policy_date_str="2025-01-01",
+        input_data=InputData.flat(data),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        backend=backend,
+    )
+    processed_data = main(
+        main_target="processed_data",
+        policy_date_str="2025-01-01",
+        input_data=InputData.flat(data),
+        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
+        backend=backend,
+    )
+
+    # Pickle roundtrip
+    pickled = cloudpickle.dumps(tt_func)
+    unpickled_func = cloudpickle.loads(pickled)
+
+    original_result = tt_func(processed_data)
+    restored_result = unpickled_func(processed_data)
+
+    for key in original_result:
+        assert numpy.allclose(original_result[key], restored_result[key]), (
+            f"Mismatch for {key}"
+        )

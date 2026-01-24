@@ -112,6 +112,7 @@ pyyaml = "*"
 snakeviz = ">=2.2.2"
 tabulate = "*"
 toml = "*"
+cloudpickle = ">=3.1.2,<4"
 
 # Development Dependencies (pypi)
 # --------------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import importlib.util
 import inspect
 import sys
 from typing import TYPE_CHECKING, Literal
+import cloudpickle
 
 import yaml
 
@@ -129,6 +130,13 @@ def load_module(path: Path, root: Path) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
+
+
+    # Enable serialization of the tt_function via cloudpickle. Policy modules are
+    # registered with importable relative paths (e.g.,
+    # 'mettsim.middle_earth.orc_hunting_bounty.orc_hunting_bounty' instead of
+    # 'orc_hunting_bounty.orc_hunting_bounty').
+    cloudpickle.register_pickle_by_value(module)
 
     return module
 
