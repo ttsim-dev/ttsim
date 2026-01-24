@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol, overload
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
 
 if TYPE_CHECKING:
     from jaxtyping import Array, Bool, Float, Int
 
-    BoolColumn: BoolColumn = Bool[Array, " n_obs"]
-    IntColumn: IntColumn = Int[Array, " n_obs"]
-    FloatColumn: FloatColumn = Float[Array, " n_obs"]
+    BoolColumn: TypeAlias = Bool[Array, " n_obs"]
+    IntColumn: TypeAlias = Int[Array, " n_obs"]
+    FloatColumn: TypeAlias = Float[Array, " n_obs"]
 
     # Make these available for import from other modules.
     import datetime
@@ -107,7 +107,7 @@ if TYPE_CHECKING:
     """Mapping of qualified name paths to 1d arrays."""
     QNameStrings = Iterable[str]
     """A list, tuple, or set of qualified names."""
-    RawParamValue: RawParamValue = dict[str | int, Any]
+    RawParamValue: TypeAlias = dict[str | int, Any]
     """The value field of a RawParam."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -117,7 +117,7 @@ if TYPE_CHECKING:
     """Tree mapping TTSIM paths to df columns or type hints."""
     UnorderedQNames = set[str]
     """A set of qualified names."""
-    OrderedQNames: OrderedQNames = tuple[str, ...] | list[str]
+    OrderedQNames: TypeAlias = tuple[str, ...] | list[str]
     """A tuple or a list of qualified names."""
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -160,6 +160,4 @@ if TYPE_CHECKING:
     SpecEnvWithPartialledParamsAndScalars = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""
 
-    NestedLookupDict: NestedLookupDict = dict[
-        int, float | int | bool | "NestedLookupDict"
-    ]
+    NestedLookupDict: TypeAlias = dict[int, float | int | bool | "NestedLookupDict"]
