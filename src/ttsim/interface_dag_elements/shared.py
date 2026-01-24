@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import datetime
 import re
+import sys
 from copy import copy
+from pathlib import Path
+
+import cloudpickle
 from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import dags.tree as dt
@@ -388,3 +392,40 @@ def copy_environment(env: SomeEnv) -> SomeEnv:
 
     """
     return optree.tree_map(copy, env)  # ty: ignore[invalid-argument-type]
+
+
+def cloudpickle_main_output(obj: Any, root: Path) -> bytes:
+    """Cloudpickle an object that references policy modules.
+
+    Policy modules are loaded with non-importable relative paths, which causes
+    cloudpickle to fail when it tries to verify classes can be imported.
+    This function registers modules for "pickle by value" (embedding class
+    definitions directly in the pickle) before pickling the object.
+
+    Parameters
+    ----------
+    obj
+        The object to pickle, typically a tt_function or other main output.
+    root
+        The ROOT_PATH of the policy environment.
+
+    Returns
+    -------
+    The pickled bytes.
+
+    Example
+    -------
+    >>> from mettsim import middle_earth
+    >>> from ttsim import main, MainTarget, cloudpickle_main_output
+    >>>
+    >>> tt_func = main(main_target=MainTarget.tt_function, ...)
+    >>> pickled = cloudpickle_main_output(tt_func, middle_earth.ROOT_PATH)
+    """
+    for mod in sys.modules.values():
+        if mod is None:
+            continue
+        mod_file = getattr(mod, "__file__", None)
+        if mod_file and Path(mod_file).is_relative_to(root):
+            cloudpickle.register_pickle_by_value(mod)
+
+    return cloudpickle.dumps(obj)

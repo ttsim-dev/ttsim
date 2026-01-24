@@ -153,47 +153,63 @@ def test_fail_functions_are_executed_with_priority(backend: Literal["numpy", "ja
 
 
 def test_tt_function_cloudpickle(backend: Literal["numpy", "jax"]):
-    """tt_function should be cloudpicklable after policy modules are loaded."""
-    import cloudpickle
+    """tt_function should be cloudpicklable via cloudpickle_main_output.
 
-    data = {
-        ("age",): numpy.array([30, 30]),
-        ("kin_id",): numpy.array([0, 0]),
-        ("p_id",): numpy.array([0, 1]),
-        ("p_id_parent_1",): numpy.array([-1, -1]),
-        ("p_id_parent_2",): numpy.array([-1, -1]),
-        ("p_id_spouse",): numpy.array([1, 0]),
-        ("parent_is_noble",): numpy.array([False, False]),
-        ("payroll_tax", "child_tax_credit", "p_id_recipient"): numpy.array([-1, -1]),
-        ("payroll_tax", "income", "gross_wage_y"): numpy.array([10000.0, 0.0]),
-        ("wealth",): numpy.array([0.0, 0.0]),
-    }
+    Runs in subprocess to avoid pytest's AssertionRewritingHook contaminating
+    module __globals__, which causes unpicklable objects in the closure chain.
+    """
+    import subprocess
+    import sys
+    import textwrap
 
-    tt_func = main(
-        main_target="tt_function",
-        policy_date_str="2025-01-01",
-        input_data=InputData.flat(data),
-        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
-        backend=backend,
-    )
-    processed_data = main(
-        main_target="processed_data",
-        policy_date_str="2025-01-01",
-        input_data=InputData.flat(data),
-        orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
-        tt_targets=TTTargets.tree({"payroll_tax": {"amount_y": None}}),
-        backend=backend,
-    )
+    code = textwrap.dedent(f"""
+        import numpy
+        import cloudpickle
+        from mettsim import middle_earth
+        from ttsim import main, OrigPolicyObjects, TTTargets, cloudpickle_main_output
+        from ttsim.main_args import InputData
 
-    # Pickle roundtrip
-    pickled = cloudpickle.dumps(tt_func)
-    unpickled_func = cloudpickle.loads(pickled)
+        data = {{
+            ("age",): numpy.array([30, 30]),
+            ("kin_id",): numpy.array([0, 0]),
+            ("p_id",): numpy.array([0, 1]),
+            ("p_id_parent_1",): numpy.array([-1, -1]),
+            ("p_id_parent_2",): numpy.array([-1, -1]),
+            ("p_id_spouse",): numpy.array([1, 0]),
+            ("parent_is_noble",): numpy.array([False, False]),
+            ("payroll_tax", "child_tax_credit", "p_id_recipient"): numpy.array([-1, -1]),
+            ("payroll_tax", "income", "gross_wage_y"): numpy.array([10000.0, 0.0]),
+            ("wealth",): numpy.array([0.0, 0.0]),
+        }}
 
-    original_result = tt_func(processed_data)
-    restored_result = unpickled_func(processed_data)
-
-    for key in original_result:
-        assert numpy.allclose(original_result[key], restored_result[key]), (
-            f"Mismatch for {key}"
+        tt_func = main(
+            main_target="tt_function",
+            policy_date_str="2025-01-01",
+            input_data=InputData.flat(data),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({{"payroll_tax": {{"amount_y": None}}}}),
+            backend="{backend}",
         )
+        processed_data = main(
+            main_target="processed_data",
+            policy_date_str="2025-01-01",
+            input_data=InputData.flat(data),
+            orig_policy_objects=OrigPolicyObjects.root(middle_earth.ROOT_PATH),
+            tt_targets=TTTargets.tree({{"payroll_tax": {{"amount_y": None}}}}),
+            backend="{backend}",
+        )
+
+        pickled = cloudpickle_main_output(tt_func, middle_earth.ROOT_PATH)
+        unpickled_func = cloudpickle.loads(pickled)
+
+        original_result = tt_func(processed_data)
+        restored_result = unpickled_func(processed_data)
+
+        for key in original_result:
+            assert numpy.allclose(original_result[key], restored_result[key])
+    """)
+
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+
+    if result.returncode != 0:
+        pytest.fail(f"Subprocess failed:\\nstderr: {result.stderr}")

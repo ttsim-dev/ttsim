@@ -4,7 +4,6 @@ import importlib.util
 import inspect
 import sys
 from typing import TYPE_CHECKING, Literal
-import cloudpickle
 
 import yaml
 
@@ -121,7 +120,6 @@ def _tree_path_to_orig_column_objects_params_functions(
 def load_module(path: Path, root: Path) -> ModuleType:
     name = path.relative_to(root).with_suffix("").as_posix().replace("/", ".")
     spec = importlib.util.spec_from_file_location(name=name, location=path)
-    # Assert that spec is not None and spec.loader is not None, required for mypy
     _msg = f"Could not load module spec for {path},  {root}"
     if spec is None:
         raise ImportError(_msg)
@@ -130,13 +128,6 @@ def load_module(path: Path, root: Path) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
-
-
-    # Enable serialization of the tt_function via cloudpickle. Policy modules are
-    # registered with importable relative paths (e.g.,
-    # 'mettsim.middle_earth.orc_hunting_bounty.orc_hunting_bounty' instead of
-    # 'orc_hunting_bounty.orc_hunting_bounty').
-    cloudpickle.register_pickle_by_value(module)
 
     return module
 

@@ -14,6 +14,7 @@ except ImportError:
 from ttsim import plot, unit_converters
 from ttsim.entry_point import main
 from ttsim.interface_dag_elements.shared import (
+    cloudpickle_main_output,
     copy_environment,
     merge_trees,
     upsert_tree,
@@ -30,6 +31,7 @@ from ttsim.main_args import (
 )
 from ttsim.main_target import MainTarget
 
+cloudpickle_main_output = cloudpickle_main_output
 copy_environment = copy_environment
 merge_trees = merge_trees
 upsert_tree = upsert_tree
@@ -59,6 +61,7 @@ __all__ = [
     "TTTargets",
     "__version__",
     "__version_tuple__",
+    "cloudpickle_main_output",
     "copy_environment",
     "main",
     "merge_trees",
