@@ -160,4 +160,6 @@ if TYPE_CHECKING:
     SpecEnvWithPartialledParamsAndScalars = Mapping[str, ColumnFunction]
     """Map qualified names to column functions that depend on columns only."""
 
-    NestedLookupDict: NestedLookupDict = dict[int, float | int | bool | "NestedLookupDict"]
+    NestedLookupDict: NestedLookupDict = dict[
+        int, float | int | bool | "NestedLookupDict"
+    ]
