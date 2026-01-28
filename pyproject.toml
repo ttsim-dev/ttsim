@@ -101,10 +101,9 @@ numpy_groupies = "*"
 numpydoc = "*"
 openpyxl = "*"
 pandas = ">=2.3"
-pre-commit = "*"
+prek = "*"
 pygments = "*"
 pygraphviz = "*"
-pytest = "*"
 pyyaml = "*"
 snakeviz = ">=2.2.2"
 tabulate = "*"
@@ -157,10 +156,9 @@ jax = ">=0.8"
 jax-metal = ">=0.1.1"
 
 [tool.pixi.feature.tests.pypi-dependencies]
-ty = ">=0.0.9"
+ty = "*"
 types-PyYAML = "*"
 types-pytz = "*"
-pytest = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
 
@@ -213,7 +211,7 @@ py314-metal = [ "py314", "tests", "metal" ]
 
 [tool.ruff]
 fix = true
-target-version = "py313"
+target-version = "py311"
 unsafe-fixes = false
 
 [tool.ruff.lint]
@@ -221,6 +219,7 @@ extend-ignore = [
   "COM812",  # Conflicts with ruff-format
   "EM101",   # Exception must not use a string literal
   "EM102",   # Exception must not use an f-string literal
+  "TC001",   # Move application import into a type-checking block
   "F722",    # Forward annotation syntax error (jaxtyping)
   "FBT001",  # Boolean-typed positional argument in function definition
   "FBT002",  # Boolean default positional argument in function definition
