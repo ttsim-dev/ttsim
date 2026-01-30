@@ -48,7 +48,7 @@ def test_columns_calls_tt_function_with_filtered_data(xnp):
         call_args.append(data)
         return {"output": xnp.array([1, 2])}
 
-    result = columns(
+    columns(
         labels__root_nodes=root_nodes,
         processed_data=processed_data,
         tt_function=tt_function,

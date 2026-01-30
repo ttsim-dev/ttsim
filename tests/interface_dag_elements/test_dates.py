@@ -6,8 +6,10 @@ import pytest
 
 from ttsim.interface_dag_elements.dates import (
     evaluation_date_from_evaluation_date_str,
+    evaluation_date_str,
     evaluation_date_use_other_info,
     policy_date,
+    policy_date_str,
 )
 from ttsim.interface_dag_elements.interface_node_objects import (
     InputDependentInterfaceFunction,
@@ -52,7 +54,7 @@ def test_policy_date_various_valid_dates(date_str):
 
 
 def test_policy_date_invalid_date_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="day is out of range for month"):
         policy_date("2024-02-30")  # Invalid date
 
 
@@ -157,15 +159,11 @@ def test_evaluation_date_from_str_condition_not_satisfied_when_no_eval_date_str(
 # Input definitions tests
 # =============================================================================
 def test_policy_date_str_is_interface_input():
-    from ttsim.interface_dag_elements.dates import policy_date_str
-
     assert isinstance(policy_date_str, InterfaceInput)
     assert policy_date_str.in_top_level_namespace is True
 
 
 def test_evaluation_date_str_is_interface_input():
-    from ttsim.interface_dag_elements.dates import evaluation_date_str
-
     assert isinstance(evaluation_date_str, InterfaceInput)
     assert evaluation_date_str.in_top_level_namespace is True
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import networkx as nx
+import numpy as np
 import pytest
 
 from ttsim.interface_dag_elements.labels import (
@@ -128,8 +129,6 @@ def test_input_columns_from_input_data_empty():
 # input_columns_is_empty_set tests
 # =============================================================================
 def test_input_columns_is_empty_set_returns_empty():
-    import numpy as np
-
     result = input_columns_is_empty_set(xnp=np)
     assert result == set()
 

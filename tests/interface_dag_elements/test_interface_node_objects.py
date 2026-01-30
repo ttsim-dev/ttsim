@@ -127,7 +127,7 @@ def test_interface_function_is_callable():
 
 def test_interface_function_dependencies_property():
     @interface_function()
-    def my_func(a: int, b: str, c: float) -> int:
+    def my_func(a: int, b: str, c: float) -> int:  # noqa: ARG001
         return a
 
     assert my_func.dependencies == {"a", "b", "c"}
@@ -143,7 +143,7 @@ def test_interface_function_original_function_name_property():
 
 def test_interface_function_preserves_signature():
     @interface_function()
-    def my_func(a: int, b: str = "default") -> int:
+    def my_func(a: int, b: str = "default") -> int:  # noqa: ARG001
         return a
 
     sig = inspect.signature(my_func)
