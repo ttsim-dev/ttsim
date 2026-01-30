@@ -5,14 +5,11 @@ import re
 from copy import copy
 from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
-import dags.tree as dt
 import optree
 
 if TYPE_CHECKING:
     from ttsim.typing import (
         DashedISOString,
-        NestedColumnObjectsParamFunctions,
-        NestedData,
         OrderedQNames,
         PolicyEnvironment,
         SpecEnvWithoutTreeLogicAndWithDerivedFunctions,

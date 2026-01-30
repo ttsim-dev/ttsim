@@ -2,16 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy
 import pytest
 
 from ttsim.interface_dag_elements.backend import dnp, xnp
-
-if TYPE_CHECKING:
-    from types import ModuleType
-
 
 # =============================================================================
 # xnp() tests
