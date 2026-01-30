@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from ttsim.interface_dag_elements.interface_node_objects import InterfaceFunction
 from ttsim.interface_dag_elements.raw_results import columns, from_input_data, params
 
