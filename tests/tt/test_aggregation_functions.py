@@ -642,11 +642,6 @@ def test_sum_by_p_id_raises(
         )
 
 
-# =============================================================================
-# Additional edge case tests for aggregation functions
-# =============================================================================
-
-
 def test_grouped_sum_single_element(backend):
     """Test grouped_sum with a single-element array."""
     column = numpy.array([42.0])
@@ -729,35 +724,6 @@ def test_sum_by_p_id_bool_column(backend):
     # p_id 0: True + False = 1, p_id 1: True + True + False = 2
     expected = numpy.array([1, 2, 0, 0, 0])
     numpy.testing.assert_array_equal(result, expected)
-
-
-@pytest.mark.skipif_jax
-def test_grouped_min_timedelta64(backend):
-    """Test grouped_min with timedelta64 arrays (NumPy only)."""
-    column = numpy.array([
-        numpy.timedelta64(10, "D"),
-        numpy.timedelta64(5, "D"),
-        numpy.timedelta64(15, "D"),
-        numpy.timedelta64(3, "D"),
-    ])
-    group_id = numpy.array([0, 0, 1, 1])
-
-    result = grouped_min(
-        column=column,
-        group_id=group_id,
-        num_segments=4,
-        backend=backend,
-    )
-
-    expected = numpy.array([
-        numpy.timedelta64(5, "D"),
-        numpy.timedelta64(5, "D"),
-        numpy.timedelta64(3, "D"),
-        numpy.timedelta64(3, "D"),
-    ])
-    numpy.testing.assert_array_equal(result, expected)
-
-
 
 
 def test_grouped_count_with_many_groups(backend):

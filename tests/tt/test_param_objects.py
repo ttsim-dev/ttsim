@@ -168,8 +168,6 @@ def test_get_consecutive_int_lookup_table_1d(xnp):
     assert result.look_up(2) == 30.0
 
 
-
-
 def test_get_consecutive_int_lookup_table_with_nonzero_min(xnp):
     """Test lookup table with non-zero minimum key."""
     raw = {5: 100.0, 6: 200.0, 7: 300.0}

@@ -76,6 +76,145 @@ def test_join(
     )
 
 
+def test_join_empty_arrays(xnp: ModuleType):
+    """Test join with empty arrays."""
+    foreign_key = xnp.asarray(numpy.array([], dtype=int))
+    primary_key = xnp.asarray(numpy.array([], dtype=int))
+    target = xnp.asarray(numpy.array([], dtype=int))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=0,
+        xnp=xnp,
+    )
+
+    assert len(result) == 0
+
+
+def test_join_single_element_arrays(xnp: ModuleType):
+    """Test join with single-element arrays."""
+    foreign_key = xnp.asarray(numpy.array([5]))
+    primary_key = xnp.asarray(numpy.array([5]))
+    target = xnp.asarray(numpy.array([100]))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=-1,
+        xnp=xnp,
+    )
+
+    numpy.testing.assert_array_equal(result, numpy.array([100]))
+
+
+def test_join_all_foreign_keys_missing(xnp: ModuleType):
+    """Test join when all foreign keys are missing (don't match any primary key)."""
+    foreign_key = xnp.asarray(numpy.array([10, 20, 30]))
+    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
+    target = xnp.asarray(numpy.array([100, 200, 300]))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=-999,
+        xnp=xnp,
+    )
+
+    # All foreign keys don't match, so all get the missing value
+    numpy.testing.assert_array_equal(result, numpy.array([-999, -999, -999]))
+
+
+def test_join_float_target(xnp: ModuleType):
+    """Test join with float target values."""
+    foreign_key = xnp.asarray(numpy.array([1, 2, 3]))
+    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
+    target = xnp.asarray(numpy.array([1.5, 2.5, 3.5]))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=0.0,
+        xnp=xnp,
+    )
+
+    numpy.testing.assert_array_almost_equal(result, numpy.array([1.5, 2.5, 3.5]))
+
+
+def test_join_bool_target(xnp: ModuleType):
+    """Test join with boolean target values."""
+    foreign_key = xnp.asarray(numpy.array([1, 2, -1]))
+    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
+    target = xnp.asarray(numpy.array([True, False, True]))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=False,
+        xnp=xnp,
+    )
+
+    numpy.testing.assert_array_equal(result, numpy.array([True, False, False]))
+
+
+def test_join_unsorted_primary_keys(xnp: ModuleType):
+    """Test join with unsorted primary keys."""
+    foreign_key = xnp.asarray(numpy.array([3, 1, 2]))
+    primary_key = xnp.asarray(numpy.array([3, 1, 2]))  # Unsorted
+    target = xnp.asarray(numpy.array([300, 100, 200]))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=-1,
+        xnp=xnp,
+    )
+
+    # Should correctly find matching targets regardless of order
+    numpy.testing.assert_array_equal(result, numpy.array([300, 100, 200]))
+
+
+def test_join_partial_matches(xnp: ModuleType):
+    """Test join with some matching and some non-matching foreign keys."""
+    foreign_key = xnp.asarray(numpy.array([1, 5, 2, 10, 3]))
+    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
+    target = xnp.asarray(numpy.array([100, 200, 300]))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=-1,
+        xnp=xnp,
+    )
+
+    # 1->100, 5->-1 (missing), 2->200, 10->-1 (missing), 3->300
+    numpy.testing.assert_array_equal(result, numpy.array([100, -1, 200, -1, 300]))
+
+
+def test_join_large_primary_key_values(xnp: ModuleType):
+    """Test join with large primary key values."""
+    foreign_key = xnp.asarray(numpy.array([1000000, 2000000]))
+    primary_key = xnp.asarray(numpy.array([1000000, 2000000]))
+    target = xnp.asarray(numpy.array([1, 2]))
+
+    result = join(
+        foreign_key=foreign_key,
+        primary_key=primary_key,
+        target=target,
+        value_if_foreign_key_is_missing=-1,
+        xnp=xnp,
+    )
+
+    numpy.testing.assert_array_equal(result, numpy.array([1, 2]))
+
+
 def test_copy_single_scalar_param():
     """Copy a ScalarParam and verify content equality but object independence."""
     original = {"param": ScalarParam(value=0.186)}
@@ -243,147 +382,3 @@ def test_policy_environment_type_inference():
     # Function should work correctly
     assert isinstance(copied_env, dict)
     assert "payroll_tax" in copied_env
-
-
-# =============================================================================
-# Additional join() edge case tests
-# =============================================================================
-
-
-def test_join_empty_arrays(xnp: ModuleType):
-    """Test join with empty arrays."""
-    foreign_key = xnp.asarray(numpy.array([], dtype=int))
-    primary_key = xnp.asarray(numpy.array([], dtype=int))
-    target = xnp.asarray(numpy.array([], dtype=int))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=0,
-        xnp=xnp,
-    )
-
-    assert len(result) == 0
-
-
-def test_join_single_element_arrays(xnp: ModuleType):
-    """Test join with single-element arrays."""
-    foreign_key = xnp.asarray(numpy.array([5]))
-    primary_key = xnp.asarray(numpy.array([5]))
-    target = xnp.asarray(numpy.array([100]))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=-1,
-        xnp=xnp,
-    )
-
-    numpy.testing.assert_array_equal(result, numpy.array([100]))
-
-
-def test_join_all_foreign_keys_missing(xnp: ModuleType):
-    """Test join when all foreign keys are missing (don't match any primary key)."""
-    foreign_key = xnp.asarray(numpy.array([10, 20, 30]))
-    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
-    target = xnp.asarray(numpy.array([100, 200, 300]))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=-999,
-        xnp=xnp,
-    )
-
-    # All foreign keys don't match, so all get the missing value
-    numpy.testing.assert_array_equal(result, numpy.array([-999, -999, -999]))
-
-
-def test_join_float_target(xnp: ModuleType):
-    """Test join with float target values."""
-    foreign_key = xnp.asarray(numpy.array([1, 2, 3]))
-    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
-    target = xnp.asarray(numpy.array([1.5, 2.5, 3.5]))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=0.0,
-        xnp=xnp,
-    )
-
-    numpy.testing.assert_array_almost_equal(result, numpy.array([1.5, 2.5, 3.5]))
-
-
-def test_join_bool_target(xnp: ModuleType):
-    """Test join with boolean target values."""
-    foreign_key = xnp.asarray(numpy.array([1, 2, -1]))
-    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
-    target = xnp.asarray(numpy.array([True, False, True]))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=False,
-        xnp=xnp,
-    )
-
-    numpy.testing.assert_array_equal(result, numpy.array([True, False, False]))
-
-
-def test_join_unsorted_primary_keys(xnp: ModuleType):
-    """Test join with unsorted primary keys."""
-    foreign_key = xnp.asarray(numpy.array([3, 1, 2]))
-    primary_key = xnp.asarray(numpy.array([3, 1, 2]))  # Unsorted
-    target = xnp.asarray(numpy.array([300, 100, 200]))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=-1,
-        xnp=xnp,
-    )
-
-    # Should correctly find matching targets regardless of order
-    numpy.testing.assert_array_equal(result, numpy.array([300, 100, 200]))
-
-
-def test_join_partial_matches(xnp: ModuleType):
-    """Test join with some matching and some non-matching foreign keys."""
-    foreign_key = xnp.asarray(numpy.array([1, 5, 2, 10, 3]))
-    primary_key = xnp.asarray(numpy.array([1, 2, 3]))
-    target = xnp.asarray(numpy.array([100, 200, 300]))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=-1,
-        xnp=xnp,
-    )
-
-    # 1->100, 5->-1 (missing), 2->200, 10->-1 (missing), 3->300
-    numpy.testing.assert_array_equal(result, numpy.array([100, -1, 200, -1, 300]))
-
-
-def test_join_large_primary_key_values(xnp: ModuleType):
-    """Test join with large primary key values."""
-    foreign_key = xnp.asarray(numpy.array([1000000, 2000000]))
-    primary_key = xnp.asarray(numpy.array([1000000, 2000000]))
-    target = xnp.asarray(numpy.array([1, 2]))
-
-    result = join(
-        foreign_key=foreign_key,
-        primary_key=primary_key,
-        target=target,
-        value_if_foreign_key_is_missing=-1,
-        xnp=xnp,
-    )
-
-    numpy.testing.assert_array_equal(result, numpy.array([1, 2]))

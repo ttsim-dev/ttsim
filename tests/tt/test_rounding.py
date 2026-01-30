@@ -270,11 +270,6 @@ def test_rounding_spec_validation(base, direction, to_add_after_rounding, match)
         )
 
 
-# =============================================================================
-# Additional RoundingSpec validation edge cases
-# =============================================================================
-
-
 def test_rounding_spec_base_zero_behavior(xnp):
     """Test RoundingSpec with base=0 (should cause division by zero or special handling)."""
     # Note: base=0 is technically allowed by type system but will cause issues at runtime
@@ -320,11 +315,6 @@ def test_rounding_spec_very_large_base(xnp):
     # Should round down to nearest 1000
     expected = numpy.array([1000.0, 5000.0, 9000.0])
     numpy.testing.assert_array_equal(result, expected)
-
-
-# =============================================================================
-# Negative value handling
-# =============================================================================
 
 
 def test_rounding_negative_values_up(xnp):
@@ -387,11 +377,6 @@ def test_rounding_mixed_positive_negative(xnp):
     # round(8/5)*5 = 2*5 = 10, round(12/5)*5 = 2*5 = 10
     expected = numpy.array([-10.0, -10.0, 0.0, 0.0, 10.0, 10.0])
     numpy.testing.assert_array_equal(result, expected)
-
-
-# =============================================================================
-# Boundary conditions
-# =============================================================================
 
 
 def test_rounding_value_exactly_on_boundary(xnp):

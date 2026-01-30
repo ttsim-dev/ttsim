@@ -103,11 +103,6 @@ def test_piecewise_polynomial(
     numpy.testing.assert_allclose(xnp.array(actual), expected, atol=0.01)
 
 
-# =============================================================================
-# piecewise_polynomial function edge cases
-# =============================================================================
-
-
 def test_piecewise_constant(xnp: ModuleType):
     """Test piecewise constant function (no rates)."""
     parameter_dict = {
