@@ -15,6 +15,9 @@ if TYPE_CHECKING:
 
 from ttsim.tt.param_objects import PiecewisePolynomialParamValue
 from ttsim.tt.piecewise_polynomial import (
+    _calculate_one_intercept,
+    _check_and_get_intercepts,
+    _check_and_get_rates,
     _create_intercepts,
     get_piecewise_parameters,
     get_piecewise_thresholds,
@@ -627,3 +630,246 @@ def test_get_piecewise_thresholds_missing_both_raises(xnp: ModuleType):
             parameter_dict=parameter_dict,
             xnp=xnp,
         )
+
+
+# =============================================================================
+# _check_and_get_rates tests
+# =============================================================================
+
+
+def test_check_and_get_rates_piecewise_linear(xnp: ModuleType):
+    """Test _check_and_get_rates extracts rate_linear correctly."""
+    parameter_dict = {
+        0: {
+            "lower_threshold": "-inf",
+            "upper_threshold": 0,
+            "rate_linear": 0.1,
+            "intercept_at_lower_threshold": 0.0,
+        },
+        1: {
+            "lower_threshold": 0,
+            "upper_threshold": "inf",
+            "rate_linear": 0.2,
+            "intercept_at_lower_threshold": 10.0,
+        },
+    }
+
+    rates = _check_and_get_rates(
+        leaf_name="test_linear",
+        func_type="piecewise_linear",
+        parameter_dict=parameter_dict,
+        xnp=xnp,
+    )
+
+    # Rates should be shape (1, n_segments) for linear
+    assert rates.shape == (1, 2)
+    numpy.testing.assert_allclose(rates[0], [0.1, 0.2])
+
+
+def test_check_and_get_rates_piecewise_quadratic(xnp: ModuleType):
+    """Test _check_and_get_rates extracts rate_linear and rate_quadratic."""
+    parameter_dict = {
+        0: {
+            "lower_threshold": "-inf",
+            "upper_threshold": 0,
+            "rate_linear": 0.1,
+            "rate_quadratic": 0.01,
+            "intercept_at_lower_threshold": 0.0,
+        },
+        1: {
+            "lower_threshold": 0,
+            "upper_threshold": "inf",
+            "rate_linear": 0.2,
+            "rate_quadratic": 0.02,
+            "intercept_at_lower_threshold": 10.0,
+        },
+    }
+
+    rates = _check_and_get_rates(
+        leaf_name="test_quadratic",
+        func_type="piecewise_quadratic",
+        parameter_dict=parameter_dict,
+        xnp=xnp,
+    )
+
+    # Rates should be shape (2, n_segments) for quadratic
+    assert rates.shape == (2, 2)
+    numpy.testing.assert_allclose(rates[0], [0.1, 0.2])  # rate_linear
+    numpy.testing.assert_allclose(rates[1], [0.01, 0.02])  # rate_quadratic
+
+
+def test_check_and_get_rates_missing_rate_raises(xnp: ModuleType):
+    """Test that _check_and_get_rates raises error when required rate is missing."""
+    parameter_dict = {
+        0: {
+            "lower_threshold": "-inf",
+            "upper_threshold": 0,
+            "rate_linear": 0.1,
+            "rate_quadratic": 0.01,
+            "intercept_at_lower_threshold": 0.0,
+        },
+        1: {
+            "lower_threshold": 0,
+            "upper_threshold": "inf",
+            "rate_linear": 0.2,
+            # Missing rate_quadratic!
+            "intercept_at_lower_threshold": 10.0,
+        },
+    }
+
+    with pytest.raises(ValueError, match="rate_quadratic is missing"):
+        _check_and_get_rates(
+            leaf_name="test_missing_rate",
+            func_type="piecewise_quadratic",
+            parameter_dict=parameter_dict,
+            xnp=xnp,
+        )
+
+
+# =============================================================================
+# _check_and_get_intercepts tests
+# =============================================================================
+
+
+def test_check_and_get_intercepts_all_supplied(xnp: ModuleType):
+    """Test _check_and_get_intercepts uses supplied intercepts directly."""
+    parameter_dict = {
+        0: {
+            "lower_threshold": "-inf",
+            "upper_threshold": 100,
+            "rate_linear": 0.1,
+            "intercept_at_lower_threshold": 5.0,
+        },
+        1: {
+            "lower_threshold": 100,
+            "upper_threshold": 200,
+            "rate_linear": 0.2,
+            "intercept_at_lower_threshold": 15.0,
+        },
+        2: {
+            "lower_threshold": 200,
+            "upper_threshold": "inf",
+            "rate_linear": 0.3,
+            "intercept_at_lower_threshold": 35.0,
+        },
+    }
+    lower_thresholds = xnp.array([-numpy.inf, 100.0, 200.0])
+    upper_thresholds = xnp.array([100.0, 200.0, numpy.inf])
+    rates = xnp.array([[0.1, 0.2, 0.3]])
+
+    intercepts = _check_and_get_intercepts(
+        leaf_name="test_all_supplied",
+        parameter_dict=parameter_dict,
+        lower_thresholds=lower_thresholds,
+        upper_thresholds=upper_thresholds,
+        rates=rates,
+        xnp=xnp,
+    )
+
+    numpy.testing.assert_allclose(intercepts, [5.0, 15.0, 35.0])
+
+
+def test_check_and_get_intercepts_auto_generated(xnp: ModuleType):
+    """Test _check_and_get_intercepts auto-generates intercepts when only first given."""
+    parameter_dict = {
+        0: {
+            "lower_threshold": "-inf",
+            "upper_threshold": 0,
+            "rate_linear": 0.0,
+            "intercept_at_lower_threshold": 5.0,
+        },
+        1: {
+            "lower_threshold": 0,
+            "upper_threshold": 100,
+            "rate_linear": 0.1,
+            # No intercept - should be auto-generated
+        },
+        2: {
+            "lower_threshold": 100,
+            "upper_threshold": "inf",
+            "rate_linear": 0.2,
+            # No intercept - should be auto-generated
+        },
+    }
+    lower_thresholds = xnp.array([-numpy.inf, 0.0, 100.0])
+    upper_thresholds = xnp.array([0.0, 100.0, numpy.inf])
+    rates = xnp.array([[0.0, 0.1, 0.2]])
+
+    intercepts = _check_and_get_intercepts(
+        leaf_name="test_auto_generated",
+        parameter_dict=parameter_dict,
+        lower_thresholds=lower_thresholds,
+        upper_thresholds=upper_thresholds,
+        rates=rates,
+        xnp=xnp,
+    )
+
+    # First intercept is given as 5.0
+    # At x=0: first segment value = 5 (rate=0, so no change)
+    # At x=100: second segment value = 5 + 0.1 * 100 = 15
+    numpy.testing.assert_allclose(float(intercepts[0]), 5.0)
+    numpy.testing.assert_allclose(float(intercepts[1]), 5.0)
+    numpy.testing.assert_allclose(float(intercepts[2]), 15.0)
+
+
+# =============================================================================
+# _calculate_one_intercept tests
+# =============================================================================
+
+
+def test_calculate_one_intercept_at_boundary():
+    """Test _calculate_one_intercept returns correct value at segment boundary."""
+    lower_thresholds = numpy.array([-numpy.inf, 0.0, 100.0])
+    upper_thresholds = numpy.array([0.0, 100.0, numpy.inf])
+    rates = numpy.array([[0.0, 0.1, 0.2]])
+    intercepts = numpy.array([5.0, 5.0, numpy.nan])
+
+    # Calculate intercept at x=100 (boundary between segments 1 and 2)
+    result = _calculate_one_intercept(
+        x=100.0,
+        lower_thresholds=lower_thresholds,
+        upper_thresholds=upper_thresholds,
+        rates=rates,
+        intercepts=intercepts,
+    )
+
+    # At x=100: segment 1 value = 5.0 + 0.1 * (100 - 0) = 15.0
+    numpy.testing.assert_allclose(result, 15.0)
+
+
+def test_calculate_one_intercept_nan_input():
+    """Test _calculate_one_intercept returns NaN for NaN input."""
+    lower_thresholds = numpy.array([-numpy.inf, 0.0])
+    upper_thresholds = numpy.array([0.0, numpy.inf])
+    rates = numpy.array([[0.0, 0.1]])
+    intercepts = numpy.array([5.0, 5.0])
+
+    result = _calculate_one_intercept(
+        x=numpy.nan,
+        lower_thresholds=lower_thresholds,
+        upper_thresholds=upper_thresholds,
+        rates=rates,
+        intercepts=intercepts,
+    )
+
+    assert numpy.isnan(result)
+
+
+def test_calculate_one_intercept_neg_infinity_boundary():
+    """Test _calculate_one_intercept returns intercept directly when lower is -inf."""
+    lower_thresholds = numpy.array([-numpy.inf, 0.0])
+    upper_thresholds = numpy.array([0.0, numpy.inf])
+    rates = numpy.array([[0.5, 0.1]])  # First rate is non-zero but ignored at -inf
+    intercepts = numpy.array([10.0, 10.0])
+
+    # Calculate at x=0 (boundary) - should be in first segment at edge
+    result = _calculate_one_intercept(
+        x=0.0,
+        lower_thresholds=lower_thresholds,
+        upper_thresholds=upper_thresholds,
+        rates=rates,
+        intercepts=intercepts,
+    )
+
+    # At x=0: lower_threshold is -inf, so return intercept directly
+    numpy.testing.assert_allclose(result, 10.0)

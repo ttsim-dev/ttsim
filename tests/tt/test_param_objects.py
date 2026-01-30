@@ -1,8 +1,14 @@
+import dataclasses
+
 import numpy
 import pytest
 
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParamValue,
+    DictParam,
+    RawParam,
+    ScalarParam,
+    _year_fraction,
     convert_sparse_to_consecutive_int_lookup_table,
     get_consecutive_int_lookup_table_param_value,
     get_month_based_phase_inout_of_age_thresholds_param_value,
@@ -342,3 +348,118 @@ def test_year_based_phase_inout_fills_before_and_after(xnp):
     numpy.testing.assert_almost_equal(result.look_up(2023), 66.0)
     numpy.testing.assert_almost_equal(result.look_up(2024), 66.0)
     numpy.testing.assert_almost_equal(result.look_up(2025), 66.0)
+
+
+# =============================================================================
+# ScalarParam tests
+# =============================================================================
+
+
+def test_scalar_param_with_bool_value():
+    """Test ScalarParam accepts bool value."""
+    param = ScalarParam(value=True)
+    assert param.value is True
+
+
+def test_scalar_param_with_int_value():
+    """Test ScalarParam accepts int value."""
+    param = ScalarParam(value=42)
+    assert param.value == 42
+
+
+def test_scalar_param_with_float_value():
+    """Test ScalarParam accepts float value."""
+    param = ScalarParam(value=3.14)
+    assert param.value == 3.14
+
+
+def test_scalar_param_with_note_and_reference():
+    """Test ScalarParam accepts optional note and reference fields."""
+    param = ScalarParam(value=100, note="A note", reference="GEP-5")
+    assert param.value == 100
+    assert param.note == "A note"
+    assert param.reference == "GEP-5"
+
+
+def test_scalar_param_is_frozen():
+    """Test ScalarParam is immutable (frozen dataclass)."""
+    param = ScalarParam(value=10)
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        param.value = 20  # ty: ignore[frozen-instance]
+
+
+# =============================================================================
+# DictParam tests
+# =============================================================================
+
+
+def test_dict_param_with_str_int_values():
+    """Test DictParam with dict[str, int] value."""
+    param = DictParam(value={"a": 1, "b": 2})
+    assert param.value == {"a": 1, "b": 2}
+
+
+def test_dict_param_rejects_note_key():
+    """Test DictParam raises ValueError when 'note' is a key in value."""
+    with pytest.raises(ValueError, match="'note' and 'reference' cannot be keys"):
+        DictParam(value={"note": 1, "other": 2})
+
+
+def test_dict_param_rejects_reference_key():
+    """Test DictParam raises ValueError when 'reference' is a key in value."""
+    with pytest.raises(ValueError, match="'note' and 'reference' cannot be keys"):
+        DictParam(value={"reference": "some_ref", "other": 2})
+
+
+# =============================================================================
+# RawParam tests
+# =============================================================================
+
+
+def test_raw_param_with_nested_dict():
+    """Test RawParam supports nested dict values."""
+    nested = {"level1": {"level2": {"level3": 42}}}
+    param = RawParam(value=nested)
+    assert param.value == nested
+    assert param.value["level1"]["level2"]["level3"] == 42
+
+
+def test_raw_param_rejects_note_key():
+    """Test RawParam raises ValueError when 'note' is a key in value."""
+    with pytest.raises(ValueError, match="'note' and 'reference' cannot be keys"):
+        RawParam(value={"note": "forbidden", "other": 1})
+
+
+def test_raw_param_rejects_reference_key():
+    """Test RawParam raises ValueError when 'reference' is a key in value."""
+    with pytest.raises(ValueError, match="'note' and 'reference' cannot be keys"):
+        RawParam(value={"reference": "forbidden", "other": 1})
+
+
+# =============================================================================
+# _year_fraction tests
+# =============================================================================
+
+
+def test_year_fraction_years_only():
+    """Test _year_fraction with years only (months=0)."""
+    result = _year_fraction({"years": 65, "months": 0})
+    assert result == 65.0
+
+
+def test_year_fraction_with_months():
+    """Test _year_fraction with years and months."""
+    result = _year_fraction({"years": 65, "months": 6})
+    assert result == 65.5
+
+
+def test_year_fraction_zero_years():
+    """Test _year_fraction with zero years."""
+    result = _year_fraction({"years": 0, "months": 6})
+    assert result == 0.5
+
+
+def test_year_fraction_full_year_months():
+    """Test _year_fraction with 12 months equals 1 year."""
+    result = _year_fraction({"years": 0, "months": 12})
+    assert result == 1.0
