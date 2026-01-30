@@ -9,7 +9,6 @@ from ttsim.tt.param_objects import (
     get_year_based_phase_inout_of_age_thresholds_param_value,
 )
 
-
 # =============================================================================
 # convert_sparse_to_consecutive_int_lookup_table tests
 # =============================================================================
@@ -119,7 +118,9 @@ def test_lookup_table_init_2d(xnp):
     )
 
     # Values should be flattened
-    numpy.testing.assert_array_equal(lut.values_to_look_up, xnp.array([10.0, 20.0, 30.0, 40.0]))
+    numpy.testing.assert_array_equal(
+        lut.values_to_look_up, xnp.array([10.0, 20.0, 30.0, 40.0])
+    )
 
 
 def test_lookup_table_look_up_single_dim(xnp):
@@ -134,8 +135,6 @@ def test_lookup_table_look_up_single_dim(xnp):
     numpy.testing.assert_almost_equal(lut.look_up(0), 10.0)
     numpy.testing.assert_almost_equal(lut.look_up(1), 20.0)
     numpy.testing.assert_almost_equal(lut.look_up(2), 30.0)
-
-
 
 
 def test_lookup_table_look_up_with_nonzero_base(xnp):
@@ -166,8 +165,6 @@ def test_get_consecutive_int_lookup_table_1d(xnp):
     assert result.look_up(0) == 10.0
     assert result.look_up(1) == 20.0
     assert result.look_up(2) == 30.0
-
-
 
 
 def test_get_consecutive_int_lookup_table_with_nonzero_min(xnp):

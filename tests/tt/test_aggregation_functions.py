@@ -734,12 +734,14 @@ def test_sum_by_p_id_bool_column(backend):
 @pytest.mark.skipif_jax
 def test_grouped_min_timedelta64(backend):
     """Test grouped_min with timedelta64 arrays (NumPy only)."""
-    column = numpy.array([
-        numpy.timedelta64(10, "D"),
-        numpy.timedelta64(5, "D"),
-        numpy.timedelta64(15, "D"),
-        numpy.timedelta64(3, "D"),
-    ])
+    column = numpy.array(
+        [
+            numpy.timedelta64(10, "D"),
+            numpy.timedelta64(5, "D"),
+            numpy.timedelta64(15, "D"),
+            numpy.timedelta64(3, "D"),
+        ]
+    )
     group_id = numpy.array([0, 0, 1, 1])
 
     result = grouped_min(
@@ -749,15 +751,15 @@ def test_grouped_min_timedelta64(backend):
         backend=backend,
     )
 
-    expected = numpy.array([
-        numpy.timedelta64(5, "D"),
-        numpy.timedelta64(5, "D"),
-        numpy.timedelta64(3, "D"),
-        numpy.timedelta64(3, "D"),
-    ])
+    expected = numpy.array(
+        [
+            numpy.timedelta64(5, "D"),
+            numpy.timedelta64(5, "D"),
+            numpy.timedelta64(3, "D"),
+            numpy.timedelta64(3, "D"),
+        ]
+    )
     numpy.testing.assert_array_equal(result, expected)
-
-
 
 
 def test_grouped_count_with_many_groups(backend):

@@ -556,10 +556,12 @@ def test_create_intercepts_quadratic_continuity(xnp: ModuleType):
     lower_thresholds = xnp.array([-numpy.inf, 0.0, 10.0])
     upper_thresholds = xnp.array([0.0, 10.0, numpy.inf])
     # [rate_linear, rate_quadratic] per segment
-    rates = xnp.array([
-        [0.0, 1.0, 0.0],  # Linear rates
-        [0.0, 0.1, 0.0],  # Quadratic rates
-    ])
+    rates = xnp.array(
+        [
+            [0.0, 1.0, 0.0],  # Linear rates
+            [0.0, 0.1, 0.0],  # Quadratic rates
+        ]
+    )
     intercept_at_lowest = 5.0
 
     intercepts = _create_intercepts(
