@@ -12,13 +12,9 @@ tax_schedule:
   reference_period: null
   type: piecewise_constant
   1900-01-01:
-    0:
-      lower_threshold: -inf
-      intercept_at_lower_threshold: 0
-    1:
-      lower_threshold: 10
-      intercept_at_lower_threshold: 1000
-    2:
-      lower_threshold: 100
-      upper_threshold: inf
-      intercept_at_lower_threshold: 10000
+    - interval: "(-inf, 10)"
+      intercept: 0
+    - interval: "[10, 100)"
+      intercept: 1000
+    - interval: "[100, inf)"
+      intercept: 10000

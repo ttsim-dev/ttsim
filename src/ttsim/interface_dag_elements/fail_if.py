@@ -829,8 +829,10 @@ def _param_with_active_periods(
 ) -> list[_ParamWithActivePeriod]:
     """Return parameter with active periods."""
 
-    def _remove_note_and_reference(entry: dict[str | int, Any]) -> dict[str | int, Any]:
+    def _remove_note_and_reference(entry: dict[str | int, Any] | list) -> dict[str | int, Any] | list:
         """Remove note and reference from a parameter specification."""
+        if isinstance(entry, list):
+            return entry
         entry.pop("note", None)
         entry.pop("reference", None)
         return entry
