@@ -270,21 +270,16 @@ def test_rounding_spec_validation(base, direction, to_add_after_rounding, match)
         )
 
 
-def test_rounding_spec_base_zero_behavior(xnp):
-    """Test RoundingSpec with base=0 (should cause division by zero or special handling)."""
-    # Note: base=0 is technically allowed by type system but will cause issues at runtime
-    # when rounding is actually applied (division by zero)
-    rs = RoundingSpec(base=0, direction="up")
-    assert rs.base == 0
+def test_rounding_spec_base_zero_raises():
+    """Test that RoundingSpec raises ValueError when base=0."""
+    with pytest.raises(ValueError, match="base must be positive, got 0"):
+        RoundingSpec(base=0, direction="up")
 
-    def test_func(x):
-        return x
 
-    # Applying rounding with base=0 will cause issues
-    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
-    # This should produce inf or nan due to division by zero
-    result = rounded_func(numpy.array([1.0, 2.0]))
-    assert numpy.all(numpy.isinf(result) | numpy.isnan(result))
+def test_rounding_spec_base_negative_raises():
+    """Test that RoundingSpec raises ValueError when base is negative."""
+    with pytest.raises(ValueError, match="base must be positive, got -1"):
+        RoundingSpec(base=-1, direction="up")
 
 
 def test_rounding_spec_very_small_base(xnp):
