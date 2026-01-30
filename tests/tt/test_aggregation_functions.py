@@ -640,3 +640,171 @@ def test_sum_by_p_id_raises(
             num_segments=len(group_id),
             backend=backend,
         )
+
+
+# =============================================================================
+# Additional edge case tests for aggregation functions
+# =============================================================================
+
+
+def test_grouped_sum_single_element(backend):
+    """Test grouped_sum with a single-element array."""
+    column = numpy.array([42.0])
+    group_id = numpy.array([0])
+
+    result = grouped_sum(
+        column=column,
+        group_id=group_id,
+        num_segments=1,
+        backend=backend,
+    )
+
+    numpy.testing.assert_array_equal(result, numpy.array([42.0]))
+
+
+def test_grouped_max_all_same_values(backend):
+    """Test grouped_max when all values in groups are identical."""
+    column = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    group_id = numpy.array([0, 0, 0, 1, 1])
+
+    result = grouped_max(
+        column=column,
+        group_id=group_id,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_grouped_min_all_same_values(backend):
+    """Test grouped_min when all values in groups are identical."""
+    column = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    group_id = numpy.array([0, 0, 0, 1, 1])
+
+    result = grouped_min(
+        column=column,
+        group_id=group_id,
+        num_segments=5,
+        backend=backend,
+    )
+
+    expected = numpy.array([5.0, 5.0, 5.0, 10.0, 10.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_sum_by_p_id_all_missing(backend):
+    """Test sum_by_p_id when all p_ids are missing (-1)."""
+    column = numpy.array([10.0, 20.0, 30.0])
+    p_id_to_aggregate_by = numpy.array([-1, -1, -1])
+    p_id_to_store_by = numpy.array([0, 1, 2])
+
+    result = sum_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=3,
+        backend=backend,
+    )
+
+    # All missing, so result should be zeros
+    numpy.testing.assert_array_equal(result, numpy.array([0.0, 0.0, 0.0]))
+
+
+def test_sum_by_p_id_bool_column(backend):
+    """Test sum_by_p_id with boolean column."""
+    column = numpy.array([True, False, True, True, False])
+    p_id_to_aggregate_by = numpy.array([0, 0, 1, 1, 1])
+    p_id_to_store_by = numpy.array([0, 1, 2, 3, 4])
+
+    result = sum_by_p_id(
+        column=column,
+        p_id_to_aggregate_by=p_id_to_aggregate_by,
+        p_id_to_store_by=p_id_to_store_by,
+        num_segments=5,
+        backend=backend,
+    )
+
+    # p_id 0: True + False = 1, p_id 1: True + True + False = 2
+    expected = numpy.array([1, 2, 0, 0, 0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.skipif_jax
+def test_grouped_min_timedelta64(backend):
+    """Test grouped_min with timedelta64 arrays (NumPy only)."""
+    column = numpy.array([
+        numpy.timedelta64(10, "D"),
+        numpy.timedelta64(5, "D"),
+        numpy.timedelta64(15, "D"),
+        numpy.timedelta64(3, "D"),
+    ])
+    group_id = numpy.array([0, 0, 1, 1])
+
+    result = grouped_min(
+        column=column,
+        group_id=group_id,
+        num_segments=4,
+        backend=backend,
+    )
+
+    expected = numpy.array([
+        numpy.timedelta64(5, "D"),
+        numpy.timedelta64(5, "D"),
+        numpy.timedelta64(3, "D"),
+        numpy.timedelta64(3, "D"),
+    ])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+
+
+def test_grouped_count_with_many_groups(backend):
+    """Test grouped_count with many distinct groups."""
+    # Each element in its own group
+    group_id = numpy.array([0, 1, 2, 3, 4])
+
+    result = grouped_count(
+        group_id=group_id,
+        num_segments=5,
+        backend=backend,
+    )
+
+    # Each group has exactly 1 element
+    expected = numpy.array([1, 1, 1, 1, 1])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_grouped_mean_with_negative_values(backend):
+    """Test grouped_mean with negative values."""
+    column = numpy.array([-10.0, 10.0, -5.0, 5.0])
+    group_id = numpy.array([0, 0, 1, 1])
+
+    result = grouped_mean(
+        column=column,
+        group_id=group_id,
+        num_segments=4,
+        backend=backend,
+    )
+
+    # Group 0: (-10 + 10) / 2 = 0, Group 1: (-5 + 5) / 2 = 0
+    expected = numpy.array([0.0, 0.0, 0.0, 0.0])
+    numpy.testing.assert_array_almost_equal(result, expected)
+
+
+def test_grouped_sum_large_group_ids_with_gaps(backend):
+    """Test grouped_sum with large group_id values that have gaps."""
+    column = numpy.array([1.0, 2.0, 3.0])
+    group_id = numpy.array([0, 100, 100])
+
+    result = grouped_sum(
+        column=column,
+        group_id=group_id,
+        num_segments=101,
+        backend=backend,
+    )
+
+    # Group 0: 1.0, Group 100: 2.0 + 3.0 = 5.0
+    expected = numpy.array([1.0, 5.0, 5.0])
+    numpy.testing.assert_array_equal(result, expected)

@@ -294,3 +294,192 @@ def test_get_re_pattern_for_some_base_name(
         grouping_levels=grouping_levels,
     )
     assert re_pattern.fullmatch(expected_match)
+
+
+# =============================================================================
+# Additional tests for utility functions
+# =============================================================================
+
+
+from ttsim.interface_dag_elements.shared import (
+    get_base_name_and_grouping_suffix,
+    partition_by_reference_dict,
+    remove_group_suffix,
+)
+
+
+@pytest.mark.parametrize(
+    ("col", "grouping_levels", "expected"),
+    [
+        ("foo_kin", ("kin", "fam"), "foo"),
+        ("foo_fam", ("kin", "fam"), "foo"),
+        ("foo_bar", ("kin", "fam"), "foo_bar"),  # No recognized suffix
+        ("foo", ("kin", "fam"), "foo"),  # No suffix at all
+        ("foo_m_kin", ("kin", "fam"), "foo_m"),  # With time unit
+        ("kin", ("kin", "fam"), "kin"),  # Edge case: just the suffix name
+    ],
+)
+def test_remove_group_suffix(col, grouping_levels, expected):
+    """Test remove_group_suffix removes grouping suffixes correctly."""
+    result = remove_group_suffix(col, grouping_levels)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("to_partition", "reference_dict", "expected_intersection", "expected_difference"),
+    [
+        # Basic partitioning
+        ({"a": 1, "b": 2, "c": 3}, {"a": 10, "b": 20}, {"a": 1, "b": 2}, {"c": 3}),
+        # No intersection
+        ({"a": 1, "b": 2}, {"c": 3, "d": 4}, {}, {"a": 1, "b": 2}),
+        # Full intersection
+        ({"a": 1, "b": 2}, {"a": 10, "b": 20}, {"a": 1, "b": 2}, {}),
+        # Empty to_partition
+        ({}, {"a": 1}, {}, {}),
+        # Empty reference
+        ({"a": 1, "b": 2}, {}, {}, {"a": 1, "b": 2}),
+        # Both empty
+        ({}, {}, {}, {}),
+    ],
+)
+def test_partition_by_reference_dict(
+    to_partition, reference_dict, expected_intersection, expected_difference
+):
+    """Test partition_by_reference_dict partitions correctly."""
+    intersection, difference = partition_by_reference_dict(to_partition, reference_dict)
+    assert intersection == expected_intersection
+    assert difference == expected_difference
+
+
+def test_get_base_name_and_grouping_suffix_with_suffix():
+    """Test get_base_name_and_grouping_suffix with grouping suffix present."""
+    pattern = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=("m", "y"),
+        grouping_levels=("kin", "fam"),
+    )
+    match = pattern.fullmatch("foo_m_kin")
+    assert match is not None
+
+    base_name, suffix = get_base_name_and_grouping_suffix(match)
+    assert base_name == "foo"
+    assert suffix == "_kin"
+
+
+def test_get_base_name_and_grouping_suffix_without_suffix():
+    """Test get_base_name_and_grouping_suffix without grouping suffix."""
+    pattern = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=("m", "y"),
+        grouping_levels=("kin", "fam"),
+    )
+    match = pattern.fullmatch("foo_m")
+    assert match is not None
+
+    base_name, suffix = get_base_name_and_grouping_suffix(match)
+    assert base_name == "foo"
+    assert suffix == ""
+
+
+def test_get_base_name_and_grouping_suffix_no_time_unit():
+    """Test get_base_name_and_grouping_suffix with only grouping suffix."""
+    pattern = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=("m", "y"),
+        grouping_levels=("kin", "fam"),
+    )
+    match = pattern.fullmatch("foo_kin")
+    assert match is not None
+
+    base_name, suffix = get_base_name_and_grouping_suffix(match)
+    assert base_name == "foo"
+    assert suffix == "_kin"
+
+
+# =============================================================================
+# Additional tests for tree operations
+# =============================================================================
+
+
+def test_upsert_tree_deeply_nested():
+    """Test upsert_tree with deeply nested structures."""
+    base = {"a": {"b": {"c": {"d": 1}}}}
+    to_upsert = {"a": {"b": {"c": {"e": 2}}}}
+
+    result = upsert_tree(base=base, to_upsert=to_upsert)
+
+    assert result == {"a": {"b": {"c": {"d": 1, "e": 2}}}}
+
+
+def test_merge_trees_with_none_values():
+    """Test merge_trees preserves None values correctly."""
+    left = {"a": None}
+    right = {"b": None}
+
+    result = merge_trees(left=left, right=right)
+
+    assert result == {"a": None, "b": None}
+
+
+def test_partition_tree_by_reference_tree_empty_reference():
+    """Test partition_tree_by_reference_tree with empty reference tree."""
+    tree_to_partition = {"a": {"b": 1, "c": 2}}
+    reference_tree = {}
+
+    in_ref, not_in_ref = partition_tree_by_reference_tree(
+        tree_to_partition=tree_to_partition,
+        reference_tree=reference_tree,
+    )
+
+    assert in_ref == {}
+    assert not_in_ref == {"a": {"b": 1, "c": 2}}
+
+
+def test_partition_tree_by_reference_tree_full_overlap():
+    """Test partition_tree_by_reference_tree when trees fully overlap."""
+    tree_to_partition = {"a": {"b": 1}}
+    reference_tree = {"a": {"b": 2}}
+
+    in_ref, not_in_ref = partition_tree_by_reference_tree(
+        tree_to_partition=tree_to_partition,
+        reference_tree=reference_tree,
+    )
+
+    assert in_ref == {"a": {"b": 1}}
+    assert not_in_ref == {}
+
+
+def test_to_datetime_with_datetime_object():
+    """Test to_datetime passes through datetime.date objects."""
+    import datetime
+
+    date_obj = datetime.date(2024, 6, 15)
+    result = to_datetime(date_obj)
+
+    assert result == date_obj
+    assert isinstance(result, datetime.date)
+
+
+def test_to_datetime_with_valid_string():
+    """Test to_datetime parses valid ISO date strings."""
+    import datetime
+
+    result = to_datetime("2024-06-15")
+
+    assert result == datetime.date(2024, 6, 15)
+
+
+def test_to_datetime_with_invalid_format_raises():
+    """Test to_datetime raises for invalid date formats."""
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        to_datetime("06-15-2024")  # Wrong format
+
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        to_datetime("2024/06/15")  # Wrong separator
+
+
+def test_create_tree_from_path_and_value_with_dataclass():
+    """Test create_tree_from_path_and_value with dataclass value."""
+    result = create_tree_from_path_and_value(
+        path=("a", "b"),
+        value=SampleDataClass(a=42),
+    )
+
+    assert result == {"a": {"b": SampleDataClass(a=42)}}

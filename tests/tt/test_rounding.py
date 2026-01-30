@@ -268,3 +268,186 @@ def test_rounding_spec_validation(base, direction, to_add_after_rounding, match)
             direction=direction,
             to_add_after_rounding=to_add_after_rounding,
         )
+
+
+# =============================================================================
+# Additional RoundingSpec validation edge cases
+# =============================================================================
+
+
+def test_rounding_spec_base_zero_behavior(xnp):
+    """Test RoundingSpec with base=0 (should cause division by zero or special handling)."""
+    # Note: base=0 is technically allowed by type system but will cause issues at runtime
+    # when rounding is actually applied (division by zero)
+    rs = RoundingSpec(base=0, direction="up")
+    assert rs.base == 0
+
+    def test_func(x):
+        return x
+
+    # Applying rounding with base=0 will cause issues
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    # This should produce inf or nan due to division by zero
+    result = rounded_func(numpy.array([1.0, 2.0]))
+    assert numpy.all(numpy.isinf(result) | numpy.isnan(result))
+
+
+def test_rounding_spec_very_small_base(xnp):
+    """Test RoundingSpec with very small base value."""
+    rs = RoundingSpec(base=0.0001, direction="nearest")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([1.23456789]))
+
+    # Should round to nearest 0.0001
+    expected = numpy.array([1.2346])
+    numpy.testing.assert_allclose(result, expected, atol=0.00005)
+
+
+def test_rounding_spec_very_large_base(xnp):
+    """Test RoundingSpec with very large base value."""
+    rs = RoundingSpec(base=1000, direction="down")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([1234.0, 5678.0, 9999.0]))
+
+    # Should round down to nearest 1000
+    expected = numpy.array([1000.0, 5000.0, 9000.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+# =============================================================================
+# Negative value handling
+# =============================================================================
+
+
+def test_rounding_negative_values_up(xnp):
+    """Test rounding negative values up (toward zero or away from zero)."""
+    rs = RoundingSpec(base=1, direction="up")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([-1.5, -1.1, -0.9, -0.1]))
+
+    # ceil(-1.5) = -1, ceil(-1.1) = -1, ceil(-0.9) = 0, ceil(-0.1) = 0
+    expected = numpy.array([-1.0, -1.0, 0.0, 0.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_rounding_negative_values_down(xnp):
+    """Test rounding negative values down (away from zero)."""
+    rs = RoundingSpec(base=1, direction="down")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([-1.5, -1.1, -0.9, -0.1]))
+
+    # floor(-1.5) = -2, floor(-1.1) = -2, floor(-0.9) = -1, floor(-0.1) = -1
+    expected = numpy.array([-2.0, -2.0, -1.0, -1.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_rounding_negative_values_nearest(xnp):
+    """Test rounding negative values to nearest."""
+    rs = RoundingSpec(base=1, direction="nearest")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([-1.6, -1.4, -0.6, -0.4]))
+
+    # round(-1.6) = -2, round(-1.4) = -1, round(-0.6) = -1, round(-0.4) = 0
+    expected = numpy.array([-2.0, -1.0, -1.0, 0.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_rounding_mixed_positive_negative(xnp):
+    """Test rounding with mixed positive and negative values."""
+    rs = RoundingSpec(base=5, direction="nearest")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([-12.0, -8.0, -2.0, 2.0, 8.0, 12.0]))
+
+    # round(-12/5)*5 = -2*5 = -10, round(-8/5)*5 = -2*5 = -10
+    # round(-2/5)*5 = 0*5 = 0, round(2/5)*5 = 0*5 = 0
+    # round(8/5)*5 = 2*5 = 10, round(12/5)*5 = 2*5 = 10
+    expected = numpy.array([-10.0, -10.0, 0.0, 0.0, 10.0, 10.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+# =============================================================================
+# Boundary conditions
+# =============================================================================
+
+
+def test_rounding_value_exactly_on_boundary(xnp):
+    """Test rounding when value is exactly on a boundary."""
+    rs = RoundingSpec(base=10, direction="nearest")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([10.0, 20.0, 30.0, 0.0, -10.0]))
+
+    # Values already on boundary should stay the same
+    expected = numpy.array([10.0, 20.0, 30.0, 0.0, -10.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_rounding_to_add_after_negative(xnp):
+    """Test rounding with negative to_add_after_rounding."""
+    rs = RoundingSpec(base=10, direction="up", to_add_after_rounding=-5)
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([12.0, 25.0]))
+
+    # ceil(12/10)*10 = 20, ceil(25/10)*10 = 30
+    # Then subtract 5: 20-5 = 15, 30-5 = 25
+    expected = numpy.array([15.0, 25.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_rounding_spec_float_base(xnp):
+    """Test RoundingSpec with float base."""
+    rs = RoundingSpec(base=2.5, direction="down")
+
+    def test_func(x):
+        return x
+
+    rounded_func = rs.apply_rounding(test_func, xnp=xnp)
+    result = rounded_func(numpy.array([3.0, 5.0, 7.5, 10.0]))
+
+    # floor(3/2.5)*2.5 = 2.5, floor(5/2.5)*2.5 = 5.0
+    # floor(7.5/2.5)*2.5 = 7.5, floor(10/2.5)*2.5 = 10.0
+    expected = numpy.array([2.5, 5.0, 7.5, 10.0])
+    numpy.testing.assert_array_equal(result, expected)
+
+
+def test_rounding_preserves_function_name(xnp):
+    """Test that apply_rounding preserves the wrapped function's name."""
+    rs = RoundingSpec(base=1, direction="up")
+
+    def my_custom_function(x):
+        return x
+
+    rounded_func = rs.apply_rounding(my_custom_function, xnp=xnp)
+
+    assert rounded_func.__name__ == "my_custom_function"
