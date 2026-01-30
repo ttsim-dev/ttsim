@@ -17,6 +17,7 @@ from ttsim.tt.column_objects_param_function import (
     policy_function,
     policy_input,
 )
+from ttsim.tt.interval_utils import extend_intervals_to_real_line
 from ttsim.tt.param_objects import (
     ConsecutiveIntLookupTableParam,
     ConsecutiveIntLookupTableParamValue,
@@ -63,6 +64,7 @@ __all__ = [
     "agg_by_group_function",
     "agg_by_p_id_function",
     "convert_sparse_to_consecutive_int_lookup_table",
+    "extend_intervals_to_real_line",
     "get_consecutive_int_lookup_table_param_value",
     "get_month_based_phase_inout_of_age_thresholds_param_value",
     "get_piecewise_parameters",

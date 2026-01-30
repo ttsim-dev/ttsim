@@ -28,6 +28,7 @@ from ttsim.tt import (
 from ttsim.tt.column_objects_param_function import (
     DEFAULT_END_DATE,
 )
+from ttsim.tt.interval_utils import extend_intervals_to_real_line
 from ttsim.tt.piecewise_polynomial import get_piecewise_parameters
 
 if TYPE_CHECKING:
@@ -188,7 +189,7 @@ def _get_one_param(
         cleaned_spec["value"] = get_piecewise_parameters(
             leaf_name=leaf_name,
             func_type=param_type,  # ty: ignore[invalid-argument-type]
-            parameter_dict=cleaned_spec["value"],
+            parameter_list=cleaned_spec["value"],
             xnp=xnp,
         )
         return PiecewisePolynomialParam(**cleaned_spec)
@@ -242,17 +243,24 @@ def _clean_one_param_spec(
     out["reference_period"] = spec.get("reference_period", None)
     out["name"] = spec["name"]
     out["description"] = spec["description"]
-    current_spec: dict[str | int, Any] = copy.deepcopy(spec[policy_dates[idx - 1]])
+    raw_current = copy.deepcopy(spec[policy_dates[idx - 1]])
+    if isinstance(raw_current, list):
+        # List-based spec (no note/reference at this level)
+        out["note"] = None
+        out["reference"] = None
+        out["value"] = _get_param_value([spec[d] for d in policy_dates[:idx]])
+        return out
+
+    current_spec: dict[str | int, Any] = raw_current
     out["note"] = current_spec.pop("note", None)
     out["reference"] = current_spec.pop("reference", None)
-    if len(current_spec) == 0:
+    if not current_spec:
         return None
     if len(current_spec) == 1 and "updates_previous" in current_spec:
         raise ValueError(
             "'updates_previous' cannot be specified as the only element, found:\n\n"
             f"{spec}\n\n",
         )
-        # Parameter ceased to exist
     if spec["type"] == "scalar":
         if "updates_previous" in current_spec:
             raise ValueError(
@@ -265,14 +273,24 @@ def _clean_one_param_spec(
 
 
 def _get_param_value(
-    relevant_specs: list[dict[str | int, Any]],
-) -> dict[str | int, Any]:
+    relevant_specs: list[dict[str | int, Any] | list[dict[str, Any]]],
+) -> dict[str | int, Any] | list[dict[str, Any]]:
     """Get the value of a parameter.
 
     Implementation is a recursion in order to handle the 'updates_previous' machinery.
 
+    Supports both dict-based and list-based (piecewise) specs. When the raw spec
+    is a list (no reference/note fields), it's used directly. When it's a dict
+    with integer keys (has reference/note alongside), the integer-keyed entries
+    are converted to a list.
+
     """
-    current_spec = relevant_specs[-1].copy()
+    raw_spec = relevant_specs[-1]
+    if isinstance(raw_spec, list):
+        # Already a list (YAML date entry was a plain list)
+        return raw_spec
+
+    current_spec = raw_spec.copy()
     updates_previous = current_spec.pop("updates_previous", False)
     current_spec.pop("note", None)
     current_spec.pop("reference", None)
@@ -282,8 +300,33 @@ def _get_param_value(
                 "'updates_previous' cannot be missing in the initial spec, found "
                 f"{relevant_specs}"
             )
+        base = _get_param_value(relevant_specs=relevant_specs[:-1])
+        if isinstance(base, list):
+            # List-based spec: convert list to dict with integer keys for merging
+            base_dict = dict(enumerate(base))
+            merged = upsert_tree(
+                base=base_dict,
+                to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
+            )
+            result = [
+                merged[i] for i in sorted(k for k in merged if isinstance(k, int))
+            ]
+            return extend_intervals_to_real_line(result)
         return upsert_tree(
-            base=_get_param_value(relevant_specs=relevant_specs[:-1]),  # ty: ignore[invalid-argument-type]
+            base=base,  # ty: ignore[invalid-argument-type]
             to_upsert=current_spec,  # ty: ignore[invalid-argument-type]
         )
+
+    # Convert integer-keyed dict to list when keys are consecutive ints 0..n-1
+    # and values are dicts (piecewise polynomial interval specs).
+    # Do not convert when values are scalars (consecutive_int_lookup_table)
+    # or keys are non-consecutive (partial overlay specs like {3: {...}}).
+    if (
+        current_spec
+        and all(isinstance(k, int) for k in current_spec)
+        and all(isinstance(v, dict) for v in current_spec.values())
+        and sorted(current_spec) == list(range(len(current_spec)))
+    ):
+        return [current_spec[i] for i in range(len(current_spec))]
+
     return current_spec
