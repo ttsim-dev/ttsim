@@ -66,7 +66,7 @@ def test_columns_returns_tt_function_output(xnp):
 
     expected_output = {"computed_col": xnp.array([10, 20])}
 
-    def tt_function():
+    def tt_function(_data):
         return expected_output
 
     result = columns(

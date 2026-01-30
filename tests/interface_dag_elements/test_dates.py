@@ -54,7 +54,7 @@ def test_policy_date_various_valid_dates(date_str):
 
 
 def test_policy_date_invalid_date_raises():
-    with pytest.raises(ValueError, match="day is out of range for month"):
+    with pytest.raises(ValueError, match="day.*must be in range"):
         policy_date("2024-02-30")  # Invalid date
 
 
