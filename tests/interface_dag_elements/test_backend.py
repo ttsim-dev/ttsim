@@ -21,7 +21,7 @@ def test_xnp_returns_numpy_for_numpy_backend():
 @pytest.mark.skipif_numpy
 def test_xnp_returns_jax_numpy_for_jax_backend():
     """Test xnp('jax') returns jax.numpy module."""
-    import jax
+    import jax  # noqa: PLC0415
 
     result = xnp("jax")
     assert result is jax.numpy
@@ -29,13 +29,13 @@ def test_xnp_returns_jax_numpy_for_jax_backend():
 
 def test_xnp_invalid_backend_raises_value_error():
     """Test xnp raises ValueError for invalid backend string."""
-    with pytest.raises(ValueError, match="Unsupported backend.*invalid"):
+    with pytest.raises(ValueError, match=r"Unsupported backend.*invalid"):
         xnp("invalid")
 
 
 def test_xnp_case_sensitive():
     """Test xnp is case-sensitive (e.g. 'NumPy' raises ValueError)."""
-    with pytest.raises(ValueError, match="Unsupported backend.*NumPy"):
+    with pytest.raises(ValueError, match=r"Unsupported backend.*NumPy"):
         xnp("NumPy")
 
 

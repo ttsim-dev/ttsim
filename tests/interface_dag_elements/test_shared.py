@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
@@ -304,8 +305,6 @@ def test_fail_if_invalid_date():
 
 def test_to_datetime_with_datetime_object():
     """Test to_datetime passes through datetime.date objects."""
-    import datetime
-
     date_obj = datetime.date(2024, 6, 15)
     result = to_datetime(date_obj)
 
@@ -315,8 +314,6 @@ def test_to_datetime_with_datetime_object():
 
 def test_to_datetime_with_valid_string():
     """Test to_datetime parses valid ISO date strings."""
-    import datetime
-
     result = to_datetime("2024-06-15")
 
     assert result == datetime.date(2024, 6, 15)

@@ -50,10 +50,10 @@ def test_convert_sparse_not_dict_raises(xnp):
 
 def test_convert_sparse_missing_min_max_raises(xnp):
     """Test that missing min_int_in_table or max_int_in_table raises TypeError."""
-    with pytest.raises(TypeError, match="min_int_in_table.*max_int_in_table"):
+    with pytest.raises(TypeError, match=r"min_int_in_table.*max_int_in_table"):
         convert_sparse_to_consecutive_int_lookup_table({1: 1, 2: 2}, xnp)
 
-    with pytest.raises(TypeError, match="min_int_in_table.*max_int_in_table"):
+    with pytest.raises(TypeError, match=r"min_int_in_table.*max_int_in_table"):
         convert_sparse_to_consecutive_int_lookup_table(
             {1: 1, "min_int_in_table": 0}, xnp
         )
@@ -82,7 +82,7 @@ def test_convert_sparse_non_int_keys_raises(xnp):
 
 def test_convert_sparse_min_larger_than_smallest_key_raises(xnp):
     """Test that min_int_in_table > smallest key raises ValueError."""
-    with pytest.raises(ValueError, match="smallest integer.*must not be larger"):
+    with pytest.raises(ValueError, match=r"smallest integer.*must not be larger"):
         convert_sparse_to_consecutive_int_lookup_table(
             {0: 1, 3: 3, "min_int_in_table": 2, "max_int_in_table": 5}, xnp
         )
@@ -90,7 +90,7 @@ def test_convert_sparse_min_larger_than_smallest_key_raises(xnp):
 
 def test_convert_sparse_max_smaller_than_largest_key_raises(xnp):
     """Test that max_int_in_table < largest key raises ValueError."""
-    with pytest.raises(ValueError, match="largest integer.*must not be smaller"):
+    with pytest.raises(ValueError, match=r"largest integer.*must not be smaller"):
         convert_sparse_to_consecutive_int_lookup_table(
             {1: 1, 4: 4, "min_int_in_table": 0, "max_int_in_table": 4}, xnp
         )

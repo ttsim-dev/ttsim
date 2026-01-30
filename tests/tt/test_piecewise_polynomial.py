@@ -164,8 +164,7 @@ def test_piecewise_quadratic(xnp: ModuleType):
     x = xnp.array([0.0, 1.0, 2.0, 3.0])
     result = piecewise_polynomial(x=x, parameters=params, xnp=xnp)
 
-    # Quadratic: intercept + rate_linear * x + rate_quadratic * x^2
-    # = 0 + 0*x + 1*x^2 = x^2
+    # With rate_quadratic=1 and others zero, result equals x squared
     expected = xnp.array([0.0, 1.0, 4.0, 9.0])
     numpy.testing.assert_allclose(result, expected)
 
@@ -201,8 +200,7 @@ def test_piecewise_cubic(xnp: ModuleType):
     x = xnp.array([0.0, 1.0, 2.0, 3.0])
     result = piecewise_polynomial(x=x, parameters=params, xnp=xnp)
 
-    # Cubic: intercept + rate_linear*x + rate_quadratic*x^2 + rate_cubic*x^3
-    # = 0 + 0*x + 0*x^2 + 1*x^3 = x^3
+    # With rate_cubic=1 and others zero, result equals x cubed
     expected = xnp.array([0.0, 1.0, 8.0, 27.0])
     numpy.testing.assert_allclose(result, expected)
 
@@ -294,9 +292,7 @@ def test_piecewise_rates_multiplier_zero(xnp: ModuleType):
     x = xnp.array([-10.0, 0.0, 10.0])
     result = piecewise_polynomial(x=x, parameters=params, xnp=xnp, rates_multiplier=0.0)
 
-    # With rates_multiplier=0, only intercepts remain (but entire expression is multiplied)
-    # Actually looking at code: return rates_multiplier * (intercepts + polynomial)
-    # So with 0, result is 0
+    # With rates_multiplier=0, the entire expression is multiplied by 0, so result is 0
     expected = xnp.array([0.0, 0.0, 0.0])
     numpy.testing.assert_allclose(result, expected)
 
@@ -375,7 +371,7 @@ def test_get_piecewise_params_missing_first_lower_threshold_raises(xnp: ModuleTy
         },
     }
 
-    with pytest.raises(ValueError, match="first piece.*lower_threshold"):
+    with pytest.raises(ValueError, match=r"first piece.*lower_threshold"):
         get_piecewise_parameters(
             leaf_name="test_missing_first_lower",
             func_type="piecewise_linear",
@@ -401,7 +397,7 @@ def test_get_piecewise_params_missing_last_upper_threshold_raises(xnp: ModuleTyp
         },
     }
 
-    with pytest.raises(ValueError, match="last piece.*upper_threshold"):
+    with pytest.raises(ValueError, match=r"last piece.*upper_threshold"):
         get_piecewise_parameters(
             leaf_name="test_missing_last_upper",
             func_type="piecewise_linear",
@@ -603,7 +599,7 @@ def test_get_piecewise_thresholds_inferred_from_adjacent(xnp: ModuleType):
         },
     }
 
-    lower_thr, upper_thr, thresholds = get_piecewise_thresholds(
+    lower_thr, upper_thr, _thresholds = get_piecewise_thresholds(
         leaf_name="test_infer",
         parameter_dict=parameter_dict,
         xnp=xnp,
@@ -626,7 +622,7 @@ def test_get_piecewise_thresholds_missing_both_raises(xnp: ModuleType):
         },
     }
 
-    with pytest.raises(ValueError, match="no lower.*upper"):
+    with pytest.raises(ValueError, match=r"no lower.*upper"):
         get_piecewise_thresholds(
             leaf_name="test_missing_both",
             parameter_dict=parameter_dict,
@@ -772,7 +768,7 @@ def test_check_and_get_intercepts_all_supplied(xnp: ModuleType):
 
 
 def test_check_and_get_intercepts_auto_generated(xnp: ModuleType):
-    """Test _check_and_get_intercepts auto-generates intercepts when only first given."""
+    """Test _check_and_get_intercepts auto-generates intercepts from first."""
     parameter_dict = {
         0: {
             "lower_threshold": "-inf",
