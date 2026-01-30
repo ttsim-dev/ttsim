@@ -14,6 +14,9 @@ except ImportError:
 
 
 from ttsim.tt.aggregation import (
+    all_by_p_id,
+    any_by_p_id,
+    count_by_p_id,
     grouped_all,
     grouped_any,
     grouped_count,
@@ -21,6 +24,9 @@ from ttsim.tt.aggregation import (
     grouped_mean,
     grouped_min,
     grouped_sum,
+    max_by_p_id,
+    mean_by_p_id,
+    min_by_p_id,
     sum_by_p_id,
 )
 
@@ -139,6 +145,41 @@ test_grouped_specs = {
         "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
         "expected_res": numpy.array([0, 70, 0, 50, 0]),
         "expected_type": numpy.integer,
+    },
+    "count_by_p_id": {
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res_count_by_p_id": numpy.array([0, 2, 0, 1, 0]),
+    },
+    "mean_by_p_id_float": {
+        "column_to_aggregate": numpy.array([10.0, 20.0, 30.0, 40.0, 50.0]),
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res_mean_by_p_id": numpy.array([0.0, 35.0, 0.0, 50.0, 0.0]),
+    },
+    "max_by_p_id_float": {
+        "column_to_aggregate": numpy.array([10.0, 20.0, 30.0, 40.0, 50.0]),
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res_max_by_p_id": numpy.array([0.0, 40.0, 0.0, 50.0, 0.0]),
+    },
+    "min_by_p_id_float": {
+        "column_to_aggregate": numpy.array([10.0, 20.0, 30.0, 40.0, 50.0]),
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res_min_by_p_id": numpy.array([0.0, 30.0, 0.0, 50.0, 0.0]),
+    },
+    "any_by_p_id_bool": {
+        "column_to_aggregate": numpy.array([True, False, True, False, True]),
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res_any_by_p_id": numpy.array([False, True, False, True, False]),
+    },
+    "all_by_p_id_bool": {
+        "column_to_aggregate": numpy.array([True, False, True, False, True]),
+        "p_id_to_aggregate_by": numpy.array([-1, -1, 8, 8, 10]),
+        "p_id_to_store_by": numpy.array([7, 8, 9, 10, 11]),
+        "expected_res_all_by_p_id": numpy.array([False, False, False, True, False]),
     },
 }
 
@@ -774,3 +815,97 @@ def test_grouped_sum_large_group_ids_with_gaps(backend):
     # Group 0: 1.0, Group 100: 2.0 + 3.0 = 5.0
     expected = numpy.array([1.0, 5.0, 5.0])
     numpy.testing.assert_array_equal(result, expected)
+
+
+def test_count_by_p_id_raises_not_implemented(backend):
+    """Test count_by_p_id raises NotImplementedError (not yet implemented)."""
+    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+
+    with pytest.raises(NotImplementedError):
+        count_by_p_id(
+            p_id_to_aggregate_by=p_id_to_aggregate_by,
+            p_id_to_store_by=p_id_to_store_by,
+            num_segments=5,
+            backend=backend,
+        )
+
+
+def test_mean_by_p_id_raises_not_implemented(backend):
+    """Test mean_by_p_id raises NotImplementedError (not yet implemented)."""
+    column = numpy.array([10.0, 20.0, 30.0, 40.0, 50.0])
+    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+
+    with pytest.raises(NotImplementedError):
+        mean_by_p_id(
+            column=column,
+            p_id_to_aggregate_by=p_id_to_aggregate_by,
+            p_id_to_store_by=p_id_to_store_by,
+            num_segments=5,
+            backend=backend,
+        )
+
+
+def test_max_by_p_id_raises_not_implemented(backend):
+    """Test max_by_p_id raises NotImplementedError (not yet implemented)."""
+    column = numpy.array([10.0, 20.0, 30.0, 40.0, 50.0])
+    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+
+    with pytest.raises(NotImplementedError):
+        max_by_p_id(
+            column=column,
+            p_id_to_aggregate_by=p_id_to_aggregate_by,
+            p_id_to_store_by=p_id_to_store_by,
+            num_segments=5,
+            backend=backend,
+        )
+
+
+def test_min_by_p_id_raises_not_implemented(backend):
+    """Test min_by_p_id raises NotImplementedError (not yet implemented)."""
+    column = numpy.array([10.0, 20.0, 30.0, 40.0, 50.0])
+    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+
+    with pytest.raises(NotImplementedError):
+        min_by_p_id(
+            column=column,
+            p_id_to_aggregate_by=p_id_to_aggregate_by,
+            p_id_to_store_by=p_id_to_store_by,
+            num_segments=5,
+            backend=backend,
+        )
+
+
+def test_any_by_p_id_raises_not_implemented(backend):
+    """Test any_by_p_id raises NotImplementedError (not yet implemented)."""
+    column = numpy.array([True, False, True, False, True])
+    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+
+    with pytest.raises(NotImplementedError):
+        any_by_p_id(
+            column=column,
+            p_id_to_aggregate_by=p_id_to_aggregate_by,
+            p_id_to_store_by=p_id_to_store_by,
+            num_segments=5,
+            backend=backend,
+        )
+
+
+def test_all_by_p_id_raises_not_implemented(backend):
+    """Test all_by_p_id raises NotImplementedError (not yet implemented)."""
+    column = numpy.array([True, False, True, False, True])
+    p_id_to_aggregate_by = numpy.array([-1, -1, 8, 8, 10])
+    p_id_to_store_by = numpy.array([7, 8, 9, 10, 11])
+
+    with pytest.raises(NotImplementedError):
+        all_by_p_id(
+            column=column,
+            p_id_to_aggregate_by=p_id_to_aggregate_by,
+            p_id_to_store_by=p_id_to_store_by,
+            num_segments=5,
+            backend=backend,
+        )
