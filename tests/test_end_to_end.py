@@ -7,8 +7,10 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
+import numpy
+
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
-from ttsim.tt.column_objects_param_function import policy_function
+from ttsim.tt.column_objects_param_function import policy_function, policy_input
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -84,6 +86,21 @@ EXPECTED_TT_RESULTS = pd.DataFrame(
     },
     index=pd.Index([2, 0, 1], name="p_id"),
 )
+
+
+@policy_input()
+def p_id() -> int:
+    pass
+
+
+@policy_input()
+def income_m() -> float:
+    pass
+
+
+@policy_function(vectorization_strategy="vectorize")
+def benefit(income_m: float) -> float:
+    return income_m * 0.5
 
 
 @pytest.mark.parametrize(
@@ -265,3 +282,36 @@ def test_input_data_reordering_with_distinct_values(
     pd.testing.assert_frame_equal(
         expected, result, check_dtype=False, check_index_type=False
     )
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="https://github.com/ttsim-dev/ttsim/issues/79",
+)
+def test_derived_time_converted_scalar_can_partialled(xnp, backend):
+    """Scalar inputs are partialled correctly.
+    
+    Scalar inputs are partialled also if they replace a function that is derived from
+    a policy input.
+    """
+    policy_environment = {
+        "p_id": p_id,
+        "income_m": income_m,
+        "benefit": benefit,
+    }
+    input_data = {
+        "p_id": xnp.array([1, 2, 3]),
+        "income_y": 12000,
+    }
+    root_nodes = main(
+        main_target=MainTarget.labels.root_nodes,
+        policy_environment=policy_environment,
+        input_data=InputData.tree(input_data),
+        tt_targets=TTTargets.tree({"benefit": None}),
+        policy_date_str="2024-01-01",
+        evaluation_date_str="2024-01-01",
+        backend=backend,
+        include_warn_nodes=False,
+        include_fail_nodes=False,
+    )
+    assert root_nodes == set()
