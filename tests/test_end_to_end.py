@@ -7,8 +7,6 @@ import pandas as pd
 import pytest
 from mettsim import middle_earth
 
-import numpy
-
 from ttsim import InputData, MainTarget, OrigPolicyObjects, TTTargets, main
 from ttsim.tt.column_objects_param_function import policy_function, policy_input
 
@@ -290,7 +288,7 @@ def test_input_data_reordering_with_distinct_values(
 )
 def test_derived_time_converted_scalar_can_partialled(xnp, backend):
     """Scalar inputs are partialled correctly.
-    
+
     Scalar inputs are partialled also if they replace a function that is derived from
     a policy input.
     """
