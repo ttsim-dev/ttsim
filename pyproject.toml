@@ -83,17 +83,6 @@ allow-direct-references = true
 [tool.hatch.version]
 source = "vcs"
 
-# ======================================================================================
-# Pixi configuration
-# ======================================================================================
-
-[tool.pixi.workspace]
-channels = [ "conda-forge" ]
-platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
-
-# Development Dependencies (conda)
-# --------------------------------------------------------------------------------------
-
 [tool.pixi.dependencies]
 ipywidgets = "*"
 jupyterlab = "*"
@@ -109,18 +98,54 @@ snakeviz = ">=2.2.2"
 tabulate = "*"
 toml = "*"
 
-# Development Dependencies (pypi)
+# Environments
 # --------------------------------------------------------------------------------------
 
-[tool.pixi.pypi-dependencies]
-jaxtyping = ">=0.3.2"
-kaleido = ">=1.0.0"
-mettsim = { path = "src_mettsim", editable = true }
-pdbp = ">=1.7.1"
-ttsim-backend = { path = ".", editable = true }
+[tool.pixi.environments]
+py311 = [ "py311", "tests" ]
+py312 = [ "py312", "tests" ]
+py313 = [ "py313", "tests" ]
+py314 = [ "py314", "tests" ]
+py314-cuda = [ "py314", "tests", "cuda" ]
+py314-jax = [ "py314", "tests", "jax" ]
+py314-metal = [ "py314", "tests", "metal" ]
 
-# Features
-# --------------------------------------------------------------------------------------
+# ======================================================================================
+# Ruff configuration
+# ======================================================================================
+
+# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
+
+[tool.pixi.feature.cuda]
+platforms = [ "linux-64" ]
+system-requirements = { cuda = "13" }
+
+[tool.pixi.feature.cuda.target.linux-64.pypi-dependencies]
+jax = { version = ">=0.8", extras = [ "cuda13" ] }
+
+[tool.pixi.feature.cuda.target.linux-64.tasks]
+tests-jax = "pytest --backend=jax"
+
+[tool.pixi.feature.jax]
+platforms = [ "linux-64", "osx-arm64", "win-64" ]
+
+[tool.pixi.feature.jax.pypi-dependencies]
+jax = ">=0.8"
+[tool.pixi.feature.jax.target.linux-64.tasks]
+tests-jax = "pytest --backend=jax"
+
+[tool.pixi.feature.jax.target.osx-arm64.tasks]
+tests-jax = "dot -c && pytest --backend=jax"
+
+[tool.pixi.feature.jax.target.win-64.tasks]
+tests-jax = "pytest --backend=jax"
+
+[tool.pixi.feature.metal]
+platforms = [ "osx-arm64" ]
+
+[tool.pixi.feature.metal.target.osx-arm64.pypi-dependencies]
+jax = ">=0.8"
+jax-metal = ">=0.1.1"
 
 [tool.pixi.feature.py311.dependencies]
 python = "~=3.11.0"
@@ -133,27 +158,6 @@ python = "~=3.13.0"
 
 [tool.pixi.feature.py314.dependencies]
 python = "~=3.14.0"
-
-[tool.pixi.feature.jax]
-platforms = [ "linux-64", "osx-arm64", "win-64" ]
-
-[tool.pixi.feature.jax.pypi-dependencies]
-jax = ">=0.8"
-# jax-datetime = { git = "https://github.com/google/jax-datetime.git" }
-
-[tool.pixi.feature.cuda]
-platforms = [ "linux-64" ]
-system-requirements = { cuda = "13" }
-
-[tool.pixi.feature.cuda.target.linux-64.pypi-dependencies]
-jax = { version = ">=0.8", extras = [ "cuda13" ] }
-
-[tool.pixi.feature.metal]
-platforms = [ "osx-arm64" ]
-
-[tool.pixi.feature.metal.target.osx-arm64.pypi-dependencies]
-jax = ">=0.8"
-jax-metal = ">=0.1.1"
 
 [tool.pixi.feature.tests.pypi-dependencies]
 ty = "*"
@@ -181,33 +185,47 @@ ty = "ty check"
 tests = "pytest"
 ty = "ty check"
 
-[tool.pixi.feature.jax.target.linux-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-[tool.pixi.feature.jax.target.osx-arm64.tasks]
-tests-jax = "dot -c && pytest --backend=jax"
-
-[tool.pixi.feature.jax.target.win-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-[tool.pixi.feature.cuda.target.linux-64.tasks]
-tests-jax = "pytest --backend=jax"
-
-# Environments
+# Development Dependencies (pypi)
 # --------------------------------------------------------------------------------------
 
-[tool.pixi.environments]
-py311 = [ "py311", "tests" ]
-py312 = [ "py312", "tests" ]
-py313 = [ "py313", "tests" ]
-py314 = [ "py314", "tests" ]
-py314-cuda = [ "py314", "tests", "cuda" ]
-py314-jax = [ "py314", "tests", "jax" ]
-py314-metal = [ "py314", "tests", "metal" ]
+[tool.pixi.pypi-dependencies]
+jaxtyping = ">=0.3.2"
+kaleido = ">=1.0.0"
+mettsim = { path = "src_mettsim", editable = true }
+pdbp = ">=1.7.1"
+ttsim-backend = { path = ".", editable = true }
+
+# Features
+# --------------------------------------------------------------------------------------
 
 # ======================================================================================
-# Ruff configuration
+# Pixi configuration
 # ======================================================================================
+
+[tool.pixi.workspace]
+channels = [ "conda-forge" ]
+platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
+
+# Development Dependencies (conda)
+# --------------------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+addopts = [ "--pdbcls=pdbp:Pdb" ]
+filterwarnings = [
+  "ignore:.*XMLParser*:DeprecationWarning",
+  "ignore:.*'tree.iter()'*:PendingDeprecationWarning",
+  "ignore:.*Sorting*:FutureWarning",
+  "ignore:The TerminalReporter.writer attribute is",
+  "ignore:Repeated execution of the test suite",
+  "ignore:Using or importing the ABCs from 'collections'",
+  "ignore:Explicitly requested dtype .*64 requested in zeros_like",
+]
+markers = [
+  "skipif_jax: skip test if backend is jax",
+  "skipif_numpy: skip test if backend is numpy",
+]
+norecursedirs = [ "docs" ]
+testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
 
 [tool.ruff]
 fix = true
@@ -324,24 +342,6 @@ useless-overload-body = "error"
 # ======================================================================================
 # pytest configuration
 # ======================================================================================
-
-[tool.pytest.ini_options]
-addopts = [ "--pdbcls=pdbp:Pdb" ]
-filterwarnings = [
-  "ignore:.*XMLParser*:DeprecationWarning",
-  "ignore:.*'tree.iter()'*:PendingDeprecationWarning",
-  "ignore:.*Sorting*:FutureWarning",
-  "ignore:The TerminalReporter.writer attribute is",
-  "ignore:Repeated execution of the test suite",
-  "ignore:Using or importing the ABCs from 'collections'",
-  "ignore:Explicitly requested dtype .*64 requested in zeros_like",
-]
-markers = [
-  "skipif_jax: skip test if backend is jax",
-  "skipif_numpy: skip test if backend is numpy",
-]
-norecursedirs = [ "docs" ]
-testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
 
 # ======================================================================================
 # yamlfix configuration
