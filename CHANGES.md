@@ -6,6 +6,9 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`80` Generalize type hints for time conversion functions. ({ghuser}`hmgaudecker`)
+- {gh}`71` Fix pygraphviz plugin registration on macOS. ({ghuser}`MImmesberger`)
+- {gh}`68` Get rid of UnitTest style tests. ({ghuser}`hmgaudecker`)
 - {gh}`67` Add glob-style pattern matching for `node_colormap` in DAG plotting.
   ({ghuser}`hmgaudecker`)
 
