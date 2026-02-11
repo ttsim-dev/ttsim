@@ -9,3 +9,5 @@ branch = True
 exclude_lines =
     pragma: no cover
     if TYPE_CHECKING:
+    @overload
+    :\s*\.\.\.\s*$
