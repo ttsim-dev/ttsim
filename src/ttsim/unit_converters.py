@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, overload
 
+import numpy as np
+import pandas as pd
+
 if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
     from jaxtyping import Array, Float, Int
 
 TIME_UNIT_IDS_TO_LABELS = {
