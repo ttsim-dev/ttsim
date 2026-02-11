@@ -53,6 +53,7 @@ if TYPE_CHECKING:
 
     from ttsim.typing import (
         BoolColumn,
+        FlatColumnObjects,
         FloatColumn,
         IntColumn,
         OrderedQNames,
@@ -113,7 +114,7 @@ def create_time_conversion_functions(
     qname_policy_environment: PolicyEnvironment,
     input_columns: UnorderedQNames,
     grouping_levels: OrderedQNames,
-) -> UnorderedQNames:
+) -> FlatColumnObjects:
     """
     Create functions converting elements of the policy environment to other time units.
 
@@ -281,8 +282,7 @@ def create_agg_by_group_functions(
     input_columns: UnorderedQNames,
     tt_targets: OrderedQNames,
     grouping_levels: OrderedQNames,
-    # backend: Literal["numpy", "jax"],
-) -> UnorderedQNames:
+) -> FlatColumnObjects:
     gp = group_pattern(grouping_levels)
     all_functions_and_data = {
         **column_functions,
