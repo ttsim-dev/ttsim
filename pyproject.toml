@@ -179,7 +179,7 @@ norecursedirs = [ "docs" ]
 testpaths = [ "tests", "src_mettsim/tests_middle_earth" ]
 
 [tool.ty.analysis]
-allowed-unresolved-imports = [ "ttsim._version" ]
+allowed-unresolved-imports = [ "ttsim._version", "jax", "jax.numpy", "jax.ops" ]
 
 [tool.ty.rules]
 ambiguous-protocol-member = "error"

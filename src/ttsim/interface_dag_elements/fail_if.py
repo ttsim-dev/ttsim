@@ -18,7 +18,7 @@ from dags import create_dag, get_free_arguments
 try:
     import jax
 except ImportError:
-    jax = None  # ty: ignore[invalid-assignment]
+    jax = None
 
 
 from ttsim.interface_dag_elements.interface_node_objects import fail_function
@@ -665,7 +665,7 @@ def backend_has_changed(
             for argname, arg in func.keywords.items():
                 # We are fine if it is a jax array and we do not want to loop over its
                 # attributes (GETTSIM tests fail otherwise).
-                if isinstance(arg, jax.Array):
+                if isinstance(arg, jax.Array):  # ty: ignore[possibly-missing-attribute]
                     continue
                 if isinstance(arg, numpy.ndarray) or any(
                     isinstance(getattr(arg, attr), numpy.ndarray) for attr in dir(arg)
