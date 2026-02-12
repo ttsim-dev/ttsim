@@ -256,7 +256,7 @@ def _create_one_set_of_time_conversion_functions(
 
 def _create_function_for_time_unit(
     source: str,
-    converter: Callable[[float], float],
+    converter: Callable[[BoolColumn | FloatColumn | IntColumn], FloatColumn],
 ) -> Callable[[BoolColumn | FloatColumn | IntColumn], FloatColumn]:
     @overload
     @rename_arguments(mapper={"x": source})
