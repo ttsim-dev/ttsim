@@ -54,6 +54,16 @@ def betrag_m() -> float:
     pass
 
 
+@policy_input()
+def income_m() -> float:
+    pass
+
+
+@policy_function(vectorization_strategy="vectorize")
+def benefit(income_m: float) -> float:
+    return income_m * 0.5
+
+
 @policy_function(vectorization_strategy="vectorize")
 def identity(x: int) -> int:
     return x
@@ -864,5 +874,37 @@ def test_scalars_in_input_data_become_part_of_specialized_environment(xnp, backe
         evaluation_date_str="2024-01-01",
         backend=backend,
         include_warn_nodes=False,
+    )
+    assert root_nodes == set()
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="https://github.com/ttsim-dev/ttsim/issues/79",
+)
+def test_derived_time_converted_scalar_not_in_processed_environment(xnp, backend):
+    """Scalar inputs are partialled correctly.
+
+    Scalars in input_data that are dependencies of derived functions should be
+    included in the processed environment."""
+    policy_environment = {
+        "p_id": p_id,
+        "income_m": income_m,
+        "benefit": benefit,
+    }
+    input_data = {
+        "p_id": xnp.array([1, 2, 3]),
+        "income_y": 12000,
+    }
+    root_nodes = main(
+        main_target=MainTarget.labels.root_nodes,
+        policy_environment=policy_environment,
+        input_data=InputData.tree(input_data),
+        tt_targets=TTTargets.tree({"benefit": None}),
+        policy_date_str="2024-01-01",
+        evaluation_date_str="2024-01-01",
+        backend=backend,
+        include_warn_nodes=False,
+        include_fail_nodes=False,
     )
     assert root_nodes == set()

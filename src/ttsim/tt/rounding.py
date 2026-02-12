@@ -27,6 +27,9 @@ class RoundingSpec:
         if not isinstance(self.base, (int, float)):
             msg = f"base needs to be a number, got {self.base!r}"
             raise TypeError(msg)
+        if self.base <= 0:
+            msg = f"base must be positive, got {self.base!r}"
+            raise ValueError(msg)
         valid_directions = get_args(ROUNDING_DIRECTION)
         if self.direction not in valid_directions:
             raise ValueError(

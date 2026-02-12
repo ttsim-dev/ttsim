@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
@@ -7,12 +8,12 @@ import pytest
 
 from ttsim.interface_dag_elements.shared import (
     create_tree_from_path_and_value,
+    get_base_name_and_grouping_suffix,
     get_name_of_group_by_id,
     get_re_pattern_for_all_time_units_and_groupings,
     get_re_pattern_for_specific_time_units_and_groupings,
     insert_path_and_value,
     merge_trees,
-    partition_tree_by_reference_tree,
     to_datetime,
     upsert_path_and_value,
     upsert_tree,
@@ -25,15 +26,6 @@ if TYPE_CHECKING:
 @dataclass
 class SampleDataClass:
     a: int
-
-
-def test_leap_year_correctly_handled():
-    to_datetime(date="2020-02-29")
-
-
-def test_fail_if_invalid_date():
-    with pytest.raises(ValueError, match=r"day .+ range"):
-        to_datetime(date="2020-02-30")
 
 
 @pytest.mark.parametrize(
@@ -108,6 +100,15 @@ def test_create_tree_from_path_and_value_if_path_is_empty(paths, value, expected
     assert create_tree_from_path_and_value(paths, value) == expected
 
 
+def test_create_tree_from_path_and_value_with_dataclass():
+    result = create_tree_from_path_and_value(
+        path=("a", "b"),
+        value=SampleDataClass(a=42),
+    )
+
+    assert result == {"a": {"b": SampleDataClass(a=42)}}
+
+
 @pytest.mark.parametrize(
     ("left", "right", "expected"),
     [
@@ -146,71 +147,6 @@ def test_merge_trees_invalid(left, right):
 )
 def test_upsert_tree(base_dict, update_dict, expected):
     assert upsert_tree(base=base_dict, to_upsert=update_dict) == expected
-
-
-@pytest.mark.parametrize(
-    ("tree_to_partition", "reference_tree", "expected"),
-    [
-        (
-            {
-                "a": {
-                    "b": 1,
-                    "c": 1,
-                },
-                "b": 1,
-            },
-            {
-                "a": {
-                    "b": 1,
-                },
-                "b": 1,
-            },
-            (
-                {"a": {"b": 1}, "b": 1},
-                {"a": {"c": 1}},
-            ),
-        ),
-        (
-            {
-                "a": {
-                    "c": 1,
-                },
-            },
-            {},
-            (
-                {},
-                {"a": {"c": 1}},
-            ),
-        ),
-        (
-            {
-                "a": {
-                    "b": None,
-                    "c": None,
-                },
-                "b": None,
-            },
-            {
-                "a": {
-                    "b": None,
-                },
-                "b": None,
-            },
-            (
-                {"a": {"b": None}, "b": None},
-                {"a": {"c": None}},
-            ),
-        ),
-    ],
-)
-def test_partition_tree_by_reference_tree(tree_to_partition, reference_tree, expected):
-    in_reference_tree, not_in_reference_tree = partition_tree_by_reference_tree(
-        tree_to_partition=tree_to_partition,
-        reference_tree=reference_tree,
-    )
-
-    assert in_reference_tree == expected[0]
-    assert not_in_reference_tree == expected[1]
 
 
 @pytest.mark.parametrize(
@@ -294,3 +230,99 @@ def test_get_re_pattern_for_some_base_name(
         grouping_levels=grouping_levels,
     )
     assert re_pattern.fullmatch(expected_match)
+
+
+def test_get_base_name_and_grouping_suffix_with_suffix():
+    """Test get_base_name_and_grouping_suffix with grouping suffix present."""
+    pattern = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=("m", "y"),
+        grouping_levels=("kin", "fam"),
+    )
+    match = pattern.fullmatch("foo_m_kin")
+    assert match is not None
+
+    base_name, suffix = get_base_name_and_grouping_suffix(match)
+    assert base_name == "foo"
+    assert suffix == "_kin"
+
+
+def test_get_base_name_and_grouping_suffix_without_suffix():
+    """Test get_base_name_and_grouping_suffix without grouping suffix."""
+    pattern = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=("m", "y"),
+        grouping_levels=("kin", "fam"),
+    )
+    match = pattern.fullmatch("foo_m")
+    assert match is not None
+
+    base_name, suffix = get_base_name_and_grouping_suffix(match)
+    assert base_name == "foo"
+    assert suffix == ""
+
+
+def test_get_base_name_and_grouping_suffix_no_time_unit():
+    """Test get_base_name_and_grouping_suffix with only grouping suffix."""
+    pattern = get_re_pattern_for_all_time_units_and_groupings(
+        time_units=("m", "y"),
+        grouping_levels=("kin", "fam"),
+    )
+    match = pattern.fullmatch("foo_kin")
+    assert match is not None
+
+    base_name, suffix = get_base_name_and_grouping_suffix(match)
+    assert base_name == "foo"
+    assert suffix == "_kin"
+
+
+def test_upsert_tree_deeply_nested():
+    """Test upsert_tree with deeply nested structures."""
+    base = {"a": {"b": {"c": {"d": 1}}}}
+    to_upsert = {"a": {"b": {"c": {"e": 2}}}}
+
+    result = upsert_tree(base=base, to_upsert=to_upsert)
+
+    assert result == {"a": {"b": {"c": {"d": 1, "e": 2}}}}
+
+
+def test_merge_trees_with_none_values():
+    """Test merge_trees preserves None values correctly."""
+    left = {"a": None}
+    right = {"b": None}
+
+    result = merge_trees(left=left, right=right)
+
+    assert result == {"a": None, "b": None}
+
+
+def test_leap_year_correctly_handled():
+    to_datetime(date="2020-02-29")
+
+
+def test_fail_if_invalid_date():
+    with pytest.raises(ValueError, match=r"day .+ range"):
+        to_datetime(date="2020-02-30")
+
+
+def test_to_datetime_with_datetime_object():
+    """Test to_datetime passes through datetime.date objects."""
+    date_obj = datetime.date(2024, 6, 15)
+    result = to_datetime(date_obj)
+
+    assert result == date_obj
+    assert isinstance(result, datetime.date)
+
+
+def test_to_datetime_with_valid_string():
+    """Test to_datetime parses valid ISO date strings."""
+    result = to_datetime("2024-06-15")
+
+    assert result == datetime.date(2024, 6, 15)
+
+
+def test_to_datetime_with_invalid_format_raises():
+    """Test to_datetime raises for invalid date formats."""
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        to_datetime("06-15-2024")  # Wrong format
+
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        to_datetime("2024/06/15")  # Wrong separator

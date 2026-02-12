@@ -36,7 +36,8 @@ Before finishing any task that modifies code, always run these three verificatio
 in order:
 
 1. `pixi run -e py314-jax ty` (type checker)
-1. `prek run --all-files` (quality checks: linting, formatting, yaml, etc.)
+1. `pixi run -e py314-jax prek run --all-files` (quality checks: linting, formatting,
+   yaml, etc.)
 1. `pixi run -e py314-jax tests -n 7` (full test suite)
 
 Pre-commit hooks run automatically via pre-commit.ci. Linting uses Ruff with `ALL` rules
