@@ -50,7 +50,7 @@ if set(OPTIONS_REGISTRY.keys()) != set(get_args(FUNC_TYPES)):
 
 
 def piecewise_polynomial(
-    x: Float[Array, " n_pp_values"] | float,
+    x: Float[Array, " n_pp_values"],
     parameters: PiecewisePolynomialParamValue,
     xnp: ModuleType,
     rates_multiplier: Float[Array, " n_segments"] | float = 1.0,
@@ -365,7 +365,7 @@ def _calculate_one_intercept(
     lower_thresholds: Float[Array, " n_segments"],
     upper_thresholds: Float[Array, " n_segments"],
     rates: Float[Array, " n_segments"],
-    intercepts: Float[Array, " n_segments"] | numpy.ndarray,
+    intercepts: Float[Array, " n_segments"],
 ) -> float:
     """Calculate the intercept for the segment `x` lies in.
 

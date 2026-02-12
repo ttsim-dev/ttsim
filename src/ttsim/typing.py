@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, overload
 
 if TYPE_CHECKING:
-    import numpy as np
     from jaxtyping import Array, Bool, Float, Int
 
-    BoolColumn: TypeAlias = Bool[Array, " n_obs"] | np.ndarray
-    IntColumn: TypeAlias = Int[Array, " n_obs"] | np.ndarray
-    FloatColumn: TypeAlias = Float[Array, " n_obs"] | np.ndarray
+    BoolColumn: TypeAlias = Bool[Array, " n_obs"]
+    IntColumn: TypeAlias = Int[Array, " n_obs"]
+    FloatColumn: TypeAlias = Float[Array, " n_obs"]
 
     # Make these available for import from other modules.
     import datetime

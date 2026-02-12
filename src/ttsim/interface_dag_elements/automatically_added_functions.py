@@ -272,7 +272,7 @@ def _create_function_for_time_unit(
 
     @rename_arguments(mapper={"x": source})
     def func(x: FloatColumn | IntColumn | BoolColumn) -> FloatColumn:
-        return converter(x)  # ty: ignore[invalid-argument-type]
+        return converter(x)
 
     return func
 
