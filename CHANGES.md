@@ -8,6 +8,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 - {gh}`83` Allow non-string annotations in vectorization. ({ghuser}`hmgaudecker`)
 - {gh}`80` Generalize type hints for time conversion functions. ({ghuser}`hmgaudecker`)
+- {gh}`75` Improve test coverage. ({ghuser}`MImmesberger`)
 - {gh}`71` Fix pygraphviz plugin registration on macOS. ({ghuser}`MImmesberger`)
 - {gh}`68` Get rid of UnitTest style tests. ({ghuser}`hmgaudecker`)
 - {gh}`67` Add glob-style pattern matching for `node_colormap` in DAG plotting.
