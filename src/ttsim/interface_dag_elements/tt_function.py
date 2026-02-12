@@ -50,7 +50,7 @@ def tt_function(
     )
 
     if backend == "jax":
-        import jax  # noqa: PLC0415 # ty: ignore[unresolved-import]
+        import jax  # noqa: PLC0415
 
         ttf_with_keyword_args = jax.jit(ttf_with_keyword_args)
 

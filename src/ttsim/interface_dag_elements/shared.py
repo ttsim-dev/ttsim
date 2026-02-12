@@ -123,7 +123,7 @@ def get_base_name_and_grouping_suffix(match: re.Match[str]) -> tuple[str, str]:
 
 
 def create_tree_from_path_and_value(
-    path: tuple[str],
+    path: tuple[str, ...],
     value: Any = None,  # noqa: ANN401
 ) -> dict[str, Any]:
     """Create a nested dict with 'path' as keys and 'value' as leaf.
@@ -214,7 +214,7 @@ def upsert_tree(base: dict[str, Any], to_upsert: dict[str, Any]) -> dict[str, An
 
 def upsert_path_and_value(
     base: dict[str, Any],
-    path_to_upsert: tuple[str],
+    path_to_upsert: tuple[str, ...],
     value_to_upsert: Any = None,  # noqa: ANN401
 ) -> dict[str, Any]:
     """Update tree with a path and value.
@@ -232,7 +232,7 @@ def upsert_path_and_value(
 
 def insert_path_and_value(
     base: dict[str, Any],
-    path_to_insert: tuple[str],
+    path_to_insert: tuple[str, ...],
     value_to_insert: Any = None,  # noqa: ANN401
 ) -> dict[str, Any]:
     """Insert a path and value into a tree.
