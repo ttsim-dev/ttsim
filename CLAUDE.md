@@ -32,6 +32,14 @@ pixi run -e ty ty
 # Available environments: py311, py312, py313, py314, py314-jax, py314-cuda, py314-metal, ty
 ```
 
+Before finishing any task that modifies code, always run these three verification steps
+in order:
+
+1. `pixi run -e py314-jax ty` (type checker)
+1. `pixi run -e py314-jax prek run --all-files` (quality checks: linting, formatting,
+   yaml, etc.)
+1. `pixi run -e py314-jax tests -n 7` (full test suite)
+
 Pre-commit hooks run automatically via pre-commit.ci. Linting uses Ruff with `ALL` rules
 enabled.
 
