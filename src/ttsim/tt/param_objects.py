@@ -11,9 +11,9 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     import numpy as np
-    from jaxtyping import Array, Bool, Float, Int
+    from jaxtyping import Array, Float
 
-    from ttsim.typing import NestedLookupDict
+    from ttsim.typing import BoolColumn, FloatColumn, IntColumn, NestedLookupDict
 
 
 @dataclass(frozen=True)
@@ -121,24 +121,16 @@ class ConsecutiveIntLookupTableParamValue:
         "xnp",
     )
 
-    bases_to_subtract: Int[Array, "n_rows n_cols"] | np.ndarray
-    lookup_multipliers: Int[Array, "n_rows n_cols"] | np.ndarray
-    values_to_look_up: (
-        Float[Array, "n_rows n_cols"]
-        | Int[Array, "n_rows n_cols"]
-        | Bool[Array, "n_rows n_cols"]
-        | np.ndarray
-    )
+    bases_to_subtract: IntColumn
+    lookup_multipliers: IntColumn
+    values_to_look_up: FloatColumn | IntColumn | BoolColumn
     xnp: ModuleType
 
     def __init__(
         self,
         xnp: ModuleType,
-        values_to_look_up: Float[Array, "n_rows n_cols"]
-        | Int[Array, "n_rows n_cols"]
-        | Bool[Array, "n_rows n_cols"]
-        | np.ndarray,
-        bases_to_subtract: Int[Array, "n_rows n_cols"] | np.ndarray,
+        values_to_look_up: FloatColumn | IntColumn | BoolColumn,
+        bases_to_subtract: IntColumn,
     ) -> None:
         self.xnp = xnp
         self.values_to_look_up = values_to_look_up.flatten()
