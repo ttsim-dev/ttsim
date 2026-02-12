@@ -6,6 +6,7 @@ releases are available on [Anaconda.org](https://anaconda.org/conda-forge/ttsim)
 
 ## Unreleased
 
+- {gh}`83` Allow non-string annotations in vectorization. ({ghuser}`hmgaudecker`)
 - {gh}`80` Generalize type hints for time conversion functions. ({ghuser}`hmgaudecker`)
 - {gh}`71` Fix pygraphviz plugin registration on macOS. ({ghuser}`MImmesberger`)
 - {gh}`68` Get rid of UnitTest style tests. ({ghuser}`hmgaudecker`)
